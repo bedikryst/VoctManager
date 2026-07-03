@@ -795,8 +795,13 @@ class MaterialsAccessControlTests(APITestCase):
         return f"/api/materials/scores/{edition.id}/download/"
 
     def test_singer_can_download_score_of_live_project(self) -> None:
+        # Editions default to a protected licence, so a chorister's copy is
+        # watermarked on the way out (rendering is stubbed here — the host has no
+        # WeasyPrint; the watermark itself is covered in test_score_protection).
+        # This test only asserts the access gate still yields the score.
         self.client.force_authenticate(user=self.singer_user)
-        resp = self.client.get(self._score_url(self.edition_live))
+        with patch("roster.views.stamp_pdf", return_value=b"%PDF-stamped"):
+            resp = self.client.get(self._score_url(self.edition_live))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp["Content-Type"], "application/pdf")
 
@@ -967,13 +972,206 @@ class MaterialsAccessControlTests(APITestCase):
             Annotation.objects.filter(edition=self.edition_live, is_deleted=False).count(), 0,
         )
 
-    def test_singer_cannot_clear_annotations(self) -> None:
-        self._make_annotation(self.edition_live, layer="shared")
+    def test_singer_clear_never_touches_shared_layer(self) -> None:
+        from archive.models import Annotation
+        shared = self._make_annotation(self.edition_live, layer="shared")
         self.client.force_authenticate(user=self.singer_user)
         resp = self.client.post(
             "/api/archive/annotations/clear/",
             {"edition": str(self.edition_live.id)}, format="json",
         )
+        # Clear is allowed for singers but scoped to their OWN personal layer —
+        # the conductor's shared markup must survive untouched.
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["deleted"], 0)
+        self.assertTrue(
+            Annotation.objects.filter(pk=shared.pk, is_deleted=False).exists(),
+        )
+
+    # --- personal layer: the chorister's own pencil marks ---------------- #
+
+    def _personal_payload(self, edition, text="my cue"):
+        return {
+            "edition": str(edition.id), "page_number": 1,
+            "annotation_type": "CM", "payload": {"x": 0.5, "y": 0.5, "text": text},
+            "layer_name": "personal",
+        }
+
+    def test_singer_can_create_personal_annotation_on_live_edition(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        )
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(str(resp.data["created_by"]), str(self.singer_user.id))
+        self.assertEqual(resp.data["layer_name"], "personal")
+
+    def test_singer_cannot_create_personal_annotation_without_live_access(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        for edition in (self.edition_closed, self.edition_foreign):
+            resp = self.client.post(
+                "/api/archive/annotations/",
+                self._personal_payload(edition), format="json",
+            )
+            self.assertEqual(resp.status_code, 403, msg=resp.data)
+
+    def test_singer_can_create_stamp_on_personal_layer(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.post("/api/archive/annotations/", {
+            "edition": str(self.edition_live.id), "page_number": 2,
+            "annotation_type": "ST", "payload": {"x": 0.3, "y": 0.4, "symbol": "breath"},
+            "layer_name": "personal",
+        }, format="json")
+        self.assertEqual(resp.status_code, 201, msg=resp.data)
+        self.assertEqual(resp.data["payload"]["symbol"], "breath")
+
+    def test_singer_can_update_and_delete_own_personal_annotation(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        created = self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        ).data
+        patched = self.client.patch(
+            f"/api/archive/annotations/{created['id']}/",
+            {"payload": {"x": 0.5, "y": 0.5, "text": "edited"}}, format="json",
+        )
+        self.assertEqual(patched.status_code, 200, msg=patched.data)
+        self.assertEqual(patched.data["payload"]["text"], "edited")
+        deleted = self.client.delete(f"/api/archive/annotations/{created['id']}/")
+        self.assertEqual(deleted.status_code, 204)
+
+    def test_singer_cannot_promote_personal_annotation_to_shared(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        created = self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        ).data
+        resp = self.client.patch(
+            f"/api/archive/annotations/{created['id']}/",
+            {"layer_name": "shared"}, format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_personal_annotations_are_private_even_from_the_manager(self) -> None:
+        # Singer leaves a personal mark…
+        self.client.force_authenticate(user=self.singer_user)
+        self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live, text="secret"), format="json",
+        )
+        # …the manager's list must not contain it (their own personal is fine).
+        self._make_annotation(self.edition_live, layer="personal")  # manager-owned
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_live.id}")
+        self.assertEqual(resp.status_code, 200)
+        personal_rows = [r for r in resp.data if r["layer_name"] == "personal"]
+        self.assertEqual(len(personal_rows), 1)
+        self.assertEqual(str(personal_rows[0]["created_by"]), str(self.manager.id))
+
+    def test_singer_list_includes_shared_and_own_personal_only(self) -> None:
+        shared = self._make_annotation(self.edition_live, layer="shared")
+        self._make_annotation(self.edition_live, layer="conductor")
+        self._make_annotation(self.edition_live, layer="personal")  # manager's own
+        self.client.force_authenticate(user=self.singer_user)
+        mine = self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        ).data
+        resp = self.client.get(f"/api/archive/annotations/?edition={self.edition_live.id}")
+        self.assertEqual(resp.status_code, 200)
+        ids = {row["id"] for row in resp.data}
+        self.assertEqual(ids, {str(shared.id), str(mine["id"])})
+
+    def test_manager_clear_leaves_personal_layers_alone(self) -> None:
+        from archive.models import Annotation
+        self._make_annotation(self.edition_live, layer="shared")
+        self._make_annotation(self.edition_live, layer="conductor")
+        self.client.force_authenticate(user=self.singer_user)
+        self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        )
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": str(self.edition_live.id)}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["deleted"], 2)
+        self.assertEqual(
+            Annotation.objects.filter(
+                edition=self.edition_live, is_deleted=False, layer_name="personal",
+            ).count(),
+            1,
+        )
+
+    def test_singer_clear_deletes_only_own_personal_marks(self) -> None:
+        from archive.models import Annotation
+        shared = self._make_annotation(self.edition_live, layer="shared")
+        self.client.force_authenticate(user=self.singer_user)
+        self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live), format="json",
+        )
+        resp = self.client.post(
+            "/api/archive/annotations/clear/",
+            {"edition": str(self.edition_live.id)}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["deleted"], 1)
+        self.assertTrue(
+            Annotation.objects.filter(pk=shared.pk, is_deleted=False).exists(),
+        )
+
+    def test_edition_detail_never_embeds_personal_annotations(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        self.client.post(
+            "/api/archive/annotations/",
+            self._personal_payload(self.edition_live, text="secret"), format="json",
+        )
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get(f"/api/archive/editions/{self.edition_live.id}/")
+        self.assertEqual(resp.status_code, 200)
+        layers = {a["layer_name"] for a in resp.data["annotations"]}
+        self.assertNotIn("personal", layers)
+
+    # --- starting pitches: the conductor's rehearsal pitch list ----------- #
+
+    def test_manager_can_set_starting_pitches_and_they_are_sanitized(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.patch(f"/api/pieces/{self.piece_live.id}/", {
+            "starting_pitches": [
+                {"voice": "  S  ", "note": 6, "octave": 4},
+                {"voice": "A", "note": "2", "octave": 4},
+                {"voice": "T", "note": 9, "octave": 3},
+                {"voice": "B", "note": 2, "octave": 3},
+            ],
+        }, format="json")
+        self.assertEqual(resp.status_code, 200, msg=resp.data)
+        self.assertEqual(resp.data["starting_pitches"][0], {"voice": "S", "note": 6, "octave": 4})
+        self.assertEqual(resp.data["starting_pitches"][1]["note"], 2)
+
+    def test_starting_pitches_reject_out_of_range_entries(self) -> None:
+        self.client.force_authenticate(user=self.manager)
+        for bad in (
+            [{"voice": "S", "note": 12, "octave": 4}],
+            [{"voice": "S", "note": 5, "octave": 9}],
+            [{"voice": "", "note": 5, "octave": 4}],
+            [{"note": 5, "octave": 4}],
+            "not-a-list",
+        ):
+            resp = self.client.patch(
+                f"/api/pieces/{self.piece_live.id}/",
+                {"starting_pitches": bad}, format="json",
+            )
+            self.assertEqual(resp.status_code, 400, msg=resp.data)
+
+    def test_singer_cannot_set_starting_pitches(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.patch(f"/api/pieces/{self.piece_live.id}/", {
+            "starting_pitches": [{"voice": "S", "note": 0, "octave": 4}],
+        }, format="json")
         self.assertEqual(resp.status_code, 403)
 
     # --- payload validation + sanitization ------------------------------- #
@@ -1458,3 +1656,158 @@ class RehearsalNotificationEmitterTests(TestCase):
         self.assertEqual(meta["project_id"], str(self.project.id))
         self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
         self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
+
+
+class ConductorScheduleAndMaterialsTests(APITestCase):
+    """
+    A conductor (Project.conductor → Artist → user) who is not cast in a project
+    still sees it — and *every* rehearsal within — in the personal schedule and
+    materials dashboards, carrying no participation (no self-RSVP / self-report)
+    but the full cast on each piece.
+    """
+
+    SCHEDULE_URL = "/api/participations/schedule-dashboard/"
+    MATERIALS_URL = "/api/participations/materials-dashboard/"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece, ScoreEdition, Track
+        from core.constants import VoiceLine
+
+        from .models import ProgramItem, ProjectPieceCasting
+
+        User = get_user_model()
+        now = timezone.now()
+
+        # The conductor: a User linked to a CONDUCTOR-voiced Artist.
+        self.maestro_user = User.objects.create_user(
+            username="cond-maestro", email="cond@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        self.maestro = Artist.objects.create(
+            user=self.maestro_user, first_name="Wanda", last_name="Baton",
+            email="cond@test.pl", voice_type=VoiceType.CONDUCTOR,
+        )
+
+        # A singer cast in the project, so a rehearsal can invite them only.
+        self.singer_user = User.objects.create_user(
+            username="cond-singer", email="cs@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Sam", last_name="Singer",
+            email="cs@test.pl", voice_type=VoiceType.TENOR,
+        )
+
+        composer = Composer.objects.create(first_name="Gustav", last_name="Holst")
+        self.piece = Piece.objects.create(title="The Planets", composer=composer)
+
+        # Project the maestro conducts but is NOT cast in.
+        self.project = Project.objects.create(
+            title="Podium Night", date_time=now, status=Project.Status.ACTIVE,
+            conductor=self.maestro,
+        )
+        self.singer_part = Participation.objects.create(
+            artist=self.singer, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+        ProjectPieceCasting.objects.create(
+            participation=self.singer_part, piece=self.piece,
+            voice_line=VoiceLine.TENOR_1,
+        )
+        ScoreEdition.objects.create(
+            piece=self.piece, pdf_file=_pdf_upload(), original_filename="planets.pdf",
+            sha256="", page_count=1,
+        )
+        Track.objects.create(
+            piece=self.piece, voice_part=VoiceLine.TENOR_1, audio_file=_audio_upload()
+        )
+
+        # Two rehearsals: one open to everyone, one that invites the singer only
+        # (never the maestro — a conductor is never on an invite list).
+        self.reh_open = Rehearsal.objects.create(
+            project=self.project, date_time=now + timedelta(days=1),
+        )
+        self.reh_singer_only = Rehearsal.objects.create(
+            project=self.project, date_time=now + timedelta(days=2),
+        )
+        self.reh_singer_only.invited_participations.add(self.singer_part)
+
+        # A foreign project the maestro has nothing to do with.
+        self.foreign = Project.objects.create(
+            title="Someone Else's Concert", date_time=now, status=Project.Status.ACTIVE,
+        )
+        self.reh_foreign = Rehearsal.objects.create(
+            project=self.foreign, date_time=now + timedelta(days=1),
+        )
+
+    # --- schedule ------------------------------------------------------- #
+
+    def test_conductor_sees_conducted_project_without_participation(self) -> None:
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+        self.assertEqual(resp.status_code, 200)
+        projects = [i for i in resp.data if i["type"] == "PROJECT"]
+        project_ids = {p["project"]["id"] for p in projects}
+        self.assertIn(str(self.project.id), project_ids)
+        self.assertNotIn(str(self.foreign.id), project_ids)
+        podium = next(p for p in projects if p["project"]["id"] == str(self.project.id))
+        self.assertIsNone(podium["participation_id"])  # nothing to RSVP against
+
+    def test_conductor_sees_every_rehearsal_of_conducted_project(self) -> None:
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+        by_id = {
+            i["rehearsal"]["id"]: i for i in resp.data if i["type"] == "REHEARSAL"
+        }
+        # The open rehearsal AND the one that invites only the singer — the
+        # invite list never filters rehearsals for the conductor who runs them.
+        self.assertIn(str(self.reh_open.id), by_id)
+        self.assertIn(str(self.reh_singer_only.id), by_id)
+        self.assertNotIn(str(self.reh_foreign.id), by_id)  # foreign project stays out
+        self.assertIsNone(by_id[str(self.reh_open.id)]["participation_id"])
+        self.assertIsNone(by_id[str(self.reh_open.id)]["my_attendance"])
+
+    # --- materials ------------------------------------------------------ #
+
+    def test_conductor_materials_row_is_marked_and_shows_full_cast(self) -> None:
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(self.MATERIALS_URL)
+        self.assertEqual(resp.status_code, 200)
+        by_project = {e["project"]["id"]: e for e in resp.data}
+        self.assertIn(str(self.project.id), by_project)
+        entry = by_project[str(self.project.id)]
+        self.assertTrue(entry["is_conducting"])
+        self.assertIsNone(entry["participation_id"])
+
+        piece = entry["program"][0]["piece"]
+        self.assertIsNone(piece["my_casting"])  # the conductor has no part
+        cast_ids = {c["artist_id"] for c in piece["castings"]}
+        self.assertIn(str(self.singer.id), cast_ids)  # the full cast is surfaced
+        # Live project → scores + tracks delivered through the gated endpoints.
+        self.assertEqual(len(piece["editions"]), 1)
+        self.assertEqual(len(piece["tracks"]), 1)
+
+    def test_singer_materials_row_is_not_conducting(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(self.MATERIALS_URL)
+        entry = next(
+            e for e in resp.data if e["project"]["id"] == str(self.project.id)
+        )
+        self.assertFalse(entry["is_conducting"])
+        self.assertEqual(entry["participation_id"], str(self.singer_part.id))
+
+    def test_conductor_who_also_sings_gets_a_single_singer_row(self) -> None:
+        # Cast the maestro as well: the project must appear once (the singer row,
+        # with their personalised data), never duplicated by the conductor read
+        # model.
+        maestro_part = Participation.objects.create(
+            artist=self.maestro, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(self.MATERIALS_URL)
+        rows = [e for e in resp.data if e["project"]["id"] == str(self.project.id)]
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0]["is_conducting"])
+        self.assertEqual(rows[0]["participation_id"], str(maestro_part.id))

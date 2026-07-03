@@ -23,7 +23,7 @@ from django.db import transaction
 from django.db.models import QuerySet
 from django.utils import timezone
 
-from archive.models import ScoreEdition
+from archive.models import ScoreEdition, ScoreLicenseType
 from roster.infrastructure.pdf_raster import (
     DEFAULT_THUMBNAIL_WIDTH_PX,
     PdfRasterDependencyError,
@@ -188,8 +188,34 @@ class ScorePackageService:
         return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
     @staticmethod
+    def uses_protected_edition(project: Project) -> bool:
+        """True when any edition bound into the current build is licence-protected
+        (anything but PUBLIC_DOMAIN, UNKNOWN included) — the trigger to watermark
+        the served score-book binder. DB-only: reads the stored ``license_type``,
+        never opens a PDF."""
+        for item in ScorePackageService._ordered_items(project):
+            edition = resolve_item_edition(item)
+            if edition is not None and edition.is_license_protected:
+                return True
+        return False
+
+    @staticmethod
+    def _copies_shortfall(edition: ScoreEdition | None, cast_size: int) -> dict[str, int] | None:
+        """Warn when a LICENSED_COPIES edition is bound for more singers than the
+        ensemble owns physical copies of. Only that licence type has a copy count
+        to breach — public-domain / digital / unknown editions never warn here."""
+        if (
+            edition is None
+            or edition.license_type != ScoreLicenseType.LICENSED_COPIES
+            or edition.copies_owned is None
+            or cast_size <= edition.copies_owned
+        ):
+            return None
+        return {"copies_owned": edition.copies_owned, "cast_size": cast_size}
+
+    @staticmethod
     def _serialize_item(
-        item: ProgramItem, package: ScorePackage, readiness: dict[str, Any]
+        item: ProgramItem, package: ScorePackage, readiness: dict[str, Any], cast_size: int
     ) -> dict[str, Any]:
         """Cockpit read model for one program item."""
         piece = item.piece
@@ -211,12 +237,16 @@ class ScorePackageService:
                     "page_count": edition.page_count,
                     "is_default": edition.is_default,
                     "ingestion_status": edition.ingestion_status,
+                    "license_type": edition.license_type,
+                    "copies_owned": edition.copies_owned,
                 }
                 for edition in editions
             ],
             "explicit_edition_id": str(item.score_edition_id) if item.score_edition_id else None,
             "selected_edition_id": str(resolved.pk) if resolved else None,
             "edition_page_count": resolved.page_count if resolved else None,
+            "selected_license_type": resolved.license_type if resolved else None,
+            "copies_shortfall": ScorePackageService._copies_shortfall(resolved, cast_size),
             "has_pdf": resolved is not None,
             "suggested_start": suggested_page_start(piece),
             "pdf_page_start": item.pdf_page_start,
@@ -254,11 +284,17 @@ class ScorePackageService:
         items = list(ScorePackageService._ordered_items(project))
         live_hash = ScorePackageService.compute_source_hash(project, package, items=items)
         readiness = compute_program_readiness(project, items, package)
+        # Ensemble size drives the "more singers than licensed copies" warning.
+        cast_size = project.participations.filter(is_deleted=False).count()
         serialized_items = [
-            ScorePackageService._serialize_item(item, package, readiness[item.pk])
+            ScorePackageService._serialize_item(item, package, readiness[item.pk], cast_size)
             for item in items
         ]
         missing = [it["title"] for it in serialized_items if not it["has_pdf"]]
+        # Titles whose bound licensed edition is short of physical copies for the cast.
+        copies_warnings = [
+            it["title"] for it in serialized_items if it["copies_shortfall"] is not None
+        ]
 
         is_stale = (
             package.status == ScorePackage.Status.READY
@@ -284,6 +320,8 @@ class ScorePackageService:
             "total_pieces": len(items),
             "bindable_pieces": len(items) - len(missing),
             "pieces_without_pdf": missing,
+            "cast_size": cast_size,
+            "pieces_over_copies": copies_warnings,
             "card_elements": list(CARD_ELEMENTS),
             "config": {
                 "density_mode": package.density_mode,

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, Briefcase, CalendarDays } from "lucide-react";
+import { Archive, Briefcase, CalendarDays, Wand2 } from "lucide-react";
 
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -76,6 +76,23 @@ export const ProjectMaterialGroup = ({
               {t("materials.project.archived_badge", "Archiwum")}
             </Eyebrow>
           </div>
+        ) : group.isConducting ? (
+          // Conductor's own project: no personal readiness to report, so the
+          // completion ring (always 0/N here) would only mislead. Show the
+          // podium badge instead — the full cast lives on each piece.
+          <div className="shrink-0 flex items-center gap-2.5">
+            {total > 0 && <OfflineDownloadControl group={group} />}
+            <div className="flex items-center gap-1.5 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1 shadow-glass-solid">
+              <Wand2
+                size={11}
+                className="text-ethereal-gold"
+                aria-hidden="true"
+              />
+              <Eyebrow color="gold">
+                {t("materials.project.conducting_badge", "Prowadzisz")}
+              </Eyebrow>
+            </div>
+          </div>
         ) : (
           total > 0 && (
             <div className="shrink-0 flex items-center gap-2.5">
@@ -109,6 +126,7 @@ export const ProjectMaterialGroup = ({
             order={item.order}
             isEncored={item.is_encore}
             isArchived={isArchived}
+            hideReadiness={group.isConducting}
           />
         ))}
       </div>

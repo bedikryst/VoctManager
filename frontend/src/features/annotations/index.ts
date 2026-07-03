@@ -7,6 +7,9 @@
 export { useScoreAnnotator } from "./useScoreAnnotator";
 export type {
   ScoreAnnotatorBindings,
+  ScoreAnnotatorMode,
   UseScoreAnnotatorOptions,
 } from "./useScoreAnnotator";
+export { ScoreStandModal } from "./components/ScoreStandModal";
+export type { ScoreStandModalProps } from "./components/ScoreStandModal";
 export type { ScoreAnnotation } from "./types/annotations.dto";

@@ -17,6 +17,11 @@ export interface PiecePdfLink {
   publisher?: string;
   edition_year?: number | null;
   page_count?: number | null;
+  /**
+   * Whether this edition may leave the app (open/share/download). Server-computed
+   * from licence × role; defaults to true when the source omits it (public domain).
+   */
+  canExport: boolean;
 }
 
 type PieceLike = Pick<Piece, "editions">;
@@ -49,6 +54,7 @@ export const getPiecePdfLinks = (piece: PieceLike): PiecePdfLink[] => {
       publisher: edition.publisher || undefined,
       edition_year: edition.edition_year ?? undefined,
       page_count: edition.page_count ?? undefined,
+      canExport: edition.can_export ?? true,
     }));
 };
 

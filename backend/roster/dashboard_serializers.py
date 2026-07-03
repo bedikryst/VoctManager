@@ -15,6 +15,8 @@ from archive.models import (
     Track,
     Translation,
 )
+from archive.score_protection import can_export as edition_can_export
+from archive.score_protection import user_is_manager
 from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
 
 
@@ -69,13 +71,17 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
     # view (`score-edition-download`). That re-checks access on every request, so
     # a bookmarked link dies the moment the chorister's projects close.
     pdf_file = serializers.SerializerMethodField()
+    # Server-computed export permission: protected editions are in-app-only for
+    # choristers (the downloaded file would be watermarked; open/share/download
+    # are hidden). The frontend gates its buttons on this bool, never re-deriving.
+    can_export = serializers.SerializerMethodField()
 
     class Meta:
         model = ScoreEdition
         fields = (
-            'id', 'pdf_file', 'original_filename',
+            'id', 'pdf_file', 'can_export', 'original_filename',
             'publisher', 'edition_year', 'editor_name',
-            'page_count', 'is_default',
+            'page_count', 'is_default', 'license_type',
             'ingestion_status', 'created_at',
         )
 
@@ -85,6 +91,11 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
         url = reverse('score-edition-download', kwargs={'pk': obj.id})
         request = self.context.get('request')
         return request.build_absolute_uri(url) if request else url
+
+    def get_can_export(self, obj: ScoreEdition) -> bool:
+        request = self.context.get('request')
+        is_manager = user_is_manager(request.user) if request is not None else False
+        return edition_can_export(obj, is_manager=is_manager)
 
 
 class TrackSnippetSerializer(serializers.ModelSerializer):
@@ -180,6 +191,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
             'lyrics_original': piece.lyrics_original,
             'opus_catalog': piece.opus_catalog,
             'musical_key': piece.musical_key,
+            'starting_pitches': piece.starting_pitches,
             'text_source': piece.text_source,
             'lyrics_ipa': piece.lyrics_ipa,
             'mbid_work': str(piece.mbid_work) if piece.mbid_work else None,
@@ -270,7 +282,73 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
         return {
             'participation_id': str(participation.id),
             'participation_status': participation.status,
+            # This row belongs to a singer's own casting, not the podium — the
+            # conductor's rows come through ConductedProjectMaterialsSerializer.
+            'is_conducting': False,
             'fee': str(participation.fee) if participation.fee is not None else None,
+            'project': {
+                'id': str(project.id),
+                'title': project.title,
+                'date_time': project.date_time,
+                'status': project.status,
+                'status_display': project.get_status_display(),
+                'location': location_data,
+            },
+            'program': ProgramItemMaterialsSerializer(
+                ordered_program,
+                many=True,
+                context=piece_context,
+            ).data,
+        }
+
+
+class ConductedProjectMaterialsSerializer(serializers.Serializer):
+    """
+    Root serializer for the conductor's slice of the materials dashboard: a
+    project they lead but are not cast in.
+
+    Emits the exact shape of ParticipationMaterialsSerializer (so the frontend
+    renders one uniform tree) with is_conducting=True, no personal
+    participation / casting / readiness, and the full project cast surfaced on
+    every piece. Consumes the pre-fetched QuerySet produced by
+    get_conductor_materials_projects() — zero additional DB queries.
+    """
+
+    def to_representation(self, project: Project) -> dict[str, Any]:
+        ordered_program: list[ProgramItem] = getattr(project, 'ordered_program', [])
+
+        piece_context: dict[str, Any] = {
+            'project_id': project.pk,
+            # The conductor has no participation, so no personal casting or
+            # readiness — every piece shows the full cast, no "my part".
+            'my_piece_castings': [],
+            'my_readiness_map': {},
+            'artist_id': None,
+            'request': self.context.get('request'),
+            # Same lifecycle gate as singers: scores + tracks are withheld once
+            # the concert is over (they remain reachable through the manager
+            # surfaces, which re-check access on every request).
+            'materials_locked': project.status in (
+                Project.Status.COMPLETED, Project.Status.CANCELLED,
+            ),
+        }
+
+        location = project.location
+        location_data: dict[str, Any] | None = (
+            {
+                'id': str(location.id),
+                'name': location.name,
+                'category': location.category,
+                'timezone': location.timezone,
+            }
+            if location else None
+        )
+
+        return {
+            'participation_id': None,
+            'participation_status': None,
+            'is_conducting': True,
+            'fee': None,
             'project': {
                 'id': str(project.id),
                 'title': project.title,

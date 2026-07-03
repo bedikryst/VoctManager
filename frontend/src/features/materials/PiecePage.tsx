@@ -27,11 +27,10 @@ import {
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
-import { useScoreAnnotator } from "@/features/annotations";
+import { ScoreStandModal } from "@/features/annotations";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
-import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { PitchPipe, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
@@ -58,6 +57,7 @@ import { ReadinessControl } from "./components/ReadinessControl";
 import { PieceLyricsViewer } from "./components/PieceLyricsViewer";
 import { PieceDivisiRoster } from "./components/PieceDivisiRoster";
 import { VoiceMixerPanel } from "./player/VoiceMixerPanel";
+import { RehearsalDock } from "./player/RehearsalDock";
 import type { MaterialsReadinessStatus } from "./types/materials.dto";
 
 type PieceTab = "practice" | "text" | "cast";
@@ -92,14 +92,6 @@ export default function PiecePage(): React.JSX.Element {
   const readinessMutation = useSetPieceReadiness();
   const [tab, setTab] = useState<PieceTab>("practice");
   const [openEdition, setOpenEdition] = useState<PiecePdfLink | null>(null);
-
-  // Conductor markup overlay: managers draw + erase, choristers read the shared
-  // layer. Bound to whichever edition is currently open in the viewer.
-  const canAnnotate = isManager(user);
-  const annotator = useScoreAnnotator({
-    editionId: openEdition?.id ?? null,
-    canEdit: canAnnotate,
-  });
 
   if (isLoading) {
     return (
@@ -157,7 +149,12 @@ export default function PiecePage(): React.JSX.Element {
     ? `${piece.composer.birth_year}–${piece.composer.death_year || ""}`
     : "";
 
+  // A conductor views their own project's materials but has no participation to
+  // self-report against — the readiness console is a singer-only affordance.
+  const canReportReadiness = !group.isConducting && !!group.participationId;
+
   const handleReadinessChange = (status: MaterialsReadinessStatus) => {
+    if (!group.participationId) return;
     readinessMutation.mutate(
       { participationId: group.participationId, pieceId: piece.id, status },
       {
@@ -443,23 +440,26 @@ export default function PiecePage(): React.JSX.Element {
                   <PitchPipe suggestedTonic={suggestedTonic} />
                 </div>
 
-                {/* readiness self-report */}
-                <div className={tabVisibility("practice")}>
-                  <SectionLabel icon={<User size={13} />}>
-                    {t("materials.piece_page.readiness_section", "Twoja gotowość")}
-                  </SectionLabel>
-                  <ReadinessControl
-                    value={piece.my_readiness}
-                    onChange={handleReadinessChange}
-                    disabled={readinessMutation.isPending}
-                  />
-                  <Text size="xs" color="muted" className="mt-2 px-1">
-                    {t(
-                      "materials.piece_page.readiness_hint",
-                      "Dyrygent widzi zbiorczą gotowość zespołu i planuje pracę na próbach.",
-                    )}
-                  </Text>
-                </div>
+                {/* readiness self-report — singer-only; a conductor has no
+                    participation to report against */}
+                {canReportReadiness && (
+                  <div className={tabVisibility("practice")}>
+                    <SectionLabel icon={<User size={13} />}>
+                      {t("materials.piece_page.readiness_section", "Twoja gotowość")}
+                    </SectionLabel>
+                    <ReadinessControl
+                      value={piece.my_readiness}
+                      onChange={handleReadinessChange}
+                      disabled={readinessMutation.isPending}
+                    />
+                    <Text size="xs" color="muted" className="mt-2 px-1">
+                      {t(
+                        "materials.piece_page.readiness_hint",
+                        "Dyrygent widzi zbiorczą gotowość zespołu i planuje pracę na próbach.",
+                      )}
+                    </Text>
+                  </div>
+                )}
 
                 {/* my guidelines */}
                 {piece.my_casting && (
@@ -506,8 +506,12 @@ export default function PiecePage(): React.JSX.Element {
         )}
       </div>
 
-      <PdfViewerModal
+      {/* Managers write the shared/conductor layers; choristers get their own
+          private pencil-mark layer on top of the conductor's shared markings. */}
+      <ScoreStandModal
         isOpen={openEdition !== null}
+        editionId={openEdition?.id ?? null}
+        mode={isManager(user) ? "conductor" : "personal"}
         title={piece.title}
         subtitle={openEdition?.label ?? composerName}
         fileName={openEdition ? pdfFileName(openEdition.label) : undefined}
@@ -516,11 +520,16 @@ export default function PiecePage(): React.JSX.Element {
             ? () => MaterialsService.fetchScoreEditionBlob(openEdition.id)
             : null
         }
-        docKey={openEdition?.id}
-        toolbarSlot={annotator.toolbarSlot}
-        renderPageOverlay={annotator.renderPageOverlay}
-        overlaySlot={annotator.overlaySlot}
-        onPageApiChange={annotator.onPageApiChange}
+        canExport={openEdition?.canExport ?? true}
+        extraOverlay={
+          /* Rehearsal instrument: starting pitches + practice-player remote,
+             available while the score is on the stand. */
+          <RehearsalDock
+            piece={piece}
+            projectId={group.project.id}
+            canEditPitches={isManager(user)}
+          />
+        }
         onClose={() => setOpenEdition(null)}
       />
     </PageTransition>

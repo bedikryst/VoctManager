@@ -10,8 +10,10 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ChevronRight, FileText, Lock, Play, Square } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
+import { ScoreStandModal } from "@/features/annotations";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import { cn } from "@/shared/lib/utils";
@@ -29,6 +31,8 @@ interface PieceRowProps {
   order: number;
   isEncored: boolean;
   isArchived: boolean;
+  /** Conductor view: no personal readiness, so the status dot is suppressed. */
+  hideReadiness?: boolean;
 }
 
 export const PieceRow = ({
@@ -37,9 +41,11 @@ export const PieceRow = ({
   order,
   isEncored,
   isArchived,
+  hideReadiness = false,
 }: PieceRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { engine, snapshot } = usePracticePlayer();
   const [isScoreOpen, setIsScoreOpen] = useState<boolean>(false);
 
@@ -141,7 +147,9 @@ export const PieceRow = ({
         </div>
 
         {/* readiness + chevron */}
-        {!isArchived && <ReadinessDot value={piece.my_readiness} />}
+        {!isArchived && !hideReadiness && (
+          <ReadinessDot value={piece.my_readiness} />
+        )}
         {isArchived ? (
           <Lock
             size={15}
@@ -206,13 +214,17 @@ export const PieceRow = ({
     </GlassCard>
 
       {primaryPdf && (
-        <PdfViewerModal
+        // editionId is gated on open: this modal is rendered per row, so an
+        // always-set id would make every songbook row fetch annotations on mount.
+        <ScoreStandModal
           isOpen={isScoreOpen}
+          editionId={isScoreOpen ? primaryPdf.id : null}
+          mode={isManager(user) ? "conductor" : "personal"}
           title={piece.title}
           subtitle={primaryPdf.label}
           fileName={primaryPdf.label.endsWith(".pdf") ? primaryPdf.label : `${primaryPdf.label}.pdf`}
           fetchBlob={() => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)}
-          docKey={primaryPdf.id}
+          canExport={primaryPdf.canExport}
           onClose={() => setIsScoreOpen(false)}
         />
       )}

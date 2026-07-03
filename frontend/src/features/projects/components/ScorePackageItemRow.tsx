@@ -15,6 +15,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
+  AlertTriangle,
   BookOpen,
   ChevronDown,
   Eye,
@@ -211,6 +212,15 @@ export function ScorePackageItemRow({
             {t(overall.key, overall.fallback)}
           </Caption>
         </span>
+        {item.copies_shortfall && (
+          <Badge
+            variant="warning"
+            icon={<AlertTriangle size={11} aria-hidden="true" />}
+            className="hidden shrink-0 md:inline-flex"
+          >
+            {t("projects.score_package.item.over_copies_short", "za mało egz.")}
+          </Badge>
+        )}
         <Caption color="muted" className="hidden shrink-0 md:block">
           {rangeLabel}
         </Caption>
@@ -237,9 +247,27 @@ export function ScorePackageItemRow({
             </Caption>
           )}
 
+          {item.copies_shortfall && (
+            <Caption color="muted" className="flex items-center gap-1.5">
+              <AlertTriangle
+                size={13}
+                aria-hidden="true"
+                className="shrink-0 text-ethereal-gold"
+              />
+              {t(
+                "projects.score_package.item.over_copies",
+                "Obsada ({{cast}}) przewyższa liczbę posiadanych egzemplarzy licencji ({{copies}}). Upewnij się, że masz dość kopii lub dodatkową licencję.",
+                {
+                  cast: item.copies_shortfall.cast_size,
+                  copies: item.copies_shortfall.copies_owned,
+                },
+              )}
+            </Caption>
+          )}
+
           {needsAttention && (
             <Link
-              to={`/panel/archive-management/${item.piece_id}/review`}
+              to={`/panel/archive-management/${item.piece_id}`}
               className="flex min-h-11 items-center gap-1.5 self-start rounded-lg px-2 text-[11px] font-medium text-ethereal-gold transition-colors hover:bg-ethereal-gold/10 hover:underline"
             >
               <PencilLine size={12} aria-hidden="true" />

@@ -18,6 +18,7 @@ export type PdfViewerEvent =
   | { type: "download"; fileName: string; succeeded: boolean }
   | { type: "share"; fileName: string; succeeded: boolean; cancelled: boolean }
   | { type: "open_in_browser" }
+  | { type: "immersive_change"; active: boolean }
   | { type: "retry" };
 
 /**
@@ -67,5 +68,19 @@ export interface PdfViewerProps {
   overlaySlot?: ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
+  /**
+   * When the wrapping shell floats its own control in the top-right corner
+   * (e.g. a modal's close button), the utility pill drops one row so the two
+   * never overlap. Only the non-immersive chrome is affected.
+   */
+  reserveTopRight?: boolean;
+  /**
+   * Whether the document may leave the app as a raw file. When `false` the
+   * open-in-browser / share / download controls are hidden — the score is
+   * read in-app only. Server-computed (licence × role); defaults to `true`
+   * for public-domain and every non-score document. Immersive/reading
+   * controls are never affected.
+   */
+  canExport?: boolean;
   className?: string;
 }

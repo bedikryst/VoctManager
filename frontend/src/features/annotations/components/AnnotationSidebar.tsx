@@ -1,10 +1,11 @@
 /**
  * @file AnnotationSidebar.tsx
  * @description Collapsible right-edge drawer stacked over the whole viewer (via
- * PdfViewer.overlaySlot). Gives the conductor a map of the markup they can't see
- * at a glance on a long score: layer visibility toggles (preview exactly what the
- * choir sees), the pages that carry marks, and a jump-to index of every note.
- * For choristers it answers "did the conductor leave anything here?".
+ * PdfViewer.overlaySlot). A map of the markup you can't see at a glance on a
+ * long score: layer visibility toggles, the pages that carry marks, and a
+ * jump-to index of every note. In conductor mode the layers are choir/private;
+ * in personal mode they are the conductor's shared markings vs the user's own
+ * pencil marks.
  * @module features/annotations/components
  */
 
@@ -36,12 +37,17 @@ interface AnnotationSidebarProps {
   goToPage: (page: number) => void;
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
-  canEdit: boolean;
+  /** Decides which layer rows make sense: choir/private vs conductor/mine. */
+  mode: "conductor" | "personal";
   onSelectNote: (id: string, page: number) => void;
 }
 
 const layerOf = (a: ScoreAnnotation): AnnotationLayer =>
-  a.layer_name === "conductor" ? "conductor" : "shared";
+  a.layer_name === "conductor"
+    ? "conductor"
+    : a.layer_name === "personal"
+      ? "personal"
+      : "shared";
 
 export const AnnotationSidebar = ({
   annotations,
@@ -49,7 +55,7 @@ export const AnnotationSidebar = ({
   goToPage,
   visibleLayers,
   toggleLayerVisibility,
-  canEdit,
+  mode,
   onSelectNote,
 }: AnnotationSidebarProps): React.JSX.Element | null => {
   const { t } = useTranslation();
@@ -76,17 +82,10 @@ export const AnnotationSidebar = ({
   }, [annotations]);
 
   const layerCounts = useMemo(() => {
-    let shared = 0;
-    let conductor = 0;
-    for (const a of annotations) {
-      if (layerOf(a) === "conductor") conductor += 1;
-      else shared += 1;
-    }
-    return { shared, conductor };
+    const counts = { shared: 0, conductor: 0, personal: 0 };
+    for (const a of annotations) counts[layerOf(a)] += 1;
+    return counts;
   }, [annotations]);
-
-  // Nothing to surface for a chorister on a clean score — stay out of the way.
-  if (annotations.length === 0 && !canEdit) return null;
 
   return (
     <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center">
@@ -116,28 +115,46 @@ export const AnnotationSidebar = ({
             </header>
 
             <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-3">
-              {canEdit && (
-                <section className="mb-4">
-                  <p className="mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50">
-                    {t("annotations.panel.layers", "Widoczność warstw")}
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    <LayerToggle
-                      label={t("annotations.layer.shared_short", "Chór")}
-                      count={layerCounts.shared}
-                      visible={visibleLayers.shared}
-                      onToggle={() => toggleLayerVisibility("shared")}
-                    />
-                    <LayerToggle
-                      label={t("annotations.layer.private_short", "Prywatne")}
-                      count={layerCounts.conductor}
-                      visible={visibleLayers.conductor}
-                      onToggle={() => toggleLayerVisibility("conductor")}
-                      isPrivate
-                    />
-                  </div>
-                </section>
-              )}
+              <section className="mb-4">
+                <p className="mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50">
+                  {t("annotations.panel.layers", "Widoczność warstw")}
+                </p>
+                <div className="flex flex-col gap-1">
+                  {mode === "conductor" ? (
+                    <>
+                      <LayerToggle
+                        label={t("annotations.layer.shared_short", "Chór")}
+                        count={layerCounts.shared}
+                        visible={visibleLayers.shared}
+                        onToggle={() => toggleLayerVisibility("shared")}
+                      />
+                      <LayerToggle
+                        label={t("annotations.layer.private_short", "Prywatne")}
+                        count={layerCounts.conductor}
+                        visible={visibleLayers.conductor}
+                        onToggle={() => toggleLayerVisibility("conductor")}
+                        isPrivate
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <LayerToggle
+                        label={t("annotations.layer.from_conductor_short", "Dyrygent")}
+                        count={layerCounts.shared}
+                        visible={visibleLayers.shared}
+                        onToggle={() => toggleLayerVisibility("shared")}
+                      />
+                      <LayerToggle
+                        label={t("annotations.layer.personal_short", "Moje")}
+                        count={layerCounts.personal}
+                        visible={visibleLayers.personal}
+                        onToggle={() => toggleLayerVisibility("personal")}
+                        isPrivate
+                      />
+                    </>
+                  )}
+                </div>
+              </section>
 
               {annotatedPages.length > 0 && (
                 <section className="mb-4">
@@ -201,7 +218,7 @@ export const AnnotationSidebar = ({
                                 {t("annotations.panel.page", "s. {{page}}", {
                                   page: note.page_number,
                                 })}
-                                {layerOf(note) === "conductor" && (
+                                {layerOf(note) !== "shared" && (
                                   <Lock size={9} aria-hidden="true" />
                                 )}
                               </span>

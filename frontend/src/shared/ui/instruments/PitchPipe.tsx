@@ -61,7 +61,8 @@ export const parseMusicalKeyTonic = (key: string): number | null => {
   return primary[token] ?? fallback[token] ?? null;
 };
 
-const noteFrequency = (noteIndex: number, octave: number): number => {
+/** Equal-temperament frequency for a chromatic index (0=C … 11=B/H) + octave. */
+export const noteFrequency = (noteIndex: number, octave: number): number => {
   const midi = (octave + 1) * 12 + noteIndex;
   return 440 * Math.pow(2, (midi - 69) / 12);
 };

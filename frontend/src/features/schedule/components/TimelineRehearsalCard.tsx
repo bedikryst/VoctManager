@@ -135,6 +135,9 @@ export const TimelineRehearsalCard = ({
   } = useTimelineRehearsalCard(event, onSubmitReport, onToggle, isExpanded);
 
   const maskedStatus = currentMaskedStatus;
+  // A conductor sees the rehearsal but isn't cast in it — no participation to
+  // RSVP against, so the self-attendance controls are withheld.
+  const canRsvp = !!event.participationId;
 
   return (
     <motion.div
@@ -254,7 +257,7 @@ export const TimelineRehearsalCard = ({
 
         {/* ── action buttons — mobile: stacked full-width (no clipping),
              desktop: sidebar inside the expanded panel ─────────────────── */}
-        {viewMode === "UPCOMING" && !reportingMode && (
+        {viewMode === "UPCOMING" && canRsvp && !reportingMode && (
           <div className="flex flex-col gap-2 px-4 pb-4 pt-0 sm:hidden">
             <RehearsalActions
               fullWidth
@@ -362,7 +365,7 @@ export const TimelineRehearsalCard = ({
               )}
 
               {/* desktop action buttons inside expanded — hidden on mobile (bottom row handles it) */}
-              {viewMode === "UPCOMING" && (
+              {viewMode === "UPCOMING" && canRsvp && (
                 <div className="hidden sm:flex gap-2 px-6 pb-5 pt-0 justify-end border-t border-ethereal-incense/10">
                   <RehearsalActions
                     maskedStatus={maskedStatus}

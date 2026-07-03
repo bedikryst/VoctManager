@@ -456,20 +456,43 @@ export const isIngestionInProgress = (status: IngestionStatusCode): boolean =>
  * The full review payload (annotations, sha256) is fetched separately by the
  * AI Review tab when a specific edition is opened.
  */
+/**
+ * Copyright status of an edition. Mirrors `archive.models.ScoreLicenseType`.
+ * Anything but PUBLIC_DOMAIN is protected (UNKNOWN included) — in-app-only for
+ * choristers, watermarked on serve, access-logged.
+ */
+export type ScoreLicenseType = "PD" | "LC" | "PDG" | "UNK";
+
 export interface ScoreEditionSummary extends BaseModel {
   pdf_file?: string;
+  /** Server-computed: may this edition leave the app as a raw file? */
+  can_export?: boolean;
   original_filename: string;
   publisher?: string;
   edition_year?: number | null;
   editor_name?: string;
   page_count?: number | null;
   is_default: boolean;
+  license_type?: ScoreLicenseType;
+  /** Physical copies owned (LICENSED_COPIES only). */
+  copies_owned?: number | null;
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
   ingestion_progress?: IngestionProgressCode;
   ingestion_cost_cents?: number;
   ingestion_cost_cents_lifetime?: number;
   ingestion_error?: string;
+}
+
+/**
+ * One rehearsal starting pitch: `note` is a chromatic index (0=C … 11=B/H),
+ * `octave` follows scientific pitch notation. Mirrors the server-side
+ * sanitizer in `archive.serializers.PieceSerializer`.
+ */
+export interface StartingPitch {
+  voice: string;
+  note: number;
+  octave: number;
 }
 
 export interface Piece extends BaseModel {
@@ -492,6 +515,12 @@ export interface Piece extends BaseModel {
   // AI/external-source identifiers.
   opus_catalog?: string;
   musical_key?: string;
+  /**
+   * Ordered rehearsal pitches (top voice first) the conductor gives before
+   * the piece: `{voice, note, octave}` with `note` a chromatic index
+   * (0=C … 11=B/H) and `octave` in scientific pitch notation.
+   */
+  starting_pitches?: StartingPitch[];
   text_source?: string;
   lyrics_ipa?: string;
   mbid_work?: string | null;

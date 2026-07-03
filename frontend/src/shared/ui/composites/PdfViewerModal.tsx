@@ -1,8 +1,12 @@
 /**
  * @file PdfViewerModal.tsx
- * @description Dialog shell wrapping the headless PdfViewer primitive. Owns Radix Dialog
- * semantics (focus trap, overlay, ARIA, exit animations), the close affordance, and the "Open full view"
- * link to the deep-linkable DocumentViewerPage when callers provide a typed docType + docId.
+ * @description Full-bleed dialog shell wrapping the headless PdfViewer primitive.
+ * Owns Radix Dialog semantics (focus trap, overlay, ARIA, exit animations) but
+ * spends no vertical space on chrome: it fills the viewport edge-to-edge and
+ * floats only a subtle title label and a round close button — styled to match
+ * the viewer's utility pill — so the document gets the whole screen. The "Open
+ * full view" link to the deep-linkable DocumentViewerPage rides alongside close
+ * when callers provide a typed docType + docId.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewerModal
  */
@@ -15,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { Button } from "@/shared/ui/primitives/Button";
+import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
 import {
   PdfViewer,
@@ -63,6 +68,11 @@ export interface PdfViewerModalProps {
   overlaySlot?: React.ReactNode;
   /** Receives the live page handle (current/total + goToPage) on every change. */
   onPageApiChange?: (api: PdfPageApi) => void;
+  /**
+   * Whether the document may be exported (open/share/download). Forwarded to the
+   * viewer; defaults to `true`. Set `false` for a protected, in-app-only score.
+   */
+  canExport?: boolean;
   onClose: () => void;
 }
 
@@ -81,6 +91,7 @@ export const PdfViewerModal = ({
   renderPageOverlay,
   overlaySlot,
   onPageApiChange,
+  canExport = true,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -156,37 +167,70 @@ export const PdfViewerModal = ({
                 closeButtonRef.current?.focus();
               }}
             >
-              <div className="fixed inset-0 z-focus-trap flex flex-col items-center justify-center outline-none sm:p-3 pointer-events-none">
-                <motion.div
-                  initial={{ opacity: 0, y: 30, scale: 0.96 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 20, scale: 0.96 }}
-                  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  className="pointer-events-auto relative flex h-full w-full max-w-7xl flex-col overflow-hidden bg-ethereal-ink shadow-glass-ethereal sm:max-h-full sm:rounded-[2rem] sm:border sm:border-white/10"
-                >
-                  <div className="relative z-10 flex shrink-0 items-center justify-between gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-2 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-10">
-                    <div className="flex min-w-0 flex-1 flex-col justify-center gap-0.5">
-                      <Dialog.Title asChild>
-                        <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
-                          {title}
-                        </Heading>
-                      </Dialog.Title>
-                      {subtitle ? (
-                        <Dialog.Description asChild>
-                          <Text color="parchment-muted" className="truncate text-xs">
-                            {subtitle}
-                          </Text>
-                        </Dialog.Description>
-                      ) : (
-                        <Dialog.Description className="sr-only">
-                          {title}
-                        </Dialog.Description>
-                      )}
-                    </div>
+              {/* Full-bleed: no margins, no rounding, no top bar — the viewer owns
+                  the whole viewport and the chrome floats on top of it. */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.99 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.99 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                className="fixed inset-0 z-focus-trap flex h-[100dvh] w-[100dvw] flex-col overflow-hidden bg-ethereal-ink outline-none"
+              >
+                <PdfViewer
+                  fetchBlob={fetchBlob}
+                  docKey={docKey}
+                  title={title}
+                  subtitle={subtitle}
+                  fileName={fileName}
+                  onEvent={onEvent}
+                  toolbarSlot={toolbarSlot}
+                  renderPageOverlay={renderPageOverlay}
+                  overlaySlot={overlaySlot}
+                  onPageApiChange={onPageApiChange}
+                  reserveTopRight
+                  canExport={canExport}
+                  className="flex-1"
+                />
 
-                    <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+                {/* Subtle floating title — top-centre, non-interactive, desktop
+                    only (the top edge is busy with tools on a phone). Kept in the
+                    DOM on every size so the dialog keeps its accessible name. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden justify-center px-24 pt-[calc(env(safe-area-inset-top)+0.85rem)] sm:flex">
+                  <div className="min-w-0 max-w-md rounded-full border border-white/10 bg-ethereal-ink/55 px-4 py-1.5 text-center shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                    <Dialog.Title asChild>
+                      <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
+                        {title}
+                      </Heading>
+                    </Dialog.Title>
+                    {subtitle ? (
+                      <Dialog.Description asChild>
+                        <Text color="parchment-muted" className="truncate text-xs">
+                          {subtitle}
+                        </Text>
+                      </Dialog.Description>
+                    ) : (
+                      <Dialog.Description className="sr-only">
+                        {title}
+                      </Dialog.Description>
+                    )}
+                  </div>
+                </div>
+
+                {/* Floating close (+ optional full-view), styled to match the
+                    viewer's utility pill. The reserveTopRight prop drops that
+                    pill one row so the two never overlap. */}
+                <div
+                  className="absolute right-4 top-4 z-focus-trap sm:right-6 sm:top-6"
+                  style={{ paddingTop: "env(safe-area-inset-top)" }}
+                >
+                  <GlassCard
+                    variant="surface"
+                    padding="sm"
+                    className="rounded-full p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+                    isHoverable={false}
+                  >
+                    <div className="flex items-center gap-1">
                       {fullViewSlot}
-                      {fullViewSlot && <div className="mx-1 h-6 w-px bg-white/10" />}
                       <Button
                         ref={closeButtonRef}
                         variant="ghost"
@@ -195,26 +239,12 @@ export const PdfViewerModal = ({
                         aria-label={t("common.close_aria", "Close")}
                         className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
                       >
-                        <X size={20} aria-hidden="true" />
+                        <X size={18} aria-hidden="true" />
                       </Button>
                     </div>
-                  </div>
-
-                  <PdfViewer
-                    fetchBlob={fetchBlob}
-                    docKey={docKey}
-                    title={title}
-                    subtitle={subtitle}
-                    fileName={fileName}
-                    onEvent={onEvent}
-                    toolbarSlot={toolbarSlot}
-                    renderPageOverlay={renderPageOverlay}
-                    overlaySlot={overlaySlot}
-                    onPageApiChange={onPageApiChange}
-                    className="flex-1"
-                  />
-                </motion.div>
-              </div>
+                  </GlassCard>
+                </div>
+              </motion.div>
             </Dialog.Content>
           </Dialog.Portal>
         )}

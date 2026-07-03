@@ -22,6 +22,7 @@ from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -32,6 +33,9 @@ from roster.queries import artist_live_piece_ids
 
 from . import services
 from .models import (
+    CONDUCTOR_ANNOTATION_LAYER,
+    PERSONAL_ANNOTATION_LAYER,
+    SHARED_ANNOTATION_LAYER,
     Annotation,
     Composer,
     IngestionStatus,
@@ -540,6 +544,19 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             status=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
+    def partial_update(self, request, *args, **kwargs):
+        """Metadata-only PATCH (never the file). The detail serializer's writable
+        set — publisher / edition_year / editor_name / is_default and the licence
+        fields (license_type / copies_owned) — is the whole editable surface; the
+        PDF, sha256 and ingestion state stay read-only."""
+        instance = self.get_object()
+        serializer = ScoreEditionDetailSerializer(
+            instance, data=request.data, partial=True, context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def perform_destroy(self, instance: ScoreEdition) -> None:
         # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
         instance.delete()
@@ -664,43 +681,44 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
 
 
 # ===========================================================================
-# Score annotations — conductor markup overlay
+# Score annotations — conductor markup overlay + personal pencil marks
 # ===========================================================================
-# The conductor draws breath marks, cuts, dynamics and pins rehearsal comments
-# onto a ScoreEdition PDF. Markings are stored as data (never mutating the source
-# PDF) on a named layer:
+# Markings are stored as data (never mutating the source PDF) on a named layer:
 #
-#   layer_name = 'shared'    → pushed to every chorister cast in a LIVE project
-#                              featuring the piece (the headline feature).
+#   layer_name = 'shared'    → conductor→choir: pushed to every chorister cast
+#                              in a LIVE project featuring the piece.
 #   layer_name = 'conductor' → the maestro's private cues, never sent to singers.
+#   layer_name = 'personal'  → a single user's own pencil marks, scoped by
+#                              created_by — invisible to everyone else,
+#                              managers included.
 #
-# Access deliberately mirrors ScoreEditionDownloadView so a score and its shared
+# Access deliberately mirrors ScoreEditionDownloadView so a score and its
 # markings appear and expire together:
-#   * managers          → full CRUD, every layer, any edition.
-#   * choristers/crew   → READ-ONLY, 'shared' layer only, and only on editions
-#                         whose piece they still have live access to.
+#   * managers          → full CRUD on 'shared' + 'conductor' (any edition),
+#                         plus their OWN 'personal' marks. Never other users'.
+#   * choristers/crew   → read 'shared' + full CRUD on their OWN 'personal'
+#                         marks, only on editions whose piece they still have
+#                         live access to.
 # ===========================================================================
-
-SHARED_ANNOTATION_LAYER = 'shared'
 
 
 class AnnotationViewSet(viewsets.ModelViewSet):
     """
     CRUD for score annotations. Thin controller: read scope is decided in
-    `get_queryset` (role-aware), write access in `get_permissions` (managers
-    only), and `created_by` is stamped from the request — never trusted from
-    the payload.
+    `get_queryset` (role-aware; also bounds object lookup for writes), write
+    scope in the `perform_*` hooks (non-managers may only touch their own
+    'personal' marks), and `created_by` is stamped from the request — never
+    trusted from the payload.
     """
     serializer_class = AnnotationSerializer
+    permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['edition', 'page_number', 'layer_name']
 
-    def get_permissions(self):
-        # Anyone authenticated may read (scope is narrowed in get_queryset);
-        # only managers may create / update / delete markings.
-        if self.request.method in permissions.SAFE_METHODS:
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), IsManager()]
+    def _is_manager(self) -> bool:
+        user = request_user(self.request)
+        profile = getattr(user, 'profile', None)
+        return user.is_staff or (profile is not None and profile.is_manager)
 
     def get_queryset(self):
         user = request_user(self.request)
@@ -710,28 +728,71 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             .filter(is_deleted=False)
             .order_by('created_at')
         )
-        profile = getattr(user, 'profile', None)
-        if user.is_staff or (profile is not None and profile.is_manager):
-            return base
-        # Chorister / crew: only the shared layer, only on still-accessible pieces.
+        own_personal = Q(layer_name=PERSONAL_ANNOTATION_LAYER, created_by=user)
+        if self._is_manager():
+            # Everything except OTHER users' personal pencil marks — those stay
+            # private even from the maestro.
+            return base.filter(~Q(layer_name=PERSONAL_ANNOTATION_LAYER) | own_personal)
+        # Chorister / crew: the shared layer plus their own personal marks,
+        # only on still-accessible pieces.
         return base.filter(
-            layer_name=SHARED_ANNOTATION_LAYER,
+            Q(layer_name=SHARED_ANNOTATION_LAYER) | own_personal,
             edition__piece_id__in=artist_live_piece_ids(user),
         )
 
+    def _assert_can_write(
+        self,
+        *,
+        layer_name: str,
+        edition: ScoreEdition,
+        instance: Annotation | None = None,
+    ) -> None:
+        """
+        Non-managers may only touch their OWN marks on the 'personal' layer, and
+        only on editions they still have live access to. Managers pass freely —
+        other users' personal marks are already unreachable via get_queryset.
+        """
+        if self._is_manager():
+            return
+        user = request_user(self.request)
+        if layer_name != PERSONAL_ANNOTATION_LAYER:
+            raise PermissionDenied('Only personal-layer annotations may be written.')
+        if instance is not None and instance.created_by_id != user.id:
+            raise PermissionDenied('You may only modify your own annotations.')
+        if edition.piece_id not in set(artist_live_piece_ids(user)):
+            raise PermissionDenied('No live access to this edition.')
+
     def perform_create(self, serializer) -> None:
+        edition = serializer.validated_data['edition']
+        layer = serializer.validated_data.get('layer_name') or CONDUCTOR_ANNOTATION_LAYER
+        self._assert_can_write(layer_name=layer, edition=edition)
         serializer.save(created_by=request_user(self.request))
 
+    def perform_update(self, serializer) -> None:
+        instance = serializer.instance
+        # Validate against the TARGET layer so a patch can't smuggle a personal
+        # mark onto 'shared' (or a chorister edit onto a shared mark).
+        layer = serializer.validated_data.get('layer_name', instance.layer_name)
+        edition = serializer.validated_data.get('edition', instance.edition)
+        self._assert_can_write(layer_name=layer, edition=edition, instance=instance)
+        serializer.save()
+
     def perform_destroy(self, instance: Annotation) -> None:
+        self._assert_can_write(
+            layer_name=instance.layer_name,
+            edition=instance.edition,
+            instance=instance,
+        )
         # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
         instance.delete()
 
     @action(detail=False, methods=['post'], url_path='clear')
     def clear(self, request):
         """
-        Manager-only bulk soft-delete of every annotation on an edition (all
-        layers by default; pass `layer_name` to scope). POST so it's gated by the
-        manager check in get_permissions. Body: {edition, layer_name?}.
+        Bulk soft-delete on one edition. Managers wipe 'shared' + 'conductor'
+        (never anyone's personal layer; pass `layer_name` to narrow — 'personal'
+        narrows to their own marks). Non-managers always wipe only their OWN
+        personal marks. Body: {edition, layer_name?}.
         """
         edition_id = request.data.get('edition')
         if not edition_id:
@@ -753,10 +814,18 @@ class AnnotationViewSet(viewsets.ModelViewSet):
                 {'detail': 'edition not found.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        user = request_user(request)
         qs = Annotation.objects.filter(edition_id=edition_id, is_deleted=False)
         layer = request.data.get('layer_name')
-        if layer:
-            qs = qs.filter(layer_name=layer)
+        if self._is_manager():
+            if layer:
+                qs = qs.filter(layer_name=layer)
+                if layer == PERSONAL_ANNOTATION_LAYER:
+                    qs = qs.filter(created_by=user)
+            else:
+                qs = qs.exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
+        else:
+            qs = qs.filter(layer_name=PERSONAL_ANNOTATION_LAYER, created_by=user)
         deleted = qs.count()
         qs.delete()  # SoftDeleteQuerySet → bulk is_deleted=True
         return Response({'deleted': deleted}, status=status.HTTP_200_OK)

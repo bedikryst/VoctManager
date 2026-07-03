@@ -6,7 +6,13 @@
  * have their own dedicated endpoints and are NOT written via this DTO.
  */
 
-import type { Epoch, Piece, VoiceLine } from "@/shared/types";
+import type {
+  Epoch,
+  Piece,
+  ScoreLicenseType,
+  StartingPitch,
+  VoiceLine,
+} from "@/shared/types";
 
 export interface VoiceRequirementDTO {
   voice_line: VoiceLine;
@@ -35,6 +41,8 @@ export interface PieceWriteDTO {
   epoch?: Epoch | "";
   opus_catalog?: string;
   musical_key?: string;
+  /** Ordered rehearsal pitches, top voice first — see shared/types StartingPitch. */
+  starting_pitches?: StartingPitch[];
   text_source?: string;
   /** JSON list of `{voice_line, quantity}` — replaces full divisi atomically. */
   voice_requirements?: VoiceRequirementDTO[];
@@ -53,6 +61,8 @@ export interface PiecePatchDTO {
   arranger?: string;
   opus_catalog?: string;
   musical_key?: string;
+  /** Ordered rehearsal pitches, top voice first — see shared/types StartingPitch. */
+  starting_pitches?: StartingPitch[];
   language?: string;
   voicing?: string;
   text_source?: string;
@@ -93,4 +103,8 @@ export interface ScoreEditionPatchDTO {
   edition_year?: number | null;
   editor_name?: string;
   is_default?: boolean;
+  /** Copyright status — drives export gating, watermarking and access logging. */
+  license_type?: ScoreLicenseType;
+  /** Physical copies owned (LICENSED_COPIES only); null clears it. */
+  copies_owned?: number | null;
 }

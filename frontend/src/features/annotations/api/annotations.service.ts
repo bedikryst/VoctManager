@@ -1,8 +1,12 @@
 /**
  * @file annotations.service.ts
  * @description Pure HTTP service for score annotations. Reads are role-scoped
- * server-side (choristers receive only the `shared` layer, and only for editions
- * they still have live access to); writes are manager-only and 403 otherwise.
+ * server-side (choristers receive the `shared` layer plus their OWN `personal`
+ * marks, only for editions they still have live access to; managers never
+ * receive other users' personal marks). Writes: managers own shared/conductor;
+ * everyone owns their personal layer — anything else is 403. `clear` is
+ * role-aware server-side (managers wipe shared+conductor, choristers their own
+ * personal marks).
  * @module features/annotations/api
  */
 

@@ -1,4 +1,5 @@
 export { PdfViewer } from "./PdfViewer";
+export { usePdfImmersive } from "./context";
 export type {
   PdfViewerProps,
   PdfViewerEvent,

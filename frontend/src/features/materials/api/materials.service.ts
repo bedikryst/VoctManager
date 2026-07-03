@@ -8,6 +8,7 @@ import api from "@/shared/api/api";
 import type {
   MaterialsDashboardItem,
   MaterialsReadinessStatus,
+  MaterialsStartingPitch,
 } from "../types/materials.dto";
 
 export const MaterialsService = {
@@ -46,5 +47,17 @@ export const MaterialsService = {
       status,
     });
     return response.data;
+  },
+
+  /**
+   * Persist the conductor's rehearsal starting pitches on the piece (archive
+   * write endpoint — manager-gated server-side). Kept here rather than in the
+   * archive feature so the rehearsal dock stays inside the materials slice.
+   */
+  updateStartingPitches: async (
+    pieceId: string,
+    pitches: MaterialsStartingPitch[],
+  ): Promise<void> => {
+    await api.patch(`/api/pieces/${pieceId}/`, { starting_pitches: pitches });
   },
 };

@@ -16,8 +16,9 @@ def get_artist_schedule(
     """
     CQRS Read Model for the Artist Schedule.
 
-    Returns the projects the artist is cast in and the rehearsals they are
-    invited to — each pre-joined with the artist's own attendance — in a fixed
+    Returns the projects the artist is cast in *and* the projects they conduct,
+    plus the rehearsals they are invited to (every rehearsal, for a project they
+    conduct) — each pre-joined with the artist's own attendance — in a fixed
     number of SQL queries. This replaces the former client-side join, where the
     frontend pulled four full collections (rehearsals, participations, projects,
     attendances) and re-joined them in O(n*m) `.find()` loops.
@@ -38,25 +39,37 @@ def get_artist_schedule(
         .values_list("id", "project_id")
     )
     participation_ids = [pid for pid, _ in active_parts]
-    project_ids = [proj_id for _, proj_id in active_parts]
+    sung_project_ids = {proj_id for _, proj_id in active_parts}
     participation_by_project = {
         str(proj_id): str(pid) for pid, proj_id in active_parts
     }
+
+    # Projects this user conducts (Project.conductor → Artist → user). The
+    # conductor is never cast, so they have no Participation — surface their
+    # podium projects, and *every* rehearsal within, alongside the projects they
+    # sing in. These items simply carry no participation id (no self-RSVP).
+    conducted_project_ids = set(
+        Project.objects.filter(
+            conductor__user=user, conductor__is_deleted=False
+        ).values_list("id", flat=True)
+    )
+    all_project_ids = sung_project_ids | conducted_project_ids
 
     # Cancelled projects drop off the schedule entirely. The prefetch mirrors
     # ProjectViewSet.get_queryset so ProjectSerializer.get_cast / get_program
     # resolve without N+1; the count annotations are omitted (the serializer
     # falls back to its `default=0`, and the schedule never reads them).
     projects_qs = (
-        Project.objects.filter(id__in=project_ids)
+        Project.objects.filter(id__in=all_project_ids)
         .exclude(status=Project.Status.CANCELLED)
         .select_related("conductor", "location")
         .prefetch_related("participations__artist", "program_items__piece")
         .order_by("date_time")
     )
 
-    # A rehearsal belongs to the artist's schedule when it has no explicit
-    # invite list (everyone in the project) or it invites the artist's own
+    # A rehearsal belongs to the schedule when the user conducts its project
+    # (they run every rehearsal), or — in a project they sing in — it has no
+    # explicit invite list (everyone) or it invites the artist's own
     # participation. distinct=True on the count keeps it immune to the M2M join.
     absent_annotation = Count(
         "attendances",
@@ -64,9 +77,10 @@ def get_artist_schedule(
         distinct=True,
     )
     rehearsals_qs = (
-        Rehearsal.objects.filter(project_id__in=project_ids, is_deleted=False)
+        Rehearsal.objects.filter(project_id__in=all_project_ids, is_deleted=False)
         .filter(
-            Q(invited_participations__isnull=True)
+            Q(project_id__in=conducted_project_ids)
+            | Q(invited_participations__isnull=True)
             | Q(invited_participations__in=participation_ids)
         )
         .distinct()

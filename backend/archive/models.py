@@ -168,6 +168,16 @@ class Piece(EnterpriseBaseModel):
         help_text=_("e.g. D major, F# minor"),
         verbose_name=_("Key"),
     )
+    starting_pitches = models.JSONField(
+        default=list, blank=True,
+        help_text=_(
+            "Ordered starting pitches the conductor gives before the piece, "
+            "top voice first: [{'voice': 'S', 'note': 6, 'octave': 4}, ...]. "
+            "'note' is a chromatic index (0=C … 11=B/H). Validated and "
+            "sanitized in PieceSerializer."
+        ),
+        verbose_name=_("Starting Pitches"),
+    )
     text_source = models.CharField(
         max_length=200, blank=True,
         help_text=_("e.g. Luke 1:46-55, Psalm 23"),
@@ -293,6 +303,19 @@ class Movement(EnterpriseBaseModel):
         return f"{self.piece.title} — {self.order_index + 1}. {self.title}"
 
 
+class ScoreLicenseType(models.TextChoices):
+    """Copyright status of an edition — the single lever that drives export
+    gating, server-side watermarking and access logging.
+
+    UNKNOWN is the safe default: an unclassified edition is treated exactly like
+    a protected one, so nothing licensed leaks before a manager has triaged it.
+    Only PUBLIC_DOMAIN opts an edition out of every restriction."""
+    PUBLIC_DOMAIN     = 'PD',  _('Public domain')
+    LICENSED_COPIES   = 'LC',  _('Licensed — physical copies owned')
+    PUBLISHER_DIGITAL = 'PDG', _('Publisher digital license')
+    UNKNOWN           = 'UNK', _('Unclassified (treated as protected)')
+
+
 class ScoreEdition(EnterpriseBaseModel):
     """
     A specific published PDF of a Piece (Bärenreiter vs. IMSLP scan vs. custom arrangement).
@@ -318,6 +341,20 @@ class ScoreEdition(EnterpriseBaseModel):
     edition_year = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Edition Year"))
     editor_name = models.CharField(max_length=120, blank=True, verbose_name=_("Editor"))
     is_default = models.BooleanField(default=False, verbose_name=_("Default Edition"))
+    license_type = models.CharField(
+        max_length=3, choices=ScoreLicenseType.choices,
+        default=ScoreLicenseType.UNKNOWN, db_index=True,
+        help_text=_("Copyright status. Anything other than PUBLIC_DOMAIN — including "
+                    "the UNKNOWN default — is treated as protected: choristers get an "
+                    "in-app, watermarked copy only, and every access is logged."),
+        verbose_name=_("License Type"),
+    )
+    copies_owned = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text=_("Number of physical copies the ensemble owns (LICENSED_COPIES). "
+                    "Powers the 'more singers than copies' warning in the score-book cockpit."),
+        verbose_name=_("Copies Owned"),
+    )
     sha256 = models.CharField(
         max_length=64, db_index=True,
         help_text=_("Hex SHA-256 of the uploaded PDF — used for dedup across uploads"),
@@ -378,6 +415,13 @@ class ScoreEdition(EnterpriseBaseModel):
         suffix = f" ({self.publisher})" if self.publisher else ""
         title = self.piece.title if self.piece else _("Unassigned edition")
         return f"{title}{suffix}"
+
+    @property
+    def is_license_protected(self) -> bool:
+        """True for every edition that is not explicitly public domain (UNKNOWN
+        included). The single predicate behind export gating + watermarking —
+        see archive.score_protection for the role-aware policy that consumes it."""
+        return self.license_type != ScoreLicenseType.PUBLIC_DOMAIN
 
 
 class Translation(EnterpriseBaseModel):
@@ -469,6 +513,18 @@ class AnnotationType(models.TextChoices):
     STAMP     = 'ST', _('Stamp / Symbol')
 
 
+# Well-known annotation layers. `layer_name` stays a free CharField (ad-hoc
+# layers like 'rehearsal-2026-05-18' remain possible), but access control in
+# AnnotationViewSet keys off these three:
+#   shared    → conductor→choir markings, pushed to every cast chorister
+#   conductor → the maestro's private cues
+#   personal  → a single user's own pencil marks, scoped by created_by and
+#               invisible to everyone else (managers included)
+SHARED_ANNOTATION_LAYER = 'shared'
+CONDUCTOR_ANNOTATION_LAYER = 'conductor'
+PERSONAL_ANNOTATION_LAYER = 'personal'
+
+
 class Annotation(EnterpriseBaseModel):
     """
     A markup layer rendered on top of a ScoreEdition's PDF.
@@ -493,7 +549,10 @@ class Annotation(EnterpriseBaseModel):
     color = models.CharField(max_length=9, default='#FFD700FF', verbose_name=_("Color (RGBA Hex)"))
     layer_name = models.CharField(
         max_length=80, default='conductor',
-        help_text=_("e.g. 'conductor', 'shared', 'rehearsal-2026-05-18'"),
+        help_text=_(
+            "e.g. 'conductor', 'shared', 'personal' (the writer's private "
+            "pencil marks), 'rehearsal-2026-05-18'"
+        ),
         verbose_name=_("Layer Name"),
     )
     created_by = models.ForeignKey(
@@ -588,3 +647,64 @@ class ProvenanceRecord(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         return f"{self.field_name} ← {self.get_source_display()} @ {self.retrieved_at:%Y-%m-%d}"
+
+
+class ScoreAccessLog(EnterpriseBaseModel):
+    """
+    Append-only record of every served access to a protected score — the single
+    edition download AND the concert score-book binder. This is the due-diligence
+    trail a publisher audit would ask for: who received a copy, of what, when.
+
+    `copy_number` is the per-recipient sequence stamped into the watermark
+    footer ("Egzemplarz nr N"): assigned once per (scope, user) and reused on
+    every re-download, so one singer's printed copy always carries one number.
+    It is null for a clean (unwatermarked) manager serve — those are logged too,
+    but consume no copy number since no physical stamped copy leaves.
+
+    Scope is the edition (single download) or the (project, build_version) pair
+    (binder): a fresh build re-arms numbering, matching a new physical print run.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        verbose_name=_("User"),
+    )
+    edition = models.ForeignKey(
+        ScoreEdition, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='access_logs',
+        verbose_name=_("Edition"),
+    )
+    project = models.ForeignKey(
+        'roster.Project', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='+',
+        verbose_name=_("Project"),
+    )
+    build_version = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text=_("Score-book build the binder access served (null for a single edition)."),
+        verbose_name=_("Build Version"),
+    )
+    copy_number = models.PositiveIntegerField(
+        null=True, blank=True,
+        help_text=_("Per-recipient copy sequence stamped in the watermark; null for a clean serve."),
+        verbose_name=_("Copy Number"),
+    )
+    was_watermarked = models.BooleanField(
+        default=False,
+        help_text=_("Whether the served PDF carried the personal watermark footer."),
+        verbose_name=_("Watermarked"),
+    )
+
+    class Meta:
+        verbose_name = _("Score Access Log")
+        verbose_name_plural = _("Score Access Logs")
+        indexes = [
+            models.Index(fields=['edition', 'user']),
+            models.Index(fields=['project', 'build_version', 'user']),
+            models.Index(fields=['-created_at']),
+        ]
+
+    def __str__(self) -> str:
+        scope = self.edition_id or f"project {self.project_id} v{self.build_version}"
+        num = f" #{self.copy_number}" if self.copy_number else ""
+        return f"access{num} · {scope} @ {self.created_at:%Y-%m-%d %H:%M}"

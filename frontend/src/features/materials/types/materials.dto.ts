@@ -63,6 +63,8 @@ export type MaterialsIngestionStatus =
 export interface MaterialsEdition {
   id: string;
   pdf_file: string;
+  /** Server-computed: may this edition leave the app? False → in-app only. */
+  can_export?: boolean;
   original_filename: string;
   publisher: string;
   edition_year: number | null;
@@ -103,6 +105,18 @@ export type MaterialsReadinessStatus =
   | "IN_PROGRESS"
   | "READY";
 
+/**
+ * One rehearsal starting pitch (the list keeps top voice first): `note` is a
+ * chromatic index (0=C … 11=B/H), `octave` in scientific pitch notation.
+ * Mirrors `shared/types` StartingPitch — kept local per this file's
+ * no-cross-feature-deps contract.
+ */
+export interface MaterialsStartingPitch {
+  voice: string;
+  note: number;
+  octave: number;
+}
+
 export interface MaterialsPiece {
   id: string;
   title: string;
@@ -115,6 +129,7 @@ export interface MaterialsPiece {
   // AI-enriched fields (may be empty for manually-entered pieces).
   opus_catalog: string;
   musical_key: string;
+  starting_pitches: MaterialsStartingPitch[];
   text_source: string;
   lyrics_ipa: string;
   mbid_work: string | null;
@@ -144,8 +159,12 @@ export interface MaterialsProject {
 }
 
 export interface MaterialsDashboardItem {
-  participation_id: string;
-  participation_status: string;
+  /** Null for a project the user only conducts (they have no participation). */
+  participation_id: string | null;
+  /** Null for a conductor row — there is no participation to have a status. */
+  participation_status: string | null;
+  /** True when this project is one the user conducts, not one they sing in. */
+  is_conducting: boolean;
   fee: string | null;
   project: MaterialsProject;
   program: MaterialsProgramItem[];
@@ -153,7 +172,10 @@ export interface MaterialsDashboardItem {
 
 export interface MaterialsDashboardGroup {
   project: MaterialsProject;
-  participationId: string;
-  participationStatus: string;
+  /** Null for a conductor-only group (no self-report / readiness target). */
+  participationId: string | null;
+  participationStatus: string | null;
+  /** The user leads this project rather than singing in it. */
+  isConducting: boolean;
   program: MaterialsProgramItem[];
 }

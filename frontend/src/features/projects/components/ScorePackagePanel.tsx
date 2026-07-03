@@ -289,6 +289,15 @@ export function ScorePackagePanel({
                       })}
                     </Badge>
                   )}
+                  {state && state.pieces_over_copies.length > 0 && (
+                    <Badge variant="warning" icon={<AlertTriangle size={11} aria-hidden="true" />}>
+                      {t(
+                        "projects.score_package.over_copies_count",
+                        "{{n}} bez egzemplarzy",
+                        { n: state.pieces_over_copies.length },
+                      )}
+                    </Badge>
+                  )}
                 </div>
               </div>
 

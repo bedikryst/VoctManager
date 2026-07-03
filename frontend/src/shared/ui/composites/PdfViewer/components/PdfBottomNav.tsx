@@ -31,7 +31,10 @@ export const PdfBottomNav = ({
 
   return (
     <div className="pointer-events-none absolute bottom-6 left-0 right-0 z-20 flex justify-center pb-[env(safe-area-inset-bottom)] sm:bottom-8">
-      <div className="pointer-events-auto flex items-center gap-1 rounded-full bg-ethereal-ink/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10">
+      <div
+        className="pointer-events-auto flex items-center gap-1 rounded-full bg-ethereal-ink/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10"
+        data-pdf-gesture-exempt
+      >
         <Button
           variant="ghost"
           size="icon"

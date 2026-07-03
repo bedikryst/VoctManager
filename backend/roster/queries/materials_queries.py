@@ -72,32 +72,18 @@ def artist_live_piece_ids(user: User) -> QuerySet[ProgramItem, uuid.UUID]:
     )
 
 
-def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
+def _materials_program_items_prefetch(
+    project_ids: list[uuid.UUID],
+) -> QuerySet[ProgramItem]:
     """
-    CQRS Read Model for the Artist Materials Dashboard.
-
-    Executes a fixed number of SQL queries regardless of data volume by building
-    a bounded scope from the user's participations and issuing all subsequent
-    fetches as IN-clauses or prefetch batches — no per-row round-trips.
-
-    Returned QuerySet attributes set by this function:
-      participation.my_piece_castings   → list[ProjectPieceCasting] (this artist only)
-      participation.my_readiness_entries → list[PieceReadiness] (this artist only)
-      participation.project.ordered_program → list[ProgramItem]
-      program_item.piece.prefetched_tracks  → list[Track]
-      program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
+    Program-items queryset with the full piece materials tree pre-joined —
+    tracks, castings (scoped to ``project_ids`` to prevent cross-tenant leakage),
+    translations, recordings, programme notes and ScoreEdition PDFs. Shared by
+    the singer and conductor materials read models so both resolve in a fixed
+    number of queries. Sets on each program_item.piece:
+      prefetched_tracks / scope_castings / prefetched_translations /
+      prefetched_recordings / prefetched_program_notes / prefetched_editions.
     """
-    base_qs: QuerySet[Participation] = Participation.objects.filter(
-        artist__user=user,
-        is_deleted=False,
-    )
-
-    # Materialise once: used to build bounded sub-queries.
-    # Typical cardinality is <50, so the IN-clause is cheap.
-    project_ids: list[uuid.UUID] = list(base_qs.values_list('project_id', flat=True))
-
-    # All castings within the artist's project scope — prevents cross-tenant data leakage.
-    # Used to populate piece.scope_castings; the serializer slices by project_id in Python.
     castings_in_scope_qs: QuerySet[ProjectPieceCasting] = (
         ProjectPieceCasting.objects
         .filter(
@@ -107,14 +93,7 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
         .select_related('participation__artist')
     )
 
-    # Only THIS artist's own castings — for the personalised "my_casting" field.
-    my_castings_qs: QuerySet[ProjectPieceCasting] = (
-        ProjectPieceCasting.objects
-        .filter(participation__in=base_qs)
-        .select_related('participation__artist')
-    )
-
-    program_items_qs: QuerySet[ProgramItem] = (
+    return (
         ProgramItem.objects
         .select_related('piece__composer')
         .prefetch_related(
@@ -156,6 +135,40 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
         .order_by('order')
     )
 
+
+def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
+    """
+    CQRS Read Model for the Artist Materials Dashboard.
+
+    Executes a fixed number of SQL queries regardless of data volume by building
+    a bounded scope from the user's participations and issuing all subsequent
+    fetches as IN-clauses or prefetch batches — no per-row round-trips.
+
+    Returned QuerySet attributes set by this function:
+      participation.my_piece_castings   → list[ProjectPieceCasting] (this artist only)
+      participation.my_readiness_entries → list[PieceReadiness] (this artist only)
+      participation.project.ordered_program → list[ProgramItem]
+      program_item.piece.prefetched_tracks  → list[Track]
+      program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
+    """
+    base_qs: QuerySet[Participation] = Participation.objects.filter(
+        artist__user=user,
+        is_deleted=False,
+    )
+
+    # Materialise once: used to build bounded sub-queries.
+    # Typical cardinality is <50, so the IN-clause is cheap.
+    project_ids: list[uuid.UUID] = list(base_qs.values_list('project_id', flat=True))
+
+    # Only THIS artist's own castings — for the personalised "my_casting" field.
+    my_castings_qs: QuerySet[ProjectPieceCasting] = (
+        ProjectPieceCasting.objects
+        .filter(participation__in=base_qs)
+        .select_related('participation__artist')
+    )
+
+    program_items_qs: QuerySet[ProgramItem] = _materials_program_items_prefetch(project_ids)
+
     return base_qs.select_related(
         'artist',
         'project__conductor',
@@ -176,4 +189,49 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
             queryset=PieceReadiness.objects.all(),
             to_attr='my_readiness_entries',
         ),
+    )
+
+
+def get_conductor_materials_projects(user: User) -> QuerySet[Project]:
+    """
+    CQRS Read Model for the conductor's slice of the materials dashboard.
+
+    Projects this user conducts (Project.conductor → Artist → user) but is NOT
+    cast in — the sung ones already flow through get_artist_materials_queryset()
+    carrying the singer's personalised castings and readiness, so excluding them
+    here keeps every project a single row. The conductor sees the same rich
+    piece tree (scores, tracks, translations, recordings, programme notes) with
+    the full project cast, resolved in a fixed number of queries.
+
+    Returned QuerySet attributes set by this function:
+      project.ordered_program              → list[ProgramItem]
+      program_item.piece.prefetched_tracks → list[Track]
+      program_item.piece.scope_castings    → list[ProjectPieceCasting] (full cast)
+    """
+    sung_project_ids: QuerySet[Participation, uuid.UUID] = (
+        Participation.objects
+        .filter(artist__user=user, is_deleted=False)
+        .values_list('project_id', flat=True)
+    )
+
+    conducted_qs: QuerySet[Project] = (
+        Project.objects
+        .filter(conductor__user=user, conductor__is_deleted=False)
+        .exclude(id__in=sung_project_ids)
+    )
+    project_ids: list[uuid.UUID] = list(conducted_qs.values_list('id', flat=True))
+
+    program_items_qs: QuerySet[ProgramItem] = _materials_program_items_prefetch(project_ids)
+
+    return (
+        conducted_qs
+        .select_related('conductor', 'location')
+        .prefetch_related(
+            Prefetch(
+                'program_items',
+                queryset=program_items_qs,
+                to_attr='ordered_program',
+            ),
+        )
+        .order_by('date_time')
     )

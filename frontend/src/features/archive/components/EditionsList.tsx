@@ -12,27 +12,158 @@
  * @module features/archive/components/EditionsList
  */
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
-import { CheckCircle2, FileDown, RefreshCcw, SquarePen, Trash2 } from "lucide-react";
+import {
+  CheckCircle2,
+  FileDown,
+  Globe,
+  Lock,
+  RefreshCcw,
+  SquarePen,
+  Trash2,
+} from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
-import { INGESTION_STATUS, type ScoreEditionSummary } from "@/shared/types";
-import { useScoreAnnotator } from "@/features/annotations";
+import {
+  INGESTION_STATUS,
+  type ScoreEditionSummary,
+  type ScoreLicenseType,
+} from "@/shared/types";
+import { ScoreStandModal } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 
 import {
   useApproveEdition,
   useDeleteEdition,
+  usePatchEdition,
   useReingestEdition,
 } from "../api/archive.queries";
+
+// Order the licence picker top-to-bottom by how common each status is for this
+// (mostly public-domain) choir; UNKNOWN last as the "not yet triaged" default.
+const LICENSE_ORDER: readonly ScoreLicenseType[] = ["PD", "LC", "PDG", "UNK"];
+
+/**
+ * Per-edition licence control (manager-only Archive). Sets the copyright status
+ * that drives export gating + server watermarking, and — for LICENSED_COPIES —
+ * the number of physical copies owned (feeds the score-book "more singers than
+ * copies" warning). Public-domain shows a full-export hint; everything else a
+ * "in-app + watermark" hint, so the manager sees the consequence at a glance.
+ */
+const EditionLicenseControl = ({
+  edition,
+}: {
+  edition: ScoreEditionSummary;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const patch = usePatchEdition();
+
+  const licenseType: ScoreLicenseType = edition.license_type ?? "UNK";
+  const isLicensedCopies = licenseType === "LC";
+  const isProtected = licenseType !== "PD";
+
+  const [copies, setCopies] = useState(
+    edition.copies_owned != null ? String(edition.copies_owned) : "",
+  );
+  useEffect(() => {
+    setCopies(edition.copies_owned != null ? String(edition.copies_owned) : "");
+  }, [edition.copies_owned]);
+
+  const licenseLabels: Record<ScoreLicenseType, string> = {
+    PD: t("archive.editions.license.public_domain", "Domena publiczna"),
+    LC: t("archive.editions.license.licensed_copies", "Licencja — egzemplarze"),
+    PDG: t("archive.editions.license.publisher_digital", "Licencja cyfrowa"),
+    UNK: t("archive.editions.license.unknown", "Nieokreślona"),
+  };
+
+  const handleLicenseChange = (value: ScoreLicenseType): void => {
+    const dto: { license_type: ScoreLicenseType; copies_owned?: number | null } = {
+      license_type: value,
+    };
+    // Copies only mean something for LICENSED_COPIES; clear on any other type.
+    if (value !== "LC") dto.copies_owned = null;
+    patch.mutate({ id: edition.id, dto });
+  };
+
+  const commitCopies = (): void => {
+    const trimmed = copies.trim();
+    const parsed = trimmed === "" ? null : Math.max(0, Math.trunc(Number(trimmed)));
+    const next = parsed === null || Number.isNaN(parsed) ? null : parsed;
+    if (next !== (edition.copies_owned ?? null)) {
+      patch.mutate({ id: edition.id, dto: { copies_owned: next } });
+    }
+  };
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ethereal-incense/10 pt-3">
+      <Caption color="muted" className="shrink-0">
+        {t("archive.editions.license.label", "Licencja")}
+      </Caption>
+      <div className="w-56">
+        <Select
+          variant="solid"
+          value={licenseType}
+          onChange={(event) =>
+            handleLicenseChange(event.target.value as ScoreLicenseType)
+          }
+          disabled={patch.isPending}
+          aria-label={t("archive.editions.license.label", "Licencja")}
+        >
+          {LICENSE_ORDER.map((key) => (
+            <option key={key} value={key}>
+              {licenseLabels[key]}
+            </option>
+          ))}
+        </Select>
+      </div>
+
+      {isLicensedCopies && (
+        <div className="w-28">
+          <Input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={copies}
+            onChange={(event) => setCopies(event.target.value)}
+            onBlur={commitCopies}
+            disabled={patch.isPending}
+            placeholder={t("archive.editions.license.copies_placeholder", "egz.")}
+            aria-label={t("archive.editions.license.copies_aria", "Liczba egzemplarzy")}
+          />
+        </div>
+      )}
+
+      <Caption
+        color="muted"
+        className="inline-flex items-center gap-1 whitespace-nowrap"
+      >
+        {isProtected ? (
+          <>
+            <Lock size={12} aria-hidden="true" />
+            {t(
+              "archive.editions.license.protected_hint",
+              "Tylko w aplikacji — kopia ze znakiem wodnym",
+            )}
+          </>
+        ) : (
+          <>
+            <Globe size={12} aria-hidden="true" />
+            {t("archive.editions.license.public_hint", "Pełny eksport dla wszystkich")}
+          </>
+        )}
+      </Caption>
+    </div>
+  );
+};
 
 interface EditionsListProps {
   readonly editions: readonly ScoreEditionSummary[];
@@ -67,10 +198,6 @@ export const EditionsList = ({
   const reingest = useReingestEdition();
   const remove = useDeleteEdition();
 
-  // In-app score viewer + conductor markup editor. This is the manager-native
-  // authoring surface: managers may always draw (archive is manager-only), and
-  // the `shared` layer they leave here is what reaches the choir's songbook.
-  const annotator = useScoreAnnotator({ editionId: openEditionId, canEdit: true });
   const openEdition = editions.find((e) => e.id === openEditionId) ?? null;
 
   if (editions.length === 0) return null;
@@ -208,7 +335,7 @@ export const EditionsList = ({
                         leftIcon={<SquarePen size={13} aria-hidden="true" />}
                         onClick={() => setOpenEditionId(edition.id)}
                       >
-                        {t("archive.editions.open_annotate", "Otwórz i adnotuj")}
+                        {t("archive.editions.open", "Otwórz")}
                       </Button>
                     )}
                     {canApprove && (
@@ -250,6 +377,8 @@ export const EditionsList = ({
                   </div>
                 </div>
               </div>
+
+              <EditionLicenseControl edition={edition} />
             </li>
           );
         })}
@@ -307,8 +436,13 @@ export const EditionsList = ({
         onConfirm={() => pendingDeleteId && handleDelete(pendingDeleteId)}
       />
 
-      <PdfViewerModal
+      {/* Manager-native score stand: managers may always draw (archive is
+          manager-only), and the `shared` layer they leave here is what reaches
+          the choir's songbook. */}
+      <ScoreStandModal
         isOpen={openEditionId !== null}
+        editionId={openEditionId}
+        mode="conductor"
         title={
           openEdition?.original_filename ||
           t("archive.editions.untitled", "Bez nazwy")
@@ -327,11 +461,7 @@ export const EditionsList = ({
             ? () => MaterialsService.fetchScoreEditionBlob(openEditionId)
             : null
         }
-        docKey={openEditionId ?? undefined}
-        toolbarSlot={annotator.toolbarSlot}
-        renderPageOverlay={annotator.renderPageOverlay}
-        overlaySlot={annotator.overlaySlot}
-        onPageApiChange={annotator.onPageApiChange}
+        canExport={openEdition?.can_export ?? true}
         onClose={() => setOpenEditionId(null)}
       />
     </>

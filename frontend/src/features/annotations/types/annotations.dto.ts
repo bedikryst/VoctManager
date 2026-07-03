@@ -8,14 +8,16 @@
  * @module features/annotations/types
  */
 
-/** Backend `Annotation.annotation_type` codes. FH ink · HL highlighter · CM note · ST reserved. */
+/** Backend `Annotation.annotation_type` codes. FH ink · HL highlighter · CM note · ST musical stamp. */
 export type AnnotationKind = "FH" | "CM" | "HL" | "ST";
 
 /**
  * `shared` markings are pushed to every chorister cast in a live project that
- * programs the piece; `conductor` markings are the maestro's private cues.
+ * programs the piece; `conductor` markings are the maestro's private cues;
+ * `personal` markings are one user's own pencil marks — scoped server-side to
+ * their creator and invisible to everyone else (managers included).
  */
-export type AnnotationLayer = "shared" | "conductor";
+export type AnnotationLayer = "shared" | "conductor" | "personal";
 
 /** How a text note renders: a clickable `pin`, or the words drawn `inline` on the page. */
 export type NoteDisplay = "pin" | "inline";
@@ -33,17 +35,33 @@ export interface FreehandPayload {
   width: number;
 }
 
-/** Text note anchored at a normalized point; `display` chooses pin vs inline. */
+/**
+ * Text note anchored at a normalized point; `display` chooses pin vs inline.
+ * `scale` multiplies the base font size (missing ⇒ 1, legacy notes).
+ */
 export interface CommentPayload {
   x: number;
   y: number;
   text: string;
   display?: NoteDisplay;
+  scale?: number;
+}
+
+/**
+ * Musical stamp (ST) anchored at a normalized point; `symbol` is a StampDef id.
+ * `scale` multiplies the stamp's base size (missing ⇒ 1, legacy stamps).
+ */
+export interface StampPayload {
+  x: number;
+  y: number;
+  symbol: string;
+  scale?: number;
 }
 
 export type AnnotationPayload =
   | FreehandPayload
   | CommentPayload
+  | StampPayload
   | Record<string, unknown>;
 
 export interface ScoreAnnotation {
@@ -93,3 +111,9 @@ export const isComment = (
 ): a is ScoreAnnotation & { payload: CommentPayload } =>
   a.annotation_type === "CM" &&
   typeof (a.payload as CommentPayload)?.text === "string";
+
+export const isStamp = (
+  a: ScoreAnnotation,
+): a is ScoreAnnotation & { payload: StampPayload } =>
+  a.annotation_type === "ST" &&
+  typeof (a.payload as StampPayload)?.symbol === "string";

@@ -19,6 +19,7 @@ import type {
   ProgramItem,
   Project,
   Rehearsal,
+  ScoreLicenseType,
   VoiceLineOption,
 } from "@/shared/types";
 import type {
@@ -122,6 +123,14 @@ export interface ScorePackageEditionOption {
   page_count: number | null;
   is_default: boolean;
   ingestion_status: string;
+  license_type: ScoreLicenseType;
+  copies_owned: number | null;
+}
+
+/** Set when a LICENSED_COPIES edition is bound for more singers than owned copies. */
+export interface CopiesShortfall {
+  copies_owned: number;
+  cast_size: number;
 }
 
 /** One piece-level translation the conductor can pin to an item's card; the
@@ -150,6 +159,10 @@ export interface ScorePackageItem {
   explicit_edition_id: string | null;
   selected_edition_id: string | null;
   edition_page_count: number | null;
+  /** Licence of the resolved edition; null when no edition binds. */
+  selected_license_type: ScoreLicenseType | null;
+  /** Present when the bound licensed edition is short of copies for the cast. */
+  copies_shortfall: CopiesShortfall | null;
   has_pdf: boolean;
   suggested_start: number | null;
   pdf_page_start: number | null;
@@ -204,6 +217,10 @@ export interface ScorePackageState {
   total_pieces: number;
   bindable_pieces: number;
   pieces_without_pdf: string[];
+  /** Active ensemble size — the number a licensed edition's copies is checked against. */
+  cast_size: number;
+  /** Titles whose bound licensed edition is short of physical copies for the cast. */
+  pieces_over_copies: string[];
   card_elements: CardElement[];
   config: ScorePackageConfig;
   items: ScorePackageItem[];

@@ -14,6 +14,7 @@ import os
 from decimal import Decimal, InvalidOperation
 
 from celery.result import AsyncResult
+from django.core.cache import cache
 from django.db.models import Count, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.utils import timezone
@@ -25,12 +26,21 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 
 from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
+from archive.score_protection import (
+    build_watermark_footer,
+    copy_holder_name,
+    record_binder_access,
+    record_edition_access,
+)
 from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly
 from core.request_utils import request_user
 
-from .dashboard_serializers import ParticipationMaterialsSerializer
+from .dashboard_serializers import (
+    ConductedProjectMaterialsSerializer,
+    ParticipationMaterialsSerializer,
+)
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRecordDTO,
@@ -44,6 +54,7 @@ from .dtos import (
 )
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
 from .infrastructure.document_generator import DocumentGenerator, DocumentRenderDependencyError
+from .infrastructure.score_watermark import stamp_pdf
 
 # Models & Exceptions
 from .models import (
@@ -56,6 +67,7 @@ from .models import (
     Project,
     ProjectPieceCasting,
     Rehearsal,
+    ScorePackage,
     VoiceType,
 )
 from .queries import (
@@ -63,6 +75,7 @@ from .queries import (
     get_artist_dossier,
     get_artist_materials_queryset,
     get_artist_schedule,
+    get_conductor_materials_projects,
 )
 from .queries.materials_queries import CLOSED_PROJECT_STATUSES
 from .score_package_service import ScorePackageItemError, ScorePackageService
@@ -115,6 +128,35 @@ class PdfRenderUnavailable(APIException):
     status_code = status.HTTP_503_SERVICE_UNAVAILABLE
     default_detail = "PDF rendering is temporarily unavailable on the server."
     default_code = "pdf_render_unavailable"
+
+
+# On-demand watermarking is not a hot path (scores are read, not spammed), but a
+# per-recipient binder can be many MB — cache the stamped bytes briefly, keyed by
+# (scope, user, copy number), and skip the cache for anything oversized.
+_WATERMARK_CACHE_TTL_SECONDS = 60 * 30
+_WATERMARK_CACHE_MAX_BYTES = 30 * 1024 * 1024
+
+
+def _watermarked_pdf(raw: bytes, *, cache_key: str, footer_text: str) -> bytes:
+    """Return ``raw`` stamped with ``footer_text``, memoised per recipient/build.
+    Propagates DocumentRenderDependencyError so the caller can refuse to serve an
+    unstamped protected score when the renderer is unavailable."""
+    cached = cache.get(cache_key)
+    if isinstance(cached, bytes):
+        return cached
+    stamped = stamp_pdf(raw, footer_text)
+    if len(stamped) <= _WATERMARK_CACHE_MAX_BYTES:
+        cache.set(cache_key, stamped, _WATERMARK_CACHE_TTL_SECONDS)
+    return stamped
+
+
+def _pdf_bytes_response(data: bytes, *, filename: str) -> FileResponse:
+    """Wrap in-memory PDF bytes (e.g. a freshly watermarked score) as an inline
+    FileResponse, matching the header shape of the raw-file streaming path."""
+    response = FileResponse(io.BytesIO(data), content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+    return response
 
 
 def _settlement_contract_response(record: Participation | CrewAssignment) -> FileResponse:
@@ -381,26 +423,70 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "This project has no score PDF."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+
+            is_manager = _is_manager(request.user)
+            # A singer downloading the book is the moment it "leaves the building";
+            # flag it so the conductor's cockpit warns before a rebuild silently
+            # replaces what is already in their folders. Managers previewing it do
+            # not count as distribution. (Unchanged by watermarking.)
+            if not is_manager:
+                ScorePackageService.mark_distributed(project)
+
+            # The binder physically contains the licensed editions' pages, so it is
+            # watermarked whenever ANY bound edition is protected — protecting the
+            # single editions without protecting the book they compose is worthless.
+            protected = ScorePackageService.uses_protected_edition(project)
+            build_version = (
+                ScorePackage.objects.filter(project=project)
+                .values_list('build_version', flat=True)
+                .first()
+            )
+            decision = record_binder_access(
+                request.user, project,
+                build_version=build_version, protected=protected, is_manager=is_manager,
+            )
+            filename = f"Score_{project.title.replace(' ', '_')}.pdf"
+
+            if not decision.watermark:
+                try:
+                    file_handle = project.score_pdf.open('rb')
+                except OSError:
+                    return Response(
+                        {"detail": "Score PDF file not found on the server."},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+                response = FileResponse(
+                    file_handle,
+                    content_type='application/pdf',
+                    filename=filename,
+                )
+                response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+                return response
+
+            # Protected + chorister: stamp the personal watermark before serving.
             try:
-                file_handle = project.score_pdf.open('rb')
+                with project.score_pdf.open('rb') as handle:
+                    raw = handle.read()
             except OSError:
                 return Response(
                     {"detail": "Score PDF file not found on the server."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
-            # A singer downloading the book is the moment it "leaves the building";
-            # flag it so the conductor's cockpit warns before a rebuild silently
-            # replaces what is already in their folders. Managers previewing it do
-            # not count as distribution.
-            if not _is_manager(request.user):
-                ScorePackageService.mark_distributed(project)
-            response = FileResponse(
-                file_handle,
-                content_type='application/pdf',
-                filename=f"Score_{project.title.replace(' ', '_')}.pdf",
+            footer = build_watermark_footer(
+                copy_number=decision.copy_number,
+                holder_name=copy_holder_name(request.user),
+                context_label=project.title,
+                when=timezone.now(),
             )
-            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-            return response
+            cache_key = (
+                f"score_wm:binder:{project.pk}:{build_version}:"
+                f"{request.user.pk}:{decision.copy_number}"
+            )
+            try:
+                stamped = _watermarked_pdf(raw, cache_key=cache_key, footer_text=footer)
+            except DocumentRenderDependencyError:
+                raise PdfRenderUnavailable() from None
+            return _pdf_bytes_response(stamped, filename=filename)
 
         if not _is_manager(request.user):
             return Response(
@@ -664,18 +750,27 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], url_path='materials-dashboard')
     def materials_dashboard(self, request) -> Response:
         """
-        Read-only materials tree for the authenticated artist.
-        Returns all active participations with the full project → program → piece
-        hierarchy, including tracks and castings, resolved in a fixed number of
-        SQL queries via pre-fetched to_attr lists.
+        Read-only materials tree for the authenticated user.
+        Returns the full project → program → piece hierarchy for every project
+        the user sings in (their participations, with personalised castings and
+        readiness) *and* every project they conduct (full cast, no self-report),
+        each resolved in a fixed number of SQL queries via pre-fetched to_attr
+        lists. Both slices share the row shape; conductor rows carry
+        `is_conducting: true` and a null participation.
         """
-        queryset = get_artist_materials_queryset(request_user(request))
-        serializer = ParticipationMaterialsSerializer(
-            queryset,
+        user = request_user(request)
+        ctx = {'request': request}
+        sung = ParticipationMaterialsSerializer(
+            get_artist_materials_queryset(user),
             many=True,
-            context={'request': request},
-        )
-        return Response(serializer.data)
+            context=ctx,
+        ).data
+        conducted = ConductedProjectMaterialsSerializer(
+            get_conductor_materials_projects(user),
+            many=True,
+            context=ctx,
+        ).data
+        return Response([*sung, *conducted])
 
     @action(detail=False, methods=['get'], url_path='schedule-dashboard')
     def schedule_dashboard(self, request) -> Response:
@@ -1113,16 +1208,45 @@ class ScoreEditionDownloadView(views.APIView):
 
         if not edition.pdf_file:
             return Response({"detail": "No file on this edition."}, status=status.HTTP_404_NOT_FOUND)
+
+        is_manager = _is_manager(request.user)
+        # Log every served access (managers included — that trail is the point) and
+        # decide clean-vs-watermarked from licence status and role.
+        decision = record_edition_access(request.user, edition, is_manager=is_manager)
+        filename = os.path.basename(edition.pdf_file.name or '') or 'score.pdf'
+
+        if not decision.watermark:
+            # Public domain, or a manager (the licence holder): stream the raw file.
+            try:
+                file_handle = edition.pdf_file.open('rb')
+            except (FileNotFoundError, OSError):
+                return Response({"detail": "File not found on storage."}, status=status.HTTP_404_NOT_FOUND)
+            response = FileResponse(file_handle, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            response['Access-Control-Expose-Headers'] = 'Content-Disposition'
+            return response
+
+        # Protected + chorister: stamp the personal watermark before serving.
         try:
-            file_handle = edition.pdf_file.open('rb')
+            with edition.pdf_file.open('rb') as handle:
+                raw = handle.read()
         except (FileNotFoundError, OSError):
             return Response({"detail": "File not found on storage."}, status=status.HTTP_404_NOT_FOUND)
-
-        filename = os.path.basename(edition.pdf_file.name or '') or 'score.pdf'
-        response = FileResponse(file_handle, content_type='application/pdf')
-        response['Content-Disposition'] = f'inline; filename="{filename}"'
-        response['Access-Control-Expose-Headers'] = 'Content-Disposition'
-        return response
+        footer = build_watermark_footer(
+            copy_number=decision.copy_number,
+            holder_name=copy_holder_name(request.user),
+            context_label=edition.piece.title if edition.piece else '',
+            when=timezone.now(),
+        )
+        cache_key = (
+            f"score_wm:edition:{edition.sha256 or edition.pk}:"
+            f"{request.user.pk}:{decision.copy_number}"
+        )
+        try:
+            stamped = _watermarked_pdf(raw, cache_key=cache_key, footer_text=footer)
+        except DocumentRenderDependencyError:
+            raise PdfRenderUnavailable() from None
+        return _pdf_bytes_response(stamped, filename=filename)
 
 
 @api_view(['GET'])

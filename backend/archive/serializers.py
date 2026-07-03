@@ -30,6 +30,7 @@ from rest_framework import serializers
 
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
+    PERSONAL_ANNOTATION_LAYER,
     Annotation,
     AnnotationType,
     Composer,
@@ -45,6 +46,17 @@ from .models import (
     Track,
     Translation,
 )
+from .score_protection import can_export as edition_can_export
+from .score_protection import user_is_manager
+
+
+def _edition_can_export(obj: "ScoreEdition", context: Mapping[str, Any]) -> bool:
+    """Server-computed export permission for one edition, from licence and the
+    requester's role. The frontend renders this bool — it never re-derives the
+    policy (see archive.score_protection)."""
+    request = context.get('request')
+    is_manager = user_is_manager(request.user) if request is not None else False
+    return edition_can_export(obj, is_manager=is_manager)
 
 
 def build_piece_provenance_index(piece: "Piece") -> dict[str, dict[str, Any]]:
@@ -282,6 +294,9 @@ _MAX_POINTS_PER_PATH = 8000
 _MAX_TEXT_LEN = 2000
 _MAX_STROKE_WIDTH = 0.2  # fraction of page width
 _NOTE_DISPLAY_MODES = ('pin', 'inline')
+# Bounds for a mark's size multiplier (text notes + stamps); default = 1.0.
+_MIN_MARK_SCALE = 0.4
+_MAX_MARK_SCALE = 4.0
 
 
 def _clamp01(value: Any) -> float:
@@ -292,6 +307,14 @@ def _clamp01(value: Any) -> float:
         raise serializers.ValidationError(
             {'payload': _('Coordinates must be numbers.')}
         ) from exc
+
+
+def _clamp_scale(value: Any) -> float:
+    """Coerce a mark's size multiplier into sane bounds; absent/garbage -> 1.0."""
+    try:
+        return min(_MAX_MARK_SCALE, max(_MIN_MARK_SCALE, float(value)))
+    except (TypeError, ValueError):
+        return 1.0
 
 
 class AnnotationSerializer(serializers.ModelSerializer):
@@ -392,6 +415,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'y': _clamp01(payload.get('y')),
             'text': text.strip()[:_MAX_TEXT_LEN],
             'display': display,
+            'scale': _clamp_scale(payload.get('scale', 1.0)),
         }
 
     def _clean_stamp(self, payload: Mapping[str, Any]) -> dict[str, Any]:
@@ -404,6 +428,7 @@ class AnnotationSerializer(serializers.ModelSerializer):
             'x': _clamp01(payload.get('x')),
             'y': _clamp01(payload.get('y')),
             'symbol': symbol.strip()[:40],
+            'scale': _clamp_scale(payload.get('scale', 1.0)),
         }
 
 
@@ -419,6 +444,7 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
     only served from the ScoreEdition detail endpoint.
     """
     pdf_file = serializers.SerializerMethodField()
+    can_export = serializers.SerializerMethodField()
     ingestion_status_display = serializers.CharField(
         source='get_ingestion_status_display', read_only=True,
     )
@@ -426,18 +452,22 @@ class PieceEditionSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = ScoreEdition
         fields = [
-            'id', 'pdf_file', 'original_filename', 'publisher',
+            'id', 'pdf_file', 'can_export', 'original_filename', 'publisher',
             'edition_year', 'editor_name', 'page_count',
-            'is_default', 'ingestion_status', 'ingestion_status_display',
+            'is_default', 'license_type', 'copies_owned',
+            'ingestion_status', 'ingestion_status_display',
             'ingestion_progress', 'ingestion_cost_cents', 'ingestion_error',
             'created_at', 'updated_at',
         ]
-        # `pdf_file` is a declared method field (read-only by nature) and must not
-        # appear in read_only_fields, so list the model fields explicitly.
-        read_only_fields = [f for f in fields if f != 'pdf_file']
+        # `pdf_file` / `can_export` are declared method fields (read-only by nature)
+        # and must not appear in read_only_fields, so list the model fields explicitly.
+        read_only_fields = [f for f in fields if f not in ('pdf_file', 'can_export')]
 
     def get_pdf_file(self, obj: ScoreEdition) -> str | None:
         return score_download_url(obj, self.context)
+
+    def get_can_export(self, obj: ScoreEdition) -> bool:
+        return _edition_can_export(obj, self.context)
 
 
 class ScoreEditionListSerializer(serializers.ModelSerializer):
@@ -455,6 +485,7 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
             'page_count', 'is_default',
             'piece', 'piece_title', 'composer_name',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
+            'ingestion_run_started_at',
             'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
@@ -468,9 +499,14 @@ class ScoreEditionListSerializer(serializers.ModelSerializer):
 
 
 class ScoreEditionDetailSerializer(serializers.ModelSerializer):
-    """Full ScoreEdition payload — includes annotations and SHA-256."""
+    """Full ScoreEdition payload — includes annotations and SHA-256.
+
+    Also the write surface for edition metadata (manager PATCH): publisher,
+    edition_year, editor_name, is_default, and the licence fields
+    (license_type / copies_owned) are all writable here."""
     pdf_file = serializers.SerializerMethodField()
-    annotations = AnnotationSerializer(many=True, read_only=True)
+    can_export = serializers.SerializerMethodField()
+    annotations = serializers.SerializerMethodField()
     ingestion_status_display = serializers.CharField(
         source='get_ingestion_status_display', read_only=True,
     )
@@ -478,26 +514,44 @@ class ScoreEditionDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ScoreEdition
         fields = [
-            'id', 'pdf_file', 'original_filename', 'page_count',
+            'id', 'pdf_file', 'can_export', 'original_filename', 'page_count',
             'publisher', 'edition_year', 'editor_name', 'is_default',
+            'license_type', 'copies_owned',
             'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
+            'ingestion_run_started_at',
             'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
-        # `pdf_file` (declared method field) is read-only by nature; never list it
-        # in read_only_fields or DRF raises an assertion error.
+        # `pdf_file` / `can_export` (declared method fields) are read-only by
+        # nature; never list them in read_only_fields or DRF raises an assertion.
         read_only_fields = [
             'id', 'page_count', 'sha256', 'uploaded_by',
             'piece', 'annotations',
             'ingestion_status', 'ingestion_status_display', 'ingestion_progress',
+            'ingestion_run_started_at',
             'ingestion_cost_cents', 'ingestion_cost_cents_lifetime', 'ingestion_error',
             'created_at', 'updated_at',
         ]
 
     def get_pdf_file(self, obj: ScoreEdition) -> str | None:
         return score_download_url(obj, self.context)
+
+    def get_can_export(self, obj: ScoreEdition) -> bool:
+        return _edition_can_export(obj, self.context)
+
+    def get_annotations(self, obj: ScoreEdition) -> list[dict[str, Any]]:
+        # The edition read carries the conductor-facing layers only. Personal
+        # pencil marks (any user's) never ride along an edition payload — they
+        # are served exclusively by AnnotationViewSet, which scopes them to
+        # their owner.
+        qs = (
+            obj.annotations
+            .exclude(layer_name=PERSONAL_ANNOTATION_LAYER)
+            .order_by('created_at')
+        )
+        return list(AnnotationSerializer(qs, many=True).data)
 
 
 class ScoreEditionUploadSerializer(serializers.Serializer):
@@ -536,9 +590,14 @@ _PIECE_WRITABLE_FIELDS: tuple[str, ...] = (
     'epoch',
     'opus_catalog',
     'musical_key',
+    'starting_pitches',
     'text_source',
     'voice_requirements',
 )
+
+# Bounds for the `starting_pitches` rehearsal payload.
+_MAX_STARTING_PITCHES = 12
+_MAX_VOICE_LABEL_LEN = 16
 
 
 class PieceSerializer(serializers.ModelSerializer):
@@ -600,6 +659,7 @@ class PieceSerializer(serializers.ModelSerializer):
             'epoch', 'epoch_display',
             'opus_catalog',
             'musical_key',
+            'starting_pitches',
             'text_source',
             'mbid_work',
             # Derived
@@ -637,6 +697,55 @@ class PieceSerializer(serializers.ModelSerializer):
         return build_piece_provenance_index(obj)
 
     # ---- Write validation --------------------------------------------------
+
+    def validate_starting_pitches(self, value: Any) -> list[dict[str, Any]]:
+        """
+        Sanitize the rehearsal pitch list: ordered `{voice, note, octave}`
+        entries, top voice first. `note` is a chromatic index (0=C … 11=B/H) so
+        the client never has to parse pitch spellings; `octave` follows
+        scientific pitch notation. The cleaned list is what gets persisted.
+        """
+        if not isinstance(value, list):
+            raise serializers.ValidationError(
+                _('starting_pitches must be a list of pitch entries.'),
+            )
+        if len(value) > _MAX_STARTING_PITCHES:
+            raise serializers.ValidationError(
+                _('Too many voices in starting_pitches (max %(max)d).')
+                % {'max': _MAX_STARTING_PITCHES},
+            )
+        cleaned: list[dict[str, Any]] = []
+        for entry in value:
+            if not isinstance(entry, Mapping):
+                raise serializers.ValidationError(
+                    _('Each starting pitch must be an object.'),
+                )
+            voice = entry.get('voice')
+            if not isinstance(voice, str) or not voice.strip():
+                raise serializers.ValidationError(
+                    _('Each starting pitch requires a voice label.'),
+                )
+            try:
+                note = int(entry.get('note'))  # type: ignore[arg-type]
+                octave = int(entry.get('octave'))  # type: ignore[arg-type]
+            except (TypeError, ValueError) as exc:
+                raise serializers.ValidationError(
+                    _('Pitch note and octave must be numbers.'),
+                ) from exc
+            if not 0 <= note <= 11:
+                raise serializers.ValidationError(
+                    _('Pitch note must be a chromatic index 0-11.'),
+                )
+            if not 1 <= octave <= 7:
+                raise serializers.ValidationError(
+                    _('Pitch octave must be between 1 and 7.'),
+                )
+            cleaned.append({
+                'voice': voice.strip()[:_MAX_VOICE_LABEL_LEN],
+                'note': note,
+                'octave': octave,
+            })
+        return cleaned
 
     def validate_voice_requirements(self, value: Any) -> list[dict[str, Any]] | None:
         """Validate the list-of-{voice_line, quantity} payload via Pydantic.

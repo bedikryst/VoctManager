@@ -1,9 +1,12 @@
 /**
  * @file useScoreAnnotator.tsx
- * @description One-call binding that turns an edition id + edit capability into
- * the slots PdfViewer needs: a `toolbarSlot` (managers only), a `renderPageOverlay`
- * (the drawing surface), an `overlaySlot` (the annotation index drawer) and an
- * `onPageApiChange` handler. Owns tool state, the per-edition cache, optimistic
+ * @description One-call binding that turns an edition id + annotator mode into
+ * the slots PdfViewer needs: a `toolbarSlot`, a `renderPageOverlay` (the drawing
+ * surface), an `overlaySlot` (the annotation index drawer) and an
+ * `onPageApiChange` handler. Two modes: `conductor` (managers — writes to the
+ * shared/conductor layers, clear wipes both) and `personal` (choristers — every
+ * mark lands on the user's own private layer; the conductor's shared markings
+ * stay read-only). Owns tool state, the per-edition cache, optimistic
  * create/update/delete, undo/redo history and keyboard shortcuts — so callers
  * stay a few lines thin.
  * @module features/annotations
@@ -29,13 +32,20 @@ import { useCanDraw } from "./lib/useCanDraw";
 import type {
   AnnotationPatch,
   NewAnnotation,
+  ScoreAnnotation,
 } from "./types/annotations.dto";
+
+export type ScoreAnnotatorMode = "conductor" | "personal";
 
 export interface UseScoreAnnotatorOptions {
   /** Edition whose markings to load; null disables fetching (viewer closed). */
   editionId: string | null;
-  /** Managers may draw + erase; everyone else gets read-only shared markings. */
-  canEdit: boolean;
+  /**
+   * conductor → managers: draw on the shared/conductor layers, clear wipes both.
+   * personal  → choristers: write only their own private layer (server-scoped);
+   *             the conductor's shared markings are visible but read-only.
+   */
+  mode: ScoreAnnotatorMode;
 }
 
 export interface ScoreAnnotatorBindings {
@@ -46,16 +56,37 @@ export interface ScoreAnnotatorBindings {
   annotationCount: number;
 }
 
-const DRAW_TOOLS = new Set(["pen", "highlighter", "eraser"]);
+/** Tools that need a stylus/precision surface — coerced away on phones. */
+const PRECISION_TOOLS = new Set(["pen", "highlighter"]);
 
 export const useScoreAnnotator = ({
   editionId,
-  canEdit,
+  mode,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
-  const tools = useAnnotationTools();
+  const isConductor = mode === "conductor";
+  const tools = useAnnotationTools(isConductor ? "shared" : "personal");
   const canDrawViewport = useCanDraw();
   const { data: annotations = [] } = useScoreAnnotations(editionId);
-  const { create, update, remove, clear } = useAnnotationMutations(editionId);
+
+  // Which of the VISIBLE marks this user may erase / edit. The server already
+  // scopes reads (a chorister receives shared + own personal; a manager never
+  // receives other users' personal), so layer membership is enough here.
+  const canModify = useCallback(
+    (a: ScoreAnnotation) => isConductor || a.layer_name === "personal",
+    [isConductor],
+  );
+
+  // Clear mirrors the server rule: managers wipe shared+conductor (personal
+  // layers survive), choristers wipe only their own personal marks.
+  const isCleared = useCallback(
+    (a: ScoreAnnotation) =>
+      isConductor ? a.layer_name !== "personal" : a.layer_name === "personal",
+    [isConductor],
+  );
+
+  const { create, update, remove, clear } = useAnnotationMutations(editionId, {
+    isCleared,
+  });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pageApi, setPageApi] = useState<PdfPageApi>({
@@ -64,8 +95,9 @@ export const useScoreAnnotator = ({
     goToPage: () => {},
   });
 
-  // Drawing is offered only from tablet width up; notes + browse stay everywhere.
-  const canDraw = canEdit && canDrawViewport;
+  // Freehand drawing is offered only from tablet width up; notes, stamps,
+  // eraser + browse stay everywhere.
+  const canDraw = canDrawViewport;
 
   const history = useAnnotationHistory({
     editionId,
@@ -109,25 +141,35 @@ export const useScoreAnnotator = ({
     [annotations, remove, recordDelete],
   );
 
+  const clearableCount = useMemo(
+    () => annotations.filter(isCleared).length,
+    [annotations, isCleared],
+  );
+
   const handleClearAll = useCallback(() => {
     if (!editionId) return;
-    const snapshot = [...annotations];
+    // Snapshot only what the server will actually wipe, so undo never
+    // duplicates marks that survived the clear.
+    const snapshot = annotations.filter(isCleared);
+    if (snapshot.length === 0) return;
     clear.mutateAsync().catch(() => {});
     recordClear(snapshot);
-  }, [annotations, clear, editionId, recordClear]);
+  }, [annotations, clear, editionId, isCleared, recordClear]);
 
   const handleSelectNote = useCallback(
     (id: string) => {
       setSelectedId(id);
-      // Drop into browse so the edit composer (managers) / preview opens.
-      if (canEdit) tools.setTool("pointer");
+      // Drop into browse so the edit composer / read-only preview opens.
+      tools.setTool("pointer");
     },
-    [canEdit, tools],
+    [tools],
   );
 
-  // Keyboard: undo / redo (managers only), ignoring text inputs.
+  // Keyboard: undo / redo, ignoring text inputs. Only while a score is open —
+  // otherwise a stray Ctrl+Z anywhere in the app would replay annotation
+  // history against a closed viewer.
   useEffect(() => {
-    if (!canEdit) return;
+    if (!editionId) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       const target = event.target as HTMLElement | null;
@@ -148,16 +190,16 @@ export const useScoreAnnotator = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canEdit, undo, redo]);
+  }, [editionId, undo, redo]);
 
-  const { tool, color, size, noteDisplay, layer, visibleLayers } = tools;
+  const { tool, color, size, textScale, stampScale, noteDisplay, stamp, layer, visibleLayers } =
+    tools;
 
-  // Coerce drawing tools back to browse on a phone-sized viewport.
+  // Coerce precision tools back to browse on a phone-sized viewport.
   const effectiveTool = useMemo(() => {
-    if (!canEdit) return "pointer" as const;
-    if (!canDrawViewport && DRAW_TOOLS.has(tool)) return "pointer" as const;
+    if (!canDrawViewport && PRECISION_TOOLS.has(tool)) return "pointer" as const;
     return tool;
-  }, [canEdit, canDrawViewport, tool]);
+  }, [canDrawViewport, tool]);
 
   const renderPageOverlay = useCallback(
     (geometry: PdfPageGeometry) => (
@@ -168,9 +210,13 @@ export const useScoreAnnotator = ({
         tool={effectiveTool}
         color={color}
         size={size}
+        textScale={textScale}
+        stampScale={stampScale}
         noteDisplay={noteDisplay}
+        stamp={stamp}
         layer={layer}
-        canEdit={canEdit}
+        canEdit
+        canModify={canModify}
         selectedId={selectedId}
         onSelect={setSelectedId}
         onCreate={handleCreate}
@@ -184,9 +230,12 @@ export const useScoreAnnotator = ({
       effectiveTool,
       color,
       size,
+      textScale,
+      stampScale,
       noteDisplay,
+      stamp,
       layer,
-      canEdit,
+      canModify,
       selectedId,
       handleCreate,
       handleUpdate,
@@ -203,25 +252,26 @@ export const useScoreAnnotator = ({
       goToPage={pageApi.goToPage}
       visibleLayers={visibleLayers}
       toggleLayerVisibility={tools.toggleLayerVisibility}
-      canEdit={canEdit}
+      mode={mode}
       onSelectNote={handleSelectNote}
     />
   );
 
   return {
-    toolbarSlot:
-      canEdit && editionId ? (
-        <AnnotationToolbar
-          {...tools}
-          canDraw={canDraw}
-          annotationCount={annotations.length}
-          canUndo={history.canUndo}
-          canRedo={history.canRedo}
-          onUndo={undo}
-          onRedo={redo}
-          onClearAll={handleClearAll}
-        />
-      ) : null,
+    toolbarSlot: editionId ? (
+      <AnnotationToolbar
+        {...tools}
+        mode={mode}
+        canDraw={canDraw}
+        annotationCount={annotations.length}
+        clearableCount={clearableCount}
+        canUndo={history.canUndo}
+        canRedo={history.canRedo}
+        onUndo={undo}
+        onRedo={redo}
+        onClearAll={handleClearAll}
+      />
+    ) : null,
     renderPageOverlay,
     overlaySlot,
     onPageApiChange,

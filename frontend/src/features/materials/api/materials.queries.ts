@@ -14,6 +14,7 @@ import {
 import type {
   MaterialsDashboardItem,
   MaterialsReadinessStatus,
+  MaterialsStartingPitch,
 } from "../types/materials.dto";
 
 export const materialsKeys = {
@@ -100,6 +101,57 @@ export const useSetPieceReadiness = () => {
       // Skip the refetch while offline — it would only fail and churn the cache;
       // the queued replay invalidates on reconnect.
       if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      void queryClient.invalidateQueries({ queryKey: materialsKeys.dashboard });
+    },
+  });
+};
+
+interface StartingPitchesVariables {
+  pieceId: string;
+  pitches: MaterialsStartingPitch[];
+}
+
+/**
+ * Optimistic write of the conductor's starting pitches (rehearsal dock). The
+ * piece appears in EVERY dashboard group that programs it, so the patch walks
+ * all groups; rollback on rejection, reconcile on settle.
+ */
+export const useUpdateStartingPitches = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ pieceId, pitches }: StartingPitchesVariables) =>
+      MaterialsService.updateStartingPitches(pieceId, pitches),
+
+    onMutate: async ({ pieceId, pitches }) => {
+      await queryClient.cancelQueries({ queryKey: materialsKeys.dashboard });
+      const snapshot = queryClient.getQueryData<MaterialsDashboardItem[]>(
+        materialsKeys.dashboard,
+      );
+
+      queryClient.setQueryData<MaterialsDashboardItem[]>(
+        materialsKeys.dashboard,
+        (old = []) =>
+          old.map((item) => ({
+            ...item,
+            program: item.program.map((pi) =>
+              pi.piece.id === pieceId
+                ? { ...pi, piece: { ...pi.piece, starting_pitches: pitches } }
+                : pi,
+            ),
+          })),
+      );
+
+      return { snapshot };
+    },
+
+    onError: (_error, _variables, context) => {
+      if (context?.snapshot) {
+        queryClient.setQueryData(materialsKeys.dashboard, context.snapshot);
+      }
+    },
+
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: materialsKeys.dashboard });
     },
   });

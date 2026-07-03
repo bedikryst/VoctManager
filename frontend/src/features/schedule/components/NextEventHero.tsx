@@ -294,6 +294,10 @@ const RehearsalHero = ({
   const { data: programItems = [], isLoading: isProgramLoading } =
     useScheduleProgramItems(event.project_id, isLive);
 
+  // A conductor sees the rehearsal but isn't cast in it — no participation to
+  // RSVP against, so the self-attendance controls are withheld.
+  const canRsvp = !!event.participationId;
+
   return (
     <GlassCard
       variant="ethereal"
@@ -378,41 +382,44 @@ const RehearsalHero = ({
           </div>
         )}
 
-        {/* RSVP — always one tap away, never behind an accordion */}
+        {/* RSVP — always one tap away, never behind an accordion. Withheld for
+            a conductor (no participation), who keeps the calendar action. */}
         {!reportingMode && (
           <>
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-            {currentMaskedStatus !== "PRESENT" && (
-              <Button
-                variant="primary"
-                size="touch"
-                onClick={handleConfirmPresence}
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-                leftIcon={!isSubmitting ? <Check size={13} aria-hidden="true" /> : undefined}
-                className="w-full bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80 sm:w-auto"
-              >
-                {t("schedule.rehearsal.action.confirm_long", "Potwierdź Obecność")}
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="touch"
-              onClick={enableReportingMode}
-              leftIcon={<AlertCircle size={13} aria-hidden="true" />}
-              className={cn(
-                "w-full sm:w-auto",
-                // crimson reflects an *actual* reported absence — never a
-                // default affordance (Ethereal: crimson = alarm only).
-                currentMaskedStatus === "ABSENT" &&
-                  "text-ethereal-crimson hover:border-ethereal-crimson/30",
+          {canRsvp && (
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+              {currentMaskedStatus !== "PRESENT" && (
+                <Button
+                  variant="primary"
+                  size="touch"
+                  onClick={handleConfirmPresence}
+                  disabled={isSubmitting}
+                  isLoading={isSubmitting}
+                  leftIcon={!isSubmitting ? <Check size={13} aria-hidden="true" /> : undefined}
+                  className="w-full bg-ethereal-sage border-ethereal-sage hover:bg-ethereal-sage/80 sm:w-auto"
+                >
+                  {t("schedule.rehearsal.action.confirm_long", "Potwierdź Obecność")}
+                </Button>
               )}
-            >
-              {currentMaskedStatus
-                ? t("schedule.rehearsal.action.edit", "Edytuj")
-                : t("schedule.rehearsal.action.report_issue", "Zgłoś problem")}
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="touch"
+                onClick={enableReportingMode}
+                leftIcon={<AlertCircle size={13} aria-hidden="true" />}
+                className={cn(
+                  "w-full sm:w-auto",
+                  // crimson reflects an *actual* reported absence — never a
+                  // default affordance (Ethereal: crimson = alarm only).
+                  currentMaskedStatus === "ABSENT" &&
+                    "text-ethereal-crimson hover:border-ethereal-crimson/30",
+                )}
+              >
+                {currentMaskedStatus
+                  ? t("schedule.rehearsal.action.edit", "Edytuj")
+                  : t("schedule.rehearsal.action.report_issue", "Zgłoś problem")}
+              </Button>
+            </div>
+          )}
           <div className="mt-2">
             <AddToCalendar event={event} tone="light" />
           </div>

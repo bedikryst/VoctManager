@@ -33,14 +33,27 @@ export const useScoreAnnotations = (editionId: string | null) =>
 let tempCounter = 0;
 const nextTempId = (): string => `temp-${Date.now()}-${tempCounter++}`;
 
+interface AnnotationMutationOptions {
+  /**
+   * Which cached rows a `clear` wipes optimistically. Must mirror the server's
+   * role-aware clear scope (managers: shared+conductor; choristers: their own
+   * personal layer) or the optimistic cache would drop marks that survive.
+   */
+  isCleared?: (annotation: ScoreAnnotation) => boolean;
+}
+
 /**
  * Create / update / delete mutations scoped to one edition's cache. Returned
  * handlers reconcile against the server response (create swaps the temp row,
  * update merges fields, delete is idempotent).
  */
-export const useAnnotationMutations = (editionId: string | null) => {
+export const useAnnotationMutations = (
+  editionId: string | null,
+  options?: AnnotationMutationOptions,
+) => {
   const queryClient = useQueryClient();
   const key = annotationKeys.byEdition(editionId ?? "none");
+  const isCleared = options?.isCleared ?? (() => true);
 
   const create = useMutation({
     mutationFn: (payload: NewAnnotation) => AnnotationsService.create(payload),
@@ -122,7 +135,10 @@ export const useAnnotationMutations = (editionId: string | null) => {
       await queryClient.cancelQueries({ queryKey: key });
       const snapshot =
         queryClient.getQueryData<ScoreAnnotation[]>(key) ?? [];
-      queryClient.setQueryData<ScoreAnnotation[]>(key, []);
+      queryClient.setQueryData<ScoreAnnotation[]>(
+        key,
+        snapshot.filter((a) => !isCleared(a)),
+      );
       return { snapshot };
     },
     onError: (_err, _vars, context) => {
