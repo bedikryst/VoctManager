@@ -274,7 +274,7 @@ export const ComposerRowExpanded = ({
             {piecesByThis.map((piece) => (
               <li key={piece.id}>
                 <Link
-                  to={`/panel/archive-management/${piece.id}/edit`}
+                  to={`/panel/archive-management/${piece.id}`}
                   className="inline-flex max-w-full items-center gap-2 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster/60 px-3 py-1.5 text-[12px] font-medium text-ethereal-ink transition-colors hover:border-ethereal-gold/35 hover:bg-ethereal-parchment/50"
                 >
                   <Music size={11} aria-hidden="true" className="text-ethereal-gold" />

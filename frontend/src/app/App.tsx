@@ -147,14 +147,11 @@ const ProjectDetailsPage = lazyWithPreload(
 const ArchiveManagement = lazyWithPreload(
   () => import("@pages/panel/ArchivePage"),
 );
-const ArchiveReviewPage = lazyWithPreload(
-  () => import("@features/archive/ArchiveReviewPage"),
+const ArchivePieceCardPage = lazyWithPreload(
+  () => import("@features/archive/ArchivePieceCardPage"),
 );
 const ArchiveNewPiecePage = lazyWithPreload(
   () => import("@features/archive/ArchiveNewPiecePage"),
-);
-const ArchiveEditPiecePage = lazyWithPreload(
-  () => import("@features/archive/ArchiveEditPiecePage"),
 );
 const ArchiveComposersPage = lazyWithPreload(
   () => import("@features/archive/ArchiveComposersPage"),
@@ -194,9 +191,8 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { scope: "manager", preload: ProjectBudgetPage.preload },
   { scope: "manager", preload: ProjectDetailsPage.preload },
   { scope: "manager", preload: ArchiveManagement.preload },
-  { scope: "manager", preload: ArchiveReviewPage.preload },
+  { scope: "manager", preload: ArchivePieceCardPage.preload },
   { scope: "manager", preload: ArchiveNewPiecePage.preload },
-  { scope: "manager", preload: ArchiveEditPiecePage.preload },
   { scope: "manager", preload: ArchiveComposersPage.preload },
   { scope: "manager", preload: CrewManagement.preload },
   { scope: "manager", preload: LogisticsLocationsPage.preload },
@@ -337,12 +333,18 @@ export const router = createBrowserRouter(
               element={<ArchiveNewPiecePage />}
             />
             <Route
+              path="archive-management/:id"
+              element={<ArchivePieceCardPage />}
+            />
+            {/* Legacy deep-links (notifications, older bookmarks) — the edit +
+                verify screens are now one Piece Card at /:id. */}
+            <Route
               path="archive-management/:id/edit"
-              element={<ArchiveEditPiecePage />}
+              element={<Navigate to=".." replace relative="path" />}
             />
             <Route
               path="archive-management/:id/review"
-              element={<ArchiveReviewPage />}
+              element={<Navigate to=".." replace relative="path" />}
             />
             <Route path="crew" element={<CrewManagement />} />
             <Route path="locations" element={<LogisticsLocationsPage />} />

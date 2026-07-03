@@ -1,16 +1,14 @@
 /**
  * @file usePieceFormState.ts
- * @description Shared RHF + side-state controller for the Piece form used
- * by both [ArchiveNewPiecePage] (create) and [ArchiveEditPiecePage] (edit).
+ * @description RHF + side-state controller for the manual-create Piece form
+ * ([ArchiveNewPiecePage]). Editing lives on the Piece Card, which manages the
+ * equivalent state inline but reuses this hook's composer-draft types
+ * ([InlineComposerDraft], [EMPTY_COMPOSER_DRAFT]).
  *
  * Wraps:
  *   - The Zod-validated RHF form (text/numeric fields)
  *   - Composer picker state (existing FK selection OR inline-create draft)
  *   - Divisi requirements list (voice_requirements)
- *
- * Each page handles its own submit (createPiece vs updatePiece). The hook
- * just owns the unified shape so the form body component doesn't care
- * which mode it's in.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/hooks/usePieceFormState
  */

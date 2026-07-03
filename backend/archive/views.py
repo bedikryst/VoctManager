@@ -266,7 +266,9 @@ class PieceViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         dto = serializer.to_dto(instance=instance)
-        piece = services.ArchiveManagementService.update_piece(piece=instance, dto=dto)
+        piece = services.ArchiveManagementService.update_piece(
+            piece=instance, dto=dto, actor_email=_actor_email(request),
+        )
         return Response(self.get_serializer(piece).data)
 
     @action(detail=True, methods=['post'], url_path='generate_program_note')

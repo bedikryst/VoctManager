@@ -41,13 +41,15 @@ export interface PieceWriteDTO {
 }
 
 /**
- * Subset of `PieceWriteDTO` the AI Review tab uses for inline patches.
- * Excludes voice_requirements (managed via dedicated DivisiEditor) and
- * description (only edited from the Metadata tab). Title is required there
- * but optional here so individual fields can patch without re-sending it.
+ * Subset of `PieceWriteDTO` the Piece Card uses for dirty-field patches. Title
+ * is required in the write DTO but optional here so individual fields can patch
+ * without re-sending it. Since the Piece Card unified the edit + verify surfaces,
+ * it covers the full editable set — composer FK, notes and divisi included.
  */
 export interface PiecePatchDTO {
   title?: string;
+  /** UUID of the composer FK. `null` clears it (traditional/anonymous works). */
+  composer_id?: string | null;
   arranger?: string;
   opus_catalog?: string;
   musical_key?: string;
@@ -59,6 +61,8 @@ export interface PiecePatchDTO {
   estimated_duration?: number | null;
   lyrics_original?: string;
   lyrics_ipa?: string;
+  /** Conductor's internal notes. */
+  description?: string;
   voice_requirements?: VoiceRequirementDTO[];
 }
 

@@ -26,9 +26,30 @@ from django.db import transaction
 from archive.dtos import PieceWriteDTO, VoiceRequirementDTO
 from archive.exceptions import PieceValidationException
 from archive.models import Composer, Piece, PieceVoiceRequirement, Track
+from archive.services import provenance
 from archive.signals import piece_material_updated_event
 
 logger = logging.getLogger(__name__)
+
+# Scalar Piece fields whose manual edit should stamp MANUAL provenance — i.e.
+# the fields the AI extracts and the review cockpit shows a source chip for.
+# Editing one by hand flips its chip "AI · do sprawdzenia" → "Zweryfikowane".
+# Composer (FK) and voice_requirements (sub-entities) are handled elsewhere.
+_PROVENANCE_TRACKED_FIELDS: tuple[str, ...] = (
+    'title',
+    'arranger',
+    'language',
+    'estimated_duration',
+    'voicing',
+    'description',
+    'lyrics_original',
+    'composition_year',
+    'epoch',
+    'opus_catalog',
+    'musical_key',
+    'text_source',
+    'lyrics_ipa',
+)
 
 
 class ArchiveManagementService:
@@ -53,8 +74,15 @@ class ArchiveManagementService:
         return value or ""
 
     @classmethod
-    def _apply_piece_fields(cls, piece: Piece, dto: PieceWriteDTO) -> None:
-        """Single source of truth for Piece field assignment from a DTO."""
+    def _apply_piece_fields(cls, piece: Piece, dto: PieceWriteDTO) -> set[str]:
+        """Single source of truth for Piece field assignment from a DTO.
+
+        Returns the names of the provenance-tracked fields whose value actually
+        changed, so the caller can stamp MANUAL provenance for exactly those —
+        an untouched field keeps its original AI / external-source chip.
+        """
+        before = {name: getattr(piece, name) for name in _PROVENANCE_TRACKED_FIELDS}
+
         piece.title = dto.title
         piece.arranger = cls._normalize_blank_text(dto.arranger)
         piece.language = cls._normalize_blank_text(dto.language)
@@ -68,6 +96,12 @@ class ArchiveManagementService:
         piece.musical_key = cls._normalize_blank_text(dto.musical_key)
         piece.text_source = cls._normalize_blank_text(dto.text_source)
         piece.lyrics_ipa = cls._normalize_blank_text(dto.lyrics_ipa)
+
+        return {
+            name
+            for name in _PROVENANCE_TRACKED_FIELDS
+            if getattr(piece, name) != before[name]
+        }
 
     @staticmethod
     def _resolve_composer(composer_id) -> Composer | None:
@@ -97,19 +131,34 @@ class ArchiveManagementService:
         return piece
 
     @classmethod
-    def update_piece(cls, piece: Piece, dto: PieceWriteDTO) -> Piece:
-        """Update piece metadata. Does not touch PDFs (those live on ScoreEdition)."""
+    def update_piece(
+        cls, piece: Piece, dto: PieceWriteDTO, actor_email: str = "",
+    ) -> Piece:
+        """Update piece metadata. Does not touch PDFs (those live on ScoreEdition).
+
+        Every scalar field the manager actually changes is stamped with MANUAL
+        provenance so its review-cockpit chip flips from "AI · do sprawdzenia"
+        to "Zweryfikowane". Fields left untouched keep their original chip.
+        """
         composer = cls._resolve_composer(dto.composer_id)
 
         with transaction.atomic():
             piece.composer = composer
-            cls._apply_piece_fields(piece, dto)
+            changed_fields = cls._apply_piece_fields(piece, dto)
             piece.save()
 
             if dto.voice_requirements is not None:
                 cls._sync_piece_voice_requirements(piece, dto.voice_requirements)
 
-        logger.info("piece.updated id=%s title=%r", piece.id, piece.title)
+            for field_name in changed_fields:
+                provenance.record_manual(
+                    target=piece, field_name=field_name, actor_email=actor_email,
+                )
+
+        logger.info(
+            "piece.updated id=%s title=%r manual_fields=%s",
+            piece.id, piece.title, sorted(changed_fields),
+        )
         return piece
 
     @classmethod

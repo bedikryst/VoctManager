@@ -95,7 +95,7 @@ export default function ArchiveNewPiecePage(): React.JSX.Element {
         t("archive.new_piece.toast_success", "Utwór dodany."),
         { id: toastId },
       );
-      navigate(`/panel/archive-management?highlight=${created.id}`);
+      navigate(`/panel/archive-management/${created.id}`);
     } catch (err) {
       const normalized = toastApiError(err, t, {
         id: toastId,

@@ -9,8 +9,8 @@
  *   2. Expand — click row → accordion shows composer / divisi / PDFs /
  *      tracks + CTAs. ~80% of conductor interactions land here.
  *   3. Deep work — dedicated routes for focused tasks:
- *        /panel/archive-management/new          → manual create
- *        /panel/archive-management/:id/review   → AI verification with PDF preview
+ *        /panel/archive-management/new   → manual create
+ *        /panel/archive-management/:id   → the Piece Card (edit + AI verification)
  *
  * Upload zone stays in a drawer triggered by the header CTA. Fresh-archive
  * empty state hosts the drop zone inline as the dominant CTA.
@@ -182,7 +182,7 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const navigateToReview = useCallback(
     (pieceId: string) => {
-      navigate(`/panel/archive-management/${pieceId}/review`);
+      navigate(`/panel/archive-management/${pieceId}`);
     },
     [navigate],
   );

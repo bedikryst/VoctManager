@@ -11,8 +11,8 @@
  *   3. Expand — click row body → accordion opens below with composer card,
  *      editions list (per-edition approve/reingest/delete), MP3 tracks
  *      mini-player + upload, audio list, AI status summary, and a CTA to
- *      `/panel/archive-management/:id/review` for deep AI verification
- *      with PDF preview.
+ *      `/panel/archive-management/:id` — the Piece Card — for the full
+ *      edit + AI verification cockpit.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceRow
  */

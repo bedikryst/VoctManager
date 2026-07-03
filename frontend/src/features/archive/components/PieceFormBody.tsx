@@ -1,10 +1,11 @@
 /**
  * @file PieceFormBody.tsx
- * @description Presentational form sections shared by [ArchiveNewPiecePage]
- * and [ArchiveEditPiecePage]. Renders all editable Piece fields including
- * composer picker / inline-create and divisi requirements.
+ * @description Presentational form sections for [ArchiveNewPiecePage] (manual
+ * create). Renders all editable Piece fields; the composer picker and divisi
+ * editor are delegated to [ComposerPicker] / [DivisiEditor], which the Piece
+ * Card reuses too.
  *
- * State + submit logic stays in the parent pages — this component only
+ * State + submit logic stays in the parent page — this component only
  * renders inputs against the [usePieceFormState] state object.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/PieceFormBody
@@ -12,7 +13,6 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, X } from "lucide-react";
 
 import type { Composer, VoiceLineOption } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -20,7 +20,7 @@ import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
 import {
@@ -28,19 +28,8 @@ import {
   getLanguageLabel,
 } from "../constants/archiveLanguages";
 import type { PieceFormState } from "../hooks/usePieceFormState";
-
-/**
- * Voice lines that make sense for divisi (one Sx/Ax/Tx/Bx slot = "I need
- * N singers on this part"). Keeps rehearsal/recording-only entries
- * (TUTTI, BACKGROUND, ACCOMPANIMENT, PRONUNCIATION) out of the add row.
- */
-const CHORAL_DIVISI_LINES: ReadonlySet<string> = new Set([
-  "S1", "S2", "S3",
-  "A1", "A2", "A3",
-  "T1", "T2", "T3",
-  "B1", "B2", "B3",
-  "SOLO",
-]);
+import { ComposerPicker } from "./ComposerPicker";
+import { DivisiEditor } from "./DivisiEditor";
 
 interface PieceFormBodyProps {
   readonly state: PieceFormState;
@@ -91,12 +80,6 @@ export const PieceFormBody = ({
         ]
       : languageOptions;
 
-  const availableLines = voiceLines.filter(
-    (vl) =>
-      CHORAL_DIVISI_LINES.has(String(vl.value)) &&
-      !requirements.some((r) => r.voice_line === String(vl.value)),
-  );
-
   return (
     <>
       {/* ── Identity ───────────────────────────────────────────────────── */}
@@ -112,95 +95,16 @@ export const PieceFormBody = ({
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           {/* Composer picker / inline create */}
-          <div>
-            <div className="mb-2 flex items-baseline justify-between">
-              <Eyebrow color="muted" size="caption">
-                {t("archive.form.fields.composer", "Kompozytor")}
-              </Eyebrow>
-              <button
-                type="button"
-                onClick={() => setIsAddingComposer(!isAddingComposer)}
-                disabled={isBusy}
-                className="text-[10px] font-bold uppercase tracking-widest text-ethereal-gold hover:underline"
-              >
-                {isAddingComposer
-                  ? t("archive.form.back_to_picker", "Wybierz z listy")
-                  : t("archive.form.add_new_composer", "+ Dodaj nowego")}
-              </button>
-            </div>
-            {isAddingComposer ? (
-              <div className="space-y-2 rounded-xl border border-ethereal-incense/25 bg-ethereal-alabaster/50 p-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder={t("archive.form.composer_first", "Imię")}
-                    value={composerDraft.first_name}
-                    onChange={(e) =>
-                      setComposerDraft({
-                        ...composerDraft,
-                        first_name: e.target.value,
-                      })
-                    }
-                    disabled={isBusy}
-                  />
-                  <Input
-                    placeholder={t("archive.form.composer_last", "Nazwisko *")}
-                    value={composerDraft.last_name}
-                    onChange={(e) =>
-                      setComposerDraft({
-                        ...composerDraft,
-                        last_name: e.target.value,
-                      })
-                    }
-                    disabled={isBusy}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    type="number"
-                    placeholder={t("archive.form.composer_birth", "Rok ur.")}
-                    value={composerDraft.birth_year}
-                    onChange={(e) =>
-                      setComposerDraft({
-                        ...composerDraft,
-                        birth_year: e.target.value,
-                      })
-                    }
-                    disabled={isBusy}
-                  />
-                  <Input
-                    type="number"
-                    placeholder={t("archive.form.composer_death", "Rok śm.")}
-                    value={composerDraft.death_year}
-                    onChange={(e) =>
-                      setComposerDraft({
-                        ...composerDraft,
-                        death_year: e.target.value,
-                      })
-                    }
-                    disabled={isBusy}
-                  />
-                </div>
-              </div>
-            ) : (
-              <Select
-                value={composerId}
-                onChange={(e) => setComposerId(e.target.value)}
-                disabled={isBusy}
-              >
-                <option value="">
-                  {t("archive.form.composer_none", "— Tradycyjny / nieznany —")}
-                </option>
-                {composers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.last_name} {c.first_name || ""}
-                    {c.birth_year
-                      ? ` (${c.birth_year}${c.death_year ? `–${c.death_year}` : ""})`
-                      : ""}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </div>
+          <ComposerPicker
+            composers={composers}
+            composerId={composerId}
+            setComposerId={setComposerId}
+            isAddingComposer={isAddingComposer}
+            setIsAddingComposer={setIsAddingComposer}
+            composerDraft={composerDraft}
+            setComposerDraft={setComposerDraft}
+            isBusy={isBusy}
+          />
           <Input
             label={t("archive.form.fields.arranger", "Aranżer")}
             placeholder={t("archive.form.arranger_placeholder", "np. John Rutter")}
@@ -301,83 +205,14 @@ export const PieceFormBody = ({
 
         {/* Divisi */}
         <div className="mt-5">
-          <Eyebrow color="muted" size="caption" className="mb-1 block">
-            {t("archive.form.fields.divisi", "Divisi (opcjonalnie)")}
-          </Eyebrow>
-          <Caption color="muted" className="mb-3 block">
-            {t(
-              "archive.form.divisi_hint",
-              "Kliknij głos, by dodać. Liczba mówi ilu śpiewaków potrzeba na tę partię.",
-            )}
-          </Caption>
-          <div className="flex flex-wrap gap-2">
-            {availableLines.map((vl) => (
-              <button
-                key={String(vl.value)}
-                type="button"
-                onClick={() => addRequirement(vl.value)}
-                disabled={isBusy}
-                className="inline-flex items-center gap-1 rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster/70 px-3 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink"
-              >
-                <Plus size={11} aria-hidden="true" /> {vl.label}
-              </button>
-            ))}
-          </div>
-          {requirements.length > 0 && (
-            <div className="mt-3 flex flex-col gap-1.5">
-              {requirements.map((requirement, index) => {
-                const display = voiceLines.find(
-                  (vl) => String(vl.value) === requirement.voice_line,
-                )?.label;
-                return (
-                  <div
-                    key={`${requirement.voice_line}-${index}`}
-                    className="flex items-center justify-between gap-3 rounded-md border border-ethereal-gold/25 bg-ethereal-gold/5 px-3 py-1.5"
-                  >
-                    <Eyebrow color="gold" size="caption">
-                      {display || requirement.voice_line}
-                    </Eyebrow>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => adjustRequirement(index, -1)}
-                        disabled={requirement.quantity <= 1 || isBusy}
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink disabled:opacity-30"
-                        aria-label={t("archive.form.decrement", "Zmniejsz")}
-                      >
-                        −
-                      </button>
-                      <Text
-                        size="xs"
-                        weight="semibold"
-                        className="w-6 text-center tabular-nums"
-                      >
-                        {requirement.quantity}
-                      </Text>
-                      <button
-                        type="button"
-                        onClick={() => adjustRequirement(index, 1)}
-                        disabled={isBusy}
-                        className="flex h-6 w-6 items-center justify-center rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink"
-                        aria-label={t("archive.form.increment", "Zwiększ")}
-                      >
-                        +
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeRequirement(index)}
-                        disabled={isBusy}
-                        className="ml-1 flex h-6 w-6 items-center justify-center rounded-md text-ethereal-incense hover:text-ethereal-crimson"
-                        aria-label={t("archive.form.remove_divisi", "Usuń")}
-                      >
-                        <X size={12} aria-hidden="true" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <DivisiEditor
+            voiceLines={voiceLines}
+            requirements={requirements}
+            addRequirement={addRequirement}
+            adjustRequirement={adjustRequirement}
+            removeRequirement={removeRequirement}
+            isBusy={isBusy}
+          />
         </div>
       </GlassCard>
 

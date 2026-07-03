@@ -28,7 +28,7 @@ from archive.infrastructure.wikidata_client import (
     WikidataClient,
     _claim_image,
 )
-from archive.models import Composer, ProvenanceRecord, ProvenanceSource
+from archive.models import Composer, Piece, ProvenanceRecord, ProvenanceSource
 from archive.services import enrichment
 from core.constants import AppRole
 from core.models import UserProfile
@@ -374,3 +374,81 @@ class RefreshMbEndpointTests(APITestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(mock_refresh.call_args.kwargs["force"])
+
+
+# ===========================================================================
+# Piece update — manual-provenance stamping
+# ===========================================================================
+
+class UpdatePieceProvenanceTests(APITestCase):
+    """PATCH /api/pieces/{id}/ stamps MANUAL provenance for exactly the scalar
+    fields whose value actually changed, so the review-cockpit chip flips
+    "AI · do sprawdzenia" → "Zweryfikowane". Untouched fields keep their AI
+    chip; a no-op edit (same value) stamps nothing.
+    """
+
+    @staticmethod
+    def _user(username: str, email: str, role: str):
+        user = User.objects.create_user(username=username, email=email, password="pw123456")
+        UserProfile.objects.create(user=user, role=role)
+        return user
+
+    def setUp(self) -> None:
+        self.manager = self._user("mgr", "mgr@test.pl", AppRole.MANAGER)
+        self.artist = self._user("art", "art@test.pl", AppRole.ARTIST)
+        self.piece = Piece.objects.create(
+            title="Ave Verum", arranger="opr. AI", musical_key="D",
+        )
+        # Seed AI provenance on two fields so we can prove one flips and the
+        # other is left alone.
+        ct = ContentType.objects.get_for_model(Piece)
+        for field in ("title", "musical_key"):
+            ProvenanceRecord.objects.create(
+                content_type=ct, object_id=self.piece.pk, field_name=field,
+                source=ProvenanceSource.AI_OPUS, model_version="claude-opus-4-8",
+            )
+        self.url = f"/api/pieces/{self.piece.id}/"
+
+    def _manual(self, field: str):
+        return ProvenanceRecord.objects.filter(
+            object_id=self.piece.pk, field_name=field, source=ProvenanceSource.MANUAL,
+        )
+
+    def test_requires_manager(self) -> None:
+        self.client.force_authenticate(self.artist)
+        resp = self.client.patch(self.url, {"title": "Nope"}, format="json")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_editing_a_field_stamps_manual_provenance_with_actor(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(self.url, {"title": "Ave Verum Corpus"}, format="json")
+
+        self.assertEqual(resp.status_code, 200)
+        self.piece.refresh_from_db()
+        self.assertEqual(self.piece.title, "Ave Verum Corpus")
+        manual = self._manual("title")
+        self.assertTrue(manual.exists())
+        self.assertEqual(manual.latest("retrieved_at").source_reference, "mgr@test.pl")
+
+    def test_untouched_field_keeps_ai_provenance(self) -> None:
+        self.client.force_authenticate(self.manager)
+        self.client.patch(self.url, {"title": "Ave Verum Corpus"}, format="json")
+        # musical_key was not in the PATCH → no manual record, AI chip stays.
+        self.assertFalse(self._manual("musical_key").exists())
+
+    def test_no_op_edit_does_not_stamp(self) -> None:
+        # Same value as stored → nothing actually changed → no manual record.
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(self.url, {"title": "Ave Verum"}, format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(self._manual("title").exists())
+
+    def test_provenance_index_reflects_the_flip(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(self.url, {"title": "Ave Verum Corpus"}, format="json")
+
+        index = resp.json()["provenance"]
+        self.assertEqual(index[f"{self.piece.id}:title"]["source"], ProvenanceSource.MANUAL)
+        self.assertEqual(
+            index[f"{self.piece.id}:musical_key"]["source"], ProvenanceSource.AI_OPUS,
+        )
