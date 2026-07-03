@@ -1,4 +1,4 @@
-# 🌅 VoctEnsemble / VoctFoundation — Strona publiczna (Astro)
+﻿# 🌅 VoctEnsemble / VoctFoundation — Strona publiczna (Astro)
 
 🌍 *Przeczytaj w innych językach: [English](README.md), [Polski](README.pl.md).*
 
@@ -20,7 +20,7 @@ Ta strona **NIE podlega projektowemu mandatowi z `CLAUDE.md`** (No-Raw-HTML / Ta
 * **Najnowsze technologie 2026, zero długu technicznego.**
 * **Ścisłe RODO:** żadnego Google Fonts, Maps, Spotify embeds, reCAPTCHA, analityki ustawiającej cookie. Wszystko self-hostowane (fonty pod `public/fonts/`, ambient audio w `public/ambient.m4a`).
 * **Bazowy poziom Awwwards:** każda interaktywna powierzchnia musi być akcelerowana sprzętowo (`transform` / `opacity`), respektować `prefers-reduced-motion` i gracefully degradować bez JS.
-* **Kierunek kreatywny:** *Nawa światła* — sakralny minimalizm, splot A-B-C, JASNA paleta paper. Pełna specyfikacja w `.ai/07_marketing_public_site.md` §10 i obowiązuje na wszystkich podstronach.
+* **Kierunek kreatywny:** *Nawa światła* — sakralny minimalizm, splot A-B-C, JASNA paleta paper. Specyfikacja w `.ai/07_marketing_public_site.md` (sekcja „Creative direction") i obowiązuje na wszystkich podstronach.
 
 ---
 

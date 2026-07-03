@@ -1,4 +1,4 @@
-# 🌅 VoctEnsemble / VoctFoundation — Public Site (Astro)
+﻿# 🌅 VoctEnsemble / VoctFoundation — Public Site (Astro)
 
 🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
 
@@ -20,7 +20,7 @@ This site is **NOT subject to the project-root `CLAUDE.md` No-Raw-HTML / Tailwin
 * **Newest 2026 tech, zero tech-debt.**
 * **GDPR-strict:** no Google Fonts, no Maps, no Spotify embeds, no reCAPTCHA, no analytics that ship a cookie. Self-host everything (fonts under `public/fonts/`, ambient audio under `public/ambient.m4a`).
 * **Awwwards baseline:** every interactive surface must be hardware-accelerated (`transform` / `opacity`), respect `prefers-reduced-motion`, and degrade gracefully without JavaScript.
-* **Creative direction:** *Nawa światła* — sacred minimalism, A-B-C braid, LIGHT parchment palette. The full spec lives in `.ai/07_marketing_public_site.md` §10 and governs every subpage.
+* **Creative direction:** *Nawa światła* — sacred minimalism, A-B-C braid, LIGHT parchment palette. The spec lives in `.ai/07_marketing_public_site.md` ("Creative direction" section) and governs every subpage.
 
 ---
 
