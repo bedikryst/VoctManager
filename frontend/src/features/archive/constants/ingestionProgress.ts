@@ -11,7 +11,11 @@
 
 import type { TFunction } from "i18next";
 
-import type { IngestionProgressCode, IngestionStatusCode } from "@/shared/types";
+import type {
+  IngestionProgressCode,
+  IngestionStatusCode,
+  LiveAnalysisPreview,
+} from "@/shared/types";
 
 const PROGRESS_LABEL: Record<
   Exclude<IngestionProgressCode, "">,
@@ -48,6 +52,59 @@ const PROGRESS_LABEL: Record<
  *  shows this distinctly so a long, legitimate pause never looks like a freeze. */
 export const isOverloadWait = (progress?: IngestionProgressCode): boolean =>
   progress === "waiting_overload";
+
+const LIVE_SECTION_LABEL: Record<
+  LiveAnalysisPreview["section"],
+  { readonly key: string; readonly pl: string }
+> = {
+  identity: {
+    key: "archive.progress.live_identity",
+    pl: "odczytuję stronę tytułową…",
+  },
+  movements: {
+    key: "archive.progress.live_movements",
+    pl: "wykrywam części…",
+  },
+  sung_text: {
+    key: "archive.progress.live_sung_text",
+    pl: "transkrybuję tekst spod nut…",
+  },
+  ipa: {
+    key: "archive.progress.live_ipa",
+    pl: "opracowuję wymowę (IPA)…",
+  },
+  translations: {
+    key: "archive.progress.live_translations",
+    pl: "tłumaczę…",
+  },
+};
+
+/**
+ * The materialising-record line for the `analyzing` step: what the model has
+ * already read (title, composer, movement count) plus the section it is
+ * writing right now — streamed live from the analysis call. Returns null when
+ * no preview is available, so callers can fall back to {@link liveIngestionLabel}.
+ */
+export const liveAnalysisDetail = (
+  t: TFunction,
+  preview: LiveAnalysisPreview | null | undefined,
+): string | null => {
+  if (!preview) return null;
+  const section = LIVE_SECTION_LABEL[preview.section];
+  if (!section) return null;
+  const parts: string[] = [];
+  if (preview.title) parts.push(`„${preview.title}"`);
+  if (preview.composer) parts.push(preview.composer);
+  if (preview.section !== "identity" && (preview.movements ?? 0) > 1) {
+    parts.push(
+      t("archive.progress.live_movement_count", "{{count}} części", {
+        count: preview.movements,
+      }),
+    );
+  }
+  parts.push(t(section.key, section.pl));
+  return parts.join(" · ");
+};
 
 /**
  * Best live label for an in-progress edition. Prefers the fine-grained step;

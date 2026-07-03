@@ -15,6 +15,7 @@
 
 import React, { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import {
   useDropzone,
   type FileRejection,
@@ -22,6 +23,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  ArrowRight,
   CheckCircle2,
   CircleAlert,
   FileText,
@@ -37,9 +39,14 @@ import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { INGESTION_STATUS } from "@/shared/types";
 
 import { useLiveIngestion, useUploadEdition } from "../api/archive.queries";
-import { isOverloadWait, liveIngestionLabel } from "../constants/ingestionProgress";
+import {
+  isOverloadWait,
+  liveAnalysisDetail,
+  liveIngestionLabel,
+} from "../constants/ingestionProgress";
 
 const fmtCents = (cents?: number): string =>
   cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
@@ -335,11 +342,11 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
         ? "uploading"
         : phase === "failed"
           ? "upload_failed"
-          : ingStatus === "FAIL"
+          : ingStatus === INGESTION_STATUS.FAILED
             ? "ingest_failed"
-            : ingStatus === "RDY "
+            : ingStatus === INGESTION_STATUS.READY
               ? "ready"
-              : ingStatus === "AWAI"
+              : ingStatus === INGESTION_STATUS.AWAITING
                 ? "awaiting"
                 : "ingesting"; // HTTP upload done, pipeline still running
 
@@ -394,7 +401,12 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           {view === "uploading" && <Caption color="muted">{progress}%</Caption>}
           {view === "ingesting" && (
             <Caption color={overloaded ? "gold" : "muted"}>
-              {liveIngestionLabel(t, ingStatus ?? "PEND", live?.ingestion_progress)}
+              {(!overloaded && liveAnalysisDetail(t, live?.live_preview)) ||
+                liveIngestionLabel(
+                  t,
+                  ingStatus ?? INGESTION_STATUS.PENDING,
+                  live?.ingestion_progress,
+                )}
             </Caption>
           )}
           {view === "ingesting" && (live?.ingestion_cost_cents_lifetime ?? 0) > 0 && (
@@ -404,7 +416,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           )}
           {view === "awaiting" && (
             <Caption color="muted">
-              {t("archive.upload.row_awaiting", "Gotowe — sprawdź i zatwierdź")}
+              {t("archive.upload.row_awaiting_short", "AI zakończył pracę")}
             </Caption>
           )}
           {view === "ready" && (
@@ -444,6 +456,19 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           </div>
         )}
       </div>
+      {view === "awaiting" && live?.piece_id && (
+        <Button
+          asChild
+          variant="outline"
+          size="sm"
+          rightIcon={<ArrowRight size={13} aria-hidden="true" />}
+          className="shrink-0"
+        >
+          <Link to={`/panel/archive-management/${live.piece_id}`}>
+            {t("archive.upload.row_review_cta", "Sprawdź i zatwierdź")}
+          </Link>
+        </Button>
+      )}
       {(phase === "succeeded" || phase === "failed") && (
         <Button
           variant="icon"

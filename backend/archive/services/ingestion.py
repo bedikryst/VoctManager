@@ -25,6 +25,7 @@ from dataclasses import dataclass
 from django.conf import settings
 from django.core.cache import cache
 from django.db import transaction
+from django.utils import timezone
 
 from archive.infrastructure.ai_client import CostCeilingExceeded
 from archive.models import IngestionStatus, Piece, ScoreEdition
@@ -82,14 +83,17 @@ def start_ingestion(edition: ScoreEdition, *, force: bool = False) -> IngestionT
         # Reset state for re-ingestion paths. The per-RUN cost ceiling applies
         # per run, so we clear that counter — but NOT the lifetime counter,
         # which records every dollar this PDF has ever cost. Provenance rows
-        # from prior runs stay.
+        # from prior runs stay. `ingestion_run_started_at` marks THIS dispatch:
+        # the UI's elapsed timer counts from it (created_at is the original
+        # upload date, which on a re-ingest can be days in the past).
         edition.ingestion_status = IngestionStatus.PENDING
         edition.ingestion_error = ''
         edition.ingestion_progress = ''
         edition.ingestion_cost_cents = 0
+        edition.ingestion_run_started_at = timezone.now()
         edition.save(update_fields=[
             'ingestion_status', 'ingestion_error', 'ingestion_progress',
-            'ingestion_cost_cents', 'updated_at',
+            'ingestion_cost_cents', 'ingestion_run_started_at', 'updated_at',
         ])
 
     # Clear any stale cancellation flag so a deliberate re-ingest of a
@@ -217,7 +221,16 @@ def _check_status(edition: ScoreEdition) -> None:
         IngestionStatus.ENRICHING,
         IngestionStatus.GENERATING,
     }
-    if edition.ingestion_status in blocking:
+    # A dispatched-but-not-yet-picked-up chain sits in PENDING; a second
+    # dispatch in that window would run (and bill) a duplicate chain. A FRESH
+    # row is also PENDING (model default) but has no run timestamp yet — that
+    # one must pass, it is the normal upload path. `force=True` remains the
+    # escape hatch for a chain that died before ever leaving PENDING.
+    already_queued = (
+        edition.ingestion_status == IngestionStatus.PENDING
+        and edition.ingestion_run_started_at is not None
+    )
+    if edition.ingestion_status in blocking or already_queued:
         raise IngestionPreconditionError(
             f"ScoreEdition {edition.id} is already mid-ingestion "
             f"(status={edition.get_ingestion_status_display()}). "

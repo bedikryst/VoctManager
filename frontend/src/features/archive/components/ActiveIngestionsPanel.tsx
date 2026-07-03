@@ -20,7 +20,11 @@ import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
 import type { ActiveIngestion } from "../api/archive.service";
-import { isOverloadWait, liveIngestionLabel } from "../constants/ingestionProgress";
+import {
+  isOverloadWait,
+  liveAnalysisDetail,
+  liveIngestionLabel,
+} from "../constants/ingestionProgress";
 
 const fmtCents = (cents?: number): string =>
   cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
@@ -84,8 +88,18 @@ interface ActiveRowProps {
 const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const overloaded = isOverloadWait(item.ingestion_progress);
-  const elapsed = Math.floor((now - new Date(item.created_at).getTime()) / 1000);
-  const title = item.piece_title?.trim() || item.original_filename;
+  // Elapsed counts from THIS run's dispatch. created_at is only the fallback
+  // (pre-migration rows): on a re-ingest it is the original upload date and
+  // would show an absurd multi-day timer.
+  const startedAt = item.ingestion_run_started_at ?? item.created_at;
+  const elapsed = Math.floor((now - new Date(startedAt).getTime()) / 1000);
+  // The streamed preview knows the work's real title seconds into the analysis
+  // — long before the resolver attaches a Piece (which is where piece_title
+  // comes from). Filename is the last resort.
+  const title =
+    item.piece_title?.trim() ||
+    item.live_preview?.title ||
+    item.original_filename;
 
   return (
     <li
@@ -110,7 +124,8 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
           {title}
         </Text>
         <Caption color={overloaded ? "gold" : "muted"} className="mt-0.5 block">
-          {liveIngestionLabel(t, item.ingestion_status, item.ingestion_progress)}
+          {(!overloaded && liveAnalysisDetail(t, item.live_preview)) ||
+            liveIngestionLabel(t, item.ingestion_status, item.ingestion_progress)}
         </Caption>
         <Caption color="muted" className="mt-0.5 block">
           {fmtElapsed(elapsed)} · {fmtCents(item.ingestion_cost_cents_lifetime)}

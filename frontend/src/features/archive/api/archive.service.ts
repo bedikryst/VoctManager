@@ -12,6 +12,7 @@ import type {
   Composer,
   IngestionProgressCode,
   IngestionStatusCode,
+  LiveAnalysisPreview,
   Movement,
   Piece,
   Recording,
@@ -81,9 +82,14 @@ export interface ActiveIngestion {
   ingestion_status: IngestionStatusCode;
   ingestion_status_display?: string;
   ingestion_progress?: IngestionProgressCode;
+  /** When THIS run was dispatched — elapsed timers count from here, not from
+   *  created_at (which, on a re-ingest, is the original upload date). */
+  ingestion_run_started_at?: string | null;
   ingestion_cost_cents?: number;
   ingestion_cost_cents_lifetime?: number;
   ingestion_error?: string;
+  /** Streaming partial-analysis preview; non-null only while Claude reads. */
+  live_preview?: LiveAnalysisPreview | null;
   created_at: string;
   updated_at: string;
 }

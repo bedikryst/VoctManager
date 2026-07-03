@@ -328,6 +328,17 @@ INGESTION_LIFETIME_CEILING_CENTS = env.int('INGESTION_LIFETIME_CEILING_CENTS', d
 # against a runaway loop or a bulk re-upload draining the API budget.
 INGESTION_DAILY_BUDGET_CENTS = env.int('INGESTION_DAILY_BUDGET_CENTS', default=2000)
 
+# The ensemble's primary language and the translation targets requested from
+# the analysis call. The analysis prompt's ECONOMY rules key off these: sung
+# text already in a target language is never "translated" into it, and a score
+# sung entirely in the primary language gets no IPA guide — both were pure
+# wasted output tokens (the most expensive kind) on the dominant Polish
+# repertoire. Comma-separated env override, e.g. `pl,en`.
+INGESTION_PRIMARY_LANGUAGE = env('INGESTION_PRIMARY_LANGUAGE', default='pl')
+INGESTION_TRANSLATION_LANGUAGES = env.list(
+    'INGESTION_TRANSLATION_LANGUAGES', default=['pl'],
+)
+
 # Anthropic SDK transient-retry budget (429/5xx/overloaded/connection). The SDK
 # backs off exponentially and honours `retry-after`; the Celery layer adds a far
 # more patient tier on top. The generous request timeout suits a worker and also

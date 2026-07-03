@@ -144,12 +144,24 @@ ANALYZE_SCORE = Prompt(
         "    Latin, German Bühnendeutsch, Parisian French.\n"
         "  - One IPA line per sung_text line, alignment exact.\n"
         # The glyph below IS the IPA primary stress mark the model must emit verbatim.
-        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n\n"  # noqa: RUF001
+        "  - Mark stressed syllables with the IPA primary stress mark (ˈ).\n"  # noqa: RUF001
+        "  - ECONOMY: the task message states the ensemble's primary language. "
+        "    If the sung text is ENTIRELY in that language, return an empty "
+        "    ipa_transcription — native singers need no pronunciation guide. "
+        "    If the text mixes languages (e.g. Polish and Latin verses), "
+        "    provide the full line-aligned guide as usual.\n\n"
 
         "== TRANSLATIONS ==\n"
         "  - Provide one prose translation per requested target language "
         "    (is_singable=false), for an audience programme book. Preserve "
         "    line breaks aligned to the original.\n"
+        "  - ECONOMY: never translate into a language the text is already in. "
+        "    If the sung text is ENTIRELY in a requested target language, omit "
+        "    that target. If it mixes languages, translate only into targets "
+        "    that add understanding (rendering the foreign-language lines; "
+        "    lines already in the target language may be copied to keep the "
+        "    line alignment). If no requested target remains, return an empty "
+        "    translations list.\n"
         "  - For liturgical Latin, prefer ecclesiastical English over "
         "    pre-Vatican-II English.\n\n"
 

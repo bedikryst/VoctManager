@@ -407,6 +407,25 @@ export type IngestionProgressCode =
   | "waiting_overload";
 
 /**
+ * Live partial-analysis preview, published (throttled, ~1.2s) by the backend
+ * while Claude streams its reading of the score — the record materialising in
+ * real time. Present only during the `analyzing` step; null/absent otherwise.
+ * Backend source of truth: `archive.tasks._LiveAnalysisProgress`.
+ */
+export interface LiveAnalysisPreview {
+  /** Which part of the record the model is writing right now. */
+  section: "identity" | "movements" | "sung_text" | "ipa" | "translations";
+  /** Work title, the moment it appears in the stream. */
+  title?: string | null;
+  /** Composer, the moment it appears in the stream. */
+  composer?: string | null;
+  /** Movements detected so far. */
+  movements?: number;
+  /** Raw streamed characters — a cheap liveness signal. */
+  chars?: number;
+}
+
+/**
  * Status codes as named constants. Always prefer these over string literals —
  * the backend stores 'RDY ' (with trailing space, max_length=4) and getting
  * the spacing wrong silently breaks comparisons.

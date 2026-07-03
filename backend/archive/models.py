@@ -351,6 +351,13 @@ class ScoreEdition(EnterpriseBaseModel):
                     "Blank when queued or finished."),
         verbose_name=_("Ingestion Progress Step"),
     )
+    ingestion_run_started_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the CURRENT ingestion run was dispatched. Reset on every "
+                    "(re)ingest — the live elapsed timer counts from here, not from "
+                    "created_at (which, on a re-ingest, can be days old)."),
+        verbose_name=_("Ingestion Run Started At"),
+    )
     ingestion_error = models.TextField(blank=True, verbose_name=_("Ingestion Error"))
 
     class Meta:

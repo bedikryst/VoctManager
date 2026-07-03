@@ -16,6 +16,7 @@ Standards: SaaS 2026, RFC 7807 (Global Exception Handling), Aggregate Roots.
 import logging
 import uuid
 
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
@@ -65,6 +66,7 @@ from .services.ingestion import (
     start_ingestion,
 )
 from .signals import piece_material_updated_event
+from .tasks import live_preview_cache_key
 
 logger = logging.getLogger(__name__)
 
@@ -647,7 +649,16 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
         serializer = ScoreEditionListSerializer(
             qs, many=True, context={'request': request},
         )
-        return Response(serializer.data)
+        rows = serializer.data
+        # Attach the live partial-analysis preview (published by the streaming
+        # callback while Claude reads the score) so the panel shows the record
+        # materialising — title, composer, current section — not just a label.
+        keys = {row['id']: live_preview_cache_key(row['id']) for row in rows}
+        found = cache.get_many(list(keys.values())) if keys else {}
+        for row in rows:
+            preview = found.get(keys[row['id']])
+            row['live_preview'] = preview if isinstance(preview, dict) else None
+        return Response(rows)
 
 
 # ===========================================================================

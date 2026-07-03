@@ -38,6 +38,7 @@ from collections.abc import AsyncIterator
 from typing import cast
 
 from asgiref.sync import sync_to_async
+from django.core.cache import cache
 from django.http import (
     Http404,
     HttpRequest,
@@ -50,6 +51,7 @@ from rest_framework.request import Request
 from rest_framework_simplejwt.exceptions import TokenError
 
 from archive.models import IngestionStatus, ScoreEdition
+from archive.tasks import live_preview_cache_key
 from core.authentication import CookieJWTAuthentication
 
 logger = logging.getLogger(__name__)
@@ -103,7 +105,15 @@ async def _snapshot(pk) -> dict | None:
     )
 
 
-def _format(event: str, snap: dict | None) -> str:
+async def _live_preview(pk) -> dict | None:
+    """The throttled partial-analysis preview the streaming callback publishes
+    while Claude reads the score (see `tasks._LiveAnalysisProgress`). Absent
+    (None) outside the analysis step."""
+    value = await cache.aget(live_preview_cache_key(str(pk)))
+    return value if isinstance(value, dict) else None
+
+
+def _format(event: str, snap: dict | None, live: dict | None = None) -> str:
     if snap is None:
         return f"event: {event}\ndata: {{}}\n\n"
     payload = {
@@ -114,6 +124,7 @@ def _format(event: str, snap: dict | None) -> str:
         'ingestion_cost_cents_lifetime': snap['ingestion_cost_cents_lifetime'],
         'page_count': snap['page_count'],
         'piece_id': str(snap['piece_id']) if snap['piece_id'] else None,
+        'live_preview': live,
     }
     return f"event: {event}\ndata: {json.dumps(payload)}\n\n"
 
@@ -131,19 +142,24 @@ async def _event_stream(pk) -> AsyncIterator[str]:
             yield _format('gone', None)
             return
 
+        live = await _live_preview(pk)
         signature = (
             snap['ingestion_status'],
             snap['ingestion_progress'],
             snap['ingestion_cost_cents'],
             snap['ingestion_error'],
+            # The preview mutates every ~1.2s during the analysis call — this
+            # is exactly what makes the stream feel alive while the DB row
+            # itself doesn't change for a minute.
+            json.dumps(live, sort_keys=True) if live else '',
         )
         now = time.monotonic()
         if signature != last_signature:
             last_signature = signature
             last_emit = now
-            yield _format('progress', snap)
+            yield _format('progress', snap, live)
             if snap['ingestion_status'] in _TERMINAL_STATUSES:
-                yield _format('done', snap)
+                yield _format('done', snap, live)
                 return
         elif now - last_emit >= _HEARTBEAT_EVERY_SECONDS:
             last_emit = now

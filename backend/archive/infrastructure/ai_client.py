@@ -15,9 +15,12 @@ Description:
          `ScoreEdition.ingestion_cost_cents`.
       3. **Cost ceiling** — `enforce_ceiling()` raises `CostCeilingExceeded`
          before a runaway loop drains the API account.
-      4. **Prompt caching** — system prompt always carries
-         `cache_control: ephemeral`. After the first call in a run, cache
-         reads should dominate. Audit via `usage.cache_read_input_tokens`.
+      4. **Prompt caching** — the system prompt always carries
+         `cache_control: ephemeral`, so concurrent/batch runs of the same
+         task within 5 minutes read it back at 0.1x. The PDF document block
+         is deliberately NOT cached: the v2 pipeline reads each PDF exactly
+         once, so a cache write there was a pure 1.25x premium on the
+         dominant input cost that almost never got a read.
       5. **Provenance** — every call emits the prompt version + model id, so
          the caller can stamp `ProvenanceRecord` rows with full attribution.
 
@@ -33,6 +36,7 @@ import base64
 import json
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import ROUND_UP, Decimal
 from typing import Any, Final, TypeVar
@@ -344,6 +348,7 @@ class AIClient:
         enable_thinking: bool = True,
         pdf_bytes: bytes | None = None,
         structured: bool = True,
+        on_text_delta: Callable[[str], None] | None = None,
     ) -> tuple[T, CallCost]:
         """
         Run one structured-output call. Returns the parsed Pydantic instance
@@ -356,8 +361,11 @@ class AIClient:
 
         When `pdf_bytes` is given, the raw PDF is sent as a native `document`
         block (Claude reads every page visually — text layer AND scanned
-        images), cached so escalation retries read it back cheaply. This is how
-        the v2 pipeline analyses a score: the real document, not pypdf text.
+        images). This is how the v2 pipeline analyses a score: the real
+        document, not pypdf text. The block is NOT cache-marked — each PDF is
+        read once per run, so a cache write is a 1.25x premium that (post the
+        strict=False parse fix) almost never earns its read back; the rare
+        `max_tokens` escalation simply re-bills the input at 1x.
 
         `structured=True` (default) uses the SDK's strict structured outputs
         (`output_format`). Set `structured=False` when the schema is too large
@@ -365,6 +373,14 @@ class AIClient:
         consolidated score analysis hits this): we then steer the shape via the
         prompt and parse the JSON ourselves. Claude 4.x follows an explicit
         schema-in-prompt reliably, and there is no complexity limit.
+
+        `on_text_delta` (unstructured path only) switches the call to the
+        streaming API and invokes the callback with each text fragment as the
+        model produces it — the live "AI is reading the score" feed. Streaming
+        costs exactly the same as a blocking call; the final message (usage,
+        stop_reason, content) is identical, so billing/retry logic is shared.
+        On a `max_tokens` escalation the callback keeps receiving deltas of the
+        fresh attempt (the consumer treats the feed as append-only).
 
         Raises `AIClientError` on any unrecoverable SDK error, or
         `AIClientOverloadedError` (retryable) on a transient capacity failure.
@@ -381,6 +397,8 @@ class AIClient:
             )
 
         if pdf_bytes is not None:
+            # No cache_control here — see the docstring. The system prompt
+            # (below) stays cached: it IS shared across runs/batch uploads.
             content_blocks: list[dict] = [{
                 "type": "document",
                 "source": {
@@ -388,7 +406,6 @@ class AIClient:
                     "media_type": "application/pdf",
                     "data": base64.standard_b64encode(pdf_bytes).decode("ascii"),
                 },
-                "cache_control": {"type": "ephemeral"},
             }]
             if isinstance(user_content, str):
                 content_blocks.append({"type": "text", "text": user_content + json_directive})
@@ -447,6 +464,14 @@ class AIClient:
             try:
                 if structured:
                     response = self._client.messages.parse(**params)
+                elif on_text_delta is not None:
+                    # Streaming variant of the unstructured path: same params,
+                    # same billing, same final message — plus a live feed of
+                    # the text as it is generated (the ingestion live preview).
+                    with self._client.messages.stream(**params) as stream:
+                        for text_piece in stream.text_stream:
+                            on_text_delta(text_piece)
+                        response = stream.get_final_message()
                 else:
                     response = self._client.messages.create(**params)
             except anthropic.BadRequestError as exc:

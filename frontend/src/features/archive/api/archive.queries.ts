@@ -458,6 +458,9 @@ export interface LiveIngestion {
   ingestion_cost_cents_lifetime: number;
   page_count: number | null;
   piece_id: string | null;
+  /** Streaming partial-analysis preview; non-null only while Claude reads the
+   *  score. Absent on the poll fallback (SSE-only signal). */
+  live_preview?: import("@/shared/types").LiveAnalysisPreview | null;
 }
 
 const SSE_BASE = import.meta.env.VITE_API_URL || "";

@@ -43,8 +43,11 @@ Standards: SaaS 2026, Celery 5.3, native-PDF vision, overload-aware.
 from __future__ import annotations
 
 import functools
+import json
 import logging
 import random
+import re
+import time
 from collections.abc import Callable
 from typing import Any, BinaryIO, cast
 from uuid import UUID
@@ -177,6 +180,100 @@ def cancel_cache_key(edition_id: str) -> str:
     """Redis key the guard polls to cooperatively stop an in-flight chain.
     Set by `services.ingestion.cancel_ingestion`, cleared on (re)dispatch."""
     return f"ingest:cancel:{edition_id}"
+
+
+def live_preview_cache_key(edition_id: str) -> str:
+    """Redis key holding the live partial-analysis preview for one edition —
+    written (throttled) by the streaming callback while Claude reads the score,
+    read by the SSE stream and the `active/` endpoint, deleted when the
+    analysis call returns."""
+    return f"ingest:live:{edition_id}"
+
+
+# ---------------------------------------------------------------------------
+# Live analysis preview — the "AI is reading the score" theatre
+# ---------------------------------------------------------------------------
+# The analysis call streams its JSON as it is generated. We scan the partial
+# text with cheap regexes (never a full JSON parse — it is incomplete by
+# definition) and publish a tiny snapshot to the cache: which section the model
+# is writing right now, the title/composer once they appear, the movement
+# count so far. Pure presentation — nothing downstream reads it back.
+
+_LIVE_TITLE_RE = re.compile(r'"title"\s*:\s*"((?:[^"\\]|\\.)*)"')
+_LIVE_COMPOSER_RE = re.compile(r'"composer_full_name"\s*:\s*"((?:[^"\\]|\\.)*)"')
+
+# Ordered by appearance in the schema; the LAST marker seen in the buffer is
+# the section the model is currently writing. `"sung_text"` does not collide
+# with `"sung_text_language"` — the trailing quote pins the exact key.
+_LIVE_SECTION_MARKERS: tuple[tuple[str, str], ...] = (
+    ('"movements"', 'movements'),
+    ('"sung_text"', 'sung_text'),
+    ('"ipa_transcription"', 'ipa'),
+    ('"translations"', 'translations'),
+)
+
+
+def _decode_partial_json_string(fragment: str) -> str:
+    """Decode a JSON string body captured by regex (handles \\u escapes)."""
+    try:
+        return cast("str", json.loads(f'"{fragment}"'))
+    except ValueError:
+        return fragment
+
+
+class _LiveAnalysisProgress:
+    """Accumulates streamed text deltas and publishes a throttled preview
+    snapshot to the cache. One instance per analysis call; `clear()` in a
+    `finally` so a finished/failed call never leaves a stale preview behind."""
+
+    EMIT_EVERY_SECONDS = 1.2
+    _MAX_LABEL_CHARS = 120
+
+    def __init__(self, edition_id: str) -> None:
+        self._key = live_preview_cache_key(edition_id)
+        self._chunks: list[str] = []
+        self._chars = 0
+        self._last_emit = 0.0
+
+    def feed(self, delta: str) -> None:
+        self._chunks.append(delta)
+        self._chars += len(delta)
+        now = time.monotonic()
+        if now - self._last_emit < self.EMIT_EVERY_SECONDS:
+            return
+        self._last_emit = now
+        cache.set(self._key, self._snapshot(), timeout=15 * 60)
+
+    def clear(self) -> None:
+        cache.delete(self._key)
+
+    def _snapshot(self) -> dict[str, Any]:
+        text = ''.join(self._chunks)
+        section = 'identity'
+        best = -1
+        for marker, name in _LIVE_SECTION_MARKERS:
+            idx = text.rfind(marker)
+            if idx > best:
+                best = idx
+                section = name
+
+        # First "title" in the buffer is the work title (identity leads the
+        # schema); movement titles come later and never win `.search`.
+        title_match = _LIVE_TITLE_RE.search(text)
+        composer_match = _LIVE_COMPOSER_RE.search(text)
+        return {
+            'section': section,
+            'title': (
+                _decode_partial_json_string(title_match.group(1))[:self._MAX_LABEL_CHARS]
+                if title_match else None
+            ),
+            'composer': (
+                _decode_partial_json_string(composer_match.group(1))[:self._MAX_LABEL_CHARS]
+                if composer_match else None
+            ),
+            'movements': text.count('"order_index"'),
+            'chars': self._chars,
+        }
 
 
 def _retry_or_fail(
@@ -399,11 +496,18 @@ def analyze_score(self, payload: dict) -> dict:
     edition.ingestion_progress = IngestionProgress.ANALYZING
     edition.save(update_fields=['ingestion_status', 'ingestion_progress', 'updated_at'])
 
-    # Default audience languages; configurable per ensemble in a later phase.
-    target_languages = ['en', 'pl']
+    # Audience languages + the ensemble's own language, from settings (env-
+    # overridable). The prompt's ECONOMY rules key off these: a score sung
+    # entirely in the primary language gets no IPA guide, and no target ever
+    # receives a translation of text already in that language — both were pure
+    # wasted output tokens on the (dominant) Polish repertoire.
+    target_languages = list(settings.INGESTION_TRANSLATION_LANGUAGES)
+    primary_language = settings.INGESTION_PRIMARY_LANGUAGE
     instructions = (
+        f"The ensemble's primary language is: {primary_language}.\n"
         "Analyse the attached score PDF. Provide prose translations of the sung "
-        f"text into these target languages: {', '.join(target_languages)}."
+        f"text into these target languages: {', '.join(target_languages)}. "
+        "Apply the ECONOMY rules for IPA and translations."
     )
 
     with edition.pdf_file.open('rb') as fh:
@@ -414,16 +518,26 @@ def analyze_score(self, payload: dict) -> dict:
     # IPA + translations) is too large for the SDK's strict `output_format`
     # validator — Anthropic rejects it with 400 "Schema is too complex". We send
     # the JSON Schema in the prompt and parse the model's JSON ourselves instead.
-    analysis, cost = client.parse(
-        model=AIModel.SONNET,
-        prompt=ANALYZE_SCORE,
-        user_content=instructions,
-        output_schema=ScoreAnalysisResult,
-        max_tokens=ANALYZE_MAX_TOKENS,
-        effort="medium",
-        pdf_bytes=pdf_bytes,
-        structured=False,
-    )
+    #
+    # `on_text_delta` streams the model's raw JSON as it is generated and
+    # publishes a throttled live preview (current section, title, composer,
+    # movement count) — the conductor watches the record materialise in real
+    # time over SSE instead of staring at one static label for a minute.
+    live = _LiveAnalysisProgress(str(edition.id))
+    try:
+        analysis, cost = client.parse(
+            model=AIModel.SONNET,
+            prompt=ANALYZE_SCORE,
+            user_content=instructions,
+            output_schema=ScoreAnalysisResult,
+            max_tokens=ANALYZE_MAX_TOKENS,
+            effort="medium",
+            pdf_bytes=pdf_bytes,
+            structured=False,
+            on_text_delta=live.feed,
+        )
+    finally:
+        live.clear()
     _bill_edition(edition, cost.total_cents)
 
     if analysis.confidence < MIN_IDENTITY_CONFIDENCE:
@@ -627,11 +741,12 @@ def generate_program_note(self, payload: dict) -> dict:
     existing = ProgramNote.objects.filter(
         piece=piece, project__isnull=True, language=language,
     )
-    if existing.exists():
-        if not payload.get('force_program_note'):
-            return payload
-        # Regenerate: soft-delete the stale note so they don't accumulate.
-        existing.delete()
+    if existing.exists() and not payload.get('force_program_note'):
+        return payload
+    # NB: on a forced regenerate the stale note is NOT deleted here — only
+    # after the new one has been generated (see the atomic swap below).
+    # Deleting up front left the piece with no note at all whenever the AI
+    # call then failed (budget, overload past the retry budget).
 
     composer = piece.composer
     composer_name = ''
@@ -676,19 +791,25 @@ def generate_program_note(self, payload: dict) -> dict:
     )
     _bill_edition(edition, cost.total_cents)
 
-    note = ProgramNote.objects.create(
-        piece=piece,
-        project=None,
-        language=language,
-        target_tone=tone,
-        word_count_target=250,
-        content=result.content,
-    )
-    provenance.record_ai(
-        target=note, field_name='content',
-        model_id=AIModel.SONNET,
-        prompt_version=GENERATE_PROGRAM_NOTE.version,
-    )
+    with transaction.atomic():
+        # Atomic swap: soft-delete the stale note (regenerate path) only now
+        # that its replacement exists, so a failed call never leaves a gap.
+        ProgramNote.objects.filter(
+            piece=piece, project__isnull=True, language=language,
+        ).delete()
+        note = ProgramNote.objects.create(
+            piece=piece,
+            project=None,
+            language=language,
+            target_tone=tone,
+            word_count_target=250,
+            content=result.content,
+        )
+        provenance.record_ai(
+            target=note, field_name='content',
+            model_id=AIModel.SONNET,
+            prompt_version=GENERATE_PROGRAM_NOTE.version,
+        )
     return payload
 
 
