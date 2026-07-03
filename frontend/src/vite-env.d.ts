@@ -19,8 +19,8 @@ interface ImportMeta {
 declare global {
   class CloseWatcher {
     constructor(options?: { signal?: AbortSignal });
-    oncancel: ((this: CloseWatcher, ev: Event) => any) | null;
-    onclose: ((this: CloseWatcher, ev: Event) => any) | null;
+    oncancel: ((this: CloseWatcher, ev: Event) => void) | null;
+    onclose: ((this: CloseWatcher, ev: Event) => void) | null;
     requestClose(): void;
     close(): void;
     destroy(): void;

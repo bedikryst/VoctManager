@@ -10,12 +10,22 @@
 
 import { useEffect } from "react";
 
+type CloseWatcherHandle = {
+  onclose: (() => void) | null;
+  destroy: () => void;
+};
+
+type CloseWatcherWindow = Window & {
+  CloseWatcher?: new () => CloseWatcherHandle;
+};
+
 export const useCloseWatcher = (isOpen: boolean, onClose: () => void): void => {
   useEffect(() => {
     if (!isOpen) return;
 
-    if ("CloseWatcher" in window) {
-      const watcher = new (window as any).CloseWatcher();
+    const closeWatcherWindow = window as CloseWatcherWindow;
+    if (closeWatcherWindow.CloseWatcher) {
+      const watcher = new closeWatcherWindow.CloseWatcher();
 
       watcher.onclose = () => {
         onClose();
