@@ -14,7 +14,6 @@ import { ArrowUpRight } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Divider } from "@/shared/ui/primitives/Divider";
-import { KineticText } from "@/shared/ui/kinematics/KineticText";
 
 const EtherealEasing = [0.16, 1, 0.3, 1] as const;
 
@@ -111,12 +110,9 @@ export function ArtifactCard({
           </motion.div>
         )}
 
-        <KineticText
-          as="h2"
-          text={title}
-          delay={0.2}
-          className="mb-6 max-w-2xl font-serif text-2xl lg:text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl"
-        />
+        <h2 className="mb-6 max-w-2xl font-serif text-2xl lg:text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl">
+          {title}
+        </h2>
 
         {subtitleSlot && (
           <motion.div
