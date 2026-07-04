@@ -28,7 +28,14 @@ from archive.infrastructure.wikidata_client import (
     WikidataClient,
     _claim_image,
 )
-from archive.models import Composer, Piece, ProvenanceRecord, ProvenanceSource
+from archive.models import (
+    Composer,
+    Movement,
+    Piece,
+    ProgramNote,
+    ProvenanceRecord,
+    ProvenanceSource,
+)
 from archive.services import enrichment
 from core.constants import AppRole
 from core.models import UserProfile
@@ -452,3 +459,165 @@ class UpdatePieceProvenanceTests(APITestCase):
         self.assertEqual(
             index[f"{self.piece.id}:musical_key"]["source"], ProvenanceSource.AI_OPUS,
         )
+
+
+class VerifyFieldEndpointTests(APITestCase):
+    """POST /api/pieces/{id}/verify_field/ marks an AI field human-verified —
+    it stamps MANUAL provenance WITHOUT changing the value, so a conductor can
+    clear a field they trust without re-typing it. It only accepts the piece's
+    own chip-bearing fields (and those of its own movements/translations); an
+    unknown field or a foreign object is rejected.
+    """
+
+    @staticmethod
+    def _user(username: str, email: str, role: str):
+        user = User.objects.create_user(username=username, email=email, password="pw123456")
+        UserProfile.objects.create(user=user, role=role)
+        return user
+
+    def setUp(self) -> None:
+        self.manager = self._user("mgr2", "mgr2@test.pl", AppRole.MANAGER)
+        self.artist = self._user("art2", "art2@test.pl", AppRole.ARTIST)
+        self.piece = Piece.objects.create(title="Ave Verum", musical_key="D")
+        self.movement = Movement.objects.create(
+            piece=self.piece, title="I. Kyrie", order_index=0,
+        )
+        piece_ct = ContentType.objects.get_for_model(Piece)
+        mvmt_ct = ContentType.objects.get_for_model(Movement)
+        ProvenanceRecord.objects.create(
+            content_type=piece_ct, object_id=self.piece.pk, field_name="title",
+            source=ProvenanceSource.AI_OPUS, model_version="claude-opus-4-8",
+        )
+        ProvenanceRecord.objects.create(
+            content_type=mvmt_ct, object_id=self.movement.pk, field_name="title",
+            source=ProvenanceSource.AI_OPUS, model_version="claude-opus-4-8",
+        )
+        self.url = f"/api/pieces/{self.piece.id}/verify_field/"
+
+    def _manual(self, object_id, field: str):
+        return ProvenanceRecord.objects.filter(
+            object_id=object_id, field_name=field, source=ProvenanceSource.MANUAL,
+        )
+
+    def test_requires_manager(self) -> None:
+        self.client.force_authenticate(self.artist)
+        resp = self.client.post(self.url, {"field": "title"}, format="json")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_verifying_a_piece_field_stamps_manual_without_changing_value(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(self.url, {"field": "title"}, format="json")
+
+        self.assertEqual(resp.status_code, 200)
+        self.piece.refresh_from_db()
+        self.assertEqual(self.piece.title, "Ave Verum")  # value untouched
+        manual = self._manual(self.piece.pk, "title")
+        self.assertTrue(manual.exists())
+        self.assertEqual(manual.latest("retrieved_at").source_reference, "mgr2@test.pl")
+        # The returned payload's provenance index shows the flip.
+        index = resp.json()["provenance"]
+        self.assertEqual(
+            index[f"{self.piece.id}:title"]["source"], ProvenanceSource.MANUAL,
+        )
+
+    def test_verifying_a_child_field_targets_the_child(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            self.url, {"field": "title", "object_id": str(self.movement.id)},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(self._manual(self.movement.pk, "title").exists())
+        # The piece's own title stays AI — only the movement was verified.
+        self.assertFalse(self._manual(self.piece.pk, "title").exists())
+
+    def test_unknown_field_is_rejected(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(self.url, {"field": "not_a_field"}, format="json")
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(self._manual(self.piece.pk, "not_a_field").exists())
+
+    def test_missing_field_is_rejected(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(self.url, {}, format="json")
+        self.assertEqual(resp.status_code, 400)
+
+    def test_foreign_object_is_rejected(self) -> None:
+        # An object_id that is not one of this piece's own children → 400, and
+        # nothing is stamped (guards against verifying arbitrary rows).
+        other_piece = Piece.objects.create(title="Other")
+        other_movement = Movement.objects.create(
+            piece=other_piece, title="Foreign", order_index=0,
+        )
+        self.client.force_authenticate(self.manager)
+        resp = self.client.post(
+            self.url, {"field": "title", "object_id": str(other_movement.id)},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertFalse(self._manual(other_movement.pk, "title").exists())
+
+
+class ProgramNoteEndpointTests(APITestCase):
+    """PATCH/DELETE /api/archive/program-notes/{id}/ let the conductor fix a
+    factual slip or a repeated phrase in the AI note by hand — a cheaper, more
+    surgical alternative to a full regenerate. Manager-only; delete soft-deletes.
+    """
+
+    @staticmethod
+    def _user(username: str, email: str, role: str):
+        user = User.objects.create_user(username=username, email=email, password="pw123456")
+        UserProfile.objects.create(user=user, role=role)
+        return user
+
+    def setUp(self) -> None:
+        self.manager = self._user("mgr3", "mgr3@test.pl", AppRole.MANAGER)
+        self.artist = self._user("art3", "art3@test.pl", AppRole.ARTIST)
+        self.piece = Piece.objects.create(title="Ave Verum")
+        self.note = ProgramNote.objects.create(
+            piece=self.piece, language="pl", content="Pierwotna treść notki.",
+        )
+        self.url = f"/api/archive/program-notes/{self.note.id}/"
+
+    def test_requires_manager(self) -> None:
+        self.client.force_authenticate(self.artist)
+        resp = self.client.patch(self.url, {"content": "Hack"}, format="json")
+        self.assertEqual(resp.status_code, 403)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "Pierwotna treść notki.")
+
+    def test_manager_can_edit_content(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(
+            self.url, {"content": "Poprawiona treść bez powtórzeń."}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.content, "Poprawiona treść bez powtórzeń.")
+
+    def test_project_and_word_count_target_are_read_only(self) -> None:
+        # Scope + length target belong to the generator; a hand-edit can't move
+        # the note to a project or rewrite its target — those keys are ignored.
+        self.client.force_authenticate(self.manager)
+        resp = self.client.patch(
+            self.url, {"word_count_target": 999}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.word_count_target, 250)
+
+    def test_manager_can_delete(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.delete(self.url)
+        self.assertEqual(resp.status_code, 204)
+        self.note.refresh_from_db()
+        self.assertTrue(self.note.is_deleted)  # EnterpriseBaseModel soft-delete
+
+    def test_list_filters_by_piece(self) -> None:
+        other = Piece.objects.create(title="Other")
+        ProgramNote.objects.create(piece=other, language="pl", content="Inna.")
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(f"/api/archive/program-notes/?piece={self.piece.id}")
+        self.assertEqual(resp.status_code, 200)
+        ids = {row["id"] for row in resp.json()}
+        self.assertEqual(ids, {str(self.note.id)})

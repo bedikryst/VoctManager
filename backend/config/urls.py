@@ -20,6 +20,7 @@ from archive.views import (
     MovementViewSet,
     PieceViewSet,
     PieceVoiceRequirementViewSet,
+    ProgramNoteViewSet,
     RecordingViewSet,
     ScoreEditionViewSet,
     TrackViewSet,
@@ -94,6 +95,7 @@ router.register(r'archive/annotations', AnnotationViewSet, basename='annotation'
 router.register(r'archive/movements', MovementViewSet, basename='movement')
 router.register(r'archive/translations', TranslationViewSet, basename='translation')
 router.register(r'archive/recordings', RecordingViewSet, basename='recording')
+router.register(r'archive/program-notes', ProgramNoteViewSet, basename='program-note')
 
 # --- System & Notifications ---
 router.register(r'notifications', NotificationViewSet, basename='notification')

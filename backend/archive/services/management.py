@@ -22,6 +22,7 @@ import logging
 from collections.abc import Sequence
 
 from django.db import transaction
+from django.db.models import Model
 
 from archive.dtos import PieceWriteDTO, VoiceRequirementDTO
 from archive.exceptions import PieceValidationException
@@ -162,6 +163,53 @@ class ArchiveManagementService:
             piece.id, piece.title, sorted(changed_fields),
         )
         return piece
+
+    @classmethod
+    def verify_piece_field(
+        cls, *, piece: Piece, field: str, object_id: str = "", actor_email: str = "",
+    ) -> None:
+        """Stamp MANUAL provenance for a single AI-extracted field the manager
+        has eyeballed and confirmed correct — WITHOUT changing its value. This
+        is the review-cockpit "this is already right" affordance: it flips the
+        field's chip from "AI · do sprawdzenia" to "Zweryfikowane" the same way
+        a hand-edit does, minus the edit.
+
+        The target must be the piece itself (``object_id`` blank or its own id)
+        or one of the piece's OWN movements/translations, and ``field`` must be
+        one the review cockpit renders a provenance chip for. Anything else
+        raises ``ValueError`` (surfaced by the view as HTTP 400) so a caller can
+        never stamp an arbitrary object/field it doesn't own.
+        """
+        target: Model
+        allowed: tuple[str, ...]
+        if not object_id or str(object_id) == str(piece.pk):
+            target, allowed = piece, _PROVENANCE_TRACKED_FIELDS
+        else:
+            target, allowed = cls._resolve_child_provenance_target(piece, object_id)
+        if field not in allowed:
+            raise ValueError(f"Field {field!r} is not verifiable on this object.")
+        provenance.record_manual(
+            target=target, field_name=field, actor_email=actor_email,
+        )
+        logger.info(
+            "piece.field_verified piece=%s object=%s field=%s",
+            piece.id, object_id or piece.id, field,
+        )
+
+    @staticmethod
+    def _resolve_child_provenance_target(
+        piece: Piece, object_id: str,
+    ) -> tuple[Model, tuple[str, ...]]:
+        """Find the piece's own movement/translation by id and return it with
+        the fields that carry a review chip. Rejects ids that don't belong to
+        this piece (or aren't a chip-bearing child) with ``ValueError``."""
+        movement = piece.movements.filter(pk=object_id).first()
+        if movement is not None:
+            return movement, ("title",)
+        translation = piece.translations.filter(pk=object_id).first()
+        if translation is not None:
+            return translation, ("text",)
+        raise ValueError("Object is not a verifiable child of this piece.")
 
     @classmethod
     def create_track(cls, validated_data: dict) -> Track:

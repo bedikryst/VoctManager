@@ -287,6 +287,19 @@ class RecordingWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'source_display']
 
 
+class ProgramNoteWriteSerializer(serializers.ModelSerializer):
+    """Read+write ProgramNote payload for `ProgramNoteViewSet`. The AI draft is
+    solid but occasionally leaves a factual slip or a repeated phrase; this lets
+    the conductor fix the note text in place instead of paying for a full
+    regenerate. `project`/`word_count_target` stay read-only — scope and length
+    target belong to the generator, not the hand-edit."""
+    class Meta:
+        model = ProgramNote
+        fields = ['id', 'piece', 'project', 'language', 'target_tone',
+                  'word_count_target', 'content', 'is_approved']
+        read_only_fields = ['id', 'project', 'word_count_target']
+
+
 # Hard limits on stored markup — defensive bounds so a malformed or hostile
 # payload can never bloat the row or persist a shape the renderer drops silently.
 _MAX_PATHS = 256

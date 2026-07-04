@@ -17,8 +17,10 @@ import logging
 import uuid
 
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Count, Q
+from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
@@ -54,6 +56,7 @@ from .serializers import (
     MovementWriteSerializer,
     PieceSerializer,
     PieceVoiceRequirementSerializer,
+    ProgramNoteWriteSerializer,
     RecordingWriteSerializer,
     ScoreEditionDetailSerializer,
     ScoreEditionListSerializer,
@@ -250,7 +253,7 @@ class PieceViewSet(viewsets.ModelViewSet):
         # Per-field provenance is one extra query; only the single-piece review
         # surfaces (detail / write responses) need it, never the list.
         ctx['include_provenance'] = self.action in (
-            'retrieve', 'create', 'update', 'partial_update',
+            'retrieve', 'create', 'update', 'partial_update', 'verify_field',
         )
         return ctx
 
@@ -298,6 +301,37 @@ class PieceViewSet(viewsets.ModelViewSet):
             {'celery_task_id': task_id, 'status': 'dispatched'},
             status=status.HTTP_202_ACCEPTED,
         )
+
+    @action(detail=True, methods=['post'], url_path='verify_field')
+    def verify_field(self, request, pk=None):
+        """Mark one AI-extracted field as human-verified — the review cockpit's
+        "this is already correct" affordance. Stamps MANUAL provenance without
+        touching the value, flipping the field's chip AI → verified.
+
+        Body: ``{"field": "<name>", "object_id": "<uuid>"?}``. ``object_id``
+        defaults to the piece; pass a movement/translation id to verify a child.
+        """
+        piece = self.get_object()
+        data = request.data if hasattr(request.data, 'get') else {}
+        field = str(data.get('field') or '').strip()
+        object_id = str(data.get('object_id') or '').strip()
+        if not field:
+            return Response(
+                {'detail': _('Field is required.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            services.ArchiveManagementService.verify_piece_field(
+                piece=piece, field=field, object_id=object_id,
+                actor_email=_actor_email(request),
+            )
+        except (ValueError, DjangoValidationError):
+            return Response(
+                {'detail': _('That field cannot be verified.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        piece.refresh_from_db()
+        return Response(self.get_serializer(piece).data)
 
 
 class TrackViewSet(viewsets.ModelViewSet):
@@ -409,6 +443,25 @@ class RecordingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsManager]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['piece', 'source']
+
+    def perform_destroy(self, instance) -> None:
+        instance.delete()  # EnterpriseBaseModel soft-delete
+
+
+class ProgramNoteViewSet(viewsets.ModelViewSet):
+    """Inline edit/delete for programme notes (manager-only).
+
+    The AI draft is good but occasionally leaves a factual slip or a repeated
+    phrase; this lets the conductor correct the note text in place instead of
+    paying for a full regenerate. Unlike movements/translations the note is not
+    a chip-backed field (it is shown in full, not summarised behind a provenance
+    chip), so a hand-edit here deliberately does NOT stamp provenance — there is
+    no AI baseline row to contrast against, and no chip that would read it."""
+    queryset = ProgramNote.objects.select_related('piece').order_by('-created_at')
+    serializer_class = ProgramNoteWriteSerializer
+    permission_classes = [permissions.IsAuthenticated, IsManager]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['piece', 'project', 'language']
 
     def perform_destroy(self, instance) -> None:
         instance.delete()  # EnterpriseBaseModel soft-delete
