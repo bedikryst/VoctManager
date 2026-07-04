@@ -4,7 +4,7 @@
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -60,6 +60,7 @@ class PieceWriteDTO(EnterpriseBaseDTO):
     opus_catalog: str = Field(default="", max_length=40)
     musical_key: str = Field(default="", max_length=20)
     text_source: str = Field(default="", max_length=200)
+    starting_pitches: list[dict[str, Any]] | None = None
 
     voice_requirements: tuple[VoiceRequirementDTO, ...] | None = None
 

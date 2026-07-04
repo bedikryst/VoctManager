@@ -32,6 +32,8 @@ def normalize_timezone_name(timezone_name: str | None, fallback_timezone: str) -
 def format_event_time(value: datetime, timezone_name: str | None, fallback_timezone: str) -> str:
     """Render an event datetime in its own venue timezone for channel copy."""
     resolved_timezone = normalize_timezone_name(timezone_name, fallback_timezone)
+    if value.tzinfo is None:
+        return value.strftime(EVENT_TIME_DISPLAY_FORMAT)
     try:
         local_value = value.astimezone(ZoneInfo(resolved_timezone))
     except (TypeError, ValueError):

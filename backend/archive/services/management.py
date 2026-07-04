@@ -96,6 +96,8 @@ class ArchiveManagementService:
         piece.musical_key = cls._normalize_blank_text(dto.musical_key)
         piece.text_source = cls._normalize_blank_text(dto.text_source)
         piece.lyrics_ipa = cls._normalize_blank_text(dto.lyrics_ipa)
+        if dto.starting_pitches is not None:
+            piece.starting_pitches = dto.starting_pitches
 
         return {
             name

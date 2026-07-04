@@ -831,5 +831,6 @@ class PieceSerializer(serializers.ModelSerializer):
             opus_catalog=pick('opus_catalog', ''),
             musical_key=pick('musical_key', ''),
             text_source=pick('text_source', ''),
+            starting_pitches=pick('starting_pitches', []),
             voice_requirements=req_dtos,
         )
