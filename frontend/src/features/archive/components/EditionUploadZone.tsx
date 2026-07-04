@@ -203,6 +203,12 @@ export const EditionUploadZone = ({
     [uploads],
   );
 
+  const zoneTitle = isDragActive
+    ? t("archive.upload.drop_active", "Upuść tutaj, by dodać do kolejki")
+    : pieceId
+      ? t("archive.upload.title_existing", "Dodaj kolejne wydanie tego utworu")
+      : t("archive.upload.title", "Przeciągnij PDF-y partytur");
+
   const dropzone = (
     <>
       <div
@@ -214,7 +220,7 @@ export const EditionUploadZone = ({
               : "border-ethereal-incense/30 hover:border-ethereal-gold/40 hover:bg-ethereal-parchment/30",
             isFocused &&
               "ring-2 ring-ethereal-gold/40 ring-offset-2 ring-offset-transparent",
-            compact && "py-8",
+            compact && "py-6",
           ),
           "aria-label": t(
             "archive.upload.dropzone_aria",
@@ -236,21 +242,25 @@ export const EditionUploadZone = ({
         >
           <UploadCloud size={26} strokeWidth={1.6} />
         </motion.div>
-        <Heading as="h3" size="lg" weight="medium">
-          {isDragActive
-            ? t("archive.upload.drop_active", "Upuść tutaj, by dodać do kolejki")
-            : pieceId
-              ? t(
-                  "archive.upload.title_existing",
-                  "Dodaj kolejne wydanie tego utworu",
-                )
-              : t("archive.upload.title", "Przeciągnij PDF-y partytur")}
-        </Heading>
+        {compact ? (
+          <Text weight="semibold" size="sm">
+            {zoneTitle}
+          </Text>
+        ) : (
+          <Heading as="h3" size="lg" weight="medium">
+            {zoneTitle}
+          </Heading>
+        )}
         <Text color="muted" size="sm">
-          {t(
-            "archive.upload.subtitle",
-            "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
-          )}
+          {pieceId
+            ? t(
+                "archive.upload.subtitle_existing",
+                "Bärenreiter, IMSLP, własna aranżacja — przeciągnij lub kliknij, by wybrać · max 50 MB",
+              )
+            : t(
+                "archive.upload.subtitle",
+                "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
+              )}
         </Text>
       </div>
 

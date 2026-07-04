@@ -29,19 +29,27 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
-import { ProgramNotesList } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
-import type { Movement, Piece, Recording, Translation } from "@/shared/types";
+import type {
+  Movement,
+  Piece,
+  ProgramNote,
+  Recording,
+  Translation,
+} from "@/shared/types";
 
 import {
   archiveKeys,
   useDeleteMovement,
+  useDeleteProgramNote,
   useDeleteRecording,
   useDeleteTranslation,
   useGenerateProgramNote,
   useUpdateMovement,
+  useUpdateProgramNote,
   useUpdateRecording,
   useUpdateTranslation,
+  useVerifyPieceField,
 } from "../api/archive.queries";
 import { ProvenanceChip, childFieldProvenance } from "./ProvenanceChip";
 
@@ -140,6 +148,7 @@ const MovementRow = ({
   const { t } = useTranslation();
   const update = useUpdateMovement();
   const remove = useDeleteMovement();
+  const verify = useVerifyPieceField();
   const pieceId = String(piece.id);
 
   const [title, setTitle] = useState(movement.title);
@@ -170,7 +179,21 @@ const MovementRow = ({
         <Caption color="muted" className="font-mono">
           {movement.order_index + 1}.
         </Caption>
-        <ProvenanceChip entry={childFieldProvenance(piece, movement.id, "title")} />
+        <ProvenanceChip
+          entry={childFieldProvenance(piece, movement.id, "title")}
+          onVerify={() =>
+            verify.mutate(
+              { pieceId, field: "title", objectId: movement.id },
+              {
+                onError: () =>
+                  toast.error(
+                    t("archive.review.verify_failed", "Nie udało się oznaczyć pola."),
+                  ),
+              },
+            )
+          }
+          isVerifying={verify.isPending}
+        />
         {movement.starts_on_page ? (
           <Caption color="muted">
             {t("archive.review.page_short", "str.")} {movement.starts_on_page}
@@ -253,6 +276,7 @@ const TranslationRow = ({
   const { t } = useTranslation();
   const update = useUpdateTranslation();
   const remove = useDeleteTranslation();
+  const verify = useVerifyPieceField();
   const pieceId = String(piece.id);
 
   const [text, setText] = useState(translation.text);
@@ -265,7 +289,21 @@ const TranslationRow = ({
         <span className="rounded-md border border-ethereal-incense/30 bg-ethereal-parchment px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ethereal-graphite">
           {translation.target_language}
         </span>
-        <ProvenanceChip entry={childFieldProvenance(piece, translation.id, "text")} />
+        <ProvenanceChip
+          entry={childFieldProvenance(piece, translation.id, "text")}
+          onVerify={() =>
+            verify.mutate(
+              { pieceId, field: "text", objectId: translation.id },
+              {
+                onError: () =>
+                  toast.error(
+                    t("archive.review.verify_failed", "Nie udało się oznaczyć pola."),
+                  ),
+              },
+            )
+          }
+          isVerifying={verify.isPending}
+        />
         {translation.is_singable ? (
           <Caption color="muted">{t("archive.review.singable", "śpiewne")}</Caption>
         ) : null}
@@ -460,6 +498,111 @@ const RecordingRow = ({
 const POLL_MS = 4000;
 const MAX_POLLS = 20; // ~80s ceiling
 
+const wordCount = (text: string): number => {
+  const trimmed = text.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+};
+
+// ---------------------------------------------------------------------------
+// A single editable note. The AI draft is good but occasionally leaves a
+// factual slip or a repeated phrase; the conductor fixes the text in place here
+// — a cheaper, more surgical alternative to a full regenerate. Its local buffer
+// is keyed on the note id, so a regenerate (new id) always reseeds it.
+// ---------------------------------------------------------------------------
+
+const ProgramNoteEditor = ({
+  piece,
+  note,
+}: {
+  readonly piece: Piece;
+  readonly note: ProgramNote;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const update = useUpdateProgramNote();
+  const remove = useDeleteProgramNote();
+  const pieceId = String(piece.id);
+
+  const [content, setContent] = useState(note.content);
+  const dirty = content.trim() !== note.content.trim();
+
+  const save = (): void => {
+    const next = content.trim();
+    if (!next) {
+      toast.error(t("archive.review.note_empty", "Notka nie może być pusta."));
+      return;
+    }
+    update.mutate(
+      { id: note.id, pieceId, data: { content: next } },
+      {
+        onSuccess: () =>
+          toast.success(t("archive.review.note_saved", "Zapisano notkę.")),
+        onError: () =>
+          toast.error(t("archive.review.save_failed", "Nie udało się zapisać.")),
+      },
+    );
+  };
+
+  return (
+    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="rounded-md border border-ethereal-incense/30 bg-ethereal-parchment px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ethereal-graphite">
+          {note.language}
+        </span>
+        {note.target_tone ? (
+          <Caption color="muted">{note.target_tone}</Caption>
+        ) : null}
+        {note.is_approved ? (
+          <Caption color="muted">
+            {t("repertoire.program_notes.approved", "zatwierdzona")}
+          </Caption>
+        ) : null}
+        <div className="ml-auto">
+          <DeleteButton
+            onConfirm={() =>
+              remove.mutate(
+                { id: note.id, pieceId },
+                {
+                  onSuccess: () =>
+                    toast.success(
+                      t("archive.review.note_deleted", "Usunięto notkę."),
+                    ),
+                  onError: () =>
+                    toast.error(
+                      t("archive.review.delete_failed", "Nie udało się usunąć."),
+                    ),
+                },
+              )
+            }
+            isPending={remove.isPending}
+            label={t("archive.review.delete_note", "Usuń notkę")}
+          />
+        </div>
+      </div>
+      <Textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        rows={8}
+        aria-label={t("archive.review.note_content", "Treść notki programowej")}
+      />
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <Caption color="muted">
+          {t("archive.review.note_words", "Słowa")}: {wordCount(content)}
+        </Caption>
+        {dirty ? (
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={save}
+            isLoading={update.isPending}
+          >
+            {t("archive.review.save_row", "Zapisz")}
+          </Button>
+        ) : null}
+      </div>
+    </li>
+  );
+};
+
 export const ProgramNoteSection = ({
   piece,
 }: {
@@ -470,6 +613,7 @@ export const ProgramNoteSection = ({
   const generate = useGenerateProgramNote();
   const pieceId = String(piece.id);
 
+  const notes = piece.program_notes ?? [];
   const note = canonicalNote(piece);
   const noteId = note?.id ?? null;
 
@@ -525,8 +669,12 @@ export const ProgramNoteSection = ({
 
   return (
     <div className="space-y-3">
-      {note ? (
-        <ProgramNotesList notes={piece.program_notes ?? []} />
+      {notes.length > 0 ? (
+        <ul role="list" className="space-y-3">
+          {notes.map((n) => (
+            <ProgramNoteEditor key={n.id} piece={piece} note={n} />
+          ))}
+        </ul>
       ) : (
         <Text size="sm" color="muted">
           {t(

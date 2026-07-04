@@ -17,13 +17,14 @@ import { useTranslation } from "react-i18next";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
+import { getDateFnsLocale } from "@/shared/lib/time/dateFnsLocale";
 import {
+  BookOpen,
   CheckCircle2,
-  FileDown,
+  FileText,
   Globe,
   Lock,
   RefreshCcw,
-  SquarePen,
   Trash2,
 } from "lucide-react";
 
@@ -51,6 +52,25 @@ import {
 // Order the licence picker top-to-bottom by how common each status is for this
 // (mostly public-domain) choir; UNKNOWN last as the "not yet triaged" default.
 const LICENSE_ORDER: readonly ScoreLicenseType[] = ["PD", "LC", "PDG", "UNK"];
+
+const fmtCost = (cents: number | undefined): string => {
+  const value = cents ?? 0;
+  if (value <= 0) return "—";
+  if (value < 100) return `${value}¢`;
+  return `$${(value / 100).toFixed(2)}`;
+};
+
+const fmtRelative = (iso: string | undefined, language?: string): string => {
+  if (!iso) return "";
+  try {
+    return formatDistanceToNow(new Date(iso), {
+      addSuffix: true,
+      locale: getDateFnsLocale(language),
+    });
+  } catch {
+    return iso;
+  }
+};
 
 /**
  * Per-edition licence control (manager-only Archive). Sets the copyright status
@@ -161,6 +181,21 @@ const EditionLicenseControl = ({
           </>
         )}
       </Caption>
+
+      {(edition.ingestion_cost_cents ?? 0) > 0 && (
+        <Caption
+          color="muted"
+          className="ml-auto inline-flex items-center gap-1 whitespace-nowrap tabular-nums"
+          title={t(
+            "archive.editions.ai_cost_title",
+            "Łączny koszt analizy AI tego wydania (kumulatywny).",
+          )}
+        >
+          {t("archive.editions.ai_cost", "Koszt AI: {{cost}}", {
+            cost: fmtCost(edition.ingestion_cost_cents),
+          })}
+        </Caption>
+      )}
     </div>
   );
 };
@@ -169,26 +204,10 @@ interface EditionsListProps {
   readonly editions: readonly ScoreEditionSummary[];
 }
 
-const fmtCost = (cents: number | undefined): string => {
-  const value = cents ?? 0;
-  if (value <= 0) return "—";
-  if (value < 100) return `${value}¢`;
-  return `$${(value / 100).toFixed(2)}`;
-};
-
-const fmtRelative = (iso: string | undefined): string => {
-  if (!iso) return "";
-  try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true });
-  } catch {
-    return iso;
-  }
-};
-
 export const EditionsList = ({
   editions,
 }: EditionsListProps): React.JSX.Element | null => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [pendingApproveId, setPendingApproveId] = useState<string | null>(null);
   const [pendingReingestId, setPendingReingestId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -280,7 +299,7 @@ export const EditionsList = ({
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
                     aria-hidden="true"
                   >
-                    <FileDown size={16} strokeWidth={1.6} />
+                    <FileText size={16} strokeWidth={1.6} />
                   </span>
                   <div className="min-w-0">
                     <Text
@@ -306,8 +325,7 @@ export const EditionsList = ({
                               { count: edition.page_count },
                             )
                           : null,
-                        fmtRelative(edition.created_at),
-                        fmtCost(edition.ingestion_cost_cents),
+                        fmtRelative(edition.created_at, i18n.language),
                       ]
                         .filter(Boolean)
                         .join(" · ")}
@@ -332,7 +350,7 @@ export const EditionsList = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        leftIcon={<SquarePen size={13} aria-hidden="true" />}
+                        leftIcon={<BookOpen size={13} aria-hidden="true" />}
                         onClick={() => setOpenEditionId(edition.id)}
                       >
                         {t("archive.editions.open", "Otwórz")}
@@ -359,7 +377,7 @@ export const EditionsList = ({
                         "Uruchom pipeline ponownie (naliczy nowe koszty AI)",
                       )}
                     >
-                      {t("archive.editions.reingest", "Re-run")}
+                      {t("archive.editions.reingest", "Ponów analizę")}
                     </Button>
                     <Button
                       variant="icon"

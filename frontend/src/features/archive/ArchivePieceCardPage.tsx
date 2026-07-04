@@ -35,13 +35,15 @@ import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
+  Check,
   ChevronRight,
   Disc3,
-  Download,
   FileText,
   Languages,
   Library,
   Music2,
+  PenLine,
   ScrollText,
   ShieldCheck,
   SlidersHorizontal,
@@ -50,7 +52,6 @@ import {
 
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -60,8 +61,9 @@ import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typograp
 import { ComposerCard, WorkIdentifiersGrid } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
 import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
+import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { MaterialsService } from "@/features/materials/api/materials.service";
-import { useScoreAnnotator } from "@/features/annotations";
+import { ScoreStandModal, useScoreAnnotator } from "@/features/annotations";
 import { useVoiceLines } from "@/shared/api/options.queries";
 
 import {
@@ -71,6 +73,7 @@ import {
   usePiece,
   usePieces,
   useUpdatePiece,
+  useVerifyPieceField,
 } from "./api/archive.queries";
 import type { PiecePatchDTO, VoiceRequirementDTO } from "./types/archive.dto";
 import { AIHallucinationWarning } from "./components/AIHallucinationWarning";
@@ -81,6 +84,8 @@ import { DivisiEditor } from "./components/DivisiEditor";
 import {
   ProvenanceChip,
   pieceFieldProvenance,
+  pieceReviewProgress,
+  type ReviewProgress,
 } from "./components/ProvenanceChip";
 import {
   MovementsEditor,
@@ -159,7 +164,7 @@ const CockpitSection = ({
             {icon}
           </span>
         )}
-        <Eyebrow color="muted" size="caption" className="flex-1">
+        <Eyebrow color="graphite" size="base" className="flex-1">
           {label}
         </Eyebrow>
         {typeof count === "number" && (
@@ -190,6 +195,170 @@ const CockpitSection = ({
         )}
       </AnimatePresence>
     </GlassCard>
+  );
+};
+
+/**
+ * A titled sub-block inside a cockpit section. The gradient hairline beside the
+ * title reads as a divider, so related fields cluster (Identity / Musical / Text)
+ * instead of pooling into one undifferentiated stack — the layout controls its
+ * own inner grid via `className`.
+ */
+const FieldGroup = ({
+  title,
+  className,
+  children,
+}: {
+  title: string;
+  className?: string;
+  children: React.ReactNode;
+}): React.JSX.Element => (
+  <div className="space-y-3">
+    <div className="flex items-center gap-2.5">
+      <Eyebrow color="graphite" size="caption" className="shrink-0">
+        {title}
+      </Eyebrow>
+      <span
+        aria-hidden="true"
+        className="h-px flex-1 bg-gradient-to-r from-ethereal-incense/25 to-transparent"
+      />
+    </div>
+    <div className={className}>{children}</div>
+  </div>
+);
+
+/** One entry in the review meter's legend: a tone dot + count. */
+const LegendDot = ({
+  toneClass,
+  label,
+}: {
+  toneClass: string;
+  label: string;
+}): React.JSX.Element => (
+  <span className="inline-flex items-center gap-1.5">
+    <span
+      aria-hidden="true"
+      className={cn("h-2 w-2 rounded-full border", toneClass)}
+    />
+    <Text as="span" size="xs" color="muted">
+      {label}
+    </Text>
+  </span>
+);
+
+/** The metadata fields that carry AI provenance and drive the review meter —
+ *  exactly the set that renders a provenance chip below. */
+const METADATA_PROVENANCE_FIELDS = [
+  "title", "arranger", "opus_catalog", "musical_key", "language",
+  "voicing", "epoch", "text_source", "lyrics_original", "lyrics_ipa",
+] as const;
+
+/**
+ * Lifts the native <Select> from its faint incense/alabaster fill to the firmer
+ * gold-on-marble treatment the <Input> already uses, so the two field primitives
+ * read as siblings across this dense form. Page-scoped via `className` + twMerge
+ * — the shared Select default is deliberately left untouched.
+ */
+const FIELD_SELECT_CLASS =
+  "bg-ethereal-marble/90 border-ethereal-gold/35 hover:border-ethereal-gold/55 focus:border-ethereal-gold/70";
+
+/**
+ * Trust scoreboard for the metadata section: gives the per-field provenance dots
+ * a job (a target to drive to zero) and a sense of closure the loose pills never
+ * offered. Hidden entirely for manually-authored pieces (no provenance at all).
+ * The bar animates via `scaleX` (transform-only), per the motion guidelines.
+ */
+const MetadataReviewMeter = ({
+  progress,
+  active,
+}: {
+  progress: ReviewProgress;
+  active: boolean;
+}): React.JSX.Element | null => {
+  const { t } = useTranslation();
+  if (progress.total === 0) return null;
+
+  // Calm state (piece already published, no edition awaiting review): a full
+  // progress bar reading "Zweryfikowano 0 z 9 · 0%" nags about a review that
+  // isn't happening. Say nothing when nothing's pending; otherwise a single
+  // quiet amethyst line — no bar, no percentage, no legend.
+  if (!active) {
+    if (progress.pending === 0) return null;
+    return (
+      <div className="mb-5 flex items-center gap-2">
+        <span
+          aria-hidden="true"
+          className="h-2 w-2 shrink-0 rounded-full border border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
+        />
+        <Text as="span" size="sm" color="muted">
+          {t(
+            "archive.piece_card.review_remaining",
+            "Do sprawdzenia pozostało: {{count}} pól",
+            { count: progress.pending },
+          )}
+        </Text>
+      </div>
+    );
+  }
+
+  // Live review: keep the bar (it's the whole point), but drop the redundant
+  // "%" — the "X z Y" line and the bar already carry the ratio.
+  const ratio = progress.verified / progress.total;
+  const allClear = progress.pending === 0;
+  return (
+    <div className="mb-5 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/50 px-4 py-3">
+      <div className="flex items-center gap-2">
+        {allClear ? (
+          <ShieldCheck
+            size={14}
+            className="text-ethereal-sage"
+            aria-hidden="true"
+          />
+        ) : (
+          <Sparkles
+            size={14}
+            className="text-ethereal-amethyst"
+            aria-hidden="true"
+          />
+        )}
+        <Text as="span" size="sm" weight="medium">
+          {allClear
+            ? t(
+                "archive.piece_card.review_all_clear",
+                "Wszystkie pola zweryfikowane",
+              )
+            : t(
+                "archive.piece_card.review_progress",
+                "Zweryfikowano {{verified}} z {{total}}",
+                { verified: progress.verified, total: progress.total },
+              )}
+        </Text>
+      </div>
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-ethereal-incense/15">
+        <div
+          className="h-full origin-left rounded-full bg-ethereal-sage transition-transform duration-500"
+          style={{ transform: `scaleX(${ratio})` }}
+        />
+      </div>
+      {progress.pending > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <LegendDot
+            toneClass="border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
+            label={t("archive.piece_card.legend_ai", "Do sprawdzenia: {{count}}", {
+              count: progress.pending,
+            })}
+          />
+          <LegendDot
+            toneClass="border-ethereal-sage/45 bg-ethereal-sage/15"
+            label={t(
+              "archive.piece_card.legend_verified",
+              "Zweryfikowane: {{count}}",
+              { count: progress.verified },
+            )}
+          />
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -262,6 +431,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const updatePiece = useUpdatePiece();
   const createComposer = useCreateComposer();
   const approveEdition = useApproveEdition();
+  const verifyField = useVerifyPieceField();
 
   const cardPath = (pieceId: string | number): string =>
     `/panel/archive-management/${pieceId}`;
@@ -272,6 +442,13 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     editionId: piece ? getPrimaryPdf(piece)?.id ?? null : null,
     mode: "conductor",
   });
+
+  // Below lg the inline viewer letterboxes a tiny page under an overlapping
+  // pager; there the score opens full-screen in the shared stand instead. Gated
+  // by a media query (not just CSS) so the heavy inline PdfViewer never mounts
+  // on phones.
+  const isDesktopScore = useMediaQuery("(min-width: 1024px)");
+  const [isScoreOpen, setIsScoreOpen] = useState(false);
 
   // ---- Scalar form (RHF) -------------------------------------------------
   const initial = useMemo<PieceCardFormValues>(() => {
@@ -343,6 +520,28 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const removeRequirement = useCallback((index: number) => {
     setRequirements((prev) => prev.filter((_, i) => i !== index));
   }, []);
+
+  // Click-to-verify: stamp MANUAL provenance for a field the manager confirms is
+  // already correct, without an edit (the chip flips AI → verified). `objectId`
+  // targets a movement/translation; omit it for a field on the piece itself.
+  const handleVerifyField = useCallback(
+    (field: string, objectId?: string): void => {
+      if (!piece) return;
+      verifyField.mutate(
+        { pieceId: String(piece.id), field, objectId },
+        {
+          onError: () =>
+            toast.error(
+              t(
+                "archive.piece_card.verify_failed",
+                "Nie udało się oznaczyć pola jako poprawne.",
+              ),
+            ),
+        },
+      );
+    },
+    [piece, verifyField, t],
+  );
 
   const composerDirty = isAddingComposer || composerId !== initialComposerId;
   const requirementsDirty = useMemo(
@@ -532,8 +731,19 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     });
   };
 
+  // One unified dot everywhere (metadata + artifacts), each a click-to-verify
+  // control for the AI fields — no more mix of loud pills and quiet dots.
+  const reviewProgress = pieceReviewProgress(piece, METADATA_PROVENANCE_FIELDS);
   const fieldChip = (field: string): React.ReactNode => (
-    <ProvenanceChip entry={pieceFieldProvenance(piece, field)} />
+    <ProvenanceChip
+      entry={pieceFieldProvenance(piece, field)}
+      onVerify={() => handleVerifyField(field)}
+      isVerifying={
+        verifyField.isPending &&
+        !verifyField.variables?.objectId &&
+        verifyField.variables?.field === field
+      }
+    />
   );
   const epochOptions = getArchiveEpochOptions(t);
   // Localised language dropdown over the canonical ISO value; any non-plain
@@ -550,10 +760,18 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
       : languageOptions;
 
   return (
-    <PageTransition>
-      <div className="flex h-[calc(100vh-4rem)] flex-col">
-        {/* Header */}
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-ethereal-incense/15 px-4 py-3 md:px-6">
+    // The shell's <main> is flex-1 inside a min-h-screen container, so a plain
+    // flex-1/h-full here is NOT a definite height — the page grows to its own
+    // content and the left score pane stretches to that whole length (a tiny
+    // page floating over a tall black void). Bind to the viewport instead, minus
+    // <main>'s own chrome: its vertical padding (~3rem) plus, on touch, the
+    // mobile nav dock (--nav-dock-h, which is 0 on a fine pointer). Now only the
+    // data panel scrolls and the score pane stays put — the MessagesPage dvh
+    // pattern, made nav-dock-aware.
+    <div className="flex h-[calc(100dvh-var(--nav-dock-h)-3rem)] flex-col gap-4 md:gap-5">
+        {/* Header — floats above the panels; the gutter separates it, no hard
+            full-bleed rule (the app has none anywhere else). */}
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             <Button
               asChild
@@ -597,54 +815,89 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
           )}
         </header>
 
-        {/* Body — split score preview / data */}
-        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          {/* Score preview */}
+        {/* Body — two floating glass panels with a gutter between them (the
+            canvas breathes through the seam instead of a hard 1px rule). */}
+        <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:gap-5">
+          {/* Score preview — the elevated hero panel: rounded so the PDF's own
+              corners round with it, resting on a soft glass shadow. */}
           <section
-            className="relative shrink-0 border-b border-ethereal-incense/15 lg:w-1/2 lg:border-b-0 lg:border-r"
+            className="relative shrink-0 overflow-hidden rounded-3xl border border-glass-border bg-glass-surface shadow-glass-ethereal lg:w-1/2"
             aria-label={t(
               "archive.piece_card.pdf_preview_aria",
               "Podgląd PDF partytury",
             )}
           >
             {primaryPdf ? (
-              <div className="flex h-[50vh] flex-col lg:h-full">
-                <div className="flex shrink-0 items-center justify-between gap-2 border-b border-ethereal-incense/10 bg-ethereal-alabaster/40 px-3 py-2">
-                  <Caption color="muted" className="truncate">
-                    {primaryPdf.label}
-                    {primaryPdf.page_count
-                      ? ` · ${t("archive.piece_card.page_count", { count: primaryPdf.page_count })}`
-                      : ""}
-                  </Caption>
-                  {/* Secondary: annotations are the default (in-app); the raw
-                      file stays reachable as a download. */}
+              isDesktopScore ? (
+                <div className="flex h-full flex-col">
+                  {/* Slim filename bar. Download is intentionally NOT duplicated
+                      here — the viewer's own toolbar owns it, over the gated blob
+                      path, rather than this raw-file URL. */}
+                  <div className="flex shrink-0 items-center gap-2 border-b border-ethereal-incense/10 bg-ethereal-alabaster/40 px-3 py-2">
+                    <FileText
+                      size={13}
+                      className="shrink-0 text-ethereal-graphite/45"
+                      aria-hidden="true"
+                    />
+                    <Caption color="muted" className="truncate">
+                      {primaryPdf.label}
+                      {primaryPdf.page_count
+                        ? ` · ${t("archive.piece_card.page_count", { count: primaryPdf.page_count })}`
+                        : ""}
+                    </Caption>
+                  </div>
+                  <div className="min-h-0 flex-1">
+                    <PdfViewer
+                      fetchBlob={() =>
+                        MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
+                      }
+                      docKey={primaryPdf.id}
+                      title={piece.title}
+                      subtitle={primaryPdf.label}
+                      fileName={primaryPdf.label}
+                      toolbarSlot={annotator.toolbarSlot}
+                      renderPageOverlay={annotator.renderPageOverlay}
+                      overlaySlot={annotator.overlaySlot}
+                      onPageApiChange={annotator.onPageApiChange}
+                    />
+                  </div>
+                </div>
+              ) : (
+                // Phone: an inline viewer only letterboxes a tiny page under an
+                // overlapping pager, so open the full-screen stand from a compact
+                // bar instead.
+                <div className="flex flex-col gap-3 p-4">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+                      aria-hidden="true"
+                    >
+                      <FileText size={18} strokeWidth={1.6} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <Text size="sm" weight="semibold" truncate className="block">
+                        {primaryPdf.label}
+                      </Text>
+                      {primaryPdf.page_count ? (
+                        <Caption color="muted" className="block">
+                          {t("archive.piece_card.page_count", {
+                            count: primaryPdf.page_count,
+                          })}
+                        </Caption>
+                      ) : null}
+                    </div>
+                  </div>
                   <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    leftIcon={<Download size={13} aria-hidden="true" />}
+                    type="button"
+                    variant="primary"
+                    className="w-full"
+                    leftIcon={<BookOpen size={15} aria-hidden="true" />}
+                    onClick={() => setIsScoreOpen(true)}
                   >
-                    <a href={primaryPdf.url} target="_blank" rel="noreferrer">
-                      {t("archive.piece_card.pdf_download", "Pobierz")}
-                    </a>
+                    {t("archive.piece_card.open_score", "Otwórz partyturę")}
                   </Button>
                 </div>
-                <div className="min-h-0 flex-1">
-                  <PdfViewer
-                    fetchBlob={() =>
-                      MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
-                    }
-                    docKey={primaryPdf.id}
-                    title={piece.title}
-                    subtitle={primaryPdf.label}
-                    fileName={primaryPdf.label}
-                    toolbarSlot={annotator.toolbarSlot}
-                    renderPageOverlay={annotator.renderPageOverlay}
-                    overlaySlot={annotator.overlaySlot}
-                    onPageApiChange={annotator.onPageApiChange}
-                  />
-                </div>
-              </div>
+              )
             ) : (
               <div className="flex h-[40vh] flex-col items-center justify-center gap-4 p-6 text-center lg:h-full">
                 <FileText
@@ -665,15 +918,16 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
             )}
           </section>
 
-          {/* Data panel */}
+          {/* Data panel — a scrolling column of glass section-cards on the
+              canvas (matching every other panel page), not a boxed pane. */}
           <section
-            className="flex min-h-0 flex-1 flex-col overflow-hidden lg:w-1/2"
+            className="flex min-h-0 flex-1 flex-col lg:w-1/2"
             aria-label={t(
               "archive.piece_card.form_panel_aria",
               "Dane utworu",
             )}
           >
-            <div className="flex-1 overflow-y-auto px-4 py-6 md:px-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
               <div className="space-y-4">
                 {awaitingEdition && <AIHallucinationWarning piece={piece} />}
 
@@ -683,6 +937,10 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   icon={<Sparkles size={14} aria-hidden="true" />}
                   defaultOpen
                 >
+                  <MetadataReviewMeter
+                    progress={reviewProgress}
+                    active={Boolean(awaitingEdition)}
+                  />
                   {awaitingEdition && (
                     <Text size="xs" color="graphite" className="mb-4 block">
                       {t(
@@ -695,9 +953,12 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     id="piece-card-form"
                     onSubmit={onSubmit}
                     noValidate
-                    className="space-y-4"
+                    className="space-y-6"
                   >
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <FieldGroup
+                      title={t("archive.piece_card.group.identity", "Tożsamość")}
+                      className="grid grid-cols-1 gap-3 md:grid-cols-2"
+                    >
                       <LabeledField
                         label={t("archive.piece_card.fields.title", "Tytuł")}
                         chip={fieldChip("title")}
@@ -720,7 +981,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                             "archive.piece_card.fields.arranger",
                             "Opracowanie / aranżacja",
                           )}
-                          placeholder="np. opr. T. Kuras"
+                          placeholder={t("archive.piece_card.ph_arranger", "np. opr. T. Kuras")}
                           error={errors.arranger?.message}
                           {...register("arranger")}
                         />
@@ -731,20 +992,40 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       >
                         <Input
                           aria-label={t("archive.piece_card.fields.opus", "Opus / Katalog")}
-                          placeholder="np. BWV 243"
+                          placeholder={t("archive.piece_card.ph_opus", "np. BWV 243")}
                           error={errors.opus_catalog?.message}
                           {...register("opus_catalog")}
                         />
                       </LabeledField>
+                    </FieldGroup>
+
+                    <FieldGroup
+                      title={t(
+                        "archive.piece_card.group.musical",
+                        "Charakterystyka muzyczna",
+                      )}
+                      className="grid grid-cols-1 gap-3 md:grid-cols-2"
+                    >
                       <LabeledField
                         label={t("archive.piece_card.fields.key", "Tonacja")}
                         chip={fieldChip("musical_key")}
                       >
                         <Input
                           aria-label={t("archive.piece_card.fields.key", "Tonacja")}
-                          placeholder="np. D-dur"
+                          placeholder={t("archive.piece_card.ph_key", "np. D-dur")}
                           error={errors.musical_key?.message}
                           {...register("musical_key")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.piece_card.fields.voicing", "Obsada")}
+                        chip={fieldChip("voicing")}
+                      >
+                        <Input
+                          aria-label={t("archive.piece_card.fields.voicing", "Obsada")}
+                          placeholder={t("archive.piece_card.ph_voicing", "np. SATB")}
+                          error={errors.voicing?.message}
+                          {...register("voicing")}
                         />
                       </LabeledField>
                       <LabeledField
@@ -753,6 +1034,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       >
                         <Select
                           aria-label={t("archive.piece_card.fields.language", "Język śpiewu")}
+                          className={FIELD_SELECT_CLASS}
                           {...register("language")}
                         >
                           <option value="">
@@ -766,38 +1048,12 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         </Select>
                       </LabeledField>
                       <LabeledField
-                        label={t("archive.piece_card.fields.voicing", "Obsada")}
-                        chip={fieldChip("voicing")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.voicing", "Obsada")}
-                          placeholder="np. SATB"
-                          error={errors.voicing?.message}
-                          {...register("voicing")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t(
-                          "archive.piece_card.fields.composition_year",
-                          "Rok kompozycji",
-                        )}
-                      >
-                        <Input
-                          aria-label={t(
-                            "archive.piece_card.fields.composition_year",
-                            "Rok kompozycji",
-                          )}
-                          type="number"
-                          error={errors.composition_year?.message}
-                          {...register("composition_year")}
-                        />
-                      </LabeledField>
-                      <LabeledField
                         label={t("archive.piece_card.fields.epoch", "Epoka")}
                         chip={fieldChip("epoch")}
                       >
                         <Select
                           aria-label={t("archive.piece_card.fields.epoch", "Epoka")}
+                          className={FIELD_SELECT_CLASS}
                           {...register("epoch")}
                         >
                           <option value="">
@@ -810,49 +1066,76 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                           ))}
                         </Select>
                       </LabeledField>
-                    </div>
-                    <LabeledField
-                      label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
-                      chip={fieldChip("text_source")}
+                      <LabeledField
+                        label={t(
+                          "archive.piece_card.fields.composition_year",
+                          "Rok kompozycji",
+                        )}
+                      >
+                        <div className="max-w-36">
+                          <Input
+                            aria-label={t(
+                              "archive.piece_card.fields.composition_year",
+                              "Rok kompozycji",
+                            )}
+                            type="number"
+                            error={errors.composition_year?.message}
+                            {...register("composition_year")}
+                          />
+                        </div>
+                      </LabeledField>
+                    </FieldGroup>
+
+                    <FieldGroup
+                      title={t("archive.piece_card.group.text", "Tekst")}
+                      className="space-y-4"
                     >
-                      <Input
-                        aria-label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
-                        placeholder="np. Magnificat (Łk 1,46-55)"
-                        error={errors.text_source?.message}
-                        {...register("text_source")}
-                      />
-                    </LabeledField>
-                    <LabeledField
-                      label={t(
-                        "archive.piece_card.fields.lyrics_original",
-                        "Tekst oryginalny",
-                      )}
-                      chip={fieldChip("lyrics_original")}
-                    >
-                      <Textarea
-                        aria-label={t(
+                      <LabeledField
+                        label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
+                        chip={fieldChip("text_source")}
+                      >
+                        <Input
+                          aria-label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
+                          placeholder={t(
+            "archive.piece_card.ph_text_source",
+            "np. Magnificat (Łk 1,46-55)",
+          )}
+                          error={errors.text_source?.message}
+                          {...register("text_source")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t(
                           "archive.piece_card.fields.lyrics_original",
                           "Tekst oryginalny",
                         )}
-                        rows={4}
-                        error={errors.lyrics_original?.message}
-                        {...register("lyrics_original")}
-                      />
-                    </LabeledField>
-                    <LabeledField
-                      label={t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA")}
-                      chip={fieldChip("lyrics_ipa")}
-                    >
-                      <Textarea
-                        aria-label={t(
-                          "archive.piece_card.fields.lyrics_ipa",
-                          "Transkrypcja IPA",
-                        )}
-                        rows={3}
-                        error={errors.lyrics_ipa?.message}
-                        {...register("lyrics_ipa")}
-                      />
-                    </LabeledField>
+                        chip={fieldChip("lyrics_original")}
+                      >
+                        <Textarea
+                          aria-label={t(
+                            "archive.piece_card.fields.lyrics_original",
+                            "Tekst oryginalny",
+                          )}
+                          rows={4}
+                          error={errors.lyrics_original?.message}
+                          {...register("lyrics_original")}
+                        />
+                      </LabeledField>
+                      <LabeledField
+                        label={t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA")}
+                        chip={fieldChip("lyrics_ipa")}
+                      >
+                        <Textarea
+                          aria-label={t(
+                            "archive.piece_card.fields.lyrics_ipa",
+                            "Transkrypcja IPA",
+                          )}
+                          rows={3}
+                          error={errors.lyrics_ipa?.message}
+                          {...register("lyrics_ipa")}
+                        />
+                      </LabeledField>
+                    </FieldGroup>
                   </form>
                 </CockpitSection>
 
@@ -882,15 +1165,17 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         {t("archive.piece_card.fields.duration", "Czas trwania")}
                       </Eyebrow>
                       <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={600}
-                          placeholder="min"
-                          aria-label={t("archive.piece_card.duration_mins", "Minuty")}
-                          error={errors.duration_mins?.message}
-                          {...register("duration_mins")}
-                        />
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={600}
+                            placeholder={t("archive.piece_card.ph_min", "min")}
+                            aria-label={t("archive.piece_card.duration_mins", "Minuty")}
+                            error={errors.duration_mins?.message}
+                            {...register("duration_mins")}
+                          />
+                        </div>
                         <Text
                           as="span"
                           aria-hidden="true"
@@ -898,15 +1183,17 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         >
                           :
                         </Text>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          placeholder="sek"
-                          aria-label={t("archive.piece_card.duration_secs", "Sekundy")}
-                          error={errors.duration_secs?.message}
-                          {...register("duration_secs")}
-                        />
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={59}
+                            placeholder={t("archive.piece_card.ph_sec", "sek")}
+                            aria-label={t("archive.piece_card.duration_secs", "Sekundy")}
+                            error={errors.duration_secs?.message}
+                            {...register("duration_secs")}
+                          />
+                        </div>
                       </div>
                     </div>
                     <DivisiEditor
@@ -968,12 +1255,6 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                 >
                   <EditionsList editions={editions} />
                   <div className="mt-5 border-t border-ethereal-incense/15 pt-5">
-                    <Caption color="muted" className="mb-2 block">
-                      {t(
-                        "archive.piece_card.add_edition_hint",
-                        "Dodaj kolejne wydanie (Bärenreiter, IMSLP, własna aranżacja)",
-                      )}
-                    </Caption>
                     <EditionUploadZone pieceId={String(piece.id)} compact />
                   </div>
                 </CockpitSection>
@@ -1023,15 +1304,23 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
               </div>
             </div>
 
-            {/* Sticky action bar */}
+            {/* Action tray — a floating rounded bar (not a full-bleed rule),
+                pinned below the scroll. Warms to gold while there are unsaved
+                edits so the Save affordance reads at a glance. */}
             <footer
               className={cn(
-                "flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-ethereal-incense/15 bg-ethereal-alabaster/55 px-4 py-3 md:px-6",
-                hasChanges && "border-t-ethereal-gold/40 bg-ethereal-gold/5",
+                "mx-2 mb-1 mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 rounded-2xl border px-4 py-3 shadow-glass-ethereal",
+                hasChanges
+                  ? "border-ethereal-gold/40 bg-ethereal-gold/10"
+                  : "border-glass-border bg-glass-surface",
               )}
             >
               {hasChanges ? (
-                <Caption color="gold" className="mr-auto">
+                <Caption
+                  color="gold"
+                  className="mr-auto inline-flex items-center gap-1.5"
+                >
+                  <PenLine size={13} aria-hidden="true" />
                   {t("archive.piece_card.dirty_hint", "Masz niezapisane zmiany")}
                 </Caption>
               ) : awaitingEdition ? (
@@ -1041,16 +1330,28 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     "Sprawdź pola powyżej, a następnie zatwierdź.",
                   )}
                 </Caption>
-              ) : null}
-              <Button
-                type="button"
-                onClick={onSubmit}
-                variant={awaitingEdition ? "outline" : "primary"}
-                disabled={!hasChanges || isBusy}
-                isLoading={updatePiece.isPending}
-              >
-                {t("archive.piece_card.save_btn", "Zapisz zmiany")}
-              </Button>
+              ) : (
+                <Caption
+                  color="sage"
+                  className="mr-auto inline-flex items-center gap-1.5"
+                >
+                  <Check size={13} aria-hidden="true" />
+                  {t("archive.piece_card.saved_state", "Wszystko zapisane")}
+                </Caption>
+              )}
+              {/* Save appears only when there is something to save — no lonely
+                  greyed-out CTA in the resting state. */}
+              {hasChanges && (
+                <Button
+                  type="button"
+                  onClick={onSubmit}
+                  variant={awaitingEdition ? "outline" : "primary"}
+                  disabled={isBusy}
+                  isLoading={updatePiece.isPending}
+                >
+                  {t("archive.piece_card.save_btn", "Zapisz zmiany")}
+                </Button>
+              )}
               {awaitingEdition && (
                 <Button
                   type="button"
@@ -1071,7 +1372,23 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
             </footer>
           </section>
         </div>
-      </div>
-    </PageTransition>
+
+        {/* Phone entry to the full-screen music stand (see the score section). */}
+        <ScoreStandModal
+          isOpen={isScoreOpen}
+          editionId={primaryPdf?.id ?? null}
+          mode="conductor"
+          title={piece.title}
+          subtitle={primaryPdf?.label}
+          fileName={primaryPdf?.label}
+          fetchBlob={
+            primaryPdf
+              ? () => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
+              : null
+          }
+          canExport={primaryPdf?.canExport ?? true}
+          onClose={() => setIsScoreOpen(false)}
+        />
+    </div>
   );
 }

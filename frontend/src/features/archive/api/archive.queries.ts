@@ -22,6 +22,7 @@ import {
   isIngestionInProgress,
   type Movement,
   type Piece,
+  type ProgramNote,
   type Recording,
   type Translation,
 } from "@/shared/types";
@@ -574,6 +575,29 @@ const invalidatePiece = (qc: ReturnType<typeof useQueryClient>, pieceId: string)
   qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
 };
 
+/**
+ * Mark one AI-extracted field as human-verified (stamp MANUAL provenance, no
+ * value change) so its review chip flips AI → verified. `objectId` targets a
+ * movement/translation; omit it for a field on the piece itself. The server
+ * returns the refreshed piece, primed straight into the detail cache so the chip
+ * flips at once; the list is invalidated for the status badges.
+ */
+export const useVerifyPieceField = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    Piece,
+    Error,
+    { pieceId: string; field: string; objectId?: string }
+  >({
+    mutationFn: ({ pieceId, field, objectId }) =>
+      ArchiveService.verifyPieceField(pieceId, { field, objectId }),
+    onSuccess: (piece, { pieceId }) => {
+      qc.setQueryData(archiveKeys.pieces.details(pieceId), piece);
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+    },
+  });
+};
+
 export const useUpdateMovement = () => {
   const qc = useQueryClient();
   return useMutation<
@@ -630,6 +654,26 @@ export const useDeleteRecording = () => {
   const qc = useQueryClient();
   return useMutation<void, Error, { id: string; pieceId: string }>({
     mutationFn: ({ id }) => ArchiveService.deleteRecording(id),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useUpdateProgramNote = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    ProgramNote,
+    Error,
+    { id: string; pieceId: string; data: Partial<ProgramNote> }
+  >({
+    mutationFn: ({ id, data }) => ArchiveService.updateProgramNote(id, data),
+    onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
+  });
+};
+
+export const useDeleteProgramNote = () => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, { id: string; pieceId: string }>({
+    mutationFn: ({ id }) => ArchiveService.deleteProgramNote(id),
     onSuccess: (_d, { pieceId }) => invalidatePiece(qc, pieceId),
   });
 };

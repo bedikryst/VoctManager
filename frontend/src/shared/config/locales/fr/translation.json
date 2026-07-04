@@ -227,6 +227,8 @@
       "title": "Supprimer la pièce de l'archive ?"
     },
     "editions": {
+      "ai_cost": "Coût IA : {{cost}}",
+      "ai_cost_title": "Coût cumulé de l'analyse IA de cette édition.",
       "approve": "Valider",
       "approve_confirm": "Valider",
       "approve_error": "Impossible de valider l'édition.",
@@ -506,20 +508,40 @@
       },
       "fields_hint": "Vérifiez chaque champ avec l'aperçu PDF à gauche. Modifiez si l'IA a mal lu.",
       "form_panel_aria": "Données de la pièce",
+      "group": {
+        "identity": "Identité",
+        "musical": "Détails musicaux",
+        "text": "Texte"
+      },
       "identifiers_section": "Identifiants de la pièce",
       "language_pick": "— choisir —",
+      "legend_ai": "À vérifier : {{count}}",
+      "legend_verified": "Vérifiés : {{count}}",
       "movements_section": "Mouvements",
       "next_awaiting": "Suivante à vérifier",
       "no_composer": "Aucun compositeur",
       "no_pdf": "Aucun PDF pour cette pièce. Importez un fichier ci-dessous.",
+      "open_score": "Ouvrir la partition",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
       "pdf_download": "Télécharger",
       "pdf_preview_aria": "Aperçu PDF de la partition",
+      "ph_arranger": "p. ex. arr. T. Kuras",
+      "ph_key": "p. ex. ré majeur",
+      "ph_min": "min",
+      "ph_opus": "p. ex. BWV 243",
+      "ph_sec": "s",
+      "ph_text_source": "p. ex. Magnificat (Lc 1,46-55)",
+      "ph_voicing": "p. ex. SATB",
       "program_note_section": "Note de programme",
       "recordings_section": "Enregistrements de référence",
+      "review_all_clear": "Tous les champs vérifiés",
+      "review_progress": "Vérifiés {{verified}} sur {{total}}",
+      "review_remaining_one": "{{count}} champ à vérifier",
+      "review_remaining_other": "{{count}} champs à vérifier",
       "save_btn": "Enregistrer les modifications",
       "save_first": "Enregistrez d'abord vos modifications.",
+      "saved_state": "Tout est enregistré",
       "section": {
         "details": "Détails de la pièce",
         "metadata": "Métadonnées"
@@ -527,16 +549,49 @@
       "toast_no_changes": "Rien à enregistrer.",
       "toast_save_error": "Impossible d'enregistrer les modifications.",
       "toast_save_success": "Modifications enregistrées.",
-      "translations_section": "Traductions"
+      "translations_section": "Traductions",
+      "verify_failed": "Impossible de marquer le champ comme correct."
     },
     "review": {
-      "no_note_hint": "Pas encore de note de programme. Elle sera générée automatiquement après validation de l'œuvre — ou générez-la maintenant (IA, ~30 s).",
-      "regenerate_note": "Régénérer la note",
+      "cancel": "Annuler",
+      "confirm_delete": "Confirmer la suppression",
+      "delete": "Supprimer",
+      "delete_failed": "Échec de la suppression.",
+      "delete_movement": "Supprimer le mouvement",
+      "delete_note": "Supprimer la note",
+      "delete_recording": "Supprimer l'enregistrement",
+      "delete_translation": "Supprimer la traduction",
+      "feature": "Définir comme recommandé",
       "generate_note": "Générer la note de programme",
+      "movement_deleted": "Mouvement supprimé.",
+      "movement_saved": "Mouvement enregistré.",
+      "movement_title": "Titre du mouvement",
+      "no_note_hint": "Pas encore de note de programme. Elle sera générée automatiquement après validation de l'œuvre — ou générez-la maintenant (IA, ~30 s).",
+      "note_content": "Texte de la note de programme",
+      "note_deleted": "Note supprimée.",
+      "note_empty": "La note ne peut pas être vide.",
+      "note_failed": "Impossible de lancer la génération.",
       "note_generating": "Génération…",
       "note_ready": "Note de programme prête.",
+      "note_saved": "Note enregistrée.",
       "note_slow": "Cela prend plus de temps que d'habitude — actualisez la page dans un instant.",
-      "note_failed": "Impossible de lancer la génération."
+      "note_words": "Mots",
+      "open_recording": "Ouvrir l'enregistrement",
+      "page_short": "p.",
+      "recording_deleted": "Enregistrement supprimé.",
+      "regenerate_note": "Régénérer la note",
+      "save_failed": "Échec de l'enregistrement.",
+      "save_row": "Enregistrer",
+      "singable": "chantable",
+      "tempo": "Tempo",
+      "translation_deleted": "Traduction supprimée.",
+      "translation_saved": "Traduction enregistrée.",
+      "translation_text": "Texte de la traduction",
+      "translator": "Traducteur",
+      "translator_ph": "Traducteur (imprimé sous le texte)",
+      "unfeature": "Retirer des recommandations",
+      "unknown_performer": "Interprète inconnu",
+      "verify_failed": "Impossible de marquer le champ."
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} piste audio",
@@ -669,6 +724,7 @@
       "row_succeeded": "Importé · pipeline lancé",
       "section": "Import de partitions",
       "subtitle": "ou cliquez pour choisir. Plusieurs fichiers à la fois · 50 Mo max chacun",
+      "subtitle_existing": "Bärenreiter, IMSLP, votre propre arrangement — glissez ou cliquez pour choisir · 50 Mo max",
       "title": "Glissez des PDF de partition",
       "title_existing": "Ajouter une autre édition de cette pièce",
       "toast_failed": "Échec de l'import",
@@ -708,7 +764,9 @@
       "ai": "IA · à vérifier",
       "ai_title": "Extrait par l'IA ({{model}}), non vérifié — comparez au PDF et corrigez si besoin.",
       "canonical": "{{source}} · confirmé",
-      "canonical_title": "Confirmé par une source canonique : {{source}}."
+      "canonical_title": "Confirmé par une source canonique : {{source}}.",
+      "verify_hint": "Cliquez pour marquer comme correct",
+      "verify_aria": "Marquer comme correct : {{label}}"
     }
   },
   "artists": {
@@ -3771,6 +3829,15 @@
     },
     "program_notes": {
       "approved": "approuvée"
+    },
+    "status": {
+      "awaiting": "En attente de révision",
+      "enriching": "Recherche de sources",
+      "extracting": "Extraction des métadonnées",
+      "failed": "Erreur",
+      "generating": "Note et traductions",
+      "pending": "En attente",
+      "ready": "Approuvé"
     }
   },
   "schedule": {

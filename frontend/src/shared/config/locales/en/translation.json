@@ -227,6 +227,8 @@
       "title": "Delete piece from archive?"
     },
     "editions": {
+      "ai_cost": "AI cost: {{cost}}",
+      "ai_cost_title": "Cumulative AI ingestion cost for this edition.",
       "approve": "Approve",
       "approve_confirm": "Approve",
       "approve_error": "Couldn't approve the edition.",
@@ -256,7 +258,7 @@
       "pages_count_few": "{{count}} pages",
       "pages_count_many": "{{count}} pages",
       "pages_count_other": "{{count}} pages",
-      "reingest": "Re-run",
+      "reingest": "Re-run analysis",
       "reingest_confirm": "Run pipeline",
       "reingest_error": "Couldn't re-run the pipeline.",
       "reingest_modal_desc": "Re-ingesting will incur new Claude costs (up to the per-edition limit) and reset the spend counter. Use it if you changed the prompt or the pipeline failed on a transient error.",
@@ -506,20 +508,40 @@
       },
       "fields_hint": "Check each field against the PDF preview on the left. Edit if the AI misread it.",
       "form_panel_aria": "Piece data",
+      "group": {
+        "identity": "Identity",
+        "musical": "Musical details",
+        "text": "Text"
+      },
       "identifiers_section": "Piece identifiers",
       "language_pick": "— select —",
+      "legend_ai": "To review: {{count}}",
+      "legend_verified": "Verified: {{count}}",
       "movements_section": "Movements",
       "next_awaiting": "Next to review",
       "no_composer": "No composer",
       "no_pdf": "No PDF for this piece. Upload a file below.",
+      "open_score": "Open score",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
       "pdf_download": "Download",
       "pdf_preview_aria": "Score PDF preview",
+      "ph_arranger": "e.g. arr. T. Kuras",
+      "ph_key": "e.g. D major",
+      "ph_min": "min",
+      "ph_opus": "e.g. BWV 243",
+      "ph_sec": "sec",
+      "ph_text_source": "e.g. Magnificat (Lk 1:46-55)",
+      "ph_voicing": "e.g. SATB",
       "program_note_section": "Programme note",
       "recordings_section": "Reference recordings",
+      "review_all_clear": "All fields verified",
+      "review_progress": "Verified {{verified}} of {{total}}",
+      "review_remaining_one": "{{count}} field left to check",
+      "review_remaining_other": "{{count}} fields left to check",
       "save_btn": "Save changes",
       "save_first": "Save your changes first.",
+      "saved_state": "All changes saved",
       "section": {
         "details": "Piece details",
         "metadata": "Metadata"
@@ -527,16 +549,49 @@
       "toast_no_changes": "Nothing to save.",
       "toast_save_error": "Couldn't save the changes.",
       "toast_save_success": "Changes saved.",
-      "translations_section": "Translations"
+      "translations_section": "Translations",
+      "verify_failed": "Couldn't mark the field as correct."
     },
     "review": {
-      "no_note_hint": "No programme note yet. It will be generated automatically once the piece is approved — or generate it now (AI, ~30 s).",
-      "regenerate_note": "Regenerate note",
+      "cancel": "Cancel",
+      "confirm_delete": "Confirm deletion",
+      "delete": "Delete",
+      "delete_failed": "Couldn't delete.",
+      "delete_movement": "Delete movement",
+      "delete_note": "Delete note",
+      "delete_recording": "Delete recording",
+      "delete_translation": "Delete translation",
+      "feature": "Set as featured",
       "generate_note": "Generate programme note",
+      "movement_deleted": "Movement deleted.",
+      "movement_saved": "Movement saved.",
+      "movement_title": "Movement title",
+      "no_note_hint": "No programme note yet. It will be generated automatically once the piece is approved — or generate it now (AI, ~30 s).",
+      "note_content": "Programme note text",
+      "note_deleted": "Note deleted.",
+      "note_empty": "The note can't be empty.",
+      "note_failed": "Couldn't start generation.",
       "note_generating": "Generating…",
       "note_ready": "Programme note ready.",
+      "note_saved": "Note saved.",
       "note_slow": "This is taking longer than usual — refresh the page in a moment.",
-      "note_failed": "Couldn't start generation."
+      "note_words": "Words",
+      "open_recording": "Open recording",
+      "page_short": "p.",
+      "recording_deleted": "Recording deleted.",
+      "regenerate_note": "Regenerate note",
+      "save_failed": "Couldn't save.",
+      "save_row": "Save",
+      "singable": "singable",
+      "tempo": "Tempo",
+      "translation_deleted": "Translation deleted.",
+      "translation_saved": "Translation saved.",
+      "translation_text": "Translation text",
+      "translator": "Translator",
+      "translator_ph": "Translator (printed below the text)",
+      "unfeature": "Unpin featured",
+      "unknown_performer": "Unknown performer",
+      "verify_failed": "Couldn't mark the field."
     },
     "row": {
       "audio_count_tooltip_one": "{{count}} audio track",
@@ -669,6 +724,7 @@
       "row_succeeded": "Uploaded · pipeline started",
       "section": "Score upload",
       "subtitle": "or click to choose. Multiple files at once · max 50 MB each",
+      "subtitle_existing": "Bärenreiter, IMSLP, your own arrangement — drag or click to choose · max 50 MB",
       "title": "Drag in score PDFs",
       "title_existing": "Add another edition of this piece",
       "toast_failed": "Upload failed",
@@ -708,7 +764,9 @@
       "ai": "AI · to review",
       "ai_title": "Extracted by AI ({{model}}), unverified — check against the PDF and correct if needed.",
       "canonical": "{{source}} · confirmed",
-      "canonical_title": "Confirmed by a canonical source: {{source}}."
+      "canonical_title": "Confirmed by a canonical source: {{source}}.",
+      "verify_hint": "Click to mark as correct",
+      "verify_aria": "Mark as correct: {{label}}"
     }
   },
   "artists": {
@@ -3771,6 +3829,15 @@
     },
     "program_notes": {
       "approved": "approved"
+    },
+    "status": {
+      "awaiting": "Awaiting review",
+      "enriching": "Finding sources",
+      "extracting": "Extracting metadata",
+      "failed": "Error",
+      "generating": "Note & translations",
+      "pending": "Pending",
+      "ready": "Approved"
     }
   },
   "schedule": {

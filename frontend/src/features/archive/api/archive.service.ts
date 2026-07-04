@@ -15,6 +15,7 @@ import type {
   LiveAnalysisPreview,
   Movement,
   Piece,
+  ProgramNote,
   Recording,
   ScoreEditionSummary,
   Track,
@@ -35,6 +36,7 @@ const EDITIONS_URL = "/api/archive/editions/";
 const MOVEMENTS_URL = "/api/archive/movements/";
 const TRANSLATIONS_URL = "/api/archive/translations/";
 const RECORDINGS_URL = "/api/archive/recordings/";
+const PROGRAM_NOTES_URL = "/api/archive/program-notes/";
 
 /**
  * Diagnostic result of a MusicBrainz/Wikidata refresh. `status` explains a
@@ -121,6 +123,24 @@ export const ArchiveService = {
 
   deletePiece: async (id: string): Promise<void> => {
     await api.delete(`${PIECES_URL}${id}/`);
+  },
+
+  /**
+   * Mark one AI-extracted field as human-verified without changing its value —
+   * the review cockpit's "this is already correct" action. Stamps MANUAL
+   * provenance server-side so the field's chip flips AI → verified. `objectId`
+   * targets a movement/translation; omit it to verify a field on the piece
+   * itself. Returns the refreshed piece (with the updated provenance map).
+   */
+  verifyPieceField: async (
+    pieceId: string,
+    payload: { field: string; objectId?: string },
+  ): Promise<Piece> => {
+    const response = await api.post<Piece>(
+      `${PIECES_URL}${pieceId}/verify_field/`,
+      { field: payload.field, object_id: payload.objectId },
+    );
+    return response.data;
   },
 
   /**
@@ -326,5 +346,19 @@ export const ArchiveService = {
 
   deleteRecording: async (id: string): Promise<void> => {
     await api.delete(`${RECORDINGS_URL}${id}/`);
+  },
+
+  // The AI note is occasionally marred by a factual slip or a repeated phrase;
+  // this lets the conductor correct the text by hand instead of regenerating.
+  updateProgramNote: async (
+    id: string,
+    data: Partial<ProgramNote>,
+  ): Promise<ProgramNote> => {
+    const response = await api.patch<ProgramNote>(`${PROGRAM_NOTES_URL}${id}/`, data);
+    return response.data;
+  },
+
+  deleteProgramNote: async (id: string): Promise<void> => {
+    await api.delete(`${PROGRAM_NOTES_URL}${id}/`);
   },
 };
