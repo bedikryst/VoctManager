@@ -13,10 +13,10 @@
      by shadow alone. This is the structural fix for the old
      "everything melts together" low-contrast field.
      ========================================= */
-  --color-ethereal-canvas: #e7e1d3;
-  --color-ethereal-alabaster: #f6f5f2;
+  --color-ethereal-canvas: #EBE5D9;
+  --color-ethereal-alabaster: #F2F0EB;
   --color-ethereal-parchment: #e6e3da;
-  --color-ethereal-marble: #fdfdfd;
+  --color-ethereal-marble: #FBFAF7;
 
   --color-ethereal-gold: #c2a878;
   --color-ethereal-sage: #8f9a8a;
@@ -34,21 +34,21 @@
      ========================================= */
   /* backdrop-filter blur radius for the workhorse glass surfaces. Kept modest:
      this filter is re-sampled every frame while scrolling over the fixed
-     background, on ~130 surfaces, so cost scales with radius. 14px reads
+     background, on ~130 surfaces, so cost scales with radius. 12px reads
      near-identically over the already-soft ethereal canvas at a fraction of
      the paint cost of the former 24px. */
-  --blur-ethereal: 14px;
-  --color-glass-surface: rgba(253, 253, 253, 0.62);
+  --blur-ethereal: 12px;
+  --color-glass-surface: rgba(243, 243, 243, 0.62);
   --color-glass-border: rgba(194, 168, 120, 0.28);
 
   --shadow-glass-ethereal:
     inset 0 1px 1px rgba(255, 255, 255, 0.9),
     0 1px 2px rgba(22, 20, 18, 0.04),
-    0 12px 26px -10px rgba(120, 104, 82, 0.18);
+    0 10px 36px -18px rgba(120, 104, 82, 0.14);
   --shadow-glass-ethereal-hover:
     inset 0 1px 1px rgba(255, 255, 255, 1),
     0 2px 4px rgba(22, 20, 18, 0.05),
-    0 22px 38px -14px rgba(120, 104, 82, 0.28);
+    0 18px 38px -18px rgba(120, 104, 82, 0.22);
   --shadow-glass-solid:
     0 1px 2px rgba(22, 20, 18, 0.05),
     0 10px 24px -12px rgba(120, 104, 82, 0.16);

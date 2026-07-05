@@ -44,7 +44,7 @@ const SHORTCUT_LABEL =
     : "Ctrl K";
 
 const navLinkVariants = cva(
-  "group/desklink relative block h-10 rounded-xl transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
+  "group/desklink relative block h-9 rounded-xl transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 overflow-hidden",
   {
     variants: {
       isActive: {
@@ -111,7 +111,7 @@ export const DesktopSidebar = ({
             className="fixed inset-y-0 left-0 z-30 hidden w-105 origin-left pointer-events-none mix-blend-multiply fine-pointer:block"
             style={{
               background:
-                "linear-gradient(to right, rgba(22, 20, 18, 0.10) 0%, rgba(22, 20, 18, 0.03) 50%, transparent 100%)",
+                "linear-gradient(to right, rgba(22, 20, 18, 0.1) 0%, rgba(22, 20, 18, 0.03) 50%, transparent 100%)",
             }}
             aria-hidden="true"
           />
@@ -169,13 +169,13 @@ export const DesktopSidebar = ({
               className="pointer-events-none absolute left-9 flex select-none items-center"
               aria-hidden={!isExpanded}
             >
-              <Heading size="2xl">
+              <Heading size="3xl" weight="normal">
                 Voct
                 <Heading
                   as="span"
                   weight="light"
                   color="gold"
-                  size="2xl"
+                  size="3xl"
                   className="italic"
                 >
                   Manager
@@ -269,7 +269,7 @@ export const DesktopSidebar = ({
           <div className="flex-1 min-h-0 w-full overflow-y-auto overflow-x-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <nav
               aria-label={t("dashboard.layout.nav.main_menu")}
-              className="flex w-full flex-col space-y-3 pb-4"
+              className="flex w-full flex-col space-y-1 pb-4"
             >
               {navGroups.map((group) => (
                 <div key={group.labelKey} className="w-full relative">
@@ -279,7 +279,7 @@ export const DesktopSidebar = ({
                       height: isExpanded ? 24 : 0,
                       opacity: isExpanded ? 1 : 0,
                     }}
-                    className="relative w-full overflow-hidden mb-1"
+                    className="relative w-full overflow-hidden mb-2"
                     aria-hidden={!isExpanded}
                   >
                     <div className="absolute left-4 top-1 whitespace-nowrap">
@@ -293,7 +293,7 @@ export const DesktopSidebar = ({
                     </div>
                   </motion.div>
 
-                  <div className="flex flex-col space-y-1 w-full">
+                  <div className="flex flex-col w-full">
                     {group.links.map((link) => {
                       const IconComponent = link.icon as React.ElementType;
                       return (
@@ -326,7 +326,7 @@ export const DesktopSidebar = ({
                                   )}
                                 >
                                   <IconComponent
-                                    size={18}
+                                    size={16}
                                     strokeWidth={isActive ? 2.5 : 1.5}
                                     className="transition-all duration-300"
                                   />
@@ -346,7 +346,7 @@ export const DesktopSidebar = ({
                                 >
                                   <Label
                                     weight={isActive ? "semibold" : "medium"}
-                                    size="base"
+                                    size="sm"
                                     color="inherit"
                                     className="transition-all duration-300"
                                   >

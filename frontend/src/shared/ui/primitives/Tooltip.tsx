@@ -76,7 +76,7 @@ export const Tooltip = ({
                   damping: 30,
                   mass: 0.2,
                 }}
-                className="relative px-3 py-1 rounded-lg border border-ethereal-gold/50 bg-ethereal-parchment/90 backdrop-blur-xl shadow-(--shadow-ethereal-soft) will-change-transform"
+                className="relative px-3 pb-1 rounded-lg border border-ethereal-gold/50 bg-ethereal-parchment/90 backdrop-blur-xl shadow-(--shadow-ethereal-soft) will-change-transform"
               >
                 <Label
                   size="sm"
