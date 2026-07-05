@@ -968,8 +968,6 @@
       "greeting_word": "Witaj",
       "subtitle": "Dostęp do VoctManagera",
       "success": {
-        "chord_cta": "Posłuchaj tonu zespołu",
-        "chord_playing": "Brzmi…",
         "copied": "Skopiowano",
         "copy_login": "Skopiuj login",
         "desc": "Twoje konto zostało zabezpieczone i aktywowane.",
@@ -978,6 +976,9 @@
         "return_home": "Wróć na stronę główną",
         "subtitle": "Aktywacja zakończona",
         "title": "Twój panel jest gotowy",
+        "tone_cta": "Kamerton · ton A",
+        "tone_playing": "Brzmi… wycisz",
+        "tone_stop": "Wycisz ton",
         "your_username": "Twój login do panelu"
       },
       "title_1": "Aktywuj swój",
@@ -1765,8 +1766,6 @@
       "satb_distribution": "Dystrybucja Głosów SATB",
       "satb_total_aria": "Łączna liczba głosów w zespole",
       "setup": {
-        "chord_cta": "Posłuchaj tonu zespołu",
-        "chord_playing": "Brzmi…",
         "eyebrow": "Pierwszy sezon",
         "finish": "Zakończ konfigurację",
         "intro": "Trzy kroki dzielą Cię od żywego pulpitu: zaplanuj pierwszy koncert, zaproś śpiewaków i zbuduj repertuar. Każdy krok prowadzi prosto do właściwego narzędzia.",
@@ -1792,7 +1791,10 @@
           }
         },
         "title": "Załóżmy fundamenty",
-        "title_done": "Sezon założony"
+        "title_done": "Sezon założony",
+        "tone_cta": "Kamerton · ton A",
+        "tone_playing": "Brzmi… wycisz",
+        "tone_stop": "Wycisz ton"
       },
       "spotlight": {
         "cast": "Obsada",
@@ -1884,19 +1886,21 @@
       },
       "validation_notes_min": "Proszę podać powód/uwagi (min. 3 znaki).",
       "welcome": {
-        "chord_cta": "Usłysz swój zespół",
-        "chord_hint": "Dotknij, by usłyszeć, jak zespół stroi",
-        "chord_playing": "Brzmi…",
         "dismiss": "Zaczynam",
         "enter": "Wejdź do swojej przestrzeni",
         "eyebrow": "Witamy w zespole",
         "install_cta": "Zainstaluj aplikację",
         "intro": "To Twoja przestrzeń: zobaczysz tu najbliższą próbę, przećwiczysz swoją partię i potwierdzisz obecność. Zacznij od jednego z trzech miejsc poniżej.",
-        "overlay_intro": "To Twoja przestrzeń — najbliższa próba, Twoja partia i obecność w jednym miejscu. Ale najpierw posłuchaj, jak brzmi zespół, do którego dołączasz.",
+        "overlay_intro": "To Twoja przestrzeń — najbliższa próba, Twoja partia i obecność w jednym miejscu. A zaczyna się tak, jak każda próba: od jednego tonu.",
         "overlay_skip": "Pomiń",
         "settings_cta": "Dokończ konfigurację",
         "settings_desc": "Powiadomienia o próbach · synchronizacja kalendarza · zdjęcie profilowe",
         "title": "Dobrze, że jesteś",
+        "tone_cta": "Zagraj ton A",
+        "tone_hint": "Dotknij, by usłyszeć ton, od którego zaczyna się każda próba.",
+        "tone_label": "Kamerton · A 440 Hz",
+        "tone_playing": "Brzmi… dotknij, by wyciszyć.",
+        "tone_stop": "Wycisz ton",
         "voice_label": "Twój głos"
       }
     },

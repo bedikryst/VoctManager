@@ -3,10 +3,10 @@
  * @description The conductor's "First Season" concierge — the founding ritual that
  * turns an empty command console into a populated one. Not a marketing carousel
  * and not a blocking takeover: a calm workbench panel at the top of the dashboard
- * that names the maestro, lets them hear the ensemble's chord, and guides three
- * founding acts — schedule the first concert, invite the singers, build the
- * repertoire — each deep-linking to the real (already-premium) flow rather than
- * forking it. Step completion is derived from live data ({@link useSeasonSetup}),
+ * that names the maestro, offers the kamerton (the honest A a season is tuned
+ * from — tap to ring, tap to silence), and guides three founding acts — schedule
+ * the first concert, invite the singers, build the repertoire — each
+ * deep-linking to the real (already-premium) flow rather than forking it. Step completion is derived from live data ({@link useSeasonSetup}),
  * so the panel fills in as the season takes shape and celebrates when it is founded.
  * @architecture Enterprise SaaS 2026
  * @module features/dashboard/components/SeasonSetupConcierge
@@ -35,7 +35,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
 import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
-import { useWelcomeChord } from "@/shared/ui/instruments/useWelcomeChord";
+import { useWelcomeTone } from "@/shared/ui/instruments/useWelcomeTone";
 import {
   useSeasonSetup,
   type SeasonStepKey,
@@ -154,7 +154,7 @@ export const SeasonSetupConcierge = ({
 }: SeasonSetupConciergeProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
-  const { play, isPlaying } = useWelcomeChord();
+  const { toggle, isPlaying } = useWelcomeTone();
   const {
     isActive,
     steps,
@@ -231,8 +231,13 @@ export const SeasonSetupConcierge = ({
 
             <button
               type="button"
-              onClick={play}
-              aria-label={t("dashboard.admin.setup.chord_cta", "Posłuchaj tonu zespołu")}
+              onClick={toggle}
+              aria-pressed={isPlaying}
+              aria-label={
+                isPlaying
+                  ? t("dashboard.admin.setup.tone_stop", "Wycisz ton")
+                  : t("dashboard.admin.setup.tone_cta", "Kamerton · ton A")
+              }
               className={cn(
                 "group mt-5 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 transition-colors",
                 isPlaying
@@ -251,8 +256,8 @@ export const SeasonSetupConcierge = ({
               />
               <Eyebrow color={isPlaying ? "gold" : "muted"} as="span" className="tracking-[0.16em]">
                 {isPlaying
-                  ? t("dashboard.admin.setup.chord_playing", "Brzmi…")
-                  : t("dashboard.admin.setup.chord_cta", "Posłuchaj tonu zespołu")}
+                  ? t("dashboard.admin.setup.tone_playing", "Brzmi… wycisz")
+                  : t("dashboard.admin.setup.tone_cta", "Kamerton · ton A")}
               </Eyebrow>
             </button>
           </div>

@@ -967,8 +967,6 @@
       "greeting_word": "Bienvenue",
       "subtitle": "Accès VoctManager",
       "success": {
-        "chord_cta": "Écoutez l'accord de votre ensemble",
-        "chord_playing": "Ça résonne…",
         "copied": "Copié",
         "copy_login": "Copier l'identifiant",
         "desc": "Votre compte a été sécurisé et activé.",
@@ -977,6 +975,9 @@
         "return_home": "Retour à l'accueil",
         "subtitle": "Activation terminée",
         "title": "Votre panneau est prêt",
+        "tone_cta": "Diapason · le la",
+        "tone_playing": "Il résonne… coupez-le",
+        "tone_stop": "Couper le son",
         "your_username": "Votre nom d'utilisateur pour vous connecter"
       },
       "title_1": "Activez votre",
@@ -1764,8 +1765,6 @@
       "satb_distribution": "Distribution vocale SATB",
       "satb_total_aria": "Nombre total de voix dans l'ensemble",
       "setup": {
-        "chord_cta": "Écoutez l'accord de l'ensemble",
-        "chord_playing": "Ça résonne…",
         "eyebrow": "Première saison",
         "finish": "Terminer la configuration",
         "intro": "Trois étapes vous séparent d'une console vivante : programmez votre premier concert, invitez vos chanteurs et constituez le répertoire. Chaque étape mène directement au bon outil.",
@@ -1791,7 +1790,10 @@
           }
         },
         "title": "Posons les fondations",
-        "title_done": "Saison fondée"
+        "title_done": "Saison fondée",
+        "tone_cta": "Diapason · le la",
+        "tone_playing": "Il résonne… coupez-le",
+        "tone_stop": "Couper le son"
       },
       "spotlight": {
         "cast": "Distribution",
@@ -1883,19 +1885,21 @@
       },
       "validation_notes_min": "Veuillez fournir une raison/notes (min. 3 caractères).",
       "welcome": {
-        "chord_cta": "Écoutez votre ensemble",
-        "chord_hint": "Touchez pour entendre l'ensemble s'accorder",
-        "chord_playing": "Ça résonne…",
         "dismiss": "Je commence",
         "enter": "Entrez dans votre espace",
         "eyebrow": "Bienvenue dans l'ensemble",
         "install_cta": "Installer l'application",
         "intro": "C'est votre espace : vous y verrez votre prochaine répétition, vous travaillerez votre partie et confirmerez votre présence. Commencez par l'un des trois endroits ci-dessous.",
-        "overlay_intro": "C'est votre espace — votre prochaine répétition, votre partie et votre présence au même endroit. Mais d'abord, écoutez comment sonne l'ensemble que vous rejoignez.",
+        "overlay_intro": "C'est votre espace — votre prochaine répétition, votre partie et votre présence au même endroit. Et tout commence comme chaque répétition : par un seul ton.",
         "overlay_skip": "Passer",
         "settings_cta": "Terminez la configuration",
         "settings_desc": "Rappels de répétition · synchronisation de l'agenda · photo de profil",
         "title": "Heureux de vous accueillir",
+        "tone_cta": "Jouer le la",
+        "tone_hint": "Touchez pour entendre le ton par lequel commence chaque répétition.",
+        "tone_label": "Diapason · La 440 Hz",
+        "tone_playing": "Il résonne… touchez pour le couper.",
+        "tone_stop": "Couper le son",
         "voice_label": "Votre voix"
       }
     },

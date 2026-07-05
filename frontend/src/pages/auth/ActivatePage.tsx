@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { useAccountActivation } from "@features/auth/hooks/useAccountActivation";
-import { useWelcomeChord } from "@/shared/ui/instruments/useWelcomeChord";
+import { useWelcomeTone } from "@/shared/ui/instruments/useWelcomeTone";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { PasswordInput } from "@/shared/ui/primitives/PasswordInput";
@@ -63,7 +63,7 @@ export default function ActivatePage(): React.JSX.Element {
     handleSubmit,
   } = useAccountActivation();
 
-  const { play: playWelcomeChord, isPlaying: chordPlaying } = useWelcomeChord();
+  const { toggle: toggleWelcomeTone, isPlaying: tonePlaying } = useWelcomeTone();
 
   const meetsLength = password.length >= 8;
   const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
@@ -445,18 +445,24 @@ export default function ActivatePage(): React.JSX.Element {
                           {t("auth.activate.success.desc")}
                         </Text>
 
-                        {/* A chord of welcome — the ensemble finds its pitch the
-                            moment the new member crosses in. */}
+                        {/* The kamerton — the honest A every rehearsal starts
+                            from, offered the moment the new member crosses in.
+                            Tap to ring, tap again to silence. */}
                         <button
                           type="button"
-                          onClick={playWelcomeChord}
-                          aria-label={t(
-                            "auth.activate.success.chord_cta",
-                            "Posłuchaj tonu zespołu",
-                          )}
+                          onClick={toggleWelcomeTone}
+                          aria-pressed={tonePlaying}
+                          aria-label={
+                            tonePlaying
+                              ? t("auth.activate.success.tone_stop", "Wycisz ton")
+                              : t(
+                                  "auth.activate.success.tone_cta",
+                                  "Kamerton · ton A",
+                                )
+                          }
                           className={cn(
                             "group mt-4 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 transition-colors",
-                            chordPlaying
+                            tonePlaying
                               ? "border-ethereal-gold/60 bg-ethereal-gold/10"
                               : "border-ethereal-sage/30 bg-white/50 hover:border-ethereal-gold/45 hover:bg-ethereal-gold/[0.06]",
                           )}
@@ -466,22 +472,22 @@ export default function ActivatePage(): React.JSX.Element {
                             strokeWidth={2}
                             className={cn(
                               "shrink-0 transition-transform",
-                              chordPlaying
+                              tonePlaying
                                 ? "animate-pulse text-ethereal-gold"
                                 : "text-ethereal-gold/80 group-hover:scale-110",
                             )}
                             aria-hidden="true"
                           />
                           <Eyebrow
-                            color={chordPlaying ? "gold" : "incense-muted"}
+                            color={tonePlaying ? "gold" : "incense-muted"}
                             as="span"
                             className="tracking-[0.16em]"
                           >
-                            {chordPlaying
-                              ? t("auth.activate.success.chord_playing", "Brzmi…")
+                            {tonePlaying
+                              ? t("auth.activate.success.tone_playing", "Brzmi… wycisz")
                               : t(
-                                  "auth.activate.success.chord_cta",
-                                  "Posłuchaj tonu zespołu",
+                                  "auth.activate.success.tone_cta",
+                                  "Kamerton · ton A",
                                 )}
                           </Eyebrow>
                         </button>
