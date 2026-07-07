@@ -1891,6 +1891,10 @@
         "eyebrow": "Witamy w zespole",
         "install_cta": "Zainstaluj aplikację",
         "intro": "To Twoja przestrzeń: zobaczysz tu najbliższą próbę, przećwiczysz swoją partię i potwierdzisz obecność. Zacznij od jednego z trzech miejsc poniżej.",
+        "invitation": {
+          "eyebrow": "Czeka na Ciebie zaproszenie",
+          "later": "Zdecyduję później"
+        },
         "overlay_intro": "To Twoja przestrzeń — najbliższa próba, Twoja partia i obecność w jednym miejscu. A zaczyna się tak, jak każda próba: od jednego tonu.",
         "overlay_skip": "Pomiń",
         "settings_cta": "Dokończ konfigurację",

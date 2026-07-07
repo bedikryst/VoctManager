@@ -6,25 +6,21 @@
  * dismissing only defers the decision for this session; the invitation is still
  * unread, so it resurfaces on the next load (and stays reachable from the
  * notification centre / schedule). Multiple pending invitations are shown one at
- * a time as a queue. The export name is kept (`ProjectInvitationToasts`) so the
- * DashboardLayout mount point is untouched.
+ * a time as a queue. The queue/decision logic is shared with the first-run
+ * WelcomeMoment via useProjectInvitationQueue; this modal stays silent while the
+ * chorister's welcome ceremony owns the screen (it presents the invitation
+ * itself), so the two takeovers never double-stack. The export name is kept
+ * (`ProjectInvitationToasts`) so the DashboardLayout mount point is untouched.
  * @module features/notifications/components/ProjectInvitationToasts
  */
 
-import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { Calendar, MapPin, User as UserIcon, X } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  useNotifications,
-  useMarkNotificationRead,
-} from "../api/notifications.queries";
-import { ProjectService } from "@/features/projects/api/project.service";
-import type { ProjectInvitationMetadata } from "../types/notifications.dto";
+import { useProjectInvitationQueue } from "../hooks/useProjectInvitationQueue";
 import { Text, Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -33,67 +29,19 @@ import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 export const ProjectInvitationToasts: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { data: notifications = [] } = useNotifications(!!user);
-  const { mutate: markAsRead } = useMarkNotificationRead();
-  const queryClient = useQueryClient();
+  const { current, pendingCount, accept, decline, defer } =
+    useProjectInvitationQueue();
   const [mounted, setMounted] = useState(false);
-  // Session-local: invitations the user closed without deciding. Kept out of the
-  // queue this session; they remain unread server-side so they return next load.
-  const [deferredIds, setDeferredIds] = useState<Set<string>>(new Set());
   const titleId = useId();
 
   useEffect(() => setMounted(true), []);
-
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: "CON" | "DEC" }) =>
-      ProjectService.updateParticipationStatus(id, status),
-    onSuccess: () => {
-      toast.success(t("notifications.invitation_toast.status_updated"));
-      queryClient.invalidateQueries({ queryKey: ["projects"] });
-      queryClient.invalidateQueries({ queryKey: ["participations"] });
-    },
-    onError: () => {
-      toast.error(t("notifications.invitation_toast.status_error"));
-    },
-  });
-
-  const pending = useMemo(
-    () =>
-      notifications.filter(
-        (n) =>
-          n.notification_type === "PROJECT_INVITATION" &&
-          !n.is_read &&
-          !deferredIds.has(n.id),
-      ),
-    [notifications, deferredIds],
-  );
-
-  const current = pending[0];
-
-  const defer = useCallback((id: string) => {
-    setDeferredIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  }, []);
-
-  const respond = useCallback(
-    (notificationId: string, participationId: string, status: "CON" | "DEC") => {
-      updateStatusMutation.mutate({ id: participationId, status });
-      markAsRead(notificationId);
-      // Advance the queue immediately; the mutation/refetch settle in the background.
-      defer(notificationId);
-    },
-    [updateStatusMutation, markAsRead, defer],
-  );
 
   useBodyScrollLock(!!current);
 
   useEffect(() => {
     if (!current) return;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") defer(current.id);
+      if (event.key === "Escape") defer();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -101,7 +49,17 @@ export const ProjectInvitationToasts: React.FC = () => {
 
   if (!mounted) return null;
 
-  const metadata = current?.metadata as ProjectInvitationMetadata | undefined;
+  // The chorister's first-run welcome overlay presents pending invitations itself
+  // (see welcome-invitation spec, Part A); showing this modal on top of the
+  // ceremony double-stacks two takeovers. The role check keeps manager
+  // invitations unaffected — managers reuse welcome_seen_at for the
+  // (non-blocking) SeasonSetupConcierge, never this overlay.
+  const welcomeOnStage =
+    !user?.profile?.is_manager &&
+    (user?.profile?.welcome_seen_at ?? null) === null;
+  if (welcomeOnStage) return null;
+
+  const metadata = current?.metadata;
 
   return createPortal(
     <AnimatePresence>
@@ -112,12 +70,12 @@ export const ProjectInvitationToasts: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-ethereal-ink/55 backdrop-blur-md"
-            onClick={() => defer(current.id)}
+            onClick={defer}
             aria-hidden="true"
           />
 
           <motion.div
-            key={current.id}
+            key={current.notificationId}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -132,7 +90,7 @@ export const ProjectInvitationToasts: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => defer(current.id)}
+              onClick={defer}
               aria-label={t("common.actions.close", "Zamknij")}
               className="absolute right-3 top-4 grid h-8 w-8 place-items-center rounded-full text-ethereal-graphite/50 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
             >
@@ -149,9 +107,9 @@ export const ProjectInvitationToasts: React.FC = () => {
                     <Eyebrow color="gold" size="caption">
                       {t("notifications.invitation_toast.title")}
                     </Eyebrow>
-                    {pending.length > 1 && (
+                    {pendingCount > 1 && (
                       <span className="rounded-full bg-ethereal-ink/[0.06] px-2 py-0.5 text-[11px] font-semibold leading-none text-ethereal-graphite/70">
-                        1 / {pending.length}
+                        1 / {pendingCount}
                       </span>
                     )}
                   </div>
@@ -200,20 +158,12 @@ export const ProjectInvitationToasts: React.FC = () => {
             <div className="flex items-center gap-3 border-t border-ethereal-incense/15 bg-ethereal-alabaster px-6 py-4">
               <Button
                 variant="ghost"
-                onClick={() =>
-                  respond(current.id, metadata.participation_id, "DEC")
-                }
+                onClick={decline}
                 className="flex-1 text-ethereal-crimson hover:bg-ethereal-crimson/10"
               >
                 {t("notifications.invitation_toast.decline")}
               </Button>
-              <Button
-                variant="primary"
-                onClick={() =>
-                  respond(current.id, metadata.participation_id, "CON")
-                }
-                className="flex-1"
-              >
+              <Button variant="primary" onClick={accept} className="flex-1">
                 {t("notifications.invitation_toast.accept")}
               </Button>
             </div>

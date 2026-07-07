@@ -265,7 +265,10 @@ def send_notification_digests() -> dict:
 
     profiles = (
         UserProfile.objects.filter(
-            digest_enabled=True, email_notifications_enabled=True, email_undeliverable=False
+            digest_enabled=True,
+            email_notifications_enabled=True,
+            email_undeliverable=False,
+            user__is_active=True,
         )
         .select_related("user")
     )

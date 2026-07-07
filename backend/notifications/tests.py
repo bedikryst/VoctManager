@@ -332,6 +332,20 @@ class TransactionalEmailTests(TestCase):
         self._dispatch(NotificationType.REHEARSAL_SCHEDULED, metadata={"project_name": "Requiem"})
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_inactive_account_suppresses_notification_email(self) -> None:
+        # An invited-but-not-yet-activated account meets the activation email
+        # first, never business notifications pointing at a panel it can't enter.
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self._dispatch(NotificationType.PROJECT_INVITATION, metadata={"project_name": "Requiem"})
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_active_account_still_receives_notification_email(self) -> None:
+        # self.user is active by default (create_user) — the gate must not
+        # suppress a genuine, activated recipient.
+        self._dispatch(NotificationType.PROJECT_INVITATION, metadata={"project_name": "Requiem"})
+        self.assertEqual(len(mail.outbox), 1)
+
     def test_rehearsal_reminder_attaches_ics_and_footer_prefs_link(self) -> None:
         self._dispatch(
             NotificationType.REHEARSAL_REMINDER,
@@ -511,6 +525,16 @@ class DigestSweepTests(TestCase):
         self.profile.digest_hour = (timezone.now().astimezone(self._tz).hour + 1) % 24
         self.profile.save(update_fields=["digest_hour"])
         self._notif(NotificationType.ATTENDANCE_SUBMITTED, {"artist_name": "Ada"})
+        self.assertEqual(self._sweep()["sent"], 0)
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_inactive_account_is_skipped_by_digest(self) -> None:
+        # A not-yet-activated account is excluded from the digest sweep, matching
+        # the real-time notification-email gate.
+        self.user.is_active = False
+        self.user.save(update_fields=["is_active"])
+        self._notif(NotificationType.ATTENDANCE_SUBMITTED,
+                    {"artist_name": "Ada", "project_name": "Requiem"})
         self.assertEqual(self._sweep()["sent"], 0)
         self.assertEqual(len(mail.outbox), 0)
 

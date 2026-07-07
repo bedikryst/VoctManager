@@ -114,6 +114,16 @@ class EmailDispatcherService:
             if email_type == EmailType.OPERATIONAL and not getattr(user.profile, 'email_notifications_enabled', True):
                 logger.info(f"[EmailService] Suppressed operational email for UID:{recipient_id}. User opted out.")
                 return
+            # An invited-but-not-yet-activated account must first meet the
+            # activation email, not business notifications pointing at a panel it
+            # cannot enter. The in-app row is already persisted; the first login
+            # presents it instead (see welcome-invitation spec, Part A).
+            if not user.is_active:
+                logger.info(
+                    f"[EmailService] Suppressed notification email for UID:{recipient_id}. "
+                    f"Account not activated (type={notification_type})."
+                )
+                return
 
             # 3. Resolve Execution Context (Language, Role & Payload)
             profile = getattr(user, 'profile', None)

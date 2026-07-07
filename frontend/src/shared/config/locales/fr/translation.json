@@ -1890,6 +1890,10 @@
         "eyebrow": "Bienvenue dans l'ensemble",
         "install_cta": "Installer l'application",
         "intro": "C'est votre espace : vous y verrez votre prochaine répétition, vous travaillerez votre partie et confirmerez votre présence. Commencez par l'un des trois endroits ci-dessous.",
+        "invitation": {
+          "eyebrow": "Une invitation vous attend",
+          "later": "Je déciderai plus tard"
+        },
         "overlay_intro": "C'est votre espace — votre prochaine répétition, votre partie et votre présence au même endroit. Et tout commence comme chaque répétition : par un seul ton.",
         "overlay_skip": "Passer",
         "settings_cta": "Terminez la configuration",

@@ -20,7 +20,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Download, Settings, Sparkles } from "lucide-react";
+import { ArrowRight, Calendar, Download, MapPin, Settings, Sparkles } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -32,6 +32,7 @@ import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
 import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
 import { useWelcomeTone } from "@/shared/ui/instruments/useWelcomeTone";
+import { useProjectInvitationQueue } from "@/features/notifications/hooks/useProjectInvitationQueue";
 import { useInstallPrompt } from "@/shared/pwa/useInstallPrompt";
 import {
   getSectionPresentation,
@@ -143,6 +144,7 @@ export const WelcomeMoment = ({
   const { t } = useTranslation();
   const { user, refreshUser } = useAuth();
   const { toggle, stop, isPlaying } = useWelcomeTone();
+  const invitation = useProjectInvitationQueue();
   const { canPrompt, isInstalled, promptInstall } = useInstallPrompt();
   const reduceMotion = useReducedMotion() ?? false;
   const [mounted, setMounted] = useState(false);
@@ -333,6 +335,99 @@ export const WelcomeMoment = ({
                       "Dotknij, by usłyszeć ton, od którego zaczyna się każda próba.",
                     )}
               </Text>
+
+              {/* ── A pending concert invitation, offered as an act inside the
+                  ceremony — not a second takeover stacked on top of it. Quiet,
+                  in the overlay's own language; full details stay one tap away in
+                  the panel afterwards. ── */}
+              {invitation.current && (
+                <div className="mt-8 w-full max-w-md rounded-2xl border border-ethereal-gold/30 bg-white/55 p-4 text-left shadow-glass-ethereal">
+                  <div className="flex items-center gap-2">
+                    <Eyebrow color="gold" size="caption">
+                      {t(
+                        "dashboard.artist.welcome.invitation.eyebrow",
+                        "Czeka na Ciebie zaproszenie",
+                      )}
+                    </Eyebrow>
+                    {invitation.pendingCount > 1 && (
+                      <span className="rounded-full bg-ethereal-ink/[0.06] px-2 py-0.5 text-[11px] font-semibold leading-none text-ethereal-graphite/70">
+                        1 / {invitation.pendingCount}
+                      </span>
+                    )}
+                  </div>
+
+                  <Heading
+                    as="h2"
+                    size="xl"
+                    weight="bold"
+                    className="mt-1 leading-tight break-words"
+                  >
+                    {invitation.current.metadata.project_name}
+                  </Heading>
+
+                  {(invitation.current.metadata.date_range ||
+                    invitation.current.metadata.location) && (
+                    <div className="mt-2 flex flex-col gap-1.5">
+                      {invitation.current.metadata.date_range && (
+                        <div className="flex items-center gap-2.5 text-ethereal-graphite">
+                          <Calendar
+                            size={15}
+                            className="shrink-0 text-ethereal-sage"
+                            aria-hidden="true"
+                          />
+                          <Text size="sm">
+                            {invitation.current.metadata.date_range}
+                          </Text>
+                        </div>
+                      )}
+                      {invitation.current.metadata.location && (
+                        <div className="flex items-center gap-2.5 text-ethereal-graphite">
+                          <MapPin
+                            size={15}
+                            className="shrink-0 text-ethereal-gold"
+                            aria-hidden="true"
+                          />
+                          <Text size="sm" className="truncate">
+                            {invitation.current.metadata.location}
+                          </Text>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-4 flex gap-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="touch"
+                      onClick={invitation.decline}
+                      className="flex-1 text-ethereal-crimson hover:bg-ethereal-crimson/10"
+                    >
+                      {t("notifications.invitation_toast.decline")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="touch"
+                      onClick={invitation.accept}
+                      className="flex-1"
+                    >
+                      {t("notifications.invitation_toast.accept")}
+                    </Button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={invitation.defer}
+                    className="mt-2 w-full rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/45 transition-colors hover:bg-ethereal-graphite/6 hover:text-ethereal-ink"
+                  >
+                    {t(
+                      "dashboard.artist.welcome.invitation.later",
+                      "Zdecyduję później",
+                    )}
+                  </button>
+                </div>
+              )}
 
               <Button
                 type="button"

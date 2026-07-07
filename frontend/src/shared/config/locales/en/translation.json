@@ -1890,6 +1890,10 @@
         "eyebrow": "Welcome to the ensemble",
         "install_cta": "Install the app",
         "intro": "This is your space: you'll find your next rehearsal here, practise your part, and confirm your attendance. Start from one of the three places below.",
+        "invitation": {
+          "eyebrow": "An invitation awaits you",
+          "later": "I'll decide later"
+        },
         "overlay_intro": "This is your space — your next rehearsal, your part, and your attendance in one place. And it begins the way every rehearsal does: with a single tone.",
         "overlay_skip": "Skip",
         "settings_cta": "Finish setting up",
