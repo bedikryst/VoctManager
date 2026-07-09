@@ -40,7 +40,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
             # Preferences
             'phone_number', 'language', 'timezone', 'salutation',
-            'dietary_preference', 'dietary_notes',
             'clothing_size', 'shoe_size', 'height_cm',
 
             # Notification delivery

@@ -7,11 +7,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from .constants import ClothingSizeChoices, DietaryChoices
+from .constants import ClothingSizeChoices
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
 SALUTATION_VALUES = frozenset({"F", "M", "N"})
-DIETARY_CHOICE_VALUES = frozenset(DietaryChoices.values)
 CLOTHING_SIZE_VALUES = frozenset(ClothingSizeChoices.values)
 
 
@@ -64,8 +63,6 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     timezone: str = Field(default='Europe/Warsaw', max_length=63)
     salutation: str = Field(default='N', max_length=1)
 
-    dietary_preference: str = Field(default='none', max_length=15)
-    dietary_notes: str = Field(default='')
     clothing_size: str = Field(default='', max_length=5)
     shoe_size: str = Field(default='', max_length=10)
     # Automatically validates that height is physically realistic
@@ -81,7 +78,7 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     def normalize_phone_number(cls, value: object) -> object:
         return _blank_to_none(value)
 
-    @field_validator("dietary_notes", "clothing_size", "shoe_size", mode="before")
+    @field_validator("clothing_size", "shoe_size", mode="before")
     @classmethod
     def normalize_blankable_text(cls, value: object) -> object:
         return _blank_to_empty(value)
@@ -107,12 +104,6 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
             raise ValueError("timezone must be a valid IANA timezone name.") from exc
         return value
 
-    @field_validator("dietary_preference")
-    @classmethod
-    def validate_dietary_preference(cls, value: str) -> str:
-        value = value.lower()
-        return _require_choice(value, DIETARY_CHOICE_VALUES, "dietary_preference")
-
     @field_validator("clothing_size")
     @classmethod
     def validate_clothing_size(cls, value: str) -> str:
@@ -132,6 +123,10 @@ class UserAccountActivationDTO(EnterpriseBaseDTO):
     uidb64: str = Field(..., min_length=1)
     token: str = Field(..., min_length=1)
     new_password: str = Field(..., min_length=8)
+    # Version of the Terms/Privacy documents displayed and accepted on the
+    # activation screen. Mandatory: acceptance is a condition of activation and
+    # the (version, timestamp) pair is stored as legal evidence.
+    terms_version: str = Field(..., min_length=1, max_length=20)
 
 
 class UserPasswordResetRequestDTO(EnterpriseBaseDTO):

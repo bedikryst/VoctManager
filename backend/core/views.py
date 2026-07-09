@@ -91,6 +91,7 @@ class ActivateAccountView(views.APIView):
                 uidb64=dto.uidb64,
                 token=dto.token,
                 new_password=dto.new_password,
+                terms_version=dto.terms_version,
             )
             return Response(
                 {
@@ -265,8 +266,6 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
                 "language": getattr(profile, 'language', 'en'),
                 "timezone": getattr(profile, 'timezone', 'Europe/Warsaw'),
                 "salutation": getattr(profile, 'salutation', 'N'),
-                "dietary_preference": getattr(profile, 'dietary_preference', 'none'),
-                "dietary_notes": getattr(profile, 'dietary_notes', ''),
                 "clothing_size": getattr(profile, 'clothing_size', ''),
                 "shoe_size": getattr(profile, 'shoe_size', ''),
                 "height_cm": getattr(profile, 'height_cm', None),

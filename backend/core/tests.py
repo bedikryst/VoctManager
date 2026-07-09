@@ -41,7 +41,6 @@ class PydanticDtoHardeningTests(SimpleTestCase):
             first_name="  Ada  ",
             last_name="  Lovelace  ",
             phone_number="   ",
-            dietary_notes="  no peanuts  ",
             clothing_size=" M ",
             shoe_size=" 42 ",
         )
@@ -49,7 +48,6 @@ class PydanticDtoHardeningTests(SimpleTestCase):
         self.assertEqual(dto.first_name, "Ada")
         self.assertEqual(dto.last_name, "Lovelace")
         self.assertIsNone(dto.phone_number)
-        self.assertEqual(dto.dietary_notes, "no peanuts")
         self.assertEqual(dto.clothing_size, "m")
         self.assertEqual(dto.shoe_size, "42")
 
@@ -144,6 +142,7 @@ class AccountActivationViewTests(APITestCase):
                     "uidb64": payload["uidb64"],
                     "token": payload["token"],
                     "new_password": "SecurePass123!",
+                    "terms_version": "2026-07-09",
                 },
                 format="json",
             )
@@ -152,8 +151,32 @@ class AccountActivationViewTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(user.is_active)
         self.assertTrue(user.check_password("SecurePass123!"))
+        self.assertEqual(user.profile.terms_accepted_version, "2026-07-09")
+        self.assertIsNotNone(user.profile.terms_accepted_at)
         enqueue_mock.assert_called_once()
         self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "welcome_email")
+
+    @patch(EMAIL_TASK)
+    def test_activation_requires_terms_version(self, enqueue_mock):
+        with self.captureOnCommitCallbacks(execute=True):
+            user = UserIdentityService.provision_user_account(
+                email="noterms@example.com", first_name="Alan", last_name="Turing",
+            )
+        payload = UserIdentityService.generate_activation_token_payload(user)
+
+        response = self.client.post(
+            self.ACTIVATE_URL,
+            {
+                "uidb64": payload["uidb64"],
+                "token": payload["token"],
+                "new_password": "SecurePass123!",
+            },
+            format="json",
+        )
+
+        user.refresh_from_db()
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(user.is_active)
 
     @patch(EMAIL_TASK)
     def test_activation_rejects_invalid_token(self, enqueue_mock):
@@ -169,6 +192,7 @@ class AccountActivationViewTests(APITestCase):
                 "uidb64": payload["uidb64"],
                 "token": "invalid-token",
                 "new_password": "SecurePass123!",
+                "terms_version": "2026-07-09",
             },
             format="json",
         )

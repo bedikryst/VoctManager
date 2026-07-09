@@ -27,13 +27,6 @@ class VoiceLine(models.TextChoices):
     ACCOMPANIMENT = 'ACC', _('Accompaniment')
     PRONUNCIATION = 'PRON', _('Pronunciation / Diction')
 
-class DietaryChoices(models.TextChoices):
-    NONE = 'none', _('Brak wymagań')
-    VEGE = 'vege', _('Wegetariańska')
-    VEGAN = 'vegan', _('Wegańska')
-    GF = 'gf', _('Bez glutenu')
-    LF = 'lf', _('Bez laktozy')
-
 class ClothingSizeChoices(models.TextChoices):
     XS = 'xs', 'XS'
     S = 's', 'S'

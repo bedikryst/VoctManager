@@ -11,7 +11,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from .constants import AppRole, ClothingSizeChoices, DietaryChoices
+from .constants import AppRole, ClothingSizeChoices
 
 
 def avatar_upload_path(instance: "UserProfile", filename: str) -> str:
@@ -154,16 +154,6 @@ class UserProfile(EnterpriseBaseModel):
                     "FR Cher/Chère). Optional; NEUTRAL makes no assumption.")
     )
 
-    dietary_preference = models.CharField(
-        max_length=15,
-        choices=DietaryChoices.choices,
-        default=DietaryChoices.NONE,
-        help_text=_("Primary dietary requirement for catering.")
-    )
-    dietary_notes = models.TextField(
-        blank=True,
-        help_text=_("Specific allergies or custom dietary instructions.")
-    )
     clothing_size = models.CharField(
         max_length=5,
         choices=ClothingSizeChoices.choices,
@@ -231,6 +221,17 @@ class UserProfile(EnterpriseBaseModel):
                     "welcome. Stamped once, server-side, so the WelcomeMoment card "
                     "greets a new member exactly once per account — on every device "
                     "they sign in from, not once per browser.")
+    )
+    terms_accepted_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("Server-side timestamp of the user's acceptance of the Terms of "
+                    "Service and Privacy Policy at account activation. Legal evidence "
+                    "of consent — stamped once, never updated on later logins.")
+    )
+    terms_accepted_version = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text=_("Version identifier (date-stamped, e.g. '2026-07-09') of the "
+                    "legal documents the user accepted at activation.")
     )
 
     # === ENTERPRISE RBAC ===

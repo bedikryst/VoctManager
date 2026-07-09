@@ -18,8 +18,6 @@ export interface UserProfileDTO {
   language: string;
   timezone: string;
   salutation: string;
-  dietary_preference: string;
-  dietary_notes: string;
   clothing_size: string;
   shoe_size: string;
   height_cm: number | null;
@@ -52,8 +50,6 @@ export interface UpdatePreferencesPayload {
     language: string;
     timezone: string;
     salutation: string;
-    dietary_preference: string;
-    dietary_notes: string;
     clothing_size: string;
     shoe_size: string;
     height_cm: number | null;

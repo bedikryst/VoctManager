@@ -10,8 +10,6 @@ export function useLogisticsSettings() {
   const { mutateAsync: updatePreferences, isPending } = useUpdatePreferences();
 
   const [formData, setFormData] = useState({
-    dietary_preference: "none",
-    dietary_notes: "",
     clothing_size: "",
     shoe_size: "",
     height_cm: "" as string | number,
@@ -25,8 +23,6 @@ export function useLogisticsSettings() {
   useEffect(() => {
     if (user?.profile) {
       setFormData({
-        dietary_preference: user.profile.dietary_preference || "none",
-        dietary_notes: user.profile.dietary_notes || "",
         clothing_size: user.profile.clothing_size || "",
         shoe_size: user.profile.shoe_size || "",
         height_cm: user.profile.height_cm || "",
@@ -37,8 +33,6 @@ export function useLogisticsSettings() {
   const isDirty = useMemo(() => {
     if (!user?.profile) return false;
     const initial = {
-      dietary_preference: user.profile.dietary_preference || "none",
-      dietary_notes: user.profile.dietary_notes || "",
       clothing_size: user.profile.clothing_size || "",
       shoe_size: user.profile.shoe_size || "",
       height_cm: user.profile.height_cm || "",
@@ -60,8 +54,6 @@ export function useLogisticsSettings() {
         language: user.profile?.language || "pl",
         timezone: user.profile?.timezone || "UTC",
         salutation: user.profile?.salutation || "N",
-        dietary_preference: formData.dietary_preference,
-        dietary_notes: formData.dietary_notes,
         clothing_size: formData.clothing_size,
         shoe_size: formData.shoe_size,
         height_cm: formData.height_cm

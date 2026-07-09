@@ -10,6 +10,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { parseApiError } from "@/shared/api/errors";
 import { authService } from "../api/auth.service";
+import { LEGAL_DOCS_VERSION } from "../components/LegalContent";
 import { changeAppLanguage } from "@/shared/config/i18n";
 
 /** Mirrors i18n `supportedLngs` — guards what we'll adopt from an untrusted link. */
@@ -121,10 +122,13 @@ export const useAccountActivation = () => {
     }
 
     setFormError(null);
+    // The submit button is gated on the accepted-terms checkbox, so reaching
+    // this point implies acceptance of the currently displayed version.
     await activationMutation.mutateAsync({
       uidb64: activationContext.uidb64,
       token: activationContext.token,
       new_password: password,
+      terms_version: LEGAL_DOCS_VERSION,
     });
   };
 

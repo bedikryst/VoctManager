@@ -1,8 +1,8 @@
 /**
  * @file LegalModals.tsx
- * @description Enterprise-grade legal modals for Terms of Service and Privacy Policy.
- * Compliant with Ethereal UI constraints (Glassmorphism, CVA Typography).
- * Updated: 2026-04-26
+ * @description Pre-login modal shell for the Terms of Service and Privacy
+ * Policy. Section bodies and the document version live in LegalContent.tsx
+ * (shared with the public printable /legal/:type page).
  */
 
 import React from "react";
@@ -10,9 +10,14 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Printer } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
+import { Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
+import {
+  PrivacyContent,
+  TermsContent,
+  LEGAL_DOCS_UPDATED_DISPLAY,
+} from "./LegalContent";
 
 export interface LegalModalProps {
   isOpen: boolean;
@@ -30,8 +35,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handlePrint = (): void => {
-    window.print();
+  // The modal itself has no print styling — the public page does. Open the
+  // printable document view instead of window.print()ing the layered modal.
+  const handleOpenPrintable = (): void => {
+    window.open(`/legal/${type}`, "_blank", "noopener");
   };
 
   return (
@@ -70,7 +77,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </Heading>
                 <Eyebrow color="muted" className="mt-1">
                   {t("auth.legal.common.last_updated", {
-                    date: "15.06.2026",
+                    date: LEGAL_DOCS_UPDATED_DISPLAY,
                   })}
                 </Eyebrow>
               </div>
@@ -78,7 +85,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handlePrint}
+                  onClick={handleOpenPrintable}
                   className="hidden sm:flex"
                 >
                   <Printer className="w-4 h-4 ml-3" />
@@ -110,232 +117,5 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         </div>
       </div>
     </AnimatePresence>
-  );
-};
-
-/*
- * Privacy policy for the *panel application* (a separate document from the public
- * site's RODO under web/). The "Internal communication" disclosures below
- * (messaging + notifications) are written to match the actual implementation:
- * see backend/messaging/signals.py for the erasure behaviour ("[treść usunięta]"),
- * and config/settings.py for the notification processors (Anymail/Resend e-mail,
- * Google Firebase/FCM mobile push, self-hosted VAPID web push).
- *
- * ⚠ NOT yet reviewed by a lawyer. The legal basis (art. 6 ust. 1 lit. f RODO) and
- * the US-transfer mechanism (Data Privacy Framework / standard contractual clauses)
- * must be confirmed by counsel before this is relied on as final legal text.
- */
-const PrivacyContent: React.FC = () => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="space-y-6">
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.administrator")}
-      </Eyebrow>
-      <Text color="graphite" size="md" className="mt-2">
-        {t("auth.legal.privacy.administrator_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.goals_and_basis")}
-      </Eyebrow>
-      <ul className="space-y-4 list-none pl-0 m-0">
-        <li>
-          <Text weight="bold" color="default" size={"md"} className="mt-2">
-            {t("auth.legal.privacy.goals_items.account.title")}:
-          </Text>
-          <Text size="md" color="graphite" className="mt-1">
-            {t("auth.legal.privacy.goals_items.account.desc")}
-          </Text>
-        </li>
-        <li>
-          <Text weight="bold" color="default" size={"md"}>
-            {t("auth.legal.privacy.goals_items.logistics.title")}:
-          </Text>
-          <Text size="md" color="graphite" className="mt-1">
-            {t("auth.legal.privacy.goals_items.logistics.desc")}
-          </Text>
-        </li>
-        <li>
-          <Text weight="bold" color="default" size={"md"} className="mt-2">
-            {t("auth.legal.privacy.goals_items.contracts.title")}:
-          </Text>
-          <Text size="md" color="graphite" className="mt-1">
-            {t("auth.legal.privacy.goals_items.contracts.desc")}
-          </Text>
-        </li>
-      </ul>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.security_and_tech")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.security_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.recipients")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.recipients_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.internal_comm_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.internal_comm_desc")}
-      </Text>
-      <Text size="md" color="graphite" className="mt-3">
-        {t("auth.legal.privacy.internal_comm_retention")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.transfers_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.transfers_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.retention_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.retention_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.analytics_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.analytics_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.embeds_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.embeds_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.privacy.your_rights_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.privacy.your_rights_desc")}
-      </Text>
-    </div>
-  </div>
-  );
-};
-
-const TermsContent: React.FC = () => {
-  const { t } = useTranslation();
-
-  return (
-    <div className="space-y-6">
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.character_and_usage")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.character_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.intellectual_property")}
-      </Eyebrow>
-      <div className="bg-ethereal-gold/10 p-4 border-l-2 border-ethereal-gold mt-2">
-        <Text size="md" color="graphite" className="italic mt-2">
-          {t("auth.legal.terms.intellectual_property_desc")}
-        </Text>
-      </div>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.confidentiality")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.confidentiality_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.data_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.data_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.embeds_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.embeds_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.support_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.support_desc_prefix")} <span className="font-medium text-ethereal-ink">{t("auth.legal.privacy.contact_email")}</span> {t("auth.legal.terms.support_desc_suffix")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.blocking_account")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.blocking_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.changes_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.changes_desc")}
-      </Text>
-    </div>
-
-    <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
-        {t("auth.legal.terms.governing_law_title")}
-      </Eyebrow>
-      <Text size="md" color="graphite" className="mt-2">
-        {t("auth.legal.terms.governing_law_desc")}
-      </Text>
-    </div>
-  </div>
   );
 };

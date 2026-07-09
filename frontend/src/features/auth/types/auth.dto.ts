@@ -3,6 +3,8 @@ export interface ActivateAccountPayload {
   uidb64: string;
   token: string;
   new_password: string;
+  /** Version of the Terms/Privacy documents accepted on the activation screen. */
+  terms_version: string;
 }
 
 export interface ActivateAccountResponse {

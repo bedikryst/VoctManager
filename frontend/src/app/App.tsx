@@ -65,6 +65,8 @@ const Activate = lazyWithPreload(() => import("@pages/auth/ActivatePage"));
 const ResetPassword = lazyWithPreload(
   () => import("@pages/auth/ResetPasswordPage"),
 );
+// Public printable legal documents (Terms / Privacy) — linkable outside auth.
+const Legal = lazyWithPreload(() => import("@pages/auth/LegalPage"));
 
 // Secure shell entry points are lazy-loaded and warmed after the dashboard shell mounts.
 const DashboardHome = lazyWithPreload(
@@ -272,6 +274,15 @@ export const router = createBrowserRouter(
           </PageTransition>
         }
       />
+      <Route
+        path="/legal/:type"
+        element={
+          <PageTransition>
+            <Legal />
+          </PageTransition>
+        }
+      />
+      <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
 
       <Route
         element={

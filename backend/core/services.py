@@ -151,9 +151,15 @@ class UserIdentityService:
         }
 
     @staticmethod
-    def activate_account_and_set_password(uidb64: str, token: str, new_password: str) -> User:
+    def activate_account_and_set_password(
+        uidb64: str, token: str, new_password: str, terms_version: str,
+    ) -> User:
         """
         Activates the user account and explicitly dispatches a welcome email.
+
+        `terms_version` identifies the Terms/Privacy documents accepted on the
+        activation screen; it is stamped on the profile together with a server
+        timestamp as durable evidence of acceptance.
         """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
@@ -170,7 +176,17 @@ class UserIdentityService:
             user.set_password(new_password)
             user.is_active = True
             user.save(update_fields=['password', 'is_active'])
-            
+
+            # Record which Terms/Privacy version was accepted, and when. The
+            # activation token is single-use (invalidated by the password
+            # change), so this stamp can never be overwritten later.
+            if hasattr(user, 'profile'):
+                user.profile.terms_accepted_at = timezone.now()
+                user.profile.terms_accepted_version = terms_version
+                user.profile.save(
+                    update_fields=['terms_accepted_at', 'terms_accepted_version']
+                )
+
             # Resolve fallback language safely
             fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
 
@@ -415,8 +431,6 @@ class UserPreferencesService:
                     'language': dto.language,
                     'timezone': dto.timezone,
                     'salutation': dto.salutation,
-                    'dietary_preference': dto.dietary_preference,
-                    'dietary_notes': dto.dietary_notes,
                     'clothing_size': dto.clothing_size,
                     'shoe_size': dto.shoe_size,
                     'height_cm': dto.height_cm,

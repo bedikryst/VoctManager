@@ -1,8 +1,9 @@
 /**
  * @file LogisticsTab.tsx
  * @description "Logistyka sceniczna" pane: wardrobe measurements used by the
- * management when ordering concert attire. Catering preferences are parked
- * (commented out) until the feature returns.
+ * management when ordering concert attire. Catering/dietary fields were removed
+ * (client + server) because allergy data is a GDPR art. 9 special category we
+ * chose not to hold; catering is coordinated off-system.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/LogisticsTab
  */
@@ -77,52 +78,6 @@ export const LogisticsTab = () => {
       </AnimatePresence>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* ── Catering ─────────────────────────────────── deleted temporary, will be reintroduced in future iterations ── 
-        <div className="space-y-5">
-          <SectionHeader
-            title={t("settings.logistics.sections.catering", "Catering")}
-            icon={<Utensils className="w-4 h-4" />}
-            withFluidDivider
-          />
-          <Select
-            label={t(
-              "settings.logistics.dietary_preference",
-              "Preferencja żywieniowa",
-            )}
-            value={formData.dietary_preference}
-            onChange={(e) => handleChange("dietary_preference", e.target.value)}
-          >
-            <option value="none">
-              {t("settings.logistics.dietary_options.none", "Brak wymagań")}
-            </option>
-            <option value="vege">
-              {t("settings.logistics.dietary_options.vege", "Wegetariańska")}
-            </option>
-            <option value="vegan">
-              {t("settings.logistics.dietary_options.vegan", "Wegańska")}
-            </option>
-            <option value="gf">
-              {t("settings.logistics.dietary_options.gf", "Bez glutenu")}
-            </option>
-            <option value="lf">
-              {t("settings.logistics.dietary_options.lf", "Bez laktozy")}
-            </option>
-          </Select>
-
-          <Textarea
-            label={t(
-              "settings.logistics.dietary_notes",
-              "Uwagi / alergie (opcjonalnie)",
-            )}
-            placeholder={t(
-              "settings.logistics.dietary_notes_placeholder",
-              "Np. uczulenie na orzechy, brak owoców morza...",
-            )}
-            value={formData.dietary_notes}
-            onChange={(e) => handleChange("dietary_notes", e.target.value)}
-          />
-        </div>
-*/}
         {/* ── Wymiary ───────────────────────────────────── */}
         <div className="space-y-5">
           <SectionHeader

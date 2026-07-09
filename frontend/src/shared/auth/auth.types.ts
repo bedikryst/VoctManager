@@ -24,8 +24,6 @@ export interface AuthProfile {
   timezone?: string;
   salutation?: string;
   phone_number?: string;
-  dietary_preference?: string;
-  dietary_notes?: string;
   clothing_size?: string;
   shoe_size?: string;
   height_cm?: number | null;

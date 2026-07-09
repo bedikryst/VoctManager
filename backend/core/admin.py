@@ -7,6 +7,6 @@ from .models import UserProfile
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
     """Admin view for managing user preferences and logistics data."""
-    list_display = ('user', 'phone_number', 'language', 'timezone', 'dietary_preference')
+    list_display = ('user', 'phone_number', 'language', 'timezone')
     search_fields = ('user__email', 'user__first_name', 'user__last_name')
-    list_filter = ('language', 'timezone', 'dietary_preference')
+    list_filter = ('language', 'timezone')

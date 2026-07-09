@@ -65,7 +65,7 @@ from archive.models import (
 )
 
 # Core
-from core.constants import AppRole, ClothingSizeChoices, DietaryChoices, VoiceLine
+from core.constants import AppRole, ClothingSizeChoices, VoiceLine
 from core.models import UserProfile
 
 # Documents (Knowledge Base / Chorister Hub)
@@ -650,15 +650,6 @@ class Command(BaseCommand):
                 first_name=first, last_name=last,
             )
             profile = self._ensure_profile(user, AppRole.ARTIST, phone=phone)
-            profile.dietary_preference = random.choices(
-                [DietaryChoices.NONE, DietaryChoices.VEGE, DietaryChoices.VEGAN,
-                 DietaryChoices.GF, DietaryChoices.LF],
-                weights=[60, 15, 5, 10, 10], k=1,
-            )[0]
-            if profile.dietary_preference != DietaryChoices.NONE:
-                profile.dietary_notes = random.choice(
-                    ["Alergia na orzechy", "Bez papryki", "Alergia na owoce morza", ""]
-                )
             profile.clothing_size = random.choice([
                 ClothingSizeChoices.S, ClothingSizeChoices.M,
                 ClothingSizeChoices.L, ClothingSizeChoices.XL,
