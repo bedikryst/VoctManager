@@ -272,8 +272,17 @@ class ProjectManagementService:
                     continue
                 old_value = getattr(project, attr)
                 if old_value != value:
-                    key = ProjectManagementService._PROJECT_CHANGE_KEYS.get(attr, attr)
-                    changes.append(_change(key, old_value, value))
+                    if attr == 'run_sheet':
+                        # The run-sheet is a structured JSON list; a raw payload diff
+                        # ("[{'time': '18:00', ...}]") reads as gibberish on the bell,
+                        # push and email. Surface it as a self-describing "day schedule
+                        # updated" change instead — mirrors the is_mandatory pattern.
+                        changes.append(_change("run_sheet", None, None))
+                    elif attr in ProjectManagementService._PROJECT_CHANGE_KEYS:
+                        key = ProjectManagementService._PROJECT_CHANGE_KEYS[attr]
+                        changes.append(_change(key, old_value, value))
+                    # Fields outside the surfaceable set (description, spotify URL)
+                    # persist silently — a note tweak isn't worth alerting the cast.
                 setattr(project, attr, value)
 
             project.save()

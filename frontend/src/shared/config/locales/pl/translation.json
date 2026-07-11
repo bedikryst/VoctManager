@@ -2834,7 +2834,8 @@
       "is_mandatory": "Obecność",
       "voice_line": "Partia",
       "now_mandatory": "Teraz obowiązkowa",
-      "now_optional": "Teraz nieobowiązkowa"
+      "now_optional": "Teraz nieobowiązkowa",
+      "run_sheet": "Harmonogram dnia"
     },
     "voiceLines": {
       "S1": "Sopran 1",

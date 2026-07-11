@@ -2833,7 +2833,8 @@
       "is_mandatory": "Présence",
       "voice_line": "Pupitre",
       "now_mandatory": "Désormais obligatoire",
-      "now_optional": "Désormais facultative"
+      "now_optional": "Désormais facultative",
+      "run_sheet": "Déroulé de la journée"
     },
     "voiceLines": {
       "S1": "Soprano 1",

@@ -15,7 +15,7 @@ from notifications.models import NotificationType
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
 from .infrastructure.document_generator import DocumentRenderDependencyError
 from .models import Artist, Participation, Project, Rehearsal, VoiceType
-from .services import ArtistHRService, RehearsalOperationsService
+from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService
 
 # Provisioning delegates the email to core.services, so the task is patched there.
 EMAIL_TASK = "core.services.send_transactional_email_task.delay"
@@ -1656,6 +1656,65 @@ class RehearsalNotificationEmitterTests(TestCase):
         self.assertEqual(meta["project_id"], str(self.project.id))
         self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
         self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
+
+
+class ProjectUpdateNotificationEmitterTests(TestCase):
+    """A project update surfaces only human-readable field changes to the cast.
+    The run-sheet is a structured JSON list, so its diff must arrive as a
+    self-describing 'day schedule' change — never the raw payload — and edits to
+    non-surfaceable fields (description) must not ping the cast at all."""
+
+    BULK = "roster.services.send_bulk_notifications_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="pue1", email="pue1@test.pl", password="pw123456", first_name="Ada",
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="L", email="pue1@test.pl",
+            voice_type=VoiceType.SOPRANO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=10),
+            status=Project.Status.ACTIVE,
+        )
+        self.participation = Participation.objects.create(
+            artist=self.artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+
+    def test_run_sheet_change_emits_label_only_not_json_payload(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(run_sheet=[{"time": "18:00", "label": "Zbiórka"}]),
+            )
+
+        bulk.assert_called_once()
+        meta = bulk.call_args.kwargs["metadata"]
+        run_sheet_changes = [c for c in meta["changes"] if c["field"] == "run_sheet"]
+        self.assertEqual(len(run_sheet_changes), 1)
+        # Label-only: no raw JSON payload leaks into old/new (the reported bug).
+        self.assertIsNone(run_sheet_changes[0]["old"])
+        self.assertIsNone(run_sheet_changes[0]["new"])
+        self.assertNotIn("Zbiórka", str(meta["changes"]))
+        # The edit still persists.
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.run_sheet, [{"time": "18:00", "label": "Zbiórka"}])
+
+    def test_description_only_change_does_not_notify_the_cast(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(description="Nowy opis programu."),
+            )
+
+        bulk.assert_not_called()
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.description, "Nowy opis programu.")
 
 
 class ConductorScheduleAndMaterialsTests(APITestCase):

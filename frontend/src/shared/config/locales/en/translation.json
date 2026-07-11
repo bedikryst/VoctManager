@@ -2833,7 +2833,8 @@
       "is_mandatory": "Attendance",
       "voice_line": "Voice part",
       "now_mandatory": "Now mandatory",
-      "now_optional": "Now optional"
+      "now_optional": "Now optional",
+      "run_sheet": "Day schedule"
     },
     "voiceLines": {
       "S1": "Soprano 1",

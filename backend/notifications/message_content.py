@@ -256,6 +256,7 @@ def _change_field_label(field_key: str) -> str:
         "now_mandatory": _("Now mandatory"),
         "now_optional": _("Now optional"),
         "voice_line": _("Voice part"),
+        "run_sheet": _("Day schedule"),
     }.get(field_key, field_key.replace("_", " ").capitalize())
 
 
