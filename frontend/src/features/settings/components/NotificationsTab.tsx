@@ -43,6 +43,7 @@ import { isPreferenceCustomized } from "@/features/notifications/lib/preferences
 import {
   groupNotificationPreferences,
   notificationTypeMeta,
+  NOTIFICATION_GROUP_ORDER,
   type NotificationGroupId,
   type NotificationPreferenceGroup,
 } from "@/features/settings/constants/notificationPreferenceGroups";
@@ -152,7 +153,13 @@ export const NotificationsTab: React.FC = () => {
 
   const [primerOpen, setPrimerOpen] = useState(false);
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<ReadonlySet<NotificationGroupId>>(new Set());
+  // Calm default: the calendar-critical "schedule" group opens expanded; the rest
+  // collapse so notification settings read as a scannable index, not a 16-row wall.
+  // Every collapsed header still surfaces its Restore-recommended / customized
+  // marker, so nothing actionable is hidden — it's one tap to fine-tune.
+  const [collapsed, setCollapsed] = useState<ReadonlySet<NotificationGroupId>>(
+    () => new Set(NOTIFICATION_GROUP_ORDER.filter((id) => id !== "schedule")),
+  );
   const [restoringGroup, setRestoringGroup] = useState<NotificationGroupId | null>(null);
 
   const pushGranted = availability.kind === "ready" && permission === "granted" && isSubscribed;

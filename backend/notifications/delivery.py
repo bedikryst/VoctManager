@@ -17,13 +17,18 @@ from .models import NotificationLevel, NotificationType
 # the router both use these values, so a first delivered event cannot silently
 # create a preference that differs from what the UI showed the user.
 #
-# Default policy follows a three-tier urgency model:
-#   • Tier 1 — Actionable / transactional (email ON + push ON): the recipient must
-#     not miss these even if they never open the app — invitations, cancellations,
-#     a contract to sign, a rehearsal moved, a direct message.
-#   • Tier 2 — Informational / timely (push ON, email OFF): worth a glance, not an
-#     inbox entry — reminders, casting, new materials, status decisions.
-#   • Tier 3 — Manager operations, high-volume (push ON, real-time email OFF): the
+# The organizing line is "would a busy singer want this in their inbox?":
+#   • Tier 1 — Commitments, decisions & direct messages (email ON + push ON): the
+#     recipient must not miss these even if they never open the app. Anything that
+#     changes what they've committed to (an invitation, a concert or rehearsal
+#     scheduled / moved / cancelled), a decision on their own request (absence
+#     approved / rejected), a contract to sign, or a person writing to them
+#     directly (a thread message, a management broadcast).
+#   • Tier 2 — Preparation, content & nudges (push ON, email OFF): timely but not
+#     inbox-worthy — reminders, casting, new sheet music / recordings, system
+#     notices. Casting and materials also fan out in bulk (a whole cast at once),
+#     so a per-event email would flood; the push + in-app row is enough.
+#   • Tier 3 — Manager routine fan-out (push ON, real-time email OFF): the
 #     per-event email is replaced by the once-daily digest; WARNING escalations
 #     (e.g. a singer declining) still break through to push in real time.
 #
@@ -31,12 +36,16 @@ from .models import NotificationLevel, NotificationType
 # explicitly subscribed a device — while email is reserved for the Tier 1 set.
 DEFAULT_EMAIL_ENABLED_TYPES: frozenset[str] = frozenset({
     NotificationType.PROJECT_INVITATION,
+    NotificationType.PROJECT_UPDATED,     # a concert moving is as must-know as a rehearsal moving
     NotificationType.PROJECT_CANCELLED,
     NotificationType.REHEARSAL_SCHEDULED,
     NotificationType.REHEARSAL_UPDATED,
     NotificationType.REHEARSAL_CANCELLED,
     NotificationType.CONTRACT_ISSUED,
     NotificationType.MESSAGE_RECEIVED,
+    NotificationType.CUSTOM_ADMIN_MESSAGE,  # management writing to you directly — parity with a DM
+    NotificationType.ABSENCE_APPROVED,      # the outcome of your own request should reach you reliably
+    NotificationType.ABSENCE_REJECTED,      # …in both directions, so good news isn't only in-app
 })
 
 # Nothing is push-off by default: push is opt-in at the device level, so a

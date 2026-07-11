@@ -664,17 +664,22 @@ class RehearsalOperationsService:
                 ))
             
             if dto.is_manager and dto.status in ['EXCUSED', 'ABSENT'] and participation.artist.user_id:
-                notif_type = NotificationType.ABSENCE_APPROVED if dto.status == 'EXCUSED' else NotificationType.ABSENCE_REJECTED
+                is_approved = dto.status == 'EXCUSED'
+                notif_type = NotificationType.ABSENCE_APPROVED if is_approved else NotificationType.ABSENCE_REJECTED
+                # A rejected absence reinstates a commitment ("you're expected after
+                # all"), so it carries WARNING weight; an approval is a positive FYI
+                # at INFO. Mirrors the composer's intended level for each.
+                level = NotificationLevel.INFO if is_approved else NotificationLevel.WARNING
                 metadata = AbsenceStatusMetadata(
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
                     rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
                 ).model_dump(mode="json")
-                
+
                 transaction.on_commit(lambda: send_notification_task.delay(
                     recipient_id=str(participation.artist.user_id),
                     notification_type=notif_type,
-                    level=NotificationLevel.INFO,
+                    level=level,
                     metadata=metadata
                 ))
                 
