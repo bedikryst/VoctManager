@@ -1,0 +1,198 @@
+  /* ── Vox · Zobacz i usłysz ────────────────────────────────────────────────────────────
+     Movement II's heart: after the silence beat, the actual voice — with image. One
+     cinematic frame (VoxMoment island) between SilenceMoment and PathSection, plus the
+     full-screen projection room (.video-lightbox) opened by the hero CTA and the
+     path-register fragments. The shared player chrome (.vplayer) lives in ../vplayer.css
+     (imported by landing.css just before this partial, and standalone by /press) — this
+     file keeps only the landing-specific surfaces around it. Light parchment shell to
+     match both neighbours; the frame is the only dark object — a window, not a room. */
+  .vox {
+    position: relative;
+    padding: clamp(72px, 9vw, 132px) max(28px, 5vw);
+    background: var(--paper);
+    isolation: isolate;
+  }
+
+  .vox-inner {
+    max-width: 880px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: clamp(20px, 2.6vw, 32px);
+  }
+
+  .vox-eyebrow {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .vox-eyebrow .lat {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .vox-line {
+    margin: 0;
+    max-width: 18ch;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(24px, 3.4vw, 44px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .vox-line em {
+    font-style: italic;
+    color: var(--candle);
+  }
+
+  /* In-flow breathing room above the frame (vplayer.css keeps the player margin-neutral). */
+  .vox .vplayer {
+    margin-top: clamp(6px, 1vw, 12px);
+  }
+
+  /* ── Path register: fragment link ── */
+  .path-entry-video {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    padding-bottom: 4px;
+    border-bottom: 1px solid transparent;
+    transition:
+      color 0.35s var(--ease),
+      border-color 0.35s var(--ease);
+  }
+
+  .path-entry-video:hover {
+    color: var(--ink);
+    border-color: var(--candle);
+  }
+
+  .path-entry-video-glyph {
+    color: var(--candle);
+    font-size: 9px;
+  }
+
+  /* ── Projection room (lightbox) — player chrome tones come from .vplayer--dark ── */
+  body.theme-marketing.video-open {
+    overflow: hidden;
+  }
+
+  .video-lightbox {
+    position: fixed;
+    inset: 0;
+    /* Matches .vault's z-index (08-vault.css) — the two overlays never open together, but
+       both must clear the chrome header. */
+    z-index: 110;
+    display: grid;
+    place-items: center;
+    padding: max(20px, 4vh) max(16px, 4vw);
+    animation: videoRoomIn 0.55s var(--ease) both;
+  }
+
+  .video-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(8, 8, 7, 0.94);
+    cursor: default;
+  }
+
+  .video-lightbox-panel {
+    position: relative;
+    width: min(1100px, 100%);
+    animation: videoRoomRise 0.55s var(--ease) both;
+  }
+
+  /* Portrait documents: the room shrinks to the frame, so the ✕ hangs at its corner
+     instead of drifting to the far edge of a 1100px panel. */
+  .video-lightbox-panel:has(.vplayer--portrait) {
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .video-lightbox-close {
+    position: absolute;
+    right: 0;
+    top: -52px;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(244, 241, 233, 0.28);
+    border-radius: 50%;
+    background: transparent;
+    color: rgba(244, 241, 233, 0.85);
+    font-size: 14px;
+    cursor: pointer;
+    transition:
+      color 0.35s var(--ease),
+      border-color 0.35s var(--ease),
+      opacity 0.45s var(--ease);
+  }
+
+  .video-lightbox-close:hover {
+    color: var(--candle);
+    border-color: var(--candle);
+  }
+
+  .video-lightbox-close:focus-visible {
+    outline: 1px solid var(--candle);
+    outline-offset: 4px;
+  }
+
+  /* Projection-room stillness: when the player chrome recedes (is-idle), the ✕ follows —
+     the first mousemove wakes everything. */
+  .video-lightbox-panel:has(.vplayer.is-idle) .video-lightbox-close {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @keyframes videoRoomIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes videoRoomRise {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 640px) {
+    .video-lightbox {
+      padding: 12px;
+    }
+    .video-lightbox-close {
+      top: auto;
+      bottom: -56px;
+      right: 50%;
+      transform: translateX(50%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .video-lightbox,
+    .video-lightbox-panel {
+      animation: none;
+    }
+  }

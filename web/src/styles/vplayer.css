@@ -1,0 +1,512 @@
+/**
+ * @file vplayer.css
+ * @description Shared custom video-player chrome (.vplayer) — extracted from
+ *  landing/12-vox.css so /press can import it without the whole landing arkusz.
+ *  Light (parchment) palette by default; `.vplayer--dark` for night surfaces
+ *  (video lightbox, /press hero); `:fullscreen` always uses the dark palette
+ *  (the room goes dark). States set by VideoPlayer.tsx:
+ *   .is-playing   — affordance recedes, glow brightens
+ *   .is-buffering — breathing ring in place of the play/pause glyph (delayed show)
+ *   .is-scrubbing — pointer drag in progress: rail thickens, playhead dot shows
+ *   .is-idle      — projection-room stillness: scrub + meta fade to a whisper
+ *   .is-failed    — missing/broken file: poster + quiet mono note
+ *  Tokens (--ease, --candle, --line, --night, --paper, --ink*, --mono) are global.
+ * @architecture Astro islands 2026
+ * @module styles/vplayer
+ */
+
+/* Named areas so the portrait variant can move the inscription beside the frame without
+   touching the DOM. Default (landscape): caption bottom-left, utility (time+fs) bottom-right. */
+.vplayer {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "stage stage"
+    "scrub scrub"
+    "meta  side";
+  text-align: left;
+}
+
+.vplayer-stage {
+  grid-area: stage;
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: var(--night);
+  /* Overflow stays visible so the optional glow canvas can bleed past the frame;
+     nothing else inside can exceed the box (video is exact-fit, cover crops internally). */
+  box-shadow:
+    0 30px 90px -36px rgba(22, 21, 20, 0.55),
+    0 0 0 1px var(--line);
+}
+
+.vplayer-stage video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+/* Ambient glow — a blurred low-res mirror of the frame (32×18 canvas painted by the
+   player). Negative z-index slots it above the stage's own background but under the
+   video, so only the negative-inset bleed is ever visible: projection light in the room. */
+.vplayer-glow {
+  position: absolute;
+  inset: -9% -11%;
+  z-index: -1;
+  filter: blur(48px) saturate(1.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s var(--ease);
+}
+
+.vplayer.is-playing .vplayer-glow {
+  opacity: 0.5;
+}
+
+/* Poster veil — the curtain. Duplicates the poster attribute so the first frame can
+   dissolve in (and back in on ended) instead of popping. */
+.vplayer-veil {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  pointer-events: none;
+  transition: opacity 0.7s var(--ease);
+}
+
+.vplayer-veil.is-lifted {
+  opacity: 0;
+}
+
+.vplayer-btn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(198, 164, 91, 0.65);
+  border-radius: 50%;
+  background: rgba(8, 8, 7, 0.35);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--candle);
+  cursor: pointer;
+  transition:
+    opacity 0.5s var(--ease),
+    background-color 0.5s var(--ease),
+    border-color 0.5s var(--ease);
+}
+
+.vplayer-btn:hover {
+  background: rgba(198, 164, 91, 0.16);
+}
+
+.vplayer-btn:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 5px;
+}
+
+.vplayer-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* While playing the affordance recedes; the frame itself is the pause target. */
+.vplayer-btn.is-quiet {
+  opacity: 0;
+}
+
+.vplayer-stage:hover .vplayer-btn.is-quiet,
+.vplayer-btn.is-quiet:focus-visible {
+  opacity: 0.85;
+}
+
+/* Buffering — the affordance recedes and a thin ring breathes in its place. The .35s
+   show-delay keeps instant starts/resumes from ever flashing it. */
+.vplayer-buffer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  border: 1px solid rgba(232, 207, 144, 0.8);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease);
+}
+
+.vplayer.is-buffering .vplayer-buffer {
+  opacity: 1;
+  transition-delay: 0.35s;
+  animation: vplayerBuffBreath 1.8s ease-in-out infinite;
+}
+
+/* Only transform breathes — opacity stays with the delayed transition above,
+   otherwise the animation would defeat the flash-guard. */
+@keyframes vplayerBuffBreath {
+  0%,
+  100% {
+    transform: scale(0.86);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+
+.vplayer.is-buffering .vplayer-stage .vplayer-btn {
+  opacity: 0;
+}
+
+/* ── Scrub — hairline at rest; intent (hover/focus/drag) thickens the rail and
+   reveals the playhead dot. --p (0..1) is written by the player on the button. ── */
+.vplayer-scrub {
+  grid-area: scrub;
+  display: block;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  /* Horizontal drags scrub; vertical gestures stay with the page scroll. */
+  touch-action: pan-y;
+  transition: opacity 0.8s var(--ease);
+}
+
+.vplayer-scrub:disabled {
+  cursor: default;
+}
+
+.vplayer-scrub:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 2px;
+}
+
+.vplayer-rail {
+  position: relative;
+  display: block;
+  height: 1px;
+  background: rgba(22, 21, 20, 0.24);
+  transition: height 0.25s var(--ease);
+}
+
+.vplayer-scrub:hover .vplayer-rail,
+.vplayer-scrub:focus-visible .vplayer-rail,
+.vplayer.is-scrubbing .vplayer-rail {
+  height: 3px;
+}
+
+/* The gradient darkens toward the tip so the playhead end reads strongest on parchment
+   (the old light tip dissolved into the paper exactly where the eye needs it). */
+.vplayer-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 100%;
+  transform: scaleX(var(--p, 0));
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--candle), #a8853f);
+  will-change: transform;
+}
+
+.vplayer-dot {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--p, 0) * 100%);
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: var(--candle);
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.25s var(--ease),
+    transform 0.25s var(--ease);
+}
+
+.vplayer-scrub:hover .vplayer-dot,
+.vplayer-scrub:focus-visible .vplayer-dot,
+.vplayer.is-scrubbing .vplayer-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Inscription (caption + provenance note) — a grid sibling of the utility row, so the
+   portrait variant can lift it out to the side without squeezing the time label. */
+.vplayer-meta {
+  grid-area: meta;
+  align-self: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: opacity 0.8s var(--ease);
+}
+
+/* Utility row: time + fullscreen. Never squeezed by the inscription (own auto column). */
+.vplayer-side {
+  grid-area: side;
+  justify-self: end;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  transition: opacity 0.8s var(--ease);
+}
+
+.vplayer-time {
+  color: var(--ink);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.vplayer-error {
+  color: var(--ink-muted);
+}
+
+/* Provenance line (audience documents) — a quiet serif-italic inscription under the
+   mono caption: "this is a live record, not a production" said in the site's voice. */
+.vplayer-note {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-muted);
+}
+
+.vplayer-fs {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: color 0.35s var(--ease);
+}
+
+.vplayer-fs:hover {
+  color: var(--candle);
+}
+
+.vplayer-fs:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 3px;
+}
+
+.vplayer-fs svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Projection-room stillness (lightbox idleHide / fullscreen): chrome fades to a whisper;
+   any mouse/key/pointer wakes it (VideoPlayer drops .is-idle). */
+.vplayer.is-idle .vplayer-scrub,
+.vplayer.is-idle .vplayer-meta,
+.vplayer.is-idle .vplayer-side {
+  opacity: 0.12;
+}
+
+/* ── Dark chrome (lightbox, /press hero) — and fullscreen, where the room is always
+   dark. `:fullscreen` is grouped here instead of a class because the browser applies
+   it to the figure itself when onFullscreen() promotes it to the top layer. ── */
+.vplayer--dark .vplayer-stage {
+  box-shadow:
+    0 40px 120px -40px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(244, 241, 233, 0.08);
+}
+
+.vplayer--dark .vplayer-meta,
+.vplayer--dark .vplayer-side,
+.vplayer:fullscreen .vplayer-meta,
+.vplayer:fullscreen .vplayer-side {
+  color: rgba(244, 241, 233, 0.58);
+}
+
+.vplayer--dark .vplayer-time,
+.vplayer:fullscreen .vplayer-time {
+  color: rgba(244, 241, 233, 0.85);
+}
+
+.vplayer--dark .vplayer-error,
+.vplayer:fullscreen .vplayer-error {
+  color: rgba(244, 241, 233, 0.6);
+}
+
+.vplayer--dark .vplayer-note,
+.vplayer:fullscreen .vplayer-note {
+  color: rgba(244, 241, 233, 0.52);
+}
+
+.vplayer--dark .vplayer-rail,
+.vplayer:fullscreen .vplayer-rail {
+  background: rgba(244, 241, 233, 0.16);
+}
+
+.vplayer--dark .vplayer-fill,
+.vplayer:fullscreen .vplayer-fill {
+  background: linear-gradient(90deg, var(--candle), #e8cf90);
+}
+
+.vplayer--dark .vplayer-dot,
+.vplayer:fullscreen .vplayer-dot {
+  background: #e8cf90;
+}
+
+.vplayer--dark .vplayer-fs,
+.vplayer:fullscreen .vplayer-fs {
+  color: rgba(244, 241, 233, 0.58);
+}
+
+/* ── Portrait (9:16 audience documents) — the stage is sized by HEIGHT so a vertical
+   phone recording never overflows the viewport; every width below is COMPUTED from that
+   height (never fit-content — a long inscription must not widen the figure). The dark
+   wall beside the frame becomes a MUSEUM PLAQUE: caption + provenance note sit in a side
+   column, bottom-aligned with the frame behind a hairline, while the utility row
+   (time + fullscreen) stays under the scrub. Below 640px the plaque returns beneath
+   the frame (no wall to hang it on). ── */
+.vplayer--portrait {
+  --vplayer-portrait-h: min(70vh, 640px);
+  --vplayer-portrait-w: calc(var(--vplayer-portrait-h) * 9 / 16);
+  --vplayer-plaque-w: clamp(170px, 24vw, 260px);
+  width: calc(var(--vplayer-portrait-w) + 28px + var(--vplayer-plaque-w));
+  max-width: 100%;
+  margin-inline: auto;
+  column-gap: 28px;
+  grid-template-columns: minmax(0, var(--vplayer-portrait-w)) minmax(0, var(--vplayer-plaque-w));
+  grid-template-areas:
+    "stage meta"
+    "scrub ."
+    "side  .";
+}
+
+.vplayer--portrait .vplayer-stage {
+  aspect-ratio: 9 / 16;
+  height: var(--vplayer-portrait-h);
+  max-width: 100%;
+}
+
+.vplayer--portrait .vplayer-meta {
+  align-self: end;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+  font-size: 10.5px;
+  line-height: 1.7;
+}
+
+.vplayer--dark.vplayer--portrait .vplayer-meta {
+  border-color: rgba(244, 241, 233, 0.16);
+}
+
+/* The plaque grants the note real room — let it speak at inscription size. */
+.vplayer--portrait .vplayer-note {
+  margin-top: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.vplayer--portrait .vplayer-side {
+  justify-self: stretch;
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* ── Custom-chrome fullscreen: the figure itself enters the top layer, so the scrub,
+   time and caption ride along (video.requestFullscreen would strand them). ── */
+.vplayer:fullscreen {
+  width: auto;
+  background: var(--night);
+  padding: clamp(16px, 3vh, 40px) clamp(16px, 4vw, 56px);
+  gap: 12px 18px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "stage stage"
+    "scrub scrub"
+    "meta  side";
+}
+
+.vplayer:fullscreen .vplayer-stage {
+  aspect-ratio: auto;
+  height: auto;
+  min-height: 0;
+  box-shadow: none;
+}
+
+/* Portrait plaque resets — in the top layer the standard bottom chrome returns. */
+.vplayer:fullscreen .vplayer-meta {
+  align-self: center;
+  padding-left: 0;
+  border-left: 0;
+}
+
+.vplayer:fullscreen .vplayer-side {
+  width: auto;
+  justify-self: end;
+  justify-content: flex-start;
+}
+
+.vplayer:fullscreen .vplayer-stage video {
+  object-fit: contain;
+}
+
+@media (max-width: 640px) {
+  .vplayer-btn {
+    width: 60px;
+    height: 60px;
+  }
+
+  /* No wall to hang the plaque on — the inscription returns beneath the frame
+     (utility row first: it belongs to the scrub). Frame shortens so the whole
+     column still fits under the lightbox's locked scroll. */
+  .vplayer--portrait {
+    --vplayer-portrait-h: min(62vh, 640px);
+    width: var(--vplayer-portrait-w);
+    column-gap: 0;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "scrub"
+      "side"
+      "meta";
+  }
+
+  .vplayer--portrait .vplayer-meta {
+    align-self: start;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .vplayer--portrait .vplayer-note {
+    margin-top: 6px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vplayer.is-buffering .vplayer-buffer {
+    animation: none;
+    opacity: 0.7;
+  }
+}

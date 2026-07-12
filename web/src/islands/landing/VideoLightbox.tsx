@@ -1,0 +1,102 @@
+/**
+ * @file VideoLightbox.tsx
+ * @description Full-screen video room — the nave goes dark for the projection. Opens on
+ *  `voct:open-video` ({ src?, caption? }, defaults to MODAL_VIDEO), closes on ✕ / Escape /
+ *  backdrop. The player mounts only while open, so its unmount cleanup pauses the video and
+ *  restores the ambient bed. Sets `window.__voctVideoReady` so the static-DOM delegation in
+ *  scripts/landing.ts knows whether to intercept `[data-video-open]` clicks or let the
+ *  native href (the MP4 itself) serve as the pre-hydration/no-JS fallback.
+ * @architecture Astro islands 2026
+ * @module islands/landing/VideoLightbox
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { MODAL_VIDEO } from "../../data/landing/video";
+import { useBodyClass } from "./hooks/useBodyClass";
+import { useFocusTrap } from "./hooks/useFocusTrap";
+import { VideoPlayer } from "./video/VideoPlayer";
+
+interface OpenDetail {
+  readonly src?: string;
+  readonly caption?: string;
+  /** 9:16 audience document — the player switches to a portrait, height-driven frame. */
+  readonly portrait?: boolean;
+  /** Provenance line under the caption (piece credit · recording origin). */
+  readonly note?: string;
+}
+
+interface VideoLightboxProps {
+  /** Optimized poster for the default reel (computed by index.astro via astro:assets). */
+  readonly poster: string;
+}
+
+export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element | null {
+  const [open, setOpen] = useState<OpenDetail | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const close = useCallback((): void => setOpen(null), []);
+
+  useBodyClass(open ? "video-open" : null);
+  useFocusTrap(panelRef, open !== null, { onEscape: close });
+
+  useEffect(() => {
+    (window as Window & { __voctVideoReady?: boolean }).__voctVideoReady = true;
+    const onOpen = (event: Event): void => {
+      const detail = (event as CustomEvent<OpenDetail>).detail;
+      setOpen({
+        src: detail?.src,
+        caption: detail?.caption,
+        portrait: detail?.portrait,
+        note: detail?.note,
+      });
+    };
+    window.addEventListener("voct:open-video", onOpen);
+    return () => {
+      (window as Window & { __voctVideoReady?: boolean }).__voctVideoReady = false;
+      window.removeEventListener("voct:open-video", onOpen);
+    };
+  }, []);
+
+  if (!open) return null;
+
+  const src = open.src ?? MODAL_VIDEO.src;
+
+  return (
+    <div
+      className="video-lightbox"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Wideo z koncertu"
+    >
+      {/* data-cursor="no-snap": full-viewport surface — the magnetic cursor snap would
+          yank the cursor toward the screen centre everywhere around the panel. */}
+      <button
+        type="button"
+        className="video-lightbox-backdrop"
+        aria-label="Zamknij"
+        data-cursor="no-snap"
+        onClick={close}
+        tabIndex={-1}
+      />
+      <div className="video-lightbox-panel" data-lenis-prevent ref={panelRef}>
+        <button type="button" className="video-lightbox-close" aria-label="Zamknij" onClick={close}>
+          ✕
+        </button>
+        {/* tone="dark" flips the chrome for the night room; idleHide fades it after
+            stillness; glow bleeds the frame's light past the panel into the dark nave. */}
+        <VideoPlayer
+          src={src}
+          poster={src === MODAL_VIDEO.src ? poster : undefined}
+          caption={open.caption ?? MODAL_VIDEO.caption}
+          note={open.note}
+          portrait={open.portrait}
+          autoPlay
+          tone="dark"
+          idleHide
+          glow
+        />
+      </div>
+    </div>
+  );
+}
