@@ -582,18 +582,18 @@
   }
 
   .path-works li {
-    position: relative;
-    padding-left: 16px;
+    padding-left: 0;
   }
 
-  .path-works li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0.62em;
-    width: 7px;
-    height: 1px;
-    background: var(--ink-muted);
+  /* Ordinal, inline on the text baseline (no absolute marker — the old dash floated high).
+     Fixed width keeps every composer name aligned; bis rows show "—" in the same column. */
+  .path-works-n {
+    display: inline-block;
+    width: 1.7em;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--ink-muted);
   }
 
   .path-works em {
@@ -608,19 +608,10 @@
     color: var(--candle);
   }
 
-  .path-works-bis::before {
-    background: var(--candle);
+  .path-works-bis .path-works-n {
+    color: var(--candle);
   }
 
-  .path-detail-text {
-    margin: 4px 0 0;
-    color: var(--ink-soft);
-    font-size: 14px;
-    line-height: 1.55;
-  }
-
-  .path-detail-text + .path-detail-text,
-  .path-detail-text + .path-works-note,
   .path-works + .path-works-note {
     margin-top: 14px;
   }

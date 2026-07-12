@@ -18,7 +18,7 @@
     blurb: "Debiut cyklu Koncertów Duchowych: renesans, barok i współczesność ułożone wokół tajemnicy Bożego Narodzenia oraz Wcielenia."
     img: o-nas-wcielenie
   accent: "#c6a45b"
-  essence: "Nie koncert kolędowy, lecz próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
+  essence: "Próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
   facts:
     - 4 / 8 / 12 głosów
     - Renesans — XXI w.
@@ -131,7 +131,10 @@
     img: o-nas-wolanie-gor
   accent: "#7d9890"
   reverse: true
-  essence: "Góry nie były dekoracją programu, ale jego oddechem. Dwanaście głosów i skrzypce Radu Ropotana prowadziły od sakralnej polifonii ku pieśniom, w których krajobraz staje się pamięcią wspólnoty."
+  inscriptio: "Ad te clamamus, exsules filii Hevae"
+  inscriptioPl: "Do Ciebie wołamy, wygnańcy, synowie Ewy"
+  inscriptioRef: "Salve Regina"
+  essence: "Góry były oddechem tego programu. Dwanaście głosów i skrzypce Radu Ropotana prowadziły od sakralnej polifonii ku pieśniom, w których krajobraz staje się pamięcią wspólnoty."
   facts:
     - 12 głosów i skrzypce
     - Pieniny
@@ -169,11 +172,14 @@
     blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
     img: o-nas-9-kart
   accent: "#bfa05f"
-  essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Pokuta, wdzięczność, mądrość i radość weszły tu kolejno: od Miserere Allegriego po świetliste Singet dem Herrn Bacha."
+  inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
+  inscriptioPl: "Zmiłuj się nade mną, Boże, w swojej łaskawości"
+  inscriptioRef: "Ps 51"
+  essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Miserere Allegriego, podzielone na dziewięć części, oplatało cały wieczór — między jego pokutne strofy wchodziły kolejno psalmy dziękczynienia, mądrości i radości."
   facts:
     - 9 psalmów
     - 6 / 8 / 9 / 12 głosów
-    - Rytm call & response
+    - Miserere jako klamra
   bg: st-9-kart-bg
   poster: poster-9-kart
   posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
@@ -204,7 +210,10 @@
     img: o-nas-ukraina
   accent: "#5e6e84"
   variant: memoriam
-  essence: "Hołd tym, którzy oddali życie w obronie Ukrainy, i modlitwa o pokój dla tych, którzy żyją dalej z ciężarem wojny. Program miał nie opowiadać tragedii, lecz stworzyć dla niej przestrzeń pamięci."
+  inscriptio: "Боже великий, єдиний, нам Україну храни"
+  inscriptioPl: "Boże wielki, jedyny, Ukrainę nam chroń"
+  inscriptioRef: "Modlitwa za Ukrainę"
+  essence: "Hołd tym, którzy oddali życie w obronie Ukrainy, i modlitwa o pokój dla tych, którzy niosą dalej ciężar wojny. W kulminacji, przy otwarciu ołtarza Bazyliki Mariackiej, zabrzmiała organowa improwizacja na hymn Ukrainy."
   facts:
     - Bazylika Mariacka
     - Modlitwa o pokój
@@ -241,6 +250,9 @@
     img: o-nas-epitafium
   accent: "#4f5d77"
   variant: memoriam
+  inscriptio: "Requiem aeternam dona eis, Domine, et lux perpetua luceat eis"
+  inscriptioPl: "Wieczny odpoczynek racz im dać, Panie, a światłość wiekuista niechaj im świeci"
+  inscriptioRef: "Introit Requiem"
   essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama ku modlitwom Pärta, Havrylets, Gjeilo, Lottiego i Tavenera."
   facts:
     - 4 / 8 / 12 głosów
@@ -279,7 +291,7 @@
     img: o-nas-bobola
   accent: "#c6a45b"
   variant: liturgy
-  essence: "Tu muzyka nie była koncertem, ale służbą liturgii. W 100-lecie obu polskich prowincji Towarzystwa Jezusowego śpiew wpisywał się w obrzęd, któremu przewodniczył abp Adrian Galbas; homilię wygłosił o. Arturo Sosa SJ."
+  essence: "Tu muzyka służyła liturgii. W 100-lecie obu polskich prowincji Towarzystwa Jezusowego śpiew wpisywał się w obrzęd, któremu przewodniczył abp Adrian Galbas; homilię wygłosił o. Arturo Sosa SJ."
   facts:
     - Warszawa
     - 16 maja 2026

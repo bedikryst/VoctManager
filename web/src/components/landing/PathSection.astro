@@ -3,7 +3,8 @@
  * @file PathSection.astro
  * @description "Wcześniejsze wybrzmienia" — typographic register of past Concerts Spirituels.
  *  Read as a memorium on an altar, not as a portfolio grid: roman numeral + year + tag in the
- *  left rail, title + place in the right rail, optional expandable repertoire/programme below.
+ *  left rail, title + place + lead in the right rail, and one uniform expandable "Program
+ *  koncertu" (works in order, derived from the concerts collection) + optional credit below.
  *  Hairline rules separate entries. No poster images — the rite doesn't market itself by face.
  *  Each entry's native <details> snap open/close is upgraded to an animated, exclusive
  *  accordion by scripts/landing.ts (same `.path-card-detail` hook so the JS contract holds).
@@ -42,7 +43,7 @@ const programFor = (id: string) => programById.get(id) ?? [];
                 <span class="path-entry-year">{path.year}</span>
                 <span class="path-entry-tag">{path.tag}</span>
               </div>
-              <div class="path-entry-body">
+              <div class="path-entry-body" data-cursor="no-snap">
                 <h3 class="path-entry-title">{path.title}</h3>
                 <p class="path-entry-place">{path.place}</p>
                 <p class="path-entry-summary">{path.note}</p>
@@ -61,24 +62,20 @@ const programFor = (id: string) => programById.get(id) ?? [];
                 )}
                 <details class="path-card-detail path-entry-detail">
                   <summary>
-                    <span>{path.detail.summary}</span>
+                    <span>Program koncertu</span>
                     <span class="path-detail-icon" aria-hidden="true" />
                   </summary>
-                  {path.detail.content.paragraphs?.map((paragraph) => (
-                    <p class="path-detail-text">{paragraph}</p>
-                  ))}
                   {programFor(path.concertId).length > 0 && (
                     <ol class="path-works">
-                      {programFor(path.concertId).map((p) => (
+                      {programFor(path.concertId).map((p, i) => (
                         <li class:list={[{ "path-works-bis": p.bis }]}>
+                          <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
                           {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
                         </li>
                       ))}
                     </ol>
                   )}
-                  {path.detail.content.note && (
-                    <p class="path-works-note">{path.detail.content.note}</p>
-                  )}
+                  {path.credit && <p class="path-works-note">{path.credit}</p>}
                 </details>
               </div>
             </li>

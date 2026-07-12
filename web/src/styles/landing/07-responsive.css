@@ -265,12 +265,7 @@
       gap: 5px;
     }
 
-    .path-works li {
-      padding-left: 13px;
-    }
-
-    .path-works-note,
-    .path-detail-text {
+    .path-works-note {
       font-size: 12px;
       line-height: 1.5;
     }
