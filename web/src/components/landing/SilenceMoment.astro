@@ -3,9 +3,11 @@
  * @file SilenceMoment.astro
  * @description One enforced beat of stillness between Vox memoriae (II) and the catalog of
  *  past concerts. When the sentinel reaches viewport center, Lenis stops, wheel + touchmove
- *  + scroll-keys are intercepted, a single Florent line fades in, dwells for ~2.8s, then
- *  scroll resumes — once per browser session. Reduced-motion + no-JS visitors see the line
- *  statically (gated by html.voct-motion in landing.css).
+ *  + scroll-keys are intercepted, the score marking "tacet." fades in, dwells for ~2.8s, then
+ *  scroll resumes — once per browser session. The word is the moment: in a part-book, tacet
+ *  instructs the voice to stay silent — here the page itself rests before the voice enters
+ *  (VoxMoment follows). No attribution, no aphorism. Reduced-motion + no-JS visitors see the
+ *  line statically (gated by html.voct-motion in landing.css).
  * @architecture Astro islands 2026
  * @module components/landing/SilenceMoment
  */
@@ -28,8 +30,7 @@
     </svg>
 
     <p class="silence-line">
-      W&nbsp;ciszy <em>rodzi się</em> muzyka.
+      <em>tacet.</em>
     </p>
-    <p class="silence-attrib">Florent de Bazelaire</p>
   </div>
 </section>

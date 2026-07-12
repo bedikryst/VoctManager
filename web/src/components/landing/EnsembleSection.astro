@@ -1,9 +1,13 @@
 ---
 /**
  * @file EnsembleSection.astro
- * @description "Jedność artystyczna" — ensemble portrait over a dark full-bleed choir image
- *  (<BleedImage>, parallax) with three fact tiles. Dimming filter in landing.css
- *  (.ensemble-media .bleed img).
+ * @description "Zaczęło się od tęsknoty." — ensemble origin story over a dark full-bleed
+ *  choir image (<BleedImage>, parallax) with three fact tiles. The copy QUOTES the founding
+ *  text ("Skąd się wzięliśmy?" — anachoreci, "z ciszy i kontemplacji", "ubóstwiamy
+ *  heterofonię…"): keep it testimony, never rewrite it into brochure-speak. Fact tiles carry
+ *  real, checkable numbers (roster count from Florent's "VE na stronę www" sheet — update
+ *  when the roster changes; repertoire span = Llibre Vermell XIV w. → Caroline Shaw 2017).
+ *  Dimming filter in landing.css (.ensemble-media .bleed img).
  * @architecture Astro islands 2026
  * @module components/landing/EnsembleSection
  */
@@ -13,9 +17,9 @@ import { bleedPair } from "../../lib/photos";
 const ensemble = bleedPair("chor-nawa");
 
 const FACTS = [
-  { num: "12+", label: "głosów na scenie" },
-  { num: "2024", label: "debiut · Kontemplacja Wcielenia" },
-  { num: "V wieków", label: "repertuar · 50+ utworów · od XIV w." },
+  { num: "44", label: "śpiewaków we wspólnocie · na scenie dwanaście głosów" },
+  { num: "2024", label: "debiut · Kontemplacja Wcielenia · Bazylika NSPJ" },
+  { num: "VII wieków", label: "od Llibre Vermell (XIV w.) po Caroline Shaw (2017)" },
 ] as const;
 ---
 
@@ -25,18 +29,17 @@ const FACTS = [
   </div>
   <div class="ensemble-inner section">
     <div class="ensemble-copy reveal">
-      <div class="micro">Wspólnota głosów</div>
-      <h2>Jedność artystyczna</h2>
-      <p>
-        VoctEnsemble to profesjonalny zespół wokalny, który poprzez muzyczną
-        precyzję i uważnie budowane doświadczenie zaprasza publiczność do
-        autentycznego spotkania. Tworzymy koncerty, w których muzyka, światło
-        i cisza współtworzą jedno doświadczenie.
-      </p>
+      <div class="micro">Skąd się wzięliśmy?</div>
+      <h2>Zaczęło się<br />od tęsknoty.</h2>
       <p class="ensemble-origin">
-        Zaczęło się od tęsknoty — jak anachoreci, w odosobnieniu, z daleka od zgiełku,
-        zatęskniliśmy za muzyką, która otula, przenika i zostaje w duszy niczym żywy
-        organizm.
+        Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy za muzyką,
+        która otula, przenika i zostaje w duszy niczym żywy organizm. Tak powstał Voct:
+        z ciszy i kontemplacji.
+      </p>
+      <p>
+        Dziś jest nas ponad czterdzieścioro; na koncert wychodzi zwykle dwanaście
+        głosów. Ubóstwiamy heterofonię, politonalność i polifonię — programy tkamy
+        z utworów, w których słowo i muzyka są swoimi lustrzanymi odbiciami.
       </p>
       <div class="ensemble-facts">
         {

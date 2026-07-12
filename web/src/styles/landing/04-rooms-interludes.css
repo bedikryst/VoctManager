@@ -281,8 +281,10 @@
     font-weight: 100;
   }
 
+  /* Origin testimony leads the copy now (founding text first, facts after) — the
+     separating margin sits below it instead of above. */
   .ensemble-copy .ensemble-origin {
-    margin: 28px 0 0;
+    margin: 0 0 28px;
     max-width: 34rem;
     padding-left: 18px;
     border-left: 1px solid rgba(198, 164, 91, 0.55);
