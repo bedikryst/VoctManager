@@ -36,9 +36,25 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
   const panelRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback((): void => setOpen(null), []);
+  const isOpen = open !== null;
 
   useBodyClass(open ? "video-open" : null);
-  useFocusTrap(panelRef, open !== null, { onEscape: close });
+  useFocusTrap(panelRef, isOpen, { onEscape: close });
+
+  // History integration (mirrors VaultModal): opening pushes an entry so the mobile back
+  // button / gesture closes the projection instead of leaving the page. Closing by
+  // ✕ / Esc / backdrop pops our own entry back off, so the next back press leaves the
+  // page as expected rather than being absorbed by a stale modal state.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!history.state?.voctVideoOpen) history.pushState({ voctVideoOpen: true }, "");
+    const onPop = (): void => close();
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (history.state?.voctVideoOpen) history.back();
+    };
+  }, [isOpen, close]);
 
   useEffect(() => {
     (window as Window & { __voctVideoReady?: boolean }).__voctVideoReady = true;
