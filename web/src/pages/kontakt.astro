@@ -1,10 +1,14 @@
 ---
 /**
  * @file kontakt.astro
- * @description Public contact page (/kontakt). Three prioritised email channels
- *  (concerts & liturgy / patronage / general) rendered as a semantic <dl>, each with a
- *  subject-prefilled mailto, a one-line concierge hint, and a copy-to-clipboard button
- *  (hostile bare mailto is a real desktop failure). An honest "three voices" signature —
+ * @description Public contact page (/kontakt). The hero frames the whole page as an
+ *  invitation — every past station of the Via began with someone's, and the next can too —
+ *  so this reads as where future concerts start, not a generic "write to us" form. Three
+ *  prioritised email channels (concerts & liturgy / patronage / general) rendered as a
+ *  semantic <dl>, each with a subject-prefilled mailto, a one-line concierge hint, and a
+ *  copy-to-clipboard button (hostile bare mailto is a real desktop failure). Prose is pinned
+ *  with the shared nbsp() / &nbsp; micro-typography so orphans and honorifics never break.
+ *  An honest "three voices" signature —
  *  the foundation board answers together, so we name the three people instead of faking a
  *  per-channel owner or a support desk. Then ONE paper-soft band carrying all the
  *  administrative weight — foundation, a mail-only correspondence address (no map, nobody
@@ -19,6 +23,7 @@ import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import BleedImage from "../components/BleedImage.astro";
 import { bleedPair } from "../lib/photos";
+import { nbsp } from "../lib/typo";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import "../styles/vault.css";
 
@@ -26,7 +31,7 @@ const hero = bleedPair("kontakt-hero");
 
 const title = "Kontakt — VoctEnsemble | Fundacja VoctFoundation";
 const description =
-  "Napisz do VoctEnsemble i Fundacji VoctFoundation: koncerty i oprawy liturgii, mecenat, sprawy ogólne. Po drugiej stronie czeka człowiek, nie formularz.";
+  "Napisz do VoctEnsemble i Fundacji VoctFoundation: koncerty i oprawy liturgii, mecenat, sprawy ogólne. Odpowiadamy osobiście — po polsku, angielsku i francusku.";
 
 // Prioritised by conversion: the two channels the site exists for first, catch-all last.
 // RODO is deliberately NOT a top-level channel — it lives in the controller note below.
@@ -47,7 +52,7 @@ const channels = [
     role: "Sprawy ogólne",
     email: "kontakt@voctensemble.com",
     subject: "Sprawy ogólne VoctEnsemble",
-    hint: "Wszystko pozostałe: pytania, współpraca artystyczna, sprawy fundacji. Jeśli nie wiesz, do kogo pisać — pisz tu, przekażemy dalej.",
+    hint: "Wszystko pozostałe: pytania, współpraca artystyczna, sprawy fundacji. Jeśli nie wiesz, do kogo pisać — pisz tu; i tak trafi do nas trojga.",
   },
 ] as const;
 
@@ -90,7 +95,7 @@ const jsonLd = {
       {
         "@type": "ContactPoint",
         email: "kontakt@voctensemble.com",
-        contactType: "customer support",
+        contactType: "general inquiries",
         availableLanguage: ["Polish", "English", "French"],
       },
     ],
@@ -135,8 +140,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="line"><span class="reveal" data-d="1">do <em>nas.</em></span></span>
         </h1>
         <p class="hero-lede reveal" data-d="2">
-          Zaproszenie na koncert, oprawa liturgii lub uroczystości, mecenat, współpraca —
-          albo po prostu wspólnota słuchania.
+          Archikatedra w&nbsp;Łodzi, dworek w&nbsp;Szczawnicy, Synagoga Tempel, śluby
+          w&nbsp;Tyńcu — każdy z&nbsp;tych wieczorów zaczął się od czyjegoś zaproszenia.
+          Następne może być Twoje.
         </p>
         <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
       </div>
@@ -146,20 +152,20 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="channels-section" aria-label="Kanały kontaktu">
       <div class="channels-wrap">
         <div class="col-head reveal">
-          <span class="eyebrow"><span class="lat">Tres viae</span>  ·  Trzy drogi</span>
-          <h2>Powiedz nam, z czym przychodzisz.</h2>
+          <span class="eyebrow"><span class="lat">Tres ianuae</span>  ·  Troje drzwi</span>
+          <h2>Powiedz nam, z&nbsp;czym przychodzisz.</h2>
         </div>
         <p class="contact-intro reveal" data-d="1">
-          Każda sprawa ma swój adres, żeby trafiła od razu we właściwe ręce. Nie ma tu
-          formularza ani działu obsługi — po drugiej stronie czekają te same <em>trzy osoby</em>,
-          które prowadzą fundację.
+          Każda sprawa ma swój adres, żeby od razu trafiła we&nbsp;właściwe ręce. Po drugiej
+          stronie czekają te same <em>trzy osoby</em>, które prowadzą fundację —
+          i&nbsp;same czytają każdą wiadomość.
         </p>
 
         <dl class="channels">
           {
             channels.map((c, i) => (
               <div class="channel reveal" data-d={String((i % 3) + 1)}>
-                <dt class="channel-role">{c.role}</dt>
+                <dt class="channel-role">{nbsp(c.role)}</dt>
                 <dd class="channel-body">
                   <p class="channel-line">
                     <a class="channel-mail" href={`mailto:${c.email}?subject=${encodeURIComponent(c.subject)}`}>
@@ -174,7 +180,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       <span class="copy-label">Kopiuj</span>
                     </button>
                   </p>
-                  <p class="channel-hint">{c.hint}</p>
+                  <p class="channel-hint">{nbsp(c.hint)}</p>
                 </dd>
               </div>
             ))
@@ -183,18 +189,18 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
         <div class="after-channels reveal">
           <p>
-            Piszcie po polsku, po angielsku albo po francusku — odpowiemy w tym języku, w
-            którym zaczniecie. Najszybciej, jak pozwala kalendarz prób i koncertów; zwykle w
-            ciągu kilku dni.
+            Pisz po polsku, po angielsku albo po francusku — odpowiemy w&nbsp;tym języku,
+            w&nbsp;którym zaczniesz. Najszybciej, jak pozwala kalendarz prób i&nbsp;koncertów;
+            zwykle w&nbsp;ciągu kilku dni.
           </p>
           <p>
-            Dziennikarze i organizatorzy znajdą biogramy, zdjęcia w wysokiej rozdzielczości i
-            pełne programy w <a href="/press">materiałach prasowych →</a>
+            Dziennikarze i&nbsp;organizatorzy znajdą biogramy, zdjęcia w&nbsp;wysokiej
+            rozdzielczości i&nbsp;pełne programy w&nbsp;<a href="/press">materiałach prasowych →</a>
           </p>
         </div>
 
         <div class="voices reveal">
-          <span class="voices-label">Czytają i odpowiadają</span>
+          <span class="voices-label">Czytają i&nbsp;odpowiadają</span>
           <p class="voices-names">
             {voices.map((v, i) => (
               <>
@@ -204,8 +210,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             ))}
           </p>
           <p class="voices-note">
-            Zarząd Fundacji VoctFoundation. Na razie odpowiadamy wspólnie — i tak chcemy to
-            zostawić.
+            Zarząd Fundacji VoctFoundation. Odpowiadamy wspólnie — i&nbsp;chcemy, żeby tak
+            zostało także wtedy, gdy urośniemy.
           </p>
         </div>
       </div>
@@ -224,9 +230,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <div class="aside-block reveal" data-d="1">
             <h3>Fundacja</h3>
             <p class="fund-mission">
-              Fundacja VoctFoundation działa w obszarze kultury, sztuki oraz ochrony
-              dziedzictwa; VoctEnsemble jest jej zespołem-rezydentem. Dochód przeznaczamy w
-              całości na cele statutowe.
+              Fundacja VoctFoundation działa w&nbsp;obszarze kultury, sztuki oraz ochrony
+              dziedzictwa; VoctEnsemble jest jej zespołem-rezydentem. Dochód przeznaczamy
+              w&nbsp;całości na cele statutowe.
             </p>
             <p class="fund-more">
               <a class="fund-link" href="/o-nas#fundacja">Poznaj fundację i zarząd →</a>
@@ -237,12 +243,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             <h3>Adres korespondencyjny</h3>
             <p class="addr">
               Fundacja VoctFoundation<br />
-              ul. Św. Filipa 23/3<br />
+              ul.&nbsp;Św.&nbsp;Filipa 23/3<br />
               31-150 Kraków
             </p>
             <p class="addr-note">
-              Do korespondencji i poczty. Biura tu nie prowadzimy — spotykamy się tam, gdzie
-              śpiewamy.
+              Biura tu nie prowadzimy — spotykamy się tam, gdzie śpiewamy.
             </p>
           </div>
         </div>
@@ -255,9 +260,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <p class="rodo-note">
             Pisząc do nas, powierzasz nam swoje dane (imię, adres e-mail oraz treść
             wiadomości). Przetwarzamy je wyłącznie po to, by odpowiedzieć na Twoją wiadomość
-            (art. 6 ust. 1 lit. f RODO). Masz prawo dostępu, sprostowania i usunięcia danych —
-            <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Więcej w
-            <a href="/polityka-prywatnosci">polityce prywatności</a>.
+            (art.&nbsp;6 ust.&nbsp;1 lit.&nbsp;f RODO). Masz prawo dostępu, sprostowania
+            i&nbsp;usunięcia danych —
+            <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Więcej
+            w&nbsp;<a href="/polityka-prywatnosci">polityce prywatności</a>.
           </p>
         </div>
       </div>
@@ -268,7 +274,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="coda-inner reveal">
         <span class="coda-glyph" aria-hidden="true"></span>
         <h2>Do usłyszenia.</h2>
-        <p>A najlepiej — na żywo, w akustyce, która pamięta.</p>
+        <p>A najlepiej — na żywo, w&nbsp;akustyce, która pamięta.</p>
         <div class="coda-links">
           <a href="/koncerty">Zobacz koncerty →</a>
           <a href="/?donate" data-vault-open="100">Wesprzyj fundację →</a>
