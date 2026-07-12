@@ -73,10 +73,10 @@ export function AudioController(): null {
     return () => window.removeEventListener("voct:audio-choice", onChoice);
   }, []);
 
-  // Duck the ambient bed while a foreground listening moment (ListenMoment) plays, then restore.
-  // Non-invasive: never flips the saved threshold choice or the header label — this is a
-  // temporary gain dip, not a state change, so the ambient on/off intent is preserved. No-ops
-  // when the ambient is off, so the excerpt can also play standalone.
+  // Duck the ambient bed while a foreground video (VoxMoment / VideoLightbox, via VideoPlayer)
+  // plays, then restore. Non-invasive: never flips the saved threshold choice or the header
+  // label — this is a temporary gain dip, not a state change, so the ambient on/off intent is
+  // preserved. No-ops when the ambient is off, so the video can also play standalone.
   useEffect(() => {
     const onDuck = (event: Event): void => {
       if (!audioRef.current.isOn) return;

@@ -19,6 +19,16 @@ export interface PathDetail {
   readonly note?: string;
 }
 
+/** One curated fragment for a register entry — omit the whole slot when no footage exists. */
+export interface PathVideo {
+  /** Public URL of a self-hosted MP4 (H.264 + AAC) under web/public/video. */
+  readonly src: string;
+  /** Phone-shot 9:16 document — the player switches to a portrait, height-driven frame. */
+  readonly portrait?: boolean;
+  /** Honest provenance line under the lightbox caption (piece credit · recording origin). */
+  readonly note?: string;
+}
+
 export interface Path {
   readonly slug: string;
   readonly year: string;
@@ -28,6 +38,8 @@ export interface Path {
   readonly note: string;
   /** Bare asset name under src/assets/photos (no extension), resolved via photo(). */
   readonly poster: string;
+  /** Curated video fragment; omit when no footage exists (never fabricate). */
+  readonly video?: PathVideo;
   readonly detail: {
     readonly summary: string;
     readonly content: PathDetail;
@@ -43,6 +55,9 @@ export const PATHS: readonly Path[] = [
     place: "Bazylika NSPJ w Krakowie · Archikatedra łódzka",
     note: "Muzyczna podróż przez 10 kompozycji 4-, 8- i 12-głosowych — od słów proroka Izajasza po kantyk Symeona. Renesans i Barok spotykają Pärta i Vivancosa, prowadząc słuchacza w tajemnicę Wcielenia.",
     poster: "poster-wcielenie",
+    // Same file as the hero modal (MODAL_VIDEO in video.ts) — shared browser cache and a
+    // shared resume position: one film threaded through hero, Vox and the register.
+    video: { src: "/video/landing-modal.mp4" },
     detail: {
       summary: "Repertuar",
       content: {
@@ -71,6 +86,11 @@ export const PATHS: readonly Path[] = [
     place: "Centrum Kongresowe · Szczawnica",
     note: "Podróż wokół piękna i pobożności Pienin — od renesansu po współczesność. Opracowania muzyki ludowej z Polski, Korsyki, Francji i Wysp Brytyjskich.",
     poster: "poster-wolanie",
+    video: {
+      src: "/video/landing-wolanie.mp4",
+      portrait: true,
+      note: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo",
+    },
     detail: {
       summary: "O programie",
       content: {
@@ -130,6 +150,11 @@ export const PATHS: readonly Path[] = [
     place: "Mistrzejowice · Niedzica",
     note: "Wobec cierpienia mieszkańców Gazy szukamy w muzyce języka współczucia. Od Aeternam Vivancosa po dwóch Tavenerów — zawierzenie ofiar Matce Bożej.",
     poster: "poster-aeternam",
+    video: {
+      src: "/video/landing-aeternam.mp4",
+      portrait: true,
+      note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo",
+    },
     detail: {
       summary: "O programie",
       content: {

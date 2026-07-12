@@ -1,22 +1,75 @@
 ---
 /**
  * @file CodaSection.astro
- * @description Per-letter variable-font weight cascade closing the page ("Cisza" · "brzmi
- *  dalej"). The wave + tail emergence are driven by scripts/landing.ts (the original CSS
- *  `animation-timeline` choreography is inert in the target browser); the static fallback
- *  weight (320) and visible tail apply where motion is reduced or scripting is unavailable.
+ * @description "Ostatni takt" — the page closes the way a score does. A compact chant
+ *  tetragram carries three neumes stepping down into a whole rest; a fermata holds above
+ *  it — in notation this literally instructs: hold the silence, the silence after the last
+ *  chord is part of the piece — and the finalis double bar ends the page. Drawn in the
+ *  aether interludes' language (stroke-draw via the shared `.knot-draw` mechanism); the
+ *  wrapper carries `.aether-knot`, so the audio analyser (useChantAudio) and scroll-breath
+ *  (setupInterludeBreath) drivers write `--knot-intensity` here for free. No inscription —
+ *  the sign speaks and "Cisza brzmi dalej." answers, in the same voice as the hero's
+ *  "Z ciszy głos." (roman + gold italic).
+ *
+ *  NOTE: no `vector-effect="non-scaling-stroke"` anywhere — in Chromium it makes
+ *  stroke-dasharray/dashoffset compute in screen space, which breaks the pathLength="1"
+ *  draw choreography AND renders hairlines as half-covered micro-dashes (near-invisible).
+ *  Stroke widths are plain user units, exactly like the interludes.
+ *
+ *  The viewBox is cropped tight to the drawing (y 22–94): the earlier full-height box
+ *  carried ~50 dead units under the staff, which read as a lopsided gap between the
+ *  emblem and the caption.
  * @architecture Astro islands 2026
  * @module components/landing/CodaSection
  */
-const LETTERS = ["C", "i", "s", "z", "a"] as const;
 ---
 
-<section class="coda" aria-label="Muzyka brzmi dalej">
-  <div class="coda-container">
-    <p class="coda-headline" aria-label="Cisza">
-      {LETTERS.map((letter) => <span class="coda-letter" aria-hidden="true">{letter}</span>)}
-      <span class="coda-letter coda-letter--punct" aria-hidden="true">.</span>
-    </p>
-    <p class="coda-tail">brzmi dalej</p>
+<section class="coda" aria-label="Cisza brzmi dalej">
+  <div class="coda-score reveal">
+    <div class="aether-knot coda-knot" aria-hidden="true">
+      <svg
+        viewBox="0 22 480 72"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <defs>
+          {/* Left-edge fade: the staff emerges from the parchment instead of starting on a
+              hard cut. userSpaceOnUse — objectBoundingBox degenerates on horizontal lines. */}
+          <linearGradient id="coda-staff-fade" gradientUnits="userSpaceOnUse" x1="12" y1="0" x2="462" y2="0">
+            <stop offset="0" stop-color="currentColor" stop-opacity="0" />
+            <stop offset="0.1" stop-color="currentColor" stop-opacity="1" />
+            <stop offset="1" stop-color="currentColor" stop-opacity="1" />
+          </linearGradient>
+        </defs>
+
+        {/* Tetragram — the chant staff from II · Vox memoriae, drawn left to right. */}
+        <path class="knot-draw cs-1" pathLength="1" d="M 12 48 H 462" stroke="url(#coda-staff-fade)" stroke-width="1.2" stroke-opacity="0.3" />
+        <path class="knot-draw cs-2" pathLength="1" d="M 12 60 H 462" stroke="url(#coda-staff-fade)" stroke-width="1.2" stroke-opacity="0.3" />
+        <path class="knot-draw cs-3" pathLength="1" d="M 12 72 H 462" stroke="url(#coda-staff-fade)" stroke-width="1.2" stroke-opacity="0.3" />
+        <path class="knot-draw cs-4" pathLength="1" d="M 12 84 H 462" stroke="url(#coda-staff-fade)" stroke-width="1.2" stroke-opacity="0.3" />
+
+        {/* Three neumes stepping down — the melody sinking toward the rest. */}
+        <path class="coda-neume cn-1" d="M 204 50 L 207.5 54 L 204 58 L 200.5 54 Z" fill="currentColor" stroke="none" />
+        <path class="coda-neume cn-2" d="M 240 58 L 243.5 62 L 240 66 L 236.5 62 Z" fill="currentColor" stroke="none" />
+        <path class="coda-neume cn-3" d="M 272 66 L 275.5 70 L 272 74 L 268.5 70 Z" fill="currentColor" stroke="none" />
+
+        {/* Whole rest hanging under the second line — the held silence itself. */}
+        <rect class="coda-rest" x="316" y="60" width="14" height="6" rx="1" fill="currentColor" stroke="none" />
+
+        {/* Fermata above the rest: hold it. The dot breathes like the interlude flames. */}
+        <path class="knot-draw c-fermata" pathLength="1" d="M 308 44 C 308 27 338 27 338 44" stroke-width="1.6" stroke-opacity="0.8" />
+        <g class="coda-fermata-hold">
+          <circle class="coda-fermata-dot" cx="323" cy="37.5" r="1.9" fill="currentColor" stroke="none" />
+        </g>
+
+        {/* Finalis — thin then thick: the page's last stroke. */}
+        <path class="knot-draw c-finalis-thin" pathLength="1" d="M 448 48 V 84" stroke-width="1.6" stroke-opacity="0.7" />
+        <rect class="coda-finalis" x="455" y="48" width="7" height="36" fill="currentColor" stroke="none" />
+      </svg>
+    </div>
+
+    <p class="coda-caption">Cisza <em>brzmi dalej.</em></p>
   </div>
 </section>

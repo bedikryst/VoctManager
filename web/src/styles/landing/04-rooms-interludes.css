@@ -281,6 +281,19 @@
     font-weight: 100;
   }
 
+  .ensemble-copy .ensemble-origin {
+    margin: 28px 0 0;
+    max-width: 34rem;
+    padding-left: 18px;
+    border-left: 1px solid rgba(198, 164, 91, 0.55);
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(16px, 1.3vw, 20px);
+    line-height: 1.6;
+    color: rgba(244, 241, 233, 0.82);
+  }
+
   .ensemble-facts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -634,7 +647,7 @@
     color: var(--paper);
   }
 
-  /* Full-bleed backdrop (<BleedImage>, parallax) + dark scrim â€” replaces the old CSS
+  /* Full-bleed backdrop (<BleedImage>, parallax) + dark scrim — replaces the old CSS
      background-image so the photo runs through Astro's image pipeline. */
   .final-support-media {
     position: absolute;

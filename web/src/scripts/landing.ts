@@ -7,8 +7,9 @@
  *
  *  Owns: reveal (`.is-visible`/`.is-settled`, mirroring useReveals), rite-glow (cursor
  *  spotlight), smooth-details (animated accordion), Lenis anchor smooth-scroll, and the
- *  kinetic variable-font choreography (hero breath, heading breath, coda per-letter wave,
- *  manifest breath) on a single rAF scroll loop.
+ *  kinetic variable-font choreography (hero breath, heading breath, manifest breath) on a
+ *  single rAF scroll loop. (The coda's old per-letter wave is gone — the "Ostatni takt"
+ *  coda draws itself via the shared .knot-draw reveal choreography, no JS of its own.)
  *
  *  NOT owned here (deliberately): parallax (the global BaseLayout `[data-parallax]` controller,
  *  the fixed cross-browser one), chrome tint (the StickyHeader island owns it via React state),
@@ -252,13 +253,6 @@ function setupLenisAnchors(): void {
 function setupKinetic(root: HTMLElement, reduce: boolean): void {
   if (reduce) return;
 
-  // Per-letter variable-font weaving is the one genuinely expensive scroll effect: each tick
-  // re-rasters six Cormorant glyphs in the Coda. On a fine pointer (desktop) that's budgeted;
-  // on a coarse pointer the wave is imperceptible at phone scale yet re-rasters mid native
-  // momentum-scroll — the documented stutter. So on touch we keep the cheap one-element hero
-  // breath + heading settle, and drop the Coda per-letter wave (the tail fade still runs).
-  const heavyKinetic = !coarsePointer();
-
   const heroTitle = root.querySelector<HTMLElement>(".hero-title");
   const heroEm = root.querySelector<HTMLElement>(".hero-title em");
   const headings = Array.from(
@@ -266,13 +260,8 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
       ".ensemble h2, .path h2, .section-title, .final-support h2",
     ),
   );
-  const coda = root.querySelector<HTMLElement>(".coda");
-  const codaLetters = coda
-    ? Array.from(coda.querySelectorAll<HTMLElement>(".coda-letter"))
-    : [];
-  const codaTail = coda ? coda.querySelector<HTMLElement>(".coda-tail") : null;
 
-  if (!heroTitle && !headings.length && !codaLetters.length) {
+  if (!heroTitle && !headings.length) {
     return;
   }
 
@@ -286,7 +275,6 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
     // read after a font-variation-settings write (below) forces a synchronous reflow on each
     // iteration; batching the reads keeps the whole frame to a single layout pass.
     const headingRects = headings.map((h) => h.getBoundingClientRect());
-    const codaRect = coda && (codaLetters.length || codaTail) ? coda.getBoundingClientRect() : null;
 
     // WRITE phase — only style mutations from here down.
     // Hero "breath" — scrubbed against the first 90vh of root scroll.
@@ -304,24 +292,6 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
       wght(h, 520 - 200 * p);
     });
 
-    // Coda — per-letter weight wave (360 → 560 → 360) staggered across the section's pass,
-    // then the italic tail emerges. Approximates the `--coda-scroll` view-timeline ranges.
-    if (codaRect) {
-      const pCoda = clamp01((vh - codaRect.top) / (vh + codaRect.height));
-      if (heavyKinetic) {
-        codaLetters.forEach((letter, i) => {
-          const start = 0.05 + i * 0.06;
-          const end = start + 0.42;
-          const local = clamp01((pCoda - start) / (end - start));
-          wght(letter, 360 + 200 * Math.sin(local * Math.PI));
-        });
-      }
-      if (codaTail) {
-        const t = clamp01((pCoda - 0.4) / 0.3);
-        codaTail.style.opacity = String(t);
-        codaTail.style.transform = `translateY(${(1 - t) * 18}px)`;
-      }
-    }
   };
 
   const onScroll = (): void => {
@@ -528,9 +498,11 @@ function setupSilenceMoment(root: HTMLElement, _reduce: boolean): void {
   moment.classList.add("is-listening", "is-settled");
 }
 
-// ── Interactions: IBAN copy buttons + vault-open dispatch from static sections ──────────────
-// Vault lives in its own React island (Faza 3c); static "Wesprzyj" triggers reach it over the
-// `voct:open-vault` event. Until that island exists the dispatch is a graceful no-op.
+// ── Interactions: IBAN copy + vault-open + video-open dispatch from static sections ─────────
+// Vault and VideoLightbox live in their own React islands (Faza 3c); static "Wesprzyj" triggers
+// reach the vault over `voct:open-vault`, and static "Zobacz i usłysz"/"Zobacz fragment" links
+// reach the lightbox over `voct:open-video`. Until each island exists the dispatch is a graceful
+// no-op — for video, the anchor's native href (the MP4 itself) serves as the pre-hydration fallback.
 function setupInteractions(root: HTMLElement): void {
   const onClick = (event: MouseEvent): void => {
     const target = event.target;
@@ -557,6 +529,24 @@ function setupInteractions(root: HTMLElement): void {
       window.dispatchEvent(
         new CustomEvent("voct:open-vault", {
           detail: { amount: Number.isFinite(amount) ? amount : undefined },
+        }),
+      );
+    }
+
+    const videoBtn = target.closest<HTMLElement>("[data-video-open]");
+    if (videoBtn) {
+      // Pre-hydration fallback: until VideoLightbox is mounted, let the native href
+      // (the MP4 itself) handle the click instead of dispatching into the void.
+      if (!(window as Window & { __voctVideoReady?: boolean }).__voctVideoReady) return;
+      event.preventDefault();
+      window.dispatchEvent(
+        new CustomEvent("voct:open-video", {
+          detail: {
+            src: videoBtn.getAttribute("href") ?? undefined,
+            caption: videoBtn.dataset.videoCaption,
+            portrait: videoBtn.dataset.videoPortrait === "true",
+            note: videoBtn.dataset.videoNote,
+          },
         }),
       );
     }

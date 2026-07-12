@@ -41,7 +41,9 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "MusicEvent",
   name: c.title,
-  location: { "@type": "Place", name: c.meta },
+  // startDate only when a real day exists — vague YAML dates stay out (no fabrication).
+  ...(c.date ? { startDate: c.date } : {}),
+  location: { "@type": "Place", name: c.venue ?? c.meta },
   performer: { "@type": "MusicGroup", name: "VoctEnsemble" },
   eventStatus: "https://schema.org/EventCompleted",
   eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",

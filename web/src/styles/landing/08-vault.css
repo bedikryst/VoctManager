@@ -259,10 +259,10 @@
     font-weight: 400;
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     Skarbiec Â· wpĹ‚ata online â€” Axepta BNP Paribas
+  /* ───────────────────────────────────────────────────────────────
+     Skarbiec · wpłata online — Axepta BNP Paribas
      Formularz currency-aware (PLN/EUR) osadzony w karcie metody.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+     ─────────────────────────────────────────────────────────────── */
   .give-form {
     display: grid;
     gap: 22px;
@@ -295,7 +295,7 @@
     line-height: 1;
   }
 
-  /* currency â€” segmented toggle with a sliding gold thumb */
+  /* currency — segmented toggle with a sliding gold thumb */
   .give-currency {
     position: relative;
     display: grid;
@@ -482,7 +482,7 @@
     display: none;
   }
 
-  /* submit â€” reuses .method-cta (elevated gold variant) */
+  /* submit — reuses .method-cta (elevated gold variant) */
   .give-submit {
     width: 100%;
     margin-top: 2px;
@@ -497,7 +497,7 @@
     50% { opacity: 1; }
   }
 
-  /* dynamic payment-methods note â€” fades on currency swap */
+  /* dynamic payment-methods note — fades on currency swap */
   .give-methods-note {
     margin: 0;
     color: rgba(244, 241, 233, 0.5);
@@ -510,7 +510,7 @@
     opacity: 0;
   }
 
-  /* fine print â€” metody pĹ‚atnoĹ›ci + tytuĹ‚ transakcji, jeden zwarty klaster */
+  /* fine print — metody płatności + tytuł transakcji, jeden zwarty klaster */
   .give-fineprint {
     display: grid;
     gap: 8px;
@@ -1281,7 +1281,7 @@
     font-weight: 400;
   }
 
-  /* vault-foot â€” drobne linki do dokumentĂłw pod kartÄ… zaufania */
+  /* vault-foot — drobne linki do dokumentów pod kartą zaufania */
   .vault-foot-links {
     display: flex;
     flex-wrap: wrap;
@@ -1308,13 +1308,13 @@
     color: var(--candle);
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     SKARBIEC Â· zgoda na regulamin + nakĹ‚adka z regulaminem darowizn
-     Akceptacja regulaminu jest wymaganym krokiem formularza wpĹ‚aty;
-     peĹ‚na treĹ›Ä‡ otwiera siÄ™ jako warstwa NAD skarbcem â€” darczyĹ„ca nie
-     opuszcza rytuaĹ‚u wpĹ‚aty. Polityka prywatnoĹ›ci, jako odrÄ™bny
-     dokument-ĹşrĂłdĹ‚o, pozostaje pod /polityka-prywatnosci.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ───────────────────────────────────────────────────────────────
+     SKARBIEC · zgoda na regulamin + nakładka z regulaminem darowizn
+     Akceptacja regulaminu jest wymaganym krokiem formularza wpłaty;
+     pełna treść otwiera się jako warstwa NAD skarbcem — darczyńca nie
+     opuszcza rytuału wpłaty. Polityka prywatności, jako odrębny
+     dokument-źródło, pozostaje pod /polityka-prywatnosci.
+     ─────────────────────────────────────────────────────────────── */
   .give-consent {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -1324,7 +1324,7 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* checkbox wizualnie ukryty, ale w peĹ‚ni dostÄ™pny dla AT i klawiatury */
+  /* checkbox wizualnie ukryty, ale w pełni dostępny dla AT i klawiatury */
   .give-consent-input {
     position: absolute;
     width: 1px;
@@ -1414,7 +1414,7 @@
     }
   }
 
-  /* â”€â”€ nakĹ‚adka z regulaminem darowizn â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ── nakładka z regulaminem darowizn ────────────────────────────── */
   .regulamin {
     position: fixed;
     inset: 0;
@@ -1651,7 +1651,7 @@
     font-weight: 400;
   }
 
-  /* dolny welon â€” sygnalizuje, ĹĽe treĹ›Ä‡ jest jeszcze przewijalna */
+  /* dolny welon — sygnalizuje, że treść jest jeszcze przewijalna */
   .regulamin-scroll-fade {
     position: absolute;
     left: 0;
@@ -1743,9 +1743,9 @@
     }
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     GRATITUDE Â· thank-you full-screen reveal
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ───────────────────────────────────────────────────────────────
+     GRATITUDE · thank-you full-screen reveal
+     ─────────────────────────────────────────────────────────────── */
 
   .gratitude {
     position: fixed;
@@ -1892,11 +1892,11 @@
     border-color: var(--candle);
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     FAILURE Â· restrained reveal after a declined payment
+  /* ───────────────────────────────────────────────────────────────
+     FAILURE · restrained reveal after a declined payment
      Mirrors GRATITUDE's structure, but drops the celebratory gold
      rings/halo for a calmer, apologetic register.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+     ─────────────────────────────────────────────────────────────── */
 
   .failure {
     position: fixed;

@@ -1,11 +1,11 @@
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     SITE FOOTER Â· "Inscriptio finalis" Â· awwwards MMXXVI
-     Diptych: lewa (SygnaĹ‚ â€” anchor czasu) â€– prawa (Fundatio â€”
-     stela inskrypcyjna). Bez generic kolumny "Relacje" â€” kontakt
+  /* ───────────────────────────────────────────────────────────────
+     SITE FOOTER · "Inscriptio finalis" · awwwards MMXXVI
+     Diptych: lewa (Sygnał — anchor czasu) ‖ prawa (Fundatio —
+     stela inskrypcyjna). Bez generic kolumny "Relacje" — kontakt
      spada do Fundatio jako stanza "Vox". Pod gridem: hairline
-     ribbon spoĹ‚ecznoĹ›ciowy â†’ wielki znak sĹ‚owny â†’ colophon.
-     KaĹĽda warstwa jest osobnym oddechem.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+     ribbon społecznościowy → wielki znak słowny → colophon.
+     Każda warstwa jest osobnym oddechem.
+     ─────────────────────────────────────────────────────────────── */
 
   .site-footer {
     position: relative;
@@ -22,10 +22,10 @@
     padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw) clamp(28px, 3vw, 44px);
   }
 
-  /* Inskrypcja IV â€” kanton finalny, dopina sekwencjÄ™ I/II/III
-     z aether-interlude (Lumen quaerit Â· Vox memoriae Â· Sustinete nos).
-     CaĹ‚a stopka czyta siÄ™ jako closing chapter, nie aneks adresowy.
-     Tight margin â€” po sekcji CODA mamy juĹĽ ogromny oddech, wiÄ™c
+  /* Inskrypcja IV — kanton finalny, dopina sekwencję I/II/III
+     z aether-interlude (Lumen quaerit · Vox memoriae · Sustinete nos).
+     Cała stopka czyta się jako closing chapter, nie aneks adresowy.
+     Tight margin — po sekcji CODA mamy już ogromny oddech, więc
      incipit siedzi blisko gridu. */
   .site-footer-incipit {
     display: grid;
@@ -48,8 +48,8 @@
 
   .site-footer-grid {
     display: grid;
-    /* Asymmetric diptych â€” SygnaĹ‚ Ĺ›ciĹ›niÄ™ty do wÄ…skiej szpalty (zegar
-       ~230px), Fundatio bierze resztÄ™. */
+    /* Asymmetric diptych — Sygnał ściśnięty do wąskiej szpalty (zegar
+       ~230px), Fundatio bierze resztę. */
     grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
     gap: clamp(40px, 5.5vw, 96px);
     margin-bottom: clamp(40px, 5vw, 72px);
@@ -80,18 +80,18 @@
   }
 
   /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     FUNDATIO â€” single inscription column (right side of diptych).
+     FUNDATIO — single inscription column (right side of diptych).
      Cztery stanze rozdzielone hairline rules:
-       1. Mark â€” VoctFoundation + siedziba + KRS/NIP/REGON
-       2. Consilium â€” zarzÄ…d jako italic inscription (nie mailto)
-       3. Corpus â€” dokumenty (Statut, Polityka)
-       4. Vox â€” kontakt (booking/patronat/dyrekcja + RODO)
+       1. Mark — VoctFoundation + siedziba + KRS/NIP/REGON
+       2. Consilium — zarząd jako italic inscription (nie mailto)
+       3. Corpus — dokumenty (Statut, Polityka)
+       4. Vox — kontakt (booking/patronat/dyrekcja + RODO)
      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-  /* WewnÄ™trzny grid Fundatio â€” Mark i Vox full-width, Consilium + Corpus
-     w jednym rzÄ™dzie obok siebie. WyrĂłwnuje pionowo wysokoĹ›Ä‡ prawej
-     kolumny do lewej (SygnaĹ‚), zamiast czterech stanz stackowanych
-     pionowo (puchniÄ™cie po prawej). */
+  /* Wewnętrzny grid Fundatio — Mark i Vox full-width, Consilium + Corpus
+     w jednym rzędzie obok siebie. Wyrównuje pionowo wysokość prawej
+     kolumny do lewej (Sygnał), zamiast czterech stanz stackowanych
+     pionowo (puchnięcie po prawej). */
   .footer-col-foundation .footer-col-body {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -105,7 +105,7 @@
     grid-column: 1 / -1;
   }
 
-  /* â”€â”€â”€ Foundation mark â€” nazwa + siedziba + identyfikatory â”€â”€â”€ */
+  /* ─── Foundation mark — nazwa + siedziba + identyfikatory ─── */
   .foundation-mark {
     display: grid;
     gap: 12px;
@@ -172,7 +172,7 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* â”€â”€â”€ Stanza â€” wspĂłlny rytm sub-sekcji â”€â”€â”€ */
+  /* ─── Stanza — wspólny rytm sub-sekcji ─── */
   .foundation-stanza {
     display: grid;
     gap: 10px;
@@ -184,8 +184,8 @@
     padding-bottom: 0;
   }
 
-  /* Label sub-stanzy: [Â·] LATIN Â· polski hint â€” wzĂłr wziÄ™ty
-     z .footer-signal-tempus (Tempus Paschae Â· okres wielkanocny). */
+  /* Label sub-stanzy: [·] LATIN · polski hint — wzór wzięty
+     z .footer-signal-tempus (Tempus Paschae · okres wielkanocny). */
   .foundation-stanza-label {
     display: inline-flex;
     align-items: baseline;
@@ -216,8 +216,8 @@
     letter-spacing: 0.1em;
   }
 
-  /* Consilium â€” zarzÄ…d jako italic inscription, Ĺ›wiadomie BEZ linkĂłw.
-     Trzy nazwiska to nie directory â€” to dedykacja na cokole. */
+  /* Consilium — zarząd jako italic inscription, świadomie BEZ linków.
+     Trzy nazwiska to nie directory — to dedykacja na cokole. */
   .foundation-consilium-list {
     margin: 0;
     padding: 0;
@@ -232,8 +232,8 @@
     line-height: 1.4;
   }
 
-  /* Corpus â€” dokumenty. Italic serif anchors z hairline underline,
-     ktĂłre rozwija siÄ™ od lewej na hover (kierunek czytania). */
+  /* Corpus — dokumenty. Italic serif anchors z hairline underline,
+     które rozwija się od lewej na hover (kierunek czytania). */
   .foundation-corpus-list {
     margin: 0;
     padding: 0;
@@ -295,8 +295,8 @@
     color: var(--candle);
   }
 
-  /* Vox â€” kontakt. Inline-list rozdzielona zĹ‚otymi mid-dotami;
-     pod niÄ… mono linijka z RODO (dane osobowe â€” wymĂłg prawny). */
+  /* Vox — kontakt. Inline-list rozdzielona złotymi mid-dotami;
+     pod nią mono linijka z RODO (dane osobowe — wymóg prawny). */
   .foundation-vox-list {
     margin: 0;
     padding: 0;
@@ -317,7 +317,7 @@
   }
 
   .foundation-vox-list li:not(:last-child)::after {
-    content: "Â·";
+    content: "·";
     color: var(--candle);
     opacity: 0.55;
   }
@@ -381,9 +381,9 @@
   }
 
   /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-     SOCIAL RIBBON â€” hairline strip pomiÄ™dzy gridem a wordmarkiem.
-     Trzy platformy wycentrowane miÄ™dzy dwiema liniami; italic
-     Cormorant zamiast "follow us" buttons. Ribbon to dechtniÄ™cie
+     SOCIAL RIBBON — hairline strip pomiędzy gridem a wordmarkiem.
+     Trzy platformy wycentrowane między dwiema liniami; italic
+     Cormorant zamiast "follow us" buttons. Ribbon to dechtnięcie
      przed cichym "amen" wordmarka.
      â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
   .footer-ribbon {
@@ -449,13 +449,13 @@
     transform-origin: left;
   }
 
-  /* â”€â”€â”€ SygnaĹ‚ â€” lewa kolumna Â· dwa bloki:
-     1) NajbliĹĽsze wybrzmienie (statyczna data + countdown)
-     2) KrakĂłw Â· teraz (live clock + hora canonica + GPS + tempus)
-     Bez horizontal rules â€” odstÄ™p pionowy jako jedyny separator.
-     Hora canonica jest teraz SATELITÄ„ zegara (nie osobnym blokiem),
-     bo Ĺ›redniowieczny mnich nie patrzyĹ‚ osobno na zegar i osobno na
-     "ktĂłra hora" â€” to byĹ‚a JEDNA rzecz. */
+  /* ─── Sygnał — lewa kolumna · dwa bloki:
+     1) Najbliższe wybrzmienie (statyczna data + countdown)
+     2) Kraków · teraz (live clock + hora canonica + GPS + tempus)
+     Bez horizontal rules — odstęp pionowy jako jedyny separator.
+     Hora canonica jest teraz SATELITĄ zegara (nie osobnym blokiem),
+     bo średniowieczny mnich nie patrzył osobno na zegar i osobno na
+     "która hora" — to była JEDNA rzecz. */
   .footer-col-signal {
     align-self: stretch;
     grid-template-rows: auto 1fr;
@@ -489,10 +489,10 @@
     line-height: 1.5;
   }
 
-  /* â”€â”€â”€ Hora canonica â€” satellite zegara â”€â”€â”€
-     Sit RIGHT under the clock â€” zegar to anchor, hora to jego nazwa.
-     Italic Cormorant ~26px sentence-case, Ĺ‚aciĹ„ski akcent candle gold,
-     polski w ink-soft. WyglÄ…da jak inskrypcja pod cyfrÄ…. */
+  /* ─── Hora canonica — satellite zegara ───
+     Sit RIGHT under the clock — zegar to anchor, hora to jego nazwa.
+     Italic Cormorant ~26px sentence-case, łaciński akcent candle gold,
+     polski w ink-soft. Wygląda jak inskrypcja pod cyfrą. */
   .footer-signal-hora-row {
     margin: 0 0 2px;
     display: flex;
@@ -518,8 +518,8 @@
     transform: translateY(-0.08em);
   }
 
-  /* Tempus row separator â€” italic Ĺ‚aciĹ„ski + mono polski majÄ… rĂłĹĽne baseline.
-     Dot lekko niĹĽej ĹĽeby optycznie usiadĹ‚ miÄ™dzy nimi zamiast wisieÄ‡ nad. */
+  /* Tempus row separator — italic łaciński + mono polski mają różne baseline.
+     Dot lekko niżej żeby optycznie usiadł między nimi zamiast wisieć nad. */
   .footer-signal-tempus-sep {
     color: var(--candle);
     opacity: 0.55;
@@ -535,10 +535,10 @@
     letter-spacing: 0;
   }
 
-  /* â”€â”€â”€ Tempus â€” okres roku liturgicznego â”€â”€â”€
-     NajgĹ‚Ä™bsza warstwa czasu w kolumnie: zegar (instant) â†’ hora (3h) â†’
-     miejsce â†’ tempus (1-2 miesiÄ…ce). Progresywne oddalanie. Zmienia siÄ™
-     ~6 razy w roku. BezpoĹ›rednio powiÄ…zane z brand'em Concerts Spirituels =
+  /* ─── Tempus — okres roku liturgicznego ───
+     Najgłębsza warstwa czasu w kolumnie: zegar (instant) → hora (3h) →
+     miejsce → tempus (1-2 miesiące). Progresywne oddalanie. Zmienia się
+     ~6 razy w roku. Bezpośrednio powiązane z brand'em Concerts Spirituels =
      muzyka roku liturgicznego. */
   .footer-signal-tempus-row {
     display: flex;
@@ -566,8 +566,8 @@
     text-transform: lowercase;
   }
 
-  /* â”€â”€â”€ Live clock â€” Anchor lewej kolumny, ale
-     nie kompozycyjny rywal pieczÄ™ci. */
+  /* ─── Live clock — Anchor lewej kolumny, ale
+     nie kompozycyjny rywal pieczęci. */
   .footer-signal-clock {
     color: var(--candle);
     font-family: var(--serif);
@@ -575,20 +575,20 @@
     line-height: 0.95;
     font-weight: 300;
     letter-spacing: 0;
-    /* lining-nums â€” wymusza wersaliki cyfr zamiast figur tekstowych
-       Cormoranta; bez tego "12:36" czytaĹ‚o siÄ™ jak "I 2:36" (wÄ…ska,
-       wpĂłĹ‚-wysoka jedynka). tabular-nums trzyma staĹ‚Ä… szerokoĹ›Ä‡ â€” zegar
-       nie skacze przy kaĹĽdym ticku. */
+    /* lining-nums — wymusza wersaliki cyfr zamiast figur tekstowych
+       Cormoranta; bez tego "12:36" czytało się jak "I 2:36" (wąska,
+       wpół-wysoka jedynka). tabular-nums trzyma stałą szerokość — zegar
+       nie skacze przy każdym ticku. */
     font-variant-numeric: lining-nums tabular-nums;
     margin: 10px 0 10px;
     font-variation-settings: "wght" 380;
   }
 
-  /* Sekundy â€” chronograph sub-dial. Italic Cormorant tabular-nums,
-     ~0.34em gĹ‚Ăłwnego zegara, raised ĹĽeby siedziaĹ‚ mniej-wiÄ™cej na
-     wysokoĹ›ci cap line minut. Lekka opacity + osobny wght (340) ĹĽeby
-     NIE oddychaĹ‚ razem z gĹ‚Ăłwnym zegarem (mniej jitter, stabilna obecnoĹ›Ä‡).
-     Tabular-nums kasuje skoki szerokoĹ›ci przy kaĹĽdym tick. */
+  /* Sekundy — chronograph sub-dial. Italic Cormorant tabular-nums,
+     ~0.34em głównego zegara, raised żeby siedział mniej-więcej na
+     wysokości cap line minut. Lekka opacity + osobny wght (340) żeby
+     NIE oddychał razem z głównym zegarem (mniej jitter, stabilna obecność).
+     Tabular-nums kasuje skoki szerokości przy każdym tick. */
   .footer-signal-seconds {
     display: inline-block;
     margin-left: 0.16em;
@@ -614,12 +614,12 @@
     margin-top: 2px;
   }
 
-  /* Breath dla clock â€” TIME-BASED pulse, nie scroll-driven.
-     PowĂłd: poprzednia wersja (entry 0% cover 60%, 460â†’320 monotonic)
-     koĹ„czyĹ‚a animacjÄ™ zanim user siÄ™ zatrzymaĹ‚ w Ĺ›rodku ekranu â€” wght
-     siedziaĹ‚ na 320 = static. Time-based 8s pulse zapewnia ciÄ…gĹ‚y puls
-     "obecnoĹ›ci" gdy user czyta footer. Browser auto-throttluje gdy
-     element off-screen â€” koszt minimalny. Will-change promuje do warstwy,
+  /* Breath dla clock — TIME-BASED pulse, nie scroll-driven.
+     Powód: poprzednia wersja (entry 0% cover 60%, 460→320 monotonic)
+     kończyła animację zanim user się zatrzymał w środku ekranu — wght
+     siedział na 320 = static. Time-based 8s pulse zapewnia ciągły puls
+     "obecności" gdy user czyta footer. Browser auto-throttluje gdy
+     element off-screen — koszt minimalny. Will-change promuje do warstwy,
      ogranicza reflow scope przy rerasteryzacji variable font. */
   @media (prefers-reduced-motion: no-preference) {
     .footer-signal-clock {
@@ -729,11 +729,11 @@
     }
   }
 
-  /* .reveal â€” wejĹ›cie do viewportu (IntersectionObserver).
-     WyciÄ™ty filter: blur â€” Gaussian blur jest jednÄ… z najdroĹĽszych operacji GPU,
-     a przy dĹ‚ugich sekcjach z wieloma reveal'ami jednoczeĹ›nie powodowaĹ‚ drop frames.
-     Zamiast tego: wiÄ™kszy translate i delikatne scale dla "gĹ‚Ä™bi" zamiast blura.
-     Blur zostaje TYLKO w jednorazowym .intro-stage przy load â€” tam mamy budĹĽet. */
+  /* .reveal — wejście do viewportu (IntersectionObserver).
+     Wycięty filter: blur — Gaussian blur jest jedną z najdroższych operacji GPU,
+     a przy długich sekcjach z wieloma reveal'ami jednocześnie powodował drop frames.
+     Zamiast tego: większy translate i delikatne scale dla "głębi" zamiast blura.
+     Blur zostaje TYLKO w jednorazowym .intro-stage przy load — tam mamy budżet. */
   .reveal {
     opacity: 0;
     transform: translateY(42px) scale(0.985);

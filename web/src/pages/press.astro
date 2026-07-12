@@ -13,6 +13,9 @@
  *  carries `data-placeholder="<kind>"` so swaps are trivially greppable:
  *    grep -r 'data-placeholder' web/src/pages/press.astro
  *
+ *  Video slots render through the landing's shared VideoPlayer island (custom chrome,
+ *  one-video-at-a-time coordination, out-of-view pause) — never native controls.
+ *
  *  Reachable only via direct URL for now — no link from the landing. Florent shares
  *  voctensemble.com/press in his outreach emails.
  * @architecture Astro islands 2026
@@ -25,7 +28,9 @@ import SiteFooter from "../components/SiteFooter.astro";
 import { bleedPair } from "../lib/photos";
 import { PATHS } from "../data/landing/paths";
 import { VaultIsland } from "../islands/landing/VaultIsland";
+import { VideoPlayer } from "../islands/landing/video/VideoPlayer";
 import "../styles/vault.css";
+import "../styles/vplayer.css";
 
 const title = "Press kit — VoctEnsemble";
 const description =
@@ -121,7 +126,7 @@ const REPERTOIRE = [
   { name: "Stanford, Charles Villiers", years: "1852–1924", works: ["Beati quorum via, Op. 38, No. 3 · ok. 1888–1890"] },
   { name: "Steven, Ken", years: "ur. 1993", works: ["Dawn and Dusk · 2020"] },
   { name: "Stopford, Philip W. J.", years: "ur. 1977", works: ["Lully, Lullay · 2008"] },
-  { name: "Sykulski, Jacek", years: "ur. 1964", works: ["Stoi lód na prośnie · 2017"] },
+  { name: "Sykulski, Jacek", years: "ur. 1964", works: ["Stoi lód na Prośnie · 2017"] },
   { name: "Tavener, John", years: "1944–2013", works: ["A Hymn to the Mother of God · 1985", "Mother of God, here I stand · 2003", "Song for Athene · 1993"] },
   { name: "Vaughan Williams, Ralph", years: "1872–1958", works: ["The Lark Ascending · 1914 (aranż. Paul Drayton)"] },
   { name: "Victoria, Tomás Luis de", years: "1548–1611", works: ["Alma Redemptoris Mater · 1581"] },
@@ -241,19 +246,15 @@ const jsonLd = {
           Sześćdziesiąt sekund — głos, cisza, obecność. Realizacja: Ars Sonora Studio.
         </p>
 
-        <figure class="press-hero-video" data-placeholder="hero-video">
-          <video controls playsinline preload="metadata" poster={heroPosterWebp}>
-            <source src={DEMO_VIDEO} type="video/mp4" />
-            <p>Aby zobaczyć demo, włącz obsługę video w przeglądarce.</p>
-          </video>
-          <figcaption class="press-hero-caption">
-            <span>Demo reel · 0:60</span>
-            <span class="dot" aria-hidden="true">·</span>
-            <span>audio: Jakub Garbacz (Ars Sonora Studio)</span>
-            <span class="dot" aria-hidden="true">·</span>
-            <span>video: ART Agencja Rzemieślników Teatralnych</span>
-          </figcaption>
-        </figure>
+        <div class="press-hero-video" data-placeholder="hero-video">
+          <VideoPlayer
+            client:visible
+            src={DEMO_VIDEO}
+            poster={heroPosterWebp}
+            tone="dark"
+            caption="Demo reel · audio: Jakub Garbacz (Ars Sonora Studio) · video: ART Agencja Rzemieślników Teatralnych"
+          />
+        </div>
 
         <div class="press-hero-actions">
           <a
@@ -421,11 +422,14 @@ const jsonLd = {
               <h3 class="press-concert-title">{p.title}</h3>
               <p class="press-concert-place">{p.place}</p>
               <p class="press-concert-note">{p.note}</p>
-              <figure class="press-concert-media" data-placeholder="concert-video">
-                <video controls playsinline preload="none" poster={heroPosterWebp}>
-                  <source src={DEMO_VIDEO} type="video/mp4" />
-                </video>
-              </figure>
+              <div class="press-concert-media" data-placeholder="concert-video">
+                <VideoPlayer
+                  client:visible
+                  src={DEMO_VIDEO}
+                  poster={heroPosterWebp}
+                  caption={`Fragment koncertu · ${p.year}`}
+                />
+              </div>
               <div class="press-concert-actions">
                 <a class="press-pill" href="/koncerty">Karta programu →</a>
                 <a class="press-pill press-pill--ghost" href={DEMO_VIDEO} download data-placeholder="concert-download">
@@ -655,10 +659,9 @@ const jsonLd = {
   .press-hero-positioning em { font-style: italic; color: var(--candle); }
   .press-hero-lede { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.42; max-width: 40ch; color: rgba(244, 241, 233, 0.66); }
 
-  .press-hero-video { position: relative; margin: 0; max-width: 1180px; width: 100%; aspect-ratio: 16 / 9; background: #000; box-shadow: 0 40px 120px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(244,241,233,.08); display: block; }
-  .press-hero-video video { width: 100%; height: 100%; display: block; }
-  .press-hero-caption { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; margin: 18px 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, 0.58); }
-  .press-hero-caption .dot { color: var(--candle); opacity: .6; }
+  /* Frame, shadow and caption come from the shared VideoPlayer chrome (vplayer.css,
+     tone="dark") — the wrapper only constrains width. */
+  .press-hero-video { position: relative; margin: 0; max-width: 1180px; width: 100%; }
 
   .press-scroll-cue { display: inline-flex; align-items: center; gap: 12px; align-self: flex-start; margin-top: clamp(20px, 4vh, 48px); padding-bottom: 6px; font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, 0.74); border-bottom: 1px solid rgba(244, 241, 233, 0.32); transition: color .35s var(--ease), border-color .35s var(--ease); }
   .press-scroll-cue:hover { color: var(--candle); border-color: var(--candle); }
@@ -735,8 +738,7 @@ const jsonLd = {
   .press-concert-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(32px, 4vw, 56px); line-height: 1.04; letter-spacing: -.01em; color: var(--ink); }
   .press-concert-place { margin: 0; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted); }
   .press-concert-note { margin: 4px 0 0; max-width: 42rem; color: var(--ink-soft); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
-  .press-concert-media { position: relative; margin: clamp(14px, 1.4vw, 22px) 0 0; aspect-ratio: 16 / 9; max-width: 720px; background: #000; box-shadow: 0 24px 60px -28px rgba(0,0,0,.6); }
-  .press-concert-media video { width: 100%; height: 100%; display: block; }
+  .press-concert-media { position: relative; margin: clamp(14px, 1.4vw, 22px) 0 0; max-width: 720px; }
   .press-concert-actions { margin-top: clamp(10px, 1vw, 14px); display: flex; flex-wrap: wrap; gap: 12px 20px; }
   .press-pill { display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); border: 1px solid var(--ink); padding: 10px 18px; transition: background-color .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
   .press-pill:hover { background: var(--candle); border-color: var(--candle); color: var(--ink); }

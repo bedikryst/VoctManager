@@ -51,7 +51,7 @@
       padding-bottom: 112px;
     }
 
-    /* Diptych zwija siÄ™ do pojedynczej kolumny â€” SygnaĹ‚ na gĂłrze
+    /* Diptych zwija się do pojedynczej kolumny — Sygnał na górze
        (anchor czasu), Fundatio pod nim (stela inskrypcyjna). */
     .site-footer-grid {
       grid-template-columns: 1fr;
@@ -256,9 +256,9 @@
       padding: 20px 18px 26px;
     }
 
-    /* Mobile: zwarty repertuar â€” krĂłtszy footprint po rozwiniÄ™ciu details.
-       Mniejszy font + ciaĹ›niejsze odstÄ™py + dwie kolumny dla bardzo krĂłtkich pozycji
-       z list-grid auto-fill, gdy elementy siÄ™ mieszczÄ…. */
+    /* Mobile: zwarty repertuar — krótszy footprint po rozwinięciu details.
+       Mniejszy font + ciaśniejsze odstępy + dwie kolumny dla bardzo krótkich pozycji
+       z list-grid auto-fill, gdy elementy się mieszczą. */
     .path-works {
       font-size: 12.5px;
       line-height: 1.4;
@@ -348,8 +348,8 @@
       gap: 44px;
     }
 
-    /* Na telefonie Fundatio wraca do 1-col stacka â€” wÄ…ska kolumna nie
-       udĹşwignie Consilium obok Corpus. */
+    /* Na telefonie Fundatio wraca do 1-col stacka — wąska kolumna nie
+       udźwignie Consilium obok Corpus. */
     .footer-col-foundation .footer-col-body {
       grid-template-columns: 1fr;
     }
@@ -394,14 +394,6 @@
       padding-bottom: clamp(48px, 10vw, 80px);
     }
 
-    .coda-headline {
-      font-size: clamp(76px, 22vw, 150px);
-    }
-
-    .coda-tail {
-      font-size: clamp(24px, 7vw, 50px);
-    }
-
     .donation-row strong {
       font-size: 24px;
     }
@@ -412,6 +404,6 @@
     }
   }
 
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     SKARBIEC Â· wesparcie Â· sliding sheet
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ───────────────────────────────────────────────────────────────
+     SKARBIEC · wesparcie · sliding sheet
+     ─────────────────────────────────────────────────────────────── */

@@ -1,86 +1,130 @@
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     CODA Â· pre-footer Â· per-letter wght cascade (Awwwards MMXXVI)
-     "CISZA." â€” kaĹĽda litera ma wĹ‚asnÄ… fazÄ™ breath, kaskada przesuwa
-     siÄ™ lewoâ†’prawo wraz ze scrollem. Cormorant variable wght
-     320â†’640â†’320. Bez 3D, bez blur, bez mix-blend-mode â€” caĹ‚y efekt
-     siedzi w jednej osi typograficznej.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+  /* ───────────────────────────────────────────────────────────────
+     CODA · "Ostatni takt" — the page ends the way a score does.
+     A compact chant tetragram (max 640px — an emblem, not a banner)
+     carries three neumes stepping down into a whole rest; a fermata
+     holds above it (hold the silence) and the finalis double bar
+     closes the page. The stroke-draw rides the shared .knot-draw
+     mechanism (base rule lives in AetherInterlude's global styles)
+     and the wrapper is an .aether-knot, so the audio analyser /
+     scroll-breath drivers already write --knot-intensity here.
+     No inscription: the sign speaks, and "Cisza brzmi dalej." answers
+     in the page's spoken-line register (SilenceMoment's), roman +
+     gold italic like the hero's "Z ciszy głos." All overrides run at
+     ≥3-class specificity so cascade order against AetherInterlude's
+     co-located styles never matters.
+     ─────────────────────────────────────────────────────────────── */
 
   .coda {
     position: relative;
-    padding: clamp(110px, 16vw, 220px) max(28px, 5vw);
+    padding: clamp(84px, 11vw, 140px) max(28px, 5vw);
     background:
-      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.18), transparent 42rem),
+      radial-gradient(circle at 50% 110%, rgba(198, 164, 91, 0.16), transparent 42rem),
       linear-gradient(180deg, var(--paper-soft) 0%, var(--paper) 100%);
     border-top: 1px solid var(--line);
     overflow: hidden;
   }
 
-  .coda-container {
-    position: relative;
+  .coda-score {
     margin: 0 auto;
-    width: min(1580px, 100%);
+    width: min(640px, 100%);
     display: grid;
-    gap: clamp(8px, 1.4vw, 20px);
-  }
-
-  .coda-headline {
-    margin: 0;
-    font-family: var(--serif);
-    /* Capped max 400 -> 280: at 400px every wght tick re-rasters six glyphs against
-       a cold cache, which is the user-reported "Cisza" stutter. 280 is still huge and
-       dramatic but caches far better; the closure reads less as standing ovation
-       and more as final breath, which matches Coda's intent anyway. */
-    font-size: clamp(120px, 22vw, 280px);
-    font-weight: 300;
-    line-height: 0.86;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    align-items: baseline;
-    font-feature-settings: "liga", "kern";
-  }
-
-  .coda-letter {
-    display: inline-block;
-    font-variation-settings: "wght" 320;
-    /* contain: paint scopes the wght re-raster to each glyph box so a swing on one
-       letter doesn't invalidate paint on the next. */
-    contain: paint;
-  }
-
-  .coda-letter--punct {
+    justify-items: center;
+    gap: clamp(30px, 4vw, 48px);
     color: var(--candle);
-    margin-left: -0.02em;
   }
 
-  .coda-tail {
-    margin: 0;
-    font-family: var(--serif);
-    font-style: italic;
-    /* Promoted from clamp(30, 6vw, 96) -> clamp(40, 8vw, 140): the Coda must claim
-       the closure. "brzmi dalej" is the page's final breath; it cannot read as
-       a smaller appendage to "Cisza." — it has to be the gold gesture itself. */
-    font-size: clamp(40px, 8vw, 140px);
-    font-weight: 360;
-    line-height: 1;
-    letter-spacing: 0.005em;
-    color: var(--candle);
-    text-align: center;
+  /* The wrapper reuses .aether-knot so the --knot-intensity breathing is free, but the
+     interlude's fixed knot box and physical swell don't fit the staff: full width of the
+     score column, no scale (a swell on ~640px would visibly wobble) — brightness flare
+     + bloom only. */
+  .coda .coda-score .coda-knot {
+    width: 100%;
+    height: auto;
+    transform: none;
   }
 
-  /* The per-letter wave + tail emergence are owned by setupKinetic (landing.ts) —
-     the earlier `@supports (animation-timeline)` CSS choreography here double-drove
-     the same letters once browsers shipped native scroll-driven animations (the JS
-     inline writes won, the CSS animation re-rastered glyphs for nothing). Removed.
-     The tail hides only while the JS driver is live (html.voct-motion), so no-JS and
-     reduced-motion visitors always see "brzmi dalej". */
-  html.voct-motion .coda-tail {
+  .coda .coda-score .coda-knot::after {
+    inset: -60% -10%;
+  }
+
+  .coda .coda-knot svg {
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── Draw choreography — staff first, the neumes step down, the rest lands, the fermata
+     arcs over it, and the finalis strikes last: the page's final stroke. Hidden states
+     engage only under html.voct-motion (no-JS / reduced-motion always see the drawn
+     state), mirroring the interludes. ── */
+  .coda .coda-knot .cs-1 { transition-duration: 1.5s; transition-delay: 0.15s; }
+  .coda .coda-knot .cs-2 { transition-duration: 1.5s; transition-delay: 0.3s; }
+  .coda .coda-knot .cs-3 { transition-duration: 1.5s; transition-delay: 0.45s; }
+  .coda .coda-knot .cs-4 { transition-duration: 1.5s; transition-delay: 0.6s; }
+  .coda .coda-knot .c-fermata { transition-duration: 1.1s; transition-delay: 1.8s; }
+  .coda .coda-knot .c-finalis-thin { transition-duration: 0.5s; transition-delay: 2.5s; }
+
+  html.voct-motion .coda .coda-score.reveal:not(.is-visible) .knot-draw {
+    stroke-dashoffset: 1;
+  }
+
+  .coda .coda-neume,
+  .coda .coda-rest,
+  .coda .coda-fermata-hold,
+  .coda .coda-finalis {
+    transition: opacity 1.3s var(--ease-slow);
+  }
+  .coda .cn-1 { opacity: 0.55; transition-delay: 1s; }
+  .coda .cn-2 { opacity: 0.45; transition-delay: 1.15s; }
+  .coda .cn-3 { opacity: 0.35; transition-delay: 1.3s; }
+  .coda .coda-rest { opacity: 0.85; transition-delay: 1.5s; }
+  .coda .coda-fermata-hold { opacity: 1; transition-delay: 2.2s; }
+  .coda .coda-finalis { opacity: 0.8; transition-delay: 2.65s; }
+
+  html.voct-motion .coda .coda-score.reveal:not(.is-visible) :is(
+    .coda-neume,
+    .coda-rest,
+    .coda-fermata-hold,
+    .coda-finalis
+  ) {
     opacity: 0;
   }
 
+  /* The fermata dot breathes in phase with the interlude flames (shared keyframes from
+     AetherInterlude); entrance opacity lives on the parent group so the two never fight. */
+  .coda .coda-fermata-dot {
+    transform-origin: 323px 37.5px;
+    animation: aetherFlameCore 4.6s ease-in-out infinite;
+  }
+
+  /* ── The final words — the page's spoken-line register (mirrors .silence-line and the
+     hero: roman opening, gold italic close). A line, not a caption; a verse, not a slogan. ── */
+  .coda-caption {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(26px, 3.6vw, 48px);
+    line-height: 1.18;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    text-align: center;
+    transition:
+      opacity 2s var(--ease-slow) 2.7s,
+      transform 2s var(--ease-slow) 2.7s;
+  }
+
+  .coda-caption em {
+    font-style: italic;
+    font-weight: 360;
+    color: var(--candle);
+  }
+
+  html.voct-motion .coda .coda-score.reveal:not(.is-visible) .coda-caption {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
   @media (prefers-reduced-motion: reduce) {
-    html.voct-motion .coda-tail { opacity: 1; }
+    .coda .coda-fermata-dot {
+      animation: none;
+    }
   }

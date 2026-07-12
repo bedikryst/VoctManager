@@ -1,10 +1,10 @@
-  /* â”€â”€â”€ Hero "Ĺšwietlisty fresk" â”€â”€â”€
+  /* ─── Hero "Świetlisty fresk" ───
      Full-bleed image treated as light, not a photograph: lifted to a luminous warm
      alabaster near-monochrome, edges dissolving into the paper so image and page are one
-     surface. The liturgy lives in a lit left zone (paper scrim â†’ crisp ink type), the
+     surface. The liturgy lives in a lit left zone (paper scrim → crisp ink type), the
      fresco stays clear toward the right/centre. The only motions are a slow push-in and
      one breathing raking light.
-     z-stack: media(0) â†’ light + veil(1) â†’ content(2) â†’ descend(3). */
+     z-stack: media(0) → light + veil(1) → content(2) → descend(3). */
   .hero {
     position: relative;
     min-height: 100svh;
@@ -116,46 +116,6 @@
     margin-top: 0;
     padding-top: 18px;
     border-top: 1px solid rgba(244, 241, 233, 0.22);
-  }
-
-  /* The standing invitation — its own full row above the CTAs (flex-basis 100%
-     inside the wrapping rail). Quiet mono, paper-toned; only the pulsing candle
-     dot and the hover warm it to gold. */
-  .hero-occasion {
-    flex-basis: 100%;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    line-height: 1.6;
-    color: rgba(244, 241, 233, 0.78);
-    transition: color 0.45s var(--ease);
-  }
-
-  .hero-occasion-dot {
-    flex-shrink: 0;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--candle);
-    box-shadow: 0 0 10px rgba(198, 164, 91, 0.8);
-    animation: occasionPulse 2.8s ease-in-out infinite;
-  }
-
-  .hero-occasion:hover {
-    color: var(--candle);
-  }
-
-  @keyframes occasionPulse {
-    0%, 100% { transform: scale(0.82); opacity: 0.65; }
-    50% { transform: scale(1.12); opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .hero-occasion-dot { animation: none; }
   }
 
   .hero-cue {

@@ -245,6 +245,86 @@
   transform: translateY(2px);
 }
 
+/* ── Seek state — the cursor becomes the scrub tooltip ────────────────────
+   Over `data-cursor="seek"` (the video player's scrub rail) the ring dissolves
+   into a thin vertical caret at the exact pointer X, with the would-be timestamp
+   above it (useSiteCursor mirrors it into data-time; empty before metadata).
+   Deliberately keeps the base mix-blend difference: paper-toned marks read as
+   ink on the parchment surfaces and as light in the dark lightbox — one rule,
+   both rooms. */
+.site-cursor.is-seek {
+  border-color: transparent;
+  background: transparent;
+  opacity: 1;
+}
+
+.site-cursor.is-seek::before {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1.5px;
+  height: 22px;
+  border-radius: 0;
+  background: rgba(244, 241, 233, 0.96);
+  transform: translate(-50%, -50%);
+  transition: width 0.15s var(--ease, ease);
+}
+
+.site-cursor.is-seek::after {
+  content: attr(data-time);
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + 17px);
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  transform: translateX(-50%);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: rgba(244, 241, 233, 0.96);
+}
+
+/* Drag press: the caret firms up; the timestamp stays put (overrides the base
+   is-down dot scale + gold fill, which would garble the text glyph). */
+.site-cursor.is-seek.is-down {
+  border-color: transparent;
+}
+
+.site-cursor.is-seek.is-down::before {
+  width: 3px;
+}
+
+.site-cursor.is-seek.is-down::after {
+  transform: translateX(-50%);
+  background: transparent;
+  opacity: 1;
+}
+
+/* Projection-room stillness: when a player's chrome has receded (.vplayer.is-idle),
+   the cursor sleeps with it — the first mousemove wakes both. */
+body.has-custom-cursor:has(.vplayer.is-idle) .site-cursor {
+  opacity: 0;
+}
+
+/* Custom-chrome fullscreen puts .vplayer in the top layer; .site-cursor lives outside
+   it and cannot render there, so the OS cursor must come back for the duration. */
+.has-custom-cursor .vplayer:fullscreen,
+.has-custom-cursor .vplayer:fullscreen * {
+  cursor: auto !important;
+}
+
+.has-custom-cursor .vplayer:fullscreen video,
+.has-custom-cursor .vplayer:fullscreen button {
+  cursor: pointer !important;
+}
+
 /* ── Autoscroll state — middle-click pinned scroll gauge ──────────────────
    Triggered when JS intercepts a middle-button mousedown on inert content.
    The cursor pins to the anchor (lerp skipped) and becomes a *live gauge*:

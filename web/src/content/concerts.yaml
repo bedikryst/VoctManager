@@ -1,6 +1,8 @@
 # Concert "stations" — the Concerts Spirituels cycle. Add a new concert by appending an
 # entry; order drives the sequence (Via rail) and the page layout. Images are bare photo()
 # names under src/assets/photos (bg expects -desktop / -mobile crops).
+# The `about:` block feeds the /o-nas milestone list (place/blurb/img) — all optional,
+# falling back to venue/essence; a missing img renders the milestone text-only.
 
 - id: wcielenie
   order: 1
@@ -8,8 +10,13 @@
   latin: Incarnatio
   title: Kontemplacja Wcielenia
   meta: "Bazylika NSPJ, Kraków · 20 stycznia 2024"
+  venue: "Bazylika NSPJ, Kraków"
+  date: "2024-01-20"
   viaDate: sty 2024
-  viaStep: "16%"
+  about:
+    place: "Bazylika NSPJ · Kraków"
+    blurb: "Debiut cyklu Koncertów Duchowych: renesans, barok i współczesność ułożone wokół tajemnicy Bożego Narodzenia oraz Wcielenia."
+    img: o-nas-wcielenie
   accent: "#c6a45b"
   essence: "Nie koncert kolędowy, lecz próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
   facts:
@@ -21,7 +28,7 @@
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
-  # hasPage: true
+  hasPage: true
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
   inscriptioRef: "Iz 11, 1"
@@ -102,8 +109,8 @@
       inscriptio: "Cantate Domino canticum novum"
       inscriptioPl: "Śpiewajcie Panu pieśń nową"
       inscriptioRef: "Ps 98 (97)"
-    - composer: "Gaudete"
-      work: "aranż. Brian Kay"
+    - composer: "Anonim / aranż. Brian Kay"
+      work: "Gaudete"
       year: "XVI w."
       inscriptio: "Gaudete, gaudete! Christus est natus"
       inscriptioPl: "Radujcie się! Chrystus się narodził"
@@ -115,8 +122,13 @@
   latin: Terra
   title: Wołanie Gór
   meta: "Centrum Kongresowe, Szczawnica · 1 czerwca 2024"
+  venue: "Centrum Kongresowe, Szczawnica"
+  date: "2024-06-01"
   viaDate: cze 2024
-  viaStep: "33%"
+  about:
+    place: "Centrum Kongresowe · Szczawnica"
+    blurb: "Koncert na dwanaście głosów i skrzypce z Radu Ropotanem: muzyka sakralna, przyroda i pieśni zakorzenione w krajobrazie Pienin."
+    img: o-nas-wolanie-gor
   accent: "#7d9890"
   reverse: true
   essence: "Góry nie były dekoracją programu, ale jego oddechem. Dwanaście głosów i skrzypce Radu Ropotana prowadziły od sakralnej polifonii ku pieśniom, w których krajobraz staje się pamięcią wspólnoty."
@@ -135,8 +147,12 @@
   latin: Psalmi
   title: 9 Kart z Księgi Psalmów
   meta: "Bazylika NSPJ, Kraków · Archikatedra, Łódź · 2024"
+  venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź"
   viaDate: "2024"
-  viaStep: "50%"
+  about:
+    place: "Kraków · Łódź"
+    blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
+    img: o-nas-9-kart
   accent: "#bfa05f"
   essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Pokuta, wdzięczność, mądrość i radość weszły tu kolejno: od Miserere Allegriego po świetliste Singet dem Herrn Bacha."
   facts:
@@ -164,8 +180,13 @@
   latin: Memoria
   title: Hymn Poległym
   meta: "Bazylika Mariacka, Kraków · 22 lutego 2025"
+  venue: "Bazylika Mariacka, Kraków"
+  date: "2025-02-22"
   viaDate: lut 2025
-  viaStep: "67%"
+  about:
+    place: "Bazylika Mariacka · Kraków"
+    blurb: "Koncert duchowy jako hołd dla tych, którzy oddali życie w obronie wolności, oraz modlitwa o pokój dla Ukrainy i przyszłych pokoleń."
+    img: o-nas-ukraina
   accent: "#5e6e84"
   variant: memoriam
   essence: "Hołd tym, którzy oddali życie w obronie Ukrainy, i modlitwa o pokój dla tych, którzy żyją dalej z ciężarem wojny. Program miał nie opowiadać tragedii, lecz stworzyć dla niej przestrzeń pamięci."
@@ -184,8 +205,12 @@
   latin: Lamentum
   title: Aeternam — Epitafium dla Gazy
   meta: "Mistrzejowice, Kraków · Niedzica · jesień 2025"
+  venue: "Mistrzejowice, Kraków / Niedzica"
   viaDate: jesień 2025
-  viaStep: "83%"
+  about:
+    place: "Mistrzejowice · Niedzica"
+    blurb: "Program pamięci i współczucia wobec cierpienia cywilów: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti i Tavener prowadzący od lamentu ku modlitwie."
+    img: o-nas-epitafium
   accent: "#4f5d77"
   variant: memoriam
   essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama ku modlitwom Pärta, Havrylets, Gjeilo, Lottiego i Tavenera."
@@ -215,8 +240,13 @@
   latin: Liturgia
   title: Uroczystość św. Andrzeja Boboli
   meta: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa · 16 maja 2026"
+  venue: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa"
+  date: "2026-05-16"
   viaDate: maj 2026
-  viaStep: "100%"
+  about:
+    place: "Sanktuarium Narodowe św. Andrzeja Boboli · Warszawa"
+    blurb: "Oprawa liturgii w dniu 100-lecia polskich prowincji jezuickich, podczas Mszy św. celebrowanej przez abp. Adriana Galbasa z homilią o. Artura Sosy SJ."
+    img: o-nas-bobola
   accent: "#c6a45b"
   variant: liturgy
   essence: "Tu muzyka nie była koncertem, ale służbą liturgii. W 100-lecie obu polskich prowincji Towarzystwa Jezusowego śpiew wpisywał się w obrzęd, któremu przewodniczył abp Adrian Galbas; homilię wygłosił o. Arturo Sosa SJ."

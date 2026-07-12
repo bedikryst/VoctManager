@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const AMBIENT_SRC = "/ambient.m4a";
-/** Normal ambient bed gain. Exported so cross-island ducking (ListenMoment) can restore it. */
+/** Normal ambient bed gain. Exported so cross-island ducking (VideoPlayer) can restore it. */
 export const TARGET_GAIN = 0.28;
 const FADE_MS = 1400;
 

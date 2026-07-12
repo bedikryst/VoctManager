@@ -12,12 +12,13 @@
 @import "./landing/02-hero-sections.css"; /* hero, CTA links, section/support/intro primitives */
 @import "./landing/03-manifest-rite.css"; /* manifest + image-rite (light) */
 @import "./landing/04-rooms-interludes.css"; /* director, ensemble, path, final-support (aether interludes live in AetherInterlude.astro) */
-@import "./landing/05-coda.css"; /* coda — per-letter wght cascade */
+@import "./landing/05-coda.css"; /* coda — "Ostatni takt": tetragram + fermata + finalis */
 @import "./landing/06-footer.css"; /* site footer — inscriptio finalis */
 @import "./landing/07-responsive.css"; /* tablet (980) + phone (640) reactive media blocks */
 @import "./landing/08-vault.css"; /* donation vault modal */
 @import "./landing/09-kinetic.css"; /* variable-font kinetic @property / @supports choreography */
 @import "./landing/10-silence.css"; /* silence moment */
 @import "./landing/11-mobile.css"; /* mobile art-direction layer (Faza 1/2/3) */
-@import "./landing/12-listen.css"; /* Posłuchaj — opt-in listening beat (movement II) */
+@import "./vplayer.css"; /* shared video player chrome (.vplayer) — also imported standalone by /press */
+@import "./landing/12-vox.css"; /* Vox — zobacz i usłysz (movement II) + video lightbox room */
 @import "./landing/13-spine.css"; /* movement spine — right-edge I·II·III orientation */

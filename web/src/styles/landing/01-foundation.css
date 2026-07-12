@@ -7,7 +7,7 @@
  *
  * Scoping: global body/html/preloader states are gated under `body.theme-marketing`
  * so the panel theme (`body.theme-panel`) remains unaffected. Component class
- * selectors (.hero, .manifest, .vault, â€¦) use namespace prefixes unique to this
+ * selectors (.hero, .manifest, .vault, …) use namespace prefixes unique to this
  * landing tree, so no collision risk with shared/panel/feature components.
  */
   :root {
@@ -22,8 +22,8 @@
     --candle: #c6a45b;
     --candle-rgb: 198 164 91;
     /* Cousin koloru candle dla jasnych powierzchni chrome:
-       gĹ‚Ä™boki granat, ~5% ciemniejszy niĹĽ kursor (#1D3268), ĹĽeby logo
-       miaĹ‚o spokojniejszÄ… obecnoĹ›Ä‡ niĹĽ pulsujÄ…cy kursor. */
+       głęboki granat, ~5% ciemniejszy niż kursor (#1D3268), żeby logo
+       miało spokojniejszą obecność niż pulsujący kursor. */
     --candle-blue: #1b2d60;
     --candle-blue-rgb: 27 45 96;
     --dark: #080807;
@@ -103,10 +103,10 @@
     inset: 0;
     z-index: 80;
     pointer-events: none;
-    /* mix-blend-mode: multiply WYRZUCONE â€” wymuszaĹ‚o re-composite caĹ‚ej warstwy
-       pod spodem na kaĹĽdy scroll. Przy ~0.042 opacity grayscale noise efekt
+    /* mix-blend-mode: multiply WYRZUCONE — wymuszało re-composite całej warstwy
+       pod spodem na każdy scroll. Przy ~0.042 opacity grayscale noise efekt
        wizualny dla mix vs. normal jest niemal identyczny, koszt GPU diametralny.
-       Lekko podbijam opacity (0.05) ĹĽeby zachowaÄ‡ tÄ™ samÄ… obecnoĹ›Ä‡ grain. */
+       Lekko podbijam opacity (0.05) żeby zachować tę samą obecność grain. */
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
@@ -596,7 +596,7 @@
       -webkit-backdrop-filter 0.55s var(--ease);
   }
 
-  /* Veil for legibility over the hero â€” fades out when chrome activates into glass. */
+  /* Veil for legibility over the hero — fades out when chrome activates into glass. */
   .chrome::before {
     content: "";
     position: absolute;
@@ -612,7 +612,7 @@
     opacity: 0;
   }
 
-  /* Active glass â€” light surface (over jasne sekcje). */
+  /* Active glass — light surface (over jasne sekcje). */
   .chrome.is-active {
     background-color: rgba(244, 241, 233, 0.78);
     backdrop-filter: blur(20px) saturate(1.5);
@@ -623,7 +623,7 @@
     padding-bottom: 14px;
   }
 
-  /* Active glass â€” dark surface (image-rite, ensemble, final-support). */
+  /* Active glass — dark surface (image-rite, ensemble, final-support). */
   .chrome.is-active.is-on-dark {
     background-color: rgba(8, 8, 7, 0.5);
     backdrop-filter: blur(20px) saturate(1.3);
@@ -675,7 +675,7 @@
     z-index: 1;
     width: 18px;
     height: 42px;
-    /* Maskowany znak PNG: background dziedziczy currentColor, wiÄ™c logo dalej zmienia barwÄ™. */
+    /* Maskowany znak PNG: background dziedziczy currentColor, więc logo dalej zmienia barwę. */
     background: currentColor;
     -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
     mask: url(/logo-mark.png) center / contain no-repeat;
@@ -688,7 +688,7 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    /* --halo-rgb steruje barwÄ… halo; domyĹ›lnie zĹ‚oty candle, na jasnym chrome przeĹ‚Ä…czamy na granat */
+    /* --halo-rgb steruje barwą halo; domyślnie złoty candle, na jasnym chrome przełączamy na granat */
     --halo-rgb: var(--candle-rgb);
     background: radial-gradient(
       circle,
@@ -699,7 +699,7 @@
     transform: translate(-50%, -50%) scale(0.4);
     opacity: 0;
     pointer-events: none;
-    /* Screen = additive glow na ciemnym tle. Na jasnym przeĹ‚Ä…czamy na multiply (subtractive). */
+    /* Screen = additive glow na ciemnym tle. Na jasnym przełączamy na multiply (subtractive). */
     mix-blend-mode: screen;
     transition:
       opacity 0.7s var(--ease-slow),
@@ -719,9 +719,9 @@
     animation: brandGlyphBreathe 4.6s ease-in-out infinite;
   }
 
-  /* Jasna powierzchnia chrome (scroll w jasne sekcje) â€” logo przechodzi na granatowy
-     dialog z kursorem, ale ~5% ciemniejszy. Halo rĂłwnieĹĽ granatowe, w trybie multiply
-     ĹĽeby daÄ‡ delikatny cieĹ„ zamiast topniejÄ…cego "screen". */
+  /* Jasna powierzchnia chrome (scroll w jasne sekcje) — logo przechodzi na granatowy
+     dialog z kursorem, ale ~5% ciemniejszy. Halo również granatowe, w trybie multiply
+     żeby dać delikatny cień zamiast topniejącego "screen". */
   body.theme-marketing.audio-on .chrome.is-active:not(.is-on-dark) .brand-glyph {
     color: var(--candle-blue);
   }
@@ -872,7 +872,7 @@
     border-color: var(--candle);
   }
 
-  /* â”€â”€â”€ Mobile menu: bar-height panel sliding in from the right; recolors with the surface. â”€â”€â”€ */
+  /* ─── Mobile menu: bar-height panel sliding in from the right; recolors with the surface. ─── */
   .nav-toggle {
     display: none;
     position: relative;
@@ -929,7 +929,7 @@
     transition-delay: 0s;
   }
 
-  /* Scrolled into a light section â†’ light panel. */
+  /* Scrolled into a light section → light panel. */
   .chrome.is-active:not(.is-on-dark) .nav-menu {
     --menu-fg: var(--ink);
     --menu-bg: rgba(244, 241, 233, 0.97);

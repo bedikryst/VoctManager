@@ -251,7 +251,13 @@ const ogImage = new URL(image, SITE).href;
           const frame = el.parentElement;
           if (!frame) continue;
           const r = frame.getBoundingClientRect();
-          if (r.bottom < -200 || r.top > vh + 200) continue;
+          if (r.bottom < -200 || r.top > vh + 200) {
+            // Off-screen: drop the transform so the layer un-promotes and frees its GPU
+            // texture. Decisive on /koncerty, where six full-bleed blurred backdrops would
+            // otherwise stay composited at once; re-set the next frame it re-enters the margin.
+            if (el.style.transform) el.style.transform = "";
+            continue;
+          }
           const speed = parseFloat(el.dataset.parallax || "0.16") || 0.16;
           const scale = parseFloat(el.dataset.parallaxScale || "1") || 1;
           // Room to drift without exposing an edge: either the image is taller than its

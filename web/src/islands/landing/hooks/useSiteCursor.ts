@@ -5,7 +5,9 @@
  *  Awwwards-grade refinements layered onto the original lerp follower:
  *   • Magnetic snap (15% weight) — over interactive elements the target nudges toward the
  *     element's centre, so the cursor settles ON the link/button instead of next to it.
- *     Subtle enough not to feel "draggy" — just polished.
+ *     Subtle enough not to feel "draggy" — just polished. Precision surfaces whose centre
+ *     is far from the pointer (full-width scrubbers, full-viewport backdrops) opt out via
+ *     `data-cursor="no-snap"` on the element or an ancestor.
  *   • Click feedback (`.is-down`) — `mousedown` adds the class, `mouseup` clears it; CSS
  *     contracts the ring + expands the inner dot for tactile pressure.
  *   • Reduced-motion + coarse-pointer + no-hover → opt out entirely (no body class, no DOM).
@@ -17,6 +19,8 @@
  */
 
 import { useEffect } from "react";
+
+import { formatTime } from "../video/formatTime";
 
 const INTERACTIVE_SELECTOR =
   'a, button, input, textarea, select, summary, [role="button"], [role="link"]';
@@ -141,7 +145,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       currentX = autoscrollAnchorX;
       currentY = autoscrollAnchorY;
       el.classList.add("is-autoscroll");
-      el.classList.remove("is-pointer", "is-video", "is-download", "is-playing");
+      el.classList.remove("is-pointer", "is-video", "is-download", "is-playing", "is-seek");
       // Pause Lenis so its lerp loop doesn't fight our discrete scrollBy ticks.
       getLenis()?.stop?.();
       if (autoscrollRaf === null) autoscrollRaf = window.requestAnimationFrame(autoscrollTick);
@@ -181,33 +185,59 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       }
 
       const target = event.target;
-      // Detection priority: video → download → standard interactive. The first three are
-      // mutually exclusive states with distinct cursor visuals:
+      // Detection priority: seek → video → download → standard interactive. The first
+      // four are mutually exclusive states with distinct cursor visuals:
+      //   .is-seek    — caret + timestamp (the cursor IS the scrub tooltip)
       //   .is-video   — ring + ▶/⏸ glyph (paused/playing reflects video.paused)
       //   .is-download — ring + ↓ arrow (line + triangle stacked vertically)
       //   .is-pointer — ring + small dot (standard link/button)
+
+      // Seek surface (`data-cursor="seek"`, the player's scrub rail): precision beats
+      // everything — no snap, no ring. The player publishes the media duration on the
+      // element (data-duration); the hovered X maps to a timestamp mirrored into
+      // data-time, which CSS renders above the caret (empty until metadata arrives).
+      // Pointer capture during a drag keeps retargeting mousemove here, so the
+      // timestamp stays live even when the pointer strays off the rail mid-scrub.
+      const seekEl =
+        target instanceof Element ? target.closest<HTMLElement>('[data-cursor="seek"]') : null;
+      const onSeek = Boolean(seekEl);
+      if (seekEl) {
+        const rect = seekEl.getBoundingClientRect();
+        const duration = Number(seekEl.dataset.duration);
+        el.setAttribute(
+          "data-time",
+          Number.isFinite(duration) && duration > 0 && rect.width > 0
+            ? formatTime(
+                Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)) * duration,
+              )
+            : "",
+        );
+      }
+
       const videoEl =
-        target instanceof Element ? target.closest<HTMLVideoElement>("video") : null;
+        !onSeek && target instanceof Element ? target.closest<HTMLVideoElement>("video") : null;
       const onVideo = Boolean(videoEl);
 
       // Download surface: `<a download>` (semantic) OR any element with `data-cursor="download"`
       // (opt-in for non-anchor download tiles or unconventional triggers).
       const downloadEl =
-        !onVideo && target instanceof Element
+        !onSeek && !onVideo && target instanceof Element
           ? target.closest<HTMLElement>('a[download], [data-cursor="download"]')
           : null;
       const onDownload = Boolean(downloadEl);
 
       const interactiveEl =
-        !onVideo && !onDownload && target instanceof Element
+        !onSeek && !onVideo && !onDownload && target instanceof Element
           ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR)
           : null;
       const interactive = Boolean(interactiveEl);
 
       // Magnetic snap — applied to .is-pointer AND .is-download (both are intentional
-      // landings); skipped on video (mouse needs precision over the scrubber/controls).
+      // landings); skipped on seek/video (mouse needs precision over the scrubber/controls)
+      // and on no-snap surfaces, where a pull toward a distant centre becomes a yank
+      // (over a scrubber the visible cursor must equal the click point).
       const snapEl = interactive ? interactiveEl : onDownload ? downloadEl : null;
-      if (snapEl) {
+      if (snapEl && !snapEl.closest('[data-cursor="no-snap"]')) {
         const rect = snapEl.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -226,6 +256,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
         if (currentVideo) attachVideoListeners(currentVideo);
       }
 
+      el.classList.toggle("is-seek", onSeek);
       el.classList.toggle("is-pointer", interactive);
       el.classList.toggle("is-video", onVideo);
       el.classList.toggle("is-download", onDownload);

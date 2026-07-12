@@ -32,7 +32,8 @@ import { Preloader } from "../islands/landing/Preloader";
 import { StickyHeader } from "../islands/landing/StickyHeader";
 import { SiteFooter } from "../islands/landing/SiteFooter";
 import { VaultIsland } from "../islands/landing/VaultIsland";
-import { ListenMoment } from "../islands/landing/ListenMoment";
+import { VoxMoment } from "../islands/landing/VoxMoment";
+import { VideoLightbox } from "../islands/landing/VideoLightbox";
 import { MovementSpine } from "../islands/landing/MovementSpine";
 
 const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
@@ -43,9 +44,21 @@ const ogImage = (
   await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
 ).src;
 
+// Poster for the concert reel (Vox moment + lightbox). EDITABLE: swap the source photo
+// when a real video still exists — bleedPair name only, the optimization stays.
+const voxPoster = (
+  await getImage({ src: bleedPair("chor-spot").desktop, width: 1600, format: "webp" })
+).src;
+
+// TODO (when the REAL files land in web/public/video/ — MODAL_VIDEO/VOX_VIDEO in
+// data/landing/video.ts): add a `video` VideoObject member here so Google can show a video
+// rich result. Deliberately absent until real footage ships. See landing-vox-video-spec Part J.
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "MusicGroup",
+  // Shared entity ids — /o-nas declares an AboutPage graph pointing at the SAME
+  // ensemble/foundation nodes, so search engines see one entity, not per-page twins.
+  "@id": "https://voctensemble.com/#ensemble",
   name: "VoctEnsemble",
   url: "https://voctensemble.com",
   genre: ["Sacred music", "Choral music", "Polifonia"],
@@ -54,6 +67,7 @@ const jsonLd = {
   founder: { "@type": "Person", name: "Florent de Bazelaire" },
   funder: {
     "@type": "NGO",
+    "@id": "https://voctensemble.com/#foundation",
     name: "VoctFoundation",
     identifier: "KRS 0001237252",
     address: {
@@ -110,7 +124,7 @@ const jsonLd = {
       <section class="movement" id="ruch-ii" data-movement="vox" aria-label="II · Vox memoriae">
         <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
         <SilenceMoment />
-        <ListenMoment client:visible />
+        <VoxMoment client:visible poster={voxPoster} />
         <PathSection />
       </section>
 
@@ -125,6 +139,7 @@ const jsonLd = {
     <SiteFooter client:visible />
 
     <VaultIsland client:idle />
+    <VideoLightbox client:idle poster={voxPoster} />
   </div>
 
   <style is:global>

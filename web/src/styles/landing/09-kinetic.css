@@ -1,9 +1,9 @@
-  /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     KINETIC TYPOGRAPHY Â· MMXXVI
+  /* ─────────────────────────────────────────────────────────────────────────
+     KINETIC TYPOGRAPHY · MMXXVI
      Variable-axis choreography scrubbed against scroll & view timelines.
-     Cormorant Garamond wght 300â€“700 (osobny plik italic) + Inter opsz auto.
+     Cormorant Garamond wght 300–700 (osobny plik italic) + Inter opsz auto.
      CSS-WG L5 primitives: @property, animation-timeline, view-timeline.
-     â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+     ───────────────────────────────────────────────────────────────────────── */
 
   @property --wght {
     syntax: "<number>";
@@ -29,9 +29,9 @@
     initial-value: 0px;
   }
 
-  /* Wordmark "VoctEnsemble" + zegar w footerze potrzebujÄ… wht ktĂłry CASCADUJE
+  /* Wordmark "VoctEnsemble" + zegar w footerze potrzebują wht który CASCADUJE
      do dzieci (litery wordmarka splitowane przez JS przy cursor-reactive
-     desktop). StÄ…d osobny --wght-mark z inherits: true. Reszta strony uĹĽywa
+     desktop). Stąd osobny --wght-mark z inherits: true. Reszta strony używa
      scoped --wght (inherits: false) dla taniej invalidation. */
   @property --wght-mark {
     syntax: "<number>";
@@ -39,33 +39,33 @@
     initial-value: 320;
   }
 
-  /* Per-letter bonus dla wordmarka â€” JS pisze tu wartoĹ›Ä‡ zaleĹĽnÄ… od dystansu
-     kursora do litery. Scoped per element (inherits: false) â†’ write na jednÄ…
-     literÄ™ inwaliduje tylko ten wÄ™zeĹ‚, nie caĹ‚e drzewo. */
+  /* Per-letter bonus dla wordmarka — JS pisze tu wartość zależną od dystansu
+     kursora do litery. Scoped per element (inherits: false) → write na jedną
+     literę inwaliduje tylko ten węzeł, nie całe drzewo. */
   @property --wght-add {
     syntax: "<number>";
     inherits: false;
     initial-value: 0;
   }
 
-  /* Manifest "ink emergence" â€” pozycja krawÄ™dzi mask-gradientu ktĂłry
-     scrubuje siÄ™ od lewej do prawej przez liniÄ™ manifestu. WartoĹ›Ä‡
-     animowana 0%â†’110% przez scroll-driven view-timeline. KaĹĽda linia
-     manifestu ma wĹ‚asnÄ… instancjÄ™ (inherits:false), wiÄ™c nawzajem
-     nie inwalidujÄ… siÄ™. */
+  /* Manifest "ink emergence" — pozycja krawędzi mask-gradientu który
+     scrubuje się od lewej do prawej przez linię manifestu. Wartość
+     animowana 0%→110% przez scroll-driven view-timeline. Każda linia
+     manifestu ma własną instancję (inherits:false), więc nawzajem
+     nie inwalidują się. */
   @property --ink-reveal {
     syntax: "<percentage>";
     inherits: false;
     initial-value: -14%;
   }
 
-  /* Inter Variable ma oĹ› opsz â€” niech browser sam dobiera display vs. text. */
+  /* Inter Variable ma oś opsz — niech browser sam dobiera display vs. text. */
   html {
     font-optical-sizing: auto;
   }
 
   /* ── Single kinetic driver ─────────────────────────────────────────────────
-     The hero breath, editorial-heading settle and coda wave are owned by ONE
+     The hero breath and editorial-heading settle are owned by ONE
      system: scripts/landing.ts (setupKinetic), which writes inline
      `font-variation-settings` on a rAF scroll loop with touch heuristics and
      batched reads. The earlier `@supports (animation-timeline: scroll())` CSS

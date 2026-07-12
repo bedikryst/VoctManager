@@ -38,6 +38,19 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as c
                 <h3 class="path-entry-title">{path.title}</h3>
                 <p class="path-entry-place">{path.place}</p>
                 <p class="path-entry-summary">{path.note}</p>
+                {path.video && (
+                  <a
+                    class="path-entry-video plausible-event-name=path+fragment"
+                    href={path.video.src}
+                    data-video-open
+                    data-video-caption={`${path.title} · ${path.year}`}
+                    data-video-portrait={path.video.portrait ? "true" : undefined}
+                    data-video-note={path.video.note}
+                  >
+                    <span class="path-entry-video-glyph" aria-hidden="true">▸</span>
+                    Zobacz fragment
+                  </a>
+                )}
                 <details class="path-card-detail path-entry-detail">
                   <summary>
                     <span>{path.detail.summary}</span>
