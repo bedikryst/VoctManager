@@ -121,12 +121,12 @@
   roman: "II"
   latin: Terra
   title: Wołanie Gór
-  meta: "Centrum Kongresowe, Szczawnica · 1 czerwca 2024"
-  venue: "Centrum Kongresowe, Szczawnica"
+  meta: "Dworek Gościnny, Szczawnica · 1 czerwca 2024"
+  venue: "Dworek Gościnny, Szczawnica"
   date: "2024-06-01"
   viaDate: cze 2024
   about:
-    place: "Centrum Kongresowe · Szczawnica"
+    place: "Dworek Gościnny · Szczawnica"
     blurb: "Koncert na dwanaście głosów i skrzypce z Radu Ropotanem: muzyka sakralna, przyroda i pieśni zakorzenione w krajobrazie Pienin."
     img: o-nas-wolanie-gor
   accent: "#7d9890"
@@ -140,17 +140,32 @@
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
+  realizacja: "Skrzypce: Radu Ropotan"
+  program:
+    - { composer: "Bernat Vivancos", years: "ur. 1973", work: "Le cri des bergers", year: "2004" }
+    - { composer: "Anonim / tradycja Oksytanii", work: "Salve Regina" }
+    - { composer: "David MacIntyre", years: "ur. 1952", work: "Ave Maria", year: "1994" }
+    - { composer: "Polifonia korsykańska", work: "Tantum ergo sacramentum", year: "XVII w." }
+    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "O salutaris hostia", year: "2005" }
+    - { composer: "Henryk Mikołaj Górecki", years: "1933–2010", work: "Sanctus, Sanctus, Sanctus", year: "1986" }
+    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "Stars", year: "2011" }
+    - { composer: "George Enescu", years: "1881–1955", work: "Ménétrier · skrzypce solo", year: "1940" }
+    - { composer: "Claudio Monteverdi", years: "1567–1643", work: "Quel augellin che canta", year: "1603" }
+    - { composer: "J. S. Bach", years: "1685–1750", work: "Preludium z Partity BWV 1006 · skrzypce solo", year: "1720" }
+    - { composer: "Ralph Vaughan Williams", years: "1872–1958", work: "The Lark Ascending · oprac. P. Drayton", year: "1914" }
+    - { composer: "Jacek Sykulski", years: "ur. 1964", work: "Stoi lód na prośnie", year: "2017" }
+    - { composer: "Ken Steven", years: "ur. 1993", work: "Dawn and Dusk", year: "2020", bis: true }
 
 - id: 9-kart
   order: 3
   roman: "III"
   latin: Psalmi
   title: 9 Kart z Księgi Psalmów
-  meta: "Bazylika NSPJ, Kraków · Archikatedra, Łódź · 2024"
-  venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź"
+  meta: "Rybnik · Łódź · Bazylika NSPJ, Kraków · 2024"
+  venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź / Bazylika Archikatedralna, Rybnik"
   viaDate: "2024"
   about:
-    place: "Kraków · Łódź"
+    place: "Rybnik · Łódź · Kraków"
     blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
     img: o-nas-9-kart
   accent: "#bfa05f"
@@ -198,6 +213,19 @@
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
+  realizacja: "Organy: Michał Piechnik · Krzysztof Michałek"
+  program:
+    - { composer: "John Rutter", years: "ur. 1945", work: "A Ukrainian Prayer", year: "2022" }
+    - { composer: "Siergiej Rachmaninow", years: "1873–1943", work: "Ektenia Pokoju", year: "1910" }
+    - { composer: "Giovanni P. da Palestrina", years: "1525–1594", work: "Super flumina Babylonis", year: "1581" }
+    - { composer: "Arvo Pärt", years: "ur. 1935", work: "The Deer's Cry", year: "2007" }
+    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "O salutaris hostia", year: "2005" }
+    - { composer: "John Tavener", years: "1944–2013", work: "Song for Athene", year: "1993" }
+    - { composer: "John Williams", years: "ur. 1932", work: "Hymn to the Fallen", year: "1998" }
+    - { composer: "Gabriel Fauré", years: "1845–1924", work: "Pie Jesu", year: "1887–90" }
+    - { composer: "Jean Sibelius", years: "1865–1957", work: "Be Still My Soul", year: "1899" }
+    - { composer: "Edward Elgar", years: "1857–1934", work: "Lux aeterna", year: "1899" }
+    - { composer: "Edward C. Bairstow", years: "1874–1946", work: "I sat down", year: "1925", bis: true }
 
 - id: aeternam
   order: 5
@@ -226,13 +254,15 @@
     - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }
     - { label: Onet / KAI ↗, href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058" }
   program:
-    - { composer: "Bernat Vivancos", work: "Aeternam" }
-    - { composer: "Mikołaj Zieleński", work: "Vox in Rama · lament" }
-    - { composer: "Arvo Pärt", work: "modlitwa o pokój" }
-    - { composer: "Hanna Havrylets", work: "modlitwa o pokój" }
-    - { composer: "Ola Gjeilo", work: "modlitwa o pokój" }
-    - { composer: "Antonio Lotti", work: "Crucifixus · ogniwo pasyjne" }
-    - { composer: "John Tavener", work: "dwa utwory · finał" }
+    - { composer: "Bernat Vivancos", years: "ur. 1973", work: "Aeternam", year: "2014" }
+    - { composer: "Mikołaj Zieleński", years: "1560–1620", work: "Vox in Rama · lament", year: "1611" }
+    - { composer: "Arvo Pärt", years: "ur. 1935", work: "Da Pacem Domine", year: "2004" }
+    - { composer: "Ola Gjeilo", years: "ur. 1978", work: "Serenity", year: "2010" }
+    - { composer: "Hanna Havrylets", years: "1958–2022", work: "Prayer · Молитва до Пресвятої Богородиці", year: "2004" }
+    - { composer: "Antonio Lotti", years: "1667–1740", work: "Crucifixus", year: "ok. 1717–19" }
+    - { composer: "Caroline Shaw", years: "ur. 1982", work: "and the swallow", year: "2017" }
+    - { composer: "John Tavener", years: "1944–2013", work: "Mother of God, here I stand", year: "2003" }
+    - { composer: "John Tavener", years: "1944–2013", work: "A Hymn to the Mother of God", year: "1985" }
 
 - id: bobola
   order: 6

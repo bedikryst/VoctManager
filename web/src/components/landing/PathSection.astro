@@ -10,9 +10,17 @@
  * @architecture Astro islands 2026
  * @module components/landing/PathSection
  */
+import { getCollection } from "astro:content";
 import { PATHS } from "../../data/landing/paths";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+
+// SSoT: program lists live in the `concerts` collection (src/content/concerts.yaml) —
+// the same source the /koncerty stations and concert pages read. The register derives
+// each card's repertoire from it by concert id, so there is no second copy to drift.
+const concerts = await getCollection("concerts");
+const programById = new Map(concerts.map((c) => [c.id, c.data.program] as const));
+const programFor = (id: string) => programById.get(id) ?? [];
 ---
 
 <section class="section path" id="droga" aria-label="Wcześniejsze wybrzmienia">
@@ -56,19 +64,18 @@ const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as c
                     <span>{path.detail.summary}</span>
                     <span class="path-detail-icon" aria-hidden="true" />
                   </summary>
-                  {path.detail.content.works && (
+                  {path.detail.content.paragraphs?.map((paragraph) => (
+                    <p class="path-detail-text">{paragraph}</p>
+                  ))}
+                  {programFor(path.concertId).length > 0 && (
                     <ol class="path-works">
-                      {path.detail.content.works.map((work) => (
-                        <li class:list={[{ "path-works-bis": work.bis }]}>
-                          {work.text}
-                          {work.italic && <em>{work.italic}</em>}
+                      {programFor(path.concertId).map((p) => (
+                        <li class:list={[{ "path-works-bis": p.bis }]}>
+                          {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
                         </li>
                       ))}
                     </ol>
                   )}
-                  {path.detail.content.paragraphs?.map((paragraph) => (
-                    <p class="path-detail-text">{paragraph}</p>
-                  ))}
                   {path.detail.content.note && (
                     <p class="path-works-note">{path.detail.content.note}</p>
                   )}

@@ -1,20 +1,16 @@
 /**
  * @file paths.ts
  * @description Past Concerts Spirituels — content for the "wcześniejsze wybrzmienia" section.
- *  Each entry maps to a single path card. `poster` is the bare asset name under
+ *  Each entry maps to a single path card. This file holds only the landing-specific editorial
+ *  layer (tag, note, curated intro prose, video fragment); the repertoire itself is NOT stored
+ *  here — the card derives its program from the `concerts` collection via `concertId` (SSoT), so
+ *  a work list is edited in exactly one place. `poster` is the bare asset name under
  *  src/assets/photos (resolved with `photo()` → optimized <Picture>), not a public URL.
  * @architecture Astro islands 2026
  * @module data/landing/paths
  */
 
-export interface PathWork {
-  readonly text: string;
-  readonly italic?: string;
-  readonly bis?: boolean;
-}
-
 export interface PathDetail {
-  readonly works?: readonly PathWork[];
   readonly paragraphs?: readonly string[];
   readonly note?: string;
 }
@@ -31,6 +27,8 @@ export interface PathVideo {
 
 export interface Path {
   readonly slug: string;
+  /** Concert id in the `concerts` collection — the SSoT the program list is read from. */
+  readonly concertId: string;
   readonly year: string;
   readonly tag: string;
   readonly title: string;
@@ -49,10 +47,11 @@ export interface Path {
 export const PATHS: readonly Path[] = [
   {
     slug: "kontemplacja-wcielenia",
+    concertId: "wcielenie",
     year: "MMXXIV",
     tag: "Koncert Duchowy · debiut",
     title: "Kontemplacja Wcielenia",
-    place: "Bazylika NSPJ w Krakowie · Archikatedra łódzka",
+    place: "Bazylika NSPJ w Krakowie",
     note: "Muzyczna podróż przez 10 kompozycji 4-, 8- i 12-głosowych — od słów proroka Izajasza po kantyk Symeona. Renesans i Barok spotykają Pärta i Vivancosa, prowadząc słuchacza w tajemnicę Wcielenia.",
     poster: "poster-wcielenie",
     // Same file as the hero modal (MODAL_VIDEO in video.ts) — shared browser cache and a
@@ -61,29 +60,17 @@ export const PATHS: readonly Path[] = [
     detail: {
       summary: "Repertuar",
       content: {
-        works: [
-          { text: "C. Monteverdi · ", italic: "Cantate Domino · 1620" },
-          { text: "J. Sandström · ", italic: "Es ist ein Ros' entsprungen · 1990" },
-          { text: "A. Pärt · ", italic: "Nunc dimittis · 2001" },
-          { text: "Ph. Stopford · ", italic: "Lully, Lullay · 2008" },
-          { text: "B. Vivancos · ", italic: "Le cri des bergers · 2004" },
-          { text: "J. Gallus · ", italic: "Canite tuba · 1590" },
-          { text: "B. Vivancos · ", italic: "A Child is born · 2001" },
-          { text: "T. L. de Victoria · ", italic: "Alma Redemptoris Mater · 1581" },
-          { text: "K. Penderecki · ", italic: "O gloriosa Virginum · 2009" },
-          { text: "M. Kramarz · ", italic: "Gdy śliczna Panna · 2018" },
-          { text: "", italic: "Gaudete · XVI w. / aranż. B. Kay 1978 · bis", bis: true },
-        ],
         note: "Rejestracja: Jakub Garbacz, Ars Sonora Studio. Reprise pod auspicjami Fundacji Carpe Diem.",
       },
     },
   },
   {
     slug: "wolanie-gor",
+    concertId: "wolanie-gor",
     year: "MMXXIV",
     tag: "12 głosów i skrzypce",
     title: "Wołanie Gór",
-    place: "Centrum Kongresowe · Szczawnica",
+    place: "Dworek Gościnny · Szczawnica",
     note: "Podróż wokół piękna i pobożności Pienin — od renesansu po współczesność. Opracowania muzyki ludowej z Polski, Korsyki, Francji i Wysp Brytyjskich.",
     poster: "poster-wolanie",
     video: {
@@ -102,31 +89,21 @@ export const PATHS: readonly Path[] = [
   },
   {
     slug: "9-kart-z-ksiegi-psalmow",
+    concertId: "9-kart",
     year: "MMXXIV",
     tag: "Cykl psalmów · 6–12 głosów",
     title: "9 Kart z Księgi Psalmów",
-    place: "Bazylika NSPJ w Krakowie · Archikatedra w Łodzi",
+    place: "Rybnik · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
     note: "Muzyczna podróż przez duchowe bogactwo psalmów — fundament muzyki sakralnej od wieków. Arcydzieła polifonii renesansu, baroku i romantyzmu na 6, 8, 9 i 12 głosów.",
     poster: "poster-9-kart",
     detail: {
       summary: "Repertuar",
-      content: {
-        works: [
-          { text: "G. Allegri · ", italic: "Miserere (Ps 51) — pokuta" },
-          { text: "J. S. Bach · ", italic: "Singet dem Herrn (Ps 149) — hymn uwielbienia" },
-          { text: "S. Rossi · ", italic: "Barukh habba beshem Adonai (Ps 118) — hebrajska tradycja" },
-          { text: "A. Bruckner · ", italic: "Os Justi (Ps 37) — psalm mądrościowy" },
-          { text: "C. V. Stanford · ", italic: "Beati quorum via (Ps 119) — droga prawa" },
-          { text: "O. Gibbons · ", italic: "O clap your hands (Ps 47) — radosne wezwanie" },
-          { text: "Laudate Dominum (Ps 117)" },
-          { text: "Jauchzet dem Herren (Ps 100)" },
-          { text: "Cantate Domino (Ps 98)" },
-        ],
-      },
+      content: {},
     },
   },
   {
     slug: "hymn-poleglym",
+    concertId: "hymn-poleglym",
     year: "MMXXV",
     tag: "Modlitwa o pokój",
     title: "Hymn Poległym",
@@ -144,6 +121,7 @@ export const PATHS: readonly Path[] = [
   },
   {
     slug: "aeternam-epitafium-dla-gazy",
+    concertId: "aeternam",
     year: "MMXXV",
     tag: "Epitafium · 4, 8 i 12 głosów",
     title: "Aeternam — Epitafium dla Gazy",
