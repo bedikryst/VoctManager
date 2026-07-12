@@ -1,14 +1,16 @@
 ---
 /**
  * @file o-nas.astro
- * @description Public "About us" page (/o-nas). VoctEnsemble identity: hero, the founder's
- *  letter (the page's single origin statement, portrait alongside), ensemble prose (roster
- *  rotates per project around a stable core — no group photo by design), pull-quote plate,
- *  working method, concert milestones derived from the `concerts` collection (about.* fields),
- *  VoctFoundation legal section, governance board (portraits render only once ALL files
- *  exist), CTA closed by the votive glyph. Full-bleed media via <BleedImage>; in-flow media
- *  via <Picture>. Reveals use BaseLayout's IntersectionObserver controller; heading-breath
- *  is native scroll-driven.
+ * @description Public "About us" page (/o-nas), structured as the founder's own catechism —
+ *  "Skąd się wzięliśmy? / Co robimy? / Co śpiewamy?": hero, the founder's letter (the single
+ *  origin statement, verbatim founding text, portrait alongside), ensemble prose (roster
+ *  rotates per project around a stable core — no group photo by design), pull-quote plate
+ *  ("Nade wszystko, dzielimy się."), "Co robimy" activity cards (named events, `doings`),
+ *  "Co śpiewamy" credo linking to the /koncerty repertoire catalog, concert milestones
+ *  derived from the `concerts` collection (about.* fields), VoctFoundation legal section,
+ *  governance board (portraits render only once ALL files exist), CTA closed by the votive
+ *  glyph. Full-bleed media via <BleedImage>; in-flow media via <Picture>. Reveals use
+ *  BaseLayout's IntersectionObserver controller; heading-breath is native scroll-driven.
  * @architecture Astro islands 2026
  * @module pages/o-nas
  */
@@ -31,7 +33,7 @@ const florent = photo("florent");
 
 const title = "O nas — VoctEnsemble | Fundacja VoctFoundation";
 const description =
-  "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Koncerty duchowe, liturgie i muzyka sakralna od renesansu po współczesny minimalizm.";
+  "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Koncerty duchowe, liturgie i muzyka sakralna od średniowiecznej polifonii po współczesny minimalizm.";
 
 // Milestones — derived from the `concerts` collection (single source of truth with
 // /koncerty): appending a concert to concerts.yaml extends this list automatically.
@@ -78,12 +80,30 @@ const board = [
 // src/assets/photos (o-nas-florent / o-nas-ania / o-nas-krystian).
 const boardPortraitsComplete = board.every((b) => b.img);
 
-const method = [
-  { n: "01", h: "Repertuar", p: "Program układamy jak dramaturgię: tekst, epoka, tonacja, faktura i kolejność wejść mają prowadzić słuchacza, nie imponować listą nazwisk." },
-  { n: "02", h: "Przestrzeń", p: "Brzmienie dopasowujemy do miejsca. Bazylika, sanktuarium, sala koncertowa i synagoga nie są neutralnym tłem, tylko częścią interpretacji." },
-  { n: "03", h: "Cisza", p: "Pauza jest pełnoprawnym materiałem. Pozwala wybrzmieć tekstowi, akordowi i temu, co dzieje się w człowieku po ostatnim dźwięku." },
-  { n: "04", h: "Światło", p: "Światło porządkuje uwagę. Nie dekoruje muzyki, lecz pomaga jej odsłaniać proporcje, napięcia i duchowy ciężar programu." },
-] as const;
+// "Co robimy?" — the founder's second question, answered with real activities and named
+// events (Bobola liturgy, Dzień Judaizmu / Synagoga Tempel, wedding liturgies), NOT an
+// invented "how we work" framework. Only OUR performances + public church figures are named
+// here — collaborator name-drops (lights/sound/visuals) wait for consent (see voces-collab).
+const doings: { k: string; p: string; href?: string; cta?: string }[] = [
+  {
+    k: "Koncerty Duchowe",
+    p: "Autorski cykl — współczesna forma dawnych Concerts Spirituels. Każdy wieczór ma osobną intencję.",
+    href: "/koncerty",
+    cta: "Zobacz drogę koncertów →",
+  },
+  {
+    k: "Liturgia i uroczystości",
+    p: "Oprawa mszy i kościelnych świąt. Ostatnio — liturgia w uroczystość św. Andrzeja Boboli w Warszawie, w 100-lecie polskich prowincji jezuickich: Msza pod przewodnictwem abp. Adriana Galbasa, homilia o. Artura Sosy SJ.",
+  },
+  {
+    k: "Dialog tradycji",
+    p: "Śpiewaliśmy podczas 28. Dnia Judaizmu w Kościele katolickim, w krakowskiej Kaplicy św. Doroty, i wystąpiliśmy w Synagodze Tempel — muzyka jako miejsce spotkania.",
+  },
+  {
+    k: "Śluby i sakramenty",
+    p: "Oprawialiśmy liturgie ślubne w Kolegiacie św. Anny w Krakowie i w Opactwie Benedyktynów w Tyńcu. Jesteśmy dyspozycyjni dla takich uroczystości.",
+  },
+];
 
 // One graph, three nodes: the AboutPage points at the SAME MusicGroup entity the landing
 // declares (shared @id — no duplicate ensemble with a divergent URL), and the foundation
@@ -165,20 +185,24 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </h1>
         <p class="hero-lede reveal" data-d="2">
           {nbsp(
-            "VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Tworzymy koncerty duchowe, liturgie i projekty, w których muzyka sakralna spotyka współczesną wrażliwość.",
+            "VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Muzyką sakralną zgłębiamy człowieczeństwo — czujni na współczesne tragedie i nadzieje świata.",
           )}
         </p>
         <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
       </div>
     </section>
 
-    {/* ── List założyciela — the single origin statement ───────────────── */}
+    {/* ── List założyciela — the single origin statement. VERBATIM founding text, not
+          copywriting: stanza I (Z tęsknoty) + II (W ciszy) are from Florent's "Skąd się
+          wzięliśmy?", stanza IV (Kruchość) from "Co śpiewamy?", stanza III (Wymiana) from the
+          Kontemplacja Wcielenia booklet ("Dlaczego powstaje nasz zespół"). All Florent,
+          across three source docs — never rewrite into brochure-speak. ──────── */}
     <section class="band letter" aria-label="List Florenta">
       <div class="wrap letter-wrap">
         <div class="section-head letter-head reveal">
-          <span class="eyebrow"><span class="lat">Initium</span>  ·  Początek</span>
-          <h2>Cztery akapity założyciela.</h2>
-          <p class="letter-lead">Nie zaczęliśmy od instytucji — zaczęliśmy od&nbsp;słuchania.</p>
+          <span class="eyebrow"><span class="lat">Initium</span>  ·  List założyciela</span>
+          <h2>Skąd się wzięliśmy?</h2>
+          <p class="letter-lead">Odpowiedź założyciela — cztery akapity, od&nbsp;tęsknoty po&nbsp;kruchość.</p>
         </div>
 
         <div class="letter-body">
@@ -243,24 +267,19 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <div class="prose measure reveal" data-d="1">
           <p class="lead">
             {nbsp(
-              "Na scenie najczęściej spotyka się dwanaście głosów: profesjonalnych i pre-profesjonalnych muzyków, dla których precyzja jest początkiem, nie celem.",
+              "Na scenie spotyka się zwykle dwanaście głosów — profesjonalnych i pre-profesjonalnych muzyków, dla których precyzja jest punktem wyjścia.",
             )}
           </p>
           <p>
             {nbsp(
-              "Skład nie jest zamkniętą listą nazwisk. Wokół stałego rdzenia zespołu obsada zmienia się z projektu na projekt — głosy dobieramy do programu, przestrzeni i intencji, tak jak dobiera się repertuar.",
+              "Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy dobieramy do programu, przestrzeni i intencji, tak jak dobiera się repertuar.",
             )}
           </p>
           <p>
-            Pod kierownictwem Florenta de Bazelaire pracujemy nad brzmieniem, w&nbsp;którym
-            dyscyplina nie odbiera muzyce czułości. Nazwa VoctEnsemble łączy <em>voces</em>,
-            <em>octo</em> i&nbsp;<em>ensemble</em>, ale dziś ważniejsze jest to, co ta nazwa
-            obiecuje: głosy słuchające siebie nawzajem.
-          </p>
-          <p>
-            {nbsp(
-              "Śpiewamy muzykę sakralną od renesansu i baroku po współczesny minimalizm: Victorię, Monteverdiego, Bacha, Pärta, Pendereckiego, Vivancosa, Tavenera. Repertuar traktujemy jak rozmowę epok, a nie katalog stylów.",
-            )}
+            Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w&nbsp;którym
+            dyscyplina i&nbsp;czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy),
+            <em>octo</em> (osiem) i&nbsp;<em>ensemble</em> — obietnicę głosów, które słuchają
+            siebie nawzajem, związanych więzią zarówno muzyczną, jak i&nbsp;międzyludzką.
           </p>
         </div>
         <div class="voces-collab reveal" data-d="2">
@@ -274,34 +293,82 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       </div>
     </section>
 
-    {/* ── Pull-quote plate ─────────────────────────────────────────────── */}
+    {/* ── Pull-quote plate — the thesis of "Co śpiewamy?" (Florent's founding text), lifted
+          into display type. It sets up the Co śpiewamy section below (call → elaboration).
+          "próg" now lives once on the landing hero; this page carries "dzielimy się". ─────── */}
     <section class="plate" aria-label="Idea">
       <div class="plate-media" aria-hidden="true">
         <BleedImage desktop={plate.desktop} mobile={plate.mobile} alt="" position="center" />
       </div>
       <blockquote class="reveal">
-        Koncert jako próg: wchodzi się z&nbsp;ulicy, wychodzi się cichszym.
+        Nade wszystko, dzielimy się.
         <cite>VoctEnsemble</cite>
       </blockquote>
     </section>
 
-    {/* ── Method ───────────────────────────────────────────────────────── */}
-    <section class="band" aria-label="Jak pracujemy">
+    {/* ── Co robimy — the founder's second question, answered with real activities and
+          named events (see the `doings` const). ───────────────────────────── */}
+    <section class="band band-soft" aria-label="Co robimy">
       <div class="wrap">
         <div class="section-head reveal measure">
-          <span class="eyebrow"><span class="lat">Modus</span>  ·  Jak pracujemy</span>
-          <h2>Nie budujemy programu z utworów. Budujemy drogę słuchania.</h2>
+          <span class="eyebrow"><span class="lat">Operatio</span>  ·  Co robimy?</span>
+          <h2>Koncerty duchowe, liturgia, ważne uroczystości.</h2>
         </div>
-        <div class="method-grid">
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">
+            {nbsp(
+              "Głównym nurtem są autorskie Koncerty Duchowe — współczesna forma dawnych Concerts Spirituels. Poza nimi śpiewamy tam, gdzie liturgia i uroczystość proszą o głos.",
+            )}
+          </p>
+        </div>
+        <div class="doings-grid">
           {
-            method.map((m, i) => (
-              <article class="method-card reveal" data-d={String(i + 1)}>
-                <span class="m-num">{m.n}</span>
-                <h3>{m.h}</h3>
-                <p>{nbsp(m.p)}</p>
+            doings.map((d, i) => (
+              <article class="doing reveal" data-d={String((i % 3) + 1)}>
+                <h3>{d.k}</h3>
+                <p>{nbsp(d.p)}</p>
+                {d.href && (
+                  <a class="inline" href={d.href}>
+                    {d.cta}
+                  </a>
+                )}
               </article>
             ))
           }
+        </div>
+      </div>
+    </section>
+
+    {/* ── Co śpiewamy — the founder's third question ("Co śpiewamy?"): the credo, verbatim in
+          spirit. The seven-century repertoire catalog lives on /koncerty#repertuar (one home
+          per idea) — this section links to it instead of re-listing composers. ─────── */}
+    <section class="band" aria-label="Co śpiewamy">
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">Cantus</span>  ·  Co śpiewamy?</span>
+          <h2>Muzyka jako odbicie duszy słowa.</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">
+            {nbsp(
+              "Dzielimy się śpiewem i przemyślanymi narracjami — utkanymi z utworów, w których muzyka i słowo są swoimi lustrzanymi odbiciami.",
+            )}
+          </p>
+          <p>
+            {nbsp(
+              "Interesuje nas świat: widzialny — przyroda i całe stworzenie — oraz ten niematerialny, którego szukamy i próbujemy zrozumieć. Muzyka sakralna jest w tej wędrówce dobrą towarzyszką.",
+            )}
+          </p>
+          <p>
+            {nbsp(
+              "Czerpie z geniuszu ludzkiego, z Biblii i z mądrości przodków, po którą kompozytorzy wciąż sięgają, by wyrazić na wskroś osobisty sposób to, co przeżywają i co ich najbardziej dotyka.",
+            )}
+          </p>
+          <p class="cantus-more">
+            <a class="inline" href="/koncerty#repertuar">
+              Repertuar siedmiu wieków — od Llibre Vermell po współczesność →
+            </a>
+          </p>
         </div>
       </div>
     </section>
@@ -406,7 +473,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </div>
         <p class="board-intro reveal" data-d="1">
           {nbsp(
-            "Fundacja nie ma być dekoracją wokół zespołu. Ma utrzymać jakość artystyczną, organizacyjną i cyfrową tak, aby projekty mogły dojrzewać, wracać i zostawiać po sobie ślad.",
+            "Fundacja ma jedno zadanie: utrzymać jakość — artystyczną, organizacyjną i cyfrową — tak, aby projekty mogły dojrzewać, wracać i zostawiać po sobie ślad.",
           )}
         </p>
         <div class="board">
@@ -443,7 +510,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <h2>Zaproście nas do przestrzeni, która potrzebuje głosu.</h2>
         <p>
           {nbsp(
-            "Koncert duchowy, oprawa liturgii, ważna uroczystość, mecenat albo współpraca artystyczna. Odpowiemy konkretnie i bez zbędnego dystansu.",
+            "Koncert duchowy, oprawa liturgii, ważna uroczystość, mecenat albo współpraca artystyczna. Czekamy na Wasz kontakt.",
           )}
         </p>
         <div class="btn-row">
@@ -526,14 +593,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .collab-label { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
   .voces-collab p { margin: 12px 0 0; font-size: 14px; line-height: 1.75; color: var(--ink-muted); max-width: 62ch; }
 
-  /* Method */
-  .method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(22px, 3vw, 42px); }
-  .method-card { display: grid; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
-  .method-card .m-num { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
-  .method-card h3 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.5vw, 34px); font-weight: 300; line-height: 1.1; color: var(--ink); }
-  .method-card p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
-  @media (max-width: 980px) { .method-grid { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 620px) { .method-grid { grid-template-columns: 1fr; } }
+  /* Co robimy — activity cards: category heading + concrete example + optional link */
+  .doings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(24px, 3.4vw, 48px); margin-top: clamp(30px, 4vw, 48px); }
+  .doing { display: grid; gap: 12px; padding-top: 24px; border-top: 1px solid var(--line-strong); align-content: start; }
+  .doing h3 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.5vw, 34px); font-weight: 300; line-height: 1.1; color: var(--ink); }
+  .doing p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
+  .doing a { justify-self: start; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 45%, transparent); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .doing a:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
+  .cantus-more { margin-top: 6px; }
+  @media (max-width: 720px) { .doings-grid { grid-template-columns: 1fr; } }
 
   /* Milestones */
   .milestones { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
