@@ -40,7 +40,15 @@
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
     - { role: "Słowo wprowadzające", name: "o. Jarek Naliwajko SJ" }
   gallery:
-    - { img: o-nas-wcielenie, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-0, alt: "VoctEnsemble podczas próby do Kontemplacji Wcielenia", caption: "Próba do Kontemplacji Wcielenia" }
+    - { img: kd-wcielenie-1, alt: "VoctEnsemble podczas próby do Kontemplacji Wcielenia", caption: "Próba do Kontemplacji Wcielenia" }
+    - { img: kd-wcielenie-2, alt: "VoctEnsemble podczas próby do Kontemplacji Wcielenia", caption: "Próba do Kontemplacji Wcielenia" }
+    - { img: kd-wcielenie-3, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-4, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-5, alt: "Nawa główna podczas koncertu Voctensemble Kontemplacja Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-6, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-8, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
   inscriptioRef: "Iz 11, 1"
