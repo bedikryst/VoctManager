@@ -101,7 +101,13 @@ const links = [
 <style>
   .chrome { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: calc(env(safe-area-inset-top, 0px) + 22px) max(28px, 5vw); color: var(--paper); background: transparent; border-bottom: 1px solid transparent; transition: color .5s var(--ease), background-color .5s var(--ease), border-color .5s var(--ease), padding .5s var(--ease), backdrop-filter .5s var(--ease); }
   .chrome::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,0) 100%); opacity: 1; transition: opacity .5s var(--ease); }
-  .chrome.is-solid { background-color: rgba(244, 241, 233, 0.82); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); border-bottom-color: rgba(22, 21, 20, 0.08); color: var(--ink); padding-top: calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom: 14px; }
+  /* Glass rides a ::after LAYER, not the .chrome root. A non-`none` backdrop-filter turns its
+     element into the containing block for `position: fixed` descendants — and the "Antyfona"
+     overlay (.nave) is a fixed child of .chrome. On the root, a scrolled (solid) bar clipped the
+     mobile overlay to the bar height; keeping the root filter-free lets .nave fill the viewport. */
+  .chrome::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-bottom: 1px solid transparent; opacity: 0; transition: opacity .5s var(--ease), background-color .5s var(--ease), border-color .5s var(--ease); }
+  .chrome.is-solid::after { opacity: 1; background-color: rgba(244, 241, 233, 0.82); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); border-bottom-color: rgba(22, 21, 20, 0.08); }
+  .chrome.is-solid { color: var(--ink); padding-top: calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom: 14px; }
   .chrome.is-solid::before { opacity: 0; }
 
   .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; }
@@ -140,22 +146,26 @@ const links = [
   /* ── Dark-tone pages (koncerty) ─────────────────────────────────────────
      Solid header is night (not paper); when a light section scrolls under it,
      the page toggles .is-light to flip to the paper treatment. */
-  .chrome[data-tone="dark"].is-solid {
+  .chrome[data-tone="dark"].is-solid::after {
+    opacity: 1;
     background-color: rgba(16, 15, 13, 0.72);
     backdrop-filter: blur(20px) saturate(1.2);
     -webkit-backdrop-filter: blur(20px) saturate(1.2);
     border-bottom-color: rgba(244, 241, 233, 0.12);
-    color: var(--paper);
   }
+  .chrome[data-tone="dark"].is-solid { color: var(--paper); }
   .chrome[data-tone="dark"].is-solid .chrome-brand .brand-mark { background: var(--candle); }
 
-  .chrome[data-tone="dark"].is-light {
+  /* is-light can be set independently of is-solid (a paper section under a not-yet-scrolled bar),
+     so the paper glass must carry its own opacity rather than borrow it from is-solid::after. */
+  .chrome[data-tone="dark"].is-light::after {
+    opacity: 1;
     background-color: rgba(244, 241, 233, 0.82);
     backdrop-filter: blur(20px) saturate(1.1);
     -webkit-backdrop-filter: blur(20px) saturate(1.1);
     border-bottom-color: rgba(22, 21, 20, 0.1);
-    color: var(--ink);
   }
+  .chrome[data-tone="dark"].is-light { color: var(--ink); }
   .chrome[data-tone="dark"].is-light::before { opacity: 0; }
   .chrome[data-tone="dark"].is-light .chrome-brand .brand-mark { background: var(--ink); }
 </style>

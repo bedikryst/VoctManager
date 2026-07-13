@@ -22,6 +22,11 @@
 .nave {
   --candle-lite: #e8cf90;
   --ease-door: cubic-bezier(0.7, 0, 0.16, 1);
+  /* Horizontal run of the wipe's slanted edge over the full viewport height — tuned so the
+     clip edge leans at the SAME ~4deg as the light shaft (.nave-seam rotate(4deg)):
+     tan(4deg) × 100vh ≈ 7vh. Keeps the panel glued to the light instead of peeling off it
+     (the old rectangular inset() edge stayed vertical while the shaft leaned). */
+  --lean-x: 7vh;
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -48,18 +53,21 @@
 
 /* ── The wipe ──────────────────────────────────────────────────────────────────────────────────
    The three panel layers (dark ground, glow, content) share ONE clip so the shaft wipes them as a
-   single plane: revealed left→right on open, erased right→left on close. `inset(0 R 0 0)` with R
-   animating 100%→0 grows the visible region from the left edge (open); 0→100% shrinks it back to
-   the left (close). */
+   single plane: revealed left→right on open, erased right→left on close. The revealing edge is a
+   4-point polygon whose right side LEANS by `--lean-x` (top point ahead of the bottom) so it runs
+   parallel to the light shaft — a linear interpolation between the two states preserves that
+   constant lean at every frame, so the panel edge stays glued to the light rather than peeling off
+   it as a vertical inset() edge did. Left column fixed at 0 (the reveal anchors on the left edge);
+   the right column sweeps from off-left (hidden) to off-right (open). */
 .nave-veil,
 .nave-spot,
 .nave-inner {
-  clip-path: inset(0 100% 0 0);
+  clip-path: polygon(0 0, 0 0, calc(-1 * var(--lean-x)) 100%, 0 100%);
 }
 .chrome.menu-open .nave-veil,
 .chrome.menu-open .nave-spot,
 .chrome.menu-open .nave-inner {
-  clip-path: inset(0 0 0 0);
+  clip-path: polygon(0 0, calc(100% + var(--lean-x)) 0, 100% 100%, 0 100%);
   transition: clip-path 0.6s var(--ease-door);
 }
 .chrome.menu-closing .nave-veil,
@@ -69,27 +77,30 @@
 }
 @keyframes nave-wipe-out {
   from {
-    clip-path: inset(0 0 0 0);
+    clip-path: polygon(0 0, calc(100% + var(--lean-x)) 0, 100% 100%, 0 100%);
   }
   to {
-    clip-path: inset(0 100% 0 0);
+    clip-path: polygon(0 0, 0 0, calc(-1 * var(--lean-x)) 100%, 0 100%);
   }
 }
 
-/* ── The dark sacred ground — opaque, so no backdrop-filter is needed (it would blur nothing). ── */
+/* ── The dark sacred ground — opaque, so no backdrop-filter is needed (it would blur nothing).
+   The built-in warmth is kept faint and high/broad: the FOCAL light now rests on the current
+   page's voice (see `.voice[aria-current]::before`), so the ground must not compete with it. ── */
 .nave-veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(58% 46% at 30% 22%, rgba(232, 207, 144, 0.12), transparent 62%),
+    radial-gradient(72% 52% at 50% 12%, rgba(232, 207, 144, 0.07), transparent 60%),
     linear-gradient(158deg, #16130f 0%, var(--night) 46%, #0a0908 100%);
 }
 
-/* ── Soft spotlight bloom behind the links ─────────────────────────────────────────────────── */
+/* ── Ambient wash over the list area — deliberately low, a held breath of light rather than a
+   spotlight, so it reads under the focal bloom on the current voice, not against it. ── */
 .nave-spot {
   position: absolute;
   inset: 0;
-  background: radial-gradient(46% 42% at 30% 34%, rgba(232, 207, 144, 0.18), transparent 60%);
+  background: radial-gradient(52% 44% at 30% 48%, rgba(232, 207, 144, 0.08), transparent 64%);
 }
 
 /* ── The shaft of light that leads the wipe. NEVER clipped, so it rides visibly over the ────────
@@ -226,11 +237,28 @@
    `--d` is the per-voice stagger (set on the voice by :nth-child). On close `--d` is unset and the
    voices are simply erased by the wipe — no separate exit needed. */
 .voice {
+  position: relative;
   display: block;
   text-decoration: none;
   color: var(--paper);
   opacity: 0;
   transform: translateY(18px);
+}
+/* The light rests where you are: a soft warm bloom behind the current page's voice, so the
+   overlay is lit at the card the visitor is on rather than at a fixed corner. It sits in the
+   nave-inner stacking context (z:-1 → behind the type, above the dark ground + ambient wash) and
+   fades in with its voice. Pages outside the four voices (press/kolofon) simply light nothing. */
+.voice[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -8%;
+  top: 50%;
+  width: 76%;
+  height: 340%;
+  transform: translateY(-50%);
+  background: radial-gradient(58% 60% at 26% 50%, rgba(232, 207, 144, 0.2), transparent 72%);
+  pointer-events: none;
 }
 .chrome.menu-open .voice {
   opacity: 1;
@@ -388,7 +416,7 @@ body.nav-open {
   .chrome.menu-open .nave-veil,
   .chrome.menu-open .nave-spot,
   .chrome.menu-open .nave-inner {
-    clip-path: inset(0 0 0 0);
+    clip-path: none;
   }
   .chrome.menu-open .voice,
   .chrome.menu-open .nave-foot {
