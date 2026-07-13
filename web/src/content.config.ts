@@ -86,9 +86,9 @@ const concerts = defineCollection({
         }),
       )
       .default([]),
-    /** Self-hosted concert film (selected fragments), opened in the shared dark projection
-        lightbox on click — the native href (the MP4 itself) is the no-JS fallback. `src` is a
-        public path under /video; `poster` is a photo() base name (falls back to the hero bg). */
+    /** Self-hosted concert film (selected fragments), rendered in the shared custom player.
+        `src` is consumed by the controlled player; `poster` is a photo() base name
+        (falls back to the hero bg). */
     video: z
       .object({ src: z.string(), caption: z.string().optional(), poster: z.string().optional() })
       .optional(),

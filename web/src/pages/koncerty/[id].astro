@@ -23,10 +23,9 @@ import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
-import { VideoLightbox } from "../../islands/landing/VideoLightbox";
+import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
 import "../../styles/vault.css";
 import "../../styles/vplayer.css";
-import "../../styles/landing/12-vox.css";
 
 export async function getStaticPaths() {
   const concerts = await getCollection("concerts", ({ data }) => data.hasPage);
@@ -62,9 +61,8 @@ for (const g of c.gallery) {
 const hasTour = c.dates.length > 0;
 const hasText = c.program.some((p) => p.text || p.textPl);
 
-// ── Concert film: still for the trigger + the projection lightbox. Falls back to the hero bg
-// when no dedicated poster is set. The optimized src feeds VideoLightbox (its `poster` prop
-// applies because our src === MODAL_VIDEO.src — see VideoLightbox).
+// ── Concert film: still for the in-flow player. Falls back to the hero bg when no dedicated
+// poster is set. The MP4 source is consumed by VideoPlayer, never exposed as a native anchor.
 const filmPoster = c.video ? (photoOptional(c.video.poster ?? "") ?? bg.desktop) : undefined;
 const filmPosterSrc = filmPoster
   ? (await getImage({ src: filmPoster, width: 1600, format: "webp" })).src
@@ -379,8 +377,8 @@ const plDate = (iso: string): string =>
       </section>
     )}
 
-    {/* ── Film: selected fragments of the evening. Poster + click → dark projection
-          lightbox (native href to the MP4 = no-JS fallback). ──────────────────── */}
+    {/* ── Film: selected fragments of the evening. In-flow custom player, same contract
+          as the landing's Vox moment. ────────────────────────────────────────── */}
     {c.video && (
       <section class="kd-band kd-film" aria-label="Zapis wieczoru">
         <div class="kd-wrap">
@@ -389,31 +387,15 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Zapis wieczoru</span>
           </span>
-          <a
-            class="kd-film-stage reveal"
-            data-d="1"
-            href={c.video.src}
-            data-video-open
-            data-video-caption={c.video.caption}
-            aria-label="Odtwórz wideo z koncertu"
-          >
-            {filmPoster && (
-              <Image
-                class="kd-film-poster"
-                src={filmPoster}
-                widths={[720, 1080, 1600]}
-                sizes="(max-width: 1180px) 92vw, 1120px"
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            )}
-            <span class="kd-film-veil" aria-hidden="true"></span>
-            <span class="kd-film-play" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
-            </span>
-            <span class="kd-film-cue micro">Obejrzyj — wybrane fragmenty, ok. 4 min</span>
-          </a>
+          <div class="kd-film-player reveal" data-d="1">
+            <VideoPlayer
+              client:visible
+              src={c.video.src}
+              poster={filmPosterSrc}
+              caption={c.video.caption}
+              tone="dark"
+            />
+          </div>
         </div>
       </section>
     )}
@@ -499,35 +481,8 @@ const plDate = (iso: string): string =>
   <SiteFooter />
 
   <VaultIsland client:idle />
-  {c.video && <VideoLightbox poster={filmPosterSrc ?? ""} client:idle />}
   <script>
     import "../../scripts/vault-triggers.ts";
-  </script>
-
-  {/* Projection lightbox trigger — mirrors the landing's `[data-video-open]` delegation:
-      intercept only once VideoLightbox has hydrated (`__voctVideoReady`); before that the
-      anchor's native href (the MP4 itself) is the fallback. Bound once, survives swaps. */}
-  <script>
-    interface VideoWin { __voctKdVideo?: boolean; __voctVideoReady?: boolean }
-    const w = window as unknown as VideoWin;
-    if (!w.__voctKdVideo) {
-      w.__voctKdVideo = true;
-      document.addEventListener("click", (event) => {
-        const target = event.target as Element | null;
-        const trigger = target?.closest?.("[data-video-open]");
-        if (!trigger) return;
-        if (!w.__voctVideoReady) return; // pre-hydration: let the native href serve the file
-        event.preventDefault();
-        window.dispatchEvent(
-          new CustomEvent("voct:open-video", {
-            detail: {
-              src: trigger.getAttribute("href") ?? undefined,
-              caption: (trigger as HTMLElement).dataset.videoCaption,
-            },
-          }),
-        );
-      });
-    }
   </script>
 
   {/* Chrome tone: flip to the paper treatment while a parchment section sits under the bar
@@ -728,21 +683,10 @@ const plDate = (iso: string): string =>
   .kd-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244,241,233,.12); box-shadow: 0 40px 90px -46px rgba(0,0,0,.9); }
   .kd-shot figcaption { margin-top: 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244,241,233,.56); }
 
-  /* ── Film: poster + play → dark projection lightbox ────────────────────── */
+  /* ── Film: in-flow custom player ───────────────────────────────────────── */
   .kd-film { background: var(--dark, #080807); color: var(--paper); }
   .kd-film .kd-section-label { margin-bottom: clamp(32px, 4vw, 52px); }
-  .kd-film-stage { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: #000; cursor: pointer; isolation: isolate; box-shadow: 0 50px 120px -54px rgba(0,0,0,.92); }
-  .kd-film-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease-slow, ease); }
-  .kd-film-stage:hover .kd-film-poster { transform: scale(1.03); }
-  .kd-film-veil { position: absolute; inset: 0; background: radial-gradient(58% 58% at 50% 46%, rgba(8,8,7,.16) 0%, rgba(8,8,7,.66) 100%); transition: background .5s var(--ease, ease); }
-  .kd-film-stage:hover .kd-film-veil { background: radial-gradient(58% 58% at 50% 46%, rgba(8,8,7,.06) 0%, rgba(8,8,7,.5) 100%); }
-  .kd-film-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: clamp(64px, 7vw, 90px); height: clamp(64px, 7vw, 90px); border-radius: 50%; display: grid; place-items: center; color: var(--paper); border: 1px solid rgba(244,241,233,.5); background: rgba(8,8,7,.28); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); transition: transform .5s var(--ease, ease), border-color .5s var(--ease, ease), color .5s var(--ease, ease); }
-  .kd-film-play svg { width: 42%; height: 42%; margin-left: 6%; }
-  .kd-film-stage:hover .kd-film-play { transform: translate(-50%, -50%) scale(1.07); border-color: var(--candle); color: var(--candle); }
-  .kd-film-cue { position: absolute; left: 0; right: 0; bottom: clamp(16px, 2.4vw, 28px); text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.84); }
-  @media (prefers-reduced-motion: reduce) {
-    .kd-film-poster, .kd-film-stage:hover .kd-film-poster { transition: none; transform: none; }
-  }
+  .kd-film-player { max-width: 1120px; margin: 0 auto; box-shadow: 0 50px 120px -54px rgba(0,0,0,.92); }
 
   /* ── Coda: poster keepsake + Via nav ───────────────────────────────────── */
   .kd-coda { background: var(--dark, #080807); color: var(--paper); padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }
