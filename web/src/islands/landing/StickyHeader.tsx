@@ -11,7 +11,7 @@
  * @module islands/landing/StickyHeader
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAudioChoice } from "./hooks/useAudioChoice";
 
@@ -22,12 +22,40 @@ const DARK_SELECTORS =
 export function StickyHeader(): React.JSX.Element {
   const { read } = useAudioChoice();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuClosing, setMenuClosing] = useState(false);
   const [audioOn, setAudioOn] = useState(false);
   // Adaptive tint, owned by React (an external script toggling these classes would be
   // reverted on the next render). `onDark` = glass over a dark surface; `active` = glass mode
   // engaged once the hero is scrolled past. Hero starts dark, so onDark defaults true.
   const [onDark, setOnDark] = useState(true);
   const [active, setActive] = useState(false);
+
+  // The overlay wipes shut over ~0.55s (nave-menu.css): `menu-closing` keeps it painted and drives
+  // the light-shaft erase, then the timer flips `menuOpen` off. Escape / Zamknij play the wipe;
+  // in-page links snap shut (there is no page to swap under them).
+  const closeTimer = useRef<number | undefined>(undefined);
+  const openMenu = useCallback(() => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    setMenuClosing(false);
+    setMenuOpen(true);
+  }, []);
+  const closeMenu = useCallback((animated = true) => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!animated || reduced) {
+      setMenuClosing(false);
+      setMenuOpen(false);
+      return;
+    }
+    setMenuClosing(true);
+    closeTimer.current = window.setTimeout(() => {
+      setMenuOpen(false);
+      setMenuClosing(false);
+    }, 580);
+  }, []);
+  useEffect(() => () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -93,10 +121,18 @@ export function StickyHeader(): React.JSX.Element {
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key === "Escape") closeMenu(true);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
+  }, [menuOpen, closeMenu]);
+
+  // Lock scroll while the overlay owns the viewport. The nave only opens on touch (≤760),
+  // where Lenis is dormant, so body overflow is a complete lock. Cleanup covers unmount on
+  // navigation away from the landing.
+  useEffect(() => {
+    document.body.classList.toggle("nav-open", menuOpen);
+    return () => document.body.classList.remove("nav-open");
   }, [menuOpen]);
 
   const toggleAudio = () => {
@@ -109,11 +145,9 @@ export function StickyHeader(): React.JSX.Element {
     window.dispatchEvent(new CustomEvent("voct:open-vault", { detail: { amount } }));
   };
 
-  const closeMenu = () => setMenuOpen(false);
-
   return (
     <header
-      className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}`}
+      className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
       aria-label="Nawigacja"
     >
       {/* view-transition-name: voct-brand → shared element with SiteChrome on the
@@ -140,6 +174,15 @@ export function StickyHeader(): React.JSX.Element {
         >
           {audioOn ? "Głos" : "Cisza"}
         </button>
+        <a className="support-link plausible-event-name=o+nas" href="/o-nas">
+          O nas
+        </a>
+        <a className="support-link plausible-event-name=koncerty" href="/koncerty">
+          Koncerty
+        </a>
+        <a className="support-link plausible-event-name=kontakt" href="/kontakt">
+          Kontakt
+        </a>
         <a
           className="support-link plausible-event-name=skarbiec+menu"
           href="#wesprzyj"
@@ -151,12 +194,6 @@ export function StickyHeader(): React.JSX.Element {
         >
           Wesprzyj
         </a>
-        <a className="support-link plausible-event-name=o+nas" href="/o-nas">
-          O nas
-        </a>
-        <a className="support-link plausible-event-name=koncerty" href="/koncerty">
-          Koncerty
-        </a>
         <button
           className="nav-toggle"
           id="navToggle"
@@ -164,43 +201,73 @@ export function StickyHeader(): React.JSX.Element {
           aria-expanded={menuOpen}
           aria-controls="navMenu"
           aria-label="Menu"
-          onClick={() => setMenuOpen(true)}
+          onClick={openMenu}
         />
       </div>
 
-      <nav className="nav-menu" id="navMenu" aria-label="Nawigacja mobilna">
-        <div className="nav-menu-links">
-          <a href="#top" onClick={closeMenu}>
-            Główna
-          </a>
-          <a href="/o-nas" onClick={closeMenu}>
-            O nas
-          </a>
-          <a href="/koncerty" onClick={closeMenu}>
-            Koncerty
-          </a>
-          <a
-            className="nav-support plausible-event-name=skarbiec+menu"
-            href="#wesprzyj"
-            data-no-lenis
-            onClick={(e) => {
-              e.preventDefault();
-              closeMenu();
-              openVault(100);
-            }}
-          >
-            Wesprzyj
-          </a>
+      {/* "Antyfona" — shared mobile overlay (nave-menu.css); same markup + choreography as the
+          Astro SiteChrome on subpages. Self-contained (own brand + close), since .chrome.menu-open
+          hides the bar. Each link carries its destination's Latin incipit. */}
+      <nav className="nave" id="navMenu" aria-label="Nawigacja główna">
+        <div className="nave-veil" />
+        <div className="nave-seam" aria-hidden="true" />
+        <div className="nave-spot" aria-hidden="true" />
+
+        <div className="nave-inner">
+          <div className="nave-top">
+            <a className="nave-brand" href="#top" aria-label="VoctEnsemble" onClick={() => closeMenu(false)}>
+              <span className="nave-brand-mark" aria-hidden="true" />
+              <span>VoctEnsemble</span>
+            </a>
+            <button
+              className="nave-close"
+              id="menuClose"
+              type="button"
+              aria-label="Zamknij menu"
+              onClick={() => closeMenu(true)}
+            >
+              Zamknij
+            </button>
+          </div>
+
+          <div className="nave-list">
+            <a className="voice" href="#top" aria-current="page" onClick={() => closeMenu(false)}>
+              <span className="voice-lat">Introitus</span>
+              <span className="voice-pl">Główna</span>
+            </a>
+            <a className="voice" href="/o-nas" onClick={() => closeMenu(false)}>
+              <span className="voice-lat">De nobis</span>
+              <span className="voice-pl">O nas</span>
+            </a>
+            <a className="voice" href="/koncerty" onClick={() => closeMenu(false)}>
+              <span className="voice-lat">Via</span>
+              <span className="voice-pl">Koncerty</span>
+            </a>
+            <a className="voice" href="/kontakt" onClick={() => closeMenu(false)}>
+              <span className="voice-lat">Scribe nobis</span>
+              <span className="voice-pl">Kontakt</span>
+            </a>
+          </div>
+
+          <div className="nave-foot">
+            <a
+              className="nave-cta plausible-event-name=skarbiec+menu"
+              href="#wesprzyj"
+              data-no-lenis
+              onClick={(e) => {
+                e.preventDefault();
+                closeMenu(false);
+                openVault(100);
+              }}
+            >
+              Wesprzyj <em>· Sustinete nos</em>
+            </a>
+            <span className="nave-colophon">
+              <span className="nave-colophon-mark" aria-hidden="true" />
+              <em>Concerts Spirituels</em> · MMXXIV
+            </span>
+          </div>
         </div>
-        <button
-          className="menu-close"
-          id="menuClose"
-          type="button"
-          aria-label="Zamknij menu"
-          onClick={closeMenu}
-        >
-          ✕
-        </button>
       </nav>
     </header>
   );

@@ -666,15 +666,18 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 22px;
-    height: 42px;
+    /* 17×40 mark footprint — unified with SiteChrome.brand-mark + nave-brand-mark so the brand
+       text starts at the same X everywhere and does not shift when the overlay opens. The halo
+       stays 42px (absolutely centred), unaffected by the wrap size. */
+    width: 17px;
+    height: 40px;
   }
 
   .brand-glyph {
     position: relative;
     z-index: 1;
-    width: 18px;
-    height: 42px;
+    width: 17px;
+    height: 40px;
     /* Maskowany znak PNG: background dziedziczy currentColor, więc logo dalej zmienia barwę. */
     background: currentColor;
     -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
@@ -872,7 +875,7 @@
     border-color: var(--candle);
   }
 
-  /* ─── Mobile menu: bar-height panel sliding in from the right; recolors with the surface. ─── */
+  /* ─── Mobile: the hamburger. The overlay it opens ("Antyfona") lives in nave-menu.css. ─── */
   .nav-toggle {
     display: none;
     position: relative;
@@ -899,121 +902,29 @@
   .nav-toggle::after { top: 10px; width: 15px; }
   .nav-toggle:hover::after { width: 26px; }
 
-  .nav-menu {
-    --menu-fg: var(--paper);
-    --menu-bg: rgba(16, 15, 13, 0.94);
-    --menu-line: rgba(244, 241, 233, 0.14);
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    padding: 0 max(22px, 5vw);
-    background: var(--menu-bg);
-    color: var(--menu-fg);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4);
-    backdrop-filter: blur(22px) saturate(1.4);
-    border-bottom: 1px solid var(--menu-line);
-    transform: translateX(100%);
-    visibility: hidden;
-    transition:
-      transform 0.5s var(--ease),
-      background-color 0.5s var(--ease),
-      color 0.5s var(--ease),
-      visibility 0s linear 0.5s;
-  }
-
-  .chrome.menu-open .nav-menu {
-    transform: none;
-    visibility: visible;
-    transition-delay: 0s;
-  }
-
-  /* Scrolled into a light section → light panel. */
-  .chrome.is-active:not(.is-on-dark) .nav-menu {
-    --menu-fg: var(--ink);
-    --menu-bg: rgba(244, 241, 233, 0.97);
-    --menu-line: rgba(22, 21, 20, 0.1);
-  }
-
-  /* Hide the bar's own brand/controls while open so the panel doesn't show them bleeding through. */
-  .chrome.menu-open .brand,
-  .chrome.menu-open .chrome-actions {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s var(--ease);
-  }
-
-  .nav-menu-links {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .nav-menu-links::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-menu a {
-    font-family: var(--mono);
-    /* 11px (was 9.5): these are the primary mobile nav targets — at 9.5px mono they
-       were both under-legible and under the comfortable touch-target threshold. */
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--menu-fg);
-    opacity: 0.8;
-    white-space: nowrap;
-    padding: 10px 0;
-    transition: opacity 0.3s var(--ease), color 0.3s var(--ease);
-  }
-
-  .nav-menu a:hover {
-    opacity: 1;
-  }
-
-  .nav-menu a[aria-current="page"] {
-    opacity: 1;
-    color: var(--candle);
-  }
-
-  .nav-menu .nav-support {
-    color: var(--candle);
-    opacity: 1;
-    border: 1px solid var(--candle);
-    border-radius: 999px;
-    padding: 5px 12px;
-    transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
-  }
-
-  .nav-menu .nav-support:hover {
-    background: var(--candle);
-    color: var(--menu-bg);
-  }
-
-  .menu-close {
-    flex-shrink: 0;
-    margin-left: clamp(10px, 3vw, 18px);
-    border: 0;
-    background: transparent;
-    color: var(--menu-fg);
-    cursor: pointer;
-    font-family: var(--mono);
-    font-size: 16px;
-    line-height: 1;
-    padding: 6px 0 6px 4px;
-    opacity: 0.55;
+  /* Bar clears when the "Antyfona" overlay (nave-menu.css) opens — it carries its own brand + close.
+     Fast fade-out (.12s) so the bar brand is gone before the overlay's clip reveals the nave brand
+     in the same aligned spot — reads as one continuous mark, not a teleport. Eases back on close. */
+  .brand {
     transition: opacity 0.3s var(--ease);
   }
-
-  .menu-close:hover {
-    opacity: 1;
+  .chrome.menu-open .brand,
+  .chrome.menu-open .chrome-actions,
+  .chrome.menu-closing .brand,
+  .chrome.menu-closing .chrome-actions {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s var(--ease);
   }
+
+  /* The landing bar sits 2px lower than the subpage bar (env + 24px vs 22px); match the nave's
+     brand row to it so the mark holds its exact Y on this page too. */
+  .voct-landing .nave-inner {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+  }
+
+  /* The old horizontal nav-menu strip + its close button now live as the shared "Antyfona"
+     overlay in nave-menu.css (.nave / .voice / .nave-close). */
 
   /* Single shared 760px boundary: max-width 759.98 / min-width 760 leaves no sub-pixel
      dead zone (the old 760/761 pair left ~760.5px viewports matching neither, so the nav
@@ -1026,9 +937,4 @@
       display: inline-flex;
     }
   }
-
-  @media (min-width: 760px) {
-    .nav-menu {
-      display: none;
-    }
-  }
+  /* .nave's desktop hide (min-width: 760) lives in nave-menu.css. */

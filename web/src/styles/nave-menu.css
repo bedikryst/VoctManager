@@ -1,0 +1,398 @@
+/**
+ * @file nave-menu.css
+ * @description Shared mobile navigation overlay — "Antyfona". One stylesheet for BOTH marketing
+ *  headers: the Astro SiteChrome (subpages) and the React StickyHeader (landing). Both toggle
+ *  `menu-open` (and, during the close wipe, `menu-closing`) on `.chrome`, so the whole
+ *  choreography keys off `.chrome.menu-open .nave-*` / `.chrome.menu-closing .nave-*` and stays
+ *  identical across the two. Opens ONLY on touch (≤759.98px, where the hamburger shows and Lenis
+ *  is dormant — so `body.nav-open { overflow: hidden }` fully locks scroll with no fight).
+ *
+ *  The moment is a single gesture in both directions — a SHAFT OF LIGHT that wipes the menu on and
+ *  off. On OPEN the shaft sweeps left→right and the whole panel (dark ground + glow + voices) is
+ *  painted in behind it via a clip-path reveal; the voices then rise a touch as their own breath.
+ *  On CLOSE (`.menu-closing`, held by JS for the wipe's length) the shaft sweeps back right→left
+ *  and the same clip erases everything in its wake — a true reverse of the entrance. The veil is
+ *  opaque, so it carries NO backdrop-filter: the clip animation stays cheap to composite on a
+ *  phone. Each link keeps its destination's Latin incipit, so the menu reads as the site's
+ *  antiphon, not a list. All animation is transform / opacity / clip-path; reduced-motion is flat.
+ * @architecture Astro islands 2026
+ * @module styles/nave-menu
+ */
+
+.nave {
+  --candle-lite: #e8cf90;
+  --ease-door: cubic-bezier(0.7, 0, 0.16, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+.chrome.menu-open .nave {
+  visibility: visible;
+  pointer-events: auto;
+}
+/* Held visible (but inert) by JS through the close wipe, then the class is dropped → hidden. */
+.chrome.menu-closing .nave {
+  visibility: visible;
+  pointer-events: none;
+}
+
+/* Desktop never opens this (hamburger is hidden ≥760); keep it out of the layout entirely. */
+@media (min-width: 760px) {
+  .nave {
+    display: none;
+  }
+}
+
+/* ── The wipe ──────────────────────────────────────────────────────────────────────────────────
+   The three panel layers (dark ground, glow, content) share ONE clip so the shaft wipes them as a
+   single plane: revealed left→right on open, erased right→left on close. `inset(0 R 0 0)` with R
+   animating 100%→0 grows the visible region from the left edge (open); 0→100% shrinks it back to
+   the left (close). */
+.nave-veil,
+.nave-spot,
+.nave-inner {
+  clip-path: inset(0 100% 0 0);
+}
+.chrome.menu-open .nave-veil,
+.chrome.menu-open .nave-spot,
+.chrome.menu-open .nave-inner {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.6s var(--ease-door);
+}
+.chrome.menu-closing .nave-veil,
+.chrome.menu-closing .nave-spot,
+.chrome.menu-closing .nave-inner {
+  animation: nave-wipe-out 0.55s var(--ease-door) forwards;
+}
+@keyframes nave-wipe-out {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+/* ── The dark sacred ground — opaque, so no backdrop-filter is needed (it would blur nothing). ── */
+.nave-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(58% 46% at 30% 22%, rgba(232, 207, 144, 0.12), transparent 62%),
+    linear-gradient(158deg, #16130f 0%, var(--night) 46%, #0a0908 100%);
+}
+
+/* ── Soft spotlight bloom behind the links ─────────────────────────────────────────────────── */
+.nave-spot {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(46% 42% at 30% 34%, rgba(232, 207, 144, 0.18), transparent 60%);
+}
+
+/* ── The shaft of light that leads the wipe. NEVER clipped, so it rides visibly over the ────────
+   advancing edge — sweeps left→right on open, right→left on close. */
+.nave-seam {
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 22vmin;
+  height: 120%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 207, 144, 0.5) 46%,
+    rgba(255, 250, 235, 0.9) 52%,
+    rgba(232, 207, 144, 0.4) 58%,
+    transparent
+  );
+  filter: blur(7px);
+  opacity: 0;
+  transform: translateX(-24vmin) rotate(4deg);
+  pointer-events: none;
+}
+.chrome.menu-open .nave-seam {
+  animation: nave-shaft-in 0.6s var(--ease-door) forwards;
+}
+.chrome.menu-closing .nave-seam {
+  animation: nave-shaft-out 0.55s var(--ease-door) forwards;
+}
+@keyframes nave-shaft-in {
+  0% {
+    opacity: 0;
+    transform: translateX(-24vmin) rotate(4deg);
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(105vw) rotate(4deg);
+  }
+}
+@keyframes nave-shaft-out {
+  0% {
+    opacity: 0;
+    transform: translateX(105vw) rotate(4deg);
+  }
+  16% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-24vmin) rotate(4deg);
+  }
+}
+
+.nave-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  /* Top padding matches the subpage bar's brand row exactly so the mark does not shift on open;
+     the landing bar sits 2px lower and overrides this via `.voct-landing .nave-inner`. */
+  padding: calc(env(safe-area-inset-top, 0px) + 22px) var(--gutter) clamp(30px, 6vh, 64px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top row: brand (continuity with the hidden bar) + close. Revealed by the clip, NOT faded ──
+   — so the mark lands at full strength in its aligned position, overlapping the bar brand's quick
+   fade-out instead of teleporting past it. */
+.nave-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nave-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 300; /* match the bar brand — no weight pop on open */
+  letter-spacing: 0.03em;
+  color: var(--paper);
+  text-decoration: none;
+}
+.nave-brand-mark {
+  width: 17px; /* match the bar brand mark exactly (glyph footprint unified site-wide) */
+  height: 40px;
+  flex-shrink: 0;
+  background: var(--candle);
+  -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
+  mask: url(/logo-mark.png) center / contain no-repeat;
+}
+.nave-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.6);
+  padding: 6px 0;
+  transition: color 0.3s var(--ease);
+}
+.nave-close::after {
+  content: "✕";
+  font-size: 15px;
+  letter-spacing: 0;
+  color: var(--candle);
+}
+.nave-close:hover,
+.nave-close:focus-visible {
+  color: var(--paper);
+  outline: none;
+}
+
+.nave-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(12px, 2.2vh, 24px);
+}
+
+/* ── Each link = a voice. Revealed by the clip; then it rises a touch as its own breath. ────────
+   `--d` is the per-voice stagger (set on the voice by :nth-child). On close `--d` is unset and the
+   voices are simply erased by the wipe — no separate exit needed. */
+.voice {
+  display: block;
+  text-decoration: none;
+  color: var(--paper);
+  opacity: 0;
+  transform: translateY(18px);
+}
+.chrome.menu-open .voice {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.8s var(--ease),
+    transform 0.8s var(--ease-slow);
+  transition-delay: var(--d, 0s);
+}
+.chrome.menu-open .voice:nth-child(1) {
+  --d: 0.24s;
+}
+.chrome.menu-open .voice:nth-child(2) {
+  --d: 0.32s;
+}
+.chrome.menu-open .voice:nth-child(3) {
+  --d: 0.4s;
+}
+.chrome.menu-open .voice:nth-child(4) {
+  --d: 0.48s;
+}
+.chrome.menu-open .voice:nth-child(5) {
+  --d: 0.56s;
+}
+
+.voice-lat {
+  display: block;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(13px, 1.3vw, 16px);
+  line-height: 1;
+  color: var(--candle);
+  margin-bottom: 3px;
+  transition: color 0.35s var(--ease);
+}
+.voice-pl {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(38px, 11vw, 72px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  transition:
+    color 0.4s var(--ease),
+    transform 0.5s var(--ease);
+}
+.voice[aria-current="page"] .voice-pl {
+  color: var(--candle);
+}
+.voice:hover .voice-pl,
+.voice:focus-visible .voice-pl {
+  color: var(--candle-lite);
+  transform: translateX(8px);
+}
+.voice:hover .voice-lat,
+.voice:focus-visible .voice-lat {
+  color: var(--candle-lite);
+}
+.voice:focus-visible {
+  outline: none;
+}
+
+/* ── Foot: the Wesprzyj CTA + a Latin colophon ─────────────────────────────────────────────── */
+.nave-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 22px;
+  opacity: 0;
+  transform: translateY(16px);
+}
+.chrome.menu-open .nave-foot {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.7s var(--ease) 0.5s,
+    transform 0.7s var(--ease-slow) 0.5s;
+}
+.nave-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 28px;
+  border: 1px solid var(--candle);
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--candle-lite);
+  text-decoration: none;
+  transition:
+    background-color 0.4s var(--ease),
+    color 0.4s var(--ease);
+}
+.nave-cta:hover,
+.nave-cta:focus-visible {
+  background: var(--candle);
+  color: var(--night);
+  outline: none;
+}
+.nave-cta em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.nave-colophon {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.42);
+}
+.nave-colophon-mark {
+  width: 10px;
+  height: 26px;
+  flex-shrink: 0;
+  background: var(--candle);
+  -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
+  mask: url(/logo-mark.png) center / contain no-repeat;
+}
+.nave-colophon em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: rgba(244, 241, 233, 0.62);
+}
+
+/* Scroll lock while open — the overlay owns the viewport (touch only; Lenis is off here). */
+body.nav-open {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nave-veil,
+  .nave-spot,
+  .nave-inner,
+  .voice,
+  .nave-foot {
+    transition: none !important;
+    animation: none !important;
+  }
+  .nave-seam {
+    display: none;
+  }
+  .chrome.menu-open .nave-veil,
+  .chrome.menu-open .nave-spot,
+  .chrome.menu-open .nave-inner {
+    clip-path: inset(0 0 0 0);
+  }
+  .chrome.menu-open .voice,
+  .chrome.menu-open .nave-foot {
+    opacity: 1;
+    transform: none;
+  }
+}
