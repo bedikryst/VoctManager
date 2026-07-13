@@ -19,6 +19,7 @@ const { current, tone = "light" } = Astro.props;
 const links = [
   { href: "/o-nas", label: "O nas" },
   { href: "/koncerty", label: "Koncerty" },
+  { href: "/kontakt", label: "Kontakt" },
 ] as const;
 ---
 
@@ -50,19 +51,50 @@ const links = [
     aria-controls="navMenu"
     aria-label="Menu"></button>
 
-  <nav class="nav-menu" id="navMenu" aria-label="Nawigacja mobilna">
-    <div class="nav-menu-links">
-      <a href="/">Główna</a>
-      {
-        links.map((l) => (
-          <a href={l.href} aria-current={current === l.href ? "page" : undefined}>
-            {l.label}
-          </a>
-        ))
-      }
-      <a class="nav-support" href="/?donate" data-vault-open="100">Wesprzyj</a>
+  {/* "Antyfona" — the shared mobile overlay (nave-menu.css). Self-contained: its own brand +
+      close, since .chrome.menu-open hides the bar's brand/toggle. Each link carries its
+      destination's Latin incipit, so the menu reads as the site's antiphon. */}
+  <nav class="nave" id="navMenu" aria-label="Nawigacja główna">
+    <div class="nave-veil"></div>
+    <div class="nave-seam" aria-hidden="true"></div>
+    <div class="nave-spot" aria-hidden="true"></div>
+
+    <div class="nave-inner">
+      <div class="nave-top">
+        <a class="nave-brand" href="/" aria-label="VoctEnsemble — strona główna">
+          <span class="nave-brand-mark" aria-hidden="true"></span>
+          <span>VoctEnsemble</span>
+        </a>
+        <button class="nave-close" id="menuClose" type="button" aria-label="Zamknij menu">Zamknij</button>
+      </div>
+
+      <div class="nave-list">
+        <a class="voice" href="/" aria-current={current === "/" ? "page" : undefined}>
+          <span class="voice-lat">Introitus</span>
+          <span class="voice-pl">Główna</span>
+        </a>
+        <a class="voice" href="/o-nas" aria-current={current === "/o-nas" ? "page" : undefined}>
+          <span class="voice-lat">De nobis</span>
+          <span class="voice-pl">O nas</span>
+        </a>
+        <a class="voice" href="/koncerty" aria-current={current === "/koncerty" ? "page" : undefined}>
+          <span class="voice-lat">Via</span>
+          <span class="voice-pl">Koncerty</span>
+        </a>
+        <a class="voice" href="/kontakt" aria-current={current === "/kontakt" ? "page" : undefined}>
+          <span class="voice-lat">Scribe nobis</span>
+          <span class="voice-pl">Kontakt</span>
+        </a>
+      </div>
+
+      <div class="nave-foot">
+        <a class="nave-cta" href="/?donate" data-vault-open="100">Wesprzyj <em>· Sustinete nos</em></a>
+        <span class="nave-colophon">
+          <span class="nave-colophon-mark" aria-hidden="true"></span>
+          <em>Concerts Spirituels</em> · MMXXIV
+        </span>
+      </div>
     </div>
-    <button class="menu-close" id="menuClose" type="button" aria-label="Zamknij menu">✕</button>
   </nav>
 </header>
 
@@ -91,36 +123,14 @@ const links = [
   .nav-toggle::after { top: 10px; width: 15px; }
   .nav-toggle:hover::after { width: 26px; }
 
-  .nav-menu {
-    --menu-fg: var(--paper); --menu-bg: rgba(16, 15, 13, 0.94); --menu-line: rgba(244, 241, 233, 0.14);
-    position: absolute; inset: 0; z-index: 3;
-    display: flex; align-items: center;
-    padding: 0 max(22px, 5vw);
-    background: var(--menu-bg); color: var(--menu-fg);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
-    border-bottom: 1px solid var(--menu-line);
-    transform: translateX(100%); visibility: hidden;
-    transition: transform .5s var(--ease), background-color .5s var(--ease), color .5s var(--ease), visibility 0s linear .5s;
-  }
-  .chrome.menu-open .nav-menu { transform: none; visibility: visible; transition-delay: 0s; }
-  .chrome.is-solid .nav-menu { --menu-fg: var(--ink); --menu-bg: rgba(244, 241, 233, 0.97); --menu-line: rgba(22, 21, 20, 0.1); }
+  /* Bar clears when the "Antyfona" overlay (nave-menu.css) opens — it carries its own brand + close. */
   .chrome.menu-open .chrome-brand, .chrome.menu-open .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .25s var(--ease); }
-  .nav-menu-links { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow-x: auto; scrollbar-width: none; }
-  .nav-menu-links::-webkit-scrollbar { display: none; }
-  .nav-menu a { font-family: var(--mono); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--menu-fg); opacity: .8; white-space: nowrap; transition: opacity .3s var(--ease), color .3s var(--ease); }
-  .nav-menu a:hover { opacity: 1; }
-  .nav-menu a[aria-current="page"] { opacity: 1; color: var(--candle); }
-  .nav-menu .nav-support { color: var(--candle); opacity: 1; border: 1px solid var(--candle); border-radius: 999px; padding: 5px 12px; transition: background-color .3s var(--ease), color .3s var(--ease); }
-  .nav-menu .nav-support:hover { background: var(--candle); color: var(--menu-bg); }
-  .menu-close { flex-shrink: 0; margin-left: clamp(10px, 3vw, 18px); border: 0; background: transparent; color: var(--menu-fg); cursor: pointer; font-family: var(--mono); font-size: 16px; line-height: 1; padding: 6px 0 6px 4px; opacity: .55; transition: opacity .3s var(--ease); }
-  .menu-close:hover { opacity: 1; }
 
-  @media (max-width: 760px) {
+  /* 759.98 / 760 boundary matches nave-menu.css so no fractional viewport falls between
+     "hamburger shown" and "overlay available". */
+  @media (max-width: 759.98px) {
     .chrome-nav { display: none; }
     .nav-toggle { display: inline-flex; }
-  }
-  @media (min-width: 761px) {
-    .nav-menu { display: none; }
   }
 
   /* ── Dark-tone pages (koncerty) ─────────────────────────────────────────
@@ -144,11 +154,6 @@ const links = [
   }
   .chrome[data-tone="dark"].is-light::before { opacity: 0; }
   .chrome[data-tone="dark"].is-light .chrome-brand .brand-mark { background: var(--ink); }
-  .chrome[data-tone="dark"].is-light .nav-menu {
-    --menu-fg: var(--ink);
-    --menu-bg: rgba(244, 241, 233, 0.97);
-    --menu-line: rgba(22, 21, 20, 0.1);
-  }
 </style>
 
 <script>
@@ -166,21 +171,25 @@ const links = [
     const openMenu = () => {
       chrome()?.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");
+      document.body.classList.add("nav-open");
     };
     const closeMenu = () => {
       chrome()?.classList.remove("menu-open");
       toggle()?.setAttribute("aria-expanded", "false");
+      document.body.classList.remove("nav-open");
     };
 
     window.addEventListener("scroll", syncSolid, { passive: true });
     // Re-evaluate tone after each navigation (new page starts scrolled to top).
     document.addEventListener("astro:page-load", syncSolid);
+    // A navigation swap tears down the open overlay; drop the scroll lock with it.
+    document.addEventListener("astro:before-swap", closeMenu);
 
     document.addEventListener("click", (e) => {
       const t = e.target as Element | null;
       if (!t) return;
       if (t.closest("#navToggle")) openMenu();
-      else if (t.closest("#menuClose") || t.closest(".nav-menu a")) closeMenu();
+      else if (t.closest("#menuClose") || t.closest(".nave a")) closeMenu();
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape") closeMenu();

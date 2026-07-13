@@ -59,6 +59,60 @@
     color: rgba(244, 241, 233, 0.72);
   }
 
+  /* "Next concert" pill — renders only when a future-dated concert exists (see HeroSection).
+     A single standing invitation that gives the hero a present tense; opacity-only pulse. */
+  .hero-announce {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 30px;
+    padding: 9px 18px 9px 15px;
+    border: 1px solid rgba(232, 207, 144, 0.4);
+    border-radius: 999px;
+    background: rgba(8, 8, 7, 0.26);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.86);
+    text-decoration: none;
+    transition: border-color 0.35s var(--ease), color 0.35s var(--ease);
+  }
+  .hero-announce strong {
+    color: var(--candle);
+    font-weight: 400;
+  }
+  .hero-announce:hover,
+  .hero-announce:focus-visible {
+    border-color: var(--candle);
+    color: var(--paper);
+  }
+  .hero-announce-dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--candle);
+    animation: announcePulse 2.8s var(--ease-slow) infinite;
+  }
+  @keyframes announcePulse {
+    0%,
+    100% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-announce-dot {
+      animation: none;
+      opacity: 0.9;
+    }
+  }
+
   .hero-title {
     margin: 0;
     max-width: 1050px;
@@ -102,8 +156,15 @@
   .hero-strap-name {
     white-space: nowrap;
     color: var(--paper);
+    text-decoration: none;
     border-bottom: 1px solid rgba(244, 241, 233, 0.36);
     padding-bottom: 2px;
+    transition: color 0.35s var(--ease), border-color 0.35s var(--ease);
+  }
+  .hero-strap-name:hover,
+  .hero-strap-name:focus-visible {
+    color: var(--candle);
+    border-bottom-color: var(--candle);
   }
 
   .hero-rail {

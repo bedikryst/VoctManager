@@ -130,7 +130,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </p>
         <p class="intro-note reveal" data-d="3">
           Każdy wieczór ma osobną intencję. To współczesna forma dawnych
-          <em>Concerts Spirituels</em> — zejdź niżej i przejdź je po kolei, w stronę tego,
+          <em>Concerts Spirituels</em> — przejdź je po kolei, w stronę tego,
           który jeszcze się nie wydarzył.
         </p>
         <span class="scroll-cue reveal" data-d="4">Wejdź na drogę</span>
@@ -407,7 +407,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Intro hero */
   .intro { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }
   .intro-media { position: absolute; inset: 0; z-index: -2; }
-  .intro::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,.12) 38%, rgba(16,15,13,.82) 100%), linear-gradient(72deg, rgba(8,8,7,.66) 0%, rgba(8,8,7,.18) 44%, transparent 70%); }
+  /* Photo keeps full brightness; text pocket (bottom-left) deepened via the diagonal (see o-nas). */
+  .intro::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,.12) 38%, rgba(16,15,13,.84) 100%), linear-gradient(72deg, rgba(8,8,7,.76) 0%, rgba(8,8,7,.24) 46%, transparent 72%); }
   .intro-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
   .intro h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(50px, 9vw, 130px); letter-spacing: -.01em; margin: 18px 0 0; }
   .intro h1 em { color: var(--candle); }

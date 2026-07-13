@@ -144,7 +144,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           w&nbsp;Tyńcu — każdy z&nbsp;tych wieczorów zaczął się od czyjegoś zaproszenia.
           Następne może być Twoje.
         </p>
-        <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
+        <span class="scroll-cue reveal" data-d="3">Wybierz drzwi</span>
       </div>
     </section>
 
@@ -324,7 +324,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Hero */
   .hero { position: relative; min-height: 84svh; display: flex; align-items: flex-end; padding: 0 var(--gutter) clamp(54px, 8vw, 92px); color: var(--paper); overflow: hidden; isolation: isolate; }
   .hero-media { position: absolute; inset: 0; z-index: -2; }
-  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.46) 0%, rgba(8,8,7,.12) 40%, rgba(8,8,7,.72) 100%), linear-gradient(72deg, rgba(8,8,7,.6) 0%, rgba(8,8,7,.16) 44%, transparent 70%); }
+  /* Photo keeps full brightness; text pocket (bottom-left) deepened via the diagonal (see o-nas). */
+  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.48) 0%, rgba(8,8,7,.12) 40%, rgba(8,8,7,.8) 100%), linear-gradient(72deg, rgba(8,8,7,.72) 0%, rgba(8,8,7,.22) 46%, transparent 72%); }
   .hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; padding: 0; }
   .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(48px, 8.4vw, 116px); letter-spacing: -.01em; margin: 16px 0 0; }
   .hero h1 em { color: var(--candle); }

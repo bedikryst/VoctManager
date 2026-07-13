@@ -2,18 +2,31 @@
 /**
  * @file HeroSection.astro
  * @description Opening threshold — full-bleed sacred fresco via <BleedImage> (art-directed
- *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the kicker → h1 → response → strap braid;
- *  hero-rail holds the CTA anchors (the "Zobacz i usłysz" reel + koncerty) + downward cue. The
+ *  AVIF/WebP, Ken Burns, parallax). hero-grid holds the optional "next concert" pill → kicker
+ *  → h1 → response → strap braid; hero-rail holds the CTA anchors (the "Zobacz i usłysz" reel +
+ *  koncerty) + downward cue. The
  *  kinetic "breath" on .hero-title is driven
  *  by scripts/landing.ts; the dark dimming filter is applied in landing.css (.hero-media .bleed img).
  * @architecture Astro islands 2026
  * @module components/landing/HeroSection
  */
+import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
 import { MODAL_VIDEO } from "../../data/landing/video";
 
 const hero = bleedPair("hero-landing");
+
+// Announcement pill — dormant by design. A standing "next concert" line shows ONLY when
+// concerts.yaml carries an entry whose `date` is still in the future; every current entry is
+// past (EventCompleted), so nothing renders today. Append a future-dated concert and the
+// pill lights up at build time — no markup change needed. This is the "pulse" the hero
+// otherwise lacks: the whole site speaks in the eternal past tense until a date lands here.
+const now = Date.now();
+const upcoming = (await getCollection("concerts"))
+  .map((c) => ({ c, t: c.data.date ? new Date(c.data.date).getTime() : Number.NaN }))
+  .filter((x) => !Number.isNaN(x.t) && x.t >= now)
+  .sort((a, b) => a.t - b.t)[0]?.c;
 ---
 
 <section class="hero" id="top" aria-label="VoctEnsemble">
@@ -23,6 +36,15 @@ const hero = bleedPair("hero-landing");
 
   <div class="hero-inner">
     <div class="hero-grid">
+      {upcoming && (
+        <a
+          class="hero-announce intro-stage plausible-event-name=hero+najblizej"
+          href={upcoming.data.hasPage ? `/koncerty/${upcoming.id}` : "/koncerty"}
+        >
+          <span class="hero-announce-dot" aria-hidden="true"></span>
+          <span>Najbliżej — <strong>{upcoming.data.title}</strong> · {upcoming.data.viaDate}</span>
+        </a>
+      )}
       <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>
       <h1 class="hero-title">
         <span class="intro-stage s2">Z ciszy</span>
@@ -34,14 +56,15 @@ const hero = bleedPair("hero-landing");
       <p class="hero-strap intro-stage s5">
         Koncert jako próg: wchodzi się z ulicy, wychodzi się cichszym. Cykl Koncertów
         Duchowych prowadzi
-        <span class="hero-strap-name">Florent&nbsp;de&nbsp;Bazelaire</span>.
+        <a class="hero-strap-name" href="#dyrygent">Florent&nbsp;de&nbsp;Bazelaire</a>.
       </p>
     </div>
 
     <div class="hero-rail intro-stage s6">
       {/* The hero's one standing invitation is the experience itself: the concert video
           projected in the lightbox. The donation line moved to movement III (Sustinete nos),
-          where the asks concentrate; when a concert date lands, an announcement pill returns here. */}
+          where the asks concentrate; the "next concert" pill (top of hero-grid) is what lights
+          up when a real date lands. */}
       <div class="hero-actions">
         <a
           class="primary-link plausible-event-name=hero+wideo"

@@ -180,15 +180,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="hero-inner">
         <p class="eyebrow reveal"><span class="lat">De nobis</span>  ·  O nas</p>
         <h1>
-          <span class="line"><span class="reveal">Głosy, które</span></span>
-          <span class="line"><span class="reveal" data-d="1">uczą się <em>ciszy.</em></span></span>
+          <span class="line"><span class="reveal">Zaczęło się</span></span>
+          <span class="line"><span class="reveal" data-d="1">od <em>tęsknoty.</em></span></span>
         </h1>
         <p class="hero-lede reveal" data-d="2">
           {nbsp(
-            "VoctEnsemble to krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Muzyką sakralną zgłębiamy człowieczeństwo — czujni na współczesne tragedie i nadzieje świata.",
+            "VoctEnsemble — krakowska formacja wokalna i zespół-rezydent Fundacji VoctFoundation. Zaczynamy od trzech pytań: skąd się wzięliśmy, co robimy i co śpiewamy.",
           )}
         </p>
-        <span class="scroll-cue reveal" data-d="3">Zejdź niżej</span>
+        <span class="scroll-cue reveal" data-d="3">Przeczytaj list</span>
       </div>
     </section>
 
@@ -534,7 +534,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Hero */
   .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 var(--gutter) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }
   .hero-media { position: absolute; inset: 0; z-index: -2; }
-  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.42) 0%, rgba(8,8,7,.1) 38%, rgba(8,8,7,.72) 100%), linear-gradient(72deg, rgba(8,8,7,.6) 0%, rgba(8,8,7,.16) 44%, transparent 70%); }
+  /* Photo keeps its full brightness; the text pocket (bottom-left) is deepened purely by the
+     72deg diagonal so it reads as light falloff, not a flat scrim. Top-right stays luminous. */
+  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.44) 0%, rgba(8,8,7,.1) 38%, rgba(8,8,7,.8) 100%), linear-gradient(72deg, rgba(8,8,7,.72) 0%, rgba(8,8,7,.22) 46%, transparent 72%); }
   .hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
   .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(54px, 10vw, 138px); letter-spacing: -.01em; margin: 18px 0 0; }
   .hero h1 em { color: var(--candle); }
