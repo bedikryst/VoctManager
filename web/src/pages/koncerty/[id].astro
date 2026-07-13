@@ -23,7 +23,10 @@ import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
+import { VideoLightbox } from "../../islands/landing/VideoLightbox";
 import "../../styles/vault.css";
+import "../../styles/vplayer.css";
+import "../../styles/landing/12-vox.css";
 
 export async function getStaticPaths() {
   const concerts = await getCollection("concerts", ({ data }) => data.hasPage);
@@ -58,6 +61,30 @@ for (const g of c.gallery) {
 
 const hasTour = c.dates.length > 0;
 const hasText = c.program.some((p) => p.text || p.textPl);
+
+// ── Concert film: still for the trigger + the projection lightbox. Falls back to the hero bg
+// when no dedicated poster is set. The optimized src feeds VideoLightbox (its `poster` prop
+// applies because our src === MODAL_VIDEO.src — see VideoLightbox).
+const filmPoster = c.video ? (photoOptional(c.video.poster ?? "") ?? bg.desktop) : undefined;
+const filmPosterSrc = filmPoster
+  ? (await getImage({ src: filmPoster, width: 1600, format: "webp" })).src
+  : undefined;
+
+// ── Programme grouped into movements (the salvation-history acts). Numbering runs continuously
+// across acts (the bis carries "bis"); consecutive works sharing a movement id sit under one act
+// header. A concert with no `movements` collapses to a single unlabelled group → the flat list.
+type Movement = (typeof c.movements)[number];
+type ProgItem = (typeof c.program)[number];
+const movementsById = new Map(c.movements.map((m) => [m.id, m]));
+const programGroups: { movement?: Movement; items: { p: ProgItem; num: string }[] }[] = [];
+let runningNum = 0;
+for (const p of c.program) {
+  const num = p.bis ? "bis" : String(++runningNum).padStart(2, "0");
+  const mv = p.movement ? movementsById.get(p.movement) : undefined;
+  const tail = programGroups.at(-1);
+  if (tail && tail.movement?.id === mv?.id) tail.items.push({ p, num });
+  else programGroups.push({ movement: mv, items: [{ p, num }] });
+}
 
 const title = `${c.title} — Koncerty Duchowe · VoctEnsemble`;
 const description = c.essence;
@@ -146,6 +173,22 @@ const plDate = (iso: string): string =>
       </div>
     </section>
 
+    {/* ── Prologue: the threshold of the evening — draws the reader across the doorway
+          into the experience before the reflection. ─────────────────────────────── */}
+    {c.prologue && (
+      <section class="kd-band kd-prologue" aria-label="Próg wieczoru">
+        <div class="kd-wrap kd-narrow">
+          <span class="kd-prologue-mark" aria-hidden="true"></span>
+          <span class="kd-section-label micro reveal">
+            <span class="lat">Ante concentum</span>
+            <span class="kd-dot" aria-hidden="true">·</span>
+            <span>Próg wieczoru</span>
+          </span>
+          <p class="kd-prologue-text reveal" data-d="1">{c.prologue}</p>
+        </div>
+      </section>
+    )}
+
     {/* ── Tour dates (multi-city). Single-date concerts keep the date in `meta`. ─ */}
     {hasTour && (
       <section class="kd-band kd-tour" aria-label="Wykonania">
@@ -223,11 +266,33 @@ const plDate = (iso: string): string =>
           </header>
 
           <ol class="kd-program">
-            {c.program.map((p, i) => (
+            {programGroups.map((grp) => (
               <>
-                <li class:list={["kd-program-item", "reveal", { "is-bis": p.bis }]}>
-                  <span class="kd-program-num micro">{p.bis ? "bis" : String(i + 1).padStart(2, "0")}</span>
-                  <div class="kd-program-body">
+                {grp.movement?.interlude && (
+                  <li class="kd-interlude reveal" aria-label="Antyfona">
+                    <p class="kd-interlude-lat">{grp.movement.interlude.lat}</p>
+                    {grp.movement.interlude.pl && (
+                      <p class="kd-interlude-pl">{grp.movement.interlude.pl}</p>
+                    )}
+                    {grp.movement.interlude.ref && (
+                      <span class="kd-interlude-ref micro">{grp.movement.interlude.ref}</span>
+                    )}
+                  </li>
+                )}
+                {grp.movement && (
+                  <li class="kd-movement reveal">
+                    <h3 class="kd-movement-head">
+                      <span class="kd-movement-lat">{grp.movement.lat}</span>
+                      <span class="kd-movement-pl">{grp.movement.pl}</span>
+                    </h3>
+                    {grp.movement.line && <p class="kd-movement-line">{grp.movement.line}</p>}
+                  </li>
+                )}
+                {grp.items.map(({ p, num }) => (
+                  <>
+                    <li class:list={["kd-program-item", "reveal", { "is-bis": p.bis }]}>
+                      <span class="kd-program-num micro">{num}</span>
+                      <div class="kd-program-body">
                     <p class="kd-program-composer">
                       <span class="kd-program-composer-name">{p.composer}</span>
                       {p.years && <span class="kd-program-years"> · {p.years}</span>}
@@ -263,13 +328,15 @@ const plDate = (iso: string): string =>
                         </div>
                       </details>
                     )}
-                  </div>
-                </li>
-                {p.clasp && (
-                  <li class="kd-clasp" aria-hidden="true">
-                    <span>{p.clasp}</span>
-                  </li>
-                )}
+                      </div>
+                    </li>
+                    {p.clasp && (
+                      <li class="kd-clasp" aria-hidden="true">
+                        <span>{p.clasp}</span>
+                      </li>
+                    )}
+                  </>
+                ))}
               </>
             ))}
           </ol>
@@ -308,6 +375,45 @@ const plDate = (iso: string): string =>
               {c.pullQuote.about && <span class="kd-cite-about micro">{c.pullQuote.about}</span>}
             </cite>
           </blockquote>
+        </div>
+      </section>
+    )}
+
+    {/* ── Film: selected fragments of the evening. Poster + click → dark projection
+          lightbox (native href to the MP4 = no-JS fallback). ──────────────────── */}
+    {c.video && (
+      <section class="kd-band kd-film" aria-label="Zapis wieczoru">
+        <div class="kd-wrap">
+          <span class="kd-section-label micro reveal">
+            <span class="lat">Imago viva</span>
+            <span class="kd-dot" aria-hidden="true">·</span>
+            <span>Zapis wieczoru</span>
+          </span>
+          <a
+            class="kd-film-stage reveal"
+            data-d="1"
+            href={c.video.src}
+            data-video-open
+            data-video-caption={c.video.caption}
+            aria-label="Odtwórz wideo z koncertu"
+          >
+            {filmPoster && (
+              <Image
+                class="kd-film-poster"
+                src={filmPoster}
+                widths={[720, 1080, 1600]}
+                sizes="(max-width: 1180px) 92vw, 1120px"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            )}
+            <span class="kd-film-veil" aria-hidden="true"></span>
+            <span class="kd-film-play" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+            </span>
+            <span class="kd-film-cue micro">Obejrzyj — wybrane fragmenty, ok. 4 min</span>
+          </a>
         </div>
       </section>
     )}
@@ -393,8 +499,35 @@ const plDate = (iso: string): string =>
   <SiteFooter />
 
   <VaultIsland client:idle />
+  {c.video && <VideoLightbox poster={filmPosterSrc ?? ""} client:idle />}
   <script>
     import "../../scripts/vault-triggers.ts";
+  </script>
+
+  {/* Projection lightbox trigger — mirrors the landing's `[data-video-open]` delegation:
+      intercept only once VideoLightbox has hydrated (`__voctVideoReady`); before that the
+      anchor's native href (the MP4 itself) is the fallback. Bound once, survives swaps. */}
+  <script>
+    interface VideoWin { __voctKdVideo?: boolean; __voctVideoReady?: boolean }
+    const w = window as unknown as VideoWin;
+    if (!w.__voctKdVideo) {
+      w.__voctKdVideo = true;
+      document.addEventListener("click", (event) => {
+        const target = event.target as Element | null;
+        const trigger = target?.closest?.("[data-video-open]");
+        if (!trigger) return;
+        if (!w.__voctVideoReady) return; // pre-hydration: let the native href serve the file
+        event.preventDefault();
+        window.dispatchEvent(
+          new CustomEvent("voct:open-video", {
+            detail: {
+              src: trigger.getAttribute("href") ?? undefined,
+              caption: (trigger as HTMLElement).dataset.videoCaption,
+            },
+          }),
+        );
+      });
+    }
   </script>
 
   {/* Chrome tone: flip to the paper treatment while a parchment section sits under the bar
@@ -427,6 +560,9 @@ const plDate = (iso: string): string =>
   /* ── Reset on this page only ────────────────────────────────────────────── */
   .page-koncert-detail { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
   main { display: block; }
+  /* Projection lightbox scroll-lock — the landing's rule is scoped to body.theme-marketing,
+     which this page's body class doesn't carry; re-declare for our body. */
+  :global(body.page-koncert-detail.video-open) { overflow: hidden; }
 
   /* ── Hero ──────────────────────────────────────────────────────────────── */
   .kd-hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(72px, 10vw, 128px); color: var(--paper); overflow: hidden; isolation: isolate; }
@@ -480,6 +616,13 @@ const plDate = (iso: string): string =>
   .kd-reflection-attrib { margin: clamp(30px, 4vw, 48px) 0 0; color: rgba(244, 241, 233, .56); font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
   .kd-reflection-note { margin: clamp(28px, 4vw, 44px) 0 0; max-width: 640px; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 19px); line-height: 1.62; color: rgba(244, 241, 233, .62); }
 
+  /* ── Prologue: the threshold beat (centered, hushed — the doorway) ──────── */
+  .kd-prologue { background: var(--night, #100f0d); color: var(--paper); text-align: center; padding-top: clamp(64px, 9vw, 116px); padding-bottom: clamp(64px, 9vw, 116px); }
+  .kd-prologue .kd-narrow { margin-inline: auto; }
+  .kd-prologue .kd-section-label { color: var(--candle); margin-bottom: 0; }
+  .kd-prologue-mark { display: block; width: 22px; height: 50px; margin: 0 auto clamp(24px, 3vw, 34px); background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .82; }
+  .kd-prologue-text { margin: clamp(20px, 3vw, 30px) auto 0; max-width: 58ch; font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 2vw, 27px); line-height: 1.56; color: rgba(244, 241, 233, .84); letter-spacing: -.003em; }
+
   /* ── Program ───────────────────────────────────────────────────────────── */
   .kd-program-band { color: var(--ink); }
   /* Obsada colophon — role → name pairs beneath the founder's title. */
@@ -489,6 +632,29 @@ const plDate = (iso: string): string =>
   .kd-credit dd { margin: 0; font-family: var(--serif); font-size: clamp(17px, 1.5vw, 20px); color: var(--ink); }
   /* Dramaturgy lede — why THIS order. Sets up the reading like a programme-book note. */
   .kd-program-arc { margin: clamp(30px, 4vw, 46px) 0 0; max-width: 62ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 23px); line-height: 1.6; color: var(--ink-soft, #34302b); letter-spacing: -.003em; padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--candle) 52%, transparent); }
+
+  /* Movement / act header — the salvation-history acts the work-list travels through. Full-width
+     row inside the <ol>; the strong rule above reads as an act divider. The first item under an
+     act drops its own hairline so the act header + work don't stack two lines. */
+  .kd-movement { list-style: none; padding: clamp(46px, 5.5vw, 74px) 0 clamp(20px, 3vw, 44px); border-top: 1px solid var(--line-strong, rgba(22,21,20,.34)); margin-top: clamp(16px, 2vw, 24px); }
+  .kd-movement:first-child { border-top: 0; margin-top: 0; padding-top: clamp(4px, 1vw, 12px); }
+  .kd-movement + .kd-program-item { border-top: 0; padding-top: 0; }
+  .kd-movement-head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
+  .kd-movement-lat { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(27px, 3.1vw, 42px); line-height: 1; letter-spacing: -.01em; color: var(--candle); }
+  .kd-movement-pl { font-family: var(--mono); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+  .kd-movement-line { margin: 14px 0 0; max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.5; color: var(--ink-soft, #34302b); }
+
+  /* Interlude — a full-bleed dark scripture beat at a dramatic hinge. Breaks out of the
+     parchment program to the viewport edges (no transform, so `.reveal` translateY is free),
+     bringing the night nave back mid-reading. */
+  .kd-interlude { list-style: none; width: 100vw; margin-inline: calc(50% - 50vw); margin-block: clamp(48px, 6vw, 92px); padding: clamp(76px, 11vw, 148px) max(28px, 7vw); background: var(--night, #100f0d); color: var(--paper); text-align: center; }
+  .kd-interlude::before { content: ""; display: block; width: 34px; height: 1px; margin: 0 auto clamp(28px, 4vw, 42px); background: color-mix(in srgb, var(--candle) 72%, transparent); }
+  .kd-interlude-lat { margin: 0 auto; max-width: 22ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(26px, 4vw, 52px); line-height: 1.2; letter-spacing: -.01em; color: var(--candle); }
+  .kd-interlude-pl { margin: clamp(18px, 2.5vw, 28px) auto 0; max-width: 36ch; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.6vw, 21px); line-height: 1.5; color: rgba(244, 241, 233, .74); }
+  .kd-interlude-ref { display: block; margin-top: clamp(20px, 3vw, 32px); font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .5); }
+  /* An act header straight after the interlude drops its own rule + top gap (the dark beat
+     already gave the break). */
+  .kd-interlude + .kd-movement { border-top: 0; margin-top: 0; padding-top: clamp(6px, 1.5vw, 16px); }
 
   .kd-program { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line, rgba(22,21,20,.16)); }
   .kd-program-item { display: grid; grid-template-columns: max-content 1fr; gap: clamp(20px, 3vw, 44px); padding: clamp(28px, 4vw, 44px) 0; border-top: 1px solid var(--line, rgba(22,21,20,.16)); align-items: start; }
@@ -561,6 +727,22 @@ const plDate = (iso: string): string =>
   .kd-shot { margin: 0; }
   .kd-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244,241,233,.12); box-shadow: 0 40px 90px -46px rgba(0,0,0,.9); }
   .kd-shot figcaption { margin-top: 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244,241,233,.56); }
+
+  /* ── Film: poster + play → dark projection lightbox ────────────────────── */
+  .kd-film { background: var(--dark, #080807); color: var(--paper); }
+  .kd-film .kd-section-label { margin-bottom: clamp(32px, 4vw, 52px); }
+  .kd-film-stage { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: #000; cursor: pointer; isolation: isolate; box-shadow: 0 50px 120px -54px rgba(0,0,0,.92); }
+  .kd-film-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1.4s var(--ease-slow, ease); }
+  .kd-film-stage:hover .kd-film-poster { transform: scale(1.03); }
+  .kd-film-veil { position: absolute; inset: 0; background: radial-gradient(58% 58% at 50% 46%, rgba(8,8,7,.16) 0%, rgba(8,8,7,.66) 100%); transition: background .5s var(--ease, ease); }
+  .kd-film-stage:hover .kd-film-veil { background: radial-gradient(58% 58% at 50% 46%, rgba(8,8,7,.06) 0%, rgba(8,8,7,.5) 100%); }
+  .kd-film-play { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: clamp(64px, 7vw, 90px); height: clamp(64px, 7vw, 90px); border-radius: 50%; display: grid; place-items: center; color: var(--paper); border: 1px solid rgba(244,241,233,.5); background: rgba(8,8,7,.28); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); transition: transform .5s var(--ease, ease), border-color .5s var(--ease, ease), color .5s var(--ease, ease); }
+  .kd-film-play svg { width: 42%; height: 42%; margin-left: 6%; }
+  .kd-film-stage:hover .kd-film-play { transform: translate(-50%, -50%) scale(1.07); border-color: var(--candle); color: var(--candle); }
+  .kd-film-cue { position: absolute; left: 0; right: 0; bottom: clamp(16px, 2.4vw, 28px); text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.84); }
+  @media (prefers-reduced-motion: reduce) {
+    .kd-film-poster, .kd-film-stage:hover .kd-film-poster { transition: none; transform: none; }
+  }
 
   /* ── Coda: poster keepsake + Via nav ───────────────────────────────────── */
   .kd-coda { background: var(--dark, #080807); color: var(--paper); padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }

@@ -64,6 +64,34 @@ const concerts = defineCollection({
         opens the programme ("kolejność jest częścią kompozycji"), grounded in the sequence
         itself, never in an invented quote. Rendered above the work list. */
     programArc: z.string().optional(),
+    /** The threshold of the evening — a short scene-setting beat rendered as a dark band right
+        after the hero (place, hour, the rite of entry). Draws the reader across the doorway into
+        the experience before the reflection. Grounded, never staged detail we can't attest. */
+    prologue: z.string().optional(),
+    /** Movements of the programme — the salvation-history acts the work-list is grouped into.
+        Each program item names its movement `id`; the page emits an act header (Latin · Polish
+        + one guiding line) whenever the movement changes. Empty ⇒ a flat list (back-compatible). */
+    movements: z
+      .array(
+        z.object({
+          id: z.string(),
+          lat: z.string(),
+          pl: z.string(),
+          line: z.string().optional(),
+          /** A full-bleed dark scripture beat rendered BEFORE this act — the night nave
+              returning mid-reading at a dramatic hinge. Use sparingly (earned pivots only). */
+          interlude: z
+            .object({ lat: z.string(), pl: z.string().optional(), ref: z.string().optional() })
+            .optional(),
+        }),
+      )
+      .default([]),
+    /** Self-hosted concert film (selected fragments), opened in the shared dark projection
+        lightbox on click — the native href (the MP4 itself) is the no-JS fallback. `src` is a
+        public path under /video; `poster` is a photo() base name (falls back to the hero bg). */
+    video: z
+      .object({ src: z.string(), caption: z.string().optional(), poster: z.string().optional() })
+      .optional(),
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
         who gives the opening word, light direction…). Rendered as a quiet colophon block. */
     credits: z.array(z.object({ role: z.string(), name: z.string() })).default([]),
@@ -114,6 +142,9 @@ const concerts = defineCollection({
           work: z.string(),
           /** Year of composition. */
           year: z.string().optional(),
+          /** Movement `id` this work belongs to (see concert-level `movements`). Consecutive
+              items sharing an id sit under one act header. */
+          movement: z.string().optional(),
           /** Vocal scoring as printed in the score, e.g. "a 8", "a12: SAATBB + SAATBB". */
           voicing: z.string().optional(),
           /** Duration as printed, e.g. "10′". */

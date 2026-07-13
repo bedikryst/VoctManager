@@ -27,6 +27,10 @@
   poster: poster-wcielenie
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
+  video:
+    src: /video/landing-modal.mp4
+    caption: 'Wybrane fragmenty koncertu „Kontemplacja Wcielenia" · VoctEnsemble 2024'
+    poster: kd-wcielenie-5
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
   hasPage: true
   programLede: "Dziesięć spojrzeń — i bis"
@@ -36,6 +40,45 @@
     Potem kontemplacja maryjna — i nagły cień: kołysanka matki nad dzieckiem skazanym przez
     Heroda. Domyka ją kantyk Symeona w świątyni — „moje oczy ujrzały Twoje zbawienie" — czyli
     spełnienie obietnicy, od której program się zaczął; stąd już tylko uwielbienie i radość bisu.
+  prologue: >-
+    Dwudziesty stycznia, wieczór, Bazylika Najświętszego Serca Pana Jezusa w Krakowie —
+    dwadzieścia dni po tym, jak zespół w ogóle powstał. Zanim zabrzmi pierwszy dźwięk,
+    o. Jarek Naliwajko SJ wprowadza w tajemnicę Wcielenia. Potem cichnie gwar i z zimowego
+    półmroku podnosi się różdżka Sandströma.
+  movements:
+    - id: prophetia
+      lat: Prophetia
+      pl: Zapowiedź
+      line: >-
+        Zanim padnie słowo o Dziecku, brzmi obietnica: różdżka z pnia Jessego, krzyk pasterzy
+        w nocy, adwentowy róg obwieszczający nadejście.
+    - id: nativitas
+      lat: Nativitas
+      pl: Narodziny
+      line: >-
+        Dziecko przychodzi. Wokół Niego zbiera się kontemplacja Matki — od renesansowej
+        Hiszpanii po polską kolędę.
+    - id: umbra
+      lat: Umbra
+      pl: Cień
+      interlude:
+        lat: "Vox in Rama audita est, ploratus et ululatus: Rachel plorans filios suos."
+        pl: "W Rama słychać lament i wielki płacz: Rachel opłakuje swoje dzieci."
+        ref: "Jr 31, 15 · Mt 2, 18"
+      line: >-
+        Tuż po narodzinach pada cień: kołysanka matki nad dzieckiem, które Herod skazał
+        na śmierć.
+    - id: impletio
+      lat: Impletio
+      pl: Spełnienie
+      line: >-
+        W świątyni Symeon bierze Dziecko na ręce — „moje oczy ujrzały Twoje zbawienie".
+        Obietnica z początku wieczoru dopełnia się.
+    - id: laus
+      lat: Laus
+      pl: Uwielbienie
+      line: >-
+        Zostaje już tylko nowa pieśń i radość: Chrystus się narodził.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
     - { role: "Słowo wprowadzające", name: "o. Jarek Naliwajko SJ" }
@@ -72,6 +115,7 @@
     - composer: "Jan Sandström"
       years: "1942–2019"
       work: "Es ist ein Ros' entsprungen"
+      movement: prophetia
       year: "1990"
       voicing: "a 8 + kwartet"
       note: >-
@@ -100,6 +144,7 @@
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "Le cri des bergers"
+      movement: prophetia
       year: "2004"
       voicing: "a 12"
       note: >-
@@ -112,6 +157,7 @@
     - composer: "Jacob Handl (Gallus)"
       years: "1550–1591"
       work: "Canite tuba"
+      movement: prophetia
       year: "1590"
       voicing: "a 5 · TTTBB"
       note: >-
@@ -138,6 +184,7 @@
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "A Child is born"
+      movement: nativitas
       year: "2001"
       voicing: "a 4"
       note: >-
@@ -147,6 +194,7 @@
     - composer: "Tomás Luis de Victoria"
       years: "1548–1611"
       work: "Alma Redemptoris Mater"
+      movement: nativitas
       year: "1581"
       voicing: "a 8"
       note: >-
@@ -158,6 +206,7 @@
     - composer: "Krzysztof Penderecki"
       years: "1933–2020"
       work: "O gloriosa Virginum"
+      movement: nativitas
       year: "2009"
       voicing: "a 8/10"
       note: >-
@@ -168,6 +217,7 @@
       inscriptioPl: "O najchwalebniejsza z dziewic"
     - composer: "Mariusz Kramarz"
       work: "Gdy śliczna Panna"
+      movement: nativitas
       voicing: "a 4"
       note: >-
         Polska kolęda w opracowaniu Mariusza Kramarza — rodzimy głos w tym międzynarodowym
@@ -176,6 +226,7 @@
     - composer: "Philip Stopford"
       years: "ur. 1977"
       work: "Lully, Lullay"
+      movement: umbra
       year: "2008"
       voicing: "a 4"
       note: >-
@@ -188,6 +239,7 @@
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "Nunc dimittis"
+      movement: impletio
       year: "2001"
       note: >-
         Kantyk Symeona z Ofiarowania w świątyni: „moje oczy ujrzały Twoje zbawienie". U Pärta,
@@ -213,6 +265,7 @@
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
       work: "Cantate Domino"
+      movement: laus
       year: "1620"
       voicing: "SSATBB"
       note: >-
@@ -224,6 +277,7 @@
       inscriptioRef: "Ps 98 (97)"
     - composer: "Anonim / aranż. Brian Kay"
       work: "Gaudete"
+      movement: laus
       year: "XVI w."
       voicing: "SATTBB"
       note: >-
