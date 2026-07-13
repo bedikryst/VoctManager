@@ -18,8 +18,15 @@
       gap: 0;
     }
 
+    /* Full-bleed band. The width must be DEFINITE (so aspect-ratio derives the height, not
+       the reverse — an auto width shrinks left once max-height binds). But width:100% is the
+       COLUMN width (viewport − 2·gutter); with margin-inline:-gutter that only bleeds the LEFT
+       edge, leaving the box a gutter short on the right — the photo hugs left. The box must be
+       column + both gutters = the full viewport, so both negative margins are absorbed and it
+       stays centred at every ratio. */
     .director-dark .portrait {
       margin-inline: calc(-1 * var(--gutter));
+      width: calc(100% + 2 * var(--gutter));
       aspect-ratio: 4 / 5;
       max-height: 60svh;
     }
@@ -59,10 +66,15 @@
       margin-top: 44px;
     }
 
+    /* start, not baseline: with a 44px numeral and a 10px mono gloss, baseline alignment
+       forced the label's first baseline down onto the numeral's baseline — the gloss sat
+       ~24px too low. Top-align both, then nudge the label down by its own leading so its
+       cap sits on the numeral's cap line (optical, not baseline). The numeral column is
+       capped so a wide value ("VII wieków") can't starve the gloss to a 4-line sliver. */
     .fact {
-      grid-template-columns: minmax(82px, auto) 1fr;
-      align-items: baseline;
-      gap: 20px;
+      grid-template-columns: minmax(72px, max-content) 1fr;
+      align-items: start;
+      gap: 18px;
       padding: 18px 0;
       border-top: 1px solid rgba(244, 241, 233, 0.16);
     }
@@ -73,7 +85,11 @@
     }
 
     .fact-num {
-      font-size: clamp(32px, 9vw, 44px);
+      font-size: clamp(30px, 8vw, 40px);
+    }
+
+    .fact-label {
+      padding-top: 0.5em;
     }
 
     /* ── Final support · readable ledger + honest tap targets ─────────────────
@@ -145,5 +161,86 @@
 
     .silence-ornament {
       width: clamp(120px, 32vw, 160px);
+    }
+  }
+
+  /* ── Footer · centred inscription (Faza 4) ────────────────────────────────
+     On the phone the diptych collapses to one narrow column and the mixed
+     left-aligned labels/lists/flex-rows read as ragged. As "Inscriptio finalis"
+     the whole closing chapter is centred — Sygnał (clock), Fundatio (mark,
+     Consilium, Corpus, Vox) and the colophon — so it settles as one plate. */
+  @media (max-width: 640px) {
+    .site-footer-inner {
+      text-align: center;
+    }
+
+    .footer-col {
+      justify-items: center;
+    }
+
+    /* The hairline-topped label keeps its max-content rule but centres over the column. */
+    .footer-col-label {
+      width: max-content;
+      margin-inline: auto;
+    }
+
+    .footer-signal-block {
+      justify-items: center;
+    }
+
+    .footer-signal-hora-row,
+    .footer-signal-tempus-row {
+      justify-content: center;
+    }
+
+    .footer-col-foundation .footer-col-body,
+    .foundation-mark,
+    .foundation-stanza {
+      justify-items: center;
+    }
+
+    .foundation-legal {
+      justify-content: center;
+    }
+
+    .foundation-consilium-list,
+    .foundation-corpus-list {
+      justify-items: center;
+    }
+
+    .foundation-vox-list {
+      justify-content: center;
+    }
+
+    .site-footer-colophon {
+      justify-items: center;
+    }
+
+    .footer-colophon-fonts,
+    .footer-colophon-signature {
+      justify-content: center;
+    }
+
+    /* Override the earlier ≤640 patch that left-stacked the signature column. */
+    .footer-colophon-signature {
+      flex-direction: row;
+      align-items: baseline;
+    }
+  }
+
+  /* ── Hero CTAs · hold the side-by-side pair on the narrowest phones ────────
+     "Zobacz i usłysz" + "Koncerty Duchowe" read best on one line; below ~376px
+     the 11px/0.12em pair wrapped into an awkward stack. A gentle step down in
+     size, tracking and gap keeps them paired down to ~320px without shouting. */
+  @media (max-width: 400px) {
+    .hero-actions {
+      gap: 14px;
+    }
+
+    .hero-actions .primary-link,
+    .hero-actions .secondary-link {
+      font-size: 10px;
+      letter-spacing: 0.07em;
+      gap: 8px;
     }
   }

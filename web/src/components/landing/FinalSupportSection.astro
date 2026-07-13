@@ -26,16 +26,21 @@ const ROWS = [
   </div>
   <div class="section">
     <div class="final-grid">
-      <div class="final-copy reveal">
-        <div class="micro">Patronat · darowizna · partnerstwo</div>
-        <h2>Niech muzyka ma swoje miejsce.</h2>
-        <p>
-          Następne wybrzmienia powstaną z darowizn — od światła w nawie po partytury
-          na pulpitach. Dołącz jako darczyńca lub mecenas, albo zaproś VoctEnsemble
-          do siebie: śpiewamy koncerty i liturgie, od mszy ślubnych po kościelne
-          jubileusze.
-        </p>
-        <div class="final-contact">
+      {/* Each block is its own .reveal (not one column-sized block) so the entrance reads
+          element-by-element as you scroll — the granular feel of the "Z drogi" register —
+          instead of a whole tall column popping in at once on the phone. */}
+      <div class="final-copy">
+        <div class="final-lede reveal">
+          <div class="micro">Patronat · darowizna · partnerstwo</div>
+          <h2>Niech muzyka ma swoje miejsce.</h2>
+          <p>
+            Następne wybrzmienia powstaną z darowizn — od światła w nawie po partytury
+            na pulpitach. Dołącz jako darczyńca lub mecenas, albo zaproś VoctEnsemble
+            do siebie: śpiewamy koncerty i liturgie, od mszy ślubnych po kościelne
+            jubileusze.
+          </p>
+        </div>
+        <div class="final-contact reveal">
           <span class="micro">Kontakt do kierownictwa artystycznego</span>
           <a
             class="final-contact-name plausible-event-name=florent+mail"
@@ -45,7 +50,7 @@ const ROWS = [
           </a>
           <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
         </div>
-        <div class="final-actions">
+        <div class="final-actions reveal">
           <a
             class="primary-link plausible-event-name=napisz+do+nas+dol"
             href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
@@ -63,17 +68,19 @@ const ROWS = [
         </div>
       </div>
 
-      <div class="donation-list reveal">
-        {
-          ROWS.map((row) => (
-            <div class="donation-row">
-              <strong>{row.amount}</strong>
-              <span>{row.text}</span>
-            </div>
-          ))
-        }
+      <div class="donation-list">
+        <div class="donation-rows reveal">
+          {
+            ROWS.map((row) => (
+              <div class="donation-row">
+                <strong>{row.amount}</strong>
+                <span>{row.text}</span>
+              </div>
+            ))
+          }
+        </div>
 
-        <div class="bank-card" id="przelew" aria-label="Dane do przelewu">
+        <div class="bank-card reveal" id="przelew" aria-label="Dane do przelewu">
           <div class="bank-row">
             <span class="currency">PLN</span>
             <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>

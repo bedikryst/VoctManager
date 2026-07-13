@@ -28,20 +28,25 @@ const FACTS = [
     <BleedImage desktop={ensemble.desktop} mobile={ensemble.mobile} alt="" position="center 32%" />
   </div>
   <div class="ensemble-inner section">
-    <div class="ensemble-copy reveal">
-      <div class="micro">Skąd się wzięliśmy?</div>
-      <h2>Zaczęło się<br />od tęsknoty.</h2>
-      <p class="ensemble-origin">
+    {/* Each block is its own .reveal (not one column-sized block) so it enters
+        element-by-element as you scroll — the granular register feel of "Z drogi" —
+        instead of the whole copy popping in at once on the phone. */}
+    <div class="ensemble-copy">
+      <div class="ensemble-lede reveal">
+        <div class="micro">Skąd się wzięliśmy?</div>
+        <h2>Zaczęło się<br />od tęsknoty.</h2>
+      </div>
+      <p class="ensemble-origin reveal">
         Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy za muzyką,
         która otula, przenika i zostaje w duszy niczym żywy organizm. Tak powstał Voct:
         z ciszy i kontemplacji.
       </p>
-      <p>
+      <p class="reveal">
         Dziś jest nas ponad czterdzieścioro; na koncert wychodzi zwykle dwanaście
         głosów. Ubóstwiamy heterofonię, politonalność i polifonię — programy tkamy
         z utworów, w których słowo i muzyka są swoimi lustrzanymi odbiciami.
       </p>
-      <div class="ensemble-facts">
+      <div class="ensemble-facts reveal">
         {
           FACTS.map((fact) => (
             <div class="fact">

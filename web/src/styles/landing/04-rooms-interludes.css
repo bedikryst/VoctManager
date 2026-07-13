@@ -422,11 +422,25 @@
     line-height: 1.04;
     letter-spacing: -0.01em;
     color: var(--ink);
-    transition: color 0.5s var(--ease), font-variation-settings 0.5s var(--ease);
+    /* wght driven via the variable axis (not font-weight) so it can transition — Cormorant
+       carries a live wght axis (the footer clock breathes on it). */
+    font-variation-settings: "wght" 300;
+    transition:
+      color 0.5s var(--ease),
+      letter-spacing 0.6s var(--ease-slow),
+      font-variation-settings 0.6s var(--ease-slow);
   }
 
-  .path-entry:hover .path-entry-title {
+  /* Illumination on intent: the entry lights to candle gold, gains a touch of weight and
+     opens its tracking — the title "breathes in" as you rest on it. Deltas are kept small
+     so a long title never re-wraps mid-transition (the variable-font "jumping text" trap).
+     :active carries the same beat to touch (best-effort — some engines gate :active on
+     non-interactive rows). */
+  .path-entry:hover .path-entry-title,
+  .path-entry:active .path-entry-title {
     color: var(--candle);
+    letter-spacing: 0.012em;
+    font-variation-settings: "wght" 384;
   }
 
   .path-entry-place {

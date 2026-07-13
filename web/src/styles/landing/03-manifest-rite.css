@@ -181,6 +181,17 @@
     transform: translateY(0);
   }
 
+  /* Touch: the rake degrades to a binary per-line trigger (landing.ts), so the only pacing
+     of the draw is this word transition. Desktop's 0.7s/24ms felt hurried on the phone —
+     the line snapped in. Slow the rise and widen the per-word stagger so each stanza is
+     lettered in, more contemplative, matching the deliberate register elsewhere. */
+  @media (pointer: coarse) {
+    .manifest-word {
+      transition-duration: 1.1s;
+      transition-delay: calc(var(--word-i, 0) * 36ms);
+    }
+  }
+
   /* The statement's colour + bloom are written per-frame by the rake (no CSS
      transition — frame-synced writes chase a transition into mush). Weight is
      STATIC: light moves, metal doesn't. */

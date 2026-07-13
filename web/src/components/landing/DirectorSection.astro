@@ -31,20 +31,24 @@ const florent = photo("florent");
         decoding="async"
       />
     </div>
-    <div class="director-copy reveal">
-      <div class="role micro">Kierownictwo artystyczne</div>
-      <h2>Florent<br />de Bazelaire</h2>
-      <p>
+    {/* Per-element reveals (not one block) so the copy enters line-by-line as you scroll,
+        the granular register feel of "Z drogi" — the phone no longer pops the whole column. */}
+    <div class="director-copy">
+      <div class="director-lede reveal">
+        <div class="role micro">Kierownictwo artystyczne</div>
+        <h2>Florent<br />de Bazelaire</h2>
+      </div>
+      <p class="reveal">
         Nazwa cyklu sięga Paryża roku 1725: Concert Spirituel śpiewał w te wieczory,
         w które milkła opera. Trzysta lat później Florent de Bazelaire podejmuje tę
         tradycję na nowo — w bazylikach Krakowa i Łodzi, w Szczawnicy i Niedzicy.
       </p>
-      <p>
+      <p class="reveal">
         Każdy program układa wokół jednej intencji: tajemnica Wcielenia na debiut —
         <em>Kontemplacja Wcielenia</em> (2024) — dziewięć kart z Księgi Psalmów,
         modlitwa o pokój w Bazylice Mariackiej, epitafium dla Gazy.
       </p>
-      <p>
+      <p class="reveal">
         Równolegle prowadzi VoctFoundation — fundację, która ma dać tej muzyce stałe
         miejsce.
       </p>

@@ -369,7 +369,10 @@ function setupManifestRake(root: HTMLElement, reduce: boolean): void {
     lines.forEach((line, i) => {
       const r = rects[i];
       if (coarse) {
-        if (!passed[i] && r.top < vh * 0.85) {
+        // Fire when the stanza has climbed to ~72% of the viewport, not 85%: at 85% it lit
+        // while still near the bottom edge, so it had finished drawing before it reached the
+        // reading zone ("wjeżdżam i już stoi"). 0.72 lets the visitor watch it come in.
+        if (!passed[i] && r.top < vh * 0.72) {
           passed[i] = true;
           line.classList.add("is-lit", "is-settled");
         }

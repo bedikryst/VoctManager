@@ -477,6 +477,36 @@
     height: 60px;
   }
 
+  /* Landscape player: the mono time label + the caption shared one row, so the time
+     (0:00 / 0:00) ate ~half the width and crushed the inscription. The time is a utility
+     of the SCRUB, not of the caption — so it rides its own control row directly under the
+     progress bar (time left, fullscreen right, flanking it), and the caption becomes the
+     full-width inscription beneath. Smaller + tighter, so it reads as a quiet timecode. */
+  .vplayer:not(.vplayer--portrait) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "stage"
+      "scrub"
+      "side"
+      "meta";
+    gap: 8px 0;
+  }
+
+  .vplayer:not(.vplayer--portrait) .vplayer-side {
+    justify-self: stretch;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .vplayer:not(.vplayer--portrait) .vplayer-time {
+    font-size: 9.5px;
+    letter-spacing: 0.05em;
+  }
+
+  .vplayer:not(.vplayer--portrait) .vplayer-meta {
+    margin-top: 2px;
+  }
+
   /* No wall to hang the plaque on — the inscription returns beneath the frame
      (utility row first: it belongs to the scrub). Frame shortens so the whole
      column still fits under the lightbox's locked scroll. */
