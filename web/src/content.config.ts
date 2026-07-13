@@ -57,10 +57,40 @@ const concerts = defineCollection({
     links: z.array(z.object({ label: z.string(), href: z.string().url() })).default([]),
     /** When true, /koncerty/[id] generates a dedicated page for this entry. */
     hasPage: z.boolean().default(false),
+    /** The founder's own name for the programme, shown on the detail page instead of a
+        bare work count (e.g. "Dziesięć spojrzeń — i bis"). Falls back to the label alone. */
+    programLede: z.string().optional(),
+    /** The dramaturgy of the evening — why THIS order. A short unsigned editorial lede that
+        opens the programme ("kolejność jest częścią kompozycji"), grounded in the sequence
+        itself, never in an invented quote. Rendered above the work list. */
+    programArc: z.string().optional(),
+    /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
+        who gives the opening word, light direction…). Rendered as a quiet colophon block. */
+    credits: z.array(z.object({ role: z.string(), name: z.string() })).default([]),
+    /** Multi-city tour dates. When present the detail page shows a "Wykonania" itinerary and
+        JSON-LD emits one MusicEvent per date; single-date concerts keep using `date`/`venue`. */
+    dates: z
+      .array(
+        z.object({
+          date: z.string(), // ISO YYYY-MM-DD
+          venue: z.string(), // full venue + city
+          time: z.string().optional(), // e.g. "20:00"
+        }),
+      )
+      .default([]),
+    /** Documentary photographs from the evening (detail page gallery). Each `img` is a bare
+        photo() base name; missing files are skipped at build (photoOptional), so a slot can be
+        declared before the image is uploaded. */
+    gallery: z
+      .array(z.object({ img: z.string(), alt: z.string().optional(), caption: z.string().optional() }))
+      .default([]),
     /** Florent-authored single reflection paragraph (concert page). */
     reflection: z.string().optional(),
     /** Author attribution for the reflection paragraph. */
     reflectionAttribution: z.string().optional(),
+    /** OUR editorial bridge paragraph — rendered UNSIGNED, beneath the signed `reflection`.
+        Never place editorial prose under `reflectionAttribution` (see concert-pages spec §1). */
+    reflectionNote: z.string().optional(),
     /** Latin epigraph that opens the concert page (typically a biblical source). */
     inscriptio: z.string().optional(),
     /** Polish translation of inscriptio. */
@@ -84,6 +114,22 @@ const concerts = defineCollection({
           work: z.string(),
           /** Year of composition. */
           year: z.string().optional(),
+          /** Vocal scoring as printed in the score, e.g. "a 8", "a12: SAATBB + SAATBB". */
+          voicing: z.string().optional(),
+          /** Duration as printed, e.g. "10′". */
+          duration: z.string().optional(),
+          /** Source / curatorial note for the work — one or two sentences on where it comes
+              from and why it sits here (drawn from the ensemble's own programme book, factual,
+              never a fabricated quote). Rendered as a quiet programme-book gloss. */
+          note: z.string().optional(),
+          /** Sung text in the original language (Latin / German / English…), verbatim. Store
+              as a YAML block scalar to preserve line breaks. */
+          text: z.string().optional(),
+          /** Polish translation of `text`. */
+          textPl: z.string().optional(),
+          /** A clasp/refrain label rendered as a slim hairline row AFTER this item — used for
+              "9 Kart", where Miserere returns between the psalms (e.g. "Miserere — część II"). */
+          clasp: z.string().optional(),
           /** Liturgical incipit / source verse in Latin (concert page only). */
           inscriptio: z.string().optional(),
           /** Polish translation of inscriptio. */

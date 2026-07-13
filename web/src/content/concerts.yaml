@@ -29,16 +29,29 @@
   realizacja: "Realizacja: Ars Sonora Studio"
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
   hasPage: true
+  programLede: "Dziesięć spojrzeń — i bis"
+  programArc: >-
+    Kolejność jest tu częścią kompozycji. Wieczór biegnie jak historia zbawienia: od różdżki
+    z proroctwa Izajasza, przez nocną straż pasterzy i adwentowy róg Gallusa, po same narodziny.
+    Potem kontemplacja maryjna — i nagły cień: kołysanka matki nad dzieckiem skazanym przez
+    Heroda. Domyka ją kantyk Symeona w świątyni — „moje oczy ujrzały Twoje zbawienie" — czyli
+    spełnienie obietnicy, od której program się zaczął; stąd już tylko uwielbienie i radość bisu.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+    - { role: "Słowo wprowadzające", name: "o. Jarek Naliwajko SJ" }
+  gallery:
+    - { img: o-nas-wcielenie, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
   inscriptioRef: "Iz 11, 1"
   reflection: >-
     Wcielenie stanowi coś niewysłowionego, co z biegiem czasu często staje się dla nas
     powszednim. Kiedy uświadamiamy sobie znaczenie tej tajemnicy, możemy odzyskać zmysł
-    obecności Boga w naszym życiu. Repertuar — od proroctw Izajasza po kantyk Symeona,
-    od zimowego półmroku Sandströma po jasność Monteverdiego — układa się jako droga
-    do samej istoty tego, co niewysłowione.
+    obecności Boga w naszym życiu.
   reflectionAttribution: "Florent de Bazelaire · 20 stycznia 2024"
+  reflectionNote: >-
+    Repertuar — od proroctw Izajasza po kantyk Symeona, od zimowego półmroku Sandströma
+    po jasność Monteverdiego — układa się jako droga do samej istoty tego, co niewysłowione.
   pullQuote:
     text: >-
       Le cri des bergers to pieśń samotności. To także krzyk udręki, cierpienia i
@@ -52,13 +65,39 @@
       years: "1942–2019"
       work: "Es ist ein Ros' entsprungen"
       year: "1990"
+      voicing: "a 8 + kwartet"
+      note: >-
+        Niemiecka kolęda z końca XVI wieku (Trewir, 1587), po raz pierwszy wydana w jezuickim
+        śpiewniku ze Spiry (1599). Sandström osnuwa dawny chorał wokół unoszącego się nad nim
+        kwartetu solistów — proroctwo o różdżce z pnia Jessego otwiera wieczór.
       inscriptio: "Et egredietur virga de radice Iesse"
       inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
       inscriptioRef: "Iz 11, 1"
+      text: |-
+        Es ist ein Ros' entsprungen
+        aus einer Wurzel zart,
+        wie uns die Alten sungen,
+        von Jesse kam die Art
+        und hat ein Blümlein bracht
+        mitten im kalten Winter,
+        wohl zu der halben Nacht.
+      textPl: |-
+        Wyrosła różdżka
+        z delikatnego korzenia,
+        jak śpiewali nam dawni —
+        z rodu Jessego;
+        i wydała kwiat
+        pośród mroźnej zimy,
+        o północnej porze.
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "Le cri des bergers"
       year: "2004"
+      voicing: "a 12"
+      note: >-
+        Krzyk pasterzy trzymających nocną straż nad trzodą. U Vivancosa to zagubiona melodia
+        samotności, która wsłuchana w „echo milczenia" przemienia się w piękno — dwanaście głosów
+        rozpisanych na całą przestrzeń nawy.
       inscriptio: "Pastores erant in regione eadem vigilantes"
       inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
       inscriptioRef: "Łk 2, 8"
@@ -66,54 +105,150 @@
       years: "1550–1591"
       work: "Canite tuba"
       year: "1590"
+      voicing: "a 5 · TTTBB"
+      note: >-
+        Adwentowy motet pięciogłosowy na słowa proroka Zachariasza. Renesansowy kontrapunkt
+        Gallusa — Słoweńca z kręgu muzyki cesarskiej — obwieszcza nadejście jak głos rogu:
+        „Oto przychodzi Bóg, Zbawiciel nasz".
       inscriptio: "Canite tuba in Sion · Ecce Deus salvator noster adveniet"
       inscriptioPl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz"
       inscriptioRef: "Za 9, 14"
+      text: |-
+        Canite tuba in Sion, vocate gentes,
+        annuntiate populis et dicite:
+        Ecce Deus salvator noster adveniet.
+        Annuntiate et auditum facite,
+        loquimini et clamate:
+        Ecce Deus salvator noster adveniet.
+      textPl: |-
+        Trąbcie w róg na Syjonie, zwołajcie narody,
+        oznajmijcie ludom i mówcie:
+        Oto przyjdzie Bóg, Zbawiciel nasz.
+        Oznajmiajcie i głoście,
+        mówcie i wołajcie:
+        Oto przyjdzie Bóg, Zbawiciel nasz.
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "A Child is born"
       year: "2001"
+      voicing: "a 4"
+      note: >-
+        Współczesna, prosta kolęda na cztery głosy do wiersza H. M. MacGilla z 1876 roku —
+        po zapowiedziach przychodzą same narodziny.
       inscriptioPl: "tekst: H. M. MacGill (1876)"
     - composer: "Tomás Luis de Victoria"
       years: "1548–1611"
       work: "Alma Redemptoris Mater"
       year: "1581"
+      voicing: "a 8"
+      note: >-
+        Antyfona maryjna okresu adwentu, śpiewana od 1 grudnia do 2 lutego. Ośmiogłosowy motet
+        Victorii w weneckim stylu coro spezzato — chór podzielony, prowadzący dialog w przestrzeni
+        kościoła.
       inscriptio: "Alma Redemptoris Mater"
       inscriptioPl: "Czcigodna Matko Odkupiciela · antyfona maryjna"
     - composer: "Krzysztof Penderecki"
       years: "1933–2020"
       work: "O gloriosa Virginum"
       year: "2009"
+      voicing: "a 8/10"
+      note: >-
+        Penderecki napisał ten utwór w 2009 roku na 70. urodziny José Antonia Abreu, twórcy
+        wenezuelskiego El Sistema. Prawykonano go w Caracas, pod batutą samego kompozytora;
+        polska premiera odbyła się kilka dni później.
       inscriptio: "O gloriosa Virginum"
       inscriptioPl: "O najchwalebniejsza z dziewic"
     - composer: "Mariusz Kramarz"
       work: "Gdy śliczna Panna"
+      voicing: "a 4"
+      note: >-
+        Polska kolęda w opracowaniu Mariusza Kramarza — rodzimy głos w tym międzynarodowym
+        programie, tuż po współczesnych narodzinach.
       inscriptioPl: "aranżacja współczesna kolędy polskiej"
     - composer: "Philip Stopford"
       years: "ur. 1977"
       work: "Lully, Lullay"
       year: "2008"
+      voicing: "a 4"
+      note: >-
+        Coventry Carol pochodzi z XVI-wiecznego misterium „The Shearmen and Tailors". To
+        kołysanka śpiewana z perspektywy matki nad skazanym dzieckiem — cień rzezi niewiniątek,
+        który pada tuż po narodzinach. Stopford ubrał ją w 2008 roku w chłodną współczesną
+        harmonię.
       inscriptio: "Coventry Carol — Rzeź Niewiniątek"
       inscriptioPl: "kołysanka matki za skazane dziecko · Mt 2, 16"
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "Nunc dimittis"
       year: "2001"
+      note: >-
+        Kantyk Symeona z Ofiarowania w świątyni: „moje oczy ujrzały Twoje zbawienie". U Pärta,
+        w jego tintinnabuli, to spełnienie obietnicy, od której wieczór się zaczął — starzec może
+        odejść w pokoju.
       inscriptio: "Nunc dimittis servum tuum, Domine"
       inscriptioPl: "Teraz, o Władco, pozwól odejść słudze Twemu · kantyk Symeona"
       inscriptioRef: "Łk 2, 29–32"
+      text: |-
+        Nunc dimittis servum tuum, Domine,
+        secundum verbum tuum in pace,
+        quia viderunt oculi mei salutare tuum,
+        quod parasti ante faciem omnium populorum:
+        lumen ad revelationem gentium
+        et gloriam plebis tuae Israel.
+      textPl: |-
+        Teraz, o Władco, pozwól odejść słudze Twemu
+        w pokoju, według Twojego słowa,
+        bo moje oczy ujrzały Twoje zbawienie,
+        któreś przygotował wobec wszystkich narodów:
+        światło na oświecenie pogan
+        i chwałę ludu Twego, Izraela.
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
       work: "Cantate Domino"
       year: "1620"
+      voicing: "SSATBB"
+      note: >-
+        Sześciogłosowy motet polichóralny, wydany w 1620 roku w zbiorze Giulia Cesare Bianchiego.
+        Monteverdi na progu baroku podejmuje wezwanie Psalmu 98 do nowej pieśni — radość, którą
+        słychać w samej fakturze.
       inscriptio: "Cantate Domino canticum novum"
       inscriptioPl: "Śpiewajcie Panu pieśń nową"
       inscriptioRef: "Ps 98 (97)"
     - composer: "Anonim / aranż. Brian Kay"
       work: "Gaudete"
       year: "XVI w."
+      voicing: "SATTBB"
+      note: >-
+        Kolęda z fińsko-szwedzkiego zbioru świętych pieśni Piae Cantiones (1582), w opracowaniu
+        Briana Kaya. Radość jako bis — „Chrystus się narodził" — ostatnie słowo wieczoru.
       inscriptio: "Gaudete, gaudete! Christus est natus"
       inscriptioPl: "Radujcie się! Chrystus się narodził"
+      text: |-
+        Gaudete, gaudete! Christus est natus
+        ex Maria virgine, gaudete!
+
+        Tempus adest gratiæ,
+        hoc quod optabamus;
+        carmina lætitiæ
+        devote reddamus.
+
+        Deus homo factus est,
+        natura mirante;
+        mundus renovatus est
+        a Christo regnante.
+      textPl: |-
+        Radujcie się, radujcie! Chrystus się narodził
+        z Maryi Dziewicy, radujcie się!
+
+        Nadszedł czas łaski,
+        którego pragnęliśmy;
+        pieśni radości
+        pobożnie oddajmy.
+
+        Bóg stał się człowiekiem,
+        natura się zdumiewa;
+        świat został odnowiony
+        przez Chrystusa Króla.
       bis: true
 
 - id: wolanie-gor
