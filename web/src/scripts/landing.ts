@@ -6,9 +6,10 @@
  *  target browser (native scroll-driven CSS is unsupported here; that was the parallax bug).
  *
  *  Owns: reveal (`.is-visible`/`.is-settled`, mirroring useReveals), rite-glow (cursor
- *  spotlight), smooth-details (animated accordion), Lenis anchor smooth-scroll, and the
- *  kinetic variable-font choreography (hero breath, heading breath, manifest breath) on a
- *  single rAF scroll loop. (The coda's old per-letter wave is gone — the "Ostatni takt"
+ *  spotlight), smooth-details (animated accordion), Lenis anchor smooth-scroll, the
+ *  kinetic variable-font choreography (hero breath, heading breath) on a single rAF
+ *  scroll loop, and the manifest light (one-shot `.is-lit` per stanza — the sweep itself
+ *  is a CSS transition). (The coda's old per-letter wave is gone — the "Ostatni takt"
  *  coda draws itself via the shared .knot-draw reveal choreography, no JS of its own.)
  *
  *  NOT owned here (deliberately): parallax (the global BaseLayout `[data-parallax]` controller,
@@ -29,8 +30,6 @@ const reduceMotion = (): boolean =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer = (): boolean =>
   window.matchMedia("(pointer: fine) and (hover: hover)").matches;
-const coarsePointer = (): boolean =>
-  window.matchMedia("(pointer: coarse), (hover: none)").matches;
 
 const clamp01 = (v: number): number => (v < 0 ? 0 : v > 1 ? 1 : v);
 
@@ -309,133 +308,40 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
   });
 }
 
-// ── Manifest "raking light" ─────────────────────────────────────────────────────────────────
-// The Nawa metaphor made literal: one slow shaft of warm light holds at ~45% of the viewport;
-// as you scroll, each manifest line passes through it, lifts out of half-light to full ink
-// (with a faint gold bloom at the peak), and stays gently lit once the light has passed —
-// "sacrum nie zdobi, odsłania". LIGHT ONLY: colour and text-shadow, never the weight axis —
-// animating wght changes glyph advance widths and reflows the whole line (the "jumping text"
-// defect). The answer group ("Odsłania.") is entirely class-driven: its entrance + one-shot
-// bloom live in CSS, keyed to `.is-lit`/`.is-settled` set here.
-function setupManifestRake(root: HTMLElement, reduce: boolean): void {
+// ── Manifest light ──────────────────────────────────────────────────────────────────────────
+// JS owns exactly ONE bit per line: `.is-lit`, set once when the stanza's top crosses ~74%
+// of the viewport (the reading zone), then the observer lets go. Everything visual — the
+// left→right light sweep on the stanzas (--ink-reveal mask transition) and the answer's
+// blur-into-focus + gold bloom — lives in 03-manifest-rite.css, so the draw is TIME-based
+// and always completes: a fast scroll at worst catches it mid-flight, never strands it.
+// This replaced the scroll-scrubbed raking light (per-frame color/textShadow writes +
+// per-word stagger + delayed group reveal): scrubbing tied the tempo to scroll velocity,
+// and its 0.32 "settled floor" left every read stanza regressed to gray — the manifest
+// un-revealing what it had revealed. One-shot light, permanent ink.
+function setupManifestLight(root: HTMLElement, reduce: boolean): void {
+  // Under reduced motion MotionGate never adds html.voct-motion, so the CSS half-light
+  // states stay inert and the manifest is plain full ink — nothing to drive here.
   if (reduce) return;
   const manifest = root.querySelector<HTMLElement>(".manifest");
   if (!manifest) return;
-  const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line-group"));
+  const lines = manifest.querySelectorAll<HTMLElement>(".manifest-line-group");
   if (!lines.length) return;
 
-  // Split each statement into word-spans once so the active line can stagger words in
-  // under the raking light (opacity + lift per word — no blur, no weight axis).
-  // Preserves whitespace between words. The answer group has no .manifest-text-inner,
-  // so it is naturally skipped here.
-  lines.forEach((line) => {
-    const text = line.querySelector<HTMLElement>(".manifest-text-inner");
-    if (!text || text.dataset.split === "1") return;
-    const original = text.textContent ?? "";
-    text.innerHTML = original
-      .split(/(\s+)/)
-      .map((part, j) =>
-        /\s/.test(part) || !part
-          ? part
-          : `<span class="manifest-word" style="--word-i:${j}">${part}</span>`,
-      )
-      .join("");
-    text.dataset.split = "1";
-  });
-
-  const LIT_COLOR = [22, 21, 20]; // var(--ink)
-  const DIM_COLOR = [138, 131, 118]; // readable half-light (old 200,195,185 was ghost-gray)
-  const SETTLED = 0.32;
-  const passed = new Array<boolean>(lines.length).fill(false);
-
-  // Touch: the cursorless rake read as a defect — stop a swipe mid-section and the
-  // unlit stanzas sat in flat gray with the emphasis half-blurred, looking like text
-  // that failed to load. On coarse pointers the rake degrades to a binary reveal:
-  // a line lights fully (class-driven, CSS transitions) once its top crosses 85% of
-  // the viewport and stays lit. No per-frame color/wght/textShadow writes at all.
-  const coarse = coarsePointer();
-
-  let ticking = false;
-  let active = false;
-  const update = (): void => {
-    ticking = false;
-    if (!active) return;
-    const vh = window.innerHeight || document.documentElement.clientHeight;
-    const beamY = vh * 0.45;
-    const reach = vh * 0.3;
-    // READ phase: measure every line before writing colour / wght / textShadow below, so one
-    // line's style writes don't force a reflow on the next line's rect read.
-    const rects = lines.map((line) => line.getBoundingClientRect());
-    lines.forEach((line, i) => {
-      const r = rects[i];
-      if (coarse) {
-        // Fire when the stanza has climbed to ~72% of the viewport, not 85%: at 85% it lit
-        // while still near the bottom edge, so it had finished drawing before it reached the
-        // reading zone ("wjeżdżam i już stoi"). 0.72 lets the visitor watch it come in.
-        if (!passed[i] && r.top < vh * 0.72) {
-          passed[i] = true;
-          line.classList.add("is-lit", "is-settled");
-        }
-        return;
-      }
-      const cy = r.top + r.height / 2;
-      const d = Math.abs(cy - beamY);
-      let lit = d < reach ? 1 - d / reach : 0;
-      if (cy <= beamY) passed[i] = true;
-      if (passed[i]) lit = Math.max(lit, SETTLED);
-
-      // `is-lit` arms the per-word stagger; `is-settled` keeps words present after the beam
-      // has passed. The answer's lit threshold is higher: it resolves only when the beam
-      // actually rests on it — a beat after stanza III, never alongside it.
-      const isAnswer = line.classList.contains("manifest-answer");
-      line.classList.toggle("is-lit", lit > (isAnswer ? 0.55 : 0.34));
-      line.classList.toggle("is-settled", passed[i]);
-      if (isAnswer) return; // entrance + bloom are class-driven in CSS — no inline writes
-
-      const statement = line.querySelector<HTMLElement>(".manifest-statement");
-      if (statement) {
-        const c = LIT_COLOR.map((v, k) => Math.round(DIM_COLOR[k] + (v - DIM_COLOR[k]) * lit));
-        statement.style.color = `rgb(${c[0]}, ${c[1]}, ${c[2]})`;
-        const bloom = lit > 0.62 ? (lit - 0.62) / 0.38 : 0;
-        statement.style.textShadow =
-          bloom > 0
-            ? `0 0 ${(bloom * 30).toFixed(0)}px rgba(198, 164, 91, ${(bloom * 0.55).toFixed(2)})`
-            : "none";
-      }
-
-      const roman = line.querySelector<HTMLElement>(".manifest-roman");
-      if (roman) {
-        roman.style.opacity = (0.22 + lit * 0.55).toFixed(3);
-      }
-    });
-  };
-
-  const schedule = (): void => {
-    if (ticking) return;
-    ticking = true;
-    window.requestAnimationFrame(update);
-  };
-  const onScroll = (): void => {
-    if (!active) return;
-    schedule();
-  };
-  // Only spend frames on the raking light while the manifest is in (or near) view; off-screen
-  // the scroll handler early-returns and the lines hold their last settled state.
   const io = new IntersectionObserver(
     (entries) => {
-      active = entries[0]?.isIntersecting ?? false;
-      if (active) schedule();
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        (entry.target as HTMLElement).classList.add("is-lit");
+        io.unobserve(entry.target);
+      });
     },
-    { rootMargin: "25% 0px 25% 0px" },
+    // Bottom inset puts the trigger line at ~74% of the viewport: low enough that the
+    // visitor watches the light pass ("wjeżdżam i już stoi" was the 85% defect), high
+    // enough that a stanza in view on load lights immediately.
+    { threshold: 0, rootMargin: "0px 0px -26% 0px" },
   );
-  io.observe(manifest);
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", onScroll);
-  cleanups.push(() => {
-    io.disconnect();
-    window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", onScroll);
-  });
+  lines.forEach((line) => io.observe(line));
+  cleanups.push(() => io.disconnect());
 }
 
 // ── Interlude breath: scroll-driven knot bloom while the ambient is silent ──────────────────
@@ -586,7 +492,7 @@ function bind(): void {
   setupSmoothDetails(root);
   setupLenisAnchors();
   setupKinetic(root, reduce);
-  setupManifestRake(root, reduce);
+  setupManifestLight(root, reduce);
   setupInterludeBreath(root, reduce);
   setupSilenceMoment(root, reduce);
   setupInteractions(root);

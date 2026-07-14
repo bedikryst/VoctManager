@@ -2,10 +2,11 @@
 /**
  * @file ManifestSection.astro
  * @description Three-stanza ensemble manifest + the answer line. Rigid editorial grid;
- *  the raking light (setupManifestRake in landing.ts) lifts each stanza from half-light
- *  to full ink as it crosses the beam — colour and a faint gold bloom only, never the
- *  weight axis (wght animation reflows glyph widths, which read as the text "jumping").
- *  "Odsłania." is its own group: it arms independently, after stanza III has settled.
+ *  ONE motion system (setupManifestLight in landing.ts + 03-manifest-rite.css): a soft
+ *  light edge sweeps each stanza once, left to right, from half-light to full ink —
+ *  time-based and one-shot, never scroll-scrubbed. The stanzas deliberately do NOT
+ *  carry the site-wide `.reveal` (no translate: light moves, metal doesn't).
+ *  "Odsłania." is its own group: it blurs into focus a beat after stanza III.
  * @architecture Astro islands 2026
  * @module components/landing/ManifestSection
  */
@@ -26,7 +27,7 @@ import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLine
     <div class="manifest-content">
       {
         MANIFEST_LINES.map((line) => (
-          <div class="manifest-line-group reveal">
+          <div class="manifest-line-group">
             <div class="manifest-roman">{line.index}</div>
             <p class="manifest-statement">
               <span class="manifest-text-inner">{line.text}</span>
@@ -35,8 +36,8 @@ import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLine
         ))
       }
 
-      {/* The answer — no numeral (it is not a fourth thesis), its own beam trigger. */}
-      <div class="manifest-line-group manifest-answer reveal">
+      {/* The answer — no numeral (it is not a fourth thesis), its own lit moment. */}
+      <div class="manifest-line-group manifest-answer">
         <div class="manifest-roman" aria-hidden="true"></div>
         <p class="manifest-statement manifest-answer-statement">
           <em class="manifest-emphasis">{MANIFEST_ANSWER}</em>

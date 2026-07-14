@@ -39,7 +39,7 @@
   .manifest-content {
     display: flex;
     flex-direction: column;
-    gap: clamp(64px, 10vw, 140px);
+    gap: clamp(64px, 10vw, 130px);
   }
 
   .manifest-line-group {
@@ -66,6 +66,7 @@
     letter-spacing: -0.01em;
     color: var(--ink);
     max-width: 14em;
+    padding-bottom: 5px;
   }
 
   .manifest-statement .manifest-text-inner {
@@ -90,24 +91,9 @@
     display: inline-block;
   }
 
-  /* Reveals */
-  .manifest .reveal {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 2.2s var(--ease), transform 2.2s var(--ease);
-  }
-
-  .manifest .reveal.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Stagger delays — stanza III arrives noticeably later, and the answer later still:
-     the reveal must feel withheld, not delivered. */
-  .manifest-line-group:nth-child(1).is-visible { transition-delay: 0.1s; }
-  .manifest-line-group:nth-child(2).is-visible { transition-delay: 0.8s; }
-  .manifest-line-group:nth-child(3).is-visible { transition-delay: 1s; transition-duration: 3.4s; }
-  .manifest-line-group.manifest-answer.is-visible { transition-delay: 1.9s; transition-duration: 3.4s; }
+  /* The header row rides the site-wide .reveal entrance (06-footer.css); the stanzas
+     deliberately do NOT — their arrival is the light sweep below, and stacking a
+     translate+delay entrance on top of it was compounded motion, not choreography. */
 
   /* Desktop Staggering Layout — the answer mirrors stanza III's offset so "Odsłania."
      sits directly beneath "Sacrum nie zdobi." */
@@ -122,98 +108,64 @@
     }
   }
 
-  /* Kinetic typography is owned by setupManifestRake (landing.ts). The answer's
-     entrance is class-driven: armed only while motion is live (html.voct-motion),
-     resolved by `.is-lit`/`.is-settled` from the rake — a transition always completes,
-     so it can never strand half-materialised the way the old scroll-scrubbed
-     emphasis-flare did. The soft blur is kept HERE only: "odsłania" — the one word
-     that should literally come into focus. */
+  /* ── The light passes once ────────────────────────────────────────────────
+     ONE motion system (it replaces three that fought each other: the scroll-scrubbed
+     raking light, the per-word stagger and the delayed group reveal). setupManifestLight
+     (landing.ts) adds `.is-lit` — one-shot — when a stanza reaches the reading zone;
+     transitioning --ink-reveal (registered in 09-kinetic.css) then sweeps a soft light
+     edge left→right across the line-group: half-light before, full ink after, FOREVER.
+     No settled floor — what the light has revealed must never re-veil ("odsłania").
+     Nothing translates and nothing hides: a fast scroll can at worst catch the sweep
+     mid-flight, and it still completes on its own clock. Time-based, never scrubbed.
+     Gated on html.voct-motion, so no-JS and reduced-motion visitors get plain full
+     ink; browsers without @property drop the whole mask (IACVT → none) — full ink,
+     no sweep, a graceful nothing. The stanzas carry NO gold: the page's gold belongs
+     to "Odsłania." below and to the coda's finalis. */
+  html.voct-motion .manifest-line-group:not(.manifest-answer) {
+    -webkit-mask-image: linear-gradient(
+      100deg,
+      rgb(0 0 0) calc(var(--ink-reveal) - 12%),
+      rgb(0 0 0 / 0.44) calc(var(--ink-reveal) + 16%)
+    );
+    mask-image: linear-gradient(
+      100deg,
+      rgb(0 0 0) calc(var(--ink-reveal) - 12%),
+      rgb(0 0 0 / 0.44) calc(var(--ink-reveal) + 16%)
+    );
+    transition: --ink-reveal 4.6s var(--ease-slow);
+  }
+
+  html.voct-motion .manifest-line-group.is-lit:not(.manifest-answer) {
+    --ink-reveal: 114%;
+  }
+
+  /* The answer keeps its own moment — "odsłania" is the one word that should
+     literally come into focus, so the soft blur lives HERE only. Same one-shot
+     `.is-lit`; the delay holds it a beat behind stanza III when both arrive
+     together. No transform: light moves, metal doesn't. */
   html.voct-motion .manifest-answer .manifest-emphasis {
     opacity: 0;
     filter: blur(5px);
-    transform: translateY(10px);
+    transition:
+      opacity 1.8s var(--ease-slow) 0.7s,
+      filter 1.8s var(--ease-slow) 0.7s;
   }
 
-  html.voct-motion .manifest-answer:is(.is-lit, .is-settled) .manifest-emphasis {
+  html.voct-motion .manifest-answer.is-lit .manifest-emphasis {
     opacity: 1;
     filter: blur(0);
-    transform: translateY(0);
   }
 
   /* One-shot gold bloom as the answer lands — an animation, not a scroll-coupled
-     value, so it has a beginning and an end. */
-  html.voct-motion .manifest-answer:is(.is-lit, .is-settled) {
-    animation: manifestAnswerBloom 3.2s var(--ease-slow) 0.4s both;
+     value, so it has a beginning and an end. Delay tracks the emphasis entrance. */
+  html.voct-motion .manifest-answer.is-lit {
+    animation: manifestAnswerBloom 3.2s var(--ease-slow) 1.1s both;
   }
 
   @keyframes manifestAnswerBloom {
     0% { text-shadow: 0 0 0 rgba(198, 164, 91, 0); }
     35% { text-shadow: 0 0 34px rgba(198, 164, 91, 0.5); }
     100% { text-shadow: 0 0 14px rgba(198, 164, 91, 0.18); }
-  }
-
-  /* ── Per-word kinetic typography + variable-font breath ──────────────────
-     setupManifestRake (landing.ts) drives `.is-lit` / `.is-settled` on each line
-     plus the per-statement gold textShadow and wght breath; CSS owns the
-     transitions and the per-word stagger. There is intentionally NO backdrop
-     light shaft — the glow emanates from the words themselves, not the page
-     beneath them ("sacrum nie zdobi, odsłania"). */
-  /* Words inherit the line's color + textShadow (driven by JS) — they only own the
-     entry transform. The lit state lifts them in sequence; settled keeps them present
-     so the manifest reads as a passed-through choreography, not a one-shot animation. */
-  /* Word entrance: opacity + lift only, NO blur (the fuzzy mid-state read as text
-     that failed to load) and NO weight axis (wght changes glyph advance widths, so
-     animating it reflowed the whole line — the "jumping text" defect). One-shot:
-     once lit/settled the words stay. */
-  .manifest-word {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(12px);
-    transition:
-      opacity 0.7s var(--ease-slow),
-      transform 0.7s var(--ease-slow);
-    transition-delay: calc(var(--word-i, 0) * 24ms);
-  }
-
-  .manifest-line-group.is-lit .manifest-word,
-  .manifest-line-group.is-settled .manifest-word {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Touch: the rake degrades to a binary per-line trigger (landing.ts), so the only pacing
-     of the draw is this word transition. Desktop's 0.7s/24ms felt hurried on the phone —
-     the line snapped in. Slow the rise and widen the per-word stagger so each stanza is
-     lettered in, more contemplative, matching the deliberate register elsewhere. */
-  @media (pointer: coarse) {
-    .manifest-word {
-      transition-duration: 1.1s;
-      transition-delay: calc(var(--word-i, 0) * 36ms);
-    }
-  }
-
-  /* The statement's colour + bloom are written per-frame by the rake (no CSS
-     transition — frame-synced writes chase a transition into mush). Weight is
-     STATIC: light moves, metal doesn't. */
-
-  .manifest-answer .manifest-emphasis {
-    transition:
-      opacity 1.4s var(--ease-slow),
-      filter 1.4s var(--ease-slow),
-      transform 1.4s var(--ease-slow);
-  }
-
-  .manifest-roman {
-    transition: opacity 0.5s var(--ease-slow);
-  }
-
-  /* Static fallback when motion is reduced — no stagger, full ink. */
-  @media (prefers-reduced-motion: reduce) {
-    .manifest-word {
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
   }
 
   .image-rite {

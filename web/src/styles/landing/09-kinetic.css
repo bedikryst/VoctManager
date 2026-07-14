@@ -48,11 +48,13 @@
     initial-value: 0;
   }
 
-  /* Manifest "ink emergence" — pozycja krawędzi mask-gradientu który
-     scrubuje się od lewej do prawej przez linię manifestu. Wartość
-     animowana 0%→110% przez scroll-driven view-timeline. Każda linia
-     manifestu ma własną instancję (inherits:false), więc nawzajem
-     nie inwalidują się. */
+  /* Manifest "ink emergence" — pozycja krawędzi mask-gradientu który przechodzi
+     RAZ, od lewej do prawej, przez linię manifestu (03-manifest-rite.css; klasę
+     .is-lit ustawia setupManifestLight w landing.ts). REJESTRACJA JEST WYMAGANA:
+     bez @property custom property nie interpoluje w transition — sweep by
+     przeskoczył zamiast płynąć. Każda linia ma własną instancję (inherits:false),
+     więc nawzajem się nie inwalidują. initial-value -14% = cała linia czeka
+     w półświetle, zanim światło ją zapali. */
   @property --ink-reveal {
     syntax: "<percentage>";
     inherits: false;
