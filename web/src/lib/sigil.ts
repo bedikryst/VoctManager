@@ -158,11 +158,13 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
   // Central candle dot
   parts.push(`<circle cx="${cx}" cy="${cy}" r="1.5" fill="currentColor" stroke="none" />`);
 
-  // Inscription along upper arc — roman date as AD · MO · DI (year · month · day)
+  // Inscription along upper arc — roman date as AD · MO · DI (year · month · day). Local
+  // fields, not UTC: this is the stamp of THE VISITOR'S visit, so an evening guest west of
+  // UTC should see today's date, not tomorrow's.
   const inscription = [
-    roman(date.getUTCFullYear()),
-    roman(date.getUTCMonth() + 1),
-    roman(date.getUTCDate()),
+    roman(date.getFullYear()),
+    roman(date.getMonth() + 1),
+    roman(date.getDate()),
   ].join("  ·  ");
   const arcR = ringRadii[ringRadii.length - 1] + size * 0.058;
   const arcPath = `M ${cx - arcR},${cy} A ${arcR},${arcR} 0 0,1 ${cx + arcR},${cy}`;
