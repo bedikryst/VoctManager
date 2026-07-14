@@ -221,7 +221,7 @@ Pełne doświadczenie opiera się na kinematyce powiązanej ze scrollem, sygnał
 
 > **Źródło:** [`web/src/pages/index.astro`](web/src/pages/index.astro) — komponuje 9 sekcji i 6 wysp React (Preloader, ThresholdGate, AudioController, StickyHeader, SiteCursor, SiteFooter, VaultIsland). Podstrony (`/koncerty`, `/o-nas`, `/kontakt`) reużywają `SiteChrome` + `SiteFooter` i montują tylko wyspę Vault dla datków w miejscu.
 
-> **Źródłowe zdjęcia strony publicznej** (`web/src/assets/photos/*.jpg`) są celowo gitignorowane — to 5-12 MB oryginałów należących do współtwórców, wgrywanych bezpośrednio na host buildu. Patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje dla kontraktu deploya.
+> **Źródłowe media strony publicznej** (`web/src/assets/photos/*`, `web/src/assets/videos/*`) są celowo gitignorowane — to oryginały należące do współtwórców, wgrywane bezpośrednio na host buildu. Patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje dla kontraktu deploya.
 
 ---
 
@@ -390,7 +390,7 @@ Projekt wykorzystuje Docker Compose do standaryzowanego środowiska deweloperski
    cd web && npm install && npm run dev
    ```
 
-   > Dla `web/` najpierw musisz umieścić źródłowe zdjęcia w `web/src/assets/photos/` (gitignorowane — żyją tylko na hoście buildu; patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje). Build Astro rzuci czytelny błąd `[photos] No image …`, jeśli któreś zdjęcie jest brakujące.
+   > Dla `web/` najpierw musisz umieścić źródłowe zdjęcia w `web/src/assets/photos/` oraz źródłowe wideo w `web/src/assets/videos/` (gitignorowane — żyją tylko na hoście buildu; patrz [`web/README.pl.md`](web/README.pl.md) §Konwencje). Build Astro rzuci czytelny błąd, jeśli któryś asset mediów jest brakujący.
 
    * API: `http://localhost:8000/api/`
    * Panel SPA: `http://localhost:5173/panel`
@@ -415,10 +415,11 @@ runtime        (nginx:1.27)     → COPY z obu → /usr/share/nginx/html/{app,ma
 Kontener nginx więc dostarcza **oba** — panel SPA i publiczną stronę Astro — wpieczone w image. Brak `npm` na hoście, brak bind-mountu `web/dist`.
 
 ```bash
-# Jednorazowo, przy pierwszym deployu (lub gdy zmieniają się zdjęcia):
+# Jednorazowo, przy pierwszym deployu (lub gdy zmieniają się media źródłowe):
 mkdir -p ~/VoctManager/web/src/assets/photos/
-# rsync / scp / sftp wgraj tutaj oryginalne JPG-i — są gitignorowane i żyją
-# tylko na hoście buildu (należą do współtwórców, 5-12 MB każde).
+mkdir -p ~/VoctManager/web/src/assets/videos/
+# rsync / scp / sftp wgraj tutaj oryginalne JPG-i i MP4 — są gitignorowane
+# i żyją tylko na hoście buildu (oryginały należące do współtwórców).
 
 # Każdy deploy:
 cd ~/VoctManager
@@ -427,7 +428,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-**Wymagania hosta buildu:** Docker + Compose v2, ≥ ~3 GB wolnego RAM w trakcie buildu (graf rollup dla panelu SPA peakuje na ~2 GB; Sharp dla pipeline'u Astro dodaje ~500 MB). Brak Node.js, brak npm, brak host-side lockfile. Root `.dockerignore` trzyma `voct_data/`, `**/node_modules`, `.git` itd. poza kontekstem buildu, więc transfer kontekstu zostaje pod kilkoma MB. Jeśli katalog ze zdjęciami nie istnieje lub jest niekompletny, stage Astro wywala się szybko z `[photos] No image "<name>"`.
+**Wymagania hosta buildu:** Docker + Compose v2, ≥ ~3 GB wolnego RAM w trakcie buildu (graf rollup dla panelu SPA peakuje na ~2 GB; Sharp dla pipeline'u Astro dodaje ~500 MB). Brak Node.js, brak npm, brak host-side lockfile. Root `.dockerignore` trzyma `voct_data/`, `**/node_modules`, `.git` itd. poza kontekstem buildu. Jeśli katalogi mediów źródłowych nie istnieją lub są niekompletne, stage Astro wywala się szybko podczas rozwiązywania assetów zdjęć/wideo.
 
 ---
 

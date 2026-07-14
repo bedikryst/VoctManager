@@ -76,8 +76,12 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--ink-muted);
-    padding-bottom: 4px;
+    appearance: none;
+    border: 0;
     border-bottom: 1px solid transparent;
+    background: transparent;
+    padding: 0 0 4px;
+    cursor: pointer;
     transition:
       color 0.35s var(--ease),
       border-color 0.35s var(--ease);

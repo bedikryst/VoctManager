@@ -2,7 +2,7 @@ const sharp = require("sharp");
 const { mkdirSync } = require("node:fs");
 
 const SRC = "src/assets/photos";
-const OUT = "public/stations";
+const OUT = "src/assets/photos";
 mkdirSync(OUT, { recursive: true });
 
 // brightness/saturation multiply the source; memoriam (hymn, aeternam) go darker + desaturated.

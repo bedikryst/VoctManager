@@ -18,8 +18,7 @@ node_modules/
 # time (see lib/photos.ts), so the directory must exist on the build host.
 src/assets/photos/
 
-# Landing videos — large MP4s (tens of MB each), uploaded out-of-band to the build
-# host like the photos above. Expected files: landing-modal.mp4 (also serves the Vox
-# moment) + landing-<koncert>.mp4 (see src/data/landing/video.ts and paths.ts `video`
-# fields). Astro copies public/ into dist/ at build time, so files must exist on the host.
-public/video/
+# Source videos — large MP4s, uploaded out-of-band to the build host like the photos
+# above. Astro imports them from src/assets/videos/ and emits content-hashed URLs, so
+# stable public `/video/*.mp4` paths are not generated.
+src/assets/videos/

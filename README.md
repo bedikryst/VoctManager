@@ -221,7 +221,7 @@ The full experience relies on scroll-linked kinematics, audio cues, parallax, cu
 
 > **Source:** [`web/src/pages/index.astro`](web/src/pages/index.astro) — composes 9 section components and 6 React islands (Preloader, ThresholdGate, AudioController, StickyHeader, SiteCursor, SiteFooter, VaultIsland). Subpages (`/koncerty`, `/o-nas`, `/kontakt`) reuse `SiteChrome` + `SiteFooter` and mount only the Vault island for in-place donations.
 
-> **Public-site source photos** (`web/src/assets/photos/*.jpg`) are intentionally gitignored — they're 5-12 MB collaborator-owned originals uploaded directly to the build host. See [`web/README.md`](web/README.md) §Conventions for the deploy contract.
+> **Public-site source media** (`web/src/assets/photos/*`, `web/src/assets/videos/*`) are intentionally gitignored — they are collaborator-owned originals uploaded directly to the build host. See [`web/README.md`](web/README.md) §Conventions for the deploy contract.
 
 ---
 
@@ -390,7 +390,7 @@ The project utilizes Docker Compose for a standardized development environment.
    cd web && npm install && npm run dev
    ```
 
-   > For `web/` you must first place the source photos under `web/src/assets/photos/` (gitignored — they live on the build host only; see [`web/README.md`](web/README.md) §Conventions). The Astro build will throw a clear `[photos] No image …` error if a referenced photo is missing.
+   > For `web/` you must first place the source photos under `web/src/assets/photos/` and source videos under `web/src/assets/videos/` (gitignored — they live on the build host only; see [`web/README.md`](web/README.md) §Conventions). The Astro build will throw a clear error if a referenced media asset is missing.
 
    * API Access: `http://localhost:8000/api/`
    * Panel SPA: `http://localhost:5173/panel`
@@ -415,10 +415,11 @@ runtime        (nginx:1.27)     → COPY from both → /usr/share/nginx/html/{ap
 The nginx container therefore ships **both** the panel SPA and the Astro public site baked in — no `npm` on the host, no `web/dist` bind-mount.
 
 ```bash
-# One-off, on first deploy (or whenever photos change):
+# One-off, on first deploy (or whenever source media change):
 mkdir -p ~/VoctManager/web/src/assets/photos/
-# rsync / scp / sftp the original JPGs here — they are .gitignored and live
-# only on the build host (collaborator-owned, 5-12 MB each).
+mkdir -p ~/VoctManager/web/src/assets/videos/
+# rsync / scp / sftp the original JPGs and MP4s here — they are .gitignored
+# and live only on the build host (collaborator-owned originals).
 
 # Every deploy:
 cd ~/VoctManager
@@ -427,7 +428,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
-**Build-host requirements:** Docker + Compose v2, ≥ ~3 GB free RAM during build (rollup graph for the panel SPA peaks at ~2 GB; Sharp for the Astro pipeline adds ~500 MB). No Node.js, no npm, no host-side lockfile. The root `.dockerignore` keeps `voct_data/`, `**/node_modules`, `.git`, etc. out of the build context so context transfer stays under a few MB. If the photos directory is missing or incomplete, the Astro stage fails fast with `[photos] No image "<name>"`.
+**Build-host requirements:** Docker + Compose v2, ≥ ~3 GB free RAM during build (rollup graph for the panel SPA peaks at ~2 GB; Sharp for the Astro pipeline adds ~500 MB). No Node.js, no npm, no host-side lockfile. The root `.dockerignore` keeps `voct_data/`, `**/node_modules`, `.git`, etc. out of the build context. If the source media directories are missing or incomplete, the Astro stage fails fast during image/video asset resolution.
 
 ---
 

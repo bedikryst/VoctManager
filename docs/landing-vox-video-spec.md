@@ -1,6 +1,6 @@
 # Spec: concert video on the landing — Vox moment, hero CTA, video lightbox, donation reorg
 
-Status: READY TO IMPLEMENT · Written 2026-07-10 · Frontend (`web/` Astro app) only · No backend, no migrations.
+Status: SUPERSEDED BY CURRENT IMPLEMENTATION · Written 2026-07-10 · Frontend (`web/` Astro app) only · No backend, no migrations.
 
 Every file path and line number below was verified against the current tree on 2026-07-10.
 Trust them; only re-verify if a line number is off by a few. **Nothing here needs discovery —
@@ -17,10 +17,9 @@ conventions like Ethereal tokens do NOT apply; `web/` owns its CSS, see `.ai/07_
 2. **All video is self-hosted MP4.** GDPR hard rule (`.ai/07` §Hard rules): zero third-party
    requests — a YouTube/Vimeo **iframe is forbidden** (it phones home before any consent).
    An outbound *link* to YouTube is fine; an embed is not.
-3. **Placeholder era:** every video slot uses the existing `/demo/demo_video.mp4`
-   (already in `web/public/demo/`). The owner swaps real footage later — all sources live in
-   ONE new file (`web/src/data/landing/video.ts`) so the swap is a one-file edit.
-   ⚠ Do not deploy publicly while placeholders are wired — same caveat as `/press`.
+3. **Placeholder era is over:** MP4 files must not live in `web/public`. Current footage lives in
+   `web/src/assets/videos/` and is exposed only through the typed registry in
+   `web/src/lib/videos.ts`, so Astro emits content-hashed URLs instead of stable public paths.
 4. **Donation reorg:** the hero's standing donation pill ("Następny Koncert Duchowy powstaje
    teraz — pomóż mu wybrzmieć") is removed; the experience (video) becomes the hero's primary
    CTA. Donation asks concentrate in movement III (*Sustinete nos*) + the path-next card +
@@ -80,16 +79,14 @@ conventions like Ethereal tokens do NOT apply; `web/` owns its CSS, see `.ai/07_
 /**
  * @file video.ts
  * @description Video sources for the landing — single source of truth. ALL entries are
- *  PLACEHOLDER (/demo/demo_video.mp4, shared with /press) until the real cuts arrive:
- *  swap the paths here (and in paths.ts `video` fields), nothing else changes. Self-hosted
- *  MP4 only — GDPR hard rule: no YouTube/Vimeo embeds (an outbound link is fine, an iframe
- *  is not). Recommended real-asset home: web/public/video/.
+ *  Self-hosted MP4 only — GDPR hard rule: no YouTube/Vimeo embeds (an outbound link is fine,
+ *  an iframe is not). Real assets are imported from src/assets/videos via lib/videos.ts.
  * @architecture Astro islands 2026
  * @module data/landing/video
  */
 
 export interface VideoSource {
-  /** Public URL of a self-hosted MP4 (H.264 + AAC), served from web/public. */
+  /** Content-hashed URL of a self-hosted MP4 (H.264 + AAC), emitted by Astro. */
   readonly src: string;
   /** Mono caption line rendered under the frame and in the lightbox. */
   readonly caption: string;
@@ -97,8 +94,7 @@ export interface VideoSource {
 
 /** The 60–90 s concert reel — hero CTA + the Vox moment in movement II. */
 export const REEL: VideoSource = {
-  // PLACEHOLDER — swap for the real reel (e.g. /video/voct-reel.mp4) when it lands.
-  src: "/demo/demo_video.mp4",
+  src: videoAsset("landing-modal"),
   caption: "Fragment Koncertu Duchowego · VoctEnsemble",
 };
 ```
@@ -128,7 +124,7 @@ time label, fullscreen. Owns the ambient contract and single-voice exclusivity.
  * @module islands/landing/video/VideoPlayer
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface VideoPlayerProps {
   readonly src: string;
@@ -142,6 +138,7 @@ interface VideoPlayerProps {
 const DUCK_GAIN = 0.04;
 
 type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+let playerIdSequence = 0;
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
@@ -156,7 +153,12 @@ export function VideoPlayer({
   caption,
   autoPlay = false,
 }: VideoPlayerProps): React.JSX.Element {
-  const id = useId();
+  const idRef = useRef<string | null>(null);
+  if (idRef.current === null) {
+    playerIdSequence += 1;
+    idRef.current = `vplayer-${playerIdSequence}`;
+  }
+  const id = idRef.current;
   const [playing, setPlaying] = useState(false);
 
   const rootRef = useRef<HTMLElement | null>(null);
@@ -557,14 +559,14 @@ downward cue" — still true; drop any mention of the occasion pill if present).
 `paths.ts` — extend `interface Path` (after `poster`, line 30):
 
 ```ts
-  /** Public URL of a self-hosted MP4 fragment; omit when no footage exists (never fabricate). */
+  /** Content-hashed URL of a self-hosted MP4 fragment; omit when no footage exists. */
   readonly video?: string;
 ```
 
 Add to **each of the five** `PATHS` entries (after `poster: …`):
 
 ```ts
-    video: "/demo/demo_video.mp4", // PLACEHOLDER — swap for the real fragment or delete this line
+    video: videoAsset("landing-modal"),
 ```
 
 `PathSection.astro` — after the summary paragraph (line 40,
@@ -1053,13 +1055,13 @@ reel replaces `REEL.src`, extend the landing `jsonLd` (index.astro lines 46–72
     name: "VoctEnsemble — fragment Koncertu Duchowego",
     description: "60 sekund koncertu VoctEnsemble: muzyka sakralna a cappella.",
     thumbnailUrl: `https://voctensemble.com${voxPoster}`,
-    contentUrl: "https://voctensemble.com/video/voct-reel.mp4",
+    contentUrl: new URL(REEL.src, Astro.site).toString(),
     uploadDate: "2026-MM-DD",
     duration: "PT1M",
   },
 ```
 
-Adjust `contentUrl`/`uploadDate`/`duration` to the final file. Leave a `// TODO` comment
+Adjust `uploadDate`/`duration` to the final file. Leave a `// TODO` comment
 near jsonLd now if helpful, nothing more.
 
 ---

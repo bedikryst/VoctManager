@@ -17,8 +17,8 @@
  *
  *  Video slots render through the landing's shared VideoPlayer island (custom chrome,
  *  one-video-at-a-time coordination, out-of-view pause) — never native controls. The hero
- *  plays the same Kontemplacja Wcielenia film as the landing's modal (shared browser cache
- *  + shared resume position).
+ *  plays the same Kontemplacja Wcielenia film as the landing's modal, sharing browser cache
+ *  and per-tab resume only for that exact media `src`.
  *
  *  Reachable only via direct URL for now — no link from the landing. Florent shares
  *  voctensemble.com/press in his outreach emails.
@@ -32,6 +32,7 @@ import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { photo, bleedPair } from "../lib/photos";
 import { PATHS } from "../data/landing/paths";
+import { MODAL_VIDEO } from "../data/landing/video";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import { VideoPlayer } from "../islands/landing/video/VideoPlayer";
 import "../styles/vault.css";
@@ -46,9 +47,9 @@ const ogImage = (
 ).src;
 
 // Hero film — the REAL Kontemplacja Wcielenia registration (same file the landing's hero
-// modal plays: shared browser cache, shared resume position). The credit is sourced from
-// paths.ts (`credit` on the wcielenie entry) — it belongs to THIS footage.
-const HERO_VIDEO = "/video/landing-modal.mp4";
+// modal plays, shared by browser cache and same-src resume). The credit is sourced from paths.ts
+// (`credit` on the wcielenie entry) — it belongs to THIS footage.
+const HERO_VIDEO = MODAL_VIDEO.src;
 const heroPoster = (
   await getImage({ src: bleedPair("chor-spot").desktop, width: 1600, format: "webp" })
 ).src;

@@ -66,14 +66,15 @@ const upcoming = (await getCollection("concerts"))
           where the asks concentrate; the "next concert" pill (top of hero-grid) is what lights
           up when a real date lands. */}
       <div class="hero-actions">
-        <a
+        <button
+          type="button"
           class="primary-link plausible-event-name=hero+wideo"
-          href={MODAL_VIDEO.src}
           data-video-open
+          data-video-src={MODAL_VIDEO.src}
           data-video-caption={MODAL_VIDEO.caption}
         >
           Zobacz i usłysz
-        </a>
+        </button>
         <a class="secondary-link plausible-event-name=hero+koncerty" href="/koncerty">
           Koncerty Duchowe
         </a>

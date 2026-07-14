@@ -8,7 +8,7 @@
  *  `voct:audio-restore` on pause/end/unmount (AudioController fades the choir loop;
  *  pages without it simply don't listen). Broadcasts `voct:video-play` so only one video
  *  sounds at a time, and pauses itself when scrolled out of view. Playback position is
- *  saved per src (resumeStore, sessionStorage) so the same file resumes across surfaces.
+ *  shared only between players using the exact same media `src`.
  *  Publishes duration on the scrub (`data-cursor="seek"` + `data-duration`) so the site
  *  cursor can become the seek tooltip. Global ←/→ seek ±5 s on the most recently started
  *  player without needing the scrub focused (the focused slider keeps its full keymap).
@@ -24,7 +24,7 @@
  * @module islands/landing/video/VideoPlayer
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatTime } from "./formatTime";
 import { clearPosition, readPosition, savePosition } from "./resumeStore";
@@ -45,6 +45,8 @@ interface VideoPlayerProps {
   readonly glow?: boolean;
   /** 9:16 audience document — height-driven portrait frame instead of the 16:9 stage. */
   readonly portrait?: boolean;
+  /** Keep playback position in sessionStorage for other players using the same media src. */
+  readonly resume?: boolean;
 }
 
 /** Same dip ListenMoment used — the choir bed recedes under the video, never dies. */
@@ -63,6 +65,7 @@ type FullscreenVideo = HTMLVideoElement & { webkitEnterFullscreen?: () => void }
 // pair of keys, one unambiguous target (only one video sounds at a time anyway). Survives
 // pauses (you can still nudge the paused film), cleared when that player unmounts.
 let globalKeysOwnerId: string | null = null;
+let playerIdSequence = 0;
 
 export function VideoPlayer({
   src,
@@ -74,8 +77,14 @@ export function VideoPlayer({
   idleHide = false,
   glow = false,
   portrait = false,
+  resume = true,
 }: VideoPlayerProps): React.JSX.Element {
-  const id = useId();
+  const idRef = useRef<string | null>(null);
+  if (idRef.current === null) {
+    playerIdSequence += 1;
+    idRef.current = `vplayer-${playerIdSequence}`;
+  }
+  const id = idRef.current;
   const [playing, setPlaying] = useState(false);
   const [buffering, setBuffering] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
@@ -118,12 +127,9 @@ export function VideoPlayer({
   const pause = useCallback((): void => {
     const video = videoRef.current;
     if (!video) return;
-    // Save synchronously, not just in the 'pause' media event (which fires in a later
-    // task) — another player's play() broadcast must be able to read this position
-    // immediately after pausing us.
-    if (!video.paused) savePosition(src, video.currentTime, video.duration);
+    if (resume && !video.paused) savePosition(src, video.currentTime, video.duration);
     video.pause();
-  }, [src]);
+  }, [resume, src]);
 
   const play = useCallback(async (): Promise<void> => {
     const video = videoRef.current;
@@ -131,14 +137,9 @@ export function VideoPlayer({
     window.dispatchEvent(new CustomEvent("voct:audio-duck", { detail: { gain: DUCK_GAIN } }));
     window.dispatchEvent(new CustomEvent("voct:video-play", { detail: { id } }));
     globalKeysOwnerId = id;
-    // Cross-surface resume — checked after the broadcast above, so a twin player pausing
-    // right now (same src on another surface) has already saved its position. Last write
-    // wins: every pause/scrub saves, so a stale twin catches up to wherever the visitor
-    // last stopped, while an in-instance pause→play (saved ≈ currentTime) never jumps.
-    const resumeAt = readPosition(src);
+    const resumeAt = resume ? readPosition(src) : 0;
     if (resumeAt > 0 && Math.abs(resumeAt - video.currentTime) > 2) {
       const applyResume = (): void => {
-        // Clamp against duration in case the file was re-cut shorter than a stale entry.
         video.currentTime =
           Number.isFinite(video.duration) && video.duration > 0
             ? Math.min(resumeAt, Math.max(0, video.duration - 1))
@@ -157,7 +158,7 @@ export function VideoPlayer({
       setBuffering(false);
       restore();
     }
-  }, [id, restore, src]);
+  }, [id, restore, resume, src]);
 
   const toggle = useCallback((): void => {
     if (failed) return;
@@ -207,16 +208,14 @@ export function VideoPlayer({
       setPlaying(false);
       setBuffering(false);
       restore();
-      // Covers pauses we didn't initiate (iOS native fullscreen controls, OS media
-      // session). Near-end saves clear the entry, so the ended-flow stays clean.
-      savePosition(src, video.currentTime, video.duration);
+      if (resume) savePosition(src, video.currentTime, video.duration);
     };
     const onEnded = (): void => {
       setPlaying(false);
       setBuffering(false);
       setVeiled(true); // the curtain falls back over the frame
       restore();
-      clearPosition(src);
+      if (resume) clearPosition(src);
       video.currentTime = 0;
       paintProgress(0, video.duration);
     };
@@ -231,10 +230,8 @@ export function VideoPlayer({
       scrubRef.current?.setAttribute("aria-valuemax", String(Math.round(video.duration)));
       paintProgress(video.currentTime, video.duration);
     };
-    // Scrubs update the stored position too — resume's last-write-wins rule relies on the
-    // store always reflecting where the visitor last put the playhead.
     const onSeeked = (): void => {
-      savePosition(src, video.currentTime, video.duration);
+      if (resume) savePosition(src, video.currentTime, video.duration);
       const pending = pendingFractionRef.current;
       if (pending !== null && Number.isFinite(video.duration) && video.duration > 0) {
         pendingFractionRef.current = null;
@@ -271,7 +268,7 @@ export function VideoPlayer({
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("error", onError);
     };
-  }, [applyMediaSession, paintProgress, restore, src]);
+  }, [applyMediaSession, paintProgress, restore, resume, src]);
 
   // Only one video sounds at a time: any player starting broadcasts; the others pause.
   useEffect(() => {
@@ -329,6 +326,22 @@ export function VideoPlayer({
     io.observe(root);
     return () => io.disconnect();
   }, [pause]);
+
+  // ClientRouter swaps can replace the DOM before React unmount cleanup runs. Pause on the
+  // transition boundary so the outgoing player saves its resume point and releases playback.
+  useEffect(() => {
+    const onBeforeSwap = (): void => {
+      if (globalKeysOwnerId === id) globalKeysOwnerId = null;
+      const video = videoRef.current;
+      if (video && !video.paused) {
+        if (resume) savePosition(src, video.currentTime, video.duration);
+        video.pause();
+      }
+      restore();
+    };
+    document.addEventListener("astro:before-swap", onBeforeSwap);
+    return () => document.removeEventListener("astro:before-swap", onBeforeSwap);
+  }, [id, restore, resume, src]);
 
   // Fullscreen tracking — drives the ✕/⤢ label and enables the idle chrome fade.
   useEffect(() => {
@@ -395,15 +408,14 @@ export function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Unmount (lightbox close, view-transition swap): remember the spot, stop sound, lift
-  // the duck, detach the OS media surface. Saved here explicitly — the media-events
-  // effect above cleans up first, so its 'pause' listener is already gone.
+  // Unmount (lightbox close, view-transition swap): save this src's resume point, stop sound,
+  // lift the duck, and detach the OS media surface.
   useEffect(() => {
     return () => {
       if (globalKeysOwnerId === id) globalKeysOwnerId = null;
       const video = videoRef.current;
       if (video && !video.paused) {
-        savePosition(src, video.currentTime, video.duration);
+        if (resume) savePosition(src, video.currentTime, video.duration);
         video.pause();
       }
       window.dispatchEvent(new CustomEvent("voct:audio-restore"));

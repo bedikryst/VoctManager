@@ -237,9 +237,14 @@
   .primary-link,
   .secondary-link {
     position: relative;
-    padding-bottom: 8px;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0 0 8px;
     color: inherit;
+    cursor: pointer;
     gap: 12px;
+    text-align: left;
     transition: color 0.45s var(--ease);
   }
 

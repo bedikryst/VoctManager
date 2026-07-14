@@ -37,6 +37,7 @@ Patrz wersja angielska — układ folderów identyczny. Krótki przegląd:
 * **`data/landing/`** — ręcznie kuratorowane moduły TS (manifestLines, paths).
 * **`content/`** — YAML collections do edycji przez zespół (`concerts/`, `repertoire/`).
 * **`assets/photos/`** — oryginalne JPG-i (gitignorowane, wgrywane ręcznie na build host).
+* **`assets/videos/`** — oryginalne MP4 (gitignorowane, wgrywane ręcznie na build host; bundlowane do hashowanych URL-i).
 
 ---
 
@@ -69,7 +70,7 @@ Każda wyspa Astro to **osobny root React** — providery z jednej nie sięgają
 * **Strony są statyczne.** `build.format: "file"` emituje `index.html`, `koncerty.html`, `kontakt.html`, `o-nas.html` do `dist/`. Produkcyjny nginx (`../infra/nginx/prod.conf`) używa `try_files /<page>.html` dla czystych URL.
 * **`/_astro/*`** to content-addressed, serwowane z `Cache-Control: public, max-age=31536000, immutable`.
 * **`/home`** — legacy SPA preview path; permanent redirect do `/` przez nginx.
-* **Deploy produkcyjny jest w pełni Dockerised.** `frontend/Dockerfile` to multi-stage build z `context: <repo root>` — Stage 1 buduje panel SPA, Stage 2 (`web-builder`) uruchamia `npm ci` + `npm run build` dla tej aplikacji Astro, Stage 3 (runtime nginx) kopiuje *oba* drzewa dist do `/usr/share/nginx/html/app` i `/usr/share/nginx/html/marketing`. Brak host bind-mountu `web/dist`; brak Node na hoście. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` to jedna komenda. **Host buildu musi jednak zawierać `web/src/assets/photos/` wypełnione oryginalnymi JPG-ami** (są gitignorowane — należą do współtwórców). Brakujące zdjęcie wywala stage Astro z czytelnym błędem `[photos] No image "<name>"`.
+* **Deploy produkcyjny jest w pełni Dockerised.** `frontend/Dockerfile` to multi-stage build z `context: <repo root>` — Stage 1 buduje panel SPA, Stage 2 (`web-builder`) uruchamia `npm ci` + `npm run build` dla tej aplikacji Astro, Stage 3 (runtime nginx) kopiuje *oba* drzewa dist do `/usr/share/nginx/html/app` i `/usr/share/nginx/html/marketing`. Brak host bind-mountu `web/dist`; brak Node na hoście. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` to jedna komenda. **Host buildu musi jednak zawierać `web/src/assets/photos/` oraz `web/src/assets/videos/` wypełnione oryginalnymi plikami** (są gitignorowane — należą do współtwórców). Brakujące zdjęcie wywala stage Astro z czytelnym błędem `[photos] No image "<name>"`; brakujące wideo wywala import assetu.
 
 ---
 
@@ -86,7 +87,7 @@ Dwa endpointy konsumowane:
 
 ## 🚦 Konwencje i wytyczne
 
-* **Zdjęcia żyją poza repo.** `src/assets/photos/` jest gitignorowane (`web/.gitignore`) — oryginały to 5-12 MB JPG-i należące do artystów. Wgrywaj ręcznie na build host przed `npm run build`. `lib/photos.ts` rozwiązuje je po bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`).
+* **Duże media żyją poza repo.** `src/assets/photos/` i `src/assets/videos/` są gitignorowane (`web/.gitignore`) — oryginały należą do artystów i są wgrywane ręcznie na build host przed `npm run build`. `lib/photos.ts` rozwiązuje zdjęcia po bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`); `lib/videos.ts` importuje MP4 z `src/assets/videos/`, żeby Astro emitowało hashowane URL-e zamiast stabilnych `/video/*.mp4`.
 * **Full-bleed obrazki** idą przez `<BleedImage desktop mobile alt position … />` — emituje AVIF + WebP w responsive widths z 1920px WebP fallback `<img src>`. In-flow obrazki używają Astro `<Picture>`.
 * **Brak zewnętrznych framework'ów CSS.** Tokeny w `tokens.css`, primitivy w `base.css`, art-directed CSS per strona / sekcja. Tailwind nie jest tu zainstalowany.
 * **Brak `any`.** Strict TypeScript. Bramka `astro check` musi zostać przy `0 errors / 0 warnings`.

@@ -3,9 +3,8 @@
  * @description Full-screen video room — the nave goes dark for the projection. Opens on
  *  `voct:open-video` ({ src?, caption? }, defaults to MODAL_VIDEO), closes on ✕ / Escape /
  *  backdrop. The player mounts only while open, so its unmount cleanup pauses the video and
- *  restores the ambient bed. Sets `window.__voctVideoReady` so the static-DOM delegation in
- *  scripts/landing.ts knows whether to intercept `[data-video-open]` clicks or let the
- *  native href (the MP4 itself) serve as the pre-hydration/no-JS fallback.
+ *  restores the ambient bed. Sets `window.__voctVideoReady` and emits `voct:video-ready`
+ *  so static-DOM triggers can queue an early click until hydration completes.
  * @architecture Astro islands 2026
  * @module islands/landing/VideoLightbox
  */
@@ -41,23 +40,9 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
   useBodyClass(open ? "video-open" : null);
   useFocusTrap(panelRef, isOpen, { onEscape: close });
 
-  // History integration (mirrors VaultModal): opening pushes an entry so the mobile back
-  // button / gesture closes the projection instead of leaving the page. Closing by
-  // ✕ / Esc / backdrop pops our own entry back off, so the next back press leaves the
-  // page as expected rather than being absorbed by a stale modal state.
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!history.state?.voctVideoOpen) history.pushState({ voctVideoOpen: true }, "");
-    const onPop = (): void => close();
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      if (history.state?.voctVideoOpen) history.back();
-    };
-  }, [isOpen, close]);
-
   useEffect(() => {
     (window as Window & { __voctVideoReady?: boolean }).__voctVideoReady = true;
+    window.dispatchEvent(new Event("voct:video-ready"));
     const onOpen = (event: Event): void => {
       const detail = (event as CustomEvent<OpenDetail>).detail;
       setOpen({

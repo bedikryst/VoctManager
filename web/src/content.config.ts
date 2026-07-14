@@ -87,10 +87,14 @@ const concerts = defineCollection({
       )
       .default([]),
     /** Self-hosted concert film (selected fragments), rendered in the shared custom player.
-        `src` is consumed by the controlled player; `poster` is a photo() base name
+        `asset` is resolved through `lib/videos.ts`; `poster` is a photo() base name
         (falls back to the hero bg). */
     video: z
-      .object({ src: z.string(), caption: z.string().optional(), poster: z.string().optional() })
+      .object({
+        asset: z.enum(["landing-modal", "landing-wolanie", "landing-aeternam"]),
+        caption: z.string().optional(),
+        poster: z.string().optional(),
+      })
       .optional(),
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
         who gives the opening word, light direction…). Rendered as a quiet colophon block. */

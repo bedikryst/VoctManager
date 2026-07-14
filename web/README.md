@@ -87,7 +87,10 @@ web/
     │   └── repertoire/       #   Five eras of sacred repertoire (Renaissance → contemporary)
     │
     ├── lib/photos.ts  # Extension-agnostic image lookup; `photo("name")` + `bleedPair("base")`
-    └── assets/photos/ ← Hero/portrait originals (gitignored — uploaded to build host manually)
+    ├── lib/videos.ts  # Bundled MP4 registry; emits hashed asset URLs, not /video/*.mp4
+    └── assets/
+        ├── photos/ ← Hero/portrait originals (gitignored — uploaded to build host manually)
+        └── videos/ ← MP4 originals (gitignored — uploaded to build host manually)
 ```
 
 > **`entities/` is intentionally omitted.** This is not an FSD codebase — it's an Astro site where domain content lives in YAML collections or hand-curated TS modules.
@@ -123,7 +126,7 @@ Each Astro island is a **separate React root** — context providers from one do
 * **Pages are static.** `build.format: "file"` emits `index.html`, `koncerty.html`, `kontakt.html`, `o-nas.html` to `dist/`. Production nginx (`../infra/nginx/prod.conf`) routes `try_files /<page>.html` for each clean URL.
 * **`/_astro/*`** is content-addressed and served with `Cache-Control: public, max-age=31536000, immutable`.
 * **`/home` legacy** — old SPA preview path; permanently redirects to `/` via nginx.
-* **Production deploy is Dockerised end-to-end.** `frontend/Dockerfile` runs as a multi-stage build with `context: <repo root>` — Stage 1 builds the panel SPA, Stage 2 (`web-builder`) runs `npm ci` + `npm run build` for this Astro app, Stage 3 (nginx runtime) copies *both* dist trees into `/usr/share/nginx/html/app` and `/usr/share/nginx/html/marketing`. No `web/dist` host bind-mount; no Node on the host. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` is the single command. **The build host must, however, contain `web/src/assets/photos/` populated with the original JPGs** (they are .gitignored — collaborator-owned). A missing photo fails the Astro stage with a clear `[photos] No image "<name>"` error.
+* **Production deploy is Dockerised end-to-end.** `frontend/Dockerfile` runs as a multi-stage build with `context: <repo root>` — Stage 1 builds the panel SPA, Stage 2 (`web-builder`) runs `npm ci` + `npm run build` for this Astro app, Stage 3 (nginx runtime) copies *both* dist trees into `/usr/share/nginx/html/app` and `/usr/share/nginx/html/marketing`. No `web/dist` host bind-mount; no Node on the host. `docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend` is the single command. **The build host must, however, contain `web/src/assets/photos/` and `web/src/assets/videos/` populated with the original files** (they are .gitignored — collaborator-owned). A missing photo fails the Astro stage with a clear `[photos] No image "<name>"` error; a missing video fails the bundled asset import.
 
 ---
 
@@ -140,7 +143,7 @@ Two endpoints are consumed:
 
 ## 🚦 Conventions & Code Guidelines
 
-* **Photos live outside the repo.** `src/assets/photos/` is `.gitignore`d (`web/.gitignore`) — originals are 5-12 MB JPGs and belong to the artists. Upload them manually to the build host before `npm run build`. `lib/photos.ts` resolves them by bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`).
+* **Large media lives outside the repo.** `src/assets/photos/` and `src/assets/videos/` are `.gitignore`d (`web/.gitignore`) — originals belong to the artists and are uploaded manually to the build host before `npm run build`. `lib/photos.ts` resolves photos by bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`); `lib/videos.ts` imports MP4s from `src/assets/videos/` so Astro emits content-hashed URLs instead of stable `/video/*.mp4` paths.
 * **Full-bleed images** go through `<BleedImage desktop mobile alt position … />` — it emits AVIF + WebP at responsive widths with a 1920px WebP fallback `<img src>`. In-flow images use Astro's `<Picture>`.
 * **No external CSS frameworks.** Tokens in `tokens.css`, primitives in `base.css`, art-directed CSS per page or section. Tailwind is *not* installed here.
 * **No `any`.** Strict TypeScript. The `astro check` gate must stay at `0 errors / 0 warnings`.

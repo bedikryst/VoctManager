@@ -7,8 +7,8 @@ hand-edit those files.
 
 ## Where the files live & how they're named
 
-- Folder: **`web/public/stations/`** (served directly at `/stations/…`, not through Astro's image
-  pipeline — these are already final).
+- Folder: **`web/src/assets/photos/`** (imported through Astro's asset pipeline, then emitted as
+  content-hashed `/_astro/*` URLs).
 - Filename = the concert's **`bg`** value in `web/src/content/concerts.yaml`, plus `.webp`:
 
   | Concert | `bg` in YAML | Output file | Source photo (`web/src/assets/photos/`) | Darkness |
@@ -20,28 +20,27 @@ hand-edit those files.
   | Aeternam | `st-aeternam-bg` | `st-aeternam-bg.webp` | `st-aeternam-bg-desktop.webp` | **memoriam (darker)** |
   | Uroczystość św. A. Boboli | `st-liturgia-bg` | `st-liturgia-bg.webp` | `st-liturgia-bg-desktop.webp` | normal |
 
-The code that consumes them: `web/src/pages/koncerty.astro` — `bgSrc: \`/stations/${c.data.bg}.webp\``
+The code that consumes them: `web/src/pages/koncerty.astro` — `bgSrc: photo(c.data.bg).src`
 (so **the output name must match the `bg` field exactly**; a new concert with a new `bg` needs a new
-file here). The station layers already darken further on top via the `.station::before` radial veil,
+file in `src/assets/photos`). The station layers already darken further on top via the `.station::before` radial veil,
 so the baked image only needs to get *most* of the way dark.
 
 **When you add a NEW concert:** create `st-<slug>-bg-desktop.webp` in `src/assets/photos` (the sharp
-source), then generate `web/public/stations/st-<slug>-bg.webp` with the recipe below.
+source), then generate `web/src/assets/photos/st-<slug>-bg.webp` with the recipe below.
 
 ---
 
 ## Option A — regenerate all six with one script (fastest)
 
-The current files were produced with `sharp` (already a dependency). Save this as
-`web/blur-stations.cjs`, run `node blur-stations.cjs` from `web/`, then delete it. Re-run whenever a
-source photo changes.
+The current files were produced with `sharp` (already a dependency). Run `node blur-stations.cjs`
+from `web/`. Re-run whenever a source photo changes.
 
 ```js
 const sharp = require("sharp");
 const { mkdirSync } = require("node:fs");
 
 const SRC = "src/assets/photos";
-const OUT = "public/stations";
+const OUT = "src/assets/photos";
 mkdirSync(OUT, { recursive: true });
 
 // brightness/saturation multiply the source; memoriam (hymn, aeternam) go darker + desaturated.
@@ -88,7 +87,7 @@ Use this when you want art control over a specific station (reframe, hand-tune t
    - (Equivalent to the script's `brightness 0.46 / 0.30` and `saturation 0.95 / 0.62`.)
 5. **Export:** `File → Export as → WEBP` → **Quality ≈ 0.68**. Save as the **output filename** from
    the table (e.g. `st-hymn-bg.webp`, NOT the `-desktop` source name).
-6. **Drop it into** `web/public/stations/`, overwriting the old one.
+6. **Drop it into** `web/src/assets/photos/`, overwriting the old one.
 
 ## Verify
 

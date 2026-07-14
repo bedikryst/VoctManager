@@ -28,7 +28,7 @@
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
   video:
-    src: /video/landing-modal.mp4
+    asset: landing-modal
     caption: 'Wybrane fragmenty koncertu „Kontemplacja Wcielenia" · VoctEnsemble 2024'
     poster: kd-wcielenie-5
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v

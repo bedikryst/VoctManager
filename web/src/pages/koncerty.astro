@@ -36,11 +36,11 @@ const stations = concerts.map((c, i) => ({
   // Via-rail fill is derived from position, not stored per-entry: adding a concert
   // no longer means re-percentaging every other YAML row by hand.
   viaStep: `${Math.round(((i + 1) / stationCount) * 100)}%`,
-  // Station backdrops are PRE-BLURRED + pre-darkened WebP files in web/public/stations/,
+  // Station backdrops are PRE-BLURRED + pre-darkened WebP files in src/assets/photos,
   // named after the concert's `bg`. Blurring offline means the browser runs ZERO filter
-  // passes on six full-bleed layers (the old runtime blur was the jank). They load eagerly
-  // as CSS backgrounds. Recipe to regenerate them: docs/station-backgrounds.md.
-  bgSrc: `/stations/${c.data.bg}.webp`,
+  // passes on six full-bleed layers (the old runtime blur was the jank). Astro emits them
+  // as content-hashed asset URLs. Recipe to regenerate them: docs/station-backgrounds.md.
+  bgSrc: photo(c.data.bg).src,
   posterImg: c.data.poster ? photo(c.data.poster) : null,
 }));
 
@@ -419,7 +419,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Stations */
   .station { position: relative; min-height: 100svh; display: flex; align-items: center; padding: clamp(96px,13vh,150px) max(28px,5vw) clamp(72px,10vh,110px); color: var(--paper); overflow: hidden; isolation: isolate; }
-  /* Backdrops are pre-blurred + pre-darkened offline (web/public/stations/), so there is NO
+  /* Backdrops are pre-blurred + pre-darkened offline (src/assets/photos), so there is NO
      runtime `filter` here — a live blur() on six full-bleed layers was the jank. No
      `will-change`: the parallax controller sets a `translate3d` only while a station is near
      the viewport, so only visible layers get promoted; off-screen ones un-promote. */

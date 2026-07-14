@@ -48,17 +48,18 @@ const programFor = (id: string) => programById.get(id) ?? [];
                 <p class="path-entry-place">{path.place}</p>
                 <p class="path-entry-summary">{path.note}</p>
                 {path.video && (
-                  <a
+                  <button
+                    type="button"
                     class="path-entry-video plausible-event-name=path+fragment"
-                    href={path.video.src}
                     data-video-open
+                    data-video-src={path.video.src}
                     data-video-caption={`${path.title} · ${path.year}`}
                     data-video-portrait={path.video.portrait ? "true" : undefined}
                     data-video-note={path.video.note}
                   >
                     <span class="path-entry-video-glyph" aria-hidden="true">▸</span>
                     Zobacz fragment
-                  </a>
+                  </button>
                 )}
                 <details class="path-card-detail path-entry-detail">
                   <summary>

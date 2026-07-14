@@ -39,8 +39,8 @@ services:
       # produces both the panel SPA and the public site in a single nginx image.
     build:
       # Build context = repo root so the Dockerfile sees both frontend/ and web/.
-      # Photos under web/src/assets/photos/ must be present on the build host
-      # (gitignored — see web/README.md §Conventions).
+      # Photos under web/src/assets/photos/ and videos under web/src/assets/videos/
+      # must be present on the build host (gitignored — see web/README.md §Conventions).
       context: .
       dockerfile: frontend/Dockerfile
       args:

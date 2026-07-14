@@ -8,10 +8,11 @@
 #   • panel SPA      → /usr/share/nginx/html/app        (served at /panel, /login, /documents)
 #   • Astro public  → /usr/share/nginx/html/marketing  (served at /, /koncerty, /o-nas, /kontakt, /polityka-prywatnosci)
 #
-# The public site needs `web/src/assets/photos/` populated on the build host before
-# `docker compose build` (the photos are .gitignored — collaborator-owned originals
-# uploaded manually). A missing photo will fail the Astro build with a clear
-# `[photos] No image "<name>"` error. See web/README.md §Conventions.
+# The public site needs `web/src/assets/photos/` and `web/src/assets/videos/`
+# populated on the build host before `docker compose build` (both are .gitignored
+# collaborator-owned originals uploaded manually). A missing photo fails fast with
+# `[photos] No image "<name>"`; a missing video fails in the asset import stage.
+# See web/README.md §Conventions.
 # ==========================================
 
 # ==========================================
@@ -84,9 +85,10 @@ COPY web/package.json web/package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
     npm ci --prefer-offline --no-audit --no-fund
 
-# Copy the rest of the public-site source. `web/src/assets/photos/` is part of
-# this context iff the operator placed the original JPGs on the build host —
-# they are .gitignored, so CI/build hosts must seed them out-of-band.
+# Copy the rest of the public-site source. `web/src/assets/photos/` and
+# `web/src/assets/videos/` are part of this context iff the operator placed the
+# originals on the build host — they are .gitignored, so CI/build hosts must seed
+# them out-of-band.
 COPY web/ ./
 
 # Astro static build → emits `dist/index.html`, `dist/koncerty.html`, etc.,

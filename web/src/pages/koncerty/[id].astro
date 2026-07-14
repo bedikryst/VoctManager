@@ -22,6 +22,7 @@ import SiteChrome from "../../components/SiteChrome.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
+import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
 import "../../styles/vault.css";
@@ -67,6 +68,7 @@ const filmPoster = c.video ? (photoOptional(c.video.poster ?? "") ?? bg.desktop)
 const filmPosterSrc = filmPoster
   ? (await getImage({ src: filmPoster, width: 1600, format: "webp" })).src
   : undefined;
+const filmVideoSrc = c.video ? videoAsset(c.video.asset) : undefined;
 
 // ── Programme grouped into movements (the salvation-history acts). Numbering runs continuously
 // across acts (the bis carries "bis"); consecutive works sharing a movement id sit under one act
@@ -377,9 +379,9 @@ const plDate = (iso: string): string =>
       </section>
     )}
 
-    {/* ── Film: selected fragments of the evening. In-flow custom player, same contract
-          as the landing's Vox moment. ────────────────────────────────────────── */}
-    {c.video && (
+    {/* ── Film: selected fragments of the evening. The player hydrates eagerly after
+          ClientRouter swaps and starts independently from the landing resume state. ── */}
+    {c.video && filmVideoSrc && (
       <section class="kd-band kd-film" aria-label="Zapis wieczoru">
         <div class="kd-wrap">
           <span class="kd-section-label micro reveal">
@@ -389,11 +391,12 @@ const plDate = (iso: string): string =>
           </span>
           <div class="kd-film-player reveal" data-d="1">
             <VideoPlayer
-              client:visible
-              src={c.video.src}
+              client:load
+              src={filmVideoSrc}
               poster={filmPosterSrc}
               caption={c.video.caption}
               tone="dark"
+              resume={false}
             />
           </div>
         </div>

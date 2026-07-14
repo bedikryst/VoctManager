@@ -504,9 +504,30 @@ function setupSilenceMoment(root: HTMLElement, _reduce: boolean): void {
 // ── Interactions: IBAN copy + vault-open + video-open dispatch from static sections ─────────
 // Vault and VideoLightbox live in their own React islands (Faza 3c); static "Wesprzyj" triggers
 // reach the vault over `voct:open-vault`, and static "Zobacz i usłysz"/"Zobacz fragment" links
-// reach the lightbox over `voct:open-video`. Until each island exists the dispatch is a graceful
-// no-op — for video, the anchor's native href (the MP4 itself) serves as the pre-hydration fallback.
+// reach the lightbox over `voct:open-video`. Video triggers are controls, not media anchors:
+// source URLs are bundled asset URLs passed via `data-video-src`.
 function setupInteractions(root: HTMLElement): void {
+  type VideoOpenDetail = {
+    src?: string;
+    caption?: string;
+    portrait?: boolean;
+    note?: string;
+  };
+
+  let pendingVideo: VideoOpenDetail | null = null;
+  const dispatchVideo = (detail: VideoOpenDetail): void => {
+    window.dispatchEvent(new CustomEvent("voct:open-video", { detail }));
+  };
+  const flushPendingVideo = (): void => {
+    if (!pendingVideo) return;
+    const detail = pendingVideo;
+    pendingVideo = null;
+    dispatchVideo(detail);
+  };
+
+  window.addEventListener("voct:video-ready", flushPendingVideo);
+  cleanups.push(() => window.removeEventListener("voct:video-ready", flushPendingVideo));
+
   const onClick = (event: MouseEvent): void => {
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -538,20 +559,18 @@ function setupInteractions(root: HTMLElement): void {
 
     const videoBtn = target.closest<HTMLElement>("[data-video-open]");
     if (videoBtn) {
-      // Pre-hydration fallback: until VideoLightbox is mounted, let the native href
-      // (the MP4 itself) handle the click instead of dispatching into the void.
-      if (!(window as Window & { __voctVideoReady?: boolean }).__voctVideoReady) return;
       event.preventDefault();
-      window.dispatchEvent(
-        new CustomEvent("voct:open-video", {
-          detail: {
-            src: videoBtn.getAttribute("href") ?? undefined,
-            caption: videoBtn.dataset.videoCaption,
-            portrait: videoBtn.dataset.videoPortrait === "true",
-            note: videoBtn.dataset.videoNote,
-          },
-        }),
-      );
+      const detail = {
+        src: videoBtn.dataset.videoSrc,
+        caption: videoBtn.dataset.videoCaption,
+        portrait: videoBtn.dataset.videoPortrait === "true",
+        note: videoBtn.dataset.videoNote,
+      };
+      if (!(window as Window & { __voctVideoReady?: boolean }).__voctVideoReady) {
+        pendingVideo = detail;
+        return;
+      }
+      dispatchVideo(detail);
     }
   };
   root.addEventListener("click", onClick);
