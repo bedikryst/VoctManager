@@ -318,21 +318,53 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
 // per-word stagger + delayed group reveal): scrubbing tied the tempo to scroll velocity,
 // and its 0.32 "settled floor" left every read stanza regressed to gray — the manifest
 // un-revealing what it had revealed. One-shot light, permanent ink.
+//
+// CANON ENTRIES: stanza I is one line tall, so a single scroll gesture often carries both
+// I and II past the trigger — and two sweeps running in unison read as a copy-pasted
+// effect, not choreography. The onset queue makes the voices enter in imitation instead:
+// each lit start must come ≥GAP_MS after the previous one's start (start-to-start, like
+// points of imitation — the previous sweep is still running when the next voice enters).
+// A stanza that arrives naturally later than the gap lights immediately: slow readers pay
+// zero added latency. The answer waits longest — "Odsłania." may only begin once "Sacrum
+// nie zdobi." reads as fully inked (its glyphs sit in the sweep's fast early stretch, so
+// ~3.4s into the 4.6s transition the line looks done).
 function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   // Under reduced motion MotionGate never adds html.voct-motion, so the CSS half-light
   // states stay inert and the manifest is plain full ink — nothing to drive here.
   if (reduce) return;
   const manifest = root.querySelector<HTMLElement>(".manifest");
   if (!manifest) return;
-  const lines = manifest.querySelectorAll<HTMLElement>(".manifest-line-group");
+  const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line-group"));
   if (!lines.length) return;
+
+  const GAP_MS = 1600;
+  const ANSWER_GAP_MS = 3400;
+  let lastOnset = Number.NEGATIVE_INFINITY;
+  const timers: number[] = [];
+
+  const light = (line: HTMLElement): void => {
+    const gap = line.classList.contains("manifest-answer") ? ANSWER_GAP_MS : GAP_MS;
+    const now = performance.now();
+    const onset = Math.max(now, lastOnset + gap);
+    lastOnset = onset;
+    if (onset <= now) {
+      line.classList.add("is-lit");
+    } else {
+      timers.push(window.setTimeout(() => line.classList.add("is-lit"), onset - now));
+    }
+  };
 
   const io = new IntersectionObserver(
     (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        (entry.target as HTMLElement).classList.add("is-lit");
-        io.unobserve(entry.target);
+      // Document order, not callback order — the canon must enter top-down even when
+      // one callback delivers several stanzas at once (fast scroll, mid-page load).
+      const hit = entries
+        .filter((entry) => entry.isIntersecting)
+        .map((entry) => entry.target as HTMLElement)
+        .sort((a, b) => lines.indexOf(a) - lines.indexOf(b));
+      hit.forEach((line) => {
+        light(line);
+        io.unobserve(line);
       });
     },
     // Bottom inset puts the trigger line at ~74% of the viewport: low enough that the
@@ -341,7 +373,10 @@ function setupManifestLight(root: HTMLElement, reduce: boolean): void {
     { threshold: 0, rootMargin: "0px 0px -26% 0px" },
   );
   lines.forEach((line) => io.observe(line));
-  cleanups.push(() => io.disconnect());
+  cleanups.push(() => {
+    io.disconnect();
+    timers.forEach((t) => window.clearTimeout(t));
+  });
 }
 
 // ── Interlude breath: scroll-driven knot bloom while the ambient is silent ──────────────────

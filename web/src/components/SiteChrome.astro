@@ -51,19 +51,15 @@ const links = [
     aria-controls="navMenu"
     aria-label="Menu"></button>
 
-  {/* "Antyfona" — the shared mobile overlay (nave-menu.css). Self-contained: its own brand +
-      close, since .chrome.menu-open hides the bar's brand/toggle. Each link carries its
-      destination's Latin incipit, so the menu reads as the site's antiphon. */}
+  {/* "Antyfona" — the shared mobile overlay (nave-menu.css). The card carries NO brand of its
+      own: the bar's .chrome-brand persists ABOVE the overlay (z-index 61, tinted to ink — see
+      the style block), so the mark never blinks. Each link carries its destination's Latin
+      incipit, so the menu reads as the site's antiphon. */}
   <nav class="nave" id="navMenu" aria-label="Nawigacja główna">
     <div class="nave-veil"></div>
-    <div class="nave-seam" aria-hidden="true"></div>
 
     <div class="nave-inner">
       <div class="nave-top">
-        <a class="nave-brand" href="/" aria-label="VoctEnsemble — strona główna">
-          <span class="nave-brand-mark" aria-hidden="true"></span>
-          <span>VoctEnsemble</span>
-        </a>
         <button class="nave-close" id="menuClose" type="button" aria-label="Zamknij menu">Zamknij</button>
       </div>
 
@@ -111,7 +107,9 @@ const links = [
   .chrome.is-solid { color: var(--ink); padding-top: calc(env(safe-area-inset-top, 0px) + 16px); padding-bottom: 14px; }
   .chrome.is-solid::before { opacity: 0; }
 
-  .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; }
+  /* z-index 61 lifts the brand ABOVE the "Antyfona" overlay (.nave, z:60) — it is the ONE bar
+     element that persists while the card is open, so the mark never blinks out and back in. */
+  .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; position: relative; z-index: 61; }
   .chrome-brand .brand-mark { width: 17px; height: 40px; flex-shrink: 0; background: var(--candle); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; transition: background-color .5s var(--ease); }
   .chrome.is-solid .chrome-brand .brand-mark { background: var(--ink); }
 
@@ -130,12 +128,13 @@ const links = [
   .nav-toggle::after { top: 10px; width: 15px; }
   .nav-toggle:hover::after { width: 26px; }
 
-  /* Bar clears when the "Antyfona" overlay (nave-menu.css) opens — it carries its own brand + close.
-     Fast fade-out (.12s) so it is gone before the overlay's clip reveals the nave brand in the same
-     spot — the mark reads as continuous, not a teleport. The brand eases back in on close. */
-  .chrome-brand, .nav-toggle { transition: opacity .3s var(--ease); }
-  .chrome.menu-open .chrome-brand, .chrome.menu-open .nav-toggle,
-  .chrome.menu-closing .chrome-brand, .chrome.menu-closing .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .12s var(--ease); }
+  /* When the "Antyfona" card opens, only the TOGGLE clears (the card carries "Zamknij"); the
+     brand stays put above the card and eases to ink with the card's fade — see the menu-open
+     overrides at the END of this block (they must follow the dark-tone rules to win the tie). */
+  .nav-toggle { transition: opacity .3s var(--ease); }
+  .chrome.menu-open .nav-toggle,
+  .chrome.menu-closing .nav-toggle { opacity: 0; pointer-events: none; transition: opacity .12s var(--ease); }
+  .chrome-brand { transition: color .32s var(--ease); }
 
   /* 759.98 / 760 boundary matches nave-menu.css so no fractional viewport falls between
      "hamburger shown" and "overlay available". */
@@ -169,6 +168,20 @@ const links = [
   .chrome[data-tone="dark"].is-light { color: var(--ink); }
   .chrome[data-tone="dark"].is-light::before { opacity: 0; }
   .chrome[data-tone="dark"].is-light .chrome-brand .brand-mark { background: var(--ink); }
+
+  /* ── "Antyfona" open: the persistent brand goes ink over the parchment card ────────────────
+     LAST in this block on purpose — these tie with the tone/scroll mark rules above on
+     specificity, and source order is what makes the open state win in every combination. */
+  .chrome.menu-open .chrome-brand,
+  .chrome.menu-closing .chrome-brand { color: var(--ink); }
+  .chrome.menu-open .chrome-brand .brand-mark,
+  .chrome.menu-closing .chrome-brand .brand-mark,
+  .chrome[data-tone="dark"].menu-open .chrome-brand .brand-mark,
+  .chrome[data-tone="dark"].menu-closing .chrome-brand .brand-mark { background: var(--ink); }
+  /* A scrolled (is-solid) bar is tighter (16px top pad); while the card is open, return to the
+     resting padding so the persistent brand sits exactly on the card's top row — the 6px glide
+     rides the bar's existing padding transition. */
+  .chrome.menu-open, .chrome.menu-closing { padding-top: calc(env(safe-area-inset-top, 0px) + 22px); }
 </style>
 
 <script>
@@ -186,9 +199,9 @@ const links = [
       const c = chrome();
       if (c) c.classList.toggle("is-solid", window.scrollY > window.innerHeight * 0.5);
     };
-    // The overlay wipes shut over ~0.55s (nave-menu.css). `menu-closing` keeps it painted and
-    // drives the light-shaft erase; when the timer fires we drop both classes → hidden.
-    const WIPE_MS = 580;
+    // The overlay fades shut over ~0.24s (nave-menu.css) — one quiet breath, no reverse wipe.
+    // `menu-closing` keeps it painted through the fade; the timer then drops both classes → hidden.
+    const WIPE_MS = 260;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let closeTimer = 0;
 
@@ -228,7 +241,7 @@ const links = [
         document.getElementById("menuClose")?.focus({ preventScroll: true });
       });
     };
-    // animated=true → play the light-shaft wipe (Zamknij / Escape). animated=false → snap shut
+    // animated=true → play the quiet close fade (Zamknij / Escape). animated=false → snap shut
     // (navigation / reduced motion), where the page swap is the transition instead.
     const closeMenu = (animated = true) => {
       const c = chrome();

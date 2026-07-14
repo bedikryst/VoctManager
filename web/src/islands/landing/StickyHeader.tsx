@@ -32,9 +32,9 @@ export function StickyHeader(): React.JSX.Element {
   const [onDark, setOnDark] = useState(true);
   const [active, setActive] = useState(false);
 
-  // The overlay wipes shut over ~0.55s (nave-menu.css): `menu-closing` keeps it painted and drives
-  // the light-shaft erase, then the timer flips `menuOpen` off. Escape / Zamknij play the wipe;
-  // in-page links snap shut (there is no page to swap under them).
+  // The overlay fades shut over ~0.24s (nave-menu.css) — one quiet breath, no reverse wipe.
+  // `menu-closing` keeps it painted through the fade, then the timer flips `menuOpen` off.
+  // Escape / Zamknij play the fade; in-page links snap shut (no page swap under them).
   const closeTimer = useRef<number | undefined>(undefined);
   const openMenu = useCallback(() => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -53,7 +53,7 @@ export function StickyHeader(): React.JSX.Element {
     closeTimer.current = window.setTimeout(() => {
       setMenuOpen(false);
       setMenuClosing(false);
-    }, 580);
+    }, 260);
   }, []);
   useEffect(() => () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
@@ -162,12 +162,16 @@ export function StickyHeader(): React.JSX.Element {
       aria-label="Nawigacja"
     >
       {/* view-transition-name: voct-brand → shared element with SiteChrome on the
-          subpages, so the brand morphs across "/" ↔ subpage instead of cross-fading. */}
+          subpages, so the brand morphs across "/" ↔ subpage instead of cross-fading.
+          The brand persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
+          01-foundation.css), so tapping it while the card is open must also close the card
+          (href="#top" is an in-page jump: no navigation swap does it for us). */}
       <a
         className="brand"
         href="#top"
         aria-label="VoctEnsemble"
         style={{ viewTransitionName: "voct-brand" }}
+        onClick={() => closeMenu(false)}
       >
         <span className="brand-glyph-wrap" aria-hidden="true">
           <span className="brand-glyph-halo" />
@@ -217,18 +221,15 @@ export function StickyHeader(): React.JSX.Element {
       </div>
 
       {/* "Antyfona" — shared mobile overlay (nave-menu.css); same markup + choreography as the
-          Astro SiteChrome on subpages. Self-contained (own brand + close), since .chrome.menu-open
-          hides the bar. Each link carries its destination's Latin incipit. */}
+          Astro SiteChrome on subpages. The card carries NO brand of its own — the bar's .brand
+          persists above it — so its top row is just "Zamknij" (also the focus trap's initial
+          target, whose focus ring is styled). Each link carries its destination's Latin
+          incipit. */}
       <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
         <div className="nave-veil" />
-        <div className="nave-seam" aria-hidden="true" />
 
         <div className="nave-inner">
           <div className="nave-top">
-            <a className="nave-brand" href="#top" aria-label="VoctEnsemble" onClick={() => closeMenu(false)}>
-              <span className="nave-brand-mark" aria-hidden="true" />
-              <span>VoctEnsemble</span>
-            </a>
             <button
               className="nave-close"
               id="menuClose"

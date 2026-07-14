@@ -1,51 +1,57 @@
 /**
  * @file nave-menu.css
- * @description Shared mobile navigation overlay — "Antyfona". One stylesheet for BOTH marketing
- *  headers: the Astro SiteChrome (subpages) and the React StickyHeader (landing). Both toggle
- *  `menu-open` (and, during the close wipe, `menu-closing`) on `.chrome`, so the whole
- *  choreography keys off `.chrome.menu-open .nave-*` / `.chrome.menu-closing .nave-*` and stays
- *  identical across the two. Opens ONLY on touch (≤759.98px, where the hamburger shows and Lenis
- *  is dormant — so `body.nav-open { overflow: hidden }` fully locks scroll with no fight).
+ * @description Shared mobile navigation overlay — "Antyfona", set as a BREVIARY CARD. One
+ *  stylesheet for BOTH marketing headers: the Astro SiteChrome (subpages) and the React
+ *  StickyHeader (landing). Both toggle `menu-open` (and, during the close fade, `menu-closing`)
+ *  on `.chrome`, so the whole choreography keys off `.chrome.menu-open .nave-*` /
+ *  `.chrome.menu-closing .nave-*` and stays identical across the two. Opens ONLY on touch
+ *  (≤759.98px, where the hamburger shows and Lenis is dormant — so `body.nav-open` fully locks
+ *  scroll with no fight).
  *
- *  ONE reveal system: a SHAFT OF LIGHT wipes the whole panel on and off through a shared
- *  clip-path — ground, grain and the voices themselves are a single painted plane. The type
- *  carries NO opacity fades: every line is at full strength from the first frame and simply
- *  EMERGES from under the passing light, incipit first, then the big word — all voices entering
- *  together, a chord, not an arpeggio. Their only own motion is a small translateX settle that
- *  trails the wipe. On CLOSE (`.menu-closing`, held by JS for the wipe's length) the shaft
- *  sweeps back and the same clip erases everything in its wake. The veil is opaque (no
- *  backdrop-filter): clip + transform stay cheap to composite on a phone. The surface is
- *  touch-only, so links carry :active press states, not :hover. Each link keeps its
- *  destination's Latin incipit, and the foot names the LIVE canonical hour (filled by the header
- *  scripts from horaeCanonicae) — the menu reads as the site's antiphon, not a list.
- *  Reduced-motion is flat.
+ *  The surface carries the identity, not the motion. The site is a light-parchment world
+ *  ("Nawa światła") — the menu is a page from its own book: warm parchment ground with paper
+ *  grain and aged-edge vignette, INK typography set FROM THE TOP like a book page (not
+ *  app-menu vertical centering — the free space consolidates before the foot, like the light at
+ *  a chapter's end), a faint ruled margin line along the entries, and rubric red used the way a
+ *  breviary uses it — SPARSELY, only to mark where you are: the current page's voice + its
+ *  thicker crimson segment ON the margin rule (and transiently under the finger). Gold is
+ *  reserved for ONE gilded element (the Wesprzyj pill's border); the foot names the LIVE
+ *  canonical hour like a colophon line (filled by the header scripts from horaeCanonicae).
+ *  The BRAND DOES NOT LIVE HERE: the bar's own brand persists above the card (z-index over the
+ *  overlay, tinted to ink by each header's stylesheet) — no fade-out/fade-in blink — so the
+ *  card's top row carries only "Zamknij". The entrance is deliberately QUIET: the card fades
+ *  over the live page (~0.32s) while the content settles DOWN from above by a few px — laid
+ *  onto the page, every mid-frame the same composition; close is one quicker breath (~0.24s).
+ *  Wipes, light shafts and staggers were tried and rejected as showy. The veil is opaque (no
+ *  backdrop-filter) and open/close is a single-group opacity — the cheapest composite on a
+ *  phone. Touch-only surface → :active press states, not :hover. Reduced-motion is flat.
  * @architecture Astro islands 2026
  * @module styles/nave-menu
  */
 
 .nave {
-  --candle-lite: #e8cf90;
-  --ease-door: cubic-bezier(0.7, 0, 0.16, 1);
-  /* Horizontal run of the wipe's slanted edge over the full viewport height — tuned so the
-     clip edge leans at the SAME ~4deg as the light shaft (.nave-seam rotate(4deg)):
-     tan(4deg) × 100vh ≈ 7vh. Keeps the panel glued to the light instead of peeling off it
-     (the old rectangular inset() edge stayed vertical while the shaft leaned). */
-  --lean-x: 7vh;
   position: fixed;
   inset: 0;
   z-index: 60;
   overflow: hidden;
   visibility: hidden;
   pointer-events: none;
+  opacity: 0;
 }
 .chrome.menu-open .nave {
   visibility: visible;
   pointer-events: auto;
+  opacity: 1;
+  transition: opacity 0.32s var(--ease);
 }
-/* Held visible (but inert) by JS through the close wipe, then the class is dropped → hidden. */
+/* Held visible (but inert) by JS through the close fade, then the class is dropped → hidden.
+   Kept AFTER the menu-open rule: both selectors tie on specificity and during the close both
+   classes are present, so source order is what lets the fade-out win. */
 .chrome.menu-closing .nave {
   visibility: visible;
   pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.24s var(--ease);
 }
 
 /* Desktop never opens this (hamburger is hidden ≥760); keep it out of the layout entirely. */
@@ -55,52 +61,20 @@
   }
 }
 
-/* ── The wipe ──────────────────────────────────────────────────────────────────────────────────
-   The two panel layers (dark ground + content) share ONE clip so the shaft wipes them as a
-   single plane: revealed left→right on open, erased right→left on close. The revealing edge is a
-   4-point polygon whose right side LEANS by `--lean-x` (top point ahead of the bottom) so it runs
-   parallel to the light shaft — a linear interpolation between the two states preserves that
-   constant lean at every frame, so the panel edge stays glued to the light rather than peeling off
-   it as a vertical inset() edge did. Left column fixed at 0 (the reveal anchors on the left edge);
-   the right column sweeps from off-left (hidden) to off-right (open). */
-.nave-veil,
-.nave-inner {
-  clip-path: polygon(0 0, 0 0, calc(-1 * var(--lean-x)) 100%, 0 100%);
-}
-.chrome.menu-open .nave-veil,
-.chrome.menu-open .nave-inner {
-  clip-path: polygon(0 0, calc(100% + var(--lean-x)) 0, 100% 100%, 0 100%);
-  transition: clip-path 0.6s var(--ease-door);
-}
-.chrome.menu-closing .nave-veil,
-.chrome.menu-closing .nave-inner {
-  animation: nave-wipe-out 0.55s var(--ease-door) forwards;
-}
-@keyframes nave-wipe-out {
-  from {
-    clip-path: polygon(0 0, calc(100% + var(--lean-x)) 0, 100% 100%, 0 100%);
-  }
-  to {
-    clip-path: polygon(0 0, 0 0, calc(-1 * var(--lean-x)) 100%, 0 100%);
-  }
-}
-
-/* ── The dark sacred ground — opaque, so no backdrop-filter is needed (it would blur nothing).
-   Four layers in one paint: a high warm breath, an ambient wash over the list area (kept low so
-   it reads UNDER the focal bloom on the current voice, not against it), a vignette pooling the
-   corners into true night, and the ground gradient itself — warm umber falling to black, spread
-   wide enough to actually be seen. ── */
+/* ── The parchment ground — opaque, so no backdrop-filter is needed (it would blur nothing).
+   Three layers in one paint: fresh light at the top (where the brand row sits), a warm aged-edge
+   vignette pooling the corners, and the page gradient itself falling from bright parchment into
+   the deeper paper tone — the card has weight at its foot. ── */
 .nave-veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(72% 52% at 50% 12%, rgba(232, 207, 144, 0.09), transparent 60%),
-    radial-gradient(52% 44% at 30% 48%, rgba(232, 207, 144, 0.07), transparent 64%),
-    radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4, 3, 2, 0.55) 100%),
-    linear-gradient(158deg, #1d1812 0%, var(--night) 46%, #060505 100%);
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 253, 246, 0.85), transparent 55%),
+    radial-gradient(130% 110% at 50% 45%, transparent 55%, rgba(112, 92, 56, 0.1) 100%),
+    linear-gradient(165deg, #f8f5ee 0%, var(--paper) 44%, var(--paper-deep) 100%);
 }
-/* Film grain — the same feTurbulence tile the landing wears globally, here INSIDE the veil so it
-   is wiped with the panel and both mounts match (subpages carry no global grain). */
+/* Paper grain — the same feTurbulence tile the landing wears globally, here INSIDE the veil so
+   both mounts match (subpages carry no global grain). On parchment it reads as paper fibre. */
 .nave-veil::after {
   content: "";
   position: absolute;
@@ -109,63 +83,9 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 /* The landing already lays its global grain film (body.theme-marketing::before, z-index 80) over
-   the whole overlay — drop the veil's own grain there so the panel isn't double-exposed. */
+   the whole overlay — drop the veil's own grain there so the card isn't double-exposed. */
 .voct-landing .nave-veil::after {
   opacity: 0.02;
-}
-
-/* ── The shaft of light that leads the wipe. NEVER clipped, so it rides visibly over the ────────
-   advancing edge — sweeps left→right on open, right→left on close. */
-.nave-seam {
-  position: absolute;
-  top: -10%;
-  left: 0;
-  width: 22vmin;
-  height: 120%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(232, 207, 144, 0.5) 46%,
-    rgba(255, 250, 235, 0.9) 52%,
-    rgba(232, 207, 144, 0.4) 58%,
-    transparent
-  );
-  filter: blur(7px);
-  opacity: 0;
-  transform: translateX(-24vmin) rotate(4deg);
-  pointer-events: none;
-}
-.chrome.menu-open .nave-seam {
-  animation: nave-shaft-in 0.6s var(--ease-door) forwards;
-}
-.chrome.menu-closing .nave-seam {
-  animation: nave-shaft-out 0.55s var(--ease-door) forwards;
-}
-@keyframes nave-shaft-in {
-  0% {
-    opacity: 0;
-    transform: translateX(-24vmin) rotate(4deg);
-  }
-  16% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(105vw) rotate(4deg);
-  }
-}
-@keyframes nave-shaft-out {
-  0% {
-    opacity: 0;
-    transform: translateX(105vw) rotate(4deg);
-  }
-  16% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(-24vmin) rotate(4deg);
-  }
 }
 
 .nave-inner {
@@ -174,8 +94,9 @@
   height: 100%;
   max-width: 1180px;
   margin: 0 auto;
-  /* Top padding matches the subpage bar's brand row exactly so the mark does not shift on open;
-     the landing bar sits 2px lower and overrides this via `.voct-landing .nave-inner`. */
+  /* Top padding matches the subpage bar's brand row exactly so "Zamknij" sits on the persistent
+     bar brand's line; the landing bar sits 2px lower and overrides this via
+     `.voct-landing .nave-inner`. */
   padding: calc(env(safe-area-inset-top, 0px) + 22px) var(--gutter) clamp(30px, 6vh, 64px);
   display: flex;
   flex-direction: column;
@@ -183,35 +104,23 @@
      `contain` stops the scroll from chaining into the locked page behind (iOS rubber-band). */
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* The one motion beside the fade: the content settles DOWN from above as the card is laid
+     onto the page. */
+  transform: translateY(-10px);
+}
+.chrome.menu-open .nave-inner {
+  transform: none;
+  transition: transform 0.45s var(--ease-slow);
 }
 
-/* ── Top row: brand (continuity with the hidden bar) + close. Revealed by the clip, NOT faded ──
-   — so the mark lands at full strength in its aligned position, overlapping the bar brand's quick
-   fade-out instead of teleporting past it. */
+/* ── Top row: only "Zamknij" — the brand is the BAR's own, persisting above the card (see the
+   header stylesheets), so the mark never blinks out and back in. min-height reserves the brand
+   row's height (40px mark) so the close button holds that line. */
 .nave-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-}
-.nave-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--serif);
-  font-size: 21px;
-  font-weight: 300; /* match the bar brand — no weight pop on open */
-  letter-spacing: 0.03em;
-  color: var(--paper);
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-.nave-brand-mark {
-  width: 17px; /* match the bar brand mark exactly (glyph footprint unified site-wide) */
-  height: 40px;
-  flex-shrink: 0;
-  background: var(--candle);
-  -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
-  mask: url(/logo-mark.png) center / contain no-repeat;
+  justify-content: flex-end;
+  min-height: 40px;
 }
 .nave-close {
   position: relative;
@@ -224,13 +133,13 @@
   font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(244, 241, 233, 0.6);
+  color: rgba(22, 21, 20, 0.55);
   padding: 6px 32px 6px 0;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.3s var(--ease);
 }
 /* The ✕ is DRAWN with the same two 1px strokes as the bar's hamburger — one drawing language
-   opens and closes the menu, instead of a raw font glyph. */
+   opens and closes the menu, instead of a raw font glyph. Ink strokes; rubric red under press. */
 .nave-close::before,
 .nave-close::after {
   content: "";
@@ -239,7 +148,7 @@
   top: 50%;
   width: 19px;
   height: 1px;
-  background: var(--candle);
+  background: var(--ink);
   transition: background-color 0.3s var(--ease);
 }
 .nave-close::before {
@@ -250,55 +159,60 @@
 }
 .nave-close:active,
 .nave-close:focus-visible {
-  color: var(--paper);
+  color: var(--ink);
   outline: none;
 }
 .nave-close:active::before,
 .nave-close:active::after,
 .nave-close:focus-visible::before,
 .nave-close:focus-visible::after {
-  background: var(--candle-lite);
+  background: var(--crimson);
 }
 
+/* ── The entries are SET FROM THE TOP like a book page — no vertical centering. The list is
+   content-sized; the leftover space consolidates between the entries and the foot (margin-top:
+   auto there), deliberate white space instead of a floating block. A faint ruled margin line
+   runs the column's full height; the current page's crimson segment sits ON it. ── */
 .nave-list {
-  /* Grows to center the voices when there is room; refuses to shrink below its content on short
-     viewports, where .nave-inner scrolls instead. */
-  flex: 1 0 auto;
+  position: relative;
+  flex: 0 0 auto;
+  margin-top: clamp(26px, 6vh, 72px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: clamp(12px, 2.2vh, 24px);
 }
+.nave-list::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 4px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--line);
+  pointer-events: none;
+}
 
-/* ── Each link = a voice. Revealed ONLY by the clip — no opacity of its own — so the type truly
-   emerges from under the passing light. All voices enter together (a chord, not an arpeggio);
-   their sole own motion is a small slide that trails the wipe and settles the line into place. ── */
+/* ── Each link = a voice, set like an entry in a breviary: small italic incipit over the ink
+   word. All stand together from the first frame — a chord, not an arpeggio; no per-voice
+   motion. Rubric red appears ONLY where you are. ── */
 .voice {
   position: relative;
   display: block;
   text-decoration: none;
-  color: var(--paper);
+  color: var(--ink);
   -webkit-tap-highlight-color: transparent;
-  transform: translateX(-16px);
 }
-.chrome.menu-open .voice {
-  transform: none;
-  transition: transform 0.75s var(--ease-slow);
-}
-/* The light rests where you are: a soft warm bloom behind the current page's voice, so the
-   overlay is lit at the card the visitor is on rather than at a fixed corner. It sits in the
-   nave-inner stacking context (z:-1 → behind the type, above the dark ground) and is revealed
-   by the same clip as its voice. Pages outside the four voices (press/kolofon) light nothing. */
+/* The book is open at your page: a thicker crimson segment standing ON the margin rule (the
+   crimson word itself is set below). Pages outside the four voices (press/kolofon) mark
+   nothing. */
 .voice[aria-current="page"]::before {
   content: "";
   position: absolute;
-  z-index: -1;
-  left: -8%;
-  top: 50%;
-  width: 76%;
-  height: 340%;
-  transform: translateY(-50%);
-  background: radial-gradient(58% 60% at 26% 50%, rgba(232, 207, 144, 0.2), transparent 72%);
+  left: -17px;
+  top: 3px;
+  bottom: 5px;
+  width: 3px;
+  background: var(--crimson);
   pointer-events: none;
 }
 
@@ -306,9 +220,9 @@
   display: block;
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(13px, 1.3vw, 16px);
+  font-size: clamp(14px, 1.4vw, 16px);
   line-height: 1;
-  color: var(--candle);
+  color: var(--ink-muted);
   margin-bottom: 3px;
   transition: color 0.35s var(--ease);
 }
@@ -319,22 +233,21 @@
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--paper);
+  color: var(--ink);
   transition:
     color 0.4s var(--ease),
     transform 0.3s var(--ease);
 }
 .voice[aria-current="page"] .voice-pl {
-  color: var(--candle);
+  color: var(--crimson);
 }
 /* This surface only ever opens on touch, so the feedback is a PRESS state (:active), not :hover —
    a hover rule here would only ever fire as sticky-hover, jolting the link at the moment of
-   navigation. The word gives slightly under the finger and releases with it. */
-.voice:active .voice-lat,
-.voice:focus-visible .voice-lat,
+   navigation. Under the finger the word turns rubric ("becoming your page") and gives slightly,
+   releasing with it — the only red outside the current mark, and only transient. */
 .voice:active .voice-pl,
 .voice:focus-visible .voice-pl {
-  color: var(--candle-lite);
+  color: var(--crimson);
 }
 .voice:active .voice-pl {
   transform: translateX(6px);
@@ -343,19 +256,17 @@
   outline: none;
 }
 
-/* ── Foot: the Wesprzyj CTA + the live canonical hour (the antiphon names its hour) ──────────
-   Same treatment as the voices: revealed by the clip, settled by a trailing slide. */
+/* ── Foot: the Wesprzyj CTA (the card's ONE gilded element — the border) + the live canonical
+   hour printed like a colophon line. `margin-top: auto` pins it down and gathers the page's
+   free space above it. ── */
 .nave-foot {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 22px;
-  transform: translateX(-16px);
-}
-.chrome.menu-open .nave-foot {
-  transform: none;
-  transition: transform 0.75s var(--ease-slow);
+  margin-top: auto;
+  padding-top: 28px;
 }
 .nave-cta {
   display: inline-flex;
@@ -368,7 +279,7 @@
   font-size: 11px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--candle-lite);
+  color: var(--ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -396,13 +307,15 @@
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(244, 241, 233, 0.42);
+  color: rgba(22, 21, 20, 0.5);
 }
+/* The small device is the printer's mark of the colophon — ink like the rest of the set matter
+   (rubric red is reserved for "where you are"). */
 .nave-colophon-mark {
   width: 10px;
   height: 26px;
   flex-shrink: 0;
-  background: var(--candle);
+  background: var(--ink-soft);
   -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
   mask: url(/logo-mark.png) center / contain no-repeat;
 }
@@ -412,7 +325,7 @@
   font-size: 13px;
   letter-spacing: 0;
   text-transform: none;
-  color: rgba(244, 241, 233, 0.62);
+  color: rgba(22, 21, 20, 0.66);
 }
 
 /* Scroll lock while open — the overlay owns the viewport (touch only; Lenis is off here). */
@@ -421,22 +334,12 @@ body.nav-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nave-veil,
-  .nave-inner,
-  .voice,
-  .nave-foot {
+  .nave,
+  .nave-inner {
     transition: none !important;
     animation: none !important;
   }
-  .nave-seam {
-    display: none;
-  }
-  .chrome.menu-open .nave-veil,
-  .chrome.menu-open .nave-inner {
-    clip-path: none;
-  }
-  .voice,
-  .nave-foot {
+  .nave-inner {
     transform: none;
   }
 }

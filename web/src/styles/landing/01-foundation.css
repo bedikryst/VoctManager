@@ -927,19 +927,46 @@
   .nav-toggle::after { top: 10px; width: 15px; }
   .nav-toggle:hover::after { width: 26px; }
 
-  /* Bar clears when the "Antyfona" overlay (nave-menu.css) opens — it carries its own brand + close.
-     Fast fade-out (.12s) so the bar brand is gone before the overlay's clip reveals the nave brand
-     in the same aligned spot — reads as one continuous mark, not a teleport. Eases back on close. */
+  /* When the "Antyfona" card (nave-menu.css) opens, only the ACTIONS clear (the card carries
+     "Zamknij"); the brand persists ABOVE the card — z-index 61 over the overlay's 60 — and
+     eases to ink with the card's fade. The card itself carries no brand, so the mark never
+     blinks out and back in. */
   .brand {
-    transition: opacity 0.3s var(--ease);
+    position: relative;
+    z-index: 61;
+    transition: color 0.32s var(--ease);
   }
-  .chrome.menu-open .brand,
   .chrome.menu-open .chrome-actions,
-  .chrome.menu-closing .brand,
   .chrome.menu-closing .chrome-actions {
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.12s var(--ease);
+  }
+  .chrome.menu-open .brand,
+  .chrome.menu-closing .brand,
+  /* audio-on tints the glyph DIRECTLY (candle, and candle-blue on light glass — that one runs
+     6 classes deep), so the open-state must out-specify it: the doubled .menu-open/.menu-closing
+     class is a deliberate specificity bump to 6, and later source breaks the tie. */
+  body.theme-marketing.audio-on .chrome.menu-open.menu-open .brand-glyph,
+  body.theme-marketing.audio-on .chrome.menu-closing.menu-closing .brand-glyph {
+    color: var(--ink);
+  }
+  body.theme-marketing.audio-on .chrome.menu-open.menu-open .brand-glyph,
+  body.theme-marketing.audio-on .chrome.menu-closing.menu-closing .brand-glyph {
+    animation: none;
+  }
+  /* The gold/navy aura has no place on the parchment card. */
+  body.theme-marketing .chrome.menu-open .brand-glyph-halo,
+  body.theme-marketing .chrome.menu-closing .brand-glyph-halo {
+    opacity: 0;
+    animation: none;
+  }
+  /* An is-active (scrolled) bar is tighter (16px top pad); while the card is open, return to the
+     resting padding so the persistent brand sits exactly on the card's top row — the glide rides
+     the bar's existing padding transition. */
+  .chrome.menu-open,
+  .chrome.menu-closing {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
   }
 
   /* The landing bar sits 2px lower than the subpage bar (env + 24px vs 22px); match the nave's
