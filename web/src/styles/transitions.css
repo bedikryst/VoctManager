@@ -1,81 +1,97 @@
 /**
  * @file transitions.css
- * @description Premium View Transitions choreography — soft crossfade instead of Astro's
- *  default brutal cut. Old page fades out 320ms; new page fades in 360ms with an 80ms head
- *  start so the layers cross-dissolve through ~80ms of overlap (the same easing family the
- *  rest of the site uses for kinematics). Persisted elements (site-cursor, scroll-top, brand
- *  mark) carry their own transition-names and are exempt from the root fade — they morph in
- *  place. Reduced-motion users get an instant swap (no animation), preserving accessibility.
+ * @description Cross-page choreography for the marketing site (Astro ClientRouter / View
+ *  Transitions API). THE single owner of the root transition.
+ *
+ *  It covers BOTH paths ClientRouter can take, which is the fix for "the mobile menu doesn't
+ *  fade": on browsers WITHOUT native View Transitions (older iOS Safari < 18, some Android)
+ *  Astro falls back to attribute-driven animation on `<html>` (`data-astro-transition-fallback`
+ *  = old|new) — the `::view-transition` pseudo-elements simply don't exist there, so styling
+ *  only them left those devices with no fade at all. Both paths are choreographed below.
+ *
+ *  Model — CROSSFADE (variant A). The incoming page is drawn fully opaque UNDERNEATH; the
+ *  outgoing page sits ON TOP and dissolves away to reveal it. Because the new layer is complete
+ *  the whole time, there is never a transparent gap where the bedrock flashes. The open mobile
+ *  "Antyfona" card is part of the outgoing page (a fixed child of the header, not a named
+ *  transition group), so it dissolves WITH the page in one motion — no snap.
+ *
+ *  (The previous "przejście przez próg" / variant B — outgoing sinks to black, a dark breath,
+ *  then the incoming hero rises out of the dark — is the alternative. To switch back: give the
+ *  OLD layer z-index:1 + a fade-out, and the NEW layer z-index:2 + a delayed fade-in from 0,
+ *  instead of the dissolve pair below. Kept in git history + the project memory.)
  * @architecture Astro islands 2026
  * @module styles/transitions
  */
 
-/* Root crossfade — z-index inversion approach.
-   By default the browser stacks NEW on top of OLD; both have an opacity animation that
-   leaves a brief gap during which BOTH pseudo-elements are partially transparent and the
-   default html background (white) shows through. Solution: put NEW at the back, fully
-   opaque the entire time; OLD goes ON TOP and fades out, revealing NEW underneath. At
-   every moment of the animation, NEW is fully drawn — no white gap is possible.
-   Side effect: the brand mark transition (named) inherits the same defaults; its own
-   pair below restores a true crossfade for that specific element. */
-@keyframes voct-fade-out {
-  to { opacity: 0; }
+/* Bedrock behind the snapshots + the document ground. Dark (matches --dark #080807, the site's
+   darkest tone and every page's dark hero) so the slim window before a snapshot is composited,
+   and any overscroll rubber-band beyond a dark hero/footer, never flashes a light gap. */
+::view-transition {
+  background-color: #080807;
+}
+html {
+  background-color: #080807;
 }
 
+@keyframes voct-dissolve-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* ── Native View Transitions path (Chrome, Edge, Safari 18+, Chrome Android) ──
+   New underneath, fully drawn the entire time; old on top dissolves to reveal it. */
 ::view-transition-old(root) {
   z-index: 2;
-  animation: voct-fade-out 380ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  mix-blend-mode: normal;
+  animation: voct-dissolve-out 340ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 ::view-transition-new(root) {
   z-index: 1;
   animation: none;
   opacity: 1;
-  mix-blend-mode: normal;
 }
 
-/* Transition stack bedrock — the topmost pseudo-element of the view-transition tree.
-   Its children (old/new root snapshots) render ON TOP, but the moment either snapshot
-   has a transparent/incomplete area (the typical micro-gap during snapshot construction
-   or animation tail), THIS background shows through.
-   On pages with paper body (--paper #f4f1e9) the gap looked like a white-ish flash; pages
-   with `body.page-koncerty { background: var(--night) }` had no flash because their
-   body bg matched. Setting a dark bedrock on the transition layer guarantees no flash
-   regardless of destination page body color. */
-::view-transition {
-  background-color: #080807;
-}
-
-/* HTML fallback — covers the slimmest window where ::view-transition itself isn't yet
-   composited. Same dark tone for visual continuity. */
-html {
-  background-color: #080807;
-}
-
-/* Brand mark (chrome-brand carries `view-transition-name: voct-brand`) — instead of the
-   default scale+morph, give it a quiet 280ms fade that matches the root crossfade rhythm
-   so the brand reads as "continuous presence", not "thing that jumped". */
-::view-transition-old(voct-brand),
-::view-transition-new(voct-brand) {
-  animation-duration: 280ms;
-  animation-timing-function: cubic-bezier(0.22, 0.61, 0.16, 1);
-}
-
-/* Persisted islands carry `view-transition-name` derived from `transition:persist="…"`:
-   site-cursor and scroll-top. They are NOT animated by the root fade — they live above the
-   transition stack and morph in place via their own React state.
-   For these, the auto-generated view-transition-name is the persist value. */
+/* Persisted islands carry a `view-transition-name` derived from `transition:persist="…"`
+   (site-cursor, scroll-top). They live above the page and must NOT dim with it — hold them
+   near-instant so they morph in place. */
 ::view-transition-group(site-cursor),
 ::view-transition-group(scroll-top) {
   animation-duration: 1ms;
 }
 
+/* ── Fallback path (no native View Transitions) ──
+   Astro drives the whole `<html>` through `data-astro-transition-fallback` = "old" then "new",
+   SEQUENTIALLY (old animation, swap, new animation) — a true overlaid crossfade isn't possible
+   here, so it's the closest degraded form: the outgoing BODY fades out (revealing the dark html
+   ground), then the incoming BODY fades in. We animate BODY, not HTML, so the #080807 ground
+   stays painted underneath (fading HTML itself would drop its background and flash the canvas).
+   Fading the body is what carries the open mobile menu card out on these devices. Gated to
+   motion-allowed; Astro also disables the fallback entirely under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes voct-fallback-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes voct-fallback-in {
+    from {
+      opacity: 0;
+    }
+  }
+  html[data-astro-transition-fallback="old"] body {
+    animation: voct-fallback-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  html[data-astro-transition-fallback="new"] body {
+    animation: voct-fallback-in 240ms cubic-bezier(0, 0, 0.2, 1) both;
+  }
+}
+
+/* Accessibility — no fade on the native path; with no animations the transition finishes
+   immediately (an instant swap to the live new DOM). The fallback path is disabled by Astro
+   itself under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
-  ::view-transition-new(root),
-  ::view-transition-old(voct-brand),
-  ::view-transition-new(voct-brand) {
-    animation-duration: 1ms;
-    animation-name: -ua-view-transition-fade-in;
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

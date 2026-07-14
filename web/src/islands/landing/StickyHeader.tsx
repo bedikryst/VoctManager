@@ -59,6 +59,17 @@ export function StickyHeader(): React.JSX.Element {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   }, []);
 
+  // Cross-page voice tap: leave the card OPEN so the outgoing snapshot captures the parchment
+  // card, and let the page transition (transitions.css) dissolve it into the destination as one
+  // motion — the DOM swap tears the card down after the snapshot is taken. Hold the chosen
+  // voice's rubric imperatively so it doesn't release with :active on touch-up (no setState
+  // here, so nothing re-renders the class away before the swap).
+  const commitVoice = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    const voice = e.currentTarget;
+    voice.classList.add("is-chosen");
+    voice.closest(".nave-list")?.classList.add("is-committing");
+  }, []);
+
   // Focus stays inside the overlay while it owns the viewport; Escape plays the wipe. The hook
   // restores focus to the hamburger on deactivation (menu-closing counts as deactivated).
   const navRef = useRef<HTMLElement>(null);
@@ -161,16 +172,15 @@ export function StickyHeader(): React.JSX.Element {
       className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
       aria-label="Nawigacja"
     >
-      {/* view-transition-name: voct-brand → shared element with SiteChrome on the
-          subpages, so the brand morphs across "/" ↔ subpage instead of cross-fading.
-          The brand persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
+      {/* The brand fades through the dark threshold with the page root (transitions.css) — no
+          shared-element morph, which only produced artifacts across the differing header states.
+          It still persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
           01-foundation.css), so tapping it while the card is open must also close the card
-          (href="#top" is an in-page jump: no navigation swap does it for us). */}
+          (href="#top" is an in-page jump; no navigation swap does it for us). */}
       <a
         className="brand"
         href="#top"
         aria-label="VoctEnsemble"
-        style={{ viewTransitionName: "voct-brand" }}
         onClick={() => closeMenu(false)}
       >
         <span className="brand-glyph-wrap" aria-hidden="true">
@@ -242,19 +252,21 @@ export function StickyHeader(): React.JSX.Element {
           </div>
 
           <div className="nave-list">
+            {/* "Główna" is an in-page jump (#top) — no page swap, so it closes the card. The
+                three cross-page voices leave it open and let the fade-through-dark carry it. */}
             <a className="voice" href="#top" aria-current="page" onClick={() => closeMenu(false)}>
               <span className="voice-lat">Introitus</span>
               <span className="voice-pl">Główna</span>
             </a>
-            <a className="voice" href="/o-nas" onClick={() => closeMenu(false)}>
+            <a className="voice" href="/o-nas" onClick={commitVoice}>
               <span className="voice-lat">De nobis</span>
               <span className="voice-pl">O nas</span>
             </a>
-            <a className="voice" href="/koncerty" onClick={() => closeMenu(false)}>
+            <a className="voice" href="/koncerty" onClick={commitVoice}>
               <span className="voice-lat">Via</span>
               <span className="voice-pl">Koncerty</span>
             </a>
-            <a className="voice" href="/kontakt" onClick={() => closeMenu(false)}>
+            <a className="voice" href="/kontakt" onClick={commitVoice}>
               <span className="voice-lat">Scribe nobis</span>
               <span className="voice-pl">Kontakt</span>
             </a>

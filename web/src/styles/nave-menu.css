@@ -256,6 +256,37 @@
   outline: none;
 }
 
+/* ── The chosen voice — held from the tap THROUGH the fade. A cross-page voice does NOT snap
+   the card shut; it stays open, is captured in the outgoing snapshot, and dissolves WITH the
+   page (transitions.css). `is-chosen` holds exactly what the finger showed
+   (rubric word + shift) with NO transition, so the snapshot captures it fully drawn rather than
+   mid-release, and paints the crimson margin segment — as if the book fell open at the page you
+   chose. The other voices recede instantly so focus pulls to your choice as the page turns.
+   All instant on purpose: with prefetch the snapshot is taken almost immediately, so a
+   transition-based change would not have rendered in time to be captured. ── */
+.voice.is-chosen .voice-pl {
+  color: var(--crimson);
+  transform: translateX(6px);
+  transition: none;
+}
+.voice.is-chosen .voice-lat {
+  color: var(--crimson);
+  transition: none;
+}
+.voice.is-chosen::before {
+  content: "";
+  position: absolute;
+  left: -17px;
+  top: 3px;
+  bottom: 5px;
+  width: 3px;
+  background: var(--crimson);
+  pointer-events: none;
+}
+.nave-list.is-committing .voice:not(.is-chosen) {
+  opacity: 0.5;
+}
+
 /* ── Foot: the Wesprzyj CTA (the card's ONE gilded element — the border) + the live canonical
    hour printed like a colophon line. `margin-top: auto` pins it down and gathers the page's
    free space above it. ── */

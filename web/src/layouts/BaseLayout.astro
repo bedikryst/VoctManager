@@ -196,9 +196,13 @@ const ogImage = new URL(image, SITE).href;
         };
         requestAnimationFrame(raf);
 
-        // On view-transition swap, the document scroll resets to top; keep Lenis in sync.
+        // Astro (history.scrollRestoration = "manual") has ALREADY applied the correct scroll
+        // target by the time astro:after-swap fires — 0 for forward navigations, the saved
+        // position for back/forward history traversal. Sync Lenis's virtual position to whatever
+        // the document scroll now is, rather than forcing the top: forcing 0 discarded the
+        // restored position and made "back" jump to the top (the reported "przeskakiwanie").
         document.addEventListener("astro:after-swap", () => {
-          lenis.scrollTo(0, { immediate: true });
+          lenis.scrollTo(window.scrollY, { immediate: true, force: true });
         });
       }
 
@@ -221,6 +225,23 @@ const ogImage = new URL(image, SITE).href;
         });
       }
 
+      // Navigation composure — the incoming page must arrive ALREADY composed, so the page
+      // transition (transitions.css) reveals a finished hero instead of one that then
+      // re-animates (the old "text → blank → text" flash). This fires inside the swap, BEFORE
+      // the browser snapshots the new page, so the above-the-fold reveals are captured settled.
+      // `vt-nav` (base.css) strips their transition so they snap rather than animate; below-the-
+      // fold reveals are left hidden and still animate on scroll. The landing opts out of the
+      // global reveal system (no `reveal-ready`) and owns its own entrance, so skip it there.
+      document.addEventListener("astro:after-swap", () => {
+        const root = document.documentElement;
+        if (!root.classList.contains("reveal-ready")) return;
+        root.classList.add("vt-nav");
+        const vh = window.innerHeight;
+        document.querySelectorAll<HTMLElement>(".reveal:not(.is-in)").forEach((el) => {
+          if (el.getBoundingClientRect().top < vh) el.classList.add("is-in");
+        });
+      });
+
       // One-shot reveal — animates once on enter, then persists. Re-scans after each
       // ClientRouter navigation (fresh DOM). Above-the-fold nodes intersect immediately.
       const setupReveals = () => {
@@ -238,7 +259,12 @@ const ogImage = new URL(image, SITE).href;
         );
         document.querySelectorAll(".reveal:not(.is-in)").forEach((el) => io.observe(el));
       };
-      document.addEventListener("astro:page-load", setupReveals);
+      document.addEventListener("astro:page-load", () => {
+        setupReveals();
+        // Composure window over: re-enable reveal transitions so the below-the-fold reveals
+        // animate on scroll again. The next navigation re-arms vt-nav from scratch.
+        document.documentElement.classList.remove("vt-nav");
+      });
 
       // Parallax — JS-driven (cross-browser; scroll-timeline CSS is still partial in FF/Safari).
       // One rAF-throttled scroll loop; layers refreshed per navigation. The image is taller than

@@ -183,44 +183,21 @@ button { font: inherit; }
   .reveal[data-d="2"] { --reveal-delay: 0.18s; }
   .reveal[data-d="3"] { --reveal-delay: 0.27s; }
   .reveal[data-d="4"] { --reveal-delay: 0.36s; }
+
+  /* During a ClientRouter navigation the incoming page must arrive COMPOSED — the page
+     transition (transitions.css) IS the entrance, so reveals must NOT replay. BaseLayout
+     settles the above-the-fold reveals synchronously in astro:after-swap, before the new
+     snapshot is taken; `vt-nav` strips their transition so they snap to the settled state and
+     are captured fully drawn, never mid-animation (the old "text → blank → text" flash).
+     Below-the-fold reveals are left hidden and still animate on scroll via the observer. */
+  html.vt-nav .reveal.is-in {
+    transition: none;
+  }
 }
 
-/* ── Cinematic page transitions (View Transitions API) ──────────────────────
-   Replaces Astro's default cross-fade with a sacred-tone fade: outgoing page
-   drifts up a touch and blurs out fast (320ms); incoming page blooms from a
-   small downward offset with a soft blur (540ms). Reduced-motion gets the
-   browser's instant swap (these rules sit inside the motion-allowed gate).
-   The shared brand mark is excluded from the root group so the chrome logo
-   morphs smoothly between pages instead of fading with the body. */
-@media (prefers-reduced-motion: no-preference) {
-  @keyframes voct-vt-out {
-    to {
-      opacity: 0;
-      filter: blur(6px);
-      transform: translateY(-6px);
-    }
-  }
-  @keyframes voct-vt-in {
-    from {
-      opacity: 0;
-      filter: blur(8px);
-      transform: translateY(10px);
-    }
-  }
-  ::view-transition-old(root) {
-    animation: voct-vt-out 320ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  }
-  ::view-transition-new(root) {
-    animation: voct-vt-in 540ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
-  /* Shared brand mark — animates with a longer, gentler curve so the logo
-     reads as a continuous anchor while the page beneath cycles through. */
-  ::view-transition-old(voct-brand),
-  ::view-transition-new(voct-brand) {
-    animation-duration: 620ms;
-    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
+/* Page-transition choreography lives entirely in transitions.css now. The former blur/drift
+   block here was dead code — transitions.css is imported after base.css and overrode every one
+   of its ::view-transition rules — so it was removed to keep a single source of truth. */
 
 /* ── Scroll-to-top — global, votive bottom-right mark ──────────────────────
    Appears after 1.5 viewport heights of scroll. Thin gold hairline + small
