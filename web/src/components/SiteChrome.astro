@@ -57,7 +57,6 @@ const links = [
   <nav class="nave" id="navMenu" aria-label="Nawigacja główna">
     <div class="nave-veil"></div>
     <div class="nave-seam" aria-hidden="true"></div>
-    <div class="nave-spot" aria-hidden="true"></div>
 
     <div class="nave-inner">
       <div class="nave-top">
@@ -89,9 +88,11 @@ const links = [
 
       <div class="nave-foot">
         <a class="nave-cta" href="/?donate" data-vault-open="100">Wesprzyj <em>· Sustinete nos</em></a>
+        {/* The antiphon names its hour — filled with the live canonical hour on open (script
+            below), so the menu carries the time of day, not a static motto. */}
         <span class="nave-colophon">
           <span class="nave-colophon-mark" aria-hidden="true"></span>
-          <em>Concerts Spirituels</em> · MMXXIV
+          <span class="nave-hora"><span id="naveHoraName">Hora</span> · <em id="naveHoraPoem">canonica</em></span>
         </span>
       </div>
     </div>
@@ -171,12 +172,15 @@ const links = [
 </style>
 
 <script>
+  import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
+
   // Document-delegated so it binds once and survives ClientRouter DOM swaps.
   if (!(window as unknown as { __voctChrome?: boolean }).__voctChrome) {
     (window as unknown as { __voctChrome?: boolean }).__voctChrome = true;
 
     const chrome = () => document.getElementById("chrome");
     const toggle = () => document.getElementById("navToggle");
+    const nave = () => document.getElementById("navMenu");
 
     const syncSolid = () => {
       const c = chrome();
@@ -188,26 +192,52 @@ const links = [
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let closeTimer = 0;
 
+    // The overlay is a modal surface: while it is open the page behind goes inert (focus,
+    // assistive tech, clicks). The nave itself lives inside <header>, so it stays live.
+    const setPageInert = (on: boolean) => {
+      document.querySelectorAll("main, footer").forEach((el) => {
+        if (on) el.setAttribute("inert", "");
+        else el.removeAttribute("inert");
+      });
+    };
+
     const finalizeClose = () => {
       window.clearTimeout(closeTimer);
       const c = chrome();
       c?.classList.remove("menu-open", "menu-closing");
       toggle()?.setAttribute("aria-expanded", "false");
       document.body.classList.remove("nav-open");
+      setPageInert(false);
     };
     const openMenu = () => {
       window.clearTimeout(closeTimer);
       const c = chrome();
-      c?.classList.remove("menu-closing");
-      c?.classList.add("menu-open");
+      if (!c) return;
+      c.classList.remove("menu-closing");
+      c.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");
       document.body.classList.add("nav-open");
+      setPageInert(true);
+      // The antiphon names its hour: fill the foot line with the live canonical hour.
+      const hora = horaForWarsaw(new Date());
+      const name = document.getElementById("naveHoraName");
+      const poem = document.getElementById("naveHoraPoem");
+      if (name) name.textContent = hora.name;
+      if (poem) poem.textContent = hora.poem;
+      window.requestAnimationFrame(() => {
+        document.getElementById("menuClose")?.focus({ preventScroll: true });
+      });
     };
     // animated=true → play the light-shaft wipe (Zamknij / Escape). animated=false → snap shut
     // (navigation / reduced motion), where the page swap is the transition instead.
     const closeMenu = (animated = true) => {
       const c = chrome();
       if (!c || !c.classList.contains("menu-open")) return;
+      // Hand focus back to the toggle if it currently sits inside the closing overlay.
+      const n = nave();
+      if (n && document.activeElement && n.contains(document.activeElement)) {
+        toggle()?.focus({ preventScroll: true });
+      }
       toggle()?.setAttribute("aria-expanded", "false");
       if (!animated || reduce.matches) {
         finalizeClose();
@@ -224,15 +254,38 @@ const links = [
     // A navigation swap tears down the open overlay; drop the scroll lock with it (no wipe here).
     document.addEventListener("astro:before-swap", () => closeMenu(false));
 
+    // `chrome()` gates both handlers: after a ClientRouter swap onto the landing this script is
+    // still live, but the landing's React StickyHeader (no #chrome id) owns its own menu there.
     document.addEventListener("click", (e) => {
       const t = e.target as Element | null;
-      if (!t) return;
+      if (!t || !chrome()) return;
       if (t.closest("#navToggle")) openMenu();
       else if (t.closest("#menuClose")) closeMenu(true);
       else if (t.closest(".nave a")) closeMenu(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeMenu(true);
+      const c = chrome();
+      if (!c) return;
+      if (e.key === "Escape") {
+        closeMenu(true);
+        return;
+      }
+      // Focus trap: while the overlay is open, Tab cycles inside it.
+      if (e.key !== "Tab" || !c.classList.contains("menu-open") || c.classList.contains("menu-closing")) return;
+      const n = nave();
+      if (!n) return;
+      const targets = Array.from(n.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"));
+      if (!targets.length) return;
+      const first = targets[0];
+      const last = targets[targets.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (!active || !n.contains(active) || active === first)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (!active || !n.contains(active) || active === last)) {
+        e.preventDefault();
+        first.focus();
+      }
     });
   }
 </script>

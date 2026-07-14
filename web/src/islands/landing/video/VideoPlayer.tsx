@@ -106,6 +106,9 @@ export function VideoPlayer({
   // A seek issued while the engine still executes the previous one queues here and is
   // applied from the 'seeked' handler — dragging never floods the decoder.
   const pendingFractionRef = useRef<number | null>(null);
+  // One-shot guard for the post-swap media reload (see the recovery effect): re-issue the
+  // aborted load at most once so a genuinely broken source still settles instead of looping.
+  const reloadedRef = useRef(false);
 
   const restore = useCallback((): void => {
     window.dispatchEvent(new CustomEvent("voct:audio-restore"));
@@ -342,6 +345,29 @@ export function VideoPlayer({
     document.addEventListener("astro:before-swap", onBeforeSwap);
     return () => document.removeEventListener("astro:before-swap", onBeforeSwap);
   }, [id, restore, resume, src]);
+
+  // Recover a media load aborted by the arrival View-Transition. When this player hydrates
+  // into a page reached via ClientRouter, the browser aborts the <video>'s in-flight source
+  // request with a "URL safety check" and strands the element in NETWORK_NO_SOURCE — no
+  // 'error' event reaches React (it fired before hydration) and it never retries on its own,
+  // so the film stays dead until a hard reload (only ever seen after arriving from a page
+  // that had already started a video). Re-issue the load once the swap has settled: check at
+  // mount (the abort usually lands before we hydrate) and again on astro:page-load (covers it
+  // landing a beat later). A fresh full-page load never hits NETWORK_NO_SOURCE here, so this
+  // no-ops there; one-shot per mount so a genuinely broken source still falls through to failed.
+  useEffect(() => {
+    const recover = (): void => {
+      const video = videoRef.current;
+      if (!video || reloadedRef.current) return;
+      if (video.networkState === HTMLMediaElement.NETWORK_NO_SOURCE) {
+        reloadedRef.current = true;
+        video.load();
+      }
+    };
+    recover();
+    document.addEventListener("astro:page-load", recover);
+    return () => document.removeEventListener("astro:page-load", recover);
+  }, []);
 
   // Fullscreen tracking — drives the ✕/⤢ label and enables the idle chrome fade.
   useEffect(() => {

@@ -14,6 +14,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAudioChoice } from "./hooks/useAudioChoice";
+import { useFocusTrap } from "./hooks/useFocusTrap";
+import { horaForWarsaw } from "./lib/horaeCanonicae";
 
 // Sections whose surface is dark enough that the glass chrome must invert to its light brand.
 const DARK_SELECTORS =
@@ -56,6 +58,12 @@ export function StickyHeader(): React.JSX.Element {
   useEffect(() => () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   }, []);
+
+  // Focus stays inside the overlay while it owns the viewport; Escape plays the wipe. The hook
+  // restores focus to the hamburger on deactivation (menu-closing counts as deactivated).
+  const navRef = useRef<HTMLElement>(null);
+  const onEscapeClose = useCallback(() => closeMenu(true), [closeMenu]);
+  useFocusTrap(navRef, menuOpen && !menuClosing, { onEscape: onEscapeClose });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -118,21 +126,20 @@ export function StickyHeader(): React.JSX.Element {
     return () => window.removeEventListener("voct:audio-state", onState);
   }, [read]);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") closeMenu(true);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [menuOpen, closeMenu]);
-
-  // Lock scroll while the overlay owns the viewport. The nave only opens on touch (≤760),
-  // where Lenis is dormant, so body overflow is a complete lock. Cleanup covers unmount on
-  // navigation away from the landing.
+  // Lock scroll while the overlay owns the viewport (the nave only opens on touch ≤760, where
+  // Lenis is dormant, so body overflow is a complete lock) and make the page behind it inert
+  // (focus, assistive tech, clicks) — the nave itself lives inside <header>, so it stays live.
+  // Cleanup covers unmount on navigation away from the landing.
   useEffect(() => {
     document.body.classList.toggle("nav-open", menuOpen);
-    return () => document.body.classList.remove("nav-open");
+    document.querySelectorAll("main, footer").forEach((el) => {
+      if (menuOpen) el.setAttribute("inert", "");
+      else el.removeAttribute("inert");
+    });
+    return () => {
+      document.body.classList.remove("nav-open");
+      document.querySelectorAll("main, footer").forEach((el) => el.removeAttribute("inert"));
+    };
   }, [menuOpen]);
 
   const toggleAudio = () => {
@@ -144,6 +151,10 @@ export function StickyHeader(): React.JSX.Element {
   const openVault = (amount: number) => {
     window.dispatchEvent(new CustomEvent("voct:open-vault", { detail: { amount } }));
   };
+
+  // The antiphon names its hour — computed only while the menu is open, so the SSG snapshot
+  // ships the neutral placeholder instead of a build-time hour (no hydration mismatch).
+  const hora = menuOpen ? horaForWarsaw(new Date()) : null;
 
   return (
     <header
@@ -208,10 +219,9 @@ export function StickyHeader(): React.JSX.Element {
       {/* "Antyfona" — shared mobile overlay (nave-menu.css); same markup + choreography as the
           Astro SiteChrome on subpages. Self-contained (own brand + close), since .chrome.menu-open
           hides the bar. Each link carries its destination's Latin incipit. */}
-      <nav className="nave" id="navMenu" aria-label="Nawigacja główna">
+      <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
         <div className="nave-veil" />
         <div className="nave-seam" aria-hidden="true" />
-        <div className="nave-spot" aria-hidden="true" />
 
         <div className="nave-inner">
           <div className="nave-top">
@@ -262,9 +272,12 @@ export function StickyHeader(): React.JSX.Element {
             >
               Wesprzyj <em>· Sustinete nos</em>
             </a>
+            {/* The antiphon names its hour — live canonical hour while open (see `hora` above). */}
             <span className="nave-colophon">
               <span className="nave-colophon-mark" aria-hidden="true" />
-              <em>Concerts Spirituels</em> · MMXXIV
+              <span className="nave-hora">
+                {hora?.name ?? "Hora"} · <em>{hora?.poem ?? "canonica"}</em>
+              </span>
             </span>
           </div>
         </div>

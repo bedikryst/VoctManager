@@ -7,14 +7,18 @@
  *  identical across the two. Opens ONLY on touch (≤759.98px, where the hamburger shows and Lenis
  *  is dormant — so `body.nav-open { overflow: hidden }` fully locks scroll with no fight).
  *
- *  The moment is a single gesture in both directions — a SHAFT OF LIGHT that wipes the menu on and
- *  off. On OPEN the shaft sweeps left→right and the whole panel (dark ground + glow + voices) is
- *  painted in behind it via a clip-path reveal; the voices then rise a touch as their own breath.
- *  On CLOSE (`.menu-closing`, held by JS for the wipe's length) the shaft sweeps back right→left
- *  and the same clip erases everything in its wake — a true reverse of the entrance. The veil is
- *  opaque, so it carries NO backdrop-filter: the clip animation stays cheap to composite on a
- *  phone. Each link keeps its destination's Latin incipit, so the menu reads as the site's
- *  antiphon, not a list. All animation is transform / opacity / clip-path; reduced-motion is flat.
+ *  ONE reveal system: a SHAFT OF LIGHT wipes the whole panel on and off through a shared
+ *  clip-path — ground, grain and the voices themselves are a single painted plane. The type
+ *  carries NO opacity fades: every line is at full strength from the first frame and simply
+ *  EMERGES from under the passing light, incipit first, then the big word — all voices entering
+ *  together, a chord, not an arpeggio. Their only own motion is a small translateX settle that
+ *  trails the wipe. On CLOSE (`.menu-closing`, held by JS for the wipe's length) the shaft
+ *  sweeps back and the same clip erases everything in its wake. The veil is opaque (no
+ *  backdrop-filter): clip + transform stay cheap to composite on a phone. The surface is
+ *  touch-only, so links carry :active press states, not :hover. Each link keeps its
+ *  destination's Latin incipit, and the foot names the LIVE canonical hour (filled by the header
+ *  scripts from horaeCanonicae) — the menu reads as the site's antiphon, not a list.
+ *  Reduced-motion is flat.
  * @architecture Astro islands 2026
  * @module styles/nave-menu
  */
@@ -52,7 +56,7 @@
 }
 
 /* ── The wipe ──────────────────────────────────────────────────────────────────────────────────
-   The three panel layers (dark ground, glow, content) share ONE clip so the shaft wipes them as a
+   The two panel layers (dark ground + content) share ONE clip so the shaft wipes them as a
    single plane: revealed left→right on open, erased right→left on close. The revealing edge is a
    4-point polygon whose right side LEANS by `--lean-x` (top point ahead of the bottom) so it runs
    parallel to the light shaft — a linear interpolation between the two states preserves that
@@ -60,18 +64,15 @@
    it as a vertical inset() edge did. Left column fixed at 0 (the reveal anchors on the left edge);
    the right column sweeps from off-left (hidden) to off-right (open). */
 .nave-veil,
-.nave-spot,
 .nave-inner {
   clip-path: polygon(0 0, 0 0, calc(-1 * var(--lean-x)) 100%, 0 100%);
 }
 .chrome.menu-open .nave-veil,
-.chrome.menu-open .nave-spot,
 .chrome.menu-open .nave-inner {
   clip-path: polygon(0 0, calc(100% + var(--lean-x)) 0, 100% 100%, 0 100%);
   transition: clip-path 0.6s var(--ease-door);
 }
 .chrome.menu-closing .nave-veil,
-.chrome.menu-closing .nave-spot,
 .chrome.menu-closing .nave-inner {
   animation: nave-wipe-out 0.55s var(--ease-door) forwards;
 }
@@ -85,22 +86,32 @@
 }
 
 /* ── The dark sacred ground — opaque, so no backdrop-filter is needed (it would blur nothing).
-   The built-in warmth is kept faint and high/broad: the FOCAL light now rests on the current
-   page's voice (see `.voice[aria-current]::before`), so the ground must not compete with it. ── */
+   Four layers in one paint: a high warm breath, an ambient wash over the list area (kept low so
+   it reads UNDER the focal bloom on the current voice, not against it), a vignette pooling the
+   corners into true night, and the ground gradient itself — warm umber falling to black, spread
+   wide enough to actually be seen. ── */
 .nave-veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(72% 52% at 50% 12%, rgba(232, 207, 144, 0.07), transparent 60%),
-    linear-gradient(158deg, #16130f 0%, var(--night) 46%, #0a0908 100%);
+    radial-gradient(72% 52% at 50% 12%, rgba(232, 207, 144, 0.09), transparent 60%),
+    radial-gradient(52% 44% at 30% 48%, rgba(232, 207, 144, 0.07), transparent 64%),
+    radial-gradient(130% 110% at 50% 42%, transparent 52%, rgba(4, 3, 2, 0.55) 100%),
+    linear-gradient(158deg, #1d1812 0%, var(--night) 46%, #060505 100%);
 }
-
-/* ── Ambient wash over the list area — deliberately low, a held breath of light rather than a
-   spotlight, so it reads under the focal bloom on the current voice, not against it. ── */
-.nave-spot {
+/* Film grain — the same feTurbulence tile the landing wears globally, here INSIDE the veil so it
+   is wiped with the panel and both mounts match (subpages carry no global grain). */
+.nave-veil::after {
+  content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(52% 44% at 30% 48%, rgba(232, 207, 144, 0.08), transparent 64%);
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.84' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* The landing already lays its global grain film (body.theme-marketing::before, z-index 80) over
+   the whole overlay — drop the veil's own grain there so the panel isn't double-exposed. */
+.voct-landing .nave-veil::after {
+  opacity: 0.02;
 }
 
 /* ── The shaft of light that leads the wipe. NEVER clipped, so it rides visibly over the ────────
@@ -168,6 +179,10 @@
   padding: calc(env(safe-area-inset-top, 0px) + 22px) var(--gutter) clamp(30px, 6vh, 64px);
   display: flex;
   flex-direction: column;
+  /* Short viewports (landscape phones) scroll INSIDE the overlay instead of crushing the list;
+     `contain` stops the scroll from chaining into the locked page behind (iOS rubber-band). */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* ── Top row: brand (continuity with the hidden bar) + close. Revealed by the clip, NOT faded ──
@@ -188,6 +203,7 @@
   letter-spacing: 0.03em;
   color: var(--paper);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .nave-brand-mark {
   width: 17px; /* match the bar brand mark exactly (glyph footprint unified site-wide) */
@@ -198,9 +214,9 @@
   mask: url(/logo-mark.png) center / contain no-repeat;
 }
 .nave-close {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -209,45 +225,70 @@
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: rgba(244, 241, 233, 0.6);
-  padding: 6px 0;
+  padding: 6px 32px 6px 0;
+  -webkit-tap-highlight-color: transparent;
   transition: color 0.3s var(--ease);
 }
+/* The ✕ is DRAWN with the same two 1px strokes as the bar's hamburger — one drawing language
+   opens and closes the menu, instead of a raw font glyph. */
+.nave-close::before,
 .nave-close::after {
-  content: "✕";
-  font-size: 15px;
-  letter-spacing: 0;
-  color: var(--candle);
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 19px;
+  height: 1px;
+  background: var(--candle);
+  transition: background-color 0.3s var(--ease);
 }
-.nave-close:hover,
+.nave-close::before {
+  transform: rotate(45deg);
+}
+.nave-close::after {
+  transform: rotate(-45deg);
+}
+.nave-close:active,
 .nave-close:focus-visible {
   color: var(--paper);
   outline: none;
 }
+.nave-close:active::before,
+.nave-close:active::after,
+.nave-close:focus-visible::before,
+.nave-close:focus-visible::after {
+  background: var(--candle-lite);
+}
 
 .nave-list {
-  flex: 1;
-  min-height: 0;
+  /* Grows to center the voices when there is room; refuses to shrink below its content on short
+     viewports, where .nave-inner scrolls instead. */
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: clamp(12px, 2.2vh, 24px);
 }
 
-/* ── Each link = a voice. Revealed by the clip; then it rises a touch as its own breath. ────────
-   `--d` is the per-voice stagger (set on the voice by :nth-child). On close `--d` is unset and the
-   voices are simply erased by the wipe — no separate exit needed. */
+/* ── Each link = a voice. Revealed ONLY by the clip — no opacity of its own — so the type truly
+   emerges from under the passing light. All voices enter together (a chord, not an arpeggio);
+   their sole own motion is a small slide that trails the wipe and settles the line into place. ── */
 .voice {
   position: relative;
   display: block;
   text-decoration: none;
   color: var(--paper);
-  opacity: 0;
-  transform: translateY(18px);
+  -webkit-tap-highlight-color: transparent;
+  transform: translateX(-16px);
+}
+.chrome.menu-open .voice {
+  transform: none;
+  transition: transform 0.75s var(--ease-slow);
 }
 /* The light rests where you are: a soft warm bloom behind the current page's voice, so the
    overlay is lit at the card the visitor is on rather than at a fixed corner. It sits in the
-   nave-inner stacking context (z:-1 → behind the type, above the dark ground + ambient wash) and
-   fades in with its voice. Pages outside the four voices (press/kolofon) simply light nothing. */
+   nave-inner stacking context (z:-1 → behind the type, above the dark ground) and is revealed
+   by the same clip as its voice. Pages outside the four voices (press/kolofon) light nothing. */
 .voice[aria-current="page"]::before {
   content: "";
   position: absolute;
@@ -259,29 +300,6 @@
   transform: translateY(-50%);
   background: radial-gradient(58% 60% at 26% 50%, rgba(232, 207, 144, 0.2), transparent 72%);
   pointer-events: none;
-}
-.chrome.menu-open .voice {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.8s var(--ease),
-    transform 0.8s var(--ease-slow);
-  transition-delay: var(--d, 0s);
-}
-.chrome.menu-open .voice:nth-child(1) {
-  --d: 0.24s;
-}
-.chrome.menu-open .voice:nth-child(2) {
-  --d: 0.32s;
-}
-.chrome.menu-open .voice:nth-child(3) {
-  --d: 0.4s;
-}
-.chrome.menu-open .voice:nth-child(4) {
-  --d: 0.48s;
-}
-.chrome.menu-open .voice:nth-child(5) {
-  --d: 0.56s;
 }
 
 .voice-lat {
@@ -304,40 +322,40 @@
   color: var(--paper);
   transition:
     color 0.4s var(--ease),
-    transform 0.5s var(--ease);
+    transform 0.3s var(--ease);
 }
 .voice[aria-current="page"] .voice-pl {
   color: var(--candle);
 }
-.voice:hover .voice-pl,
+/* This surface only ever opens on touch, so the feedback is a PRESS state (:active), not :hover —
+   a hover rule here would only ever fire as sticky-hover, jolting the link at the moment of
+   navigation. The word gives slightly under the finger and releases with it. */
+.voice:active .voice-lat,
+.voice:focus-visible .voice-lat,
+.voice:active .voice-pl,
 .voice:focus-visible .voice-pl {
   color: var(--candle-lite);
-  transform: translateX(8px);
 }
-.voice:hover .voice-lat,
-.voice:focus-visible .voice-lat {
-  color: var(--candle-lite);
+.voice:active .voice-pl {
+  transform: translateX(6px);
 }
 .voice:focus-visible {
   outline: none;
 }
 
-/* ── Foot: the Wesprzyj CTA + a Latin colophon ─────────────────────────────────────────────── */
+/* ── Foot: the Wesprzyj CTA + the live canonical hour (the antiphon names its hour) ──────────
+   Same treatment as the voices: revealed by the clip, settled by a trailing slide. */
 .nave-foot {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 22px;
-  opacity: 0;
-  transform: translateY(16px);
+  transform: translateX(-16px);
 }
 .chrome.menu-open .nave-foot {
-  opacity: 1;
   transform: none;
-  transition:
-    opacity 0.7s var(--ease) 0.5s,
-    transform 0.7s var(--ease-slow) 0.5s;
+  transition: transform 0.75s var(--ease-slow);
 }
 .nave-cta {
   display: inline-flex;
@@ -352,11 +370,12 @@
   text-transform: uppercase;
   color: var(--candle-lite);
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background-color 0.4s var(--ease),
     color 0.4s var(--ease);
 }
-.nave-cta:hover,
+.nave-cta:active,
 .nave-cta:focus-visible {
   background: var(--candle);
   color: var(--night);
@@ -403,7 +422,6 @@ body.nav-open {
 
 @media (prefers-reduced-motion: reduce) {
   .nave-veil,
-  .nave-spot,
   .nave-inner,
   .voice,
   .nave-foot {
@@ -414,13 +432,11 @@ body.nav-open {
     display: none;
   }
   .chrome.menu-open .nave-veil,
-  .chrome.menu-open .nave-spot,
   .chrome.menu-open .nave-inner {
     clip-path: none;
   }
-  .chrome.menu-open .voice,
-  .chrome.menu-open .nave-foot {
-    opacity: 1;
+  .voice,
+  .nave-foot {
     transform: none;
   }
 }
