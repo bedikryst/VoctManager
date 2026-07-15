@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../lib/overlayHistory";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
@@ -62,8 +63,7 @@ export function StickyHeader(): React.JSX.Element {
   // vault CTA) keep their own close — they hand off to another surface, and consuming the entry
   // there would race with the #top hash push / the vault's own pushState.
   const dismiss = useCallback(() => {
-    if (history.state?.navOpen) history.back();
-    else closeMenu(true);
+    dismissOverlayEntry("navOpen", () => closeMenu(true));
   }, [closeMenu]);
 
   useEffect(() => () => {
@@ -76,14 +76,14 @@ export function StickyHeader(): React.JSX.Element {
   // simply backs out to the landing. Mirrors VaultModal.
   useEffect(() => {
     if (!menuOpen) return;
-    if (!history.state?.navOpen) {
-      // Hash-mark the entry: ClientRouter treats consuming it (back) as a same-page hash change,
-      // so it runs NO View Transition swap — without this the outgoing snapshot ghosts the open
-      // parchment card mid-close (it flashes back before settling). No #menu element exists, so
-      // nothing scrolls; the hash is transient (only while the card is open).
-      history.pushState({ navOpen: true }, "", `${location.pathname}${location.search}#menu`);
-    }
-    const onPop = (): void => closeMenu(true);
+    // Hash-marked entry pushed via ClientRouter's own navigate() (see overlayHistory.ts), so
+    // consuming it (back) is a same-page hash traversal — NO View Transition swap; a raw
+    // pushState made the router re-swap the document and ghost the card mid-close. No #menu
+    // element exists, so nothing scrolls; the hash is transient (only while the card is open).
+    pushOverlayEntry("navOpen", "menu");
+    const onPop = (): void => {
+      if (!isOverlayEntry("navOpen")) closeMenu(true);
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [menuOpen, closeMenu]);

@@ -187,6 +187,7 @@ const links = [
 
 <script>
   import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
+  import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../lib/overlayHistory";
 
   // Document-delegated so it binds once and survives ClientRouter DOM swaps.
   if (!(window as unknown as { __voctChrome?: boolean }).__voctChrome) {
@@ -233,13 +234,10 @@ const links = [
       window.clearTimeout(closeTimer);
       const c = chrome();
       if (!c) return;
-      // History integration: push a state entry so the mobile back button / edge-swipe dismisses
-      // the "Antyfona" card. Hash-mark it so ClientRouter treats consuming it (back) as a same-page
-      // hash change — NO document swap, so the outgoing snapshot doesn't ghost the open card and
-      // flash it back mid-close. No #menu element exists (nothing scrolls); the hash is transient.
-      if (!history.state?.navOpen) {
-        history.pushState({ navOpen: true }, "", `${location.pathname}${location.search}#menu`);
-      }
+      // History integration: push a hash-marked entry (via ClientRouter's own navigate(), see
+      // overlayHistory.ts) so the mobile back button / edge-swipe dismisses the "Antyfona" card
+      // with NO document swap. No #menu element exists (nothing scrolls); the hash is transient.
+      pushOverlayEntry("navOpen", "menu");
       c.classList.remove("menu-closing");
       c.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");
@@ -279,7 +277,7 @@ const links = [
     // popstate handler below. Navigation-adjacent closers (voices, the vault CTA) keep closeMenu.
     const dismissMenu = () => {
       const c = chrome();
-      if (c && c.classList.contains("menu-open") && history.state?.navOpen) history.back();
+      if (c?.classList.contains("menu-open")) dismissOverlayEntry("navOpen", () => closeMenu(true));
       else closeMenu(true);
     };
 
@@ -290,7 +288,11 @@ const links = [
     document.addEventListener("astro:before-swap", () => closeMenu(false));
     // Mobile back button / edge-swipe: the browser pops our pushed entry — fade the card shut.
     // closeMenu no-ops when the card isn't open, so ordinary page-to-page back is unaffected.
-    window.addEventListener("popstate", () => closeMenu(true));
+    // The isOverlayEntry gate skips the router's synthetic popstate right after the open-push
+    // and a forward re-traversal onto a stranded entry — neither is a dismissal.
+    window.addEventListener("popstate", () => {
+      if (!isOverlayEntry("navOpen")) closeMenu(true);
+    });
 
     // `chrome()` gates both handlers: after a ClientRouter swap onto the landing this script is
     // still live, but the landing's React StickyHeader (no #chrome id) owns its own menu there.

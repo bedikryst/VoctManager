@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../../lib/overlayHistory";
 import { BrandGlyph } from "../BrandGlyph";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
 import { useBodyClass } from "../hooks/useBodyClass";
@@ -34,23 +35,24 @@ export function VaultModal(): React.JSX.Element {
   // on top, pop it (→ popstate → close) so no "swallowed" back press lingers afterwards; otherwise
   // close directly. A genuine mobile back / edge-swipe lands straight in the popstate handler.
   const dismiss = useCallback(() => {
-    if (history.state?.vaultOpen) history.back();
-    else close();
+    dismissOverlayEntry("vaultOpen", close);
   }, [close]);
 
   useBodyClass(isOpen ? "vault-open" : null);
   useFocusTrap(sheetRef, isOpen, { onEscape: dismiss });
   useLenisLock(isOpen);
 
-  // History integration: open → push a state entry so the mobile back button dismisses the sheet
-  // instead of leaving the page; popstate → close (the single close path shared by `dismiss`'s
-  // history.back() and a genuine back press).
+  // History integration: open → push a hash-marked entry via ClientRouter's navigate() (see
+  // overlayHistory.ts — a raw pushState made the router re-swap the whole document on back,
+  // re-running every reveal); popstate → close (the single close path shared by `dismiss`'s
+  // history.back() and a genuine back press). #skarbiec matches no element id (#wesprzyj and
+  // #vault are real anchors and would scroll), so nothing moves on open.
   useEffect(() => {
     if (!isOpen) return;
-    if (!history.state?.vaultOpen) {
-      history.pushState({ vaultOpen: true }, "");
-    }
-    const onPop = () => close();
+    pushOverlayEntry("vaultOpen", "skarbiec");
+    const onPop = () => {
+      if (!isOverlayEntry("vaultOpen")) close();
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [isOpen, close]);

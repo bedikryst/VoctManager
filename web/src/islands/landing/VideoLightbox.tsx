@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MODAL_VIDEO } from "../../data/landing/video";
+import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../lib/overlayHistory";
 import { useBodyClass } from "./hooks/useBodyClass";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { VideoPlayer } from "./video/VideoPlayer";
@@ -42,9 +43,8 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
   // close) so no "swallowed" back press lingers; a genuine back / edge-swipe lands straight in the
   // popstate handler. Falls back to a direct close if our entry isn't on top (defensive).
   const dismiss = useCallback((): void => {
-    if (history.state?.videoOpen) history.back();
-    else setOpen(null);
-  }, []);
+    dismissOverlayEntry("videoOpen", close);
+  }, [close]);
 
   useBodyClass(open ? "video-open" : null);
   useFocusTrap(panelRef, isOpen, { onEscape: dismiss });
@@ -68,14 +68,17 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
     };
   }, []);
 
-  // History integration: open → push a state entry, mobile back / edge-swipe → close (so the
-  // gesture dismisses the projection instead of leaving the landing). Mirrors VaultModal.
+  // History integration: open → push a hash-marked entry via ClientRouter's navigate() (see
+  // overlayHistory.ts — a raw pushState made the router re-swap the whole document on back,
+  // re-running every reveal), mobile back / edge-swipe → close (so the gesture dismisses the
+  // projection instead of leaving the landing). Mirrors VaultModal; no #projekcja element
+  // exists, so nothing scrolls on open.
   useEffect(() => {
     if (!isOpen) return;
-    if (!history.state?.videoOpen) {
-      history.pushState({ videoOpen: true }, "");
-    }
-    const onPop = (): void => close();
+    pushOverlayEntry("videoOpen", "projekcja");
+    const onPop = (): void => {
+      if (!isOverlayEntry("videoOpen")) close();
+    };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, [isOpen, close]);
