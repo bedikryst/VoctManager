@@ -233,6 +233,10 @@ const links = [
       window.clearTimeout(closeTimer);
       const c = chrome();
       if (!c) return;
+      // History integration: push a state entry so the mobile back button / edge-swipe dismisses
+      // the "Antyfona" card instead of leaving the page. A cross-page voice tap leaves the card
+      // open and lets the swap carry it; the stranded same-URL entry backs out to this page.
+      if (!history.state?.navOpen) history.pushState({ navOpen: true }, "");
       c.classList.remove("menu-closing");
       c.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");
@@ -267,12 +271,23 @@ const links = [
       window.clearTimeout(closeTimer);
       closeTimer = window.setTimeout(finalizeClose, WIPE_MS);
     };
+    // Pure-dismiss closers (Zamknij, Escape) pop the entry pushed on open (→ popstate → animated
+    // close) so no "swallowed" back press lingers; a genuine back press lands straight in the
+    // popstate handler below. Navigation-adjacent closers (voices, the vault CTA) keep closeMenu.
+    const dismissMenu = () => {
+      const c = chrome();
+      if (c && c.classList.contains("menu-open") && history.state?.navOpen) history.back();
+      else closeMenu(true);
+    };
 
     window.addEventListener("scroll", syncSolid, { passive: true });
     // Re-evaluate tone after each navigation (new page starts scrolled to top).
     document.addEventListener("astro:page-load", syncSolid);
     // A navigation swap tears down the open overlay; drop the scroll lock with it (no wipe here).
     document.addEventListener("astro:before-swap", () => closeMenu(false));
+    // Mobile back button / edge-swipe: the browser pops our pushed entry — fade the card shut.
+    // closeMenu no-ops when the card isn't open, so ordinary page-to-page back is unaffected.
+    window.addEventListener("popstate", () => closeMenu(true));
 
     // `chrome()` gates both handlers: after a ClientRouter swap onto the landing this script is
     // still live, but the landing's React StickyHeader (no #chrome id) owns its own menu there.
@@ -284,7 +299,7 @@ const links = [
         return;
       }
       if (t.closest("#menuClose")) {
-        closeMenu(true);
+        dismissMenu();
         return;
       }
       const voice = t.closest(".nave .voice");
@@ -311,7 +326,7 @@ const links = [
       const c = chrome();
       if (!c) return;
       if (e.key === "Escape") {
-        closeMenu(true);
+        dismissMenu();
         return;
       }
       // Focus trap: while the overlay is open, Tab cycles inside it.

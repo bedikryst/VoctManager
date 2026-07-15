@@ -25,6 +25,9 @@
  *  Wipes, light shafts and staggers were tried and rejected as showy. The veil is opaque (no
  *  backdrop-filter) and open/close is a single-group opacity — the cheapest composite on a
  *  phone. Touch-only surface → :active press states, not :hover. Reduced-motion is flat.
+ *  The mobile back button / edge-swipe DISMISSES the card: the two header owners (StickyHeader.tsx
+ *  on the landing, SiteChrome.astro on subpages) push a history entry on open and close on
+ *  `popstate` — this stylesheet only paints the card, so that behaviour lives in the scripts.
  * @architecture Astro islands 2026
  * @module styles/nave-menu
  */

@@ -9,7 +9,7 @@
  * @module islands/landing/vault/VaultModal
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BrandGlyph } from "../BrandGlyph";
 import { VAULT_CONFIG } from "../constants/vaultConfig";
@@ -30,11 +30,21 @@ export function VaultModal(): React.JSX.Element {
   const progress = useDonationProgress();
   const [tab, setTab] = useState<"once" | "mecenat">("once");
 
+  // Every user-initiated close routes through `dismiss`: if the entry we pushed on open is still
+  // on top, pop it (→ popstate → close) so no "swallowed" back press lingers afterwards; otherwise
+  // close directly. A genuine mobile back / edge-swipe lands straight in the popstate handler.
+  const dismiss = useCallback(() => {
+    if (history.state?.vaultOpen) history.back();
+    else close();
+  }, [close]);
+
   useBodyClass(isOpen ? "vault-open" : null);
-  useFocusTrap(sheetRef, isOpen, { onEscape: close });
+  useFocusTrap(sheetRef, isOpen, { onEscape: dismiss });
   useLenisLock(isOpen);
 
-  // History integration: open → push, back → close.
+  // History integration: open → push a state entry so the mobile back button dismisses the sheet
+  // instead of leaving the page; popstate → close (the single close path shared by `dismiss`'s
+  // history.back() and a genuine back press).
   useEffect(() => {
     if (!isOpen) return;
     if (!history.state?.vaultOpen) {
@@ -56,7 +66,7 @@ export function VaultModal(): React.JSX.Element {
       aria-hidden={!isOpen}
       aria-labelledby="vault-title"
     >
-      <div className="vault-backdrop" onClick={close} aria-hidden="true" />
+      <div className="vault-backdrop" onClick={dismiss} aria-hidden="true" />
       <div className="vault-sheet" tabIndex={-1} data-lenis-prevent ref={sheetRef}>
         <header className="vault-head">
           <div className="vault-mark" aria-hidden="true">
@@ -69,7 +79,7 @@ export function VaultModal(): React.JSX.Element {
               Wesprzyj cykl
             </h2>
           </div>
-          <button type="button" className="vault-close" onClick={close} aria-label="Zamknij">
+          <button type="button" className="vault-close" onClick={dismiss} aria-label="Zamknij">
             <span />
             <span />
           </button>

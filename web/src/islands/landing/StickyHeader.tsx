@@ -55,9 +55,34 @@ export function StickyHeader(): React.JSX.Element {
       setMenuClosing(false);
     }, 260);
   }, []);
+
+  // Pure-dismiss closers (Zamknij, Escape) route through `dismiss`: pop the entry pushed on open
+  // (→ popstate → animated close) so no "swallowed" back press lingers. A genuine back press lands
+  // straight in the popstate handler. Navigation-adjacent closers (brand #top, the voices, the
+  // vault CTA) keep their own close — they hand off to another surface, and consuming the entry
+  // there would race with the #top hash push / the vault's own pushState.
+  const dismiss = useCallback(() => {
+    if (history.state?.navOpen) history.back();
+    else closeMenu(true);
+  }, [closeMenu]);
+
   useEffect(() => () => {
     if (closeTimer.current) window.clearTimeout(closeTimer.current);
   }, []);
+
+  // History integration: opening the card pushes a state entry so the mobile back button /
+  // edge-swipe dismisses the "Antyfona" overlay instead of leaving the landing. A cross-page
+  // voice tap leaves the card open and lets the swap carry it — the stranded same-URL entry
+  // simply backs out to the landing. Mirrors VaultModal.
+  useEffect(() => {
+    if (!menuOpen) return;
+    if (!history.state?.navOpen) {
+      history.pushState({ navOpen: true }, "");
+    }
+    const onPop = (): void => closeMenu(true);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [menuOpen, closeMenu]);
 
   // Cross-page voice tap: leave the card OPEN so the outgoing snapshot captures the parchment
   // card, and let the page transition (transitions.css) dissolve it into the destination as one
@@ -73,7 +98,7 @@ export function StickyHeader(): React.JSX.Element {
   // Focus stays inside the overlay while it owns the viewport; Escape plays the wipe. The hook
   // restores focus to the hamburger on deactivation (menu-closing counts as deactivated).
   const navRef = useRef<HTMLElement>(null);
-  const onEscapeClose = useCallback(() => closeMenu(true), [closeMenu]);
+  const onEscapeClose = useCallback(() => dismiss(), [dismiss]);
   useFocusTrap(navRef, menuOpen && !menuClosing, { onEscape: onEscapeClose });
 
   useEffect(() => {
@@ -245,7 +270,7 @@ export function StickyHeader(): React.JSX.Element {
               id="menuClose"
               type="button"
               aria-label="Zamknij menu"
-              onClick={() => closeMenu(true)}
+              onClick={dismiss}
             >
               Zamknij
             </button>
