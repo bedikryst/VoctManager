@@ -234,9 +234,12 @@ const links = [
       const c = chrome();
       if (!c) return;
       // History integration: push a state entry so the mobile back button / edge-swipe dismisses
-      // the "Antyfona" card instead of leaving the page. A cross-page voice tap leaves the card
-      // open and lets the swap carry it; the stranded same-URL entry backs out to this page.
-      if (!history.state?.navOpen) history.pushState({ navOpen: true }, "");
+      // the "Antyfona" card. Hash-mark it so ClientRouter treats consuming it (back) as a same-page
+      // hash change — NO document swap, so the outgoing snapshot doesn't ghost the open card and
+      // flash it back mid-close. No #menu element exists (nothing scrolls); the hash is transient.
+      if (!history.state?.navOpen) {
+        history.pushState({ navOpen: true }, "", `${location.pathname}${location.search}#menu`);
+      }
       c.classList.remove("menu-closing");
       c.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");

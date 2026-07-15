@@ -77,7 +77,11 @@ export function StickyHeader(): React.JSX.Element {
   useEffect(() => {
     if (!menuOpen) return;
     if (!history.state?.navOpen) {
-      history.pushState({ navOpen: true }, "");
+      // Hash-mark the entry: ClientRouter treats consuming it (back) as a same-page hash change,
+      // so it runs NO View Transition swap — without this the outgoing snapshot ghosts the open
+      // parchment card mid-close (it flashes back before settling). No #menu element exists, so
+      // nothing scrolls; the hash is transient (only while the card is open).
+      history.pushState({ navOpen: true }, "", `${location.pathname}${location.search}#menu`);
     }
     const onPop = (): void => closeMenu(true);
     window.addEventListener("popstate", onPop);
