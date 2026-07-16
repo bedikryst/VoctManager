@@ -25,6 +25,12 @@ const concerts = defineCollection({
     /** ISO date (YYYY-MM-DD) for schema.org startDate. Omitted when the date is vague
         (a season or bare year); JSON-LD then skips startDate rather than fabricate one. */
     date: z.string().optional(),
+    /** Concert hour "HH:MM" for a single-date concert — shown after `meta` in the detail
+        hero and folded into the JSON-LD startDate. Tour entries carry time per-date. */
+    time: z.string().optional(),
+    /** Street address of the venue (e.g. "ul. Kopernika 26, Kraków") — JSON-LD Place.address
+        only; the visible page keeps the quieter `meta`/`venue` register. */
+    address: z.string().optional(),
     /** Short via-rail date label (e.g. "sty 2024"). The via-rail fill % is computed
         from order in the page, not stored here. */
     viaDate: z.string(),
@@ -99,6 +105,24 @@ const concerts = defineCollection({
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
         who gives the opening word, light direction…). Rendered as a quiet colophon block. */
     credits: z.array(z.object({ role: z.string(), name: z.string() })).default([]),
+    /** The voices of THIS evening — the singers as they stood that night, grouped by voice
+        part. CONSENT SCOPE: names are cleared for concert pages ONLY — never reuse them on
+        /o-nas, the landing or press materials. Line-ups are per-evening (guests, later
+        departures), so never frame the list as the ensemble's fixed roster or "founders".
+        `detail` glosses a group (e.g. which works the solo quartet joined); `note` is a
+        quiet factual footnote for the whole block (e.g. the debut sung without fees). */
+    roster: z
+      .object({
+        groups: z.array(
+          z.object({
+            voice: z.string(),
+            names: z.array(z.string()),
+            detail: z.string().optional(),
+          }),
+        ),
+        note: z.string().optional(),
+      })
+      .optional(),
     /** Multi-city tour dates. When present the detail page shows a "Wykonania" itinerary and
         JSON-LD emits one MusicEvent per date; single-date concerts keep using `date`/`venue`. */
     dates: z

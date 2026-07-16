@@ -12,6 +12,8 @@
   meta: "Bazylika NSPJ, Kraków · 20 stycznia 2024"
   venue: "Bazylika NSPJ, Kraków"
   date: "2024-01-20"
+  time: "20:00"
+  address: "ul. Kopernika 26, Kraków"
   viaDate: sty 2024
   about:
     place: "Bazylika NSPJ · Kraków"
@@ -82,6 +84,21 @@
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
     - { role: "Słowo wprowadzające", name: "o. Jarek Naliwajko SJ" }
+  # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
+  roster:
+    groups:
+      - { voice: "Soprany", names: ["Liliana Pociecha", "Marta Migut"] }
+      - { voice: "Alty", names: ["Natalia Czajkowska", "Olga Bodnar"] }
+      - { voice: "Tenory", names: ["Michał Ryguła", "Paweł Żurawski"] }
+      - { voice: "Basy", names: ["Dawid Janowiak", "Szymon Maziarz"] }
+      - voice: "Kwartet solistów"
+        names: ["Maria Marczewska", "Hanna Mikołajun", "Mikołaj Niżegorodcew", "Jakub Ciępka"]
+        detail: >-
+          Kwartet unoszący się nad chorałem w Es ist ein Ros' entsprungen;
+          w Le cri des bergers dopełnia dwanaście głosów.
+    note: >-
+      Wykonawcy i organizatorzy nie pobrali za ten wieczór honorariów —
+      debiut wsparła zbiórka społeczna wokół powstającego zespołu.
   gallery:
     - { img: kd-wcielenie-0, alt: "VoctEnsemble podczas próby do Kontemplacji Wcielenia", caption: "Próba do Kontemplacji Wcielenia" }
     - { img: kd-wcielenie-1, alt: "VoctEnsemble podczas próby do Kontemplacji Wcielenia", caption: "Próba do Kontemplacji Wcielenia" }
@@ -119,9 +136,11 @@
       year: "1990"
       voicing: "a 8 + kwartet"
       note: >-
-        Niemiecka kolęda z końca XVI wieku (Trewir, 1587), po raz pierwszy wydana w jezuickim
-        śpiewniku ze Spiry (1599). Sandström osnuwa dawny chorał wokół unoszącego się nad nim
-        kwartetu solistów — proroctwo o różdżce z pnia Jessego otwiera wieczór.
+        Niemiecka kolęda z końca XVI wieku (Trewir, 1587), wydana po raz pierwszy w jezuickim
+        śpiewniku ze Spiry (1599) — jego dwadzieścia trzy zwrotki prowadzą przez całą historię
+        świętą, od proroctwa Izajasza po pokłon Mędrców: tę samą drogę, którą za chwilę przejdzie
+        ten program. Po polsku znana jako „Cudowna różdżka wzrosła" (przekład ks. Pawła Sikory,
+        1912). Sandström osnuwa dawny chorał wokół unoszącego się nad nim kwartetu solistów.
       inscriptio: "Et egredietur virga de radice Iesse"
       inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
       inscriptioRef: "Iz 11, 1"
@@ -199,8 +218,8 @@
       voicing: "a 8"
       note: >-
         Antyfona maryjna okresu adwentu, śpiewana od 1 grudnia do 2 lutego. Ośmiogłosowy motet
-        Victorii w weneckim stylu coro spezzato — chór podzielony, prowadzący dialog w przestrzeni
-        kościoła.
+        Victorii — osiem samodzielnych linii prowadzi ze sobą dialog pokrewny weneckiemu coro
+        spezzato, choć o rozstawieniu chóru w przestrzeni sam kompozytor nie zostawił wskazówek.
       inscriptio: "Alma Redemptoris Mater"
       inscriptioPl: "Czcigodna Matko Odkupiciela · antyfona maryjna"
     - composer: "Krzysztof Penderecki"
@@ -236,6 +255,46 @@
         harmonię.
       inscriptio: "Coventry Carol — Rzeź Niewiniątek"
       inscriptioPl: "kołysanka matki za skazane dziecko · Mt 2, 16"
+      text: |-
+        Lully, lullay, thou little tiny child,
+        bye, bye, lully, lullay.
+        Lullay, thou little tiny child,
+        bye, bye, lully, lullay.
+
+        O sisters too, how may we do
+        for to preserve this day
+        this poor youngling for whom we do sing:
+        bye, bye, lully, lullay?
+
+        Herod the king, in his raging,
+        charged he hath this day
+        his men of might, in his own sight,
+        all young children to slay.
+
+        That woe is me, poor child, for thee!
+        And ever mourn and sigh,
+        for thy parting neither say nor sing:
+        bye, bye, lully, lullay.
+      textPl: |-
+        Lully, lullay, maleńkie Dziecię,
+        bye, bye, lully, lullay.
+        Lullay, maleńkie Dziecię,
+        bye, bye, lully, lullay.
+
+        O siostry, cóż uczynić mamy,
+        by ocalić w ten dzień
+        biedne maleństwo, któremu śpiewamy:
+        bye, bye, lully, lullay?
+
+        Herod, król, w swej wściekłości
+        rozkazał dziś
+        swoim zbrojnym, na własnych oczach,
+        zgładzić wszystkie małe dzieci.
+
+        Biada mi, biedne Dziecię, żal mi Ciebie!
+        Wciąż będę płakać i wzdychać;
+        na Twoje odejście — ani słowa, ani pieśni:
+        bye, bye, lully, lullay.
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "Nunc dimittis"
@@ -269,8 +328,9 @@
       year: "1620"
       voicing: "SSATBB"
       note: >-
-        Sześciogłosowy motet polichóralny, wydany w 1620 roku w zbiorze Giulia Cesare Bianchiego.
-        Monteverdi na progu baroku podejmuje wezwanie Psalmu 98 do nowej pieśni — radość, którą
+        Sześciogłosowy motet, wydany w 1620 roku w zbiorze Giulia Cesare Bianchiego. Radosny
+        trójmiar otwarcia — najpierw w czterech głosach, zaraz potem w pełnej szóstce — prowadzi
+        przez splecione wersety Psalmów 96 i 98: wezwanie do nowej pieśni, którego radość
         słychać w samej fakturze.
       inscriptio: "Cantate Domino canticum novum"
       inscriptioPl: "Śpiewajcie Panu pieśń nową"
@@ -298,6 +358,16 @@
         natura mirante;
         mundus renovatus est
         a Christo regnante.
+
+        Ezechielis porta
+        clausa pertransitur;
+        unde lux est orta,
+        salus invenitur.
+
+        Ergo nostra concio
+        psallat iam in lustro;
+        benedicat Domino:
+        salus Regi nostro.
       textPl: |-
         Radujcie się, radujcie! Chrystus się narodził
         z Maryi Dziewicy, radujcie się!
@@ -311,6 +381,16 @@
         natura się zdumiewa;
         świat został odnowiony
         przez Chrystusa Króla.
+
+        Zamknięta brama Ezechiela
+        została przekroczona;
+        skąd wzeszło światło,
+        tam znajduje się zbawienie.
+
+        Niech więc nasze zgromadzenie
+        śpiewa już w jasności;
+        niech błogosławi Panu:
+        cześć Królowi naszemu.
       bis: true
 
 - id: wolanie-gor

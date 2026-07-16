@@ -9,8 +9,10 @@
  *
  *  The page reads like the ensemble's own programme book: a dark full-bleed nave (hero +
  *  reflection), then the visitor "sits down to read the programme" on parchment (the program
- *  with its expandable sung texts), a composer's voice, documentary photographs of the evening,
- *  and finally the Via that runs on — prev / next Obraz, the road that does not dead-end.
+ *  with its expandable sung texts), a composer's voice, the voices of the evening (per-evening
+ *  roster), documentary photographs, and finally the Via that runs on — prev / next Obraz,
+ *  the road that does not dead-end. Each station burns its own candle: `--candle` inside
+ *  <main> is re-toned from the concert `accent` (lib/candle), while the chrome keeps gold.
  * @architecture Astro islands 2026
  * @module pages/koncerty/[id]
  */
@@ -22,6 +24,7 @@ import SiteChrome from "../../components/SiteChrome.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
+import { candleFrom } from "../../lib/candle";
 import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
@@ -40,6 +43,11 @@ const { entry } = Astro.props;
 const c = entry.data;
 const bg = bleedPair(c.bg);
 const ogImage = (await getImage({ src: bg.desktop, width: 1200, format: "webp" })).src;
+
+// ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
+// the base gold's OKLCH lightness (build-time hex — no runtime CSS feature risk). Gold
+// accents pass through unchanged; the chrome and vault outside <main> keep brand gold.
+const candle = candleFrom(c.accent);
 
 // ── Via neighbours: only page-bearing concerts (a non-page neighbour would 404). The road
 // runs THROUGH the detail pages — a walk, not a set of dead-ends. Skips a slot when there
@@ -98,17 +106,22 @@ const baseEvent = {
   eventStatus: "https://schema.org/EventCompleted",
   eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
 };
+const startDate = c.date ? (c.time ? `${c.date}T${c.time}:00` : c.date) : undefined;
 const events = hasTour
   ? c.dates.map((d) => ({
       ...baseEvent,
-      startDate: d.date,
+      startDate: d.time ? `${d.date}T${d.time}:00` : d.date,
       location: { "@type": "Place", name: d.venue },
     }))
   : [
       {
         ...baseEvent,
-        ...(c.date ? { startDate: c.date } : {}),
-        location: { "@type": "Place", name: c.venue ?? c.meta },
+        ...(startDate ? { startDate } : {}),
+        location: {
+          "@type": "Place",
+          name: c.venue ?? c.meta,
+          ...(c.address ? { address: c.address } : {}),
+        },
       },
     ];
 const jsonLd =
@@ -139,7 +152,7 @@ const plDate = (iso: string): string =>
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   <SiteChrome current="/koncerty" tone="dark" />
 
-  <main id="tresc">
+  <main id="tresc" style={`--candle: ${candle}`}>
     {/* ── Hero: full-bleed church, latin inscriptio, title, meta ───────────── */}
     <section class="kd-hero" aria-label={c.title}>
       <div class="kd-hero-media" aria-hidden="true">
@@ -154,7 +167,7 @@ const plDate = (iso: string): string =>
           <span class="lat">{c.latin}</span>
         </p>
         <h1 class="kd-hero-title reveal" data-d="1">{c.title}</h1>
-        <p class="kd-hero-meta reveal" data-d="1">{c.meta}</p>
+        <p class="kd-hero-meta reveal" data-d="1">{c.meta}{c.time ? ` · godz. ${c.time}` : ""}</p>
 
         {c.inscriptio && (
           <p class="kd-inscriptio reveal" data-d="2">
@@ -375,6 +388,34 @@ const plDate = (iso: string): string =>
               {c.pullQuote.about && <span class="kd-cite-about micro">{c.pullQuote.about}</span>}
             </cite>
           </blockquote>
+        </div>
+      </section>
+    )}
+
+    {/* ── Voces: the singers as they stood THAT evening — a per-evening cast, never the
+          ensemble's fixed roster (guests happen, people move on). Names are consent-cleared
+          for concert pages only. The quiet factual footnote (`roster.note`) belongs to the
+          whole block. Placed before the film/gallery so the names lead into the images. ── */}
+    {c.roster && c.roster.groups.length > 0 && (
+      <section class="kd-band kd-band-soft kd-voces tone-light" aria-label="Głosy wieczoru">
+        <div class="kd-wrap">
+          <span class="kd-section-label micro reveal">
+            <span class="lat">Voces</span>
+            <span class="kd-dot" aria-hidden="true">·</span>
+            <span>Głosy wieczoru</span>
+          </span>
+          <dl class="kd-voces-grid">
+            {c.roster.groups.map((g, i) => (
+              <div class="kd-voces-group reveal" data-d={String((i % 3) + 1)}>
+                <dt class="kd-voces-voice micro">{g.voice}</dt>
+                {g.names.map((n) => (
+                  <dd class="kd-voces-name">{n}</dd>
+                ))}
+                {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
+              </div>
+            ))}
+          </dl>
+          {c.roster.note && <p class="kd-voces-note reveal">{c.roster.note}</p>}
         </div>
       </section>
     )}
@@ -675,6 +716,16 @@ const plDate = (iso: string): string =>
   .kd-cite { display: flex; flex-direction: column; gap: 6px; margin-top: clamp(28px, 4vw, 44px); padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); font-style: normal; }
   .kd-cite-name { font-family: var(--serif); font-style: italic; font-size: clamp(16px, 1.5vw, 20px); color: var(--ink); }
   .kd-cite-about { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+
+  /* ── Voces: the evening's cast, grouped by voice part ──────────────────── */
+  .kd-voces { padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }
+  .kd-voces .kd-section-label { margin-bottom: clamp(36px, 5vw, 56px); }
+  .kd-voces-grid { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: clamp(28px, 4vw, 44px) clamp(24px, 3vw, 40px); }
+  .kd-voces-group { min-width: 0; }
+  .kd-voces-voice { margin: 0 0 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .kd-voces-name { margin: 0 0 6px; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.25; color: var(--ink); }
+  .kd-voces-detail { margin: 12px 0 0; max-width: 32ch; font-family: var(--sans); font-weight: 300; font-size: clamp(13px, 1vw, 14px); line-height: 1.65; color: var(--ink-muted, #746d62); }
+  .kd-voces-note { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(15px, 1.3vw, 17px); line-height: 1.6; color: var(--ink-muted, #746d62); }
 
   /* ── Documentary gallery ───────────────────────────────────────────────── */
   .kd-gallery { background: var(--night, #100f0d); color: var(--paper); }
