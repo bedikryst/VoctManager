@@ -70,6 +70,11 @@ const concerts = defineCollection({
         opens the programme ("kolejność jest częścią kompozycji"), grounded in the sequence
         itself, never in an invented quote. Rendered above the work list. */
     programArc: z.string().optional(),
+    /** A quiet factual footnote for the WHOLE programme, rendered in the programme foot beside
+        the standing texts/translations note. For what the work-list itself cannot carry — e.g.
+        a touring concert whose instrumental interludes differed between evenings, so the list
+        shows the ogniwa common to both. Facts only; the editorial voice belongs to programArc. */
+    programNote: z.string().optional(),
     /** The threshold of the evening — a short scene-setting beat rendered as a dark band right
         after the hero (place, hour, the rite of entry). Draws the reader across the doorway into
         the experience before the reflection. Grounded, never staged detail we can't attest. */
@@ -94,12 +99,16 @@ const concerts = defineCollection({
       .default([]),
     /** Self-hosted concert film (selected fragments), rendered in the shared custom player.
         `asset` is resolved through `lib/videos.ts`; `poster` is a photo() base name
-        (falls back to the hero bg). */
+        (falls back to the hero bg). `portrait` switches the player to the height-driven 9:16
+        frame for phone-shot audience documents (their caption + note hang as a plaque beside
+        it); `note` is the honest provenance line — which work, whose recording. */
     video: z
       .object({
         asset: z.enum(["landing-modal", "landing-wolanie", "landing-aeternam"]),
         caption: z.string().optional(),
+        note: z.string().optional(),
         poster: z.string().optional(),
+        portrait: z.boolean().default(false),
       })
       .optional(),
     /** Named "obsada" credits for the detail page — role → person (conductor, the Jesuit
@@ -140,6 +149,25 @@ const concerts = defineCollection({
     gallery: z
       .array(z.object({ img: z.string(), alt: z.string().optional(), caption: z.string().optional() }))
       .default([]),
+    /** Verbum — the spoken threshold word: the live introduction given before the music
+        begins (rite 01 on /koncerty). Distinct from `reflection` (the conductor's own
+        authored note): this is someone else's live voice, transcribed and lightly edited
+        for readability — edits are subtractive/corrective only, never paraphrase, and the
+        page discloses the editing in a micro note. `quote` is a verbatim excerpt for the
+        prominent blockquote; `text` is the full transcript behind a native reveal,
+        `\n\n`-separated into paragraphs; `bridge` is OUR unsigned hand-off line closing
+        the section (editorial register, not the speaker's). CONSENT: speaker consent
+        covers the concert page — do not lift quotes to the landing or /koncerty without
+        asking again. A film of the word (if any) joins later as a player under the
+        transcript once its asset lands in assets/videos. */
+    verbum: z
+      .object({
+        speaker: z.string(),
+        quote: z.string(),
+        text: z.string(),
+        bridge: z.string().optional(),
+      })
+      .optional(),
     /** Florent-authored single reflection paragraph (concert page). */
     reflection: z.string().optional(),
     /** Author attribution for the reflection paragraph. */

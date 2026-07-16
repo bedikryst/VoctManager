@@ -45,8 +45,66 @@
   prologue: >-
     Dwudziesty stycznia, wieczór, Bazylika Najświętszego Serca Pana Jezusa w Krakowie —
     dwadzieścia dni po tym, jak zespół powstał. Zanim zabrzmi pierwszy dźwięk,
-    o. Jarek Naliwajko SJ wprowadza w tajemnicę Wcielenia. Potem cichnie gwar i z zimowego
-    półmroku podnosi się różdżka Sandströma.
+    o. Jarek Naliwajko SJ wprowadza w tajemnicę Wcielenia.
+  verbum:
+    speaker: "o. Jarek Naliwajko SJ · 20 stycznia 2024"
+    quote: >-
+      Odkrywanie tajemnicy kończy się zawsze tak samo. Prowadzi do kolejnej tajemnicy.
+      W przeciwnym wypadku to nie ona, tylko wiedza lub rutyna.
+    text: |-
+      Dobry wieczór Państwu, Szczęść Boże. Witam serdecznie wszystkich przybyłych do naszej
+      świątyni, do Bazyliki Najświętszego Serca Jezusa.
+
+      Szanowni Państwo, dzisiejszym wieczorem, tym inaugurującym koncertem, wykonawcy chcą nas
+      zaprosić do wciąż niepokojącego świata ducha, który ich samych — wykonawców, autorów
+      dzisiejszego spotkania — przynagla do swoistego wewnętrznego ruchu, wręcz wyrzucenia
+      z siebie tego niepokoju, czyli konieczności opowiedzenia o tajemnicy ducha.
+
+      Bo chwilowo, czyli od jakichś dwustu tysięcy lat, ludzkość nie opracowała lepszego słowa
+      na tę intrygującą, a nierozpoznaną do końca przez siebie część zanurzenia siebie samych
+      w czasie. Nie wynaleziono lepszego słowa jak duch. Chcą nam zdradzić tajemnicę. Jednak
+      odkrywanie tajemnicy kończy się zawsze tak samo. Prowadzi do kolejnej tajemnicy.
+      W przeciwnym wypadku to nie ona, tylko wiedza lub rutyna — tak przez niektórych
+      uwielbiana, mylona często z życiem.
+
+      Ale zacznijmy od plakatu na dzisiejszy koncert — powinien się wyświetlać na naszych
+      monitorach. To tło kobaltowe, a na nim rozchodzące się — zauważcie Państwo — lub
+      schodzące się białe promienie, utworzone z liter układających słowa. Są one schodzące
+      lub wychodzące, czy wchodzące, ale o kierunku decyduje odbiorca, bo w życiu albo schodzi
+      się do centrum, albo wychodzi się, odchodzi się z centrum, w którym nie ma nic oprócz
+      tego właśnie tła kobaltowego lub indygo na tle białej plamki — jak na tym plakacie.
+
+      A te trzy kolory kojarzone są z symbolem duchowości najwyższej — tak na przykład
+      w antropologii indyjskiej: indygo to najwyższa czakra, łącząca z duchem wszechświata,
+      tak jak kolor biały w naszej tradycji, przypisywany Absolutowi. Idąc dalej tym tropem:
+      indygo czy kobalt używano do barwienia szat królewskich, a więc pomazańców Bożych.
+
+      Demokracja — niestety i na szczęście — uczyniła z nas wszystkich równych, a tak naprawdę
+      to rutyna demokracji, czy raczej: demokracja to rutyna. Jednak wykonawcy dziś pragną nas
+      wyprowadzić z komfortu dnia codziennego, w którym rutyna zawładnęła nami, dając złudne
+      uczucie bezpieczeństwa, właśnie jakiejś równości — bo z pewnością rutyna to siostra
+      zapomnienia o świecie ducha.
+
+      Wykonawcy proponują nam jeszcze raz spotkać się z Wcieleniem. Wyprowadzają nas z rutyny,
+      aby zaprowadzić nas do Wcielenia. Choć w momencie, w którym to słowo wypowiadam i zamienia
+      się ono w falę dźwiękową, odzieram Wcielenie z całego jego bezkresu. Staje się pozornie zrozumiałe,
+      a przez to całkowicie nieprawdziwe, a z pewnością zamazane, bo zostaje odarte z tajemnicy.
+      Wcielenie wypływa, jednocześnie wpływając — jak te promienie na plakacie — ze źródła
+      wypływa do nas, a z nami wpływa z powrotem do centrum.
+
+      Koncert duchowy — bo taki nadali autorzy podtytuł całemu temu cyklowi, którego i my
+      będziemy nie tylko świadkami, ale w jakimś sensie twórcami — jest pierwszą odsłoną.
+      Dzisiejszy wieczór jest niczym innym jak spotkaniem ze sobą samym, gdy tylko zgodzimy się
+      na ten nasz wewnętrzny ruch, aby odkryć, że nie jesteśmy sami — ani w sobie, ani wokół
+      siebie — a pełnia stara się znaleźć wypowiedzenie przekraczające granice, a nie
+      zamazujące ich, właśnie poprzez muzykę.
+
+      I już na koniec — prośba od wykonawców, aby nie klaskać w trakcie programu, czyli
+      całkowicie poddajemy się zawieszeniu świadomości i dajemy się poruszać jedynie jak fale
+      bezkresnego oceanu. Nasłuchujemy, a aktywna niech będzie jedynie nasza uważność na ducha.
+      Powitajmy zatem dzisiejszych wykonawców.
+    bridge: >-
+      Potem cichnie gwar i z zimowego półmroku podnosi się różdżka Sandströma.
   movements:
     - id: prophetia
       lat: Prophetia
@@ -530,7 +588,7 @@
   inscriptio: "Requiem aeternam dona eis, Domine, et lux perpetua luceat eis"
   inscriptioPl: "Wieczny odpoczynek racz im dać, Panie, a światłość wiekuista niechaj im świeci"
   inscriptioRef: "Introit Requiem"
-  essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama ku modlitwom Pärta, Havrylets, Gjeilo, Lottiego i Tavenera."
+  essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama, przez modlitwy o pokój Pärta, Havrylets i Gjeilo oraz obraz męki Lottiego, ku schronieniu Shaw i zawierzeniu Tavenera."
   facts:
     - 4 / 8 / 12 głosów
     - Lament i modlitwa
@@ -542,16 +600,377 @@
   links:
     - { label: Relacja prasowa ↗, href: "https://krakow.gosc.pl/doc/9466268.Niedzica-Koncert-dedykowany-Strefie-Gazy" }
     - { label: Onet / KAI ↗, href: "https://www.onet.pl/informacje/kai/muzyczna-modlitwa-w-niedzicy-koncert-dla-strefy-gazy/l3pn8kc,30bc1058" }
+  hasPage: true
+  video:
+    asset: landing-aeternam
+    caption: 'Fragment koncertu „Aeternam — Epitafium dla Gazy" · VoctEnsemble 2025'
+    note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo"
+    portrait: true
+  dates:
+    - date: "2025-09-14"
+      venue: "Kościół św. Maksymiliana Marii Kolbego (dolny kościół), Mistrzejowice, Kraków"
+      time: "18:00"
+    - date: "2025-10-18"
+      venue: "Kościół św. Bartłomieja Apostoła, Niedzica"
+      time: "18:00"
+  prologue: >-
+    Czternasty września 2025, dolny kościół w Mistrzejowicach — święto Podwyższenia Krzyża
+    Świętego, w przeddzień wspomnienia Matki Bożej Bolesnej. Zespół prosi o jedno: żeby wieczór
+    wybrzmiał w ciszy, jako jedno dzieło.
+  reflection: >-
+    „Epitafium dla Gazy" jest wyrazem modlitwy i gestem solidarności wobec zranionej ludzkości
+    w Gazie. Stając wobec cierpienia jej mieszkańców, szukamy w muzyce najczystszego języka
+    współczucia — wierząc, że kontemplacja, cisza i śpiew mogą unieść zarówno ból, jak i światło
+    nadziei tam, gdzie słowa już nie wystarczają.
+  reflectionAttribution: "VoctEnsemble · wrzesień 2025"
+  reflectionNote: >-
+    Program prowadzi drogą, którą chrześcijaństwo zna od wieków: od modlitwy nad grobem, przez
+    lament matki i prośbę o pokój, przez obraz męki — aż po zawierzenie Tej, która stała
+    pod krzyżem.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+    - { role: "Wiolonczela", name: "Joanna Indyk" }
+    - { role: "Kwartet smyczkowy", name: "Paulina Niemiec · Maria Tur · Magdalena Prześlica · Joanna Indyk" }
+  # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
+  # Documented for the Mistrzejowice evening only — the Niedzica line-up was never sent
+  # with these materials, hence the dated note rather than a blanket "skład zespołu".
+  roster:
+    groups:
+      - { voice: "Sopran I", names: ["Maria Marczewska", "Karolina Grodecka"] }
+      - { voice: "Sopran II", names: ["Katarzyna Rogal", "Joanna Kosiba"] }
+      - { voice: "Alt I", names: ["Natalia Czajkowska"] }
+      - { voice: "Alt II", names: ["Izabela Bartyzel-Gajówka"] }
+      - { voice: "Alt III", names: ["Anna Marcisz"] }
+      - { voice: "Tenor I", names: ["Bartłomiej Chorąży"] }
+      - { voice: "Tenor II", names: ["Mateusz Solarz"] }
+      - { voice: "Tenor III", names: ["Michał Jan Barański"] }
+      - { voice: "Bas I", names: ["Dawid Janowiak", "Adam Dawiec"] }
+      - { voice: "Bas II", names: ["Szymon Maziarz", "Jakub Ciępka"] }
+    note: >-
+      Skład wieczoru w Mistrzejowicach, 14 września 2025 — za notą prasową zespołu.
+  pullQuote:
+    text: >-
+      Tam, gdzie ludność cywilna, dzieci i rodziny noszą na sobie ślady wojny, pytamy: czym
+      jest dziś sprawiedliwość, pamięć i miłosierdzie? Jaki napis wyryć na grobie Gazy?
+    attribution: "VoctEnsemble"
+    about: "z zapowiedzi koncertu"
+  programLede: "Muzyczna modlitwa — dziewięć ogniw i bis"
+  programArc: >-
+    Kolejność jest tu modlitwą, nie opowieścią. Wieczór otwierają słowa, które Kościół śpiewa
+    nad grobem, a zaraz potem schodzi najniżej, jak zejść można: do krzyku matki nad zabitymi
+    dziećmi. Stamtąd prowadzi przez trzy prośby o pokój i przez ciężar krzyża — aż do miejsca,
+    gdzie nawet jaskółka ma gniazdo, i do ostatniego refrenu, w którym całe stworzenie raduje się.
+  programNote: >-
+    Przerywniki instrumentalne różniły się między wieczorami: w Mistrzejowicach kwartet smyczkowy
+    grał Psalom Arvo Pärta, w Niedzicy Joanna Indyk — części suit wiolonczelowych Bacha.
+    Powyższa lista obejmuje ogniwa wspólne dla obu wykonań.
+  movements:
+    - id: epitaphium
+      lat: Epitaphium
+      pl: Epitafium
+      line: >-
+        Wieczór zaczyna się tam, gdzie kończy się mowa: od słów śpiewanych nad grobami
+        od wieków.
+    - id: ploratus
+      lat: Ploratus
+      pl: Lament niewinnych
+      line: >-
+        Rachel opłakuje swoje dzieci — w tradycji biblijnej figura każdej matki, której
+        odebrano dziecko.
+    - id: oratio
+      lat: Oratio pro pace
+      pl: Modlitwa o pokój
+      line: >-
+        Trzy prośby z trzech stron Europy: antyfona napisana po zamachach w Madrycie,
+        norweskie ukojenie z wiolonczelą, ukraińskie wołanie do Bogurodzicy.
+    - id: passio
+      lat: Passio
+      pl: Obraz męki
+      interlude:
+        lat: "Videns civitatem, flevit super illam: Si cognovisses et tu, quæ ad pacem tibi!"
+        pl: "Na widok miasta zapłakał nad nim: O gdybyś i ty poznało to, co służy pokojowi!"
+        ref: "Łk 19, 41–42"
+      line: >-
+        W połowie wieczoru — ciężar krzyża, wypisany chromatyką ośmiu głosów.
+    - id: refugium
+      lat: Refugium
+      pl: Schronienie
+      line: >-
+        Po męce wraca najmniejszy obraz, jaki zna Psałterz: wróbel i jaskółka, które przy
+        ołtarzu znajdują gniazdo.
+    - id: commendatio
+      lat: Commendatio
+      pl: Zawierzenie
+      line: >-
+        Zostaje zawierzenie Tej, która stała pod krzyżem — i obietnica, którą niesie ostatni
+        refren.
   program:
-    - { composer: "Bernat Vivancos", years: "ur. 1973", work: "Aeternam", year: "2014" }
-    - { composer: "Mikołaj Zieleński", years: "1560–1620", work: "Vox in Rama · lament", year: "1611" }
-    - { composer: "Arvo Pärt", years: "ur. 1935", work: "Da Pacem Domine", year: "2004" }
-    - { composer: "Ola Gjeilo", years: "ur. 1978", work: "Serenity", year: "2010" }
-    - { composer: "Hanna Havrylets", years: "1958–2022", work: "Prayer · Молитва до Пресвятої Богородиці", year: "2004" }
-    - { composer: "Antonio Lotti", years: "1667–1740", work: "Crucifixus", year: "ok. 1717–19" }
-    - { composer: "Caroline Shaw", years: "ur. 1982", work: "and the swallow", year: "2017" }
-    - { composer: "John Tavener", years: "1944–2013", work: "Mother of God, here I stand", year: "2003" }
-    - { composer: "John Tavener", years: "1944–2013", work: "A Hymn to the Mother of God", year: "1985" }
+    - composer: "Bernat Vivancos"
+      years: "ur. 1973"
+      work: "Aeternam"
+      movement: epitaphium
+      year: "2014"
+      voicing: "a 8"
+      duration: "10′"
+      note: >-
+        Część Requiem katalońskiego kompozytora, przez lata związanego z chórem chłopięcym
+        Escolania de Montserrat. Podstawą jest Introit Mszy za zmarłych — słowa odmawiane nad
+        grobami od wieków. Vivancos zestawia współczesną heterofonię z prostotą dawnego chorału.
+      inscriptioPl: "Introit Mszy za zmarłych"
+      text: |-
+        Requiem æternam dona eis, Domine,
+        et lux perpetua luceat eis.
+      textPl: |-
+        Wieczny odpoczynek racz im dać, Panie,
+        a światłość wiekuista niechaj im świeci.
+    - composer: "Mikołaj Zieleński"
+      years: "1560–1620"
+      work: "Vox in Rama"
+      movement: ploratus
+      year: "1611"
+      voicing: "a 4"
+      duration: "4′"
+      note: >-
+        Motet ze zbioru Communiones totius anni, wydanego w Wenecji w 1611 roku. Tekst — werset
+        Jeremiasza przywołany w Ewangelii Mateusza — Zieleński opracował tak, że nakładające się
+        głosy same stają się krzykiem. Rachel, matka Józefa i Beniamina, jest w tradycji biblijnej
+        figurą matki opłakującej wszystkie niewinne ofiary; motet śpiewano w liturgii dnia
+        Świętych Młodzianków.
+      inscriptioRef: "Mt 2, 18"
+      text: |-
+        Vox in Rama audita est,
+        ploratus et ululatus multus.
+        Rachel plorans filios suos,
+        noluit consolari, quia non sunt.
+      textPl: |-
+        Krzyk usłyszano w Rama,
+        płacz i jęk wielki.
+        Rachel opłakuje swe dzieci
+        i nie chce utulić się w żalu, bo ich już nie ma.
+    - composer: "Arvo Pärt"
+      years: "ur. 1935"
+      work: "Da pacem Domine"
+      movement: oratio
+      year: "2004"
+      voicing: "a 4"
+      duration: "6′"
+      note: >-
+        Napisane na prośbę Jordiego Savalla trzy dni po zamachach w Madrycie 11 marca 2004 roku.
+        Pärt wpisał średniowieczną antyfonę w swój styl tintinnabuli, odnaleziony po dziesięcioletnim
+        okresie twórczego milczenia. Prosta formuła wraca tu jak oddech — trwa, zamiast prowadzić
+        do kulminacji.
+      inscriptioPl: "antyfona średniowieczna"
+      text: |-
+        Da pacem, Domine, in diebus nostris,
+        quia non est alius,
+        qui pugnet pro nobis,
+        nisi tu, Deus noster.
+      textPl: |-
+        Obdarz nas pokojem, Panie, w naszych czasach,
+        bo nie ma nikogo,
+        kto by walczył za nas,
+        prócz Ciebie, Boże nasz.
+    - composer: "Ola Gjeilo"
+      years: "ur. 1978"
+      work: "Serenity"
+      movement: oratio
+      year: "2010"
+      voicing: "a 8 + wiolonczela"
+      duration: "6′"
+      note: >-
+        Norweski kompozytor opracował responsorium O magnum mysterium na chór i solową wiolonczelę.
+        Głos instrumentu, porównywany do ludzkiego, prowadzi z chórem intymny dialog. Tekst mówi
+        o narodzinach — w tym programie o narodzinach Księcia Pokoju.
+      inscriptio: "O magnum mysterium"
+      inscriptioPl: "responsorium Bożego Narodzenia"
+      text: |-
+        O magnum mysterium,
+        et admirabile sacramentum,
+        ut animalia viderent Dominum natum,
+        iacentem in praesepio:
+        Beata Virgo, cujus viscera meruerunt portare
+        Dominum Christum.
+        Alleluia.
+      textPl: |-
+        O wielka tajemnico
+        i cudowny sakramencie,
+        że zwierzęta ujrzały narodzonego Pana,
+        leżącego w żłobie.
+        Błogosławiona Dziewico, której łono zasłużyło, by nosić
+        Chrystusa Pana.
+        Alleluja.
+    - composer: "Hanna Havrylets"
+      years: "1958–2022"
+      work: "Prayer · Молитва до Пресвятої Богородиці"
+      movement: oratio
+      voicing: "a 8"
+      duration: "5′"
+      note: >-
+        Kompozytorka, uczennica Myrosława Skoryka, była jedną z czołowych postaci ukraińskiej
+        muzyki współczesnej. Zmarła w Kijowie w 2022 roku, w pierwszych dniach rosyjskiej inwazji,
+        gdy dostęp do pomocy medycznej był ograniczony. Jej modlitwa do Bogurodzicy, oparta na
+        prostych liniach melodycznych, brzmi dziś jak świadectwo.
+      inscriptioPl: "Modlitwa do Przenajświętszej Bogurodzicy"
+      text: |-
+        Пресвятая Богородице, вислухай нас.
+        Пресвятая Богородице, будь нам заступницею.
+        Всесильною Твоєю рукою допоможи нам
+        Перемогти ворогiв, що напали.
+      textPl: |-
+        Przenajświętsza Bogurodzico, wysłuchaj nas.
+        Przenajświętsza Bogurodzico, bądź nam orędowniczką.
+        Swą wszechmocną ręką pomóż nam
+        pokonać wrogów, którzy nas napadli.
+    - composer: "Antonio Lotti"
+      years: "1667–1740"
+      work: "Crucifixus"
+      movement: passio
+      year: "przed 1717"
+      voicing: "a 8"
+      duration: "4′"
+      note: >-
+        Fragment Credo z mszy Lottiego, kompozytora działającego w Wenecji na przełomie XVII
+        i XVIII wieku. Zachowały się jego liczne opracowania tego tekstu na różne obsady; wersja
+        ośmiogłosowa należy do najbardziej przejmujących. Chromatyczne prowadzenie głosów i gęsta
+        faktura tworzą obraz ciężaru krzyża — barokowa ekspresja podporządkowana teologii pasyjnej.
+      inscriptioPl: "z Credo Mszy"
+      text: |-
+        Crucifixus etiam pro nobis sub Pontio Pilato:
+        passus, et sepultus est.
+      textPl: |-
+        Ukrzyżowany również za nas, pod Poncjuszem Piłatem
+        został umęczony i pogrzebany.
+    - composer: "Caroline Shaw"
+      years: "ur. 1982"
+      work: "and the swallow"
+      movement: refugium
+      year: "2017"
+      voicing: "a 8"
+      duration: "4′"
+      note: >-
+        Amerykańska kompozytorka, laureatka Nagrody Pulitzera, napisała ten utwór na zamówienie
+        Nederlands Kamerkoor do cyklu „150 Psalms". Kameralna obsada i lekka faktura odróżniają go
+        od reszty programu: zamiast lamentu — obraz najmniejszych stworzeń, które przy ołtarzu
+        znajdują gniazdo. Tym samym psalmem zespół zamknął zapowiedź wieczoru: nadzieją, że
+        nadejdzie dzień, kiedy każdy będzie mógł wypowiedzieć „Jak miłe są przybytki Twoje, Panie".
+      inscriptioRef: "Ps 84, 2–4. 7"
+      text: |-
+        How beloved is your dwelling place, o lord of hosts.
+        My soul yearns,
+        my heart and my flesh cry [out].
+
+        The sparrow found a house,
+        and the swallow her nest,
+        where she may raise her young.
+
+        They pass through the Valley of Bakka,
+        they make it a place of springs;
+        the autumn rains cover it with pools.
+      textPl: |-
+        Jak miłe są przybytki Twoje, Panie Zastępów!
+        Dusza moja pragnie i tęskni [do przedsieni Pańskich.]
+        Moje serce i moje ciało radośnie wołają [do Boga żywego.]
+
+        Nawet wróbel dom sobie znajduje
+        i jaskółka gniazdo,
+        gdzie złoży swe pisklęta.
+
+        Przechodząc doliną Baka,
+        przemieniają ją w źródło,
+        a wczesny deszcz błogosławieństwem ją okryje.
+    - composer: "John Tavener"
+      years: "1944–2013"
+      work: "Mother of God, here I stand"
+      movement: commendatio
+      year: "2003"
+      voicing: "a 4"
+      duration: "3′"
+      note: >-
+        Część monumentalnego cyklu The Veil of the Temple (Zasłona Przybytku), prawykonanego
+        w londyńskim Temple Church w 2003 roku; tekst pochodzi z poezji Michaiła Lermontowa.
+        Muzyka trwa w zupełnej statyce, bez kulminacji — jak ikona w dźwięku. W tym programie
+        cisza jest kulminacją: gestem zawierzenia ofiar Gazy.
+      inscriptioPl: "tekst: Michaił Lermontow"
+      text: |-
+        Mother of God, here I stand now praying,
+        Before this icon of your radiant brightness,
+        Not praying to be saved from a battlefield;
+        Not giving thanks, nor seeking forgiveness
+        For the sins of my soul, nor for all the souls
+        Numb, joyless and desolate on earth;
+        But for THEM alone, whom I wholly give you.
+      textPl: |-
+        Matko Boża, oto stoję na modlitwie
+        przed ikoną Twego światła.
+        Nie proszę o wybawienie z pola bitwy,
+        nie składam dziękczynienia, nie błagam o odpuszczenie
+        grzechów mej duszy ni dusz wszystkich,
+        otępiałych, bez wesela, opuszczonych na ziemi.
+        Lecz tylko za NICH, których całkowicie Tobie oddaję.
+    - composer: "John Tavener"
+      years: "1944–2013"
+      work: "A Hymn to the Mother of God"
+      movement: commendatio
+      year: "1985"
+      voicing: "a 12 · SAATBB + SAATBB"
+      duration: "4′"
+      note: >-
+        Jeden z najbardziej znanych utworów chóralnych Tavenera, napisany ku pamięci jego matki,
+        do tekstu z liturgii bizantyjskiej. Kompozytor zestawia dwa sześciogłosowe chóry, których
+        nakładające się frazy tworzą rezonans i przestrzeń — dialog ziemi z niebem. Ostatni refren
+        przenosi wieczór od bólu ku obietnicy.
+      inscriptioPl: "tekst z liturgii bizantyjskiej"
+      text: |-
+        In you, O Woman full of grace,
+        the angelic choirs and the human race,
+        all creation rejoices.
+        O sanctified temple, mystical paradise,
+        glory of virgins,
+        in you God was made flesh
+        and became a child,
+        He who is our God before all ages.
+        He made your womb a throne,
+        and made it wider than the heavens.
+        In you, O Woman full of grace,
+        all creation rejoices.
+        Glory to you.
+      textPl: |-
+        W Tobie, o Niewiasto pełna łaski,
+        chóry anielskie i rodzaj ludzki
+        — całe stworzenie raduje się.
+        O uświęcona świątynio, mistyczny raju,
+        chwało dziewic,
+        w Tobie Bóg stał się ciałem
+        i stał się Dziecięciem,
+        Ten, który jest naszym Bogiem od wieków.
+        On uczynił Twoje łono tronem
+        i sprawił, że stało się szersze niż niebiosa.
+        W Tobie, o Niewiasto pełna łaski,
+        całe stworzenie raduje się.
+        Chwała Tobie.
+    - composer: "Rihards Dubra"
+      years: "ur. 1964"
+      work: "O crux, ave"
+      movement: commendatio
+      voicing: "a 4"
+      duration: "3′"
+      note: >-
+        Łotewski kompozytor opracował fragment hymnu Vexilla regis Wenancjusza Fortunata (VI w.).
+        To hymn święta Podwyższenia Krzyża Świętego — tego samego dnia, w którym zespół śpiewał
+        ten program po raz pierwszy. Prosta, niemal archaiczna faktura zamyka wieczór prośbą
+        o przebaczenie.
+      inscriptioPl: "z hymnu Vexilla regis · Wenancjusz Fortunat (VI w.)"
+      text: |-
+        O crux, ave, spes unica,
+        hoc passionis tempore:
+        auge piis justitiam,
+        reisque dona veniam.
+      textPl: |-
+        Witaj, Krzyżu, jedyna nadziejo,
+        w tym czasie Męki Pańskiej;
+        przymnóż sprawiedliwość wiernym,
+        a winowajcom udziel przebaczenia.
+      bis: true
 
 - id: bobola
   order: 6

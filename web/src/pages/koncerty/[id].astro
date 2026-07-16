@@ -202,6 +202,42 @@ const plDate = (iso: string): string =>
       </section>
     )}
 
+    {/* ── Verbum: the spoken threshold word — a live introduction transcribed, lightly
+          edited for readability (subtractive only), never paraphrased. Fulfils the promise
+          the prologue makes ("o. Naliwajko wprowadza…"); the unsigned `bridge` line hands
+          the reader onward — the hush before the first work — so the narrative baton the
+          prologue used to carry now falls AFTER the word was actually spoken. ─────────── */}
+    {c.verbum && (
+      <section class="kd-band kd-verbum" aria-label="Słowo wprowadzające">
+        <div class="kd-wrap kd-narrow">
+          <span class="kd-section-label micro reveal">
+            <span class="lat">Verbum</span>
+            <span class="kd-dot" aria-hidden="true">·</span>
+            <span>Słowo wprowadzające</span>
+          </span>
+          <blockquote class="kd-verbum-quote reveal" data-d="1">
+            <p>{c.verbum.quote}</p>
+          </blockquote>
+          <p class="kd-verbum-cite reveal" data-d="2">{c.verbum.speaker}</p>
+
+          <details class="kd-verbum-full reveal" data-d="2">
+            <summary>
+              <span class="kd-text-cue">Całe słowo wprowadzenia</span>
+              <span class="kd-text-icon" aria-hidden="true"></span>
+            </summary>
+            <div class="kd-verbum-body">
+              {c.verbum.text.split("\n\n").map((para) => (
+                <p>{para}</p>
+              ))}
+            </div>
+          </details>
+
+          {c.verbum.bridge && <p class="kd-verbum-bridge reveal">{c.verbum.bridge}</p>}
+          <p class="kd-verbum-note micro">Zapis słowa wprowadzającego, nieznacznie zredagowany dla czytelności.</p>
+        </div>
+      </section>
+    )}
+
     {/* ── Tour dates (multi-city). Single-date concerts keep the date in `meta`. ─ */}
     {hasTour && (
       <section class="kd-band kd-tour" aria-label="Wykonania">
@@ -282,7 +318,7 @@ const plDate = (iso: string): string =>
             {programGroups.map((grp) => (
               <>
                 {grp.movement?.interlude && (
-                  <li class="kd-interlude reveal" aria-label="Antyfona">
+                  <li class="kd-interlude reveal" aria-label="Przerywnik biblijny">
                     <p class="kd-interlude-lat">{grp.movement.interlude.lat}</p>
                     {grp.movement.interlude.pl && (
                       <p class="kd-interlude-pl">{grp.movement.interlude.pl}</p>
@@ -354,8 +390,9 @@ const plDate = (iso: string): string =>
             ))}
           </ol>
 
-          {(c.spotify || hasText) && (
+          {(c.spotify || hasText || c.programNote) && (
             <div class="kd-program-foot reveal">
+              {c.programNote && <p class="kd-program-note kd-program-note-lead">{c.programNote}</p>}
               {hasText && (
                 <p class="kd-program-note micro">
                   Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie własne.
@@ -430,12 +467,14 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Zapis wieczoru</span>
           </span>
-          <div class="kd-film-player reveal" data-d="1">
+          <div class:list={["kd-film-player", "reveal", { "is-portrait": c.video.portrait }]} data-d="1">
             <VideoPlayer
               client:load
               src={filmVideoSrc}
               poster={filmPosterSrc}
               caption={c.video.caption}
+              note={c.video.note}
+              portrait={c.video.portrait}
               tone="dark"
               resume={false}
             />
@@ -600,6 +639,25 @@ const plDate = (iso: string): string =>
   .kd-section-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 14px; }
   .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; }
 
+  /* ── Verbum: the spoken threshold word — dark register, guillemet quote up top +
+     a zero-JS reveal for the full transcript (reuses .kd-text-cue/.kd-text-icon). ──────── */
+  .kd-verbum { background: var(--dark, #080807); color: var(--paper, #f4f1e9); }
+  .kd-verbum .kd-section-label { color: var(--candle); }
+  .kd-verbum-quote { margin: 0; }
+  .kd-verbum-quote p { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(22px, 2.6vw, 34px); line-height: 1.48; color: rgba(244, 241, 233, .94); margin: 0; letter-spacing: -.005em; }
+  .kd-verbum-quote p::before { content: "« "; color: var(--candle); }
+  .kd-verbum-quote p::after { content: " »"; color: var(--candle); }
+  .kd-verbum-cite { margin: clamp(22px, 3vw, 32px) 0 0; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244, 241, 233, .56); }
+  .kd-verbum-full { margin: clamp(40px, 5.5vw, 60px) 0 0; }
+  .kd-verbum-full summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle); padding: 4px 0; transition: color .3s var(--ease, ease); }
+  .kd-verbum-full summary::-webkit-details-marker { display: none; }
+  .kd-verbum-full summary:hover { color: var(--paper); }
+  .kd-verbum-body { margin: 24px 0 0; display: grid; gap: 20px; max-width: 62ch; }
+  .kd-verbum-body p { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.4vw, 18px); line-height: 1.68; color: rgba(244, 241, 233, .78); }
+  /* The unsigned hand-off out of the word — quieter than the quote, our register. */
+  .kd-verbum-bridge { margin: clamp(40px, 5.5vw, 60px) 0 0; max-width: 46ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.6; color: rgba(244, 241, 233, .64); }
+  .kd-verbum-note { margin: clamp(22px, 3vw, 32px) 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244, 241, 233, .48); }
+
   /* ── Tour (dark, slim) ─────────────────────────────────────────────────── */
   .kd-tour { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(64px, 8vw, 108px); padding-bottom: clamp(64px, 8vw, 108px); }
   .kd-tour-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(244,241,233,.14); }
@@ -704,6 +762,9 @@ const plDate = (iso: string): string =>
 
   .kd-program-foot { display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline; margin: clamp(40px, 5vw, 64px) 0 0; }
   .kd-program-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-muted, #746d62); margin: 0; text-transform: none; }
+  /* A per-concert factual footnote is a sentence, not a timecode — give it the wall-label
+     register (as per-work notes) and its own row above the standing micro notes. */
+  .kd-program-note-lead { flex-basis: 100%; max-width: 62ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; letter-spacing: 0; padding-bottom: 4px; }
   .kd-spotify-link { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
   .kd-spotify-link:hover { border-bottom-color: var(--candle); }
 
@@ -741,6 +802,10 @@ const plDate = (iso: string): string =>
   .kd-film { background: var(--dark, #080807); color: var(--paper); }
   .kd-film .kd-section-label { margin-bottom: clamp(32px, 4vw, 52px); }
   .kd-film-player { max-width: 1120px; margin: 0 auto; box-shadow: 0 50px 120px -54px rgba(0,0,0,.92); }
+  /* The portrait player sizes ITSELF (height-driven 9:16 frame + side plaque) and centres in
+     the band — so the wrapper drops its own box, or the shadow would draw a wide rectangle
+     around a narrow film. The player's stage carries its own depth. */
+  .kd-film-player.is-portrait { max-width: none; box-shadow: none; }
 
   /* ── Coda: poster keepsake + Via nav ───────────────────────────────────── */
   .kd-coda { background: var(--dark, #080807); color: var(--paper); padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }
