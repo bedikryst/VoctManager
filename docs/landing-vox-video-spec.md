@@ -663,7 +663,7 @@ Content of `12-vox.css` (starting point — visual polish is the owner's browser
     color: var(--candle);
     font-family: var(--serif);
     font-style: italic;
-    font-size: 14px;
+    font-size: 16px;
     letter-spacing: 0;
     text-transform: none;
   }
@@ -926,7 +926,7 @@ Content of `12-vox.css` (starting point — visual polish is the owner's browser
     border-radius: 50%;
     background: transparent;
     color: rgba(244, 241, 233, 0.85);
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
     transition:
       color 0.35s var(--ease),

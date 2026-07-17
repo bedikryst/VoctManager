@@ -69,6 +69,13 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 
+# The Docker healthcheck requests http://localhost:8000/api/health/ from inside
+# the container, so loopback hosts must pass host validation even when the env
+# var overrides the default list with public domains only.
+for _loopback_host in ('localhost', '127.0.0.1'):
+    if _loopback_host not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_loopback_host)
+
 # --- APPLICATION DEFINITION ---
 INSTALLED_APPS = [
     'whitenoise.runserver_nostatic',

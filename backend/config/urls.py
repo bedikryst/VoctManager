@@ -66,6 +66,7 @@ from roster.views import (
 )
 
 from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
+from .health import health
 
 __author__ = "Krystian Bugalski"
 
@@ -112,6 +113,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     
     path('api/csrf/', CSRFCookieView.as_view(), name='csrf-cookie'),
+
+    # Container liveness probe (Docker healthcheck) — unauthenticated, no DB.
+    path('api/health/', health, name='health-check'),
 
     # --- System & Notifications Specific Routes ---
     # These must be evaluated before the router to prevent 'preferences' / 'devices'
