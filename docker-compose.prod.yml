@@ -1,5 +1,8 @@
 # docker-compose.prod.yml
-# Production overrides focusing on performance and security (HTTPS)
+# Production overrides focusing on performance and security (HTTPS).
+# Always pair with the base file (build args and volumes live there):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+# (wrapped as `make prod`).
 
 services:
   web:
@@ -28,6 +31,9 @@ services:
       # Load production Nginx config, GZIP core, and SSL certificates
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infra/nginx/prod.conf:/etc/nginx/conf.d/default.conf:ro
+      # Shared security headers — prod.conf includes this snippet in every
+      # location that declares its own add_header (nginx inheritance rule).
+      - ./infra/nginx/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
       # Let's Encrypt HTTP-01 challenge webroot — certbot (on host) writes to
       # /var/www/certbot, nginx (in container) serves it for ACME validation.
@@ -35,8 +41,8 @@ services:
       - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro
       # The Astro public site at /usr/share/nginx/html/marketing is baked INTO
       # the image by frontend/Dockerfile (web-builder stage). No host mount
-      # needed — `docker compose -f docker-compose.prod.yml build frontend`
-      # produces both the panel SPA and the public site in a single nginx image.
+      # needed — building via `make prod` (both -f files!) produces the panel
+      # SPA and the public site in a single nginx image.
     build:
       # Build context = repo root so the Dockerfile sees both frontend/ and web/.
       # Photos under web/src/assets/photos/ and videos under web/src/assets/videos/

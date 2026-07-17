@@ -3,11 +3,24 @@
 # VoctManager Infrastructure Configuration
 # Standard: Enterprise SaaS 2026
 # ==========================================
+# Local dev:  docker compose -f docker-compose.yml -f docker-compose.dev.yml up  (= make up)
+# Production: docker compose -f docker-compose.yml -f docker-compose.prod.yml up (= make prod)
+# The dev file is deliberately NOT named docker-compose.override.yml — an
+# auto-loaded override on the prod host would silently expose the dev stack.
+
+# Cap container log growth (default json-file grows unbounded and eventually
+# fills the VPS disk).
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   db:
     image: postgres:15-alpine
     restart: always
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
@@ -25,14 +38,23 @@ services:
     image: redis:7-alpine
     container_name: voct_redis
     restart: always
-    command: redis-server --requirepass ${REDIS_PASSWORD:-voct_super_secret_redis}
+    logging: *default-logging
+    # No password fallback on purpose: a missing REDIS_PASSWORD must fail the
+    # deployment loudly instead of silently running with a known-in-repo value.
+    # List form keeps the password a single argv even with special characters.
+    command:
+      [
+        "redis-server",
+        "--requirepass",
+        "${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}",
+      ]
+    environment:
+      # redis-cli reads this implicitly — keeps the password out of the
+      # healthcheck command line (visible in `docker inspect` / warnings).
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}
     healthcheck:
       # Verification that Redis is responding to pings
-      test:
-        [
-          "CMD-SHELL",
-          "redis-cli -a ${REDIS_PASSWORD:-voct_super_secret_redis} ping | grep PONG",
-        ]
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -42,6 +64,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
+    logging: *default-logging
     depends_on:
       db:
         condition: service_healthy
@@ -52,11 +75,27 @@ services:
     environment:
       - DB_HOST=db
       # Centralized Redis connection strings with authentication
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
     volumes:
       - ./voct_data/media:/app/media
       - ./voct_data/static:/app/static
+    healthcheck:
+      # Hits the unauthenticated liveness endpoint (config/health.py) through
+      # the real HTTP stack — proves gunicorn/runserver is serving Django, not
+      # just that the process exists. Loopback hosts are always ALLOWED_HOSTS.
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      # collectstatic in the entrypoint delays the first listen on cold starts.
+      start_period: 60s
 
   celery:
     build:
@@ -64,20 +103,36 @@ services:
       dockerfile: Dockerfile
     container_name: voct_celery
     restart: always
+    logging: *default-logging
     depends_on:
+      # service_healthy (not just started): the web container applies
+      # migrations in dev and proves the shared codebase boots — don't start
+      # consuming tasks against a schema that never came up.
       web:
-        condition: service_started
+        condition: service_healthy
       redis:
         condition: service_healthy
     env_file:
       - .env
     environment:
       - DB_HOST=db
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:-voct_super_secret_redis}@redis:6379/0
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required (set it in .env)}@redis:6379/0
     volumes:
       - ./voct_data/media:/app/media
       - ./voct_data/static:/app/static
+    healthcheck:
+      # Pings this worker's own node through the broker — catches a hung worker
+      # that still has a live PID.
+      test:
+        [
+          "CMD-SHELL",
+          "celery -A config inspect ping -d celery@$$HOSTNAME --timeout 10 | grep -q pong",
+        ]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
 
   frontend:
     build:
@@ -100,13 +155,24 @@ services:
         - VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY-${VAPID_PUBLIC_KEY-}}
         - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY-}
     restart: always
+    logging: *default-logging
     depends_on:
+      # Deliberately NOT service_healthy: the marketing site must come up (and
+      # show the maintenance page for /api) even when the backend is down.
       web:
         condition: service_started
     volumes:
       # Serve media and static files via Nginx as read-only
       - ./voct_data/media:/app/media:ro
       - ./voct_data/static:/app/static:ro
+    healthcheck:
+      # /healthz is defined in both prod.conf (port-80 server, before the HTTPS
+      # redirect) and local.conf.
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

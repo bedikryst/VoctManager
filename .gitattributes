@@ -4,7 +4,7 @@
 
 # Shell scripts MUST stay LF even on Windows checkouts. They run inside the
 # Linux containers and in dev are bind-mounted from the host (see
-# docker-compose.override.yml). CRLF mangles the shebang and the container dies
+# docker-compose.dev.yml). CRLF mangles the shebang and the container dies
 # with "exec /app/entrypoint.sh: no such file or directory".
 *.sh text eol=lf
 

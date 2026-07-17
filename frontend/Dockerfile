@@ -46,21 +46,21 @@ ARG VITE_GOOGLE_MAPS_FRONTEND_KEY
 ARG VITE_GOOGLE_MAP_ID
 ARG VITE_VAPID_PUBLIC_KEY
 ARG VAPID_PUBLIC_KEY
-RUN if [ -z "$VITE_VAPID_PUBLIC_KEY" ] && [ -n "$VAPID_PUBLIC_KEY" ]; then \
-      export VITE_VAPID_PUBLIC_KEY="$VAPID_PUBLIC_KEY"; \
-    fi
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY \
-    VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID \
-    VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
+    VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID
 
 # Production build.
 #  - max-old-space-size=4096: rollup graphs for 3000+ modules with sourcemaps
 #    can briefly hit 1.8–2.4 GB. The default ~1.5 GB heap is what causes the
 #    "Mark-Compact … allocation failure" SIGABRT seen on cold builds.
 #  - The final dist/ contains hashed, code-split chunks (see vite.config.ts).
+#  - The VAPID fallback (VAPID_PUBLIC_KEY when VITE_VAPID_PUBLIC_KEY is unset)
+#    is applied inline at the only point it matters — an `export` in a separate
+#    RUN never survives its layer, and compose files apply the same fallback in
+#    their build args anyway.
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm run build
+RUN VITE_VAPID_PUBLIC_KEY="${VITE_VAPID_PUBLIC_KEY:-$VAPID_PUBLIC_KEY}" npm run build
 
 
 # ==========================================

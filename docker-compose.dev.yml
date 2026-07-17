@@ -1,0 +1,47 @@
+# docker-compose.dev.yml
+# Local development overrides for hot-reloading and direct host mapping.
+#
+# Deliberately NOT named docker-compose.override.yml: Compose auto-loads that
+# filename, so a bare `docker compose up` on the production host would silently
+# start the dev stack (runserver as root, code bind mount, API published on
+# :8000 past nginx/TLS). This file must always be passed explicitly:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+# (wrapped as `make up`).
+
+services:
+  web:
+    # Use standard Django dev server for automatic code reloading
+    command: python manage.py runserver 0.0.0.0:8000
+    # Run as root in dev so uploads can be written to the host-bind-mounted
+    # media dir (Docker Desktop's file-sharing layer won't honour chown to
+    # voctuser → EACCES). Prod keeps the unprivileged default. See entrypoint.sh.
+    environment:
+      APP_RUN_USER: root
+    ports:
+      - "8000:8000"
+    volumes:
+      # CRITICAL: Mount local codebase only in development
+      - ./backend:/app
+
+  celery:
+    environment:
+      APP_RUN_USER: root
+    # -B runs the beat scheduler embedded in the worker so CELERY_BEAT_SCHEDULE
+    # (reminders, daily digest, stale-donation sweep) actually fires. Safe while
+    # there is a SINGLE celery container — beat must be a singleton. If you ever
+    # scale to multiple workers, drop -B here and add a dedicated `beat` service.
+    command: celery -A config worker -B -l INFO
+
+  frontend:
+    ports:
+      - "80:80"
+    volumes:
+      # Mirror the prod nginx layout 1:1 (core config + server block + shared
+      # security-header snippet + maintenance page) so http://localhost behaves
+      # like the deployed site. The Astro public site and the panel build are
+      # baked into the image; hot-reload panel development bypasses this
+      # container entirely (Vite on the host at :5173 → API at :8000).
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/local.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./infra/nginx/security-headers.conf:/etc/nginx/snippets/security-headers.conf:ro
+      - ./infra/maintenance:/usr/share/nginx/html/maintenance:ro

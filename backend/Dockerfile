@@ -18,8 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY requirements.txt .
 
-# Build Python wheels to avoid shipping build tools in the final image
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+# Build Python wheels (INCLUDING transitive dependencies) so the runtime stage
+# installs fully offline and never needs gcc. `--no-deps` here would silently
+# push transitive resolution into the runtime stage's network install.
+RUN pip wheel --no-cache-dir --wheel-dir /usr/src/app/wheels -r requirements.txt
 
 
 # ------------------------------------------
@@ -38,22 +40,27 @@ RUN addgroup --system voctgroup && adduser --system --ingroup voctgroup voctuser
 
 WORKDIR /app
 
-# Install strictly required runtime system libraries (WeasyPrint & DB drivers)
+# Install strictly required runtime system libraries (WeasyPrint & DB drivers).
+# fonts-dejavu-core is the glyph fallback for WeasyPrint: the slim base ships
+# ZERO fonts, so anything outside the bundled Gentium Plus @font-face set
+# (see roster/infrastructure/print_fonts.py) would render as tofu without it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
     libmagic1 \
     libharfbuzz0b \
     fontconfig \
+    fonts-dejavu-core \
     libpq5 \
     dos2unix \
     gosu \
     gettext \
     && rm -rf /var/lib/apt/lists/*
 
-# Inject pre-compiled wheels from the builder stage and install
+# Inject pre-compiled wheels from the builder stage and install strictly
+# offline — every dependency (transitive included) must come from /wheels.
 COPY --from=builder /usr/src/app/wheels /wheels
-RUN pip install --no-cache /wheels/* && rm -rf /wheels
+RUN pip install --no-cache-dir --no-index --find-links=/wheels /wheels/* && rm -rf /wheels
 
 # Copy application source code and explicitly transfer ownership
 COPY --chown=voctuser:voctgroup . /app/
