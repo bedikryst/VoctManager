@@ -528,6 +528,13 @@
   textNote: >-
     Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie hymnów
     i antyfon za tradycją kościelną, pozostałe własne.
+  gallery:
+    - { img: kd-wolanie-0, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", caption: "Próba do koncertu Wołanie Gór" }
+    - { img: kd-wolanie-1, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", caption: "Próba do Koncertu Wołanie Gór" }
+    - { img: kd-wolanie-2, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", caption: "Próba do Koncertu Wołanie Gór" }
+    - { img: kd-wolanie-3, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy", caption: "Dworek Gościnny, Szczawnica · 1 czerwca 2024" }
+    - { img: kd-wolanie-4, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy", caption: "Dworek Gościnny, Szczawnica · 1 czerwca 2024" }
+    - { img: kd-wolanie-5, alt: "VoctEnsemble po Koncercie Wołanie Gór w Dworku Gościnnym w Szczawnicy", caption: "Dworek Gościnny, Szczawnica · 1 czerwca 2024" }
   movements:
     - id: clamor
       lat: Clamor
@@ -1023,6 +1030,22 @@
     Teksty i przekłady polskie — za programem koncertu.
   # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
   # braided through the other eight, so the braid IS the structure — the clasps carry it.
+  gallery:
+  - { img: kd-9-kart-0, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-1, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-2, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-3, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-4, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-5, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-6, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
+  - { img: kd-9-kart-7, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
+  - { img: kd-9-kart-8, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
+  - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
+  - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
+  - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
+  - { img: kd-9-kart-14, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-13, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
+  - { img: kd-9-kart-12, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Jakub Garbacz)" }
   program:
     - composer: "Gregorio Allegri"
       years: "1582–1652"
@@ -1600,6 +1623,16 @@
       line: >-
         Zostaje zawierzenie Tej, która stała pod krzyżem — i obietnica, którą niesie ostatni
         refren.
+  gallery:
+  - { img: kd-aeternam-0, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
+  - { img: kd-aeternam-1, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
+  - { img: kd-aeternam-2, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
+  - { img: kd-aeternam-3, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
+  - { img: kd-aeternam-5, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
+  - { img: kd-aeternam-7, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
+  - { img: kd-aeternam-6, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
+  - { img: kd-aeternam-4, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
+  - { img: kd-aeternam-8, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
   program:
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
