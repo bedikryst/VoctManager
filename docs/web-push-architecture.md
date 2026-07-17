@@ -50,8 +50,8 @@ Twój backend nie wysyła powiadomień bezpośrednio do przeglądarki użytkowni
 VAPID to para kluczy kryptograficznych (publiczny + prywatny), wygenerowana raz dla Twojej aplikacji:
 
 ```
-FIREBASE_VAPID_PUBLIC_KEY   → udostępniany przeglądarce (bezpieczny)
-FIREBASE_VAPID_PRIVATE_KEY  → tylko na serwerze (tajny!)
+VAPID_PUBLIC_KEY   → udostępniany przeglądarce (bezpieczny)
+VAPID_PRIVATE_KEY  → tylko na serwerze (tajny!)
 ```
 
 **Analogia:** To jak pieczęć firmowa. Przeglądarka użytkownika zapamiętuje Twój klucz publiczny przy subskrypcji. Gdy backend wysyła powiadomienie i podpisuje je kluczem prywatnym, usługa push weryfikuje podpis kluczem publicznym. Tylko Ty możesz wysłać powiadomienie do Twoich użytkowników.
@@ -128,7 +128,7 @@ Gdy w systemie wydarzy się coś (np. nowa próba, zaproszenie do projektu):
      → pywebpush.webpush(
          subscription_info = { endpoint, keys: { p256dh, auth } },
          data = JSON payload,
-         vapid_private_key = FIREBASE_VAPID_PRIVATE_KEY,
+         vapid_private_key = VAPID_PRIVATE_KEY,
          vapid_claims = { sub: "mailto:noreply@voct.pl" }
        )
      → Wysyłanie HTTP POST do endpoint URL (np. Google FCM)
@@ -238,11 +238,11 @@ frontend/
       NotificationsTab.tsx   ← UI z permission gate
 
 .env (backend)
-  FIREBASE_VAPID_PRIVATE_KEY = <klucz prywatny>
-  FIREBASE_VAPID_PUBLIC_KEY  = <klucz publiczny>
+  VAPID_PRIVATE_KEY = <klucz prywatny>
+  VAPID_PUBLIC_KEY  = <klucz publiczny>
 
 .env (frontend)
-  VITE_FIREBASE_VAPID_PUBLIC_KEY = <ten sam klucz publiczny>
+  VITE_VAPID_PUBLIC_KEY = <ten sam klucz publiczny>
 ```
 
 ---
