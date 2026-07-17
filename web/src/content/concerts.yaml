@@ -26,6 +26,7 @@
     - Renesans — XXI w.
     - Debiut cyklu
   bg: st-wcielenie-bg
+  heroImg: o-nas-wcielenie
   poster: poster-wcielenie
   posterAlt: Plakat koncertu Kontemplacja Wcielenia
   realizacja: "Realizacja: Ars Sonora Studio"
@@ -470,6 +471,7 @@
     - Pieniny
     - Od Pirenejów po Indonezję
   bg: st-wolanie-bg
+  heroImg: o-nas-wolanie-gor
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
@@ -991,6 +993,7 @@
     - 6 / 8 / 9 / 12 głosów
     - Miserere jako klamra
   bg: st-9-kart-bg
+  heroImg: o-nas-9-kart
   poster: poster-9-kart
   posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
@@ -1457,6 +1460,8 @@
   meta: "Bazylika Mariacka, Kraków · 22 lutego 2025"
   venue: "Bazylika Mariacka, Kraków"
   date: "2025-02-22"
+  time: "20:00"
+  address: "plac Mariacki 5, Kraków"
   viaDate: lut 2025
   about:
     place: "Bazylika Mariacka · Kraków"
@@ -1473,22 +1478,431 @@
     - Modlitwa o pokój
     - Pamięć Ukrainy
   bg: st-hymn-bg
+  heroImg: o-nas-ukraina
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
   realizacja: "Organy: Michał Piechnik · Krzysztof Michałek"
+  hasPage: true
+  prologue: >-
+    Dwudziesty drugi lutego 2025, sobota, godzina dwudziesta — Bazylika Mariacka w Krakowie,
+    dwa dni przed trzecią rocznicą pełnoskalowej inwazji na Ukrainę. Zanim padnie pierwsze
+    słowo, kościół wypełniają organy; potem archiprezbiter bazyliki wprowadza w modlitwę.
+  reflection: >-
+    Koncert jest wyrazem pamięci, solidarności i wsparcia dla tych, którzy zostali bezpośrednio
+    dotknięci konfliktem — rodzin, przyjaciół, a także tych, którzy wciąż walczą o swoją wolność
+    i godność.
+  reflectionAttribution: "VoctEnsemble · luty 2025"
+  reflectionNote: >-
+    To nie był koncert o wojnie — to była modlitwa odprawiona muzyką. Stąd jego porządek: nie
+    kolejność wydarzeń, lecz droga żałoby, która musi przejść przez wszystkie swoje stacje,
+    zanim wolno jej mówić o świetle.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+    - { role: "Słowo i błogosławieństwo", name: "ks. inf. dr hab. Dariusz Raś" }
+    - { role: "Kantor bazyliki", name: "M. Wasilewski-Kruk" }
+  pullQuote:
+    text: >-
+      Pierwszy raz angażujemy się w projekt, który poza wymiarem duchowym odnosi się tak
+      bezpośrednio do największej aspiracji ludzkiej — wolności i samostanowienia. Pragniemy,
+      aby ten koncert był nie tylko aktem pamięci, ale również darem ukojenia dla tych, którzy
+      doświadczyli straty, i wyrazem naszej solidarności z narodem ukraińskim.
+    attribution: "Anna Kaczka-Marcisz"
+    about: "menedżerka VoctEnsemble, z zapowiedzi koncertu"
+  programLede: "Modlitwa o pokój — trzynaście ogniw i bis"
+  programArc: >-
+    Kolejność jest tu obrzędem. Wieczór zaczyna się organami, a pierwsze słowo, jakie pada,
+    jest po ukraińsku. Potem program schodzi tam, gdzie żałoba naprawdę mieszka: do litanii
+    o pokój, do rzek Babilonu, nad którymi wygnańcy zawiesili swoje instrumenty, i do psalmu,
+    który pyta wprost — jak długo jeszcze? Stamtąd prowadzi przez dwie modlitwy o osłonę
+    i przez pogrzeb, aż po hymn, od którego wieczór wziął nazwę — bezsłowny. Dopiero na końcu
+    wolno mówić o świetle, i wtedy dzieje się jedyna rzecz, której nie da się zaśpiewać:
+    otwiera się ołtarz.
+  programNote: >-
+    Poza utworami organowymi zapisanymi w programie Michał Piechnik, tytularny organista
+    Bazyliki Mariackiej, improwizował między ogniwami wieczoru; w zapowiedzi zespół nazwał
+    te interludia „równoległą narracją, urzeczywistniającą tragiczne oblicze wojny”.
+  # Default textNote would claim "przekłady polskie własne" — untrue here: O salutaris, Pie Jesu,
+  # Lux aeterna and the Bairstow carry the traditional church / Biblia Tysiąclecia renderings the
+  # concert programme itself printed. That programme also printed several texts abridged.
+  textNote: >-
+    Teksty oryginalne — z programu koncertu i ksiąg, z których pochodzą; program wieczoru
+    drukowano ze skrótami. Przekłady polskie hymnów, antyfon i miejsc biblijnych za tradycją
+    kościelną, pozostałe własne.
+  movements:
+    - id: introitus
+      lat: Introitus
+      pl: Na wejście
+      line: >-
+        Najpierw sama przestrzeń: wielkie organy Bazyliki Mariackiej. Pierwszym słowem, jakie
+        pada tego wieczoru, jest modlitwa po ukraińsku.
+    - id: luctus
+      lat: Luctus
+      pl: Żałoba
+      line: >-
+        Modlitwa zaczyna się od tego, co jest: litania o pokój, rzeki Babilonu, nad którymi
+        wygnańcy zawiesili swoje instrumenty — i psalm, który pyta wprost: jak długo jeszcze?
+    - id: lorica
+      lat: Lorica
+      pl: Zbroja
+      line: >-
+        Dwie modlitwy o osłonę: pancerz św. Patryka, w którym Chrystus staje ze wszystkich
+        stron — i hymn, w którym wierni proszą o siłę, bo „bój srogi” ich nęka.
+    - id: exsequiae
+      lat: Exsequiae
+      pl: Nad grobem
+      line: >-
+        Cztery ogniwa pogrzebu: lot aniołów nad grobem, hymn poległym — bez jednego słowa —
+        wezwanie do duszy, by się nie trwożyła, i prośba o odpoczynek.
+    - id: lux
+      lat: Lux
+      pl: Światłość
+      interlude:
+        lat: "Conflabunt gladios suos in vomeres: nec exercebuntur ultra ad proelium."
+        pl: "Swe miecze przekują na lemiesze; i nie będą się więcej zaprawiać do wojny."
+        ref: "Iz 2, 4"
+      line: >-
+        Dopiero teraz wolno mówić o świetle — i wtedy otwiera się ołtarz.
   program:
-    - { composer: "John Rutter", years: "ur. 1945", work: "A Ukrainian Prayer", year: "2022" }
-    - { composer: "Siergiej Rachmaninow", years: "1873–1943", work: "Ektenia Pokoju", year: "1910" }
-    - { composer: "Giovanni P. da Palestrina", years: "1525–1594", work: "Super flumina Babylonis", year: "1581" }
-    - { composer: "Arvo Pärt", years: "ur. 1935", work: "The Deer's Cry", year: "2007" }
-    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "O salutaris hostia", year: "2005" }
-    - { composer: "John Tavener", years: "1944–2013", work: "Song for Athene", year: "1993" }
-    - { composer: "John Williams", years: "ur. 1932", work: "Hymn to the Fallen", year: "1998" }
-    - { composer: "Gabriel Fauré", years: "1845–1924", work: "Pie Jesu", year: "1887–90" }
-    - { composer: "Jean Sibelius", years: "1865–1957", work: "Be Still My Soul", year: "1899" }
-    - { composer: "Edward Elgar", years: "1857–1934", work: "Lux aeterna", year: "1899" }
-    - { composer: "Edward C. Bairstow", years: "1874–1946", work: "I sat down", year: "1925", bis: true }
+    - composer: "J. S. Bach"
+      years: "1685–1750"
+      work: "Fantazja i fuga g-moll, BWV 542"
+      movement: introitus
+      year: "ok. 1720"
+      voicing: "organy"
+      note: >-
+        „Wielka” fantazja i fuga g-moll, wiązana z wizytą Bacha w Hamburgu w 1720 roku — tą
+        samą, podczas której improwizował pół godziny na chorale „An Wasserflüssen Babylon”,
+        a sędziwy Reincken miał powiedzieć, że sądził, iż ta sztuka już umarła. Fantazja jest
+        niemal operowa: recytatyw, zawieszenia, chromatyka bez dna. Grał Krzysztof Michałek,
+        na wejście, zanim padło pierwsze słowo wieczoru; rzeki Babilonu wrócą tu za chwilę
+        u Palestriny.
+    - composer: "John Rutter"
+      years: "ur. 1945"
+      work: "A Ukrainian Prayer"
+      movement: introitus
+      year: "2022"
+      voicing: "a 4"
+      note: >-
+        Rutter napisał ją w pierwszych tygodniach po rosyjskiej inwazji w 2022 roku i udostępnił
+        chórom za darmo, prosząc w zamian o wsparcie dla ofiar wojny. Tekst to „Modlitwa za
+        Ukrainę” Ołeksandra Konyskiego, którą Mykoła Łysenko ułożył w 1885 roku — śpiewana do
+        dziś jako duchowy hymn Ukrainy. Pierwszym słowem tego wieczoru jest więc prośba
+        w języku tych, o których się modli.
+      inscriptio: "Боже великий, єдиний, нам Україну храни"
+      inscriptioPl: "Boże wielki, jedyny, Ukrainę nam chroń"
+      inscriptioRef: "Modlitwa za Ukrainę · O. Konyski, 1885"
+      text: |-
+        Боже великий, єдиний,
+        нам Україну храни,
+        волі і світу промінням
+        Ти її осіни.
+
+        Світлом науки і знання
+        нас, дітей, просвіти,
+        в чистій любові до краю
+        Ти нас, Боже, зрости.
+
+        Молимось, Боже єдиний,
+        нам Україну храни,
+        всі свої ласки й щедроти
+        Ти на люд наш зверни.
+      textPl: |-
+        Boże wielki, jedyny,
+        Ukrainę nam chroń,
+        promieniem wolności i światła
+        Ty ją oświeć.
+
+        Światłem nauki i wiedzy
+        nas, dzieci, oświeć,
+        w czystej miłości do kraju
+        Ty nas, Boże, wychowaj.
+
+        Modlimy się, Boże jedyny,
+        Ukrainę nam chroń,
+        wszystkie swoje łaski i szczodrość
+        Ty na lud nasz zwróć.
+      clasp: "Wprowadzenie do modlitwy · ks. inf. Dariusz Raś"
+    - composer: "Siergiej Rachmaninow"
+      years: "1873–1943"
+      work: "Ektenia Pokoju, op. 31 nr 1"
+      movement: luctus
+      year: "1910"
+      note: >-
+        Wielka ektenia otwiera prawosławną Boską Liturgię; nazywa się ją także ektenią pokoju,
+        bo pierwsze prośby diakona są o pokój z wysokości i o pokój całego świata. Chór odpowiada
+        na nie tylko dwoma zdaniami. Rachmaninow napisał Liturgię św. Jana Chryzostoma w 1910
+        roku w niespełna trzy tygodnie — było to jego pierwsze dzieło cerkiewne; siedem lat
+        później opuścił Rosję na zawsze. Tego wieczoru jego prośba o pokój całego świata
+        zabrzmiała zaraz po modlitwie za Ukrainę.
+      inscriptioPl: "z Liturgii św. Jana Chryzostoma · odpowiedzi chóru"
+      text: |-
+        Господи, помилуй.
+        Тебе, Господи.
+      textPl: |-
+        Panie, zmiłuj się.
+        Tobie zawierzamy, Panie.
+    - composer: "Giovanni P. da Palestrina"
+      years: "1525–1594"
+      work: "Super flumina Babylonis"
+      movement: luctus
+      year: "1581"
+      voicing: "a 4"
+      note: >-
+        Motet czterogłosowy wydany w 1581 roku. Psalm 137 — pieśń wygnańców, którzy nad rzekami
+        Babilonu odłożyli muzykę: powiesili swoje instrumenty na wierzbach, bo nie umieli śpiewać
+        pieśni Pańskiej w obcej ziemi. Palestrina prowadzi cztery głosy z całkowitym spokojem;
+        żałoba jest tu nie w krzyku, lecz w tym, co ucichło.
+      inscriptio: "Super flumina Babylonis, illic sedimus et flevimus"
+      inscriptioPl: "Nad rzekami Babilonu tam siedzieliśmy i płakali"
+      inscriptioRef: "Ps 137 (136), 1–2"
+      text: |-
+        Super flumina Babylonis,
+        illic sedimus et flevimus,
+        dum recordaremur tui, Sion.
+        In salicibus in medio eius
+        suspendimus organa nostra.
+      textPl: |-
+        Nad rzekami Babilonu —
+        tam myśmy siedzieli i płakali,
+        kiedyśmy wspominali Syjon.
+        Na wierzbach tamtej krainy
+        zawiesiliśmy instrumenty nasze.
+    - composer: "Dieterich Buxtehude"
+      years: "1637–1707"
+      work: "Ach Herr, mich armen Sünder, BuxWV 178"
+      movement: luctus
+      voicing: "organy"
+      note: >-
+        Organowe opracowanie chorału na melodię, którą świat zna dziś jako chorał pasyjny —
+        „O Haupt voll Blut und Wunden”, tę samą, którą Bach pięć razy przywołał w Pasji
+        Mateuszowej. Sam tekst chorału jest parafrazą Psalmu 6, pierwszego z psalmów pokutnych,
+        w którym dusza pyta wprost: jak długo jeszcze? Tu słów nie było — grał je na organach
+        Michał Piechnik; kto zna melodię, ten je usłyszał.
+      inscriptioPl: "opracowanie organowe chorału · parafraza Psalmu 6"
+    - composer: "Arvo Pärt"
+      years: "ur. 1935"
+      work: "The Deer's Cry"
+      movement: lorica
+      year: "2007"
+      voicing: "a 4"
+      note: >-
+        Pärt napisał go na zamówienie irlandzkiego Louth Contemporary Music Society. Tekst to
+        fragment „Pancerza św. Patryka” — modlitwy, którą według podania święty odmówił, idąc
+        nawracać króla Tary; jego ludzie mieli zobaczyć wtedy zamiast wędrowców stado jeleni,
+        stąd druga nazwa: krzyk jelenia. To modlitwa ochronna: Chrystus ustawia się dookoła
+        mówiącego ze wszystkich stron. Pärt w swoim tintinnabuli powtarza ją tak, jak powtarza
+        się modlitwę, której naprawdę się potrzebuje.
+      inscriptioPl: "z „Pancerza św. Patryka” (Lorica)"
+      text: |-
+        Christ with me, Christ before me,
+        Christ behind me, Christ in me,
+        Christ beneath me, Christ above me,
+        Christ on my right, Christ on my left,
+        Christ when I lie down, Christ when I sit down,
+        Christ in me, Christ when I arise,
+        Christ in the heart of every man who thinks of me,
+        Christ in the mouth of everyone who speaks of me,
+        Christ in every eye that sees me,
+        Christ in every ear that hears me,
+        Christ with me.
+      textPl: |-
+        Chrystus ze mną, Chrystus przede mną,
+        Chrystus za mną, Chrystus we mnie,
+        Chrystus pode mną, Chrystus nade mną,
+        Chrystus po mojej prawicy, Chrystus po lewicy,
+        Chrystus, gdy się kładę, Chrystus, gdy siadam,
+        Chrystus we mnie, Chrystus, gdy wstaję,
+        Chrystus w sercu każdego, kto o mnie myśli,
+        Chrystus w ustach każdego, kto o mnie mówi,
+        Chrystus w każdym oku, które mnie widzi,
+        Chrystus w każdym uchu, które mnie słyszy.
+        Chrystus ze mną.
+    - composer: "Ēriks Ešenvalds"
+      years: "ur. 1977"
+      work: "O salutaris hostia"
+      movement: lorica
+      year: "2005"
+      note: >-
+        Ten sam hymn, który zabrzmiał w „Wołaniu Gór” — dwie ostatnie zwrotki Verbum supernum
+        prodiens św. Tomasza z Akwinu, śpiewane przy wystawieniu Najświętszego Sakramentu.
+        Tutaj słychać w nim jednak co innego: „bella premunt hostilia, da robur, fer auxilium” —
+        bój srogi nęka wiernych Ci, daj siłę, pomoc ześlij nam. Trzynastowieczny hymn
+        eucharystyczny mówi o wojnie wprost; jako jedyny tekst tego wieczoru zespół wydrukował
+        go w programie w całości.
+      inscriptio: "O salutaris Hostia, quae caeli pandis ostium"
+      inscriptioPl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens"
+      text: |-
+        O salutaris Hostia,
+        quae caeli pandis ostium:
+        bella premunt hostilia,
+        da robur, fer auxilium.
+
+        Uni trinoque Domino
+        sit sempiterna gloria,
+        qui vitam sine termino
+        nobis donet in patria.
+        Amen.
+      textPl: |-
+        O zbawcza Hostio, godna czci,
+        co lud do niebios wiedziesz bram.
+        Bój srogi nęka wiernych Ci,
+        daj siłę, pomoc ześlij nam.
+
+        Jednemu w Trójcy Władcy ziem
+        niech będzie chwała w każdy czas,
+        niech On wieczystym życiem Swym
+        w Ojczyźnie rajskiej darzy nas.
+        Amen.
+    - composer: "John Tavener"
+      years: "1944–2013"
+      work: "Song for Athene"
+      movement: exsequiae
+      year: "1993"
+      note: >-
+        Tavener napisał go po śmierci Athene Hariades — młodej aktorki, przyjaciółki rodziny,
+        która zginęła w wypadku na rowerze. Tekst ułożyła matka Thekla, prawosławna mniszka
+        i wieloletnia współpracowniczka kompozytora: splata w nim słowa Horacja z „Hamleta”
+        („niech aniołów loty niosą cię do snu”) z prawosławnym nabożeństwem żałobnym. Pod
+        chórem trwa przez cały czas nieruchomy burdon basów — ison. Świat usłyszał ten utwór
+        w 1997 roku, gdy przy jego dźwiękach wynoszono z Opactwa Westminsterskiego trumnę
+        księżnej Diany.
+      inscriptioPl: "tekst: matka Thekla · Szekspir i prawosławne nabożeństwo żałobne"
+      text: |-
+        Alleluia. May flights of angels sing thee to thy rest.
+        Alleluia. Remember me, O Lord, when you come into your kingdom.
+        Alleluia. Give rest, O Lord, to your handmaid, who has fallen asleep.
+        Alleluia. The Choir of Saints have found the well-spring of life,
+        and door of paradise.
+        Alleluia. Life: a shadow and a dream.
+        Alleluia. Weeping at the grave creates the song: Alleluia.
+        Alleluia. Come, enjoy rewards and crowns I have prepared for you.
+      textPl: |-
+        Alleluja. Niech aniołów loty niosą cię do snu.
+        Alleluja. Wspomnij na mnie, Panie, gdy przyjdziesz do swego królestwa.
+        Alleluja. Daj odpoczynek, Panie, swej służebnicy, która zasnęła.
+        Alleluja. Chór świętych znalazł źródło życia
+        i bramę raju.
+        Alleluja. Życie — cień i sen.
+        Alleluja. Płacz nad grobem staje się pieśnią: Alleluja.
+        Alleluja. Przyjdźcie, weźcie nagrody i korony, które wam przygotowałem.
+    - composer: "John Williams"
+      years: "ur. 1932"
+      work: "Hymn to the Fallen"
+      movement: exsequiae
+      year: "1998"
+      note: >-
+        Z muzyki do „Szeregowca Ryana” Stevena Spielberga. Chór nie śpiewa w nim ani jednego
+        słowa — sama wokaliza; Williams pisał go nie pod konkretną scenę, lecz jako hymn dla
+        poległych. Bez imion i bez języka, więc i bez granic. Od tego utworu wieczór wziął nazwę.
+      inscriptioPl: "z muzyki do filmu „Szeregowiec Ryan” · chór bez słów"
+    - composer: "Jean Sibelius"
+      years: "1865–1957"
+      work: "Be Still My Soul · hymn z Finlandii, op. 26"
+      movement: exsequiae
+      year: "1899"
+      note: >-
+        Melodia pochodzi z finału poematu symfonicznego Finlandia, który Sibelius napisał
+        w 1899 roku — w roku, w którym carska Rosja ograniczyła autonomię Finlandii i nałożyła
+        cenzurę na fińską prasę. Utwór grywano wtedy pod zmyślonymi tytułami, żeby ominąć zakaz;
+        stał się pieśnią oporu narodu, który nie miał jeszcze państwa. Do tej melodii dołożono
+        później hymn Kathariny von Schlegel z 1752 roku, w angielskim przekładzie Jane Borthwick:
+        nie trwóż się, duszo ma. W koncercie za poległych Ukrainy zabrzmiała więc fińska melodia
+        wolności — ze słowami o ukojeniu.
+      inscriptioPl: "słowa: K. von Schlegel (1752), przekład ang. J. Borthwick · zwrotka III"
+      text: |-
+        Be still, my soul: the hour is hastening on
+        when we shall be forever with the Lord,
+        when disappointment, grief, and fear are gone,
+        sorrow forgot, love's purest joys restored.
+        Be still, my soul: when change and tears are past,
+        all safe and blessed we shall meet at last.
+      textPl: |-
+        Nie trwóż się, duszo ma: zbliża się godzina,
+        gdy na zawsze będziemy z Panem;
+        gdy przeminą zawód, ból i strach,
+        smutek ustąpi, a czysta radość miłości powróci.
+        Nie trwóż się, duszo ma: gdy miną zmiany i łzy,
+        bezpieczni i błogosławieni spotkamy się wreszcie.
+    - composer: "Gabriel Fauré"
+      years: "1845–1924"
+      work: "Pie Jesu · z Requiem op. 48"
+      movement: exsequiae
+      year: "1887–90"
+      note: >-
+        Czwarta i jedyna solowa część Requiem Fauré, pisana na głos chłopięcy. W całej swojej
+        mszy żałobnej Fauré zrezygnował z sekwencji Dies irae, która w innych requiem zajmuje
+        najwięcej miejsca: nie ma tu sądu ani trwogi. Nazwano to dzieło „kołysanką śmierci” —
+        kompozytor się nie spierał, tak właśnie widział śmierć. Tekst to dwa zdania: zmiłuj się
+        i daj odpoczynek.
+      inscriptio: "Pie Jesu Domine, dona eis requiem"
+      inscriptioPl: "Miłosierny Panie Jezu, daj im odpoczynek · z Requiem op. 48"
+      text: |-
+        Pie Jesu Domine,
+        dona eis requiem,
+        dona eis requiem sempiternam.
+      textPl: |-
+        Miłosierny Panie Jezu,
+        daj im odpoczynek,
+        daj im odpoczynek wieczny.
+    - composer: "Edward Elgar"
+      years: "1857–1934"
+      work: "Lux aeterna (Nimrod) · oprac. J. Cameron"
+      movement: lux
+      year: "1899"
+      voicing: "a 8"
+      rubric: "Podczas utworu otwarto ołtarz Wita Stwosza"
+      note: >-
+        Nimrod to dziewiąta z Wariacji Enigma — portret Augusta Jaegera, wydawcy i przyjaciela,
+        który w chwili zwątpienia przekonał Elgara, żeby nie przestawał pisać. Jäger znaczy po
+        niemiecku „myśliwy”, a Nimrod był biblijnym myśliwym: stąd nazwa. Wielka Brytania gra tę
+        muzykę nad grobami — co roku przy Cenotaph w Londynie, w Niedzielę Pamięci. John Cameron
+        podłożył pod nią komunię z Mszy żałobnej: światłość wiekuistą.
+      inscriptio: "Lux aeterna luceat eis, Domine"
+      inscriptioPl: "Światłość wieczna niechaj im świeci, Panie · komunia z Mszy żałobnej"
+      text: |-
+        Lux aeterna luceat eis, Domine,
+        cum sanctis tuis in aeternum,
+        quia pius es.
+      textPl: |-
+        Światłość wieczna niechaj im świeci, Panie,
+        wraz z Twymi Świętymi na wieki,
+        bo jesteś miłosierny.
+    - composer: "Michał Piechnik"
+      work: "Impresja organowa na temat „Szcze ne wmerła Ukrajiny”"
+      movement: lux
+      voicing: "organy"
+      note: >-
+        Hymn Ukrainy: słowa Pawła Czubynskiego z 1862 roku, melodia ks. Mychajły Werbyckiego,
+        greckokatolickiego duchownego — „jeszcze nie umarła Ukraina, ani jej chwała, ani wola”.
+        Tytularny organista Bazyliki Mariackiej zaimprowizował na ten temat przy już otwartym
+        ołtarzu. Z wieży tego samego kościoła co godzinę gra się hejnał, który urywa się w pół
+        dźwięku — na pamiątkę najazdu.
+      inscriptioPl: "hymn Ukrainy · słowa: P. Czubynski (1862), melodia: ks. M. Werbycki"
+      clasp: "Błogosławieństwo · ks. inf. Dariusz Raś"
+    - composer: "Edward C. Bairstow"
+      years: "1874–1946"
+      work: "I sat down under his shadow"
+      movement: lux
+      year: "1925"
+      voicing: "a 4"
+      note: >-
+        Bairstow był przez trzydzieści trzy lata organistą katedry w Yorku; ten krótki anthem
+        śpiewa się zwykle po komunii, a jego tekst pochodzi z Pieśni nad Pieśniami. Po wieczorze,
+        który zamknął się hymnem narodu w wojnie, ostatnie słowo należy do innego sztandaru.
+      inscriptioPl: "z Pieśni nad Pieśniami"
+      inscriptioRef: "PnP 2, 3–4"
+      text: |-
+        I sat down under his shadow with great delight,
+        and his fruit was sweet to my taste.
+        He brought me to the banqueting house,
+        and his banner over me was love.
+      textPl: |-
+        W upragnionym jego cieniu usiadłam,
+        a owoc jego słodki memu podniebieniu.
+        Wprowadził mnie do domu wina
+        i jak sztandar rozwinął nade mną swą Miłość.
+      bis: true
 
 - id: aeternam
   order: 5
@@ -1513,6 +1927,7 @@
     - Lament i modlitwa
     - Kraków · Niedzica
   bg: st-aeternam-bg
+  heroImg: o-nas-epitafium
   poster: poster-aeternam
   posterAlt: Plakat koncertu Aeternam — Epitafium dla Gazy
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM?si=417e9288f94a4201&pt=99e96a55d7b2cb60c5ac46b8a007f36e

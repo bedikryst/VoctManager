@@ -93,7 +93,16 @@ COPY web/ ./
 
 # Astro static build → emits `dist/index.html`, `dist/koncerty.html`, etc.,
 # plus content-addressed assets under `dist/_astro/`.
-RUN npm run build
+#
+# BuildKit cache mount for Astro's asset cache (`cacheDir` default = node_modules/.astro).
+# Without it every prod build re-encodes ~380 image variants from ~1150 megapixels of
+# camera originals — the dominant cost, since a single 2560w AVIF takes ~4s and the
+# root .dockerignore's `**/node_modules` guarantees the host's warm cache never lands here.
+# The cache is content-addressed (`<name>.<srcContentHash>_<transformHash>.<ext>`), so the
+# fresh mtimes from `COPY web/ ./` above do NOT invalidate it — only changed image BYTES do.
+# Cold builds (new host, empty cache) pay full price exactly once.
+RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
+    npm run build
 
 
 # ==========================================

@@ -41,7 +41,10 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const c = entry.data;
-const bg = bleedPair(c.bg);
+// The hero takes the station's canonical photograph (`heroImg`) — the same file /o-nas shows
+// as the milestone — rather than a second byte-identical copy under the `st-*-bg-desktop`
+// name. `bg` stays what it is: the pre-blurred card wash for /koncerty.
+const bg = bleedPair(c.heroImg ?? c.bg);
 const ogImage = (await getImage({ src: bg.desktop, width: 1200, format: "webp" })).src;
 
 // ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
@@ -380,6 +383,14 @@ const plDate = (iso: string): string =>
                         {p.inscriptioRef && (
                           <span class="kd-program-inscriptio-ref"> ({p.inscriptioRef})</span>
                         )}
+                      </p>
+                    )}
+                    {/* The rubric: not what was sung — what was done. A missal prints its
+                        instructions apart from its texts; so does this. */}
+                    {p.rubric && (
+                      <p class="kd-rubric">
+                        <span class="kd-rubric-mark" aria-hidden="true"></span>
+                        <span>{p.rubric}</span>
                       </p>
                     )}
                     {p.note && <p class="kd-program-note-work">{p.note}</p>}
@@ -766,6 +777,15 @@ const plDate = (iso: string): string =>
   .kd-program-inscriptio-lat { font-style: italic; color: var(--ink-soft, #34302b); }
   .kd-program-inscriptio-pl { color: var(--ink-muted, #746d62); }
   .kd-program-inscriptio-ref { font-family: var(--mono); font-style: normal; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+
+  /* Rubric — the missal's other ink. In a liturgical book the sung text is black and the
+     instruction ("open", "kneel") is red; here the register does that work instead of the
+     colour, which belongs to the station's candle: a lozenge, a candle rule and the faintest
+     candle wash, set in the mono voice the page reserves for facts. `justify-self: start` is
+     load-bearing: the body is a grid, which would otherwise stretch it into a banner instead
+     of the sentence-wide direction this is. */
+  .kd-rubric { margin: 14px 0 2px; justify-self: start; display: flex; align-items: center; gap: 12px; padding: 9px 18px 9px 14px; border-left: 2px solid var(--candle); background: color-mix(in srgb, var(--candle) 9%, transparent); font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.5; color: var(--ink-soft, #34302b); }
+  .kd-rubric-mark { width: 6px; height: 6px; flex: none; transform: rotate(45deg); background: var(--candle); }
 
   /* Per-work note — the "why this work" gloss, a museum wall-label register. */
   .kd-program-note-work { margin: 10px 0 0; max-width: 60ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; color: var(--ink-muted, #746d62); }
