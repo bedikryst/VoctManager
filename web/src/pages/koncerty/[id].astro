@@ -64,11 +64,48 @@ const next = here >= 0 && here < walk.length - 1 ? walk[here + 1] : null;
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
 const posterImg = c.poster ? photoOptional(c.poster) : undefined;
-const gallery: { img: ImageMetadata; alt: string; caption?: string }[] = [];
+const gallery: { img: ImageMetadata; alt: string; caption?: string; ar: number }[] = [];
 for (const g of c.gallery) {
   const img = photoOptional(g.img);
-  if (img) gallery.push({ img, alt: g.alt ?? "", caption: g.caption });
+  if (img)
+    gallery.push({
+      img,
+      alt: g.alt ?? "",
+      caption: g.caption,
+      ar: Number((img.width / img.height).toFixed(4)),
+    });
 }
+
+// ── The gallery hangs by row HEIGHT, not by a column count. Every shot brings its true aspect
+// (ImageMetadata reads the real pixels), so a row of portraits fits four where the same row takes
+// only three landscapes, and a short last row centers instead of leaving a hole at the right. The
+// height is chosen so the evening's dominant orientation fills the measure exactly; H_MAX then
+// refuses to let a small set balloon — which is also what lands a lone landscape on a 960px plate.
+const GALLERY_W = 1180; // .kd-wrap
+const GALLERY_GAP = 40; // the gap's clamp ceiling
+const GALLERY_H_MAX = 640;
+const meanAr = gallery.length
+  ? gallery.reduce((sum, g) => sum + g.ar, 0) / gallery.length
+  : 1.5;
+// Landscapes read best three-up — except at 2 or 4, where a two-up row beats stranding a shot.
+const perRow =
+  meanAr < 1
+    ? Math.min(gallery.length, 4)
+    : gallery.length === 2 || gallery.length === 4
+      ? 2
+      : Math.min(gallery.length, 3);
+// ×0.99 leaves the flex line a few px of slack so sub-pixel rounding can't drop the last shot of
+// a full row onto a row of its own. flex-grow takes the slack straight back.
+const shotH = Math.min(
+  Math.round(((GALLERY_W - (perRow - 1) * GALLERY_GAP) / perRow / meanAr) * 0.99),
+  GALLERY_H_MAX,
+);
+// `wMax` caps how far a short row may inflate its shots: 40% over the ideal, but never past the
+// height cap — otherwise a lone portrait would grow into a tower to fill the line it sits on.
+const shots = gallery.map((g) => {
+  const w = Math.round(shotH * g.ar);
+  return { ...g, w, wMax: Math.round(Math.min(w * 1.4, GALLERY_H_MAX * g.ar)) };
+});
 
 const hasTour = c.dates.length > 0;
 
@@ -171,7 +208,9 @@ const plDate = (iso: string): string =>
   </Fragment>
 
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
-  <SiteChrome current="/koncerty" tone="dark" />
+  {/* Full path so the chrome's registrum marks THIS concert's ribbon with the crimson
+      stitch; SiteChrome still lights the bare KONCERTY link for any /koncerty/* path. */}
+  <SiteChrome current={`/koncerty/${entry.id}`} tone="dark" />
 
   <main id="tresc" style={`--candle: ${candle}`}>
     {/* ── Hero: full-bleed church, latin inscriptio, title, meta ───────────── */}
@@ -534,13 +573,17 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Obrazy wieczoru</span>
           </span>
-          <div class:list={["kd-gallery-grid", { "is-solo": gallery.length === 1 }]}>
-            {gallery.map((g, i) => (
-              <figure class="kd-shot reveal" data-d={String((i % 3) + 1)}>
+          <div class="kd-gallery-grid">
+            {shots.map((g, i) => (
+              <figure
+                class="kd-shot reveal"
+                data-d={String((i % 3) + 1)}
+                style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
+              >
                 <Image
                   src={g.img}
                   widths={[560, 840, 1200]}
-                  sizes="(max-width: 720px) 92vw, (max-width: 1180px) 46vw, 560px"
+                  sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
                   alt={g.alt}
                   loading="lazy"
                   decoding="async"
@@ -850,10 +893,18 @@ const plDate = (iso: string): string =>
   /* ── Documentary gallery ───────────────────────────────────────────────── */
   .kd-gallery { background: var(--night, #100f0d); color: var(--paper); }
   .kd-gallery .kd-section-label { margin-bottom: clamp(36px, 5vw, 56px); }
-  .kd-gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: clamp(20px, 3vw, 40px); }
-  /* A lone photo reads as a feature plate, not a stranded thumbnail. */
-  .kd-gallery-grid.is-solo { grid-template-columns: minmax(0, 1fr); max-width: 960px; margin: 0 auto; }
-  .kd-shot { margin: 0; }
+  /* Rows are hung by height, not cut into columns: each shot asks for the width its own aspect
+     needs at the row height (`--w`, computed above), so portraits pack four to a row where
+     landscapes take three, and the line wraps as soon as the next one stops fitting — no
+     breakpoints, because the photographs decide. Grow and shrink both run ∝ aspect, which is what
+     keeps every shot in a line at one height; `--w-max` stops a short row from inflating its
+     photographs, and `center` hangs whatever is left over in the middle. */
+  .kd-gallery-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
+  .kd-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
+  /* On a phone the aspect has no room to argue: one shot per row, full measure. */
+  @media (max-width: 640px) {
+    .kd-shot { flex-basis: 100%; max-width: 100%; }
+  }
   .kd-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244,241,233,.12); box-shadow: 0 40px 90px -46px rgba(0,0,0,.9); }
   .kd-shot figcaption { margin-top: 14px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244,241,233,.56); }
 

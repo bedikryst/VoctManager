@@ -1529,6 +1529,11 @@
     Teksty oryginalne — z programu koncertu i ksiąg, z których pochodzą; program wieczoru
     drukowano ze skrótami. Przekłady polskie hymnów, antyfon i miejsc biblijnych za tradycją
     kościelną, pozostałe własne.
+  gallery:
+  - { img: kd-hymn-0, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", caption: "Hymn Poległym w Bazylice Mariackiej w Krakowie" }
+  - { img: kd-hymn-1, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", caption: "Hymn Poległym w Bazylice Mariackiej w Krakowie" }
+  - { img: kd-hymn-2, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", caption: "Hymn Poległym w Bazylice Mariackiej w Krakowie" }
+  - { img: kd-hymn-3, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", caption: "Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   movements:
     - id: introitus
       lat: Introitus
