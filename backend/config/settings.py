@@ -460,6 +460,13 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = True
+    # The container healthcheck probes http://localhost:8000/api/health/ from
+    # inside the container — no TLS, no X-Forwarded-Proto. Redirecting it to
+    # https:// makes urllib open a TLS handshake against the plaintext gunicorn
+    # port ("Invalid HTTP request received" on every probe) and the container
+    # never turns healthy, which also blocks celery (depends_on: service_healthy).
+    # Patterns are matched against the path with the leading slash stripped.
+    SECURE_REDIRECT_EXEMPT = [r'^api/health/$']
 
 
 # ==========================================
