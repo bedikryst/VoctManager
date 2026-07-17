@@ -76,7 +76,7 @@ export const PATHS: readonly Path[] = [
     year: "MMXXIV",
     tag: "Cykl psalmów · 6–12 głosów",
     title: "9 Kart z Księgi Psalmów",
-    place: "Rybnik · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
+    place: "Bazylika św. Antoniego w Rybniku · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
     note: "Dziewięć psalmów, od pokuty po radość uwielbienia. Miserere Allegriego, podzielone na dziewięć części, oplata cały wieczór.",
     poster: "poster-9-kart",
   },

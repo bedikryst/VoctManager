@@ -75,6 +75,12 @@ const concerts = defineCollection({
         a touring concert whose instrumental interludes differed between evenings, so the list
         shows the ogniwa common to both. Facts only; the editorial voice belongs to programArc. */
     programNote: z.string().optional(),
+    /** Overrides the standing provenance line under the programme ("Teksty łacińskie i
+        oryginalne — z programów zespołu; przekłady polskie własne"). Set it whenever that
+        sentence would not be true of THIS page — e.g. 9 Kart, whose Polish comes from the
+        concert programme (the psalter the ensemble actually sang), not from us. Provenance is
+        a claim like any other: it has to be right per page, so state less rather than guess. */
+    textNote: z.string().optional(),
     /** The threshold of the evening — a short scene-setting beat rendered as a dark band right
         after the hero (place, hour, the rite of entry). Draws the reader across the doorway into
         the experience before the reflection. Grounded, never staged detail we can't attest. */
@@ -217,6 +223,13 @@ const concerts = defineCollection({
           /** A clasp/refrain label rendered as a slim hairline row AFTER this item — used for
               "9 Kart", where Miserere returns between the psalms (e.g. "Miserere — część II"). */
           clasp: z.string().optional(),
+          /** The words the clasp actually sang, verbatim — for a clasp that is a performed
+              fragment rather than a mere marker ("Przerwa" carries none). In 9 Kart each return
+              of the Miserere brings the next two verses of Psalm 51, so the psalm runs across
+              the whole programme exactly as the evening distributed it. Store as a block scalar. */
+          claspText: z.string().optional(),
+          /** Polish translation of `claspText`. */
+          claspTextPl: z.string().optional(),
           /** Liturgical incipit / source verse in Latin (concert page only). */
           inscriptio: z.string().optional(),
           /** Polish translation of inscriptio. */

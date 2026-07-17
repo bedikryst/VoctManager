@@ -87,8 +87,8 @@ export function QRPanel(): React.JSX.Element {
         </span>
         <p className="transfer-recurring-note">
           Chcesz wspierać cykl regularnie? Skopiuj powyższe dane i w swojej aplikacji bankowej
-          ustaw je jako <strong>zlecenie stałe</strong> (zakładka „zlecenia stałe" /
-          „płatności cykliczne") — np. 25, 50 lub 100&nbsp;zł miesięcznie. Kod QR powyżej tworzy
+          ustaw je jako <strong>zlecenie stałe</strong> (zakładka „zlecenia stałe” /
+          „płatności cykliczne”) — np. 25, 50 lub 100&nbsp;zł miesięcznie. Kod QR powyżej tworzy
           przelew jednorazowy; zlecenie cykliczne wpisuje się ręcznie. Pozostaje ono w pełni pod
           Twoją kontrolą — zmienisz je lub odwołasz w każdej chwili w bankowości, bez kontaktu
           z nami. Bez prowizji i bez przekazywania danych karty.

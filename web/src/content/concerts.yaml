@@ -31,7 +31,7 @@
   realizacja: "Realizacja: Ars Sonora Studio"
   video:
     asset: landing-modal
-    caption: 'Wybrane fragmenty koncertu „Kontemplacja Wcielenia" · VoctEnsemble 2024'
+    caption: 'Wybrane fragmenty koncertu „Kontemplacja Wcielenia” · VoctEnsemble 2024'
     poster: kd-wcielenie-5
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
   hasPage: true
@@ -40,7 +40,7 @@
     Kolejność jest tu częścią kompozycji. Wieczór biegnie jak historia zbawienia: od różdżki
     z proroctwa Izajasza, przez nocną straż pasterzy i adwentowy róg Gallusa, po same narodziny.
     Potem kontemplacja maryjna — i nagły cień: kołysanka matki nad dzieckiem skazanym przez
-    Heroda. Domyka ją kantyk Symeona w świątyni — „moje oczy ujrzały Twoje zbawienie" — czyli
+    Heroda. Domyka ją kantyk Symeona w świątyni — „moje oczy ujrzały Twoje zbawienie” — czyli
     spełnienie obietnicy, od której program się zaczął; stąd już tylko uwielbienie i radość bisu.
   prologue: >-
     Dwudziesty stycznia, wieczór, Bazylika Najświętszego Serca Pana Jezusa w Krakowie —
@@ -132,7 +132,7 @@
       lat: Impletio
       pl: Spełnienie
       line: >-
-        W świątyni Symeon bierze Dziecko na ręce — „moje oczy ujrzały Twoje zbawienie".
+        W świątyni Symeon bierze Dziecko na ręce — „moje oczy ujrzały Twoje zbawienie”.
         Obietnica z początku wieczoru dopełnia się.
     - id: laus
       lat: Laus
@@ -178,14 +178,9 @@
   reflectionNote: >-
     Repertuar — od proroctw Izajasza po kantyk Symeona, od zimowego półmroku Sandströma
     po jasność Monteverdiego — układa się jako droga do samej istoty tego, co niewysłowione.
-  pullQuote:
-    text: >-
-      Le cri des bergers to pieśń samotności. To także krzyk udręki, cierpienia i
-      niepewności; w gruncie rzeczy jest to zagubiona melodia, która rozbrzmiewa
-      wewnątrz nas. Jeśli wsłuchamy się w to „echo milczenia", możemy przekształcić
-      milczenie w magię, magię w dźwięk i przekształcić to w piękno.
-    attribution: "Bernat Vivancos"
-    about: "o utworze Le cri des bergers"
+  # No pullQuote: the one composer's-own-words we have (Vivancos on Le cri des bergers)
+  # lives on /koncerty/wolanie-gor — the evening NAMED after that piece; its essence stays
+  # here in the work's program note. Do not print the same quote on two pages of the cycle.
   program:
     - composer: "Jan Sandström"
       years: "1942–2019"
@@ -197,7 +192,7 @@
         Niemiecka kolęda z końca XVI wieku (Trewir, 1587), wydana po raz pierwszy w jezuickim
         śpiewniku ze Spiry (1599) — jego dwadzieścia trzy zwrotki prowadzą przez całą historię
         świętą, od proroctwa Izajasza po pokłon Mędrców: tę samą drogę, którą za chwilę przejdzie
-        ten program. Po polsku znana jako „Cudowna różdżka wzrosła" (przekład ks. Pawła Sikory,
+        ten program. Po polsku znana jako „Cudowna różdżka wzrosła” (przekład ks. Pawła Sikory,
         1912). Sandström osnuwa dawny chorał wokół unoszącego się nad nim kwartetu solistów.
       inscriptio: "Et egredietur virga de radice Iesse"
       inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
@@ -226,7 +221,7 @@
       voicing: "a 12"
       note: >-
         Krzyk pasterzy trzymających nocną straż nad trzodą. U Vivancosa to zagubiona melodia
-        samotności, która wsłuchana w „echo milczenia" przemienia się w piękno — dwanaście głosów
+        samotności, która wsłuchana w „echo milczenia” przemienia się w piękno — dwanaście głosów
         rozpisanych na całą przestrzeń nawy.
       inscriptio: "Pastores erant in regione eadem vigilantes"
       inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
@@ -240,7 +235,7 @@
       note: >-
         Adwentowy motet pięciogłosowy na słowa proroka Zachariasza. Renesansowy kontrapunkt
         Gallusa — Słoweńca z kręgu muzyki cesarskiej — obwieszcza nadejście jak głos rogu:
-        „Oto przychodzi Bóg, Zbawiciel nasz".
+        „Oto przychodzi Bóg, Zbawiciel nasz”.
       inscriptio: "Canite tuba in Sion · Ecce Deus salvator noster adveniet"
       inscriptioPl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz"
       inscriptioRef: "Za 9, 14"
@@ -307,7 +302,7 @@
       year: "2008"
       voicing: "a 4"
       note: >-
-        Coventry Carol pochodzi z XVI-wiecznego misterium „The Shearmen and Tailors". To
+        Coventry Carol pochodzi z XVI-wiecznego misterium „The Shearmen and Tailors”. To
         kołysanka śpiewana z perspektywy matki nad skazanym dzieckiem — cień rzezi niewiniątek,
         który pada tuż po narodzinach. Stopford ubrał ją w 2008 roku w chłodną współczesną
         harmonię.
@@ -359,7 +354,7 @@
       movement: impletio
       year: "2001"
       note: >-
-        Kantyk Symeona z Ofiarowania w świątyni: „moje oczy ujrzały Twoje zbawienie". U Pärta,
+        Kantyk Symeona z Ofiarowania w świątyni: „moje oczy ujrzały Twoje zbawienie”. U Pärta,
         w jego tintinnabuli, to spełnienie obietnicy, od której wieczór się zaczął — starzec może
         odejść w pokoju.
       inscriptio: "Nunc dimittis servum tuum, Domine"
@@ -400,7 +395,7 @@
       voicing: "SATTBB"
       note: >-
         Kolęda z fińsko-szwedzkiego zbioru świętych pieśni Piae Cantiones (1582), w opracowaniu
-        Briana Kaya. Radość jako bis — „Chrystus się narodził" — ostatnie słowo wieczoru.
+        Briana Kaya. Radość jako bis — „Chrystus się narodził” — ostatnie słowo wieczoru.
       inscriptio: "Gaudete, gaudete! Christus est natus"
       inscriptioPl: "Radujcie się! Chrystus się narodził"
       text: |-
@@ -473,26 +468,499 @@
   facts:
     - 12 głosów i skrzypce
     - Pieniny
-    - Polska · Korsyka · Francja · Wyspy Brytyjskie
+    - Od Pirenejów po Indonezję
   bg: st-wolanie-bg
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
   realizacja: "Skrzypce: Radu Ropotan"
+  hasPage: true
+  video:
+    asset: landing-wolanie
+    caption: 'Fragment koncertu „Wołanie Gór” · VoctEnsemble 2024'
+    note: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo"
+    portrait: true
+  prologue: >-
+    Pierwszy czerwca 2024, Dworek Gościnny w Szczawnicy — jedyny wieczór tego cyklu poza kościołem.
+    Program o wołaniu gór zabrzmiał w górach: za oknami Pieniny. Dwanaście głosów, skrzypce
+    Radu Ropotana, dwie części i przerwa.
+  reflectionNote: >-
+    Góry uczą słuchania: głos posłany w przestrzeń wraca odmieniony. Ten program nasłuchuje,
+    co echo robi z ludzkim wołaniem — czy zostaje krzykiem, czy staje się modlitwą, lotem,
+    pieśnią. I czy samotny głos może liczyć na odpowiedź.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+  # Roster consent: names cleared for concert pages ONLY (do not reuse elsewhere).
+  roster:
+    groups:
+      - { voice: "Soprany", names: ["Liliana Pociecha", "Bernadetta Gałda", "Maria Marczewska", "Anna Kanarkiewicz"] }
+      - { voice: "Alty", names: ["Natalia Czajkowska", "Natalia Lechwar"] }
+      - { voice: "Tenory", names: ["Paweł Żurawski", "Piotr Szewczyk", "Mateusz Solarz"] }
+      - { voice: "Basy", names: ["Michał Jan Barański", "Szymon Maziarz", "Jakub Ciępka"] }
+    note: >-
+      Skład wieczoru w Szczawnicy, 1 czerwca 2024; na skrzypcach — Radu Ropotan.
+  # The composer's own words on the TITLE work — the evening takes its name from this piece,
+  # so the quote is load-bearing here (moved from wcielenie, where its essence stays in the
+  # work's program note). Full booklet version, with the resolution the short form dropped.
+  pullQuote:
+    text: >-
+      Le cri des bergers jest pieśnią samotności — krzykiem trwogi, cierpienia i niepewności;
+      zagubioną pieśnią, która rezonuje wewnątrz każdego z nas. Jeśli umiemy wsłuchać się w jej
+      „echo ciszy”, możemy przemienić ciszę w magię, magię w dźwięk, a dźwięk w piękno. Wtedy
+      samotność znajduje towarzysza, trwoga zamienia się w pokój, cierpienie w radość — a
+      zagubiona pieśń otrzymuje odpowiedź tej samej mocy.
+    attribution: "Bernat Vivancos"
+    about: "o utworze Le cri des bergers, od którego wieczór wziął nazwę"
+  programLede: "Dwanaście pieśni gór — i bis"
+  programArc: >-
+    Kolejność prowadzi w górę i z powrotem. Wieczór otwiera wołanie bez słów — pasterskie „Eee-Ooo”
+    z Pirenejów — a zaraz potem to samo wołanie dostaje słowa: Salve Regina pasterzy z Rouergue,
+    „Ad te clamamus”, do Ciebie wołamy. Stąd program wspina się przez Ave Maria i trzy hymny
+    śpiewane przed Najświętszym Sakramentem aż po nocne niebo Ešenvaldsa; tam wypada przerwa.
+    Druga część zaczyna nisko i po ludzku, od wiejskiego skrzypka, a potem trzy razy próbuje lotu:
+    ptak Monteverdiego, Bach, i skowronek Vaughana Williamsa, który ginie w świetle. Zostaje powrót
+    na ziemię — lód na Prośnie — i bis, w którym światło zstępuje z tronu z powrotem ku nam.
+  programNote: >-
+    Wieczór trwał godzinę i trzy kwadranse, z przerwą; gospodarzami koncertu byli
+    Dworek Gościnny i Pieniny Resort & SPA.
+  # Default textNote would claim "przekłady polskie własne" — untrue here: Salve Regina,
+  # Tantum ergo, O salutaris and the Górecki carry the traditional church translations.
+  textNote: >-
+    Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie hymnów
+    i antyfon za tradycją kościelną, pozostałe własne.
+  movements:
+    - id: clamor
+      lat: Clamor
+      pl: Wołanie
+      line: >-
+        Zew pasterzy odbity od zboczy — jeszcze bez słów, sam głos w przestrzeni.
+    - id: advocata
+      lat: Advocata
+      pl: Orędowniczka
+      line: >-
+        Wołanie znajduje adresata: Matkę, do której wołają wygnańcy — i kobiety, których praca
+        trzyma świat w ruchu.
+    - id: sacramentum
+      lat: Sacramentum
+      pl: Tajemnica ołtarza
+      line: >-
+        Trzy hymny przed Najświętszym Sakramentem: dwa do słów św. Tomasza z Akwinu — raz
+        w polifonii korsykańskiej, raz u współczesnego Łotysza — i polska pieśń Góreckiego.
+    - id: astra
+      lat: Astra
+      pl: Gwiazdy
+      line: >-
+        Najwyższy punkt pierwszej części: samotna noc pod gwiazdami, których eony nie zdołają
+        zasmucić ani zmęczyć.
+    - id: volatus
+      lat: Volatus
+      pl: Lot
+      line: >-
+        Po przerwie ziemia i powietrze: wiejski skrzypek, zakochany ptak, Bach — i skowronek,
+        który wznosi się, aż zginie w świetle.
+    - id: reditus
+      lat: Reditus
+      pl: Powrót
+      line: >-
+        Z nieba z powrotem na ziemię: zamarznięta rzeka, dziewczyna przy młynie — i światło,
+        które zstępuje, by jutro wzejść na nowo.
   program:
-    - { composer: "Bernat Vivancos", years: "ur. 1973", work: "Le cri des bergers", year: "2004" }
-    - { composer: "Anonim / tradycja Oksytanii", work: "Salve Regina" }
-    - { composer: "David MacIntyre", years: "ur. 1952", work: "Ave Maria", year: "1994" }
-    - { composer: "Polifonia korsykańska", work: "Tantum ergo sacramentum", year: "XVII w." }
-    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "O salutaris hostia", year: "2005" }
-    - { composer: "Henryk Mikołaj Górecki", years: "1933–2010", work: "Sanctus, Sanctus, Sanctus", year: "1986" }
-    - { composer: "Ēriks Ešenvalds", years: "ur. 1977", work: "Stars", year: "2011" }
-    - { composer: "George Enescu", years: "1881–1955", work: "Ménétrier · skrzypce solo", year: "1940" }
-    - { composer: "Claudio Monteverdi", years: "1567–1643", work: "Quel augellin che canta", year: "1603" }
-    - { composer: "J. S. Bach", years: "1685–1750", work: "Preludium z Partity BWV 1006 · skrzypce solo", year: "1720" }
-    - { composer: "Ralph Vaughan Williams", years: "1872–1958", work: "The Lark Ascending · oprac. P. Drayton", year: "1914" }
-    - { composer: "Jacek Sykulski", years: "ur. 1964", work: "Stoi lód na prośnie", year: "2017" }
-    - { composer: "Ken Steven", years: "ur. 1993", work: "Dawn and Dusk", year: "2020", bis: true }
+    - composer: "Bernat Vivancos"
+      years: "ur. 1973"
+      work: "Le cri des bergers"
+      movement: clamor
+      year: "2004"
+      voicing: "a 12"
+      note: >-
+        Wołanie pasterzy z Pirenejów — jedyny „tekst” tego utworu to zew „Eee-Ooo”. Vivancos,
+        przez lata związany z Escolanią de Montserrat, osnuwa wokół niego dwanaście głosów
+        rozpisanych na całą przestrzeń sali. Od tego bezsłownego wołania bierze nazwę cały wieczór.
+      inscriptio: "Pastores erant in regione eadem vigilantes"
+      inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
+      inscriptioRef: "Łk 2, 8"
+    - composer: "Anonim / tradycja Oksytanii"
+      work: "Salve Regina"
+      movement: advocata
+      note: >-
+        Antyfona maryjna w wersji pasterzy z Rouergue — dawnej krainy w dzisiejszej Oksytanii —
+        i mnichów z miasteczka Estaing. Surowa, prosta polifonia bliska korsykańskiej: wielogłos
+        jest tu formą wspólnoty. Stąd pochodzi zdanie, które stoi jako napis nad całym wieczorem:
+        „Ad te clamamus” — do Ciebie wołamy. Bezsłowne wołanie z pierwszego utworu dostaje tu
+        słowa. W nagraniach tej wersji antyfonę domyka Zdrowaś Maryjo recytowane w dialekcie
+        oksytańskim — „Adiu, Maria, siás tot de gràcia…” — modlitwa w mowie, którą pasterze
+        naprawdę mówili.
+      inscriptio: "Salve, Regina, mater misericordiae"
+      inscriptioPl: "Witaj Królowo, Matko Miłosierdzia · antyfona maryjna"
+      text: |-
+        Salve, Regina, mater misericordiae,
+        vita, dulcedo et spes nostra, salve.
+        Ad te clamamus, exsules filii Hevae.
+        Ad te suspiramus gementes et flentes
+        in hac lacrimarum valle.
+        Eia ergo, advocata nostra,
+        illos tuos misericordes oculos ad nos converte.
+        Et Jesum, benedictum fructum ventris tui,
+        nobis post hoc exsilium ostende.
+        O clemens, o pia, o dulcis Virgo Maria.
+      textPl: |-
+        Witaj Królowo, Matko Miłosierdzia,
+        życie, słodyczy i nadziejo nasza, witaj!
+        Do Ciebie wołamy wygnańcy, synowie Ewy;
+        do Ciebie wzdychamy jęcząc i płacząc
+        na tym łez padole.
+        Przeto, Orędowniczko nasza,
+        one miłosierne oczy Twoje na nas zwróć,
+        a Jezusa, błogosławiony owoc żywota Twojego,
+        po tym wygnaniu nam okaż.
+        O łaskawa, o litościwa, o słodka Panno Maryjo!
+    - composer: "David MacIntyre"
+      years: "ur. 1952"
+      work: "Ave Maria"
+      movement: advocata
+      year: "1994"
+      voicing: "a 6 · SSSAAA"
+      note: >-
+        Kanadyjski kompozytor pisał ją, zbierając materiały do opery o wydarzeniach w Medziugorju,
+        w ogarniętej wówczas wojną Bośni: sześcioro dzieci, którym od czerwca 1981 roku miała się
+        codziennie ukazywać Matka Boża, i tłum odmawiający w tym czasie różaniec. Stąd sześć
+        głosów — sześcioro dzieci, sześć partii; utwór na same głosy wysokie. Fermata na ostatnim,
+        cichym takcie to w zamyśle MacIntyre'a moment zjawienia.
+      inscriptioPl: "na sześć głosów wysokich · fermata ciszy na końcu"
+    - composer: "Polifonia korsykańska"
+      work: "Tantum ergo sacramentum"
+      movement: sacramentum
+      year: "XVII w."
+      note: >-
+        Korsykańska polifonia z tradycji franciszkańskiej. Tekst to dwie ostatnie zwrotki hymnu
+        Pange lingua św. Tomasza z Akwinu (XIII w.), śpiewane przy adoracji — najczęściej na
+        repozycję, gdy Najświętszy Sakrament wraca do tabernakulum.
+      inscriptio: "Tantum ergo Sacramentum veneremur cernui"
+      inscriptioPl: "Przed tak wielkim Sakramentem upadajmy na twarze · z hymnu Pange lingua"
+      text: |-
+        Tantum ergo Sacramentum
+        veneremur cernui:
+        et antiquum documentum
+        novo cedat ritui:
+        praestet fides supplementum
+        sensuum defectui.
+
+        Genitori, Genitoque
+        laus et jubilatio,
+        salus, honor, virtus quoque
+        sit et benedictio:
+        procedenti ab utroque
+        compar sit laudatio.
+        Amen.
+      textPl: |-
+        Przed tak wielkim Sakramentem
+        upadajmy wszyscy wraz,
+        niech przed Nowym Testamentem
+        starych praw ustąpi czas:
+        co dla zmysłów niepojęte,
+        niech dopełni wiara w nas.
+
+        Bogu Ojcu i Synowi
+        hołd po wszystkie nieśmy dni:
+        niech podaje wiek wiekowi
+        hymn triumfu, dzięki, czci;
+        a równemu Im Duchowi
+        niechaj wieczna chwała brzmi.
+        Amen.
+    - composer: "Ēriks Ešenvalds"
+      years: "ur. 1977"
+      work: "O salutaris hostia"
+      movement: sacramentum
+      year: "2005"
+      note: >-
+        Znowu św. Tomasz z Akwinu — dwie ostatnie zwrotki hymnu Verbum supernum prodiens,
+        napisanego na Boże Ciało i śpiewanego przy wystawieniu Najświętszego Sakramentu.
+        Ten sam obrzęd co przed chwilą, tylko język o siedem wieków późniejszy: u Ešenvaldsa
+        wielowarstwowe harmonie i chóralne klastry.
+      inscriptio: "O salutaris Hostia, quae caeli pandis ostium"
+      inscriptioPl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens"
+      text: |-
+        O salutaris Hostia,
+        quae caeli pandis ostium:
+        bella premunt hostilia,
+        da robur, fer auxilium.
+
+        Uni trinoque Domino
+        sit sempiterna gloria,
+        qui vitam sine termino
+        nobis donet in patria.
+        Amen.
+      textPl: |-
+        O zbawcza Hostio, godna czci,
+        co lud do niebios wiedziesz bram.
+        Bój srogi nęka wiernych Ci,
+        daj siłę, pomoc ześlij nam.
+
+        Jednemu w Trójcy Władcy ziem
+        niech będzie chwała w każdy czas,
+        niech On wieczystym życiem Swym
+        w Ojczyźnie rajskiej darzy nas.
+        Amen.
+    - composer: "Henryk Mikołaj Górecki"
+      years: "1933–2010"
+      work: "Sanctus, Sanctus, Sanctus"
+      movement: sacramentum
+      year: "1986"
+      note: >-
+        Z cyklu dwudziestu jeden Pieśni kościelnych op. 84, które Górecki napisał w Katowicach
+        w 1986 roku, opierając je na melodiach ze Śpiewnika kościelnego ks. Jana Siedleckiego —
+        tego samego, z którego śpiewa się w polskich kościołach od pokoleń. Minimalne środki,
+        maksymalny efekt. Oryginał jest polski i mówi „Jezu, jesteś niepojęty”; tu zabrzmiała
+        wersja łacińska, w której ten sam wers mówi „Jezu, przychodzisz do nas”.
+      inscriptioPl: "z cyklu Pieśni kościelne op. 84 · oryginał polski: Święty, święty, święty"
+      text: |-
+        Sanctus, sanctus, sanctus,
+        sanctus semper sanctus,
+        Jesu Christe venis nobis
+        sanctissimo Sacramento.
+      textPl: |-
+        Święty, Święty, Święty,
+        Święty zawsze Święty,
+        Jezu, przychodzisz do nas
+        w Najświętszym Sakramencie.
+    - composer: "Ēriks Ešenvalds"
+      years: "ur. 1977"
+      work: "Stars"
+      movement: astra
+      year: "2011"
+      note: >-
+        Wiersz amerykańskiej poetki Sary Teasdale o samotnej nocy pod gwiazdami. Ešenvalds dopisał
+        do chóru szklane harmonijki — strojone kieliszki, po których wodzi się mokrym palcem — żeby
+        brzmiały jak migotanie. Harmonie są otwarte i przestronne; to najwyższy punkt wieczoru,
+        i na nim kończy się pierwsza część.
+      inscriptioPl: "tekst: Sara Teasdale"
+      text: |-
+        Alone in the night
+        on a dark hill
+        with pines around me
+        spicy and still,
+
+        and a heaven full of stars
+        over my head,
+        white and topaz
+        and misty red;
+
+        myriads with beating
+        hearts of fire
+        that aeons
+        cannot vex or tire;
+
+        up the dome of heaven
+        like a great hill,
+        I watch them marching
+        stately and still,
+
+        and I know that I
+        am honored to be
+        witness
+        of so much majesty.
+      textPl: |-
+        Samotny w nocy
+        na ciemnym wzgórzu,
+        wśród sosen
+        pachnących i cichych,
+
+        a nad głową
+        niebo pełne gwiazd —
+        białych, topazowych
+        i zamglonych czerwienią;
+
+        miriady o bijących
+        sercach z ognia,
+        których eony
+        nie zdołają zasmucić ani zmęczyć;
+
+        w górę kopuły nieba,
+        jak na wielkie wzgórze,
+        patrzę, jak maszerują
+        dostojnie i spokojnie,
+
+        i wiem, że mam
+        zaszczyt być
+        świadkiem
+        tak wielkiego majestatu.
+      clasp: "Przerwa"
+    - composer: "George Enescu"
+      years: "1881–1955"
+      work: "Ménétrier"
+      movement: volatus
+      year: "1940"
+      voicing: "skrzypce solo"
+      note: >-
+        Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28 — wspomnień z dzieciństwa
+        ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
+        i wschód słońca. Ménétrier to wiejski skrzypek, ten od wesel. Otwiera drugą część wieczoru;
+        gra Radu Ropotan — jak Enescu, Rumun.
+      inscriptioPl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek"
+    - composer: "Claudio Monteverdi"
+      years: "1567–1643"
+      work: "Quel augellin che canta"
+      movement: volatus
+      year: "1603"
+      note: >-
+        Madrygał z czwartej księgi madrygałów pięciogłosowych, wydanej w Wenecji w 1603 roku —
+        u progu przejścia od renesansowej polifonii do baroku, gdy muzyka zaczyna malować afekty.
+        Ptak, który śpiewa „tak słodko”, jest metaforą zakochanego serca: gdyby miał ludzką duszę,
+        powiedziałby „płonę z miłości” — a drugi ptak mu odpowiada.
+      inscriptio: "Quel augellin che canta sì dolcemente"
+      inscriptioPl: "Ten ptaszek, co śpiewa tak słodko · z IV księgi madrygałów"
+      text: |-
+        Quel augellin che canta
+        sì dolcemente
+        e lascivetto vola
+        hor da l'abete al faggio
+        et hor dal faggio al mirto,
+        s'havesse humano spirto,
+        direbb': Ardo d'amor, ardo d'amore!
+        Ma ben arde nel core
+        e chiam' il suo desio
+        che li rispond': Ardo d'amor anch' io!
+        Che sii tu benedetto,
+        amoroso, gentil, vago augelletto!
+      textPl: |-
+        Ten ptaszek, co śpiewa
+        tak słodko
+        i z figlarną lekkością lata
+        to do jodły, to do buka,
+        a potem do mirtu —
+        gdyby miał ludzkiego ducha,
+        rzekłby: Płonę z miłości, płonę z miłości!
+        Lecz płonie w sercu
+        i woła swoje pragnienie,
+        które mu odpowiada: Płonę z miłości i ja!
+        Bądź błogosławiony,
+        kochający, delikatny, piękny ptaszku!
+    - composer: "J. S. Bach"
+      years: "1685–1750"
+      work: "Preludium z Partity E-dur BWV 1006"
+      movement: volatus
+      year: "1720"
+      voicing: "skrzypce solo"
+      note: >-
+        Z trzeciej partity, z cyklu sześciu sonat i partit na skrzypce solo ukończonego w 1720 roku —
+        arcydzieł literatury skrzypcowej. Czysta energia i lekkość: druga w tym programie chwila,
+        gdy zostają same skrzypce, i most między ptakiem Monteverdiego a skowronkiem Vaughana
+        Williamsa.
+      inscriptioPl: "z Partity na skrzypce solo nr 3 E-dur"
+    - composer: "Ralph Vaughan Williams"
+      years: "1872–1958"
+      work: "The Lark Ascending · oprac. P. Drayton"
+      movement: volatus
+      year: "1914 · rev. 1920"
+      voicing: "skrzypce i chór"
+      note: >-
+        Pastoralny poemat na skrzypce, napisany w 1914 roku i zrewidowany w 1920; na prawykonanie
+        czekał sześć lat, bo wybuchła wojna. Inspirował go wiersz George'a Mereditha o skowronku
+        wznoszącym się ku niebu — linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
+        przepisał utwór na skrzypce i chór, więc słowa Mereditha, w oryginale tylko wypisane nad
+        nutami, tutaj naprawdę słychać.
+      inscriptioPl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton"
+      text: |-
+        He rises and begins to round,
+        he drops the silver chain of sound,
+        of many links without a break,
+        in chirrup, whistle, slur and shake.
+
+        For singing till his heaven fills,
+        'tis love of earth that he instils,
+        and ever winging up and up,
+        our valley is his golden cup
+        and he the wine which overflows
+        to lift us with him as he goes.
+
+        Till lost on his aerial rings
+        in light, and then the fancy sings.
+      textPl: |-
+        Wzbija się i zaczyna zataczać kręgi,
+        upuszcza srebrny łańcuch dźwięku
+        o wielu ogniwach, bez przerwy,
+        w ćwierkaniu, gwizdach, ślizgach i drżeniu.
+
+        Bo śpiewa, aż jego niebo się wypełni —
+        to miłość do ziemi w nas zaszczepia;
+        i wciąż wznosząc się wyżej i wyżej,
+        nasza dolina jest jego złotym kielichem,
+        a on winem, które się przelewa,
+        by unieść nas z sobą, gdy odchodzi.
+
+        Aż zginie w swoich powietrznych kręgach
+        w świetle — i wtedy śpiewa wyobraźnia.
+    - composer: "Jacek Sykulski"
+      years: "ur. 1964"
+      work: "Stoi lód na Prośnie"
+      movement: reditus
+      year: "2017"
+      note: >-
+        Sykulski napisał go na zamówienie Agnieszki Franków-Żelazny dla Polskiego Narodowego Chóru
+        Młodzieżowego — jako wokalizę, bez słów. Czegoś w nim jednak brakowało: „utwór nie niósł
+        żadnego przesłania”. Kompozytor wysłał więc partyturę koledze, a ten w ciągu jednej nocy
+        dopisał całą historię — tak dopasowaną, że w muzyce nie trzeba było zmienić ani nuty.
+        Dziewczyna z Podzamcza płacze nad zamarzniętą Prosną, młyn stoi, chleba nie będzie —
+        a Jan Nepomucen, patron mostów i rzek, stoi przy niej.
+      inscriptioPl: "pieśń w idiomie ludowym · słowa dopisane do wokalizy"
+      text: |-
+        Stoi lód na Prośnie,
+        stoi koło młyna —
+        pięć lat tu przychodzi
+        z Podzamcza dziewczyna.
+
+        Stoi dziewcze, kwili,
+        w dłoniach fular skrywa,
+        Święty Roch na sumę
+        ku pociesze wzywa.
+
+        Oj dana, oj dana…
+
+        Stoi młyn, lecz któż ma
+        koło rozklekotać?
+        Nie ma mąki, nie ma
+        i nie będzie chleba.
+
+        Dana, dana… na na, na na…
+
+        Stoi lód na Prośnie,
+        czas pod lodem płynie,
+        a Jan Nepomucen
+        stoi przy dziewczynie.
+
+        Dana, dana… na na…
+    - composer: "Ken Steven"
+      years: "ur. 1993"
+      work: "Dawn and Dusk"
+      movement: reditus
+      year: "2020"
+      note: >-
+        Indonezyjski kompozytor oparł utwór na skali Melayu, a śpiewane sylaby nie znaczą nic —
+        to czysta eksploracja barw ludzkiego głosu. Punktem wyjścia jest wiersz, który Steven
+        napisał sam. W partyturze prosi chór, by w pierwszych taktach dodał odgłosy nocnych
+        zwierząt — świerszcza, sowy — a potem, coraz gęściej, świergot ptaków; na końcu wszystko
+        wraca i cichnie.
+      inscriptioPl: "wiersz kompozytora · śpiewane sylaby nie mają znaczenia"
+      text: |-
+        It was a quiet night
+        — when a glimpse of light slowly gazed upon the sky.
+
+        Awakening the sleeping souls
+        — joyfully singing
+        — dancing in the ray of light
+        — and slowly
+
+        it will descend again from its mighty throne.
+      textPl: |-
+        Była cicha noc
+        — gdy spojrzenie światła powoli spoczęło na niebie.
+
+        Budząc śpiące dusze
+        — radośnie śpiewające
+        — tańczące w promieniu światła
+        — i powoli
+
+        znów zstąpi ze swego potężnego tronu.
+      bis: true
 
 - id: 9-kart
   order: 3
@@ -500,7 +968,7 @@
   latin: Psalmi
   title: 9 Kart z Księgi Psalmów
   meta: "Rybnik · Łódź · Bazylika NSPJ, Kraków · 2024"
-  venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź / Bazylika Archikatedralna, Rybnik"
+  venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź / Bazylika św. Antoniego, Rybnik"
   viaDate: "2024"
   about:
     place: "Rybnik · Łódź · Kraków"
@@ -519,16 +987,444 @@
   poster: poster-9-kart
   posterAlt: Plakat koncertu 9 Kart z Księgi Psalmów
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6quiVYU28Sl3Fx17VZulSc
+  hasPage: true
+  # Booklet documents cities + hours for all three evenings and a venue only for Kraków;
+  # Rybnik + Łódź confirmed by the owner (2026-07-17).
+  dates:
+    - { date: "2024-09-08", venue: "Bazylika św. Antoniego, Rybnik", time: "16:30" }
+    - { date: "2024-09-17", venue: "Archikatedra, Łódź", time: "19:00" }
+    - { date: "2024-11-16", venue: "Bazylika NSPJ, ul. Kopernika 26, Kraków", time: "20:00" }
+  prologue: >-
+    Szesnasty listopada 2024, Bazylika NSPJ w Krakowie — trzeci wieczór tego programu, po Rybniku
+    i Łodzi. Zanim zabrzmi pierwszy dźwięk, o. Przemysław Wysogląd SJ nakreśla kontekst psalmów,
+    a przestrzeń rzeźbi światło Ady Bystrzyckiej. Zespół prosi o jedno: nie oklaskiwać
+    poszczególnych utworów i zachować ciszę między nimi.
+  reflectionNote: >-
+    Psałterz nie porządkuje uczuć — kładzie je obok siebie: skarga sąsiaduje z dziękczynieniem,
+    prośba o litość z wezwaniem do tańca. Dziewięć kart tego wieczoru wybrano właśnie dla tej
+    rozpiętości, a spięto je jedną modlitwą pokutną, która wraca dziewięć razy i nie pozwala
+    o sobie zapomnieć.
+  credits:
+    - { role: "Dyrygent", name: "Florent de Bazelaire" }
+    - { role: "Słowo wprowadzające", name: "o. Przemysław Wysogląd SJ" }
+    - { role: "Reżyseria światła", name: "Ada Bystrzycka" }
+  programLede: "Dziewięć psalmów, oplecionych Miserere"
+  programArc: >-
+    Przy liście utworów zespół dopisał dwa słowa: „kolejność ważna”. Wieczór zaczyna się od pokuty —
+    Miserere Allegriego, Psalm 51 — i natychmiast ją przerywa: psalm zostaje rozcięty na dziewięć
+    części, a między nie wchodzą kolejno chwała, mądrość, prawo, radość, tron, dziękczynienie
+    i pieśń nowa. Pokutnik nie dokończy swojej modlitwy, dopóki nie wybrzmi każdy inny głos
+    Psałterza; dopiero po ostatnim wraca po raz dziewiąty i dopowiada ją do końca. Tak jak w życiu,
+    w którym żal i radość nie ustawiają się w kolejce — przeplatają się.
+  programNote: >-
+    Skład trzynaściorga wokalistów odnotowano dla wieczoru krakowskiego (16 listopada 2024);
+    ten sam program, w tej samej kolejności, zespół wykonał wcześniej w Rybniku i w Łodzi.
+  textNote: >-
+    Teksty i przekłady polskie — za programem koncertu.
+  # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
+  # braided through the other eight, so the braid IS the structure — the clasps carry it.
   program:
-    - { composer: "Gregorio Allegri", work: "Miserere · Ps 51" }
-    - { composer: "Orlando di Lasso", work: "Laudate Dominum · Ps 117" }
-    - { composer: "Anton Bruckner", work: "Os justi · Ps 37" }
-    - { composer: "Charles V. Stanford", work: "Beati quorum via · Ps 119" }
-    - { composer: "J. S. Bach", work: "Singet dem Herrn · Ps 149" }
-    - { composer: "Orlando Gibbons", work: "O clap your hands · Ps 47" }
-    - { composer: "Salomone Rossi", work: "Barukh habba beshem Adonai · Ps 118" }
-    - { composer: "Heinrich Schütz", work: "Jauchzet dem Herrn · Ps 100" }
-    - { composer: "Claudio Monteverdi", work: "Cantate Domino · Ps 98" }
+    - composer: "Gregorio Allegri"
+      years: "1582–1652"
+      work: "Miserere mei, Deus"
+      year: "ok. 1638"
+      voicing: "a 9 · chór a 5 i soliści a 4"
+      note: >-
+        Psalm pokutny śpiewany w Kaplicy Sykstyńskiej podczas Ciemnych Jutrzni Wielkiego Tygodnia.
+        Watykan strzegł tej muzyki: za wyniesienie odpisu groziła ekskomunika, a zdobne linie
+        solistów przekazywano ustnie, z pokolenia na pokolenie. Czternastoletni Mozart usłyszał ją
+        w 1770 roku i spisał z pamięci. Tutaj utwór został rozdzielony na dziewięć części, które
+        oplatają pozostałe psalmy: pięciogłosowy chór prowadzi wers po wersie, a czterech solistów
+        odpowiada mu z oddalenia — stąd echo.
+      inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
+      inscriptioPl: "Zmiłuj się nade mną, Boże, w łaskawości swojej"
+      inscriptioRef: "Ps 51 (50)"
+      clasp: "Miserere — część I"
+      claspText: |-
+        Miserere mei, Deus, secundum magnam misericordiam tuam;
+        et secundum multitudinem miserationum tuarum, dele iniquitatem meam.
+        Amplius lava me ab iniquitate mea,
+        et a peccato meo munda me.
+      claspTextPl: |-
+        Zmiłuj się nade mną, Boże, w łaskawości swojej.
+        W ogromie swej litości zgładź nieprawość moją.
+        Obmyj mnie zupełnie z mojej winy
+        i oczyść mnie z grzechu mojego.
+    - composer: "Orlando di Lasso"
+      years: "1532–1594"
+      work: "Laudate Dominum omnes gentes"
+      voicing: "a 12"
+      note: >-
+        Psalm 117 jest najkrótszy w całym Psałterzu — dwa wersety, wezwanie skierowane do
+        wszystkich narodów. Lassus, Flamandczyk od 1556 roku związany z dworem bawarskim
+        w Monachium i autor przeszło dwóch tysięcy utworów, rozpisał je na dwanaście głosów
+        w dialogujących chórach: najkrótszy tekst wieczoru dostaje jego największą obsadę.
+        Po pierwszej części Miserere pokutnik milknie, a odzywa się cała ziemia.
+      inscriptio: "Laudate Dominum omnes gentes"
+      inscriptioPl: "Chwalcie Pana, wszystkie narody"
+      inscriptioRef: "Ps 117"
+      text: |-
+        Laudate Dominum omnes gentes,
+        laudate Dominum omnes populi.
+        Quoniam confirmata est super nos misericordia eius,
+        et veritas Domini manet in aeternum.
+      textPl: |-
+        Chwalcie Pana, wszystkie narody,
+        wysławiajcie Go, wszystkie ludy,
+        bo Jego łaskawość nad nami potężna,
+        a wierność Pańska trwa na wieki.
+      clasp: "Miserere — część II"
+      claspText: |-
+        Quoniam iniquitatem meam ego cognosco,
+        et peccatum meum contra me est semper.
+        Tibi soli peccavi, et malum coram te feci:
+        ut justificeris in sermonibus tuis, et vincas cum judicaris.
+      claspTextPl: |-
+        Uznaję bowiem nieprawość swoją,
+        a grzech mój jest zawsze przede mną.
+        Przeciwko Tobie samemu zgrzeszyłem i uczyniłem, co złe jest, przed Tobą,
+        abyś okazał się sprawiedliwy w swym wyroku i prawy w swoim sądzie.
+    - composer: "Anton Bruckner"
+      years: "1824–1896"
+      work: "Os justi, WAB 30"
+      year: "1879"
+      voicing: "a 8"
+      note: >-
+        Gradual napisany dla Ignaza Traumihlera, kierownika chóru w opactwie św. Floriana —
+        tego samego, w którego krypcie Bruckner kazał się później pochować, pod organami.
+        Kompozytor narzucił sobie regułę równie surową jak prawo, o którym mówi psalm: ani jednego
+        krzyżyka, ani jednego bemola, żadnych akordów septymowych — wszystko w czystej skali
+        lidyjskiej. Chwalił się tym Traumihlerowi w liście. Po drugiej części Miserere, w której
+        pokutnik uznaje swoją winę, wchodzi obraz człowieka sprawiedliwego.
+      inscriptio: "Os justi meditabitur sapientiam"
+      inscriptioPl: "Usta sprawiedliwego głoszą mądrość"
+      inscriptioRef: "Ps 37, 30–31"
+      text: |-
+        Os justi meditabitur sapientiam:
+        et lingua ejus loquetur judicium.
+        Lex Dei ejus in corde ipsius:
+        et non supplantabuntur gressus ejus.
+        Alleluia.
+      textPl: |-
+        Usta sprawiedliwego głoszą mądrość
+        i język jego mówi to, co słuszne.
+        Prawo jego Boga jest w jego sercu,
+        a jego kroki się nie zachwieją.
+        Alleluja.
+      clasp: "Miserere — część III"
+      claspText: |-
+        Ecce enim in iniquitatibus conceptus sum,
+        et in peccatis concepit me mater mea.
+        Ecce enim veritatem dilexisti;
+        incerta et occulta sapientiae tuae manifestasti mihi.
+      claspTextPl: |-
+        Oto urodziłem się obciążony winą
+        i jako grzesznika poczęła mnie matka.
+        A Ty masz upodobanie w ukrytej prawdzie,
+        naucz mnie tajemnic mądrości.
+    - composer: "Charles Villiers Stanford"
+      years: "1852–1924"
+      work: "Beati quorum via, op. 38 nr 3"
+      year: "1905"
+      voicing: "a 6"
+      note: >-
+        Psalm 119 jest najdłuższy w Psałterzu — sto siedemdziesiąt sześć wersetów o Prawie Bożym.
+        Stanford bierze z niego jeden, pierwszy. Motet powstał dla chóru Trinity College
+        w Cambridge, gdzie kompozytor był organistą, i ukazał się w 1905 roku w zbiorze trzech
+        łacińskich motetów. Sześć głosów dzieli się na dwie trzygłosowe grupy, które podają sobie
+        tę samą frazę — droga, o której mowa, jest tu słyszalna.
+      inscriptio: "Beati quorum via integra est"
+      inscriptioPl: "Szczęśliwi, których droga nieskalana"
+      inscriptioRef: "Ps 119, 1"
+      text: |-
+        Beati quorum via integra est,
+        qui ambulant in lege Domini.
+      textPl: |-
+        Szczęśliwi, których droga nieskalana,
+        którzy postępują według Prawa Pańskiego.
+      clasp: "Miserere — część IV"
+      claspText: |-
+        Asperges me hyssopo, et mundabor;
+        lavabis me, et super nivem dealbabor.
+        Auditui meo dabis gaudium et laetitiam,
+        et exsultabunt ossa humiliata.
+      claspTextPl: |-
+        Pokrop mnie hizopem, a stanę się czysty,
+        obmyj mnie, a nad śnieg wybieleję.
+        Spraw, abym usłyszał radość i wesele,
+        niech się radują kości, które skruszyłeś.
+    - composer: "J. S. Bach"
+      years: "1685–1750"
+      work: "Singet dem Herrn ein neues Lied, BWV 225"
+      year: "ok. 1727"
+      voicing: "a 8 · dwa chóry"
+      note: >-
+        Najbardziej znany z motetów Bacha, powstały w Lipsku. Dwa czterogłosowe chóry podają sobie
+        wersety psalmu jak piłkę; kompozytor splata w nim Psalm 149, luterański chorał i wersety
+        Psalmu 150. To najradośniejsze i najtrudniejsze ogniwo wieczoru, postawione dokładnie
+        naprzeciw pokuty Miserere. Kiedy w 1789 roku Mozart usłyszał ten motet u św. Tomasza
+        w Lipsku, miał zawołać: „Oto nareszcie coś, z czego można się czegoś nauczyć” — i poprosił
+        o rozłożenie głosów.
+      inscriptio: "Singet dem Herrn ein neues Lied"
+      inscriptioPl: "Śpiewajcie Panu pieśń nową"
+      inscriptioRef: "Ps 149, 1–3"
+      text: |-
+        Singet dem Herrn ein neues Lied,
+        die Gemeine der Heiligen sollen ihn loben.
+        Israel freue sich des, der ihn gemacht hat.
+        Die Kinder Zion sei'n fröhlich über ihrem Könige,
+        Sie sollen loben seinen Namen im Reigen;
+        mit Pauken und mit Harfen sollen sie ihm spielen.
+      textPl: |-
+        Śpiewaj Panu nową pieśń,
+        zebranie świętych niech Go chwali.
+        Niech się Izrael cieszy z tego, kto go uczynił,
+        niech dzieci Syjonu radują się swym Królem,
+        niech w tańcu wysławiają Jego imię;
+        z bębnami i harfami niech Mu grają.
+      clasp: "Miserere — część V"
+      claspText: |-
+        Averte faciem tuam a peccatis meis,
+        et omnes iniquitates meas dele.
+        Cor mundum crea in me, Deus,
+        et spiritum rectum innova in visceribus meis.
+      claspTextPl: |-
+        Odwróć swe oblicze od moich grzechów
+        i zmaż wszystkie moje przewinienia.
+        Stwórz, Boże, we mnie serce czyste
+        i odnów we mnie moc ducha.
+    - composer: "Orlando Gibbons"
+      years: "1583–1625"
+      work: "O clap your hands"
+      year: "1622"
+      voicing: "a 8"
+      note: >-
+        Gibbons, organista Chapel Royal, napisał ten ośmiogłosowy anthem w 1622 roku jako pracę
+        doktorską dla Oksfordu; tekst pochodzi z anglikańskiego psałterza Coverdale'a. Psalm 47
+        sadza Boga na tronie wśród okrzyków i trąb — a chór rozbija się na osiem głosów, żeby ten
+        tłum było słychać.
+      inscriptio: "O clap your hands together, all ye people"
+      inscriptioPl: "Wszystkie narody, klaskajcie w dłonie"
+      inscriptioRef: "Ps 47, 2–5"
+      text: |-
+        O clap your hands together, all ye people;
+        O sing unto God with the voice of melody.
+        For the Lord is high and to be feared;
+        he is the great King of all the earth.
+        He shall subdue the people under us,
+        and the nations under our feet.
+        He shall choose out an heritage for us,
+        even the worship of Jacob, whom he loved.
+      textPl: |-
+        Wszystkie narody, klaskajcie w dłonie,
+        wykrzykujcie Bogu radosnym głosem,
+        bo Pan najwyższy, straszliwy,
+        jest wielkim Królem nad całą ziemią.
+        On nam poddaje narody
+        i ludy rzuca pod nasze stopy.
+        Wybiera dla nas dziedzictwo —
+        chlubę Jakuba, którego miłuje.
+      clasp: "Miserere — część VI"
+      claspText: |-
+        Ne projicias me a facie tua,
+        et spiritum sanctum tuum ne auferas a me.
+        Redde mihi laetitiam salutaris tui,
+        et spiritu principali confirma me.
+      claspTextPl: |-
+        Nie odrzucaj mnie od swego oblicza
+        i nie odbieraj mi świętego ducha swego.
+        Przywróć mi radość z Twojego zbawienia
+        i wzmocnij mnie duchem ofiarnym.
+    - composer: "Salomone Rossi"
+      years: "1570–1630"
+      work: "Barukh habba beshem Adonai"
+      year: "1622/23"
+      voicing: "a 6"
+      note: >-
+        Rossi był Żydem na dworze Gonzagów w Mantui; książę zwolnił go z obowiązku noszenia żółtej
+        oznaki, którą musieli nosić pozostali. W zbiorze „Ha-shirim asher li-Shlomo” (Wenecja)
+        jako pierwszy zastosował renesansową polifonię do hebrajskich tekstów liturgicznych —
+        przedmowę, broniącą wielogłosu w synagodze, napisał mu rabin Leon z Modeny. Tu, w programie
+        ułożonym z psalmów łacińskich, niemieckich i angielskich, wraca ich język pierwotny.
+      inscriptio: "Barukh haba b'shem Adonai"
+      inscriptioPl: "Błogosławiony, który przybywa w imię Pańskie"
+      inscriptioRef: "Ps 118, 26–29"
+      text: |-
+        Baruch haba b'shem Adonai!
+        B'rakhnuchém mi-beit Adonai.
+        El Adonai, va-ya'er lanu!
+        Isru-chag b'avotim ad karnot ha-mizbéach.
+        Eli atah ve-odeka,
+        Elohai, aromemeka.
+        Hodu l'Adonai, ki tov,
+        ki l'olam chasdo.
+      textPl: |-
+        Błogosławiony, który przybywa w imię Pańskie!
+        Błogosławimy wam z domu Pańskiego.
+        Pan jest Bogiem: niech nas oświeci!
+        Ścieśnijcie szeregi, z gałęziami w rękach, aż do rogów ołtarza.
+        Jesteś moim Bogiem, chcę Ci dziękować:
+        Boże mój, chcę Ciebie wywyższać.
+        Wysławiajcie Pana, bo dobry;
+        bo łaska Jego na wieki.
+      clasp: "Miserere — część VII"
+      claspText: |-
+        Docebo iniquos vias tuas,
+        et impii ad te convertentur.
+        Libera me de sanguinibus, Deus, Deus salutis meae,
+        et exsultabit lingua mea justitiam tuam.
+      claspTextPl: |-
+        Będę nieprawych nauczał dróg Twoich
+        i wrócą do Ciebie grzesznicy.
+        Uwolnij mnie, Boże, od kary za krew przelaną, Boże, mój Zbawco,
+        niech sławi mój język Twoją sprawiedliwość.
+    - composer: "Heinrich Schütz"
+      years: "1585–1672"
+      work: "Jauchzet dem Herrn, alle Welt, SWV 36"
+      year: "1619"
+      voicing: "a 8 · dwa chóry"
+      note: >-
+        Ze zbioru „Psalmen Davids” (Drezno, 1619) — pierwszego wielkiego dzieła Schütza po powrocie
+        z Wenecji, gdzie uczył się u Giovanniego Gabrielego. Przywiózł stamtąd wielochórowość
+        i przyłożył ją do niemieckiego psałterza Lutra. Schütz urodził się dokładnie sto lat przed
+        Bachem; w tym programie oba ich psalmy brzmią po niemiecku i na dwa chóry — słychać
+        stulecie, które je dzieli.
+      inscriptio: "Jauchzet dem Herren, alle Welt"
+      inscriptioPl: "Wykrzykujcie na cześć Pana, wszystkie ziemie"
+      inscriptioRef: "Ps 100"
+      text: |-
+        Jauchzet dem Herren, alle Welt!
+        Dienet dem Herren mit Freuden;
+        kommt vor sein Angesichtt mit Frohlokken.
+        Erkennet, daß der Herre Gott ist.
+        Er hat uns gemacht und nicht wir selbst,
+        zu seinem Volk und zu Schafen seiner Weide.
+        Gehet zu seinen Toren ein mit Danken,
+        zu seinen Vorhöfen mit Loben.
+        Danket ihm, lobet seinen Namen!
+        Denn der Herr ist freundlich,
+        und seine Gnade währet ewig
+        und seine Wahrheit für und für.
+
+        Ehre sei dem Vater und dem Sohn
+        und auch dem heilgen Geiste,
+        wie es war im Anfang, jetzt und immerdar
+        und von Ewigkeit zu Ewigkeit. Amen.
+      textPl: |-
+        Wykrzykujcie na cześć Pana, wszystkie ziemie;
+        służcie Panu z weselem!
+        Wśród okrzyków radości stawajcie przed Nim!
+        Wiedzcie, że Pan jest Bogiem:
+        On sam nas stworzył, my Jego własnością,
+        jesteśmy Jego ludem, owcami Jego pastwiska.
+        Wstępujcie w Jego bramy wśród dziękczynienia,
+        wśród hymnów w Jego przedsionki;
+        chwalcie Go i błogosławcie Jego imię!
+        Albowiem dobry jest Pan,
+        łaskawość Jego trwa na wieki,
+        a wierność Jego przez pokolenia.
+
+        Chwała Ojcu i Synowi, i Duchowi Świętemu,
+        jak była na początku, teraz i zawsze,
+        i na wieki wieków. Amen.
+      clasp: "Miserere — część VIII"
+      claspText: |-
+        Domine, labia mea aperies,
+        et os meum annuntiabit laudem tuam.
+        Quoniam si voluisses sacrificium, dedissem utique;
+        holocaustis non delectaberis.
+      claspTextPl: |-
+        Panie, otwórz wargi moje,
+        a usta moje będą głosić Twoją chwałę.
+        Ofiarą bowiem Ty się nie radujesz,
+        a całopalenia choćbym dał, nie przyjmiesz.
+    - composer: "Claudio Monteverdi"
+      years: "1567–1643"
+      work: "Cantate Domino"
+      year: "1620"
+      voicing: "a 6 · SSATBB"
+      note: >-
+        Sześciogłosowy motet wydany w mediolańskim zbiorze Giulia Cesare Bianchiego. Tekst jest
+        spleciony z dwóch psalmów — wersety 98 przeplatają się z wersetem 96 — a wezwanie, od
+        którego się zaczyna, słychać już było tego wieczoru u Bacha: śpiewajcie Panu pieśń nową.
+        Tym samym motetem zespół zamknął program „Kontemplacji Wcielenia”, od której zaczął się
+        cykl; tutaj jest ostatnim słowem chwały przed dziewiątą częścią Miserere.
+      inscriptio: "Cantate Domino canticum novum"
+      inscriptioPl: "Śpiewajcie Panu pieśń nową"
+      inscriptioRef: "Ps 98 (97)"
+      text: |-
+        Cantate Domino canticum novum,
+        Cantate et benedicite nomini ejus:
+        Quia mirabilia fecit.
+        Cantate et exultate et psallite
+        in cythara et voce psalmi:
+        Quia mirabilia fecit.
+      textPl: |-
+        Śpiewajcie Panu pieśń nową,
+        śpiewajcie Panu, błogosławcie Jego imię,
+        albowiem cuda uczynił.
+        Cieszcie się i weselcie, i grajcie
+        przy wtórze cytry i przy dźwięku harfy,
+        albowiem cuda uczynił.
+      clasp: "Miserere — część IX + epilog"
+      claspText: |-
+        Sacrificium Deo spiritus contribulatus;
+        cor contritum et humiliatum, Deus, non despicies.
+        Benigne fac, Domine, in bona voluntate tua Sion,
+        ut aedificentur muri Jerusalem.
+
+        Tunc acceptabis sacrificium justitiae, oblationes et holocausta;
+        tunc imponent super altare tuum vitulos.
+      claspTextPl: |-
+        Boże, moją ofiarą jest duch skruszony,
+        pokornym i skruszonym sercem Ty, Boże, nie gardzisz.
+        Panie, okaż Syjonowi łaskę w Twej dobroci,
+        odbuduj mury Jeruzalem.
+
+        Wtedy przyjmiesz prawe ofiary: dary i całopalenia,
+        wtedy składać będą cielce na Twoim ołtarzu.
+    - composer: "Orlando Gibbons"
+      years: "1583–1625"
+      work: "Drop, drop, slow tears"
+      year: "1623"
+      note: >-
+        Wiersz Phineasa Fletchera — wydrukowany dopiero w 1633 roku, choć krążył wcześniej —
+        w melodii Gibbonsa ze zbioru pieśni kościelnych George'a Withera. Ta sama ręka, która dała
+        temu wieczorowi jego najbardziej triumfalny psalm, zostawia jego ostatnie i najcichsze
+        słowo. Zespół prosił, żeby podczas bisu wyświetlić na ekranach polski tekst: po dziewięciu
+        częściach Miserere te łzy miały zostać zrozumiane.
+      inscriptioPl: "słowa: Phineas Fletcher"
+      text: |-
+        Drop, drop, slow tears,
+        and bathe those beauteous feet
+        which brought from Heaven
+        the news and Prince of Peace.
+
+        Cease not, wet eyes,
+        his mercies to entreat;
+        to cry for vengeance
+        sin doth never cease.
+
+        In your deep floods
+        drown all my faults and fears;
+        nor let his eye
+        see sin, but through my tears.
+      textPl: |-
+        Spływajcie, spływajcie, łzy powolne,
+        Obmyjcie te piękne stopy,
+        Które z niebios przyniosły wieść o Pokoju,
+        I Księcia Pokoju w swej chwale.
+
+        Nie ustawajcie, oczy w smutku skąpane,
+        Błagajcie o Jego miłosierdzie;
+        Wołajcie o przebaczenie,
+        Bo grzech nie ustaje w swej złości.
+
+        W głębokich strumieniach mych łez
+        Zatopcie wszystkie winy i lęki,
+        Niech Jego oko nie widzi grzechu,
+        Lecz tylko poprzez łzy.
+      bis: true
 
 - id: hymn-poleglym
   order: 4
@@ -603,7 +1499,7 @@
   hasPage: true
   video:
     asset: landing-aeternam
-    caption: 'Fragment koncertu „Aeternam — Epitafium dla Gazy" · VoctEnsemble 2025'
+    caption: 'Fragment koncertu „Aeternam — Epitafium dla Gazy” · VoctEnsemble 2025'
     note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo"
     portrait: true
   dates:
@@ -618,7 +1514,7 @@
     Świętego, w przeddzień wspomnienia Matki Bożej Bolesnej. Zespół prosi o jedno: żeby wieczór
     wybrzmiał w ciszy, jako jedno dzieło.
   reflection: >-
-    „Epitafium dla Gazy" jest wyrazem modlitwy i gestem solidarności wobec zranionej ludzkości
+    „Epitafium dla Gazy” jest wyrazem modlitwy i gestem solidarności wobec zranionej ludzkości
     w Gazie. Stając wobec cierpienia jej mieszkańców, szukamy w muzyce najczystszego języka
     współczucia — wierząc, że kontemplacja, cisza i śpiew mogą unieść zarówno ból, jak i światło
     nadziei tam, gdzie słowa już nie wystarczają.
@@ -849,10 +1745,10 @@
       duration: "4′"
       note: >-
         Amerykańska kompozytorka, laureatka Nagrody Pulitzera, napisała ten utwór na zamówienie
-        Nederlands Kamerkoor do cyklu „150 Psalms". Kameralna obsada i lekka faktura odróżniają go
+        Nederlands Kamerkoor do cyklu „150 Psalms”. Kameralna obsada i lekka faktura odróżniają go
         od reszty programu: zamiast lamentu — obraz najmniejszych stworzeń, które przy ołtarzu
         znajdują gniazdo. Tym samym psalmem zespół zamknął zapowiedź wieczoru: nadzieją, że
-        nadejdzie dzień, kiedy każdy będzie mógł wypowiedzieć „Jak miłe są przybytki Twoje, Panie".
+        nadejdzie dzień, kiedy każdy będzie mógł wypowiedzieć „Jak miłe są przybytki Twoje, Panie”.
       inscriptioRef: "Ps 84, 2–4. 7"
       text: |-
         How beloved is your dwelling place, o lord of hosts.

@@ -7,7 +7,7 @@
 ![TypeScript 6](https://img.shields.io/badge/TypeScript_6-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 ![View Transitions](https://img.shields.io/badge/View_Transitions-API-c6a45b?style=for-the-badge)
 
-Ten katalog zawiera kod **publicznej strony marketingowej** VoctEnsemble (voctensemble.com / .pl) i VoctFoundation (voctfoundation.pl / .com / .org) — wszystkie pięć domen rozwiązuje się do tego samego buildu Astro. Strona to art-directed sakralny minimalizm w duchu *„Nawy światła"*: ręcznie pisany CSS, art-directed obrazy, oszczędne wyspy React dla genuinely-stateful kawałków (lejek datków Vault, brama audio Threshold, chrome nagłówka). Zbudowane jako osobna aplikacja od panelu SPA w [`../frontend/`](../frontend/); oba buildy współdzielą backend Django pod `/api/*`.
+Ten katalog zawiera kod **publicznej strony marketingowej** VoctEnsemble (voctensemble.com / .pl) i VoctFoundation (voctfoundation.pl / .com / .org) — wszystkie pięć domen rozwiązuje się do tego samego buildu Astro. Strona to art-directed sakralny minimalizm w duchu *„Nawy światła”*: ręcznie pisany CSS, art-directed obrazy, oszczędne wyspy React dla genuinely-stateful kawałków (lejek datków Vault, brama audio Threshold, chrome nagłówka). Zbudowane jako osobna aplikacja od panelu SPA w [`../frontend/`](../frontend/); oba buildy współdzielą backend Django pod `/api/*`.
 
 > **Dlaczego Astro, a nie SPA?** Powłoka CSR React była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro daje crawlable statyczny HTML + natywne View Transitions + selektywną hydratację — przejścia na poziomie Awwwards bez pustej powłoki `#root`. Decyzja zapadła 2026-05-27; uzasadnienie zarchiwizowane w `MEMORY.md` (`project_react_landing_migration`).
 
@@ -20,7 +20,7 @@ Ta strona **NIE podlega projektowemu mandatowi z `CLAUDE.md`** (No-Raw-HTML / Ta
 * **Najnowsze technologie 2026, zero długu technicznego.**
 * **Ścisłe RODO:** żadnego Google Fonts, Maps, Spotify embeds, reCAPTCHA, analityki ustawiającej cookie. Wszystko self-hostowane (fonty pod `public/fonts/`, ambient audio w `public/ambient.m4a`).
 * **Bazowy poziom Awwwards:** każda interaktywna powierzchnia musi być akcelerowana sprzętowo (`transform` / `opacity`), respektować `prefers-reduced-motion` i gracefully degradować bez JS.
-* **Kierunek kreatywny:** *Nawa światła* — sakralny minimalizm, splot A-B-C, JASNA paleta paper. Specyfikacja w `.ai/07_marketing_public_site.md` (sekcja „Creative direction") i obowiązuje na wszystkich podstronach.
+* **Kierunek kreatywny:** *Nawa światła* — sakralny minimalizm, splot A-B-C, JASNA paleta paper. Specyfikacja w `.ai/07_marketing_public_site.md` (sekcja „Creative direction”) i obowiązuje na wszystkich podstronach.
 
 ---
 
@@ -46,7 +46,7 @@ Patrz wersja angielska — układ folderów identyczny. Krótki przegląd:
 * **Astro `<ClientRouter />`** — natywne View Transitions napędzają przejścia między stronami. Cinematic root fade (320ms wyjście / 540ms wejście) + shared `view-transition-name: voct-brand`, więc świeca-mark morphuje płynnie między stronami. Sakralny ton, akceleracja sprzętowa, zero JS.
 * **Reveal** — `.reveal` (+ `data-d="1..4"` stagger) ukryty przez `html.reveal-ready` (inline head script z `data-astro-rerun`, więc re-arms na każdym ClientRouter swap). IntersectionObserver dodaje `.is-in`. Powyżej-fold animuje się przy load.
 * **Parallax** — JS przez `data-parallax="0.16"`. Natywne `animation-timeline` wciąż częściowe w Firefox/Safari, więc pojedyncza pętla rAF w `BaseLayout`.
-* **Manifest „odsłania"** — światło emanuje Z TEKSTU (textShadow gold bloom + variable-font `wght` axis breath 320 → 480 peak → 360 settled + per-word stagger 28ms). Brak backdrop shaft — *„sacrum nie zdobi, odsłania"*.
+* **Manifest „odsłania”** — światło emanuje Z TEKSTU (textShadow gold bloom + variable-font `wght` axis breath 320 → 480 peak → 360 settled + per-word stagger 28ms). Brak backdrop shaft — *„sacrum nie zdobi, odsłania”*.
 * **Lenis v1.3+** — smooth scroll na poziomie okna w BaseLayout. Fine-pointer + motion-allowed only. Re-anchored na `astro:after-swap`.
 
 ---

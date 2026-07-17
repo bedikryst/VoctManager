@@ -329,7 +329,7 @@
 .nave-cta em {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -356,7 +356,7 @@
 .nave-colophon em {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0;
   text-transform: none;
   color: rgba(22, 21, 20, 0.66);

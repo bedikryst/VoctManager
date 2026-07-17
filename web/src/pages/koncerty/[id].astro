@@ -68,7 +68,25 @@ for (const g of c.gallery) {
 }
 
 const hasTour = c.dates.length > 0;
-const hasText = c.program.some((p) => p.text || p.textPl);
+
+// ── The conductor stood that evening too: every roster (Voces) closes with the conductor,
+// pulled from the credits so no YAML entry has to repeat him. Program-header obsada keeps
+// its own line — a programme book names the conductor in both places.
+const conductorCredit = c.credits.find((cr) => /dyrygent/i.test(cr.role));
+// A page carries the sung word when any work — or any clasp, since in 9 Kart the psalm itself
+// lives in the returns rather than in the work rows — prints its text. The provenance line hangs
+// off this, so a clasp-only page must still own up to where its texts come from.
+const hasText = c.program.some((p) => p.text || p.textPl || p.claspText || p.claspTextPl);
+
+// ── `realizacja` is a free-text credit line owned by the /koncerty listing, and each evening fills
+// it with whatever extra hand it had: "Realizacja: Ars Sonora Studio", "Skrzypce: Radu Ropotan",
+// "Organy: …". Split a leading "Rola:" so the colophon prints a true credit instead of filing a
+// violinist under "Realizacja". No prefix ⇒ the line really is a realizacja credit.
+const realizacjaCredit = (() => {
+  if (!c.realizacja) return undefined;
+  const m = c.realizacja.match(/^\s*([^:]{2,24}?)\s*:\s*(.+)$/);
+  return m ? { role: m[1], name: m[2] } : { role: "Realizacja", name: c.realizacja };
+})();
 
 // ── Concert film: still for the in-flow player. Falls back to the hero bg when no dedicated
 // poster is set. The MP4 source is consumed by VideoPlayer, never exposed as a native anchor.
@@ -294,7 +312,7 @@ const plDate = (iso: string): string =>
             </span>
             {c.programLede && <h2 class="kd-section-title reveal" data-d="1">{c.programLede}</h2>}
 
-            {(c.credits.length > 0 || c.realizacja) && (
+            {(c.credits.length > 0 || realizacjaCredit) && (
               <dl class="kd-credits reveal" data-d="2" aria-label="Obsada">
                 {c.credits.map((cr) => (
                   <div class="kd-credit">
@@ -302,10 +320,10 @@ const plDate = (iso: string): string =>
                     <dd>{cr.name}</dd>
                   </div>
                 ))}
-                {c.realizacja && (
+                {realizacjaCredit && (
                   <div class="kd-credit">
-                    <dt>Realizacja</dt>
-                    <dd>{c.realizacja.replace(/^Realizacja:\s*/i, "")}</dd>
+                    <dt>{realizacjaCredit.role}</dt>
+                    <dd>{realizacjaCredit.name}</dd>
                   </div>
                 )}
               </dl>
@@ -379,9 +397,14 @@ const plDate = (iso: string): string =>
                     )}
                       </div>
                     </li>
+                    {/* The clasp: a marker when it only names a seam ("Przerwa"), a sung beat when
+                        it brings words back (9 Kart — Psalm 51 returning between the psalms). It is
+                        content either way, so it stays in the accessibility tree. */}
                     {p.clasp && (
-                      <li class="kd-clasp" aria-hidden="true">
-                        <span>{p.clasp}</span>
+                      <li class:list={["kd-clasp", "reveal", { "is-sung": p.claspText || p.claspTextPl }]}>
+                        <span class="kd-clasp-rule"><span>{p.clasp}</span></span>
+                        {p.claspText && <p class="kd-clasp-lat">{p.claspText}</p>}
+                        {p.claspTextPl && <p class="kd-clasp-pl">{p.claspTextPl}</p>}
                       </li>
                     )}
                   </>
@@ -395,7 +418,8 @@ const plDate = (iso: string): string =>
               {c.programNote && <p class="kd-program-note kd-program-note-lead">{c.programNote}</p>}
               {hasText && (
                 <p class="kd-program-note micro">
-                  Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie własne.
+                  {c.textNote ??
+                    "Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie własne."}
                 </p>
               )}
               {c.spotify && (
@@ -431,8 +455,9 @@ const plDate = (iso: string): string =>
 
     {/* ── Voces: the singers as they stood THAT evening — a per-evening cast, never the
           ensemble's fixed roster (guests happen, people move on). Names are consent-cleared
-          for concert pages only. The quiet factual footnote (`roster.note`) belongs to the
-          whole block. Placed before the film/gallery so the names lead into the images. ── */}
+          for concert pages only. The cast closes with the conductor (from credits — he stood
+          there too). The quiet factual footnote (`roster.note`) belongs to the whole block.
+          Placed before the film/gallery so the names lead into the images. ── */}
     {c.roster && c.roster.groups.length > 0 && (
       <section class="kd-band kd-band-soft kd-voces tone-light" aria-label="Głosy wieczoru">
         <div class="kd-wrap">
@@ -451,6 +476,12 @@ const plDate = (iso: string): string =>
                 {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
               </div>
             ))}
+            {conductorCredit && (
+              <div class="kd-voces-group reveal" data-d={String((c.roster.groups.length % 3) + 1)}>
+                <dt class="kd-voces-voice micro">{conductorCredit.role}</dt>
+                <dd class="kd-voces-name">{conductorCredit.name}</dd>
+              </div>
+            )}
           </dl>
           {c.roster.note && <p class="kd-voces-note reveal">{c.roster.note}</p>}
         </div>
@@ -636,7 +667,7 @@ const plDate = (iso: string): string =>
 
   .kd-section-head { margin: 0 0 clamp(44px, 6vw, 80px); }
   .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
-  .kd-section-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 14px; }
+  .kd-section-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; }
   .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; }
 
   /* ── Verbum: the spoken threshold word — dark register, guillemet quote up top +
@@ -755,10 +786,18 @@ const plDate = (iso: string): string =>
   .kd-text-orig { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(15px, 1.35vw, 17px); line-height: 1.62; color: var(--ink-soft, #34302b); white-space: pre-line; }
   .kd-text-pl { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(15px, 1.35vw, 17px); line-height: 1.62; color: var(--ink-muted, #746d62); white-space: pre-line; }
 
-  /* Clasp row (9 Kart — Miserere weaving the psalms). */
-  .kd-clasp { display: flex; align-items: center; gap: 16px; padding: clamp(14px, 2vw, 20px) 0; border-top: 1px solid var(--line, rgba(22,21,20,.16)); font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--candle); }
-  .kd-clasp::before,
-  .kd-clasp::after { content: ""; height: 1px; background: color-mix(in srgb, var(--candle) 40%, transparent); flex: 1; }
+  /* Clasp row — the seam between works. Two registers: a bare label on a rule (Wołanie Gór's
+     "Przerwa"), or a sung return that brings its words with it (9 Kart — Psalm 51 coming back
+     nine times between the psalms). The label keeps its own rule so both cases read identically
+     at the seam; the words hang below it, centered and candle-lit, the same grammar the dark
+     interlude uses — scripture returning, here slim and on parchment. */
+  .kd-clasp { padding: clamp(14px, 2vw, 20px) 0; border-top: 1px solid var(--line, rgba(22,21,20,.16)); }
+  .kd-clasp-rule { display: flex; align-items: center; gap: 16px; font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--candle); }
+  .kd-clasp-rule::before,
+  .kd-clasp-rule::after { content: ""; height: 1px; background: color-mix(in srgb, var(--candle) 40%, transparent); flex: 1; }
+  .kd-clasp.is-sung { padding-bottom: clamp(26px, 3.5vw, 40px); }
+  .kd-clasp-lat { margin: clamp(20px, 2.6vw, 30px) auto 0; max-width: 46ch; text-align: center; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.55; color: var(--candle); white-space: pre-line; }
+  .kd-clasp-pl { margin: clamp(10px, 1.4vw, 14px) auto 0; max-width: 46ch; text-align: center; font-family: var(--serif); font-weight: 300; font-size: clamp(14px, 1.2vw, 16px); line-height: 1.6; color: var(--ink-muted, #746d62); white-space: pre-line; }
 
   .kd-program-foot { display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline; margin: clamp(40px, 5vw, 64px) 0 0; }
   .kd-program-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-muted, #746d62); margin: 0; text-transform: none; }
@@ -817,7 +856,7 @@ const plDate = (iso: string): string =>
 
   .kd-vianav { display: grid; gap: clamp(24px, 3vw, 34px); }
   .kd-vianav-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); }
-  .kd-vianav-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 14px; }
+  .kd-vianav-label .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; }
   .kd-vianav-rail { display: grid; grid-template-columns: 1fr auto 1fr; gap: clamp(20px, 3vw, 44px); align-items: center; }
   .kd-vianav-side { display: grid; gap: 6px; min-width: 0; }
   .kd-vianav-side.is-empty { min-height: 1px; }
