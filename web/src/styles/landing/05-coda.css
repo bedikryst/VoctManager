@@ -56,12 +56,12 @@
      arcs over it, and the finalis strikes last: the page's final stroke. Hidden states
      engage only under html.voct-motion (no-JS / reduced-motion always see the drawn
      state), mirroring the interludes. ── */
-  .coda .coda-knot .cs-1 { transition-duration: 1.5s; transition-delay: 0.15s; }
-  .coda .coda-knot .cs-2 { transition-duration: 1.5s; transition-delay: 0.3s; }
-  .coda .coda-knot .cs-3 { transition-duration: 1.5s; transition-delay: 0.45s; }
-  .coda .coda-knot .cs-4 { transition-duration: 1.5s; transition-delay: 0.6s; }
-  .coda .coda-knot .c-fermata { transition-duration: 1.1s; transition-delay: 1.8s; }
-  .coda .coda-knot .c-finalis-thin { transition-duration: 0.5s; transition-delay: 2.5s; }
+  .coda .coda-knot .cs-1 { transition-duration: 1.1s; transition-delay: 0.05s; }
+  .coda .coda-knot .cs-2 { transition-duration: 1.1s; transition-delay: 0.13s; }
+  .coda .coda-knot .cs-3 { transition-duration: 1.1s; transition-delay: 0.21s; }
+  .coda .coda-knot .cs-4 { transition-duration: 1.1s; transition-delay: 0.29s; }
+  .coda .coda-knot .c-fermata { transition-duration: 0.85s; transition-delay: 0.95s; }
+  .coda .coda-knot .c-finalis-thin { transition-duration: 0.45s; transition-delay: 1.3s; }
 
   html.voct-motion .coda .coda-score.reveal:not(.is-visible) .knot-draw {
     stroke-dashoffset: 1;
@@ -71,14 +71,14 @@
   .coda .coda-rest,
   .coda .coda-fermata-hold,
   .coda .coda-finalis {
-    transition: opacity 1.3s var(--ease-slow);
+    transition: opacity 0.9s var(--ease-slow);
   }
-  .coda .cn-1 { opacity: 0.55; transition-delay: 1s; }
-  .coda .cn-2 { opacity: 0.45; transition-delay: 1.15s; }
-  .coda .cn-3 { opacity: 0.35; transition-delay: 1.3s; }
-  .coda .coda-rest { opacity: 0.85; transition-delay: 1.5s; }
-  .coda .coda-fermata-hold { opacity: 1; transition-delay: 2.2s; }
-  .coda .coda-finalis { opacity: 0.8; transition-delay: 2.65s; }
+  .coda .cn-1 { opacity: 0.55; transition-delay: 0.5s; }
+  .coda .cn-2 { opacity: 0.45; transition-delay: 0.6s; }
+  .coda .cn-3 { opacity: 0.35; transition-delay: 0.7s; }
+  .coda .coda-rest { opacity: 0.85; transition-delay: 0.82s; }
+  .coda .coda-fermata-hold { opacity: 1; transition-delay: 1.15s; }
+  .coda .coda-finalis { opacity: 0.8; transition-delay: 1.4s; }
 
   html.voct-motion .coda .coda-score.reveal:not(.is-visible) :is(
     .coda-neume,
@@ -107,9 +107,13 @@
     letter-spacing: -0.01em;
     color: var(--ink);
     text-align: center;
+    /* The words rise as the last strokes land (~1.2s), not after the whole score has
+       finished drawing (the old 2.7s hold — the visitor reached the page-bottom, the
+       emblem sat there, and "Cisza brzmi dalej." only began speaking seconds later,
+       often missed entirely). Score and answer now close together, as a cadence does. */
     transition:
-      opacity 2s var(--ease-slow) 2.7s,
-      transform 2s var(--ease-slow) 2.7s;
+      opacity 1.4s var(--ease-slow) 1.2s,
+      transform 1.4s var(--ease-slow) 1.2s;
   }
 
   .coda-caption em {

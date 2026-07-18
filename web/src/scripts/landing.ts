@@ -325,9 +325,12 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
 // each lit start must come ≥GAP_MS after the previous one's start (start-to-start, like
 // points of imitation — the previous sweep is still running when the next voice enters).
 // A stanza that arrives naturally later than the gap lights immediately: slow readers pay
-// zero added latency. The answer waits longest — "Odsłania." may only begin once "Sacrum
-// nie zdobi." reads as fully inked (its glyphs sit in the sweep's fast early stretch, so
-// ~3.4s into the 4.6s transition the line looks done).
+// zero added latency. The answer replies a short breath behind III (ANSWER_GAP_MS) — enough
+// that "Odsłania." reads as a response, not a fourth voice firing in unison, but NOT a full-
+// inking wait: it is the manifest's payoff word and must land in view. The old 3.4s hold
+// stranded the reveal off-screen even on slow scroll (III and the answer cross the trigger
+// close together, so the gap kept biting), and its own blur-into-focus then played where no
+// one was looking. Short reply + a quick entrance (03-manifest-rite.css) keeps the moment.
 function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   // Under reduced motion MotionGate never adds html.voct-motion, so the CSS half-light
   // states stay inert and the manifest is plain full ink — nothing to drive here.
@@ -338,7 +341,7 @@ function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   if (!lines.length) return;
 
   const GAP_MS = 1600;
-  const ANSWER_GAP_MS = 3400;
+  const ANSWER_GAP_MS = 1000;
   let lastOnset = Number.NEGATIVE_INFINITY;
   const timers: number[] = [];
 

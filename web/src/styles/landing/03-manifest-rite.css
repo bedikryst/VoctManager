@@ -146,9 +146,12 @@
   html.voct-motion .manifest-answer .manifest-emphasis {
     opacity: 0;
     filter: blur(5px);
+    /* Short delay + brisk resolve: the payoff word must come into focus while it is
+       still in the reading zone, not 2.5s after the trigger (which stranded it above
+       the fold on slow scroll). The blur-in itself IS the word "odsłania". */
     transition:
-      opacity 1.8s var(--ease-slow) 0.7s,
-      filter 1.8s var(--ease-slow) 0.7s;
+      opacity 1.3s var(--ease-slow) 0.15s,
+      filter 1.3s var(--ease-slow) 0.15s;
   }
 
   html.voct-motion .manifest-answer.is-lit .manifest-emphasis {
@@ -159,7 +162,7 @@
   /* One-shot gold bloom as the answer lands — an animation, not a scroll-coupled
      value, so it has a beginning and an end. Delay tracks the emphasis entrance. */
   html.voct-motion .manifest-answer.is-lit {
-    animation: manifestAnswerBloom 3.2s var(--ease-slow) 1.1s both;
+    animation: manifestAnswerBloom 3.2s var(--ease-slow) 0.5s both;
   }
 
   @keyframes manifestAnswerBloom {
