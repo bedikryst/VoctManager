@@ -361,15 +361,23 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
         const href = ribbon.getAttribute("href");
         if (!href || reduce.matches) return;
         e.preventDefault();
+        const registrum = ribbon.closest(".registrum");
         ribbon.classList.add("is-chosen");
-        ribbon.closest(".registrum")?.classList.add("is-committing");
-        window.setTimeout(() => void navigate(href), PULL_MS);
+        // is-committing also starts easing the hush blur to 0 (registrum.css), timed to be spent
+        // by this beat's end; is-leaving then swaps blur(0) for NONE in the navigate tick — an
+        // invisible change, but required BEFORE the View Transition captures the outgoing page
+        // (a live backdrop-filter seams the snapshot; the dim tint stays and dissolves with it).
+        registrum?.classList.add("is-committing");
+        window.setTimeout(() => {
+          registrum?.classList.add("is-leaving");
+          void navigate(href);
+        }, PULL_MS);
         // Safety: a no-op navigate (same URL) leaves no swap to discard the classes — release the
         // committing state so the set can't stay stuck withdrawn. A successful swap replaces these
         // nodes first, making this a harmless no-op on detached elements.
         window.setTimeout(() => {
           ribbon.classList.remove("is-chosen");
-          ribbon.closest(".registrum")?.classList.remove("is-committing");
+          registrum?.classList.remove("is-committing", "is-leaving");
         }, PULL_MS + 900);
         return;
       }

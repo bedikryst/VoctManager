@@ -123,9 +123,17 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
     if (!href) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     e.preventDefault();
+    const registrum = ribbon.closest(".registrum");
     ribbon.classList.add("is-chosen");
-    ribbon.closest(".registrum")?.classList.add("is-committing");
-    window.setTimeout(() => void navigate(href), RIBBON_PULL_MS);
+    // is-committing also starts easing the hush blur to 0 (registrum.css), timed to be spent by
+    // this beat's end; is-leaving then swaps blur(0) for NONE in the navigate tick — an invisible
+    // change, but required BEFORE the View Transition captures the outgoing page (a live
+    // backdrop-filter seams the snapshot; the dim tint stays and dissolves with it).
+    registrum?.classList.add("is-committing");
+    window.setTimeout(() => {
+      registrum?.classList.add("is-leaving");
+      void navigate(href);
+    }, RIBBON_PULL_MS);
   }, []);
 
   // Focus stays inside the overlay while it owns the viewport; Escape plays the wipe. The hook

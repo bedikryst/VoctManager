@@ -530,6 +530,35 @@
   transition: opacity 0.22s var(--ease);
 }
 
+/* ── The hush and the page turn. The hush's DIM is a plain background: the View Transition
+   snapshots it cleanly and it dissolves WITH the outgoing page — the nave stays quiet to the end
+   of the turn. Its BLUR cannot make that crossing: Chromium mis-captures a live backdrop-filter
+   into the outgoing root snapshot and draws a faint full-width horizontal seam under the bar's
+   line that persists through the whole dissolve. Field-tested dead ends — don't revisit: giving
+   the hush its own view-transition-name does NOT help (a named group's backdrop-filter may not
+   sample outside its group, so the blur dies anyway); dropping the filter in one frame at the
+   navigate tick kills the seam but POPS the page sharp mid-gesture (blur(8px)→none in a single
+   frame reads as a glitch, not a beat). So the blur RETIRES INSIDE THE PULL: is-committing eases
+   it 8px→0 over 0.2s — spent just before the 220ms PULL_MS beat ends, while the yanked silk owns
+   the eye, so the page's focus returning underneath reads as the nave releasing its breath. At
+   the navigate tick the headers add `is-leaving`, swapping the spent blur(0px) for NONE —
+   visually identical, but blur(0px) still creates a backdrop root and only none is capture-safe.
+   The transition list restates the open-state opacity/visibility pair: equal specificity, later
+   in source, so omitting them would silently revert those to the base timings mid-interaction. ── */
+.registrum.is-committing .registrum-hush {
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition:
+    opacity 0.5s var(--ease) 0.1s,
+    visibility 0s linear 0s,
+    backdrop-filter 0.2s var(--ease),
+    -webkit-backdrop-filter 0.2s var(--ease);
+}
+.registrum.is-leaving .registrum-hush {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 /* Same 759.98/760 boundary as nave-menu.css: below it the bar links are hidden and the
    "Antyfona" card owns navigation — the registrum never renders there. */
 @media (max-width: 759.98px) {
