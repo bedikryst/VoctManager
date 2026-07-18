@@ -9,8 +9,10 @@
  * @module pages/index
  */
 import { getImage } from "astro:assets";
+import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { bleedPair } from "../lib/photos";
+import { toRibbons } from "../lib/registrum";
 import "../styles/landing.css";
 
 import HeroSection from "../components/landing/HeroSection.astro";
@@ -43,6 +45,10 @@ const description =
 const ogImage = (
   await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
 ).src;
+
+// Desktop "registrum" ribbons for the StickyHeader island — derived here because a client
+// island cannot read the concerts collection itself (see lib/registrum).
+const ribbons = toRibbons(await getCollection("concerts"));
 
 // Poster for the concert reel (Vox moment + lightbox). EDITABLE: swap the source photo
 // when a real video still exists — bleedPair name only, the optimization stays.
@@ -107,7 +113,7 @@ const jsonLd = {
     <Preloader client:load />
     <AudioController client:load />
 
-    <StickyHeader client:load />
+    <StickyHeader client:load ribbons={ribbons} />
     <MovementSpine client:idle />
 
     <main id="main">

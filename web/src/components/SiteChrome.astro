@@ -8,19 +8,23 @@
  * @architecture Astro islands 2026
  * @module components/SiteChrome
  */
+import { getCollection } from "astro:content";
+import { toRibbons } from "../lib/registrum";
+
 interface Props {
-  /** Path of the current page so the matching nav link gets aria-current. */
+  /** Path of the current page so the matching nav link gets aria-current — concert pages
+      pass their FULL path ("/koncerty/wcielenie") so the matching ribbon can carry the
+      crimson stitch; the bare KONCERTY link treats any of them as its own. */
   current?: string;
   /** "dark" pages (koncerty) get a night solid header + an is-light state over paper sections. */
   tone?: "light" | "dark";
 }
 const { current, tone = "light" } = Astro.props;
 
-const links = [
-  { href: "/o-nas", label: "O nas" },
-  { href: "/koncerty", label: "Koncerty" },
-  { href: "/kontakt", label: "Kontakt" },
-] as const;
+/* The "registrum" — desktop register ribbons under KONCERTY (styles/registrum.css),
+   derived from the concerts collection (page-bearing entries only, Via order). */
+const ribbons = toRibbons(await getCollection("concerts"));
+const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
 ---
 
 <header class="chrome" id="chrome" data-tone={tone} aria-label="Nawigacja">
@@ -34,13 +38,44 @@ const links = [
   </a>
 
   <nav class="chrome-nav" aria-label="Nawigacja główna">
-    {
-      links.map((l) => (
-        <a href={l.href} aria-current={current === l.href ? "page" : undefined}>
-          {l.label}
-        </a>
-      ))
-    }
+    <a href="/o-nas" aria-current={current === "/o-nas" ? "page" : undefined}>O nas</a>
+    {/* "Registrum" — hover/focus on KONCERTY lets mute breviary register silks slip from
+        under the bar beside an ink index; each row's hairline leader runs to its silk's
+        tip (registrum.css). Pure CSS state — the link itself stays a plain navigation to
+        /koncerty (the drop is enhancement only). */}
+    <div class="registrum">
+      <a href="/koncerty" aria-current={onKoncerty ? "page" : undefined}>Koncerty</a>
+      {/* The hush: full-viewport fixed layer quieting the whole page while the register
+          hangs open — a SIBLING of the drop (the drop's transform would hijack its fixed
+          containing block, see registrum.css traps). */}
+      <span class="registrum-hush" aria-hidden="true"></span>
+      <div class="registrum-drop">
+        <div class="registrum-sleeve" style={`--n: ${ribbons.length};`}>
+          {
+            ribbons.map((r, i) => (
+              <a
+                class="ribbon"
+                href={r.href}
+                style={`--rib: ${r.accent}; --i: ${i};`}
+                aria-current={current === r.href ? "page" : undefined}
+              >
+                <span class="ribbon-line">
+                  <span class="ribbon-roman">{r.roman}</span>
+                  <span class="ribbon-title">{r.title}</span>
+                  <span class="ribbon-thread" aria-hidden="true"></span>
+                </span>
+                <span class="ribbon-meta">{r.meta}</span>
+                <span class="ribbon-silk" aria-hidden="true">
+                  <span class="ribbon-cord"></span>
+                  <span class="ribbon-strip"></span>
+                </span>
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+    <a href="/kontakt" aria-current={current === "/kontakt" ? "page" : undefined}>Kontakt</a>
     <a class="nav-support" href="/?donate" data-vault-open="100">Wesprzyj</a>
   </nav>
 
@@ -115,11 +150,15 @@ const links = [
   .chrome.is-solid .chrome-brand .brand-mark { background: var(--ink); }
 
   .chrome-nav { display: flex; align-items: center; gap: clamp(16px, 2.4vw, 34px); }
-  .chrome-nav a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
-  .chrome-nav a::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
-  .chrome-nav a:hover { opacity: 1; }
-  .chrome-nav a:hover::after, .chrome-nav a[aria-current="page"]::after { transform: scaleX(1); }
-  .chrome-nav a[aria-current="page"] { opacity: 1; color: var(--candle); }
+  /* Direct children (+ the registrum's trigger link) ONLY — a bare `.chrome-nav a` also
+     dressed the registrum's ribbon anchors (scoped attribute selectors out-specify the
+     global registrum.css), turning the index rows into tracked-uppercase mono chips. */
+  .chrome-nav > a, .chrome-nav .registrum > a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
+  .chrome-nav > a::after, .chrome-nav .registrum > a::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
+  .chrome-nav > a:hover, .chrome-nav .registrum > a:hover { opacity: 1; }
+  .chrome-nav > a:hover::after, .chrome-nav .registrum > a:hover::after,
+  .chrome-nav > a[aria-current="page"]::after, .chrome-nav .registrum > a[aria-current="page"]::after { transform: scaleX(1); }
+  .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[aria-current="page"] { opacity: 1; color: var(--candle); }
   .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
 
   /* Mobile menu */
@@ -186,6 +225,8 @@ const links = [
 </style>
 
 <script>
+  import { navigate } from "astro:transitions/client";
+
   import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
   import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../lib/overlayHistory";
 
@@ -204,6 +245,9 @@ const links = [
     // The overlay fades shut over ~0.24s (nave-menu.css) — one quiet breath, no reverse wipe.
     // `menu-closing` keeps it painted through the fade; the timer then drops both classes → hidden.
     const WIPE_MS = 260;
+    // How long the chosen registrum silk is pulled before the page swap fires — one beat, so the
+    // bookmark-pull gesture reads before the crossfade (transitions.css) dissolves it.
+    const PULL_MS = 220;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let closeTimer = 0;
 
@@ -307,6 +351,28 @@ const links = [
         dismissMenu();
         return;
       }
+      // Registrum ribbon: pull the chosen bookmark long, then let the page dissolve onto its
+      // concert. Plain primary clicks only — modified / middle clicks navigate normally (new tab),
+      // and the current concert's own row (aria-current) just navigates (you can't pull to where
+      // you already are). Reduced motion skips straight to the swap.
+      const ribbon = t.closest(".registrum .ribbon");
+      if (ribbon && ribbon.getAttribute("aria-current") !== "page") {
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        const href = ribbon.getAttribute("href");
+        if (!href || reduce.matches) return;
+        e.preventDefault();
+        ribbon.classList.add("is-chosen");
+        ribbon.closest(".registrum")?.classList.add("is-committing");
+        window.setTimeout(() => void navigate(href), PULL_MS);
+        // Safety: a no-op navigate (same URL) leaves no swap to discard the classes — release the
+        // committing state so the set can't stay stuck withdrawn. A successful swap replaces these
+        // nodes first, making this a harmless no-op on detached elements.
+        window.setTimeout(() => {
+          ribbon.classList.remove("is-chosen");
+          ribbon.closest(".registrum")?.classList.remove("is-committing");
+        }, PULL_MS + 900);
+        return;
+      }
       const voice = t.closest(".nave .voice");
       if (voice) {
         // Tapping the page you're already on triggers no swap, so leaving the card open would
@@ -331,6 +397,13 @@ const links = [
       const c = chrome();
       if (!c) return;
       if (e.key === "Escape") {
+        // Desktop registrum ribbons hold open via :focus-within — Escape blurs out of the
+        // set so the CSS releases it (the pointer path needs no JS at all).
+        const active = document.activeElement as HTMLElement | null;
+        if (active?.closest(".registrum-drop")) {
+          active.blur();
+          return;
+        }
         dismissMenu();
         return;
       }

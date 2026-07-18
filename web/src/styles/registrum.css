@@ -1,0 +1,561 @@
+/**
+ * @file registrum.css
+ * @description The "registrum" — desktop concert navigation set as BREVIARY REGISTER
+ *  RIBBONS beside an ink INDEX. One stylesheet for BOTH marketing headers (Astro
+ *  SiteChrome on subpages, React StickyHeader on the landing), mirroring nave-menu.css:
+ *  shared class names, no per-header forks. Hovering (or keyboard-focusing) the KONCERTY
+ *  link lets the set slip out from under the bar.
+ *
+ *  COMPOSITION — silk as thread, name as ink. A first build set the Latin names
+ *  VERTICALLY ON the silks; that one decision forced everything that read wrong: 34px
+ *  banner-wide strips (chorągwie, not zakładki), near-even hang lengths (the vertical
+ *  word set a floor), five flat colour fields in a chrome whose site shows flat colour
+ *  nowhere else, and a payload (the Polish titles) hidden behind a second hover. DON'T
+ *  put text back on the silk. A LATER rebuild replaced the whole set with an opaque
+ *  parchment CARD carrying equal "thumb-index" tabs — REJECTED by the founder on sight
+ *  ("o klasę gorsze"): a bounded panel floats rootless over the dark heroes (a generic
+ *  dropdown), and 14×22px dye chips carry no shape language — the silks' proportions ARE
+ *  the bookmark reading. Don't re-pitch a card/panel here; this composition is the
+ *  identity, its defects get fixed in place. Now each concert is one INDEX ROW — roman
+ *  numeral, Polish title, place · date — whose hairline LEADER (the dotted-leader gesture
+ *  of an old missal's table of contents, drawn solid) runs from the title to the notched
+ *  tip of that concert's silk. The silks are true slivers (9px), dyed with a QUIETED
+ *  version of the concert accent — at this width the five dyes stop being colour fields
+ *  and become what a real register is: polychrome silk threads.
+ *
+ *  GEOMETRY — the staircase is load-bearing, not decorative. Row i's leader sits at
+ *  y = --pt + i·--row + --ly below the bar's line; its silk hangs from the line exactly
+ *  that far, so every leader ENDS on its own silk's tip. For no leader to cross a
+ *  foreign silk, lengths must increase left→right (a leader passes only under silks
+ *  that have already ended above it) — hence Via order runs I→V left to right, shortest
+ *  to longest, and the newest concert hangs deepest in the book. Don't "randomize" the
+ *  lengths: any non-monotone order makes a leader cut across a silk.
+ *
+ *  The entrance is PHYSICAL, not a fade: each silk (cord + strip) slides down THROUGH
+ *  the bar's line, notched tip first; its index row settles in as it lands, then the
+ *  leader draws out from the title to meet the tip. The sleeve clips everything above
+ *  the line (a wide polygon, top edge at y=0 of the sleeve = the bar's bottom line), so
+ *  nothing ever exists over the bar — the line is the slot of the book block. The clip
+ *  lives on the SLEEVE, not the drop, because clip-path also clips hit-testing and the
+ *  drop's padding-top is the hover bridge between link and line.
+ *
+ *  Hovering a row (anywhere — the whole row is one anchor, silk included) warms the
+ *  title to candle, floats a candle SHEEN up the silk (a satin catch on `.ribbon-strip::after`,
+ *  faded in on OPACITY since gradients don't transition) and TUGS its silk 7px past the
+ *  leader — a pulled bookmark, not a lengthening banner. Rubric red obeys the site's one law:
+ *  ONLY where you are — the current concert's silk wears a crimson stitch and its index title
+ *  is set rubric.
+ *
+ *  CHOOSING a concert opens the book on its ribbon: a click marks the row `is-chosen` (its set
+ *  `is-committing`) and the header scripts hold the swap one beat (registrum.ts consumers) so
+ *  the chosen silk is YANKED long past its leader — a firm pull where the hover is a stir — its
+ *  cord darkening taut, while every OTHER silk withdraws through the slot and its index falls
+ *  quiet; then the page dissolves (transitions.css) onto the chosen concert. Reduced motion
+ *  skips the pull (the swap is immediate).
+ *
+ *  THE GROUND IS THE HUSH OF THE WHOLE NAVE — no local backdrop at all. Every LOCAL
+ *  ground tried here contradicted the composition's own thesis (objects hanging through
+ *  a slot, NO surface) and each failed the moment it became visible: a bounded parchment
+ *  CARD read as a generic dropdown (rejected on sight); a feathered near-solid MIST
+ *  became an arbitrary dark blob on bright photos; a concentric MASKLESS blur stack
+ *  stepped visibly on photographic content and cut running text mid-word at its box
+ *  edge (masked gradients — real progressive blur — stay broken, see the traps below;
+ *  CSSWG `linear-blur()` is only a proposal). So the ground stopped being local:
+ *  `.registrum-hush` is ONE full-viewport fixed layer under the bar's row — the page
+ *  itself falls quiet (night tint over dark pages, a paling paper breath over light
+ *  ones) behind a UNIFORM maskless blur, the only blur Chromium renders cleanly. No box,
+ *  no edges, nothing to center; the silks and the index hang sharp over the hushed page.
+ *  Open the register — the nave holds its breath.
+ *
+ *  BACKDROP / POSITIONING TRAPS, all field-hit — don't regress:
+ *  (a) mask + backdrop-filter on ONE element → Chromium discards the blur (the original
+ *      mist experiment: dim rendered, blur didn't). The hush therefore carries NO mask.
+ *  (b) an ancestor with clip-path/mask/filter/group-opacity is a backdrop root → a
+ *      child's backdrop-filter samples only that subtree (nothing) — keep the hush out
+ *      of the clip-path'd sleeve, and never group-fade it via a parent's opacity.
+ *  (c) `.registrum-drop` carries a TRANSFORM → it is the containing block for fixed
+ *      descendants; the hush must live as a child of `.registrum` (which is clean), or
+ *      it anchors to the drop instead of the viewport. Same contract as `.nave`: the
+ *      `.chrome` root must stay transform/filter/backdrop-free.
+ *
+ *  The hush tone rides the chrome state map; so do the rubric (`--rubric`, lifted
+ *  toward paper on night where pure crimson dies at ~2:1), the silk dye
+ *  (`--silk-quiet`: quieted toward PAPER on night, toward INK on paper — a paper-mix
+ *  washed the dyes to pastel on parchment) and the text halo (`--halo`: a breath of
+ *  shadow under the index over dark photos, none on paper). The notched tail is a
+ *  clip-path; its shadow therefore lives as drop-shadow ON `.ribbon-silk` (a box-shadow
+ *  would be clipped) — cord and strip share that single light source. Hover intent
+ *  rides the open transition-delay (a skim across the bar shows nothing); the close
+ *  keeps a visibility grace over the withdraw so a slip of the wrist doesn't snap the
+ *  set away. Desktop only (≥760px, matching the nave-menu boundary); touch desktops get
+ *  the standard first-tap-opens behaviour.
+ * @architecture Astro islands 2026
+ * @module styles/registrum
+ */
+
+/* The wrapper stands in the bar's flex row exactly where the bare link stood — it adds no
+   box of its own, so link spacing and baselines are untouched in both headers. */
+.registrum {
+  position: relative;
+  display: inline-flex;
+}
+
+/* ── The drop: anchored under the KONCERTY link. Its padding-top spans link → bar line
+   (the invisible hover bridge); everything below the line lives in the sleeve. The right
+   edge sits 56px right of the link's center so the SILK COLUMN (~113px wide, at the
+   sleeve's right) hangs centered under the word while the index extends LEFT into open
+   air — never off the viewport's right edge. ── */
+.registrum-drop {
+  position: absolute;
+  top: 100%;
+  right: 50%;
+  transform: translateX(56px);
+  /* Resting bar: ~(40px brand − link height)/2 below the link box + 22px bar padding. */
+  padding-top: 33px;
+  /* Register state map, keyed to the bar's face (defaults = transparent bar over a dark
+     hero): a rubric LIFTED 30% toward paper — pure crimson sits at ~2:1 on the hushed
+     night, unreadable — silks quieted toward paper, and a breath of text halo so the
+     index holds over bright patches of a dimmed photograph. The light states below give
+     crimson back its full voice, quiet the silks toward ink instead (toward-paper
+     pastels them out on parchment) and drop the halo (ink on paled paper needs none). */
+  --rubric: color-mix(in srgb, var(--crimson), var(--paper) 30%);
+  --silk-quiet: var(--paper);
+  --halo: 0 1px 2px rgba(8, 8, 7, 0.5), 0 2px 18px rgba(8, 8, 7, 0.45);
+  visibility: hidden;
+  pointer-events: none;
+  /* Close grace: outlives the 0.45s withdraw so a slip off the bar doesn't snap the set. */
+  transition: visibility 0s linear 0.6s;
+}
+/* Scrolled bars sit tighter (14px bottom padding on both headers) — the line, and with it
+   the slot the silks emerge from, rides up. */
+.chrome.is-solid .registrum-drop,
+.chrome.is-active .registrum-drop {
+  padding-top: 25px;
+}
+
+/* Ink-register states wherever the chrome's text is INK: subpage solid / is-light, and
+   the landing's glass over a light section. Dark-tone pages keep the night register
+   through their night-solid state (paper text over a dark page). */
+.chrome.is-solid .registrum-drop,
+.chrome.is-light .registrum-drop,
+.chrome.is-active:not(.is-on-dark) .registrum-drop {
+  --rubric: var(--crimson);
+  --silk-quiet: var(--ink);
+  --halo: none;
+}
+.chrome[data-tone="dark"].is-solid:not(.is-light) .registrum-drop {
+  --rubric: color-mix(in srgb, var(--crimson), var(--paper) 30%);
+  --silk-quiet: var(--paper);
+  --halo: 0 1px 2px rgba(8, 8, 7, 0.5), 0 2px 18px rgba(8, 8, 7, 0.45);
+}
+
+.registrum:hover .registrum-drop,
+.registrum:focus-within .registrum-drop {
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
+}
+
+/* ── The hush: ONE full-viewport fixed layer — the page falls quiet behind a uniform
+   maskless blur while the register hangs over it. A child of `.registrum` (NOT the
+   drop — its transform would become the fixed containing block, trap (c)); z-index -1
+   parks it under the bar's own row (and under the solid bar's ::after glass) but over
+   everything the page paints. Tint rides the chrome state map: night breath over dark
+   pages, a paling paper breath over light ones. Fades on its own opacity (never a
+   parent's — trap (b)); visibility shares the drop's close grace so the page exhales
+   with the silks' withdraw. ── */
+.registrum-hush {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgb(var(--hush-c, 8 8 7 / 0.64));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.35s var(--ease),
+    visibility 0s linear 0.6s;
+}
+.chrome.is-solid .registrum-hush,
+.chrome.is-light .registrum-hush,
+.chrome.is-active:not(.is-on-dark) .registrum-hush {
+  --hush-c: 244 241 233 / 0.2;
+}
+.chrome[data-tone="dark"].is-solid:not(.is-light) .registrum-hush {
+  --hush-c: 8 8 7 / 0.64;
+}
+.registrum:hover .registrum-hush,
+.registrum:focus-within .registrum-hush {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.5s var(--ease) 0.1s,
+    visibility 0s linear 0s;
+}
+
+/* ── The sleeve: the world below the bar's line. Top edge = the line itself; the wide
+   polygon clips every pixel above it (sides and bottom stay open), so the assemblies
+   physically pass through the slot — nothing ever exists over the bar.
+   GEOMETRY CONSTANTS (inherited by every row): --pt air from line to first row, --row
+   row pitch, --ly leader y within a row, --pitch silk-to-silk spacing, --silk silk
+   width. `--n` (row count) arrives inline from the headers. ── */
+.registrum-sleeve {
+  --pt: 46px;
+  /* 50, not 46: the extra air lives BETWEEN entries, so each meta reads as its title's
+     colophon, not the next row's eyebrow (gestalt — meta sits 4px under its own line,
+     11px above the next). */
+  --row: 50px;
+  --ly: 17px;
+  --pitch: 26px;
+  --silk: 9px;
+  position: relative;
+  width: 420px;
+  padding-top: var(--pt);
+  clip-path: polygon(-300px 0, calc(100% + 300px) 0, calc(100% + 300px) 700px, -300px 700px);
+}
+
+/* ── One concert = one <a> = one full-width index row + its hanging silk. The block
+   spans the sleeve, so text, leader, empty air and silk are ONE generous hit target.
+   padding-right parks the leader's end exactly under this row's silk center. The halo
+   (state-mapped, none on light) inherits to every text span — a breath of shadow that
+   holds the index over bright patches of the dimmed photograph beneath. ── */
+.registrum-drop .ribbon {
+  position: relative;
+  display: block;
+  height: var(--row);
+  padding: 0 calc((var(--n) - 1 - var(--i)) * var(--pitch) + var(--silk) / 2) 0 0;
+  color: inherit;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+  text-shadow: var(--halo);
+}
+.registrum-drop .ribbon::after {
+  content: none; /* the headers' shared underline pseudo has no place on an index row */
+}
+.registrum-drop .ribbon:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
+}
+
+/* ── The index line: numeral · title · leader, on one 22px rule. The roman column is
+   fixed so titles (and the meta below) align on one left edge, hanging-indent style. ── */
+.ribbon-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  height: 22px;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.2s var(--ease);
+}
+.ribbon-roman {
+  flex: none;
+  width: 22px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  opacity: 0.55;
+  transition: opacity 0.25s var(--ease);
+}
+.ribbon-title {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: color 0.25s var(--ease);
+}
+/* The leader: a hairline drawn from the title to the silk's tip — the index's ruled
+   thread. flex-end + margin lays its 1px at the leader height the silks are cut to.
+   Base opacity .34 (was .28): over photographic heroes the thread is the ONLY thing
+   binding row to silk — at .28 it died into the picture. */
+.ribbon-thread {
+  flex: 1;
+  align-self: flex-end;
+  min-width: 18px;
+  height: 1px;
+  margin-bottom: 4px;
+  background: currentColor;
+  opacity: 0.34;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition:
+    transform 0.18s var(--ease),
+    opacity 0.3s var(--ease);
+}
+.ribbon-meta {
+  display: block;
+  margin: 1px 0 0 32px; /* 32 = roman column + gap: flush under the title */
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.registrum:hover .ribbon-line,
+.registrum:focus-within .ribbon-line {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.4s var(--ease) calc(0.2s + var(--i) * 0.05s),
+    transform 0.4s var(--ease-slow) calc(0.2s + var(--i) * 0.05s);
+}
+.registrum:hover .ribbon-meta,
+.registrum:focus-within .ribbon-meta {
+  opacity: 0.62;
+  transition: opacity 0.4s var(--ease) calc(0.26s + var(--i) * 0.05s);
+}
+/* The .06s/.12s delays here and on the silk's height below SEQUENCE the row hover into
+   one gesture — touch the name, the warmth runs down the leader, the bookmark stirs.
+   They live in the open-state transition lists (active during all interaction), so the
+   release lingers by the same beats — a quiet after-glow, not a snap. */
+.registrum:hover .ribbon-thread,
+.registrum:focus-within .ribbon-thread {
+  transform: scaleX(1);
+  transition:
+    transform 0.38s var(--ease) calc(0.3s + var(--i) * 0.05s),
+    opacity 0.25s var(--ease) 0.06s,
+    background-color 0.25s var(--ease) 0.06s;
+}
+
+/* ── The silk: cord + strip, one assembly hanging from the line to this row's leader.
+   top/height (not bottom/height) so the hover tug grows DOWNWARD past the leader. ── */
+.ribbon-silk {
+  /* The quieted dye — the concert's accent settled 14% toward the mist's counterweight:
+     paper on the night mist (mute silks), ink on the paper mist (where a paper-mix
+     washed the dyes to pastel — field-tested). */
+  --dye: color-mix(in srgb, var(--rib), var(--silk-quiet) 14%);
+  position: absolute;
+  top: calc(-1 * (var(--pt) + var(--i) * var(--row)));
+  right: calc((var(--n) - 1 - var(--i)) * var(--pitch));
+  width: var(--silk);
+  height: calc(var(--pt) + var(--i) * var(--row) + var(--ly));
+  /* The ONE light source for cord and strip alike; follows the clip-path notch. */
+  filter: drop-shadow(0 8px 12px rgba(8, 8, 7, 0.26));
+  /* Closed: the whole assembly is drawn up through the slot, out of existence (the
+     extra 16px keeps the drop-shadow from peeking under the line). */
+  transform: translateY(calc(-100% - 16px));
+  transition:
+    transform 0.45s var(--ease),
+    height 0.3s var(--ease);
+}
+/* Open: each assembly descends through the slot, notched tip leading, with a quiet
+   stagger — first after a 0.12s hover-intent beat, then one after another. */
+.registrum:hover .ribbon-silk,
+.registrum:focus-within .ribbon-silk {
+  transform: translateY(0);
+  transition:
+    transform 0.6s var(--ease-slow) calc(0.12s + var(--i) * 0.05s),
+    height 0.3s var(--ease) 0.12s;
+}
+
+/* ── The cord: a short dyed hairline pinned straight up into the line — each silk hangs
+   from its own. ── */
+.ribbon-cord {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1.5px;
+  height: 22px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--dye), #100f0d 22%);
+  opacity: 0.9;
+}
+
+/* ── The strip: CLOTH, not metal. An earlier fixed side-light (a white sweep running the
+   whole length by one edge) read as a machined bar — a continuous specular is how metal
+   is drawn; fabric has none. The material is now woven in three whispers over the dye:
+   satin POOLS along the length (soft light caught at a few heights — and since every
+   silk hangs a different length, the % stops scatter to different absolute heights for
+   free), grosgrain RIBS across the width (the weft cords of real bookmark ribbon, 3px
+   period at thread alpha) and a faint lengthwise WARP grain — ribs × warp = the weave,
+   felt more than seen. (A check at any visible scale would be gingham, not breviary
+   silk; moiré was considered and dropped — the watered wave needs width to wander, at
+   9px it reads as banding.) The head still darkens where the strip vanishes under the
+   bar; the tail is the classic notched bookmark cut, its point landing exactly on the
+   leader. ── */
+.ribbon-strip {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 253, 246, 0) 0%,
+      rgba(255, 253, 246, 0.09) 14%,
+      rgba(255, 253, 246, 0) 34%,
+      rgba(8, 8, 7, 0.05) 52%,
+      rgba(255, 253, 246, 0.05) 72%,
+      rgba(255, 253, 246, 0) 88%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 253, 246, 0.05) 0 1px,
+      transparent 1px 2px,
+      rgba(8, 8, 7, 0.06) 2px 3px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 2px,
+      rgba(255, 253, 246, 0.04) 2px 3px
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--dye), #100f0d 28%) 0%,
+      var(--dye) 20%,
+      var(--dye) 74%,
+      color-mix(in srgb, var(--dye), #100f0d 12%) 100%
+    );
+  /* Selvages: soft lit/shaded CURLS (blurred insets), not 1px machined bevels — the lit
+     left edge still keeps the dark dyes alive on the dark hero, just as cloth now. */
+  box-shadow:
+    inset 2px 0 2px -1px rgba(255, 253, 246, 0.14),
+    inset -2px 0 2px -1px rgba(8, 8, 7, 0.22);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), 50% 100%, 0 calc(100% - 7px));
+}
+
+/* ── The sheen: a candle catch on the satin, dark at rest, warmed up on hover. A warm-white
+   pool (the strip's own highlight family) fades in on OPACITY — never a gradient tween, which
+   the strip's dye already forbids — so the light "arrives" cleanly. inset:0 with no clip of its
+   own: the parent strip's clip-path already carries the notch, so the sheen follows the tail's
+   point for free. Decorative, so pointer-events stay off (the whole row is the hit target). ── */
+.ribbon-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 251, 240, 0) 4%,
+    rgba(255, 251, 240, 0.26) 20%,
+    rgba(255, 251, 240, 0.04) 42%,
+    rgba(255, 251, 240, 0.12) 64%,
+    rgba(255, 251, 240, 0) 84%
+  );
+  opacity: 0;
+  transition: opacity 0.45s var(--ease) 0.08s;
+}
+
+/* ── Hover a row — ONE gesture, sequenced (delays live in the open-state transition
+   lists above): the title warms to candle, the light RUNS DOWN THE LEADER (the thread
+   itself turns candle, +.06s), and the silk is TUGGED 7px past its leader (+.12s) — a
+   pulled bookmark answering a touched name, wherever the cursor actually sits in the
+   full-width row. (No dye change on the silk: gradients don't transition and a snap
+   would flicker.) ── */
+.ribbon:hover .ribbon-title,
+.ribbon:focus-visible .ribbon-title {
+  color: var(--candle);
+}
+.ribbon:hover .ribbon-roman,
+.ribbon:focus-visible .ribbon-roman {
+  opacity: 0.78;
+}
+.ribbon:hover .ribbon-thread,
+.ribbon:focus-visible .ribbon-thread {
+  background-color: var(--candle);
+  opacity: 0.65;
+}
+.ribbon:hover .ribbon-silk,
+.ribbon:focus-visible .ribbon-silk {
+  height: calc(var(--pt) + var(--i) * var(--row) + var(--ly) + 7px);
+}
+.ribbon:hover .ribbon-strip::after,
+.ribbon:focus-visible .ribbon-strip::after {
+  opacity: 1;
+}
+
+/* ── Rubric: the book is open at your page. A crimson stitch runs the current concert's
+   silk and its index title is set rubric — the only red in the set, per the site's rule
+   (crimson marks WHERE YOU ARE). The :hover pair keeps rubric from yielding to candle
+   (you can't be invited to where you already are). ── */
+.ribbon[aria-current="page"] .ribbon-strip::before {
+  content: "";
+  position: absolute;
+  left: 1.5px;
+  top: 0;
+  bottom: 6px;
+  width: 1.5px;
+  background: var(--rubric);
+}
+.ribbon[aria-current="page"] .ribbon-title,
+.ribbon[aria-current="page"]:hover .ribbon-title,
+.ribbon[aria-current="page"]:focus-visible .ribbon-title {
+  color: var(--rubric);
+}
+/* Candle is an INVITATION — the current row's leader must not extend one to where you
+   already are. It firms on hover (the row still answers) but keeps the page's ink. */
+.ribbon[aria-current="page"]:hover .ribbon-thread,
+.ribbon[aria-current="page"]:focus-visible .ribbon-thread {
+  background-color: currentColor;
+  opacity: 0.45;
+}
+
+/* ── The pull: choosing a concert opens the book on its ribbon. A click marks the row
+   `is-chosen` and the set `is-committing` (header scripts, which then hold the swap one beat so
+   the gesture reads); these rules OUT-SPECIFY the open-state hover set (0,5,0 vs 0,3,0) and sit
+   after it in source, so they win while the pointer still rests on the open register. The
+   chosen silk is yanked 52px past its leader with a decisive, front-loaded ease (a firm bookmark
+   pull, not the hover's 7px stir); its cord darkens taut. Every OTHER silk is drawn back up
+   through the slot and its index line falls quiet — the pulled ribbon stands alone as the page
+   dissolves (transitions.css). ── */
+.registrum.is-committing .ribbon.is-chosen .ribbon-silk {
+  height: calc(var(--pt) + var(--i) * var(--row) + var(--ly) + 52px);
+  transition: height 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.registrum.is-committing .ribbon.is-chosen .ribbon-cord {
+  background-color: color-mix(in srgb, var(--dye), #100f0d 44%);
+  opacity: 1;
+  transition:
+    background-color 0.34s var(--ease),
+    opacity 0.34s var(--ease);
+}
+.registrum.is-committing .ribbon:not(.is-chosen) .ribbon-silk {
+  transform: translateY(calc(-100% - 16px));
+  transition: transform 0.32s var(--ease);
+}
+.registrum.is-committing .ribbon:not(.is-chosen) .ribbon-line,
+.registrum.is-committing .ribbon:not(.is-chosen) .ribbon-meta,
+.registrum.is-committing .ribbon:not(.is-chosen) .ribbon-thread {
+  opacity: 0;
+  transition: opacity 0.22s var(--ease);
+}
+
+/* Same 759.98/760 boundary as nave-menu.css: below it the bar links are hidden and the
+   "Antyfona" card owns navigation — the registrum never renders there. */
+@media (max-width: 759.98px) {
+  .registrum-drop,
+  .registrum-hush {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .registrum-drop,
+  .registrum-hush,
+  .ribbon-line,
+  .ribbon-meta,
+  .ribbon-thread,
+  .ribbon-silk {
+    transition: none !important; /* the set appears/retracts in place, no slide */
+  }
+  .ribbon-silk {
+    transform: none; /* composition intact, motion gone */
+  }
+  .ribbon-line {
+    transform: none;
+  }
+  .ribbon:hover .ribbon-silk,
+  .ribbon:focus-visible .ribbon-silk {
+    height: calc(var(--pt) + var(--i) * var(--row) + var(--ly)); /* no tug */
+  }
+}

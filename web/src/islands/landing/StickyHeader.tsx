@@ -11,9 +11,11 @@
  * @module islands/landing/StickyHeader
  */
 
+import { navigate } from "astro:transitions/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../lib/overlayHistory";
+import type { RibbonEntry } from "../../lib/registrum";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
@@ -22,7 +24,17 @@ import { horaForWarsaw } from "./lib/horaeCanonicae";
 const DARK_SELECTORS =
   ".image-rite, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure";
 
-export function StickyHeader(): React.JSX.Element {
+// How long the chosen registrum silk is pulled before the page swap fires — one beat, so the
+// bookmark-pull gesture reads before the crossfade (transitions.css) dissolves it.
+const RIBBON_PULL_MS = 220;
+
+export interface StickyHeaderProps {
+  /** The desktop "registrum" — one register ribbon per page-bearing concert, derived by
+      lib/registrum in index.astro (islands can't read the collection themselves). */
+  ribbons?: readonly RibbonEntry[];
+}
+
+export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Element {
   const { read } = useAudioChoice();
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClosing, setMenuClosing] = useState(false);
@@ -97,6 +109,23 @@ export function StickyHeader(): React.JSX.Element {
     const voice = e.currentTarget;
     voice.classList.add("is-chosen");
     voice.closest(".nave-list")?.classList.add("is-committing");
+  }, []);
+
+  // Registrum ribbon: pull the chosen bookmark long, then let the page dissolve onto its concert.
+  // Same gesture as the Astro SiteChrome's delegated handler on subpages. Plain primary clicks
+  // only — modified / middle clicks navigate normally (new tab); reduced motion skips to the swap.
+  // The classes are set imperatively (like commitVoice) so no re-render strips them before the
+  // hold; navigate() then runs the View Transition crossfade (transitions.css).
+  const commitRibbon = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const ribbon = e.currentTarget;
+    const href = ribbon.getAttribute("href");
+    if (!href) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    e.preventDefault();
+    ribbon.classList.add("is-chosen");
+    ribbon.closest(".registrum")?.classList.add("is-committing");
+    window.setTimeout(() => void navigate(href), RIBBON_PULL_MS);
   }, []);
 
   // Focus stays inside the overlay while it owns the viewport; Escape plays the wipe. The hook
@@ -231,9 +260,57 @@ export function StickyHeader(): React.JSX.Element {
         <a className="support-link plausible-event-name=o+nas" href="/o-nas">
           O nas
         </a>
-        <a className="support-link plausible-event-name=koncerty" href="/koncerty">
-          Koncerty
-        </a>
+        {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
+            (registrum.css); same markup + CSS choreography as the Astro SiteChrome on
+            subpages. Pure :hover/:focus-within state — the only JS is the Escape blur
+            below (the subpage script's equivalent is gated off this page by its missing
+            #chrome id). */}
+        <div
+          className="registrum"
+          onKeyDown={(e) => {
+            if (e.key !== "Escape") return;
+            (document.activeElement as HTMLElement | null)?.blur();
+          }}
+        >
+          <a className="support-link plausible-event-name=koncerty" href="/koncerty">
+            Koncerty
+          </a>
+          {ribbons.length > 0 && (
+            <>
+              {/* The hush: full-viewport fixed layer quieting the whole page while the
+                  register hangs open — a SIBLING of the drop (the drop's transform would
+                  hijack its fixed containing block, see registrum.css traps). */}
+              <span className="registrum-hush" aria-hidden="true" />
+              <div className="registrum-drop">
+                <div
+                  className="registrum-sleeve"
+                  style={{ "--n": ribbons.length } as React.CSSProperties}
+                >
+                  {ribbons.map((r, i) => (
+                    <a
+                      key={r.id}
+                      className="ribbon"
+                      href={r.href}
+                      style={{ "--rib": r.accent, "--i": i } as React.CSSProperties}
+                      onClick={commitRibbon}
+                    >
+                      <span className="ribbon-line">
+                        <span className="ribbon-roman">{r.roman}</span>
+                        <span className="ribbon-title">{r.title}</span>
+                        <span className="ribbon-thread" aria-hidden="true" />
+                      </span>
+                      <span className="ribbon-meta">{r.meta}</span>
+                      <span className="ribbon-silk" aria-hidden="true">
+                        <span className="ribbon-cord" />
+                        <span className="ribbon-strip" />
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
         <a className="support-link plausible-event-name=kontakt" href="/kontakt">
           Kontakt
         </a>

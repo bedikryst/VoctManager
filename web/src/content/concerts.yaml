@@ -983,7 +983,10 @@
     place: "Rybnik · Łódź · Kraków"
     blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
     img: o-nas-9-kart
-  accent: "#bfa05f"
+  # Penitential violet: the evening is braided into Allegri's Miserere (Ps 51) — the
+  # Tenebrae psalm; violet frames the program the way the Miserere frames the psalms.
+  # (Was #bfa05f — a twin of Wcielenie's gold; the registrum made the clash visible.)
+  accent: "#7a648f"
   inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
   inscriptioPl: "Zmiłuj się nade mną, Boże, w swojej łaskawości"
   inscriptioRef: "Ps 51"
@@ -1921,7 +1924,10 @@
     place: "Mistrzejowice · Niedzica"
     blurb: "Program pamięci i współczucia wobec cierpienia cywilów: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti i Tavener prowadzący od lamentu ku modlitwie."
     img: o-nas-epitafium
-  accent: "#4f5d77"
+  # Ash: an epitaph — "jaki napis wyryć na grobie GAZY?" The one achromatic dye in the
+  # registrum (mourning wears no colour); candleFrom turns it into a near-monochrome,
+  # quieted page light. (Was #4f5d77 — a twin of Hymn Poległym's steel.)
+  accent: "#7d766c"
   variant: memoriam
   inscriptio: "Requiem aeternam dona eis, Domine, et lux perpetua luceat eis"
   inscriptioPl: "Wieczny odpoczynek racz im dać, Panie, a światłość wiekuista niechaj im świeci"
