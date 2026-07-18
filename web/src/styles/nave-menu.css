@@ -1,33 +1,69 @@
 /**
  * @file nave-menu.css
- * @description Shared mobile navigation overlay — "Antyfona", set as a BREVIARY CARD. One
- *  stylesheet for BOTH marketing headers: the Astro SiteChrome (subpages) and the React
- *  StickyHeader (landing). Both toggle `menu-open` (and, during the close fade, `menu-closing`)
- *  on `.chrome`, so the whole choreography keys off `.chrome.menu-open .nave-*` /
- *  `.chrome.menu-closing .nave-*` and stays identical across the two. Opens ONLY on touch
- *  (≤759.98px, where the hamburger shows and Lenis is dormant — so `body.nav-open` fully locks
- *  scroll with no fight).
+ * @description Shared mobile navigation overlay — the "VITTA": the breviary's ONE ribbon
+ *  in use. One stylesheet for BOTH marketing headers (Astro SiteChrome on subpages, React
+ *  StickyHeader on the landing); both toggle `menu-open` / `menu-closing` on `.chrome`, so
+ *  the whole choreography keys off those and stays identical across the two. Opens ONLY on
+ *  touch (≤759.98px, where the hamburger shows and Lenis is dormant — `body.nav-open`
+ *  fully locks scroll with no fight).
  *
- *  The surface carries the identity, not the motion. The site is a light-parchment world
- *  ("Nawa światła") — the menu is a page from its own book: warm parchment ground with paper
- *  grain and aged-edge vignette, INK typography set FROM THE TOP like a book page (not
- *  app-menu vertical centering — the free space consolidates before the foot, like the light at
- *  a chapter's end), a faint ruled margin line along the entries, and rubric red used the way a
- *  breviary uses it — SPARSELY, only to mark where you are: the current page's voice + its
- *  thicker crimson segment ON the margin rule (and transiently under the finger). Gold is
- *  reserved for ONE gilded element (the Wesprzyj pill's border); the foot names the LIVE
- *  canonical hour like a colophon line (filled by the header scripts from horaeCanonicae).
- *  The BRAND DOES NOT LIVE HERE: the bar's own brand persists above the card (z-index over the
- *  overlay, tinted to ink by each header's stylesheet) — no fade-out/fade-in blink — so the
- *  card's top row carries only "Zamknij". The entrance is deliberately QUIET: the card fades
- *  over the live page (~0.32s) while the content settles DOWN from above by a few px — laid
- *  onto the page, every mid-frame the same composition; close is one quicker breath (~0.24s).
- *  Wipes, light shafts and staggers were tried and rejected as showy. The veil is opaque (no
- *  backdrop-filter) and open/close is a single-group opacity — the cheapest composite on a
- *  phone. Touch-only surface → :active press states, not :hover. Reduced-motion is flat.
- *  The mobile back button / edge-swipe DISMISSES the card: the two header owners (StickyHeader.tsx
- *  on the landing, SiteChrome.astro on subpages) push a history entry on open and close on
- *  `popstate` — this stylesheet only paints the card, so that behaviour lives in the scripts.
+ *  COMPOSITION — a book in the hand has one ribbon where it is open; the fanned register
+ *  belongs to the desktop (registrum.css), where you BROWSE the concerts. Two prior
+ *  compositions died to teach this: the bare big-word LIST (rejected as banal — typography
+ *  with no event) and a full REGISTER transplant (per-voice bone silks + a polychrome
+ *  sheaf of concert threads — rejected at scale: fullscreen turned the 9px jewel language
+ *  into window-blind straps, the sheaf grew with every new concert page, and the words
+ *  shrunk to serve desktop geometry lost the menu's presence). What survives: the
+ *  parchment page, the big ink words, the head rule, the slot physics, the pull beat, the
+ *  rubric law.
+ *
+ *  Under the brand row a HEAD RULE is drawn — the running-head line of a missal page, and
+ *  the SLOT of the book block. Each voice is set large from the top (Latin incipit over a
+ *  44px ink word), indented off a narrow left margin. Down that margin hangs ONE crimson
+ *  silk — `.vitta`: cord, cloth, notched tip — from the rule to the CURRENT page's row:
+ *  the book is open where you are. The old card's 3px crimson margin segment,
+ *  materialized into a real object. Crimson appears nowhere else (transient press aside);
+ *  gold stays on the Wesprzyj pill's border alone.
+ *
+ *  THE RIBBON MOVES BY LENGTH, NEVER BY TRANSFORM — field-hit. A first build gave every
+ *  row its own hidden ribbon and swapped them on commit (chosen slid down from above the
+ *  rule while the current withdrew): two stacked ribbons trading places in the SAME
+ *  margin track read as the ribbon being REDRAWN from scratch — a jump, not a motion.
+ *  There is exactly ONE `.vitta` element per card; its `height` (driven by `--vi`, the
+ *  target row index) is the only thing that animates. Opening UNROLLS it from the rule,
+ *  tip first, head pinned in the slot; choosing another voice runs it through the slot to
+ *  the chosen row — down = unrolling, up = rolling back in — one object, one continuous
+ *  gesture. `overflow: hidden` makes the fixed-height cord emerge first at the tip like
+ *  the thread it is. (Height animation is layout-bound, but it is one small element on an
+ *  opaque card — measured fine on touch hardware; the desktop registrum already animates
+ *  silk heights.) Since nothing ever exists above the rule now, the list needs NO
+ *  clip-path.
+ *
+ *  GEOMETRY — fixed px ON PURPOSE: the one contract is that the ribbon's tip lands ON its
+ *  row's word (height = --pt + --vi·--row + --ly), and fluid type moves that target.
+ *  Pages outside the four voices ship the vitta WITHOUT `is-set` (height 0 — the book is
+ *  shut on them); choosing a voice there unrolls it from nothing.
+ *
+ *  DYE — the vitta wears the site's crimson, LIFTED for thin-width optics: at 9px the two
+ *  selvage shadows own almost half the cloth, so the head/tail darkening and the shaded
+ *  selvage are kept light (a first cut at desktop-strength shading read as oxblood next
+ *  to the rubric word — the ribbon and the word must be ONE crimson family, cloth merely
+ *  a breath deeper than ink).
+ *
+ *  The commit beat: the header scripts mark the tapped row `is-chosen` (its list
+ *  `is-committing`), retarget `--vi`, and hold the swap one PULL_MS beat so the run
+ *  reads; the chosen word's rubric is INSTANT (no transition) because with prefetch the
+ *  View Transition snapshot lands early and a tweened colour would be captured
+ *  mid-release. The card stays open into the swap and dissolves with the page
+ *  (transitions.css).
+ *
+ *  TRAPS, field-derived — don't regress:
+ *  (a) the card fades as ONE group opacity — safe here ONLY because nothing inside carries
+ *      backdrop-filter (the veil is opaque); don't add one (registrum.css trap (b)).
+ *  (b) `.nave-inner` must stay transform-free while open — it is the scroll container and
+ *      an ancestor of the absolutely-hung vitta.
+ *  (c) entrance opacity/translate live on the ROW (`.voice`), not the word — on the word
+ *      the press give would inherit the stagger delays.
  * @architecture Astro islands 2026
  * @module styles/nave-menu
  */
@@ -103,17 +139,12 @@
   padding: calc(env(safe-area-inset-top, 0px) + 22px) var(--gutter) clamp(30px, 6vh, 64px);
   display: flex;
   flex-direction: column;
-  /* Short viewports (landscape phones) scroll INSIDE the overlay instead of crushing the list;
-     `contain` stops the scroll from chaining into the locked page behind (iOS rubber-band). */
+  /* Short viewports (landscape phones) scroll INSIDE the overlay instead of crushing the page;
+     `contain` stops the scroll from chaining into the locked page behind (iOS rubber-band).
+     The vitta is absolutely hung inside .nave-list, so the whole page scrolls as one object.
+     NO transform here — trap (b). */
   overflow-y: auto;
   overscroll-behavior: contain;
-  /* The one motion beside the fade: the content settles DOWN from above as the card is laid
-     onto the page. */
-  transform: translateY(-10px);
-}
-.chrome.menu-open .nave-inner {
-  transform: none;
-  transition: transform 0.45s var(--ease-slow);
 }
 
 /* ── Top row: only "Zamknij" — the brand is the BAR's own, persisting above the card (see the
@@ -172,122 +203,195 @@
   background: var(--crimson);
 }
 
-/* ── The entries are SET FROM THE TOP like a book page — no vertical centering. The list is
-   content-sized; the leftover space consolidates between the entries and the foot (margin-top:
-   auto there), deliberate white space instead of a floating block. A faint ruled margin line
-   runs the column's full height; the current page's crimson segment sits ON it. ── */
+/* ── The page block. GEOMETRY CONSTANTS (fixed px — see header): --pt air from rule to first
+   row, --row row pitch, --ly ribbon-tip y within a row (lands on the word), --silk ribbon
+   width, --gut the left margin the ribbon hangs in. `--i` arrives inline on each row (entrance
+   stagger + the scripts read it to retarget the vitta). The ::before pseudo IS the head rule —
+   the slot of the book block — drawn out on open. ── */
 .nave-list {
+  --pt: 32px;
+  --row: 92px;
+  --ly: 54px;
+  --silk: 9px;
+  --gut: 30px;
   position: relative;
   flex: 0 0 auto;
-  margin-top: clamp(26px, 6vh, 72px);
-  display: flex;
-  flex-direction: column;
-  gap: clamp(12px, 2.2vh, 24px);
+  margin-top: clamp(20px, 4vh, 44px);
+  padding-top: var(--pt);
 }
 .nave-list::before {
   content: "";
   position: absolute;
-  left: -16px;
-  top: 4px;
-  bottom: 6px;
-  width: 1px;
-  background: var(--line);
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--line-strong);
   pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+.chrome.menu-open .nave-list::before {
+  transform: scaleX(1);
+  transition: transform 0.55s var(--ease) 0.05s;
 }
 
-/* ── Each link = a voice, set like an entry in a breviary: small italic incipit over the ink
-   word. All stand together from the first frame — a chord, not an arpeggio; no per-voice
-   motion. Rubric red appears ONLY where you are. ── */
+/* ── One voice = one <a> = one full-width 92px row, set large from the top like the site's
+   own headings: incipit over the ink word, indented off the ribbon's margin. No leaders, no
+   per-row furniture — the words ARE the page; the one ribbon marks it. ── */
 .voice {
   position: relative;
   display: block;
+  height: var(--row);
+  padding: 6px 0 0 var(--gut);
   text-decoration: none;
   color: var(--ink);
   -webkit-tap-highlight-color: transparent;
+  /* Entrance lives on the ROW (settles in with the card) — trap (c). */
+  opacity: 0;
+  transform: translateY(-6px);
 }
-/* The book is open at your page: a thicker crimson segment standing ON the margin rule (the
-   crimson word itself is set below). Pages outside the four voices (press/kolofon) mark
-   nothing. */
-.voice[aria-current="page"]::before {
-  content: "";
-  position: absolute;
-  left: -17px;
-  top: 3px;
-  bottom: 5px;
-  width: 3px;
-  background: var(--crimson);
-  pointer-events: none;
+.chrome.menu-open .voice {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.4s var(--ease) calc(0.14s + var(--i) * 0.05s),
+    transform 0.4s var(--ease-slow) calc(0.14s + var(--i) * 0.05s);
+}
+.voice:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
 }
 
 .voice-lat {
   display: block;
   font-family: var(--serif);
   font-style: italic;
-  font-size: clamp(14px, 1.4vw, 16px);
+  font-size: 14px;
   line-height: 1;
   color: var(--ink-muted);
-  margin-bottom: 3px;
-  transition: color 0.35s var(--ease);
+  margin-bottom: 6px;
 }
 .voice-pl {
   display: block;
   font-family: var(--serif);
-  font-size: clamp(38px, 11vw, 72px);
+  font-size: 44px;
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--ink);
+  white-space: nowrap;
   transition:
-    color 0.4s var(--ease),
-    transform 0.3s var(--ease);
+    color 0.3s var(--ease),
+    transform 0.25s var(--ease);
 }
+/* The book is open at your page: the current voice's word is set rubric — with the vitta's
+   tip at its line, the only red at rest. */
 .voice[aria-current="page"] .voice-pl {
   color: var(--crimson);
 }
-/* This surface only ever opens on touch, so the feedback is a PRESS state (:active), not :hover —
-   a hover rule here would only ever fire as sticky-hover, jolting the link at the moment of
-   navigation. Under the finger the word turns rubric ("becoming your page") and gives slightly,
-   releasing with it — the only red outside the current mark, and only transient. */
+
+/* ── The vitta: THE one ribbon — cord + cloth strip + notched tip — hanging down the left
+   margin from the rule. `--vi` (target row index, inline; retargeted by the header scripts on
+   commit) sets its length; `is-set` says a page of the four is open at all. All movement is
+   HEIGHT — see the header block for why transform-swapped ribbons are banned. overflow:hidden
+   lets the fixed-height cord emerge tip-first during the unroll. Material recipe follows
+   registrum.css (satin pools, grosgrain ribs, warp grain, soft selvage curls), with the
+   shading LIGHTENED for 9px-width optics (see DYE note in the header). ── */
+.vitta {
+  --dye: var(--crimson);
+  position: absolute;
+  top: 0;
+  left: 2px;
+  width: var(--silk);
+  height: 0;
+  overflow: hidden;
+  filter: drop-shadow(0 6px 10px rgba(8, 8, 7, 0.18));
+}
+.chrome.menu-open .vitta.is-set {
+  height: calc(var(--pt) + var(--vi, 0) * var(--row) + var(--ly));
+  /* The opening unroll: tip-first out of the slot, trailing the rule's draw by a beat. */
+  transition: height 0.6s var(--ease-slow) 0.12s;
+}
+.vitta-cord {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1.5px;
+  height: 16px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--dye), #100f0d 18%);
+  opacity: 0.9;
+}
+.vitta-strip {
+  position: absolute;
+  top: 16px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 253, 246, 0) 0%,
+      rgba(255, 253, 246, 0.16) 14%,
+      rgba(255, 253, 246, 0) 34%,
+      rgba(8, 8, 7, 0.04) 52%,
+      rgba(255, 253, 246, 0.09) 72%,
+      rgba(255, 253, 246, 0) 88%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 253, 246, 0.05) 0 1px,
+      transparent 1px 2px,
+      rgba(8, 8, 7, 0.04) 2px 3px
+    ),
+    repeating-linear-gradient(90deg, transparent 0 2px, rgba(255, 253, 246, 0.05) 2px 3px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--dye), #100f0d 12%) 0%,
+      var(--dye) 18%,
+      var(--dye) 76%,
+      color-mix(in srgb, var(--dye), #100f0d 6%) 100%
+    );
+  box-shadow:
+    inset 2px 0 2px -1px rgba(255, 253, 246, 0.3),
+    inset -2px 0 2px -1px rgba(8, 8, 7, 0.12);
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), 50% 100%, 0 calc(100% - 5px));
+}
+
+/* ── Press (touch-only surface → :active, never :hover): the word turns rubric under the
+   finger — "becoming your page", the only transient red — and gives slightly toward the
+   ribbon's coming run. ── */
 .voice:active .voice-pl,
 .voice:focus-visible .voice-pl {
   color: var(--crimson);
 }
 .voice:active .voice-pl {
-  transform: translateX(6px);
-}
-.voice:focus-visible {
-  outline: none;
+  transform: translateX(4px);
 }
 
-/* ── The chosen voice — held from the tap THROUGH the fade. A cross-page voice does NOT snap
-   the card shut; it stays open, is captured in the outgoing snapshot, and dissolves WITH the
-   page (transitions.css). `is-chosen` holds exactly what the finger showed
-   (rubric word + shift) with NO transition, so the snapshot captures it fully drawn rather than
-   mid-release, and paints the crimson margin segment — as if the book fell open at the page you
-   chose. The other voices recede instantly so focus pulls to your choice as the page turns.
-   All instant on purpose: with prefetch the snapshot is taken almost immediately, so a
-   transition-based change would not have rendered in time to be captured. ── */
-.voice.is-chosen .voice-pl {
-  color: var(--crimson);
-  transform: translateX(6px);
-  transition: none;
+/* ── The choice: RUNNING THE RIBBON. The header scripts mark the tapped row `is-chosen` (its
+   list `is-committing`) and retarget `--vi`; the vitta runs through the slot to the chosen
+   row — one height transition, decisive and front-loaded, no delay (the opening unroll's
+   beat has no place under a finger). The other voices fall quiet; the swap is held one
+   PULL_MS beat so the run reads, then the page dissolves (transitions.css) with the ribbon
+   standing at the chosen page. Rubric on the chosen word is INSTANT (no transition): the
+   View Transition snapshot lands early under prefetch and must capture it fully drawn. ── */
+.nave-list.is-committing .vitta.is-set {
+  transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.voice.is-chosen .voice-lat {
+.nave-list.is-committing .voice.is-chosen .voice-lat,
+.nave-list.is-committing .voice.is-chosen .voice-pl {
   color: var(--crimson);
   transition: none;
 }
-.voice.is-chosen::before {
-  content: "";
-  position: absolute;
-  left: -17px;
-  top: 3px;
-  bottom: 5px;
-  width: 3px;
-  background: var(--crimson);
-  pointer-events: none;
+/* Hold exactly what the finger showed (the 4px give) so the snapshot never catches the word
+   mid-release on touch-up. */
+.nave-list.is-committing .voice.is-chosen .voice-pl {
+  transform: translateX(4px);
 }
 .nave-list.is-committing .voice:not(.is-chosen) {
-  opacity: 0.5;
+  opacity: 0.35;
+  transition: opacity 0.22s var(--ease);
 }
 
 /* ── Foot: the Wesprzyj CTA (the card's ONE gilded element — the border) + the live canonical
@@ -369,11 +473,16 @@ body.nav-open {
 
 @media (prefers-reduced-motion: reduce) {
   .nave,
-  .nave-inner {
+  .nave-inner,
+  .nave-list::before,
+  .voice,
+  .voice-pl,
+  .vitta {
     transition: none !important;
-    animation: none !important;
   }
-  .nave-inner {
+  /* States snap (rule drawn, ribbon at its page, retargets land instantly); the scripts also
+     skip the pull hold and navigate immediately. */
+  .voice:active .voice-pl {
     transform: none;
   }
 }

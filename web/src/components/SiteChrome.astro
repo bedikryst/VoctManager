@@ -25,6 +25,12 @@ const { current, tone = "light" } = Astro.props;
    derived from the concerts collection (page-bearing entries only, Via order). */
 const ribbons = toRibbons(await getCollection("concerts"));
 const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
+
+/* The mobile "Vitta" ribbon's resting row (nave-menu.css `--vi`): which of the four voices
+   this page belongs to — null on pages outside them (press/kolofon), where the ribbon ships
+   shut (no `is-set`, height 0). */
+const naveIndex =
+  current === "/" ? 0 : current === "/o-nas" ? 1 : onKoncerty ? 2 : current === "/kontakt" ? 3 : null;
 ---
 
 <header class="chrome" id="chrome" data-tone={tone} aria-label="Nawigacja">
@@ -87,10 +93,14 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
     aria-controls="navMenu"
     aria-label="Menu"></button>
 
-  {/* "Antyfona" — the shared mobile overlay (nave-menu.css). The card carries NO brand of its
-      own: the bar's .chrome-brand persists ABOVE the overlay (z-index 61, tinted to ink — see
-      the style block), so the mark never blinks. Each link carries its destination's Latin
-      incipit, so the menu reads as the site's antiphon. */}
+  {/* "Vitta" — the shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
+      ribbon hanging down the left margin to the current voice — the book is open where you
+      are. The card carries NO brand of its own: the bar's .chrome-brand persists ABOVE the
+      overlay (z-index 61, tinted to ink — see the style block), so the mark never blinks.
+      There is exactly ONE ribbon element; `--vi` sets its resting row and the script below
+      RETARGETS it on commit so it runs through the slot (never two ribbons swapping — see
+      nave-menu.css). Any /koncerty/* page is the Koncerty voice's own, matching the desktop
+      trigger. */}
   <nav class="nave" id="navMenu" aria-label="Nawigacja główna">
     <div class="nave-veil"></div>
 
@@ -100,19 +110,27 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
       </div>
 
       <div class="nave-list">
-        <a class="voice" href="/" aria-current={current === "/" ? "page" : undefined}>
+        <span
+          class={`vitta${naveIndex !== null ? " is-set" : ""}`}
+          style={naveIndex !== null ? `--vi: ${naveIndex};` : undefined}
+          aria-hidden="true"
+        >
+          <span class="vitta-cord"></span>
+          <span class="vitta-strip"></span>
+        </span>
+        <a class="voice" href="/" style="--i: 0" aria-current={current === "/" ? "page" : undefined}>
           <span class="voice-lat">Introitus</span>
           <span class="voice-pl">Główna</span>
         </a>
-        <a class="voice" href="/o-nas" aria-current={current === "/o-nas" ? "page" : undefined}>
+        <a class="voice" href="/o-nas" style="--i: 1" aria-current={current === "/o-nas" ? "page" : undefined}>
           <span class="voice-lat">De nobis</span>
           <span class="voice-pl">O nas</span>
         </a>
-        <a class="voice" href="/koncerty" aria-current={current === "/koncerty" ? "page" : undefined}>
+        <a class="voice" href="/koncerty" style="--i: 2" aria-current={onKoncerty ? "page" : undefined}>
           <span class="voice-lat">Via</span>
           <span class="voice-pl">Koncerty</span>
         </a>
-        <a class="voice" href="/kontakt" aria-current={current === "/kontakt" ? "page" : undefined}>
+        <a class="voice" href="/kontakt" style="--i: 3" aria-current={current === "/kontakt" ? "page" : undefined}>
           <span class="voice-lat">Scribe nobis</span>
           <span class="voice-pl">Kontakt</span>
         </a>
@@ -245,8 +263,9 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
     // The overlay fades shut over ~0.24s (nave-menu.css) — one quiet breath, no reverse wipe.
     // `menu-closing` keeps it painted through the fade; the timer then drops both classes → hidden.
     const WIPE_MS = 260;
-    // How long the chosen registrum silk is pulled before the page swap fires — one beat, so the
-    // bookmark-pull gesture reads before the crossfade (transitions.css) dissolves it.
+    // How long a chosen silk is held before the page swap fires — one beat, so the gesture
+    // reads before the crossfade (transitions.css) dissolves it. Shared by the desktop
+    // registrum's bookmark pull AND the mobile Vitta's ribbon descent (nave-menu.css).
     const PULL_MS = 220;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
     let closeTimer = 0;
@@ -389,13 +408,45 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
           closeMenu(false);
           return;
         }
-        // A voice is a page. Cross-page voices do NOT snap the card shut: leave it open so the
-        // OUTGOING snapshot captures the parchment card, and let the page transition dissolve it
-        // into the destination as one motion. `before-swap` tears the card down AFTER that
-        // snapshot is taken. Mark the chosen voice so its rubric holds into the fade instead of
-        // releasing with :active on touch-up.
+        // Modified / middle clicks navigate normally (new tab) — no pull, no classes.
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        // A voice is a page — choosing one RUNS THE RIBBON (nave-menu.css): retargeting the
+        // vitta's `--vi` makes the ONE ribbon run through the slot to the chosen row (one
+        // height transition — never two ribbons swapping), and the swap is held one PULL_MS
+        // beat so the run reads. The card stays OPEN into the swap: the OUTGOING snapshot
+        // captures it mid-run and the page transition dissolves it into the destination as one
+        // motion (`before-swap` tears it down AFTER the snapshot). The chosen rubric is
+        // instant (no transition) so an early snapshot can't catch it mid-tween. Reduced
+        // motion skips the hold — the swap is the transition.
+        const list = voice.closest(".nave-list");
         voice.classList.add("is-chosen");
-        voice.closest(".nave-list")?.classList.add("is-committing");
+        list?.classList.add("is-committing");
+        const vitta = list?.querySelector<HTMLElement>(".vitta");
+        const prevVi = vitta?.style.getPropertyValue("--vi") ?? "";
+        const prevSet = vitta?.classList.contains("is-set") ?? false;
+        const vi = voice instanceof HTMLElement ? voice.style.getPropertyValue("--i").trim() : "";
+        if (vitta && vi) {
+          vitta.classList.add("is-set");
+          vitta.style.setProperty("--vi", vi);
+        }
+        const href = voice.getAttribute("href");
+        if (!href || reduce.matches) return;
+        e.preventDefault();
+        window.setTimeout(() => {
+          void navigate(href);
+        }, PULL_MS);
+        // Safety: a no-op navigate leaves no swap to discard the classes — release the
+        // committing state (and re-park the ribbon) so the card can't stay stuck mid-choice
+        // (harmless on detached nodes after a successful swap).
+        window.setTimeout(() => {
+          voice.classList.remove("is-chosen");
+          list?.classList.remove("is-committing");
+          if (vitta) {
+            if (prevVi) vitta.style.setProperty("--vi", prevVi);
+            else vitta.style.removeProperty("--vi");
+            if (!prevSet) vitta.classList.remove("is-set");
+          }
+        }, PULL_MS + 900);
         return;
       }
       // The Wesprzyj CTA (→ vault) or any other card link closes immediately (no page swap).

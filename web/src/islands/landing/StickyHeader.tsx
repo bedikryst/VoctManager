@@ -24,8 +24,9 @@ import { horaForWarsaw } from "./lib/horaeCanonicae";
 const DARK_SELECTORS =
   ".image-rite, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure";
 
-// How long the chosen registrum silk is pulled before the page swap fires — one beat, so the
-// bookmark-pull gesture reads before the crossfade (transitions.css) dissolves it.
+// How long a chosen silk is held before the page swap fires — one beat, so the gesture reads
+// before the crossfade (transitions.css) dissolves it. Shared by the desktop registrum's
+// bookmark pull AND the mobile Vitta's ribbon descent (nave-menu.css).
 const RIBBON_PULL_MS = 220;
 
 export interface StickyHeaderProps {
@@ -100,15 +101,30 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
     return () => window.removeEventListener("popstate", onPop);
   }, [menuOpen, closeMenu]);
 
-  // Cross-page voice tap: leave the card OPEN so the outgoing snapshot captures the parchment
-  // card, and let the page transition (transitions.css) dissolve it into the destination as one
-  // motion — the DOM swap tears the card down after the snapshot is taken. Hold the chosen
-  // voice's rubric imperatively so it doesn't release with :active on touch-up (no setState
-  // here, so nothing re-renders the class away before the swap).
+  // Cross-page voice tap — RUNNING THE RIBBON (nave-menu.css): retargeting the vitta's `--vi`
+  // makes the ONE ribbon run through the slot to the chosen row (one height transition — never
+  // two ribbons swapping), and the swap is held one PULL_MS beat so the run reads. The card
+  // stays OPEN into the swap: the outgoing snapshot captures it mid-run and the page
+  // transition (transitions.css) dissolves it into the destination as one motion — the DOM
+  // swap tears it down after the snapshot. Classes/vars are set imperatively (no setState) so
+  // nothing re-renders them away before the swap; reduced motion skips the hold and lets the
+  // swap itself be the transition.
   const commitVoice = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const voice = e.currentTarget;
+    const list = voice.closest(".nave-list");
     voice.classList.add("is-chosen");
-    voice.closest(".nave-list")?.classList.add("is-committing");
+    list?.classList.add("is-committing");
+    const vitta = list?.querySelector<HTMLElement>(".vitta");
+    const vi = voice.style.getPropertyValue("--i").trim();
+    if (vitta && vi) vitta.style.setProperty("--vi", vi);
+    const href = voice.getAttribute("href");
+    if (!href) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    e.preventDefault();
+    window.setTimeout(() => {
+      void navigate(href);
+    }, RIBBON_PULL_MS);
   }, []);
 
   // Registrum ribbon: pull the chosen bookmark long, then let the page dissolve onto its concert.
@@ -344,11 +360,14 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
         />
       </div>
 
-      {/* "Antyfona" — shared mobile overlay (nave-menu.css); same markup + choreography as the
-          Astro SiteChrome on subpages. The card carries NO brand of its own — the bar's .brand
-          persists above it — so its top row is just "Zamknij" (also the focus trap's initial
-          target, whose focus ring is styled). Each link carries its destination's Latin
-          incipit. */}
+      {/* "Vitta" — shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
+          ribbon hanging down the left margin to the current voice (here always Główna — the
+          landing is the current page); same markup + choreography as the Astro SiteChrome on
+          subpages. The card carries NO brand of its own — the bar's .brand persists above it —
+          so its top row is just "Zamknij" (also the focus trap's initial target). Every row
+          carries a hidden margin ribbon (--i drives its length); choosing a voice lays its
+          ribbon through the head rule while the current one withdraws (pull beat in
+          commitVoice). */}
       <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
         <div className="nave-veil" />
 
@@ -366,21 +385,52 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
           </div>
 
           <div className="nave-list">
+            {/* The ONE ribbon — resting at Główna (the landing is always the current page);
+                commitVoice retargets `--vi` so it RUNS to the chosen row (nave-menu.css). */}
+            <span
+              className="vitta is-set"
+              style={{ "--vi": 0 } as React.CSSProperties}
+              aria-hidden="true"
+            >
+              <span className="vitta-cord" />
+              <span className="vitta-strip" />
+            </span>
             {/* "Główna" is an in-page jump (#top) — no page swap, so it closes the card. The
                 three cross-page voices leave it open and let the fade-through-dark carry it. */}
-            <a className="voice" href="#top" aria-current="page" onClick={() => closeMenu(false)}>
+            <a
+              className="voice"
+              href="#top"
+              aria-current="page"
+              style={{ "--i": 0 } as React.CSSProperties}
+              onClick={() => closeMenu(false)}
+            >
               <span className="voice-lat">Introitus</span>
               <span className="voice-pl">Główna</span>
             </a>
-            <a className="voice" href="/o-nas" onClick={commitVoice}>
+            <a
+              className="voice"
+              href="/o-nas"
+              style={{ "--i": 1 } as React.CSSProperties}
+              onClick={commitVoice}
+            >
               <span className="voice-lat">De nobis</span>
               <span className="voice-pl">O nas</span>
             </a>
-            <a className="voice" href="/koncerty" onClick={commitVoice}>
+            <a
+              className="voice"
+              href="/koncerty"
+              style={{ "--i": 2 } as React.CSSProperties}
+              onClick={commitVoice}
+            >
               <span className="voice-lat">Via</span>
               <span className="voice-pl">Koncerty</span>
             </a>
-            <a className="voice" href="/kontakt" onClick={commitVoice}>
+            <a
+              className="voice"
+              href="/kontakt"
+              style={{ "--i": 3 } as React.CSSProperties}
+              onClick={commitVoice}
+            >
               <span className="voice-lat">Scribe nobis</span>
               <span className="voice-pl">Kontakt</span>
             </a>
