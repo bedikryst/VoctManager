@@ -794,14 +794,19 @@
       "active_account_title": "Account active and connected to the platform",
       "archive_action": "Archive",
       "archive_badge": "Archive",
+      "detached_account": "Account detached",
       "details": "Dossier",
       "edit": "Edit",
-      "inactive_account": "Inactive account",
       "message": "Message",
       "message_title": "Write a message",
       "no_phone": "No phone",
       "none": "None",
       "open_profile_aria": "Open profile: {{name}}",
+      "pending_activation": "Not activated",
+      "pending_activation_title": "Invitation sent — the account hasn't been activated yet",
+      "resend_activation": "Resend invitation",
+      "resend_activation_short": "Resend",
+      "resending": "Sending…",
       "sight_reading": "Sight-reading",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
@@ -824,8 +829,8 @@
       "empty_filtered_title": "Nobody matches the filters",
       "empty_roster_title": "Your ensemble is empty",
       "empty_title": "No results",
-      "no_account": "no account",
-      "no_account_hint": "Active artists who haven't activated their platform account yet.",
+      "pending_activation": "not activated",
+      "pending_activation_hint": "Active artists who haven't activated their platform account yet.",
       "search_placeholder": "Search by last name...",
       "show_all": "Show all",
       "subtitle": "Human Resources",
@@ -853,6 +858,7 @@
       "history_title": "Project history",
       "most_sung_lines": "Most-sung voice parts",
       "no_casting": "Not cast in any pieces",
+      "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
       "upcoming": "Upcoming"
     },
     "editor": {
@@ -916,6 +922,9 @@
       "activating": "Activating account...",
       "archived_success": "Artist archived",
       "archiving": "Archiving artist...",
+      "resend_activation_error_desc": "Couldn't send the activation invitation.",
+      "resending_activation": "Sending invitation...",
+      "resent_activation_success": "Invitation resent to {{email}}.",
       "toggle_error_desc": "Failed to change the artist's status."
     },
     "toolbar": {
@@ -2095,6 +2104,10 @@
       "unknown_detail": "Please try again in a moment."
     },
     "codes": {
+      "account_already_active": {
+        "title": "Account already active",
+        "detail": "This artist has already activated their account — they can use password reset instead of activation."
+      },
       "invalid_credentials": {
         "title": "Invalid login",
         "detail": "Check your email and password, then try again."

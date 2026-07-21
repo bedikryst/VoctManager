@@ -49,6 +49,15 @@ class InvalidImageException(CoreDomainException):
     default_message = "The uploaded file is not a valid image."
 
 
+class AccountAlreadyActiveException(CoreDomainException):
+    """Raised when an activation email is requested for an account that has
+    already been activated (it has a usable password). Such a user's path is
+    password reset, not activation."""
+
+    code = "account_already_active"
+    default_message = "This account has already been activated."
+
+
 # HTTP statuses → stable snake_case codes the frontend can branch on without
 # parsing prose. Anything unmapped falls back to ``http_<status>``.
 _HTTP_CODE_MAP = {

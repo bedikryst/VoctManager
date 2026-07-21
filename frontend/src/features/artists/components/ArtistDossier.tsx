@@ -20,9 +20,11 @@ import {
   ChevronRight,
   Coins,
   Layers,
+  MailWarning,
   MessageSquare,
   Music2,
   Pencil,
+  Send,
   Users,
   X,
 } from "lucide-react";
@@ -55,6 +57,8 @@ interface ArtistDossierProps {
   artist: Artist | null;
   onEdit: (artist: Artist) => void;
   onMessage: (artist: Artist) => void;
+  onResendActivation?: (artist: Artist) => void;
+  isResending?: boolean;
 }
 
 type Tone = "sage" | "gold" | "crimson" | "neutral";
@@ -328,6 +332,8 @@ export const ArtistDossier = ({
   artist,
   onEdit,
   onMessage,
+  onResendActivation,
+  isResending = false,
 }: ArtistDossierProps): React.ReactPortal | null => {
   const { t } = useTranslation();
   const [mounted, setMounted] = useState(false);
@@ -415,6 +421,36 @@ export const ArtistDossier = ({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 md:p-6">
+              {artist.account_activated === false && (
+                <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-ethereal-gold/25 bg-ethereal-gold/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-2.5 text-ethereal-gold">
+                    <MailWarning size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+                    <div className="min-w-0">
+                      <Eyebrow color="gold">
+                        {t("artists.card.pending_activation", "Nie aktywowano")}
+                      </Eyebrow>
+                      <Caption color="muted" className="mt-0.5 block">
+                        {t(
+                          "artists.dossier.pending_activation_desc",
+                          "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
+                        )}
+                      </Caption>
+                    </div>
+                  </div>
+                  {onResendActivation && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => onResendActivation(artist)}
+                      isLoading={isResending}
+                      leftIcon={<Send size={13} aria-hidden="true" />}
+                      className="shrink-0 self-start sm:self-auto"
+                    >
+                      {t("artists.card.resend_activation", "Wyślij ponownie zaproszenie")}
+                    </Button>
+                  )}
+                </div>
+              )}
               {isLoading ? (
                 <EtherealLoader className="h-64" />
               ) : isError ? (

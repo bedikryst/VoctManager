@@ -795,14 +795,19 @@
       "active_account_title": "Konto aktywne i połączone z platformą",
       "archive_action": "Archiwum",
       "archive_badge": "Archiwum",
+      "detached_account": "Konto odłączone",
       "details": "Dossier",
       "edit": "Edytuj",
-      "inactive_account": "Konto nieaktywne",
       "message": "Napisz",
       "message_title": "Napisz wiadomość",
       "no_phone": "Brak telefonu",
       "none": "Brak",
       "open_profile_aria": "Otwórz profil: {{name}}",
+      "pending_activation": "Nie aktywowano",
+      "pending_activation_title": "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
+      "resend_activation": "Wyślij ponownie zaproszenie",
+      "resend_activation_short": "Wyślij ponownie",
+      "resending": "Wysyłanie…",
       "sight_reading": "A Vista",
       "sight_reading_title": "Czytanie a vista: {{level}}/5",
       "unverified": "Brak weryfikacji",
@@ -825,8 +830,8 @@
       "empty_filtered_title": "Nikt nie pasuje do filtrów",
       "empty_roster_title": "Twój zespół jest pusty",
       "empty_title": "Brak wyników",
-      "no_account": "bez konta",
-      "no_account_hint": "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
+      "pending_activation": "bez aktywacji",
+      "pending_activation_hint": "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
       "search_placeholder": "Szukaj po nazwisku...",
       "show_all": "Pokaż wszystkich",
       "subtitle": "Zasoby Ludzkie",
@@ -854,6 +859,7 @@
       "history_title": "Historia projektów",
       "most_sung_lines": "Najczęściej śpiewane głosy",
       "no_casting": "Brak przypisania do utworów",
+      "pending_activation_desc": "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
       "upcoming": "Nadchodzące"
     },
     "editor": {
@@ -917,6 +923,9 @@
       "activating": "Aktywowanie konta...",
       "archived_success": "Artysta zarchiwizowany",
       "archiving": "Archiwizowanie artysty...",
+      "resend_activation_error_desc": "Nie udało się wysłać zaproszenia aktywacyjnego.",
+      "resending_activation": "Wysyłanie zaproszenia...",
+      "resent_activation_success": "Ponownie wysłano zaproszenie na {{email}}.",
       "toggle_error_desc": "Nie udało się zmienić statusu artysty."
     },
     "toolbar": {
@@ -2096,6 +2105,10 @@
       "unknown_detail": "Spróbuj ponownie za chwilę."
     },
     "codes": {
+      "account_already_active": {
+        "title": "Konto już aktywne",
+        "detail": "Ten artysta aktywował już konto — może skorzystać z resetu hasła zamiast aktywacji."
+      },
       "invalid_credentials": {
         "title": "Nieprawidłowe dane logowania",
         "detail": "Sprawdź e-mail i hasło, a następnie spróbuj ponownie."

@@ -83,6 +83,8 @@ export default function ArtistManagement(): React.JSX.Element {
     closePanel,
     handleToggleRequest,
     executeStatusToggle,
+    handleResendActivation,
+    resendingIds,
   } = useArtistData();
 
   useEffect(() => {
@@ -200,6 +202,8 @@ export default function ArtistManagement(): React.JSX.Element {
                         onOpen={openDossier}
                         onMessage={openMessage}
                         onToggleStatus={handleToggleRequest}
+                        onResendActivation={handleResendActivation}
+                        isResending={resendingIds.has(artist.id)}
                         selectionMode={selectionMode}
                         selected={selectedIds.has(artist.id)}
                         onToggleSelect={toggleSelect}
@@ -216,6 +220,8 @@ export default function ArtistManagement(): React.JSX.Element {
                       onOpen={openDossier}
                       onMessage={openMessage}
                       onToggleStatus={handleToggleRequest}
+                      onResendActivation={handleResendActivation}
+                      isResending={resendingIds.has(artist.id)}
                       selectionMode={selectionMode}
                       selected={selectedIds.has(artist.id)}
                       onToggleSelect={toggleSelect}
@@ -327,6 +333,10 @@ export default function ArtistManagement(): React.JSX.Element {
             openPanel(artist);
           }}
           onMessage={openMessage}
+          onResendActivation={handleResendActivation}
+          isResending={
+            dossierTarget !== null && resendingIds.has(dossierTarget.id)
+          }
         />
 
         <ConfirmModal

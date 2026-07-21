@@ -8,6 +8,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArtistService } from "./artist.service";
+import { parseApiError } from "@/shared/api/errors";
 import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
 
 export const artistKeys = {
@@ -64,6 +65,26 @@ export const useToggleArtistStatus = () => {
       ArtistService.toggleStatus(id, isActive),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
+    },
+  });
+};
+
+/**
+ * Re-sends the account-activation invite to an artist who never activated.
+ * A successful resend changes nothing server-side (they stay pending until they
+ * act on the link), so there is no cache to touch on success. The one exception
+ * is the `account_already_active` rejection: it means the artist activated in
+ * the gap since the roster was fetched, so our cached `account_activated` is
+ * stale — refetch it there so the card flips from "pending" to "active".
+ */
+export const useResendActivation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => ArtistService.resendActivation(id),
+    onError: (error) => {
+      if (parseApiError(error).code === "account_already_active") {
+        queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
+      }
     },
   });
 };

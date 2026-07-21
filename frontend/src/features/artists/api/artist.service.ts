@@ -33,6 +33,10 @@ export const ArtistService = {
     return response.data;
   },
 
+  resendActivation: async (id: string): Promise<void> => {
+    await api.post(`${BASE_URL}${id}/resend-activation/`);
+  },
+
   toggleStatus: async (
     id: string,
     isActive: boolean,

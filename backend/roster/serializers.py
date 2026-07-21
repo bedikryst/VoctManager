@@ -82,9 +82,21 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     Highly privileged Artist entity exclusively for Managers and HR.
     Exposes all operational and capability fields.
     """
+    account_activated = serializers.SerializerMethodField()
+
     class Meta:
         model = Artist
         fields = '__all__'
+
+    def get_account_activated(self, obj: Artist) -> bool:
+        """True once the invited member has set their password (finished
+        activation). A usable password is the durable, unambiguous marker —
+        unlike ``user.is_active``, it is not cleared when an artist is archived,
+        so it never mistakes an archived-but-activated singer for a pending one.
+        False both for a still-open invitation and for an account that was
+        detached (GDPR erasure SET_NULLs ``user``)."""
+        user = getattr(obj, 'user', None)
+        return bool(user and user.has_usable_password())
 
 
 # --- 2. PARTICIPATION SERIALIZERS ---

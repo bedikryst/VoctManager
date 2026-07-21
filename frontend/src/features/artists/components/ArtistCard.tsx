@@ -15,9 +15,11 @@ import {
   CheckCircle2,
   ChevronRight,
   Mail,
+  MailWarning,
   MessageSquare,
   Music2,
   Phone,
+  Send,
   Trash2,
   UserX,
 } from "lucide-react";
@@ -41,6 +43,8 @@ interface ArtistCardProps {
   onOpen: (artist: Artist) => void;
   onMessage: (artist: Artist) => void;
   onToggleStatus: (id: string, willBeActive: boolean) => void;
+  onResendActivation?: (artist: Artist) => void;
+  isResending?: boolean;
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -54,6 +58,8 @@ export const ArtistCard = React.memo(
     onOpen,
     onMessage,
     onToggleStatus,
+    onResendActivation,
+    isResending = false,
     selectionMode = false,
     selected = false,
     onToggleSelect,
@@ -63,6 +69,10 @@ export const ArtistCard = React.memo(
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
     const hasAccount = Boolean(artist.user);
+    // Activation status is manager-only (undefined otherwise): treat unknown as
+    // neither state so we never raise a false "pending" flag on a partial DTO.
+    const accountActivated = artist.account_activated === true;
+    const accountPending = hasAccount && artist.account_activated === false;
     const fullName = `${artist.first_name} ${artist.last_name}`;
     const voiceLabel = artist.voice_type
       ? t(
@@ -125,12 +135,21 @@ export const ArtistCard = React.memo(
                   : "border-ethereal-incense/20 bg-ethereal-marble",
               )}
             />
-            {isActive && hasAccount && (
+            {isActive && accountActivated && (
               <span
                 className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster bg-ethereal-sage shadow-sm"
                 title={t(
                   "artists.card.active_account_title",
                   "Konto aktywne i połączone z platformą",
+                )}
+              />
+            )}
+            {isActive && accountPending && (
+              <span
+                className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster bg-ethereal-gold shadow-sm"
+                title={t(
+                  "artists.card.pending_activation_title",
+                  "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
                 )}
               />
             )}
@@ -263,11 +282,37 @@ export const ArtistCard = React.memo(
               </Text>
             </span>
           )}
+          {accountPending && (
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-ethereal-gold/25 bg-ethereal-gold/[0.07] px-2.5 py-2">
+              <span className="inline-flex min-w-0 items-center gap-1.5 text-ethereal-gold">
+                <MailWarning size={13} className="shrink-0" aria-hidden="true" />
+                <Eyebrow color="gold">
+                  {t("artists.card.pending_activation", "Nie aktywowano")}
+                </Eyebrow>
+              </span>
+              {onResendActivation && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    stop(event);
+                    onResendActivation(artist);
+                  }}
+                  disabled={isResending}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
+                >
+                  <Send size={11} aria-hidden="true" />
+                  {isResending
+                    ? t("artists.card.resending", "Wysyłanie…")
+                    : t("artists.card.resend_activation_short", "Wyślij ponownie")}
+                </button>
+              )}
+            </div>
+          )}
           {!hasAccount && (
             <span className="inline-flex items-center gap-2 text-ethereal-crimson">
               <UserX size={14} className="shrink-0" aria-hidden="true" />
               <Eyebrow color="crimson">
-                {t("artists.card.inactive_account", "Konto nieaktywne")}
+                {t("artists.card.detached_account", "Konto odłączone")}
               </Eyebrow>
             </span>
           )}
@@ -303,9 +348,11 @@ export const ArtistCard = React.memo(
     previous.artist === next.artist &&
     previous.selectionMode === next.selectionMode &&
     previous.selected === next.selected &&
+    previous.isResending === next.isResending &&
     previous.onOpen === next.onOpen &&
     previous.onMessage === next.onMessage &&
     previous.onToggleStatus === next.onToggleStatus &&
+    previous.onResendActivation === next.onResendActivation &&
     previous.onToggleSelect === next.onToggleSelect,
 );
 

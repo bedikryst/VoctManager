@@ -26,6 +26,7 @@ from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
 from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
 from archive.score_protection import (
@@ -231,6 +232,15 @@ def _fee_action(viewset, request) -> Response:
     return Response(viewset.get_serializer(record).data, status=status.HTTP_200_OK)
 
 
+class ResendActivationThrottle(UserRateThrottle):
+    """Per-manager cap on re-sending activation invites, under the
+    ``resend_activation`` rate. Subclasses ``UserRateThrottle`` so the bucket is
+    keyed on the acting manager's id, independent of the coarse project-wide
+    ``user`` scope."""
+
+    scope = 'resend_activation'
+
+
 class ArtistViewSet(viewsets.ModelViewSet):
     """
     Artist Lifecycle & HR Management.
@@ -300,6 +310,22 @@ class ArtistViewSet(viewsets.ModelViewSet):
             
         ArtistHRService.restore_artist(artist)
         return Response(self.get_serializer(artist).data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[IsManager],
+        throttle_classes=[ResendActivationThrottle],
+        url_path='resend-activation',
+    )
+    def resend_activation(self, request, pk=None) -> Response:
+        """Re-sends the account-activation invite to an artist who was invited
+        but never activated (e.g. lost the original email). Manager-only. The
+        service refuses already-activated accounts, surfacing a stable
+        `account_already_active` code the client maps to clear copy."""
+        artist = self.get_object()
+        ArtistHRService.resend_activation(artist)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
     def me(self, request) -> Response:

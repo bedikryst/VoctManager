@@ -19,6 +19,12 @@ class RosterDomainException(Exception):
 class ArtistProvisioningException(RosterDomainException):
     pass
 
+class ActivationResendException(RosterDomainException):
+    """Raised when an activation invite cannot be re-sent — the artist has no
+    linked authentication account to activate (e.g. it was detached by GDPR
+    erasure)."""
+    pass
+
 class AttendanceValidationException(RosterDomainException):
     pass
 

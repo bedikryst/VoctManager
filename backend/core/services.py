@@ -29,7 +29,11 @@ from .dtos import (
     UserPasswordChangeDTO,
     UserPreferencesUpdateDTO,
 )
-from .exceptions import EmailAlreadyInUseException, InvalidCredentialsException
+from .exceptions import (
+    AccountAlreadyActiveException,
+    EmailAlreadyInUseException,
+    InvalidCredentialsException,
+)
 from .models import UserProfile
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
@@ -120,6 +124,60 @@ class UserIdentityService:
 
             logger.info(f"Core IAM identity provisioned and invite dispatched for: {email}")
             return user
+
+    @staticmethod
+    def resend_activation_email(user: User) -> None:
+        """
+        Re-dispatches the account-activation email for an invited member who has
+        not activated yet (e.g. they lost or never received the original invite).
+
+        A fresh signed token is minted because the original link expires after
+        ``PASSWORD_RESET_TIMEOUT``. Guard: an account with a usable password has
+        already been activated — its path is password reset, not activation — so
+        we refuse rather than send a misleading second invite. Onboarding context
+        (language, vocative, salutation) is reconstructed from the persisted
+        profile so the re-sent mail is identical in tone to the first one.
+        """
+        if user.has_usable_password():
+            # Message-less: the stable machine code is the class ``code`` attr,
+            # and the envelope falls back to ``default_message`` for ``detail``.
+            raise AccountAlreadyActiveException()
+
+        profile = getattr(user, 'profile', None)
+        language = getattr(profile, 'language', '') or 'pl'
+        language = language if language in SUPPORTED_LANGUAGE_CODES else 'pl'
+        salutation = getattr(profile, 'salutation', 'N') or 'N'
+        salutation = salutation if salutation in {'F', 'M', 'N'} else 'N'
+
+        payload = UserIdentityService.generate_activation_token_payload(user)
+        activation_link = (
+            f"{settings.CORS_ALLOWED_ORIGINS[0]}/activate"
+            f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
+        )
+
+        artist_profile = getattr(user, 'artist_profile', None)
+        raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
+        base_name = getattr(user, 'first_name', '') or ''
+        vocative = (raw_vocative or base_name) if language == 'pl' else base_name
+
+        with override(language):
+            translated_subject = str(_("Welcome to VoctManager - Activate Your Account"))
+
+        # No DB write here (token generation is stateless), so dispatch directly.
+        send_transactional_email_task.delay(
+            recipient_email=user.email,
+            subject=translated_subject,
+            template_name="account_activation",
+            context={
+                "first_name": base_name,
+                "first_name_vocative": vocative,
+                "salutation": salutation,
+                "activation_link": activation_link,
+            },
+            fallback_language=language,
+            email_type=EmailType.OPERATIONAL,
+        )
+        logger.info(f"Activation email re-dispatched for pending account: {user.email}")
 
     @staticmethod
     def get_activation_invitee(uidb64: str, token: str) -> dict[str, str]:

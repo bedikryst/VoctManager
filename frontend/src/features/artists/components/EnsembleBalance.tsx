@@ -12,7 +12,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Users, UserX } from "lucide-react";
+import { MailWarning, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -83,24 +83,24 @@ export const EnsembleBalance = React.memo(
                 color="muted"
                 className="inline-flex items-center gap-1 tabular-nums"
                 title={t(
-                  "artists.dashboard.no_account_hint",
+                  "artists.dashboard.pending_activation_hint",
                   "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
                 )}
               >
-                <UserX
+                <MailWarning
                   size={11}
-                  className="text-ethereal-crimson/70"
+                  className="text-ethereal-gold"
                   aria-hidden="true"
                 />
                 <Text
                   as="span"
                   size="sm"
                   weight="semibold"
-                  className="text-ethereal-crimson"
+                  className="text-ethereal-gold"
                 >
                   {accountPending}
                 </Text>
-                {t("artists.dashboard.no_account", "bez konta")}
+                {t("artists.dashboard.pending_activation", "bez aktywacji")}
               </Caption>
             )}
           </div>

@@ -794,14 +794,19 @@
       "active_account_title": "Compte actif et connecté à la plateforme",
       "archive_action": "Archiver",
       "archive_badge": "Archive",
+      "detached_account": "Compte détaché",
       "details": "Dossier",
       "edit": "Modifier",
-      "inactive_account": "Compte inactif",
       "message": "Écrire",
       "message_title": "Écrire un message",
       "no_phone": "Pas de téléphone",
       "none": "Aucun",
       "open_profile_aria": "Ouvrir le profil : {{name}}",
+      "pending_activation": "Non activé",
+      "pending_activation_title": "Invitation envoyée — le compte n'a pas encore été activé",
+      "resend_activation": "Renvoyer l'invitation",
+      "resend_activation_short": "Renvoyer",
+      "resending": "Envoi…",
       "sight_reading": "Déchiffrage",
       "sight_reading_title": "Déchiffrage : {{level}}/5",
       "unverified": "Non vérifié",
@@ -824,8 +829,8 @@
       "empty_filtered_title": "Personne ne correspond aux filtres",
       "empty_roster_title": "Votre ensemble est vide",
       "empty_title": "Aucun résultat",
-      "no_account": "sans compte",
-      "no_account_hint": "Artistes actifs qui n'ont pas encore activé leur compte sur la plateforme.",
+      "pending_activation": "sans activation",
+      "pending_activation_hint": "Artistes actifs qui n'ont pas encore activé leur compte sur la plateforme.",
       "search_placeholder": "Rechercher par nom...",
       "show_all": "Tout afficher",
       "subtitle": "Ressources humaines",
@@ -853,6 +858,7 @@
       "history_title": "Historique des projets",
       "most_sung_lines": "Pupitres les plus chantés",
       "no_casting": "Aucune affectation à des pièces",
+      "pending_activation_desc": "L'invitation a été envoyée, mais cet artiste n'a pas encore activé son compte sur la plateforme.",
       "upcoming": "À venir"
     },
     "editor": {
@@ -916,6 +922,9 @@
       "activating": "Activation du compte...",
       "archived_success": "Artiste archivé",
       "archiving": "Archivage de l'artiste...",
+      "resend_activation_error_desc": "Impossible d'envoyer l'invitation d'activation.",
+      "resending_activation": "Envoi de l'invitation...",
+      "resent_activation_success": "Invitation renvoyée à {{email}}.",
       "toggle_error_desc": "Impossible de modifier le statut de l'artiste."
     },
     "toolbar": {
@@ -2095,6 +2104,10 @@
       "unknown_detail": "Veuillez réessayer dans un instant."
     },
     "codes": {
+      "account_already_active": {
+        "title": "Compte déjà activé",
+        "detail": "Cet artiste a déjà activé son compte — il peut utiliser la réinitialisation du mot de passe plutôt que l'activation."
+      },
       "invalid_credentials": {
         "title": "Identifiants invalides",
         "detail": "Vérifiez votre e-mail et votre mot de passe, puis réessayez."

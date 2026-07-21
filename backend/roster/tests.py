@@ -9,10 +9,12 @@ from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
+from core.exceptions import AccountAlreadyActiveException
 from core.models import UserProfile
 from notifications.models import NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
+from .exceptions import ActivationResendException
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
@@ -79,6 +81,118 @@ class ArtistProvisioningTests(TestCase):
 
         enqueue_mock.assert_called_once()
         self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "account_activation")
+
+
+class ArtistActivationResendTests(TestCase):
+    """Covers re-sending the activation invite to an artist who never activated."""
+
+    def _provision(self, enqueue_mock) -> Artist:
+        dto = ArtistCreateDTO(
+            first_name="Grace",
+            last_name="Hopper",
+            email="grace@example.com",
+            voice_type="ALT",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            artist = ArtistHRService.provision_artist(dto)
+        enqueue_mock.reset_mock()
+        return artist
+
+    @patch(EMAIL_TASK)
+    def test_resend_requeues_activation_email_for_pending_account(self, enqueue_mock):
+        artist = self._provision(enqueue_mock)
+
+        ArtistHRService.resend_activation(artist)
+
+        enqueue_mock.assert_called_once()
+        self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "account_activation")
+        self.assertEqual(enqueue_mock.call_args.kwargs["recipient_email"], "grace@example.com")
+
+    @patch(EMAIL_TASK)
+    def test_resend_rejects_already_activated_account(self, enqueue_mock):
+        artist = self._provision(enqueue_mock)
+        assert artist.user is not None
+        # A usable password is the marker of a completed activation.
+        artist.user.set_password("already-activated-pw")
+        artist.user.is_active = True
+        artist.user.save(update_fields=["password", "is_active"])
+
+        with self.assertRaises(AccountAlreadyActiveException):
+            ArtistHRService.resend_activation(artist)
+        enqueue_mock.assert_not_called()
+
+    @patch(EMAIL_TASK)
+    def test_resend_rejects_artist_without_linked_account(self, enqueue_mock):
+        artist = self._provision(enqueue_mock)
+        artist.user = None
+        artist.save(update_fields=["user"])
+
+        with self.assertRaises(ActivationResendException):
+            ArtistHRService.resend_activation(artist)
+        enqueue_mock.assert_not_called()
+
+
+class ArtistResendActivationEndpointTests(APITestCase):
+    """API cover for POST /api/artists/{id}/resend-activation/: the manager-only
+    gate, the 204 success contract, and the already-activated rejection surfaced
+    as a stable ``account_already_active`` code the client maps to copy."""
+
+    @patch(EMAIL_TASK)
+    def setUp(self, enqueue_mock) -> None:
+        # The throttle bucket lives in the process cache, not the DB — clear it so
+        # a rate hit from a previous test never leaks into this one.
+        from django.core.cache import cache
+        cache.clear()
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-resend", email="mgr-resend@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        self.non_manager = User.objects.create_user(
+            username="singer-resend", email="singer-resend@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.non_manager, role=AppRole.ARTIST)
+
+        dto = ArtistCreateDTO(
+            first_name="Grace",
+            last_name="Hopper",
+            email="grace-endpoint@example.com",
+            voice_type="ALT",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+
+    def _url(self, artist: Artist) -> str:
+        return f"/api/artists/{artist.id}/resend-activation/"
+
+    @patch(EMAIL_TASK)
+    def test_manager_resend_returns_204_and_dispatches(self, enqueue_mock):
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(self._url(self.artist))
+        self.assertEqual(resp.status_code, 204)
+        enqueue_mock.assert_called_once()
+
+    @patch(EMAIL_TASK)
+    def test_non_manager_is_forbidden(self, enqueue_mock):
+        self.client.force_authenticate(user=self.non_manager)
+        resp = self.client.post(self._url(self.artist))
+        self.assertEqual(resp.status_code, 403)
+        enqueue_mock.assert_not_called()
+
+    @patch(EMAIL_TASK)
+    def test_already_activated_rejected_with_stable_code(self, enqueue_mock):
+        assert self.artist.user is not None
+        self.artist.user.set_password("already-activated-pw")
+        self.artist.user.save(update_fields=["password"])
+
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.post(self._url(self.artist))
+
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data["error_code"], "account_already_active")
+        enqueue_mock.assert_not_called()
 
 
 class ProjectUpdateServiceTests(TestCase):

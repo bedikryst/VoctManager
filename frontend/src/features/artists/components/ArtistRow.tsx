@@ -17,6 +17,7 @@ import {
   Mail,
   MessageSquare,
   Phone,
+  Send,
   Trash2,
   UserX,
 } from "lucide-react";
@@ -34,6 +35,8 @@ interface ArtistRowProps {
   onOpen: (artist: Artist) => void;
   onMessage: (artist: Artist) => void;
   onToggleStatus: (id: string, willBeActive: boolean) => void;
+  onResendActivation?: (artist: Artist) => void;
+  isResending?: boolean;
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -47,6 +50,8 @@ export const ArtistRow = React.memo(
     onOpen,
     onMessage,
     onToggleStatus,
+    onResendActivation,
+    isResending = false,
     selectionMode = false,
     selected = false,
     onToggleSelect,
@@ -56,6 +61,9 @@ export const ArtistRow = React.memo(
     const section = getSectionPresentation(artist.voice_type);
     const isActive = artist.is_active;
     const hasAccount = Boolean(artist.user);
+    // Manager-only flag (undefined otherwise): unknown counts as neither state.
+    const accountActivated = artist.account_activated === true;
+    const accountPending = hasAccount && artist.account_activated === false;
     const fullName = `${artist.first_name} ${artist.last_name}`;
     const voiceLabel = artist.voice_type
       ? t(
@@ -128,12 +136,21 @@ export const ArtistRow = React.memo(
                 : "border-ethereal-incense/20 bg-ethereal-marble",
             )}
           />
-          {isActive && hasAccount && (
+          {isActive && accountActivated && (
             <span
               className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ethereal-alabaster bg-ethereal-sage"
               title={t(
                 "artists.card.active_account_title",
                 "Konto aktywne i połączone z platformą",
+              )}
+            />
+          )}
+          {isActive && accountPending && (
+            <span
+              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ethereal-alabaster bg-ethereal-gold"
+              title={t(
+                "artists.card.pending_activation_title",
+                "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
               )}
             />
           )}
@@ -155,10 +172,15 @@ export const ArtistRow = React.memo(
                 {t("artists.card.archive_badge", "Archiwum")}
               </Badge>
             )}
+            {accountPending && (
+              <Badge variant="warning" className="hidden shrink-0 sm:inline-flex">
+                {t("artists.card.pending_activation", "Nie aktywowano")}
+              </Badge>
+            )}
             {isActive && !hasAccount && (
               <span
                 className="shrink-0 text-ethereal-crimson/70"
-                title={t("artists.card.inactive_account", "Konto nieaktywne")}
+                title={t("artists.card.detached_account", "Konto odłączone")}
               >
                 <UserX size={13} aria-hidden="true" />
               </span>
@@ -208,6 +230,27 @@ export const ArtistRow = React.memo(
 
         {!selectionMode && (
           <div className="flex shrink-0 items-center gap-1">
+            {accountPending && onResendActivation && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  stop(event);
+                  onResendActivation(artist);
+                }}
+                disabled={isResending}
+                title={t(
+                  "artists.card.resend_activation",
+                  "Wyślij ponownie zaproszenie",
+                )}
+                aria-label={t(
+                  "artists.card.resend_activation",
+                  "Wyślij ponownie zaproszenie",
+                )}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
+              >
+                <Send size={14} aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
               onClick={(event) => {
@@ -263,9 +306,11 @@ export const ArtistRow = React.memo(
     previous.artist === next.artist &&
     previous.selectionMode === next.selectionMode &&
     previous.selected === next.selected &&
+    previous.isResending === next.isResending &&
     previous.onOpen === next.onOpen &&
     previous.onMessage === next.onMessage &&
     previous.onToggleStatus === next.onToggleStatus &&
+    previous.onResendActivation === next.onResendActivation &&
     previous.onToggleSelect === next.onToggleSelect,
 );
 

@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import {
   useArtists,
   useBulkToggleArtistStatus,
+  useResendActivation,
   useToggleArtistStatus,
 } from "../api/artist.queries";
 import { useVoiceTypes } from "@/shared/api/options.queries";
@@ -54,6 +55,12 @@ export const useArtistData = () => {
     useVoiceTypes();
 
   const toggleStatusMutation = useToggleArtistStatus();
+  const resendActivationMutation = useResendActivation();
+  // Track resends per-artist so a second click (on a different singer) while one
+  // is in flight is honoured, not silently dropped by a single shared lock.
+  const [resendingIds, setResendingIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
 
   const isLoading = isArtistsLoading || isVoiceTypesLoading;
   const isError = isArtistsError;
@@ -105,8 +112,16 @@ export const useArtistData = () => {
     return { ...counts, Total: activeArtists.length };
   }, [activeArtists]);
 
+  // Singers still owing an activation: they have a linked account (invited) but
+  // never set a password. The `Boolean(artist.user)` guard is what keeps this in
+  // step with every per-card render — the serializer reports `account_activated
+  // === false` for a *detached* (GDPR-erased) account too, which is the crimson
+  // "detached" state, not a pending invite, so we must exclude it here as well.
   const accountPendingCount = useMemo(
-    () => activeArtists.filter((artist) => !artist.user).length,
+    () =>
+      activeArtists.filter(
+        (artist) => Boolean(artist.user) && artist.account_activated === false,
+      ).length,
     [activeArtists],
   );
 
@@ -277,6 +292,43 @@ export const useArtistData = () => {
     [],
   );
 
+  const handleResendActivation = useCallback(
+    async (artist: Artist) => {
+      // Re-entrancy guard scoped to this artist only (a double-tap), so resends
+      // to other singers can still run in parallel.
+      if (resendingIds.has(artist.id)) return;
+      setResendingIds((prev) => new Set(prev).add(artist.id));
+      const toastId = toast.loading(
+        t("artists.toast.resending_activation", "Wysyłanie zaproszenia..."),
+      );
+      try {
+        await resendActivationMutation.mutateAsync(artist.id);
+        toast.success(
+          t("artists.toast.resent_activation_success", {
+            defaultValue: "Ponownie wysłano zaproszenie na {{email}}.",
+            email: artist.email ?? "",
+          }),
+          { id: toastId },
+        );
+      } catch (err) {
+        toastApiError(err, t, {
+          id: toastId,
+          fallbackDescription: t(
+            "artists.toast.resend_activation_error_desc",
+            "Nie udało się wysłać zaproszenia aktywacyjnego.",
+          ),
+        });
+      } finally {
+        setResendingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(artist.id);
+          return next;
+        });
+      }
+    },
+    [resendActivationMutation, resendingIds, t],
+  );
+
   const executeStatusToggle = async () => {
     if (!artistToToggle) return;
     const toastId = toast.loading(
@@ -354,5 +406,7 @@ export const useArtistData = () => {
     closePanel,
     handleToggleRequest,
     executeStatusToggle,
+    handleResendActivation,
+    resendingIds,
   };
 };

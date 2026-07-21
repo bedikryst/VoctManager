@@ -62,6 +62,10 @@ const KNOWN_CODES: Record<string, { title: string; detail: string }> = {
     title: "errors.codes.invalid_activation_link.title",
     detail: "errors.codes.invalid_activation_link.detail",
   },
+  account_already_active: {
+    title: "errors.codes.account_already_active.title",
+    detail: "errors.codes.account_already_active.detail",
+  },
   avatar_missing: {
     title: "errors.codes.avatar_missing.title",
     detail: "errors.codes.avatar_missing.detail",

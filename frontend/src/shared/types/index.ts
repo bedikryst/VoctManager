@@ -87,6 +87,9 @@ export interface VoiceTypeOption {
 
 export interface Artist extends BaseModel {
   user?: string | null;
+  // True once the invited member has set their password (finished activation).
+  // Manager-only (present on the detailed serializer); undefined = unknown.
+  account_activated?: boolean;
   avatar_thumb_url?: string | null;
   first_name: string;
   last_name: string;

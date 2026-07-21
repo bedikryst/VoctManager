@@ -46,6 +46,7 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .exceptions import (
+    ActivationResendException,
     ArtistProvisioningException,
     AttendanceValidationException,
     CastingValidationException,
@@ -155,6 +156,21 @@ class ArtistHRService:
             # Catch Core exception and map it to Roster Domain exception
             raise ArtistProvisioningException(f"Account with email {dto.email} already exists.")
     
+    @staticmethod
+    def resend_activation(artist: Artist) -> None:
+        """
+        Re-sends the platform activation invite to an artist who was provisioned
+        but never activated. Delegates the token + email to the IAM service;
+        here we only enforce that a linked account actually exists to activate.
+        """
+        user = artist.user
+        if user is None:
+            raise ActivationResendException(
+                "This artist has no linked account to activate."
+            )
+        UserIdentityService.resend_activation_email(user)
+        logger.info(f"Activation invite re-sent for artist: {artist.email}")
+
     @staticmethod
     def archive_artist(artist: Artist) -> None:
         """Przenosi artystę do archiwum i blokuje mu możliwość logowania do aplikacji."""
