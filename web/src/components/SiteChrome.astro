@@ -10,47 +10,83 @@
  */
 import { getCollection } from "astro:content";
 import { toRibbons } from "../lib/registrum";
+import { UI } from "../i18n/ui";
+import { localizePath, LOCALE_META, DEFAULT_LOCALE, type Locale } from "../i18n/config";
 
 interface Props {
-  /** Path of the current page so the matching nav link gets aria-current — concert pages
-      pass their FULL path ("/koncerty/wcielenie") so the matching ribbon can carry the
-      crimson stitch; the bare KONCERTY link treats any of them as its own. */
+  /** Base path of the current page (locale-neutral, e.g. "/o-nas") so the matching nav link gets
+      aria-current — concert pages pass their FULL path ("/koncerty/wcielenie") so the matching
+      ribbon can carry the crimson stitch; the bare KONCERTY link treats any of them as its own.
+      Also the anchor the language switcher localizes into each locale. */
   current?: string;
   /** "dark" pages (koncerty) get a night solid header + an is-light state over paper sections. */
   tone?: "light" | "dark";
+  /** Page locale — selects the vernacular nav labels and localizes the site links (Latin rubrics
+      stay put). Defaults to Polish, so every un-migrated caller renders byte-identical to before. */
+  lang?: Locale;
+  /** Locales this page actually exists in. The language switcher appears only when there is a real
+      choice beyond Polish; a Polish-only page (the default) shows none. */
+  availableLocales?: Locale[];
 }
-const { current, tone = "light" } = Astro.props;
+const {
+  current,
+  tone = "light",
+  lang = DEFAULT_LOCALE,
+  availableLocales = [DEFAULT_LOCALE],
+} = Astro.props;
+const t = UI[lang];
 
 /* The "registrum" — desktop register ribbons under KONCERTY (styles/registrum.css),
-   derived from the concerts collection (page-bearing entries only, Via order). */
+   derived from the concerts collection (page-bearing entries only, Via order). Ribbon hrefs point
+   at concert pages, which stay Polish-only for now, so they are NOT localized. */
 const ribbons = toRibbons(await getCollection("concerts"));
 const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
 
 /* The mobile "Vitta" ribbon's resting row (nave-menu.css `--vi`): which of the four voices
    this page belongs to — null on pages outside them (press/kolofon), where the ribbon ships
-   shut (no `is-set`, height 0). */
+   shut (no `is-set`, height 0). Matched on the locale-neutral base path. */
 const naveIndex =
   current === "/" ? 0 : current === "/o-nas" ? 1 : onKoncerty ? 2 : current === "/kontakt" ? 3 : null;
+
+/* Localized destinations — Polish returns the bare path (identical output), other locales get a
+   prefix ONLY for pages that are translated (localizePath falls back to the Polish URL otherwise). */
+const hrefHome = localizePath("/", lang);
+const hrefAbout = localizePath("/o-nas", lang);
+const hrefConcerts = localizePath("/koncerty", lang);
+const hrefContact = localizePath("/kontakt", lang);
+
+/* Language switcher: only when the current page has a real alternate (more than Polish). Each
+   option localizes the current base path into its locale (same page, other language). */
+const showLang = availableLocales.length > 1 && !!current;
+const langOptions = showLang
+  ? availableLocales.map((loc) => ({
+      loc,
+      href: localizePath(current as string, loc),
+      label: LOCALE_META[loc].short,
+      name: LOCALE_META[loc].name,
+      isCurrent: loc === lang,
+    }))
+  : [];
 ---
 
-<header class="chrome" id="chrome" data-tone={tone} aria-label="Nawigacja">
+<header class="chrome" id="chrome" data-tone={tone} aria-label={t.nav.ariaHeader}>
   {/* The brand is part of the page root snapshot — it fades through the dark threshold with
       everything else (transitions.css) rather than morphing as a shared element. A shared
       element only ever showed artifacts here (position slip vs. is-solid padding, ink↔candle
       colour flip, and a different glyph anatomy on the landing), so it was removed. */}
-  <a class="chrome-brand" href="/" aria-label="VoctEnsemble — strona główna">
+  <a class="chrome-brand" href={hrefHome} aria-label={t.nav.brandAria}>
     <span class="brand-mark" aria-hidden="true"></span>
     <span>VoctEnsemble</span>
   </a>
 
-  <nav class="chrome-nav" aria-label="Nawigacja główna">
-    <a href="/o-nas" aria-current={current === "/o-nas" ? "page" : undefined}>O nas</a>
+  <nav class="chrome-nav" aria-label={t.nav.ariaPrimary}>
+    <a href={hrefAbout} aria-current={current === "/o-nas" ? "page" : undefined}>{t.nav.about}</a>
     {/* "Registrum" — hover/focus on KONCERTY lets mute breviary register silks slip from
         under the bar beside an ink index; each row's hairline leader runs to its silk's
         tip (registrum.css). Pure CSS state — the link itself stays a plain navigation to
         /koncerty (the drop is enhancement only). */}
     <div class="registrum">
-      <a href="/koncerty" aria-current={onKoncerty ? "page" : undefined}>Koncerty</a>
+      <a href={hrefConcerts} aria-current={onKoncerty ? "page" : undefined}>{t.nav.concerts}</a>
       {/* The hush: full-viewport fixed layer quieting the whole page while the register
           hangs open — a SIBLING of the drop (the drop's transform would hijack its fixed
           containing block, see registrum.css traps). */}
@@ -81,8 +117,26 @@ const naveIndex =
         </div>
       </div>
     </div>
-    <a href="/kontakt" aria-current={current === "/kontakt" ? "page" : undefined}>Kontakt</a>
-    <a class="nav-support" href="/?donate" data-vault-open="100">Wesprzyj</a>
+    <a href={hrefContact} aria-current={current === "/kontakt" ? "page" : undefined}>{t.nav.contact}</a>
+    <a class="nav-support" href="/?donate" data-vault-open="100">{t.nav.support}</a>
+    {
+      showLang && (
+        <span class="chrome-lang" role="group" aria-label={t.nav.langAria}>
+          {langOptions.map((o) => (
+            <a
+              class="chrome-lang-opt"
+              href={o.href}
+              hreflang={o.loc}
+              lang={o.loc}
+              aria-current={o.isCurrent ? "true" : undefined}
+              aria-label={o.name}
+            >
+              {o.label}
+            </a>
+          ))}
+        </span>
+      )
+    }
   </nav>
 
   <button
@@ -91,7 +145,7 @@ const naveIndex =
     type="button"
     aria-expanded="false"
     aria-controls="navMenu"
-    aria-label="Menu"></button>
+    aria-label={t.nav.menu}></button>
 
   {/* "Vitta" — the shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
       ribbon hanging down the left margin to the current voice — the book is open where you
@@ -101,12 +155,12 @@ const naveIndex =
       RETARGETS it on commit so it runs through the slot (never two ribbons swapping — see
       nave-menu.css). Any /koncerty/* page is the Koncerty voice's own, matching the desktop
       trigger. */}
-  <nav class="nave" id="navMenu" aria-label="Nawigacja główna">
+  <nav class="nave" id="navMenu" aria-label={t.nav.ariaPrimary}>
     <div class="nave-veil"></div>
 
     <div class="nave-inner">
       <div class="nave-top">
-        <button class="nave-close" id="menuClose" type="button" aria-label="Zamknij menu">Zamknij</button>
+        <button class="nave-close" id="menuClose" type="button" aria-label={t.nav.closeAria}>{t.nav.close}</button>
       </div>
 
       <div class="nave-list">
@@ -118,26 +172,44 @@ const naveIndex =
           <span class="vitta-cord"></span>
           <span class="vitta-strip"></span>
         </span>
-        <a class="voice" href="/" style="--i: 0" aria-current={current === "/" ? "page" : undefined}>
+        <a class="voice" href={hrefHome} style="--i: 0" aria-current={current === "/" ? "page" : undefined}>
           <span class="voice-lat">Introitus</span>
-          <span class="voice-pl">Główna</span>
+          <span class="voice-pl">{t.nav.home}</span>
         </a>
-        <a class="voice" href="/o-nas" style="--i: 1" aria-current={current === "/o-nas" ? "page" : undefined}>
+        <a class="voice" href={hrefAbout} style="--i: 1" aria-current={current === "/o-nas" ? "page" : undefined}>
           <span class="voice-lat">De nobis</span>
-          <span class="voice-pl">O nas</span>
+          <span class="voice-pl">{t.nav.about}</span>
         </a>
-        <a class="voice" href="/koncerty" style="--i: 2" aria-current={onKoncerty ? "page" : undefined}>
+        <a class="voice" href={hrefConcerts} style="--i: 2" aria-current={onKoncerty ? "page" : undefined}>
           <span class="voice-lat">Via</span>
-          <span class="voice-pl">Koncerty</span>
+          <span class="voice-pl">{t.nav.concerts}</span>
         </a>
-        <a class="voice" href="/kontakt" style="--i: 3" aria-current={current === "/kontakt" ? "page" : undefined}>
+        <a class="voice" href={hrefContact} style="--i: 3" aria-current={current === "/kontakt" ? "page" : undefined}>
           <span class="voice-lat">Scribe nobis</span>
-          <span class="voice-pl">Kontakt</span>
+          <span class="voice-pl">{t.nav.contact}</span>
         </a>
       </div>
 
       <div class="nave-foot">
-        <a class="nave-cta" href="/?donate" data-vault-open="100">Wesprzyj <em>· Sustinete nos</em></a>
+        <a class="nave-cta" href="/?donate" data-vault-open="100">{t.nav.support} <em>· Sustinete nos</em></a>
+        {
+          showLang && (
+            <span class="nave-lang" role="group" aria-label={t.nav.langAria}>
+              {langOptions.map((o) => (
+                <a
+                  class="nave-lang-opt"
+                  href={o.href}
+                  hreflang={o.loc}
+                  lang={o.loc}
+                  aria-current={o.isCurrent ? "true" : undefined}
+                  aria-label={o.name}
+                >
+                  {o.label}
+                </a>
+              ))}
+            </span>
+          )
+        }
         {/* The antiphon names its hour — filled with the live canonical hour on open (script
             below), so the menu carries the time of day, not a static motto. */}
         <span class="nave-colophon">
@@ -178,6 +250,19 @@ const naveIndex =
   .chrome-nav > a[aria-current="page"]::after, .chrome-nav .registrum > a[aria-current="page"]::after { transform: scaleX(1); }
   .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[aria-current="page"] { opacity: 1; color: var(--candle); }
   .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
+
+  /* Language switcher — a quiet trio of locale chips set off by a hairline, in the nav's own
+     mono register. The active locale reads solid; the others recede until hover. */
+  .chrome-lang { display: inline-flex; align-items: center; gap: 10px; margin-left: 6px; padding-left: 18px; border-left: 1px solid currentColor; border-color: color-mix(in srgb, currentColor 22%, transparent); }
+  .chrome-lang-opt { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: inherit; opacity: .5; transition: opacity .3s var(--ease), color .3s var(--ease); }
+  .chrome-lang-opt:hover { opacity: 1; }
+  .chrome-lang-opt[aria-current="true"] { opacity: 1; color: var(--candle); }
+
+  /* Mobile switcher — a trio in the card foot, above the colophon, in the overlay's ink register. */
+  .nave-lang { display: flex; align-items: center; gap: 18px; margin-top: 6px; }
+  .nave-lang-opt { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); opacity: .45; transition: opacity .3s var(--ease), color .3s var(--ease); }
+  .nave-lang-opt:hover { opacity: 1; }
+  .nave-lang-opt[aria-current="true"] { opacity: 1; color: var(--candle); }
 
   /* Mobile menu */
   .nav-toggle { display: none; position: relative; width: 26px; height: 14px; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }

@@ -11,6 +11,16 @@ import { defineCollection } from "astro:content";
 import { file } from "astro/loaders";
 import { z } from "astro/zod";
 
+/** Localized milestone editorial (per non-default locale) inside a concert's `about` block —
+    every field optional so a partial translation still validates and falls back to Polish. */
+const milestoneI18n = z
+  .object({
+    place: z.string().optional(),
+    blurb: z.string().optional(),
+    title: z.string().optional(),
+  })
+  .optional();
+
 const concerts = defineCollection({
   loader: file("src/content/concerts.yaml"),
   schema: z.object({
@@ -46,6 +56,13 @@ const concerts = defineCollection({
         blurb: z.string().optional(),
         /** photo() base name for the 3:2 milestone image. */
         img: z.string().optional(),
+        /** Localized milestone editorial (English) for the About page — place / blurb / a
+            translated concert title. Each field falls back to its Polish counterpart (title to
+            the concert `title`), so a partly-filled block still renders. Populate per concert as
+            the site is translated; the full concert programme stays Polish-only for now. */
+        en: milestoneI18n,
+        /** Localized milestone editorial (French) — same fallbacks as `en`. */
+        fr: milestoneI18n,
       })
       .optional(),
     accent: z.string(),

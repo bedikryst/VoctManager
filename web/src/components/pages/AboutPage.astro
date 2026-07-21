@@ -1,0 +1,580 @@
+---
+/**
+ * @file AboutPage.astro
+ * @description Locale-agnostic body of the "About us" page — the reference i18n component. It owns
+ *  ALL the structure, styles and JSON-LD; every word comes from the per-locale copy module
+ *  (i18n/content/o-nas.ts) via the `lang` prop, so the three route files (/o-nas, /en/o-nas,
+ *  /fr/o-nas) are one-liners that differ only in `lang`. Rich fields (…Html) render with `set:html`
+ *  (verbatim markup + hard &nbsp;); plain fields go through `typoFor(lang)` for locale micro-
+ *  typography. The milestone list still derives from the `concerts` collection (SSoT with
+ *  /koncerty), reading its localized `about.{en,fr}` block and falling back to Polish. The donation
+ *  Vault is a shared island that is still Polish-only (a later pass) — the one deliberate seam.
+ * @architecture Astro islands 2026
+ * @module components/pages/AboutPage
+ */
+import { getCollection } from "astro:content";
+import { getImage, Picture } from "astro:assets";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import SiteChrome from "../SiteChrome.astro";
+import SiteFooter from "../SiteFooter.astro";
+import BleedImage from "../BleedImage.astro";
+import { photo, photoOptional, bleedPair } from "../../lib/photos";
+import { typoFor } from "../../lib/typo";
+import { VaultIsland } from "../../islands/landing/VaultIsland";
+import { ABOUT } from "../../i18n/content/o-nas";
+import { UI } from "../../i18n/ui";
+import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
+import "../../styles/vault.css";
+
+interface Props {
+  /** Which language this render is. Drives the copy, the chrome, the URL and the hreflang graph. */
+  lang: Locale;
+}
+const { lang } = Astro.props;
+
+const c = ABOUT[lang];
+const typo = typoFor(lang);
+// One base path → this render's own URL, its hreflang graph, and the locales the switcher offers.
+const { path, alternates, available } = pageI18n("/o-nas", lang);
+const hrefConcerts = localizePath("/koncerty", lang);
+const hrefContact = localizePath("/kontakt", lang);
+
+const hero = bleedPair("o-nas-hero");
+const plate = bleedPair("swiatlo-krzyz");
+const florent = photo("florent");
+
+// Milestones — derived from the `concerts` collection (single source of truth with /koncerty):
+// appending a concert to concerts.yaml extends this list automatically. The localized `about.{en,
+// fr}` block overrides place/blurb/title per locale, each falling back to the Polish about, then to
+// venue/essence/title — so an untranslated concert still renders (in Polish) rather than breaking.
+const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
+const milestones = concerts.map((entry, i) => {
+  const a = entry.data.about;
+  const loc = lang === "en" ? a?.en : lang === "fr" ? a?.fr : undefined;
+  return {
+    year: entry.data.date?.slice(0, 4) ?? entry.data.viaDate.match(/\d{4}/)?.[0] ?? entry.data.viaDate,
+    place: loc?.place ?? a?.place ?? entry.data.venue ?? entry.data.meta,
+    title: loc?.title ?? entry.data.title,
+    img: a?.img ? photoOptional(a.img) : undefined,
+    d: String((i % 3) + 1),
+    body: typo(loc?.blurb ?? a?.blurb ?? entry.data.essence),
+  };
+});
+
+// Board — names + portraits are structural (proper names, never translated); the role line and
+// one-sentence remit come from the copy module, in board order.
+const boardMembers = [
+  { name: "Florent de Bazelaire", img: photoOptional("o-nas-florent") },
+  { name: "Anna Marcisz", img: photoOptional("o-nas-ania") },
+  { name: "Krystian Bugalski", img: photoOptional("o-nas-krystian") },
+] as const;
+const board = boardMembers.map((b, i) => ({ ...b, ...c.governance.roles[i] }));
+// Portraits are all-or-nothing: with only some files present the three-card grid goes ragged.
+const boardPortraitsComplete = board.every((b) => b.img);
+
+// One graph, three nodes: the AboutPage points at the SAME MusicGroup entity the landing declares
+// (shared @id — no per-locale duplicate ensemble), and the foundation is its parentOrganization,
+// carrying the legal identity (KRS/NIP/REGON). Only the AboutPage node localizes (per-locale url +
+// inLanguage + translated name/description); the entity nodes stay canonical across languages.
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "@id": `${SITE}${path}`,
+      url: `${SITE}${path}`,
+      name: c.meta.title,
+      description: c.meta.description,
+      inLanguage: lang,
+      mainEntity: { "@id": `${SITE}/#ensemble` },
+    },
+    {
+      "@type": "MusicGroup",
+      "@id": `${SITE}/#ensemble`,
+      name: "VoctEnsemble",
+      url: SITE,
+      genre: ["Sacred music", "Choral music", "Polifonia"],
+      foundingDate: "2024",
+      foundingLocation: { "@type": "Place", name: "Kraków, Polska" },
+      founder: { "@type": "Person", name: "Florent de Bazelaire" },
+      parentOrganization: { "@id": `${SITE}/#foundation` },
+      sameAs: [
+        "https://www.instagram.com/voctensemble/",
+        "https://www.facebook.com/voctensemble/",
+        "https://www.youtube.com/@VoctEnsemble-nb7gh",
+      ],
+    },
+    {
+      "@type": "NGO",
+      "@id": `${SITE}/#foundation`,
+      name: "Fundacja VoctFoundation",
+      url: `${SITE}/o-nas#fundacja`,
+      identifier: [
+        { "@type": "PropertyValue", propertyID: "KRS", value: "0001237252" },
+        { "@type": "PropertyValue", propertyID: "NIP", value: "6762718992" },
+        { "@type": "PropertyValue", propertyID: "REGON", value: "544621525" },
+      ],
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Św. Filipa 23/3",
+        postalCode: "31-150",
+        addressLocality: "Kraków",
+        addressCountry: "PL",
+      },
+      member: board.map((b) => ({ "@type": "Person", name: b.name, jobTitle: b.role })),
+    },
+  ],
+};
+
+const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
+---
+
+<BaseLayout
+  title={c.meta.title}
+  description={c.meta.description}
+  path={path}
+  image={ogImage}
+  bodyClass="page-o-nas"
+  lang={lang}
+  alternates={alternates}
+>
+  <Fragment slot="head">
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">{UI[lang].skipToContent}</a>
+  <SiteChrome current="/o-nas" lang={lang} availableLocales={available} />
+
+  <main id="tresc">
+    {/* ── Hero ─────────────────────────────────────────────────────────── */}
+    <section class="hero" aria-label={c.hero.aria}>
+      <div class="hero-media" aria-hidden="true">
+        <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" position="center 30%" eager animate />
+      </div>
+      <div class="hero-inner">
+        <p class="eyebrow reveal"><span class="lat">{c.hero.eyebrow.lat}</span>  ·  {c.hero.eyebrow.label}</p>
+        <h1>
+          <span class="line"><span class="reveal">{c.hero.titleLine1}</span></span>
+          <span class="line"><span class="reveal" data-d="1" set:html={c.hero.titleLine2Html} /></span>
+        </h1>
+        <p class="hero-lede reveal" data-d="2">{typo(c.hero.ledeText)}</p>
+        <span class="scroll-cue reveal" data-d="3">{c.hero.scrollCue}</span>
+      </div>
+    </section>
+
+    {/* ── List założyciela — the single origin statement. VERBATIM founding text (Polish),
+          translated for EN/FR while keeping the register. See i18n/content/o-nas.ts. ──────── */}
+    <section class="band letter" aria-label={c.letter.aria}>
+      <div class="wrap letter-wrap">
+        <div class="section-head letter-head reveal">
+          <span class="eyebrow"><span class="lat">{c.letter.eyebrow.lat}</span>  ·  {c.letter.eyebrow.label}</span>
+          <h2>{c.letter.h2}</h2>
+          <p class="letter-lead" set:html={c.letter.leadHtml}></p>
+        </div>
+
+        <div class="letter-body">
+          {
+            c.letter.stanzas.map((s, i) => (
+              <div class="letter-stanza reveal" data-d={String(i + 1)}>
+                <p class="letter-mark"><span class="lat">{s.lat}</span> · {s.label}</p>
+                <p class="letter-para" set:html={s.paraHtml}></p>
+              </div>
+            ))
+          }
+
+          <p class="letter-signature reveal" data-d="4">
+            <span class="letter-sig-name">Florent de Bazelaire</span>
+            <span class="letter-sig-meta">{c.letter.signatureMeta}</span>
+          </p>
+        </div>
+
+        <figure class="letter-portrait reveal" data-d="2">
+          <span class="frame-rule" aria-hidden="true"></span>
+          <Picture
+            src={florent}
+            formats={["avif", "webp"]}
+            widths={[420, 640, 840]}
+            sizes="(max-width: 880px) min(70vw, 340px), clamp(240px, 26vw, 320px)"
+            alt={c.letter.portraitAlt}
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption>{c.letter.portraitCaption}</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    {/* ── Ensemble — prose only (the roster rotates per project). ─────── */}
+    <section class="band band-soft" id="zespol" aria-label={c.ensemble.aria}>
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">{c.ensemble.eyebrow.lat}</span>  ·  {c.ensemble.eyebrow.label}</span>
+          <h2>{c.ensemble.h2}</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">{typo(c.ensemble.leadText)}</p>
+          <p>{typo(c.ensemble.p2Text)}</p>
+          <p set:html={c.ensemble.p3Html}></p>
+        </div>
+        <div class="voces-collab reveal" data-d="2">
+          <span class="collab-label">{c.ensemble.collabLabel}</span>
+          <p>{typo(c.ensemble.collabText)}</p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Pull-quote plate — thesis of "Co śpiewamy?". ─────── */}
+    <section class="plate" aria-label={c.plate.aria}>
+      <div class="plate-media" aria-hidden="true">
+        <BleedImage desktop={plate.desktop} mobile={plate.mobile} alt="" position="center" />
+      </div>
+      <blockquote class="reveal">
+        {c.plate.quote}
+        <cite>VoctEnsemble</cite>
+      </blockquote>
+    </section>
+
+    {/* ── Co robimy — real activities and named events. ───────────────────────────── */}
+    <section class="band band-soft" aria-label={c.doings.aria}>
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">{c.doings.eyebrow.lat}</span>  ·  {c.doings.eyebrow.label}</span>
+          <h2>{c.doings.h2}</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">{typo(c.doings.leadText)}</p>
+        </div>
+        <div class="doings-grid">
+          {
+            c.doings.cards.map((d, i) => (
+              <article class="doing reveal" data-d={String((i % 3) + 1)}>
+                <h3>{d.k}</h3>
+                <p>{typo(d.p)}</p>
+                {d.cta && (
+                  <a class="inline" href={hrefConcerts}>
+                    {d.cta}
+                  </a>
+                )}
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ── Co śpiewamy — the credo; repertoire catalog lives on /koncerty#repertuar. ─────── */}
+    <section class="band" aria-label={c.cantus.aria}>
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">{c.cantus.eyebrow.lat}</span>  ·  {c.cantus.eyebrow.label}</span>
+          <h2>{c.cantus.h2}</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">{typo(c.cantus.leadText)}</p>
+          <p>{typo(c.cantus.p2Text)}</p>
+          <p>{typo(c.cantus.p3Text)}</p>
+          <p class="cantus-more">
+            <a class="inline" href={`${hrefConcerts}#repertuar`}>{c.cantus.moreLink}</a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Milestones — rendered from the `concerts` collection ─────────── */}
+    <section class="band band-soft" aria-label={c.milestones.aria}>
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">{c.milestones.eyebrow.lat}</span>  ·  {c.milestones.eyebrow.label}</span>
+          <h2>{c.milestones.h2}</h2>
+        </div>
+        <ol class="milestones">
+          {
+            milestones.map((m) => (
+              <li class:list={["reveal", { "no-media": !m.img }]} data-d={m.d}>
+                <span class="milestone-date">{m.year}</span>
+                {m.img && (
+                  <figure class="milestone-media">
+                    <Picture
+                      src={m.img}
+                      formats={["avif", "webp"]}
+                      widths={[320, 480, 640, 840]}
+                      sizes="(max-width: 700px) min(92vw, 420px), clamp(200px, 24vw, 320px)"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                )}
+                <div class="milestone-body">
+                  <span class="milestone-place">{m.place}</span>
+                  <h3>{m.title}</h3>
+                  <p>{m.body}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="prose milestones-more reveal" data-d="4">
+          <p><a class="inline" href={hrefConcerts}>{c.milestones.moreLink}</a></p>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Foundation ───────────────────────────────────────────────────── */}
+    <section class="band" id="fundacja" aria-label={c.foundation.aria}>
+      <div class="wrap">
+        <div class="section-head reveal measure">
+          <span class="eyebrow"><span class="lat">{c.foundation.eyebrow.lat}</span>  ·  {c.foundation.eyebrow.label}</span>
+          <h2>{c.foundation.h2}</h2>
+        </div>
+        <div class="prose measure reveal" data-d="1">
+          <p class="lead">{typo(c.foundation.leadText)}</p>
+          <p set:html={c.foundation.p2Html}></p>
+        </div>
+        <ol class="goals reveal" data-d="2" aria-label={c.foundation.aria}>
+          {
+            c.foundation.goals.map((g, i) => (
+              <li>
+                <span class="g-num">{String(i + 1).padStart(2, "0")}</span>
+                <span>{typo(g)}</span>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="legal-card reveal" data-d="3">
+          <div class="legal-grid">
+            <div><span class="k">KRS</span><span class="v">0001237252</span></div>
+            <div><span class="k">NIP</span><span class="v">6762718992</span></div>
+            <div><span class="k">REGON</span><span class="v">544621525</span></div>
+          </div>
+          <p class="legal-note">{typo(c.foundation.legalNote)}</p>
+          <div class="legal-foot">
+            <span>Fundacja VoctFoundation · ul. Św. Filipa 23/3, 31-150 Kraków</span>
+            <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
+              {c.foundation.statuteLabel}
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* ── Governance ───────────────────────────────────────────────────── */}
+    <section class="band band-deep" id="zarzad" aria-label={c.governance.aria}>
+      <div class="wrap">
+        <div class="section-head reveal">
+          <span class="eyebrow"><span class="lat">{c.governance.eyebrow.lat}</span>  ·  {c.governance.eyebrow.label}</span>
+          <h2>{c.governance.h2}</h2>
+        </div>
+        <p class="board-intro reveal" data-d="1">{typo(c.governance.intro)}</p>
+        <div class="board">
+          {
+            board.map((b, i) => (
+              <article class="board-card reveal" data-d={String(i + 1)}>
+                {boardPortraitsComplete && b.img && (
+                  <figure class="board-portrait">
+                    <Picture
+                      src={b.img}
+                      formats={["avif", "webp"]}
+                      widths={[240, 360, 480]}
+                      sizes="(max-width: 860px) 90vw, 30vw"
+                      alt={`${b.name} — ${b.role}`}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </figure>
+                )}
+                <h3>{b.name}</h3>
+                <p class="role">{b.role}</p>
+                <p class="vision">{typo(b.vision)}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ── CTA — closed by the votive glyph ──── */}
+    <section class="band cta-band" aria-label={c.cta.aria}>
+      <div class="wrap reveal">
+        <span class="cta-glyph" aria-hidden="true"></span>
+        <h2>{c.cta.h2}</h2>
+        <p>{typo(c.cta.p)}</p>
+        <div class="btn-row">
+          <a class="btn btn-gold" href={hrefContact}>{c.cta.write}</a>
+          <a class="btn" href={hrefConcerts}>{c.cta.concerts}</a>
+          <a class="btn" href="/?donate" data-vault-open="100">{c.cta.support}</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter lang={lang} />
+
+  <VaultIsland client:idle />
+  <script>
+    import "../../scripts/vault-triggers.ts";
+  </script>
+</BaseLayout>
+
+<style>
+  /* Hero */
+  .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 var(--gutter) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }
+  .hero-media { position: absolute; inset: 0; z-index: -2; }
+  /* Photo keeps its full brightness; the text pocket (bottom-left) is deepened purely by the
+     72deg diagonal so it reads as light falloff, not a flat scrim. Top-right stays luminous. */
+  .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.44) 0%, rgba(8,8,7,.1) 38%, rgba(8,8,7,.8) 100%), linear-gradient(72deg, rgba(8,8,7,.72) 0%, rgba(8,8,7,.22) 46%, transparent 72%); }
+  .hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
+  .hero h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(54px, 10vw, 138px); letter-spacing: -.01em; margin: 18px 0 0; }
+  .hero h1 em { color: var(--candle); }
+  .hero-lede { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.3vw, 30px); line-height: 1.42; max-width: 30ch; margin: 26px 0 0; color: rgba(244,241,233,.9); }
+  .scroll-cue { margin-top: 40px; font-family: var(--mono); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244,241,233,.62); display: inline-flex; align-items: center; gap: 10px; }
+  .scroll-cue::after { content: ""; width: 38px; height: 1px; background: currentColor; opacity: .6; animation: cuepulse 3.4s var(--ease-slow) infinite; }
+
+  /* Sections / layout */
+  section { position: relative; }
+  .band { padding: clamp(84px, 13vw, 184px) var(--gutter); }
+  .band-soft { background: var(--paper-soft); }
+  .band-deep { background: var(--paper-deep); }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .measure { max-width: 720px; }
+
+  .section-head { margin: 0 0 clamp(40px, 6vw, 80px); }
+  .section-head .eyebrow { display: block; margin-bottom: 22px; }
+  .section-head h2 { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(36px, 5.6vw, 76px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 18ch; }
+
+  .prose p { margin: 0 0 20px; font-size: clamp(16px, 1.25vw, 18px); color: var(--ink-soft); }
+  .prose p.lead { font-family: var(--serif); font-style: italic; font-size: clamp(21px, 2.1vw, 28px); line-height: 1.5; color: var(--ink); margin-bottom: 28px; }
+  .prose strong { font-weight: 500; color: var(--ink); }
+  .prose a.inline { border-bottom: 1px solid var(--line-strong); transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .prose a.inline:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
+
+  /* Letter — the founder's voice, four short stanzas, portrait alongside, signed */
+  .letter { background: var(--paper); }
+  .letter-wrap { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) clamp(240px, 26vw, 320px); column-gap: clamp(44px, 6vw, 88px); row-gap: 0; align-items: start; }
+  .letter-head { grid-column: 1 / -1; }
+  .letter-lead { margin: 20px 0 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2vw, 26px); line-height: 1.45; color: var(--ink-soft); max-width: 36ch; }
+  .letter-body { display: grid; gap: clamp(36px, 5vw, 64px); padding: clamp(8px, 2vw, 28px) 0 0; }
+  .letter-stanza { display: grid; gap: 14px; }
+  .letter-mark { font-family: var(--mono); font-size: 10.5px; letter-spacing: .26em; line-height: 1.45; text-transform: uppercase; color: var(--candle); margin: 0; }
+  .letter-mark .lat { font-family: var(--serif); font-style: italic; text-transform: none; letter-spacing: 0; font-size: 16px; margin-right: 4px; }
+  .letter-para { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.48; color: var(--ink); letter-spacing: -.005em; }
+  .letter-signature { margin-top: clamp(40px, 6vw, 80px); padding-top: 22px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .letter-sig-name { font-family: var(--serif); font-style: italic; font-size: clamp(18px, 1.8vw, 24px); color: var(--ink); }
+  .letter-sig-meta { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-muted); }
+  /* Sticky: the portrait is ~400px tall against a ~2000px letter — static it would leave
+     the right column dead for most of the section; sticky, it accompanies the reader. */
+  .letter-portrait { position: sticky; top: clamp(96px, 12vh, 150px); margin: clamp(10px, 2vw, 30px) 0 0; }
+  .letter-portrait :global(picture) { display: block; }
+  .letter-portrait :global(img) { width: 100%; height: auto; display: block; aspect-ratio: 4 / 5; object-fit: cover; }
+  .letter-portrait .frame-rule { position: absolute; left: -1px; top: -1px; width: 34px; height: 34px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; z-index: 1; }
+  .letter-portrait figcaption { margin-top: 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); }
+  @media (max-width: 880px) {
+    .letter-wrap { grid-template-columns: 1fr; }
+    /* The portrait follows the signature in DOM order — it reads as a photograph
+       enclosed with the letter. Sticky off: last item in a single column has no
+       scroll range to stick through (and it would jitter against the nav). */
+    .letter-portrait { position: relative; top: auto; max-width: 340px; margin-top: clamp(36px, 7vw, 56px); }
+  }
+
+  /* Ensemble — collaborators line */
+  .voces-collab { margin-top: clamp(36px, 5vw, 56px); padding-top: clamp(22px, 3vw, 30px); border-top: 1px solid var(--line); max-width: 720px; }
+  .collab-label { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .voces-collab p { margin: 12px 0 0; font-size: 16px; line-height: 1.75; color: var(--ink-muted); max-width: 62ch; }
+
+  /* Co robimy — activity cards: category heading + concrete example + optional link */
+  .doings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(24px, 3.4vw, 48px); margin-top: clamp(30px, 4vw, 48px); }
+  .doing { display: grid; gap: 12px; padding-top: 24px; border-top: 1px solid var(--line-strong); align-content: start; }
+  .doing h3 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.5vw, 34px); font-weight: 300; line-height: 1.1; color: var(--ink); }
+  .doing p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
+  .doing a { justify-self: start; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 45%, transparent); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .doing a:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
+  .cantus-more { margin-top: 6px; }
+  @media (max-width: 720px) { .doings-grid { grid-template-columns: 1fr; } }
+
+  /* Milestones */
+  .milestones { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line); }
+  .milestones li { display: grid; grid-template-columns: max-content clamp(200px, 24vw, 320px) 1fr; gap: clamp(16px, 2.4vw, 36px); padding: clamp(24px, 4vw, 42px) 0; border-top: 1px solid var(--line); align-items: start; }
+  /* No about.img in YAML → the image column collapses so the body doesn't land in it. */
+  .milestones li.no-media { grid-template-columns: max-content 1fr; }
+  .milestone-date { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); }
+  .milestone-body { display: grid; gap: 9px; }
+  .milestone-body h3 { margin: 0; font-family: var(--serif); font-size: clamp(26px, 3vw, 42px); font-weight: 300; line-height: 1.08; color: var(--ink); }
+  .milestone-body p { margin: 0; max-width: 68ch; color: var(--ink-soft); font-size: clamp(15px, 1.18vw, 17px); line-height: 1.75; }
+  .milestone-place { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+  /* Frame owns the ratio (3:2) and clips — so any source crop renders identically,
+     regardless of the uploaded photo's intrinsic dimensions. */
+  .milestone-media { margin-inline: 40px; aspect-ratio: 3 / 2; overflow: hidden; }
+  .milestone-media :global(picture) { display: block; width: 100%; height: 100%; }
+  .milestone-media :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
+  .milestones-more { padding-top: 10px; }
+  @media (max-width: 700px) {
+    .milestones li, .milestones li.no-media { grid-template-columns: 1fr; gap: 12px; }
+    /* Keep the image on phones — a small 3:2 frame between date and title, not a cut. */
+    .milestone-media { margin-inline: 0; max-width: 420px; }
+  }
+
+  /* Foundation */
+  .goals { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 2px; }
+  .goals li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-top: 1px solid var(--line); font-size: clamp(15px, 1.2vw, 17px); color: var(--ink-soft); }
+  .goals li:last-child { border-bottom: 1px solid var(--line); }
+  .goals .g-num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--candle); }
+  .legal-card { margin-top: clamp(36px, 5vw, 56px); background: var(--paper); border: 1px solid var(--line); padding: clamp(26px, 3.4vw, 40px); display: grid; gap: 22px; }
+  .legal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .legal-grid div { display: grid; gap: 4px; }
+  .legal-grid .k { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-muted); }
+  .legal-grid .v { font-family: var(--mono); font-size: 15px; color: var(--ink); letter-spacing: .02em; }
+  .legal-foot { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 22px; font-family: var(--mono); font-size: 12px; color: var(--ink-muted); letter-spacing: .03em; }
+  .legal-note { margin: 0; max-width: 78ch; color: var(--ink-muted); font-size: 16px; line-height: 1.75; }
+  @media (max-width: 620px) { .legal-grid { grid-template-columns: 1fr; gap: 14px; } }
+
+  /* Governance */
+  .board-intro { max-width: 720px; margin: calc(clamp(40px, 6vw, 80px) * -0.45) 0 clamp(38px, 5vw, 64px); color: var(--ink-soft); font-size: clamp(16px, 1.25vw, 18px); }
+  .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 4vw, 56px); }
+  .board-card { display: grid; gap: 18px; padding-top: 26px; border-top: 1px solid var(--line-strong); }
+  .board-card h3 { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; color: var(--ink); margin: 0; }
+  .board-card .role { font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle); }
+  .board-card .vision { font-size: 15px; line-height: 1.8; color: var(--ink-muted); margin: 0; }
+  /* Portraits render only when ALL of src/assets/photos/o-nas-{florent,ania,krystian}.*
+     exist (boardPortraitsComplete) — a partial set would leave the grid ragged. */
+  .board-portrait { position: relative; margin: 0 0 4px; aspect-ratio: 4 / 5; overflow: hidden; background: rgba(22, 21, 20, 0.05); }
+  .board-portrait :global(img) { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; display: block; filter: saturate(0.88) contrast(1.02); }
+  .board-portrait::after { content: ""; position: absolute; left: 0; top: 0; width: 28px; height: 28px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; }
+  @media (max-width: 860px) { .board { grid-template-columns: 1fr; gap: 34px; } .board-portrait { max-width: 360px; } }
+
+  /* Plate */
+  .plate { position: relative; min-height: 70svh; display: flex; align-items: center; padding: clamp(64px,9vw,120px) var(--gutter); color: var(--paper); overflow: hidden; isolation: isolate; }
+  .plate-media { position: absolute; inset: 0; z-index: -2; }
+  .plate::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.5), rgba(8,8,7,.34)); }
+  .plate blockquote { margin: 0; max-width: 24ch; font-family: var(--serif); font-style: italic; font-weight: 300; line-height: 1.18; font-size: clamp(30px, 5vw, 64px); }
+  .plate cite { display: block; margin-top: 22px; font-style: normal; font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.7); }
+  /* Smaller quote on phones → shorter band. */
+  @media (max-width: 760px) { .plate { min-height: 28svh; } }
+
+  /* CTA — the votive glyph closes the page (same mark kontakt's coda carries) */
+  .cta-band { text-align: center; overflow: hidden; isolation: isolate; }
+  .cta-band::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 50% at 50% 24%, color-mix(in srgb, var(--candle) 10%, transparent) 0%, transparent 62%); }
+  .cta-glyph { display: block; width: 80px; height: 220px; margin: 0 auto 46px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .85; }
+  .cta-band h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(40px, 7vw, 92px); line-height: 1; color: var(--ink); margin: 0 0 14px; letter-spacing: -.01em; }
+  .cta-band p { max-width: 46ch; margin: 0 auto 38px; color: var(--ink-soft); }
+  .btn-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+  .btn { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; padding: 16px 30px; border: 1px solid var(--ink); color: var(--ink); transition: background-color .4s var(--ease), color .4s var(--ease), border-color .4s var(--ease); }
+  .btn:hover { background: var(--ink); color: var(--paper); }
+  .btn-gold { border-color: var(--candle); color: var(--ink); background: var(--candle); }
+  .btn-gold:hover { background: transparent; color: var(--ink); border-color: var(--candle); }
+
+  /* Variable-font heading breath (native, sparing). */
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .hero h1, .section-head h2 {
+        font-variation-settings: "wght" var(--wght);
+        animation: headingBreath linear both;
+        animation-timeline: view();
+        animation-range: entry 0% cover 55%;
+      }
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-cue::after { animation: none; }
+  }
+  @keyframes cuepulse { 0%, 100% { transform: scaleX(.4); opacity: .3; } 50% { transform: scaleX(1); opacity: .7; } }
+</style>

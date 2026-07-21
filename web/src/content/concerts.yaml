@@ -19,6 +19,14 @@
     place: "Bazylika NSPJ · Kraków"
     blurb: "Debiut cyklu Koncertów Duchowych: renesans, barok i współczesność ułożone wokół tajemnicy Bożego Narodzenia oraz Wcielenia."
     img: o-nas-wcielenie
+    en:
+      title: "Contemplation of the Incarnation"
+      place: "Sacred Heart Basilica · Kraków"
+      blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
+    fr:
+      title: "Contemplation de l'Incarnation"
+      place: "Basilique du Sacré-Cœur · Cracovie"
+      blurb: "Les débuts du cycle des Concerts Spirituels : Renaissance, baroque et création contemporaine réunis autour du mystère de la Nativité et de l'Incarnation."
   accent: "#c6a45b"
   essence: "Próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
   facts:
@@ -460,6 +468,12 @@
     place: "Dworek Gościnny · Szczawnica"
     blurb: "Koncert na dwanaście głosów i skrzypce z Radu Ropotanem: muzyka sakralna, przyroda i pieśni zakorzenione w krajobrazie Pienin."
     img: o-nas-wolanie-gor
+    en:
+      title: "The Call of the Mountains"
+      blurb: "A concert for twelve voices and violin with Radu Ropotan: sacred music, nature and songs rooted in the landscape of the Pieniny mountains."
+    fr:
+      title: "L'Appel des montagnes"
+      blurb: "Un concert pour douze voix et violon avec Radu Ropotan : musique sacrée, nature et chants enracinés dans le paysage des Pieniny."
   accent: "#7d9890"
   reverse: true
   inscriptio: "Ad te clamamus, exsules filii Hevae"
@@ -983,6 +997,14 @@
     place: "Rybnik · Łódź · Kraków"
     blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
     img: o-nas-9-kart
+    en:
+      title: "Nine Leaves from the Book of Psalms"
+      place: "Rybnik · Łódź · Kraków"
+      blurb: "A programme built from the psalms: from penitence and thanksgiving to the joy of praise, with music by Allegri, Bach, Rossi, Bruckner and Stanford."
+    fr:
+      title: "Neuf feuillets du Livre des Psaumes"
+      place: "Rybnik · Łódź · Cracovie"
+      blurb: "Un programme bâti sur les psaumes : de la pénitence et de l'action de grâce à la joie de la louange, avec des pièces d'Allegri, Bach, Rossi, Bruckner et Stanford."
   # Penitential violet: the evening is braided into Allegri's Miserere (Ps 51) — the
   # Tenebrae psalm; violet frames the program the way the Miserere frames the psalms.
   # (Was #bfa05f — a twin of Wcielenie's gold; the registrum made the clash visible.)
@@ -1470,6 +1492,14 @@
     place: "Bazylika Mariacka · Kraków"
     blurb: "Koncert duchowy jako hołd dla tych, którzy oddali życie w obronie wolności, oraz modlitwa o pokój dla Ukrainy i przyszłych pokoleń."
     img: o-nas-ukraina
+    en:
+      title: "Hymn for the Fallen"
+      place: "St Mary's Basilica · Kraków"
+      blurb: "A spiritual concert in tribute to those who gave their lives in defence of freedom, and a prayer for peace — for Ukraine and for the generations to come."
+    fr:
+      title: "Hymne aux morts"
+      place: "Basilique Sainte-Marie · Cracovie"
+      blurb: "Un concert spirituel en hommage à ceux qui ont donné leur vie pour la liberté, et une prière pour la paix — pour l'Ukraine et pour les générations à venir."
   accent: "#5e6e84"
   variant: memoriam
   inscriptio: "Боже великий, єдиний, нам Україну храни"
@@ -1924,6 +1954,14 @@
     place: "Mistrzejowice · Niedzica"
     blurb: "Program pamięci i współczucia wobec cierpienia cywilów: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti i Tavener prowadzący od lamentu ku modlitwie."
     img: o-nas-epitafium
+    en:
+      title: "Aeternam — Epitaph for Gaza"
+      place: "Mistrzejowice · Niedzica"
+      blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament toward prayer."
+    fr:
+      title: "Aeternam — Épitaphe pour Gaza"
+      place: "Mistrzejowice · Niedzica"
+      blurb: "Un programme de mémoire et de compassion face à la souffrance des civils : Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti et Tavener menant de la lamentation vers la prière."
   # Ash: an epitaph — "jaki napis wyryć na grobie GAZY?" The one achromatic dye in the
   # registrum (mourning wears no colour); candleFrom turns it into a near-monochrome,
   # quieted page light. (Was #4f5d77 — a twin of Hymn Poległym's steel.)
