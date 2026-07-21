@@ -2054,6 +2054,7 @@
     "fallback": {
       "chorister_hub_title": "Dokument",
       "project_call_sheet_title": "Call-Sheet",
+      "project_day_sheet_title": "Karta dnia",
       "project_score_title": "Partytura koncertu"
     },
     "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
@@ -3897,11 +3898,11 @@
       "menu_label": "Zapisz wydarzenie"
     },
     "card": {
-      "call_sheet_preview_title": "Podgląd Call-Sheet",
       "call_time": "Zbiórka:",
-      "download_call_sheet_aria": "Pobierz Call-Sheet PDF",
+      "day_sheet_preview_title": "Karta dnia",
+      "download_day_sheet_aria": "Pobierz kartę dnia (PDF)",
       "download_error_desc": "Nie udało się pobrać pliku.",
-      "download_loading": "Generowanie dokumentu Call-Sheet...",
+      "download_loading": "Przygotowywanie karty dnia...",
       "download_success": "Plik został pobrany",
       "dress_code_men": "Panowie:",
       "dress_code_title": "Szczegóły ubioru",
@@ -3916,7 +3917,7 @@
       "no_spotify": "Brak playlisty referencyjnej.",
       "note_label": "Notatka:",
       "open_detail": "Otwórz szczegóły: {{title}}",
-      "preview_call_sheet": "Podgląd Call-Sheet",
+      "preview_day_sheet": "Karta dnia",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
       "run_sheet_untitled": "Punkt harmonogramu",

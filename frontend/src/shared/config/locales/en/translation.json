@@ -2053,6 +2053,7 @@
     "fallback": {
       "chorister_hub_title": "Document",
       "project_call_sheet_title": "Call Sheet",
+      "project_day_sheet_title": "Day Sheet",
       "project_score_title": "Concert Score"
     },
     "invalid_description": "We could not recognize this document link. It may be malformed or out of date.",
@@ -3896,11 +3897,11 @@
       "menu_label": "Save event"
     },
     "card": {
-      "call_sheet_preview_title": "Call-Sheet",
       "call_time": "Call Time:",
-      "download_call_sheet_aria": "Download Call-Sheet PDF",
+      "day_sheet_preview_title": "Day Sheet",
+      "download_day_sheet_aria": "Download day sheet (PDF)",
       "download_error_desc": "Failed to download the file.",
-      "download_loading": "Generating Call Sheet document...",
+      "download_loading": "Preparing your day sheet...",
       "download_success": "File downloaded successfully",
       "dress_code_men": "Men:",
       "dress_code_title": "Dress Code Details",
@@ -3915,7 +3916,7 @@
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
       "open_detail": "Open details: {{title}}",
-      "preview_call_sheet": "Call-Sheet PDF",
+      "preview_day_sheet": "Day Sheet",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
       "run_sheet_untitled": "Schedule item",

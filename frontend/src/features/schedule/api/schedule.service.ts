@@ -114,4 +114,19 @@ export const ScheduleService = {
     );
     return response.data as Blob;
   },
+
+  /**
+   * Personalized concert-day sheet for the people performing it. The backend
+   * resolves the audience from the caller: a cast singer receives their own
+   * sheet (their voice, casting and pitch duties — no private contact
+   * directory), the project's conductor receives the music-forward maestro
+   * sheet. Managers use {@link exportCallSheet} for the full production version.
+   */
+  exportDaySheet: async (projectId: string | number): Promise<Blob> => {
+    const response = await api.get(
+      `/api/projects/${projectId}/export_day_sheet/`,
+      { responseType: "blob" },
+    );
+    return response.data as Blob;
+  },
 };

@@ -17,12 +17,14 @@ from celery.result import AsyncResult
 from django.core.cache import cache
 from django.db.models import Count, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from pydantic import ValidationError
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action, api_view
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 
 from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
@@ -53,7 +55,11 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
-from .infrastructure.document_generator import DocumentGenerator, DocumentRenderDependencyError
+from .infrastructure.document_generator import (
+    Audience,
+    DocumentGenerator,
+    DocumentRenderDependencyError,
+)
 from .infrastructure.score_watermark import stamp_pdf
 
 # Models & Exceptions
@@ -642,10 +648,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         return Response(PieceReadinessService.get_project_readiness_summary(project))
 
-    @action(detail=True, methods=['get'], permission_classes=[IsManager])
-    def export_call_sheet(self, request, pk=None) -> FileResponse:
-        project = self.get_object()
-        participations = Participation.objects.filter(project=project, is_deleted=False).select_related('artist').order_by('artist__last_name')
+    @staticmethod
+    def _call_sheet_querysets(project: Project):
+        """Shared, fully-prefetched querysets feeding the concert-day sheet.
+        Used by both the production export and the personalized day sheet."""
+        participations = (
+            Participation.objects
+            .filter(project=project, is_deleted=False)
+            .select_related('artist')
+            .order_by('artist__last_name')
+        )
         crew = CrewAssignment.objects.filter(project=project).select_related('collaborator')
         program = (
             ProgramItem.objects
@@ -688,22 +700,110 @@ class ProjectViewSet(viewsets.ModelViewSet):
             .select_related('piece', 'participation__artist')
             .order_by('piece__title', 'voice_line', 'participation__artist__last_name')
         )
+        return participations, crew, program, rehearsals, castings
 
-        pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(
-            project,
-            participations,
-            crew,
-            program,
-            rehearsals,
-            castings,
-            base_url=request.build_absolute_uri('/'),
-        )
+    def _render_call_sheet(
+        self,
+        request,
+        project: Project,
+        audience: Audience,
+        recipient: Participation | None,
+        filename_stub: str,
+    ) -> FileResponse | Response:
+        """Renders the day sheet for a resolved audience, degrading gracefully
+        if the PDF engine's native libraries are unavailable (rather than 500)."""
+        participations, crew, program, rehearsals, castings = self._call_sheet_querysets(project)
+        try:
+            pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(
+                project,
+                participations,
+                crew,
+                program,
+                rehearsals,
+                castings,
+                audience=audience,
+                recipient=recipient,
+                base_url=request.build_absolute_uri('/'),
+            )
+        except DocumentRenderDependencyError:
+            logger.exception("Call sheet render failed: WeasyPrint native dependencies missing")
+            return Response(
+                {"detail": _("Generator PDF jest chwilowo niedostępny. Spróbuj ponownie za chwilę.")},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
         buffer = io.BytesIO(pdf_bytes)
         buffer.seek(0)
-        
-        response = FileResponse(buffer, as_attachment=True, filename=f"CallSheet_{project.title.replace(' ', '_')}.pdf", content_type='application/pdf')
+        safe_title = project.title.replace(' ', '_')
+        response = FileResponse(
+            buffer,
+            as_attachment=True,
+            filename=f"{filename_stub}_{safe_title}.pdf",
+            content_type='application/pdf',
+        )
         response['Access-Control-Expose-Headers'] = 'Content-Disposition'
         return response
+
+    @action(detail=True, methods=['get'], permission_classes=[IsManager])
+    def export_call_sheet(self, request, pk=None) -> FileResponse | Response:
+        """Full production call sheet — managers only. Complete logistics,
+        casting, coverage metrics and the operational contact directory."""
+        project = self.get_object()
+        return self._render_call_sheet(
+            request, project, Audience.PRODUCTION, recipient=None, filename_stub="CallSheet",
+        )
+
+    @staticmethod
+    def _resolve_day_sheet_audience(
+        project: Project,
+        user,
+    ) -> tuple[Audience | None, Participation | None]:
+        """Maps the requesting user to the day sheet they're entitled to:
+        the maestro gets the conductor sheet, a cast singer gets their own
+        personalized sheet, everyone else is denied (managers use the full
+        production export instead)."""
+        if project.conductor_id and project.conductor and project.conductor.user_id == user.id:
+            return Audience.CONDUCTOR, None
+        recipient = (
+            Participation.objects
+            .filter(project=project, artist__user=user, is_deleted=False)
+            .exclude(status=Participation.Status.DECLINED)
+            .select_related('artist')
+            .first()
+        )
+        if recipient is not None:
+            return Audience.CHORISTER, recipient
+        return None, None
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='export_day_sheet',
+        permission_classes=[permissions.IsAuthenticated],
+    )
+    def export_day_sheet(self, request, pk=None) -> FileResponse | Response:
+        """Personalized concert-day sheet for the people performing it.
+
+        Unlike the manager-only production export, this is scoped to the
+        recipient: a cast singer receives their own sheet (their voice, casting
+        and pitch duties; no private contact directory), and the project's
+        conductor receives the music-forward maestro sheet. Not tied to
+        ``get_queryset`` on purpose — a conductor who isn't a participant would
+        otherwise be invisible to the project scope.
+        """
+        project = get_object_or_404(
+            Project.objects.select_related('conductor', 'location'),
+            pk=pk,
+        )
+        user = request_user(request)
+        audience, recipient = self._resolve_day_sheet_audience(project, user)
+        if audience is None:
+            raise PermissionDenied(
+                _("Nie masz dostępu do karty tego wydarzenia.")
+            )
+        return self._render_call_sheet(
+            request, project, audience, recipient, filename_stub="Karta",
+        )
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_zaiks(self, request, pk=None) -> StreamingHttpResponse:

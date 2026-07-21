@@ -1,6 +1,10 @@
 /**
  * @file useTimelineProjectCard.ts
- * @description Encapsulates lazy data fetching and call-sheet download handling for project timeline cards.
+ * @description Encapsulates lazy data fetching and day-sheet download handling for
+ * project timeline cards on the *personal* schedule. The day sheet is scoped
+ * server-side to the caller — a cast singer gets their personalized card, the
+ * conductor gets the maestro card — so this surface never touches the
+ * manager-only production call sheet.
  */
 
 import { useState, useCallback } from "react";
@@ -26,7 +30,7 @@ export const useTimelineProjectCard = (
   );
   const [expandedPieceId, setExpandedPieceId] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isCallSheetPreviewOpen, setCallSheetPreviewOpen] = useState(false);
+  const [isDaySheetPreviewOpen, setDaySheetPreviewOpen] = useState(false);
   const [isScorePdfPreviewOpen, setScorePdfPreviewOpen] = useState(false);
 
   const { data: programItems = [], isLoading: isProgramLoading } =
@@ -37,8 +41,8 @@ export const useTimelineProjectCard = (
   const { data: castings = [], isLoading: isCastingsLoading } =
     useSchedulePieceCastings(projectId, expandedPieceId, !!expandedPieceId);
 
-  const fetchCallSheetBlob = useCallback(
-    () => ScheduleService.exportCallSheet(projectId),
+  const fetchDaySheetBlob = useCallback(
+    () => ScheduleService.exportDaySheet(projectId),
     [projectId],
   );
 
@@ -47,16 +51,16 @@ export const useTimelineProjectCard = (
     [projectId],
   );
 
-  const handleOpenCallSheetPreview = useCallback(
+  const handleOpenDaySheetPreview = useCallback(
     (event: React.MouseEvent) => {
       event.stopPropagation();
-      setCallSheetPreviewOpen(true);
+      setDaySheetPreviewOpen(true);
     },
     [],
   );
 
-  const handleCloseCallSheetPreview = useCallback(() => {
-    setCallSheetPreviewOpen(false);
+  const handleCloseDaySheetPreview = useCallback(() => {
+    setDaySheetPreviewOpen(false);
   }, []);
 
   const handleOpenScorePdfPreview = useCallback(
@@ -71,21 +75,21 @@ export const useTimelineProjectCard = (
     setScorePdfPreviewOpen(false);
   }, []);
 
-  const handleDownloadCallSheet = async (event: React.MouseEvent) => {
+  const handleDownloadDaySheet = async (event: React.MouseEvent) => {
     event.stopPropagation();
     setIsDownloading(true);
     const toastId = toast.loading(
-      t("schedule.card.download_loading", "Generowanie dokumentu Call-Sheet..."),
+      t("schedule.card.download_loading", "Przygotowywanie karty dnia..."),
     );
 
     try {
-      const blob = await ScheduleService.exportCallSheet(projectId);
+      const blob = await ScheduleService.exportDaySheet(projectId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute(
         "download",
-        `CallSheet_${projectTitle.replace(/\s+/g, "_")}.pdf`,
+        `Karta_${projectTitle.replace(/\s+/g, "_")}.pdf`,
       );
       document.body.appendChild(link);
       link.click();
@@ -118,11 +122,11 @@ export const useTimelineProjectCard = (
     isProgramLoading,
     castings,
     isCastingsLoading,
-    handleDownloadCallSheet,
-    isCallSheetPreviewOpen,
-    fetchCallSheetBlob,
-    handleOpenCallSheetPreview,
-    handleCloseCallSheetPreview,
+    handleDownloadDaySheet,
+    isDaySheetPreviewOpen,
+    fetchDaySheetBlob,
+    handleOpenDaySheetPreview,
+    handleCloseDaySheetPreview,
     isScorePdfPreviewOpen,
     fetchScorePdfBlob,
     handleOpenScorePdfPreview,

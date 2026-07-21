@@ -16,6 +16,7 @@
 export type DocumentType =
   | "project-score"
   | "project-call-sheet"
+  | "project-day-sheet"
   | "chorister-hub";
 
 /**

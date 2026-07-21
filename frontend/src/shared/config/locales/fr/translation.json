@@ -2053,6 +2053,7 @@
     "fallback": {
       "chorister_hub_title": "Document",
       "project_call_sheet_title": "Feuille de service",
+      "project_day_sheet_title": "Feuille du jour",
       "project_score_title": "Partition de concert"
     },
     "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
@@ -3896,11 +3897,11 @@
       "menu_label": "Enregistrer l'événement"
     },
     "card": {
-      "call_sheet_preview_title": "Aperçu Call-Sheet",
       "call_time": "Convocation :",
-      "download_call_sheet_aria": "Télécharger Call-Sheet PDF",
+      "day_sheet_preview_title": "Feuille du jour",
+      "download_day_sheet_aria": "Télécharger la feuille du jour (PDF)",
       "download_error_desc": "Impossible de télécharger le fichier.",
-      "download_loading": "Génération du document Call Sheet...",
+      "download_loading": "Préparation de la feuille du jour...",
       "download_success": "Fichier téléchargé avec succès",
       "dress_code_men": "Hommes :",
       "dress_code_title": "Détails de la tenue",
@@ -3915,7 +3916,7 @@
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
       "open_detail": "Ouvrir les détails : {{title}}",
-      "preview_call_sheet": "Call-Sheet PDF",
+      "preview_day_sheet": "Feuille du jour",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
       "run_sheet_untitled": "Élément du programme",

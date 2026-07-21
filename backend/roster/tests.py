@@ -13,7 +13,11 @@ from core.models import UserProfile
 from notifications.models import NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
-from .infrastructure.document_generator import DocumentRenderDependencyError
+from .infrastructure.document_generator import (
+    Audience,
+    DocumentGenerator,
+    DocumentRenderDependencyError,
+)
 from .models import Artist, Participation, Project, Rehearsal, VoiceType
 from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService
 
@@ -1870,3 +1874,311 @@ class ConductorScheduleAndMaterialsTests(APITestCase):
         self.assertEqual(len(rows), 1)
         self.assertFalse(rows[0]["is_conducting"])
         self.assertEqual(rows[0]["participation_id"], str(maestro_part.id))
+
+
+class ConcertDaySheetTests(APITestCase):
+    """
+    The concert-day sheet is audience-shaped. This covers the access model
+    (the production export is manager-only; the personalized day sheet is scoped
+    to the cast singer or the conductor), the per-singer personalization, the
+    chronological run sheet, and — critically — that a singer's sheet never
+    carries the crew's private phone/email.
+    """
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+        from core.constants import AppRole, VoiceLine
+        from core.models import UserProfile
+
+        from .models import (
+            Artist,
+            Collaborator,
+            CrewAssignment,
+            ProgramItem,
+            ProjectPieceCasting,
+        )
+
+        User = get_user_model()
+        now = timezone.now()
+
+        # Manager without an artist profile — production export only.
+        self.manager = User.objects.create_user(
+            username="ds-mgr", email="ds-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        # Conductor: a User linked to a CONDUCTOR-voiced Artist; conducts, not cast.
+        self.maestro_user = User.objects.create_user(
+            username="ds-cond", email="ds-cond@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.ARTIST)
+        self.maestro = Artist.objects.create(
+            user=self.maestro_user, first_name="Wanda", last_name="Baton",
+            email="ds-cond@test.pl", voice_type=VoiceType.CONDUCTOR,
+            phone_number="600100100", first_name_vocative="Wando",
+        )
+
+        # Cast singer — the recipient of a personalized sheet.
+        self.singer_user = User.objects.create_user(
+            username="ds-singer", email="ds-singer@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Ada", last_name="Lovelace",
+            email="ds-singer@test.pl", voice_type=VoiceType.ALTO,
+            first_name_vocative="Ado",
+        )
+
+        # A section-mate (same voice) so "Twoja sekcja" is non-empty.
+        self.mate = Artist.objects.create(
+            first_name="Bea", last_name="Second", email="ds-mate@test.pl",
+            voice_type=VoiceType.ALTO,
+        )
+
+        # Outsider — neither cast nor conducting.
+        self.outsider_user = User.objects.create_user(
+            username="ds-out", email="ds-out@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.outsider_user, role=AppRole.ARTIST)
+
+        self.project = Project.objects.create(
+            title="Vespers of Light", date_time=now, timezone="Europe/Warsaw",
+            call_time=now - timedelta(hours=1), conductor=self.maestro,
+            run_sheet=[
+                {"time": "20:00", "title": "Downbeat"},
+                {"time": "18:30", "title": "Call & warm-up"},
+                {"time": "19:15", "title": "Sound check"},
+            ],
+        )
+
+        self.singer_part = Participation.objects.create(
+            artist=self.singer, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        Participation.objects.create(
+            artist=self.mate, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        composer = Composer.objects.create(first_name="Claudio", last_name="Monteverdi")
+        self.piece1 = Piece.objects.create(title="Dixit Dominus", composer=composer)
+        self.piece2 = Piece.objects.create(title="Magnificat", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.piece1, order=1)
+        ProgramItem.objects.create(project=self.project, piece=self.piece2, order=2)
+
+        # Singer sings both; gives the pitch on piece 1 only.
+        ProjectPieceCasting.objects.create(
+            participation=self.singer_part, piece=self.piece1,
+            voice_line=VoiceLine.ALTO_1, gives_pitch=True, notes="Wejście po organach",
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.singer_part, piece=self.piece2, voice_line=VoiceLine.ALTO_1,
+        )
+
+        # Crew with real PII that must NEVER reach a singer's sheet.
+        collaborator = Collaborator.objects.create(
+            first_name="Sound", last_name="Engineer",
+            specialty=Collaborator.Specialty.SOUND,
+            phone_number="555999555", email="crew-secret@test.pl",
+        )
+        CrewAssignment.objects.create(
+            project=self.project, collaborator=collaborator,
+            status=CrewAssignment.Status.CONFIRMED,
+        )
+
+        # Two rehearsals: one whole-ensemble, one that invites the singer only.
+        self.reh_open = Rehearsal.objects.create(
+            project=self.project, date_time=now + timedelta(days=1)
+        )
+        self.reh_singer_only = Rehearsal.objects.create(
+            project=self.project, date_time=now + timedelta(days=2)
+        )
+        self.reh_singer_only.invited_participations.add(self.singer_part)
+
+    def _build_context(self, audience: Audience, recipient: Participation | None) -> dict:
+        from .views import ProjectViewSet
+
+        parts, crew, program, reh, cast = ProjectViewSet._call_sheet_querysets(self.project)
+        return DocumentGenerator._build_call_sheet_context(
+            project=self.project, participations=parts, crew=crew, program=program,
+            rehearsals=reh, castings=cast, audience=audience, recipient=recipient,
+            base_url="http://testserver/",
+        )
+
+    # --- access model -------------------------------------------------- #
+
+    def test_production_export_forbidden_for_singer(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_call_sheet/")
+        self.assertEqual(resp.status_code, 403)
+
+    @patch("roster.views.DocumentGenerator.generate_call_sheet_pdf")
+    def test_production_export_ok_for_manager(self, render_mock) -> None:
+        render_mock.return_value = b"%PDF-1.4 prod"
+        self.client.force_authenticate(user=self.manager)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_call_sheet/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/pdf")
+        _, kwargs = render_mock.call_args
+        self.assertEqual(kwargs["audience"], Audience.PRODUCTION)
+        self.assertIsNone(kwargs["recipient"])
+
+    @patch("roster.views.DocumentGenerator.generate_call_sheet_pdf")
+    def test_day_sheet_personalizes_for_singer(self, render_mock) -> None:
+        render_mock.return_value = b"%PDF-1.4 singer"
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+        self.assertEqual(resp.status_code, 200)
+        _, kwargs = render_mock.call_args
+        self.assertEqual(kwargs["audience"], Audience.CHORISTER)
+        self.assertEqual(kwargs["recipient"].id, self.singer_part.id)
+
+    @patch("roster.views.DocumentGenerator.generate_call_sheet_pdf")
+    def test_day_sheet_conductor_audience_for_maestro(self, render_mock) -> None:
+        render_mock.return_value = b"%PDF-1.4 cond"
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+        self.assertEqual(resp.status_code, 200)
+        _, kwargs = render_mock.call_args
+        self.assertEqual(kwargs["audience"], Audience.CONDUCTOR)
+        self.assertIsNone(kwargs["recipient"])
+
+    def test_day_sheet_forbidden_for_outsider(self) -> None:
+        self.client.force_authenticate(user=self.outsider_user)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+        self.assertEqual(resp.status_code, 403)
+
+    @patch("roster.views.DocumentGenerator.generate_call_sheet_pdf")
+    def test_day_sheet_returns_503_when_renderer_missing(self, render_mock) -> None:
+        render_mock.side_effect = DocumentRenderDependencyError("no native libs")
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+        self.assertEqual(resp.status_code, 503)
+
+    # --- data shape / personalization / privacy ------------------------ #
+
+    def test_run_sheet_is_chronological(self) -> None:
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        times = [item["time"] for item in ctx["run_sheet_items"]]
+        self.assertEqual(times, ["18:30", "19:15", "20:00"])
+
+    def test_score_links_are_gated_never_raw_media(self) -> None:
+        """The score/edition hyperlinks in the sheet must target the access-gated
+        endpoints, never a bare /media/ file URL. nginx serves the score media
+        prefixes `internal;`, so a raw link 404s and would also bypass watermarking
+        + access logging. Mirrors the serializer convention asserted in
+        MaterialsAccessControlTests."""
+        from archive.models import ScoreEdition
+
+        self.project.score_pdf = _pdf_upload()
+        self.project.save(update_fields=["score_pdf"])
+        ScoreEdition.objects.create(
+            piece=self.piece1, pdf_file=_pdf_upload("dixit.pdf"),
+            original_filename="dixit.pdf", sha256="", page_count=1, is_default=True,
+        )
+
+        ctx = self._build_context(Audience.PRODUCTION, None)
+
+        self.assertIn(f"/api/projects/{self.project.pk}/score_pdf/", ctx["project_score_url"])
+        self.assertNotIn("/media/", ctx["project_score_url"])
+
+        card = next(c for c in ctx["program_cards"] if c["piece_id"] == self.piece1.id)
+        self.assertIn("/api/materials/scores/", card["sheet_music_url"])
+        self.assertNotIn("/media/", card["sheet_music_url"])
+
+    def test_generation_stamp_present_in_rendered_sheet(self) -> None:
+        """The 'as of' stamp must reach the page body (not just file metadata),
+        so a reprinted sheet can be told apart from a stale copy."""
+        from django.template.loader import render_to_string
+
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        self.assertTrue(ctx["generation_label"])
+        html = render_to_string("projects/call_sheet_pdf.html", ctx)
+        self.assertIn(ctx["generation_label"], html)
+        self.assertIn("Stan na", html)
+
+    def test_singer_sheet_personalizes_and_marks_pitch(self) -> None:
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+        personal = ctx["personal"]
+        self.assertIsNotNone(personal)
+        self.assertEqual(personal["full_name"], "Ada Lovelace")
+        self.assertTrue(personal["gives_pitch_anywhere"])
+        self.assertEqual(
+            [a["title"] for a in personal["assignments"]],
+            ["Dixit Dominus", "Magnificat"],
+        )
+        self.assertIn("Bea Second", personal["section_mates"])
+        card1 = next(c for c in ctx["program_cards"] if c["order"] == 1)
+        self.assertIsNotNone(card1["you"])
+        self.assertTrue(card1["you"]["gives_pitch"])
+
+    def test_singer_sheet_never_leaks_crew_pii(self) -> None:
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+        blob = repr(ctx["contact_directory"])
+        self.assertNotIn("555999555", blob)
+        self.assertNotIn("crew-secret@test.pl", blob)
+        # Only the conductor's name is surfaced — and with no private number.
+        self.assertEqual(len(ctx["contact_directory"]), 1)
+        self.assertEqual(ctx["contact_directory"][0]["phone"], "")
+
+    def test_production_sheet_includes_crew_contacts(self) -> None:
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        self.assertIn("555999555", repr(ctx["contact_directory"]))
+
+    def test_singer_only_sees_relevant_rehearsals(self) -> None:
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+        # The whole-ensemble call and the singer-targeted one — both relevant.
+        self.assertEqual(len(ctx["rehearsal_items"]), 2)
+
+    def test_sections_reorder_per_audience(self) -> None:
+        self.assertEqual(
+            self._build_context(Audience.CHORISTER, self.singer_part)["sections"][0],
+            "personal",
+        )
+        self.assertEqual(
+            self._build_context(Audience.CONDUCTOR, None)["sections"][0], "program"
+        )
+        self.assertEqual(
+            self._build_context(Audience.PRODUCTION, None)["sections"][0], "metrics"
+        )
+
+    def test_template_renders_for_every_audience(self) -> None:
+        # Exercises the real Django template (WeasyPrint is mocked elsewhere, so
+        # a template syntax error would otherwise only surface at runtime).
+        from django.template.loader import render_to_string
+
+        cases = [
+            (Audience.CHORISTER, self.singer_part, "Twoja rola dzisiaj"),
+            (Audience.CONDUCTOR, None, "Karta dyrygenta"),
+            (Audience.PRODUCTION, None, "Call sheet"),
+        ]
+        for audience, recipient, marker in cases:
+            ctx = self._build_context(audience, recipient)
+            html = render_to_string("projects/call_sheet_pdf.html", ctx)
+            self.assertIn(marker, html)
+            self.assertIn(self.project.title, html)
+
+        # The privacy guarantee holds in the *rendered* singer document, too.
+        singer_html = render_to_string(
+            "projects/call_sheet_pdf.html",
+            self._build_context(Audience.CHORISTER, self.singer_part),
+        )
+        self.assertNotIn("555999555", singer_html)
+        self.assertNotIn("crew-secret@test.pl", singer_html)
+        self.assertIn("podajesz", singer_html)
+
+    def test_resolve_audience_maps_users(self) -> None:
+        from .views import ProjectViewSet
+
+        aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.singer_user)
+        self.assertEqual(aud, Audience.CHORISTER)
+        assert rec is not None
+        self.assertEqual(rec.id, self.singer_part.id)
+
+        aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.maestro_user)
+        self.assertEqual(aud, Audience.CONDUCTOR)
+        self.assertIsNone(rec)
+
+        aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.outsider_user)
+        self.assertIsNone(aud)
+        self.assertIsNone(rec)

@@ -6,6 +6,14 @@ Strictly isolated from core business logic. Acts as an infrastructure adapter
 for the rendering engine (WeasyPrint / Django Templates). This design enables
 effortless migration to microservices (for example AWS Lambda PDF rendering) in
 the future.
+
+The concert-day sheet is audience-shaped: the same production data is rendered
+into three documents with different priorities and privacy rules — a personal
+sheet for a single singer (``Audience.CHORISTER``), a music-forward sheet for
+the maestro (``Audience.CONDUCTOR``), and the full production call sheet for
+management (``Audience.PRODUCTION``). Typography is pinned to the bundled
+Gentium Plus face (see ``print_fonts``) so the PDF renders identically on the
+Windows dev host and the Linux runtime image.
 """
 
 from __future__ import annotations
@@ -13,14 +21,17 @@ from __future__ import annotations
 import zoneinfo
 from collections import defaultdict
 from collections.abc import Iterator
+from enum import StrEnum
 from typing import Any
 from urllib.parse import quote_plus, urljoin
 
+from django.conf import settings
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from django.utils import timezone
 
 from core.constants import VoiceLine
+from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
 from roster.models import (
     Artist,
     CrewAssignment,
@@ -45,6 +56,56 @@ _VOICE_TYPE_ORDER: dict[str, int] = {
     VoiceType.BASS: 6,
     VoiceType.CONDUCTOR: 7,
 }
+
+
+class Audience(StrEnum):
+    """Who the concert-day sheet is compiled for. Drives section order,
+    personalization and — critically — which contact PII is exposed."""
+
+    CHORISTER = "chorister"
+    CONDUCTOR = "conductor"
+    PRODUCTION = "production"
+
+
+# Ordered section pipeline per audience. The template renders exactly these
+# sections, in this order (the hero is always rendered first, outside the loop).
+# Keep the keys in sync with the ``{% if section == %}`` chain in
+# ``projects/call_sheet_pdf.html``.
+_SECTIONS: dict[Audience, tuple[str, ...]] = {
+    # Singer first: what concerns *them* today, then the day, then the music.
+    Audience.CHORISTER: ("personal", "event", "runsheet", "rehearsals", "program"),
+    # Maestro first: the musical arc and who sings/gives pitch, then the day.
+    Audience.CONDUCTOR: (
+        "program",
+        "casting",
+        "ensemble",
+        "runsheet",
+        "rehearsals",
+        "event",
+        "contacts",
+    ),
+    # Management: full coverage picture, logistics, everything, everyone.
+    Audience.PRODUCTION: (
+        "metrics",
+        "event",
+        "runsheet",
+        "rehearsals",
+        "program",
+        "casting",
+        "contacts",
+        "ensemble",
+    ),
+}
+
+
+def _ensemble_name() -> str:
+    """Resident-ensemble name for the document chrome, from settings (rebrandable)."""
+    return getattr(settings, "SCORE_BOOK_ENSEMBLE_NAME", "VoctEnsemble")
+
+
+def _doc_lang() -> str:
+    """Document language for print hyphenation, from settings."""
+    return getattr(settings, "SCORE_BOOK_LANG", "pl")
 
 
 class DocumentRenderDependencyError(RuntimeError):
@@ -74,9 +135,15 @@ class DocumentGenerator:
         program: QuerySet[ProgramItem],
         rehearsals: QuerySet[Rehearsal],
         castings: QuerySet[ProjectPieceCasting],
+        audience: Audience = Audience.PRODUCTION,
+        recipient: Participation | None = None,
         base_url: str | None = None,
     ) -> bytes:
-        """Compiles an Enterprise-grade PDF Call Sheet binary payload."""
+        """Compiles the concert-day sheet PDF for the given audience.
+
+        ``recipient`` personalizes the ``CHORISTER`` sheet (their voice, their
+        casting, their pitch duties). It is ignored for the other audiences.
+        """
         context = DocumentGenerator._build_call_sheet_context(
             project=project,
             participations=participations,
@@ -84,6 +151,8 @@ class DocumentGenerator:
             program=program,
             rehearsals=rehearsals,
             castings=castings,
+            audience=audience,
+            recipient=recipient,
             base_url=base_url,
         )
         html_string = render_to_string('projects/call_sheet_pdf.html', context)
@@ -131,27 +200,27 @@ class DocumentGenerator:
     def generate_zaiks_csv_iterator(program_items: QuerySet[ProgramItem]) -> Iterator[str]:
         """Generates a streaming CSV payload for ZAiKS copyright reporting."""
         yield 'Lp.;Tytuł Utworu;Kompozytor;Aranżer;Czas trwania;Uwagi (BIS)\n'
-        
+
         for idx, item in enumerate(program_items, 1):
             title = item.piece.title if item.piece else 'Nieznany tytuł'
-            
+
             composer_name = 'Nieznany'
             if item.piece and hasattr(item.piece, 'composer') and item.piece.composer:
                 if hasattr(item.piece.composer, 'last_name'):
                     composer_name = f"{getattr(item.piece.composer, 'first_name', '')} {item.piece.composer.last_name}".strip()
                 else:
                     composer_name = str(item.piece.composer)
-                    
+
             arranger_name = getattr(item.piece, 'arranger', '-') if item.piece else '-'
             encore = 'BIS' if item.is_encore else ''
-            
+
             yield f'{idx};{title};{composer_name};{arranger_name};;{encore}\n'
 
     @staticmethod
     def generate_dtp_export_text(project: Project, participations: QuerySet[Participation]) -> str:
         """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP)."""
         groups: dict[str, list[Artist]] = {'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': []}
-        
+
         for p in participations:
             vt = p.artist.voice_type or ''
             if vt.startswith('S'):
@@ -170,7 +239,7 @@ class DocumentGenerator:
             'groups': groups,
             'generation_date': timezone.now()
         }
-        
+
         return render_to_string('projects/dtp_export.txt', context)
 
     @staticmethod
@@ -181,6 +250,8 @@ class DocumentGenerator:
         program: QuerySet[ProgramItem],
         rehearsals: QuerySet[Rehearsal],
         castings: QuerySet[ProjectPieceCasting],
+        audience: Audience,
+        recipient: Participation | None,
         base_url: str | None,
     ) -> dict[str, Any]:
         participation_list = list(participations)
@@ -188,6 +259,17 @@ class DocumentGenerator:
         program_items = list(program)
         rehearsal_list = list(rehearsals)
         casting_list = list(castings)
+
+        is_chorister = audience == Audience.CHORISTER
+        # The chorister sheet is personalized only when we actually know who the
+        # recipient is; without it we degrade gracefully to a non-personal sheet.
+        personal = (
+            DocumentGenerator._build_personal_block(
+                recipient, program_items, casting_list, participation_list
+            )
+            if is_chorister and recipient is not None
+            else None
+        )
 
         project_timezone = project.timezone or (
             project.location.timezone if project.location else 'UTC'
@@ -218,8 +300,19 @@ class DocumentGenerator:
         )
         tentative_crew_count = max(len(crew_list) - confirmed_crew_count, 0)
 
+        # Program cards, optionally annotated with the recipient's own line.
+        recipient_line_by_piece = (
+            {c.piece_id: c for c in casting_list if c.participation_id == recipient.id}
+            if recipient is not None
+            else {}
+        )
         program_cards = [
-            DocumentGenerator._build_program_card(item, piece_castings_map.get(item.piece_id, []), base_url)
+            DocumentGenerator._build_program_card(
+                item,
+                piece_castings_map.get(item.piece_id, []),
+                recipient_line_by_piece.get(item.piece_id),
+                base_url,
+            )
             for item in program_items
         ]
         total_program_duration_seconds = sum(
@@ -234,7 +327,7 @@ class DocumentGenerator:
         venue_map_url = DocumentGenerator._build_map_url(venue)
         event_facts = [
             {'label': 'Data wydarzenia', 'text': DocumentGenerator._format_date(event_datetime_local)},
-            {'label': 'Call time', 'text': DocumentGenerator._format_time(call_time_local)},
+            {'label': 'Zbiórka (call)', 'text': DocumentGenerator._format_time(call_time_local)},
             {'label': 'Start koncertu', 'text': DocumentGenerator._format_time(event_datetime_local)},
             {'label': 'Strefa czasowa', 'text': project_timezone},
             {'label': 'Miejsce', 'text': venue.name if venue else 'Do ustalenia'},
@@ -251,87 +344,67 @@ class DocumentGenerator:
         if project.conductor:
             event_facts.append({'label': 'Prowadzenie', 'text': str(project.conductor)})
 
-        preparation_assets = [
-            {
-                'label': 'Pelny score projektu',
-                'status': 'Gotowe' if project.score_pdf else 'Brak',
-                'url': DocumentGenerator._build_file_url(project.score_pdf, base_url),
-                'note': 'Kompletny pakiet nut dla calego wydarzenia.',
-            },
-            {
-                'label': 'Spotify playlist',
-                'status': 'Gotowe' if project.spotify_playlist_url else 'Brak',
-                'url': project.spotify_playlist_url,
-                'note': 'Referencyjna kolejnosc i brzmienie programu.',
-            },
-            {
-                'label': 'Nuty per utwor',
-                'status': f'{pieces_with_sheet_music}/{len(program_cards)}'
-                if program_cards
-                else '0/0',
-                'note': 'Liczba pozycji z dedykowanym PDF partytury lub materialu.',
-            },
-            {
-                'label': 'Tracki sekcyjne',
-                'status': f'{pieces_with_tracks}/{len(program_cards)}'
-                if program_cards
-                else '0/0',
-                'note': 'Pozycje z przygotowanymi trackami do samodzielnego utrwalenia.',
-            },
-            {
-                'label': 'Nagrania referencyjne',
-                'status': f'{pieces_with_reference}/{len(program_cards)}'
-                if program_cards
-                else '0/0',
-                'note': 'Utwory z linkiem do YouTube lub Spotify.',
-            },
-            {
-                'label': 'Casting rozpisany',
-                'status': f'{pieces_with_casting}/{len(program_cards)}'
-                if program_cards
-                else '0/0',
-                'note': 'Pozycje z gotowym micro-castingiem i odpowiedzialnosciami.',
-            },
-        ]
+        # Preparation-readiness meters are a management concern; singers get a
+        # short "what to open" list, managers get the full coverage picture.
+        preparation_assets = DocumentGenerator._build_preparation_assets(
+            project, program_cards, base_url, audience,
+            pieces_with_sheet_music, pieces_with_tracks,
+            pieces_with_reference, pieces_with_casting,
+        )
 
         dress_code_entries = []
         if project.dress_code_female:
             dress_code_entries.append({'label': 'Kobiety', 'value': project.dress_code_female})
         if project.dress_code_male:
-            dress_code_entries.append({'label': 'Mezczyzni', 'value': project.dress_code_male})
+            dress_code_entries.append({'label': 'Mężczyźni', 'value': project.dress_code_male})
         if not dress_code_entries:
             dress_code_entries.append({'label': 'Dress code', 'value': 'Do potwierdzenia przez management.'})
 
-        contact_directory = []
-        if project.conductor:
-            contact_directory.append(
-                {
-                    'name': f'{project.conductor.first_name} {project.conductor.last_name}',
-                    'role': 'Dyrygent',
-                    'organization': '',
-                    'status': 'Kontakt glowny',
-                    'phone': project.conductor.phone_number,
-                    'email': project.conductor.email,
-                }
-            )
-        for assignment in crew_list:
-            contact_directory.append(
-                {
-                    'name': f'{assignment.collaborator.first_name} {assignment.collaborator.last_name}',
-                    'role': (
-                        assignment.role_description
-                        or assignment.collaborator.get_specialty_display()
-                    ),
-                    'organization': assignment.collaborator.company_name,
-                    'status': assignment.get_status_display(),
-                    'phone': assignment.collaborator.phone_number,
-                    'email': assignment.collaborator.email or '',
-                }
+        # Contacts carry personal phone/email — never handed to the whole choir.
+        contact_directory = DocumentGenerator._build_contact_directory(
+            project, crew_list, audience
+        )
+
+        rehearsal_items = [
+            DocumentGenerator._build_rehearsal_item(rehearsal, project, recipient)
+            for rehearsal in rehearsal_list
+        ]
+        # A singer only sees rehearsals that concern them (whole-ensemble calls
+        # plus any they were personally invited to).
+        if is_chorister:
+            rehearsal_items = [item for item in rehearsal_items if item['is_for_me']]
+
+        greeting = None
+        if recipient is not None:
+            artist = recipient.artist
+            greeting = artist.first_name_vocative.strip() or artist.first_name
+        elif audience == Audience.CONDUCTOR and project.conductor:
+            greeting = (
+                project.conductor.first_name_vocative.strip()
+                or project.conductor.first_name
             )
 
         return {
             'project': project,
+            'audience': audience.value,
+            'sections': list(_SECTIONS[audience]),
+            'is_chorister': is_chorister,
+            'is_conductor': audience == Audience.CONDUCTOR,
+            'is_production': audience == Audience.PRODUCTION,
+            'ensemble_name': _ensemble_name(),
+            'doc_lang': _doc_lang(),
+            'font_css': font_face_css(),
+            'font_stack': BOOK_FONT_STACK,
+            'greeting': greeting,
+            'personal': personal,
             'generation_date': timezone.now(),
+            # A concert-day sheet gets reprinted as the plan changes; an "as of"
+            # stamp on the page (not just the file metadata) is what stops people
+            # working off a stale copy. Localised to the project timezone so it
+            # reads in the same clock as the rest of the sheet.
+            'generation_label': DocumentGenerator._format_datetime(
+                DocumentGenerator._localize(timezone.now(), project_timezone)
+            ),
             'event_datetime_local': event_datetime_local,
             'call_time_local': call_time_local,
             'event_date_label': DocumentGenerator._format_date(event_datetime_local),
@@ -343,14 +416,15 @@ class DocumentGenerator:
             ),
             'event_facts': event_facts,
             'venue_map_url': venue_map_url,
-            'project_score_url': DocumentGenerator._build_file_url(project.score_pdf, base_url),
+            'project_score_url': (
+                DocumentGenerator._absolute_url(base_url, f'/api/projects/{project.pk}/score_pdf/')
+                if project.score_pdf
+                else ''
+            ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
             'run_sheet_items': DocumentGenerator._normalize_run_sheet(project.run_sheet),
-            'rehearsal_items': [
-                DocumentGenerator._build_rehearsal_item(rehearsal, project)
-                for rehearsal in rehearsal_list
-            ],
+            'rehearsal_items': rehearsal_items,
             'program_cards': program_cards,
             'casting_sections': [
                 DocumentGenerator._build_casting_section(item, piece_castings_map.get(item.piece_id, []))
@@ -378,9 +452,165 @@ class DocumentGenerator:
         }
 
     @staticmethod
+    def _build_personal_block(
+        recipient: Participation,
+        program_items: list[ProgramItem],
+        casting_list: list[ProjectPieceCasting],
+        participation_list: list[Participation],
+    ) -> dict[str, Any]:
+        """The heart of the singer sheet: their voice, their pieces, their pitch
+        duties, and their section-mates for the day."""
+        artist = recipient.artist
+        order_by_piece = {item.piece_id: item.order for item in program_items}
+        title_by_piece = {item.piece_id: item.piece.title for item in program_items}
+
+        assignments = [
+            {
+                'order': order_by_piece.get(casting.piece_id),
+                'title': title_by_piece.get(casting.piece_id, 'Pozycja programu'),
+                'voice_line': casting.get_voice_line_display(),
+                'gives_pitch': casting.gives_pitch,
+                'notes': casting.notes.strip() if casting.notes else '',
+            }
+            for casting in casting_list
+            if casting.participation_id == recipient.id
+        ]
+        assignments.sort(key=lambda entry: (entry['order'] is None, entry['order'] or 0))
+
+        section_mates = sorted(
+            f'{p.artist.first_name} {p.artist.last_name}'
+            for p in participation_list
+            if p.id != recipient.id
+            and p.status == Participation.Status.CONFIRMED
+            and p.artist.voice_type == artist.voice_type
+        )
+
+        return {
+            'full_name': f'{artist.first_name} {artist.last_name}',
+            'voice_label': artist.get_voice_type_display(),
+            'status_label': recipient.get_status_display(),
+            'is_confirmed': recipient.status == Participation.Status.CONFIRMED,
+            'assignments': assignments,
+            'gives_pitch_anywhere': any(entry['gives_pitch'] for entry in assignments),
+            'section_mates': section_mates,
+            'section_size': len(section_mates) + 1,
+        }
+
+    @staticmethod
+    def _build_preparation_assets(
+        project: Project,
+        program_cards: list[dict[str, Any]],
+        base_url: str | None,
+        audience: Audience,
+        pieces_with_sheet_music: int,
+        pieces_with_tracks: int,
+        pieces_with_reference: int,
+        pieces_with_casting: int,
+    ) -> list[dict[str, Any]]:
+        total = len(program_cards)
+        # Singers get the two things they actually open before a concert; the
+        # coverage counters ("12/14 pieces have tracks") are a manager's metric.
+        singer_assets = [
+            {
+                'label': 'Pełny score projektu',
+                'status': 'Gotowe' if project.score_pdf else 'Brak',
+                'url': (
+                    DocumentGenerator._absolute_url(base_url, f'/api/projects/{project.pk}/score_pdf/')
+                    if project.score_pdf
+                    else ''
+                ),
+                'note': 'Kompletny pakiet nut na dziś. Otwórz w aplikacji lub wydrukuj.',
+            },
+            {
+                'label': 'Playlista referencyjna',
+                'status': 'Gotowe' if project.spotify_playlist_url else 'Brak',
+                'url': project.spotify_playlist_url,
+                'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
+            },
+        ]
+        if audience != Audience.PRODUCTION:
+            return singer_assets
+
+        return [
+            *singer_assets,
+            {
+                'label': 'Nuty per utwór',
+                'status': f'{pieces_with_sheet_music}/{total}' if total else '0/0',
+                'note': 'Liczba pozycji z dedykowanym PDF partytury lub materiału.',
+            },
+            {
+                'label': 'Tracki sekcyjne',
+                'status': f'{pieces_with_tracks}/{total}' if total else '0/0',
+                'note': 'Pozycje z przygotowanymi trackami do samodzielnego utrwalenia.',
+            },
+            {
+                'label': 'Nagrania referencyjne',
+                'status': f'{pieces_with_reference}/{total}' if total else '0/0',
+                'note': 'Utwory z linkiem do YouTube lub Spotify.',
+            },
+            {
+                'label': 'Casting rozpisany',
+                'status': f'{pieces_with_casting}/{total}' if total else '0/0',
+                'note': 'Pozycje z gotowym micro-castingiem i odpowiedzialnościami.',
+            },
+        ]
+
+    @staticmethod
+    def _build_contact_directory(
+        project: Project,
+        crew_list: list[CrewAssignment],
+        audience: Audience,
+    ) -> list[dict[str, Any]]:
+        # RODO: the whole ensemble must never receive everyone's phone/email.
+        # The singer sheet names who leads (no private numbers); the conductor
+        # and management sheets carry the full operational directory.
+        if audience == Audience.CHORISTER:
+            if not project.conductor:
+                return []
+            return [
+                {
+                    'name': f'{project.conductor.first_name} {project.conductor.last_name}',
+                    'role': 'Prowadzenie',
+                    'organization': '',
+                    'status': 'Za pytania i spóźnienia pisz w aplikacji.',
+                    'phone': '',
+                    'email': '',
+                }
+            ]
+
+        directory: list[dict[str, Any]] = []
+        if project.conductor:
+            directory.append(
+                {
+                    'name': f'{project.conductor.first_name} {project.conductor.last_name}',
+                    'role': 'Dyrygent',
+                    'organization': '',
+                    'status': 'Kontakt główny',
+                    'phone': project.conductor.phone_number,
+                    'email': project.conductor.email,
+                }
+            )
+        for assignment in crew_list:
+            directory.append(
+                {
+                    'name': f'{assignment.collaborator.first_name} {assignment.collaborator.last_name}',
+                    'role': (
+                        assignment.role_description
+                        or assignment.collaborator.get_specialty_display()
+                    ),
+                    'organization': assignment.collaborator.company_name,
+                    'status': assignment.get_status_display(),
+                    'phone': assignment.collaborator.phone_number,
+                    'email': assignment.collaborator.email or '',
+                }
+            )
+        return directory
+
+    @staticmethod
     def _build_program_card(
         item: ProgramItem,
         piece_castings: list[ProjectPieceCasting],
+        recipient_casting: ProjectPieceCasting | None,
         base_url: str | None,
     ) -> dict[str, Any]:
         piece = item.piece
@@ -395,9 +625,14 @@ class DocumentGenerator:
             key=lambda e: (0 if e.is_default else 1, -(e.created_at.timestamp() if e.created_at else 0)),
         )
         primary_edition = editions_sorted[0] if editions_sorted else None
+        # The per-piece "Nuty PDF" link points at the access-gated edition download
+        # view (watermarked + logged per recipient), never the raw /media file —
+        # nginx serves /media/score_editions/ `internal;` only, so a direct file
+        # hyperlink 404s and would bypass score protection.
         sheet_music_url = (
-            DocumentGenerator._build_file_url(primary_edition.pdf_file, base_url)
-            if primary_edition else ''
+            DocumentGenerator._absolute_url(base_url, f'/api/materials/scores/{primary_edition.pk}/download/')
+            if primary_edition and primary_edition.pdf_file
+            else ''
         )
 
         # Reference links — featured recordings first, then platform-grouped.
@@ -425,8 +660,19 @@ class DocumentGenerator:
         )
         track_labels = [track.get_voice_part_display() for track in tracks]
 
+        # "You sing this" annotation for the personalized singer sheet.
+        you = None
+        if recipient_casting is not None:
+            you = {
+                'voice_line': recipient_casting.get_voice_line_display(),
+                'gives_pitch': recipient_casting.gives_pitch,
+                'notes': recipient_casting.notes.strip() if recipient_casting.notes else '',
+            }
+
         return {
+            'piece_id': item.piece_id,
             'order': item.order,
+            'is_encore': item.is_encore,
             'title': piece.title,
             'composer': str(piece.composer) if piece.composer else '',
             'arranger': piece.arranger,
@@ -441,6 +687,7 @@ class DocumentGenerator:
             'track_summary': ', '.join(track_labels),
             'casting_count': len(piece_castings),
             'material_badges': material_badges,
+            'you': you,
         }
 
     @staticmethod
@@ -491,16 +738,29 @@ class DocumentGenerator:
         }
 
     @staticmethod
-    def _build_rehearsal_item(rehearsal: Rehearsal, project: Project) -> dict[str, Any]:
+    def _build_rehearsal_item(
+        rehearsal: Rehearsal,
+        project: Project,
+        recipient: Participation | None,
+    ) -> dict[str, Any]:
         rehearsal_timezone = rehearsal.timezone or (
             rehearsal.location.timezone if rehearsal.location else project.timezone
         )
         local_datetime = DocumentGenerator._localize(rehearsal.date_time, rehearsal_timezone)
         invited_participations = list(rehearsal.invited_participations.all())
+        invited_ids = {participation.id for participation in invited_participations}
+        is_whole_ensemble = not invited_participations
         scope_label = (
-            f'Wybrani artysci ({len(invited_participations)})'
+            f'Wybrani artyści ({len(invited_participations)})'
             if invited_participations
-            else 'Caly zespol'
+            else 'Cały zespół'
+        )
+        # A whole-ensemble call is for everyone; a targeted one only for those on
+        # the list. Absent a recipient (conductor / production sheets) we don't filter.
+        is_for_me = (
+            True
+            if recipient is None
+            else is_whole_ensemble or recipient.id in invited_ids
         )
         location = rehearsal.location or project.location
 
@@ -512,6 +772,7 @@ class DocumentGenerator:
             'focus': rehearsal.focus,
             'is_mandatory': rehearsal.is_mandatory,
             'scope_label': scope_label,
+            'is_for_me': is_for_me,
             'location_name': location.name if location else 'Do ustalenia',
             'location_address': (
                 location.formatted_address
@@ -587,19 +848,24 @@ class DocumentGenerator:
                     'location': str(item.get('location') or '').strip(),
                 }
             )
+        # The editor and overview widget sort chronologically; the PDF must match,
+        # so a manager entering points out of order still prints a clean timeline.
+        normalized.sort(key=lambda entry: (entry['time'] == '', entry['time']))
         return normalized
 
     @staticmethod
-    def _build_file_url(file_field: Any, base_url: str | None) -> str:
-        if not file_field:
+    def _absolute_url(base_url: str | None, path: str) -> str:
+        """Join an app-relative API path onto the request origin.
+
+        Score/edition links MUST target the authenticated, access-gated endpoints
+        (``/api/projects/<pk>/score_pdf/``, ``/api/materials/scores/<pk>/download/``)
+        — never a raw ``/media/`` file URL. nginx serves the score media prefixes
+        ``internal;`` only, so a direct file hyperlink 404s and would also bypass
+        watermarking + access logging. Mirrors ``ProjectSerializer.get_score_pdf``.
+        """
+        if not path:
             return ''
-        try:
-            relative_url = file_field.url
-        except ValueError:
-            return ''
-        if not relative_url:
-            return ''
-        return urljoin(base_url or '', relative_url)
+        return urljoin(base_url or '', path)
 
     @staticmethod
     def _build_map_url(location: Any) -> str:
@@ -663,3 +929,9 @@ class DocumentGenerator:
         if not value:
             return 'Do ustalenia'
         return value.strftime('%H:%M')
+
+    @staticmethod
+    def _format_datetime(value) -> str:
+        if not value:
+            return ''
+        return value.strftime('%d.%m.%Y, %H:%M')

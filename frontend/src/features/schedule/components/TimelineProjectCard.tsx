@@ -73,11 +73,11 @@ export const TimelineProjectCard = ({
     isProgramLoading,
     castings,
     isCastingsLoading,
-    handleDownloadCallSheet,
-    isCallSheetPreviewOpen,
-    fetchCallSheetBlob,
-    handleOpenCallSheetPreview,
-    handleCloseCallSheetPreview,
+    handleDownloadDaySheet,
+    isDaySheetPreviewOpen,
+    fetchDaySheetBlob,
+    handleOpenDaySheetPreview,
+    handleCloseDaySheetPreview,
     isScorePdfPreviewOpen,
     fetchScorePdfBlob,
     handleOpenScorePdfPreview,
@@ -350,24 +350,24 @@ export const TimelineProjectCard = ({
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={handleOpenCallSheetPreview}
+                            onClick={handleOpenDaySheetPreview}
                             leftIcon={<Eye size={11} aria-hidden="true" />}
                             className="border-ethereal-gold/50 text-ethereal-gold hover:bg-ethereal-gold/15"
                           >
                             {t(
-                              "schedule.card.preview_call_sheet",
-                              "Call-Sheet PDF",
+                              "schedule.card.preview_day_sheet",
+                              "Karta dnia",
                             )}
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={handleDownloadCallSheet}
+                            onClick={handleDownloadDaySheet}
                             disabled={isDownloading}
                             isLoading={isDownloading}
                             aria-label={t(
-                              "schedule.card.download_call_sheet_aria",
-                              "Download Call-Sheet PDF",
+                              "schedule.card.download_day_sheet_aria",
+                              "Pobierz kartę dnia (PDF)",
                             )}
                             className="text-ethereal-gold/70 hover:text-ethereal-gold hover:bg-ethereal-gold/15"
                           >
@@ -770,22 +770,22 @@ export const TimelineProjectCard = ({
       </GlassCard>
 
       <PdfViewerModal
-        isOpen={isCallSheetPreviewOpen}
-        title={t("schedule.card.call_sheet_preview_title", "Call-Sheet")}
+        isOpen={isDaySheetPreviewOpen}
+        title={t("schedule.card.day_sheet_preview_title", "Karta dnia")}
         subtitle={proj.title}
-        fileName={`CallSheet_${proj.title.replace(/\s+/g, "_")}.pdf`}
-        fetchBlob={fetchCallSheetBlob}
+        fileName={`Karta_${proj.title.replace(/\s+/g, "_")}.pdf`}
+        fetchBlob={fetchDaySheetBlob}
         docKey={proj.id}
         fullView={{
-          type: "project-call-sheet",
+          type: "project-day-sheet",
           id: proj.id,
           hint: {
-            title: t("schedule.card.call_sheet_preview_title", "Call-Sheet"),
+            title: t("schedule.card.day_sheet_preview_title", "Karta dnia"),
             subtitle: proj.title,
-            fileName: `CallSheet_${proj.title.replace(/\s+/g, "_")}.pdf`,
+            fileName: `Karta_${proj.title.replace(/\s+/g, "_")}.pdf`,
           },
         }}
-        onClose={handleCloseCallSheetPreview}
+        onClose={handleCloseDaySheetPreview}
       />
 
       {proj.score_pdf && (
