@@ -406,6 +406,20 @@
   margin-top: auto;
   padding-top: 28px;
 }
+/* Translated pages carry a language line too. Stack the foot into a column so the tongues read as
+   an imprint printed ABOVE the colophon (both left-aligned in `.nave-imprint`) rather than a trio
+   floated into the opposite corner. Untranslated pages keep the plain pill ↔ colophon row above. */
+.nave-foot.has-lang {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: clamp(24px, 5vh, 36px);
+}
+.nave-imprint {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 13px;
+}
 .nave-cta {
   display: inline-flex;
   align-items: center;

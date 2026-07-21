@@ -62,7 +62,8 @@ const langOptions = showLang
   ? availableLocales.map((loc) => ({
       loc,
       href: localizePath(current as string, loc),
-      label: LOCALE_META[loc].short,
+      // The vernacular's own endonym (Polski / English / Français) — the choice of tongue named
+      // in that tongue, not an ISO code. Locale-neutral proper names, so never translated.
       name: LOCALE_META[loc].name,
       isCurrent: loc === lang,
     }))
@@ -122,17 +123,23 @@ const langOptions = showLang
     {
       showLang && (
         <span class="chrome-lang" role="group" aria-label={t.nav.langAria}>
-          {langOptions.map((o) => (
-            <a
-              class="chrome-lang-opt"
-              href={o.href}
-              hreflang={o.loc}
-              lang={o.loc}
-              aria-current={o.isCurrent ? "true" : undefined}
-              aria-label={o.name}
-            >
-              {o.label}
-            </a>
+          {langOptions.map((o, i) => (
+            <Fragment>
+              {i > 0 && (
+                <span class="chrome-lang-sep" aria-hidden="true">
+                  ·
+                </span>
+              )}
+              <a
+                class="chrome-lang-opt"
+                href={o.href}
+                hreflang={o.loc}
+                lang={o.loc}
+                aria-current={o.isCurrent ? "true" : undefined}
+              >
+                {o.name}
+              </a>
+            </Fragment>
           ))}
         </span>
       )
@@ -190,32 +197,42 @@ const langOptions = showLang
         </a>
       </div>
 
-      <div class="nave-foot">
+      {/* has-lang stacks the foot into a column so the language line reads as an imprint above the
+          colophon (nave-menu.css); untranslated pages keep the plain pill/colophon row. */}
+      <div class:list={["nave-foot", { "has-lang": showLang }]}>
         <a class="nave-cta" href="/?donate" data-vault-open="100">{t.nav.support} <em>· Sustinete nos</em></a>
-        {
-          showLang && (
-            <span class="nave-lang" role="group" aria-label={t.nav.langAria}>
-              {langOptions.map((o) => (
-                <a
-                  class="nave-lang-opt"
-                  href={o.href}
-                  hreflang={o.loc}
-                  lang={o.loc}
-                  aria-current={o.isCurrent ? "true" : undefined}
-                  aria-label={o.name}
-                >
-                  {o.label}
-                </a>
-              ))}
-            </span>
-          )
-        }
-        {/* The antiphon names its hour — filled with the live canonical hour on open (script
-            below), so the menu carries the time of day, not a static motto. */}
-        <span class="nave-colophon">
-          <span class="nave-colophon-mark" aria-hidden="true"></span>
-          <span class="nave-hora"><span id="naveHoraName">Hora</span> · <em id="naveHoraPoem">canonica</em></span>
-        </span>
+        <div class="nave-imprint">
+          {
+            showLang && (
+              <span class="nave-lang" role="group" aria-label={t.nav.langAria}>
+                {langOptions.map((o, i) => (
+                  <Fragment>
+                    {i > 0 && (
+                      <span class="nave-lang-sep" aria-hidden="true">
+                        ·
+                      </span>
+                    )}
+                    <a
+                      class="nave-lang-opt"
+                      href={o.href}
+                      hreflang={o.loc}
+                      lang={o.loc}
+                      aria-current={o.isCurrent ? "true" : undefined}
+                    >
+                      {o.name}
+                    </a>
+                  </Fragment>
+                ))}
+              </span>
+            )
+          }
+          {/* The antiphon names its hour — filled with the live canonical hour on open (script
+              below), so the menu carries the time of day, not a static motto. */}
+          <span class="nave-colophon">
+            <span class="nave-colophon-mark" aria-hidden="true"></span>
+            <span class="nave-hora"><span id="naveHoraName">Hora</span> · <em id="naveHoraPoem">canonica</em></span>
+          </span>
+        </div>
       </div>
     </div>
   </nav>
@@ -251,18 +268,27 @@ const langOptions = showLang
   .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[aria-current="page"] { opacity: 1; color: var(--candle); }
   .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
 
-  /* Language switcher — a quiet trio of locale chips set off by a hairline, in the nav's own
-     mono register. The active locale reads solid; the others recede until hover. */
-  .chrome-lang { display: inline-flex; align-items: center; gap: 10px; margin-left: 6px; padding-left: 18px; border-left: 1px solid currentColor; border-color: color-mix(in srgb, currentColor 22%, transparent); }
-  .chrome-lang-opt { font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: inherit; opacity: .5; transition: opacity .3s var(--ease), color .3s var(--ease); }
-  .chrome-lang-opt:hover { opacity: 1; }
-  .chrome-lang-opt[aria-current="true"] { opacity: 1; color: var(--candle); }
+  /* Language switcher — the choice of vernacular, each tongue named in its own word and set in the
+     site's serif-italic "voice" register (not the mono rubric of the links beside it), a hairline
+     rule setting the trio apart. The current tongue reads in candle with its hairline underline
+     drawn; the alternates recede until hover — the same underline grammar as every other nav link.
+     Middot separators are neutral (their own colour), so the active option can't tint them. */
+  .chrome-lang { display: inline-flex; align-items: baseline; gap: 9px; margin-left: 4px; padding-left: 18px; border-left: 1px solid color-mix(in srgb, currentColor 20%, transparent); }
+  .chrome-lang-opt { position: relative; font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1; color: color-mix(in srgb, currentColor 52%, transparent); padding-bottom: 3px; transition: color .35s var(--ease); }
+  .chrome-lang-opt::after { content: ""; position: absolute; left: 0; bottom: 1px; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
+  .chrome-lang-opt:hover { color: inherit; }
+  .chrome-lang-opt:hover::after, .chrome-lang-opt[aria-current="true"]::after { transform: scaleX(1); }
+  .chrome-lang-opt[aria-current="true"] { color: var(--candle); }
+  .chrome-lang-sep { font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1; color: color-mix(in srgb, currentColor 30%, transparent); }
 
-  /* Mobile switcher — a trio in the card foot, above the colophon, in the overlay's ink register. */
-  .nave-lang { display: flex; align-items: center; gap: 18px; margin-top: 6px; }
-  .nave-lang-opt { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink); opacity: .45; transition: opacity .3s var(--ease), color .3s var(--ease); }
-  .nave-lang-opt:hover { opacity: 1; }
-  .nave-lang-opt[aria-current="true"] { opacity: 1; color: var(--candle); }
+  /* Mobile switcher — the same vernacular voice, printed a touch larger as an imprint line in the
+     card foot (its column placement lives in nave-menu.css). Touch surface → :active, no :hover. */
+  .nave-lang { display: inline-flex; align-items: baseline; gap: 11px; }
+  .nave-lang-opt { position: relative; font-family: var(--serif); font-style: italic; font-size: 17px; line-height: 1; color: color-mix(in srgb, var(--ink) 48%, transparent); padding-bottom: 3px; transition: color .3s var(--ease); }
+  .nave-lang-opt::after { content: ""; position: absolute; left: 0; bottom: 1px; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
+  .nave-lang-opt:active::after, .nave-lang-opt[aria-current="true"]::after { transform: scaleX(1); }
+  .nave-lang-opt[aria-current="true"] { color: var(--candle); }
+  .nave-lang-sep { font-family: var(--serif); font-style: italic; font-size: 17px; line-height: 1; color: color-mix(in srgb, var(--ink) 28%, transparent); }
 
   /* Mobile menu */
   .nav-toggle { display: none; position: relative; width: 26px; height: 14px; border: 0; background: transparent; color: inherit; cursor: pointer; padding: 0; }
