@@ -217,10 +217,11 @@ REST_FRAMEWORK = {
         # cache; the limit only guards against deliberate cache-busting floods.
         'donation_progress': '60/minute',
         # Re-sending an activation invite dispatches one e-mail to the artist's
-        # own inbox per hit. It is manager-only (already trusted + behind the
-        # coarse `user` cap), so this is defence-in-depth against a stuck client
-        # or double-firing — set generously so bulk onboarding of a whole pending
-        # cohort in one sitting is never blocked.
+        # own inbox per hit. The action is manager-only (a trusted actor), so this
+        # is a defence-in-depth safety net against a stuck client or double-firing,
+        # not a security boundary — and it replaces the coarse `user` cap on this
+        # endpoint. Set generously so onboarding a whole pending cohort in one
+        # sitting is never blocked.
         'resend_activation': '60/hour',
     }
 }
