@@ -90,6 +90,9 @@ export interface Artist extends BaseModel {
   // True once the invited member has set their password (finished activation).
   // Manager-only (present on the detailed serializer); undefined = unknown.
   account_activated?: boolean;
+  // When the activation invite was last dispatched (initial provisioning or a
+  // manual resend). ISO string; null if never recorded.
+  activation_email_sent_at?: string | null;
   avatar_thumb_url?: string | null;
   first_name: string;
   last_name: string;

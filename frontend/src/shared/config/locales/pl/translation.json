@@ -798,6 +798,7 @@
       "detached_account": "Konto odłączone",
       "details": "Dossier",
       "edit": "Edytuj",
+      "invite_sent_at": "Wysłano {{when}}",
       "message": "Napisz",
       "message_title": "Napisz wiadomość",
       "no_phone": "Brak telefonu",

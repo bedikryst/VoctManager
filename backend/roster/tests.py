@@ -101,12 +101,19 @@ class ArtistActivationResendTests(TestCase):
     @patch(EMAIL_TASK)
     def test_resend_requeues_activation_email_for_pending_account(self, enqueue_mock):
         artist = self._provision(enqueue_mock)
+        original_sent_at = artist.activation_email_sent_at
+        assert original_sent_at is not None  # stamped at provisioning; narrows for mypy
 
         ArtistHRService.resend_activation(artist)
 
         enqueue_mock.assert_called_once()
         self.assertEqual(enqueue_mock.call_args.kwargs["template_name"], "account_activation")
         self.assertEqual(enqueue_mock.call_args.kwargs["recipient_email"], "grace@example.com")
+        # The resend advances the recorded send time so the roster reflects it.
+        artist.refresh_from_db()
+        new_sent_at = artist.activation_email_sent_at
+        assert new_sent_at is not None
+        self.assertGreaterEqual(new_sent_at, original_sent_at)
 
     @patch(EMAIL_TASK)
     def test_resend_rejects_already_activated_account(self, enqueue_mock):

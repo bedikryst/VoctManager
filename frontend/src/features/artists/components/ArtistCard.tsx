@@ -26,6 +26,7 @@ import {
 
 import type { Artist } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -52,6 +53,16 @@ interface ArtistCardProps {
 
 const stop = (event: React.SyntheticEvent) => event.stopPropagation();
 
+// Compact "invited on" stamp (e.g. 22.07.2026, 23:50) — no timezone suffix, it
+// only needs to read as "this went out recently / a while ago".
+const INVITE_SENT_FORMAT: Intl.DateTimeFormatOptions = {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+};
+
 export const ArtistCard = React.memo(
   ({
     artist,
@@ -73,6 +84,9 @@ export const ArtistCard = React.memo(
     // neither state so we never raise a false "pending" flag on a partial DTO.
     const accountActivated = artist.account_activated === true;
     const accountPending = hasAccount && artist.account_activated === false;
+    const inviteSentAt = artist.activation_email_sent_at
+      ? formatLocalizedDateTime(artist.activation_email_sent_at, INVITE_SENT_FORMAT)
+      : null;
     const fullName = `${artist.first_name} ${artist.last_name}`;
     const voiceLabel = artist.voice_type
       ? t(
@@ -283,13 +297,30 @@ export const ArtistCard = React.memo(
             </span>
           )}
           {accountPending && (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-ethereal-gold/25 bg-ethereal-gold/[0.07] px-2.5 py-2">
-              <span className="inline-flex min-w-0 items-center gap-1.5 text-ethereal-gold">
-                <MailWarning size={13} className="shrink-0" aria-hidden="true" />
-                <Eyebrow color="gold">
-                  {t("artists.card.pending_activation", "Nie aktywowano")}
-                </Eyebrow>
-              </span>
+            <div className="mt-auto flex flex-col gap-2 rounded-lg border border-ethereal-gold/25 bg-ethereal-gold/[0.07] px-3 py-2.5">
+              <div className="flex items-start gap-1.5 text-ethereal-gold">
+                <MailWarning
+                  size={13}
+                  className="mt-0.5 shrink-0"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0 flex-1">
+                  <Eyebrow color="gold">
+                    {t("artists.card.pending_activation", "Nie aktywowano")}
+                  </Eyebrow>
+                  {inviteSentAt && (
+                    <Caption
+                      color="muted"
+                      className="mt-0.5 block leading-tight tabular-nums"
+                    >
+                      {t("artists.card.invite_sent_at", {
+                        defaultValue: "Wysłano {{when}}",
+                        when: inviteSentAt,
+                      })}
+                    </Caption>
+                  )}
+                </div>
+              </div>
               {onResendActivation && (
                 <button
                   type="button"
@@ -298,7 +329,7 @@ export const ArtistCard = React.memo(
                     onResendActivation(artist);
                   }}
                   disabled={isResending}
-                  className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-ethereal-gold/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
                 >
                   <Send size={11} aria-hidden="true" />
                   {isResending

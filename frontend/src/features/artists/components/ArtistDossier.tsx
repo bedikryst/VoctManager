@@ -43,7 +43,7 @@ import {
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
-import { formatLocalizedDate } from "@/shared/lib/time/intl";
+import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
 import type {
@@ -435,6 +435,23 @@ export const ArtistDossier = ({
                           "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
                         )}
                       </Caption>
+                      {artist.activation_email_sent_at && (
+                        <Caption className="mt-1 block font-semibold text-ethereal-gold/90 tabular-nums">
+                          {t("artists.card.invite_sent_at", {
+                            defaultValue: "Wysłano {{when}}",
+                            when: formatLocalizedDateTime(
+                              artist.activation_email_sent_at,
+                              {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            ),
+                          })}
+                        </Caption>
+                      )}
                     </div>
                   </div>
                   {onResendActivation && (

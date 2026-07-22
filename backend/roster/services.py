@@ -135,7 +135,9 @@ class ArtistHRService:
                     salutation=getattr(dto, 'salutation', 'N'),
                 )
 
-                # 2. Create Roster-specific entity
+                # 2. Create Roster-specific entity. `provision_user_account` has
+                #    already queued the first activation invite, so stamp the send
+                #    time now — the roster can show when the singer was invited.
                 artist = Artist.objects.create(
                     user=user,
                     first_name=dto.first_name,
@@ -146,7 +148,8 @@ class ArtistHRService:
                     phone_number=dto.phone_number or "",
                     sight_reading_skill=dto.sight_reading_skill,
                     vocal_range_bottom=dto.vocal_range_bottom or "",
-                    vocal_range_top=dto.vocal_range_top or ""
+                    vocal_range_top=dto.vocal_range_top or "",
+                    activation_email_sent_at=timezone.now(),
                 )
 
                 logger.info(f"Successfully provisioned artist HR profile for: {dto.email}")
@@ -169,6 +172,10 @@ class ArtistHRService:
                 "This artist has no linked account to activate."
             )
         UserIdentityService.resend_activation_email(user)
+        # Only stamp once the invite is actually (re)queued — the call above raises
+        # for an already-activated account, so we never record a phantom send.
+        artist.activation_email_sent_at = timezone.now()
+        artist.save(update_fields=['activation_email_sent_at'])
         logger.info(f"Activation invite re-sent for artist: {artist.email}")
 
     @staticmethod

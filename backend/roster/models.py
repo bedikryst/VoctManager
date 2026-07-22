@@ -76,6 +76,14 @@ class Artist(EnterpriseBaseModel):
         verbose_name=_("First Name (Vocative)"),
         help_text=_("Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized greetings and emails.")
     )
+    activation_email_sent_at = models.DateTimeField(
+        null=True, blank=True,
+        verbose_name=_("Activation Email Sent At"),
+        help_text=_("When the account-activation invite was last dispatched — at initial "
+                    "provisioning or a manual resend. Lets the roster show when the singer "
+                    "was invited and confirm a resend actually went out. Irrelevant once "
+                    "the account is activated.")
+    )
 
     class Meta:
         verbose_name = _("Artist")

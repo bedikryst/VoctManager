@@ -71,16 +71,19 @@ export const useToggleArtistStatus = () => {
 
 /**
  * Re-sends the account-activation invite to an artist who never activated.
- * A successful resend changes nothing server-side (they stay pending until they
- * act on the link), so there is no cache to touch on success. The one exception
- * is the `account_already_active` rejection: it means the artist activated in
- * the gap since the roster was fetched, so our cached `account_activated` is
- * stale — refetch it there so the card flips from "pending" to "active".
+ * A successful resend stamps a fresh `activation_email_sent_at` server-side, so
+ * we refetch the roster to surface that new send time on the card. The
+ * `account_already_active` rejection is refetched too: it means the artist
+ * activated in the gap since the roster was fetched, so our cached
+ * `account_activated` is stale — refetching flips the card "pending" → "active".
  */
 export const useResendActivation = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ArtistService.resendActivation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
+    },
     onError: (error) => {
       if (parseApiError(error).code === "account_already_active") {
         queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });

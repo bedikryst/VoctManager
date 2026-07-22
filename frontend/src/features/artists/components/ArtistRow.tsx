@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Mail,
+  MailWarning,
   MessageSquare,
   Phone,
   Send,
@@ -24,6 +25,7 @@ import {
 
 import type { Artist } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -64,6 +66,15 @@ export const ArtistRow = React.memo(
     // Manager-only flag (undefined otherwise): unknown counts as neither state.
     const accountActivated = artist.account_activated === true;
     const accountPending = hasAccount && artist.account_activated === false;
+    const inviteSentAt = artist.activation_email_sent_at
+      ? formatLocalizedDateTime(artist.activation_email_sent_at, {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
     const fullName = `${artist.first_name} ${artist.last_name}`;
     const voiceLabel = artist.voice_type
       ? t(
@@ -200,6 +211,17 @@ export const ArtistRow = React.memo(
               <Caption color="muted" className="inline-flex items-center gap-1">
                 <Phone size={11} aria-hidden="true" />
                 {artist.phone_number}
+              </Caption>
+            )}
+            {accountPending && inviteSentAt && (
+              <Caption
+                className="inline-flex items-center gap-1 text-ethereal-gold/90 tabular-nums"
+              >
+                <MailWarning size={11} aria-hidden="true" />
+                {t("artists.card.invite_sent_at", {
+                  defaultValue: "Wysłano {{when}}",
+                  when: inviteSentAt,
+                })}
               </Caption>
             )}
           </div>
