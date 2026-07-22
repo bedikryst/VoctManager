@@ -191,7 +191,7 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
 - [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
-- [ ] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation (`infra/backup.sh`; on-droplet today, off-site copy still TODO for true DR). Media persistence + nginx delivery already ship via host bind-mounts.
+- [ ] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation, off-site mirror to the foundation's Google Shared Drive, and healthcheck alerting (`infra/backup.sh`; runbook in `docs/backups.md`). Remaining: automated restore verification.
 - [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
 - [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules and DRF throttling for API abuse prevention.
 - [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
@@ -429,6 +429,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 **Build-host requirements:** Docker + Compose v2, ≥ ~3 GB free RAM during build (rollup graph for the panel SPA peaks at ~2 GB; Sharp for the Astro pipeline adds ~500 MB). No Node.js, no npm, no host-side lockfile. The root `.dockerignore` keeps `voct_data/`, `**/node_modules`, `.git`, etc. out of the build context. If the source media directories are missing or incomplete, the Astro stage fails fast during image/video asset resolution.
+
+**Backups & disk hygiene:** [`infra/backup.sh`](infra/backup.sh) takes a daily PostgreSQL dump + media tar, mirrors it off-site to the foundation's Google Shared Drive, and pings a healthcheck monitor so a failed run alerts instead of passing silently. Cron install, the rclone/service-account setup, and the restore drill are in [`docs/backups.md`](docs/backups.md) — that runbook also schedules the periodic `docker image prune` / `builder prune` that keeps repeated prod builds from filling the disk.
 
 ---
 

@@ -19,6 +19,8 @@
 .env
 backend/.env
 frontend/.env
+# Backup secrets (healthcheck URL, rclone remote) — infra/backup.env.example is committed.
+infra/backup.env
 *.local
 
 # =========================

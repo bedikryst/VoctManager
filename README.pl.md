@@ -191,7 +191,7 @@ VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalnośc
 - [ ] **Szyfrowanie pól i dziennik audytu:** Szyfrowanie w spoczynku (Fernet) pól umów/finansowych oraz niezmienny log mutacji rekordów HR/finansowych do przeglądu kryminalistycznego.
 - [ ] **CI frontendu i testy E2E:** Pipeline'y lint / typecheck / build dla obu frontendów oraz pokrycie E2E Playwright w oparciu o istniejący harness zrzutów ekranu.
 - [ ] **Metryki i rozproszone śledzenie:** Dashboardy Prometheus + Grafana oraz instrumentacja OpenTelemetry do śledzenia żądań end-to-end między usługami i zewnętrznymi API.
-- [ ] **Automatyczne backupy i odzyskiwanie po awarii:** Zaplanowane kopie PostgreSQL + mediów z rotacją (`infra/backup.sh`; na razie na droplecie, kopia poza serwerem wciąż do zrobienia dla pełnego DR). Trwałość mediów + serwowanie przez nginx już działa dzięki bind-mountom hosta.
+- [ ] **Automatyczne backupy i odzyskiwanie po awarii:** Zaplanowane kopie PostgreSQL + mediów z rotacją, kopia off-site na fundacyjny Google Shared Drive oraz alertowanie przez healthcheck (`infra/backup.sh`; runbook w `docs/backups.md`). Pozostaje: automatyczna weryfikacja odtworzenia.
 - [ ] **Zaawansowane buforowanie:** Klaster Redis do zarządzania sesją i unieważniania rozproszonej pamięci podręcznej.
 - [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF oraz throttling DRF do zapobiegania nadużywaniu API.
 - [ ] **Replikacja bazy danych:** Strumieniowa replikacja PostgreSQL w celu zapewnienia wysokiej dostępności i odzyskiwania po awarii.
@@ -429,6 +429,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ```
 
 **Wymagania hosta buildu:** Docker + Compose v2, ≥ ~3 GB wolnego RAM w trakcie buildu (graf rollup dla panelu SPA peakuje na ~2 GB; Sharp dla pipeline'u Astro dodaje ~500 MB). Brak Node.js, brak npm, brak host-side lockfile. Root `.dockerignore` trzyma `voct_data/`, `**/node_modules`, `.git` itd. poza kontekstem buildu. Jeśli katalogi mediów źródłowych nie istnieją lub są niekompletne, stage Astro wywala się szybko podczas rozwiązywania assetów zdjęć/wideo.
+
+**Backupy i higiena dysku:** [`infra/backup.sh`](infra/backup.sh) robi dzienny dump PostgreSQL + tar mediów, kopiuje je off-site na fundacyjny Google Shared Drive i pinguje monitor healthcheck, więc nieudany run alarmuje zamiast przejść po cichu. Instalacja crona, konfiguracja rclone/service-accountu oraz próba odtworzenia (restore drill) są w [`docs/backups.md`](docs/backups.md) — ten runbook planuje też okresowy `docker image prune` / `builder prune`, który nie pozwala kolejnym buildom prod zapchać dysku.
 
 ---
 
