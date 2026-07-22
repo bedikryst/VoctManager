@@ -54,6 +54,14 @@ export const LOCALE_META: Record<Locale, LocaleMeta> = {
  */
 export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>(["/o-nas"]);
 
+/**
+ * Master visibility of the on-page language switcher. Temporarily OFF: the EN/FR pages still build
+ * and stay reachable by direct URL (link-only preview while the translations are validated), the
+ * hreflang graph and localized links stay intact — only the visible switcher chips are hidden on
+ * desktop and mobile. Flip to `true` to surface the switcher again (no other change needed).
+ */
+export const LANG_SWITCHER_ENABLED = false;
+
 /** True when `basePath` has real route files in every locale (safe to prefix / offer in the switcher). */
 export function isTranslated(basePath: string): boolean {
   return TRANSLATED_ROUTES.has(basePath);

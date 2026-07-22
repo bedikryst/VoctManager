@@ -11,7 +11,7 @@
 import { getCollection } from "astro:content";
 import { toRibbons } from "../lib/registrum";
 import { UI } from "../i18n/ui";
-import { localizePath, LOCALE_META, DEFAULT_LOCALE, type Locale } from "../i18n/config";
+import { localizePath, LOCALE_META, DEFAULT_LOCALE, LANG_SWITCHER_ENABLED, type Locale } from "../i18n/config";
 
 interface Props {
   /** Base path of the current page (locale-neutral, e.g. "/o-nas") so the matching nav link gets
@@ -55,9 +55,10 @@ const hrefAbout = localizePath("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
 const hrefContact = localizePath("/kontakt", lang);
 
-/* Language switcher: only when the current page has a real alternate (more than Polish). Each
-   option localizes the current base path into its locale (same page, other language). */
-const showLang = availableLocales.length > 1 && !!current;
+/* Language switcher: hidden globally for now (LANG_SWITCHER_ENABLED) — EN/FR stay reachable by
+   direct link only. When on, it shows only where the page has a real alternate (more than Polish);
+   each option localizes the current base path into its locale (same page, other language). */
+const showLang = LANG_SWITCHER_ENABLED && availableLocales.length > 1 && !!current;
 const langOptions = showLang
   ? availableLocales.map((loc) => ({
       loc,
