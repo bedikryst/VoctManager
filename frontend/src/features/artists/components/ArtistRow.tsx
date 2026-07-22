@@ -66,6 +66,7 @@ export const ArtistRow = React.memo(
     // Manager-only flag (undefined otherwise): unknown counts as neither state.
     const accountActivated = artist.account_activated === true;
     const accountPending = hasAccount && artist.account_activated === false;
+    const linkExpired = accountPending && artist.activation_link_expired === true;
     const inviteSentAt = artist.activation_email_sent_at
       ? formatLocalizedDateTime(artist.activation_email_sent_at, {
           day: "2-digit",
@@ -158,11 +159,21 @@ export const ArtistRow = React.memo(
           )}
           {isActive && accountPending && (
             <span
-              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ethereal-alabaster bg-ethereal-gold"
-              title={t(
-                "artists.card.pending_activation_title",
-                "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
+              className={cn(
+                "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-ethereal-alabaster",
+                linkExpired ? "bg-ethereal-crimson" : "bg-ethereal-gold",
               )}
+              title={
+                linkExpired
+                  ? t(
+                      "artists.card.link_expired_title",
+                      "Link aktywacyjny wygasł — wyślij zaproszenie ponownie",
+                    )
+                  : t(
+                      "artists.card.pending_activation_title",
+                      "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
+                    )
+              }
             />
           )}
         </div>
@@ -184,8 +195,13 @@ export const ArtistRow = React.memo(
               </Badge>
             )}
             {accountPending && (
-              <Badge variant="warning" className="hidden shrink-0 sm:inline-flex">
-                {t("artists.card.pending_activation", "Nie aktywowano")}
+              <Badge
+                variant={linkExpired ? "danger" : "warning"}
+                className="hidden shrink-0 sm:inline-flex"
+              >
+                {linkExpired
+                  ? t("artists.card.link_expired", "Link wygasł")
+                  : t("artists.card.pending_activation", "Nie aktywowano")}
               </Badge>
             )}
             {isActive && !hasAccount && (
@@ -215,7 +231,10 @@ export const ArtistRow = React.memo(
             )}
             {accountPending && inviteSentAt && (
               <Caption
-                className="inline-flex items-center gap-1 text-ethereal-gold/90 tabular-nums"
+                className={cn(
+                  "inline-flex items-center gap-1 tabular-nums",
+                  linkExpired ? "text-ethereal-crimson/90" : "text-ethereal-gold/90",
+                )}
               >
                 <MailWarning size={11} aria-hidden="true" />
                 {t("artists.card.invite_sent_at", {
@@ -268,7 +287,12 @@ export const ArtistRow = React.memo(
                   "artists.card.resend_activation",
                   "Wyślij ponownie zaproszenie",
                 )}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:opacity-50",
+                  linkExpired
+                    ? "text-ethereal-crimson hover:bg-ethereal-crimson/10"
+                    : "text-ethereal-gold hover:bg-ethereal-gold/12",
+                )}
               >
                 <Send size={14} aria-hidden="true" />
               </button>

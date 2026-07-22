@@ -9,7 +9,10 @@ Handles pure data transformation (Object <-> JSON).
 Delegates role-based data exposure to explicitly defined serializers routed via ViewSets.
 """
 import zoneinfo
+from datetime import timedelta
 
+from django.conf import settings
+from django.utils import timezone
 from rest_framework import serializers
 
 from core.serializers import UserProfileSerializer
@@ -83,6 +86,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     Exposes all operational and capability fields.
     """
     account_activated = serializers.SerializerMethodField()
+    activation_link_expired = serializers.SerializerMethodField()
 
     class Meta:
         model = Artist
@@ -97,6 +101,22 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
         detached (GDPR erasure SET_NULLs ``user``)."""
         user = getattr(obj, 'user', None)
         return bool(user and user.has_usable_password())
+
+    def get_activation_link_expired(self, obj: Artist) -> bool:
+        """True when the most recently sent invite's signed link has passed its
+        validity window, so the roster can flag that a *resend* is required (the
+        old link is dead). Authoritative: the token is minted from
+        ``default_token_generator`` and expires after ``PASSWORD_RESET_TIMEOUT``,
+        and ``activation_email_sent_at`` is stamped in the same breath the token
+        is generated — so ``now - sent_at > timeout`` tracks the live link.
+
+        Only meaningful for a pending account: returns False for an activated or
+        detached one (expiry is irrelevant there) and when no send was recorded."""
+        user = getattr(obj, 'user', None)
+        if not user or user.has_usable_password() or obj.activation_email_sent_at is None:
+            return False
+        timeout = getattr(settings, 'PASSWORD_RESET_TIMEOUT', 60 * 60 * 24 * 3)
+        return timezone.now() > obj.activation_email_sent_at + timedelta(seconds=timeout)
 
 
 # --- 2. PARTICIPATION SERIALIZERS ---

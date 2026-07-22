@@ -84,6 +84,8 @@ export const ArtistCard = React.memo(
     // neither state so we never raise a false "pending" flag on a partial DTO.
     const accountActivated = artist.account_activated === true;
     const accountPending = hasAccount && artist.account_activated === false;
+    // Past its ~3-day validity window: the last link is dead, a resend is required.
+    const linkExpired = accountPending && artist.activation_link_expired === true;
     const inviteSentAt = artist.activation_email_sent_at
       ? formatLocalizedDateTime(artist.activation_email_sent_at, INVITE_SENT_FORMAT)
       : null;
@@ -160,11 +162,21 @@ export const ArtistCard = React.memo(
             )}
             {isActive && accountPending && (
               <span
-                className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster bg-ethereal-gold shadow-sm"
-                title={t(
-                  "artists.card.pending_activation_title",
-                  "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
+                className={cn(
+                  "absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster shadow-sm",
+                  linkExpired ? "bg-ethereal-crimson" : "bg-ethereal-gold",
                 )}
+                title={
+                  linkExpired
+                    ? t(
+                        "artists.card.link_expired_title",
+                        "Link aktywacyjny wygasł — wyślij zaproszenie ponownie",
+                      )
+                    : t(
+                        "artists.card.pending_activation_title",
+                        "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
+                      )
+                }
               />
             )}
           </div>
@@ -297,16 +309,30 @@ export const ArtistCard = React.memo(
             </span>
           )}
           {accountPending && (
-            <div className="mt-auto flex flex-col gap-2 rounded-lg border border-ethereal-gold/25 bg-ethereal-gold/[0.07] px-3 py-2.5">
-              <div className="flex items-start gap-1.5 text-ethereal-gold">
+            <div
+              className={cn(
+                "mt-auto flex flex-col gap-2 rounded-lg border px-3 py-2.5",
+                linkExpired
+                  ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
+                  : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
+              )}
+            >
+              <div
+                className={cn(
+                  "flex items-start gap-1.5",
+                  linkExpired ? "text-ethereal-crimson" : "text-ethereal-gold",
+                )}
+              >
                 <MailWarning
                   size={13}
                   className="mt-0.5 shrink-0"
                   aria-hidden="true"
                 />
                 <div className="min-w-0 flex-1">
-                  <Eyebrow color="gold">
-                    {t("artists.card.pending_activation", "Nie aktywowano")}
+                  <Eyebrow color={linkExpired ? "crimson" : "gold"}>
+                    {linkExpired
+                      ? t("artists.card.link_expired", "Link wygasł")
+                      : t("artists.card.pending_activation", "Nie aktywowano")}
                   </Eyebrow>
                   {inviteSentAt && (
                     <Caption
@@ -329,7 +355,12 @@ export const ArtistCard = React.memo(
                     onResendActivation(artist);
                   }}
                   disabled={isResending}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-ethereal-gold/30 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-ethereal-gold transition-colors hover:bg-ethereal-gold/12 disabled:opacity-50"
+                  className={cn(
+                    "inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors disabled:opacity-50",
+                    linkExpired
+                      ? "border-ethereal-crimson/30 text-ethereal-crimson hover:bg-ethereal-crimson/10"
+                      : "border-ethereal-gold/30 text-ethereal-gold hover:bg-ethereal-gold/12",
+                  )}
                 >
                   <Send size={11} aria-hidden="true" />
                   {isResending

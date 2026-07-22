@@ -798,6 +798,8 @@
       "details": "Dossier",
       "edit": "Edit",
       "invite_sent_at": "Sent {{when}}",
+      "link_expired": "Link expired",
+      "link_expired_title": "Activation link expired — resend the invitation",
       "message": "Message",
       "message_title": "Write a message",
       "no_phone": "No phone",
@@ -857,6 +859,7 @@
       "error_title": "Couldn't load the history",
       "gives_pitch": "Gives the pitch",
       "history_title": "Project history",
+      "link_expired_desc": "The activation link has expired. Resend the invitation so this artist can activate their account.",
       "most_sung_lines": "Most-sung voice parts",
       "no_casting": "Not cast in any pieces",
       "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
@@ -942,6 +945,14 @@
       "back_to_home": "Back to homepage",
       "badge": "Invite Activation",
       "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
+      "errors": {
+        "activation_failed": "Couldn't activate the account. Please try again in a moment.",
+        "expired_link": "This activation link has expired. Ask your team coordinator for a new invitation.",
+        "incomplete_link": "This link is missing activation parameters.",
+        "invalid_link": "This activation link is invalid or has already been used.",
+        "password_mismatch": "The passwords do not match.",
+        "password_too_short": "The password must be at least 8 characters long."
+      },
       "features": {
         "access": {
           "desc": "After activation you can sign in immediately and review rehearsals, projects, and operational materials.",
@@ -975,6 +986,15 @@
         "title": "Finalize your access"
       },
       "greeting_word": "Welcome",
+      "invalid": {
+        "cta_home": "Back to homepage",
+        "cta_login": "I already have an account — sign in",
+        "expired_desc": "This activation link has expired. Ask your team coordinator to resend the invitation.",
+        "expired_title": "Link expired",
+        "eyebrow": "Invitation",
+        "invalid_desc": "This activation link is invalid or has already been used. Ask your team coordinator for a new invitation.",
+        "invalid_title": "Invalid link"
+      },
       "subtitle": "VoctManager Access",
       "success": {
         "copied": "Copied",

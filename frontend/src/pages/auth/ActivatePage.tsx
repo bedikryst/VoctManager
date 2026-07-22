@@ -60,6 +60,7 @@ export default function ActivatePage(): React.JSX.Element {
     isSubmitting,
     hasActivationParams,
     inviteeName,
+    linkStatus,
     handleSubmit,
   } = useAccountActivation();
 
@@ -240,7 +241,65 @@ export default function ActivatePage(): React.JSX.Element {
                 aria-hidden="true"
               />
 
-              {!activatedData ? (
+              {linkStatus !== "ok" ? (
+                <div className="flex h-full flex-col justify-center">
+                  <div className="rounded-3xl border border-ethereal-crimson/25 bg-ethereal-crimson/5 p-5 sm:p-6">
+                    <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
+                      <div
+                        className="shrink-0 rounded-2xl bg-ethereal-crimson/10 p-3"
+                        aria-hidden="true"
+                      >
+                        <AlertCircle className="h-7 w-7 text-ethereal-crimson" />
+                      </div>
+                      <div className="min-w-0">
+                        <Eyebrow color="crimson" as="p" className="mb-2">
+                          {t("auth.activate.invalid.eyebrow", "Zaproszenie")}
+                        </Eyebrow>
+                        <Heading as="h2" size="3xl" color="default">
+                          {linkStatus === "expired"
+                            ? t("auth.activate.invalid.expired_title", "Link wygasł")
+                            : t(
+                                "auth.activate.invalid.invalid_title",
+                                "Link nieprawidłowy",
+                              )}
+                        </Heading>
+                        <Text size="sm" color="graphite" className="mt-3 leading-7">
+                          {linkStatus === "expired"
+                            ? t(
+                                "auth.activate.invalid.expired_desc",
+                                "Ten link aktywacyjny stracił ważność. Poproś opiekuna zespołu o ponowne wysłanie zaproszenia.",
+                              )
+                            : t(
+                                "auth.activate.invalid.invalid_desc",
+                                "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany. Poproś opiekuna zespołu o nowe zaproszenie.",
+                              )}
+                        </Text>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="primary"
+                      size="lg"
+                      className="flex-1"
+                      onClick={() => navigate("/")}
+                    >
+                      {t("auth.activate.invalid.cta_home", "Powrót na stronę główną")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      className="flex-1"
+                      onClick={() => navigate("/login")}
+                    >
+                      {t("auth.activate.invalid.cta_login", "Mam już konto — zaloguj się")}
+                    </Button>
+                  </div>
+                </div>
+              ) : !activatedData ? (
                 <>
                   <div className="mb-7">
                     <Eyebrow color="incense-muted" as="p" className="mb-3">

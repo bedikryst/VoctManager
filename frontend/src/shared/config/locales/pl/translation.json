@@ -799,6 +799,8 @@
       "details": "Dossier",
       "edit": "Edytuj",
       "invite_sent_at": "Wysłano {{when}}",
+      "link_expired": "Link wygasł",
+      "link_expired_title": "Link aktywacyjny wygasł — wyślij zaproszenie ponownie",
       "message": "Napisz",
       "message_title": "Napisz wiadomość",
       "no_phone": "Brak telefonu",
@@ -858,6 +860,7 @@
       "error_title": "Nie udało się wczytać historii",
       "gives_pitch": "Podaje ton",
       "history_title": "Historia projektów",
+      "link_expired_desc": "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
       "most_sung_lines": "Najczęściej śpiewane głosy",
       "no_casting": "Brak przypisania do utworów",
       "pending_activation_desc": "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
@@ -943,6 +946,14 @@
       "back_to_home": "Powrót na stronę główną",
       "badge": "Aktywacja zaproszenia",
       "description": "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
+      "errors": {
+        "activation_failed": "Nie udało się aktywować konta. Spróbuj ponownie za chwilę.",
+        "expired_link": "Ten link aktywacyjny wygasł. Poproś opiekuna zespołu o nowe zaproszenie.",
+        "incomplete_link": "W tym linku brakuje parametrów aktywacyjnych.",
+        "invalid_link": "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany.",
+        "password_mismatch": "Hasła nie są identyczne.",
+        "password_too_short": "Hasło musi mieć co najmniej 8 znaków."
+      },
       "features": {
         "access": {
           "desc": "Po aktywacji możesz od razu zalogować się i sprawdzić próby, projekty oraz materiały organizacyjne.",
@@ -976,6 +987,15 @@
         "title": "Dokończ aktywację"
       },
       "greeting_word": "Witaj",
+      "invalid": {
+        "cta_home": "Powrót na stronę główną",
+        "cta_login": "Mam już konto — zaloguj się",
+        "expired_desc": "Ten link aktywacyjny stracił ważność. Poproś opiekuna zespołu o ponowne wysłanie zaproszenia.",
+        "expired_title": "Link wygasł",
+        "eyebrow": "Zaproszenie",
+        "invalid_desc": "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany. Poproś opiekuna zespołu o nowe zaproszenie.",
+        "invalid_title": "Link nieprawidłowy"
+      },
       "subtitle": "Dostęp do VoctManagera",
       "success": {
         "copied": "Skopiowano",

@@ -76,6 +76,20 @@ export const useAccountActivation = () => {
 
   const invitee = previewQuery.data;
 
+  // A signed preview that comes back rejected tells us the link itself is dead
+  // *before* the member wastes effort on the password form. Only the two
+  // definitive link codes gate the form; a transient failure (offline, 500)
+  // stays "ok" so they can still try to submit and get a precise error then.
+  const previewErrorCode = previewQuery.error
+    ? parseApiError(previewQuery.error).code
+    : null;
+  const linkStatus: "ok" | "expired" | "invalid" =
+    previewErrorCode === "expired_activation_link"
+      ? "expired"
+      : previewErrorCode === "invalid_activation_link"
+        ? "invalid"
+        : "ok";
+
   // Reaffirm from the server's authoritative value once the preview resolves —
   // covers a missing/tampered ?lang= on the link.
   const inviteeLang = invitee?.language;
@@ -142,6 +156,7 @@ export const useAccountActivation = () => {
     isSubmitting: activationMutation.isPending,
     hasActivationParams,
     inviteeName,
+    linkStatus,
     handleSubmit,
   };
 };

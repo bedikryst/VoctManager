@@ -360,6 +360,8 @@ export const ArtistDossier = ({
   const voiceLabel = artist?.voice_type
     ? t(`dashboard.layout.roles.${artist.voice_type}`, artist.voice_type_display || artist.voice_type)
     : "";
+  const accountPending = artist?.account_activated === false;
+  const linkExpired = accountPending && artist?.activation_link_expired === true;
 
   return createPortal(
     <AnimatePresence>
@@ -421,22 +423,48 @@ export const ArtistDossier = ({
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto p-5 md:p-6">
-              {artist.account_activated === false && (
-                <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-ethereal-gold/25 bg-ethereal-gold/[0.07] p-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-2.5 text-ethereal-gold">
+              {accountPending && (
+                <div
+                  className={cn(
+                    "mb-6 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between",
+                    linkExpired
+                      ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
+                      : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "flex min-w-0 items-start gap-2.5",
+                      linkExpired ? "text-ethereal-crimson" : "text-ethereal-gold",
+                    )}
+                  >
                     <MailWarning size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
                     <div className="min-w-0">
-                      <Eyebrow color="gold">
-                        {t("artists.card.pending_activation", "Nie aktywowano")}
+                      <Eyebrow color={linkExpired ? "crimson" : "gold"}>
+                        {linkExpired
+                          ? t("artists.card.link_expired", "Link wygasł")
+                          : t("artists.card.pending_activation", "Nie aktywowano")}
                       </Eyebrow>
                       <Caption color="muted" className="mt-0.5 block">
-                        {t(
-                          "artists.dossier.pending_activation_desc",
-                          "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
-                        )}
+                        {linkExpired
+                          ? t(
+                              "artists.dossier.link_expired_desc",
+                              "Link aktywacyjny stracił ważność. Wyślij zaproszenie ponownie, aby ten artysta mógł aktywować konto.",
+                            )
+                          : t(
+                              "artists.dossier.pending_activation_desc",
+                              "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
+                            )}
                       </Caption>
                       {artist.activation_email_sent_at && (
-                        <Caption className="mt-1 block font-semibold text-ethereal-gold/90 tabular-nums">
+                        <Caption
+                          className={cn(
+                            "mt-1 block font-semibold tabular-nums",
+                            linkExpired
+                              ? "text-ethereal-crimson/90"
+                              : "text-ethereal-gold/90",
+                          )}
+                        >
                           {t("artists.card.invite_sent_at", {
                             defaultValue: "Wysłano {{when}}",
                             when: formatLocalizedDateTime(

@@ -798,6 +798,8 @@
       "details": "Dossier",
       "edit": "Modifier",
       "invite_sent_at": "Envoyé {{when}}",
+      "link_expired": "Lien expiré",
+      "link_expired_title": "Lien d'activation expiré — renvoyez l'invitation",
       "message": "Écrire",
       "message_title": "Écrire un message",
       "no_phone": "Pas de téléphone",
@@ -857,6 +859,7 @@
       "error_title": "Impossible de charger l'historique",
       "gives_pitch": "Donne le ton",
       "history_title": "Historique des projets",
+      "link_expired_desc": "Le lien d'activation a expiré. Renvoyez l'invitation pour que cet artiste puisse activer son compte.",
       "most_sung_lines": "Pupitres les plus chantés",
       "no_casting": "Aucune affectation à des pièces",
       "pending_activation_desc": "L'invitation a été envoyée, mais cet artiste n'a pas encore activé son compte sur la plateforme.",
@@ -942,6 +945,14 @@
       "back_to_home": "Retour à la page d'accueil",
       "badge": "Activation d'invitation",
       "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
+      "errors": {
+        "activation_failed": "Impossible d'activer le compte. Réessayez dans un instant.",
+        "expired_link": "Ce lien d'activation a expiré. Demandez une nouvelle invitation au responsable de l'ensemble.",
+        "incomplete_link": "Ce lien manque de paramètres d'activation.",
+        "invalid_link": "Ce lien d'activation est invalide ou a déjà été utilisé.",
+        "password_mismatch": "Les mots de passe ne correspondent pas.",
+        "password_too_short": "Le mot de passe doit contenir au moins 8 caractères."
+      },
       "features": {
         "access": {
           "desc": "Après activation, vous pouvez vous connecter immédiatement et consulter les répétitions, les projets et les matériels opérationnels.",
@@ -975,6 +986,15 @@
         "title": "Finalisez votre accès"
       },
       "greeting_word": "Bienvenue",
+      "invalid": {
+        "cta_home": "Retour à la page d'accueil",
+        "cta_login": "J'ai déjà un compte — se connecter",
+        "expired_desc": "Ce lien d'activation a expiré. Demandez au responsable de l'ensemble de renvoyer l'invitation.",
+        "expired_title": "Lien expiré",
+        "eyebrow": "Invitation",
+        "invalid_desc": "Ce lien d'activation est invalide ou a déjà été utilisé. Demandez une nouvelle invitation au responsable de l'ensemble.",
+        "invalid_title": "Lien invalide"
+      },
       "subtitle": "Accès VoctManager",
       "success": {
         "copied": "Copié",

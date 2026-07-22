@@ -93,6 +93,10 @@ export interface Artist extends BaseModel {
   // When the activation invite was last dispatched (initial provisioning or a
   // manual resend). ISO string; null if never recorded.
   activation_email_sent_at?: string | null;
+  // True when the last-sent invite link has passed its validity window
+  // (~3 days) and a resend is required. Manager-only; only meaningful while
+  // the account is pending.
+  activation_link_expired?: boolean;
   avatar_thumb_url?: string | null;
   first_name: string;
   last_name: string;

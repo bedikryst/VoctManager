@@ -2,6 +2,7 @@ import tempfile
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -21,6 +22,7 @@ from .infrastructure.document_generator import (
     DocumentRenderDependencyError,
 )
 from .models import Artist, Participation, Project, Rehearsal, VoiceType
+from .serializers import ArtistDetailedSerializer
 from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService
 
 # Provisioning delegates the email to core.services, so the task is patched there.
@@ -137,6 +139,26 @@ class ArtistActivationResendTests(TestCase):
         with self.assertRaises(ActivationResendException):
             ArtistHRService.resend_activation(artist)
         enqueue_mock.assert_not_called()
+
+    @patch(EMAIL_TASK)
+    def test_activation_link_expired_flag_tracks_the_validity_window(self, enqueue_mock):
+        artist = self._provision(enqueue_mock)
+        serializer = ArtistDetailedSerializer()
+
+        # Freshly invited → link still valid.
+        self.assertFalse(serializer.get_activation_link_expired(artist))
+
+        # Sent longer ago than PASSWORD_RESET_TIMEOUT (default 3 days) → expired.
+        timeout = getattr(settings, "PASSWORD_RESET_TIMEOUT", 60 * 60 * 24 * 3)
+        artist.activation_email_sent_at = timezone.now() - timedelta(seconds=timeout + 3600)
+        artist.save(update_fields=["activation_email_sent_at"])
+        self.assertTrue(serializer.get_activation_link_expired(artist))
+
+        # Once activated, expiry is irrelevant → False even for an old send.
+        assert artist.user is not None
+        artist.user.set_password("activated-now")
+        artist.user.save(update_fields=["password"])
+        self.assertFalse(serializer.get_activation_link_expired(artist))
 
 
 class ArtistResendActivationEndpointTests(APITestCase):
