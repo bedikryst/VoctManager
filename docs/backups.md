@@ -63,12 +63,14 @@ deliberate: it needs no browser, no interactive token, and **never expires**
    (`.../drive/folders/<ID>` → the ID is the `0A...` value).
 3. *(Recommended)* In **Workspace Admin → data regions**, pin the org / this
    Shared Drive to the **EU**.
-4. Configure the rclone remote on the droplet:
+4. Configure the rclone remote on the droplet. Pass config params as
+   **space-separated `key value` pairs** — the `key=value` form only works on
+   newer rclone, and the `apt` build errors with `found key without value`:
    ```bash
    rclone config create voct-drive drive \
-     scope=drive \
-     service_account_file=/root/voct-sa.json \
-     team_drive=<SHARED_DRIVE_ID>
+     scope drive \
+     service_account_file /root/voct-sa.json \
+     team_drive 0AHriIeVMnRF3Uk9PVA
    # sanity check — should list the Shared Drive without prompting:
    rclone lsd voct-drive:
    ```
@@ -139,8 +141,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml start web celery
 
 ## Health checklist (review quarterly)
 
-- [ ] healthchecks.io shows a green ping every day (not just green *now*).
-- [ ] `rclone ls voct-drive:backups` holds ~`KEEP_DAYS` of both archive types.
+- [*] healthchecks.io shows a green ping every day (not just green *now*).
+- [*] `rclone ls voct-drive:backups` holds ~`KEEP_DAYS` of both archive types.
 - [ ] A restore drill was completed within the last quarter.
-- [ ] The service-account JSON key and `infra/backup.env` are `chmod 600`.
-- [ ] The Shared Drive is pinned to the EU region and its membership is minimal.
+- [*] The service-account JSON key and `infra/backup.env` are `chmod 600`.
+- [*] The Shared Drive is pinned to the EU region and its membership is minimal.
