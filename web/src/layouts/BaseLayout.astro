@@ -27,6 +27,9 @@ interface Props {
       default pointed at /photos/…, a directory that does not exist in public/, so any
       page relying on it shipped a 404 og:image. Every page now passes a real image. */
   image: string;
+  /** Alt text for the share image (og:image:alt / twitter:image:alt). Defaults to the page
+      title — every image here is the page's own hero, so the title describes it adequately. */
+  imageAlt?: string;
   /** Optional class on <body> for page-level theming hooks. */
   bodyClass?: string;
   /**
@@ -48,6 +51,7 @@ const {
   description,
   path,
   image,
+  imageAlt = title,
   bodyClass = "",
   reveal = true,
   lang = "pl",
@@ -126,11 +130,14 @@ const ogLocaleAlternates =
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
+    <meta property="og:image:alt" content={imageAlt} />
     <meta property="og:locale" content={ogLocale} />
     {ogLocaleAlternates.map((loc) => <meta property="og:locale:alternate" content={loc} />)}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={imageAlt} />
 
     <!-- Plausible Analytics — cookieless, EU-hosted (see /polityka-prywatnosci). The
          `tagged-events` variant reports the `plausible-event-name=…` classes already wired

@@ -4,4 +4,4 @@ Disallow: /panel
 Disallow: /api/
 Disallow: /documents/
 
-Sitemap: https://voctensemble.com/sitemap.xml
+Sitemap: https://voctensemble.com/sitemap-index.xml

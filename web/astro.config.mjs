@@ -23,6 +23,7 @@
  */
 import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
   site: "https://voctensemble.com",
@@ -40,5 +41,28 @@ export default defineConfig({
     prefetchAll: true,
     defaultStrategy: "viewport",
   },
-  integrations: [react()],
+  integrations: [
+    react(),
+    // Auto-generated sitemap — replaces the hand-maintained public/sitemap.xml, which listed
+    // 6 URLs while the build emits 13 indexable pages (every concert detail page, /kolofon and
+    // the /en|/fr translations were missing). Regenerates on every build, so adding a concert
+    // can no longer leave the sitemap stale.
+    //  - `filter`: drop /press — it ships `<meta name="robots" content="noindex,follow">`, so it
+    //    must not be advertised for indexing (the integration does NOT read the noindex tag itself).
+    //  - `i18n`: emit `<xhtml:link rel="alternate" hreflang>` groups. Only pages that actually
+    //    exist in a locale are grouped (currently just /o-nas → pl/en/fr); Polish-only pages get a
+    //    single self-referential entry. Mirrors the per-page hreflang already set in BaseLayout.
+    // Output lives at /sitemap-index.xml (NOT /sitemap.xml) — robots.txt points there.
+    sitemap({
+      filter: (page) => page !== "https://voctensemble.com/press",
+      // The privacy policy is a hand-authored static file (public/polityka-prywatnosci.html),
+      // not an Astro route, so the integration can't discover it — declare it explicitly or it
+      // silently drops out of the sitemap (it was present in the old hand-maintained one).
+      customPages: ["https://voctensemble.com/polityka-prywatnosci"],
+      i18n: {
+        defaultLocale: "pl",
+        locales: { pl: "pl", en: "en", fr: "fr" },
+      },
+    }),
+  ],
 });
