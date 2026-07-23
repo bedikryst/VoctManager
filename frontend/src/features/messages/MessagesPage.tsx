@@ -170,6 +170,7 @@ const MessagesPage: React.FC = () => {
               onChange={setFilter}
               ariaLabel={t("messages.filter.aria", "Filtruj rozmowy")}
               className="text-xs"
+              wrap
             />
           </div>
 

@@ -59,15 +59,16 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         )}
         <Text size="sm" color="graphite" className="whitespace-pre-line leading-relaxed">
           {message.body}
+          {/* Timestamp trails the last line so short messages stay a single row. */}
+          <Label
+            size="xs"
+            color="muted"
+            className="ml-2.5 inline-flex items-center gap-1 align-baseline tabular-nums opacity-60"
+          >
+            {pending && <Clock size={10} className="animate-pulse" aria-hidden="true" />}
+            {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at)}
+          </Label>
         </Text>
-        <Label
-          size="xs"
-          color="muted"
-          className="mt-1 flex items-center justify-end gap-1 opacity-60"
-        >
-          {pending && <Clock size={10} className="animate-pulse" aria-hidden="true" />}
-          {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at)}
-        </Label>
       </div>
     </motion.div>
   );

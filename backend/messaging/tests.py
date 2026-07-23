@@ -154,6 +154,74 @@ class MessagingFlowTests(APITestCase):
         self.assertEqual({r["id"] for r in resp.json()}, {self.manager.id, self.manager2.id})
 
     # ------------------------------------------------------------------ #
+    # Privacy: assignee gates manager visibility (no cross-manager peek)  #
+    # ------------------------------------------------------------------ #
+
+    def test_manager_cannot_see_peers_directed_thread(self) -> None:
+        # Artist directs a thread to manager1 → private to artist + manager1.
+        self.client.force_authenticate(user=self.artist_user)
+        created = self.client.post(
+            THREADS,
+            {"subject": "Prywatne", "body": "tylko dla Ciebie", "assignee_id": self.manager.id},
+            format="json",
+        )
+        thread_id = created.json()["id"]
+
+        # A peer manager sees neither the row nor the detail.
+        self.client.force_authenticate(user=self.manager2)
+        self.assertEqual(self.client.get(THREADS).json(), [])
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 404)
+
+        # The assignee does see it.
+        self.client.force_authenticate(user=self.manager)
+        self.assertIn(thread_id, {t["id"] for t in self.client.get(THREADS).json()})
+
+    def test_unassigned_thread_is_visible_to_every_manager(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        created = self.client.post(THREADS, {"subject": "Do biura", "body": "pytanie"}, format="json")
+        thread_id = created.json()["id"]
+
+        for mgr in (self.manager, self.manager2):
+            self.client.force_authenticate(user=mgr)
+            self.assertIn(thread_id, {t["id"] for t in self.client.get(THREADS).json()})
+
+    def test_manager_reply_claims_unassigned_thread(self) -> None:
+        self.client.force_authenticate(user=self.artist_user)
+        created = self.client.post(THREADS, {"subject": "Do biura", "body": "pytanie"}, format="json")
+        thread_id = created.json()["id"]
+
+        # manager1 replies to the queue thread → claims it.
+        self.client.force_authenticate(user=self.manager)
+        with patch(EMIT), self.captureOnCommitCallbacks(execute=True):
+            reply = self.client.post(f"{THREADS}{thread_id}/messages/", {"body": "odpowiadam"}, format="json")
+        self.assertEqual(reply.status_code, 201)
+        self.assertEqual(Thread.objects.get(id=thread_id).assignee_id, self.manager.id)
+
+        # It is now private: the peer no longer sees it.
+        self.client.force_authenticate(user=self.manager2)
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 404)
+
+    def test_manager_can_release_thread_back_to_queue(self) -> None:
+        # Manager-initiated thread → assignee defaults to the creator (private).
+        self.client.force_authenticate(user=self.manager)
+        created = self.client.post(
+            THREADS, {"subject": "X", "body": "y", "artist_id": str(self.artist.id)}, format="json"
+        )
+        thread_id = created.json()["id"]
+
+        self.client.force_authenticate(user=self.manager2)
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 404)
+
+        # Owner releases it (assignee → null) → back to the shared queue.
+        self.client.force_authenticate(user=self.manager)
+        released = self.client.patch(f"{THREADS}{thread_id}/", {"assignee_id": None}, format="json")
+        self.assertEqual(released.status_code, 200)
+
+        # The peer sees it again.
+        self.client.force_authenticate(user=self.manager2)
+        self.assertEqual(self.client.get(f"{THREADS}{thread_id}/").status_code, 200)
+
+    # ------------------------------------------------------------------ #
     # Faza 3: dedup + GDPR erasure                                       #
     # ------------------------------------------------------------------ #
 

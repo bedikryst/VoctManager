@@ -77,20 +77,28 @@ const RecipientField: React.FC<{
   const { t } = useTranslation();
   const { data: recipients = [] } = useRecipients();
   return (
-    <Select
-      label={t("messages.compose.recipient", "Do kogo (opcjonalnie)")}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">
-        {t("messages.compose.recipient_any", "Dowolny dyrygent")}
-      </option>
-      {recipients.map((recipient) => (
-        <option key={recipient.id} value={String(recipient.id)}>
-          {recipient.name}
+    <div className="flex flex-col gap-1.5">
+      <Select
+        label={t("messages.compose.recipient", "Do kogo (opcjonalnie)")}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">
+          {t("messages.compose.recipient_any", "Dowolny dyrygent")}
         </option>
-      ))}
-    </Select>
+        {recipients.map((recipient) => (
+          <option key={recipient.id} value={String(recipient.id)}>
+            {recipient.name}
+          </option>
+        ))}
+      </Select>
+      <Text size="xs" color="muted">
+        {t(
+          "messages.compose.recipient_hint",
+          "Bez wyboru wiadomość trafia do wspólnej kolejki zarządu. Wybór osoby = rozmowa prywatna.",
+        )}
+      </Text>
+    </div>
   );
 };
 

@@ -71,11 +71,17 @@ class MessagingService:
         return thread
 
     @classmethod
-    def post_message(cls, *, thread: Thread, sender_id: int, body: str) -> Message:
+    def post_message(
+        cls, *, thread: Thread, sender_id: int, body: str, claim_if_unassigned: bool = False
+    ) -> Message:
         """Appends a reply, bumps the inbox sort key, and pings the other party.
 
         A reply to a RESOLVED thread reopens it: "resolved" is a triage state ("handled"),
         not a lock — a fresh message means the conversation is live again.
+
+        ``claim_if_unassigned`` (set when the sender is a manager): a manager replying to
+        a thread still in the shared queue claims it, turning the conversation private to
+        that manager and the artist.
         """
         with transaction.atomic():
             message = Message.objects.create(thread=thread, sender_id=sender_id, body=body)
@@ -84,6 +90,9 @@ class MessagingService:
             if thread.status == ThreadStatus.RESOLVED:
                 thread.status = ThreadStatus.OPEN
                 update_fields.append('status')
+            if claim_if_unassigned and thread.assignee_id is None:
+                thread.assignee_id = sender_id
+                update_fields.append('assignee')
             thread.save(update_fields=update_fields)
             cls._touch_read_state(thread.id, sender_id, when=message.created_at)
             transaction.on_commit(

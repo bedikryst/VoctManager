@@ -31,11 +31,12 @@ class ThreadStatus(models.TextChoices):
 
 class Thread(EnterpriseBaseModel):
     """
-    A conversation between one artist and the management pool.
+    A private conversation between one artist and one manager.
 
-    The whole management pool always has visibility; ``assignee`` is a soft
-    routing/ownership hint (who the artist directed it to or who claimed it),
-    NOT an access restriction.
+    ``assignee`` is the owning manager and gates visibility: a directed or
+    claimed thread is visible only to the artist and its assignee. An unassigned
+    thread sits in the shared intake queue, visible to every manager until one
+    claims it (by replying or explicitly taking it over).
     """
     artist = models.ForeignKey(
         'roster.Artist',
@@ -65,7 +66,7 @@ class Thread(EnterpriseBaseModel):
         null=True,
         blank=True,
         related_name='assigned_threads',
-        help_text=_("Manager the thread is directed to / who claimed it. Routing hint only."),
+        help_text=_("Owning manager. Gates visibility: null = shared intake queue; set = private to this manager."),
     )
     status = models.CharField(
         max_length=20,

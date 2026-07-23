@@ -10,7 +10,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Hand, FolderOpen, RotateCcw, Send } from "lucide-react";
+import { ArrowLeft, Check, Hand, FolderOpen, RotateCcw, Send, Undo2 } from "lucide-react";
 
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -161,6 +161,17 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 leftIcon={<Hand size={14} />}
               >
                 {t("messages.thread.claim", "Przejmij")}
+              </Button>
+            )}
+            {ownedByMe && (
+              <Button
+                variant="ghost"
+                type="button"
+                onClick={() => updateThread.mutate({ assignee_id: null })}
+                disabled={updateThread.isPending}
+                leftIcon={<Undo2 size={14} />}
+              >
+                {t("messages.thread.release", "Do kolejki")}
               </Button>
             )}
             <Button

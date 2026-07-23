@@ -1,10 +1,11 @@
 """
 @file views.py
 @description REST surface for the messaging domain. Role-scoped querysets (artist
-             sees own threads; management sees the whole pool), thread/message
-             creation delegated to MessagingService, and lightweight triage
-             (assignee/status) for managers. List is unpaginated to mirror the
-             notifications inbox and the 30s frontend polling model.
+             sees own threads; a manager sees only threads they own plus the shared
+             unassigned queue — assignee gates visibility), thread/message creation
+             delegated to MessagingService, and lightweight triage (assignee/status)
+             for managers. List is unpaginated to mirror the notifications inbox and
+             the 30s frontend polling model.
 @architecture Enterprise SaaS 2026
 @module messaging/views
 """
@@ -90,6 +91,11 @@ class ThreadViewSet(viewsets.GenericViewSet):
         if not self._is_manager(user):
             return qs.filter(artist__user_id=user.id)
 
+        # Privacy gate: a manager sees only threads they own plus the shared intake
+        # queue (unassigned). Directed/claimed conversations are private to their
+        # assignee — no cross-manager visibility, and no superuser override.
+        qs = qs.filter(Q(assignee_id=user.id) | Q(assignee__isnull=True))
+
         params = self.request.query_params
         assignee = params.get('assignee')
         if assignee == 'me':
@@ -137,26 +143,28 @@ class ThreadViewSet(viewsets.GenericViewSet):
 
     @staticmethod
     def _find_reusable_thread(
-        *, artist: Artist, context_type: str, context_id: UUID | None, assignee_id: int | None
+        *, artist: Artist, context_type: str, context_id: UUID | None,
+        assignee_id: int | None, is_manager: bool,
     ) -> Thread | None:
         """An OPEN conversation to continue instead of spawning a duplicate.
 
         - PROJECT-scoped: one thread per (artist, project) while open — keeps a person's
           private project matters in a single, resolvable place (and tagged to the project).
+          For a manager, reuse is restricted to a thread they may see (their own or the
+          shared queue) so a new message never lands in a peer's private thread.
         - GENERAL + undirected: the artist's standing general thread.
         Directed general threads (an explicit assignee) always open fresh.
         """
         if context_type == ThreadContextType.PROJECT and context_id:
-            return (
-                Thread.objects.filter(
-                    artist=artist,
-                    context_type=ThreadContextType.PROJECT,
-                    context_id=context_id,
-                    status=ThreadStatus.OPEN,
-                )
-                .order_by('-last_message_at')
-                .first()
+            qs = Thread.objects.filter(
+                artist=artist,
+                context_type=ThreadContextType.PROJECT,
+                context_id=context_id,
+                status=ThreadStatus.OPEN,
             )
+            if is_manager:
+                qs = qs.filter(Q(assignee_id=assignee_id) | Q(assignee__isnull=True))
+            return qs.order_by('-last_message_at').first()
         if context_type == ThreadContextType.GENERAL and not context_id and not assignee_id:
             return (
                 Thread.objects.filter(
@@ -175,7 +183,8 @@ class ThreadViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        if self._is_manager(user):
+        is_manager = self._is_manager(user)
+        if is_manager:
             artist_id = data.get('artist_id')
             if not artist_id:
                 return Response({"detail": "artist_id is required for management-initiated threads."}, status=status.HTTP_400_BAD_REQUEST)
@@ -204,9 +213,13 @@ class ThreadViewSet(viewsets.GenericViewSet):
             context_type=context_type,
             context_id=context_id,
             assignee_id=assignee_id,
+            is_manager=is_manager,
         )
         if existing is not None:
-            MessagingService.post_message(thread=existing, sender_id=user.id, body=data['body'])
+            MessagingService.post_message(
+                thread=existing, sender_id=user.id, body=data['body'],
+                claim_if_unassigned=is_manager,
+            )
             read_map = {existing.id: existing.last_message_at}
             return Response(
                 ThreadDetailSerializer(existing, context={'request': request, 'read_map': read_map}).data,
@@ -265,7 +278,8 @@ class ThreadViewSet(viewsets.GenericViewSet):
         serializer = MessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = MessagingService.post_message(
-            thread=thread, sender_id=user.id, body=serializer.validated_data['body']
+            thread=thread, sender_id=user.id, body=serializer.validated_data['body'],
+            claim_if_unassigned=self._is_manager(user),
         )
         return Response(MessageSerializer(message, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
