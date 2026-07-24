@@ -191,7 +191,7 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
 - [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
-- [ ] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation, off-site mirror to the foundation's Google Shared Drive, and healthcheck alerting (`infra/backup.sh`; runbook in `docs/backups.md`). Remaining: automated restore verification.
+- [x] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation, off-site mirror to the foundation's Google Shared Drive, and healthcheck alerting (`infra/backup.sh`; runbook in `docs/backups.md`). Restores are *proven*, not assumed: `infra/restore-drill.sh` replays the off-site archive into a throwaway database and scratch directory — checking archive integrity, row counts against live, media completeness, migration state, and measured RTO — without ever touching production data.
 - [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
 - [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules and DRF throttling for API abuse prevention.
 - [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
@@ -424,9 +424,16 @@ mkdir -p ~/VoctManager/web/src/assets/videos/
 # Every deploy:
 cd ~/VoctManager
 git pull
-docker compose -f docker-compose.yml -f docker-compose.prod.yml build frontend
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+make deploy
 ```
+
+`make deploy` is `build` → `up -d` → `migrate` → `migrate --check`, and every step matters:
+
+* **`build` without a service name rebuilds the backend image too.** `build frontend` alone leaves `web` and `celery` on the previously built image, so a backend change silently does not ship.
+* **Nothing applies migrations for you** — not `entrypoint.sh` (it only runs `collectstatic`), not `up`. A deploy that stops after `up` leaves new code running against the old schema.
+* **`migrate --check` is the receipt.** It exits non-zero if anything is still outstanding, so the deploy fails loudly instead of looking successful.
+
+Make aborts on the first failing step, so a broken build never reaches the database.
 
 **Build-host requirements:** Docker + Compose v2, ≥ ~3 GB free RAM during build (rollup graph for the panel SPA peaks at ~2 GB; Sharp for the Astro pipeline adds ~500 MB). No Node.js, no npm, no host-side lockfile. The root `.dockerignore` keeps `voct_data/`, `**/node_modules`, `.git`, etc. out of the build context. If the source media directories are missing or incomplete, the Astro stage fails fast during image/video asset resolution.
 

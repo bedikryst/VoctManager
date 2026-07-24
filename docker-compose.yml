@@ -9,12 +9,15 @@
 # auto-loaded override on the prod host would silently expose the dev stack.
 
 # Cap container log growth (default json-file grows unbounded and eventually
-# fills the VPS disk).
+# fills the VPS disk). Sized for INCIDENT FORENSICS, not just disk safety: at
+# 10m x 3 a chatty container retained only hours, so by the time a problem was
+# reported the evidence had already rotated away. 250 MB per container is a
+# rounding error next to the media tree and buys days of history.
 x-default-logging: &default-logging
   driver: json-file
   options:
-    max-size: "10m"
-    max-file: "3"
+    max-size: "50m"
+    max-file: "5"
 
 services:
   db:

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from uuid import uuid4
 
+import requests
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
@@ -29,6 +30,7 @@ from .exceptions import EmailAlreadyInUseException, InvalidImageException, forma
 from .models import UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
 from .services import UserIdentityService
+from .tasks import ping_beat_heartbeat
 
 # `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
 # concrete model under TYPE_CHECKING so "User" annotations resolve, while keeping
@@ -1061,3 +1063,103 @@ class AccountEmailUniquenessConstraintTests(TransactionTestCase):
                 UserIdentityService.provision_user_account(
                     email="ADA@example.com", first_name="Ada", last_name="Lovelace",
                 )
+
+
+class ReadinessProbeTests(TestCase):
+    """The external uptime monitor branches on this endpoint's status code, so
+    200-vs-503 is a production contract rather than cosmetics."""
+
+    URL = "/api/health/ready/"
+
+    def test_liveness_stays_dependency_free(self):
+        """`/api/health/` backs the Docker healthcheck. If it ever grew a database
+        call, a slow Postgres would start restarting the web container — and take
+        celery down with it through `depends_on: service_healthy`."""
+        with patch("config.health.connections") as connections_mock:
+            response = self.client.get("/api/health/")
+
+        self.assertEqual(response.status_code, 200)
+        connections_mock.__getitem__.assert_not_called()
+
+    def test_healthy_stack_reports_ok(self):
+        response = self.client.get(self.URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(), {"status": "ok", "checks": {"database": "ok", "redis": "ok"}}
+        )
+
+    def test_unreachable_database_degrades_to_503(self):
+        with patch("config.health.connections") as connections_mock:
+            connections_mock.__getitem__.side_effect = RuntimeError("connection refused")
+            with self.assertLogs("config.health", level="ERROR"):
+                response = self.client.get(self.URL)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["status"], "degraded")
+        self.assertEqual(response.json()["checks"]["database"], "error")
+
+    def test_unreachable_cache_degrades_to_503(self):
+        """Redis backs the cache and the Celery broker alike, so losing it must not
+        read as healthy merely because Django can still answer."""
+        with (
+            patch("config.health.cache.set", side_effect=RuntimeError("connection refused")),
+            self.assertLogs("config.health", level="ERROR"),
+        ):
+            response = self.client.get(self.URL)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["checks"]["redis"], "error")
+        self.assertEqual(response.json()["checks"]["database"], "ok")
+
+    def test_write_only_cache_does_not_pass_as_healthy(self):
+        """A Redis at maxmemory under noeviction accepts the connection and answers
+        PING happily while dropping writes. The probe does a round-trip, not a ping,
+        precisely so that instance is reported degraded."""
+        with (
+            patch("config.health.cache.get", return_value=None),
+            self.assertLogs("config.health", level="ERROR"),
+        ):
+            response = self.client.get(self.URL)
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["checks"]["redis"], "error")
+
+    def test_driver_detail_never_reaches_an_anonymous_caller(self):
+        """The endpoint is unauthenticated and the driver's error text carries
+        hostnames and credential fragments; only the check name may travel."""
+        secret = "redis://admin:hunter2@10.0.0.5:6379"
+        with (
+            patch("config.health.cache.set", side_effect=RuntimeError(secret)),
+            self.assertLogs("config.health", level="ERROR"),
+        ):
+            response = self.client.get(self.URL)
+
+        body = response.content.decode()
+        self.assertNotIn("10.0.0.5", body)
+        self.assertNotIn("hunter2", body)
+
+
+class BeatHeartbeatTaskTests(SimpleTestCase):
+    """Alerting depends on this ping ARRIVING, so the task must fail closed and
+    quietly — never by raising into the worker it is meant to vouch for."""
+
+    @override_settings(BEAT_HEARTBEAT_URL="")
+    def test_no_monitor_configured_is_a_no_op(self):
+        """Dev and CI run without a monitor; the absence must not look like a fault."""
+        self.assertFalse(ping_beat_heartbeat())
+
+    @override_settings(BEAT_HEARTBEAT_URL="https://hc-ping.invalid/uuid")
+    @patch("core.tasks.requests.get")
+    def test_ping_is_sent_when_configured(self, get_mock):
+        self.assertTrue(ping_beat_heartbeat())
+        get_mock.assert_called_once()
+        self.assertEqual(get_mock.call_args.args[0], "https://hc-ping.invalid/uuid")
+
+    @override_settings(BEAT_HEARTBEAT_URL="https://hc-ping.invalid/uuid")
+    @patch("core.tasks.requests.get", side_effect=requests.RequestException("unreachable"))
+    def test_unreachable_monitor_never_raises(self, _get_mock):
+        """A flaky monitor must not generate alerts about itself or burn worker
+        slots on retries — the real signal is the ping that never arrives."""
+        with self.assertLogs("core.tasks", level="WARNING"):
+            self.assertFalse(ping_beat_heartbeat())

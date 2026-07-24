@@ -279,7 +279,19 @@ PROJECT_REMINDER_LEAD_HOURS = env.int('PROJECT_REMINDER_LEAD_HOURS', default=48)
 # Scheduled tasks — requires the `celery beat` process to be running alongside
 # the worker. Hourly sweeps: fail out abandoned PENDING donations; remind
 # participants of upcoming rehearsals/concerts.
+# Heartbeat monitor URL (healthchecks.io ping endpoint) for the periodic
+# pipeline. Empty disables the ping — the task then no-ops instead of erroring,
+# so dev and CI stay quiet. See docs/monitoring.md.
+BEAT_HEARTBEAT_URL = env('BEAT_HEARTBEAT_URL', default='')
+
 CELERY_BEAT_SCHEDULE = {
+    # Proves beat → broker → worker is alive end to end. The monitor alerts on
+    # the ping going MISSING, so a dead scheduler or hung worker cannot fail
+    # quietly. Period must stay well inside the monitor's configured grace.
+    'core-ping-beat-heartbeat': {
+        'task': 'core.ping_beat_heartbeat',
+        'schedule': timedelta(hours=1),
+    },
     'payments-expire-stale-pending-donations': {
         'task': 'payments.expire_stale_pending_donations',
         'schedule': timedelta(hours=1),

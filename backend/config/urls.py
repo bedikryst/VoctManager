@@ -66,7 +66,7 @@ from roster.views import (
 )
 
 from .auth_views import CookieTokenObtainPairView, CookieTokenRefreshView, LogoutView
-from .health import health
+from .health import health, ready
 
 __author__ = "Krystian Bugalski"
 
@@ -116,6 +116,9 @@ urlpatterns = [
 
     # Container liveness probe (Docker healthcheck) — unauthenticated, no DB.
     path('api/health/', health, name='health-check'),
+    # Readiness probe for the external uptime monitor — checks DB + Redis and
+    # answers 503 when degraded. Not used by the Docker healthcheck; see health.py.
+    path('api/health/ready/', ready, name='health-ready'),
 
     # --- System & Notifications Specific Routes ---
     # These must be evaluated before the router to prevent 'preferences' / 'devices'

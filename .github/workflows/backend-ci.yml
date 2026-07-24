@@ -82,6 +82,14 @@ jobs:
           sudo apt-get install -y libmagic1 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf-2.0-0 libcairo2
       - name: Install dependencies
         run: pip install -r backend/requirements-dev.txt
+      # Catches a model edited without `makemigrations`. Nothing else guards this:
+      # the drift stays invisible until a deploy runs against a schema the code no
+      # longer describes. --dry-run keeps it read-only, but it belongs in THIS job
+      # rather than the lint one — makemigrations verifies migration-history
+      # consistency against a live connection, so it needs the postgres service.
+      - name: Models match migrations
+        working-directory: backend
+        run: python manage.py makemigrations --check --dry-run
       - name: Run Django test suite
         working-directory: backend
         run: python manage.py test --verbosity=2

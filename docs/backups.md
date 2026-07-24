@@ -202,6 +202,6 @@ $COMPOSE exec -T web python manage.py migrate --check
 
 - [*] healthchecks.io shows a green ping every day (not just green *now*).
 - [*] `rclone ls voct-drive:backups` holds ~`KEEP_DAYS` of both archive types.
-- [ ] A restore drill was completed within the last quarter.
+- [*] A restore drill was completed within the last quarter (`bash infra/restore-drill.sh` — first green run 24.07.2026, RTO 3 s).
 - [*] The service-account JSON key and `infra/backup.env` are `chmod 600`.
 - [*] The Shared Drive is pinned to the EU region and its membership is minimal.
