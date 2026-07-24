@@ -76,12 +76,16 @@ export const DashboardLayout = ({
 
   const outlet = useOutlet();
 
-  // Collapse hubs whose sub-routes are in-page tabs (project hub, settings) into a
-  // single transition key, so switching tabs keeps the page mounted — header, nav
-  // and loaded data persist instead of the whole shell exiting + re-animating.
+  // Collapse hubs whose sub-routes render inside the page (project hub tabs,
+  // settings sections, the messages inbox where the route only picks which
+  // conversation the right pane shows) into a single transition key, so moving
+  // between them keeps the page mounted — header, nav and loaded data persist
+  // instead of the whole shell exiting + re-animating.
   // Every other route keeps its full-path key and transitions normally.
   const collapsedHubMatch =
-    /^(\/panel\/projects\/[^/]+|\/panel\/settings)/.exec(location.pathname);
+    /^(\/panel\/projects\/[^/]+|\/panel\/settings|\/panel\/messages)/.exec(
+      location.pathname,
+    );
   const transitionKey = collapsedHubMatch ? collapsedHubMatch[1] : location.pathname;
 
   useEffect(() => {

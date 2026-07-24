@@ -217,10 +217,25 @@ const MessagesPage: React.FC = () => {
             hasSelection ? "flex" : "hidden md:flex",
           )}
         >
+          {/* Keyed per conversation: only this pane re-instantiates on selection,
+              so the draft in the composer and the scroll position never bleed
+              from one conversation into the next. */}
           {channelId ? (
-            <ChannelView channelId={channelId} isManager={isManager} me={me} onBack={clearSelection} />
+            <ChannelView
+              key={channelId}
+              channelId={channelId}
+              isManager={isManager}
+              me={me}
+              onBack={clearSelection}
+            />
           ) : threadId ? (
-            <ThreadView threadId={threadId} isManager={isManager} me={me} onBack={clearSelection} />
+            <ThreadView
+              key={threadId}
+              threadId={threadId}
+              isManager={isManager}
+              me={me}
+              onBack={clearSelection}
+            />
           ) : isLoading ? (
             <EtherealLoader fullHeight={false} />
           ) : (
