@@ -53,11 +53,12 @@ export type CastingChangeEvent = "updated" | "removed";
 /** Attendance status (PRESENT/LATE/EXCUSED/ABSENT) or participation RSVP (INV/CON/DEC). */
 export type RosterStatusCode = string;
 
-export interface ProjectInvitationMetadata {
+export interface ProjectInvitationMetadata extends EventMomentMetadata {
   project_id: string;
   project_name: string;
   participation_id: string;
   inviter_name?: string;
+  /** Legacy display fallback for rows emitted before the canonical event moment. */
   date_range?: string;
   location?: string;
   description?: string;
@@ -132,18 +133,20 @@ export interface MaterialUploadedMetadata {
   composer_name?: string;
 }
 
-export interface AbsenceStatusMetadata {
+export interface AbsenceStatusMetadata extends EventMomentMetadata {
   rehearsal_id: string;
   project_name?: string;
+  /** Legacy display fallback for rows emitted before the canonical event moment. */
   rehearsal_date?: string;
 }
 
-export interface ManagerActionMetadata {
+export interface ManagerActionMetadata extends EventMomentMetadata {
   project_name: string;
   artist_name: string;
   artist_id?: string;
   project_id?: string;
   rehearsal_id?: string;
+  /** Legacy display fallback for rows emitted before the canonical event moment. */
   rehearsal_date?: string;
   status?: RosterStatusCode;
   previous_status?: RosterStatusCode;

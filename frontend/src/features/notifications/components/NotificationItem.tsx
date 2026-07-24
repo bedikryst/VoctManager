@@ -114,36 +114,72 @@ const firstText = (...values: readonly unknown[]): string | undefined =>
     .map((value) => (value == null ? "" : String(value).trim()))
     .find(Boolean);
 
+/**
+ * Renders an event moment the way a person says it — "jutro o 19:00", "piątek,
+ * 24 lipca o 19:00" — in the viewer's UI language and the event's own timezone.
+ * Mirrors the backend `humanize_event_time()` so the bell, the push and the
+ * email name the same moment the same way.
+ *
+ * The ISO timestamp outranks the stored `starts_at_display`, which is frozen at
+ * emission time in whatever language was then active. Relative wording is
+ * resolved against "now" on every render, so an old row never claims "tomorrow".
+ */
 const formatEventMoment = (
   metadata: EventMomentMetadata,
   lang: string,
+  t: TFunc,
   ...legacyValues: readonly unknown[]
 ): string | undefined => {
-  const display = firstText(metadata.starts_at_display);
-  if (display) return display;
-
   const startsAt = firstText(metadata.starts_at);
-  if (startsAt && startsAt.includes("T")) {
-    const parsed = new Date(startsAt);
-    if (!Number.isNaN(parsed.getTime())) {
-      const timezone = firstText(metadata.timezone);
-      const options: Intl.DateTimeFormatOptions = {
-        dateStyle: "medium",
-        timeStyle: "short",
-      };
-      if (timezone) options.timeZone = timezone;
+  const parsed = startsAt?.includes("T") ? new Date(startsAt) : null;
+
+  if (parsed && !Number.isNaN(parsed.getTime())) {
+    const locale = lang || "pl";
+    const timeZone = firstText(metadata.timezone);
+    const render = (options: Intl.DateTimeFormatOptions): string => {
       try {
-        return new Intl.DateTimeFormat(lang || "pl", options).format(parsed);
+        return new Intl.DateTimeFormat(
+          locale,
+          timeZone ? { ...options, timeZone } : options,
+        ).format(parsed);
       } catch {
-        return new Intl.DateTimeFormat(lang || "pl", {
-          dateStyle: "medium",
-          timeStyle: "short",
-        }).format(parsed);
+        // An unknown IANA zone must not blank the row — fall back to the viewer's.
+        return new Intl.DateTimeFormat(locale, options).format(parsed);
       }
-    }
+    };
+    // The calendar-day comparison has to happen in the event's own timezone;
+    // en-CA yields an ISO-shaped YYYY-MM-DD that subtracts cleanly.
+    const dayKey = (value: Date): string => {
+      try {
+        return new Intl.DateTimeFormat("en-CA", timeZone ? { timeZone } : {}).format(value);
+      } catch {
+        return new Intl.DateTimeFormat("en-CA").format(value);
+      }
+    };
+
+    const time = render({ hour: "2-digit", minute: "2-digit", hour12: false });
+    const eventDay = dayKey(parsed);
+    const today = dayKey(new Date());
+    const daysAway = Math.round(
+      (Date.parse(eventDay) - Date.parse(today)) / 86_400_000,
+    );
+
+    if (daysAway === 0) return t("notifications.time.today", { time });
+    if (daysAway === 1) return t("notifications.time.tomorrow", { time });
+
+    const sameYear = eventDay.slice(0, 4) === today.slice(0, 4);
+    return t("notifications.time.absolute", {
+      weekday: render({ weekday: "long" }),
+      date: render(
+        sameYear
+          ? { day: "numeric", month: "long" }
+          : { day: "numeric", month: "long", year: "numeric" },
+      ),
+      time,
+    });
   }
 
-  return firstText(startsAt, ...legacyValues);
+  return firstText(metadata.starts_at_display, startsAt, ...legacyValues);
 };
 
 interface RowContent {
@@ -172,12 +208,19 @@ const describe = (
 ): RowContent => {
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
+      // Who is asking is half of what an invitation means, and the push and the
+      // email both say it — the bell was the only surface that dropped it.
       return {
         title: notification.metadata.project_name,
         context: compactMetaLine(
-          notification.metadata.date_range,
+          formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
           notification.metadata.location,
         ),
+        detail: notification.metadata.inviter_name
+          ? t("notifications.inapp.invited_by", {
+              name: notification.metadata.inviter_name,
+            })
+          : undefined,
       };
     case "PROJECT_UPDATED":
       if (notification.metadata.event === "removed") {
@@ -198,7 +241,7 @@ const describe = (
       return {
         title: notification.metadata.project_name,
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang),
+          formatEventMoment(notification.metadata, lang, t),
           notification.metadata.location,
         ),
         detail: notification.metadata.focus || undefined,
@@ -207,7 +250,7 @@ const describe = (
       return {
         title: notification.metadata.project_name,
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang),
+          formatEventMoment(notification.metadata, lang, t),
           notification.metadata.location,
         ),
         detail: notification.metadata.focus || undefined,
@@ -218,7 +261,7 @@ const describe = (
       return {
         title: notification.metadata.project_name,
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang),
+          formatEventMoment(notification.metadata, lang, t),
           notification.metadata.location,
         ),
         detail: notification.metadata.focus || undefined,
@@ -227,7 +270,7 @@ const describe = (
       return {
         title: notification.metadata.project_name as string | undefined,
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, notification.metadata.rehearsal_date),
+          formatEventMoment(notification.metadata, lang, t, notification.metadata.rehearsal_date),
           notification.metadata.location,
         ),
         detail: notification.metadata.focus || undefined,
@@ -236,7 +279,7 @@ const describe = (
       return {
         title: notification.metadata.project_name as string | undefined,
         context: compactMetaLine(
-          formatEventMoment(notification.metadata, lang, notification.metadata.date_range),
+          formatEventMoment(notification.metadata, lang, t, notification.metadata.date_range),
           notification.metadata.location,
         ),
       };
@@ -249,7 +292,7 @@ const describe = (
         pill: voiceLineLabel(t, notification.metadata.voice_line),
         context: compactMetaLine(
           notification.metadata.project_name,
-          formatEventMoment(notification.metadata, lang),
+          formatEventMoment(notification.metadata, lang, t),
         ),
       };
     case "PIECE_CASTING_UPDATED":
@@ -278,7 +321,9 @@ const describe = (
     case "ABSENCE_APPROVED":
       return {
         title: notification.metadata.project_name,
-        context: notification.metadata.rehearsal_date,
+        context: formatEventMoment(
+          notification.metadata, lang, t, notification.metadata.rehearsal_date,
+        ),
         detail: t("notifications.inapp.absence_approved"),
       };
     case "ABSENCE_REJECTED":
@@ -286,12 +331,19 @@ const describe = (
       // which one. Echoing "not approved" in the body added nothing.
       return {
         title: notification.metadata.project_name,
-        context: notification.metadata.rehearsal_date,
+        context: formatEventMoment(
+          notification.metadata, lang, t, notification.metadata.rehearsal_date,
+        ),
       };
     case "ABSENCE_REQUESTED":
       return {
         title: notification.metadata.artist_name,
-        context: notification.metadata.project_name,
+        context: compactMetaLine(
+          notification.metadata.project_name,
+          formatEventMoment(
+            notification.metadata, lang, t, notification.metadata.rehearsal_date,
+          ),
+        ),
         detail: t("notifications.inapp.absence_requested"),
       };
     case "PARTICIPATION_RESPONSE":
@@ -301,9 +353,16 @@ const describe = (
         detail: statusPhrase(t, "participation", notification.metadata.status),
       };
     case "ATTENDANCE_SUBMITTED":
+      // Which rehearsal matters here: a manager triaging the bell needs to know
+      // whether this absence lands tonight or in three weeks.
       return {
         title: notification.metadata.artist_name,
-        context: notification.metadata.project_name,
+        context: compactMetaLine(
+          notification.metadata.project_name,
+          formatEventMoment(
+            notification.metadata, lang, t, notification.metadata.rehearsal_date,
+          ),
+        ),
         detail: statusPhrase(t, "attendance", notification.metadata.status),
       };
     case "MESSAGE_RECEIVED":
@@ -331,7 +390,11 @@ const describe = (
         detail: t("notifications.inapp.read_receipt"),
       };
     case "CONTRACT_ISSUED":
-      return { title: notification.metadata.project_name as string | undefined };
+      // The eyebrow says "Contract"; only the row can say it needs signing.
+      return {
+        title: notification.metadata.project_name as string | undefined,
+        detail: t("notifications.inapp.contract_issued"),
+      };
     case "SYSTEM_ALERT":
       return {
         title: notification.metadata.title as string | undefined,
@@ -503,10 +566,11 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
   };
 
   const { title, pill, context, detail, changeChips } = describe(notification, t, i18n.language);
-  const typeLabel = t(
-    `notifications.types.${notification.notification_type}`,
-    "Powiadomienie systemowe",
-  );
+  // The fallback covers a type the client doesn't know yet (a backend deploy
+  // ahead of the app); it has to be localized like everything else.
+  const typeLabel = t(`notifications.types.${notification.notification_type}`, {
+    defaultValue: t("notifications.types.fallback"),
+  });
 
   return (
     <div

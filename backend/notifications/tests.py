@@ -8,9 +8,9 @@
              are deterministic regardless of compiled .mo catalogs.
 @module notifications/tests
 """
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
-from typing import cast
+from typing import ClassVar, cast
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
 
@@ -121,10 +121,13 @@ class StructuredMetadataTests(SimpleTestCase):
                 {"artist_name": "Ada", "project_name": "Requiem", "status": "LATE", "minutes_late": 15},
                 is_manager=True,
             )
-            self.assertIn("Ada", c.body)
-            self.assertIn("15", c.body)
+            # The person and their answer are the scanning line; the body carries
+            # the context they apply to.
+            self.assertIn("Ada", c.title)
+            self.assertIn("15", c.title)
+            self.assertIn("Requiem", c.body)
             # The old half-English "Status: LATE. Note:" prose must be gone.
-            self.assertNotIn("Status:", c.body)
+            self.assertNotIn("Status:", c.title)
 
     def test_participation_status_renders_phrase(self) -> None:
         with translation.override("en"):
@@ -133,8 +136,9 @@ class StructuredMetadataTests(SimpleTestCase):
                 {"artist_name": "Bo", "project_name": "Requiem", "status": "DEC"},
                 is_manager=True,
             )
-            self.assertIn("declined", c.body.lower())
-            self.assertNotIn("Changed status", c.body)
+            self.assertIn("declined", c.title.lower())
+            self.assertIn("Requiem", c.body)
+            self.assertNotIn("Changed status", c.title)
 
     def test_structured_changes_render_localized_labels(self) -> None:
         with translation.override("en"):
@@ -150,6 +154,33 @@ class StructuredMetadataTests(SimpleTestCase):
             # Detail rows mirror the structured changes.
             self.assertTrue(any(r.label == "Date & time" for r in c.details))
 
+    def test_status_change_renders_a_label_not_a_database_code(self) -> None:
+        # A status diff carries language-neutral Project.Status codes; surfacing
+        # them raw ("ACTIVE → CANC") leaks the schema to the singer.
+        for lang, expected in (("en", "Active / In Prep"), ("pl", "Aktywny")):
+            with translation.override(lang):
+                c = MessageContentBuilder.build(
+                    NotificationType.PROJECT_UPDATED, "WARNING",
+                    {"project_name": "Requiem",
+                     "changes": [{"field": "status", "old": "DRAFT", "new": "ACTIVE"}]},
+                    is_manager=False,
+                )
+                with self.subTest(lang=lang):
+                    self.assertIn(expected, c.body)
+                    self.assertNotIn("ACTIVE", c.body)
+                    self.assertNotIn("DRAFT", c.body)
+
+    def test_admin_broadcast_without_a_link_lands_on_the_dashboard(self) -> None:
+        # Not on the notification-preferences tab: a message from management is
+        # not an invitation to reconfigure channels.
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.CUSTOM_ADMIN_MESSAGE, "INFO",
+                {"sender_name": "Ada", "title": "Dress code", "message": "Black shoes."},
+                is_manager=False,
+            )
+            self.assertEqual(c.url_path, "/panel")
+
     def test_rehearsal_scheduled_uses_glance_facts(self) -> None:
         with translation.override("en"):
             c = MessageContentBuilder.build(
@@ -164,24 +195,35 @@ class StructuredMetadataTests(SimpleTestCase):
                 },
                 is_manager=False,
             )
-            self.assertIn("19.06.2026, 19:00", c.body)
+            # The moment leads the title — it is the one fact a lock screen must
+            # never truncate — and it is rendered from the ISO value, so the
+            # stored numeric copy never reaches the reader.
+            self.assertIn("Friday", c.title)
+            self.assertIn("19 June", c.title)
+            self.assertIn("19:00", c.title)
+            self.assertNotIn("19.06.2026", c.title)
+            # The body spends its room on where and what, not on repeating the title.
             self.assertIn("St Anne's", c.body)
             self.assertIn("Lacrimosa", c.body)
+            self.assertNotIn("19 June", c.body)
             self.assertTrue(any(r.label == "Focus" for r in c.details))
 
     def test_event_time_metadata_is_structured_and_display_safe(self) -> None:
         from .time_metadata import build_event_time_metadata, display_event_time
 
         metadata = build_event_time_metadata(
-            datetime(2026, 6, 19, 17, 0, tzinfo=UTC),
+            datetime(2020, 6, 19, 17, 0, tzinfo=UTC),
             "Europe/Warsaw",
             fallback_timezone="Europe/Warsaw",
         )
 
-        self.assertEqual(metadata["starts_at"], "2026-06-19T17:00:00+00:00")
-        self.assertEqual(metadata["starts_at_display"], "19.06.2026, 19:00")
+        self.assertEqual(metadata["starts_at"], "2020-06-19T17:00:00+00:00")
+        # The persisted display copy stays language-neutral: it is frozen at
+        # emission time, before the recipient's language is known.
+        self.assertEqual(metadata["starts_at_display"], "19.06.2020, 19:00")
         self.assertEqual(metadata["timezone"], "Europe/Warsaw")
-        self.assertEqual(display_event_time(metadata), "19.06.2026, 19:00")
+        with translation.override("en"):
+            self.assertEqual(display_event_time(metadata), "Friday, 19 June 2020 at 19:00")
 
         fallback_metadata = build_event_time_metadata(
             datetime(2026, 6, 19, 17, 0, tzinfo=UTC),
@@ -196,14 +238,15 @@ class StructuredMetadataTests(SimpleTestCase):
                 NotificationType.REHEARSAL_SCHEDULED, "INFO",
                 {
                     "project_name": "Requiem",
-                    "starts_at": "2026-06-19T17:00:00+00:00",
+                    "starts_at": "2020-06-19T17:00:00+00:00",
                     "timezone": "Europe/Warsaw",
                     "location": "St Anne's",
                 },
                 is_manager=False,
             )
-            self.assertIn("19.06.2026, 19:00", c.body)
-            self.assertNotIn("2026-06-19T17:00:00", c.body)
+            self.assertIn("Friday, 19 June 2020 at 19:00", c.title)
+            self.assertNotIn("2020-06-19T17:00:00", c.title)
+            self.assertNotIn("2020-06-19T17:00:00", c.body)
 
     def test_message_push_body_does_not_expose_full_message(self) -> None:
         with translation.override("en"):
@@ -240,6 +283,60 @@ class StructuredMetadataTests(SimpleTestCase):
             self.assertEqual(urls.get("schedule"), "/panel/schedule")
 
 
+class EmailLeadTests(SimpleTestCase):
+    """
+    The email lead says what the event means and what is expected; the detail card
+    below it owns the facts. A lead that is merely the push body would repeat the
+    headline and drag lock-screen idiom ("Tap to…") into an inbox.
+    """
+
+    _EVENT_META: ClassVar[dict[str, str]] = {
+        "project_name": "Requiem",
+        "piece_title": "Lacrimosa",
+        "artist_name": "Ada",
+        "starts_at": "2020-06-19T17:00:00+00:00",
+        "timezone": "Europe/Warsaw",
+        "location": "St Anne's",
+        "rehearsal_date": "19.06.2020, 19:00",
+    }
+
+    def test_every_routed_type_authors_its_own_lead(self) -> None:
+        # Free-form types carry the sender's own words, so their lead IS the body.
+        free_form = {
+            NotificationType.CUSTOM_ADMIN_MESSAGE.value,
+            NotificationType.MESSAGE_RECEIVED.value,
+            NotificationType.CHANNEL_MESSAGE.value,
+            NotificationType.SYSTEM_ALERT.value,
+            NotificationType.NOTIFICATION_READ_RECEIPT.value,
+        }
+        with translation.override("en"):
+            for ntype in NotificationType:
+                if ntype.value in free_form:
+                    continue
+                c = MessageContentBuilder.build(
+                    ntype.value, "INFO", self._EVENT_META, is_manager=False
+                )
+                with self.subTest(notification_type=ntype.value):
+                    self.assertTrue(c.email_lead, "no lead authored")
+                    self.assertNotEqual(c.email_lead, c.body)
+                    self.assertNotIn("Tap", c.email_lead)
+
+    def test_ceremonial_types_get_the_warm_greeting(self) -> None:
+        with translation.override("en"):
+            invitation = MessageContentBuilder.build(
+                NotificationType.PROJECT_INVITATION.value, "INFO",
+                self._EVENT_META, is_manager=False,
+            )
+            cancelled = MessageContentBuilder.build(
+                NotificationType.REHEARSAL_CANCELLED.value, "WARNING",
+                self._EVENT_META, is_manager=False,
+            )
+        self.assertEqual(invitation.greeting_style, "dear")
+        self.assertEqual(invitation.to_email_context(base_url="https://x")["greeting_style"], "dear")
+        # An alarm stays sober.
+        self.assertEqual(cancelled.greeting_style, "hello")
+
+
 class LocalizedRenderTests(SimpleTestCase):
     """The compiled .mo catalogs render the warm copy in PL/FR (no English leak)."""
 
@@ -250,7 +347,7 @@ class LocalizedRenderTests(SimpleTestCase):
                 {"piece_title": "Lacrimosa", "voice_line": "Alt"}, is_manager=False,
             )
             self.assertIn("Śpiewasz", c.title)
-            self.assertIn("nuty", c.body)
+            self.assertIn("Nuty", c.body)
 
     def test_polish_participation_has_no_english_leak(self) -> None:
         with translation.override("pl"):
@@ -259,8 +356,8 @@ class LocalizedRenderTests(SimpleTestCase):
                 {"artist_name": "Ada", "project_name": "Requiem", "status": "DEC"},
                 is_manager=True,
             )
-            self.assertIn("rezygnuje", c.body)
-            self.assertNotIn("declined", c.body.lower())
+            self.assertIn("rezygnuje", c.title)
+            self.assertNotIn("declined", c.title.lower())
 
 
 @override_settings(
@@ -669,36 +766,64 @@ class EventTimeMetadataTests(SimpleTestCase):
         rendered = format_event_time(datetime(2026, 6, 19, 17, 0), "Europe/Warsaw", "UTC")
         self.assertEqual(rendered, "19.06.2026, 17:00")
 
-    def test_display_event_time_prefers_explicit_display_copy(self) -> None:
+    def test_display_event_time_prefers_the_iso_moment_over_stored_copy(self) -> None:
         from .time_metadata import display_event_time
 
+        # A past date keeps the assertion deterministic: the relative wording and
+        # the year are both resolved against "now" at render time.
         meta = {
-            "starts_at": "2026-06-19T17:00:00+00:00",
-            "starts_at_display": "19.06.2026, 19:00",
+            "starts_at": "2020-06-19T17:00:00+00:00",
+            "starts_at_display": "19.06.2020, 19:00",
             "timezone": "Europe/Warsaw",
         }
-        self.assertEqual(display_event_time(meta, "starts_at"), "19.06.2026, 19:00")
+        # The stored display string is frozen at emission time and shared by every
+        # recipient, so the ISO moment outranks it — that is what lets the copy
+        # render in the reader's own language.
+        with translation.override("en"):
+            self.assertEqual(
+                display_event_time(meta, "starts_at"), "Friday, 19 June 2020 at 19:00"
+            )
+        with translation.override("pl"):
+            self.assertEqual(
+                display_event_time(meta, "starts_at"), "piątek, 19 czerwca 2020 o 19:00"
+            )
+        # A multi-day range has no single moment to render, so its copy stands.
         self.assertEqual(display_event_time({"date_range_display": "19-21 June"}), "19-21 June")
 
     def test_display_event_time_formats_iso_in_timezone_without_leaking_raw(self) -> None:
         from .time_metadata import display_event_time
 
-        meta = {"starts_at": "2026-06-19T17:00:00+00:00", "timezone": "Europe/Warsaw"}
-        rendered = display_event_time(meta)
-        self.assertEqual(rendered, "19.06.2026, 19:00")
-        self.assertNotIn("T", rendered)
-        # A trailing-Z ISO value is normalized the same way.
-        self.assertEqual(
-            display_event_time({"starts_at": "2026-06-19T17:00:00Z", "timezone": "Europe/Warsaw"}),
-            "19.06.2026, 19:00",
-        )
+        with translation.override("en"):
+            meta = {"starts_at": "2020-06-19T17:00:00+00:00", "timezone": "Europe/Warsaw"}
+            rendered = display_event_time(meta)
+            self.assertEqual(rendered, "Friday, 19 June 2020 at 19:00")
+            self.assertNotIn("T", rendered)
+            # A trailing-Z ISO value is normalized the same way.
+            self.assertEqual(
+                display_event_time(
+                    {"starts_at": "2020-06-19T17:00:00Z", "timezone": "Europe/Warsaw"}
+                ),
+                "Friday, 19 June 2020 at 19:00",
+            )
 
     def test_display_event_time_survives_bad_timezone(self) -> None:
         from .time_metadata import display_event_time
 
-        meta = {"starts_at": "2026-06-19T17:00:00+00:00", "timezone": "Invalid/Zone"}
+        meta = {"starts_at": "2020-06-19T17:00:00+00:00", "timezone": "Invalid/Zone"}
         # Falls back to the value's own offset (UTC) rather than raising.
-        self.assertEqual(display_event_time(meta), "19.06.2026, 17:00")
+        with translation.override("en"):
+            self.assertEqual(display_event_time(meta), "Friday, 19 June 2020 at 17:00")
+
+    def test_humanize_event_time_speaks_relative_days(self) -> None:
+        from .time_metadata import humanize_event_time
+
+        tomorrow = (timezone.localtime(timezone.now()) + timedelta(days=1)).replace(
+            hour=19, minute=0
+        )
+        with translation.override("en"):
+            self.assertEqual(humanize_event_time(tomorrow), "tomorrow at 19:00")
+        with translation.override("pl"):
+            self.assertEqual(humanize_event_time(tomorrow), "jutro o 19:00")
 
     def test_display_event_time_falls_back_to_legacy_keys(self) -> None:
         from .time_metadata import display_event_time
@@ -759,12 +884,14 @@ class NotificationPreferenceSettingsAPITests(APITestCase):
     def test_inert_and_offplatform_types_are_hidden_from_the_matrix(self) -> None:
         # No per-channel preference to express, so they never appear:
         #  CHANNEL_MESSAGE (per-channel push), NOTIFICATION_READ_RECEIPT (in-app
-        #  only — never routed), CONTRACT_ISSUED (issued off-platform for now).
+        #  only — never routed), CONTRACT_ISSUED (issued off-platform for now),
+        #  SYSTEM_ALERT (no emitter yet, so the toggle would govern nothing).
         rows = self._rows(self.manager)
         for hidden in (
             NotificationType.CHANNEL_MESSAGE.value,
             NotificationType.NOTIFICATION_READ_RECEIPT.value,
             NotificationType.CONTRACT_ISSUED.value,
+            NotificationType.SYSTEM_ALERT.value,
         ):
             self.assertNotIn(hidden, rows)
 

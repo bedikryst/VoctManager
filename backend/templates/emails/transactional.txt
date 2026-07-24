@@ -5,14 +5,13 @@ VOCTMANAGER — {{ eyebrow }}
 
 =========================================
 
-{% if first_name %}{% blocktranslate trimmed with name=first_name_vocative|default:first_name %}Hello {{ name }},{% endblocktranslate %}{% else %}{% translate "Hello," %}{% endif %}
-
+{% include "emails/partials/_greeting.txt" with style=greeting_style|default:"hello" %}
 {{ lead }}
 {% if details %}
 {% for row in details %}{{ row.label }}: {{ row.value }}
 {% endfor %}{% endif %}
 -----------------------------------------
 {{ cta_label }}: {{ cta_url }}
-
-{% translate "With warmest regards," %}
+{% if level != 'WARNING' and level != 'URGENT' %}
+{% translate "With warmest regards," %}{% endif %}
 {% translate "The VoctEnsemble Team" %}

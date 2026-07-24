@@ -59,10 +59,24 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     participation_id: UUID
     # Optional context — composers fall back to localized neutral copy when blank.
     inviter_name: str = ""
+    # Canonical event moment, so the invitation states when the concert is in the
+    # reader's own language. `date_range` stays as the legacy display fallback.
+    starts_at: str = ""
+    starts_at_display: str = ""
+    timezone: str = ""
     date_range: str = ""
     location: str = ""
     description: str = ""
     message: str | None = None
+
+class ProjectCancelledMetadata(EnterpriseBaseDTO):
+    """A cancellation is an alarm in its own right, not a status field in a diff —
+    it carries no `changes`, so the cast reads "cancelled" rather than a status
+    transition they have to decode."""
+    project_id: UUID | None = None
+    project_name: str
+    message: str | None = None
+
 
 class ProjectUpdatedMetadata(EnterpriseBaseDTO):
     project_id: UUID | None = None
@@ -128,6 +142,10 @@ class CrewAssignedMetadata(EnterpriseBaseDTO):
 class AbsenceStatusMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     project_name: str
+    # Canonical event moment; `rehearsal_date` stays as the legacy display fallback.
+    starts_at: str = ""
+    starts_at_display: str = ""
+    timezone: str = ""
     rehearsal_date: str
     message: str | None = None
 
@@ -140,6 +158,10 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     artist_id: str | UUID | None = None
     project_id: str | UUID | None = None
     rehearsal_id: str | UUID | None = None
+    # Canonical event moment; `rehearsal_date` stays as the legacy display fallback.
+    starts_at: str = ""
+    starts_at_display: str = ""
+    timezone: str = ""
     rehearsal_date: str | None = None
     # Attendance / absence: status code (PRESENT|LATE|EXCUSED|ABSENT) + context.
     status: str | None = None

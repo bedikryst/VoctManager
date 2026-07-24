@@ -7,6 +7,15 @@ from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from django.utils import timezone as django_timezone
+from django.utils.formats import date_format
+from django.utils.translation import gettext as _
+from django.utils.translation import pgettext
+
+# Language-neutral fallback format. It is persisted into notification metadata at
+# emission time — before the recipient (and therefore the language) is known — so
+# it must never carry weekday or month names. Human, localized rendering happens
+# at send time in humanize_event_time().
 EVENT_TIME_DISPLAY_FORMAT = "%d.%m.%Y, %H:%M"
 _SAFE_FALLBACK_TIMEZONE = "UTC"
 
@@ -67,19 +76,90 @@ def _parse_iso_datetime(value: Any) -> datetime | None:
         return None
 
 
-def display_event_time(metadata: Mapping[str, Any], *legacy_keys: str) -> str:
-    """Resolve the best human display value from canonical or legacy metadata."""
-    display_value = metadata.get("starts_at_display") or metadata.get("date_range_display")
-    if display_value:
-        return str(display_value)
+def _weekday_name(value: datetime) -> str:
+    """
+    Weekday name as it reads inside a sentence. Deliberately our own strings
+    rather than Django's `l` specifier: the bundled Polish catalog capitalizes
+    them ("Piątek"), which is wrong mid-sentence, and the casing convention is a
+    per-language call that belongs in the catalog, not in a branch here.
+    """
+    return (
+        pgettext("weekday", "Monday"),
+        pgettext("weekday", "Tuesday"),
+        pgettext("weekday", "Wednesday"),
+        pgettext("weekday", "Thursday"),
+        pgettext("weekday", "Friday"),
+        pgettext("weekday", "Saturday"),
+        pgettext("weekday", "Sunday"),
+    )[value.weekday()]
 
+
+def _day_and_month(value: datetime, *, with_year: bool) -> str:
+    """
+    Day and month ("6 listopada", "6 novembre", "6 November"). The Django format
+    string itself is translated, because the specifier that yields a correctly
+    cased, correctly inflected month differs per language — `E` gives the Polish
+    genitive but a capitalized French month, where `F` is right.
+    """
+    pattern = (
+        pgettext("event date format", "j E Y")
+        if with_year
+        else pgettext("event date format", "j E")
+    )
+    return date_format(value, pattern)
+
+
+def humanize_event_time(value: datetime) -> str:
+    """
+    Render an event moment the way a person would say it, in the active language:
+    "tomorrow at 19:00", "Friday, 19 June at 19:00". The year is stated only when
+    it is not the current one, so the common case stays short enough for a push.
+
+    Must run inside the recipient's translation.override — weekday and month names
+    come from the active locale. Relative wording is resolved against "now" at call
+    time, which is why this is never baked into the stored metadata: a persisted
+    "tomorrow" would still say tomorrow a week later.
+    """
+    clock = date_format(value, "H:i")
+
+    reference_year = datetime.now().year
+    if django_timezone.is_aware(value):
+        today = django_timezone.localtime(django_timezone.now(), value.tzinfo).date()
+        reference_year = today.year
+        days_away = (value.date() - today).days
+        if days_away == 0:
+            return _("today at %(time)s") % {"time": clock}
+        if days_away == 1:
+            return _("tomorrow at %(time)s") % {"time": clock}
+
+    return _("%(weekday)s, %(date)s at %(time)s") % {
+        "weekday": _weekday_name(value),
+        "date": _day_and_month(value, with_year=value.year != reference_year),
+        "time": clock,
+    }
+
+
+def display_event_time(metadata: Mapping[str, Any], *legacy_keys: str) -> str:
+    """
+    Resolve the best human display value from canonical or legacy metadata.
+
+    The ISO moment outranks any pre-rendered string: `starts_at_display` is frozen
+    at emission time, shared by every recipient, so rendering from the timestamp is
+    what lets the copy speak the reader's own language — and say "tomorrow" instead
+    of a bare date. The stored display value remains the fallback for legacy rows
+    and for multi-day ranges, which have no single moment to render.
+    """
     parsed = _parse_iso_datetime(metadata.get("starts_at"))
     if parsed is not None:
         timezone_name = metadata.get("timezone")
         if timezone_name:
             with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
                 parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
-        return parsed.strftime(EVENT_TIME_DISPLAY_FORMAT)
+        return humanize_event_time(parsed)
+
+    display_value = metadata.get("starts_at_display") or metadata.get("date_range_display")
+    if display_value:
+        return str(display_value)
 
     for key in legacy_keys:
         legacy_value = metadata.get(key)

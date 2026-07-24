@@ -22,7 +22,7 @@ from firebase_admin import messaging
 from firebase_admin.exceptions import FirebaseError
 from pywebpush import WebPushException, webpush
 
-from core.constants import AppRole
+from core.permissions import user_is_manager
 
 from .dtos import PushDeviceRegisterDTO, WebPushSubscribeDTO
 from .models import DeviceType, NotificationLevel, PushDevice
@@ -189,8 +189,7 @@ class PushDispatcherService:
 
         profile = getattr(user, "profile", None)
         language = getattr(profile, "language", "en") or "en"
-        role = getattr(profile, "role", None)
-        is_manager = role == AppRole.MANAGER or bool(getattr(user, "is_staff", False))
+        is_manager = user_is_manager(user)
 
         return _DispatchTarget(
             user_id=str(user.id),

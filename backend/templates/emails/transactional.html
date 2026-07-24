@@ -21,7 +21,7 @@
 {% include "emails/partials/_rule.html" with mb=40 %}
 
 {# II. GREETING + LEAD #}
-{% include "emails/partials/_greeting.html" with style="hello" mb=24 %}
+{% include "emails/partials/_greeting.html" with style=greeting_style|default:"hello" mb=24 %}
 
 {% if lead %}
 <p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
