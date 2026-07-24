@@ -127,18 +127,15 @@ ls -lh "$BACKUP_DIR" | tail -n +2 || true
 ping_health
 
 # ==========================================================================
-# RESTORE (manual, run from the repo root on the droplet)
+# RESTORING
 # --------------------------------------------------------------------------
-#   If the droplet's local copy is gone, fetch the archive off-site first:
-#     rclone copy voct-drive:backups/voct-db-<TS>.sql.gz ~/voct-backups/
+#   Routine verification:  bash infra/restore-drill.sh
+#     Non-destructive — replays into a throwaway database and a scratch media
+#     directory, checks integrity, row counts and migration state.
 #
-#   Database:
-#     gunzip -c ~/voct-backups/voct-db-<TS>.sql.gz \
-#       | docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-#           exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
-#
-#   Media (stop writers first to avoid mid-write races):
-#     docker compose -f docker-compose.yml -f docker-compose.prod.yml stop web celery
-#     rm -rf voct_data/media && tar xzf ~/voct-backups/voct-media-<TS>.tgz -C voct_data
-#     docker compose -f docker-compose.yml -f docker-compose.prod.yml start web celery
+#   Actual disaster recovery: docs/backups.md §"Real restore".
+#     Deliberately not inlined here. These dumps carry --clean --if-exists, so
+#     a replay DROPs every object before writing: the procedure needs an
+#     integrity check, a safety dump and stopped writers around it, and that
+#     belongs in the runbook where it can be read in full under pressure.
 # ==========================================================================
