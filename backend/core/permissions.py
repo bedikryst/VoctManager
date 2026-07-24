@@ -3,9 +3,38 @@
 # Enterprise RBAC Permissions
 # Standard: Enterprise SaaS 2026
 # ==========================================
+from django.db.models import Q
 from rest_framework import permissions
 
+from core.constants import AppRole
 from core.models import UserProfile
+
+# Single source of truth for "who is a manager", in both directions: the
+# predicate for a user instance, and the queryset filter for asking the database
+# the same question. Every gate across the project resolves through one of these
+# two — a second, slightly different definition somewhere else is how a person
+# ends up privileged on one screen and not on the next.
+MANAGER_QUERY_FILTER = Q(profile__role=AppRole.MANAGER) | Q(is_staff=True)
+
+
+def user_is_manager(user: object) -> bool:
+    """
+    True for the MANAGER business role and for Django staff.
+
+    Staff counts because it is strictly the stronger privilege — a staff account
+    reaches the admin and the database directly, so denying it a manager screen
+    would protect nothing while producing confusing dead ends. Note this is
+    deliberately NOT symmetric: `IsArtist` / `IsCrew` stay role-only, because
+    staff is an administrative capability, not a seat in the ensemble.
+
+    Tolerates anonymous users and accounts with no profile row.
+    """
+    if user is None or not getattr(user, 'is_authenticated', False):
+        return False
+    if getattr(user, 'is_staff', False):
+        return True
+    profile = getattr(user, 'profile', None)
+    return bool(profile is not None and profile.is_manager)
 
 
 class BaseEnterprisePermission(permissions.BasePermission):
@@ -21,10 +50,7 @@ class BaseEnterprisePermission(permissions.BasePermission):
 
     def _is_manager(self, request) -> bool:
         """Returns True for staff users and users with the manager profile role."""
-        if request.user and request.user.is_authenticated and request.user.is_staff:
-            return True
-        profile = self._get_profile(request)
-        return bool(profile and profile.is_manager)
+        return user_is_manager(getattr(request, 'user', None))
 
 
 # --- Role-Based Permissions ---

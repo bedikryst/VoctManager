@@ -16,7 +16,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from core.constants import AppRole
-from core.permissions import IsManagerOrReadOnly
+from core.permissions import IsManagerOrReadOnly, user_is_manager
 
 from .dtos import DocumentCategoryCreateDTO, DocumentCategoryUpdateDTO, DocumentCreateDTO
 from .file_detection import FileTypeDetectionUnavailableError, detect_mime_from_buffer
@@ -48,10 +48,7 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
     permission_classes = [IsManagerOrReadOnly]
 
     def list(self, request: Request) -> Response:
-        is_mgr = request.user.is_staff or getattr(
-            getattr(request.user, 'profile', None), 'is_manager', False
-        )
-        if is_mgr:
+        if user_is_manager(request.user):
             categories = DocumentService.get_all_categories_for_manager()
         else:
             categories = DocumentService.get_artist_visible_categories()
@@ -168,10 +165,7 @@ class DocumentDownloadView(views.APIView):
         except Document.DoesNotExist:
             return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-        user_role = AppRole.MANAGER if (
-            request.user.is_staff
-            or getattr(getattr(request.user, 'profile', None), 'is_manager', False)
-        ) else AppRole.ARTIST
+        user_role = AppRole.MANAGER if user_is_manager(request.user) else AppRole.ARTIST
 
         effective_roles = document.effective_roles
         if effective_roles and user_role != AppRole.MANAGER and user_role not in effective_roles:

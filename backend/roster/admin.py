@@ -12,7 +12,12 @@ with comprehensive list displays, dynamic buttons, and relational filtering.
 """
 
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+
+from core.models import UserProfile
 
 from .models import (
     Artist,
@@ -26,14 +31,97 @@ from .models import (
     Rehearsal,
 )
 
+User = get_user_model()
+
+# --- One person, one screen ------------------------------------------------
+#
+# A member is spread over three tables — the account, its preferences, and the
+# choral profile — which as three separate admin entries reads as three separate
+# people. Composing the latter two as inlines on the account restores the single
+# subject. Assembled here rather than in `core` because roster is the layer
+# permitted to know about both sides; core must not import from it.
+
+
+class UserProfileInline(admin.StackedInline):
+    """Preferences and business role, edited in place on the person."""
+    model = UserProfile
+    fk_name = 'user'
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = _("Preferences & role")
+    readonly_fields = ('calendar_token', 'terms_accepted_at', 'terms_accepted_version')
+
+    def get_queryset(self, request):
+        # The default manager hides soft-deleted rows, which would render this
+        # section deceptively empty for a person whose data is still on file.
+        return UserProfile.all_objects.all()
+
+
+class ArtistInline(admin.StackedInline):
+    """Choral profile, edited in place on the person."""
+    model = Artist
+    fk_name = 'user'
+    can_delete = False
+    max_num = 1
+    verbose_name_plural = _("Choral profile")
+    # Roster standing moves only through ArtistHRService.archive_artist /
+    # restore_artist, which also revoke or restore the login. Editing either flag
+    # by hand is what lets a singer read as archived while still signing in.
+    readonly_fields = ('is_active', 'is_deleted', 'activation_email_sent_at')
+
+    def get_queryset(self, request):
+        return Artist.all_objects.all()
+
+
+admin.site.unregister(User)
+
+
+@admin.register(User)
+class PersonAdmin(DjangoUserAdmin):
+    """The account, with its preferences and choral profile attached."""
+    inlines = [UserProfileInline, ArtistInline]
+    list_display = ('email', 'first_name', 'last_name', 'business_role', 'voice', 'is_active', 'is_staff')
+    list_filter = ('is_active', 'is_staff', 'profile__role', 'artist_profile__voice_type')
+    search_fields = ('email', 'first_name', 'last_name')
+    ordering = ('email',)
+    list_select_related = ('profile', 'artist_profile')
+
+    @admin.display(description=_("Role"), ordering='profile__role')
+    def business_role(self, obj) -> str:
+        profile = getattr(obj, 'profile', None)
+        return profile.get_role_display() if profile else "—"
+
+    @admin.display(description=_("Voice"), ordering='artist_profile__voice_type')
+    def voice(self, obj) -> str:
+        artist = getattr(obj, 'artist_profile', None)
+        return artist.get_voice_type_display() if artist else "—"
+
 
 @admin.register(Artist)
 class ArtistAdmin(admin.ModelAdmin):
-    """Admin view for managing ensemble members and their vocal profiles."""
+    """
+    Choral profiles on their own.
+
+    Kept alongside the person screen rather than folded into it, because an
+    Artist outlives its account: GDPR erasure detaches the login (`user` becomes
+    null) and the row survives to keep concert history intact. Reachable only
+    from here.
+    """
     list_display = ('first_name', 'last_name', 'email', 'voice_type', 'user', 'is_active')
     list_filter = ('voice_type', 'is_active')
     search_fields = ('first_name', 'last_name', 'email')
-    fields = ('user', 'first_name', 'last_name', 'email', 'voice_type', 'is_active', 'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top')
+    # See ArtistInline: the archived state is a service's to move, not a form's.
+    readonly_fields = ('is_active',)
+    # No vocative here: it belongs to the account profile, edited on the person
+    # screen above, which is also where a manager or crew member gets one.
+    fields = (
+        'user', 'first_name', 'last_name', 'email', 'phone_number',
+        'voice_type', 'is_active', 'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
+    )
+
+    def get_queryset(self, request):
+        # Detached and archived rows are exactly the ones that need this screen.
+        return Artist.all_objects.select_related('user')
 
 
 class ProgramItemInline(admin.TabularInline):

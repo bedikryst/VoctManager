@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 from core.constants import AppRole
 from core.exceptions import AccountAlreadyActiveException
 from core.models import UserProfile
-from notifications.models import NotificationType
+from notifications.models import NotificationLevel, NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
 from .exceptions import ActivationResendException
@@ -1863,6 +1863,39 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
         self.project.refresh_from_db()
         self.assertEqual(self.project.description, "Nowy opis programu.")
 
+    def test_cancelling_a_project_emits_its_own_alarm_not_a_status_diff(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.CANCELLED),
+            )
+
+        bulk.assert_called_once()
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.PROJECT_CANCELLED)
+        self.assertEqual(kwargs["level"], NotificationLevel.URGENT)
+        # No status diff to decode — the type itself is the message.
+        self.assertNotIn("changes", kwargs["metadata"])
+        self.assertEqual(kwargs["metadata"]["project_name"], "Requiem")
+
+    def test_cancellation_supersedes_other_edits_in_the_same_save(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(status=Project.Status.CANCELLED, title="Requiem II"),
+            )
+
+        # One alarm, not an alarm plus a "title changed" ping about a dead concert.
+        bulk.assert_called_once()
+        self.assertEqual(
+            bulk.call_args.kwargs["notification_type"], NotificationType.PROJECT_CANCELLED
+        )
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Requiem II")
+
 
 class ConductorScheduleAndMaterialsTests(APITestCase):
     """
@@ -2054,22 +2087,25 @@ class ConcertDaySheetTests(APITestCase):
         self.maestro_user = User.objects.create_user(
             username="ds-cond", email="ds-cond@test.pl", password="pw123456"
         )
-        UserProfile.objects.create(user=self.maestro_user, role=AppRole.ARTIST)
+        UserProfile.objects.create(
+            user=self.maestro_user, role=AppRole.ARTIST, first_name_vocative="Wando"
+        )
         self.maestro = Artist.objects.create(
             user=self.maestro_user, first_name="Wanda", last_name="Baton",
             email="ds-cond@test.pl", voice_type=VoiceType.CONDUCTOR,
-            phone_number="600100100", first_name_vocative="Wando",
+            phone_number="600100100",
         )
 
         # Cast singer — the recipient of a personalized sheet.
         self.singer_user = User.objects.create_user(
             username="ds-singer", email="ds-singer@test.pl", password="pw123456"
         )
-        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        UserProfile.objects.create(
+            user=self.singer_user, role=AppRole.ARTIST, first_name_vocative="Ado"
+        )
         self.singer = Artist.objects.create(
             user=self.singer_user, first_name="Ada", last_name="Lovelace",
             email="ds-singer@test.pl", voice_type=VoiceType.ALTO,
-            first_name_vocative="Ado",
         )
 
         # A section-mate (same voice) so "Twoja sekcja" is non-empty.
@@ -2325,3 +2361,478 @@ class ConcertDaySheetTests(APITestCase):
         aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.outsider_user)
         self.assertIsNone(aud)
         self.assertIsNone(rec)
+
+
+class ArtistLifecycleStateTests(APITestCase):
+    """
+    Cover for the roster's active/archived state being a single fact rather than
+    three flags that can disagree. `Artist.is_active` is what every roster surface
+    renders, `is_deleted` is what the default manager filters on, and the account's
+    `is_active` is the login gate — an artist shown as archived while still able to
+    sign in is the outcome these guarantee against.
+    """
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-lifecycle", email="mgr-lifecycle@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        dto = ArtistCreateDTO(
+            first_name="Grace", last_name="Hopper",
+            email="grace-lifecycle@example.com", voice_type="ALT",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+
+        # An activated singer: the login gate starts open, so revoking it is observable.
+        assert self.artist.user is not None
+        self.artist.user.set_password("activated-pw")
+        self.artist.user.is_active = True
+        self.artist.user.save(update_fields=["password", "is_active"])
+
+        self.client.force_authenticate(user=self.manager)
+
+    def _reload(self) -> Artist:
+        artist = Artist.all_objects.get(pk=self.artist.pk)
+        if artist.user is not None:
+            artist.user.refresh_from_db()
+        return artist
+
+    def test_archive_moves_all_three_markers_together(self):
+        ArtistHRService.archive_artist(self.artist)
+
+        artist = self._reload()
+        self.assertFalse(artist.is_active)
+        self.assertTrue(artist.is_deleted)
+        assert artist.user is not None
+        self.assertFalse(artist.user.is_active)
+
+    def test_restore_inverts_all_three_markers(self):
+        ArtistHRService.archive_artist(self.artist)
+        ArtistHRService.restore_artist(Artist.all_objects.get(pk=self.artist.pk))
+
+        artist = self._reload()
+        self.assertTrue(artist.is_active)
+        self.assertFalse(artist.is_deleted)
+        assert artist.user is not None
+        self.assertTrue(artist.user.is_active)
+
+    def test_patch_cannot_revoke_access_behind_the_services_back(self):
+        """`is_active` is lifecycle state, not a profile field: a plain PATCH must
+        not be able to present somebody as archived while their login stays open."""
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/", {"is_active": False}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        artist = self._reload()
+        self.assertTrue(artist.is_active)
+        assert artist.user is not None
+        self.assertTrue(artist.user.is_active)
+
+    def test_patch_cannot_soft_delete_bypassing_the_archive_service(self):
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/", {"is_deleted": True}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(self._reload().is_deleted)
+
+    def test_patch_cannot_relink_the_identity(self):
+        original_user_id = self.artist.user_id
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/", {"user": self.manager.id}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._reload().user_id, original_user_id)
+
+    def test_patch_cannot_forge_the_invite_dispatch_trail(self):
+        stamp = "2020-01-01T00:00:00Z"
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/",
+            {"activation_email_sent_at": stamp}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotEqual(
+            self._reload().activation_email_sent_at,
+            datetime(2020, 1, 1, tzinfo=UTC),
+        )
+
+    def test_patch_still_writes_ordinary_profile_fields(self):
+        """The lock-down must not cost the manager their actual editing job."""
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/",
+            {"first_name": "Grazyna", "sight_reading_skill": 4}, format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        artist = self._reload()
+        self.assertEqual(artist.first_name, "Grazyna")
+        self.assertEqual(artist.sight_reading_skill, 4)
+
+    def test_archived_artist_stays_editable(self):
+        """Detail routes must reach archived records: correcting or inspecting
+        somebody after they were archived is why the row is kept at all."""
+        ArtistHRService.archive_artist(self.artist)
+
+        resp = self.client.patch(
+            f"/api/artists/{self.artist.id}/", {"first_name": "Grazyna"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(self._reload().first_name, "Grazyna")
+
+    def test_archived_artists_are_absent_from_the_default_list(self):
+        """The default list feeds the pickers, where an archived singer must never
+        be offered."""
+        ArtistHRService.archive_artist(self.artist)
+
+        resp = self.client.get("/api/artists/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertNotIn(str(self.artist.id), [row["id"] for row in resp.data])
+
+    def test_roster_can_opt_into_archived_artists(self):
+        """Without this the restore action can never be aimed: an archived singer
+        would be invisible on every surface."""
+        ArtistHRService.archive_artist(self.artist)
+
+        resp = self.client.get("/api/artists/?include_archived=true")
+        self.assertEqual(resp.status_code, 200)
+        rows = {row["id"]: row for row in resp.data}
+        self.assertIn(str(self.artist.id), rows)
+        self.assertFalse(rows[str(self.artist.id)]["is_active"])
+
+    def test_non_manager_cannot_opt_into_archived_artists(self):
+        ArtistHRService.archive_artist(self.artist)
+
+        User = get_user_model()
+        outsider = User.objects.create_user(
+            username="outsider-lifecycle", email="outsider-lifecycle@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=outsider, role=AppRole.ARTIST)
+        self.client.force_authenticate(user=outsider)
+
+        resp = self.client.get("/api/artists/?include_archived=true")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(list(resp.data), [])
+
+
+class ArtistPiiSyncTests(TestCase):
+    """
+    Cover for the member's own settings being authoritative over the Artist row.
+    The roster surfaces read the Artist copy, so a value the member removed must
+    not survive there and resurface as if it were still theirs.
+    """
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        dto = ArtistCreateDTO(
+            first_name="Ada", last_name="Lovelace",
+            email="ada-pii@example.com", voice_type="SOP",
+            phone_number="+48 600 100 100",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+        assert self.artist.user is not None
+        self.user = self.artist.user
+
+    def _save_preferences(self, **overrides: object) -> None:
+        from core.dtos import UserPreferencesUpdateDTO
+        from core.services import UserPreferencesService
+
+        payload: dict[str, object] = {
+            "first_name": "Ada", "last_name": "Lovelace",
+            "language": "pl", "timezone": "Europe/Warsaw", "salutation": "F",
+        }
+        payload.update(overrides)
+        UserPreferencesService.update_user_preferences(
+            self.user, UserPreferencesUpdateDTO(**payload)
+        )
+
+    def test_clearing_the_phone_number_propagates_to_the_artist(self):
+        self._save_preferences(phone_number="+48 600 200 200")
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.phone_number, "+48 600 200 200")
+
+        self._save_preferences(phone_number="")
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.phone_number, "")
+
+    def test_phone_number_accepts_the_full_width_the_profile_allows(self):
+        """Both columns must be the same width: this write bypasses serializer
+        validation, so a narrower Artist column would fail it outright."""
+        long_number = "+48 600 100 100 ext 1234"  # 24 chars — over the old 15 cap
+        self._save_preferences(phone_number=long_number)
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.phone_number, long_number)
+
+    def test_names_accept_the_full_width_the_account_allows(self):
+        """Same trap as the phone number, one column over: the account permits 150
+        characters and this sync writes them straight through, so anything the
+        account accepts has to fit here. Fails only on PostgreSQL — SQLite does
+        not enforce varchar lengths — which is exactly why it is asserted."""
+        long_first = "Maria" + "-Anna" * 20  # 105 chars — over the old 50 cap
+        self._save_preferences(first_name=long_first)
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.first_name, long_first)
+
+
+class ArtistNameOwnershipTests(APITestCase):
+    """
+    Cover for the account owning a member's name and the roster row projecting it.
+
+    The roster copy has to exist — GDPR erasure detaches the account and concert
+    history still has to name whoever sang — but it is not a second place to edit.
+    A rename applied there alone leaves the singer's own settings screen, their
+    greetings and every e-mail addressing them by a name nobody uses any more.
+    """
+
+    ME_URL = "/api/users/me/"
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        dto = ArtistCreateDTO(
+            first_name="Ada", last_name="Lovelace",
+            email="ada-names@example.com", voice_type="SOP",
+            first_name_vocative="Ado", language="pl",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+        assert self.artist.user is not None
+        self.user = self.artist.user
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-names", email="mgr-names@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+    def test_provisioning_stores_the_vocative_on_the_account_profile(self):
+        self.assertEqual(self.user.profile.first_name_vocative, "Ado")
+        # And reads back through the roster row, which is what the form edits.
+        self.assertEqual(self.artist.first_name_vocative, "Ado")
+
+    def test_roster_rename_reaches_the_account(self):
+        ArtistHRService.update_artist(
+            self.artist, {"first_name": "Augusta", "last_name": "King"}
+        )
+
+        self.user.refresh_from_db()
+        self.artist.refresh_from_db()
+        self.assertEqual((self.user.first_name, self.user.last_name), ("Augusta", "King"))
+        self.assertEqual((self.artist.first_name, self.artist.last_name), ("Augusta", "King"))
+
+    def test_me_reports_the_renamed_account_without_backfill(self):
+        """End-to-end proof that the two sides cannot disagree. Before the account
+        became the owner this returned the stale name, and the serializer's
+        Artist-backfill hid that for exactly as long as the account row was blank."""
+        ArtistHRService.update_artist(self.artist, {"first_name": "Augusta"})
+
+        self.user.refresh_from_db()
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get(self.ME_URL)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["first_name"], "Augusta")
+
+    def test_roster_vocative_edit_lands_on_the_account_profile(self):
+        ArtistHRService.update_artist(self.artist, {"first_name_vocative": "Augusto"})
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.profile.first_name_vocative, "Augusto")
+
+    def test_roster_patch_carries_a_name_and_vocative_end_to_end(self):
+        """Through the endpoint, not just the service: the vocative is no longer a
+        column here, so the serializer field and the read-through property have to
+        agree with each other and with where the write actually lands."""
+        self.client.force_authenticate(user=self.manager)
+
+        response = self.client.patch(
+            f"/api/artists/{self.artist.id}/",
+            {"first_name": "Augusta", "first_name_vocative": "Augusto"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["first_name"], "Augusta")
+        self.assertEqual(response.data["first_name_vocative"], "Augusto")
+
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "Augusta")
+        self.assertEqual(self.user.profile.first_name_vocative, "Augusto")
+
+    def test_detached_row_owns_its_own_archival_name(self):
+        """The one case where this row is not a projection: erasure SET_NULLs the
+        account, and the label left behind is all that keeps the history readable."""
+        self.artist.user = None
+        self.artist.save(update_fields=["user"])
+
+        ArtistHRService.update_artist(self.artist, {"last_name": "Byron"})
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.last_name, "Byron")
+        self.assertEqual(self.artist.first_name_vocative, "")
+
+
+class ArtistEmailChangeTests(APITestCase):
+    """
+    Cover for a roster e-mail edit reaching the sign-in identity. Writing the
+    Artist row alone would leave the member signing in — and receiving every
+    notification, which key off `user.email` — at the old address, while the
+    roster displays the new one and nobody notices until somebody asks why the
+    mail stopped arriving.
+    """
+
+    @patch(EMAIL_TASK)
+    def setUp(self, _enqueue_mock) -> None:
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-email", email="mgr-email@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        dto = ArtistCreateDTO(
+            first_name="Grace", last_name="Hopper",
+            email="typo@example.com", voice_type="ALT",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            self.artist = ArtistHRService.provision_artist(dto)
+        self.client.force_authenticate(user=self.manager)
+
+    def _url(self) -> str:
+        return f"/api/artists/{self.artist.id}/"
+
+    def _activate(self) -> None:
+        assert self.artist.user is not None
+        self.artist.user.set_password("activated-pw")
+        self.artist.user.is_active = True
+        self.artist.user.save(update_fields=["password", "is_active"])
+
+    @patch(EMAIL_TASK)
+    def test_pending_invite_typo_is_corrected_on_both_sides(self, enqueue_mock):
+        resp = self.client.patch(
+            self._url(), {"email": "correct@example.com"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        self.artist.refresh_from_db()
+        assert self.artist.user is not None
+        self.artist.user.refresh_from_db()
+        self.assertEqual(self.artist.email, "correct@example.com")
+        self.assertEqual(self.artist.user.email, "correct@example.com")
+
+        # The old link is dead (the signed token hashes the address), so the
+        # invite has to be re-issued or the member never receives one.
+        enqueue_mock.assert_called_once()
+        self.assertEqual(
+            enqueue_mock.call_args.kwargs["recipient_email"], "correct@example.com"
+        )
+        self.assertIsNotNone(self.artist.activation_email_sent_at)
+
+    @patch(EMAIL_TASK)
+    def test_correction_clears_a_bounce_suppression(self, _enqueue_mock):
+        """A correction is usually prompted by the old address bouncing; leaving
+        the suppression set would silently drop every later notification."""
+        assert self.artist.user is not None
+        UserProfile.objects.filter(user=self.artist.user).update(email_undeliverable=True)
+
+        self.client.patch(self._url(), {"email": "correct@example.com"}, format="json")
+
+        self.artist.user.refresh_from_db()
+        self.assertFalse(self.artist.user.profile.email_undeliverable)
+
+    @patch(EMAIL_TASK)
+    def test_activated_member_email_is_locked_to_its_owner(self, enqueue_mock):
+        self._activate()
+
+        resp = self.client.patch(
+            self._url(), {"email": "hijack@example.com"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data["error_code"], "artist_email_locked")
+
+        self.artist.refresh_from_db()
+        assert self.artist.user is not None
+        self.artist.user.refresh_from_db()
+        self.assertEqual(self.artist.email, "typo@example.com")
+        self.assertEqual(self.artist.user.email, "typo@example.com")
+        enqueue_mock.assert_not_called()
+
+    @patch(EMAIL_TASK)
+    def test_activated_member_can_still_have_other_fields_edited(self, _enqueue_mock):
+        """The lock is on the credential, not on the record."""
+        self._activate()
+
+        resp = self.client.patch(self._url(), {"voice_type": "SOP"}, format="json")
+        self.assertEqual(resp.status_code, 200)
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.voice_type, "SOP")
+
+    @patch(EMAIL_TASK)
+    def test_resubmitting_the_unchanged_email_is_not_a_change(self, enqueue_mock):
+        """The editor posts the whole form, so an untouched e-mail arrives on
+        every save — it must not re-issue an invite each time, nor trip the lock
+        for an activated member."""
+        self._activate()
+
+        resp = self.client.patch(
+            self._url(), {"email": "TYPO@example.com", "first_name": "Grazyna"},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.first_name, "Grazyna")
+        enqueue_mock.assert_not_called()
+
+    @patch(EMAIL_TASK)
+    def test_collision_with_another_artist_is_rejected(self, _enqueue_mock):
+        """Caught one layer earlier, by the serializer's own uniqueness check —
+        which reports it as a field error on `email`, the same inline shape the
+        client renders for the service-level rejection below."""
+        other = ArtistCreateDTO(
+            first_name="Ada", last_name="Lovelace",
+            email="taken@example.com", voice_type="SOP",
+        )
+        with self.captureOnCommitCallbacks(execute=True):
+            ArtistHRService.provision_artist(other)
+
+        resp = self.client.patch(
+            self._url(), {"email": "taken@example.com"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn("email", resp.data["errors"])
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.email, "typo@example.com")
+
+    @patch(EMAIL_TASK)
+    def test_collision_with_a_non_artist_account_is_rejected(self, _enqueue_mock):
+        """A manager or crew account holds no Artist row, so the roster check
+        alone would wave this through and produce two logins on one address."""
+        resp = self.client.patch(
+            self._url(), {"email": "mgr-email@test.pl"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.data["error_code"], "email_taken")
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.email, "typo@example.com")
+
+    @patch(EMAIL_TASK)
+    def test_detached_artist_email_is_only_an_archival_label(self, enqueue_mock):
+        """After GDPR erasure there is no sign-in identity behind the row, so the
+        address is history and there is nothing to keep in step with it."""
+        self.artist.user = None
+        self.artist.save(update_fields=["user"])
+
+        resp = self.client.patch(
+            self._url(), {"email": "relabelled@example.com"}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        self.artist.refresh_from_db()
+        self.assertEqual(self.artist.email, "relabelled@example.com")
+        enqueue_mock.assert_not_called()

@@ -26,7 +26,8 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import translation
 
-from core.constants import AppRole
+from core.greetings import resolve_vocative
+from core.permissions import user_is_manager
 
 from .message_content import MessageContentBuilder
 from .models import NotificationLevel
@@ -128,7 +129,7 @@ class EmailDispatcherService:
             # 3. Resolve Execution Context (Language, Role & Payload)
             profile = getattr(user, 'profile', None)
             resolved_language = getattr(profile, 'language', 'en') or 'en'
-            is_manager = getattr(profile, 'role', None) == AppRole.MANAGER or bool(getattr(user, 'is_staff', False))
+            is_manager = user_is_manager(user)
 
             # 4. Contextual Override for Thread-Safe Localization
             with translation.override(resolved_language):
@@ -141,11 +142,7 @@ class EmailDispatcherService:
                 )
                 subject = content.subject or content.title
 
-                artist_profile = getattr(user, 'artist_profile', None)
-                raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
-                first_name_vocative = (
-                    (raw_vocative or user.first_name) if resolved_language == 'pl' else user.first_name
-                )
+                first_name_vocative = resolve_vocative(user, resolved_language)
 
                 frontend_url = getattr(settings, 'FRONTEND_URL', 'https://voctensemble.com')
                 context: dict[str, Any] = {

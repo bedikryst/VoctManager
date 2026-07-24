@@ -650,6 +650,7 @@ class Command(BaseCommand):
                 first_name=first, last_name=last,
             )
             profile = self._ensure_profile(user, AppRole.ARTIST, phone=phone)
+            profile.first_name_vocative = vocative
             profile.clothing_size = random.choice([
                 ClothingSizeChoices.S, ClothingSizeChoices.M,
                 ClothingSizeChoices.L, ClothingSizeChoices.XL,
@@ -661,7 +662,7 @@ class Command(BaseCommand):
             bottom, top = RANGE_FOR[voice]
             artist = Artist.objects.create(
                 user=user, first_name=first, last_name=last, email=email,
-                voice_type=voice, phone_number=phone, first_name_vocative=vocative,
+                voice_type=voice, phone_number=phone,
                 sight_reading_skill=random.randint(2, 5),
                 vocal_range_bottom=bottom, vocal_range_top=top,
             )

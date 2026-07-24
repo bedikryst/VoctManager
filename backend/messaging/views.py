@@ -21,7 +21,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from core.constants import AppRole
+from core.permissions import MANAGER_QUERY_FILTER, user_is_manager
 from core.request_utils import request_user
 from roster.models import Artist, Project
 
@@ -56,7 +56,6 @@ from .services import ChannelService, MessagingService
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-_MANAGER_FILTER = Q(profile__role=AppRole.MANAGER) | Q(is_staff=True)
 
 
 class ThreadViewSet(viewsets.GenericViewSet):
@@ -74,12 +73,11 @@ class ThreadViewSet(viewsets.GenericViewSet):
     # ------------------------------------------------------------------ #
 
     def _is_manager(self, user) -> bool:
-        role = getattr(getattr(user, 'profile', None), 'role', None)
-        return role == AppRole.MANAGER or bool(getattr(user, 'is_staff', False))
+        return user_is_manager(user)
 
     @staticmethod
     def _is_manager_user_id(user_id: int) -> bool:
-        return User.objects.filter(_MANAGER_FILTER, id=user_id, is_active=True).exists()
+        return User.objects.filter(MANAGER_QUERY_FILTER, id=user_id, is_active=True).exists()
 
     def get_queryset(self) -> QuerySet[Thread]:
         user = request_user(self.request)
@@ -327,7 +325,7 @@ class ThreadViewSet(viewsets.GenericViewSet):
     def recipients(self, request: Request) -> Response:
         user = request_user(request)
         managers = (
-            User.objects.filter(_MANAGER_FILTER, is_active=True)
+            User.objects.filter(MANAGER_QUERY_FILTER, is_active=True)
             .exclude(id=user.id)
             .select_related('artist_profile')
             .distinct()
@@ -349,8 +347,7 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
     pagination_class = None
 
     def _is_manager(self, user) -> bool:
-        role = getattr(getattr(user, 'profile', None), 'role', None)
-        return role == AppRole.MANAGER or bool(getattr(user, 'is_staff', False))
+        return user_is_manager(user)
 
     def get_queryset(self) -> QuerySet[ProjectChannel]:
         user = request_user(self.request)

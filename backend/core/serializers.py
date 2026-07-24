@@ -84,6 +84,11 @@ class UserMeSerializer(serializers.ModelSerializer):
     """
     Enterprise Aggregated Serializer.
     Combines core Auth Identity, Profile preferences, and Artist domain data into a single DTO.
+
+    Names are read from the account and nowhere else. The roster row carries a
+    copy, but it is a projection written from here — backfilling from it would
+    hide the very drift that arrangement exists to prevent, and would show this
+    screen a name its own PATCH cannot reach.
     """
     profile = UserProfileSerializer()
     voice_type = serializers.SerializerMethodField()
@@ -125,27 +130,6 @@ class UserMeSerializer(serializers.ModelSerializer):
         """Resolves the human-readable translation for the voice type."""
         artist_profile = getattr(obj, 'artist_profile', None)
         return artist_profile.get_voice_type_display() if artist_profile else "N/A"
-
-    def to_representation(self, instance):
-        """
-        Data aggregation layer. Fallbacks to Artist profile details if core User identity is sparse.
-        """
-        data = super().to_representation(instance)
-        
-        # Fallback to Artist profile names if core User names are missing
-        artist = getattr(instance, 'artist_profile', None)
-        if artist:
-            if not data.get('first_name'): 
-                data['first_name'] = artist.first_name
-            if not data.get('last_name'): 
-                data['last_name'] = artist.last_name
-            
-            # Phone fallback strategy
-            profile_data = data.get('profile', {})
-            if profile_data and not profile_data.get('phone_number') and artist.phone_number:
-                data['profile']['phone_number'] = artist.phone_number
-                
-        return data
 
 
 class ChangePasswordSerializer(serializers.Serializer):

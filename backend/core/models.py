@@ -57,7 +57,20 @@ class EnterpriseBaseModel(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)
 
-    # Base Managers
+    # Base Managers.
+    #
+    # `objects` is declared first, so Django adopts it as `_default_manager` —
+    # what DRF's uniqueness validators, `get_object_or_404` and the admin all
+    # resolve through. Filtering soft-deleted rows out of those is the intent.
+    #
+    # `_base_manager` is deliberately left to Django's auto-created plain manager
+    # rather than pinned to `all_objects` via `Meta.base_manager_name`. Both are
+    # unfiltered, so forward-FK traversal reaches soft-deleted rows either way —
+    # but `all_objects` carries SoftDeleteQuerySet, whose `.delete()` is itself a
+    # soft delete, and that is not a semantic to hand to Django's internals.
+    #
+    # Backups are unaffected by any of this: they are `pg_dump`, not `dumpdata`,
+    # so they capture soft-deleted rows regardless of manager choice.
     objects = ActiveManager()
     all_objects = models.Manager.from_queryset(SoftDeleteQuerySet)()
 
@@ -152,6 +165,15 @@ class UserProfile(EnterpriseBaseModel):
         default=Salutation.NEUTRAL,
         help_text=_("Grammatical form of address for greetings only (e.g. PL Drogi/Droga, "
                     "FR Cher/Chère). Optional; NEUTRAL makes no assumption.")
+    )
+    first_name_vocative = models.CharField(
+        max_length=150,
+        blank=True,
+        verbose_name=_("First Name (Vocative)"),
+        help_text=_("Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in "
+                    "greetings; blank falls back to the nominative first name. Lives here "
+                    "rather than on the choral profile because managers and crew are "
+                    "addressed too, and they have no Artist row.")
     )
 
     clothing_size = models.CharField(

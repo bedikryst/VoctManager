@@ -49,6 +49,10 @@ export interface ArtistCreateDTO {
   salutation?: string;
 }
 
-export type ArtistUpdateDTO = Partial<ArtistCreateDTO> & {
-  is_active?: boolean;
-};
+/**
+ * Editable profile fields only. Platform access is deliberately absent: the
+ * server owns `is_active` and moves it exclusively through archive/restore,
+ * together with the soft-delete flag and the login gate. Sending it here would
+ * be silently dropped.
+ */
+export type ArtistUpdateDTO = Partial<ArtistCreateDTO>;

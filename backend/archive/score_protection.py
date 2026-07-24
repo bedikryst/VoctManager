@@ -23,17 +23,16 @@ from django.db import transaction
 from django.db.models import Max
 
 from archive.models import ScoreAccessLog, ScoreEdition
+from core.permissions import user_is_manager as core_user_is_manager
 
 # Joins the watermark footer segments. A wide middle dot reads as a divider on a
 # printed page without looking like punctuation inside a name.
 _FOOTER_SEPARATOR = "  ·  "
 
 
-def user_is_manager(user) -> bool:
-    """Manager check mirroring roster's score-access gate (profile flag only), so
-    export rights and download access can never disagree about who a manager is."""
-    profile = getattr(user, "profile", None)
-    return bool(profile is not None and profile.is_manager)
+# Re-exported so export rights and download access can never disagree about who
+# a manager is — both resolve through the one project-wide definition.
+user_is_manager = core_user_is_manager
 
 
 def can_export(edition: ScoreEdition, *, is_manager: bool) -> bool:

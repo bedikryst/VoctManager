@@ -9,21 +9,24 @@ Encapsulates all database transactions, state mutations, and side-effects.
 Views MUST delegate all business logic to these stateless classes.
 """
 import logging
+from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from core.exceptions import EmailAlreadyInUseException
+from core.models import UserProfile
 from core.services import UserIdentityService
 from logistics.models import Location
 from notifications.dtos import (
     AbsenceStatusMetadata,
     ManagerActionMetadata,
     PieceCastingMetadata,
+    ProjectCancelledMetadata,
     ProjectInvitationMetadata,
     ProjectUpdatedMetadata,
     RehearsalCancelledMetadata,
@@ -46,7 +49,9 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .exceptions import (
+    ActivatedEmailChangeException,
     ActivationResendException,
+    ArtistEmailConflictException,
     ArtistProvisioningException,
     AttendanceValidationException,
     CastingValidationException,
@@ -138,11 +143,13 @@ class ArtistHRService:
                 # 2. Create Roster-specific entity. `provision_user_account` has
                 #    already queued the first activation invite, so stamp the send
                 #    time now — the roster can show when the singer was invited.
+                #    Names and e-mail are seeded from the same DTO the account was
+                #    built from; from here on they are a projection of it, and the
+                #    vocative is not copied at all — it lives on the profile.
                 artist = Artist.objects.create(
                     user=user,
                     first_name=dto.first_name,
                     last_name=dto.last_name,
-                    first_name_vocative=dto.first_name_vocative or "",
                     email=dto.email,
                     voice_type=dto.voice_type,
                     phone_number=dto.phone_number or "",
@@ -179,33 +186,191 @@ class ArtistHRService:
         logger.info(f"Activation invite re-sent for artist: {artist.email}")
 
     @staticmethod
-    def archive_artist(artist: Artist) -> None:
-        """Przenosi artystę do archiwum i blokuje mu możliwość logowania do aplikacji."""
+    def update_artist(artist: Artist, changes: Mapping[str, Any]) -> Artist:
+        """
+        Applies a manager's roster edit.
+
+        Choral fields (voice, sight-reading, range) are written straight through —
+        the roster owns them. Everything that identifies the person does not live
+        here and must not be written here alone:
+
+        - **names** belong to the account. Writing only the roster copy is how a
+          singer ends up renamed on every manager screen while their own settings,
+          their greetings and their e-mails keep the old name indefinitely.
+        - **the vocative** belongs to the account's profile, for the same reason
+          plus one more: managers and crew are greeted too and have no row here.
+        - **the e-mail** is the sign-in identity, routed through `_rewrite_email`,
+          which owns both sides and re-issues the dead invitation link.
+
+        The first two are applied to the account and then projected back onto this
+        row in the same transaction, so the archival snapshot this row exists to be
+        stays current right up to the moment the account is detached.
+        """
+        data = dict(changes)
+        new_email = data.pop('email', None)
+        vocative = data.pop('first_name_vocative', None)
+        names = {
+            field: data.pop(field) for field in ('first_name', 'last_name') if field in data
+        }
+
         with transaction.atomic():
-            # 1. Soft Delete Artysty (ukrywa go na listach)
-            artist.delete() 
-            
-            # 2. Blokada logowania (Zatrzymuje autoryzację JWT/Sesji)
+            ArtistHRService._rewrite_account_names(artist, names, vocative)
+
+            if data:
+                for field, value in data.items():
+                    setattr(artist, field, value)
+                artist.save()
+
+            # Last, because it queues an e-mail: nothing may fail after that
+            # point and roll back a message already handed to the broker.
+            if new_email is not None:
+                ArtistHRService._rewrite_email(artist, new_email)
+
+        return artist
+
+    @staticmethod
+    def _rewrite_account_names(
+        artist: Artist, names: Mapping[str, str], vocative: str | None
+    ) -> None:
+        """Writes a name edit to the account and projects it onto the roster row.
+
+        A detached row (GDPR erasure SET_NULLed `user`) has no account to write to,
+        so the edit lands on the archival label alone — the only case where this
+        row is the owner rather than the projection.
+        """
+        if not names and vocative is None:
+            return
+
+        user = artist.user
+
+        if user is None:
+            for field, value in names.items():
+                setattr(artist, field, value)
+            if names:
+                artist.save(update_fields=[*names, 'updated_at'])
+            return
+
+        if names:
+            for field, value in names.items():
+                setattr(user, field, value)
+                setattr(artist, field, value)
+            user.save(update_fields=list(names))
+            artist.save(update_fields=[*names, 'updated_at'])
+
+        if vocative is not None:
+            # Written through the instance already attached to `user`, not with a
+            # queryset update: the caller serializes this artist straight back to
+            # the manager, and `Artist.first_name_vocative` reads it off that
+            # cached profile — a detached write would answer with the old value.
+            profile = getattr(user, 'profile', None)
+            if profile is None:
+                # Provisioning always makes one; a fixture or a pre-existing
+                # account may not, and the edit must not vanish either way.
+                UserProfile.objects.create(user=user, first_name_vocative=vocative)
+            else:
+                profile.first_name_vocative = vocative
+                profile.save(update_fields=['first_name_vocative', 'updated_at'])
+
+    @staticmethod
+    def _rewrite_email(artist: Artist, raw_email: str) -> None:
+        """
+        Moves an artist's e-mail on both sides of the Core/Roster boundary.
+
+        Only reachable before activation. The old invitation link dies on its own
+        —  the signed token hashes the account's e-mail — so the correction has
+        to re-issue the invite, or the member is simply left without one.
+        """
+        new_email = (raw_email or "").strip()
+        if not new_email or new_email.casefold() == (artist.email or "").strip().casefold():
+            return
+
+        user = artist.user
+
+        if user is not None and user.has_usable_password():
+            raise ActivatedEmailChangeException()
+
+        # Uniqueness spans both tables. Checking one alone lets the other drift
+        # into a duplicate, and these two are meant to hold the same address.
+        if Artist.objects.exclude(pk=artist.pk).filter(
+            email__iexact=new_email, is_deleted=False
+        ).exists():
+            raise ArtistEmailConflictException()
+        if user is not None and User.objects.exclude(pk=user.pk).filter(
+            email__iexact=new_email
+        ).exists():
+            raise ArtistEmailConflictException()
+
+        artist.email = new_email
+        artist.save(update_fields=['email', 'updated_at'])
+
+        if user is None:
+            # Detached by GDPR erasure: no sign-in identity behind this row, so
+            # the address is a historical label and there is nothing to keep in
+            # step with it.
+            logger.info(f"Roster: archival email relabelled for detached artist {artist.id}")
+            return
+
+        user.email = new_email
+        try:
+            # The uniqueness checks above are separate statements from this write;
+            # the database's case-insensitive index is what actually settles a
+            # concurrent claim on the same address.
+            with transaction.atomic():
+                user.save(update_fields=['email'])
+        except IntegrityError as exc:
+            logger.warning(f"Roster email correction lost a race for {new_email}: {exc}")
+            raise ArtistEmailConflictException() from exc
+
+        # A correction is often prompted by the old address bouncing, which
+        # leaves the account suppressed. The new mailbox is deliverable until
+        # proven otherwise, so it must start clean or every later notification
+        # would be silently dropped.
+        UserProfile.objects.filter(user=user, email_undeliverable=True).update(
+            email_undeliverable=False
+        )
+
+        UserIdentityService.resend_activation_email(user)
+        artist.activation_email_sent_at = timezone.now()
+        artist.save(update_fields=['activation_email_sent_at', 'updated_at'])
+        logger.info(f"Roster: artist email corrected and invite re-issued to {new_email}")
+
+    @staticmethod
+    def archive_artist(artist: Artist) -> None:
+        """
+        Moves an artist to the archive and revokes their access to the platform.
+
+        The sole writer of the archived state. All three markers move together —
+        `is_active` (what every roster surface renders), `is_deleted` (what the
+        default manager filters on) and the account's login gate — because a
+        singer shown as archived while still able to sign in is the one outcome
+        this operation must never produce.
+        """
+        with transaction.atomic():
+            artist.is_active = False
+            artist.save(update_fields=['is_active', 'updated_at'])
+            artist.delete()
+
             user = artist.user
             if user is not None:
                 user.is_active = False
                 user.save(update_fields=['is_active'])
-            
+
             logger.info(f"Artist {artist.email} archived and user access revoked.")
 
     @staticmethod
     def restore_artist(artist: Artist) -> None:
-        """Przywraca artystę z archiwum i odblokowuje mu dostęp."""
+        """Returns an artist from the archive and restores their access. Exact
+        inverse of `archive_artist` — see there for why all three move as one."""
         with transaction.atomic():
-            # 1. Przywrócenie Artysty (odkręcenie Soft Delete)
-            artist.restore() 
-            
-            # 2. Odblokowanie logowania
+            artist.is_active = True
+            artist.save(update_fields=['is_active', 'updated_at'])
+            artist.restore()
+
             user = artist.user
             if user is not None:
                 user.is_active = True
                 user.save(update_fields=['is_active'])
-            
+
             logger.info(f"Artist {artist.email} restored and user access granted.")
 
 
@@ -314,6 +479,24 @@ class ProjectManagementService:
             recipient_ids = NotificationRecipientPolicy.from_participations(qs)
 
             if recipient_ids and changes:
+                # A move to CANCELLED is an alarm of its own — not one field change
+                # among several. It supersedes any other edit in the same save, so
+                # the cast reads "cancelled" instead of decoding "Status: … → CANC".
+                if project.status == Project.Status.CANCELLED and any(
+                    c["field"] == "status" for c in changes
+                ):
+                    cancelled_metadata = ProjectCancelledMetadata(
+                        project_id=project.id,
+                        project_name=project.title,
+                    ).model_dump(mode="json")
+                    transaction.on_commit(lambda: send_bulk_notifications_task.delay(
+                        recipient_ids=recipient_ids,
+                        notification_type=NotificationType.PROJECT_CANCELLED,
+                        level=NotificationLevel.URGENT,
+                        metadata=cancelled_metadata,
+                    ))
+                    return project
+
                 # De-duplicate on the structured key (dress_code_male/female both map
                 # to one "dress_code" change; conductor may repeat).
                 unique_changes = list({c["field"]: c for c in changes}.values())
@@ -335,7 +518,7 @@ class ProjectManagementService:
                     level=level,
                     metadata=metadata
                 ))
-                
+
         return project
 
     
@@ -397,12 +580,19 @@ class ProjectManagementService:
                     if participation.project.conductor else ""
                 )
 
+                event_time_metadata = build_event_time_metadata(
+                    participation.project.date_time,
+                    participation.project.timezone,
+                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                )
+
                 metadata = ProjectInvitationMetadata(
                     project_id=participation.project_id,
                     project_name=participation.project.title,
                     participation_id=participation.id,
                     inviter_name=inviter_name,
-                    date_range=participation.project.date_time.strftime("%Y-%m-%d %H:%M"),
+                    **event_time_metadata,
+                    date_range=event_time_metadata["starts_at_display"],
                     location=location_name,
                     description=participation.project.description or "",
                 ).model_dump(mode="json")
@@ -652,7 +842,12 @@ class RehearsalOperationsService:
 
             if not dto.is_manager:
                 artist_name = f"{attendance.participation.artist.first_name} {attendance.participation.artist.last_name}"
-                rehearsal_date = attendance.rehearsal.date_time.strftime("%Y-%m-%d %H:%M")
+                event_time_metadata = build_event_time_metadata(
+                    attendance.rehearsal.date_time,
+                    attendance.rehearsal.timezone,
+                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                )
+                rehearsal_date = event_time_metadata["starts_at_display"]
 
                 # An artist marking themselves EXCUSED/ABSENT IS an absence request —
                 # surface it to managers as the specific, actionable type rather than
@@ -665,6 +860,7 @@ class RehearsalOperationsService:
                         artist_id=str(attendance.participation.artist_id),
                         project_id=str(attendance.rehearsal.project_id),
                         rehearsal_id=str(rehearsal.id),
+                        **event_time_metadata,
                         rehearsal_date=rehearsal_date,
                         status=dto.status,
                         excuse_note=dto.excuse_note or None,
@@ -676,6 +872,7 @@ class RehearsalOperationsService:
                         artist_name=artist_name,
                         artist_id=str(attendance.participation.artist_id),
                         rehearsal_id=str(rehearsal.id),
+                        **event_time_metadata,
                         rehearsal_date=rehearsal_date,
                         status=dto.status,
                         minutes_late=dto.minutes_late or None,
@@ -693,10 +890,16 @@ class RehearsalOperationsService:
                 # all"), so it carries WARNING weight; an approval is a positive FYI
                 # at INFO. Mirrors the composer's intended level for each.
                 level = NotificationLevel.INFO if is_approved else NotificationLevel.WARNING
+                decision_time_metadata = build_event_time_metadata(
+                    rehearsal.date_time,
+                    rehearsal.timezone,
+                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+                )
                 metadata = AbsenceStatusMetadata(
                     rehearsal_id=rehearsal.id,
                     project_name=rehearsal.project.title,
-                    rehearsal_date=rehearsal.date_time.strftime("%Y-%m-%d %H:%M"),
+                    **decision_time_metadata,
+                    rehearsal_date=decision_time_metadata["starts_at_display"],
                 ).model_dump(mode="json")
 
                 transaction.on_commit(lambda: send_notification_task.delay(

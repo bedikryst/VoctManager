@@ -1,5 +1,6 @@
 import io
 import tempfile
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from uuid import uuid4
@@ -9,7 +10,14 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import EmailMultiAlternatives
-from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.db import IntegrityError
+from django.test import (
+    RequestFactory,
+    SimpleTestCase,
+    TestCase,
+    TransactionTestCase,
+    override_settings,
+)
 from PIL import Image
 from pydantic import ValidationError
 from rest_framework.test import APITestCase
@@ -200,6 +208,59 @@ class AccountActivationViewTests(APITestCase):
         user.refresh_from_db()
         self.assertEqual(response.status_code, 403)
         self.assertFalse(user.is_active)
+
+
+class GreetingResolutionTests(TestCase):
+    """
+    Cover for who gets addressed properly and in which language.
+
+    The vocative used to live on the choral profile, so resolving it meant
+    reaching from the account into the roster — and a manager or crew member,
+    who has no row there, was silently greeted in the nominative. In Polish that
+    is not a nuance: "Witaj Krystian" is simply wrong where "Krystianie" belongs.
+    """
+
+    def _account(self, first_name: str, vocative: str) -> "User":
+        user = User.objects.create_user(
+            username=str(uuid4()), email=f"{uuid4()}@example.com",
+            password="pw12345678", first_name=first_name,
+        )
+        UserProfile.objects.create(
+            user=user, role=AppRole.MANAGER, first_name_vocative=vocative
+        )
+        return user
+
+    def test_account_without_a_choral_profile_is_greeted_in_the_vocative(self):
+        from .greetings import resolve_vocative
+
+        user = self._account("Krystian", "Krystianie")
+        self.assertEqual(resolve_vocative(user, "pl"), "Krystianie")
+
+    def test_non_polish_languages_are_addressed_in_the_nominative(self):
+        """French and English have no vocative case; a stored Polish form there
+        would read as a misspelling of the person's own name."""
+        from .greetings import resolve_vocative
+
+        user = self._account("Krystian", "Krystianie")
+        self.assertEqual(resolve_vocative(user, "fr"), "Krystian")
+        self.assertEqual(resolve_vocative(user, "en"), "Krystian")
+
+    def test_missing_vocative_falls_back_to_the_first_name(self):
+        from .greetings import resolve_vocative
+
+        user = self._account("Krystian", "")
+        self.assertEqual(resolve_vocative(user, "pl"), "Krystian")
+
+    def test_account_without_a_profile_row_does_not_crash(self):
+        """Provisioning always makes one, but fixtures and legacy rows may not —
+        and a greeting is never worth a 500."""
+        from .greetings import resolve_vocative
+
+        user = User.objects.create_user(
+            username=str(uuid4()), email=f"{uuid4()}@example.com",
+            password="pw12345678", first_name="Krystian",
+        )
+        self.assertEqual(resolve_vocative(user, "pl"), "Krystian")
 
 
 class ActivationPreviewViewTests(APITestCase):
@@ -779,3 +840,224 @@ class MakeErrorResponseEnvelopeTests(SimpleTestCase):
         self.assertEqual(
             response.data["validation_errors"]["new_password"], ["Too short."]
         )
+
+
+class AccountErasureTests(TestCase):
+    """
+    Cover for GDPR erasure actually removing the profile. `delete()` on an
+    EnterpriseBaseModel is a soft delete, which would leave every preference row
+    (phone number, height, sizes) intact and still reachable through
+    `user.profile`, since the reverse relation resolves via the unfiltered base
+    manager. Erasure has to remove the data, not flag it.
+    """
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username=str(uuid4()), email="erasure@example.com", password="pw12345678",
+        )
+        self.profile = UserProfile.objects.create(
+            user=self.user, phone_number="+48 600 100 100", height_cm=180,
+            clothing_size="l", shoe_size="42",
+        )
+
+    @patch(EMAIL_TASK)
+    def test_erasure_removes_the_profile_row_entirely(self, _enqueue_mock):
+        from .dtos import UserAccountDeletionDTO
+
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.process_account_soft_deletion(
+                self.user, UserAccountDeletionDTO(current_password="pw12345678"),
+            )
+
+        # Not merely hidden by the default manager — gone from the table.
+        self.assertFalse(
+            UserProfile.all_objects.filter(pk=self.profile.pk).exists()
+        )
+
+    @patch(EMAIL_TASK)
+    def test_erasure_anonymizes_the_core_identity(self, _enqueue_mock):
+        from .dtos import UserAccountDeletionDTO
+
+        with self.captureOnCommitCallbacks(execute=True):
+            UserIdentityService.process_account_soft_deletion(
+                self.user, UserAccountDeletionDTO(current_password="pw12345678"),
+            )
+
+        self.user.refresh_from_db()
+        self.assertNotIn("erasure@example.com", self.user.email)
+        self.assertFalse(self.user.is_active)
+
+
+class AccountEmailAuditCommandTests(TestCase):
+    """
+    Cover for the pre-flight that gates enforcing e-mail as a real identifier.
+    It has to be trustworthy in both directions: silent when the data is clean,
+    and refusing to pass when it is not — a false all-clear would send a
+    uniqueness migration into a collision mid-deploy.
+    """
+
+    def _run(self, **kwargs) -> str:
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("audit_account_emails", stdout=out, **kwargs)
+        return out.getvalue()
+
+    def _user(self, email: str):
+        return User.objects.create_user(username=str(uuid4()), email=email, password="pw12345678")
+
+    @contextmanager
+    def _without_email_constraint(self):
+        """
+        Drops the case-insensitive unique index for the duration of the block.
+
+        The command exists to inspect a database that does NOT yet have that
+        index — it is the pre-flight run before the constraint is applied. Once
+        the index exists, the duplicate state it reports can no longer be created
+        through the ORM, so removing it is the only way to reach the detection
+        path at all.
+
+        Nothing is restored on exit, and nothing needs to be: both SQLite and
+        PostgreSQL have transactional DDL, so this class's TestCase rollback
+        undoes the drop along with the rows. Rebuilding it here would in fact
+        fail — the duplicates are still present until that rollback.
+        """
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute("DROP INDEX IF EXISTS voct_user_email_ci_uniq;")
+        yield
+
+    def test_clean_data_passes(self):
+        self._user("ada@example.com")
+        self._user("grace@example.com")
+
+        output = self._run()
+        self.assertIn("will apply cleanly", output)
+
+    def test_case_insensitive_duplicates_block_the_constraint(self):
+        from django.core.management.base import CommandError
+
+        with self._without_email_constraint():
+            self._user("ada@example.com")
+            self._user("ADA@example.com")
+
+            with self.assertRaises(CommandError) as ctx:
+                self._run()
+        self.assertIn("duplicate address group", str(ctx.exception))
+
+    @patch(EMAIL_TASK)
+    def test_roster_drift_is_reported(self, _enqueue_mock):
+        from roster.dtos import ArtistCreateDTO
+        from roster.services import ArtistHRService
+
+        with self.captureOnCommitCallbacks(execute=True):
+            artist = ArtistHRService.provision_artist(
+                ArtistCreateDTO(
+                    first_name="Ada", last_name="Lovelace",
+                    email="ada@example.com", voice_type="SOP",
+                )
+            )
+        # Simulate the divergence a roster-side write used to create.
+        artist.email = "stale@example.com"
+        artist.save(update_fields=["email"])
+
+        output = self._run()
+        self.assertIn("stale@example.com", output)
+        self.assertIn("ada@example.com", output)
+
+    @patch(EMAIL_TASK)
+    def test_fix_drift_realigns_the_roster_to_the_account(self, _enqueue_mock):
+        from roster.dtos import ArtistCreateDTO
+        from roster.models import Artist
+        from roster.services import ArtistHRService
+
+        with self.captureOnCommitCallbacks(execute=True):
+            artist = ArtistHRService.provision_artist(
+                ArtistCreateDTO(
+                    first_name="Ada", last_name="Lovelace",
+                    email="ada@example.com", voice_type="SOP",
+                )
+            )
+        artist.email = "stale@example.com"
+        artist.save(update_fields=["email"])
+
+        self._run(fix_drift=True)
+
+        artist.refresh_from_db()
+        self.assertEqual(artist.email, "ada@example.com")
+        self.assertEqual(Artist.all_objects.filter(email="stale@example.com").count(), 0)
+
+    @patch(EMAIL_TASK)
+    def test_fix_drift_leaves_duplicates_alone(self, _enqueue_mock):
+        """Merging accounts decides who keeps the concert history — not a script's
+        call. The command must still refuse even when asked to repair."""
+        from django.core.management.base import CommandError
+
+        with self._without_email_constraint():
+            self._user("ada@example.com")
+            self._user("ADA@example.com")
+
+            with self.assertRaises(CommandError):
+                self._run(fix_drift=True)
+            self.assertEqual(User.objects.filter(email__iexact="ada@example.com").count(), 2)
+
+    def test_blank_addresses_are_reported_but_not_duplicates(self):
+        """Two blank addresses are not a collision to resolve by merging — they
+        are accounts that simply cannot sign in, and must not mask the real
+        duplicate report."""
+        User.objects.create_user(username=str(uuid4()), email="", password="pw12345678")
+        User.objects.create_user(username=str(uuid4()), email="", password="pw12345678")
+
+        output = self._run()
+        self.assertIn("blank address", output)
+        self.assertIn("will apply cleanly", output)
+
+
+class AccountEmailUniquenessConstraintTests(TransactionTestCase):
+    """
+    Cover for the database actually refusing a duplicate address.
+
+    Every application-side guard is a check-then-insert, so the only real
+    enforcement is the index — and an index nobody exercises is an index that
+    quietly stops existing after some future migration. TransactionTestCase
+    because an IntegrityError marks the surrounding transaction unusable, which a
+    single-transaction TestCase cannot recover from.
+    """
+
+    def _make(self, email: str):
+        return User.objects.create_user(username=str(uuid4()), email=email, password="pw12345678")
+
+    def test_exact_duplicate_is_refused(self):
+        self._make("ada@example.com")
+        with self.assertRaises(IntegrityError):
+            self._make("ada@example.com")
+
+    def test_case_variant_duplicate_is_refused(self):
+        """Authentication looks accounts up with `email__iexact`, so a case
+        variant is the same account as far as sign-in is concerned."""
+        self._make("ada@example.com")
+        with self.assertRaises(IntegrityError):
+            self._make("ADA@Example.com")
+
+    def test_blank_addresses_do_not_collide(self):
+        """`AbstractUser.email` is blankable; several blank rows are accounts that
+        cannot sign in, not a collision — the index is partial for this reason."""
+        self._make("")
+        self._make("")
+        self.assertEqual(User.objects.filter(email="").count(), 2)
+
+    @patch(EMAIL_TASK)
+    def test_provisioning_reports_a_lost_race_as_a_domain_error(self, _enqueue_mock):
+        """Simulates the window between the existence check and the insert: the
+        caller must see the ordinary duplicate error, not a 500."""
+        self._make("ada@example.com")
+
+        with patch.object(User.objects, "filter") as guard:
+            guard.return_value.exists.return_value = False
+            with self.assertRaises(EmailAlreadyInUseException):
+                UserIdentityService.provision_user_account(
+                    email="ADA@example.com", first_name="Ada", last_name="Lovelace",
+                )

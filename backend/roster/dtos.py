@@ -76,12 +76,14 @@ class EnterpriseBaseDTO(BaseModel):
 
 
 class ArtistCreateDTO(EnterpriseBaseDTO):
-    first_name: str = Field(..., min_length=1, max_length=50)
-    last_name: str = Field(..., min_length=1, max_length=50)
-    first_name_vocative: str | None = Field(None, max_length=50)
+    # Widths track `AbstractUser` (150), which is where these values are actually
+    # persisted — a narrower limit here would reject a name the account accepts.
+    first_name: str = Field(..., min_length=1, max_length=150)
+    last_name: str = Field(..., min_length=1, max_length=150)
+    first_name_vocative: str | None = Field(None, max_length=150)
     email: EmailStr
     voice_type: str = Field(..., min_length=2, max_length=5)
-    phone_number: str | None = Field(None, max_length=15)
+    phone_number: str | None = Field(None, max_length=32)
     sight_reading_skill: int | None = Field(None, ge=1, le=5)
     vocal_range_bottom: str | None = Field(None, max_length=5)
     vocal_range_top: str | None = Field(None, max_length=5)

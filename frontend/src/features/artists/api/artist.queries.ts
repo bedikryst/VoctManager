@@ -14,16 +14,24 @@ import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
 export const artistKeys = {
   artists: {
     all: ["artists"] as const,
+    // The archive-inclusive roster is a different result set, so it gets its own
+    // key rather than overwriting the active list every other surface reads.
+    // Nested under `all` so a single invalidation still refreshes both.
+    withArchived: ["artists", "with-archived"] as const,
     details: (id: string | number) => ["artists", String(id)] as const,
     dossier: (id: string | number) =>
       ["artists", String(id), "dossier"] as const,
   },
 };
 
-export const useArtists = () => {
+export const useArtists = (includeArchived = false) => {
   return useQuery({
-    queryKey: artistKeys.artists.all,
-    queryFn: ArtistService.getAll,
+    queryKey: includeArchived
+      ? artistKeys.artists.withArchived
+      : artistKeys.artists.all,
+    queryFn: includeArchived
+      ? ArtistService.getAllIncludingArchived
+      : ArtistService.getAll,
     staleTime: 1000 * 60 * 5,
   });
 };

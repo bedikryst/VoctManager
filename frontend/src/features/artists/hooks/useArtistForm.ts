@@ -11,13 +11,16 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
-import { useCreateArtist, useUpdateArtist } from "../api/artist.queries";
+import {
+  useCreateArtist,
+  useToggleArtistStatus,
+  useUpdateArtist,
+} from "../api/artist.queries";
 import {
   artistFormSchema,
   voiceToSalutation,
   type ArtistFormValues,
   type ArtistCreateDTO,
-  type ArtistUpdateDTO,
 } from "../types/artist.dto";
 
 export const useArtistForm = (
@@ -30,6 +33,7 @@ export const useArtistForm = (
   const { t } = useTranslation();
   const createMutation = useCreateArtist();
   const updateMutation = useUpdateArtist();
+  const toggleStatusMutation = useToggleArtistStatus();
 
   const defaultNames = useMemo(() => {
     let first = "";
@@ -135,15 +139,21 @@ export const useArtistForm = (
       if (artist?.id) {
         // language + salutation are profile-level prefs, set at creation and then
         // owned by the member in their own settings — not editable per-artist here.
-        const { language, salutation, ...safeBasePayload } = basePayload;
-        const updatePayload: ArtistUpdateDTO = {
-          ...safeBasePayload,
-          is_active: data.is_active,
-        };
+        const { language, salutation, ...updatePayload } = basePayload;
         await updateMutation.mutateAsync({
           id: artist.id,
           data: updatePayload,
         });
+
+        // Platform access is lifecycle state, not a profile field: only
+        // archive/restore move the roster standing, the soft-delete flag and the
+        // login gate together. A plain PATCH would touch none of them.
+        if (data.is_active !== artist.is_active) {
+          await toggleStatusMutation.mutateAsync({
+            id: artist.id,
+            isActive: data.is_active,
+          });
+        }
         toast.success(
           t(
             "artists.form.toast.update_success",
@@ -166,7 +176,21 @@ export const useArtistForm = (
       // Transition the loading toast into a precise summary, and light up the
       // rejected field inline.
       const normalized = toastApiError(err, t, { id: toastId });
-      if (normalized.code === "email_taken") {
+      if (normalized.code === "artist_email_locked") {
+        // The address belongs to the member once they have activated. Pin the
+        // explanation to the field they tried to change, not a floating toast.
+        form.setError(
+          "email",
+          {
+            type: "server",
+            message: t(
+              "errors.codes.artist_email_locked.detail",
+              "Ten członek aktywował już konto — adres logowania może zmienić tylko on sam, w swoich ustawieniach.",
+            ),
+          },
+          { shouldFocus: true },
+        );
+      } else if (normalized.code === "email_taken") {
         // The one provisioning conflict is a duplicate email — pin it to the
         // email input in the UI language, not the server's English sentence,
         // and never as a vague "someone changed this" conflict toast.
@@ -190,7 +214,10 @@ export const useArtistForm = (
   return {
     form,
     isDirty: form.formState.isDirty,
-    isSubmitting: createMutation.isPending || updateMutation.isPending,
+    isSubmitting:
+      createMutation.isPending ||
+      updateMutation.isPending ||
+      toggleStatusMutation.isPending,
     onSubmit: form.handleSubmit(onSubmit),
   };
 };

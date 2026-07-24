@@ -53,6 +53,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from archive.models import IngestionStatus, ScoreEdition
 from archive.tasks import live_preview_cache_key
 from core.authentication import CookieJWTAuthentication
+from core.permissions import user_is_manager
 
 logger = logging.getLogger(__name__)
 
@@ -89,14 +90,10 @@ def _authenticate(request: HttpRequest):
     return result[0] if result else None
 
 
-@sync_to_async
-def _is_manager(user) -> bool:
-    if user is None or not getattr(user, 'is_authenticated', False):
-        return False
-    if user.is_staff:
-        return True
-    profile = getattr(user, 'profile', None)
-    return bool(profile and getattr(profile, 'is_manager', False))
+# Async wrapper around the project-wide manager definition: the predicate touches
+# the profile relation, so it may hit the DB and cannot be called from async code
+# directly.
+_is_manager = sync_to_async(user_is_manager)
 
 
 async def _snapshot(pk) -> dict | None:

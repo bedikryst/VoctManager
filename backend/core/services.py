@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -34,6 +34,7 @@ from .exceptions import (
     EmailAlreadyInUseException,
     InvalidCredentialsException,
 )
+from .greetings import apply_vocative_rule, resolve_vocative
 from .models import UserProfile
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
@@ -76,21 +77,32 @@ class UserIdentityService:
             # SaaS 2026 Standard: Abstract usernames prevent enumeration and PII leaks
             username = str(uuid.uuid4())
 
-            user = User.objects.create(
-                username=username,
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                is_active=False
-            )
-            user.set_unusable_password()
-            user.save()
+            try:
+                # The check above and this insert are two statements; a concurrent
+                # request slipping between them is exactly what the database's
+                # case-insensitive unique index refuses. Translate that refusal
+                # into the same domain error, so a race and a plain duplicate are
+                # indistinguishable to the caller instead of surfacing as a 500.
+                with transaction.atomic():
+                    user = User.objects.create(
+                        username=username,
+                        email=email,
+                        first_name=first_name,
+                        last_name=last_name,
+                        is_active=False
+                    )
+                    user.set_unusable_password()
+                    user.save()
+            except IntegrityError as exc:
+                logger.warning(f"Provisioning lost an email race for {email}: {exc}")
+                raise EmailAlreadyInUseException("email_in_use") from exc
 
             # Explicit Profile Creation (side-effecting; the instance is not needed here)
             UserProfile.objects.create(
                 user=user,
                 language=language,
                 salutation=salutation if salutation in {'F', 'M', 'N'} else 'N',
+                first_name_vocative=first_name_vocative or '',
             )
 
             # Generate Activation Tokens
@@ -100,7 +112,11 @@ class UserIdentityService:
                 f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
             )
 
-            vocative = (first_name_vocative or first_name) if language == 'pl' else first_name
+            # Resolved from the arguments, not re-read: the profile was written a
+            # few lines up and this is the same transaction.
+            vocative = apply_vocative_rule(
+                vocative=first_name_vocative or '', first_name=first_name, language=language
+            )
 
             # Dispatch Operational Email
             with override(language):
@@ -155,10 +171,8 @@ class UserIdentityService:
             f"?uid={payload['uidb64']}&token={payload['token']}&lang={language}"
         )
 
-        artist_profile = getattr(user, 'artist_profile', None)
-        raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
         base_name = getattr(user, 'first_name', '') or ''
-        vocative = (raw_vocative or base_name) if language == 'pl' else base_name
+        vocative = resolve_vocative(user, language)
 
         with override(language):
             translated_subject = str(_("Welcome to VoctManager - Activate Your Account"))
@@ -197,13 +211,13 @@ class UserIdentityService:
         if not default_token_generator.check_token(user, token):
             raise InvalidCredentialsException("expired_activation_link")
 
-        artist_profile = getattr(user, "artist_profile", None)
-        vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
         profile = getattr(user, "profile", None)
         language = getattr(profile, "language", "") or "pl"
         return {
             "first_name": getattr(user, "first_name", "") or "",
-            "first_name_vocative": vocative or "",
+            # Raw, not language-resolved: the activation screen greets in the
+            # language the invitee is about to pick, which is its own decision.
+            "first_name_vocative": getattr(profile, "first_name_vocative", "") or "",
             # Authoritative confirmation of the link's ?lang= (server-side source).
             "language": language,
         }
@@ -249,11 +263,9 @@ class UserIdentityService:
             fallback_lang = user.profile.language if hasattr(user, 'profile') else 'en'
 
             # Dispatch Welcome Email
-            artist_profile = getattr(user, 'artist_profile', None)
-            raw_vocative = getattr(artist_profile, 'first_name_vocative', '') if artist_profile else ''
-            base_name = getattr(user, 'first_name', '')
-            vocative = (raw_vocative or base_name) if fallback_lang == 'pl' else base_name
-            
+            vocative = resolve_vocative(user, fallback_lang)
+
+
             with override(fallback_lang):
                 translated_subject = str(_("Welcome to VoctManager"))
                 
@@ -302,10 +314,8 @@ class UserIdentityService:
         )
 
         fallback_lang = user.profile.language if hasattr(user, "profile") else "en"
-        artist_profile = getattr(user, "artist_profile", None)
-        raw_vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
         base_name = getattr(user, "first_name", "")
-        vocative = (raw_vocative or base_name) if fallback_lang == "pl" else base_name
+        vocative = resolve_vocative(user, fallback_lang)
 
         with override(fallback_lang):
             translated_subject = str(_("Reset your VoctManager password"))
@@ -414,7 +424,15 @@ class UserIdentityService:
 
         old_email = user.email
         user.email = dto.new_email
-        user.save(update_fields=['email'])
+        try:
+            # Same race as provisioning: the uniqueness check above is a separate
+            # statement, and the database index is what actually settles it.
+            with transaction.atomic():
+                user.save(update_fields=['email'])
+        except IntegrityError as exc:
+            user.email = old_email
+            logger.warning(f"Email change lost a race for {dto.new_email}: {exc}")
+            raise EmailAlreadyInUseException("email_in_use") from exc
 
         # A fresh address is deliverable until proven otherwise — clear any prior
         # bounce/complaint suppression so the new mailbox starts receiving again.
@@ -448,9 +466,17 @@ class UserIdentityService:
             user.is_active = False  
             user.save(update_fields=['email', 'username', 'first_name', 'last_name', 'is_active'])
             
-            # 2. Delete Core Preferences entirely
+            # 2. Erase Core Preferences for real. `delete()` on an
+            #    EnterpriseBaseModel is a soft delete, which would leave the whole
+            #    profile row (phone number, height, clothing/shoe size) intact and
+            #    still reachable through `user.profile` — the reverse relation
+            #    resolves via the unfiltered base manager. Erasure has to remove the
+            #    PII, so this takes the explicit hard-delete escape hatch.
+            #    Consequence accepted: the acceptance stamp (`terms_accepted_at` /
+            #    `_version`) goes with it. No consent record is kept for an erased
+            #    account; the dispatch below is the only remaining trace.
             if hasattr(user, 'profile'):
-                user.profile.delete() 
+                user.profile.hard_delete()
                 
             # 3. Emit Domain Event (Handled by Roster to soft-delete Artist)
             account_soft_deleted.send(sender=UserIdentityService, user=user)

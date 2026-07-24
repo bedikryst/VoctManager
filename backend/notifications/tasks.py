@@ -21,6 +21,8 @@ from celery import group, shared_task
 from django.conf import settings
 from django.utils import timezone
 
+from core.greetings import apply_vocative_rule
+
 from .dtos import NotificationCreateDTO
 from .models import NotificationLevel, NotificationType
 from .services import NotificationService
@@ -222,12 +224,22 @@ def _dispatch_digest(profile, notifications: list) -> None:
         total = sum(g["count"] for g in groups)
         frontend_url = getattr(settings, "FRONTEND_URL", "https://voctensemble.com")
 
-        artist_profile = getattr(user, "artist_profile", None)
-        raw_vocative = getattr(artist_profile, "first_name_vocative", "") if artist_profile else ""
-        first_name_vocative = (raw_vocative or user.first_name) if lang == "pl" else user.first_name
+        # Read off the profile already in hand rather than back through the user,
+        # so the digest fan-out stays at one query per recipient.
+        first_name_vocative = apply_vocative_rule(
+            vocative=getattr(profile, "first_name_vocative", "") or "",
+            first_name=user.first_name,
+            language=lang,
+        )
 
-        from django.utils.translation import gettext as _
-        subject = _("Your daily briefing — %(count)d update(s)") % {"count": total}
+        from django.utils.translation import ngettext
+        # Plural-correct in every language — Polish alone needs three forms
+        # (1 / 2-4 / 5+), which a single "%(count)d update(s)" string cannot carry.
+        subject = ngettext(
+            "Your daily briefing — %(count)d update",
+            "Your daily briefing — %(count)d updates",
+            total,
+        ) % {"count": total}
 
         context = {
             "first_name": user.first_name,

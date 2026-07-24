@@ -37,7 +37,7 @@ from archive.score_protection import (
 )
 from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
-from core.permissions import IsManager, IsManagerOrReadOnly
+from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
 from core.request_utils import request_user
 
 from .dashboard_serializers import (
@@ -113,12 +113,6 @@ from .services import (
     RehearsalOperationsService,
 )
 from .tasks import generate_project_zip_task
-
-
-def _is_manager(user) -> bool:
-    """Helper for evaluating manager privileges safely."""
-    return hasattr(user, 'profile') and user.profile.is_manager
-
 
 # Chorister material-access rule now lives in roster.queries.materials_queries so
 # the archive AnnotationViewSet can share the exact same gate (scores + their
@@ -250,15 +244,35 @@ class ArtistViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
 
     def get_queryset(self):
-        # Data Partitioning: Managers see everyone, Artists see restricted subsets or everyone (depending on biz rules). 
-        # Here we allow seeing all active artists, but serializers will strip sensitive data.
+        # Data Partitioning: Managers see everyone, Artists see only themselves;
+        # the serializers strip sensitive data either way.
         # select_related user__profile so the avatar thumbnail does not trigger
         # an extra query per artist card.
-        qs = Artist.objects.select_related('user', 'user__profile').all()
-        return qs if _is_manager(self.request.user) else qs.filter(user=request_user(self.request))
+        #
+        # Archived singers stay out of the default LIST because it also feeds the
+        # pickers — project invitations, season setup, new message, command
+        # palette — where offering an archived person would be wrong. The roster
+        # screen alone opts in via ?include_archived=true, which is what keeps
+        # restoring somebody reachable at all: without it an archived artist is
+        # invisible everywhere and the restore action can never be aimed.
+        #
+        # Detail routes carry no such risk and must reach archived records
+        # regardless: correcting, inspecting or restoring somebody after they were
+        # archived is precisely why the row is kept.
+        is_manager = user_is_manager(self.request.user)
+        opted_in = str(
+            self.request.query_params.get('include_archived', '')
+        ).lower() in {'1', 'true'}
+        include_archived = is_manager and (
+            getattr(self, 'action', None) != 'list' or opted_in
+        )
+
+        manager = Artist.all_objects if include_archived else Artist.objects
+        qs = manager.select_related('user', 'user__profile').all()
+        return qs if is_manager else qs.filter(user=request_user(self.request))
     
     def get_serializer_class(self):
-        if _is_manager(self.request.user):
+        if user_is_manager(self.request.user):
             return ArtistDetailedSerializer
         if self.action == 'me':
             return ArtistMeSerializer
@@ -292,7 +306,23 @@ class ArtistViewSet(viewsets.ModelViewSet):
                 detail=str(e),
                 validation_errors={"email": [str(e)]},
             )
-    
+
+    def update(self, request, *args, **kwargs) -> Response:
+        """Mirrors DRF's update flow but hands persistence to the service, so an
+        e-mail edit cannot land on the roster row alone while the account keeps
+        signing in at the old address."""
+        partial = kwargs.pop('partial', False)
+        artist = self.get_object()
+        serializer = self.get_serializer(artist, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        updated = ArtistHRService.update_artist(artist, serializer.validated_data)
+        return Response(self.get_serializer(updated).data)
+
+    def partial_update(self, request, *args, **kwargs) -> Response:
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
     @action(detail=True, methods=['post'], permission_classes=[IsManager])
     def archive(self, request, pk=None) -> Response:
         """Executes a Soft Delete (Archiving) of an Artist."""
@@ -391,7 +421,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             crew_total=Count('crew_assignments', distinct=True)
         )
         
-        if _is_manager(user): 
+        if user_is_manager(user): 
             return base_qs.all()
             
         return base_qs.filter(participations__artist__user=user).distinct()
@@ -445,7 +475,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # Choristers lose access to the concert score once the project is
             # completed or cancelled — the score is the conductor's property and
             # is not retained on personal devices via the app after the event.
-            if not _is_manager(request.user) and project.status in _CLOSED_PROJECT_STATUSES:
+            if not user_is_manager(request.user) and project.status in _CLOSED_PROJECT_STATUSES:
                 return Response(
                     {"detail": "Score access for this project has closed."},
                     status=status.HTTP_403_FORBIDDEN,
@@ -456,7 +486,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
-            is_manager = _is_manager(request.user)
+            is_manager = user_is_manager(request.user)
             # A singer downloading the book is the moment it "leaves the building";
             # flag it so the conductor's cockpit warns before a rebuild silently
             # replaces what is already in their folders. Managers previewing it do
@@ -520,7 +550,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 raise PdfRenderUnavailable() from None
             return _pdf_bytes_response(stamped, filename=filename)
 
-        if not _is_manager(request.user):
+        if not user_is_manager(request.user):
             return Response(
                 {"detail": "Manager access required to modify the score PDF."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -859,10 +889,10 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = request_user(self.request)
         qs = Participation.objects.select_related('artist__user', 'artist', 'project').all()
-        return qs if _is_manager(user) else qs.filter(artist__user=user)
+        return qs if user_is_manager(user) else qs.filter(artist__user=user)
 
     def get_serializer_class(self):
-        return ParticipationDetailedSerializer if _is_manager(self.request.user) else ParticipationBasicSerializer
+        return ParticipationDetailedSerializer if user_is_manager(self.request.user) else ParticipationBasicSerializer
     
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -952,7 +982,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         participation = self.get_object()
 
-        if not _is_manager(request.user) and participation.artist.user_id != request.user.id:
+        if not user_is_manager(request.user) and participation.artist.user_id != request.user.id:
             return Response(
                 {"detail": "You do not have permission to modify readiness for this participation."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -987,7 +1017,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         """
         participation = self.get_object()
         
-        if not _is_manager(request.user) and participation.artist.user_id != request.user.id:
+        if not user_is_manager(request.user) and participation.artist.user_id != request.user.id:
             return Response(
                 {"detail": "You do not have permission to modify this participation status."}, 
                 status=status.HTTP_403_FORBIDDEN
@@ -1066,7 +1096,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = Attendance.objects.select_related('rehearsal', 'rehearsal__project', 'participation', 'participation__artist', 'participation__artist__user')
-        if _is_manager(self.request.user):
+        if user_is_manager(self.request.user):
             return qs
         return qs.filter(participation__artist__user=request_user(self.request))
 
@@ -1074,7 +1104,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         try:
             dto = AttendanceRecordDTO(
                 requesting_user_id=request.user.id,
-                is_manager=_is_manager(request.user),
+                is_manager=user_is_manager(request.user),
                 **request.data
             )
         except ValidationError as e:
@@ -1099,7 +1129,7 @@ class RehearsalViewSet(viewsets.ModelViewSet):
             'invited_participations', 'invited_participations__artist'
         ).annotate(absent_count=absent_annotation)
 
-        if _is_manager(user):
+        if user_is_manager(user):
             return qs
         return qs.filter(project__participations__artist__user=user).filter(
             Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
@@ -1193,7 +1223,7 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
         # Data partitioning: a chorister may read the setlist only for projects
         # they are cast in — never the whole organisation's programming.
         qs = ProgramItem.objects.select_related('piece').order_by('order')
-        if _is_manager(self.request.user):
+        if user_is_manager(self.request.user):
             return qs
         return qs.filter(
             project__participations__artist__user=request_user(self.request),
@@ -1211,7 +1241,7 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
         # Data partitioning: a chorister sees the divisi (and casting notes) only
         # for projects they are cast in, mirroring ProgramItem/Project scoping.
         qs = ProjectPieceCasting.objects.all()
-        if _is_manager(self.request.user):
+        if user_is_manager(self.request.user):
             return qs
         return qs.filter(
             participation__project__participations__artist__user=request_user(self.request),
@@ -1242,7 +1272,7 @@ class CollaboratorViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         # Contact PII (email / phone) is manager-only, mirroring the crew and
         # participation serializers. Non-managers get the PII-stripped payload.
-        return CollaboratorSerializer if _is_manager(self.request.user) else CollaboratorBasicSerializer
+        return CollaboratorSerializer if user_is_manager(self.request.user) else CollaboratorBasicSerializer
 
 
 class CrewAssignmentViewSet(viewsets.ModelViewSet):
@@ -1256,7 +1286,7 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
         # A chorister may see who the crew are on their own projects, but not the
         # crew bookings of projects they have nothing to do with.
         qs = CrewAssignment.objects.all()
-        if _is_manager(self.request.user):
+        if user_is_manager(self.request.user):
             return qs
         return qs.filter(
             project__participations__artist__user=request_user(self.request),
@@ -1266,7 +1296,7 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         # Financial fields (fee / is_paid / paid_at) are manager-only, mirroring
         # the participation serializers. Non-managers get the basic payload.
-        return CrewAssignmentSerializer if _is_manager(self.request.user) else CrewAssignmentBasicSerializer
+        return CrewAssignmentSerializer if user_is_manager(self.request.user) else CrewAssignmentBasicSerializer
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -1325,7 +1355,7 @@ class ScoreEditionDownloadView(views.APIView):
         except ScoreEdition.DoesNotExist:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if not _is_manager(request.user) and not _artist_has_live_access_to_piece(
+        if not user_is_manager(request.user) and not _artist_has_live_access_to_piece(
             request.user, edition.piece_id
         ):
             # Deliberately 404 (not 403): a chorister who has lost access must not
@@ -1335,7 +1365,7 @@ class ScoreEditionDownloadView(views.APIView):
         if not edition.pdf_file:
             return Response({"detail": "No file on this edition."}, status=status.HTTP_404_NOT_FOUND)
 
-        is_manager = _is_manager(request.user)
+        is_manager = user_is_manager(request.user)
         # Log every served access (managers included — that trail is the point) and
         # decide clean-vs-watermarked from licence status and role.
         decision = record_edition_access(request.user, edition, is_manager=is_manager)

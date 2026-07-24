@@ -14,10 +14,9 @@ from uuid import UUID
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Q
 from django.utils import timezone
 
-from core.constants import AppRole
+from core.permissions import MANAGER_QUERY_FILTER
 from notifications.dtos import NotificationCreateDTO
 from notifications.models import NotificationLevel, NotificationType
 from notifications.services import NotificationService
@@ -159,8 +158,7 @@ class MessagingService:
             else:
                 ids = list(
                     User.objects.filter(
-                        Q(profile__role=AppRole.MANAGER) | Q(is_staff=True),
-                        is_active=True,
+                        MANAGER_QUERY_FILTER, is_active=True,
                     ).values_list('id', flat=True)
                 )
         else:

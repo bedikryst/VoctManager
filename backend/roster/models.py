@@ -55,15 +55,32 @@ class Artist(EnterpriseBaseModel):
         verbose_name=_("Account"),
         help_text=_("Linked authentication identity. SET_NULL preserves historical HR data if account is deleted.")
     )
-    first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
-    last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
-    
+    # Names, e-mail and phone are a projection of the linked account, not a second
+    # place to edit them: `ArtistHRService` and the `user_pii_updated` signal are
+    # the only writers, and both copy downward from `User`/`UserProfile`. The
+    # columns exist because `user` is SET_NULL — after GDPR erasure this row is all
+    # that keeps concert history and ZAiKS contracts readable, so the last known
+    # values have to survive here. Widths match `AbstractUser` (150) deliberately:
+    # the signal writes through without serializer validation, so a narrower column
+    # would reject a legal account name outright.
+    first_name = models.CharField(max_length=150, verbose_name=_("First Name"))
+    last_name = models.CharField(max_length=150, verbose_name=_("Last Name"))
+
     # Removed standard unique=True to prevent SoftDelete ghost conflicts. Handled in Meta.
-    email = models.EmailField(verbose_name=_("Email")) 
+    email = models.EmailField(verbose_name=_("Email"))
     
-    phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
+    # Width matches core.UserProfile.phone_number: the member's own settings write
+    # through to this field via the `user_pii_updated` signal, which bypasses
+    # serializer validation — a narrower column here would fail that write outright.
+    phone_number = models.CharField(max_length=32, blank=True, verbose_name=_("Phone"))
     voice_type = models.CharField(max_length=5, choices=VoiceType.choices, verbose_name=_("Voice Type"))
-    is_active = models.BooleanField(default=True, verbose_name=_("Is Active"))
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name=_("Is Active"),
+        help_text=_("Roster standing. Owned exclusively by ArtistHRService.archive_artist / "
+                    "restore_artist, which move it in lockstep with `is_deleted` and the "
+                    "account's login gate — never write it directly.")
+    )
 
     sight_reading_skill = models.IntegerField(
         choices=[(i, str(i)) for i in range(1, 6)], 
@@ -71,11 +88,6 @@ class Artist(EnterpriseBaseModel):
     )
     vocal_range_bottom = models.CharField(max_length=5, blank=True, help_text=_("e.g. G2"), verbose_name=_("Range (Bottom)"))
     vocal_range_top = models.CharField(max_length=5, blank=True, help_text=_("e.g. C5"), verbose_name=_("Range (Top)"))
-    first_name_vocative = models.CharField(
-        max_length=50, blank=True,
-        verbose_name=_("First Name (Vocative)"),
-        help_text=_("Polish vocative form, e.g. 'Krystianie' for 'Krystian'. Used in personalized greetings and emails.")
-    )
     activation_email_sent_at = models.DateTimeField(
         null=True, blank=True,
         verbose_name=_("Activation Email Sent At"),
@@ -99,6 +111,20 @@ class Artist(EnterpriseBaseModel):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.get_voice_type_display()})"
+
+    @property
+    def first_name_vocative(self) -> str:
+        """Polish vocative for greetings, owned by `UserProfile`.
+
+        Read-through rather than a column of its own: a vocative belongs to the
+        person, not to their place in the choir, and managers and crew are greeted
+        without ever having an Artist row. Empty for a detached (erased) row —
+        nothing is addressed to an account that no longer exists.
+        """
+        user = self.user
+        if user is None:
+            return ""
+        return getattr(getattr(user, "profile", None), "first_name_vocative", "") or ""
 
 
 class Project(EnterpriseBaseModel):
@@ -549,7 +575,9 @@ class Collaborator(EnterpriseBaseModel):
     first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
     last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
     email = models.EmailField(blank=True, null=True, verbose_name=_("Email")) # Removed unique=True
-    phone_number = models.CharField(max_length=15, blank=True, verbose_name=_("Phone"))
+    # Same width as every other phone field in the project: a real number written
+    # with a country code and separators does not fit in 15 characters.
+    phone_number = models.CharField(max_length=32, blank=True, verbose_name=_("Phone"))
     company_name = models.CharField(max_length=100, blank=True, verbose_name=_("Company / Brand"))
     specialty = models.CharField(max_length=15, choices=Specialty.choices, default=Specialty.OTHER, verbose_name=_("Specialty"))
 

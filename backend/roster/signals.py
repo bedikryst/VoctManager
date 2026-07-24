@@ -35,17 +35,21 @@ def sync_artist_email(sender, user, old_email: str, new_email: str, **kwargs) ->
 @receiver(user_pii_updated)
 def sync_artist_pii(sender, user, dto, **kwargs) -> None:
     """
-    Updates the Artist's Personally Identifiable Information (PII) 
+    Updates the Artist's Personally Identifiable Information (PII)
     when changes occur in the core user preferences.
+
+    The member's own settings are authoritative for all three fields, clearing
+    included: an empty phone number means they removed it and must propagate,
+    otherwise the stale value survives here and resurfaces through every
+    roster surface that reads the Artist row.
     """
     try:
         artist = Artist.objects.get(user=user, is_deleted=False)
-        
+
         artist.first_name = dto.first_name
         artist.last_name = dto.last_name
-        if dto.phone_number:
-            artist.phone_number = dto.phone_number
-            
+        artist.phone_number = dto.phone_number or ""
+
         artist.save(update_fields=['first_name', 'last_name', 'phone_number', 'updated_at'])
         logger.info(f"Roster Domain Event: Synchronized PII for artist ID {artist.id}")
         

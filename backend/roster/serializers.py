@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
+from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
 from logistics.models import Location
 
@@ -71,12 +72,16 @@ class ArtistMeSerializer(serializers.ModelSerializer):
     voice_type_display = serializers.CharField(source='get_voice_type_display', read_only=True)
     username = serializers.CharField(source='user.username', read_only=True)
     profile = UserProfileSerializer(source='user.profile', read_only=True)
-    
+    # Read-through from the account profile (see Artist.first_name_vocative).
+    # Declared because it is no longer a column here; kept flat because the
+    # dashboards greet with it and read it at this level.
+    first_name_vocative = serializers.CharField(read_only=True)
+
     class Meta:
         model = Artist
         exclude = (
-            'sight_reading_skill', 
-            'vocal_range_bottom', 
+            'sight_reading_skill',
+            'vocal_range_bottom',
             'vocal_range_top'
         )
 
@@ -84,13 +89,51 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
     """
     Highly privileged Artist entity exclusively for Managers and HR.
     Exposes all operational and capability fields.
+
+    Fields are enumerated rather than pulled in wholesale, because the model
+    carries lifecycle state that is only correct when a service moves it:
+    `is_deleted` and `is_active` belong to archive/restore (which also revoke or
+    restore the login in the same transaction), `user` is the identity link
+    itself, and `activation_email_sent_at` is the trail of a dispatch that
+    actually happened. All are readable here; none may be written through the
+    generic PATCH, which would otherwise bypass those guarantees entirely.
     """
     account_activated = serializers.SerializerMethodField()
     activation_link_expired = serializers.SerializerMethodField()
+    # Stored on the account's profile, edited from the roster form. Declared
+    # rather than inferred, because the model side is a read-through property;
+    # `ArtistHRService.update_artist` is what routes a write to its real owner.
+    first_name_vocative = serializers.CharField(
+        required=False, allow_blank=True, max_length=150
+    )
 
     class Meta:
         model = Artist
-        fields = '__all__'
+        fields = (
+            # Record identity
+            'id', 'created_at', 'updated_at', 'is_deleted',
+
+            # Linked account
+            'user', 'username', 'is_manager',
+
+            # PII / contact
+            'first_name', 'last_name', 'first_name_vocative',
+            'email', 'phone_number', 'avatar_thumb_url',
+
+            # Musical capability
+            'voice_type', 'voice_type_display',
+            'sight_reading_skill', 'vocal_range_bottom', 'vocal_range_top',
+
+            # Roster standing
+            'is_active',
+
+            # Onboarding state
+            'activation_email_sent_at', 'account_activated', 'activation_link_expired',
+        )
+        read_only_fields = (
+            'id', 'created_at', 'updated_at', 'is_deleted',
+            'user', 'is_active', 'activation_email_sent_at',
+        )
 
     def get_account_activated(self, obj: Artist) -> bool:
         """True once the invited member has set their password (finished
@@ -190,11 +233,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get('request')
         user = getattr(request, 'user', None)
-        is_manager = bool(
-            getattr(getattr(user, 'profile', None), 'is_manager', False)
-            or getattr(user, 'is_staff', False)
-        )
-        if not is_manager and obj.status in (Project.Status.COMPLETED, Project.Status.CANCELLED):
+        if not user_is_manager(user) and obj.status in (Project.Status.COMPLETED, Project.Status.CANCELLED):
             return None
         url = f"/api/projects/{obj.pk}/score_pdf/"
         return request.build_absolute_uri(url) if request else url

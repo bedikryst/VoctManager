@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from core.constants import AppRole
+from core.permissions import user_is_manager
 from core.request_utils import request_user
 
 from .delivery import default_channel_preferences
@@ -138,9 +138,7 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         Manager-only endpoint to dispatch a direct CUSTOM_ADMIN_MESSAGE to a single artist.
         Resolves the artist's linked user account before dispatching.
         """
-        user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
-        is_manager = (user_role == AppRole.MANAGER) or request.user.is_staff
-        if not is_manager:
+        if not user_is_manager(request.user):
             return Response({"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = SendToArtistSerializer(data=request.data)
@@ -254,8 +252,7 @@ class NotificationPreferenceAPIView(views.APIView):
     
     def get(self, request: Request) -> Response:
         """Returns the current user's notification preferences in a structured format."""
-        user_role = getattr(request.user.profile, 'role', None) if hasattr(request.user, 'profile') else None
-        is_manager = (user_role == AppRole.MANAGER) or request.user.is_staff
+        is_manager = user_is_manager(request.user)
 
         MANAGER_ONLY = {
             NotificationType.PARTICIPATION_RESPONSE.value,
@@ -270,10 +267,13 @@ class NotificationPreferenceAPIView(views.APIView):
         #    email or push, so channel toggles would be inert.
         #  • CONTRACT_ISSUED — contracts are currently issued and signed off-platform
         #    by management; re-expose if/when an in-app contract flow ships.
+        #  • SYSTEM_ALERT — no emitter yet (no admin broadcast UI), so a toggle here
+        #    would govern an event that cannot fire. Re-expose when it is wired.
         HIDDEN_FROM_PREFS = {
             NotificationType.CHANNEL_MESSAGE.value,
             NotificationType.NOTIFICATION_READ_RECEIPT.value,
             NotificationType.CONTRACT_ISSUED.value,
+            NotificationType.SYSTEM_ALERT.value,
         }
 
         prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request_user(request))}

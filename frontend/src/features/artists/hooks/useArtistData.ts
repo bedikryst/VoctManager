@@ -45,11 +45,14 @@ const sortName = (artist: Artist): string =>
 
 export const useArtistData = () => {
   const { t } = useTranslation();
+  // The roster is the one screen that shows archived singers: the filters, the
+  // section balance and the bulk bar all split on `is_active`, and restoring
+  // somebody is only reachable if they are on screen to be selected.
   const {
     data: artists = [],
     isLoading: isArtistsLoading,
     isError: isArtistsError,
-  } = useArtists();
+  } = useArtists(true);
 
   const { data: voiceTypes = [], isLoading: isVoiceTypesLoading } =
     useVoiceTypes();

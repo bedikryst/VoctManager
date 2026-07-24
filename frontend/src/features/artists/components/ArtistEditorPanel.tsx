@@ -69,6 +69,11 @@ export default function ArtistEditorPanel({
   const { errors } = form.formState;
   const errorText = (key?: string) => (key ? t(key) : undefined);
 
+  // Past activation the address is that person's sign-in credential, and the
+  // server refuses to move it from here. Lock the field rather than let a
+  // manager type a change that can only come back rejected.
+  const isEmailLocked = Boolean(artist?.id && artist.account_activated);
+
   const firstNameValue = useWatch({ control: form.control, name: "first_name" });
   const languageValue = useWatch({ control: form.control, name: "language" });
   const voiceValue = useWatch({ control: form.control, name: "voice_type" });
@@ -233,13 +238,23 @@ export default function ArtistEditorPanel({
                     </div>
 
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                      <Input
-                        type="email"
-                        label={t("artists.editor.email", "E-mail *")}
-                        {...form.register("email")}
-                        disabled={isSubmitting}
-                        error={errorText(errors.email?.message)}
-                      />
+                      <div>
+                        <Input
+                          type="email"
+                          label={t("artists.editor.email", "E-mail *")}
+                          {...form.register("email")}
+                          disabled={isSubmitting || isEmailLocked}
+                          error={errorText(errors.email?.message)}
+                        />
+                        {isEmailLocked && (
+                          <Eyebrow color="muted" className="mt-2 block">
+                            {t(
+                              "artists.editor.email_locked",
+                              "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
+                            )}
+                          </Eyebrow>
+                        )}
+                      </div>
                       <Input
                         type="tel"
                         label={t("artists.editor.phone", "Telefon")}

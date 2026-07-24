@@ -1,12 +1,8 @@
-from django.contrib import admin
+"""
+Core admin.
 
-from .models import UserProfile
-
-# Register your models here.
-
-@admin.register(UserProfile)
-class UserProfileAdmin(admin.ModelAdmin):
-    """Admin view for managing user preferences and logistics data."""
-    list_display = ('user', 'phone_number', 'language', 'timezone')
-    search_fields = ('user__email', 'user__first_name', 'user__last_name')
-    list_filter = ('language', 'timezone')
+`UserProfile` has no standalone entry on purpose: it is preferences *of* a
+person and is meaningless detached from one, so it is edited as an inline on the
+account. That composition lives in `roster.admin`, the layer allowed to know
+about both the account and the choral profile — core must not import from it.
+"""

@@ -29,7 +29,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from core.exceptions import make_error_response
-from core.permissions import IsManager
+from core.permissions import IsManager, user_is_manager
 from core.request_utils import request_user
 from roster.queries import artist_live_piece_ids
 
@@ -769,9 +769,7 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     filterset_fields = ['edition', 'page_number', 'layer_name']
 
     def _is_manager(self) -> bool:
-        user = request_user(self.request)
-        profile = getattr(user, 'profile', None)
-        return user.is_staff or (profile is not None and profile.is_manager)
+        return user_is_manager(request_user(self.request))
 
     def get_queryset(self):
         user = request_user(self.request)

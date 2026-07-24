@@ -13,8 +13,22 @@ import type { ArtistDossier } from "../types/artistDossier.dto";
 const BASE_URL = "/api/artists/";
 
 export const ArtistService = {
+  /** Active roster. The list every picker reads — never includes archived singers. */
   getAll: async (): Promise<Artist[]> => {
     const response = await api.get<Artist[]>(BASE_URL);
+    return response.data;
+  },
+
+  /**
+   * Active roster plus archived singers, for the roster screen alone. Kept as a
+   * separate call rather than a flag on `getAll` so no picker (invitations,
+   * season setup, new message, command palette) can reach it by accident and
+   * offer somebody who has been archived.
+   */
+  getAllIncludingArchived: async (): Promise<Artist[]> => {
+    const response = await api.get<Artist[]>(BASE_URL, {
+      params: { include_archived: "true" },
+    });
     return response.data;
   },
 
