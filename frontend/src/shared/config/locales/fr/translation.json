@@ -870,6 +870,7 @@
       "active_access_title": "Accès actif à la plateforme",
       "create_artist": "Créer l'artiste",
       "email": "E-mail *",
+      "email_locked": "Adresse de connexion — seul le titulaire du compte peut la modifier, dans ses paramètres.",
       "first_name": "Prénom *",
       "first_name_vocative": "Cas vocatif du prénom",
       "first_name_vocative_hint": "Forme utilisée dans les salutations, ex. dans les e-mails.",
@@ -2137,6 +2138,10 @@
         "title": "E-mail déjà utilisé",
         "detail": "Cet e-mail est déjà associé à un autre compte."
       },
+      "artist_email_locked": {
+        "title": "L'adresse de connexion appartient à son titulaire",
+        "detail": "Ce membre a déjà activé son compte — lui seul peut modifier son adresse de connexion, dans ses paramètres."
+      },
       "expired_reset_link": {
         "title": "Lien expiré",
         "detail": "Ce lien de réinitialisation n’est plus valide. Demandez-en un nouveau."
@@ -2843,7 +2848,8 @@
       "CUSTOM_ADMIN_MESSAGE": "Message",
       "MESSAGE_RECEIVED": "Message",
       "CHANNEL_MESSAGE": "Canal du projet",
-      "NOTIFICATION_READ_RECEIPT": "Accusé de lecture"
+      "NOTIFICATION_READ_RECEIPT": "Accusé de lecture",
+      "fallback": "Notification"
     },
     "status": {
       "attendance": {
@@ -2897,15 +2903,19 @@
       "score": "Partition",
       "recording": "Enregistrement"
     },
+    "time": {
+      "today": "aujourd’hui à {{time}}",
+      "tomorrow": "demain à {{time}}",
+      "absolute": "{{weekday}} {{date}} à {{time}}"
+    },
     "inapp": {
       "project_removed": "retrait de l’effectif",
-      "project_cancelled": "projet annulé",
-      "rehearsal_cancelled": "répétition annulée",
       "casting_removed": "rôle retiré",
       "absence_approved": "absence acceptée",
-      "absence_rejected": "non approuvée",
       "absence_requested": "demande une absence",
-      "read_receipt": "a lu votre message"
+      "read_receipt": "a lu votre message",
+      "invited_by": "à l’invitation de {{name}}",
+      "contract_issued": "en attente de votre signature"
     },
     "push": {
       "toasts": {

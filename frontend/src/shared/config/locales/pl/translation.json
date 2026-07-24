@@ -871,6 +871,7 @@
       "active_access_title": "Aktywny dostęp do platformy",
       "create_artist": "Utwórz Artystę",
       "email": "E-mail *",
+      "email_locked": "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
       "first_name": "Imię *",
       "first_name_vocative": "Wołacz",
       "first_name_vocative_hint": "Forma używana w powitaniach, np. w mailach.",
@@ -2138,6 +2139,10 @@
         "title": "Adres e-mail zajęty",
         "detail": "Ten adres e-mail jest już przypisany do innego konta."
       },
+      "artist_email_locked": {
+        "title": "Adres logowania należy do właściciela konta",
+        "detail": "Ten członek aktywował już konto — adres logowania może zmienić tylko on sam, w swoich ustawieniach."
+      },
       "expired_reset_link": {
         "title": "Link wygasł",
         "detail": "Ten link do resetu hasła stracił ważność. Poproś o nowy."
@@ -2844,7 +2849,8 @@
       "CUSTOM_ADMIN_MESSAGE": "Wiadomość",
       "MESSAGE_RECEIVED": "Wiadomość",
       "CHANNEL_MESSAGE": "Kanał projektu",
-      "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu"
+      "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu",
+      "fallback": "Powiadomienie"
     },
     "status": {
       "attendance": {
@@ -2898,15 +2904,19 @@
       "score": "Nuty",
       "recording": "Nagranie"
     },
+    "time": {
+      "today": "dziś o {{time}}",
+      "tomorrow": "jutro o {{time}}",
+      "absolute": "{{weekday}}, {{date}} o {{time}}"
+    },
     "inapp": {
       "project_removed": "usunięto Cię ze składu",
-      "project_cancelled": "projekt odwołany",
-      "rehearsal_cancelled": "próba odwołana",
       "casting_removed": "nie śpiewasz już w tym utworze",
       "absence_approved": "nieobecność usprawiedliwiona",
-      "absence_rejected": "nie zatwierdzono",
       "absence_requested": "prosi o nieobecność",
-      "read_receipt": "przeczytano Twoją wiadomość"
+      "read_receipt": "przeczytano Twoją wiadomość",
+      "invited_by": "zaprasza: {{name}}",
+      "contract_issued": "czeka na Twój podpis"
     },
     "push": {
       "toasts": {

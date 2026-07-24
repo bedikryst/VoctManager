@@ -2372,9 +2372,6 @@ msgstr "Mises à jour de présence"
 msgid "Updates"
 msgstr "Mises à jour"
 
-msgid "Your daily briefing — %(count)d update(s)"
-msgstr "Votre récapitulatif du jour — %(count)d mise(s) à jour"
-
 #. email preheader
 msgid ""
 "Activate your VoctEnsemble profile — your scores, schedule and casting are "
@@ -2870,3 +2867,286 @@ msgstr "De nouvelles partitions pour %(piece)s. Touchez pour ouvrir."
 
 msgid "A new recording for %(piece)s. Tap to open it."
 msgstr "Un nouvel enregistrement pour %(piece)s. Touchez pour ouvrir."
+
+msgid "today at %(time)s"
+msgstr "aujourd’hui à %(time)s"
+
+msgid "tomorrow at %(time)s"
+msgstr "demain à %(time)s"
+
+msgid "%(weekday)s, %(date)s at %(time)s"
+msgstr "%(weekday)s %(date)s à %(time)s"
+
+msgctxt "weekday"
+msgid "Monday"
+msgstr "lundi"
+
+msgctxt "weekday"
+msgid "Tuesday"
+msgstr "mardi"
+
+msgctxt "weekday"
+msgid "Wednesday"
+msgstr "mercredi"
+
+msgctxt "weekday"
+msgid "Thursday"
+msgstr "jeudi"
+
+msgctxt "weekday"
+msgid "Friday"
+msgstr "vendredi"
+
+msgctxt "weekday"
+msgid "Saturday"
+msgstr "samedi"
+
+msgctxt "weekday"
+msgid "Sunday"
+msgstr "dimanche"
+
+msgctxt "event date format"
+msgid "j E"
+msgstr "j F"
+
+msgctxt "event date format"
+msgid "j E Y"
+msgstr "j F Y"
+
+msgid "Day schedule"
+msgstr "Déroulé de la journée"
+
+msgid "%(facts)s. Invited by %(inviter)s."
+msgstr "%(facts)s. À l’invitation de %(inviter)s."
+
+msgid "Invited by %(inviter)s."
+msgstr "À l’invitation de %(inviter)s."
+
+msgid "Open the invitation to see the details."
+msgstr "Ouvrez l’invitation pour voir les détails."
+
+msgid ""
+"%(inviter)s has invited you to join %(project)s. Everything you need is "
+"below — let us know whether you can be part of it."
+msgstr ""
+"%(inviter)s vous invite à rejoindre %(project)s. Vous trouverez l’essentiel "
+"ci-dessous — dites-nous si vous pouvez en être."
+
+msgid "You're no longer on this roster. Reach out if that's unexpected."
+msgstr ""
+"Vous ne figurez plus dans cet effectif. Écrivez-nous si c’est inattendu."
+
+msgid ""
+"You're no longer part of %(project)s, so nothing is expected of you for it. "
+"If that seems wrong, please get in touch with the office."
+msgstr ""
+"Vous ne faites plus partie de %(project)s ; rien n’est donc attendu de vous "
+"pour ce projet. Si c’est une erreur, contactez le bureau."
+
+msgid "Open the schedule to see what's new."
+msgstr "Ouvrez le planning pour voir les nouveautés."
+
+msgid ""
+"Some details of %(project)s have changed. Here is what is different now — "
+"check that the new plan still works for you."
+msgstr ""
+"Des détails de %(project)s ont changé. Voici ce qui est différent — vérifiez"
+" que le nouveau plan vous convient toujours."
+
+msgid "This one won't be going ahead. Your other dates are unaffected."
+msgstr "Celui-ci n’aura pas lieu. Vos autres dates restent inchangées."
+
+msgid ""
+"%(project)s has been cancelled — you can free up the date. Everything else "
+"in your schedule stands."
+msgstr ""
+"%(project)s est annulé — vous pouvez libérer la date. Le reste de votre "
+"planning tient."
+
+msgid "Concert — %(when)s"
+msgstr "Concert — %(when)s"
+
+msgid "Your concert is coming up"
+msgstr "Votre concert approche"
+
+msgid ""
+"%(project)s is almost here. Below is everything you need for the day — give "
+"it a look before you set off."
+msgstr ""
+"%(project)s approche. Vous trouverez ci-dessous tout ce qu’il faut pour la "
+"journée — jetez-y un œil avant de partir."
+
+msgid "%(facts)s. Focus: %(focus)s."
+msgstr "%(facts)s. Au programme : %(focus)s."
+
+msgid "Focus: %(focus)s."
+msgstr "Au programme : %(focus)s."
+
+msgid "New rehearsal — %(when)s"
+msgstr "Nouvelle répétition — %(when)s"
+
+msgid "A new rehearsal has been added"
+msgstr "Une répétition a été ajoutée"
+
+msgid ""
+"A rehearsal has been added to %(project)s. If you can't make this one, mark "
+"it in the panel so we know who to count on."
+msgstr ""
+"Une répétition a été ajoutée à %(project)s. Si vous ne pouvez pas venir, "
+"signalez-le dans l’espace pour que nous sachions sur qui compter."
+
+msgid "Rehearsal moved — %(when)s"
+msgstr "Répétition déplacée — %(when)s"
+
+msgid "A rehearsal has changed"
+msgstr "Une répétition a changé"
+
+msgid ""
+"A rehearsal for %(project)s is not where it was. Check that the new "
+"arrangement still works for you."
+msgstr ""
+"Une répétition de %(project)s n’est plus où elle était. Vérifiez que le "
+"nouveau créneau vous convient toujours."
+
+msgid "Rehearsal cancelled — %(when)s"
+msgstr "Répétition annulée — %(when)s"
+
+msgid "%(project)s — don't set off."
+msgstr "%(project)s — ne vous déplacez pas."
+
+msgid ""
+"This %(project)s rehearsal will not take place — please don't travel for it."
+" Any new date will appear in your schedule."
+msgstr ""
+"Cette répétition de %(project)s n’aura pas lieu — ne vous déplacez pas. "
+"Toute nouvelle date apparaîtra dans votre planning."
+
+msgid "Rehearsal %(when)s"
+msgstr "Répétition — %(when)s"
+
+msgid "Your rehearsal is coming up"
+msgstr "Votre répétition approche"
+
+msgid ""
+"A quick reminder about your next %(project)s rehearsal. The details are "
+"below — see you at the stands."
+msgstr ""
+"Un petit rappel pour votre prochaine répétition de %(project)s. Les détails "
+"sont ci-dessous — à très vite aux pupitres."
+
+msgid "%(facts)s. The score and recordings are waiting."
+msgstr "%(facts)s. La partition et les enregistrements vous attendent."
+
+msgid "The score and recordings are waiting."
+msgstr "La partition et les enregistrements vous attendent."
+
+msgid ""
+"You have a part in this one. The score and the recordings are already in "
+"your materials — the earlier you look at them, the calmer the first "
+"rehearsal will be."
+msgstr ""
+"Vous avez une partie dans cette œuvre. La partition et les enregistrements "
+"sont déjà dans vos documents — plus tôt vous les ouvrirez, plus sereine sera"
+" la première répétition."
+
+msgid "You're no longer singing this one."
+msgstr "Vous ne chantez plus cette œuvre."
+
+msgid ""
+"You're no longer cast in %(piece)s, so there is nothing left to prepare for "
+"it. The rest of your repertoire is unchanged."
+msgstr ""
+"Vous ne chantez plus %(piece)s ; il n’y a donc plus rien à préparer pour "
+"cette œuvre. Le reste de votre répertoire est inchangé."
+
+msgid "Open the score to see your part."
+msgstr "Ouvrez la partition pour voir votre partie."
+
+msgid ""
+"Your part in %(piece)s is not what it was. Open the score and check the new "
+"line before the next rehearsal."
+msgstr ""
+"Votre partie dans %(piece)s a changé. Ouvrez la partition et vérifiez la "
+"nouvelle ligne avant la prochaine répétition."
+
+msgid ""
+"A new recording for %(piece)s is in your materials — a good way to get the "
+"piece into your ear before the next rehearsal."
+msgstr ""
+"Un nouvel enregistrement de %(piece)s est dans vos documents — de quoi vous "
+"familiariser avec l’œuvre avant la répétition."
+
+msgid ""
+"Fresh sheet music for %(piece)s is in your materials. Do have a look before "
+"you next sing it."
+msgstr ""
+"De nouvelles partitions de %(piece)s sont dans vos documents. Jetez-y un œil"
+" avant de la rechanter."
+
+msgid "New material for %(piece)s has landed in your library."
+msgstr ""
+"De nouveaux documents pour %(piece)s sont arrivés dans votre bibliothèque."
+
+msgid "%(composer)s — open it in your materials."
+msgstr "%(composer)s — à ouvrir dans vos documents."
+
+msgid "Open it in your materials."
+msgstr "À ouvrir dans vos documents."
+
+msgid "Read it through and sign it in the panel."
+msgstr "Lisez-le et signez-le dans l’espace."
+
+msgid ""
+"Your contract for %(project)s is ready. Please read it through and sign it "
+"in the panel — your place is confirmed once it is signed."
+msgstr ""
+"Votre contrat pour %(project)s est prêt. Lisez-le et signez-le dans l’espace"
+" — votre place est confirmée une fois signé."
+
+msgid ""
+"%(artist)s is asking to be excused from a rehearsal. The request is below — "
+"approve or decline it in the panel."
+msgstr ""
+"%(artist)s demande une absence pour une répétition. La demande est ci-"
+"dessous — acceptez-la ou refusez-la dans l’espace."
+
+msgid "Rehearsal %(when)s — you're not expected."
+msgstr "Votre absence est notée pour la répétition — %(when)s."
+
+msgid "You're not expected at this rehearsal."
+msgstr "Votre absence à cette répétition est notée."
+
+msgid ""
+"Your absence is recorded and there is nothing else you need to do. Thank you"
+" for the early warning — it makes planning the rehearsal much easier."
+msgstr ""
+"Votre absence est enregistrée, vous n’avez rien d’autre à faire. Merci de "
+"nous avoir prévenus à l’avance — cela facilite beaucoup l’organisation."
+
+msgid "We're counting on you at the rehearsal %(when)s."
+msgstr "Nous comptons sur vous à la répétition — %(when)s."
+
+msgid "We're counting on you at this rehearsal."
+msgstr "Nous comptons sur vous à cette répétition."
+
+msgid ""
+"We weren't able to excuse you this time, so you are still expected at the "
+"rehearsal below. If that is genuinely impossible, write to us."
+msgstr ""
+"Nous n’avons pas pu accepter votre absence cette fois ; nous comptons donc "
+"toujours sur vous pour la répétition ci-dessous. Si c’est vraiment "
+"impossible, écrivez-nous."
+
+msgid "%(artist)s %(phrase)s"
+msgstr "%(artist)s %(phrase)s"
+
+msgid "%(headline)s — %(project)s"
+msgstr "%(headline)s — %(project)s"
+
+msgid "%(headline)s."
+msgstr "%(headline)s."
+
+msgid "Your daily briefing — %(count)d update"
+msgid_plural "Your daily briefing — %(count)d updates"
+msgstr[0] "Votre briefing du jour — %(count)d mise à jour"
+msgstr[1] "Votre briefing du jour — %(count)d mises à jour"

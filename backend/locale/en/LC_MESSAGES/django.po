@@ -2028,3 +2028,8 @@ msgstr "Fresh sheet music for %(piece)s. Tap to open it."
 
 msgid "A new recording for %(piece)s. Tap to open it."
 msgstr "A new recording for %(piece)s. Tap to open it."
+
+msgid "Your daily briefing — %(count)d update"
+msgid_plural "Your daily briefing — %(count)d updates"
+msgstr[0] "Your daily briefing — %(count)d update"
+msgstr[1] "Your daily briefing — %(count)d updates"

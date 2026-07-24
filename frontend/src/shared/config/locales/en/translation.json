@@ -870,6 +870,7 @@
       "active_access_title": "Active platform access",
       "create_artist": "Create Artist",
       "email": "Email *",
+      "email_locked": "Sign-in address — only the account holder can change it, in their own settings.",
       "first_name": "First Name *",
       "first_name_vocative": "Vocative",
       "first_name_vocative_hint": "Form used in greetings, e.g. in emails.",
@@ -2137,6 +2138,10 @@
         "title": "Email taken",
         "detail": "This email is already linked to another account."
       },
+      "artist_email_locked": {
+        "title": "Sign-in address belongs to its owner",
+        "detail": "This member has activated their account — only they can change the sign-in address, in their own settings."
+      },
       "expired_reset_link": {
         "title": "Link expired",
         "detail": "This password-reset link is no longer valid. Request a new one."
@@ -2843,7 +2848,8 @@
       "CUSTOM_ADMIN_MESSAGE": "Message",
       "MESSAGE_RECEIVED": "Message",
       "CHANNEL_MESSAGE": "Project channel",
-      "NOTIFICATION_READ_RECEIPT": "Read receipt"
+      "NOTIFICATION_READ_RECEIPT": "Read receipt",
+      "fallback": "Notification"
     },
     "status": {
       "attendance": {
@@ -2897,15 +2903,19 @@
       "score": "Sheet music",
       "recording": "Recording"
     },
+    "time": {
+      "today": "today at {{time}}",
+      "tomorrow": "tomorrow at {{time}}",
+      "absolute": "{{weekday}}, {{date}} at {{time}}"
+    },
     "inapp": {
       "project_removed": "you’ve been removed",
-      "project_cancelled": "project cancelled",
-      "rehearsal_cancelled": "rehearsal cancelled",
       "casting_removed": "no longer cast",
       "absence_approved": "excused",
-      "absence_rejected": "not approved",
       "absence_requested": "asked to be excused",
-      "read_receipt": "read your message"
+      "read_receipt": "read your message",
+      "invited_by": "invited by {{name}}",
+      "contract_issued": "waiting for your signature"
     },
     "push": {
       "toasts": {
