@@ -151,11 +151,19 @@ echo
 # The check everyone skips: a dump restores perfectly and is still useless
 # because it predates a migration the current code requires.
 note "checking migration state against the restored database"
-if $COMPOSE exec -T -e DB_NAME="$SCRATCH_DB" web python manage.py migrate --check > "$WORK_DIR/migrate.log" 2>&1; then
+# Probe first: `migrate --check` exits 1 both when migrations are missing AND
+# when it could not run at all (container down, image gone). Without separating
+# the two, a stopped stack gets reported as a schema problem — a wrong diagnosis
+# pointing at the wrong system.
+if ! $COMPOSE exec -T web python -c 'print("reachable")' > "$WORK_DIR/probe.log" 2>&1; then
+  fail "cannot reach the web container — migration state NOT verified"
+  tail -5 "$WORK_DIR/probe.log" >&2
+elif $COMPOSE exec -T -e DB_NAME="$SCRATCH_DB" web python manage.py migrate --check > "$WORK_DIR/migrate.log" 2>&1; then
   note "migration state matches the deployed code"
 else
   fail "restored schema does not match the deployed code (unapplied migrations)"
-  tail -10 "$WORK_DIR/migrate.log" >&2
+  $COMPOSE exec -T -e DB_NAME="$SCRATCH_DB" web python manage.py showmigrations --plan 2>/dev/null \
+    | grep '\[ \]' | head -20 >&2 || true
 fi
 
 # --- 6. Media -------------------------------------------------------------
