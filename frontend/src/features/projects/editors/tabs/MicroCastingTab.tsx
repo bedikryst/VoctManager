@@ -285,7 +285,8 @@ export const MicroCastingTab = ({
               variant="solid"
               padding="md"
               isHoverable={false}
-              className="flex shrink-0 flex-col gap-4"
+              className="shrink-0"
+              contentClassName="gap-4"
             >
               <div className="flex items-center gap-2">
                 <ListOrdered
@@ -483,7 +484,8 @@ export const MicroCastingTab = ({
                         variant="outline"
                         padding="sm"
                         isHoverable={false}
-                        className="mb-6 flex items-center gap-2 border-ethereal-gold/30 bg-ethereal-gold/10"
+                        className="mb-6 border-ethereal-gold/30 bg-ethereal-gold/10"
+                        contentClassName="flex-row items-center gap-2"
                       >
                         <AlertCircle
                           size={16}

@@ -89,7 +89,7 @@ export const RehearsalsTab = ({
             variant="solid"
             padding="md"
             isHoverable={false}
-            className="flex flex-col gap-5"
+            contentClassName="gap-5"
           >
             <div className="flex items-center gap-2.5 border-b border-ethereal-ink/6 pb-3">
               <Clock

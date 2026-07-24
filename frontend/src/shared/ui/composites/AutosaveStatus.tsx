@@ -84,11 +84,12 @@ export const AutosaveStatus = ({
             padding="none"
             isHoverable={false}
             className={cn(
-              "flex items-center gap-2 rounded-full px-4 py-2",
+              "rounded-full px-4 py-2",
               isSavingPhase
                 ? "border-ethereal-gold/30"
                 : "border-ethereal-sage/30",
             )}
+            contentClassName="flex-row items-center gap-2"
           >
             {isSavingPhase ? (
               <Loader2

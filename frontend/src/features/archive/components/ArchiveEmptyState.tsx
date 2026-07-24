@@ -33,7 +33,7 @@ export function ArchiveEmptyState({
       variant="light"
       padding="lg"
       isHoverable={false}
-      className="flex flex-col items-center justify-center gap-5 text-center"
+      contentClassName="items-center gap-5 text-center"
     >
       <div
         className="rounded-full border border-ethereal-incense/15 bg-ethereal-alabaster/70 p-4 text-ethereal-graphite/55"

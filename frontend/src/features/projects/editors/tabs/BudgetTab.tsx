@@ -249,7 +249,7 @@ export const BudgetTab = ({
               variant="solid"
               padding="lg"
               isHoverable={false}
-              className="flex flex-col items-center gap-2 text-center"
+              contentClassName="items-center gap-2 text-center"
             >
               <Users size={28} className="text-ethereal-incense/30" aria-hidden="true" />
               <Eyebrow color="muted">

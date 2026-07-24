@@ -37,7 +37,8 @@ const WidgetSkeleton = (): React.JSX.Element => (
     variant="solid"
     padding="md"
     isHoverable={false}
-    className="flex min-h-44 flex-col gap-4"
+    className="flex min-h-44 flex-col"
+    contentClassName="gap-4"
   >
     <div className="h-4 w-1/3 animate-pulse rounded-md bg-ethereal-incense/15" />
     <div className="flex-1 space-y-2.5">

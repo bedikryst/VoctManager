@@ -340,7 +340,8 @@ export const TimelineRehearsalCard = ({
                     variant="solid"
                     padding="sm"
                     isHoverable={false}
-                    className="flex-1 flex flex-col justify-center items-center text-center rounded-2xl"
+                    className="flex flex-1 flex-col rounded-2xl"
+                    contentClassName="items-center justify-center text-center"
                   >
                     <Text size="sm" weight="bold" color="default" className="mb-1">
                       {t("schedule.rehearsal.details.materials_subtitle", "Przygotuj się do próby")}

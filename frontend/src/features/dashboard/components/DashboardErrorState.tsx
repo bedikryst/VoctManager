@@ -30,7 +30,8 @@ export const DashboardErrorState = ({
         variant="light"
         padding="lg"
         isHoverable={false}
-        className="flex max-w-md flex-col items-center gap-4 text-center"
+        className="max-w-md"
+        contentClassName="items-center gap-4 text-center"
       >
         <div
           className="rounded-full border border-ethereal-crimson/20 bg-ethereal-crimson/5 p-4 text-ethereal-crimson"

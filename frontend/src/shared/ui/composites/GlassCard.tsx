@@ -5,6 +5,8 @@
  * (motion values, pointer listeners, getBoundingClientRect) is only mounted when glow={true}.
  * Cards without glow attach zero pointer listeners and skip motion-template evaluation entirely.
  * `will-change` is opt-in via the hover variant — Framer manages compositor promotion for animated subtrees.
+ * Children live in a content wrapper that stacks above the decorative layers; `className` styles the
+ * card surface, `contentClassName` styles that wrapper (see the prop docs).
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/GlassCard
  */
@@ -90,6 +92,15 @@ export type GlassCardProps<C extends ElementType> = {
   withNoise?: boolean;
   glow?: boolean;
   backgroundElement?: ReactNode;
+  /**
+   * Classes for the content wrapper — the box the children actually live in.
+   * `className` reaches the card SURFACE only, and the surface has exactly one
+   * child (this wrapper), so alignment/gap/flex-direction passed there never
+   * reaches the content: `items-*` shrink-wraps the wrapper instead of centering
+   * anything, and `gap-*` is a no-op. Those classes belong here.
+   * The wrapper is already `flex flex-col` — pass `flex-row` to switch axis.
+   */
+  contentClassName?: string;
 } & VariantProps<typeof glassCardVariants> &
   Omit<
     ComponentPropsWithoutRef<C>,
@@ -162,6 +173,7 @@ const GlassCardInner = <C extends ElementType = "div">(
     backgroundElement,
     animationEngine,
     className,
+    contentClassName,
     onPointerMove,
     ...rest
   }: GlassCardProps<C>,
@@ -224,7 +236,12 @@ const GlassCardInner = <C extends ElementType = "div">(
         />
       )}
 
-      <div className="relative z-10 min-h-0 flex-1 flex flex-col">
+      <div
+        className={cn(
+          "relative z-10 min-h-0 flex-1 flex flex-col",
+          contentClassName,
+        )}
+      >
         {children}
       </div>
     </Component>

@@ -87,7 +87,8 @@ const DocumentRow = ({
       variant="light"
       padding="none"
       isHoverable={false}
-      className="group/file flex items-stretch justify-between p-4 cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30 transition-colors"
+      className="group/file p-4 cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30 transition-colors"
+      contentClassName="flex-row items-stretch justify-between"
       onClick={() =>
         isPdf
           ? onPreview(doc)

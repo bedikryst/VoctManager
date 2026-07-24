@@ -52,7 +52,7 @@ export const CrewTab = ({
             variant="solid"
             padding="md"
             isHoverable={false}
-            className="flex flex-col gap-5"
+            contentClassName="gap-5"
           >
             <div className="flex items-center gap-2.5 border-b border-ethereal-ink/6 pb-3">
               <Plus size={16} className="text-ethereal-gold" aria-hidden="true" />

@@ -184,7 +184,8 @@ export const Materials = (): React.JSX.Element => {
               >
                 <GlassCard
                   variant="ethereal"
-                  className="flex flex-col items-center justify-center py-16 px-8 text-center"
+                  className="py-16 px-8"
+                  contentClassName="items-center text-center"
                 >
                   <div className="w-20 h-20 rounded-full bg-ethereal-alabaster border border-ethereal-marble flex items-center justify-center mb-6 shadow-glass-solid">
                     <Music

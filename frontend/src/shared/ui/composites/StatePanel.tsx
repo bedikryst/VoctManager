@@ -45,52 +45,45 @@ export function StatePanel({
 }: StatePanelProps): React.JSX.Element {
   const isCentered = align === "center";
 
-  // NOTE: layout classes live on an INNER wrapper, not on the GlassCard root.
-  // GlassCard renders its children inside its own `flex flex-col` div, so flex /
-  // alignment classes passed to the card's className never reach the content
-  // (that bug stretched the icon into a full-width pill and broke centering).
   return (
     <GlassCard
       variant="light"
       padding="lg"
       isHoverable={false}
       className={className}
+      contentClassName={cn(
+        "gap-5",
+        isCentered ? "items-center text-center" : "items-start text-left",
+      )}
       {...props}
     >
       <div
-        className={cn(
-          "flex flex-col gap-5",
-          isCentered ? "items-center text-center" : "items-start text-left",
-        )}
+        className={cn("rounded-full border p-4 shadow-sm", toneClassMap[tone])}
+        aria-hidden="true"
       >
-        <div
-          className={cn("rounded-full border p-4 shadow-sm", toneClassMap[tone])}
-          aria-hidden="true"
-        >
-          {icon}
-        </div>
-
-        <div className={cn("space-y-2", isCentered && "max-w-2xl")}>
-          {eyebrow && <Eyebrow color="muted">{eyebrow}</Eyebrow>}
-          <Heading as="h3" size="2xl" weight="medium">
-            {title}
-          </Heading>
-          <Text color="graphite" className="max-w-2xl">
-            {description}
-          </Text>
-        </div>
-
-        {actions && (
-          <div
-            className={cn(
-              "flex flex-col gap-3 sm:flex-row",
-              !isCentered && "sm:justify-start",
-            )}
-          >
-            {actions}
-          </div>
-        )}
+        {icon}
       </div>
+
+      <div className={cn("space-y-2", isCentered && "max-w-2xl")}>
+        {eyebrow && <Eyebrow color="muted">{eyebrow}</Eyebrow>}
+        <Heading as="h3" size="2xl" weight="medium">
+          {title}
+        </Heading>
+        <Text color="graphite" className="max-w-2xl">
+          {description}
+        </Text>
+      </div>
+
+      {actions && (
+        <div
+          className={cn(
+            "flex flex-col gap-3 sm:flex-row",
+            !isCentered && "sm:justify-start",
+          )}
+        >
+          {actions}
+        </div>
+      )}
     </GlassCard>
   );
 }

@@ -91,7 +91,8 @@ export const EditorActionBar = ({
             variant="solid"
             padding="sm"
             isHoverable={false}
-            className="flex flex-col gap-3 rounded-2xl border-ethereal-gold/30 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+            className="rounded-2xl border-ethereal-gold/30"
+            contentClassName="gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           >
             <div className="flex min-w-0 flex-1 flex-col gap-1 pl-1 sm:pl-2">
               <div className="flex items-center gap-2">

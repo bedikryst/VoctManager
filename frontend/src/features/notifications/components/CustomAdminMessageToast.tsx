@@ -46,7 +46,8 @@ export const CustomAdminMessageToast: React.FC = () => {
       toast.custom(
         (toastId) => (
           <GlassCard
-            className={`p-4 flex flex-col gap-3 w-full min-w-[320px] max-w-[420px] border-l-2 ${borderClass}`}
+            className={`p-4 w-full min-w-[320px] max-w-[420px] border-l-2 ${borderClass}`}
+            contentClassName="gap-3"
           >
             <div className="flex items-start gap-2">
               {LEVEL_ICON[level] ?? LEVEL_ICON.INFO}

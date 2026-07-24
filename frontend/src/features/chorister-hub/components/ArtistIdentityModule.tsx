@@ -45,7 +45,7 @@ const MetricTile = ({
     variant="light"
     padding="md"
     isHoverable={false}
-    className="flex flex-col items-start gap-3"
+    contentClassName="items-start gap-3"
   >
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-ethereal-gold/20 bg-ethereal-gold/10 text-ethereal-gold">
       {icon}

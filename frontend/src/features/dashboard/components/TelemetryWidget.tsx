@@ -78,7 +78,8 @@ export function TelemetryWidget({
       padding="none"
       isHoverable={false}
       withNoise
-      className="flex h-full w-full flex-col justify-between p-6 pb-4 md:p-8 md:pb-5 xl:p-10 xl:pb-6"
+      className="flex h-full w-full flex-col p-6 pb-4 md:p-8 md:pb-5 xl:p-10 xl:pb-6"
+      contentClassName="justify-between"
     >
       {/* UPPER STRATUM: Resonance Metrics */}
       <section className="relative z-10 flex flex-col">
