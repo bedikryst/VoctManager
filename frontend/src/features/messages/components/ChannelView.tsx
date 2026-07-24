@@ -88,7 +88,11 @@ const ChannelRow: React.FC<ChannelRowProps> = ({ message, isManager, onTogglePin
             </button>
           )}
         </div>
-        <Text size="sm" color="graphite" className="whitespace-pre-line leading-relaxed">
+        <Text
+          size="sm"
+          color="graphite"
+          className="break-words whitespace-pre-line leading-relaxed"
+        >
           {message.body}
         </Text>
       </div>
@@ -225,7 +229,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
       {/* Composer */}
       <div className="border-t border-ethereal-ink/8 p-3">
         <div className="flex items-end gap-2">
-          <div className="flex-1">
+          {/* min-w-0 defeats the textarea's intrinsic `cols` width, which would
+              otherwise keep the composer wider than a phone. */}
+          <div className="min-w-0 flex-1">
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}

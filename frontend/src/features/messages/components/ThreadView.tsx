@@ -29,6 +29,13 @@ import type { UserBrief } from "../types/messages.dto";
 import { MessageBubble } from "./MessageBubble";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
 
+/**
+ * Triage actions collapse to icon-only below `sm`: a phone-width pane cannot
+ * carry two labelled buttons beside the counterpart's name, and the labels
+ * survive as the accessible name + tooltip.
+ */
+const TRIAGE_ACTION_CLASS = "gap-0 px-3 sm:gap-2 sm:px-5";
+
 interface ThreadViewProps {
   threadId: string;
   isManager: boolean;
@@ -88,6 +95,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const isResolved = thread.status === "RESOLVED";
   const ownedByMe = thread.assignee?.id === me.id;
   const groups = groupMessagesByDay(thread.messages);
+  const claimLabel = t("messages.thread.claim", "Przejmij");
+  const releaseLabel = t("messages.thread.release", "Do kolejki");
+  const statusLabel = isResolved
+    ? t("messages.thread.reopen", "Otwórz ponownie")
+    : t("messages.thread.resolve", "Zamknij");
 
   const projectContext =
     thread.context_type === "PROJECT" && thread.context_id
@@ -151,7 +163,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         </div>
 
         {isManager && (
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             {!ownedByMe && (
               <Button
                 variant="ghost"
@@ -159,8 +171,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 onClick={() => updateThread.mutate({ assignee_id: me.id })}
                 disabled={updateThread.isPending}
                 leftIcon={<Hand size={14} />}
+                aria-label={claimLabel}
+                title={claimLabel}
+                className={TRIAGE_ACTION_CLASS}
               >
-                {t("messages.thread.claim", "Przejmij")}
+                <span className="hidden sm:inline">{claimLabel}</span>
               </Button>
             )}
             {ownedByMe && (
@@ -170,8 +185,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 onClick={() => updateThread.mutate({ assignee_id: null })}
                 disabled={updateThread.isPending}
                 leftIcon={<Undo2 size={14} />}
+                aria-label={releaseLabel}
+                title={releaseLabel}
+                className={TRIAGE_ACTION_CLASS}
               >
-                {t("messages.thread.release", "Do kolejki")}
+                <span className="hidden sm:inline">{releaseLabel}</span>
               </Button>
             )}
             <Button
@@ -182,10 +200,11 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
               }
               disabled={updateThread.isPending}
               leftIcon={isResolved ? <RotateCcw size={14} /> : <Check size={14} />}
+              aria-label={statusLabel}
+              title={statusLabel}
+              className={TRIAGE_ACTION_CLASS}
             >
-              {isResolved
-                ? t("messages.thread.reopen", "Otwórz ponownie")
-                : t("messages.thread.resolve", "Zamknij")}
+              <span className="hidden sm:inline">{statusLabel}</span>
             </Button>
           </div>
         )}
@@ -217,7 +236,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           </Text>
         )}
         <div className="flex items-end gap-2">
-          <div className="flex-1">
+          {/* min-w-0 defeats the textarea's intrinsic `cols` width, which would
+              otherwise keep the composer wider than a phone. */}
+          <div className="min-w-0 flex-1">
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}

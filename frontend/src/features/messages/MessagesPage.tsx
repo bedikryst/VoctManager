@@ -151,7 +151,7 @@ const MessagesPage: React.FC = () => {
           isHoverable={false}
           padding="none"
           className={cn(
-            "h-full w-full flex-col overflow-hidden md:w-85 md:shrink-0",
+            "h-full w-full min-w-0 flex-col overflow-hidden md:w-85 md:shrink-0",
             hasSelection ? "hidden md:flex" : "flex",
           )}
         >
@@ -213,7 +213,10 @@ const MessagesPage: React.FC = () => {
           isHoverable={false}
           padding="none"
           className={cn(
-            "h-full flex-1 overflow-hidden",
+            // min-w-0: without it the pane's width follows its own min-content
+            // (header actions, composer) and on a phone the card grows past the
+            // viewport instead of the conversation adapting to it.
+            "h-full min-w-0 flex-1 overflow-hidden",
             hasSelection ? "flex" : "hidden md:flex",
           )}
         >
