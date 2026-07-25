@@ -6,10 +6,12 @@ rehearsals reach twelve singers as twelve messages, the conductor can see and ed
 it leaves, a queue nobody publishes says so on a clock, and the chorister is now asked what they want
 to hear about rather than which of our event names they recognise.
 
-**Read the audit section before changing anything below it.** A pass over stages 0–3 on 2026-07-25
-found four defects, two of which falsified success criteria this file had already ticked, and one
-policy question the fold had quietly answered on the reader's behalf. Claims elsewhere in this
-document that the audit corrected are marked where they stand; the audit itself is the record.
+**Read the two audit sections before changing anything below them.** The first, over stages 0–3,
+found four defects — two of which falsified success criteria this file had already ticked — and one
+policy question the fold had quietly answered on the reader's behalf. The second, over stages 5 and
+6, found six smaller ones, all fixed, and ends with the one structural change left deliberately
+unscheduled. Claims elsewhere in this document that either audit corrected are marked where they
+stand; the audits themselves are the record.
 
 **Stage 2 was taken before Stage 1, deliberately.** Stage 0b left the tree with no path from DRAFT to
 ACTIVE (see the deploy blocker it recorded), so a queue would have had nothing to attach to: every
@@ -645,6 +647,9 @@ without pressing further because "later" was supposed to be caught by a clock. I
   - the concert has not happened yet;
   - **publication would actually send something** (`message_count > 0`);
   - the queue has been waiting longer than its own fuse, and the last nudge is older than that fuse.
+    ~~Measured from the oldest pending row~~ — **corrected in the stages 5-6 audit:** from the oldest
+    row behind a line that would actually be sent, so a mutually-cancelling edit cannot age the news
+    beside it.
 - `Project.announcement_nudged_at` (migration `roster/0036`) — a cooldown, not a one-shot claim,
   which is the one way it differs from `reminder_sent_at` beside it.
 - `roster.dispatch_announcement_nudges`, hourly beat, claiming before dispatching exactly as the
@@ -960,6 +965,113 @@ decline, a removal still reaching someone with no participation left, and the th
 transitions; `BriefingRoutingTests` covering per-channel item filtering, a channel with nothing
 enabled, the calendar rule both ways, no rows minted, and the type's absence from the matrix). ruff
 and mypy clean; frontend typecheck, lint and build clean.
+
+## Audit — stages 5 and 6, 2026-07-25
+
+A read of the two stages against the tree, after they shipped. No defect falsified a success
+criterion this time; the six below are the kind that would have gone unnoticed until they misled
+somebody. All are fixed. The verification the stages claimed holds: 475 roster + notifications tests,
+ruff and mypy clean, frontend typecheck/lint/build clean, locale parity across pl/en/fr and `.po`
+matching `.mo` in both translated catalogues.
+
+**The nudge's fuse dated the rows, not the news.** `stale()` took `Min(created_at)` over every
+pending row and only then checked that publication would send something. So a venue moved and moved
+back yesterday — two rows, no news — started the clock on a dress code changed an hour ago: the
+queue nudged about something nobody had been sitting on, and quoted a `waiting_hours` that belonged
+to a different edit. The same error as counting rows instead of messages (decision 3), one step
+further in. `preview()` now reports `waiting_since` measured over the rows behind lines that are
+neither held nor addressed to nobody, and `stale()` reads it from there. **Per line, not per
+announcement**, because the line is the atom everywhere else in this surface: a project diff's dead
+field is dropped with its rows, while a rehearsal's whole diff is one indivisible fact and is
+therefore as old as its oldest row.
+
+**The claim was unconditional.** `update(announcement_nudged_at=now)` over the whole stale set did
+not re-check the cooldown, so two beats reading the queue at the same moment would both pass and both
+send. The reminder sweep beside it gets away with a flat update because its `due` queryset carries
+the very predicate the update flips; here the fuse is per project, so the condition has to travel
+with each row. The sweep now claims one project at a time, conditionally, and skips what it did not
+win — which is why `StaleQueue` carries its `fuse`.
+
+**`_fuse()` restated the settings defaults** it was reading through `getattr`, so two places said
+"24". Now `settings.ANNOUNCEMENT_NUDGE_HOURS` directly; `override_settings` still exercises it.
+
+**The briefing invariant was defended by a hand-written list.** `test_everything_a_briefing_can_carry
+_lives_in_one_group` enumerated five types "mirroring the queued emitters" — which cannot fail for the
+case it exists for, since a new queued emitter simply would not appear in it. Stage 6's whole
+argument is that a derived invariant beats a tested one ("deriving makes the disagreement
+unrepresentable instead of merely tested for"), and this was the one place that did not take its own
+advice. `announcements.QUEUEABLE_TYPES` now declares the set, `queue_announcement` /
+`queue_broadcast` refuse a type outside it, and the test reads it. A new queued emitter registers
+itself or fails the first time it fires.
+
+**The preferences endpoint filtered group members through `HIDDEN_FROM_PREFS`** — but that set *is*
+`UNGROUPED_DEFAULTS`, and the coherence assert forbids the overlap, so the filter never removed
+anything and its `if not visible: continue` was unreachable. Dead code is cheap; dead code that casts
+doubt on an invariant enforced ten lines away is not. Removed.
+
+**`NOTIFICATION_TYPE_ICON` still mapped `SYSTEM_ALERT`**, an ungrouped type with no row to draw a
+glyph on — the client-side twin of the same smell. Removed.
+
+### Deliberately not changed
+
+- **`change_count` counts lines that reach nobody.** The nudge's `change_count` is the whole
+  collapsed queue, which is exactly what the hub's pill shows — the two agreeing matters more than
+  the count matching the envelopes, which is what `message_count` is for.
+- **A held line still ages its own queue.** `waiting_since` excludes held lines, so a queue holding
+  *only* held rows never nudges — but the moment anything else is pending, the fuse dates from the
+  live line. That is the intended reading of Stage 5's recorded trap: holding is a legitimate
+  indefinite state and the sweep keeps asking, but it asks about what is actually waiting.
+- **The `team` group has no group control.** See the spec below; the current shape is coherent, and
+  the change is worth making on its own terms rather than as a bug fix.
+
+### Spec — split the safety net out of `team` (not scheduled)
+
+The one structural change worth making, written down so it does not have to be re-derived.
+
+**Why.** `team` is `controllable=False` because `ANNOUNCEMENT_PENDING` disagrees with its three
+siblings about e-mail, and a single switch there could only pick a side. The admission is honest, but
+its cost is that **the manager — the reader with by far the most notification traffic — is the only
+one who gets no group control at all** and must operate the ledger at the per-type grain Stage 6
+exists to retire. The disagreement is also the *only* reason `_EMAIL_OVERRIDES`, the `controllable`
+flag and the third invariant in `assert_preference_policy_is_coherent` exist; all three are machinery
+serving one exception.
+
+**The change.** Give the safety net its own single-member group. A one-member group is not a control
+that lies — it governs exactly one type, honestly — and "tell me when I have forgotten to announce
+something" is a consequence a manager can name, which is the test `PreferenceGroup` sets for a group
+being a group.
+
+```
+team        controllable, manager_only, email=False
+  PARTICIPATION_RESPONSE / ATTENDANCE_SUBMITTED / ABSENCE_REQUESTED
+safety_net  controllable, manager_only, email=True
+  ANNOUNCEMENT_PENDING
+```
+
+**What it touches.**
+1. `delivery.py` — split the group; delete `_EMAIL_OVERRIDES` and the `controllable` field; drop the
+   third invariant from `assert_preference_policy_is_coherent` (the first two stay and are the ones
+   that matter).
+2. `views.py` — `recommended_email`/`recommended_push` lose their `if group.controllable else None`
+   branch and are always the group's own.
+3. `NotificationsTab.tsx` — `showRows = expanded` unconditionally, `showActionBar` likewise; the
+   `group.controllable &&` guard around `ChannelCells` goes. The DTO keeps `controllable` for one
+   release or drops it with the server — it is our own client either way.
+4. `notificationPreferenceGroups.ts` — one glyph for `safety_net` (`Megaphone`, matching the bell row).
+5. Locales ×3 — `settings.notifications.groups.safety_net` and `.groups_desc.safety_net`. **Not**
+   `groups_email_off.safety_net`: it recommends e-mail ON, so the consequence sentence applies —
+   write it. That makes three keys × three languages.
+6. Tests — `PreferenceGroupPolicyTests` loses the override assertions and gains the new group's
+   membership; `PreferenceLedgerShapeTests` render-order and "uncontrollable group promises nothing"
+   cases are rewritten.
+
+**No data migration.** No type changes group *default*: `ANNOUNCEMENT_PENDING` was already e-mail ON
+through `_EMAIL_OVERRIDES` and stays ON through its new group. Rows minted at the old default remain
+correct — which is exactly the check migration `0014` had to fail before it was written.
+
+**The trap.** `groupChannelState` returns `"off"` for an empty row list, and a one-member group makes
+the mixed state unreachable — fine, but do not "simplify" the mixed handling away on the strength of
+it; `commitments` still needs it.
 
 ## Open decisions
 
