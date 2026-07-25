@@ -41,8 +41,11 @@ export const DraggableArtist = React.memo(function DraggableArtist({
 }: DraggableArtistProps): React.JSX.Element {
   const { t } = useTranslation();
 
-  const isBlocked =
-    !isOverlay && !!participationStatus && participationStatus !== "CON";
+  // Casting is a plan, not a record of consent: a singer who has not answered yet
+  // can be placed on a voice line, which is the only way to build divisi before the
+  // project is published. A decline is the one refusal — that seat is empty.
+  const isBlocked = !isOverlay && participationStatus === "DEC";
+  const isAwaitingAnswer = !isOverlay && participationStatus === "INV";
 
   const draggable = useDraggable({
     id: participationId,
@@ -90,7 +93,6 @@ export const DraggableArtist = React.memo(function DraggableArtist({
           participationStatus === "DEC" && !isOverlay
             ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
             : "",
-          participationStatus === "INV" && !isOverlay ? "opacity-60" : "",
           pending && !isOverlay
             ? "ring-1 ring-ethereal-gold/25"
             : "",
@@ -161,6 +163,25 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               {artist.first_name} {artist.last_name}
             </Text>
           </div>
+
+          {/* The answer state travels with the singer, so a voice line reads as a
+              plan with known gaps rather than a settled cast. Confirmed carries no
+              chip: the calm state is the absence of one. */}
+          {(isAwaitingAnswer || isBlocked) && (
+            <Text
+              size="xs"
+              className={cn(
+                "inline-flex h-4 shrink-0 items-center rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider",
+                isBlocked
+                  ? "border-ethereal-crimson/35 bg-ethereal-crimson/10 text-ethereal-crimson"
+                  : "border-ethereal-incense/30 bg-ethereal-incense/10 text-ethereal-graphite/60",
+              )}
+            >
+              {isBlocked
+                ? t("projects.micro_cast.artist.declined", "Odmowa")
+                : t("projects.micro_cast.artist.awaiting", "Czeka")}
+            </Text>
+          )}
 
           {casting &&
             !isOverlay &&

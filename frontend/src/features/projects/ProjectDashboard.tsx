@@ -117,6 +117,7 @@ export const ProjectDashboard = (): React.JSX.Element => {
   );
   const filterCounts: Record<ProjectFilterId, number> = {
     [PROJECT_FILTER.ACTIVE]: projectStats.activeCount,
+    [PROJECT_FILTER.DRAFT]: projectStats.draftCount,
     [PROJECT_FILTER.DONE]: projectStats.archivedCount,
     [PROJECT_FILTER.ALL]: projectStats.totalCount,
   };

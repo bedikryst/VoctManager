@@ -28,6 +28,7 @@ interface UseProjectDashboardReturn {
   filteredProjects: Project[];
   projectStats: {
     activeCount: number;
+    draftCount: number;
     archivedCount: number;
     totalCount: number;
     visibleCount: number;
@@ -67,6 +68,10 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
             return !isArchiveStatus(status);
           }
 
+          if (listFilter === PROJECT_FILTER.DRAFT) {
+            return status === PROJECT_STATUS.DRAFT;
+          }
+
           if (listFilter === PROJECT_FILTER.DONE) {
             return isArchiveStatus(status);
           }
@@ -83,9 +88,13 @@ export const useProjectDashboard = (): UseProjectDashboardReturn => {
     const activeCount = projects.filter(
       (project) => !isArchiveStatus(project.status || PROJECT_STATUS.DRAFT),
     ).length;
+    const draftCount = projects.filter(
+      (project) => (project.status || PROJECT_STATUS.DRAFT) === PROJECT_STATUS.DRAFT,
+    ).length;
 
     return {
       activeCount,
+      draftCount,
       archivedCount: projects.length - activeCount,
       totalCount: projects.length,
       visibleCount: filteredProjects.length,

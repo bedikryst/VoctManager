@@ -22,6 +22,7 @@ import {
   Clock,
   FileText,
   MapPin,
+  Megaphone,
   RotateCcw,
   Trash2,
   UserRound,
@@ -43,6 +44,8 @@ import { PROJECT_STATUS } from "../constants/projectDomain";
 import {
   getArtistDisplayName,
   getLocationLabel,
+  getProjectStatusPresentation,
+  isProjectDraft,
 } from "../lib/projectPresentation";
 
 interface ProjectRowProps {
@@ -78,6 +81,8 @@ export const ProjectRow = ({
   const updateStatus = useUpdateProjectStatus();
 
   const isDone = project.status === PROJECT_STATUS.DONE;
+  const isDraft = isProjectDraft(project.status);
+  const statusPresentation = getProjectStatusPresentation(project.status);
   const conductorName = getArtistDisplayName(
     project.conductor,
     project.conductor_name,
@@ -173,11 +178,21 @@ export const ProjectRow = ({
               }
             />
           </span>
-          <Badge variant={isDone ? "neutral" : "warning"} className="shrink-0">
-            {isDone
-              ? t("projects.badge_done", "Zrealizowano")
-              : t("projects.badge_active", "W przygotowaniu")}
+          <Badge variant={statusPresentation.variant} className="shrink-0">
+            {t(statusPresentation.labelKey, statusPresentation.fallbackLabel)}
           </Badge>
+          {/* Visible without opening the project, which is the point: a queue the
+              conductor never revisits is how news quietly dies. A flag rather than
+              a count — the honest number needs collapsing, and the hub does that. */}
+          {project.has_unannounced_changes && (
+            <Badge
+              variant="glass"
+              className="inline-flex shrink-0 items-center gap-1"
+            >
+              <Megaphone size={10} aria-hidden="true" />
+              {t("projects.announce.badge", "Do ogłoszenia")}
+            </Badge>
+          )}
         </div>
 
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
@@ -241,28 +256,33 @@ export const ProjectRow = ({
           </span>
         )}
 
-        <Button
-          variant="icon"
-          size="icon"
-          onClick={toggleStatus}
-          title={
-            isDone
-              ? t("projects.actions.mark_active", "Oznacz jako aktywny")
-              : t("projects.actions.mark_done", "Zakończ projekt")
-          }
-          aria-label={
-            isDone
-              ? t("projects.actions.mark_active", "Oznacz jako aktywny")
-              : t("projects.actions.mark_done", "Zakończ projekt")
-          }
-          className="h-8 w-8 text-ethereal-graphite/70 hover:text-ethereal-sage"
-        >
-          {isDone ? (
-            <RotateCcw size={14} aria-hidden="true" />
-          ) : (
-            <CheckCircle2 size={14} aria-hidden="true" />
-          )}
-        </Button>
+        {/* A draft cannot be "finished" — the toggle would resolve to DONE and
+            skip publication entirely. Publishing needs its preview, so it lives
+            in the hub; the row opens it. */}
+        {!isDraft && (
+          <Button
+            variant="icon"
+            size="icon"
+            onClick={toggleStatus}
+            title={
+              isDone
+                ? t("projects.actions.mark_active", "Oznacz jako aktywny")
+                : t("projects.actions.mark_done", "Zakończ projekt")
+            }
+            aria-label={
+              isDone
+                ? t("projects.actions.mark_active", "Oznacz jako aktywny")
+                : t("projects.actions.mark_done", "Zakończ projekt")
+            }
+            className="h-8 w-8 text-ethereal-graphite/70 hover:text-ethereal-sage"
+          >
+            {isDone ? (
+              <RotateCcw size={14} aria-hidden="true" />
+            ) : (
+              <CheckCircle2 size={14} aria-hidden="true" />
+            )}
+          </Button>
+        )}
 
         <Button
           variant="icon"

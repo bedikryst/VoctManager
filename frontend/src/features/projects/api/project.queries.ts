@@ -16,3 +16,5 @@ export * from "./project.program.mutations";
 export * from "./project.piece-casting.mutations";
 export * from "./project.attendance.mutations";
 export * from "./project.score-pdf.mutations";
+export * from "./project.publication";
+export * from "./project.announcements";

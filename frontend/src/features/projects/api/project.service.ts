@@ -29,8 +29,7 @@ import type {
   CrewAssignmentUpdateDTO,
   ParticipationCreateDTO,
   ParticipationUpdateDTO,
-  PieceCastingCreateDTO,
-  PieceCastingUpdateDTO,
+  PieceCastingBoardDTO,
   ProgramItemCreateDTO,
   ProgramItemUpdateDTO,
   ProjectCreateDTO,
@@ -78,6 +77,114 @@ export interface ProjectReadinessSummaryEntry {
   ready: number;
   in_progress: number;
   not_started: number;
+}
+
+/**
+ * Language-neutral gaps the server found in a project about to be published.
+ * They are advisory: an incomplete project may still be a deliberate
+ * announcement, so the decision stays the conductor's.
+ */
+export type ProjectPublicationWarning =
+  | "no_cast"
+  | "no_rehearsals"
+  | "no_program"
+  | "no_location"
+  | "unreachable_artists";
+
+export interface ProjectPublicationRecipient {
+  participation_id: string;
+  artist_name: string;
+  /** False when the artist has no account yet — they are on the roster but no
+   *  message can reach them. */
+  is_reachable: boolean;
+}
+
+export interface ProjectPublicationPreview {
+  project_id: string;
+  status: string;
+  is_publishable: boolean;
+  /** People who will actually be written to. */
+  recipient_count: number;
+  recipients: ProjectPublicationRecipient[];
+  /** Cast members deliberately not addressed — they already answered. */
+  skipped_count: number;
+  warnings: ProjectPublicationWarning[];
+}
+
+export type AnnouncementSubject =
+  | "PROJECT"
+  | "REHEARSAL"
+  | "CASTING"
+  | "PARTICIPATION";
+export type AnnouncementKind = "CREATED" | "CHANGED" | "REMOVED";
+export type AnnouncementLevel = "INFO" | "WARNING" | "URGENT";
+
+/**
+ * One line of the conductor's review sheet — the unit a checkbox holds back. A
+ * project diff is one line per field (the venue can go out while a call time
+ * waits); a creation, a removal or a rehearsal's whole diff is one indivisible
+ * line. `metadata` is the payload the emitter built, so the sheet renders the
+ * line from exactly the facts the artist's own message will carry.
+ */
+export interface AnnouncementChange {
+  id: string;
+  /** The pending rows this line stands for — what `exclude`/`discard` act on. */
+  row_ids: string[];
+  subject_type: AnnouncementSubject;
+  subject_id: string;
+  kind: AnnouncementKind;
+  notification_type: string;
+  level: AnnouncementLevel;
+  /** The single field this line reports, when it is one line of a wider diff;
+   *  empty for anything indivisible. */
+  field: string;
+  metadata: Record<string, unknown>;
+  /** How many people this line reaches. */
+  recipient_count: number;
+  /** Whose part this is, for a personal line — above all, who is about to be told
+   *  they are off the cast. Empty for a broadcast. */
+  recipient_name: string;
+  /** Held back by the conductor (or by the rule that holds a whole subject when
+   *  its creation is held). The row stays pending; nothing is discarded. */
+  is_held: boolean;
+}
+
+/** One reader's share of the publication — the fold seen from their side. */
+export interface AnnouncementRecipientShare {
+  recipient_id: string;
+  name: string;
+  /** The change ids that reach this person. */
+  change_ids: string[];
+  /** True when their several changes arrive as one composite briefing. */
+  is_briefing: boolean;
+}
+
+export interface AnnouncementReview {
+  project_id: string;
+  /** Raw rows still waiting — higher than `change_count` when a value moved back. */
+  pending_count: number;
+  /** How many distinct changes the sheet lists. */
+  change_count: number;
+  /** How many messages the current selection would actually send, counted in
+   *  envelopes rather than events — one change broadcast to twelve singers is
+   *  twelve. This is the number on the confirm button. */
+  message_count: number;
+  briefing_count: number;
+  recipient_count: number;
+  /** True when the queue holds a cast removal — discarding it wholesale would
+   *  leave that person removed and never told. */
+  has_cast_removal: boolean;
+  changes: AnnouncementChange[];
+  recipients: AnnouncementRecipientShare[];
+}
+
+export interface AnnouncementPublishResult {
+  announcements: number;
+  messages: number;
+  briefings: number;
+  recipients: number;
+  rows: number;
+  held: number;
 }
 
 export type ScorePackageStatus = "IDLE" | "QUED" | "BLDG" | "RDY" | "FAIL";
@@ -261,6 +368,64 @@ export const ProjectService = {
       `${PROJECTS_BASE_URL}${projectId}/readiness-summary/`,
     );
     return response.data ?? [];
+  },
+
+  getPublicationPreview: async (
+    projectId: string | number,
+  ): Promise<ProjectPublicationPreview> => {
+    const response = await api.get<ProjectPublicationPreview>(
+      `${PROJECTS_BASE_URL}${projectId}/publish/`,
+    );
+    return response.data;
+  },
+
+  /** Takes the project live and sends one full invitation per awaiting artist. */
+  publish: async (projectId: string | number): Promise<Project> => {
+    const response = await api.post<Project>(
+      `${PROJECTS_BASE_URL}${projectId}/publish/`,
+    );
+    return response.data;
+  },
+
+  /**
+   * The review sheet's preview for a given selection. `exclude` holds those lines
+   * back and `hasNote` applies the note's fold, so the counts follow the boxes the
+   * conductor has unticked. Only the note's presence changes the arithmetic — its
+   * text is sent only when publishing.
+   */
+  getAnnouncementReview: async (
+    projectId: string | number,
+    exclude: readonly string[] = [],
+    hasNote = false,
+  ): Promise<AnnouncementReview> => {
+    const response = await api.get<AnnouncementReview>(
+      `${PROJECTS_BASE_URL}${projectId}/announcements/`,
+      { params: { exclude: exclude.join(","), with_note: hasNote ? 1 : 0 } },
+    );
+    return response.data;
+  },
+
+  /** Publishes the queue, sending everything except the held `exclude` rows and
+   *  carrying the conductor's `note` when there is one. */
+  publishAnnouncements: async (
+    projectId: string | number,
+    payload: { note?: string; exclude?: readonly string[] } = {},
+  ): Promise<AnnouncementPublishResult> => {
+    const response = await api.post<AnnouncementPublishResult>(
+      `${PROJECTS_BASE_URL}${projectId}/announcements/`,
+      { note: payload.note ?? "", exclude: payload.exclude ?? [] },
+    );
+    return response.data;
+  },
+
+  /** Abandons the whole queue without telling anyone. The saved data stands. */
+  discardAnnouncements: async (
+    projectId: string | number,
+  ): Promise<{ discarded: number }> => {
+    const response = await api.delete<{ discarded: number }>(
+      `${PROJECTS_BASE_URL}${projectId}/announcements/`,
+    );
+    return response.data;
   },
 
   create: async (data: ProjectCreateDTO): Promise<Project> => {
@@ -564,29 +729,15 @@ export const ProjectService = {
     return response.data.results ?? response.data ?? [];
   },
 
-  createPieceCasting: async (
-    data: PieceCastingCreateDTO,
-  ): Promise<PieceCasting> => {
-    const response = await api.post<PieceCasting>(
-      PIECE_CASTINGS_BASE_URL,
+  /** Saves one piece's divisi board whole; resolves with the persisted board. */
+  savePieceCastingBoard: async (
+    data: PieceCastingBoardDTO,
+  ): Promise<PieceCasting[]> => {
+    const response = await api.put<PieceCasting[]>(
+      `${PIECE_CASTINGS_BASE_URL}board/`,
       data,
     );
     return response.data;
-  },
-
-  updatePieceCasting: async (
-    id: string | number,
-    data: PieceCastingUpdateDTO,
-  ): Promise<PieceCasting> => {
-    const response = await api.patch<PieceCasting>(
-      `${PIECE_CASTINGS_BASE_URL}${id}/`,
-      data,
-    );
-    return response.data;
-  },
-
-  deletePieceCasting: async (id: string | number): Promise<void> => {
-    await api.delete(`${PIECE_CASTINGS_BASE_URL}${id}/`);
   },
 
   getAttendancesByProject: async (

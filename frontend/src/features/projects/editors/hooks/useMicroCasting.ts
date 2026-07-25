@@ -2,9 +2,11 @@
  * @file useMicroCasting.ts
  * @description State controller for the Micro-Casting Kanban board.
  * Holds an in-memory draft (`localCastings`) decoupled from server state. All drag &
- * drop and note edits stay local until the user explicitly commits via `saveChanges`.
- * The committed snapshot (`originalCastings`) is the diff baseline; switching pieces
- * while dirty is gated through `requestSelectPiece` so the UI can render a guard.
+ * drop and note edits stay local until the user explicitly commits via `saveChanges`,
+ * which sends the board for the selected piece as one declarative write.
+ * The committed snapshot (`originalCastings`) is the diff baseline behind the pending
+ * counts; switching pieces while dirty is gated through `requestSelectPiece` so the UI
+ * can render a guard.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useMicroCasting
  */
@@ -16,7 +18,6 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import { toast } from "sonner";
 
@@ -31,16 +32,13 @@ import type {
   VoiceRequirement,
 } from "@/shared/types";
 import {
-  projectKeys,
-  useCreatePieceCasting,
-  useDeletePieceCasting,
   useProjectArtistsDictionary,
   useProjectParticipations,
   useProjectPieceCastings,
   useProjectPiecesDictionary,
   useProjectProgram,
   useProjectVoiceLinesDictionary,
-  useUpdatePieceCasting,
+  useSavePieceCastingBoard,
 } from "../../api/project.queries";
 
 export type PieceCastingStatus = "FREE" | "OK" | "DEFICIT";
@@ -95,7 +93,6 @@ const isCastingDifferent = (a: PieceCasting, b: PieceCasting): boolean =>
 
 export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
 
   const artistsQuery = useProjectArtistsDictionary();
   const piecesQuery = useProjectPiecesDictionary();
@@ -110,15 +107,13 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const program = programQuery.data ?? EMPTY_PROGRAM;
   const pieceCastings = pieceCastingsQuery.data ?? EMPTY_PIECE_CASTINGS;
 
-  const createMutation = useCreatePieceCasting(projectId);
-  const updateMutation = useUpdatePieceCasting(projectId);
-  const deleteMutation = useDeletePieceCasting(projectId);
+  const saveMutation = useSavePieceCastingBoard(projectId);
+  const isSaving = saveMutation.isPending;
 
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [originalCastings, setOriginalCastings] = useState<PieceCasting[]>([]);
   const [localCastings, setLocalCastings] = useState<PieceCasting[]>([]);
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
   const [pendingPieceSwitch, setPendingPieceSwitch] = useState<string | null>(
     null,
   );
@@ -262,8 +257,12 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
       let missing = 0;
       requirements.forEach((requirement) => {
+        // A declined singer left on a line does not fill it — the seat is a hole the
+        // conductor has to see, so it keeps counting towards the deficit.
         const assigned = effectiveCastings.filter(
-          (casting) => casting.voice_line === requirement.voice_line,
+          (casting) =>
+            casting.voice_line === requirement.voice_line &&
+            participationStatusMap.get(String(casting.participation)) !== "DEC",
         ).length;
         if (assigned < requirement.quantity) {
           missing += requirement.quantity - assigned;
@@ -274,7 +273,14 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     });
 
     return statuses;
-  }, [pieceCastings, pieces, program, selectedPieceId, localCastings]);
+  }, [
+    pieceCastings,
+    pieces,
+    program,
+    selectedPieceId,
+    localCastings,
+    participationStatusMap,
+  ]);
 
   const handleUpdateNote = useCallback(
     (castingId: string, newNote: string): void => {
@@ -304,7 +310,10 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       const draggedParticipation = projectParticipations.find(
         (participation) => String(participation.id) === participationId,
       );
-      if (draggedParticipation && draggedParticipation.status !== "CON") {
+      // Casting states an intention, not consent: a singer who has not answered yet
+      // (every singer, on an unpublished project) can still be placed on a voice
+      // line. Only a decline is refused — that seat is known to be empty.
+      if (draggedParticipation && draggedParticipation.status === "DEC") {
         return;
       }
 
@@ -356,92 +365,26 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
   const saveChanges = useCallback(async (): Promise<void> => {
     if (!isDirty || isSaving || !selectedPieceId) return;
-    setIsSaving(true);
-
-    const originalById = new Map(
-      originalCastings.map((casting) => [String(casting.id), casting]),
-    );
-    const localIds = new Set(
-      localCastings.map((casting) => String(casting.id)),
-    );
-
-    type Operation =
-      | { kind: "create"; casting: PieceCasting }
-      | { kind: "update"; id: string; casting: PieceCasting }
-      | { kind: "delete"; id: string };
-
-    const operations: Operation[] = [];
-
-    for (const casting of localCastings) {
-      if (isTempId(casting.id)) {
-        operations.push({ kind: "create", casting });
-        continue;
-      }
-      const original = originalById.get(String(casting.id));
-      if (original && isCastingDifferent(original, casting)) {
-        operations.push({ kind: "update", id: String(casting.id), casting });
-      }
-    }
-    for (const casting of originalCastings) {
-      if (!localIds.has(String(casting.id))) {
-        operations.push({ kind: "delete", id: String(casting.id) });
-      }
-    }
-
-    const runOperation = async (operation: Operation): Promise<void> => {
-      switch (operation.kind) {
-        case "create":
-          await createMutation.mutateAsync({
-            participation: String(operation.casting.participation),
-            piece: String(operation.casting.piece),
-            voice_line: operation.casting.voice_line,
-            gives_pitch: operation.casting.gives_pitch ?? false,
-            notes: operation.casting.notes ?? undefined,
-          });
-          return;
-        case "update":
-          await updateMutation.mutateAsync({
-            id: operation.id,
-            data: {
-              voice_line: operation.casting.voice_line,
-              notes: operation.casting.notes ?? "",
-              gives_pitch: operation.casting.gives_pitch ?? false,
-            },
-          });
-          return;
-        case "delete":
-          await deleteMutation.mutateAsync(operation.id);
-          return;
-      }
-    };
 
     try {
-      // Order matters: deletes first to free slots that creates may target,
-      // then updates, then creates. Within each phase we run in parallel.
-      const deletes = operations.filter((operation) => operation.kind === "delete");
-      const updates = operations.filter((operation) => operation.kind === "update");
-      const creates = operations.filter((operation) => operation.kind === "create");
+      // The whole board goes up, not the diff: the server reconciles it in one
+      // transaction, so a save can no longer half-succeed — and each affected
+      // singer hears about it once instead of once per drag.
+      const board = await saveMutation.mutateAsync({
+        project: projectId,
+        piece: selectedPieceId,
+        castings: localCastings.map((casting) => ({
+          participation: String(casting.participation),
+          voice_line: casting.voice_line,
+          gives_pitch: casting.gives_pitch ?? false,
+          notes: casting.notes ?? "",
+        })),
+      });
 
-      if (deletes.length > 0) await Promise.all(deletes.map(runOperation));
-      if (updates.length > 0) await Promise.all(updates.map(runOperation));
-      if (creates.length > 0) await Promise.all(creates.map(runOperation));
-
-      // Re-baseline from the freshest cache snapshot. Mutations have already
-      // swapped temp IDs for real ones via their onSuccess handlers.
-      const refreshed =
-        queryClient.getQueryData<PieceCasting[]>(
-          projectKeys.pieceCastings.byProject(projectId),
-        ) ?? [];
-      const refreshedForPiece = refreshed.filter(
-        (casting) =>
-          String(casting.piece) === String(selectedPieceId) &&
-          projectParticipations.some(
-            (participation) =>
-              String(participation.id) === String(casting.participation),
-          ),
-      );
-      setOriginalCastings(refreshedForPiece);
-      setLocalCastings(refreshedForPiece);
+      // What came back is what was persisted — real ids in place of the local
+      // draft's temporary ones. It is the only honest baseline.
+      setOriginalCastings(board);
+      setLocalCastings(board);
 
       toast.success(
         t("projects.micro_cast.toast.save_success", "Casting zapisany"),
@@ -453,24 +396,17 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         },
       );
     } catch {
-      // Mutation hooks already toast on error and revert their slice of cache.
-      // Local state stays dirty so the user can review and retry.
-    } finally {
-      setIsSaving(false);
+      // The mutation already toasted the reason. The draft stays dirty so the
+      // user can review and retry rather than lose the board they built.
     }
   }, [
-    createMutation,
-    deleteMutation,
     isDirty,
     isSaving,
     localCastings,
-    originalCastings,
     projectId,
-    projectParticipations,
-    queryClient,
+    saveMutation,
     selectedPieceId,
     t,
-    updateMutation,
   ]);
 
   const requestSelectPiece = useCallback(

@@ -17,6 +17,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
+  useSearchParams,
 } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -30,9 +31,12 @@ import {
   Download,
   Eye,
   FileText,
+  Megaphone,
   MoreHorizontal,
   RotateCcw,
+  Send,
   Trash2,
+  UserX,
 } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
@@ -58,15 +62,26 @@ import { useUnsavedChangesWarning } from "@/shared/lib/dom/useUnsavedChangesWarn
 import { useEnrichedProject } from "./hooks/useEnrichedProjects";
 import { useProjectCard } from "./ProjectCard/hooks/useProjectCard";
 import { ProjectService } from "./api/project.service";
-import { useDeleteProject, useUpdateProjectStatus } from "./api/project.queries";
+import {
+  useAnnouncementReview,
+  useDeleteProject,
+  useUpdateProjectStatus,
+} from "./api/project.queries";
+import { useDeclinedWithSeats } from "./hooks/useDeclinedWithSeats";
 import { projectKeys } from "./api/project.query-keys";
 import {
   FAST_CHANGING_STALE_TIME,
   PROJECT_RELATION_STALE_TIME,
 } from "./api/project.query-utils";
 import { PROJECT_STATUS } from "./constants/projectDomain";
-import { getArtistDisplayName } from "./lib/projectPresentation";
+import {
+  getArtistDisplayName,
+  getProjectStatusPresentation,
+  isProjectDraft,
+} from "./lib/projectPresentation";
 import { ProjectTabs } from "./components/ProjectTabs";
+import { PublishProjectModal } from "./components/PublishProjectModal";
+import { AnnouncementReviewSheet } from "./components/AnnouncementReviewSheet";
 
 export interface ProjectHubContext {
   project: Project;
@@ -99,6 +114,42 @@ export default function ProjectHubLayout(): React.JSX.Element {
   const [isRunsheetOpen, setRunsheetOpen] = useState<boolean>(false);
   const [isScoreOpen, setScoreOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
+  const [isPublishOpen, setPublishOpen] = useState<boolean>(false);
+  const [isAnnounceOpen, setAnnounceOpen] = useState<boolean>(false);
+  // Set once the conductor answers "later" to the leaving prompt, so the queue asks
+  // once per visit and never becomes the thing that nags them out of the project.
+  const [queuePromptAnswered, setQueuePromptAnswered] = useState<boolean>(false);
+
+  // `?announce=1` opens the review sheet on arrival — the contract the queue's
+  // overdue nudge deep-links to, so answering it is one tap from a lock screen
+  // rather than a landing on the hub with something still to find. The param is
+  // consumed immediately: it describes how the reader got here, not where they
+  // are, and leaving it would re-open the sheet on every back navigation.
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get("announce") !== "1") return;
+    setAnnounceOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("announce");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  // The queue is read only when the project claims to hold something, and the count
+  // comes from the queue itself rather than the flag: the flag counts rows, and rows
+  // that cancelled each other out are not news. A pill reading "2" beside a sheet
+  // listing nothing would be a small lie told on every visit.
+  const hasQueuedRows = Boolean(project?.has_unannounced_changes);
+  const announcements = useAnnouncementReview(id, { enabled: hasQueuedRows });
+  // Gated on the flag as well as the data: the flag is what a publication clears
+  // first, and the pill must go out with it rather than linger on a cached count.
+  const pendingChangeCount = hasQueuedRows
+    ? (announcements.data?.change_count ?? 0)
+    : 0;
+
+  // Someone who declined after being cast leaves their seats behind as a deliberate
+  // hole in the divisi (Stage 0b). The board shows it, but only if the conductor
+  // opens that tab — so the hub says it out loud.
+  const declinedWithSeats = useDeclinedWithSeats(id);
 
   // Unsaved-changes guard. A deferred-save work area (program, budget,
   // micro-casting, details) reports its dirty state through `setDirty`. The hub
@@ -155,10 +206,19 @@ export default function ProjectHubLayout(): React.JSX.Element {
     ]);
   }, [id, queryClient]);
 
-  const blocker = useBlocker(
-    ({ currentLocation, nextLocation }) =>
-      isDirty && currentLocation.pathname !== nextLocation.pathname,
-  );
+  // One blocker, two reasons to stop. Unsaved edits guard every move away from the
+  // work area; a waiting announcement queue only guards *leaving the project*, and
+  // asks once — the queue exists to spare the cast noise, so it must not become the
+  // thing that nags the conductor. Which modal is shown follows from `isDirty`.
+  const blocker = useBlocker(({ currentLocation, nextLocation }) => {
+    if (currentLocation.pathname === nextLocation.pathname) return false;
+    if (isDirty) return true;
+    const leavingHub = !nextLocation.pathname.startsWith(
+      `/panel/projects/${id}`,
+    );
+    return leavingHub && pendingChangeCount > 0 && !queuePromptAnswered;
+  });
+  const isQueuePrompt = blocker.state === "blocked" && !isDirty;
 
   const fetchRunsheetBlob = useCallback(async () => {
     const response = await ProjectService.downloadReport(
@@ -234,6 +294,8 @@ export default function ProjectHubLayout(): React.JSX.Element {
   }
 
   const isDone = project.status === PROJECT_STATUS.DONE;
+  const isDraft = isProjectDraft(project.status);
+  const statusPresentation = getProjectStatusPresentation(project.status);
   const conductorName = getArtistDisplayName(
     project.conductor,
     project.conductor_name,
@@ -259,29 +321,70 @@ export default function ProjectHubLayout(): React.JSX.Element {
             </Button>
 
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleStatusToggle}
-                leftIcon={
-                  isDone ? (
-                    <RotateCcw size={14} aria-hidden="true" />
-                  ) : (
-                    <CheckCircle2 size={14} aria-hidden="true" />
-                  )
-                }
-                aria-label={
-                  isDone
-                    ? t("projects.actions.mark_active", "Oznacz jako aktywny")
-                    : t("projects.actions.mark_done", "Zakończ projekt")
-                }
-              >
-                <span className="hidden md:inline">
-                  {isDone
-                    ? t("projects.actions.mark_active", "Oznacz jako aktywny")
-                    : t("projects.actions.mark_done", "Zakończ projekt")}
-                </span>
-              </Button>
+              {/* The queue's own door. Quiet by design: it states a number and
+                  waits, because an edit the cast has not been told about is a
+                  pending decision, not a fault. Absent when nothing is waiting. */}
+              {pendingChangeCount > 0 && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setAnnounceOpen(true)}
+                  leftIcon={<Megaphone size={14} aria-hidden="true" />}
+                  aria-label={t("projects.announce.pill_aria", {
+                    count: pendingChangeCount,
+                    defaultValue: "Do ogłoszenia: {{count}} zmian",
+                  })}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="hidden md:inline">
+                      {t("projects.announce.pill", "Do ogłoszenia")}
+                    </span>
+                    <span className="rounded-full bg-ethereal-gold/15 px-1.5 py-0.5 tabular-nums text-ethereal-gold">
+                      {pendingChangeCount}
+                    </span>
+                  </span>
+                </Button>
+              )}
+
+              {/* A draft has no "finish" to offer — the only move forward is
+                  publication, and it is the primary act on this screen. */}
+              {isDraft ? (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setPublishOpen(true)}
+                  leftIcon={<Send size={14} aria-hidden="true" />}
+                  aria-label={t("projects.actions.publish", "Opublikuj projekt")}
+                >
+                  <span className="hidden md:inline">
+                    {t("projects.actions.publish", "Opublikuj projekt")}
+                  </span>
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStatusToggle}
+                  leftIcon={
+                    isDone ? (
+                      <RotateCcw size={14} aria-hidden="true" />
+                    ) : (
+                      <CheckCircle2 size={14} aria-hidden="true" />
+                    )
+                  }
+                  aria-label={
+                    isDone
+                      ? t("projects.actions.mark_active", "Oznacz jako aktywny")
+                      : t("projects.actions.mark_done", "Zakończ projekt")
+                  }
+                >
+                  <span className="hidden md:inline">
+                    {isDone
+                      ? t("projects.actions.mark_active", "Oznacz jako aktywny")
+                      : t("projects.actions.mark_done", "Zakończ projekt")}
+                  </span>
+                </Button>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -387,13 +490,41 @@ export default function ProjectHubLayout(): React.JSX.Element {
 
           {/* Identity row */}
           <div className="min-w-0">
-            <div className="mb-1.5 flex items-center gap-2">
-              <Badge variant={isDone ? "neutral" : "warning"}>
-                {isDone
-                  ? t("projects.badge_done", "Zrealizowano")
-                  : t("projects.badge_active", "W przygotowaniu")}
+            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+              <Badge variant={statusPresentation.variant}>
+                {t(
+                  statusPresentation.labelKey,
+                  statusPresentation.fallbackLabel,
+                )}
               </Badge>
+              {isDraft && (
+                <Caption color="muted">
+                  {t(
+                    "projects.hub.draft_hint",
+                    "Obsada nic o tym projekcie nie wie — nic nie wychodzi na zewnątrz aż do publikacji.",
+                  )}
+                </Caption>
+              )}
             </div>
+
+            {/* A seat left by someone who declined stays on the board as a hole on
+                purpose. Gold, not crimson: it is a gap to fill, not an alarm. */}
+            {declinedWithSeats.length > 0 && (
+              <Caption color="muted" className="mb-1.5 flex items-start gap-1.5">
+                <UserX
+                  size={13}
+                  className="mt-0.5 shrink-0 text-ethereal-gold"
+                  aria-hidden="true"
+                />
+                {/* Worded so the sentence never has to agree with the number or
+                    the gender of whoever declined. */}
+                {t("projects.hub.declined_with_seats", {
+                  names: declinedWithSeats.join(", "),
+                  defaultValue:
+                    "Odmowa po obsadzeniu: {{names}}. Zwolnione miejsca w divisi czekają puste.",
+                })}
+              </Caption>
+            )}
             <Heading as="h1" size="3xl" weight="medium" className="truncate">
               {project.title}
             </Heading>
@@ -489,7 +620,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
       )}
 
       <ConfirmModal
-        isOpen={blocker.state === "blocked"}
+        isOpen={blocker.state === "blocked" && isDirty}
         isDestructive
         title={t(
           "projects.hub.unsaved_modal_title",
@@ -506,6 +637,47 @@ export default function ProjectHubLayout(): React.JSX.Element {
           blocker.proceed?.();
         }}
         onCancel={() => blocker.reset?.()}
+      />
+
+      {/* The queue asks on the way out, not on the way in: interrupting an edit to
+          talk about announcements would put the mechanism in front of the work.
+          "Later" is a real answer — the queue is durable and Stage 5's sweep is what
+          catches a conductor who forgets. Discarding is deliberately absent here: it
+          needs the sheet's contents in front of you, above all the name of anyone
+          about to be dropped from the cast in silence. */}
+      <ConfirmModal
+        isOpen={isQueuePrompt}
+        isDestructive={false}
+        title={t("projects.announce.leave_title", "Obsada jeszcze o tym nie wie")}
+        description={t("projects.announce.leave_desc", {
+          count: pendingChangeCount,
+          defaultValue:
+            "{{count}} zmian czeka w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
+        })}
+        confirmText={t("projects.announce.leave_review", "Przejrzyj i wyślij")}
+        cancelText={t("projects.announce.leave_later", "Później")}
+        onConfirm={() => {
+          blocker.reset?.();
+          setAnnounceOpen(true);
+        }}
+        onCancel={() => {
+          setQueuePromptAnswered(true);
+          blocker.proceed?.();
+        }}
+      />
+
+      <AnnouncementReviewSheet
+        isOpen={isAnnounceOpen}
+        projectId={id}
+        projectTitle={project.title}
+        onClose={() => setAnnounceOpen(false)}
+      />
+
+      <PublishProjectModal
+        isOpen={isPublishOpen}
+        projectId={String(project.id)}
+        projectTitle={project.title}
+        onClose={() => setPublishOpen(false)}
       />
 
       <ConfirmModal

@@ -180,6 +180,10 @@ export interface Project extends BaseModel {
   cast_declined?: number;
   crew_total?: number;
   pieces_total?: number;
+  /** Manager-only: the announcement queue is holding changes the cast has not
+   *  been told about yet. Always false for artists — the app already shows them
+   *  the current data. */
+  has_unannounced_changes?: boolean;
 }
 
 export interface Participation extends BaseModel {

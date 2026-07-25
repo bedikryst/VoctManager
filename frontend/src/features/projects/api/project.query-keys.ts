@@ -17,6 +17,26 @@ export const projectKeys = {
     active: ["projects", { status: "ACTIVE" }] as const,
     details: (id: string | number) => ["projects", String(id)] as const,
   },
+  publication: {
+    preview: (projectId: string | number) =>
+      ["projects", String(projectId), "publication"] as const,
+  },
+  announcements: {
+    /** The review sheet's preview. Keyed by the selection it describes — held
+     *  lines and whether a note is present both change the counts, so a stale
+     *  key would show a number the confirm button then contradicts. */
+    review: (
+      projectId: string | number,
+      exclude: readonly string[] = [],
+      hasNote = false,
+    ) =>
+      [
+        "projects",
+        String(projectId),
+        "announcements",
+        { exclude: [...exclude].sort().join(","), note: hasNote },
+      ] as const,
+  },
   participations: {
     all: ["participations"] as const,
     byProject: (projectId: string | number) =>

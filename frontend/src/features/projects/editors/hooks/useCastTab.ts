@@ -110,9 +110,12 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
         );
 
         if (existingDeclined) {
+          // Re-adding someone who declined asks them again — it does not answer
+          // for them. Confirming on their behalf would also skip them at
+          // publication, which only addresses people still awaiting an answer.
           await updateParticipationMutation.mutateAsync({
             id: String(existingDeclined.id),
-            data: { status: "CON" },
+            data: { status: "INV" },
           });
         } else {
           await createParticipationMutation.mutateAsync({
