@@ -152,7 +152,7 @@ export const PitchPipe = ({
         <Eyebrow color="muted">
           {t("schedule.pitch_pipe.title", "Kamerton")}
         </Eyebrow>
-        <div className="flex items-center gap-1 rounded-lg border border-ethereal-marble bg-ethereal-alabaster p-0.5 shadow-glass-solid">
+        <div className="flex items-center gap-1 rounded-chip border border-ethereal-marble bg-ethereal-alabaster p-0.5 shadow-glass-solid">
           {OCTAVES.map((value) => (
             <button
               key={value}
@@ -163,7 +163,7 @@ export const PitchPipe = ({
               }}
               aria-pressed={octave === value}
               className={cn(
-                "min-h-7 rounded-md border px-2 py-0.5 transition-all active:scale-95",
+                "min-h-7 rounded-chip border px-2 py-0.5 transition-all active:scale-95",
                 octave === value
                   ? "border-ethereal-gold/30 bg-ethereal-gold/10"
                   : "border-transparent hover:border-ethereal-marble",
@@ -188,7 +188,7 @@ export const PitchPipe = ({
               onClick={() => handleNoteTap(index)}
               aria-pressed={isActive}
               className={cn(
-                "flex min-h-11 items-center justify-center rounded-lg border text-sm font-semibold transition-all active:scale-95",
+                "flex min-h-11 items-center justify-center rounded-chip border text-sm font-semibold transition-all active:scale-95",
                 isActive
                   ? "border-ethereal-gold bg-ethereal-gold text-ethereal-graphite shadow-button-primary"
                   : isTonic

@@ -32,7 +32,7 @@ export const MovementsList = ({
       {ordered.map((mv) => (
         <li
           key={mv.id}
-          className="flex items-baseline gap-3 rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster/55 px-4 py-2"
+          className="flex items-baseline gap-3 rounded-control border border-ethereal-incense/15 bg-ethereal-alabaster/55 px-4 py-2"
         >
           <Eyebrow color="muted" size="caption">
             {String(mv.order_index + 1).padStart(2, "0")}

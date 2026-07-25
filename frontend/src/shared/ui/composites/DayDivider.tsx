@@ -22,7 +22,7 @@ export const DayDivider: React.FC<DayDividerProps> = ({ label }) => (
       size="xs"
       color="muted"
       weight="medium"
-      className="rounded-full border border-ethereal-ink/8 bg-ethereal-alabaster/70 px-2.5 py-0.5"
+      className="rounded-full border border-hairline-strong bg-ethereal-alabaster/70 px-2.5 py-0.5"
     >
       {label}
     </Label>

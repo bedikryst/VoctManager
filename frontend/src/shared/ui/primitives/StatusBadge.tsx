@@ -58,7 +58,9 @@ export function StatusBadge({
           aria-hidden="true"
         />
       )}
-      <span className="relative z-10 text-[9px] font-bold uppercase tracking-[0.25em]">
+      {/* Same chip type recipe as `Badge` — the two differ in shape and glow,
+          never in typography. */}
+      <span className="relative z-10 text-overline-sm font-bold uppercase tracking-widest">
         {label}
       </span>
     </div>

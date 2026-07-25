@@ -52,7 +52,7 @@ export const PdfOutlineDrawer = ({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -40, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-surface border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
             <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
               <span className="flex items-center gap-2 text-sm font-semibold">
@@ -79,7 +79,7 @@ export const PdfOutlineDrawer = ({
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex w-full items-baseline gap-2 rounded-lg px-2 py-1.5 text-left transition-colors",
+                      "flex w-full items-baseline gap-2 rounded-chip px-2 py-1.5 text-left transition-colors",
                       index === activeIndex
                         ? "bg-ethereal-gold/15 text-ethereal-gold"
                         : "text-ethereal-marble hover:bg-white/10",

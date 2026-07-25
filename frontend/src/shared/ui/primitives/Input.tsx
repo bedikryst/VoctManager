@@ -8,9 +8,10 @@
 import React, { InputHTMLAttributes, forwardRef, useId } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 const inputVariants = cva(
-  "w-full rounded-xl text-sm transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+  "w-full rounded-control text-sm transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
@@ -58,12 +59,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex w-full flex-col gap-1.5">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="ml-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite antialiased"
-          >
+          <Eyebrow as="label" htmlFor={inputId} color="muted" className="ml-1">
             {label}
-          </label>
+          </Eyebrow>
         )}
 
         <div className="relative flex items-center">
@@ -114,7 +112,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
 
           {rightElement && (
             <div
-              className="absolute right-6 flex items-center justify-center text-[10px] font-bold text-ethereal-incense uppercase tracking-tighter"
+              className="absolute right-6 flex items-center justify-center text-overline-sm font-bold text-ethereal-incense uppercase tracking-widest"
               aria-hidden="true"
             >
               {rightElement}

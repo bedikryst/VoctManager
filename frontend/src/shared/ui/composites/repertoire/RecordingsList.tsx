@@ -55,11 +55,11 @@ export const RecordingsList = ({
             href={recording.url}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-3 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/65 px-4 py-3 transition-colors hover:border-ethereal-gold/40 hover:bg-ethereal-parchment/40"
+            className="flex items-center gap-3 rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/65 px-4 py-3 transition-colors hover:border-ethereal-gold/40 hover:bg-ethereal-parchment/40"
           >
             <span
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-control border",
                 sourceTone(recording.source),
               )}
               aria-hidden="true"

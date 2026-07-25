@@ -126,7 +126,7 @@ export const InlineEditable = ({
         }}
         aria-label={`${ariaLabel} (kliknij by edytować)`}
         className={cn(
-          "group/edit inline-flex items-baseline gap-1.5 rounded-md py-0.5 text-left transition-colors",
+          "group/edit inline-flex items-baseline gap-1.5 rounded-chip py-0.5 text-left transition-colors",
           !disabled && "hover:bg-ethereal-gold/10 hover:text-ethereal-ink cursor-text",
           isEmpty && "text-ethereal-graphite/60 italic",
           variant === "title" && "font-semibold text-base",
@@ -173,7 +173,7 @@ export const InlineEditable = ({
         aria-label={ariaLabel}
         aria-invalid={error !== null}
         className={cn(
-          "rounded-md border border-ethereal-gold/40 bg-ethereal-alabaster px-1.5 py-0.5 outline-none transition-colors",
+          "rounded-chip border border-ethereal-gold/40 bg-ethereal-alabaster px-1.5 py-0.5 outline-none transition-colors",
           "focus:border-ethereal-gold focus:ring-1 focus:ring-ethereal-gold/40",
           error && "border-ethereal-crimson/60",
           variant === "title" && "font-semibold text-base",
@@ -189,7 +189,7 @@ export const InlineEditable = ({
         onClick={() => void commit(draft)}
         disabled={isSaving}
         aria-label={t("common.actions.save")}
-        className="flex h-6 w-6 items-center justify-center rounded-md text-ethereal-sage hover:bg-ethereal-sage/10"
+        className="flex h-6 w-6 items-center justify-center rounded-chip text-ethereal-sage hover:bg-ethereal-sage/10"
       >
         {isSaving ? (
           <Loader2 size={12} className="animate-spin" />
@@ -204,7 +204,7 @@ export const InlineEditable = ({
         onClick={cancel}
         disabled={isSaving}
         aria-label={t("common.actions.cancel")}
-        className="flex h-6 w-6 items-center justify-center rounded-md text-ethereal-graphite hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+        className="flex h-6 w-6 items-center justify-center rounded-chip text-ethereal-graphite hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
       >
         <X size={12} />
       </button>

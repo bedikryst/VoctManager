@@ -11,7 +11,10 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest border transition-all duration-300",
+  // Chip type is one recipe shared with StatusBadge: the overline-sm size at
+  // the control tracking (0.1em). The wider 0.14em belongs to `Eyebrow` and
+  // must not leak here — a chip sits inline with buttons, not with headings.
+  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip text-overline-sm font-bold uppercase tracking-widest border transition-colors duration-300",
   {
     variants: {
       variant: {
@@ -24,7 +27,7 @@ const badgeVariants = cva(
         amethyst:
           "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/30 shadow-sm",
         neutral:
-          "bg-ethereal-ink/4 text-ethereal-graphite border-ethereal-ink/8",
+          "bg-ethereal-ink/4 text-ethereal-graphite border-hairline-strong",
         brand:
           "bg-ethereal-ink/5 text-ethereal-ink border-ethereal-incense/30 backdrop-blur-sm",
         outline:

@@ -12,15 +12,29 @@ import { cn } from "@/shared/lib/utils";
 export const typographyVariants = cva("transition-colors duration-500", {
   variants: {
     variant: {
-      body: "font-sans leading-relaxed",
+      body: "font-sans",
       heading: "font-serif tracking-tight",
       eyebrow: "font-sans uppercase tracking-[0.14em]",
-      metric: "font-serif font-light tracking-tight",
+      // The display figure: one number, read once, so it carries the same
+      // serif voice as the heading above it. `lnum` is not optional here —
+      // Cormorant's default set is OLDSTYLE, where 3/5/7/9 hang below the
+      // baseline and 1 is an x-height glyph indistinguishable from "I".
+      // Tabular is deliberately absent: Cormorant pads every tabular digit to
+      // a uniform 491/1000 advance, which opens visible gaps around the narrow
+      // ones. Figures that must align down a column (ledgers, matrices, the
+      // clock) belong to sans + `tabular-nums`, never to this variant.
+      metric: "font-serif lining-nums tracking-tight",
       emphasis: "font-serif italic tracking-wide",
       unit: "font-serif italic tracking-normal",
-      caption: "font-sans leading-snug",
+      caption: "font-sans",
     },
     size: {
+      // The two sizes of the uppercase overline role (see --text-overline in
+      // panel.css). Only `Eyebrow` should reach for these; the tracking that
+      // completes the role comes from the `eyebrow` variant above, so a size
+      // used on any other variant would carry none.
+      overline: "text-overline",
+      "overline-sm": "text-overline-sm",
       caption: "text-[11px]",
       xs: "text-[10px]",
       sm: "text-xs",
@@ -72,6 +86,16 @@ export const typographyVariants = cva("transition-colors duration-500", {
       true: "truncate",
     },
   },
+  // Line-height is a property of the ROLE (prose breathes, a caption does not),
+  // not of the size — but tailwind-merge resolves a font-size as owning the
+  // line-height, so a `leading-*` declared with the variant is dropped by the
+  // `text-*` that follows it. cva applies compound variants after every plain
+  // variant and before the caller's `className`, which is exactly the slot this
+  // needs: it outlives the size, and a caller's own `leading-*` still wins.
+  compoundVariants: [
+    { variant: "body", class: "leading-relaxed" },
+    { variant: "caption", class: "leading-snug" },
+  ],
 });
 
 type TypographyDomProps = Omit<
