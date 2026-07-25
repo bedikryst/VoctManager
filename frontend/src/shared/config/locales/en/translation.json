@@ -2779,7 +2779,12 @@
       "invites": "Invited by: {{name}}",
       "status_error": "Error updating participation status",
       "status_updated": "Participation status updated",
-      "title": "New project invitation"
+      "title": "New project invitation",
+      "call_time": "Call time: {{time}}",
+      "your_part": "Your part: {{parts}}",
+      "rehearsals": "Rehearsals ({{count}})",
+      "optional": "optional",
+      "program": "Programme"
     },
     "mark_all_read": "Mark all as read",
     "render_error": "This notification couldn't be displayed.",
@@ -2831,6 +2836,7 @@
       "PROJECT_UPDATED": "Project update",
       "PROJECT_CANCELLED": "Project cancelled",
       "PROJECT_REMINDER": "Reminder",
+      "PROJECT_BRIEFING": "Project briefing",
       "REHEARSAL_SCHEDULED": "New rehearsal",
       "REHEARSAL_UPDATED": "Rehearsal change",
       "REHEARSAL_CANCELLED": "Rehearsal cancelled",
@@ -2849,7 +2855,8 @@
       "MESSAGE_RECEIVED": "Message",
       "CHANNEL_MESSAGE": "Project channel",
       "NOTIFICATION_READ_RECEIPT": "Read receipt",
-      "fallback": "Notification"
+      "fallback": "Notification",
+      "ANNOUNCEMENT_PENDING": "Announcement queue"
     },
     "status": {
       "attendance": {
@@ -2875,9 +2882,15 @@
       "focus": "Focus",
       "is_mandatory": "Attendance",
       "voice_line": "Voice part",
+      "gives_pitch": "Starting pitch",
+      "notes": "Part note",
       "now_mandatory": "Now mandatory",
       "now_optional": "Now optional",
-      "run_sheet": "Day schedule"
+      "run_sheet": "Day schedule",
+      "boolean": {
+        "true": "Yes",
+        "false": "No"
+      }
     },
     "voiceLines": {
       "S1": "Soprano 1",
@@ -2908,6 +2921,13 @@
       "tomorrow": "tomorrow at {{time}}",
       "absolute": "{{weekday}}, {{date}} at {{time}}"
     },
+    "briefing": {
+      "count_one": "{{count}} change",
+      "count_other": "{{count}} changes",
+      "more": "and {{n}} more",
+      "rehearsal_added": "New rehearsal",
+      "rehearsal_changed": "Rehearsal"
+    },
     "inapp": {
       "project_removed": "you’ve been removed",
       "casting_removed": "no longer cast",
@@ -2915,7 +2935,15 @@
       "absence_requested": "asked to be excused",
       "read_receipt": "read your message",
       "invited_by": "invited by {{name}}",
-      "contract_issued": "waiting for your signature"
+      "contract_issued": "waiting for your signature",
+      "announcement_pending_changes_one": "{{count}} change waiting",
+      "announcement_pending_changes_other": "{{count}} changes waiting",
+      "announcement_pending_hours_one": "waiting {{count}} hour",
+      "announcement_pending_hours_other": "waiting {{count}} hours",
+      "announcement_pending_days_one": "waiting {{count}} day",
+      "announcement_pending_days_other": "waiting {{count}} days",
+      "announcement_pending_unaware_one": "{{count}} person hasn't been told",
+      "announcement_pending_unaware_other": "{{count}} people haven't been told"
     },
     "push": {
       "toasts": {
@@ -3151,7 +3179,8 @@
       "delete_project": "Delete project",
       "manage": "Manage",
       "mark_active": "Mark as Active",
-      "mark_done": "Complete project"
+      "mark_done": "Complete project",
+      "publish": "Publish project"
     },
     "badge_active": "In preparation",
     "badge_done": "Completed",
@@ -3409,7 +3438,8 @@
       "active": "In preparation",
       "all": "All",
       "aria_label": "Project status filters",
-      "done": "Archive"
+      "done": "Archive",
+      "draft": "Drafts"
     },
     "hub": {
       "back": "Events",
@@ -3420,7 +3450,9 @@
       },
       "tabs_aria": "Project sections",
       "unsaved_modal_desc": "Leaving this section will discard unsaved changes. Do you want to continue?",
-      "unsaved_modal_title": "You have unsaved changes"
+      "unsaved_modal_title": "You have unsaved changes",
+      "draft_hint": "The cast knows nothing about this project — nothing leaves the app until you publish.",
+      "declined_with_seats": "Declined after being cast: {{names}}. The seats they left stand open in the divisi."
     },
     "matrix": {
       "action_bar": {
@@ -3465,7 +3497,9 @@
         "add_note": "Add note",
         "drag_aria": "Drag {{name}}",
         "note_placeholder": "Note...",
-        "pending_label": "Unsaved"
+        "pending_label": "Unsaved",
+        "awaiting": "Awaiting",
+        "declined": "Declined"
       },
       "bucket": {
         "aria": "Droppable Section",
@@ -3743,6 +3777,79 @@
       "delete_error_title": "Deletion error",
       "delete_loading": "Deleting project...",
       "delete_success": "Project deleted successfully"
+    },
+    "badge_draft": "Draft",
+    "badge_cancelled": "Cancelled",
+    "publish": {
+      "eyebrow": "Publishing the project",
+      "recipients_hint_one": "person will receive the full invitation: date, rehearsals, programme and their own part.",
+      "recipients_hint_other": "people will receive the full invitation: date, rehearsals, programme and their own part.",
+      "skipped_hint_one": "{{count}} person has already answered — we won't invite them again.",
+      "skipped_hint_other": "{{count}} people have already answered — we won't invite them again.",
+      "warning_no_cast": "Nobody has been invited yet — no message will go out.",
+      "warning_no_rehearsals": "No rehearsals scheduled — the invitation won't state any dates.",
+      "warning_no_program": "The programme is empty — the invitation won't state the repertoire.",
+      "warning_no_location": "No concert venue has been set.",
+      "warning_unreachable": "Some of the cast have no account yet — the invitation won't reach them.",
+      "unreachable_list": "No account — the invitation won't reach them:",
+      "irreversible_hint": "Once published, the project becomes visible to the cast, and sent messages cannot be recalled.",
+      "preview_error": "Could not load the publication preview.",
+      "confirm": "Publish and send"
+    },
+    "announce": {
+      "title": "To announce",
+      "eyebrow": "Announcement queue",
+      "pill": "To announce",
+      "badge": "To announce",
+      "pill_aria_one": "To announce: {{count}} change",
+      "pill_aria_other": "To announce: {{count}} changes",
+      "change_count_one": "{{count}} change",
+      "change_count_other": "{{count}} changes",
+      "intro": "The cast already sees the current data in the app. This is one message for the people who aren't looking — untick anything that should wait.",
+      "section_project": "The concert",
+      "section_rehearsal": "Rehearsals",
+      "section_casting": "Parts",
+      "section_participation": "Removed from the cast",
+      "removed_from_cast": "Removed from the cast",
+      "casting_created": "New part",
+      "casting_changed": "Part changed",
+      "casting_removed": "Part withdrawn",
+      "urgent": "Urgent",
+      "toggle_line": "Send this change",
+      "recipient_count_one": "{{count}} person",
+      "recipient_count_other": "{{count}} people",
+      "summary_headline_one": "{{count}} message will go out",
+      "summary_headline_other": "{{count}} messages will go out",
+      "summary_briefings_one": "{{count}} of them a briefing",
+      "summary_briefings_other": "{{count}} of them briefings",
+      "summary_more": "and {{n}} more",
+      "nothing_leaves": "Nothing will go out — every change is held back.",
+      "note_label": "A word from the conductor (optional)",
+      "note_placeholder": "e.g. Please be on time — we start sharp.",
+      "note_hint": "The note opens the message. Add one and everybody receives a single combined briefing.",
+      "note_undeliverable": "This note has nowhere to go — the queue holds only a removal from the cast, which always travels on its own. Write to that person directly.",
+      "publish": "Send ({{n}})",
+      "nothing_selected": "Nothing selected",
+      "publishing": "Sending…",
+      "published_one": "Sent {{count}} message.",
+      "published_other": "Sent {{count}} messages.",
+      "publish_error": "The queue could not be sent.",
+      "discard": "Discard",
+      "discarding": "Discarding…",
+      "discarded": "Queue discarded — nothing went out.",
+      "discard_error": "The queue could not be discarded.",
+      "discard_title": "Discard the whole queue?",
+      "discard_desc": "The saved changes stay — only the notification about them disappears. This cannot be undone.",
+      "discard_removal_warning": "The queue holds a removal from the cast: {{names}}. Discarding keeps the change in the database, but nobody will ever be told. Discard anyway?",
+      "discard_confirm": "Discard queue",
+      "empty_title": "Nothing waiting",
+      "empty_desc": "The cast knows everything that has been saved. Further changes will gather here into one message.",
+      "load_error": "The announcement queue could not be loaded.",
+      "leave_title": "The cast doesn't know yet",
+      "leave_desc_one": "{{count}} change is waiting in the announcement queue. It is saved in full — only the message to the cast is missing.",
+      "leave_desc_other": "{{count}} changes are waiting in the announcement queue. They are saved in full — only the message to the cast is missing.",
+      "leave_review": "Review and send",
+      "leave_later": "Later"
     }
   },
   "pwa": {
@@ -4228,7 +4335,7 @@
         "unsupported_desc": "Use the latest version of Chrome, Edge, Firefox, or Safari. In-app notifications still work normally.",
         "unsupported_title": "This browser does not support push notifications"
       },
-      "description": "Manage how and when you want to receive information from the system. In-app notifications are always active.",
+      "description": "Choose what you want to hear about — and how it reaches you.",
       "hero_variant": {
         "active": "Active",
         "blocked": "Blocked",
@@ -4238,7 +4345,7 @@
       },
       "table": {
         "email": "Email",
-        "event_type": "Event type",
+        "event_type": "Notifications",
         "in_app": "In-App",
         "push": "Push"
       },
@@ -4262,6 +4369,7 @@
         "PARTICIPATION_RESPONSE": "Artist Project Response",
         "PIECE_CASTING_ASSIGNED": "Assigned to Piece",
         "PIECE_CASTING_UPDATED": "Piece Casting Changed",
+        "PROJECT_BRIEFING": "Grouped Project Changes",
         "PROJECT_CANCELLED": "Project Cancelled",
         "PROJECT_INVITATION": "Project Invitation",
         "PROJECT_REMINDER": "Upcoming Project Reminder",
@@ -4270,7 +4378,8 @@
         "REHEARSAL_REMINDER": "Upcoming Rehearsal Reminder",
         "REHEARSAL_SCHEDULED": "New Rehearsal Scheduled",
         "REHEARSAL_UPDATED": "Rehearsal Time/Location Changed",
-        "SYSTEM_ALERT": "System Maintenance or Alert"
+        "SYSTEM_ALERT": "System Maintenance or Alert",
+        "ANNOUNCEMENT_PENDING": "Unannounced changes waiting"
       },
       "unsubscribe_modal": {
         "description": "You will no longer receive push notifications on this device. You can turn them back on at any time.",
@@ -4283,16 +4392,16 @@
         "hour_label": "Delivery time",
         "timezone_note": "In your timezone ({{timezone}})"
       },
-      "in_app_note": "Every event always appears in your in-app bell. Below, choose what you also want by email and as a push notification.",
+      "in_app_note": "Everything lands in the in-app bell, always, whatever you set here. Below you are only choosing email and push.",
       "groups": {
-        "schedule": "Schedule & rehearsals",
-        "repertoire": "Repertoire & materials",
-        "messages": "Communications",
-        "decisions": "Your requests",
+        "commitments": "Your commitments",
+        "messages": "Messages",
+        "materials": "Materials & reminders",
         "team": "Team operations"
       },
       "type_desc": {
         "PROJECT_INVITATION": "You're invited to sing in a project",
+        "PROJECT_BRIEFING": "Several changes at once, gathered into one message",
         "PROJECT_UPDATED": "A project's details change",
         "PROJECT_REMINDER": "Shortly before a concert",
         "REHEARSAL_UPDATED": "A rehearsal's time, place or focus changes",
@@ -4306,15 +4415,38 @@
         "PARTICIPATION_RESPONSE": "A singer responds to an invitation",
         "ATTENDANCE_SUBMITTED": "A singer updates their attendance",
         "ABSENCE_REQUESTED": "A singer requests an absence",
-        "SYSTEM_ALERT": "Maintenance and important system notices"
+        "SYSTEM_ALERT": "Maintenance and important system notices",
+        "ANNOUNCEMENT_PENDING": "A project's queue is waiting and the cast still doesn't know",
+        "PROJECT_CANCELLED": "A concert is called off",
+        "REHEARSAL_SCHEDULED": "A new rehearsal joins the schedule",
+        "REHEARSAL_CANCELLED": "A rehearsal is called off",
+        "MESSAGE_RECEIVED": "A reply in your conversation"
       },
       "restore_recommended": "Restore recommended",
       "customized_hint": "Customized — differs from the recommended default",
       "a11y": {
         "email": "Email for {{event}}",
-        "push": "Push for {{event}}"
+        "push": "Push for {{event}}",
+        "email_group": "Email for: {{group}}",
+        "email_group_partial": "Email for: {{group}} — partially on",
+        "push_group": "Push for: {{group}}",
+        "push_group_partial": "Push for: {{group}} — partially on"
       },
-      "customized_badge": "Edited"
+      "customized_badge": "Edited",
+      "groups_desc": {
+        "commitments": "Invitations, rehearsal and concert times changing, your own parts, and decisions on your absence requests.",
+        "messages": "Someone writing to you — a reply in a conversation, or a message from management.",
+        "materials": "New scores and recordings, plus reminders shortly before a rehearsal or concert.",
+        "team": "Singers' responses and the announcement queue waiting to go out. Each of these rows answers for itself."
+      },
+      "groups_email_off": {
+        "commitments": "You will not get an email when a rehearsal or concert time changes. The app still shows everything — but only once you open it.",
+        "messages": "You will not get an email when someone writes to you. The message will be waiting in the app."
+      },
+      "details_show": "Details ({{n}})",
+      "details_hide": "Hide details",
+      "partial_badge": "Partial",
+      "partial_hint": "Some notifications in this group are set differently. The switch beside it turns them all on."
     },
     "page": {
       "highlight": "account",

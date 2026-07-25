@@ -2780,7 +2780,12 @@
       "invites": "Zaprasza: {{name}}",
       "status_error": "Wystąpił błąd podczas aktualizacji statusu",
       "status_updated": "Zaktualizowano status uczestnictwa",
-      "title": "Nowe zaproszenie do projektu"
+      "title": "Nowe zaproszenie do projektu",
+      "call_time": "Zbiórka: {{time}}",
+      "your_part": "Twoja partia: {{parts}}",
+      "rehearsals": "Próby ({{count}})",
+      "optional": "nieobowiązkowa",
+      "program": "Program"
     },
     "mark_all_read": "Oznacz wszystkie jako przeczytane",
     "render_error": "Nie udało się wyświetlić tego powiadomienia.",
@@ -2832,6 +2837,7 @@
       "PROJECT_UPDATED": "Aktualizacja projektu",
       "PROJECT_CANCELLED": "Projekt odwołany",
       "PROJECT_REMINDER": "Przypomnienie",
+      "PROJECT_BRIEFING": "Zmiany w projekcie",
       "REHEARSAL_SCHEDULED": "Nowa próba",
       "REHEARSAL_UPDATED": "Zmiana próby",
       "REHEARSAL_CANCELLED": "Próba odwołana",
@@ -2850,7 +2856,8 @@
       "MESSAGE_RECEIVED": "Wiadomość",
       "CHANNEL_MESSAGE": "Kanał projektu",
       "NOTIFICATION_READ_RECEIPT": "Potwierdzenie odczytu",
-      "fallback": "Powiadomienie"
+      "fallback": "Powiadomienie",
+      "ANNOUNCEMENT_PENDING": "Kolejka ogłoszeń"
     },
     "status": {
       "attendance": {
@@ -2876,9 +2883,15 @@
       "focus": "Plan próby",
       "is_mandatory": "Obecność",
       "voice_line": "Partia",
+      "gives_pitch": "Podaje ton",
+      "notes": "Notatka do partii",
       "now_mandatory": "Teraz obowiązkowa",
       "now_optional": "Teraz nieobowiązkowa",
-      "run_sheet": "Harmonogram dnia"
+      "run_sheet": "Harmonogram dnia",
+      "boolean": {
+        "true": "Tak",
+        "false": "Nie"
+      }
     },
     "voiceLines": {
       "S1": "Sopran 1",
@@ -2909,6 +2922,15 @@
       "tomorrow": "jutro o {{time}}",
       "absolute": "{{weekday}}, {{date}} o {{time}}"
     },
+    "briefing": {
+      "count_one": "{{count}} zmiana",
+      "count_few": "{{count}} zmiany",
+      "count_many": "{{count}} zmian",
+      "count_other": "{{count}} zmiany",
+      "more": "i jeszcze {{n}}",
+      "rehearsal_added": "Nowa próba",
+      "rehearsal_changed": "Próba"
+    },
     "inapp": {
       "project_removed": "usunięto Cię ze składu",
       "casting_removed": "nie śpiewasz już w tym utworze",
@@ -2916,7 +2938,19 @@
       "absence_requested": "prosi o nieobecność",
       "read_receipt": "przeczytano Twoją wiadomość",
       "invited_by": "zaprasza: {{name}}",
-      "contract_issued": "czeka na Twój podpis"
+      "contract_issued": "czeka na Twój podpis",
+      "announcement_pending_changes_one": "{{count}} zmiana czeka",
+      "announcement_pending_changes_few": "{{count}} zmiany czekają",
+      "announcement_pending_changes_many": "{{count}} zmian czeka",
+      "announcement_pending_hours_one": "od {{count}} godziny",
+      "announcement_pending_hours_few": "od {{count}} godzin",
+      "announcement_pending_hours_many": "od {{count}} godzin",
+      "announcement_pending_days_one": "od {{count}} dnia",
+      "announcement_pending_days_few": "od {{count}} dni",
+      "announcement_pending_days_many": "od {{count}} dni",
+      "announcement_pending_unaware_one": "{{count}} osoba jeszcze o tym nie wie",
+      "announcement_pending_unaware_few": "{{count}} osoby jeszcze o tym nie wiedzą",
+      "announcement_pending_unaware_many": "{{count}} osób jeszcze o tym nie wie"
     },
     "push": {
       "toasts": {
@@ -3152,7 +3186,8 @@
       "delete_project": "Usuń projekt",
       "manage": "Zarządzaj",
       "mark_active": "Oznacz jako Aktywny",
-      "mark_done": "Zakończ projekt"
+      "mark_done": "Zakończ projekt",
+      "publish": "Opublikuj projekt"
     },
     "badge_active": "W przygotowaniu",
     "badge_done": "Zrealizowano",
@@ -3410,7 +3445,8 @@
       "active": "W przygotowaniu",
       "all": "Wszystkie",
       "aria_label": "Filtry statusu projektów",
-      "done": "Archiwum"
+      "done": "Archiwum",
+      "draft": "Szkice"
     },
     "hub": {
       "back": "Wydarzenia",
@@ -3421,7 +3457,9 @@
       },
       "tabs_aria": "Sekcje projektu",
       "unsaved_modal_desc": "Opuszczenie tej sekcji odrzuci niezapisane zmiany. Czy chcesz kontynuować?",
-      "unsaved_modal_title": "Masz niezapisane zmiany"
+      "unsaved_modal_title": "Masz niezapisane zmiany",
+      "draft_hint": "Obsada nic o tym projekcie nie wie — nic nie wychodzi na zewnątrz aż do publikacji.",
+      "declined_with_seats": "Odmowa po obsadzeniu: {{names}}. Zwolnione miejsca w divisi czekają puste."
     },
     "matrix": {
       "action_bar": {
@@ -3466,7 +3504,9 @@
         "add_note": "Dodaj notatkę",
         "drag_aria": "Przeciągnij {{name}}",
         "note_placeholder": "Notatka...",
-        "pending_label": "Niezapisane"
+        "pending_label": "Niezapisane",
+        "awaiting": "Czeka",
+        "declined": "Odmowa"
       },
       "bucket": {
         "aria": "Sekcja upuszczania: ",
@@ -3744,6 +3784,88 @@
       "delete_error_title": "Błąd usuwania",
       "delete_loading": "Usuwanie projektu...",
       "delete_success": "Projekt usunięty pomyślnie"
+    },
+    "badge_draft": "Szkic",
+    "badge_cancelled": "Odwołany",
+    "publish": {
+      "eyebrow": "Publikacja projektu",
+      "recipients_hint_one": "osoba otrzyma pełne zaproszenie: termin, próby, program i swoją partię.",
+      "recipients_hint_few": "osoby otrzymają pełne zaproszenie: termin, próby, program i swoją partię.",
+      "recipients_hint_many": "osób otrzyma pełne zaproszenie: termin, próby, program i swoją partię.",
+      "skipped_hint_one": "{{count}} osoba już odpowiedziała — jej nie zapraszamy ponownie.",
+      "skipped_hint_few": "{{count}} osoby już odpowiedziały — ich nie zapraszamy ponownie.",
+      "skipped_hint_many": "{{count}} osób już odpowiedziało — ich nie zapraszamy ponownie.",
+      "warning_no_cast": "Nikt nie jest jeszcze zaproszony — nie wyjdzie żadna wiadomość.",
+      "warning_no_rehearsals": "Brak prób w harmonogramie — zaproszenie nie poda ich terminów.",
+      "warning_no_program": "Program jest pusty — zaproszenie nie poda repertuaru.",
+      "warning_no_location": "Nie ustalono miejsca koncertu.",
+      "warning_unreachable": "Część obsady nie ma jeszcze konta — do nich zaproszenie nie dotrze.",
+      "unreachable_list": "Bez konta — zaproszenie do nich nie dotrze:",
+      "irreversible_hint": "Po publikacji projekt staje się widoczny dla obsady, a wysłanych wiadomości nie da się cofnąć.",
+      "preview_error": "Nie udało się wczytać podglądu publikacji.",
+      "confirm": "Opublikuj i wyślij"
+    },
+    "announce": {
+      "title": "Do ogłoszenia",
+      "eyebrow": "Kolejka ogłoszeń",
+      "pill": "Do ogłoszenia",
+      "badge": "Do ogłoszenia",
+      "pill_aria_one": "Do ogłoszenia: {{count}} zmiana",
+      "pill_aria_few": "Do ogłoszenia: {{count}} zmiany",
+      "pill_aria_many": "Do ogłoszenia: {{count}} zmian",
+      "change_count_one": "{{count}} zmiana",
+      "change_count_few": "{{count}} zmiany",
+      "change_count_many": "{{count}} zmian",
+      "intro": "Obsada widzi już aktualne dane w aplikacji. To jedna wiadomość dla tych, którzy nie zaglądają — odznacz, co ma jeszcze poczekać.",
+      "section_project": "Koncert",
+      "section_rehearsal": "Próby",
+      "section_casting": "Partie",
+      "section_participation": "Skreślenia z obsady",
+      "removed_from_cast": "Zdjęcie z obsady",
+      "casting_created": "Nowa partia",
+      "casting_changed": "Zmiana w partii",
+      "casting_removed": "Partia zabrana",
+      "urgent": "Pilne",
+      "toggle_line": "Wyślij tę zmianę",
+      "recipient_count_one": "{{count}} osoba",
+      "recipient_count_few": "{{count}} osoby",
+      "recipient_count_many": "{{count}} osób",
+      "summary_headline_one": "Wyjdzie {{count}} wiadomość",
+      "summary_headline_few": "Wyjdą {{count}} wiadomości",
+      "summary_headline_many": "Wyjdzie {{count}} wiadomości",
+      "summary_briefings_one": "w tym {{count}} zbiorcza",
+      "summary_briefings_few": "w tym {{count}} zbiorcze",
+      "summary_briefings_many": "w tym {{count}} zbiorczych",
+      "summary_more": "i jeszcze {{n}}",
+      "nothing_leaves": "Nic nie wyjdzie — wszystkie zmiany są wstrzymane.",
+      "note_label": "Słowo od dyrygenta (opcjonalnie)",
+      "note_placeholder": "np. Prosimy o punktualność — zaczynamy równo.",
+      "note_hint": "Dopisek trafia na początek wiadomości. Gdy go dodasz, każdy dostaje jeden zbiorczy briefing.",
+      "note_undeliverable": "Ten dopisek nigdzie nie trafi — w kolejce jest tylko wypisanie z obsady, które zawsze idzie osobno. Napisz do tej osoby bezpośrednio.",
+      "publish": "Wyślij ({{n}})",
+      "nothing_selected": "Nic nie wybrano",
+      "publishing": "Wysyłanie…",
+      "published_one": "Wysłano {{count}} wiadomość.",
+      "published_few": "Wysłano {{count}} wiadomości.",
+      "published_many": "Wysłano {{count}} wiadomości.",
+      "publish_error": "Nie udało się wysłać kolejki.",
+      "discard": "Odrzuć",
+      "discarding": "Odrzucanie…",
+      "discarded": "Kolejka odrzucona — nic nie wyszło.",
+      "discard_error": "Nie udało się odrzucić kolejki.",
+      "discard_title": "Odrzucić całą kolejkę?",
+      "discard_desc": "Zapisane zmiany zostaną — zniknie tylko powiadomienie o nich. Tej akcji nie da się cofnąć.",
+      "discard_removal_warning": "W kolejce jest skreślenie z obsady: {{names}}. Po odrzuceniu zmiana zostaje w bazie, ale nikt się o niej nie dowie. Odrzucić mimo to?",
+      "discard_confirm": "Odrzuć kolejkę",
+      "empty_title": "Nic nie czeka",
+      "empty_desc": "Obsada wie już o wszystkim, co zapisano. Kolejne zmiany zbiorą się tutaj do jednej wiadomości.",
+      "load_error": "Nie udało się wczytać kolejki ogłoszeń.",
+      "leave_title": "Obsada jeszcze o tym nie wie",
+      "leave_desc_one": "{{count}} zmiana czeka w kolejce ogłoszeń. Zapisana jest w komplecie — brakuje tylko wiadomości do obsady.",
+      "leave_desc_few": "{{count}} zmiany czekają w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
+      "leave_desc_many": "{{count}} zmian czeka w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
+      "leave_review": "Przejrzyj i wyślij",
+      "leave_later": "Później"
     }
   },
   "pwa": {
@@ -4229,7 +4351,7 @@
         "unsupported_desc": "Skorzystaj z najnowszej wersji Chrome, Edge, Firefox lub Safari. Powiadomienia w aplikacji nadal działają normalnie.",
         "unsupported_title": "Ta przeglądarka nie obsługuje powiadomień push"
       },
-      "description": "Zarządzaj tym, jak i kiedy chcesz otrzymywać informacje z systemu. Powiadomienia wewnątrz aplikacji są zawsze aktywne.",
+      "description": "Wybierz, o czym chcesz słyszeć — i którą drogą.",
       "hero_variant": {
         "active": "Aktywne",
         "blocked": "Zablokowane",
@@ -4239,7 +4361,7 @@
       },
       "table": {
         "email": "E-mail",
-        "event_type": "Typ zdarzenia",
+        "event_type": "Powiadomienia",
         "in_app": "In-App",
         "push": "Push"
       },
@@ -4263,6 +4385,7 @@
         "PARTICIPATION_RESPONSE": "Odpowiedź artysty",
         "PIECE_CASTING_ASSIGNED": "Przypisanie do utworu",
         "PIECE_CASTING_UPDATED": "Zmiana obsady utworu",
+        "PROJECT_BRIEFING": "Zbiorcze zmiany w projekcie",
         "PROJECT_CANCELLED": "Projekt odwołany",
         "PROJECT_INVITATION": "Zaproszenie do projektu",
         "PROJECT_REMINDER": "Przypomnienie o projekcie",
@@ -4271,7 +4394,8 @@
         "REHEARSAL_REMINDER": "Przypomnienie o próbie",
         "REHEARSAL_SCHEDULED": "Nowa próba",
         "REHEARSAL_UPDATED": "Zmiana czasu/miejsca próby",
-        "SYSTEM_ALERT": "Komunikat systemowy"
+        "SYSTEM_ALERT": "Komunikat systemowy",
+        "ANNOUNCEMENT_PENDING": "Niewysłane ogłoszenia"
       },
       "unsubscribe_modal": {
         "description": "Nie będziesz już otrzymywać powiadomień push na tym urządzeniu. W każdej chwili możesz je włączyć ponownie.",
@@ -4284,16 +4408,16 @@
         "hour_label": "Godzina wysyłki",
         "timezone_note": "W Twojej strefie czasowej ({{timezone}})"
       },
-      "in_app_note": "Każde zdarzenie zawsze pojawia się w dzwonku w aplikacji. Poniżej wybierz, co dodatkowo chcesz dostawać e-mailem i jako powiadomienie push.",
+      "in_app_note": "Wszystko trafia do dzwonka w aplikacji — zawsze i niezależnie od tych ustawień. Poniżej decydujesz tylko o e-mailu i powiadomieniach push.",
       "groups": {
-        "schedule": "Harmonogram i próby",
-        "repertoire": "Repertuar i materiały",
-        "messages": "Komunikaty",
-        "decisions": "Twoje prośby",
+        "commitments": "Twoje zobowiązania",
+        "messages": "Wiadomości",
+        "materials": "Materiały i przypomnienia",
         "team": "Operacje zespołu"
       },
       "type_desc": {
         "PROJECT_INVITATION": "Zaproszenie do udziału w projekcie",
+        "PROJECT_BRIEFING": "Kilka zmian naraz, zebranych w jedną wiadomość",
         "PROJECT_UPDATED": "Zmiana szczegółów projektu",
         "PROJECT_REMINDER": "Tuż przed koncertem",
         "REHEARSAL_UPDATED": "Zmiana terminu, miejsca lub planu próby",
@@ -4307,15 +4431,38 @@
         "PARTICIPATION_RESPONSE": "Śpiewak odpowiada na zaproszenie",
         "ATTENDANCE_SUBMITTED": "Śpiewak aktualizuje swoją obecność",
         "ABSENCE_REQUESTED": "Śpiewak prosi o nieobecność",
-        "SYSTEM_ALERT": "Konserwacja i ważne komunikaty systemowe"
+        "SYSTEM_ALERT": "Konserwacja i ważne komunikaty systemowe",
+        "ANNOUNCEMENT_PENDING": "Kolejka projektu czeka, a obsada wciąż o niej nie wie",
+        "PROJECT_CANCELLED": "Odwołanie koncertu",
+        "REHEARSAL_SCHEDULED": "Nowa próba w harmonogramie",
+        "REHEARSAL_CANCELLED": "Odwołanie próby",
+        "MESSAGE_RECEIVED": "Odpowiedź w Twojej rozmowie"
       },
       "restore_recommended": "Przywróć zalecane",
       "customized_hint": "Zmienione — różni się od zalecanych ustawień",
       "a11y": {
         "email": "E-mail dla: {{event}}",
-        "push": "Push dla: {{event}}"
+        "push": "Push dla: {{event}}",
+        "email_group": "E-mail dla grupy: {{group}}",
+        "email_group_partial": "E-mail dla grupy: {{group}} — włączony częściowo",
+        "push_group": "Push dla grupy: {{group}}",
+        "push_group_partial": "Push dla grupy: {{group}} — włączony częściowo"
       },
-      "customized_badge": "Zmienione"
+      "customized_badge": "Zmienione",
+      "groups_desc": {
+        "commitments": "Zaproszenia, zmiany terminów prób i koncertów, Twoje partie oraz decyzje w sprawie Twoich nieobecności.",
+        "messages": "Ktoś pisze do Ciebie — odpowiedź w rozmowie albo wiadomość od zarządu.",
+        "materials": "Nowe nuty i nagrania oraz przypomnienia tuż przed próbą i koncertem.",
+        "team": "Zgłoszenia od śpiewaków i kolejka ogłoszeń czekająca na wysyłkę. Każdy z tych wierszy odpowiada za siebie."
+      },
+      "groups_email_off": {
+        "commitments": "Nie dostaniesz e-maila, gdy zmieni się termin próby albo koncertu. W aplikacji nadal zobaczysz wszystko — ale tylko wtedy, gdy do niej zajrzysz.",
+        "messages": "Nie dostaniesz e-maila, gdy ktoś do Ciebie napisze. Wiadomość poczeka w aplikacji."
+      },
+      "details_show": "Szczegóły ({{n}})",
+      "details_hide": "Ukryj szczegóły",
+      "partial_badge": "Częściowo",
+      "partial_hint": "Część powiadomień w tej grupie ma inne ustawienie. Przełącznik obok włączy wszystkie."
     },
     "page": {
       "highlight": "konta",

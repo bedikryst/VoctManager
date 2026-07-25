@@ -3112,3 +3112,165 @@ msgid_plural "Your daily briefing — %(count)d updates"
 msgstr[0] "Twój dzienny przegląd — %(count)d aktualizacja"
 msgstr[1] "Twój dzienny przegląd — %(count)d aktualizacje"
 msgstr[2] "Twój dzienny przegląd — %(count)d aktualizacji"
+
+#: notifications/message_content.py
+msgid "Programme"
+msgstr "Program"
+
+#: notifications/message_content.py
+msgid "Your part"
+msgstr "Twoja partia"
+
+#: notifications/message_content.py
+msgid "%(rehearsal)s (optional)"
+msgstr "%(rehearsal)s (nieobowiązkowa)"
+
+#: notifications/message_content.py
+msgid "Only a draft can be published; this project is already live."
+msgstr "Opublikować można tylko szkic — ten projekt jest już aktywny."
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(count)d rehearsal"
+msgid_plural "%(count)d rehearsals"
+msgstr[0] "%(count)d próba"
+msgstr[1] "%(count)d próby"
+msgstr[2] "%(count)d prób"
+
+#: notifications/message_content.py:0
+msgid "Starting pitch"
+msgstr "Podaje ton"
+
+#: notifications/message_content.py:0
+msgid "Part note"
+msgstr "Notatka do partii"
+
+#: notifications/message_content.py:0
+msgid "Yes"
+msgstr "Tak"
+
+#: notifications/message_content.py:0
+msgid "No"
+msgstr "Nie"
+
+#: roster/services.py:0
+msgid ""
+"Cannot assign artist to a voice line: the artist declined this project."
+msgstr ""
+"Nie można przypisać artysty do partii: ta osoba odmówiła udziału w "
+"projekcie."
+
+#: roster/services.py:0
+msgid "Cannot cast an artist who is not a participant of this project."
+msgstr "Nie można obsadzić artysty, który nie bierze udziału w tym projekcie."
+
+#: roster/services.py
+msgid "A published project cannot be turned back into a draft."
+msgstr "Opublikowanego projektu nie można cofnąć do szkicu."
+
+#: notifications/message_content.py
+msgid "The concert"
+msgstr "Koncert"
+
+#: notifications/message_content.py
+msgid "Other changes"
+msgstr "Pozostałe zmiany"
+
+#: notifications/message_content.py
+msgid "A new part for you."
+msgstr "Nowa partia dla Ciebie."
+
+#: notifications/message_content.py
+msgid "Rehearsal — %(when)s"
+msgstr "Próba — %(when)s"
+
+#: notifications/message_content.py
+msgid "What changed — %(project)s"
+msgstr "Co się zmieniło — %(project)s"
+
+#: notifications/message_content.py
+msgid ""
+"Here is everything that has changed since we last wrote to you about "
+"%(project)s. Anything to do with your own part comes first."
+msgstr ""
+"Oto wszystko, co zmieniło się od naszej ostatniej wiadomości o projekcie "
+"„%(project)s”. Na początku to, co dotyczy Twojej partii."
+
+#: notifications/models.py
+msgid "Project Briefing"
+msgstr "Podsumowanie zmian w projekcie"
+
+#: notifications/message_content.py
+msgid "%(count)d update — %(project)s"
+msgid_plural "%(count)d updates — %(project)s"
+msgstr[0] "%(count)d zmiana — %(project)s"
+msgstr[1] "%(count)d zmiany — %(project)s"
+msgstr[2] "%(count)d zmian — %(project)s"
+
+#: notifications/message_content.py:0
+msgid "The cast hasn't been told — %(project)s"
+msgstr "Obsada jeszcze o tym nie wie — %(project)s"
+
+#: notifications/message_content.py:0
+msgid "Changes waiting to be announced — %(project)s"
+msgstr "Zmiany czekają na ogłoszenie — %(project)s"
+
+#: notifications/message_content.py:0
+msgid "Announcement queue"
+msgstr "Kolejka ogłoszeń"
+
+#: notifications/message_content.py:0
+msgid "Waiting to be sent"
+msgstr "Czeka na wysłanie"
+
+#: notifications/message_content.py:0
+msgid "Not yet told"
+msgstr "Nie powiadomiono"
+
+#: notifications/message_content.py:0
+msgid "Review what's waiting"
+msgstr "Przejrzyj i wyślij"
+
+#: notifications/message_content.py:0
+msgid ""
+"%(project)s is holding changes the cast has not been told about. Nothing "
+"goes out until you send it — review what is waiting, add a word of your own "
+"if it helps, and press send. If it is no longer worth announcing, discard it"
+" and this will stop."
+msgstr ""
+"W projekcie „%(project)s” czekają zmiany, o których obsada jeszcze nie wie. "
+"Nic nie wyjdzie, dopóki tego nie wyślesz — przejrzyj, co czeka, dopisz słowo"
+" od siebie, jeśli to pomoże, i naciśnij wyślij. Jeśli nie warto już tego "
+"ogłaszać, odrzuć kolejkę, a przypomnienia ustaną."
+
+#: notifications/message_content.py:0
+msgid "Unannounced Changes Waiting"
+msgstr "Niewysłane zmiany czekają"
+
+#: notifications/message_content.py:0
+msgid "%(count)d change"
+msgid_plural "%(count)d changes"
+msgstr[0] "%(count)d zmiana"
+msgstr[1] "%(count)d zmiany"
+msgstr[2] "%(count)d zmian"
+
+#: notifications/message_content.py:0
+msgid "%(count)d person"
+msgid_plural "%(count)d people"
+msgstr[0] "%(count)d osoba"
+msgstr[1] "%(count)d osoby"
+msgstr[2] "%(count)d osób"
+
+#: notifications/message_content.py:0
+msgid "waiting %(count)d hour"
+msgid_plural "waiting %(count)d hours"
+msgstr[0] "od %(count)d godziny"
+msgstr[1] "od %(count)d godzin"
+msgstr[2] "od %(count)d godzin"
+
+#: notifications/message_content.py:0
+msgid "waiting %(count)d day"
+msgid_plural "waiting %(count)d days"
+msgstr[0] "od %(count)d dnia"
+msgstr[1] "od %(count)d dni"
+msgstr[2] "od %(count)d dni"

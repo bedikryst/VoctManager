@@ -2033,3 +2033,112 @@ msgid "Your daily briefing — %(count)d update"
 msgid_plural "Your daily briefing — %(count)d updates"
 msgstr[0] "Your daily briefing — %(count)d update"
 msgstr[1] "Your daily briefing — %(count)d updates"
+
+#: notifications/message_content.py
+#, python-format
+msgid "%(count)d rehearsal"
+msgid_plural "%(count)d rehearsals"
+msgstr[0] "%(count)d rehearsal"
+msgstr[1] "%(count)d rehearsals"
+
+#: notifications/message_content.py
+msgid "The concert"
+msgstr "The concert"
+
+#: notifications/message_content.py
+msgid "Other changes"
+msgstr "Other changes"
+
+#: notifications/message_content.py
+msgid "A new part for you."
+msgstr "A new part for you."
+
+#: notifications/message_content.py
+msgid "Rehearsal — %(when)s"
+msgstr "Rehearsal — %(when)s"
+
+#: notifications/message_content.py
+msgid "What changed — %(project)s"
+msgstr "What changed — %(project)s"
+
+#: notifications/message_content.py
+msgid ""
+"Here is everything that has changed since we last wrote to you about "
+"%(project)s. Anything to do with your own part comes first."
+msgstr ""
+"Here is everything that has changed since we last wrote to you about "
+"%(project)s. Anything to do with your own part comes first."
+
+#: notifications/models.py
+msgid "Project Briefing"
+msgstr "Project briefing"
+
+#: notifications/message_content.py
+msgid "Your part"
+msgstr "Your part"
+
+#: notifications/message_content.py
+msgid "%(count)d update — %(project)s"
+msgid_plural "%(count)d updates — %(project)s"
+msgstr[0] "%(count)d update — %(project)s"
+msgstr[1] "%(count)d updates — %(project)s"
+
+#: notifications/message_content.py:0
+msgid "The cast hasn't been told — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Changes waiting to be announced — %(project)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Announcement queue"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Waiting to be sent"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Not yet told"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Review what's waiting"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid ""
+"%(project)s is holding changes the cast has not been told about. Nothing "
+"goes out until you send it — review what is waiting, add a word of your own "
+"if it helps, and press send. If it is no longer worth announcing, discard it"
+" and this will stop."
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Unannounced Changes Waiting"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "%(count)d change"
+msgid_plural "%(count)d changes"
+msgstr[0] "%(count)d change"
+msgstr[1] "%(count)d changes"
+
+#: notifications/message_content.py:0
+msgid "%(count)d person"
+msgid_plural "%(count)d people"
+msgstr[0] "%(count)d person"
+msgstr[1] "%(count)d people"
+
+#: notifications/message_content.py:0
+msgid "waiting %(count)d hour"
+msgid_plural "waiting %(count)d hours"
+msgstr[0] "waiting %(count)d hour"
+msgstr[1] "waiting %(count)d hours"
+
+#: notifications/message_content.py:0
+msgid "waiting %(count)d day"
+msgid_plural "waiting %(count)d days"
+msgstr[0] "waiting %(count)d day"
+msgstr[1] "waiting %(count)d days"
