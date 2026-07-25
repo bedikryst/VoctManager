@@ -101,9 +101,9 @@ def _fuse(level: str) -> timedelta:
     Settings-overridable so the sweep can be exercised without manufacturing a day.
     """
     hours = (
-        getattr(settings, "ANNOUNCEMENT_NUDGE_URGENT_HOURS", 4)
+        settings.ANNOUNCEMENT_NUDGE_URGENT_HOURS
         if level == NotificationLevel.URGENT
-        else getattr(settings, "ANNOUNCEMENT_NUDGE_HOURS", 24)
+        else settings.ANNOUNCEMENT_NUDGE_HOURS
     )
     return timedelta(hours=hours)
 
@@ -217,11 +217,16 @@ class StaleQueue:
     The counts are the ones the conductor already reads elsewhere:
     `change_count` is what the hub's pill shows and `recipient_count` is how many
     people are in the dark. Both come from `preview`, so a nudge can never quote a
-    number the review sheet then contradicts.
+    number the review sheet then contradicts — and so does `waiting_since`, which
+    dates the news rather than the rows behind it.
+
+    `fuse` travels with the rest so the dispatcher can re-check the cooldown as it
+    claims the project, rather than trusting the read that produced this.
     """
     project: Project
     waiting_since: datetime
     level: str
+    fuse: timedelta
     change_count: int
     recipient_count: int
 
@@ -664,9 +669,34 @@ class AnnouncementQueue:
             for index in indices:
                 attribute(recipient_id, index)
 
+        # How long the *news* has been waiting, which is not how long the rows
+        # have. A field moved and moved back leaves rows that say nothing, and
+        # dating the queue from them would start the nudge's fuse on something
+        # that will never be sent — the same error as counting rows instead of
+        # messages, one step further in.
+        #
+        # Measured per line rather than per announcement, because the line is the
+        # atom everywhere else in this surface: a project diff's dead field is
+        # dropped with its rows, while a rehearsal's whole diff is one indivisible
+        # fact and is therefore as old as its oldest row. Held lines are excluded
+        # for the same reason they are excluded from the counts — they are not
+        # what this publication would send.
+        live_row_ids = {
+            row_id
+            for line in lines
+            if line.recipient_count and not line.is_held
+            for row_id in line.row_ids
+        }
+        waiting_since = min(
+            (row.created_at for row in rows if str(row.id) in live_row_ids),
+            default=None,
+        )
+
         names = _recipient_names(set(per_recipient))
         return {
             "project_id": str(project.id),
+            # None exactly when nothing would be sent; DRF renders it ISO-8601.
+            "waiting_since": waiting_since,
             # Raw rows still waiting. Higher than `change_count` whenever a value
             # moved and moved back: the rows are still there, the change is not.
             "pending_count": len(rows),
@@ -821,9 +851,12 @@ class AnnouncementQueue:
             cancelled out has rows but no news; saying "3 changes are waiting"
             about it would be the one thing this feature cannot afford to be —
             wrong about its own numbers.
-          • **The fuse, taken from what survived collapsing.** Urgency is read off
-            the lines that will really be sent, so a reschedule that was reverted
-            does not keep the short fuse it was queued with.
+          • **The fuse, taken from what survived collapsing** — both its length
+            and where it starts counting. Urgency is read off the lines that will
+            really be sent, so a reschedule that was reverted does not keep the
+            short fuse it was queued with; and the clock starts at the oldest row
+            behind news that still reaches somebody, so a mutually-cancelling edit
+            made yesterday cannot age a change made an hour ago.
 
         The cooldown is the same length as the fuse rather than a fixed day, which
         is what lets an escalation break through: a calm nudge sent this morning
@@ -854,12 +887,18 @@ class AnnouncementQueue:
         shortest = min(_fuse(NotificationLevel.URGENT), _fuse(NotificationLevel.INFO))
         stale: list[StaleQueue] = []
         for project in candidates:
-            waiting_since = project.queued_since
-            if now - waiting_since < shortest:
+            # A cheap lower bound on the real wait, so the collapse below is only
+            # paid for by projects that could possibly be due: the oldest row is
+            # never newer than the oldest surviving one.
+            if now - project.queued_since < shortest:
                 continue
 
             preview = AnnouncementQueue.preview(project)
-            if not preview["message_count"]:
+            # `waiting_since` is None exactly when no line would be sent, which
+            # `message_count` also reports — the pair is checked together rather
+            # than trusting them to agree.
+            waiting_since = preview["waiting_since"]
+            if not preview["message_count"] or waiting_since is None:
                 continue
 
             # Only lines that reach somebody set the urgency. An alarm addressed to
@@ -884,6 +923,7 @@ class AnnouncementQueue:
                 project=project,
                 waiting_since=waiting_since,
                 level=level,
+                fuse=fuse,
                 change_count=preview["change_count"],
                 recipient_count=preview["recipient_count"],
             ))

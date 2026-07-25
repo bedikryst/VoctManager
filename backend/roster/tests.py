@@ -5042,6 +5042,67 @@ class AnnouncementNudgeTests(TestCase):
 
     # -- honesty ----------------------------------------------------------------
 
+    def test_a_dead_row_does_not_age_the_news_beside_it(self) -> None:
+        """The fuse dates the news, not the rows. A venue moved and moved back
+        yesterday says nothing, so it must not start the clock on a dress code
+        changed an hour ago — the queue would nudge about something nobody has
+        been sitting on, and the hours it quoted would be about a different edit."""
+        self._queue(field="location", old="Sala A", new="Sala B")
+        self._queue(field="location", old="Sala B", new="Sala A")
+        self._age(25)
+        # Fresh, and the only thing that survives collapsing.
+        self._queue(field="dress_code_male", old="Frak", new="Smoking")
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_the_surviving_line_carries_its_own_age(self) -> None:
+        """The counterpart: once the live change is itself past the fuse, the nudge
+        fires and reports that line's age rather than the dead rows' — a number the
+        conductor could otherwise not reconcile with anything they can see."""
+        self._queue(field="location", old="Sala A", new="Sala B")
+        self._queue(field="location", old="Sala B", new="Sala A")
+        self._age(100)
+        self._queue(field="dress_code_male", old="Frak", new="Smoking")
+        from notifications.models import PendingAnnouncement
+        PendingAnnouncement.objects.filter(
+            project=self.project, change_field="dress_code_male"
+        ).update(created_at=timezone.now() - timedelta(hours=26))
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 1)
+        waiting = managers.call_args.kwargs["metadata"]["waiting_hours"]
+        self.assertGreaterEqual(waiting, 25)
+        self.assertLess(waiting, 30)
+
+    def test_a_project_claimed_meanwhile_is_not_nudged_twice(self) -> None:
+        """The claim re-states the cooldown as the condition of its own write, so
+        two beats reading the queue at the same moment cannot both send. Simulated
+        by stamping the project after the read that found it stale."""
+        self._queue()
+        self._age(25)
+
+        from notifications.announcement_queue import AnnouncementQueue
+
+        real_stale = AnnouncementQueue.stale
+
+        def stale_then_claimed(now):
+            found = real_stale(now)
+            # Stands for the other beat, which got there first.
+            Project.objects.filter(pk=self.project.pk).update(
+                announcement_nudged_at=timezone.now()
+            )
+            return found
+
+        with patch.object(AnnouncementQueue, "stale", side_effect=stale_then_claimed):
+            result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
     def test_a_queue_that_collapses_to_silence_is_never_raised(self) -> None:
         """Rows are not news. A value moved and moved back leaves the queue holding
         two rows and nothing to say — nudging about it would make the feature wrong

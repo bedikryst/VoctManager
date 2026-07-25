@@ -1439,25 +1439,37 @@ class PreferenceGroupPolicyTests(SimpleTestCase):
             self.assertEqual(GROUP_OF_TYPE[ntype], "commitments")
             self.assertTrue(default_channel_preferences(ntype)["email_enabled"])
 
-    def test_everything_a_briefing_can_carry_lives_in_one_group(self) -> None:
+    def test_everything_a_briefing_can_carry_shares_one_group(self) -> None:
         # The invariant that retires the fold's bypass in practice. The router
         # still filters a briefing per item — that stays as the enforcement — but
         # while every briefable type shares one control, a reader cannot end up
-        # with a preference the fold has to work around. The list mirrors the
-        # queued emitters in roster/services.py.
+        # with a preference the fold has to work around.
+        #
+        # Read from QUEUEABLE_TYPES rather than from a list written out here: a
+        # list would pass unchanged the day a new emitter starts queueing a type
+        # nobody added to it, which is the one case this test exists for.
+        from .announcements import QUEUEABLE_TYPES
         from .delivery import GROUP_OF_TYPE
 
-        briefable = {
-            NotificationType.PROJECT_UPDATED,
-            NotificationType.REHEARSAL_SCHEDULED,
-            NotificationType.REHEARSAL_UPDATED,
-            NotificationType.PIECE_CASTING_ASSIGNED,
-            NotificationType.PIECE_CASTING_UPDATED,
-        }
         self.assertEqual(
-            {GROUP_OF_TYPE[ntype] for ntype in briefable},
+            {GROUP_OF_TYPE[ntype] for ntype in QUEUEABLE_TYPES},
             {"commitments"},
         )
+
+    def test_queueing_an_undeclared_type_is_refused(self) -> None:
+        # The other half of the same invariant: the declaration is only worth
+        # something if a type outside it cannot reach the queue.
+        from .announcements import queue_broadcast
+        from .models import AnnouncementKind, AnnouncementSubject
+
+        with self.assertRaises(ValueError):
+            queue_broadcast(
+                project=None,  # type: ignore[arg-type]
+                subject_type=AnnouncementSubject.PROJECT,
+                subject_id="x",
+                kind=AnnouncementKind.CHANGED,
+                notification_type=NotificationType.MATERIAL_UPLOADED,
+            )
 
     def test_a_type_with_no_control_has_no_group(self) -> None:
         # A group *is* a control, so the types kept out of the ledger are exactly

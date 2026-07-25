@@ -12,11 +12,7 @@ from rest_framework.response import Response
 from core.permissions import user_is_manager
 from core.request_utils import request_user
 
-from .delivery import (
-    HIDDEN_FROM_PREFS,
-    PREFERENCE_GROUPS,
-    default_channel_preferences,
-)
+from .delivery import PREFERENCE_GROUPS, default_channel_preferences
 from .dtos import (
     CustomAdminMessageMetadata,
     NotificationCreateDTO,
@@ -276,11 +272,12 @@ class NotificationPreferenceAPIView(views.APIView):
         groups: list[dict[str, object]] = []
         rows: list[dict[str, object]] = []
 
+        # Every member of a group is visible by construction: a group *is* a
+        # control, so the hidden types are exactly the ungrouped ones and the
+        # boot-time coherence assert refuses any overlap. Filtering here again
+        # would only cast doubt on an invariant that is already enforced.
         for group in PREFERENCE_GROUPS:
             if group.manager_only and not is_manager:
-                continue
-            visible = [ntype for ntype in group.types if ntype not in HIDDEN_FROM_PREFS]
-            if not visible:
                 continue
 
             groups.append({
@@ -294,7 +291,7 @@ class NotificationPreferenceAPIView(views.APIView):
                 "recommended_push": group.push if group.controllable else None,
             })
 
-            for ntype in visible:
+            for ntype in group.types:
                 pref = stored.get(ntype)
                 defaults = default_channel_preferences(ntype)
                 # `recommended_*` carries the shared default contract to the client

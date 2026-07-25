@@ -29,7 +29,6 @@ import {
   Music,
   PencilLine,
   Repeat,
-  ShieldAlert,
   ShieldCheck,
   UserCheck,
   XCircle,
@@ -55,7 +54,8 @@ export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = 
 
 /**
  * Per-type glyph. Purely decorative: an unmapped type still renders its row with
- * the neutral bell rather than disappearing.
+ * the neutral bell rather than disappearing. Only the types the server groups
+ * appear here — one with no group has no row to draw a glyph on.
  */
 export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon>> = {
   // Commitments — what you have said yes to, and decisions on your own requests
@@ -72,7 +72,6 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   // Messages — someone writing to you
   MESSAGE_RECEIVED: MessageCircle,
   CUSTOM_ADMIN_MESSAGE: Megaphone,
-  SYSTEM_ALERT: ShieldAlert,
   // Materials & reminders — preparation and nudges
   MATERIAL_UPLOADED: FileMusic,
   PROJECT_REMINDER: CalendarClock,

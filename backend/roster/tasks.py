@@ -13,6 +13,7 @@ from celery import shared_task
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db.models import Q
 from django.utils import timezone
 
 from notifications.announcement_queue import AnnouncementQueue
@@ -292,15 +293,21 @@ def dispatch_announcement_nudges() -> dict:
     if not stale:
         return {"nudged": 0}
 
-    # Claim before dispatching, exactly as the reminder sweep does: a second beat
-    # (or a second worker) must not be able to send the same nudge twice. Unlike a
-    # reminder this claim is a cooldown rather than a one-shot, so a dispatch that
-    # then fails costs one cycle instead of the message itself.
-    Project.objects.filter(id__in=[item.project.id for item in stale]).update(
-        announcement_nudged_at=now
-    )
-
+    nudged: list[str] = []
     for item in stale:
+        # Claim before dispatching, and re-state the cooldown as the condition of
+        # the write: two beats (or two workers) reading the queue at once would
+        # otherwise both pass the check above and both send. The reminder sweep
+        # gets away with a flat update because its `due` queryset carries the very
+        # predicate the update flips; here the fuse is per project, so the
+        # condition has to travel with each row.
+        claimed = Project.objects.filter(id=item.project.id).filter(
+            Q(announcement_nudged_at__isnull=True)
+            | Q(announcement_nudged_at__lte=now - item.fuse)
+        ).update(announcement_nudged_at=now)
+        if not claimed:
+            continue
+
         metadata = AnnouncementPendingMetadata(
             project_id=item.project.id,
             project_name=item.project.title,
@@ -314,13 +321,15 @@ def dispatch_announcement_nudges() -> dict:
             metadata=metadata,
             level=item.level,
         )
+        nudged.append(str(item.project.id))
 
-    logger.info(
-        "[AnnouncementNudge] %d project queue(s) waiting past their fuse: %s",
-        len(stale),
-        ", ".join(str(item.project.id) for item in stale),
-    )
-    return {"nudged": len(stale)}
+    if nudged:
+        logger.info(
+            "[AnnouncementNudge] %d project queue(s) waiting past their fuse: %s",
+            len(nudged),
+            ", ".join(nudged),
+        )
+    return {"nudged": len(nudged)}
 
 
 @shared_task(name="roster.dispatch_due_reminders")
