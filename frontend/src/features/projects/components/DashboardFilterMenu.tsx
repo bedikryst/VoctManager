@@ -41,6 +41,10 @@ export const DashboardFilterMenu = ({
         label: t("projects.filters.active", "W przygotowaniu"),
       },
       {
+        id: PROJECT_FILTER.DRAFT,
+        label: t("projects.filters.draft", "Szkice"),
+      },
+      {
         id: PROJECT_FILTER.DONE,
         label: t("projects.filters.done", "Archiwum"),
       },

@@ -2779,7 +2779,12 @@
       "invites": "Invité par : {{name}}",
       "status_error": "Erreur lors de la mise à jour du statut",
       "status_updated": "Statut de participation mis à jour",
-      "title": "Nouvelle invitation au projet"
+      "title": "Nouvelle invitation au projet",
+      "call_time": "Convocation : {{time}}",
+      "your_part": "Ta partie : {{parts}}",
+      "rehearsals": "Répétitions ({{count}})",
+      "optional": "facultative",
+      "program": "Programme"
     },
     "mark_all_read": "Marquer tout comme lu",
     "render_error": "Cette notification n'a pas pu s'afficher.",
@@ -2831,6 +2836,7 @@
       "PROJECT_UPDATED": "Mise à jour du projet",
       "PROJECT_CANCELLED": "Projet annulé",
       "PROJECT_REMINDER": "Rappel",
+      "PROJECT_BRIEFING": "Récapitulatif du projet",
       "REHEARSAL_SCHEDULED": "Nouvelle répétition",
       "REHEARSAL_UPDATED": "Répétition modifiée",
       "REHEARSAL_CANCELLED": "Répétition annulée",
@@ -2849,7 +2855,8 @@
       "MESSAGE_RECEIVED": "Message",
       "CHANNEL_MESSAGE": "Canal du projet",
       "NOTIFICATION_READ_RECEIPT": "Accusé de lecture",
-      "fallback": "Notification"
+      "fallback": "Notification",
+      "ANNOUNCEMENT_PENDING": "File d'annonces"
     },
     "status": {
       "attendance": {
@@ -2875,9 +2882,15 @@
       "focus": "Objectif",
       "is_mandatory": "Présence",
       "voice_line": "Pupitre",
+      "gives_pitch": "Donne le ton",
+      "notes": "Note de pupitre",
       "now_mandatory": "Désormais obligatoire",
       "now_optional": "Désormais facultative",
-      "run_sheet": "Déroulé de la journée"
+      "run_sheet": "Déroulé de la journée",
+      "boolean": {
+        "true": "Oui",
+        "false": "Non"
+      }
     },
     "voiceLines": {
       "S1": "Soprano 1",
@@ -2908,6 +2921,14 @@
       "tomorrow": "demain à {{time}}",
       "absolute": "{{weekday}} {{date}} à {{time}}"
     },
+    "briefing": {
+      "count_one": "{{count}} changement",
+      "count_many": "{{count}} changements",
+      "count_other": "{{count}} changements",
+      "more": "et {{n}} de plus",
+      "rehearsal_added": "Nouvelle répétition",
+      "rehearsal_changed": "Répétition"
+    },
     "inapp": {
       "project_removed": "retrait de l’effectif",
       "casting_removed": "rôle retiré",
@@ -2915,7 +2936,15 @@
       "absence_requested": "demande une absence",
       "read_receipt": "a lu votre message",
       "invited_by": "à l’invitation de {{name}}",
-      "contract_issued": "en attente de votre signature"
+      "contract_issued": "en attente de votre signature",
+      "announcement_pending_changes_one": "{{count}} modification en attente",
+      "announcement_pending_changes_other": "{{count}} modifications en attente",
+      "announcement_pending_hours_one": "depuis {{count}} heure",
+      "announcement_pending_hours_other": "depuis {{count}} heures",
+      "announcement_pending_days_one": "depuis {{count}} jour",
+      "announcement_pending_days_other": "depuis {{count}} jours",
+      "announcement_pending_unaware_one": "{{count}} personne n'est pas au courant",
+      "announcement_pending_unaware_other": "{{count}} personnes ne sont pas au courant"
     },
     "push": {
       "toasts": {
@@ -3151,7 +3180,8 @@
       "delete_project": "Supprimer le projet",
       "manage": "Gérer",
       "mark_active": "Marquer comme actif",
-      "mark_done": "Clore le projet"
+      "mark_done": "Clore le projet",
+      "publish": "Publier le projet"
     },
     "badge_active": "En préparation",
     "badge_done": "Terminé",
@@ -3409,7 +3439,8 @@
       "active": "En préparation",
       "all": "Tous",
       "aria_label": "Filtres de statut des projets",
-      "done": "Archive"
+      "done": "Archive",
+      "draft": "Brouillons"
     },
     "hub": {
       "back": "Événements",
@@ -3420,7 +3451,9 @@
       },
       "tabs_aria": "Sections du projet",
       "unsaved_modal_desc": "Quitter cette section annulera les modifications non enregistrées. Voulez-vous continuer ?",
-      "unsaved_modal_title": "Vous avez des modifications non enregistrées"
+      "unsaved_modal_title": "Vous avez des modifications non enregistrées",
+      "draft_hint": "Les chanteurs ignorent tout de ce projet — rien ne sort de l'application avant la publication.",
+      "declined_with_seats": "Refus après distribution : {{names}}. Les places libérées attendent dans le divisi."
     },
     "matrix": {
       "action_bar": {
@@ -3465,7 +3498,9 @@
         "add_note": "Ajouter une note",
         "drag_aria": "Faire glisser {{name}}",
         "note_placeholder": "Note...",
-        "pending_label": "En attente"
+        "pending_label": "En attente",
+        "awaiting": "Sans réponse",
+        "declined": "Refus"
       },
       "bucket": {
         "aria": "Section de dépôt: ",
@@ -3743,6 +3778,79 @@
       "delete_error_title": "Erreur de suppression",
       "delete_loading": "Suppression du projet...",
       "delete_success": "Projet supprimé avec succès"
+    },
+    "badge_draft": "Brouillon",
+    "badge_cancelled": "Annulé",
+    "publish": {
+      "eyebrow": "Publication du projet",
+      "recipients_hint_one": "personne recevra l'invitation complète : date, répétitions, programme et sa propre partie.",
+      "recipients_hint_other": "personnes recevront l'invitation complète : date, répétitions, programme et leur propre partie.",
+      "skipped_hint_one": "{{count}} personne a déjà répondu — nous ne la réinvitons pas.",
+      "skipped_hint_other": "{{count}} personnes ont déjà répondu — nous ne les réinvitons pas.",
+      "warning_no_cast": "Personne n'est encore invité — aucun message ne partira.",
+      "warning_no_rehearsals": "Aucune répétition au calendrier — l'invitation n'en donnera pas les dates.",
+      "warning_no_program": "Le programme est vide — l'invitation ne donnera pas le répertoire.",
+      "warning_no_location": "Aucun lieu de concert n'a été fixé.",
+      "warning_unreachable": "Une partie des chanteurs n'a pas encore de compte — l'invitation ne leur parviendra pas.",
+      "unreachable_list": "Sans compte — l'invitation ne leur parviendra pas :",
+      "irreversible_hint": "Une fois publié, le projet devient visible pour les chanteurs, et les messages envoyés ne peuvent pas être rappelés.",
+      "preview_error": "Impossible de charger l'aperçu de la publication.",
+      "confirm": "Publier et envoyer"
+    },
+    "announce": {
+      "title": "À annoncer",
+      "eyebrow": "File d'annonces",
+      "pill": "À annoncer",
+      "badge": "À annoncer",
+      "pill_aria_one": "À annoncer : {{count}} modification",
+      "pill_aria_other": "À annoncer : {{count}} modifications",
+      "change_count_one": "{{count}} modification",
+      "change_count_other": "{{count}} modifications",
+      "intro": "Les choristes voient déjà les données à jour dans l'application. Ceci est un seul message pour celles et ceux qui ne les consultent pas — décochez ce qui peut encore attendre.",
+      "section_project": "Le concert",
+      "section_rehearsal": "Répétitions",
+      "section_casting": "Parties",
+      "section_participation": "Retraits de la distribution",
+      "removed_from_cast": "Retrait de la distribution",
+      "casting_created": "Nouvelle partie",
+      "casting_changed": "Partie modifiée",
+      "casting_removed": "Partie retirée",
+      "urgent": "Urgent",
+      "toggle_line": "Envoyer cette modification",
+      "recipient_count_one": "{{count}} personne",
+      "recipient_count_other": "{{count}} personnes",
+      "summary_headline_one": "{{count}} message partira",
+      "summary_headline_other": "{{count}} messages partiront",
+      "summary_briefings_one": "dont {{count}} récapitulatif",
+      "summary_briefings_other": "dont {{count}} récapitulatifs",
+      "summary_more": "et {{n}} autres",
+      "nothing_leaves": "Rien ne partira — toutes les modifications sont retenues.",
+      "note_label": "Un mot du chef (facultatif)",
+      "note_placeholder": "ex. Merci d'être ponctuels — nous commençons à l'heure.",
+      "note_hint": "Le mot ouvre le message. Si vous en ajoutez un, chacun reçoit un seul récapitulatif.",
+      "note_undeliverable": "Ce mot n'a nulle part où aller — la file ne contient qu'un retrait de la distribution, qui part toujours seul. Écrivez directement à cette personne.",
+      "publish": "Envoyer ({{n}})",
+      "nothing_selected": "Rien de sélectionné",
+      "publishing": "Envoi…",
+      "published_one": "{{count}} message envoyé.",
+      "published_other": "{{count}} messages envoyés.",
+      "publish_error": "Impossible d'envoyer la file.",
+      "discard": "Abandonner",
+      "discarding": "Abandon…",
+      "discarded": "File abandonnée — rien n'est parti.",
+      "discard_error": "Impossible d'abandonner la file.",
+      "discard_title": "Abandonner toute la file ?",
+      "discard_desc": "Les modifications enregistrées restent — seule la notification disparaît. Cette action est irréversible.",
+      "discard_removal_warning": "La file contient un retrait de la distribution : {{names}}. En abandonnant, la modification reste en base, mais personne n'en sera informé. Abandonner quand même ?",
+      "discard_confirm": "Abandonner la file",
+      "empty_title": "Rien en attente",
+      "empty_desc": "Les choristes savent tout ce qui a été enregistré. Les prochaines modifications s'accumuleront ici en un seul message.",
+      "load_error": "Impossible de charger la file d'annonces.",
+      "leave_title": "Les choristes ne le savent pas encore",
+      "leave_desc_one": "{{count}} modification attend dans la file d'annonces. Elle est enregistrée — seul le message à la distribution manque.",
+      "leave_desc_other": "{{count}} modifications attendent dans la file d'annonces. Elles sont enregistrées — seul le message à la distribution manque.",
+      "leave_review": "Relire et envoyer",
+      "leave_later": "Plus tard"
     }
   },
   "pwa": {
@@ -4228,7 +4336,7 @@
         "unsupported_desc": "Utilisez la dernière version de Chrome, Edge, Firefox ou Safari. Les notifications dans l'application fonctionnent toujours normalement.",
         "unsupported_title": "Ce navigateur ne prend pas en charge les notifications push"
       },
-      "description": "Gérez comment et quand vous souhaitez recevoir des informations du système. Les notifications intégrées à l'application sont toujours actives.",
+      "description": "Choisissez ce dont vous voulez être informé — et par quel canal.",
       "hero_variant": {
         "active": "Actives",
         "blocked": "Bloquées",
@@ -4238,7 +4346,7 @@
       },
       "table": {
         "email": "E-mail",
-        "event_type": "Type d'événement",
+        "event_type": "Notifications",
         "in_app": "In-App",
         "push": "Push"
       },
@@ -4262,6 +4370,7 @@
         "PARTICIPATION_RESPONSE": "Réponse de l'artiste au projet",
         "PIECE_CASTING_ASSIGNED": "Affecté à une pièce",
         "PIECE_CASTING_UPDATED": "Affectation de pièce modifiée",
+        "PROJECT_BRIEFING": "Changements groupés du projet",
         "PROJECT_CANCELLED": "Projet annulé",
         "PROJECT_INVITATION": "Invitation au projet",
         "PROJECT_REMINDER": "Rappel de projet à venir",
@@ -4270,7 +4379,8 @@
         "REHEARSAL_REMINDER": "Rappel de répétition à venir",
         "REHEARSAL_SCHEDULED": "Nouvelle répétition programmée",
         "REHEARSAL_UPDATED": "Heure/Lieu de répétition modifié",
-        "SYSTEM_ALERT": "Maintenance ou alerte système"
+        "SYSTEM_ALERT": "Maintenance ou alerte système",
+        "ANNOUNCEMENT_PENDING": "Modifications non annoncées"
       },
       "unsubscribe_modal": {
         "description": "Vous ne recevrez plus de notifications push sur cet appareil. Vous pourrez les réactiver à tout moment.",
@@ -4283,16 +4393,17 @@
         "hour_label": "Heure d’envoi",
         "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
       },
-      "in_app_note": "Chaque événement apparaît toujours dans la cloche de l’application. Ci-dessous, choisissez ce que vous souhaitez aussi recevoir par e-mail et en notification push.",
+      "in_app_note": "Tout arrive dans la cloche de l’application, toujours, quels que soient ces réglages. Ci-dessous, vous ne choisissez que l’e-mail et les notifications push.",
       "groups": {
-        "schedule": "Calendrier et répétitions",
-        "repertoire": "Répertoire et partitions",
-        "messages": "Communications",
-        "decisions": "Vos demandes",
+        "commitments": "Vos engagements",
+        "messages": "Messages",
+        "materials": "Partitions et rappels",
+        "safety_net": "Annonces non envoyées",
         "team": "Opérations d'équipe"
       },
       "type_desc": {
         "PROJECT_INVITATION": "Vous êtes invité à chanter dans un projet",
+        "PROJECT_BRIEFING": "Plusieurs changements à la fois, réunis en un seul message",
         "PROJECT_UPDATED": "Les détails d'un projet changent",
         "PROJECT_REMINDER": "Peu avant un concert",
         "REHEARSAL_UPDATED": "L'heure, le lieu ou le programme d'une répétition change",
@@ -4306,15 +4417,40 @@
         "PARTICIPATION_RESPONSE": "Un choriste répond à une invitation",
         "ATTENDANCE_SUBMITTED": "Un choriste met à jour sa présence",
         "ABSENCE_REQUESTED": "Un choriste demande une absence",
-        "SYSTEM_ALERT": "Maintenance et avis système importants"
+        "SYSTEM_ALERT": "Maintenance et avis système importants",
+        "ANNOUNCEMENT_PENDING": "La file d'un projet attend et les chanteurs l'ignorent encore",
+        "PROJECT_CANCELLED": "Un concert est annulé",
+        "REHEARSAL_SCHEDULED": "Une nouvelle répétition rejoint le calendrier",
+        "REHEARSAL_CANCELLED": "Une répétition est annulée",
+        "MESSAGE_RECEIVED": "Une réponse dans votre conversation"
       },
       "restore_recommended": "Rétablir les valeurs recommandées",
       "customized_hint": "Personnalisé — diffère des réglages recommandés",
       "a11y": {
         "email": "E-mail pour {{event}}",
-        "push": "Push pour {{event}}"
+        "push": "Push pour {{event}}",
+        "email_group": "E-mail pour : {{group}}",
+        "email_group_partial": "E-mail pour : {{group}} — partiellement activé",
+        "push_group": "Push pour : {{group}}",
+        "push_group_partial": "Push pour : {{group}} — partiellement activé"
       },
-      "customized_badge": "Modifié"
+      "customized_badge": "Modifié",
+      "groups_desc": {
+        "commitments": "Invitations, changements d'horaire des répétitions et des concerts, vos propres parties et les décisions sur vos demandes d'absence.",
+        "messages": "Quelqu'un vous écrit — une réponse dans une conversation ou un message de la direction.",
+        "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels peu avant une répétition ou un concert.",
+        "safety_net": "La seule notification portant sur ce qui n'a pas encore été fait : des modifications attendent dans la file et les choristes l'ignorent toujours. C'est pourquoi elle part aussi par e-mail.",
+        "team": "Les réponses aux invitations, les mises à jour de présence et les demandes d'absence. Les mêmes événements que rassemble le résumé quotidien ci-dessous."
+      },
+      "groups_email_off": {
+        "commitments": "Vous ne recevrez pas d'e-mail lorsqu'un horaire de répétition ou de concert change. L'application affiche toujours tout — mais seulement si vous l'ouvrez.",
+        "messages": "Vous ne recevrez pas d'e-mail lorsque quelqu'un vous écrit. Le message vous attendra dans l'application.",
+        "safety_net": "Vous ne recevrez pas d'e-mail lorsqu'une file d'annonces reste non envoyée. Le rappel restera dans l'application — c'est-à-dire là où il ne vous atteindra que si vous l'ouvrez déjà."
+      },
+      "details_show": "Détails ({{n}})",
+      "details_hide": "Masquer les détails",
+      "partial_badge": "Partiel",
+      "partial_hint": "Certaines notifications de ce groupe sont réglées différemment. L’interrupteur à côté les active toutes."
     },
     "page": {
       "highlight": "du compte",

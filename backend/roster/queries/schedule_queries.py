@@ -33,9 +33,16 @@ def get_artist_schedule(
     """
     # Bounded scope from the artist's own active participations. Typical
     # cardinality is small, so the IN-clauses below are cheap.
+    #
+    # Drafts are excluded here rather than from `projects_qs` below, so the cast's
+    # rehearsals and participation map drop with them in one stroke. A project the
+    # cast has not been told about must not appear in their schedule — being cast in
+    # an unpublished concert is a plan the conductor is still making. The conductor's
+    # own slice (`conducted_project_ids`) is untouched: they are the one planning it.
     active_parts: list[tuple] = list(
         Participation.objects.filter(artist__user=user, is_deleted=False)
         .exclude(status=Participation.Status.DECLINED)
+        .exclude(project__status=Project.Status.DRAFT)
         .values_list("id", "project_id")
     )
     participation_ids = [pid for pid, _ in active_parts]

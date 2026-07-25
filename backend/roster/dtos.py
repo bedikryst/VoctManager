@@ -11,6 +11,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
+from core.constants import VoiceLine
+
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
@@ -19,6 +21,7 @@ ATTENDANCE_STATUS_VALUES = frozenset(Attendance.Status.values)
 PROJECT_STATUS_VALUES = frozenset(Project.Status.values)
 PARTICIPATION_STATUS_VALUES = frozenset(Participation.Status.values)
 VOICE_TYPE_VALUES = frozenset(VoiceType.values)
+VOICE_LINE_VALUES = frozenset(VoiceLine.values)
 PIECE_READINESS_STATUS_VALUES = frozenset(PieceReadiness.Status.values)
 
 
@@ -157,6 +160,60 @@ class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_status(cls, value: str) -> str:
         return _require_choice(value, PIECE_READINESS_STATUS_VALUES, "status")
+
+
+class PieceCastingRowDTO(EnterpriseBaseDTO):
+    """One seat on the divisi board: this participant, on this voice line."""
+
+    participation: UUID
+    voice_line: str = Field(..., max_length=5)
+    gives_pitch: bool = False
+    notes: str = Field(default='', max_length=200)
+
+    @field_validator("voice_line")
+    @classmethod
+    def validate_voice_line(cls, value: str) -> str:
+        return _require_choice(value, VOICE_LINE_VALUES, "voice_line")
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def normalize_notes(cls, value: object) -> object:
+        return _blankable_string(value)
+
+
+class PieceCastingBoardDTO(EnterpriseBaseDTO):
+    """The complete divisi board for one piece of one project.
+
+    Declarative rather than incremental: whatever the conductor sees on screen is
+    what gets sent, and the server reconciles. One save is one request and at most
+    one announcement per affected singer — where the per-casting endpoints issued
+    one of each per drag, and could leave the board half-written when a later call
+    failed.
+
+    An empty `castings` list is legitimate — it clears the piece.
+    """
+
+    project: UUID
+    piece: UUID
+    castings: tuple[PieceCastingRowDTO, ...] = Field(default_factory=tuple)
+
+    @field_validator("castings", mode="before")
+    @classmethod
+    def normalize_castings(cls, value: object) -> object:
+        if value is None:
+            return ()
+        if isinstance(value, list | tuple):
+            return tuple(value)
+        return value
+
+    @model_validator(mode="after")
+    def reject_repeated_participants(self):
+        seen: set[UUID] = set()
+        for row in self.castings:
+            if row.participation in seen:
+                raise ValueError("castings must hold at most one voice line per participant.")
+            seen.add(row.participation)
+        return self
 
 
 class ProjectBulkFeeDTO(EnterpriseBaseDTO):

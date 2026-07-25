@@ -53,7 +53,29 @@ class EventMomentMetadata(EnterpriseBaseDTO):
 
 
 # --- Project Management ---
+class InvitationRehearsalMetadata(EnterpriseBaseDTO):
+    """One rehearsal inside the invitation's schedule block. Carries the canonical
+    moment rather than a rendered date, so every recipient reads it in their own
+    language — the same contract as any other event moment in this module."""
+    rehearsal_id: UUID
+    starts_at: str = ""
+    starts_at_display: str = ""
+    timezone: str = ""
+    location: str = ""
+    focus: str = ""
+    is_mandatory: bool = True
+
+
 class ProjectInvitationMetadata(EnterpriseBaseDTO):
+    """The whole decision, in one message.
+
+    An invitation is the only thing a singer gets before answering, so it has to
+    state the real cost of saying yes: not just the concert, but the rehearsals
+    they are expected at and the part they would be singing. Fields below the
+    event moment are the publication payload; they stay empty on legacy rows and
+    on the immediate invite of an already-live project, and every composer
+    tolerates their absence.
+    """
     project_id: UUID
     project_name: str
     participation_id: UUID
@@ -67,7 +89,77 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     date_range: str = ""
     location: str = ""
     description: str = ""
+    # Call time is a second moment on the same day; kept separate so the copy can
+    # say "be there at 18:00" without overwriting when the concert itself starts.
+    call_time_at: str = ""
+    call_time_display: str = ""
+    dress_code: str = ""
+    rehearsals: tuple[InvitationRehearsalMetadata, ...] = ()
+    # Programme as ordered piece titles — names, not prose, so the list renders
+    # identically on every surface.
+    program: tuple[str, ...] = ()
+    # This artist's own voice lines across the programme, as language-neutral
+    # VoiceLine CODES. Empty when they have not been cast yet.
+    voice_lines: tuple[str, ...] = ()
     message: str | None = None
+
+class BriefingItemMetadata(EnterpriseBaseDTO):
+    """One thing that changed, carried inside a composite briefing.
+
+    The nested `metadata` is the payload the emitting service built, untouched —
+    so a briefing line and the standalone message it would otherwise have been
+    render from exactly the same facts, and a surface that already knows how to
+    read a casting or a rehearsal needs no second vocabulary. `subject_type` and
+    `kind` are what the briefing groups and phrases by; the calendar payload is
+    lifted out to the briefing's own `ics`, since attachments are per message.
+    """
+    subject_type: str
+    kind: str
+    notification_type: str
+    level: str = NotificationLevel.INFO
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProjectBriefingMetadata(EnterpriseBaseDTO):
+    """Everything one artist has not been told about one project.
+
+    Assembled at publication from the collapsed queue: the changes the whole cast
+    shares plus the ones that are only theirs, personal first. A recipient with a
+    single item is never sent one of these — they get that item's own message,
+    which says more precisely what happened.
+    """
+    project_id: UUID | None = None
+    project_name: str
+    # The conductor's own words, written when publishing the queue. Free text,
+    # passed through verbatim like any other authored message.
+    note: str = ""
+    items: tuple[BriefingItemMetadata, ...] = ()
+    # Calendar events for every rehearsal named above, so a briefing announcing
+    # five of them attaches one .ics rather than five.
+    ics: tuple[dict[str, Any], ...] = ()
+    message: str | None = None
+
+
+class AnnouncementPendingMetadata(EnterpriseBaseDTO):
+    """A live project whose queue has been sitting unpublished — addressed to the
+    managers, not the cast.
+
+    Two numbers, deliberately. `change_count` is what the project hub's pill shows,
+    so the nudge and the app agree on how much is waiting; `recipient_count` is how
+    many people are in the dark, which is the reason to care. How many envelopes
+    publication would send is a decision the review sheet's confirm button states,
+    and repeating it here would offer a third number to reconcile.
+
+    `waiting_hours` is a count, not a rendered duration: the reader's language
+    decides whether that reads as hours or days.
+    """
+    project_id: UUID
+    project_name: str
+    change_count: int = 0
+    recipient_count: int = 0
+    waiting_hours: int = 0
+    message: str | None = None
+
 
 class ProjectCancelledMetadata(EnterpriseBaseDTO):
     """A cancellation is an alarm in its own right, not a status field in a diff —
@@ -240,6 +332,7 @@ class SystemAlertMetadata(EnterpriseBaseDTO):
 # Polymorphic Payload Definition
 NotificationMetadataPayload = (
     ProjectInvitationMetadata
+    | ProjectBriefingMetadata
     | ProjectUpdatedMetadata
     | ProjectReminderMetadata
     | RehearsalScheduledMetadata

@@ -1,0 +1,21 @@
+{% load i18n %}
+VOCTMANAGER — {{ eyebrow }}
+
+{{ headline }}
+
+=========================================
+
+{% include "emails/partials/_greeting.txt" with style=greeting_style|default:"hello" %}
+{{ lead }}
+{% if metadata.note %}
+{{ metadata.note }}
+{% endif %}{% for section in sections %}
+{{ section.title|upper }} ({{ section.count }})
+{% for item in section.items %}- {{ item.primary }}{% if item.secondary %} · {{ item.secondary }}{% endif %}{% if item.detail %}
+  {{ item.detail }}{% endif %}
+{% endfor %}{% endfor %}
+-----------------------------------------
+{{ cta_label }}: {{ cta_url }}
+{% if level != 'WARNING' and level != 'URGENT' %}
+{% translate "With warmest regards," %}{% endif %}
+{% translate "The VoctEnsemble Team" %}

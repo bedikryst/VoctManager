@@ -1,9 +1,10 @@
 /**
  * @file NotificationsTab.tsx
- * @description Notification preferences: a stateful Web Push hero plus a grouped
- * "preference ledger" — domain sections of per-event email/push toggles, each row
- * annotated with an icon, a one-line description and a "customized vs recommended"
- * marker, with per-section Restore-recommended and a manager-only daily digest.
+ * @description Notification preferences: a stateful Web Push hero above a ledger
+ * of consequences. Each group ("what you committed to", "someone writing to you",
+ * "materials and reminders") is one email/push decision; the per-event rows behind
+ * it stay reachable under a details disclosure for anyone who wants that grain.
+ * Turning a recommended channel off says what it costs instead of blocking it.
  * @architecture Enterprise SaaS 2026
  * @module settings/NotificationsTab
  */
@@ -30,6 +31,7 @@ import { motion } from "framer-motion";
 import {
   useNotificationPreferences,
   useRestoreRecommendedPreferences,
+  useUpdateGroupChannel,
   useUpdatePreference,
 } from "@/features/notifications/api/preferences";
 import {
@@ -39,11 +41,16 @@ import {
 import { usePushNotifications } from "@/features/notifications/hooks/usePushNotifications";
 import { PushPermissionPrimer } from "@/features/notifications/components/PushPermissionPrimer";
 import type { NotificationPreferenceDTO } from "@/features/notifications/types/notifications.dto";
-import { isPreferenceCustomized } from "@/features/notifications/lib/preferences";
+import {
+  groupChannelState,
+  isPreferenceCustomized,
+  nextGroupChannelValue,
+  type GroupChannelState,
+  type PreferenceChannel,
+} from "@/features/notifications/lib/preferences";
 import {
   groupNotificationPreferences,
-  notificationTypeMeta,
-  NOTIFICATION_GROUP_ORDER,
+  notificationTypeIcon,
   type NotificationGroupId,
   type NotificationPreferenceGroup,
 } from "@/features/settings/constants/notificationPreferenceGroups";
@@ -58,26 +65,121 @@ import { cn } from "@/shared/lib/utils";
 
 type TFunc = ReturnType<typeof useTranslation>["t"];
 
+/** The grid a group's control, its detail rows and the column headers all lay out
+ *  on, so the two channel columns line up down the whole ledger. Written as whole
+ *  literal class names — Tailwind scans source text, so a composed one never
+ *  reaches the stylesheet. */
+const channelGrid = (showPush: boolean) =>
+  showPush ? "sm:grid-cols-[1fr_100px_100px]" : "sm:grid-cols-[1fr_100px]";
+
+const channelHeaderGrid = (showPush: boolean) =>
+  showPush ? "grid-cols-[1fr_100px_100px]" : "grid-cols-[1fr_100px]";
+
 interface NotificationSwitchProps {
-  checked: boolean;
-  onCheckedChange: (v: boolean) => void;
+  state: GroupChannelState;
+  onToggle: () => void;
   ariaLabel: string;
 }
 
-const NotificationSwitch = ({ checked, onCheckedChange, ariaLabel }: NotificationSwitchProps) => (
+/**
+ * A switch that can also say "some of these". `mixed` is a real state here — a
+ * reader who once answered per event has one, and painting it as plain off would
+ * misreport their own settings back to them. Clicking resolves it upward.
+ */
+const NotificationSwitch = ({ state, onToggle, ariaLabel }: NotificationSwitchProps) => (
   <Switch.Root
-    checked={checked}
-    onCheckedChange={onCheckedChange}
+    checked={state === "on"}
+    onCheckedChange={onToggle}
     aria-label={ariaLabel}
-    className="w-11 h-6 bg-ethereal-parchment rounded-full relative data-[state=checked]:bg-ethereal-gold transition-colors cursor-pointer outline-none focus:ring-2 ring-ethereal-gold/50 ring-offset-2 ring-offset-ethereal-alabaster shrink-0"
+    data-mixed={state === "mixed" ? "" : undefined}
+    className={cn(
+      "group/switch w-11 h-6 bg-ethereal-parchment rounded-full relative transition-colors cursor-pointer outline-none focus:ring-2 ring-ethereal-gold/50 ring-offset-2 ring-offset-ethereal-alabaster shrink-0",
+      "data-[state=checked]:bg-ethereal-gold data-mixed:bg-ethereal-gold/35",
+    )}
   >
-    <Switch.Thumb className="block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-5.5" />
+    <Switch.Thumb
+      className={cn(
+        "block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform",
+        "data-[state=checked]:translate-x-5.5 group-data-mixed/switch:translate-x-3",
+      )}
+    />
   </Switch.Root>
 );
 
 const LockedOffSwitch = () => (
   <div className="w-11 h-6 bg-ethereal-parchment/60 rounded-full flex items-center px-0.5 opacity-40 cursor-not-allowed shrink-0">
     <div className="w-5 h-5 bg-ethereal-graphite/40 rounded-full translate-x-0.5" />
+  </div>
+);
+
+interface ChannelCellsProps {
+  t: TFunc;
+  showPushColumn: boolean;
+  canManagePush: boolean;
+  emailState: GroupChannelState;
+  pushState: GroupChannelState;
+  onToggle: (channel: PreferenceChannel, state: GroupChannelState) => void;
+  emailLabel: string;
+  pushLabel: string;
+}
+
+/**
+ * The two channel columns, shared by a group's control and its detail rows.
+ * `sm:contents` dissolves the wrapper into the parent grid on desktop while
+ * keeping the cells as one labelled block on mobile.
+ */
+const ChannelCells: React.FC<ChannelCellsProps> = ({
+  t,
+  showPushColumn,
+  canManagePush,
+  emailState,
+  pushState,
+  onToggle,
+  emailLabel,
+  pushLabel,
+}) => (
+  <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
+    <div className="flex items-center justify-between sm:justify-center w-full">
+      <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
+      <NotificationSwitch
+        state={emailState}
+        ariaLabel={emailLabel}
+        onToggle={() => onToggle("email_enabled", emailState)}
+      />
+    </div>
+
+    {showPushColumn && (
+      <div className="flex items-center justify-between sm:justify-center w-full">
+        <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
+        {canManagePush ? (
+          <NotificationSwitch
+            state={pushState}
+            ariaLabel={pushLabel}
+            onToggle={() => onToggle("push_enabled", pushState)}
+          />
+        ) : (
+          // Push is available but not yet activated — a locked teaser that
+          // invites the user to turn it on via the hero above.
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <span className="flex">
+                <LockedOffSwitch />
+              </span>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                side="left"
+                sideOffset={6}
+                className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
+              >
+                {t("settings.notifications.tooltips.activate_first")}
+                <Tooltip.Arrow className="fill-ethereal-ink" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        )}
+      </div>
+    )}
   </div>
 );
 
@@ -137,8 +239,9 @@ const PALETTES: Record<HeroVariant, HeroPalette> = {
 
 export const NotificationsTab: React.FC = () => {
   const { t } = useTranslation();
-  const { data: preferences, isLoading } = useNotificationPreferences();
+  const { data: matrix, isLoading } = useNotificationPreferences();
   const updateMutation = useUpdatePreference();
+  const groupChannelMutation = useUpdateGroupChannel();
   const restoreMutation = useRestoreRecommendedPreferences();
   const {
     availability,
@@ -153,12 +256,11 @@ export const NotificationsTab: React.FC = () => {
 
   const [primerOpen, setPrimerOpen] = useState(false);
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
-  // Calm default: the calendar-critical "schedule" group opens expanded; the rest
-  // collapse so notification settings read as a scannable index, not a 16-row wall.
-  // Every collapsed header still surfaces its Restore-recommended / customized
-  // marker, so nothing actionable is hidden — it's one tap to fine-tune.
-  const [collapsed, setCollapsed] = useState<ReadonlySet<NotificationGroupId>>(
-    () => new Set(NOTIFICATION_GROUP_ORDER.filter((id) => id !== "schedule")),
+  // Every group's control is visible from the start — it is the decision the page
+  // exists for. The per-event rows behind it open on request, so the ledger reads
+  // as three choices (five for a manager) rather than a wall of near-synonyms.
+  const [expanded, setExpanded] = useState<ReadonlySet<NotificationGroupId>>(
+    () => new Set<NotificationGroupId>(),
   );
   const [restoringGroup, setRestoringGroup] = useState<NotificationGroupId | null>(null);
 
@@ -192,7 +294,7 @@ export const NotificationsTab: React.FC = () => {
   // explanation — no wall of inert grey dots.
   const showPushColumn = heroVariant === "subscribed" || heroVariant === "ready";
 
-  const groups = groupNotificationPreferences(preferences ?? []);
+  const groups = groupNotificationPreferences(matrix);
 
   const handlePrimerAccept = async () => {
     const ok = await subscribe();
@@ -208,18 +310,29 @@ export const NotificationsTab: React.FC = () => {
     setUnsubConfirmOpen(false);
   };
 
-  const toggleCollapse = (id: NotificationGroupId) =>
-    setCollapsed((prev) => {
+  const toggleExpanded = (id: NotificationGroupId) =>
+    setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
 
-  const handleToggle = (
+  const handleRowToggle = (
     pref: NotificationPreferenceDTO,
     patch: { email_enabled?: boolean; push_enabled?: boolean },
   ) => updateMutation.mutate({ notification_type: pref.notification_type, ...patch });
+
+  const handleGroupToggle = (
+    group: NotificationPreferenceGroup,
+    channel: PreferenceChannel,
+    state: GroupChannelState,
+  ) =>
+    groupChannelMutation.mutate({
+      rows: group.preferences,
+      channel,
+      value: nextGroupChannelValue(state),
+    });
 
   const handleRestore = (group: NotificationPreferenceGroup) => {
     setRestoringGroup(group.id);
@@ -253,8 +366,8 @@ export const NotificationsTab: React.FC = () => {
 
         <div
           className={cn(
-            "hidden sm:grid gap-4 pb-2 px-2 border-b border-ethereal-parchment/40",
-            showPushColumn ? "grid-cols-[1fr_100px_100px]" : "grid-cols-[1fr_100px]",
+            "hidden sm:grid gap-4 pb-2 px-5 border-b border-ethereal-parchment/40",
+            channelHeaderGrid(showPushColumn),
           )}
         >
           <div>
@@ -270,23 +383,25 @@ export const NotificationsTab: React.FC = () => {
           )}
         </div>
 
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-3 pt-4">
           {groups.map((group) => (
-            <PreferenceGroup
+            <PreferenceGroupPanel
               key={group.id}
               group={group}
               t={t}
-              collapsed={collapsed.has(group.id)}
-              onToggleCollapse={() => toggleCollapse(group.id)}
+              expanded={expanded.has(group.id)}
+              onToggleExpanded={() => toggleExpanded(group.id)}
               showPushColumn={showPushColumn}
               canManagePush={canManagePushColumn}
-              onToggle={handleToggle}
+              onGroupToggle={(channel, state) => handleGroupToggle(group, channel, state)}
+              onRowToggle={handleRowToggle}
               onRestore={() => handleRestore(group)}
               isRestoring={restoreMutation.isPending && restoringGroup === group.id}
             />
           ))}
-          {/* Team-ops is the last group, so the digest lands as the ledger's
-              true footer — batching exactly those routine team alerts above it. */}
+          {/* Team operations is the last group, so the digest lands as the
+              ledger's true footer — batching exactly the routine team alerts
+              listed directly above it. */}
           <DigestPanel />
         </div>
       </GlassCard>
@@ -313,14 +428,15 @@ export const NotificationsTab: React.FC = () => {
   );
 };
 
-interface PreferenceGroupProps {
+interface PreferenceGroupPanelProps {
   group: NotificationPreferenceGroup;
   t: TFunc;
-  collapsed: boolean;
-  onToggleCollapse: () => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
   showPushColumn: boolean;
   canManagePush: boolean;
-  onToggle: (
+  onGroupToggle: (channel: PreferenceChannel, state: GroupChannelState) => void;
+  onRowToggle: (
     pref: NotificationPreferenceDTO,
     patch: { email_enabled?: boolean; push_enabled?: boolean },
   ) => void;
@@ -328,39 +444,124 @@ interface PreferenceGroupProps {
   isRestoring: boolean;
 }
 
-const PreferenceGroup: React.FC<PreferenceGroupProps> = ({
+const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
   group,
   t,
-  collapsed,
-  onToggleCollapse,
+  expanded,
+  onToggleExpanded,
   showPushColumn,
   canManagePush,
-  onToggle,
+  onGroupToggle,
+  onRowToggle,
   onRestore,
   isRestoring,
 }) => {
   const GroupIcon = group.icon;
+  const name = t(`settings.notifications.groups.${group.id}`);
   const hasCustomized = group.preferences.some((pref) =>
     isPreferenceCustomized(pref, showPushColumn),
   );
 
+  const emailState = groupChannelState(group.preferences, "email_enabled");
+  const pushState = groupChannelState(group.preferences, "push_enabled");
+  const isPartial = emailState === "mixed" || (showPushColumn && pushState === "mixed");
+
+  // Below its own recommendation, and said out loud. A reader may switch a
+  // commitment out of their inbox — it is their inbox — but they should not
+  // discover what that cost them from a missed call time.
+  //
+  // Only when the whole group is off: the sentence speaks for every member, and
+  // under a mixed state it would claim silence about events that still e-mail.
+  // A partial group is described by its chip and its rows' own markers instead.
+  const showEmailConsequence = group.recommended_email && emailState === "off";
+
+  const channelLabel = (channel: PreferenceChannel, state: GroupChannelState) =>
+    t(
+      state === "mixed"
+        ? `settings.notifications.a11y.${channel === "email_enabled" ? "email" : "push"}_group_partial`
+        : `settings.notifications.a11y.${channel === "email_enabled" ? "email" : "push"}_group`,
+      { group: name },
+    );
+
   return (
-    <section className="border-b border-ethereal-parchment/30 last:border-b-0">
-      <header className="flex items-center justify-between gap-3 pt-5 pb-1">
+    <section className="rounded-2xl border border-ethereal-parchment/40 bg-ethereal-parchment/10 px-4 py-4 sm:px-5">
+      <div
+        className={cn(
+          "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4",
+          channelGrid(showPushColumn),
+        )}
+      >
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="mt-0.5 p-2 rounded-xl bg-ethereal-gold/10 shrink-0">
+            <GroupIcon className="w-4 h-4 text-ethereal-gold" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Text size="sm" weight="medium">
+                {name}
+              </Text>
+              {isPartial && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-ethereal-gold/15 px-2 py-0.5 shrink-0"
+                  title={t("settings.notifications.partial_hint")}
+                >
+                  <span className="w-1 h-1 rounded-full bg-ethereal-gold" aria-hidden />
+                  <Eyebrow className="text-ethereal-gold">
+                    {t("settings.notifications.partial_badge")}
+                  </Eyebrow>
+                </span>
+              )}
+            </div>
+            <Text size="xs" color="muted" className="leading-snug mt-0.5">
+              {t(`settings.notifications.groups_desc.${group.id}`)}
+            </Text>
+          </div>
+        </div>
+
+        <ChannelCells
+          t={t}
+          showPushColumn={showPushColumn}
+          canManagePush={canManagePush}
+          emailState={emailState}
+          pushState={pushState}
+          onToggle={onGroupToggle}
+          emailLabel={channelLabel("email_enabled", emailState)}
+          pushLabel={channelLabel("push_enabled", pushState)}
+        />
+      </div>
+
+      {showEmailConsequence && (
+        <div className="mt-3 flex items-start gap-2 rounded-xl bg-ethereal-parchment/25 px-3 py-2.5">
+          <Info className="w-3.5 h-3.5 text-ethereal-graphite/70 shrink-0 mt-0.5" aria-hidden />
+          <Text size="xs" color="muted" className="leading-relaxed">
+            {t(`settings.notifications.groups_email_off.${group.id}`)}
+          </Text>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-ethereal-parchment/30 pt-2">
         <button
           type="button"
-          onClick={onToggleCollapse}
-          aria-expanded={!collapsed}
-          className="flex items-center gap-2 rounded-lg px-1 -mx-1 py-1 outline-none focus-visible:ring-2 ring-ethereal-gold/50"
+          onClick={onToggleExpanded}
+          aria-expanded={expanded}
+          className="flex items-center gap-1.5 rounded-lg px-1 -mx-1 py-1 text-ethereal-graphite/70 hover:text-ethereal-ink transition-colors outline-none focus-visible:ring-2 ring-ethereal-gold/50"
         >
           <ChevronDown
             className={cn(
-              "w-4 h-4 text-ethereal-graphite/60 transition-transform duration-200",
-              collapsed && "-rotate-90",
+              "w-3.5 h-3.5 transition-transform duration-200",
+              !expanded && "-rotate-90",
             )}
           />
-          <GroupIcon className="w-4 h-4 text-ethereal-gold" />
-          <Eyebrow>{t(`settings.notifications.groups.${group.id}`)}</Eyebrow>
+          <Eyebrow>
+            {expanded
+              ? t("settings.notifications.details_hide")
+              : // `n`, not `count` — the number is parenthesised, so no locale
+                // needs to agree with it and i18next's plural machinery would
+                // only add suffixed keys nobody writes.
+                t("settings.notifications.details_show", {
+                  n: group.preferences.length,
+                })}
+          </Eyebrow>
         </button>
 
         {hasCustomized && (
@@ -374,10 +575,10 @@ const PreferenceGroup: React.FC<PreferenceGroupProps> = ({
             {t("settings.notifications.restore_recommended")}
           </Button>
         )}
-      </header>
+      </div>
 
-      {!collapsed && (
-        <div className="flex flex-col divide-y divide-ethereal-parchment/30 pb-2">
+      {expanded && (
+        <div className="flex flex-col divide-y divide-ethereal-parchment/30">
           {group.preferences.map((pref) => (
             <PreferenceRow
               key={pref.notification_type}
@@ -385,7 +586,7 @@ const PreferenceGroup: React.FC<PreferenceGroupProps> = ({
               t={t}
               showPushColumn={showPushColumn}
               canManagePush={canManagePush}
-              onToggle={onToggle}
+              onToggle={onRowToggle}
             />
           ))}
         </div>
@@ -412,7 +613,7 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
   canManagePush,
   onToggle,
 }) => {
-  const { icon: RowIcon } = notificationTypeMeta(pref.notification_type);
+  const RowIcon = notificationTypeIcon(pref.notification_type);
   const label = t(
     `settings.notifications.types.${pref.notification_type}`,
     pref.label || pref.notification_type.replace(/_/g, " "),
@@ -423,19 +624,17 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4 py-4 sm:px-2 hover:bg-ethereal-parchment/10 transition-colors rounded-xl sm:rounded-none",
-        showPushColumn ? "sm:grid-cols-[1fr_100px_100px]" : "sm:grid-cols-[1fr_100px]",
+        "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4 py-4 rounded-xl sm:rounded-none",
+        channelGrid(showPushColumn),
       )}
     >
-      <div className="flex items-start gap-3 px-1 sm:px-0">
+      <div className="flex items-start gap-3 pl-1 sm:pl-3">
         <div className="mt-0.5 p-1.5 rounded-lg bg-ethereal-parchment/40 shrink-0">
           <RowIcon className="w-4 h-4 text-ethereal-graphite" />
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <Text size="sm" weight="medium">
-              {label}
-            </Text>
+          <div className="flex flex-wrap items-center gap-2">
+            <Text size="sm">{label}</Text>
             {customized && (
               <span
                 className="inline-flex items-center gap-1 rounded-full bg-ethereal-gold/15 px-2 py-0.5 shrink-0"
@@ -456,49 +655,16 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
-        <div className="flex items-center justify-between sm:justify-center w-full">
-          <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
-          <NotificationSwitch
-            checked={pref.email_enabled}
-            ariaLabel={t("settings.notifications.a11y.email", { event: label })}
-            onCheckedChange={(val) => onToggle(pref, { email_enabled: val })}
-          />
-        </div>
-
-        {showPushColumn && (
-          <div className="flex items-center justify-between sm:justify-center w-full">
-            <Eyebrow className="sm:hidden">{t("settings.notifications.table.push")}</Eyebrow>
-            {canManagePush ? (
-              <NotificationSwitch
-                checked={pref.push_enabled}
-                ariaLabel={t("settings.notifications.a11y.push", { event: label })}
-                onCheckedChange={(val) => onToggle(pref, { push_enabled: val })}
-              />
-            ) : (
-              // Push is available but not yet activated — a locked teaser that
-              // invites the user to turn it on via the hero above.
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <span className="flex">
-                    <LockedOffSwitch />
-                  </span>
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Content
-                    side="left"
-                    sideOffset={6}
-                    className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
-                  >
-                    {t("settings.notifications.tooltips.activate_first")}
-                    <Tooltip.Arrow className="fill-ethereal-ink" />
-                  </Tooltip.Content>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            )}
-          </div>
-        )}
-      </div>
+      <ChannelCells
+        t={t}
+        showPushColumn={showPushColumn}
+        canManagePush={canManagePush}
+        emailState={pref.email_enabled ? "on" : "off"}
+        pushState={pref.push_enabled ? "on" : "off"}
+        onToggle={(channel, state) => onToggle(pref, { [channel]: state !== "on" })}
+        emailLabel={t("settings.notifications.a11y.email", { event: label })}
+        pushLabel={t("settings.notifications.a11y.push", { event: label })}
+      />
     </div>
   );
 };
@@ -600,10 +766,10 @@ const PushHero: React.FC<PushHeroProps> = ({
 };
 
 /**
- * Daily-digest control, bound directly beneath the team-ops group: those routine
- * INFO alerts (attendance, RSVPs, absence requests) are the very events it batches
- * into one email a day instead of a real-time flood. Manager-only — and the team
- * group is itself manager-only, so the two always appear together.
+ * Daily-digest control, bound directly beneath the team-operations group: those
+ * routine INFO alerts (attendance, RSVPs, absence requests) are the very events it
+ * batches into one email a day instead of a real-time flood. Manager-only — and
+ * the team group is itself manager-only, so the two always appear together.
  */
 const DigestPanel: React.FC = () => {
   const { t } = useTranslation();
@@ -617,7 +783,7 @@ const DigestPanel: React.FC = () => {
   const timezone = user.profile.timezone;
 
   return (
-    <div className="mt-5 rounded-xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-4">
+    <div className="mt-2 rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -631,9 +797,9 @@ const DigestPanel: React.FC = () => {
           </Text>
         </div>
         <NotificationSwitch
-          checked={enabled}
+          state={enabled ? "on" : "off"}
           ariaLabel={t("settings.notifications.digest.title")}
-          onCheckedChange={(val) => updateDigest.mutate({ digest_enabled: val })}
+          onToggle={() => updateDigest.mutate({ digest_enabled: !enabled })}
         />
       </div>
 

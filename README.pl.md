@@ -190,13 +190,19 @@ VoctManager jest zaprojektowany do ciągłej ewolucji w kierunku obserwowalnośc
 - [ ] **Adnotacje partytur — spłaszczanie przy eksporcie:** wypalenie wspólnej warstwy adnotacji do skoroszytu koncertowego na etapie montażu, plus zmiana kolejności stron w viewerze.
 - [ ] **Szyfrowanie pól i dziennik audytu:** Szyfrowanie w spoczynku (Fernet) pól umów/finansowych oraz niezmienny log mutacji rekordów HR/finansowych do przeglądu kryminalistycznego.
 - [ ] **CI frontendu i testy E2E:** Pipeline'y lint / typecheck / build dla obu frontendów oraz pokrycie E2E Playwright w oparciu o istniejący harness zrzutów ekranu.
-- [ ] **Metryki i rozproszone śledzenie:** Dashboardy Prometheus + Grafana oraz instrumentacja OpenTelemetry do śledzenia żądań end-to-end między usługami i zewnętrznymi API.
+- [x] **Monitoring produkcyjny i alertowanie:** Rozdzielenie liveness i readiness — `/api/health/` pozostaje wolny od zależności na potrzeby healthchecku kontenera, a `/api/health/ready/` dowodzi, że Postgres i Redis faktycznie obsługują ruch, i odpowiada 503, gdy tak nie jest — plus zewnętrzne odpytywanie dostępności i wygaśnięcia certyfikatu oraz heartbeat bicia Celery beat alarmujący **brakiem** pingu, dzięki czemu martwy scheduler, nieosiągalny broker ani zawieszony worker nie mogą paść po cichu. Runbook w `docs/monitoring.md`.
 - [x] **Automatyczne backupy i odzyskiwanie po awarii:** Zaplanowane kopie PostgreSQL + mediów z rotacją, kopia off-site na fundacyjny Google Shared Drive oraz alertowanie przez healthcheck (`infra/backup.sh`; runbook w `docs/backups.md`). Odtwarzalność jest *dowiedziona*, nie zakładana: `infra/restore-drill.sh` odtwarza archiwum off-site do bazy jednorazowej i katalogu tymczasowego — sprawdzając integralność archiwum, liczby wierszy wobec żywej bazy, kompletność mediów, stan migracji i zmierzone RTO — nie dotykając danych produkcyjnych.
-- [ ] **Zaawansowane buforowanie:** Klaster Redis do zarządzania sesją i unieważniania rozproszonej pamięci podręcznej.
-- [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF oraz throttling DRF do zapobiegania nadużywaniu API.
-- [ ] **Replikacja bazy danych:** Strumieniowa replikacja PostgreSQL w celu zapewnienia wysokiej dostępności i odzyskiwania po awarii.
+- [ ] **Limitowanie szybkości i ochrona DDoS:** Reguły CloudFlare + WAF na wierzchu wdrożonego już throttlingu DRF, zapobiegające nadużywaniu API.
 - [ ] **Zgodność z EAA (dostępność):** Automatyczne testy dostępności (axe / Playwright) certyfikujące bazowy poziom Europejskiego Aktu o Dostępności, pod który budowany jest UI.
 - [ ] **Wdrożenia bez przestojów:** Automatyzacja release'ów blue-green / rolling na bazie obecnego jednokomendowego buildu produkcyjnego.
+
+### Świadomie poza zakresem
+
+Decyzje projektowe, nie backlog — zapisane, by nie wracały jako rzekome braki:
+
+- **Prometheus / Grafana / OpenTelemetry.** Metryki odpowiadają na pytanie *ile*. Instalacja jednodzierżawcza na jednym dropletcie z jednym utrzymującym nie ma SLO, dyżurów ani wolumenu ruchu, żeby to pytanie miało sens. Pytania, które realnie padają — *czy leży*, *co rzuciło wyjątkiem* — obsługują powyższe sondy zdrowia i heartbeat ułamkiem kosztu operacyjnego, na hoście, którego pamięć jest już wąskim gardłem przy buildach. Do rewizji, jeśli wdrożenie kiedyś obsłuży drugi zespół.
+- **Klaster Redis do rozproszonego unieważniania cache'u.** Jedna instancja Redisa obsługuje cache i brokera Celery dla całego systemu. Klastrowanie rozwiązuje problem koordynacji, którego to wdrożenie nie ma.
+- **Strumieniowa replikacja PostgreSQL.** Gorąca kopia zapasowa chroni przed utratą instancji — co pokrywają już codzienne kopie off-site o *zweryfikowanej* odtwarzalności i zmierzonym czasie odtworzenia liczonym w sekundach. Na jednym dropletcie replika byłaby drugą usługą stanową dzielącą ten sam dysk i tę samą awarię zasilania: skorelowaną awarią przebraną za redundancję.
 
 ---
 

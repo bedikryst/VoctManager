@@ -9,7 +9,58 @@ import { compareAsc, compareDesc, isAfter, isBefore, isValid, parseISO } from "d
 
 import type { Artist, LocationSnippet, Project, Rehearsal } from "@/shared/types";
 
+import { PROJECT_STATUS, type ProjectStatus } from "../constants/projectDomain";
+
 type ProjectLocationReference = Project["location"] | Rehearsal["location"];
+
+export interface ProjectStatusPresentation {
+  readonly variant: "outline" | "warning" | "neutral" | "danger";
+  readonly labelKey: string;
+  readonly fallbackLabel: string;
+}
+
+const PROJECT_STATUS_PRESENTATION: Record<
+  ProjectStatus,
+  ProjectStatusPresentation
+> = {
+  // A draft is quiet by design — nothing has reached the cast — so it wears the
+  // most reticent badge in the set rather than competing with a live project.
+  [PROJECT_STATUS.DRAFT]: {
+    variant: "outline",
+    labelKey: "projects.badge_draft",
+    fallbackLabel: "Szkic",
+  },
+  [PROJECT_STATUS.ACTIVE]: {
+    variant: "warning",
+    labelKey: "projects.badge_active",
+    fallbackLabel: "W przygotowaniu",
+  },
+  [PROJECT_STATUS.DONE]: {
+    variant: "neutral",
+    labelKey: "projects.badge_done",
+    fallbackLabel: "Zrealizowano",
+  },
+  [PROJECT_STATUS.CANCELLED]: {
+    variant: "danger",
+    labelKey: "projects.badge_cancelled",
+    fallbackLabel: "Odwołano",
+  },
+};
+
+/**
+ * Single source of truth for how a project's lifecycle status reads. Every
+ * surface resolves the badge here, so a draft can never render as though it were
+ * live — the distinction the whole publication model rests on.
+ */
+export const getProjectStatusPresentation = (
+  status: Project["status"] | null | undefined,
+): ProjectStatusPresentation =>
+  PROJECT_STATUS_PRESENTATION[(status as ProjectStatus) ?? PROJECT_STATUS.DRAFT] ??
+  PROJECT_STATUS_PRESENTATION[PROJECT_STATUS.DRAFT];
+
+export const isProjectDraft = (
+  status: Project["status"] | null | undefined,
+): boolean => (status ?? PROJECT_STATUS.DRAFT) === PROJECT_STATUS.DRAFT;
 
 const parseProjectDate = (value?: string | null): Date | null => {
   if (!value) {

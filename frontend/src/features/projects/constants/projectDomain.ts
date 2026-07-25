@@ -31,6 +31,9 @@ export type ProjectStatus =
 
 export const PROJECT_FILTER = {
   ACTIVE: "ACTIVE",
+  // Unpublished projects. They also remain under ACTIVE — a draft is genuinely
+  // in preparation — so this is a lens on the same list, not a separate bucket.
+  DRAFT: "DRAFT",
   DONE: "DONE",
   ALL: "ALL",
 } as const;

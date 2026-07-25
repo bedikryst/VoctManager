@@ -15,15 +15,28 @@ from core.models import UserProfile
 from notifications.models import NotificationLevel, NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
-from .exceptions import ActivationResendException
+from .exceptions import ActivationResendException, CastingValidationException
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
     DocumentRenderDependencyError,
 )
-from .models import Artist, Participation, Project, Rehearsal, VoiceType
+from .models import (
+    Artist,
+    Participation,
+    ProgramItem,
+    Project,
+    ProjectPieceCasting,
+    Rehearsal,
+    VoiceType,
+)
 from .serializers import ArtistDetailedSerializer
-from .services import ArtistHRService, ProjectManagementService, RehearsalOperationsService
+from .services import (
+    ArtistHRService,
+    CastingAndCrewService,
+    ProjectManagementService,
+    RehearsalOperationsService,
+)
 
 # Provisioning delegates the email to core.services, so the task is patched there.
 EMAIL_TASK = "core.services.send_transactional_email_task.delay"
@@ -1500,6 +1513,31 @@ class ReminderDispatchTests(TestCase):
         near.refresh_from_db()
         self.assertIsNotNone(near.reminder_sent_at)
 
+    def test_draft_project_and_its_rehearsals_are_not_reminded(self) -> None:
+        """A reminder would be the first the cast hears of an unpublished concert."""
+        from .tasks import dispatch_due_reminders
+        draft = Project.objects.create(
+            title="Szkic", date_time=timezone.now() + timedelta(hours=24),
+            status=Project.Status.DRAFT,
+        )
+        Participation.objects.create(
+            artist=self.artist, project=draft, status=Participation.Status.CONFIRMED
+        )
+        reh = Rehearsal.objects.create(
+            project=draft, date_time=timezone.now() + timedelta(hours=6)
+        )
+
+        with patch(self.BULK) as bulk:
+            dispatch_due_reminders()
+            bulk.assert_not_called()
+
+        # Crucially, the one-shot claim is untouched: publishing the project later
+        # leaves both reminders still available to fire.
+        draft.refresh_from_db()
+        reh.refresh_from_db()
+        self.assertIsNone(draft.reminder_sent_at)
+        self.assertIsNone(reh.reminder_sent_at)
+
 
 class AbsenceRequestNotificationTests(TestCase):
     """An artist self-marking EXCUSED/ABSENT pings managers as ABSENCE_REQUESTED."""
@@ -1710,7 +1748,9 @@ class RehearsalNotificationEmitterTests(TestCase):
     (structured ISO `starts_at`, localized display fallback, IANA timezone) plus the
     rehearsal identity, so every downstream surface renders timezone-correct copy."""
 
-    BULK = "roster.services.send_bulk_notifications_task.delay"
+    # Patching the task's own `delay` catches both routes out of the gate — the
+    # queue's publication and the immediate dispatch a cancellation still uses.
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
     # 17:00 UTC == 19:00 in Warsaw — a fixed instant keeps display assertions stable.
     WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
 
@@ -1745,19 +1785,29 @@ class RehearsalNotificationEmitterTests(TestCase):
         bulk.assert_called_once()
         return dict(bulk.call_args.kwargs)
 
+    def _emit_queued(self, fn) -> dict:
+        """Schedule and update accrue in the queue on a live project, so the
+        payload is what publication puts on the wire."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            fn()
+            AnnouncementQueue.publish(self.project)
+        bulk.assert_called_once()
+        return dict(bulk.call_args.kwargs)
+
     def test_schedule_emits_canonical_event_time_and_identity(self) -> None:
         from .dtos import RehearsalCreateDTO
 
         location = self._location()
         # Deliberately pass a different DTO timezone to prove the location's IANA
         # zone is the single source of truth that lands in the metadata.
-        rehearsal = self._emit(lambda: RehearsalOperationsService.schedule_rehearsal(
+        kwargs = self._emit_queued(lambda: RehearsalOperationsService.schedule_rehearsal(
             RehearsalCreateDTO(
                 project_id=self.project.id, date_time=self.WHEN, timezone="UTC",
                 location_id=location.id, focus="Lacrimosa",
             )
         ))
-        kwargs = rehearsal
         self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_SCHEDULED)
         meta = kwargs["metadata"]
         self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
@@ -1775,7 +1825,7 @@ class RehearsalNotificationEmitterTests(TestCase):
             project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
             focus="Intro",
         )
-        kwargs = self._emit(lambda: RehearsalOperationsService.update_rehearsal(
+        kwargs = self._emit_queued(lambda: RehearsalOperationsService.update_rehearsal(
             rehearsal, RehearsalUpdateDTO(focus="Lacrimosa")
         ))
         self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_UPDATED)
@@ -1811,7 +1861,9 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
     self-describing 'day schedule' change — never the raw payload — and edits to
     non-surfaceable fields (description) must not ping the cast at all."""
 
-    BULK = "roster.services.send_bulk_notifications_task.delay"
+    # Patching the task's own `delay` catches both routes out of the gate — the
+    # queue's publication and the immediate dispatch a cancellation still uses.
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
 
     def setUp(self) -> None:
         self.user = get_user_model().objects.create_user(
@@ -1831,6 +1883,8 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
         )
 
     def test_run_sheet_change_emits_label_only_not_json_payload(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
         from .dtos import ProjectUpdateDTO
 
         with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
@@ -1838,6 +1892,7 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
                 self.project,
                 ProjectUpdateDTO(run_sheet=[{"time": "18:00", "label": "Zbiórka"}]),
             )
+            AnnouncementQueue.publish(self.project)
 
         bulk.assert_called_once()
         meta = bulk.call_args.kwargs["metadata"]
@@ -1895,6 +1950,1986 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
         )
         self.project.refresh_from_db()
         self.assertEqual(self.project.title, "Requiem II")
+
+
+class AnnouncementAudienceTests(TestCase):
+    """One rule for who hears about a live project: confirmed *and* still
+    deciding, never declined.
+
+    The queue and the alarms that bypass it (cancellations) must resolve the same
+    audience. They did not: cancellations addressed CON only, and since publication
+    leaves the whole cast INVITED by mechanism, a concert called off the day after
+    it went live reached nobody at all.
+    """
+
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+    WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+
+    def setUp(self) -> None:
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        self.waiting, self.waiting_user = self._singer(
+            "waiting", Participation.Status.INVITED
+        )
+        self.declined, self.declined_user = self._singer(
+            "declined", Participation.Status.DECLINED
+        )
+
+    def _singer(self, slug: str, status: str):
+        user = get_user_model().objects.create_user(
+            username=f"aud-{slug}", email=f"aud-{slug}@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=slug.title(), last_name="Singer",
+            email=f"aud-{slug}@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project, status=status,
+        )
+        return participation, user
+
+    def _rehearsal(self) -> Rehearsal:
+        return Rehearsal.objects.create(
+            project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
+        )
+
+    def test_cancelling_a_project_reaches_those_still_deciding(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.CANCELLED),
+            )
+
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.PROJECT_CANCELLED)
+        # The person weighing the invitation is exactly who this answers; the one
+        # who already said no has ended the conversation.
+        self.assertEqual(kwargs["recipient_ids"], [str(self.waiting_user.id)])
+
+    def test_cancelling_a_rehearsal_reaches_those_still_deciding(self) -> None:
+        rehearsal = self._rehearsal()
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.delete_rehearsal(rehearsal)
+
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(
+            kwargs["notification_type"], NotificationType.REHEARSAL_CANCELLED
+        )
+        # Anything else would leave them holding a date that no longer exists —
+        # they were told about the rehearsal by the queue, which reaches INVITED.
+        self.assertEqual(kwargs["recipient_ids"], [str(self.waiting_user.id)])
+
+    def test_a_queued_personal_row_is_dropped_when_its_singer_declines(self) -> None:
+        from archive.models import Composer, Piece
+        from notifications.announcement_queue import AnnouncementQueue
+
+        piece = Piece.objects.create(
+            title="Pie Jesu",
+            composer=Composer.objects.create(first_name="Gabriel", last_name="Fauré"),
+        )
+        CastingAndCrewService.assign_piece_casting(
+            {"participation": self.waiting, "piece": piece, "voice_line": "S1"}
+        )
+        self.waiting.status = Participation.Status.DECLINED
+        self.waiting.save(update_fields=["status"])
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            result = AnnouncementQueue.publish(self.project)
+
+        # Sending them the voice line they have since turned down would read as the
+        # app not having heard the answer.
+        single.assert_not_called()
+        self.assertEqual(result["messages"], 0)
+
+    def test_a_removal_still_reaches_someone_with_no_participation_left(self) -> None:
+        """Guard on the rule above: the DECLINED filter must not silence the one
+        message that has no live participation behind it by definition."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        ProjectManagementService.delete_participation(self.waiting)
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            AnnouncementQueue.publish(self.project)
+
+        single.assert_called_once()
+        self.assertEqual(
+            single.call_args.kwargs["recipient_id"], str(self.waiting_user.id)
+        )
+        self.assertEqual(
+            single.call_args.kwargs["metadata"]["event"], "removed"
+        )
+
+
+class ReinvitationTests(TestCase):
+    """Moving a seat back to INVITED asks the singer again.
+
+    The cast tab does exactly this when someone who declined is re-added. Without
+    an invitation behind it the project simply reappears in their schedule with
+    nobody ever having put the question — and publication cannot rescue them,
+    since it runs once.
+    """
+
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="reinv", email="reinv@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="Singer",
+            email="reinv@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+
+    def _project(self, status: str) -> Project:
+        return Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=status,
+        )
+
+    def _participation(self, project: Project) -> Participation:
+        return Participation.objects.create(
+            artist=self.artist, project=project,
+            status=Participation.Status.DECLINED,
+        )
+
+    def test_declined_to_invited_re_invites_on_a_live_project(self) -> None:
+        from .services import ParticipationService
+
+        participation = self._participation(self._project(Project.Status.ACTIVE))
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ParticipationService.update_by_manager(
+                participation, {"status": Participation.Status.INVITED}
+            )
+
+        single.assert_called_once()
+        self.assertEqual(
+            single.call_args.kwargs["notification_type"],
+            NotificationType.PROJECT_INVITATION,
+        )
+        self.assertEqual(single.call_args.kwargs["recipient_id"], str(self.user.id))
+
+    def test_declined_to_invited_is_silent_on_a_draft(self) -> None:
+        from .services import ParticipationService
+
+        participation = self._participation(self._project(Project.Status.DRAFT))
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ParticipationService.update_by_manager(
+                participation, {"status": Participation.Status.INVITED}
+            )
+
+        # The whole cast is invited together at publication; a draft says nothing.
+        single.assert_not_called()
+
+    def test_an_administrative_status_change_says_nothing(self) -> None:
+        from .services import ParticipationService
+
+        participation = self._participation(self._project(Project.Status.ACTIVE))
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ParticipationService.update_by_manager(
+                participation, {"status": Participation.Status.CONFIRMED, "fee": 100}
+            )
+
+        # Answering CONFIRMED *for* someone is bookkeeping, not a message to them.
+        single.assert_not_called()
+        participation.refresh_from_db()
+        self.assertEqual(participation.fee, 100)
+
+
+class DraftProjectSilenceTests(TestCase):
+    """A project still in DRAFT is invisible to its cast: the conductor assembles the
+    people, schedule and divisi without a single message leaving the app. Publishing
+    it (DRAFT → ACTIVE) is the one act that speaks, and it speaks as an invitation."""
+
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="draft1", email="draft1@test.pl", password="pw123456", first_name="Ada",
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="L", email="draft1@test.pl",
+            voice_type=VoiceType.SOPRANO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT,
+        )
+
+    def _confirmed(self) -> Participation:
+        return Participation.objects.create(
+            artist=self.artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+    def test_inviting_to_a_draft_stays_silent(self) -> None:
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.create_or_restore_participation({
+                "artist": self.artist, "project": self.project,
+                "status": Participation.Status.INVITED,
+            })
+
+        single.assert_not_called()
+        # The participation itself is persisted — only the announcement is withheld.
+        self.assertTrue(
+            Participation.objects.filter(artist=self.artist, project=self.project).exists()
+        )
+
+    def test_scheduling_rehearsals_on_a_draft_stays_silent(self) -> None:
+        from .dtos import RehearsalCreateDTO
+
+        self._confirmed()
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.schedule_rehearsal(
+                RehearsalCreateDTO(
+                    project_id=self.project.id,
+                    date_time=timezone.now() + timedelta(days=20),
+                    timezone="Europe/Warsaw",
+                    focus="Lacrimosa",
+                )
+            )
+
+        bulk.assert_not_called()
+        self.assertEqual(Rehearsal.objects.filter(project=self.project).count(), 1)
+
+    def test_editing_a_draft_stays_silent(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        self._confirmed()
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(title="Requiem — wersja druga"),
+            )
+
+        bulk.assert_not_called()
+
+    def test_cancelling_a_draft_never_announced_stays_silent(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        self._confirmed()
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.CANCELLED),
+            )
+
+        # Nobody was told the concert existed, so nobody is told it is off.
+        bulk.assert_not_called()
+
+    def test_publishing_invites_everyone_still_awaiting_an_answer(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        pending = Participation.objects.create(
+            artist=self.artist, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.ACTIVE),
+            )
+
+        single.assert_called_once()
+        kwargs = single.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.PROJECT_INVITATION)
+        self.assertEqual(kwargs["recipient_id"], str(self.user.id))
+        meta = kwargs["metadata"]
+        self.assertEqual(meta["project_name"], "Requiem")
+        self.assertEqual(meta["participation_id"], str(pending.id))
+
+    def test_publishing_does_not_re_invite_those_who_already_answered(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        self._confirmed()
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.ACTIVE),
+            )
+
+        # A confirmed singer accepted already; re-inviting them would read as a bug.
+        single.assert_not_called()
+
+    def test_publishing_does_not_emit_a_status_field_diff(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        self._confirmed()
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(status=Project.Status.ACTIVE, title="Requiem II"),
+            )
+
+        # "Status: Szkic → Aktywny" is an implementation detail, not news for a singer.
+        bulk.assert_not_called()
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Requiem II")
+
+    def test_a_published_project_announces_again(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        self.project.status = Project.Status.ACTIVE
+        self.project.save(update_fields=["status"])
+        self._confirmed()
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(title="Requiem II"),
+            )
+            # Past publication the silence ends, but the change waits for review
+            # rather than going out on the keystroke that made it.
+            self.assertEqual(len(AnnouncementQueue.pending_for(self.project)), 1)
+            AnnouncementQueue.publish(self.project)
+
+        bulk.assert_called_once()
+        self.assertEqual(
+            bulk.call_args.kwargs["notification_type"], NotificationType.PROJECT_UPDATED
+        )
+
+
+class DraftInvisibleToCastTests(APITestCase):
+    """Silence is not only about notifications. A draft the cast was never told about
+    must not surface in their schedule or materials either — otherwise the conductor
+    plans in private while the singers watch it happen. The conductor keeps seeing
+    their own draft: they are the one assembling it."""
+
+    SCHEDULE_URL = "/api/participations/schedule-dashboard/"
+    MATERIALS_URL = "/api/participations/materials-dashboard/"
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.singer_user = User.objects.create_user(
+            username="dinv-singer", email="dinv@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Sam", last_name="Singer",
+            email="dinv@test.pl", voice_type=VoiceType.TENOR,
+        )
+
+        self.maestro_user = User.objects.create_user(
+            username="dinv-cond", email="dinvc@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        self.maestro = Artist.objects.create(
+            user=self.maestro_user, first_name="Wanda", last_name="Baton",
+            email="dinvc@test.pl", voice_type=VoiceType.CONDUCTOR,
+        )
+
+        self.draft = Project.objects.create(
+            title="Szkic", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT, conductor=self.maestro,
+        )
+        Participation.objects.create(
+            artist=self.singer, project=self.draft,
+            status=Participation.Status.CONFIRMED,
+        )
+        Rehearsal.objects.create(
+            project=self.draft, date_time=timezone.now() + timedelta(days=20),
+        )
+
+    def _titles(self, url: str, user) -> set[str]:
+        self.client.force_authenticate(user=user)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        return {str(row).lower() for row in [resp.content.decode()]}
+
+    def test_draft_is_absent_from_the_singers_schedule(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, [])
+
+    def test_draft_is_absent_from_the_singers_materials(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(self.MATERIALS_URL)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data, [])
+
+    def test_conductor_still_sees_the_draft_they_are_building(self) -> None:
+        self.client.force_authenticate(user=self.maestro_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+        self.assertEqual(resp.status_code, 200)
+        project_ids = {
+            item["project"]["id"] for item in resp.data if item["type"] == "PROJECT"
+        }
+        self.assertIn(str(self.draft.id), project_ids)
+
+    def test_publishing_reveals_the_project_to_the_singer(self) -> None:
+        self.draft.status = Project.Status.ACTIVE
+        self.draft.save(update_fields=["status"])
+
+        self.client.force_authenticate(user=self.singer_user)
+        resp = self.client.get(self.SCHEDULE_URL)
+        project_ids = {
+            item["project"]["id"] for item in resp.data if item["type"] == "PROJECT"
+        }
+        self.assertIn(str(self.draft.id), project_ids)
+
+
+class CastingBeforeConfirmationTests(TestCase):
+    """Casting states an intention ('you sing B2'), not a fact about consent. The
+    conductor must be able to build divisi on a draft, where by definition nobody has
+    answered yet. Only a decline blocks: that seat is known to be empty."""
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        self.user = get_user_model().objects.create_user(
+            username="cast1", email="cast1@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.user, first_name="Ada", last_name="L", email="cast1@test.pl",
+            voice_type=VoiceType.SOPRANO,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT,
+        )
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        self.piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+
+    def _cast(self, status: str):
+        participation = Participation.objects.create(
+            artist=self.artist, project=self.project, status=status,
+        )
+        return CastingAndCrewService.assign_piece_casting({
+            "participation": participation,
+            "piece": self.piece,
+            "voice_line": "S1",
+        })
+
+    def test_an_invited_singer_can_be_cast(self) -> None:
+        with self.captureOnCommitCallbacks(execute=True):
+            casting = self._cast(Participation.Status.INVITED)
+        self.assertEqual(casting.voice_line, "S1")
+
+    def test_a_confirmed_singer_can_be_cast(self) -> None:
+        with self.captureOnCommitCallbacks(execute=True):
+            casting = self._cast(Participation.Status.CONFIRMED)
+        self.assertEqual(casting.voice_line, "S1")
+
+    def test_a_declined_singer_cannot_be_cast(self) -> None:
+        with self.assertRaises(CastingValidationException):
+            self._cast(Participation.Status.DECLINED)
+
+
+class PieceCastingBoardTests(APITestCase):
+    """One Save is one write. The board endpoint takes the divisi grid as the
+    conductor sees it and reconciles it server-side, so an editing session costs one
+    request and at most one message per affected singer — instead of one of each per
+    drag, which is what made casting the loudest surface in the app."""
+
+    URL = "/api/piece-castings/board/"
+    # Patching the task's own `delay` catches whichever route the seam takes.
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="board-mgr", email="boardmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        self.piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+        self.other_piece = Piece.objects.create(title="Libera me", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+
+        self.ada, self.ada_user = self._singer("ada", VoiceType.SOPRANO)
+        self.bo, self.bo_user = self._singer("bo", VoiceType.ALTO)
+        self.cyd, self.cyd_user = self._singer("cyd", VoiceType.TENOR)
+
+        self.client.force_authenticate(user=self.manager_user)
+
+    def _singer(self, slug: str, voice_type: str):
+        user = get_user_model().objects.create_user(
+            username=f"board-{slug}", email=f"board-{slug}@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=slug.title(), last_name="Singer",
+            email=f"board-{slug}@test.pl", voice_type=voice_type,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        return participation, user
+
+    def _row(self, participation: Participation, voice_line: str, **extra) -> dict:
+        return {"participation": str(participation.id), "voice_line": voice_line, **extra}
+
+    def _save(self, rows: list[dict], piece=None):
+        """One save, then the publication that would follow it — so the count of
+        messages below is what the singers actually receive, not what the queue
+        happens to hold."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        payload = {
+            "project": str(self.project.id),
+            "piece": str((piece or self.piece).id),
+            "castings": rows,
+        }
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.put(self.URL, payload, format="json")
+            AnnouncementQueue.publish(self.project)
+        return response, single
+
+    def _lines(self) -> dict[str, str]:
+        return {
+            str(casting.participation_id): casting.voice_line
+            for casting in ProjectPieceCasting.objects.filter(piece=self.piece)
+        }
+
+    def test_one_save_creates_updates_and_deletes_in_a_single_request(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S1"
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.cyd, piece=self.piece, voice_line="T1"
+        )
+
+        # Ada moves, Bo joins, Cyd leaves the piece — one editing session, one save.
+        response, single = self._save([
+            self._row(self.ada, "S2"),
+            self._row(self.bo, "A1"),
+        ])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            self._lines(), {str(self.ada.id): "S2", str(self.bo.id): "A1"}
+        )
+
+        # Exactly one message per affected singer — never one per drag.
+        by_recipient = {
+            call.kwargs["recipient_id"]: call.kwargs for call in single.call_args_list
+        }
+        self.assertEqual(len(single.call_args_list), 3)
+        self.assertEqual(len(by_recipient), 3)
+        self.assertEqual(
+            by_recipient[str(self.bo_user.id)]["notification_type"],
+            NotificationType.PIECE_CASTING_ASSIGNED,
+        )
+        moved = by_recipient[str(self.ada_user.id)]
+        self.assertEqual(moved["notification_type"], NotificationType.PIECE_CASTING_UPDATED)
+        self.assertEqual(
+            moved["metadata"]["changes"],
+            [{"field": "voice_line", "old": "S1", "new": "S2"}],
+        )
+        dropped = by_recipient[str(self.cyd_user.id)]
+        self.assertEqual(dropped["level"], NotificationLevel.WARNING)
+        self.assertEqual(dropped["metadata"]["event"], "removed")
+
+    def test_resaving_an_unchanged_board_says_nothing(self) -> None:
+        casting = ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S1", notes="solo t. 24"
+        )
+
+        _, single = self._save([self._row(self.ada, "S1", notes="solo t. 24")])
+
+        # Nothing moved, so nobody is written to — and the row is not rewritten.
+        single.assert_not_called()
+        self.assertEqual(
+            ProjectPieceCasting.objects.get(pk=casting.pk).voice_line, "S1"
+        )
+
+    def test_the_board_is_the_truth_for_its_own_piece_only(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S1"
+        )
+        elsewhere = ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.other_piece, voice_line="S3"
+        )
+
+        response, _ = self._save([])
+
+        # Clearing a piece is a legitimate save; the rest of the programme stands.
+        self.assertEqual(response.data, [])
+        self.assertEqual(self._lines(), {})
+        self.assertTrue(ProjectPieceCasting.objects.filter(pk=elsewhere.pk).exists())
+
+    def test_the_response_is_the_persisted_board(self) -> None:
+        response, _ = self._save([
+            self._row(self.bo, "A1", gives_pitch=True, notes="ton"),
+        ])
+
+        self.assertEqual(len(response.data), 1)
+        row = response.data[0]
+        self.assertEqual(row["voice_line"], "A1")
+        self.assertTrue(row["gives_pitch"])
+        self.assertEqual(row["notes"], "ton")
+        self.assertEqual(row["artist_name"], "Bo Singer")
+
+    def test_a_draft_board_stays_silent(self) -> None:
+        self.project.status = Project.Status.DRAFT
+        self.project.save(update_fields=["status"])
+
+        response, single = self._save([self._row(self.ada, "S1")])
+
+        self.assertEqual(response.status_code, 200)
+        single.assert_not_called()
+        self.assertEqual(self._lines(), {str(self.ada.id): "S1"})
+
+    def test_a_declined_singer_cannot_be_put_on_the_board(self) -> None:
+        self.ada.status = Participation.Status.DECLINED
+        self.ada.save(update_fields=["status"])
+        ProjectPieceCasting.objects.create(
+            participation=self.bo, piece=self.piece, voice_line="A1"
+        )
+
+        response, single = self._save([
+            self._row(self.ada, "S1"),
+            self._row(self.bo, "A2"),
+        ])
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "casting_validation")
+        single.assert_not_called()
+        # The refusal takes the whole save with it — no half-written board.
+        self.assertEqual(self._lines(), {str(self.bo.id): "A1"})
+
+    def test_a_singer_who_declined_after_being_cast_keeps_their_hole(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S1"
+        )
+        self.ada.status = Participation.Status.DECLINED
+        self.ada.save(update_fields=["status"])
+
+        response, _ = self._save([
+            self._row(self.ada, "S1"),
+            self._row(self.bo, "A1"),
+        ])
+
+        # Untouched, the declined seat survives the save: the conductor has to keep
+        # seeing the gap rather than have it quietly read as filled.
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            self._lines(), {str(self.ada.id): "S1", str(self.bo.id): "A1"}
+        )
+
+    def test_an_artist_from_another_project_is_refused(self) -> None:
+        other_project = Project.objects.create(
+            title="Nieszpory", date_time=timezone.now() + timedelta(days=60),
+            status=Project.Status.ACTIVE,
+        )
+        outsider = Participation.objects.create(
+            artist=self.bo.artist, project=other_project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        response, single = self._save([self._row(outsider, "A1")])
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "casting_validation")
+        single.assert_not_called()
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+    def test_one_singer_cannot_hold_two_voice_lines_on_one_piece(self) -> None:
+        response, _ = self._save([
+            self._row(self.ada, "S1"),
+            self._row(self.ada, "S2"),
+        ])
+
+        # The board renders one card per singer; two lines would make the deficit
+        # maths count one person as two filled seats.
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "validation_error")
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+    def test_duplicate_rows_collapse_without_telling_anyone(self) -> None:
+        ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S1"
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.ada, piece=self.piece, voice_line="S2"
+        )
+
+        _, single = self._save([self._row(self.ada, "S1")])
+
+        # Ada keeps her seat, so nothing about it is news to her.
+        self.assertEqual(
+            ProjectPieceCasting.objects.filter(piece=self.piece).count(), 1
+        )
+        single.assert_not_called()
+
+    def test_an_artist_without_an_account_is_cast_without_a_message(self) -> None:
+        offline_artist = Artist.objects.create(
+            first_name="Bez", last_name="Konta", email="boardoffline@test.pl",
+            voice_type=VoiceType.BASS,
+        )
+        offline = Participation.objects.create(
+            artist=offline_artist, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+
+        response, single = self._save([self._row(offline, "B1")])
+
+        self.assertEqual(response.status_code, 200)
+        single.assert_not_called()
+        self.assertEqual(self._lines(), {str(offline.id): "B1"})
+
+    def test_a_singer_cannot_save_the_board(self) -> None:
+        self.client.force_authenticate(user=self.ada_user)
+        response = self.client.put(
+            self.URL,
+            {
+                "project": str(self.project.id),
+                "piece": str(self.piece.id),
+                "castings": [self._row(self.ada, "S1")],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+
+class AnnouncementQueueTests(APITestCase):
+    """On a live project the save and the announcement are separate acts. The write
+    lands at once — a singer opening the app always sees current data — while what
+    the cast would be *told* waits for the conductor to publish it. That is what
+    turns an afternoon of edits into one piece of news, and what makes a typo
+    corrected a minute later reach nobody at all."""
+
+    # Patching the task's own `delay` catches both routes: the queue's publication
+    # and the events that still go out the moment they happen.
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+    # 17:00 UTC == 19:00 in Warsaw — a fixed instant keeps display assertions stable.
+    WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="aq-mgr", email="aqmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        self.ada, self.ada_user = self._singer("ada", VoiceType.SOPRANO)
+        self.bo, self.bo_user = self._singer("bo", VoiceType.ALTO)
+        self.client.force_authenticate(user=self.manager_user)
+
+    def _singer(self, slug: str, voice_type: str, status: str = Participation.Status.CONFIRMED):
+        user = get_user_model().objects.create_user(
+            username=f"aq-{slug}", email=f"aq-{slug}@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=slug.title(), last_name="Singer",
+            email=f"aq-{slug}@test.pl", voice_type=voice_type,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project, status=status,
+        )
+        return participation, user
+
+    def _rehearsal(self, **overrides) -> Rehearsal:
+        return Rehearsal.objects.create(**{
+            "project": self.project, "date_time": self.WHEN,
+            "timezone": "Europe/Warsaw", "focus": "Intro", **overrides,
+        })
+
+    def _pending(self) -> list:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        return AnnouncementQueue.pending_for(self.project)
+
+    def _publish(self):
+        """Publish the queue and hand back both dispatch mocks."""
+        from notifications.announcement_queue import AnnouncementQueue
+
+        with patch(self.BULK) as bulk, patch(self.SINGLE) as single, \
+                self.captureOnCommitCallbacks(execute=True):
+            AnnouncementQueue.publish(self.project)
+        return bulk, single
+
+    # --- the queue holds, publication releases ---------------------------------
+
+    def test_an_edit_saves_immediately_and_says_nothing(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(title="Requiem — wersja druga"),
+            )
+
+        bulk.assert_not_called()
+        # The database is the truth; the announcement is the courtesy.
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Requiem — wersja druga")
+        self.assertEqual(len(self._pending()), 1)
+
+    def test_publishing_sends_the_queue_and_consumes_it(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        bulk, _ = self._publish()
+
+        bulk.assert_called_once()
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.PROJECT_UPDATED)
+        self.assertEqual(
+            kwargs["metadata"]["changes"],
+            [{"field": "title", "old": "Requiem", "new": "Requiem II"}],
+        )
+        # Consumed exactly once — a second publication has nothing left to send.
+        self.assertEqual(self._pending(), [])
+        bulk_again, _ = self._publish()
+        bulk_again.assert_not_called()
+
+    def test_a_change_made_and_reverted_reaches_nobody(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Reqiuem"),
+        )
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem"),
+        )
+        bulk, _ = self._publish()
+
+        # The typo and its fix cancel out. Shipping them would spend the cast's
+        # attention on the conductor correcting himself.
+        bulk.assert_not_called()
+        self.assertEqual(self._pending(), [])
+
+    def test_a_reverted_reschedule_takes_its_alarm_with_it(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        moved = self.WHEN + timedelta(minutes=30)
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=moved, focus="Lacrimosa"),
+        )
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=self.WHEN),
+        )
+        bulk, _ = self._publish()
+
+        # The rehearsal never moved, so what is left is a focus change — and with
+        # the time row gone, so is the urgency it carried.
+        bulk.assert_called_once()
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(kwargs["level"], NotificationLevel.WARNING)
+        self.assertEqual(
+            [c["field"] for c in kwargs["metadata"]["changes"]], ["focus"],
+        )
+
+    def test_a_move_that_stands_keeps_the_alarm(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=self.WHEN + timedelta(minutes=30)),
+        )
+        bulk, _ = self._publish()
+
+        bulk.assert_called_once()
+        self.assertEqual(bulk.call_args.kwargs["level"], NotificationLevel.URGENT)
+
+    def test_a_label_only_change_survives_collapsing(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        # The run sheet carries no old/new by design, so it must not be mistaken
+        # for a value that ended where it started.
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(run_sheet=[{"time": "18:00", "label": "Zbiórka"}]),
+        )
+        bulk, _ = self._publish()
+
+        bulk.assert_called_once()
+        self.assertEqual(
+            [c["field"] for c in bulk.call_args.kwargs["metadata"]["changes"]],
+            ["run_sheet"],
+        )
+
+    def test_a_rehearsal_scheduled_then_moved_is_announced_once_at_its_final_time(self) -> None:
+        from .dtos import RehearsalCreateDTO, RehearsalUpdateDTO
+
+        rehearsal = RehearsalOperationsService.schedule_rehearsal(
+            RehearsalCreateDTO(
+                project_id=self.project.id, date_time=self.WHEN,
+                timezone="Europe/Warsaw", focus="Intro",
+            )
+        )
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=self.WHEN + timedelta(hours=1)),
+        )
+        bulk, _ = self._publish()
+
+        # One new rehearsal, at the time it will actually happen — never an
+        # invitation to 19:00 followed by a correction to 20:00.
+        bulk.assert_called_once()
+        kwargs = bulk.call_args.kwargs
+        self.assertEqual(kwargs["notification_type"], NotificationType.REHEARSAL_SCHEDULED)
+        self.assertEqual(kwargs["metadata"]["starts_at_display"], "19.06.2026, 20:00")
+        self.assertNotIn("changes", kwargs["metadata"])
+        # The calendar attachment travels in the same payload — a stale one would
+        # put the wrong hour into people's calendars, which no later correction
+        # reliably undoes.
+        self.assertEqual(
+            kwargs["metadata"]["ics"]["start"], "2026-06-19T18:00:00+00:00"
+        )
+
+    def test_a_rehearsal_cancelled_before_it_was_announced_is_silent(self) -> None:
+        from .dtos import RehearsalCreateDTO
+
+        rehearsal = RehearsalOperationsService.schedule_rehearsal(
+            RehearsalCreateDTO(
+                project_id=self.project.id, date_time=self.WHEN,
+                timezone="Europe/Warsaw", focus="Intro",
+            )
+        )
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.delete_rehearsal(rehearsal)
+
+        # Nobody was told it existed, so nobody is told it is off — and nothing is
+        # left in the queue to announce about a rehearsal that never was.
+        bulk.assert_not_called()
+        self.assertEqual(self._pending(), [])
+
+    def test_cancelling_an_announced_rehearsal_still_reaches_everyone_at_once(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(focus="Lacrimosa"),
+        )
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            RehearsalOperationsService.delete_rehearsal(rehearsal)
+
+        # The alarm never waits for review, and it supersedes the edits made to the
+        # rehearsal it cancels.
+        bulk.assert_called_once()
+        self.assertEqual(
+            bulk.call_args.kwargs["notification_type"], NotificationType.REHEARSAL_CANCELLED
+        )
+        self.assertEqual(self._pending(), [])
+
+    def test_cancelling_the_project_flushes_everything_pending(self) -> None:
+        from .dtos import ProjectUpdateDTO, RehearsalUpdateDTO
+
+        RehearsalOperationsService.update_rehearsal(
+            self._rehearsal(), RehearsalUpdateDTO(focus="Lacrimosa"),
+        )
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        self.assertTrue(self._pending())
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(status=Project.Status.CANCELLED),
+            )
+
+        bulk.assert_called_once()
+        self.assertEqual(
+            bulk.call_args.kwargs["notification_type"], NotificationType.PROJECT_CANCELLED
+        )
+        # Nothing held back about a concert that is off is worth publishing after it.
+        self.assertEqual(self._pending(), [])
+
+    def test_leaving_the_cast_waits_for_the_conductor_and_drops_their_queue(self) -> None:
+        from archive.models import Composer, Piece
+
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+        CastingAndCrewService.assign_piece_casting(
+            {"participation": self.ada, "piece": piece, "voice_line": "S1"}
+        )
+        self.assertEqual(len(self._pending()), 1)
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.delete_participation(self.ada)
+
+        # "You're off the roster" is the one announcement that cannot be taken
+        # back, so it waits for the conductor like every other edit.
+        single.assert_not_called()
+        # Their pending part goes: it would arrive as news about a project they can
+        # no longer open. The removal itself is what is left to say.
+        pending = self._pending()
+        self.assertEqual(len(pending), 1)
+        self.assertEqual(pending[0].subject_type, "PARTICIPATION")
+
+        _, published = self._publish()
+        published.assert_called_once()
+        kwargs = published.call_args.kwargs
+        self.assertEqual(kwargs["recipient_id"], str(self.ada_user.id))
+        self.assertEqual(kwargs["metadata"]["event"], "removed")
+
+    def test_a_removal_undone_before_publication_is_never_told(self) -> None:
+        ProjectManagementService.delete_participation(self.ada)
+        self.assertEqual(len(self._pending()), 1)
+
+        with patch(self.SINGLE) as invitation, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.create_or_restore_participation({
+                "artist": self.ada.artist,
+                "project": self.project,
+                "status": Participation.Status.INVITED,
+            })
+
+        # The whole point of holding it: a mis-click put back a minute later leaves
+        # no trace. They are re-invited — which is honest, since the restore did
+        # reset them to INVITED — but never told they had left.
+        self.assertEqual(self._pending(), [])
+        self.assertEqual(
+            invitation.call_args.kwargs["notification_type"],
+            NotificationType.PROJECT_INVITATION,
+        )
+
+    def test_a_removal_is_never_a_bullet_in_a_briefing(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        # Give the rest of the cast something to hear, so the queue holds both a
+        # broadcast and one person's removal.
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II", dress_code_male="Frak"),
+        )
+        ProjectManagementService.delete_participation(self.ada)
+
+        bulk, single = self._publish()
+
+        # Being taken off a cast is a message about leaving, not a line under
+        # "what's new in Requiem" — a project the reader can no longer open.
+        removals = [
+            call for call in single.call_args_list
+            if call.kwargs["metadata"].get("event") == "removed"
+        ]
+        self.assertEqual(len(removals), 1)
+        self.assertEqual(removals[0].kwargs["recipient_id"], str(self.ada_user.id))
+        # And she is out of the audience for the rest of it.
+        self.assertNotIn(str(self.ada_user.id), bulk.call_args.kwargs["recipient_ids"])
+
+    # --- who hears it, decided at publication ----------------------------------
+
+    def test_someone_who_confirms_after_the_edit_is_still_reached(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        late, late_user = self._singer("cyd", VoiceType.TENOR, Participation.Status.INVITED)
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        late.status = Participation.Status.CONFIRMED
+        late.save(update_fields=["status"])
+
+        bulk, _ = self._publish()
+
+        self.assertIn(str(late_user.id), bulk.call_args.kwargs["recipient_ids"])
+
+    def test_a_singer_still_deciding_hears_what_changed_since_the_invitation(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        _undecided, undecided_user = self._singer(
+            "dee", VoiceType.BASS, Participation.Status.INVITED
+        )
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        bulk, _ = self._publish()
+
+        # They are weighing the invitation; a project that has moved since is
+        # exactly what that decision rests on.
+        self.assertIn(str(undecided_user.id), bulk.call_args.kwargs["recipient_ids"])
+
+    def test_someone_who_declined_hears_nothing_more(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        _gone, gone_user = self._singer("eve", VoiceType.TENOR, Participation.Status.DECLINED)
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        bulk, _ = self._publish()
+
+        self.assertNotIn(str(gone_user.id), bulk.call_args.kwargs["recipient_ids"])
+
+    def test_a_sectional_change_reaches_only_the_singers_called_to_it(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        rehearsal.invited_participations.set([self.ada])
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(focus="Soprany"),
+        )
+        bulk, _ = self._publish()
+
+        self.assertEqual(
+            bulk.call_args.kwargs["recipient_ids"], [str(self.ada_user.id)]
+        )
+
+    def test_each_singer_hears_only_about_their_own_part(self) -> None:
+        from archive.models import Composer, Piece
+
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+        for participation, line in ((self.ada, "S1"), (self.bo, "A1")):
+            CastingAndCrewService.assign_piece_casting(
+                {"participation": participation, "piece": piece, "voice_line": line}
+            )
+        _, single = self._publish()
+
+        by_recipient = {
+            call.kwargs["recipient_id"]: call.kwargs for call in single.call_args_list
+        }
+        self.assertEqual(
+            set(by_recipient), {str(self.ada_user.id), str(self.bo_user.id)}
+        )
+        self.assertEqual(by_recipient[str(self.ada_user.id)]["metadata"]["voice_line"], "S1")
+
+    def test_a_seat_given_and_taken_back_before_publication_is_silent(self) -> None:
+        from archive.models import Composer, Piece
+
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+        casting = CastingAndCrewService.assign_piece_casting(
+            {"participation": self.ada, "piece": piece, "voice_line": "S1"}
+        )
+        CastingAndCrewService.delete_piece_casting(casting)
+
+        _, single = self._publish()
+
+        # She was never told she had the part, so she is not told she lost it.
+        single.assert_not_called()
+
+    # --- the conductor's door --------------------------------------------------
+
+    def test_preview_reports_what_would_go_out_without_sending_it(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II", description="nowy opis"),
+        )
+        with patch(self.BULK) as bulk:
+            response = self.client.get(f"/api/projects/{self.project.id}/announcements/")
+
+        self.assertEqual(response.status_code, 200)
+        bulk.assert_not_called()
+        self.assertEqual(response.data["change_count"], 1)
+        self.assertEqual(response.data["recipient_count"], 2)
+        line = response.data["changes"][0]
+        # The description is not surfaceable, so it never became a row at all.
+        self.assertEqual(line["field"], "title")
+        self.assertEqual([c["field"] for c in line["metadata"]["changes"]], ["title"])
+        # The line carries the payload its emitter built, so the review sheet renders
+        # it from the same facts the artist's own message will.
+        self.assertEqual(line["metadata"]["project_name"], "Requiem II")
+        self.assertEqual(line["recipient_count"], 2)
+
+    def test_the_queue_can_be_published_from_its_endpoint(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(f"/api/projects/{self.project.id}/announcements/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["announcements"], 1)
+        bulk.assert_called_once()
+        self.assertEqual(self._pending(), [])
+
+    def test_the_queue_can_be_abandoned_without_telling_anyone(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.delete(f"/api/projects/{self.project.id}/announcements/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["discarded"], 1)
+        bulk.assert_not_called()
+        self.assertEqual(self._pending(), [])
+        # The edit itself stands — only its announcement was dropped.
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Requiem II")
+
+    def test_a_singer_cannot_read_or_publish_the_queue(self) -> None:
+        self.client.force_authenticate(user=self.ada_user)
+        url = f"/api/projects/{self.project.id}/announcements/"
+
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertEqual(self.client.post(url).status_code, 403)
+
+    # --- publication is one-way ------------------------------------------------
+
+    def test_a_live_project_cannot_be_turned_back_into_a_draft(self) -> None:
+        response = self.client.patch(
+            f"/api/projects/{self.project.id}/",
+            {"status": Project.Status.DRAFT},
+            format="json",
+        )
+
+        # The cast has read the invitation; re-drafting would silence a concert
+        # they are already preparing and strand whatever is queued about it.
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "project_cannot_unpublish")
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, Project.Status.ACTIVE)
+
+
+class AnnouncementReviewTests(APITestCase):
+    """The conductor's surface over the queue: what the review sheet is shown, and
+    what happens to a line they untick.
+
+    Holding is not discarding. An unticked line stays pending and turns up next
+    time — which is what lets the sheet get away with a single per-line control,
+    since publishing the rest leaves exactly the held rows behind for one explicit
+    discard to drop."""
+
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+    WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="ar-mgr", email="armgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        self.ada, self.ada_user = self._singer("ada")
+        self.bo, self.bo_user = self._singer("bo")
+        self.client.force_authenticate(user=self.manager_user)
+        self.url = f"/api/projects/{self.project.id}/announcements/"
+
+    def _singer(self, slug: str):
+        user = get_user_model().objects.create_user(
+            username=f"ar-{slug}", email=f"ar-{slug}@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=slug.title(), last_name="Singer",
+            email=f"ar-{slug}@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+        return participation, user
+
+    def _pending(self) -> list:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        return AnnouncementQueue.pending_for(self.project)
+
+    def _preview(self, **params) -> dict:
+        response = self.client.get(self.url, params)
+        self.assertEqual(response.status_code, 200)
+        return response.data
+
+    # --- the sheet's lines -----------------------------------------------------
+
+    def test_a_project_diff_is_offered_one_field_at_a_time(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project,
+            ProjectUpdateDTO(title="Requiem II", dress_code_male="Frak"),
+        )
+        data = self._preview()
+
+        # A venue and a dress code have nothing to do with each other, so the sheet
+        # can send one and hold the other.
+        self.assertEqual(data["change_count"], 2)
+        self.assertEqual(
+            sorted(line["field"] for line in data["changes"]),
+            ["dress_code", "title"],
+        )
+        # Each line carries only its own diff, so it renders as one fact.
+        for line in data["changes"]:
+            self.assertEqual(
+                [c["field"] for c in line["metadata"]["changes"]], [line["field"]],
+            )
+
+    def test_a_rehearsals_whole_diff_stays_one_line(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=self.WHEN, timezone="Europe/Warsaw",
+            focus="Intro",
+        )
+        from notifications.announcement_queue import AnnouncementQueue
+        AnnouncementQueue.discard(self.project)
+
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal,
+            RehearsalUpdateDTO(
+                date_time=self.WHEN + timedelta(hours=1), focus="Lacrimosa",
+            ),
+        )
+        data = self._preview()
+
+        # "It moved, and the focus moved with it" is one fact about one evening —
+        # splitting it would offer the conductor half an announcement.
+        self.assertEqual(data["change_count"], 1)
+        line = data["changes"][0]
+        self.assertEqual(line["field"], "")
+        self.assertEqual(
+            sorted(c["field"] for c in line["metadata"]["changes"]),
+            ["date_time", "focus"],
+        )
+        # The move earns the alarm, and the line has to show it.
+        self.assertEqual(line["level"], NotificationLevel.URGENT)
+
+    def test_the_alarm_is_shown_per_line_not_per_announcement(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project,
+            ProjectUpdateDTO(call_time=self.WHEN, title="Requiem II"),
+        )
+        levels = {
+            line["field"]: line["level"] for line in self._preview()["changes"]
+        }
+
+        # Holding the call time visibly calms the rest of the diff, which it could
+        # not do if every line wore the announcement's loudest level.
+        self.assertEqual(levels["call_time"], NotificationLevel.URGENT)
+        self.assertEqual(levels["title"], NotificationLevel.WARNING)
+
+    def test_a_pending_cast_removal_is_named_and_flagged(self) -> None:
+        ProjectManagementService.delete_participation(self.bo)
+        data = self._preview()
+
+        # Discard must be able to warn about this one by name: dropping the queue
+        # would leave her removed and never told.
+        self.assertTrue(data["has_cast_removal"])
+        line = next(
+            item for item in data["changes"] if item["subject_type"] == "PARTICIPATION"
+        )
+        self.assertEqual(line["recipient_name"], "Bo Singer")
+        self.assertEqual(line["kind"], "REMOVED")
+
+    def test_the_preview_says_who_receives_which_lines(self) -> None:
+        from archive.models import Piece
+
+        from .dtos import ProjectUpdateDTO
+
+        piece = Piece.objects.create(title="Lacrimosa")
+        CastingAndCrewService.assign_piece_casting(
+            {"participation": self.ada, "piece": piece, "voice_line": "S1"}
+        )
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        data = self._preview()
+
+        by_recipient = {row["name"]: row for row in data["recipients"]}
+        # Ada has her part and the title change, so the fold earns its keep for her;
+        # Bo has only the title change and gets that change's own message.
+        self.assertEqual(len(by_recipient["Ada Singer"]["change_ids"]), 2)
+        self.assertTrue(by_recipient["Ada Singer"]["is_briefing"])
+        self.assertEqual(len(by_recipient["Bo Singer"]["change_ids"]), 1)
+        self.assertFalse(by_recipient["Bo Singer"]["is_briefing"])
+        self.assertEqual(data["message_count"], 2)
+
+    def test_the_preview_reflects_a_note_before_it_is_written(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+
+        # A note does not add messages — two people are written to either way. What
+        # it changes is what arrives: each of them now reads a briefing addressed to
+        # them rather than a bare field diff. The sheet has to show that the moment
+        # the conductor starts typing, which is why the flag travels without the text.
+        plain, noted = self._preview(), self._preview(with_note=1)
+        self.assertEqual((plain["message_count"], plain["briefing_count"]), (2, 0))
+        self.assertEqual((noted["message_count"], noted["briefing_count"]), (2, 2))
+
+    # --- holding a line back ---------------------------------------------------
+
+    def test_an_unticked_line_is_left_pending_rather_than_sent(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project,
+            ProjectUpdateDTO(title="Requiem II", dress_code_male="Frak"),
+        )
+        held = next(
+            line for line in self._preview()["changes"] if line["field"] == "dress_code"
+        )
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.url, {"exclude": held["row_ids"]}, format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["held"], 1)
+        # Only the title change went out.
+        self.assertEqual(
+            [c["field"] for c in bulk.call_args.kwargs["metadata"]["changes"]],
+            ["title"],
+        )
+        # The dress code is still waiting, not discarded — the conductor said "not
+        # yet", and the next review has to show it again.
+        remaining = self._pending()
+        self.assertEqual([row.change_field for row in remaining], ["dress_code"])
+        self.assertEqual(self._preview()["change_count"], 1)
+
+    def test_the_preview_counts_the_selection_but_still_shows_what_is_held(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project,
+            ProjectUpdateDTO(title="Requiem II", dress_code_male="Frak"),
+        )
+        rows = self._preview()["changes"]
+        held = next(line for line in rows if line["field"] == "dress_code")
+
+        data = self._preview(exclude=",".join(held["row_ids"]))
+
+        # Both lines are listed — the conductor has to see what they are holding —
+        # while the counts describe only what would actually leave.
+        self.assertEqual(data["change_count"], 2)
+        self.assertEqual(
+            {line["field"]: line["is_held"] for line in data["changes"]},
+            {"title": False, "dress_code": True},
+        )
+        # One surviving change, written to both singers.
+        self.assertEqual(data["message_count"], 2)
+
+    def test_holding_a_creation_holds_everything_about_it(self) -> None:
+        from .dtos import RehearsalCreateDTO, RehearsalUpdateDTO
+
+        rehearsal = RehearsalOperationsService.schedule_rehearsal(
+            RehearsalCreateDTO(
+                project_id=self.project.id, date_time=self.WHEN,
+                timezone="Europe/Warsaw", focus="Intro",
+            )
+        )
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=self.WHEN + timedelta(hours=1)),
+        )
+        creation = next(
+            row for row in self._pending() if row.kind == "CREATED"
+        )
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                self.url, {"exclude": [str(creation.id)]}, format="json",
+            )
+
+        # Sending the move on its own would announce a change to a rehearsal the
+        # cast has never been told exists. The sheet cannot express this selection,
+        # but the endpoint accepts row ids from a client and must refuse the hole.
+        bulk.assert_not_called()
+        self.assertEqual(response.data["messages"], 0)
+        self.assertEqual(len(self._pending()), 2)
+
+    def test_publishing_the_rest_leaves_the_held_rows_for_one_discard(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project,
+            ProjectUpdateDTO(title="Requiem II", dress_code_male="Frak"),
+        )
+        held = next(
+            line for line in self._preview()["changes"] if line["field"] == "dress_code"
+        )
+        with patch(self.BULK), self.captureOnCommitCallbacks(execute=True):
+            self.client.post(self.url, {"exclude": held["row_ids"]}, format="json")
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.delete(self.url)
+
+        # This is why one per-line control is enough: what is left after publishing
+        # is exactly what the conductor never wanted to announce.
+        self.assertEqual(response.data["discarded"], 1)
+        bulk.assert_not_called()
+        self.assertEqual(self._pending(), [])
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.dress_code_male, "Frak")
+
+    # --- the dashboard badge ---------------------------------------------------
+
+    def test_a_waiting_queue_is_visible_from_the_project_list(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        response = self.client.get(f"/api/projects/{self.project.id}/")
+        self.assertFalse(response.data["has_unannounced_changes"])
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        response = self.client.get(f"/api/projects/{self.project.id}/")
+        self.assertTrue(response.data["has_unannounced_changes"])
+
+        # It is the conductor's business, not the cast's: the app already shows the
+        # singer the new venue, and a "not official yet" badge would only teach them
+        # to distrust it.
+        self.client.force_authenticate(user=self.ada_user)
+        response = self.client.get(f"/api/projects/{self.project.id}/")
+        self.assertFalse(response.data["has_unannounced_changes"])
+
+
+class ProjectBriefingTests(APITestCase):
+    """Collapsing answers "what changed"; the briefing answers "how many envelopes
+    leave". Five rehearsals across twelve singers is sixty e-mails if each change
+    travels on its own, and twelve if each *person* does — that second number is
+    the whole point of the queue, and this is where it is bought.
+
+    A singer with a single piece of news is deliberately left out of the fold:
+    "Rehearsal moved — Friday at 19:00" names what happened far better than a
+    briefing wrapping one line."""
+
+    BULK = "notifications.announcements.send_bulk_notifications_task.delay"
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+    WHEN = datetime(2026, 6, 19, 17, 0, tzinfo=UTC)
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="br-mgr", email="brmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        self.ada, self.ada_user = self._singer("ada", VoiceType.SOPRANO)
+        self.bo, self.bo_user = self._singer("bo", VoiceType.ALTO)
+        self.piece = Piece.objects.create(
+            title="Pie Jesu",
+            composer=Composer.objects.create(first_name="Gabriel", last_name="Fauré"),
+        )
+        self.client.force_authenticate(user=self.manager_user)
+
+    def _singer(self, slug: str, voice_type: str):
+        user = get_user_model().objects.create_user(
+            username=f"br-{slug}", email=f"br-{slug}@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name=slug.title(), last_name="Singer",
+            email=f"br-{slug}@test.pl", voice_type=voice_type,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+        return participation, user
+
+    def _rehearsal(self, **overrides) -> Rehearsal:
+        from .dtos import RehearsalCreateDTO
+
+        return RehearsalOperationsService.schedule_rehearsal(RehearsalCreateDTO(**{
+            "project_id": self.project.id, "date_time": self.WHEN,
+            "timezone": "Europe/Warsaw", "focus": "Intro", **overrides,
+        }))
+
+    def _publish(self, **kwargs):
+        from notifications.announcement_queue import AnnouncementQueue
+
+        with patch(self.BULK) as bulk, patch(self.SINGLE) as single, \
+                self.captureOnCommitCallbacks(execute=True):
+            result = AnnouncementQueue.publish(self.project, **kwargs)
+        return bulk, single, result
+
+    @staticmethod
+    def _briefings(single) -> dict:
+        return {
+            call.kwargs["recipient_id"]: call.kwargs
+            for call in single.call_args_list
+            if call.kwargs["notification_type"] == NotificationType.PROJECT_BRIEFING
+        }
+
+    # --- the headline arithmetic ------------------------------------------------
+
+    def test_a_schedule_full_of_rehearsals_is_one_message_per_singer(self) -> None:
+        for hour in range(5):
+            self._rehearsal(date_time=self.WHEN + timedelta(days=hour))
+
+        bulk, single, result = self._publish()
+
+        # Five pieces of news, two singers: two messages, not ten. Nothing goes out
+        # per change any more, so the bulk path is not used at all.
+        bulk.assert_not_called()
+        briefings = self._briefings(single)
+        self.assertEqual(
+            set(briefings), {str(self.ada_user.id), str(self.bo_user.id)}
+        )
+        self.assertEqual(result["messages"], 2)
+        self.assertEqual(result["announcements"], 5)
+        self.assertEqual(len(briefings[str(self.ada_user.id)]["metadata"]["items"]), 5)
+
+    def test_a_lone_change_still_arrives_as_itself(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        self._publish()
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(focus="Lacrimosa"),
+        )
+
+        bulk, single, result = self._publish()
+
+        # One thing happened, so it is announced as that thing — "Rehearsal moved"
+        # says more than a briefing wrapping a single line ever could.
+        self._briefings(single)
+        self.assertEqual(self._briefings(single), {})
+        bulk.assert_called_once()
+        self.assertEqual(
+            bulk.call_args.kwargs["notification_type"], NotificationType.REHEARSAL_UPDATED
+        )
+        # One announcement, one dispatch — and two messages, because two people are
+        # written to. Envelopes are what the conductor is promising when they press
+        # send, so that is what this number counts.
+        self.assertEqual(result["messages"], 2)
+
+    # --- what each person's copy contains ---------------------------------------
+
+    def test_a_briefing_carries_the_readers_own_part_and_nobody_elses(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        for participation, line in ((self.ada, "S1"), (self.bo, "A1")):
+            CastingAndCrewService.assign_piece_casting(
+                {"participation": participation, "piece": self.piece, "voice_line": line}
+            )
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+
+        _bulk, single, _result = self._publish()
+        briefings = self._briefings(single)
+
+        for user, line in ((self.ada_user, "S1"), (self.bo_user, "A1")):
+            items = briefings[str(user.id)]["metadata"]["items"]
+            castings = [i for i in items if i["subject_type"] == "CASTING"]
+            self.assertEqual(len(castings), 1)
+            self.assertEqual(castings[0]["metadata"]["voice_line"], line)
+            # The shared change is in both copies; the personal one is in neither
+            # of the other's.
+            self.assertTrue(any(i["subject_type"] == "PROJECT" for i in items))
+
+    def test_a_briefing_is_as_loud_as_the_loudest_thing_in_it(self) -> None:
+        from .dtos import RehearsalUpdateDTO
+
+        rehearsal = self._rehearsal()
+        self._publish()
+        CastingAndCrewService.assign_piece_casting(
+            {"participation": self.ada, "piece": self.piece, "voice_line": "S1"}
+        )
+        RehearsalOperationsService.update_rehearsal(
+            rehearsal, RehearsalUpdateDTO(date_time=self.WHEN + timedelta(hours=1)),
+        )
+
+        _bulk, single, _result = self._publish()
+        briefing = self._briefings(single)[str(self.ada_user.id)]
+
+        # A briefing containing a reschedule is an alarm, however calm the rest of
+        # it reads — otherwise batching would be a way of muting one.
+        self.assertEqual(briefing["level"], NotificationLevel.URGENT)
+
+    def test_every_rehearsal_in_a_briefing_travels_in_one_calendar(self) -> None:
+        for day in range(3):
+            self._rehearsal(date_time=self.WHEN + timedelta(days=day))
+
+        _bulk, single, _result = self._publish()
+        metadata = self._briefings(single)[str(self.ada_user.id)]["metadata"]
+
+        # Three attachments would read as three pieces of news, which is precisely
+        # what the fold exists to prevent.
+        self.assertEqual(len(metadata["ics"]), 3)
+        self.assertTrue(all("ics" not in item["metadata"] for item in metadata["items"]))
+
+    # --- the conductor's own words ----------------------------------------------
+
+    def test_a_note_folds_even_a_single_change(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+
+        bulk, single, result = self._publish(note="Prosimy o punktualność.")
+
+        # A note is addressed to the reader rather than describing a field, so it
+        # needs the surface a briefing gives it.
+        bulk.assert_not_called()
+        briefings = self._briefings(single)
+        self.assertEqual(result["briefings"], 2)
+        self.assertEqual(
+            briefings[str(self.ada_user.id)]["metadata"]["note"],
+            "Prosimy o punktualność.",
+        )
+
+    def test_the_preview_counts_messages_not_just_changes(self) -> None:
+        for day in range(4):
+            self._rehearsal(date_time=self.WHEN + timedelta(days=day))
+
+        response = self.client.get(f"/api/projects/{self.project.id}/announcements/")
+
+        # Four things changed; two people hear about them. The second number is the
+        # one that belongs on a confirm button.
+        self.assertEqual(response.data["change_count"], 4)
+        self.assertEqual(response.data["message_count"], 2)
+        self.assertEqual(response.data["briefing_count"], 2)
+
+    def test_the_endpoint_carries_the_note_through(self) -> None:
+        from .dtos import ProjectUpdateDTO
+
+        ProjectManagementService.update_project(
+            self.project, ProjectUpdateDTO(title="Requiem II"),
+        )
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                f"/api/projects/{self.project.id}/announcements/",
+                {"note": "Zmiana sali na stałe."}, format="json",
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["briefings"], 2)
+        self.assertEqual(
+            self._briefings(single)[str(self.bo_user.id)]["metadata"]["note"],
+            "Zmiana sali na stałe.",
+        )
+
+
+class ProjectPublicationTests(APITestCase):
+    """Publication is the one message a singer gets before deciding, so it has to
+    carry the whole cost of saying yes — the rehearsals they are called to and the
+    part they would be singing, not just a concert date. It runs through its own
+    endpoint because it has a side effect the conductor must see first."""
+
+    SINGLE = "notifications.announcements.send_notification_task.delay"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+        from logistics.models import Location
+
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="pub-mgr", email="pubmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.singer_user = User.objects.create_user(
+            username="pub-singer", email="pubsinger@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Ada", last_name="Lorenz",
+            email="pubsinger@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+        # No linked account: reachable in the roster, unreachable by notification.
+        self.offline = Artist.objects.create(
+            first_name="Bez", last_name="Konta", email="offline@test.pl",
+            voice_type=VoiceType.ALTO,
+        )
+
+        self.venue = Location.objects.create(name="Bazylika św. Krzyża")
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            call_time=timezone.now() + timedelta(days=30, hours=-2),
+            status=Project.Status.DRAFT, location=self.venue,
+            dress_code_male="Frak",
+        )
+
+        composer = Composer.objects.create(first_name="Gabriel", last_name="Fauré")
+        self.piece = Piece.objects.create(title="Pie Jesu", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+
+        self.participation = Participation.objects.create(
+            artist=self.singer, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.participation, piece=self.piece, voice_line="S2",
+        )
+        self.shared_rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=10),
+            location=self.venue, focus="Lacrimosa",
+        )
+
+    def _publish(self):
+        self.client.force_authenticate(user=self.manager_user)
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(f"/api/projects/{self.project.id}/publish/")
+        return response, single
+
+    def test_preview_reports_recipients_without_sending_anything(self) -> None:
+        self.client.force_authenticate(user=self.manager_user)
+        with patch(self.SINGLE) as single:
+            response = self.client.get(f"/api/projects/{self.project.id}/publish/")
+
+        single.assert_not_called()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_publishable"])
+        self.assertEqual(response.data["recipient_count"], 1)
+        self.assertEqual(len(response.data["recipients"]), 1)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, Project.Status.DRAFT)
+
+    def test_preview_names_the_gaps_without_blocking(self) -> None:
+        bare = Project.objects.create(
+            title="Nagi szkic", date_time=timezone.now() + timedelta(days=5),
+            status=Project.Status.DRAFT,
+        )
+        self.client.force_authenticate(user=self.manager_user)
+        response = self.client.get(f"/api/projects/{bare.id}/publish/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data["is_publishable"])
+        self.assertEqual(
+            set(response.data["warnings"]),
+            {"no_cast", "no_rehearsals", "no_program", "no_location"},
+        )
+
+    def test_preview_flags_artists_no_message_can_reach(self) -> None:
+        Participation.objects.create(
+            artist=self.offline, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        self.client.force_authenticate(user=self.manager_user)
+        response = self.client.get(f"/api/projects/{self.project.id}/publish/")
+
+        self.assertIn("unreachable_artists", response.data["warnings"])
+        # Two people on the list, one of whom will never receive it.
+        self.assertEqual(len(response.data["recipients"]), 2)
+        self.assertEqual(response.data["recipient_count"], 1)
+
+    def test_publishing_takes_the_project_live_and_invites_the_cast(self) -> None:
+        response, single = self._publish()
+
+        self.assertEqual(response.status_code, 200)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, Project.Status.ACTIVE)
+        single.assert_called_once()
+        self.assertEqual(
+            single.call_args.kwargs["notification_type"],
+            NotificationType.PROJECT_INVITATION,
+        )
+
+    def test_the_invitation_states_the_cost_of_saying_yes(self) -> None:
+        _, single = self._publish()
+        metadata = single.call_args.kwargs["metadata"]
+
+        # The rehearsal they are called to, the part they would sing, the
+        # programme — the facts the decision actually turns on.
+        self.assertEqual(len(metadata["rehearsals"]), 1)
+        self.assertEqual(
+            metadata["rehearsals"][0]["rehearsal_id"], str(self.shared_rehearsal.id)
+        )
+        self.assertEqual(metadata["voice_lines"], ["S2"])
+        self.assertEqual(metadata["program"], ["Pie Jesu"])
+        self.assertEqual(metadata["location"], "Bazylika św. Krzyża")
+        self.assertEqual(metadata["dress_code"], "Frak")
+        self.assertTrue(metadata["call_time_at"])
+
+    def test_a_sectional_reaches_only_the_singers_called_to_it(self) -> None:
+        other_user = get_user_model().objects.create_user(
+            username="pub-other", email="pubother@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=other_user, role=AppRole.ARTIST)
+        other_artist = Artist.objects.create(
+            user=other_user, first_name="Bo", last_name="Tenor",
+            email="pubother@test.pl", voice_type=VoiceType.TENOR,
+        )
+        other = Participation.objects.create(
+            artist=other_artist, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        sectional = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=12),
+        )
+        sectional.invited_participations.set([self.participation])
+
+        _, single = self._publish()
+
+        by_recipient = {
+            call.kwargs["recipient_id"]: call.kwargs["metadata"]
+            for call in single.call_args_list
+        }
+        called = {
+            entry["rehearsal_id"]
+            for entry in by_recipient[str(self.singer_user.id)]["rehearsals"]
+        }
+        not_called = {
+            entry["rehearsal_id"]
+            for entry in by_recipient[str(other_user.id)]["rehearsals"]
+        }
+        self.assertEqual(called, {str(self.shared_rehearsal.id), str(sectional.id)})
+        self.assertEqual(not_called, {str(self.shared_rehearsal.id)})
+        self.assertEqual(other.status, Participation.Status.INVITED)
+
+    def test_publishing_twice_is_refused(self) -> None:
+        self._publish()
+        self.client.force_authenticate(user=self.manager_user)
+        with patch(self.SINGLE) as single:
+            response = self.client.post(f"/api/projects/{self.project.id}/publish/")
+
+        # Publication happens once; a second run would re-invite people who
+        # already answered.
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "project_already_published")
+        single.assert_not_called()
+
+    def test_a_singer_cannot_publish(self) -> None:
+        self.client.force_authenticate(user=self.singer_user)
+        response = self.client.post(f"/api/projects/{self.project.id}/publish/")
+
+        self.assertEqual(response.status_code, 403)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.status, Project.Status.DRAFT)
+
+    def test_joining_a_live_project_brings_the_whole_picture(self) -> None:
+        self._publish()
+        latecomer = Artist.objects.create(
+            user=get_user_model().objects.create_user(
+                username="pub-late", email="publate@test.pl", password="pw123456"
+            ),
+            first_name="Late", last_name="Comer", email="publate@test.pl",
+            voice_type=VoiceType.BASS,
+        )
+        self.project.refresh_from_db()
+
+        with patch(self.SINGLE) as single, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.create_or_restore_participation({
+                "artist": latecomer, "project": self.project,
+                "status": Participation.Status.INVITED,
+            })
+
+        # For them the whole project is news, so they get the same full invitation
+        # the cast received at publication — not a bare concert date.
+        single.assert_called_once()
+        metadata = single.call_args.kwargs["metadata"]
+        self.assertEqual(len(metadata["rehearsals"]), 1)
+        self.assertEqual(metadata["program"], ["Pie Jesu"])
 
 
 class ConductorScheduleAndMaterialsTests(APITestCase):
@@ -2836,3 +4871,316 @@ class ArtistEmailChangeTests(APITestCase):
         self.artist.refresh_from_db()
         self.assertEqual(self.artist.email, "relabelled@example.com")
         enqueue_mock.assert_not_called()
+
+
+class AnnouncementNudgeTests(TestCase):
+    """The safety net under the queue.
+
+    Every other part of this feature is about sending *less*; this is the only one
+    that guards against sending nothing. A queue nobody publishes is silence that
+    looks like calm, and a choir that believes it knows the schedule is worse off
+    than a spammed one — so a queue left sitting eventually says so, to the people
+    who can actually publish it.
+    """
+
+    MANAGERS = "roster.services.send_bulk_notifications_task.delay"
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="an-mgr", email="anmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        self.singer_user = User.objects.create_user(
+            username="an-ada", email="anada@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=self.singer_user, first_name="Ada", last_name="Singer",
+            email="anada@test.pl", voice_type=VoiceType.SOPRANO,
+        )
+        Participation.objects.create(
+            artist=artist, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+    # -- helpers ----------------------------------------------------------------
+
+    def _queue(self, *, field: str = "location", old: str = "Sala A", new: str = "Sala B"):
+        """Put one project field diff in the queue, exactly as an edit would."""
+        from notifications.announcement_queue import AnnouncementQueue
+        from notifications.models import AnnouncementKind, AnnouncementSubject
+
+        return AnnouncementQueue.enqueue(
+            project=self.project,
+            subject_type=AnnouncementSubject.PROJECT,
+            subject_id=str(self.project.id),
+            kind=AnnouncementKind.CHANGED,
+            notification_type=NotificationType.PROJECT_UPDATED,
+            level=NotificationLevel.WARNING,
+            metadata={
+                "project_id": str(self.project.id),
+                "project_name": self.project.title,
+                "changes": [{"field": field, "old": old, "new": new}],
+            },
+        )
+
+    def _age(self, hours: float) -> None:
+        """Age the whole queue, preserving the order the edits were made in.
+        `created_at` is auto_now_add, so shifting it afterwards is the only way to
+        have an old queue in a test — and collapsing reads that order."""
+        from notifications.models import PendingAnnouncement
+
+        shift = timedelta(hours=hours)
+        for row in PendingAnnouncement.objects.filter(project=self.project):
+            PendingAnnouncement.objects.filter(pk=row.pk).update(
+                created_at=row.created_at - shift
+            )
+
+    def _sweep(self):
+        from .tasks import dispatch_announcement_nudges
+
+        with patch(self.MANAGERS) as managers:
+            result = dispatch_announcement_nudges()
+        return result, managers
+
+    # -- the fuse ---------------------------------------------------------------
+
+    def test_a_fresh_queue_is_left_alone(self) -> None:
+        """The queue is an editorial buffer, not a countdown. A conductor still
+        working must not be nudged about the edit they made a minute ago."""
+        self._queue()
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_a_queue_past_its_fuse_names_what_is_waiting(self) -> None:
+        self._queue()
+        self._age(25)
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 1)
+        managers.assert_called_once()
+        kwargs = managers.call_args.kwargs
+        self.assertEqual(
+            kwargs["notification_type"], NotificationType.ANNOUNCEMENT_PENDING
+        )
+        # Addressed to whoever may publish — never to the cast, who already see the
+        # saved data and would only be taught to distrust it.
+        self.assertEqual(kwargs["recipient_ids"], [str(self.manager_user.id)])
+
+        metadata = kwargs["metadata"]
+        self.assertEqual(metadata["project_name"], "Requiem")
+        # The same numbers the hub's pill and the review sheet show.
+        self.assertEqual(metadata["change_count"], 1)
+        self.assertEqual(metadata["recipient_count"], 1)
+        self.assertGreaterEqual(metadata["waiting_hours"], 24)
+
+    def test_the_same_queue_is_not_raised_twice_in_one_window(self) -> None:
+        """A safety net that repeats hourly is the flood it was built to replace."""
+        self._queue()
+        self._age(25)
+
+        first, _ = self._sweep()
+        second, managers = self._sweep()
+
+        self.assertEqual(first["nudged"], 1)
+        self.assertEqual(second["nudged"], 0)
+        managers.assert_not_called()
+
+    @override_settings(ANNOUNCEMENT_NUDGE_HOURS=24, ANNOUNCEMENT_NUDGE_URGENT_HOURS=4)
+    def test_a_reschedule_gets_the_short_fuse(self) -> None:
+        """A change to when people have to be somewhere stops being useful the
+        moment they have left for the old time, so it cannot wait out a full day."""
+        self._queue(field="date_time", old="19:00", new="19:30")
+        self._age(6)
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 1)
+        self.assertEqual(managers.call_args.kwargs["level"], NotificationLevel.URGENT)
+
+    @override_settings(ANNOUNCEMENT_NUDGE_HOURS=24, ANNOUNCEMENT_NUDGE_URGENT_HOURS=4)
+    def test_a_calm_queue_of_the_same_age_stays_quiet(self) -> None:
+        """The counterpart to the test above: six hours is past the urgent fuse but
+        well inside the ordinary one, so urgency is the only thing separating them."""
+        self._queue()
+        self._age(6)
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+
+    @override_settings(ANNOUNCEMENT_NUDGE_HOURS=24, ANNOUNCEMENT_NUDGE_URGENT_HOURS=4)
+    def test_an_escalation_breaks_through_a_calm_cooldown(self) -> None:
+        """The cooldown is the surviving level's own fuse, not a flat day —
+        otherwise a calm nudge sent this morning would mute a reschedule queued at
+        noon until tomorrow, which is exactly when the alarm matters most."""
+        self._queue()
+        self._age(25)
+        first, _ = self._sweep()
+        self.assertEqual(first["nudged"], 1)
+
+        # A reschedule arrives afterwards, and five more hours pass with nobody
+        # publishing. The morning's stamp is older than the urgent fuse, so it no
+        # longer speaks for this queue.
+        self._queue(field="date_time", old="19:00", new="19:30")
+        self._age(5)
+        Project.objects.filter(pk=self.project.pk).update(
+            announcement_nudged_at=timezone.now() - timedelta(hours=5)
+        )
+
+        second, managers = self._sweep()
+        self.assertEqual(second["nudged"], 1)
+        self.assertEqual(managers.call_args.kwargs["level"], NotificationLevel.URGENT)
+
+    # -- honesty ----------------------------------------------------------------
+
+    def test_a_dead_row_does_not_age_the_news_beside_it(self) -> None:
+        """The fuse dates the news, not the rows. A venue moved and moved back
+        yesterday says nothing, so it must not start the clock on a dress code
+        changed an hour ago — the queue would nudge about something nobody has
+        been sitting on, and the hours it quoted would be about a different edit."""
+        self._queue(field="location", old="Sala A", new="Sala B")
+        self._queue(field="location", old="Sala B", new="Sala A")
+        self._age(25)
+        # Fresh, and the only thing that survives collapsing.
+        self._queue(field="dress_code_male", old="Frak", new="Smoking")
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_the_surviving_line_carries_its_own_age(self) -> None:
+        """The counterpart: once the live change is itself past the fuse, the nudge
+        fires and reports that line's age rather than the dead rows' — a number the
+        conductor could otherwise not reconcile with anything they can see."""
+        self._queue(field="location", old="Sala A", new="Sala B")
+        self._queue(field="location", old="Sala B", new="Sala A")
+        self._age(100)
+        self._queue(field="dress_code_male", old="Frak", new="Smoking")
+        from notifications.models import PendingAnnouncement
+        PendingAnnouncement.objects.filter(
+            project=self.project, change_field="dress_code_male"
+        ).update(created_at=timezone.now() - timedelta(hours=26))
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 1)
+        waiting = managers.call_args.kwargs["metadata"]["waiting_hours"]
+        self.assertGreaterEqual(waiting, 25)
+        self.assertLess(waiting, 30)
+
+    def test_a_project_claimed_meanwhile_is_not_nudged_twice(self) -> None:
+        """The claim re-states the cooldown as the condition of its own write, so
+        two beats reading the queue at the same moment cannot both send. Simulated
+        by stamping the project after the read that found it stale."""
+        self._queue()
+        self._age(25)
+
+        from notifications.announcement_queue import AnnouncementQueue
+
+        real_stale = AnnouncementQueue.stale
+
+        def stale_then_claimed(now):
+            found = real_stale(now)
+            # Stands for the other beat, which got there first.
+            Project.objects.filter(pk=self.project.pk).update(
+                announcement_nudged_at=timezone.now()
+            )
+            return found
+
+        with patch.object(AnnouncementQueue, "stale", side_effect=stale_then_claimed):
+            result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_a_queue_that_collapses_to_silence_is_never_raised(self) -> None:
+        """Rows are not news. A value moved and moved back leaves the queue holding
+        two rows and nothing to say — nudging about it would make the feature wrong
+        about its own numbers, which is the one thing it cannot afford to be."""
+        self._queue(old="Sala A", new="Sala B")
+        self._queue(old="Sala B", new="Sala A")
+        self._age(25)
+
+        result, managers = self._sweep()
+
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_a_queue_nobody_would_receive_is_not_raised(self) -> None:
+        """Everyone declined, so publication would send nothing. The rows are still
+        there; there is simply no one left in the conversation to tell."""
+        Participation.objects.filter(project=self.project).update(
+            status=Participation.Status.DECLINED
+        )
+        self._queue()
+        self._age(25)
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+
+    def test_publishing_the_queue_ends_the_nudging(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        self._queue()
+        self._age(25)
+
+        with patch("notifications.announcement_queue.send_bulk_notifications_task.delay"):
+            AnnouncementQueue.publish(self.project)
+
+        result, managers = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+        managers.assert_not_called()
+
+    def test_discarding_the_queue_ends_the_nudging(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        self._queue()
+        self._age(25)
+        AnnouncementQueue.discard(self.project)
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+
+    # -- what the sweep deliberately ignores ------------------------------------
+
+    def test_a_concert_that_has_already_happened_is_not_raised(self) -> None:
+        """After the concert a held rehearsal move is archaeology, and a project
+        left ACTIVE would otherwise nag for as long as it existed."""
+        self._queue()
+        self._age(25)
+        Project.objects.filter(pk=self.project.pk).update(
+            date_time=timezone.now() - timedelta(days=1)
+        )
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+
+    def test_a_cancelled_project_is_not_raised(self) -> None:
+        self._queue()
+        self._age(25)
+        Project.objects.filter(pk=self.project.pk).update(
+            status=Project.Status.CANCELLED
+        )
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)
+
+    def test_a_completed_project_is_not_raised(self) -> None:
+        self._queue()
+        self._age(25)
+        Project.objects.filter(pk=self.project.pk).update(
+            status=Project.Status.COMPLETED
+        )
+
+        result, _ = self._sweep()
+        self.assertEqual(result["nudged"], 0)

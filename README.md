@@ -190,13 +190,19 @@ VoctManager is architected for continuous evolution toward production-grade obse
 - [ ] **Score Annotation — Export-Time Flattening:** burn the shared annotation layer into the concert score-book at assembly time, plus in-viewer page reorder.
 - [ ] **Field-Level Encryption & Audit Trail:** Fernet at-rest encryption for contract/financial fields and an immutable mutation log over HR/financial records for forensic review.
 - [ ] **Frontend CI & End-to-End Tests:** Lint / typecheck / build pipelines for both frontends, plus Playwright E2E coverage building on the existing screenshot harness.
-- [ ] **Metrics & Distributed Tracing:** Prometheus + Grafana dashboards and OpenTelemetry instrumentation for end-to-end request tracing across services and external APIs.
+- [x] **Production Monitoring & Alerting:** A liveness/readiness split — `/api/health/` stays dependency-free for the container healthcheck, while `/api/health/ready/` proves Postgres and Redis are actually serving and answers 503 when they are not — plus external uptime and TLS-expiry polling, and a Celery beat heartbeat that alerts on the **absence** of a ping, so a dead scheduler, an unreachable broker or a hung worker cannot fail silently. Runbook in `docs/monitoring.md`.
 - [x] **Automated Backups & Disaster Recovery:** Scheduled PostgreSQL + media backups with rotation, off-site mirror to the foundation's Google Shared Drive, and healthcheck alerting (`infra/backup.sh`; runbook in `docs/backups.md`). Restores are *proven*, not assumed: `infra/restore-drill.sh` replays the off-site archive into a throwaway database and scratch directory — checking archive integrity, row counts against live, media completeness, migration state, and measured RTO — without ever touching production data.
-- [ ] **Advanced Caching:** Redis cluster for session management and distributed cache invalidation.
-- [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules and DRF throttling for API abuse prevention.
-- [ ] **Database Replication:** PostgreSQL streaming replication for high availability and disaster recovery.
+- [ ] **Rate Limiting & DDoS Protection:** CloudFlare + WAF rules on top of the DRF throttling already in place for API abuse prevention.
 - [ ] **EAA Accessibility Conformance:** Automated accessibility testing (axe / Playwright) to certify the European Accessibility Act baseline the UI is built against.
 - [ ] **Zero-Downtime Deploys:** Blue-green / rolling release automation on top of the current single-command prod build.
+
+### Deliberately out of scope
+
+Scope decisions, not backlog — recorded so they are not re-proposed as gaps:
+
+- **Prometheus / Grafana / OpenTelemetry.** Metrics answer *how much*. A single-tenant install on one droplet with one maintainer has no SLO, no on-call rotation and no traffic volume to ask that about. The questions actually asked here — *is it down*, *what threw* — are answered by the health probes and heartbeat above at a fraction of the operating cost, on a host whose RAM is already the binding constraint during builds. Revisit if a second ensemble ever shares the deployment.
+- **Redis cluster for distributed cache invalidation.** One Redis instance backs the cache and the Celery broker for the whole system. Clustering solves a coordination problem this deployment does not have.
+- **PostgreSQL streaming replication.** A hot standby protects against instance loss — already covered by daily off-site backups whose restore is *verified*, with a measured replay time of seconds. On a single droplet a replica would be a second stateful service sharing the same disk and the same power failure: correlated failure dressed as redundancy.
 
 ---
 

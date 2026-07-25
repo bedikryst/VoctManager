@@ -7,6 +7,7 @@ export type NotificationType =
   | "PROJECT_UPDATED"
   | "PROJECT_CANCELLED"
   | "PROJECT_REMINDER"
+  | "PROJECT_BRIEFING"
   | "REHEARSAL_SCHEDULED"
   | "REHEARSAL_UPDATED"
   | "REHEARSAL_CANCELLED"
@@ -21,6 +22,7 @@ export type NotificationType =
   | "SYSTEM_ALERT"
   | "PARTICIPATION_RESPONSE"
   | "ATTENDANCE_SUBMITTED"
+  | "ANNOUNCEMENT_PENDING"
   | "CUSTOM_ADMIN_MESSAGE"
   | "MESSAGE_RECEIVED"
   | "CHANNEL_MESSAGE"
@@ -53,6 +55,21 @@ export type CastingChangeEvent = "updated" | "removed";
 /** Attendance status (PRESENT/LATE/EXCUSED/ABSENT) or participation RSVP (INV/CON/DEC). */
 export type RosterStatusCode = string;
 
+/** One rehearsal inside an invitation's schedule block. */
+export interface InvitationRehearsalMetadata extends EventMomentMetadata {
+  rehearsal_id: string;
+  location?: string;
+  focus?: string;
+  is_mandatory?: boolean;
+}
+
+/**
+ * An invitation is the only message a singer gets before answering, so it states
+ * the real cost of saying yes. Everything below `description` arrives with a
+ * project published under the publication model; rows emitted before it — and
+ * invitations to an artist joining a live project without a schedule — simply
+ * omit them, so every consumer must tolerate their absence.
+ */
 export interface ProjectInvitationMetadata extends EventMomentMetadata {
   project_id: string;
   project_name: string;
@@ -62,6 +79,14 @@ export interface ProjectInvitationMetadata extends EventMomentMetadata {
   date_range?: string;
   location?: string;
   description?: string;
+  call_time_at?: string;
+  call_time_display?: string;
+  dress_code?: string;
+  rehearsals?: InvitationRehearsalMetadata[];
+  /** Ordered programme, as piece titles. */
+  program?: string[];
+  /** This artist's own voice lines, as language-neutral VoiceLine codes. */
+  voice_lines?: string[];
 }
 
 export interface ProjectUpdatedMetadata {
@@ -69,6 +94,58 @@ export interface ProjectUpdatedMetadata {
   project_name: string;
   event?: ProjectChangeEvent;
   changes?: FieldChange[];
+}
+
+/** What a briefing item is about, and which lifecycle step it records. Mirrors
+ *  the backend AnnouncementSubject / AnnouncementKind. */
+export type BriefingSubject = "PROJECT" | "REHEARSAL" | "CASTING";
+export type BriefingKind = "CREATED" | "CHANGED" | "REMOVED";
+
+/**
+ * One change inside a briefing. `metadata` is the payload the emitting service
+ * built, untouched — so a briefing line renders from exactly the same facts as
+ * the standalone notification it would otherwise have been, and the row needs no
+ * second vocabulary for a rehearsal or a part.
+ */
+export interface BriefingItemMetadata {
+  subject_type: BriefingSubject;
+  kind: BriefingKind;
+  notification_type: NotificationType;
+  level: NotificationLevel;
+  metadata: DefaultMetadata;
+}
+
+/**
+ * Everything one artist has not been told about one project, published as a
+ * single message. A recipient with only one piece of news never receives this —
+ * they get that event's own notification, which names it more precisely.
+ */
+export interface ProjectBriefingMetadata {
+  project_id?: string;
+  project_name: string;
+  /** The conductor's own words, written when publishing the queue. */
+  note?: string;
+  items?: BriefingItemMetadata[];
+}
+
+/**
+ * A live project whose announcement queue has been sitting unpublished, raised by
+ * the clock rather than by an edit. Manager-only: it is a prompt to act, and only
+ * a manager may publish.
+ *
+ * `change_count` is the same number the project hub's pill shows and
+ * `recipient_count` is how many people are still in the dark. How many messages
+ * publication would actually send belongs to the review sheet's confirm button —
+ * a third number here would only be one more thing to reconcile.
+ */
+export interface AnnouncementPendingMetadata {
+  project_id: string;
+  project_name: string;
+  change_count?: number;
+  recipient_count?: number;
+  /** A count, not a rendered duration — the viewer's language decides whether it
+   *  reads as hours or days. */
+  waiting_hours?: number;
 }
 
 export interface ProjectReminderMetadata extends EventMomentMetadata {
@@ -209,6 +286,10 @@ export type NotificationDTO = BaseNotification &
       }
     | { notification_type: "PROJECT_UPDATED"; metadata: ProjectUpdatedMetadata }
     | {
+        notification_type: "PROJECT_BRIEFING";
+        metadata: ProjectBriefingMetadata;
+      }
+    | {
         notification_type: "REHEARSAL_SCHEDULED";
         metadata: RehearsalScheduledMetadata;
       }
@@ -239,6 +320,10 @@ export type NotificationDTO = BaseNotification &
           | "ATTENDANCE_SUBMITTED"
           | "ABSENCE_REQUESTED";
         metadata: ManagerActionMetadata;
+      }
+    | {
+        notification_type: "ANNOUNCEMENT_PENDING";
+        metadata: AnnouncementPendingMetadata;
       }
     | {
         notification_type:
@@ -274,8 +359,32 @@ export interface UnreadCountResponse {
   new_count: number;
 }
 
+/**
+ * The consequence a reader is actually answering for. Not a topic: "something I
+ * committed to has changed" is a decision a chorister can make; "PROJECT_UPDATED
+ * but not REHEARSAL_UPDATED" is not. Server-owned — see notifications/delivery.py.
+ */
+export type NotificationGroupId =
+  | "commitments"
+  | "messages"
+  | "materials"
+  | "safety_net"
+  | "team";
+
+export interface NotificationPreferenceGroupDTO {
+  id: NotificationGroupId;
+  manager_only: boolean;
+  /** What the group's control targets. Never null: a type that disagrees with its
+   *  neighbours gets its own group, so every group can state one answer. */
+  recommended_email: boolean;
+  recommended_push: boolean;
+}
+
 export interface NotificationPreferenceDTO {
   notification_type: NotificationType;
+  /** Which group speaks for this row. Assigned by the backend, never inferred
+   *  here — the ledger and the router must not hold two different maps. */
+  group: NotificationGroupId;
   email_enabled: boolean;
   push_enabled: boolean;
   label?: string;
@@ -283,6 +392,17 @@ export interface NotificationPreferenceDTO {
    *  and Restore-recommended without re-deriving the backend policy. */
   recommended_email?: boolean;
   recommended_push?: boolean;
+}
+
+/**
+ * The settings ledger: the groups a reader decides in, and the per-type rows
+ * behind each one. Rows stay flat and keyed by type because that is still the
+ * storage grain — a group control writes all of its members at once, and the
+ * details disclosure writes exactly one.
+ */
+export interface NotificationPreferenceMatrixDTO {
+  groups: NotificationPreferenceGroupDTO[];
+  preferences: NotificationPreferenceDTO[];
 }
 
 export type NotificationPreferenceUpdateDTO =

@@ -15,7 +15,7 @@ from decimal import Decimal, InvalidOperation
 
 from celery.result import AsyncResult
 from django.core.cache import cache
-from django.db.models import Count, Prefetch, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -28,7 +28,7 @@ from rest_framework.exceptions import APIException, PermissionDenied
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from archive.models import PieceVoiceRequirement, Recording, ScoreEdition, Track
+from archive.models import Piece, PieceVoiceRequirement, Recording, ScoreEdition, Track
 from archive.score_protection import (
     build_watermark_footer,
     copy_holder_name,
@@ -39,6 +39,8 @@ from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
 from core.request_utils import request_user
+from notifications.announcement_queue import AnnouncementQueue
+from notifications.models import PendingAnnouncement
 
 from .dashboard_serializers import (
     ConductedProjectMaterialsSerializer,
@@ -48,6 +50,7 @@ from .dtos import (
     ArtistCreateDTO,
     AttendanceRecordDTO,
     ParticipationStatusUpdateDTO,
+    PieceCastingBoardDTO,
     PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
     ProjectCreateDTO,
@@ -89,6 +92,7 @@ from .score_package_service import ScorePackageItemError, ScorePackageService
 
 # Serializers
 from .serializers import (
+    AnnouncementPublishSerializer,
     ArtistBasicSerializer,
     ArtistDetailedSerializer,
     ArtistMeSerializer,
@@ -110,6 +114,7 @@ from .services import (
     ParticipationService,
     PieceReadinessService,
     ProjectManagementService,
+    ProjectPublicationService,
     RehearsalOperationsService,
 )
 from .tasks import generate_project_zip_task
@@ -420,10 +425,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
             pieces_total=Count('program_items', distinct=True),
             crew_total=Count('crew_assignments', distinct=True)
         )
-        
-        if user_is_manager(user): 
-            return base_qs.all()
-            
+
+        if user_is_manager(user):
+            # Whether the announcement queue is holding anything — a correlated
+            # EXISTS rather than a sixth Count join, because this table holds dozens
+            # of rows per project and joining it would multiply the intermediate
+            # rows every other aggregate above is counted over. Deliberately a
+            # boolean: the honest number of *changes* only exists after collapsing,
+            # which no annotation can do. The filter mirrors
+            # `AnnouncementQueue.pending_for` so the badge and the queue agree.
+            return base_qs.annotate(
+                has_pending_announcements=Exists(
+                    PendingAnnouncement.objects.filter(
+                        project=OuterRef('pk'), published_at__isnull=True,
+                    )
+                )
+            )
+
         return base_qs.filter(participations__artist__user=user).distinct()
     
     def create(self, request, *args, **kwargs) -> Response:
@@ -695,6 +713,74 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response({"detail": str(exc)}, status=status.HTTP_404_NOT_FOUND)
         return Response(manifest)
 
+    @action(detail=True, methods=['get', 'post'], url_path='publish', permission_classes=[IsManager])
+    def publish(self, request, pk=None) -> Response:
+        """
+        Publication of a project — its own endpoint rather than a status PATCH,
+        because it has a side effect the conductor must see first: it is the
+        moment the whole cast learns the concert exists.
+
+        GET returns the preview (who would be written to, what is still missing).
+        POST takes the project from DRAFT to ACTIVE and dispatches one full
+        invitation per artist still awaiting an answer. Manager-only: publishing
+        speaks to the whole ensemble, and `Project.conductor` is an Artist link,
+        not a permission.
+        """
+        project = self.get_object()
+        if request.method == 'GET':
+            return Response(ProjectPublicationService.preview(project))
+
+        published = ProjectPublicationService.publish(project)
+        return Response(self.get_serializer(published).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get', 'post', 'delete'], url_path='announcements',
+            permission_classes=[IsManager])
+    def announcements(self, request, pk=None) -> Response:
+        """
+        The project's announcement queue — what the cast has not been told yet.
+
+        On a live project a save changes the data at once but only accrues here,
+        so a run of edits reaches the choir as one considered message instead of
+        one alarm per keystroke.
+
+        GET returns what publishing would send, after collapsing (a value moved
+        and moved back is already gone by this point) and after the per-recipient
+        fold — `message_count` is how many messages actually leave, which is the
+        number worth putting on a confirm button. It answers for a *selection*:
+        `?exclude=<row id>,<row id>` holds those lines back and `?with_note=1`
+        applies the note's fold, so the review sheet's counts follow the boxes the
+        conductor has unticked. Only the note's presence changes the arithmetic,
+        which is why the flag carries no text.
+
+        POST sends it and consumes the rows it sent, optionally carrying a `note`
+        in the conductor's own words and an `exclude` list of rows to leave pending.
+        DELETE abandons the queue — the saved data stands either way; only the
+        announcement is dropped.
+        """
+        project = self.get_object()
+
+        if request.method == 'GET':
+            raw_exclude = request.query_params.get('exclude', '')
+            return Response(AnnouncementQueue.preview(
+                project,
+                has_note=request.query_params.get('with_note', '') in ('1', 'true', 'True'),
+                exclude=[value for value in raw_exclude.split(',') if value],
+            ))
+
+        if request.method == 'DELETE':
+            return Response({"discarded": AnnouncementQueue.discard(project)})
+
+        serializer = AnnouncementPublishSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            AnnouncementQueue.publish(
+                project,
+                note=serializer.validated_data.get('note', ''),
+                exclude=[str(value) for value in serializer.validated_data.get('exclude', [])],
+            ),
+            status=status.HTTP_200_OK,
+        )
+
     @action(detail=True, methods=['get'], url_path='readiness-summary', permission_classes=[IsManager])
     def readiness_summary(self, request, pk=None) -> Response:
         """
@@ -899,6 +985,14 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         participation = ProjectManagementService.create_or_restore_participation(serializer.validated_data)
         return Response(self.get_serializer(participation).data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer) -> None:
+        # Routed through the service because one of these edits is not a field
+        # write: moving a seat back to INVITED re-asks the singer, and on a live
+        # project that has to carry an invitation with it.
+        ParticipationService.update_by_manager(
+            serializer.instance, serializer.validated_data
+        )
 
     def perform_destroy(self, instance) -> None:
         ProjectManagementService.delete_participation(instance)
@@ -1262,6 +1356,38 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance) -> None:
         CastingAndCrewService.delete_piece_casting(instance)
+
+    @action(detail=False, methods=['put'], url_path='board', permission_classes=[IsManager])
+    def board(self, request) -> Response:
+        """
+        One piece's divisi board, saved whole.
+
+        The per-casting endpoints above turn a single Save into one request (and
+        one notification) per drag — a full choir's worth of pushes for one
+        editing session. This takes the board as the conductor sees it and
+        reconciles it server-side, inside one transaction: one request, one
+        atomic write, at most one message per affected singer.
+
+        Returns the resulting board, so the client re-baselines on what was
+        actually persisted rather than on what it hoped it sent.
+        """
+        try:
+            dto = PieceCastingBoardDTO(**request.data)
+        except ValidationError as e:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
+        project = get_object_or_404(Project, pk=dto.project)
+        piece = get_object_or_404(Piece, pk=dto.piece)
+        castings = CastingAndCrewService.save_piece_board(
+            project=project, piece=piece, rows=dto.castings
+        )
+        return Response(self.get_serializer(castings, many=True).data, status=status.HTTP_200_OK)
 
 
 class CollaboratorViewSet(viewsets.ModelViewSet):

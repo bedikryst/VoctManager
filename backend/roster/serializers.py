@@ -209,6 +209,7 @@ class ProjectSerializer(serializers.ModelSerializer):
     location_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     conductor_name = serializers.CharField(source='conductor.__str__', read_only=True)
     score_pdf = serializers.SerializerMethodField()
+    has_unannounced_changes = serializers.SerializerMethodField()
     rehearsals_total = serializers.IntegerField(read_only=True, default=0)
     rehearsals_upcoming = serializers.IntegerField(read_only=True, default=0)
     cast_total = serializers.IntegerField(read_only=True, default=0)
@@ -237,6 +238,25 @@ class ProjectSerializer(serializers.ModelSerializer):
             return None
         url = f"/api/projects/{obj.pk}/score_pdf/"
         return request.build_absolute_uri(url) if request else url
+
+    def get_has_unannounced_changes(self, obj) -> bool:
+        """Whether this project is holding changes the cast has not been told about.
+
+        Deliberately a flag and not a count: the review sheet counts *changes* after
+        collapsing, while anything cheap enough for a list query can only see rows —
+        and a dashboard badge reading "3" beside a sheet listing one would be a small
+        lie told on every page load.
+
+        Withheld from artists, which settles the plan's open question about marking
+        unannounced-but-saved data on their side: the database is the truth and the
+        app always shows it, so a badge saying "this is not official yet" would
+        invite them to distrust what they can plainly see. The annotation is only
+        added for managers; this check is what makes that a contract rather than a
+        detail of one queryset branch.
+        """
+        if not user_is_manager(getattr(self.context.get('request'), 'user', None)):
+            return False
+        return bool(getattr(obj, 'has_pending_announcements', False))
 
     def get_cast(self, obj) -> list[dict]:
         """Returns non-sensitive casting snapshot."""
@@ -348,6 +368,26 @@ class RehearsalSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+
+class AnnouncementPublishSerializer(serializers.Serializer):
+    """Validates the payload that publishes a project's announcement queue.
+
+    The note is the conductor's own words alongside the changes — the one part of
+    a briefing nothing else can compose. Its presence also forces the fold: a note
+    is addressed to the reader, so it belongs in a briefing even when there is
+    only one change to report.
+
+    `exclude` holds rows back rather than dropping them: an unticked line stays in
+    the queue and turns up in the next review, collapsed against anything that has
+    happened to it since. Discarding is a separate, explicit verb.
+    """
+    note = serializers.CharField(
+        required=False, allow_blank=True, trim_whitespace=True, max_length=2000,
+    )
+    exclude = serializers.ListField(
+        child=serializers.UUIDField(), required=False, allow_empty=True,
+    )
+
 
 # --- 4. RELATIONAL & JUNCTION SERIALIZERS ---
 

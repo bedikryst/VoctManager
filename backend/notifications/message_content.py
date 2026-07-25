@@ -29,10 +29,16 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from django.utils.translation import gettext as _
+from django.utils.translation import ngettext
 
 from core.constants import VoiceLine
 
-from .models import NotificationLevel, NotificationType
+from .models import (
+    AnnouncementKind,
+    AnnouncementSubject,
+    NotificationLevel,
+    NotificationType,
+)
 from .time_metadata import display_event_time
 
 logger = logging.getLogger(__name__)
@@ -92,6 +98,23 @@ class DetailRow:
     value: str
 
 
+@dataclass(frozen=True)
+class BriefingItem:
+    """One change inside a briefing, as three lines of decreasing weight: what it
+    is, the fact that identifies it, and what is different about it."""
+    primary: str
+    secondary: str = ""
+    detail: str = ""
+
+
+@dataclass(frozen=True)
+class MessageSection:
+    """A titled run of briefing items. Only the briefing email renders these; every
+    other type leaves the tuple empty and uses `details` as before."""
+    title: str
+    items: tuple[BriefingItem, ...]
+
+
 # --------------------------------------------------------------------------- #
 # Canonical content                                                           #
 # --------------------------------------------------------------------------- #
@@ -116,6 +139,8 @@ class MessageContent:
     eyebrow: str = ""                            # small category kicker above the H1
     email_lead: str = ""                         # email lead paragraph (falls back to body)
     details: tuple[DetailRow, ...] = field(default_factory=tuple)
+    # Grouped items for the composite briefing layout; empty for every other type.
+    sections: tuple[MessageSection, ...] = field(default_factory=tuple)
     cta_label: str = ""                          # email button label (falls back to "Open VoctManager")
     # "hello" (genderless, the default) or the warmer, gendered "dear" reserved for
     # the ceremonial moments — an invitation, a part, a contract.
@@ -146,6 +171,17 @@ class MessageContent:
             # is written for a lock screen and repeats the headline by design.
             "lead": self.email_lead or self.body,
             "details": [{"label": d.label, "value": d.value} for d in self.details],
+            "sections": [
+                {
+                    "title": s.title,
+                    "count": len(s.items),
+                    "items": [
+                        {"primary": i.primary, "secondary": i.secondary, "detail": i.detail}
+                        for i in s.items
+                    ],
+                }
+                for s in self.sections
+            ],
             "cta_label": self.cta_label or _("Open VoctManager"),
             "cta_url": _absolute(self.url_path, base_url),
             "level": self.level,
@@ -275,20 +311,31 @@ def _change_field_label(field_key: str) -> str:
         "now_mandatory": _("Now mandatory"),
         "now_optional": _("Now optional"),
         "voice_line": _("Voice part"),
+        "gives_pitch": _("Starting pitch"),
+        "notes": _("Part note"),
         "run_sheet": _("Day schedule"),
     }.get(field_key, field_key.replace("_", " ").capitalize())
 
 
+def _boolean_label(value: str) -> str:
+    """Localized Yes/No for a flag stored as Python's `str(bool)`. An unrecognized
+    value passes through, so a legacy row never renders as a blank."""
+    return {"True": _("Yes"), "False": _("No")}.get(value, value)
+
+
 def _change_value(field_key: str, value: Any) -> Any:
     """Localizes a change value where the field carries a language-neutral code
-    (voice line, project status); passes pre-formatted display values through
-    unchanged. Without this the diff shows the raw database code ("ACTIVE → CANC")."""
+    (voice line, project status, boolean flag); passes pre-formatted display values
+    through unchanged. Without this the diff shows the raw database code
+    ("ACTIVE → CANC")."""
     if not value:
         return value
     if field_key == "voice_line":
         return _voice_line_label(str(value))
     if field_key == "status":
         return _project_status_label(str(value))
+    if field_key == "gives_pitch":
+        return _boolean_label(str(value))
     return value
 
 
@@ -366,6 +413,29 @@ def _rehearsal_detail_rows(project: str, when: Any = None, venue: Any = None, fo
 # Per-type composers                                                          #
 # --------------------------------------------------------------------------- #
 
+def _invitation_rehearsal_lines(entries: Any) -> list[str]:
+    """One line per rehearsal: its moment, its venue, and — only when it is not
+    obligatory — that it is optional. Marking the exception rather than the rule
+    keeps a five-rehearsal block readable.
+
+    Joined without `_facts`, whose leading capital is meant for a push body: here
+    each line is a value under a label, and the row above it ("When: piątek…")
+    renders the same kind of moment lowercase.
+    """
+    lines: list[str] = []
+    for entry in entries or ():
+        if not isinstance(entry, dict):
+            continue
+        parts = (display_event_time(entry), entry.get("location"), entry.get("focus"))
+        line = " · ".join(str(part).strip() for part in parts if part and str(part).strip())
+        if not line:
+            continue
+        if entry.get("is_mandatory") is False:
+            line = _("%(rehearsal)s (optional)") % {"rehearsal": line}
+        lines.append(line)
+    return lines
+
+
 def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     project = m.get("project_name") or _("a new project")
@@ -373,9 +443,21 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
     dates = display_event_time(m, "date_range")
     venue = m.get("location")
 
+    rehearsal_lines = _invitation_rehearsal_lines(m.get("rehearsals"))
+    rehearsal_count = len(rehearsal_lines)
+    # The rehearsals are the real price of saying yes, so their number belongs in
+    # the glance itself — the singer is deciding, not being kept informed.
+    rehearsal_summary = ngettext(
+        "%(count)d rehearsal", "%(count)d rehearsals", rehearsal_count
+    ) % {"count": rehearsal_count} if rehearsal_count else ""
+
+    voice_lines = ", ".join(
+        _voice_line_label(str(code)) for code in (m.get("voice_lines") or ()) if code
+    )
+
     # Push carries the glance facts; the invitation's warmth lives in the email
     # lead, where there is room for it.
-    body = _facts(dates, venue)
+    body = _facts(dates, venue, rehearsal_summary)
     if m.get("inviter_name"):
         body = _("%(facts)s. Invited by %(inviter)s.") % {"facts": body, "inviter": inviter} if body \
             else _("Invited by %(inviter)s.") % {"inviter": inviter}
@@ -389,6 +471,24 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
         details.append(_row(_("When"), dates))
     if venue:
         details.append(_row(_("Where"), venue))
+    call_time = display_event_time({
+        "starts_at": m.get("call_time_at"),
+        "starts_at_display": m.get("call_time_display"),
+        "timezone": m.get("timezone"),
+    })
+    if call_time:
+        details.append(_row(_("Call time"), call_time))
+    if voice_lines:
+        details.append(_row(_("Your part"), voice_lines))
+    # Multi-value rows are newline-separated; the email detail card renders them
+    # as separate lines, and nothing else consumes `details`.
+    if rehearsal_lines:
+        details.append(_row(_("Rehearsals"), "\n".join(rehearsal_lines)))
+    program = [str(title) for title in (m.get("program") or ()) if title]
+    if program:
+        details.append(_row(_("Programme"), "\n".join(program)))
+    if m.get("dress_code"):
+        details.append(_row(_("Dress code"), m["dress_code"]))
 
     return MessageContent(
         notification_type=ctx.notification_type,
@@ -450,6 +550,171 @@ def _compose_project_updated(ctx: MessageContext) -> MessageContent:
             " — check that the new plan still works for you."
         ) % {"project": project},
         details=_change_rows(m.get("changes")),
+        cta_label=_("See the changes"),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# The composite briefing                                                       #
+# --------------------------------------------------------------------------- #
+# Sections in the order a singer reads them: what is theirs alone, then the dates
+# they have to keep, then the concert itself. The same order drives the push
+# glance, so the lock screen leads with the personal news too.
+_BRIEFING_SECTION_ORDER: tuple[str, ...] = (
+    AnnouncementSubject.CASTING,
+    AnnouncementSubject.REHEARSAL,
+    AnnouncementSubject.PROJECT,
+)
+
+# How many item headlines fit a push body before the rest becomes a count.
+_BRIEFING_GLANCE_LIMIT = 3
+
+
+def _briefing_section_title(subject_type: str) -> str:
+    titles: dict[str, str] = {
+        AnnouncementSubject.CASTING: _("Your part"),
+        AnnouncementSubject.REHEARSAL: _("Rehearsals"),
+        AnnouncementSubject.PROJECT: _("The concert"),
+    }
+    return titles.get(subject_type, _("Other changes"))
+
+
+def _briefing_casting_items(kind: str, m: dict[str, Any]) -> list[BriefingItem]:
+    """A seat on one piece. The piece names the item; the voice line and what moved
+    sit underneath it."""
+    piece = str(m.get("piece_title") or _("a piece"))
+    if kind == AnnouncementKind.REMOVED:
+        return [BriefingItem(primary=piece, detail=_("You're no longer singing this one."))]
+
+    voice = _voice_line_label(m.get("voice_line"))
+    if kind == AnnouncementKind.CREATED:
+        return [BriefingItem(primary=piece, secondary=voice, detail=_("A new part for you."))]
+    return [
+        BriefingItem(
+            primary=piece,
+            secondary=voice,
+            detail=_summarize_changes(m.get("changes"), limit=4),
+        )
+    ]
+
+
+def _briefing_rehearsal_items(kind: str, m: dict[str, Any]) -> list[BriefingItem]:
+    """A rehearsal names itself by its moment — that is what the reader has to put
+    in a diary. The moment follows a dash so it never opens the line, which Polish
+    and French both render lowercase."""
+    when = display_event_time(m, "starts_at", "rehearsal_date")
+    venue = str(m.get("location") or "")
+
+    if kind == AnnouncementKind.CREATED:
+        primary = (
+            _("New rehearsal — %(when)s") % {"when": when}
+            if when
+            else _("A new rehearsal has been added")
+        )
+        return [BriefingItem(primary=primary, secondary=venue, detail=str(m.get("focus") or ""))]
+
+    primary = (
+        _("Rehearsal — %(when)s") % {"when": when} if when else _("A rehearsal has changed")
+    )
+    return [
+        BriefingItem(
+            primary=primary,
+            secondary=venue,
+            detail=_summarize_changes(m.get("changes"), limit=4),
+        )
+    ]
+
+
+def _briefing_project_items(m: dict[str, Any]) -> list[BriefingItem]:
+    """One item per field. A briefing lists "Venue — A → B" the way the conductor's
+    review sheet does, rather than folding four changes into one dense line."""
+    return [
+        BriefingItem(primary=row.label, detail=row.value)
+        for row in _change_rows(m.get("changes"))
+    ]
+
+
+def _briefing_sections(items: Any) -> tuple[MessageSection, ...]:
+    """Group the briefing's items into rendered sections.
+
+    Each item carries the payload its own emitter built, so the line a briefing
+    shows is composed from the same facts the standalone message would have used.
+    An item of an unknown subject is dropped rather than guessed at — a briefing
+    that half-renders is worse than one that is merely shorter.
+    """
+    builders: dict[str, Any] = {
+        AnnouncementSubject.CASTING: _briefing_casting_items,
+        AnnouncementSubject.REHEARSAL: _briefing_rehearsal_items,
+    }
+    grouped: dict[str, list[BriefingItem]] = {}
+
+    for item in items or ():
+        if not isinstance(item, dict):
+            continue
+        subject = str(item.get("subject_type") or "")
+        payload = item.get("metadata")
+        payload = payload if isinstance(payload, dict) else {}
+
+        if subject == AnnouncementSubject.PROJECT:
+            built = _briefing_project_items(payload)
+        elif subject in builders:
+            built = builders[subject](str(item.get("kind") or AnnouncementKind.CHANGED), payload)
+        else:
+            continue
+        grouped.setdefault(subject, []).extend(entry for entry in built if entry.primary)
+
+    return tuple(
+        MessageSection(title=_briefing_section_title(subject), items=tuple(grouped[subject]))
+        for subject in _BRIEFING_SECTION_ORDER
+        if grouped.get(subject)
+    )
+
+
+def _compose_project_briefing(ctx: MessageContext) -> MessageContent:
+    """Everything one singer has not been told about one project, in one message.
+
+    This is what the announcement queue publishes when a recipient has more than
+    one piece of news waiting — five rehearsal changes and a part reach them as a
+    single briefing instead of six separate alarms. A recipient with exactly one
+    item never sees this type: they get that item's own message, which says more
+    precisely what happened.
+    """
+    m = ctx.metadata
+    project = m.get("project_name") or _("your project")
+    sections = _briefing_sections(m.get("items"))
+    headlines = [item.primary for section in sections for item in section.items]
+    note = str(m.get("note") or "").strip()
+
+    glance = "; ".join(headlines[:_BRIEFING_GLANCE_LIMIT])
+    if len(headlines) > _BRIEFING_GLANCE_LIMIT:
+        glance += " " + _("(+%(count)d more)") % {
+            "count": len(headlines) - _BRIEFING_GLANCE_LIMIT
+        }
+
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        # The count leads so a long concert name can never push it off a lock
+        # screen — the same reasoning as the reminder titles.
+        title=ngettext(
+            "%(count)d update — %(project)s",
+            "%(count)d updates — %(project)s",
+            len(headlines),
+        ) % {"count": len(headlines), "project": project},
+        # The conductor's own words come first when there are any; the facts follow
+        # and are truncated from the tail, so the note is never the part that is cut.
+        body=_facts(note, glance) or _("Open the schedule to see what's new."),
+        url_path=_projects_url(ctx),
+        tag=f"project-briefing:{m.get('project_id') or project}",
+        actions=(_open_action(),),
+        subject=_("What changed — %(project)s") % {"project": project},
+        preheader=glance,
+        eyebrow=_("Project update"),
+        email_lead=_(
+            "Here is everything that has changed since we last wrote to you about"
+            " %(project)s. Anything to do with your own part comes first."
+        ) % {"project": project},
+        sections=sections,
         cta_label=_("See the changes"),
     )
 
@@ -978,6 +1243,80 @@ def _compose_attendance_submitted(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _waiting_phrase(hours: int) -> str:
+    """How long the queue has been sitting, in the unit a reader would use.
+
+    Under two days a conductor thinks in hours ("since this morning"); past that
+    only the number of days carries any meaning, and "51 hours" reads as a machine
+    talking. Both forms are plural-correct — Polish alone needs three.
+    """
+    if hours < 48:
+        return ngettext(
+            "waiting %(count)d hour", "waiting %(count)d hours", max(hours, 1)
+        ) % {"count": max(hours, 1)}
+    days = hours // 24
+    return ngettext("waiting %(count)d day", "waiting %(count)d days", days) % {
+        "count": days
+    }
+
+
+def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
+    """The announcement queue has been sitting; the cast still does not know.
+
+    Addressed to the managers, and the only project notification raised by the
+    clock rather than by an edit. Its whole job is to be answerable in one tap, so
+    the deep-link opens the review sheet itself rather than the project — a nudge
+    that lands the reader somewhere they still have to go looking is the same
+    silence with extra steps.
+    """
+    m = ctx.metadata
+    project = m.get("project_name") or _("a project")
+    changes = int(m.get("change_count") or 0)
+    listeners = int(m.get("recipient_count") or 0)
+    waiting = _waiting_phrase(int(m.get("waiting_hours") or 0))
+    # Straight to the sheet. `?announce=1` is the hub's own contract for opening it.
+    review_url = f"/panel/projects/{m.get('project_id') or ''}?announce=1"
+
+    changes_phrase = ngettext(
+        "%(count)d change", "%(count)d changes", changes
+    ) % {"count": changes}
+    details: list[DetailRow] = [
+        _row(_("Project"), project),
+        _row(_("Waiting to be sent"), changes_phrase),
+    ]
+    if listeners:
+        details.append(_row(
+            _("Not yet told"),  # paired with a count: "Not yet told: 12 people"
+            ngettext("%(count)d person", "%(count)d people", listeners)
+            % {"count": listeners},
+        ))
+
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        # The situation leads, the project follows: a manager scanning a lock
+        # screen needs to know it is the queue speaking before they read which
+        # concert it is about.
+        title=_("The cast hasn't been told — %(project)s") % {"project": project},
+        body=_facts(changes_phrase, waiting),
+        url_path=review_url,
+        # Per project, so a second nudge about the same queue replaces the first
+        # rather than stacking beside it.
+        tag=f"announcement-pending:{m.get('project_id') or project}",
+        actions=(_open_action(review_url),),
+        subject=_("Changes waiting to be announced — %(project)s") % {"project": project},
+        eyebrow=_("Announcement queue"),
+        email_lead=_(
+            "%(project)s is holding changes the cast has not been told about."
+            " Nothing goes out until you send it — review what is waiting, add a"
+            " word of your own if it helps, and press send. If it is no longer"
+            " worth announcing, discard it and this will stop."
+        ) % {"project": project},
+        details=tuple(details),
+        cta_label=_("Review what's waiting"),
+    )
+
+
 def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
     """Direct manager → singer message. The sender names the title; the push body
     carries only the subject (lock-screen safe), while the full message is kept to
@@ -1115,6 +1454,7 @@ _Composer = Callable[[MessageContext], MessageContent]
 _COMPOSERS: dict[str, _Composer] = {
     NotificationType.PROJECT_INVITATION: _compose_project_invitation,
     NotificationType.PROJECT_UPDATED: _compose_project_updated,
+    NotificationType.PROJECT_BRIEFING: _compose_project_briefing,
     NotificationType.PROJECT_CANCELLED: _compose_project_cancelled,
     NotificationType.PROJECT_REMINDER: _compose_project_reminder,
     NotificationType.REHEARSAL_SCHEDULED: _compose_rehearsal_scheduled,
@@ -1130,6 +1470,7 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.ABSENCE_REJECTED: _compose_absence_rejected,
     NotificationType.PARTICIPATION_RESPONSE: _compose_participation_response,
     NotificationType.ATTENDANCE_SUBMITTED: _compose_attendance_submitted,
+    NotificationType.ANNOUNCEMENT_PENDING: _compose_announcement_pending,
     NotificationType.CUSTOM_ADMIN_MESSAGE: _compose_custom_admin_message,
     NotificationType.MESSAGE_RECEIVED: _compose_message_received,
     NotificationType.CHANNEL_MESSAGE: _compose_channel_message,

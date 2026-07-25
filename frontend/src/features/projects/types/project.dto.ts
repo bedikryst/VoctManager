@@ -81,15 +81,24 @@ export interface ProgramItemCreateDTO {
 
 export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO>;
 
-export interface PieceCastingCreateDTO {
+/** One seat on the divisi board: this participant, on this voice line. */
+export interface PieceCastingBoardRowDTO {
   participation: string;
-  piece: string;
   voice_line: VoiceLine;
   gives_pitch: boolean;
-  notes?: string;
+  notes: string;
 }
 
-export type PieceCastingUpdateDTO = Partial<PieceCastingCreateDTO>;
+/**
+ * The whole divisi board for one piece, sent as one declarative write. Rows the
+ * payload omits are deleted server-side — the board is the truth, not a list of
+ * edits — which is what keeps a Save at one request and one message per singer.
+ */
+export interface PieceCastingBoardDTO {
+  project: string;
+  piece: string;
+  castings: PieceCastingBoardRowDTO[];
+}
 
 export interface AttendanceCreateDTO {
   rehearsal: string;

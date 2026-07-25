@@ -9,7 +9,6 @@ import type {
   Attendance,
   CrewAssignment,
   Participation,
-  PieceCasting,
   ProgramItem,
   Project,
   Rehearsal,
@@ -21,7 +20,6 @@ import type {
   AttendanceCreateDTO,
   CrewAssignmentCreateDTO,
   ParticipationCreateDTO,
-  PieceCastingCreateDTO,
   ProgramItemCreateDTO,
   ProjectCreateDTO,
   RehearsalCreateDTO,
@@ -110,18 +108,6 @@ export const buildOptimisticProgramItem = (
   piece: data.piece,
   order: data.order,
   is_encore: data.is_encore,
-});
-
-export const buildOptimisticPieceCasting = (
-  data: PieceCastingCreateDTO,
-  optimisticId: string,
-): PieceCasting => ({
-  id: optimisticId,
-  participation: data.participation,
-  piece: data.piece,
-  voice_line: data.voice_line,
-  gives_pitch: data.gives_pitch,
-  notes: data.notes,
 });
 
 export const buildOptimisticAttendance = (

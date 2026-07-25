@@ -9,7 +9,10 @@ import { describe, expect, it } from "vitest";
 
 import type { NotificationPreferenceDTO } from "../types/notifications.dto";
 import {
+  groupChannelPayload,
+  groupChannelState,
   isPreferenceCustomized,
+  nextGroupChannelValue,
   recommendedChannels,
   restorePayload,
 } from "./preferences";
@@ -18,6 +21,7 @@ const make = (
   over: Partial<NotificationPreferenceDTO> = {},
 ): NotificationPreferenceDTO => ({
   notification_type: "REHEARSAL_SCHEDULED",
+  group: "commitments",
   email_enabled: true,
   push_enabled: true,
   recommended_email: true,
@@ -136,5 +140,70 @@ describe("restorePayload", () => {
     expect(restorePayload(rows, false)).toEqual([
       { notification_type: "REHEARSAL_SCHEDULED", email_enabled: true, push_enabled: false },
     ]);
+  });
+});
+
+describe("groupChannelState", () => {
+  const rows = (...email: boolean[]) =>
+    email.map((email_enabled, i) =>
+      make({
+        notification_type: i === 0 ? "REHEARSAL_SCHEDULED" : "PIECE_CASTING_ASSIGNED",
+        email_enabled,
+      }),
+    );
+
+  it("reads on only when every member is on", () => {
+    expect(groupChannelState(rows(true, true), "email_enabled")).toBe("on");
+  });
+
+  it("reads off only when every member is off", () => {
+    expect(groupChannelState(rows(false, false), "email_enabled")).toBe("off");
+  });
+
+  it("reads mixed when the members disagree", () => {
+    // The state a reader arrives in after answering per type — displayed, never
+    // silently coerced.
+    expect(groupChannelState(rows(true, false), "email_enabled")).toBe("mixed");
+  });
+
+  it("answers per channel, not per row", () => {
+    const members = [
+      make({ notification_type: "REHEARSAL_SCHEDULED", email_enabled: false }),
+      make({ notification_type: "PIECE_CASTING_ASSIGNED", email_enabled: false }),
+    ];
+    expect(groupChannelState(members, "email_enabled")).toBe("off");
+    expect(groupChannelState(members, "push_enabled")).toBe("on");
+  });
+});
+
+describe("nextGroupChannelValue", () => {
+  it("resolves a mixed control upward", () => {
+    // Adding delivery is the safe direction: it never silences something the
+    // reader did not ask to lose.
+    expect(nextGroupChannelValue("mixed")).toBe(true);
+  });
+
+  it("toggles a settled control", () => {
+    expect(nextGroupChannelValue("on")).toBe(false);
+    expect(nextGroupChannelValue("off")).toBe(true);
+  });
+});
+
+describe("groupChannelPayload", () => {
+  it("writes only the members that differ, preserving the other channel", () => {
+    const rows = [
+      make({ notification_type: "REHEARSAL_SCHEDULED", email_enabled: false, push_enabled: false }),
+      make({ notification_type: "PIECE_CASTING_ASSIGNED", email_enabled: true, push_enabled: true }),
+    ];
+
+    expect(groupChannelPayload(rows, "email_enabled", true)).toEqual([
+      // Push travels at its stored value: a group decision about e-mail must not
+      // quietly move a channel the reader answered separately.
+      { notification_type: "REHEARSAL_SCHEDULED", email_enabled: true, push_enabled: false },
+    ]);
+  });
+
+  it("is empty when the group already holds the target value", () => {
+    expect(groupChannelPayload([make()], "email_enabled", true)).toEqual([]);
   });
 });
