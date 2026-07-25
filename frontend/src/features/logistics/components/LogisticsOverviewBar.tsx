@@ -199,7 +199,7 @@ export const LogisticsOverviewBar = React.memo(
                   <Metric
                     size="xl"
                     color={isActive ? "default" : "graphite"}
-                    className="leading-none tabular-nums"
+                    className="leading-none"
                   >
                     {count}
                   </Metric>
@@ -248,7 +248,7 @@ export const LogisticsOverviewBar = React.memo(
               <Metric
                 size="xl"
                 color={!hasFilter ? "default" : "graphite"}
-                className="leading-none tabular-nums"
+                className="leading-none"
               >
                 {metrics.totalLocations}
               </Metric>

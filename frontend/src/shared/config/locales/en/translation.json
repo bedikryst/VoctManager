@@ -3259,7 +3259,8 @@
       },
       "mobile": {
         "assigned": "Cast",
-        "available": "Database"
+        "available": "Database",
+        "switch_aria": "Switch cast list"
       },
       "search_placeholder": "Search artist...",
       "sections": {
@@ -3282,7 +3283,7 @@
         "hire_label": "Hire from database",
         "role_label": "Role for this concert",
         "role_placeholder": "e.g., FOH Engineer",
-        "select_placeholder": "— Select collaborator —",
+        "select_placeholder": "Choose a collaborator",
         "submit": "Assign",
         "title": "Add to the team"
       },
@@ -3369,7 +3370,11 @@
       },
       "placeholders": {
         "description": "e.g., Please be punctual...",
-        "spotify": "Paste link to reference playlist..."
+        "spotify": "Paste link to reference playlist...",
+        "location": "Choose a saved location",
+        "location_clear": "No location",
+        "conductor": "Choose a conductor",
+        "conductor_clear": "No conductor"
       },
       "run_sheet": {
         "description": "Description (optional)",
@@ -3692,7 +3697,7 @@
         "focus": "Rehearsal Plan / Focus",
         "focus_placeholder": "e.g., Requiem pt. 1-3...",
         "location": "Location (Room) *",
-        "location_placeholder": "e.g., Room 102, Academy",
+        "location_placeholder": "Choose a room",
         "mandatory": "Mandatory attendance for invitees",
         "submit": "Save to calendar",
         "timezone": "Time Zone *",

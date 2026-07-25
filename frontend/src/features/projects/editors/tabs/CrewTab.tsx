@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Wrench, Trash2 } from "lucide-react";
 
 import { useCrewAssignments } from "../hooks/useCrewAssignments";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -48,39 +48,27 @@ export const CrewTab = ({
       <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
         {/* ── Add collaborator ─────────────────────────────────────────── */}
         <form onSubmit={handleAssign} className="lg:col-span-4">
-          <GlassCard
-            variant="solid"
-            padding="md"
-            isHoverable={false}
-            contentClassName="gap-5"
+          <SectionCard
+            as="h2"
+            bodyClassName="gap-5"
+            icon={<Plus size={15} aria-hidden="true" />}
+            title={t("projects.crew.form.title", "Dodaj do zespołu")}
           >
-            <div className="flex items-center gap-2.5 border-b border-ethereal-ink/6 pb-3">
-              <Plus size={16} className="text-ethereal-gold" aria-hidden="true" />
-              <Eyebrow color="default">
-                {t("projects.crew.form.title", "Dodaj do zespołu")}
-              </Eyebrow>
-            </div>
-
             <Select
               label={t("projects.crew.form.hire_label", "Zatrudnij z bazy")}
               required
               value={selectedCrewId}
-              onChange={(event) => setSelectedCrewId(event.target.value)}
+              onValueChange={setSelectedCrewId}
               disabled={isMutating}
-            >
-              <option value="">
-                {t(
-                  "projects.crew.form.select_placeholder",
-                  "— Wybierz współpracownika —",
-                )}
-              </option>
-              {availableCrew.map((collaborator) => (
-                <option key={collaborator.id} value={collaborator.id}>
-                  {collaborator.first_name} {collaborator.last_name} (
-                  {collaborator.specialty})
-                </option>
-              ))}
-            </Select>
+              placeholder={t(
+                "projects.crew.form.select_placeholder",
+                "Wybierz współpracownika",
+              )}
+              options={availableCrew.map((collaborator) => ({
+                value: String(collaborator.id),
+                label: `${collaborator.first_name} ${collaborator.last_name} (${collaborator.specialty})`,
+              }))}
+            />
 
             <Input
               label={t("projects.crew.form.role_label", "Rola na tym koncercie")}
@@ -103,34 +91,24 @@ export const CrewTab = ({
             >
               {t("projects.crew.form.submit", "Przypisz")}
             </Button>
-          </GlassCard>
+          </SectionCard>
         </form>
 
         {/* ── Crew roster ──────────────────────────────────────────────── */}
-        <GlassCard
-          variant="solid"
-          padding="none"
-          isHoverable={false}
-          className="flex max-h-[70dvh] flex-col lg:col-span-8"
-        >
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <Wrench
-                size={15}
-                className="text-ethereal-gold/70"
-                aria-hidden="true"
-              />
-              <Eyebrow as="h2" color="graphite">
-                {t("projects.crew.list.title", "Skład Ekipy (Crew)")}
-              </Eyebrow>
-            </div>
-            {projectAssignments.length > 0 && (
+        <SectionCard
+          as="h2"
+          scroll
+          className="max-h-[70dvh] lg:col-span-8"
+          bodyClassName="divide-y divide-hairline p-0"
+          icon={<Wrench size={15} aria-hidden="true" />}
+          title={t("projects.crew.list.title", "Skład Ekipy (Crew)")}
+          action={
+            projectAssignments.length > 0 ? (
               <Badge variant="neutral">{projectAssignments.length}</Badge>
-            )}
-          </header>
-
-          <div className="min-h-0 flex-1 divide-y divide-ethereal-ink/6 overflow-y-auto">
-            <AnimatePresence initial={false}>
+            ) : undefined
+          }
+        >
+          <AnimatePresence initial={false}>
               {projectAssignments.length > 0 ? (
                 projectAssignments.map((assignment) => {
                   const person = crewMap.get(String(assignment.collaborator));
@@ -195,9 +173,8 @@ export const CrewTab = ({
                   </Text>
                 </motion.div>
               )}
-            </AnimatePresence>
-          </div>
-        </GlassCard>
+          </AnimatePresence>
+        </SectionCard>
       </div>
 
       <AutosaveStatus isSaving={isMutating} />

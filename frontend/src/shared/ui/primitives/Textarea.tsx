@@ -10,14 +10,14 @@ import { cn } from "@/shared/lib/utils";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 const textareaVariants = cva(
-  "w-full rounded-xl text-sm text-ethereal-ink placeholder:text-ethereal-graphite/50 transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y",
+  "w-full rounded-control text-sm text-ethereal-ink placeholder:text-ethereal-graphite/50 transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y",
   {
     variants: {
       variant: {
         glass:
           "bg-ethereal-alabaster/60 backdrop-blur-md border border-ethereal-incense/20 shadow-glass-ethereal focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
         solid:
-          "bg-ethereal-marble border border-ethereal-ink/10 shadow-glass-solid focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
+          "bg-ethereal-marble border border-hairline-strong shadow-glass-solid focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
         ghost:
           "bg-transparent border border-transparent hover:bg-ethereal-incense/10 focus:bg-ethereal-marble focus:border-ethereal-incense/30",
       },

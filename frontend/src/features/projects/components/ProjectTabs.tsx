@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
-import { Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 interface ProjectTabsProps {
   readonly projectId: string;
@@ -105,7 +105,7 @@ export const ProjectTabs = ({
     <nav
       aria-label={t("projects.hub.tabs_aria", "Sekcje projektu")}
       className={cn(
-        "flex gap-1 overflow-x-auto rounded-2xl border border-ethereal-ink/6 bg-ethereal-marble/55 p-1.5 shadow-glass-solid backdrop-blur-md no-scrollbar",
+        "flex gap-1 overflow-x-auto rounded-nested border border-hairline bg-ethereal-marble/55 p-1.5 shadow-glass-solid backdrop-blur-md no-scrollbar",
         className,
       )}
     >
@@ -116,7 +116,7 @@ export const ProjectTabs = ({
           end={tab.end}
           className={({ isActive }) =>
             cn(
-              "relative inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               isActive
                 ? "bg-ethereal-marble text-ethereal-ink shadow-[0_1px_3px_rgba(0,0,0,0.07),0_1px_1px_rgba(194,168,120,0.14)]"
                 : "text-ethereal-graphite/65 hover:bg-ethereal-marble/60 hover:text-ethereal-ink",
@@ -134,12 +134,9 @@ export const ProjectTabs = ({
               >
                 {tab.icon}
               </span>
-              <Text
-                as="span"
-                className="truncate text-[11px] font-bold uppercase tracking-wider text-inherit"
-              >
+              <Eyebrow color="inherit" className="truncate">
                 {tab.label}
-              </Text>
+              </Eyebrow>
             </>
           )}
         </NavLink>

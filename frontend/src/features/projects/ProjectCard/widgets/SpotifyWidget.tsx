@@ -13,7 +13,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Music, ExternalLink, PlayCircle, ShieldCheck } from "lucide-react";
 
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 import {
@@ -72,13 +72,13 @@ export function SpotifyWidget({
   const consented = useSpotifyConsent();
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.spotify.title", "Referencje do odsłuchu")}
       icon={<Music size={15} aria-hidden="true" />}
       bodyClassName="gap-3"
     >
       {!embedUrl ? (
-        <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-ethereal-ink/8 bg-ethereal-alabaster/45 text-center">
+        <div className="flex h-40 flex-col items-center justify-center gap-2 rounded-control border border-dashed border-hairline-strong bg-ethereal-alabaster/45 text-center">
           <Music
             size={26}
             className="text-ethereal-incense/30"
@@ -98,7 +98,7 @@ export function SpotifyWidget({
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
             style={{ minHeight: "152px", border: "none", background: "transparent" }}
-            className="block rounded-xl shadow-sm"
+            className="block rounded-control shadow-sm"
           />
           {externalUrl && (
             <Button asChild variant="secondary" fullWidth>
@@ -111,7 +111,7 @@ export function SpotifyWidget({
         </>
       ) : (
         // RODO consent gate — nothing reaches Spotify until the user acts.
-        <div className="flex flex-col gap-3 rounded-xl border border-dashed border-ethereal-ink/10 bg-ethereal-alabaster/50 p-4">
+        <div className="flex flex-col gap-3 rounded-control border border-dashed border-hairline-strong bg-ethereal-alabaster/50 p-4">
           <div className="flex items-start gap-2.5">
             <ShieldCheck
               size={18}
@@ -146,6 +146,6 @@ export function SpotifyWidget({
           </div>
         </div>
       )}
-    </WidgetCard>
+    </SectionCard>
   );
 }

@@ -61,13 +61,13 @@ export const ComposerCard = ({
           alt={t("repertoire.composer.portrait_alt", "Portret {{name}}", {
             name: fullName,
           })}
-          className="h-20 w-20 shrink-0 rounded-2xl border border-ethereal-incense/20 object-cover"
+          className="h-20 w-20 shrink-0 rounded-nested border border-ethereal-incense/20 object-cover"
           loading="lazy"
           onError={() => setPortraitFailed(true)}
         />
       ) : (
         <div
-          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-ethereal-incense/25 bg-ethereal-marble/60"
+          className="flex h-20 w-20 shrink-0 items-center justify-center rounded-nested border border-ethereal-incense/25 bg-ethereal-marble/60"
           aria-hidden="true"
         >
           <Sparkles size={22} className="text-ethereal-gold/60" />

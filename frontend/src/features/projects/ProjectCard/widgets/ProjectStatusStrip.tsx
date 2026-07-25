@@ -22,7 +22,7 @@ import {
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { Metric, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
 import {
   useProjectRehearsals,
   useProjectParticipations,
@@ -71,15 +71,12 @@ const StatusTile = ({
     type="button"
     onClick={onClick}
     aria-label={ariaLabel}
-    className="group flex flex-col gap-3 rounded-2xl border border-ethereal-ink/6 bg-ethereal-marble p-4 text-left shadow-glass-solid transition-[transform,border-color,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-ethereal-gold/35 hover:shadow-glass-ethereal-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+    className="group flex flex-col gap-3 rounded-nested border border-hairline bg-ethereal-marble p-4 text-left shadow-glass-solid transition-[border-color,box-shadow] duration-300 hover:border-ethereal-gold/45 hover:shadow-glass-ethereal-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
   >
     <div className="flex items-center justify-between">
-      <Text
-        as="span"
-        className="truncate text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/55"
-      >
+      <Eyebrow size="overline-sm" color="muted" className="truncate">
         {label}
-      </Text>
+      </Eyebrow>
       <Icon
         size={15}
         className="shrink-0 text-ethereal-gold/55 transition-colors group-hover:text-ethereal-gold"
@@ -90,7 +87,7 @@ const StatusTile = ({
     <div className="flex items-baseline gap-1.5">
       <Metric
         as="span"
-        className={cn("text-3xl leading-none tabular-nums", VALUE_TONE[tone])}
+        className={cn("text-3xl leading-none", VALUE_TONE[tone])}
       >
         {value}
       </Metric>

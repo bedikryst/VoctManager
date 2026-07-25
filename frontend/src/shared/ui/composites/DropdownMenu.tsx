@@ -39,7 +39,7 @@ export const DropdownMenuContent = ({
       align={align}
       sideOffset={8}
       className={cn(
-        "z-(--z-nav-sheet) min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
+        "z-(--z-nav-sheet) min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className,
       )}
@@ -71,7 +71,7 @@ export const DropdownMenuItem = ({
     disabled={disabled}
     onSelect={onSelect}
     className={cn(
-      "group flex cursor-pointer select-none items-center gap-2.5 rounded-xl px-3 py-2 outline-none transition-colors",
+      "group flex cursor-pointer select-none items-center gap-2.5 rounded-control px-3 py-2 outline-none transition-colors",
       "focus:bg-ethereal-marble/70 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       destructive
         ? "text-ethereal-crimson focus:bg-ethereal-crimson/10"

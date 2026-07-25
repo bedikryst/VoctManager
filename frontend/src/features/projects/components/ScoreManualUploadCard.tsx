@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Eye, FileUp, Trash2 } from "lucide-react";
 
 import { toastApiError } from "@/shared/api/errors";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 
@@ -73,7 +73,7 @@ export function ScoreManualUploadCard({
   };
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.score_package.manual.title", "Własny plik PDF")}
       icon={<FileUp size={15} aria-hidden="true" />}
       bodyClassName="flex flex-col gap-3"
@@ -143,6 +143,6 @@ export function ScoreManualUploadCard({
           </>
         )}
       </div>
-    </WidgetCard>
+    </SectionCard>
   );
 }

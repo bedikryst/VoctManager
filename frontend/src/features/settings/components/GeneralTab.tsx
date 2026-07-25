@@ -24,7 +24,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
-import { Select } from "@ui/primitives/Select";
+import { NativeSelect } from "@ui/primitives/NativeSelect";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
@@ -161,7 +161,7 @@ export const GeneralTab = () => {
             withFluidDivider
           />
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-            <Select
+            <NativeSelect
               label={t("settings.general.language", "Język interfejsu")}
               leftIcon={<Globe className="h-4 w-4" />}
               value={formData.profile.language}
@@ -170,9 +170,9 @@ export const GeneralTab = () => {
               <option value="pl">Polski</option>
               <option value="en">English</option>
               <option value="fr">Français</option>
-            </Select>
+            </NativeSelect>
 
-            <Select
+            <NativeSelect
               label={t("settings.general.timezone", "Strefa czasowa")}
               leftIcon={<Clock className="h-4 w-4" />}
               value={formData.profile.timezone}
@@ -183,10 +183,10 @@ export const GeneralTab = () => {
                   {zone.label}
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
 
             <div>
-              <Select
+              <NativeSelect
                 label={t("common.salutation.label", "Forma zwrotu")}
                 value={formData.profile.salutation}
                 onChange={(e) => handleProfileChange("salutation", e.target.value)}
@@ -194,7 +194,7 @@ export const GeneralTab = () => {
                 <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
                 <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
                 <option value="M">{t("common.salutation.masculine", "Męska")}</option>
-              </Select>
+              </NativeSelect>
               <Text as="p" size="xs" color="muted" className="ml-1 mt-1.5">
                 {t(
                   "common.salutation.settings_hint",

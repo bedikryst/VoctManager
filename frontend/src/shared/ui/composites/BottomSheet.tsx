@@ -115,7 +115,7 @@ export const BottomSheet = ({
             transition={{ type: "spring", stiffness: 320, damping: 34 }}
             className={cn(
               "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid",
-              "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-3xl",
+              "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-surface",
               isDark
                 ? "border-ethereal-incense/20 bg-ethereal-ink/95 text-ethereal-marble backdrop-blur-ethereal"
                 : "border-ethereal-incense/15 bg-ethereal-alabaster text-ethereal-ink",

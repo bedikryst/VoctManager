@@ -18,7 +18,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import {
   Eyebrow,
   Heading,
@@ -214,7 +214,7 @@ export function CrewEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
-                  <Select
+                  <NativeSelect
                     label={t("crew.editor.specialty", "Specjalizacja *")}
                     value={formData.specialty}
                     onChange={(event) =>
@@ -230,7 +230,7 @@ export function CrewEditorPanel({
                         {option.label}
                       </option>
                     ))}
-                  </Select>
+                  </NativeSelect>
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
                     <Text size="xs" color="graphite">

@@ -28,7 +28,7 @@ export interface CheckboxProps
 
 const sizeClasses: Record<Size, string> = {
   sm: "h-4 w-4 rounded",
-  md: "h-5 w-5 rounded-md",
+  md: "h-5 w-5 rounded-chip",
 };
 
 const iconSize: Record<Size, number> = {

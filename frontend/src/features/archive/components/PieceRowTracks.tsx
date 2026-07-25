@@ -16,7 +16,7 @@ import { toastApiError } from "@/shared/api/errors";
 import { Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { useVoiceLines } from "@/shared/api/options.queries";
@@ -158,7 +158,7 @@ export const PieceRowTracks = ({
           onSubmit={handleUpload}
           className="flex flex-col gap-2 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/5 p-3 md:flex-row md:items-center"
         >
-          <Select
+          <NativeSelect
             value={voicePart}
             onChange={(event) => setVoicePart(event.target.value)}
             disabled={uploadMutation.isPending}
@@ -173,7 +173,7 @@ export const PieceRowTracks = ({
                 {vl.label}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
           <input
             ref={fileInputRef}
             type="file"

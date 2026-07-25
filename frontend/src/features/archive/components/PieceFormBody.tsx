@@ -18,7 +18,7 @@ import type { Composer, VoiceLineOption } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
@@ -118,7 +118,7 @@ export const PieceFormBody = ({
             <Eyebrow color="muted" size="caption" className="mb-1 block">
               {t("archive.form.fields.epoch", "Epoka")}
             </Eyebrow>
-            <Select disabled={isBusy} {...register("epoch")}>
+            <NativeSelect disabled={isBusy} {...register("epoch")}>
               <option value="">
                 {t("archive.form.epoch_pick", "— wybierz —")}
               </option>
@@ -127,7 +127,7 @@ export const PieceFormBody = ({
                   {epoch.label}
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
           </div>
           <Input
             label={t("archive.form.fields.year", "Rok powstania")}
@@ -140,7 +140,7 @@ export const PieceFormBody = ({
             <Eyebrow color="muted" size="caption" className="mb-1 block">
               {t("archive.form.fields.language", "Język śpiewu")}
             </Eyebrow>
-            <Select disabled={isBusy} {...register("language")}>
+            <NativeSelect disabled={isBusy} {...register("language")}>
               <option value="">
                 {t("archive.form.language_pick", "— wybierz —")}
               </option>
@@ -149,7 +149,7 @@ export const PieceFormBody = ({
                   {lang.label}
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
           </div>
         </div>
       </GlassCard>

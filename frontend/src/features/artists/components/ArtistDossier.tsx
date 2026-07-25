@@ -116,7 +116,7 @@ const RateTile = ({
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
       <Eyebrow color="muted">{label}</Eyebrow>
-      <Metric size="3xl" className={cn("leading-none tabular-nums", TONE_TEXT[tone])}>
+      <Metric size="3xl" className={cn("leading-none", TONE_TEXT[tone])}>
         {formatPercent(rate)}
       </Metric>
       <Caption color="muted">{sub}</Caption>

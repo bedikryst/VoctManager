@@ -26,7 +26,7 @@ const avatarVariants = cva(
       },
       shape: {
         circle: "rounded-full",
-        rounded: "rounded-2xl",
+        rounded: "rounded-nested",
       },
     },
     defaultVariants: {

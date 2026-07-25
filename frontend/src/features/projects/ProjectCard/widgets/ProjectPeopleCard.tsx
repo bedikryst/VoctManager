@@ -16,8 +16,8 @@ import { ChevronRight, Users, Wrench, type LucideIcon } from "lucide-react";
 
 import type { Collaborator, Project } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   useProjectArtistsMap,
   useProjectCollaboratorsDictionary,
@@ -67,12 +67,12 @@ const PeopleSection = ({
         type="button"
         onClick={onOpen}
         aria-label={ariaLabel}
-        className="group -mx-1 flex items-center gap-2.5 rounded-lg px-1 py-1 text-left transition-colors hover:bg-ethereal-alabaster/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+        className="group -mx-1 flex items-center gap-2.5 rounded-chip px-1 py-1 text-left transition-colors hover:bg-ethereal-alabaster/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
       >
         <Icon size={14} className="shrink-0 text-ethereal-gold/70" aria-hidden="true" />
-        <Caption as="span" color="graphite" weight="bold" className="uppercase tracking-[0.16em]">
+        <Eyebrow as="span" color="graphite">
           {label}
-        </Caption>
+        </Eyebrow>
         <span className="text-sm font-bold tabular-nums text-ethereal-ink">
           {chips.length}
         </span>
@@ -95,7 +95,7 @@ const PeopleSection = ({
               type="button"
               onClick={() => setExpanded((prev) => !prev)}
               aria-expanded={expanded}
-              className="inline-flex items-center rounded-md border border-ethereal-incense/30 bg-ethereal-ink/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-ink transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+              className="inline-flex items-center rounded-chip border border-ethereal-incense/30 bg-ethereal-ink/5 px-2.5 py-1.5 text-overline-sm font-bold uppercase tracking-widest text-ethereal-ink transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
             >
               {expanded
                 ? t("common.actions.collapse", "Zwiń")
@@ -163,7 +163,7 @@ export function ProjectPeopleCard({
   );
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.overview.people.title", "Ludzie")}
       icon={<Users size={15} aria-hidden="true" />}
       bodyClassName="gap-5"
@@ -187,6 +187,6 @@ export function ProjectPeopleCard({
         ariaLabel={t("projects.crew.aria_label", "Zarządzaj ekipą techniczną")}
         onOpen={onOpenCrew}
       />
-    </WidgetCard>
+    </SectionCard>
   );
 }

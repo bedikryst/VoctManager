@@ -26,7 +26,7 @@ export const ProgramNotesList = ({
       {notes.map((note) => (
         <article
           key={note.id}
-          className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4"
+          className="rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4"
         >
           <div className="flex items-baseline justify-between">
             <Eyebrow color="muted" size="caption">

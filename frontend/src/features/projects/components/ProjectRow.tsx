@@ -157,8 +157,8 @@ export const ProjectRow = ({
         title: project.title,
       })}
       className={cn(
-        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border bg-ethereal-alabaster px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
-        "border-ethereal-ink/8 hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40",
+        "group flex w-full cursor-pointer items-center gap-3 rounded-nested border bg-ethereal-alabaster px-4 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
+        "border-hairline-strong hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40",
         isDone && "opacity-65 saturate-[0.85]",
       )}
     >
@@ -247,13 +247,14 @@ export const ProjectRow = ({
       {/* State + actions */}
       <div className="flex shrink-0 items-center gap-1">
         {project.score_pdf && (
-          <span
-            className="hidden items-center gap-1 rounded-md border border-ethereal-amethyst/30 bg-ethereal-amethyst/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-amethyst sm:inline-flex"
+          <Badge
+            variant="amethyst"
+            icon={<FileText size={10} aria-hidden="true" />}
+            className="hidden px-1.5 py-0.5 sm:inline-flex"
             title={t("projects.exports.open_score_pdf", "Otwórz Partyturę (PDF)")}
           >
-            <FileText size={10} aria-hidden="true" />
             PDF
-          </span>
+          </Badge>
         )}
 
         {/* A draft cannot be "finished" — the toggle would resolve to DONE and

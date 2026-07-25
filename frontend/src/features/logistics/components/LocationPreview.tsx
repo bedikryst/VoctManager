@@ -239,7 +239,7 @@ export const LocationPreview = ({
           as="span"
           size="sm"
           weight="medium"
-          className="truncate tracking-widest text-inherit transition-colors duration-500 group-hover:text-ethereal-gold"
+          className="truncate text-inherit transition-colors duration-500 group-hover:text-ethereal-gold"
         >
           {normalizedLocation?.name ?? displayFallback}
         </Text>

@@ -56,13 +56,13 @@ class PreferenceGroup:
 #     reason a direct message deserves an inbox.
 #   • materials — preparation and nudges: new scores and recordings, reminders.
 #     Push ON, e-mail OFF. Timely, but not worth an inbox.
-#   • team — the manager's job console: routine reports of things that already
-#     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
 #   • safety_net — "tell me when I have forgotten to announce something". E-mail
 #     ON + push ON: alone among the manager's alerts it reports that something
 #     has *not* happened, and the failure it guards against is a conductor who
 #     stopped opening the app — precisely the reader push and the in-app badge
 #     cannot reach.
+#   • team — the manager's job console: routine reports of things that already
+#     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
 PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
     PreferenceGroup(
         id="commitments",

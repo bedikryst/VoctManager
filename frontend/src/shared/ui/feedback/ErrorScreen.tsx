@@ -197,7 +197,7 @@ export function ErrorScreen({
             <summary className="cursor-pointer select-none text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/50 transition-colors hover:text-ethereal-graphite">
               {t("errors.detail_label", "Szczegóły techniczne")}
             </summary>
-            <pre className="mt-3 max-h-56 overflow-auto rounded-xl bg-ethereal-ink/[0.04] p-3 text-left font-mono text-[11px] leading-relaxed text-ethereal-graphite/80 ring-1 ring-ethereal-ink/5">
+            <pre className="mt-3 max-h-56 overflow-auto rounded-control bg-ethereal-ink/[0.04] p-3 text-left font-mono text-[11px] leading-relaxed text-ethereal-graphite/80 ring-1 ring-ethereal-ink/5">
               {detail}
             </pre>
           </details>

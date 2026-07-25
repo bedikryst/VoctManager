@@ -21,7 +21,7 @@ const Stat = ({
   label: string;
 }): React.JSX.Element => (
   <div className="min-w-0">
-    <Metric size="2xl" color="graphite" className="leading-none tabular-nums">
+    <Metric size="2xl" color="graphite" className="leading-none">
       {value}
     </Metric>
     <Caption color="muted" className="mt-1 block truncate">

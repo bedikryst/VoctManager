@@ -14,8 +14,8 @@ import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 
 import type { Project } from "@/shared/types";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
-import { Caption, Metric, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
@@ -37,14 +37,9 @@ interface FactRowProps {
 
 const FactRow = ({ label, children }: FactRowProps): React.JSX.Element => (
   <div className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
-    <Caption
-      as="dt"
-      color="muted"
-      weight="bold"
-      className="uppercase tracking-[0.16em]"
-    >
+    <Eyebrow as="dt" color="muted">
       {label}
-    </Caption>
+    </Eyebrow>
     <dd className="min-w-0">{children}</dd>
   </div>
 );
@@ -84,14 +79,14 @@ export function ProjectFactsCard({
   const dash = "—";
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.overview.facts.title", "Szczegóły")}
       icon={<Info size={15} aria-hidden="true" />}
       onActivate={onEdit}
       ariaLabel={t("projects.overview.facts.aria", "Edytuj szczegóły wydarzenia")}
       bodyClassName="py-2"
     >
-      <dl className="divide-y divide-ethereal-ink/5">
+      <dl className="divide-y divide-hairline">
         <FactRow label={t("projects.overview.facts.when", "Termin")}>
           {project.date_time ? (
             <div className="flex flex-col gap-0.5">
@@ -106,9 +101,11 @@ export function ProjectFactsCard({
               <DualTimeDisplay
                 value={project.date_time}
                 timeZone={project.timezone}
-                containerClassName="inline-flex items-center gap-1"
-                primaryTimeClassName="inline-flex items-center gap-1 text-sm font-medium text-ethereal-ink"
-                localTimeClassName="pl-1 text-xs font-medium normal-case tracking-normal text-ethereal-graphite"
+                orientation="row"
+                spacing="compact"
+                size="base"
+                weight="medium"
+                localTimeClassName="text-xs font-medium normal-case tracking-normal text-ethereal-graphite"
               />
             </div>
           ) : (
@@ -161,6 +158,6 @@ export function ProjectFactsCard({
           </FactRow>
         )}
       </dl>
-    </WidgetCard>
+    </SectionCard>
   );
 }

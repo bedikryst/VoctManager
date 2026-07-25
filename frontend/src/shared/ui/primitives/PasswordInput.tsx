@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { DURATION, EASE } from "@/shared/ui/kinematics/motion-presets";
 
 interface PasswordInputProps {
@@ -66,12 +66,9 @@ export const PasswordInput = ({
   return (
     <div className="flex w-full flex-col gap-1.5">
       {label && (
-        <label
-          htmlFor={inputId}
-          className="ml-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite antialiased"
-        >
+        <Eyebrow as="label" htmlFor={inputId} color="muted" className="ml-1">
           {label}
-        </label>
+        </Eyebrow>
       )}
 
       <div className="relative">
@@ -102,7 +99,7 @@ export const PasswordInput = ({
               ? t("password.hide", "Ukryj hasło")
               : t("password.show", "Pokaż hasło")
           }
-          className="absolute inset-y-0 right-2 my-auto flex h-8 w-8 items-center justify-center rounded-lg text-ethereal-graphite/50 transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+          className="absolute inset-y-0 right-2 my-auto flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/50 transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
         >
           {visible ? (
             <EyeOff size={16} aria-hidden="true" />

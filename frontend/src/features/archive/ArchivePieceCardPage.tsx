@@ -55,7 +55,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { ComposerCard, WorkIdentifiersGrid } from "@/shared/ui/composites/repertoire";
@@ -254,7 +254,7 @@ const METADATA_PROVENANCE_FIELDS = [
 ] as const;
 
 /**
- * Lifts the native <Select> from its faint incense/alabaster fill to the firmer
+ * Lifts the native <NativeSelect> from its faint incense/alabaster fill to the firmer
  * gold-on-marble treatment the <Input> already uses, so the two field primitives
  * read as siblings across this dense form. Page-scoped via `className` + twMerge
  * — the shared Select default is deliberately left untouched.
@@ -1032,7 +1032,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         label={t("archive.piece_card.fields.language", "Język śpiewu")}
                         chip={fieldChip("language")}
                       >
-                        <Select
+                        <NativeSelect
                           aria-label={t("archive.piece_card.fields.language", "Język śpiewu")}
                           className={FIELD_SELECT_CLASS}
                           {...register("language")}
@@ -1045,13 +1045,13 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                               {lang.label}
                             </option>
                           ))}
-                        </Select>
+                        </NativeSelect>
                       </LabeledField>
                       <LabeledField
                         label={t("archive.piece_card.fields.epoch", "Epoka")}
                         chip={fieldChip("epoch")}
                       >
-                        <Select
+                        <NativeSelect
                           aria-label={t("archive.piece_card.fields.epoch", "Epoka")}
                           className={FIELD_SELECT_CLASS}
                           {...register("epoch")}
@@ -1064,7 +1064,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                               {option.label}
                             </option>
                           ))}
-                        </Select>
+                        </NativeSelect>
                       </LabeledField>
                       <LabeledField
                         label={t(

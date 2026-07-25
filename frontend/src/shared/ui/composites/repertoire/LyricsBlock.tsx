@@ -28,7 +28,7 @@ export const LyricsBlock = ({
   return (
     <div className="flex flex-col gap-4">
       {ipa && (
-        <article className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4">
+        <article className="rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4">
           <Eyebrow color="muted" size="caption">
             {t("repertoire.lyrics.ipa", "IPA · wymowa")}
           </Eyebrow>
@@ -40,7 +40,7 @@ export const LyricsBlock = ({
       {translations.map((tr) => (
         <article
           key={tr.id}
-          className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4"
+          className="rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/65 p-4"
         >
           <div className="flex items-baseline justify-between">
             <Eyebrow color="muted" size="caption">

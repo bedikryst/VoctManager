@@ -12,8 +12,8 @@ import { ListOrdered, Music } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { useProgramFulfillment } from "../hooks/useProgramFulfillment";
 
 interface ProgramWidgetProps {
@@ -34,7 +34,7 @@ export function ProgramWidget({
   const overflow = enrichedProgram.length - DISPLAY_LIMIT;
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.program.title", "Program koncertu")}
       icon={<ListOrdered size={15} aria-hidden="true" />}
       onActivate={onEdit}
@@ -47,21 +47,16 @@ export function ProgramWidget({
                 {formattedDuration}
               </Badge>
             ) : (
-              <Caption
-                as="span"
-                color="muted"
-                weight="bold"
-                className="uppercase tracking-[0.16em]"
-              >
+              <Eyebrow as="span" color="muted">
                 {t("projects.program.duration_unknown", "Czas nieznany")}
-              </Caption>
+              </Eyebrow>
             )}
           </div>
         ) : undefined
       }
     >
       {enrichedProgram.length > 0 ? (
-        <ul className="-my-1 divide-y divide-ethereal-ink/5">
+        <ul className="-my-1 divide-y divide-hairline">
           {enrichedProgram.slice(0, DISPLAY_LIMIT).map((item, index) => (
             <li
               key={item.id}
@@ -80,11 +75,11 @@ export function ProgramWidget({
           ))}
           {overflow > 0 && (
             <li className="py-1.5 pl-7">
-              <Caption color="muted" weight="bold" className="uppercase tracking-[0.16em]">
+              <Eyebrow color="muted">
                 {t("projects.program.and_more", "...i {{count}} więcej", {
                   count: overflow,
                 })}
-              </Caption>
+              </Eyebrow>
             </li>
           )}
         </ul>
@@ -93,6 +88,6 @@ export function ProgramWidget({
           {t("projects.program.empty.setlist_title", "Setlista jest pusta.")}
         </Text>
       )}
-    </WidgetCard>
+    </SectionCard>
   );
 }

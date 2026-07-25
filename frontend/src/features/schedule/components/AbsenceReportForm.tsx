@@ -11,7 +11,7 @@ import { AlertCircle, Send } from "lucide-react";
 import type { AttendanceStatus } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 type ReportStatus = Extract<AttendanceStatus, "ABSENT" | "LATE">;
@@ -40,7 +40,7 @@ export const AbsenceReportForm = ({
         {t("schedule.rehearsal.form.title", "Formularz nieobecności dla Inspektora")}
       </Eyebrow>
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Select
+        <NativeSelect
           variant="glass"
           label={t("schedule.rehearsal.form.status_label", "Status *")}
           value={reportForm.status}
@@ -58,7 +58,7 @@ export const AbsenceReportForm = ({
           <option value="LATE">
             {t("schedule.rehearsal.form.option_late", "Spóźnię się")}
           </option>
-        </Select>
+        </NativeSelect>
         <div className="sm:col-span-2">
           <Eyebrow as="label" color="muted" className="mb-1.5 ml-1 block">
             {t("schedule.rehearsal.form.reason_label", "Powód / Uwagi *")}

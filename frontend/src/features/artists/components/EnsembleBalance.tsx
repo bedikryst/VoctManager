@@ -128,7 +128,7 @@ export const EnsembleBalance = React.memo(
                   <Metric
                     size="2xl"
                     color={isActive ? "default" : "graphite"}
-                    className="leading-none tabular-nums"
+                    className="leading-none"
                   >
                     {count}
                   </Metric>
@@ -167,7 +167,7 @@ export const EnsembleBalance = React.memo(
               <Metric
                 size="2xl"
                 color={!hasFilter ? "default" : "graphite"}
-                className="leading-none tabular-nums"
+                className="leading-none"
               >
                 {balance.Total}
               </Metric>

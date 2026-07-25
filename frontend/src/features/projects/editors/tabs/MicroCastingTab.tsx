@@ -39,6 +39,7 @@ import { DroppableBucket } from "./components/DroppableBucket";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -155,6 +156,25 @@ export const MicroCastingTab = ({
       !localCastings.some((c) => String(c.participation) === String(part.id)),
   );
 
+  // Casting state rides on the option itself, so the picker says which pieces
+  // are still short before you open any of them.
+  const pieceOptions = [...program]
+    .sort((a, b) => a.order - b.order)
+    .map((item, index) => {
+      const piece = pieces.find((p) => String(p.id) === String(item.piece));
+      const status = pieceStatuses[String(item.piece)];
+      return {
+        value: String(item.piece),
+        label: `${index + 1}. ${item.piece_title || piece?.title || ""}`,
+        tone:
+          status === "OK"
+            ? ("sage" as const)
+            : status === "DEFICIT"
+              ? ("crimson" as const)
+              : ("default" as const),
+      };
+    });
+
   const renderBucket = (
     bucketId: string,
     title: string,
@@ -177,20 +197,20 @@ export const MicroCastingTab = ({
       <DroppableBucket key={bucketId} id={bucketId} title={title}>
         <div
           className={cn(
-            "flex h-full flex-col gap-1.5 rounded-2xl border p-2.5 transition-colors",
+            "flex h-full flex-col gap-1.5 rounded-nested border p-2.5 transition-colors",
             hasDeficit
               ? "border-ethereal-crimson/20 bg-ethereal-crimson/3"
               : isOver
                 ? "border-ethereal-gold/30 bg-ethereal-gold/5"
                 : isExact
                   ? "border-ethereal-sage/25 bg-ethereal-sage/4"
-                  : "border-ethereal-ink/6 bg-ethereal-alabaster/50",
+                  : "border-hairline bg-ethereal-alabaster/50",
           )}
         >
           <div className="flex items-center justify-between gap-2 px-0.5">
-            <span className="truncate text-[11px] font-bold uppercase tracking-[0.08em] text-ethereal-ink">
+            <Eyebrow color="default" className="truncate">
               {title}
-            </span>
+            </Eyebrow>
             {requirementCount !== null ? (
               <span
                 className={cn(
@@ -231,14 +251,18 @@ export const MicroCastingTab = ({
             })}
 
             {hasDeficit && (
-              <div className="flex items-center justify-center rounded-lg border border-dashed border-ethereal-crimson/20 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-ethereal-crimson/45">
-                {t("projects.micro_cast.status.drop_here", "Upuść tu")}
+              <div className="flex items-center justify-center rounded-control border border-dashed border-ethereal-crimson/20 px-2 py-1">
+                <Eyebrow size="overline-sm" className="text-ethereal-crimson/45">
+                  {t("projects.micro_cast.status.drop_here", "Upuść tu")}
+                </Eyebrow>
               </div>
             )}
 
             {filled === 0 && requirementCount === null && (
-              <div className="flex items-center justify-center rounded-lg border border-dashed border-ethereal-ink/10 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-ethereal-graphite/35">
-                {t("projects.micro_cast.status.free", "Wolny wakat")}
+              <div className="flex items-center justify-center rounded-control border border-dashed border-hairline-strong px-2 py-1">
+                <Eyebrow size="overline-sm" color="muted">
+                  {t("projects.micro_cast.status.free", "Wolny wakat")}
+                </Eyebrow>
               </div>
             )}
           </div>
@@ -303,56 +327,18 @@ export const MicroCastingTab = ({
               </div>
 
               <Select
-                aria-label={t(
+                ariaLabel={t(
                   "projects.micro_cast.select_piece",
                   "Wybierz utwór z programu",
                 )}
                 value={selectedPieceId || ""}
-                onChange={(event) => requestSelectPiece(event.target.value)}
-              >
-                {program.length === 0 && (
-                  <option value="">
-                    {t("projects.micro_cast.empty.pieces", "Brak utworów")}
-                  </option>
+                onValueChange={requestSelectPiece}
+                placeholder={t(
+                  "projects.micro_cast.empty.pieces",
+                  "Brak utworów",
                 )}
-                {program.length > 0 && (
-                  <optgroup
-                    label={t(
-                      "projects.micro_cast.label.pieces_in_program",
-                      "Utwory w programie",
-                    )}
-                  >
-                    {[...program]
-                      .sort((a, b) => a.order - b.order)
-                      .map((item, index) => {
-                        const piece = pieces.find(
-                          (p) => String(p.id) === String(item.piece),
-                        );
-                        const status = pieceStatuses[String(item.piece)];
-
-                        let optionColorClass = "text-ethereal-graphite";
-                        if (status === "OK")
-                          optionColorClass = "font-bold text-ethereal-sage";
-                        if (status === "DEFICIT")
-                          optionColorClass =
-                            "font-bold text-ethereal-crimson";
-
-                        return (
-                          <option
-                            key={
-                              item.id ||
-                              `microcast-opt-${item.piece}-${index}`
-                            }
-                            value={item.piece}
-                            className={optionColorClass}
-                          >
-                            {index + 1}. {item.piece_title || piece?.title}
-                          </option>
-                        );
-                      })}
-                  </optgroup>
-                )}
-              </Select>
+                options={pieceOptions}
+              />
 
               {selectedPiece && (() => {
                 const composer = selectedPiece.composer;
@@ -397,33 +383,22 @@ export const MicroCastingTab = ({
               })()}
             </GlassCard>
 
-            <GlassCard
-              variant="solid"
-              padding="md"
-              isHoverable={false}
-              className="flex max-h-[55dvh] flex-col overflow-hidden border-ethereal-gold/20"
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[55dvh] border-ethereal-gold/20"
+              bodyClassName="[scrollbar-gutter:stable]"
+              icon={<Users size={15} aria-hidden="true" />}
+              title={t(
+                "projects.micro_cast.sections.unassigned",
+                "Nieprzypisani",
+              )}
+              action={
+                <Badge variant="neutral">
+                  {unassignedParticipations.length}
+                </Badge>
+              }
             >
-              <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-4 flex flex-none items-center justify-between border-b border-ethereal-incense/15 pb-3">
-                  <div className="flex items-center gap-1.5">
-                    <Users
-                      size={14}
-                      className="text-ethereal-gold"
-                      aria-hidden="true"
-                    />
-                    <Eyebrow color="muted">
-                      {t(
-                        "projects.micro_cast.sections.unassigned",
-                        "Nieprzypisani",
-                      )}
-                    </Eyebrow>
-                  </div>
-                  <Badge variant="neutral">
-                    {unassignedParticipations.length}
-                  </Badge>
-                </div>
-
-                <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
                   <DroppableBucket
                     id="UNASSIGNED"
                     title={t(
@@ -463,9 +438,7 @@ export const MicroCastingTab = ({
                       )}
                     </div>
                   </DroppableBucket>
-                </div>
-              </div>
-            </GlassCard>
+            </SectionCard>
           </StaggeredBentoItem>
 
           {/* MAIN — Casting buckets */}
@@ -505,7 +478,7 @@ export const MicroCastingTab = ({
                           key={group.label}
                           className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-4"
                         >
-                          <div className="border-b border-ethereal-ink/8 pb-1.5 md:col-span-2 xl:col-span-4">
+                          <div className="border-b border-hairline-strong pb-1.5 md:col-span-2 xl:col-span-4">
                             <Eyebrow color="gold">{group.label}</Eyebrow>
                           </div>
                           {voiceLines

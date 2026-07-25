@@ -119,7 +119,7 @@ export const PublishProjectModal = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 10 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
+            className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-surface border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -169,8 +169,8 @@ export const PublishProjectModal = ({
 
               {data && (
                 <>
-                  <div className="flex items-center gap-4 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
-                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ethereal-gold/12 text-ethereal-gold">
+                  <div className="flex items-center gap-4 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
+                    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-nested bg-ethereal-gold/12 text-ethereal-gold">
                       <Users size={22} strokeWidth={1.75} aria-hidden="true" />
                     </div>
                     <div className="min-w-0">
@@ -196,7 +196,7 @@ export const PublishProjectModal = ({
                   )}
 
                   {data.warnings.length > 0 && (
-                    <ul className="flex flex-col gap-2 rounded-2xl border border-ethereal-gold/25 bg-ethereal-gold/8 p-4">
+                    <ul className="flex flex-col gap-2 rounded-nested border border-ethereal-gold/25 bg-ethereal-gold/8 p-4">
                       {data.warnings.map((warning) => (
                         <li key={warning} className="flex items-start gap-2.5">
                           <AlertTriangle

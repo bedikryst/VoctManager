@@ -28,6 +28,7 @@ import type { RehearsalTargetType } from "../types";
 import { cn } from "@/shared/lib/utils";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -85,27 +86,24 @@ export const RehearsalsTab = ({
       <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
         {/* ── Compose form ─────────────────────────────────────────────── */}
         <form onSubmit={handleSubmit} className="lg:col-span-5">
-          <GlassCard
-            variant="solid"
-            padding="md"
-            isHoverable={false}
-            contentClassName="gap-5"
-          >
-            <div className="flex items-center gap-2.5 border-b border-ethereal-ink/6 pb-3">
+          <SectionCard
+            as="h2"
+            bodyClassName="gap-5"
+            icon={
               <Clock
-                size={16}
+                size={15}
                 className={
                   isEditing ? "text-ethereal-amethyst" : "text-ethereal-gold"
                 }
                 aria-hidden="true"
               />
-              <Eyebrow color="default">
-                {isEditing
-                  ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
-                  : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")}
-              </Eyebrow>
-            </div>
-
+            }
+            title={
+              isEditing
+                ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
+                : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")
+            }
+          >
             <Input
               label={t("projects.rehearsals.form.date_time", "Data i godzina *")}
               type="datetime-local"
@@ -122,24 +120,21 @@ export const RehearsalsTab = ({
                 label={t("projects.rehearsals.form.timezone", "Strefa czasowa *")}
                 required
                 value={formData.timezone}
-                onChange={(event) =>
-                  setFormData({ ...formData, timezone: event.target.value })
+                onValueChange={(timezone) =>
+                  setFormData({ ...formData, timezone })
                 }
                 disabled={isSubmitting}
-              >
-                {timezones.map((timezone) => (
-                  <option key={timezone} value={timezone}>
-                    {timezone.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </Select>
+                options={timezones.map((timezone) => ({
+                  value: timezone,
+                  label: timezone.replace(/_/g, " "),
+                }))}
+              />
 
               <Select
                 label={t("projects.rehearsals.form.location", "Lokalizacja *")}
                 required
                 value={formData.location_id}
-                onChange={(event) => {
-                  const nextLocationId = event.target.value;
+                onValueChange={(nextLocationId) => {
                   const selectedLocation =
                     locations.find(
                       (location) => String(location.id) === nextLocationId,
@@ -152,19 +147,15 @@ export const RehearsalsTab = ({
                   });
                 }}
                 disabled={isSubmitting}
-              >
-                <option value="">
-                  {t(
-                    "projects.rehearsals.form.location_placeholder",
-                    "Wybierz lokalizację",
-                  )}
-                </option>
-                {locations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                  </option>
-                ))}
-              </Select>
+                placeholder={t(
+                  "projects.rehearsals.form.location_placeholder",
+                  "Wybierz lokalizację",
+                )}
+                options={locations.map((location) => ({
+                  value: String(location.id),
+                  label: location.name,
+                }))}
+              />
             </div>
 
             <Textarea
@@ -239,7 +230,7 @@ export const RehearsalsTab = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-wrap gap-2 overflow-hidden border-t border-ethereal-ink/6 pt-4"
+                    className="flex flex-wrap gap-2 overflow-hidden border-t border-hairline pt-4"
                   >
                     {[
                       {
@@ -285,7 +276,7 @@ export const RehearsalsTab = ({
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="grid max-h-50 grid-cols-1 gap-2 overflow-y-auto border-t border-ethereal-ink/6 pr-1 pt-4 sm:grid-cols-2"
+                    className="grid max-h-50 grid-cols-1 gap-2 overflow-y-auto border-t border-hairline pr-1 pt-4 sm:grid-cols-2"
                   >
                     {projectParticipations.map((participation) => {
                       const artist = artistMap.get(String(participation.artist));
@@ -304,10 +295,10 @@ export const RehearsalsTab = ({
                           }
                           aria-pressed={isSelected}
                           className={cn(
-                            "flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                            "flex items-center justify-between gap-2 rounded-control border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                             isSelected
                               ? "border-ethereal-gold/40 bg-ethereal-gold/15"
-                              : "border-ethereal-ink/8 bg-ethereal-marble hover:border-ethereal-gold/30",
+                              : "border-hairline-strong bg-ethereal-marble hover:border-ethereal-gold/30",
                           )}
                         >
                           <Text
@@ -338,8 +329,8 @@ export const RehearsalsTab = ({
               </AnimatePresence>
             </GlassCard>
 
-            <div className="flex flex-col items-start justify-between gap-4 border-t border-ethereal-ink/6 pt-4 md:flex-row md:items-center">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl px-1 py-1.5 transition-colors hover:bg-ethereal-alabaster/60">
+            <div className="flex flex-col items-start justify-between gap-4 border-t border-hairline pt-4 md:flex-row md:items-center">
+              <label className="flex cursor-pointer items-center gap-3 rounded-control px-1 py-1.5 transition-colors hover:bg-ethereal-alabaster/60">
                 <Checkbox
                   checked={formData.is_mandatory}
                   onChange={(event) =>
@@ -386,35 +377,25 @@ export const RehearsalsTab = ({
                 </Button>
               </div>
             </div>
-          </GlassCard>
+          </SectionCard>
         </form>
 
         {/* ── Live schedule ────────────────────────────────────────────── */}
-        <GlassCard
-          variant="solid"
-          padding="none"
-          isHoverable={false}
-          className="flex max-h-[78dvh] flex-col lg:col-span-7"
-        >
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
-            <div className="flex items-center gap-2.5">
-              <Calendar1
-                size={15}
-                className="text-ethereal-gold/70"
-                aria-hidden="true"
-              />
-              <Eyebrow as="h2" color="graphite">
-                {t("projects.rehearsals.list.title", "Harmonogram prób")}
-              </Eyebrow>
-            </div>
-            {projectRehearsals.length > 0 && (
+        <SectionCard
+          as="h2"
+          scroll
+          className="max-h-[78dvh] lg:col-span-7"
+          bodyClassName="p-0"
+          icon={<Calendar1 size={15} aria-hidden="true" />}
+          title={t("projects.rehearsals.list.title", "Harmonogram prób")}
+          action={
+            projectRehearsals.length > 0 ? (
               <Badge variant="neutral">{projectRehearsals.length}</Badge>
-            )}
-          </header>
-
-          <div className="min-h-0 flex-1 overflow-y-auto">
+            ) : undefined
+          }
+        >
             {projectRehearsals.length > 0 ? (
-              <ul className="divide-y divide-ethereal-ink/6">
+              <ul className="divide-y divide-hairline">
                 {projectRehearsals.map((rehearsal) => {
                   const isPast = isPastProjectDate(rehearsal.date_time);
                   const invitedCount =
@@ -447,10 +428,11 @@ export const RehearsalsTab = ({
                             value={rehearsal.date_time}
                             timeZone={rehearsal.timezone}
                             icon={<Clock size={14} aria-hidden="true" />}
+                            orientation="row"
                             containerClassName={cn(
-                              "rounded-lg border px-3 py-1.5",
+                              "rounded-chip border px-3 py-1.5",
                               isPast
-                                ? "border-ethereal-ink/8 bg-ethereal-marble text-ethereal-graphite"
+                                ? "border-hairline-strong bg-ethereal-marble text-ethereal-graphite"
                                 : "border-ethereal-gold/25 bg-ethereal-gold/10 text-ethereal-ink",
                             )}
                             primaryTimeClassName="text-sm font-bold tracking-tight"
@@ -568,8 +550,7 @@ export const RehearsalsTab = ({
                 </Eyebrow>
               </div>
             )}
-          </div>
-        </GlassCard>
+        </SectionCard>
       </div>
 
       <ConfirmModal

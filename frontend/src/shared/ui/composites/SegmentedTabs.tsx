@@ -44,7 +44,7 @@ export function SegmentedTabs<TId extends string>({
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "flex w-full max-w-full gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1",
+        "flex w-full max-w-full gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1",
         wrap
           ? "flex-wrap"
           : "overflow-x-auto no-scrollbar sm:inline-flex sm:w-max",
@@ -61,7 +61,7 @@ export function SegmentedTabs<TId extends string>({
             aria-selected={isActive}
             onClick={() => onChange(id)}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              "inline-flex items-center justify-center gap-2 rounded-chip px-3.5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
               isActive
                 ? "bg-ethereal-gold text-ethereal-ink shadow-sm"

@@ -85,7 +85,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
         padding="none"
         isHoverable={false}
         className={cn(
-          "group relative flex items-center gap-1.5 rounded-xl px-2 py-1 transition-colors",
+          "group relative flex items-center gap-1.5 rounded-control px-2 py-1 transition-colors",
           isOverlay
             ? "scale-105 rotate-1 border-ethereal-gold/50 shadow-glass-ethereal ring-2 ring-ethereal-gold/20"
             : "hover:border-ethereal-gold/40",
@@ -119,7 +119,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               // a ~44px WCAG-grade target — we deliberately let the card grow to
               // ~44px tall rather than over-pull with negatives, which GlassCard's
               // overflow-hidden would clip straight back to the old size.
-              "flex min-h-8 min-w-7 -my-1 -ml-1.5 shrink-0 items-center justify-center rounded-lg transition-colors select-none",
+              "flex min-h-8 min-w-7 -my-1 -ml-1.5 shrink-0 items-center justify-center rounded-chip transition-colors select-none",
               "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
               isBlocked
                 ? "cursor-not-allowed text-ethereal-graphite/25"
@@ -139,7 +139,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
           <div className="flex shrink-0 max-w-25 items-center gap-1.5 sm:max-w-35">
             <Text
               className={cn(
-                "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider",
+                "inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-chip border px-1 text-[9px] font-bold uppercase tracking-wider",
                 isOverlay
                   ? "border-ethereal-gold/40 bg-ethereal-gold/15 text-ethereal-gold"
                   : "border-ethereal-incense/25 bg-ethereal-marble text-ethereal-graphite/70",
@@ -171,7 +171,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
             <Text
               size="xs"
               className={cn(
-                "inline-flex h-4 shrink-0 items-center rounded-md border px-1 text-[9px] font-bold uppercase tracking-wider",
+                "inline-flex h-4 shrink-0 items-center rounded-chip border px-1 text-[9px] font-bold uppercase tracking-wider",
                 isBlocked
                   ? "border-ethereal-crimson/35 bg-ethereal-crimson/10 text-ethereal-crimson"
                   : "border-ethereal-incense/30 bg-ethereal-incense/10 text-ethereal-graphite/60",
@@ -198,7 +198,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
                     setIsEditing(false);
                   }
                 }}
-                className="ml-1 w-16 sm:w-20 rounded-md border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage outline-none placeholder:text-ethereal-sage/40 focus:border-ethereal-sage/60 focus:ring-1 focus:ring-ethereal-sage/40"
+                className="ml-1 w-16 sm:w-20 rounded-chip border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage outline-none placeholder:text-ethereal-sage/40 focus:border-ethereal-sage/60 focus:ring-1 focus:ring-ethereal-sage/40"
                 placeholder={t(
                   "projects.micro_cast.artist.note_placeholder",
                   "Notatka...",
@@ -208,7 +208,7 @@ export const DraggableArtist = React.memo(function DraggableArtist({
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="ml-1 max-w-15 truncate rounded-md border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest text-ethereal-sage transition-colors hover:bg-ethereal-sage/20 sm:max-w-20"
+                className="ml-1 max-w-15 truncate rounded-chip border border-ethereal-sage/30 bg-ethereal-sage/10 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest text-ethereal-sage transition-colors hover:bg-ethereal-sage/20 sm:max-w-20"
                 title={casting.notes}
               >
                 {casting.notes}

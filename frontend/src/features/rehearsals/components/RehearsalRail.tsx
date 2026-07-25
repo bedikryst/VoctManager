@@ -17,7 +17,7 @@ import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   formatLocalizedDate,
@@ -199,7 +199,7 @@ export const RehearsalRail = ({
         </div>
 
         {displayProjects.length > 0 ? (
-          <Select
+          <NativeSelect
             aria-label={t("rehearsals.rail.project_label", "Projekt")}
             leftIcon={<FolderOpen size={16} aria-hidden="true" />}
             value={selectedProjectId}
@@ -210,7 +210,7 @@ export const RehearsalRail = ({
                 {project.title}
               </option>
             ))}
-          </Select>
+          </NativeSelect>
         ) : (
           <Caption className="block px-1 italic">
             {t("rehearsals.dashboard.no_projects", "Brak projektów w tej zakładce.")}

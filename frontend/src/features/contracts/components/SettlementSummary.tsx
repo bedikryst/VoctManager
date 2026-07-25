@@ -104,7 +104,7 @@ export const SettlementSummary = React.memo(
           <Metric
             size="2xl"
             color={isClear ? "sage" : hasDebt ? "crimson" : "gold"}
-            className="tabular-nums leading-none"
+            className="leading-none"
           >
             {isClear
               ? t("contracts.summary.all_settled", "Rozliczono")

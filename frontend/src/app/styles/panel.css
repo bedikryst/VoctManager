@@ -6,6 +6,17 @@
   --font-serif:
     "Cormorant Garamond", "Cinzel", "Cormorant", ui-serif, Georgia, serif;
 
+  /* The uppercase overline is the most repeated element in the panel — every
+     card header, field label, tab and group divider. Two sizes, no more:
+     `overline` is the default (card headers, field labels), `overline-sm` is
+     for dense contexts (table heads, group rows inside a scroller). Letter
+     spacing does NOT live here: it stays on the `eyebrow` typography variant
+     so a single value governs the role regardless of which size is used. */
+  --text-overline: 0.6875rem;
+  --text-overline--line-height: 1.15;
+  --text-overline-sm: 0.625rem;
+  --text-overline-sm--line-height: 1.15;
+
   /* =========================================
      ETHEREAL UI COLOR PALETTE
      Canvas is intentionally a few shades deeper than the card
@@ -28,6 +39,15 @@
 
   --color-ethereal-crimson: #a95e59;
   --color-ethereal-crimson-light: #d6a19f;
+
+  /* Hairlines. Every 1px rule inside an in-flow surface — card headers, list
+     dividers, form section splits — comes from these two and nothing else.
+     `strong` is for structural splits that must survive a busy background
+     (table heads, the divider between two stacked regions). Warm (incense)
+     rules belong to FLOATING overlays only; on an in-flow card they read as a
+     different material. */
+  --color-hairline: rgba(22, 20, 18, 0.06);
+  --color-hairline-strong: rgba(22, 20, 18, 0.1);
 
   /* =========================================
      GLASSMORPHISM & KINEMATICS TOKENS
@@ -62,6 +82,19 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     inset 0 -1px 0 rgba(22, 20, 18, 0.16),
     0 12px 28px -6px rgba(194, 168, 120, 0.5);
+
+  /* =========================================
+     RADIUS SCALE
+     Four steps, and one rule: a box nested inside another steps DOWN at least
+     one level, never up. That is what keeps a badge from sitting in a button's
+     row with a rounder corner than the button. Sizes are deliberately tied to
+     the box's role rather than its pixel size — a KPI tile is `nested` because
+     it lives in a strip under real cards, not because it happens to be small.
+     ========================================= */
+  --radius-surface: 1.5rem;
+  --radius-nested: 1rem;
+  --radius-control: 0.75rem;
+  --radius-chip: 0.5rem;
 
   /* =========================================
      SPATIAL, LAYOUT & Z-INDEX TOKENS

@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
-import { Select } from "@ui/primitives/Select";
+import { NativeSelect } from "@ui/primitives/NativeSelect";
 import { Text } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
@@ -89,7 +89,7 @@ export const LogisticsTab = () => {
             withFluidDivider
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <Select
+            <NativeSelect
               label={t("settings.logistics.clothing_size", "Rozmiar ubrań")}
               value={formData.clothing_size}
               onChange={(e) => handleChange("clothing_size", e.target.value)}
@@ -101,7 +101,7 @@ export const LogisticsTab = () => {
               <option value="l">L</option>
               <option value="xl">XL</option>
               <option value="xxl">XXL</option>
-            </Select>
+            </NativeSelect>
 
             <Input
               label={t("settings.logistics.shoe_size", "Rozmiar buta (EU)")}

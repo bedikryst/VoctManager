@@ -60,7 +60,7 @@ export const DashboardFilterMenu = ({
     <div
       role="tablist"
       aria-label={t("projects.filters.aria_label", "Filtry statusu projektów")}
-      className="inline-flex max-w-full gap-1 overflow-x-auto rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1 no-scrollbar"
+      className="inline-flex max-w-full gap-1 overflow-x-auto rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1 no-scrollbar"
     >
       {filterOptions.map((filter) => {
         const isActive = currentFilter === filter.id;
@@ -73,7 +73,7 @@ export const DashboardFilterMenu = ({
             aria-selected={isActive}
             onClick={() => onFilterChange(filter.id)}
             className={cn(
-              "inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              "inline-flex shrink-0 items-center gap-2 rounded-chip px-3 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               isActive
                 ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
                 : "text-ethereal-graphite hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",

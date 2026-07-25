@@ -2,8 +2,8 @@
  * @file DetailsTab.tsx
  * @description Creation and editing of base project metadata and production timelines.
  * Defers API sync via dirty-state tracking surfaced through the shared `EditorActionBar`.
- * Sections share one `FormSection` shell (solid card + bordered header) and lay out in two
- * balanced columns on desktop (the two tall sections — identity & run-sheet — split apart).
+ * Sections are `SectionCard`s laid out in two balanced columns on desktop (the two tall
+ * sections — identity & run-sheet — split apart).
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/DetailsTab
  */
@@ -28,47 +28,17 @@ import { useDetailsForm } from "../hooks/useDetailsForm";
 import { useProjectArtistsDictionary } from "../../api/project.queries";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
+import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Text } from "@/shared/ui/primitives/typography";
 
 interface DetailsTabProps {
   project: Project | null;
   onSuccess: (updatedProject?: Project) => void;
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
-
-interface FormSectionProps {
-  icon: React.ReactNode;
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}
-
-/** Consistent section shell: a solid card with a bordered icon+title header. */
-const FormSection = ({
-  icon,
-  title,
-  action,
-  children,
-}: FormSectionProps): React.JSX.Element => (
-  <GlassCard variant="solid" padding="md" isHoverable={false}>
-    <div className="mb-6 flex items-center justify-between gap-3 border-b border-ethereal-ink/6 pb-3">
-      <div className="flex min-w-0 items-center gap-2.5">
-        <span className="shrink-0 text-ethereal-gold/70" aria-hidden="true">
-          {icon}
-        </span>
-        <Eyebrow as="h2" color="graphite" className="truncate">
-          {title}
-        </Eyebrow>
-      </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
-    {children}
-  </GlassCard>
-);
 
 export const DetailsTab = ({
   project,
@@ -88,14 +58,37 @@ export const DetailsTab = ({
     handleSubmit,
   } = useDetailsForm(project?.id, onSuccess, onDirtyStateChange);
 
-  const timezones = getAvailableTimezones();
-
   const { data: locationsData } = useLocations();
   const { data: artists } = useProjectArtistsDictionary();
 
-  const displayLocations = locationsData ?? [];
-  const conductors = useMemo(
-    () => artists.filter((artist) => artist.voice_type === "DIR"),
+  const timezoneOptions = useMemo<SelectOption[]>(
+    () =>
+      getAvailableTimezones().map((timezone) => ({
+        value: timezone,
+        label: timezone.replace(/_/g, " "),
+      })),
+    [],
+  );
+
+  const locationOptions = useMemo<SelectOption[]>(
+    () =>
+      (locationsData ?? []).map((location) => ({
+        value: String(location.id),
+        label: location.formatted_address
+          ? `${location.name} - ${location.formatted_address.split(",")[0]}`
+          : location.name,
+      })),
+    [locationsData],
+  );
+
+  const conductorOptions = useMemo<SelectOption[]>(
+    () =>
+      artists
+        .filter((artist) => artist.voice_type === "DIR")
+        .map((artist) => ({
+          value: String(artist.id),
+          label: `${artist.first_name} ${artist.last_name}`.trim(),
+        })),
     [artists],
   );
 
@@ -119,7 +112,8 @@ export const DetailsTab = ({
       >
         {/* ── Left column ─────────────────────────────────────────────── */}
         <div className="flex flex-col gap-6">
-          <FormSection
+          <SectionCard
+            as="h2"
             icon={<Info size={15} aria-hidden="true" />}
             title={t("projects.details_tab.sections.title_desc", "Tytuł i Opis")}
           >
@@ -150,16 +144,11 @@ export const DetailsTab = ({
                 label={t("projects.details_tab.fields.timezone", "Strefa Czasowa *")}
                 required
                 value={formData.timezone}
-                onChange={(event) =>
-                  setFormData({ ...formData, timezone: event.target.value })
+                onValueChange={(timezone) =>
+                  setFormData({ ...formData, timezone })
                 }
-              >
-                {timezones.map((timezone) => (
-                  <option key={timezone} value={timezone}>
-                    {timezone.replace(/_/g, " ")}
-                  </option>
-                ))}
-              </Select>
+                options={timezoneOptions}
+              />
 
               <Select
                 label={t(
@@ -167,52 +156,47 @@ export const DetailsTab = ({
                   "Lokalizacja / Miejsce",
                 )}
                 value={formData.location_id || ""}
-                onChange={(event) =>
+                onValueChange={(locationId) =>
                   setFormData({
                     ...formData,
-                    location_id: event.target.value || null,
+                    location_id: locationId || null,
                   })
                 }
-              >
-                <option value="">
-                  {t("common.select_location", "--- Wybierz zapisaną lokalizację ---")}
-                </option>
-                {displayLocations.map((location) => (
-                  <option key={location.id} value={location.id}>
-                    {location.name}
-                    {location.formatted_address
-                      ? ` - ${location.formatted_address.split(",")[0]}`
-                      : ""}
-                  </option>
-                ))}
-              </Select>
+                placeholder={t(
+                  "projects.details_tab.placeholders.location",
+                  "Wybierz zapisaną lokalizację",
+                )}
+                clearLabel={t(
+                  "projects.details_tab.placeholders.location_clear",
+                  "Bez lokalizacji",
+                )}
+                options={locationOptions}
+              />
 
               <Select
                 label={t("projects.details_tab.fields.conductor", "Dyrygent")}
                 value={formData.conductor || ""}
-                onChange={(event) =>
+                onValueChange={(conductor) =>
                   setFormData({
                     ...formData,
-                    conductor: event.target.value || null,
+                    conductor: conductor || null,
                   })
                 }
-              >
-                <option value="">
-                  {t(
-                    "projects.details_tab.fields.conductor_placeholder",
-                    "--- Wybierz dyrygenta ---",
-                  )}
-                </option>
-                {conductors.map((conductor) => (
-                  <option key={conductor.id} value={conductor.id}>
-                    {`${conductor.first_name} ${conductor.last_name}`.trim()}
-                  </option>
-                ))}
-              </Select>
+                placeholder={t(
+                  "projects.details_tab.placeholders.conductor",
+                  "Wybierz dyrygenta",
+                )}
+                clearLabel={t(
+                  "projects.details_tab.placeholders.conductor_clear",
+                  "Bez dyrygenta",
+                )}
+                options={conductorOptions}
+              />
             </div>
-          </FormSection>
+          </SectionCard>
 
-          <FormSection
+          <SectionCard
+            as="h2"
             icon={<Clock size={15} aria-hidden="true" />}
             title={t("projects.details_tab.sections.logistics", "Zbiórka i Dress Code")}
           >
@@ -248,9 +232,10 @@ export const DetailsTab = ({
                 }
               />
             </div>
-          </FormSection>
+          </SectionCard>
 
-          <FormSection
+          <SectionCard
+            as="h2"
             icon={<PlayCircle size={15} aria-hidden="true" />}
             title={t("projects.details_tab.sections.references", "Referencje Muzyczne")}
           >
@@ -266,12 +251,13 @@ export const DetailsTab = ({
                 "Wklej link do playlisty z referencjami...",
               )}
             />
-          </FormSection>
+          </SectionCard>
         </div>
 
         {/* ── Right column ────────────────────────────────────────────── */}
         <div className="flex flex-col gap-6">
-          <FormSection
+          <SectionCard
+            as="h2"
             icon={<ListOrdered size={15} aria-hidden="true" />}
             title={t(
               "projects.details_tab.sections.run_sheet",
@@ -291,7 +277,7 @@ export const DetailsTab = ({
           >
             <div className="space-y-3">
               {sortedRunSheet.length === 0 ? (
-                <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-ethereal-ink/10 py-8 text-center">
+                <div className="flex flex-col items-center gap-2 rounded-control border border-dashed border-hairline-strong py-8 text-center">
                   <ListOrdered
                     size={24}
                     className="text-ethereal-incense/30"
@@ -315,7 +301,7 @@ export const DetailsTab = ({
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                        className="flex flex-col items-start gap-3 rounded-xl border border-ethereal-ink/6 bg-ethereal-alabaster/50 p-2.5 sm:flex-row sm:items-center"
+                        className="flex flex-col items-start gap-3 rounded-control border border-hairline bg-ethereal-alabaster/50 p-2.5 sm:flex-row sm:items-center"
                       >
                         <div className="relative w-full shrink-0 sm:w-32">
                           <Clock
@@ -379,9 +365,10 @@ export const DetailsTab = ({
                 </AnimatePresence>
               )}
             </div>
-          </FormSection>
+          </SectionCard>
 
-          <FormSection
+          <SectionCard
+            as="h2"
             icon={<AlignLeft size={15} aria-hidden="true" />}
             title={t("projects.details_tab.sections.notes", "Notatki Produkcyjne")}
           >
@@ -397,7 +384,7 @@ export const DetailsTab = ({
                 "np. Proszę o punktualność...",
               )}
             />
-          </FormSection>
+          </SectionCard>
 
         </div>
       </form>

@@ -179,13 +179,13 @@ export function ScorePackageItemRow({
   ];
 
   return (
-    <div className="rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/40">
+    <div className="rounded-nested border border-hairline-strong bg-ethereal-alabaster/40">
       {/* Header */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-ethereal-incense/5"
+        className="flex w-full items-center gap-3 rounded-nested px-3 py-2.5 text-left transition-colors hover:bg-ethereal-incense/5"
       >
         <Text
           as="span"
@@ -236,7 +236,7 @@ export function ScorePackageItemRow({
 
       {/* Body */}
       {open && (
-        <div className="flex flex-col gap-4 border-t border-ethereal-ink/8 px-3 py-4">
+        <div className="flex flex-col gap-4 border-t border-hairline-strong px-3 py-4">
           {!item.has_pdf && (
             <Caption color="muted" className="flex items-center gap-1.5 italic">
               <FileWarning size={13} aria-hidden="true" />
@@ -268,7 +268,7 @@ export function ScorePackageItemRow({
           {needsAttention && (
             <Link
               to={`/panel/archive-management/${item.piece_id}`}
-              className="flex min-h-11 items-center gap-1.5 self-start rounded-lg px-2 text-[11px] font-medium text-ethereal-gold transition-colors hover:bg-ethereal-gold/10 hover:underline"
+              className="flex min-h-11 items-center gap-1.5 self-start rounded-chip px-2 text-[11px] font-medium text-ethereal-gold transition-colors hover:bg-ethereal-gold/10 hover:underline"
             >
               <PencilLine size={12} aria-hidden="true" />
               {t(
@@ -288,21 +288,23 @@ export function ScorePackageItemRow({
                 <Select
                   variant="solid"
                   value={item.explicit_edition_id ?? ""}
-                  onChange={(e) =>
-                    onPatch({ score_edition_id: e.target.value || null })
+                  onValueChange={(editionId) =>
+                    onPatch({ score_edition_id: editionId || null })
                   }
-                  aria-label={t("projects.score_package.item.edition", "Wydanie")}
-                >
-                  <option value="">
-                    {t("projects.score_package.item.edition_auto", "Domyślne (automatycznie)")}
-                  </option>
-                  {item.editions.map((edition) => (
-                    <option key={edition.id} value={edition.id}>
-                      {edition.label}
-                      {edition.is_default ? " ★" : ""}
-                    </option>
-                  ))}
-                </Select>
+                  ariaLabel={t("projects.score_package.item.edition", "Wydanie")}
+                  placeholder={t(
+                    "projects.score_package.item.edition_auto",
+                    "Domyślne (automatycznie)",
+                  )}
+                  clearLabel={t(
+                    "projects.score_package.item.edition_auto",
+                    "Domyślne (automatycznie)",
+                  )}
+                  options={item.editions.map((edition) => ({
+                    value: String(edition.id),
+                    label: `${edition.label}${edition.is_default ? " ★" : ""}`,
+                  }))}
+                />
               ) : (
                 <Text size="sm" color="muted" className="italic">
                   {t("projects.score_package.item.no_editions", "Ten utwór nie ma jeszcze nut.")}
@@ -355,7 +357,7 @@ export function ScorePackageItemRow({
                 <button
                   type="button"
                   onClick={() => onPatch({ pdf_page_start: item.suggested_start })}
-                  className="-ml-2 flex min-h-11 items-center gap-1 self-start rounded-lg px-2 text-[11px] font-medium text-ethereal-gold transition-colors hover:bg-ethereal-gold/10 hover:underline"
+                  className="-ml-2 flex min-h-11 items-center gap-1 self-start rounded-chip px-2 text-[11px] font-medium text-ethereal-gold transition-colors hover:bg-ethereal-gold/10 hover:underline"
                 >
                   <Sparkles size={11} aria-hidden="true" />
                   {t(
@@ -400,7 +402,7 @@ export function ScorePackageItemRow({
               the per-item content overrides. Configure → preview lives here. */}
           <section
             aria-label={t("projects.score_package.item.card", "Karta przed utworem")}
-            className="flex flex-col gap-4 rounded-xl border border-ethereal-ink/8 bg-ethereal-parchment/40 p-3.5 shadow-glass-solid sm:p-4"
+            className="flex flex-col gap-4 rounded-control border border-hairline-strong bg-ethereal-parchment/40 p-3.5 shadow-glass-solid sm:p-4"
           >
             {/* Identity + the enable decision */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -440,7 +442,7 @@ export function ScorePackageItemRow({
             </div>
 
             {/* Elements — what prints on the card */}
-            <div className="flex flex-col gap-2.5 border-t border-ethereal-ink/6 pt-3.5">
+            <div className="flex flex-col gap-2.5 border-t border-hairline pt-3.5">
               <div className="flex items-center justify-between gap-2">
                 <Eyebrow color="muted">
                   {t("projects.score_package.item.card_elements_label", "Elementy karty")}
@@ -466,7 +468,7 @@ export function ScorePackageItemRow({
             </div>
 
             {/* Content & labels — sources the card draws from + free-text overrides */}
-            <div className="flex flex-col gap-3 border-t border-ethereal-ink/6 pt-3.5">
+            <div className="flex flex-col gap-3 border-t border-hairline pt-3.5">
               <Eyebrow color="muted">
                 {t("projects.score_package.item.card_content_label", "Treść i etykiety")}
               </Eyebrow>
@@ -481,23 +483,21 @@ export function ScorePackageItemRow({
                     <Select
                       variant="solid"
                       value={item.explicit_translation_id ?? ""}
-                      onChange={(e) => onPatch({ translation_id: e.target.value || null })}
-                      aria-label={t("projects.score_package.item.translation_pick", "Tłumaczenie na karcie")}
-                    >
-                      <option value="">
-                        {t("projects.score_package.item.translation_auto", "Automatycznie (język książki)")}
-                      </option>
-                      {item.translations.map((tr) => (
-                        <option key={tr.id} value={tr.id}>
-                          {tr.language.toUpperCase()}
-                          {" · "}
-                          {tr.is_singable
+                      onValueChange={(translationId) =>
+                        onPatch({ translation_id: translationId || null })
+                      }
+                      ariaLabel={t("projects.score_package.item.translation_pick", "Tłumaczenie na karcie")}
+                      placeholder={t("projects.score_package.item.translation_auto", "Automatycznie (język książki)")}
+                      clearLabel={t("projects.score_package.item.translation_auto", "Automatycznie (język książki)")}
+                      options={item.translations.map((tr) => ({
+                        value: String(tr.id),
+                        label: `${tr.language.toUpperCase()} · ${
+                          tr.is_singable
                             ? t("projects.score_package.item.translation_singable", "śpiewne")
-                            : t("projects.score_package.item.translation_literal", "dosłowne")}
-                          {tr.translator ? ` — ${tr.translator}` : ""}
-                        </option>
-                      ))}
-                    </Select>
+                            : t("projects.score_package.item.translation_literal", "dosłowne")
+                        }${tr.translator ? ` — ${tr.translator}` : ""}`,
+                      }))}
+                    />
                   </div>
                 )}
                 <Input
@@ -563,7 +563,7 @@ export function ScorePackageItemRow({
             </div>
 
             {/* Panel footer — the designer's own configure→preview CTA */}
-            <div className="flex justify-end border-t border-ethereal-ink/6 pt-3.5">
+            <div className="flex justify-end border-t border-hairline pt-3.5">
               <Button
                 type="button"
                 variant="secondary"

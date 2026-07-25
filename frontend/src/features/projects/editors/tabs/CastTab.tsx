@@ -24,7 +24,8 @@ import type { Artist, ParticipationStatus } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
@@ -99,19 +100,19 @@ const ArtistCard = React.memo(
       >
         <div
           className={cn(
-            "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-colors",
+            "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
             isDeclined
               ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
-              : "border-ethereal-ink/6 bg-ethereal-marble hover:border-ethereal-gold/30",
+              : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
             isPending && "opacity-70",
           )}
         >
           <span
             className={cn(
-              "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-[10px] font-bold uppercase",
+              "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-chip border text-[10px] font-bold uppercase",
               isAssigned
                 ? "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
-                : "border-ethereal-ink/8 bg-ethereal-alabaster text-ethereal-graphite/70",
+                : "border-hairline-strong bg-ethereal-alabaster text-ethereal-graphite/70",
             )}
             aria-hidden="true"
           >
@@ -255,13 +256,18 @@ export const CastTab = ({
     assigned: boolean,
   ): React.JSX.Element => (
     <div key={group.key} className="mb-2 last:mb-0">
-      <div className="sticky top-0 z-10 mb-1 flex items-center justify-between rounded-lg bg-ethereal-alabaster/85 px-2 py-1 backdrop-blur-sm">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite/55">
+      <div className="sticky top-0 z-10 mb-1 flex items-center justify-between rounded-chip bg-ethereal-alabaster/85 px-2 py-1 backdrop-blur-sm">
+        <Eyebrow size="overline-sm" color="muted">
           {voiceLabel(group.key)}
-        </span>
-        <span className="text-[10px] font-bold tabular-nums text-ethereal-graphite/40">
+        </Eyebrow>
+        <Text
+          as="span"
+          size="xs"
+          color="muted"
+          className="font-bold tabular-nums"
+        >
           {group.artists.length}
-        </span>
+        </Text>
       </div>
       {group.artists.map((artist) => {
         const participation = assigned
@@ -299,35 +305,24 @@ export const CastTab = ({
         </div>
       </div>
 
-      <div className="mb-6 flex shrink-0 flex-col gap-4 lg:hidden">
-        <GlassCard
-          variant="light"
-          padding="none"
-          isHoverable={false}
-          className="flex overflow-hidden p-1"
-        >
-          <Button
-            type="button"
-            variant={mobileView === "AVAILABLE" ? "primary" : "ghost"}
-            size="sm"
-            fullWidth
-            onClick={() => setMobileView("AVAILABLE")}
-            className="rounded-lg"
-          >
-            {t("projects.cast.mobile.available", "Baza")} ({unassignedCount})
-          </Button>
-          <Button
-            type="button"
-            variant={mobileView === "ASSIGNED" ? "primary" : "ghost"}
-            size="sm"
-            fullWidth
-            onClick={() => setMobileView("ASSIGNED")}
-            className="rounded-lg"
-          >
-            {t("projects.cast.mobile.assigned", "Obsada")} (
-            {participations.length})
-          </Button>
-        </GlassCard>
+      <div className="mb-6 shrink-0 lg:hidden">
+        <SegmentedTabs
+          value={mobileView}
+          onChange={setMobileView}
+          ariaLabel={t("projects.cast.mobile.switch_aria", "Przełącz listę obsady")}
+          items={[
+            {
+              id: "AVAILABLE",
+              label: `${t("projects.cast.mobile.available", "Baza")} (${unassignedCount})`,
+              Icon: Users,
+            },
+            {
+              id: "ASSIGNED",
+              label: `${t("projects.cast.mobile.assigned", "Obsada")} (${participations.length})`,
+              Icon: UserCheck,
+            },
+          ]}
+        />
       </div>
 
       <div className="grid w-full grid-cols-1 gap-6 pb-8 lg:grid-cols-2 lg:gap-8 lg:items-start">
@@ -336,18 +331,14 @@ export const CastTab = ({
               mobileView === "AVAILABLE" ? "flex" : "hidden lg:flex"
             }`}
           >
-            <div className="mb-3 flex items-center justify-between px-2">
-              <Eyebrow color="muted">
-                {t("projects.cast.sections.available", "Baza Artystów")}
-              </Eyebrow>
-              <Badge variant="neutral">{unassignedCount}</Badge>
-            </div>
-
-            <GlassCard
-              variant="solid"
-              padding="sm"
-              isHoverable={false}
-              className="max-h-[70dvh] overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[70dvh]"
+              bodyClassName="overflow-x-hidden p-3.5 [scrollbar-gutter:stable]"
+              icon={<Users size={15} aria-hidden="true" />}
+              title={t("projects.cast.sections.available", "Baza Artystów")}
+              action={<Badge variant="neutral">{unassignedCount}</Badge>}
             >
               {availableGroups.map((group) => renderGroup(group, false))}
               {unassignedCount === 0 && (
@@ -362,7 +353,7 @@ export const CastTab = ({
                   </Eyebrow>
                 </div>
               )}
-            </GlassCard>
+            </SectionCard>
           </div>
 
           <div
@@ -370,25 +361,14 @@ export const CastTab = ({
               mobileView === "ASSIGNED" ? "flex" : "hidden lg:flex"
             }`}
           >
-            <div className="mb-3 flex items-center justify-between px-2">
-              <div className="flex items-center gap-1.5">
-                <UserCheck
-                  size={14}
-                  className="text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Eyebrow color="gold">
-                  {t("projects.cast.sections.assigned", "Obsada Projektu")}
-                </Eyebrow>
-              </div>
-              <Badge variant="neutral">{participations.length}</Badge>
-            </div>
-
-            <GlassCard
-              variant="solid"
-              padding="sm"
-              isHoverable={false}
-              className="max-h-[70dvh] overflow-y-auto overflow-x-hidden border-ethereal-gold/25 [scrollbar-gutter:stable]"
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[70dvh] border-ethereal-gold/25"
+              bodyClassName="overflow-x-hidden p-3.5 [scrollbar-gutter:stable]"
+              icon={<UserCheck size={15} aria-hidden="true" />}
+              title={t("projects.cast.sections.assigned", "Obsada Projektu")}
+              action={<Badge variant="neutral">{participations.length}</Badge>}
             >
               {assignedGroups.map((group) => renderGroup(group, true))}
               {participations.length === 0 && (
@@ -403,7 +383,7 @@ export const CastTab = ({
                   </Eyebrow>
                 </div>
               )}
-            </GlassCard>
+            </SectionCard>
           </div>
         </div>
 

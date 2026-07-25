@@ -54,7 +54,7 @@ export function EditionThumbnailStrip({
         {SKELETON_TILES.map((i) => (
           <div
             key={i}
-            className="h-28 w-20 shrink-0 animate-pulse rounded-md bg-ethereal-ink/5"
+            className="h-28 w-20 shrink-0 animate-pulse rounded-chip bg-ethereal-ink/5"
           />
         ))}
       </div>
@@ -117,12 +117,12 @@ export function EditionThumbnailStrip({
                   { n: page },
                 )}
                 className={cn(
-                  "block overflow-hidden rounded-md border transition-all duration-200",
+                  "block overflow-hidden rounded-chip border transition-all duration-200",
                   isStart
                     ? "border-ethereal-gold ring-2 ring-ethereal-gold/60"
                     : isEnd
                       ? "border-ethereal-ink/40 ring-2 ring-ethereal-ink/25"
-                      : "border-ethereal-ink/10 hover:border-ethereal-gold/50",
+                      : "border-hairline-strong hover:border-ethereal-gold/50",
                   !isKept && "opacity-35 grayscale",
                 )}
               >
@@ -191,7 +191,7 @@ export function EditionThumbnailStrip({
                   // hover/focus. Stays visible (not display:none) so touch can reach it.
                   isEnd
                     ? "border-ethereal-ink/40 bg-ethereal-ink/70 text-ethereal-alabaster"
-                    : "border-ethereal-ink/10 bg-ethereal-alabaster/85 text-ethereal-graphite/70 opacity-40 hover:text-ethereal-ink group-hover:opacity-100 focus-visible:opacity-100",
+                    : "border-hairline-strong bg-ethereal-alabaster/85 text-ethereal-graphite/70 opacity-40 hover:text-ethereal-ink group-hover:opacity-100 focus-visible:opacity-100",
                 )}
               >
                 <Scissors size={11} aria-hidden="true" />
