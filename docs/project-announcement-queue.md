@@ -1154,6 +1154,10 @@ Decide them when the stage arrives and record the answer here.
   own terms: never about rows that would publish to silence, and sooner when what is waiting is a
   change to when people have to be somewhere.)*
 - ✅ A chorister can say what they want to hear about without being taught the type names.
-  *(Stage 6 — the only criterion about the reader rather than the machinery. The ledger asks four
+  *(Stage 6 — the only criterion about the reader rather than the machinery. The ledger asks three
   questions about consequences; the per-type rows survive behind a disclosure for anyone who wants
   that grain, and the group map is the same object the router reads.)*
+- ✅ …and so can the manager, who has by far the most traffic to govern. *(Stage 7 — Stage 6 had left
+  them the one reader operating the ledger at the per-type grain it exists to retire. Their two extra
+  questions are now questions too: "routine reports from the singers" and "tell me when I have
+  forgotten to announce something".)*
