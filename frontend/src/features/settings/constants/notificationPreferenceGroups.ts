@@ -49,6 +49,9 @@ export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = 
   commitments: CalendarCheck,
   messages: MessagesSquare,
   materials: Library,
+  // A one-member group, so it shares its single row's glyph rather than inventing
+  // a second symbol for the same event.
+  safety_net: Megaphone,
   team: ShieldCheck,
 };
 
@@ -80,6 +83,7 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   PARTICIPATION_RESPONSE: UserCheck,
   ATTENDANCE_SUBMITTED: ClipboardCheck,
   ABSENCE_REQUESTED: CalendarOff,
+  // Safety net — the queue nobody has published yet
   ANNOUNCEMENT_PENDING: Megaphone,
 };
 

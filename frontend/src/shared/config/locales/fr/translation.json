@@ -4398,6 +4398,7 @@
         "commitments": "Vos engagements",
         "messages": "Messages",
         "materials": "Partitions et rappels",
+        "safety_net": "Annonces non envoyées",
         "team": "Opérations d'équipe"
       },
       "type_desc": {
@@ -4438,11 +4439,13 @@
         "commitments": "Invitations, changements d'horaire des répétitions et des concerts, vos propres parties et les décisions sur vos demandes d'absence.",
         "messages": "Quelqu'un vous écrit — une réponse dans une conversation ou un message de la direction.",
         "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels peu avant une répétition ou un concert.",
-        "team": "Les réponses des choristes et la file d'annonces en attente d'envoi. Chacune de ces lignes répond pour elle-même."
+        "safety_net": "La seule notification portant sur ce qui n'a pas encore été fait : des modifications attendent dans la file et les choristes l'ignorent toujours. C'est pourquoi elle part aussi par e-mail.",
+        "team": "Les réponses aux invitations, les mises à jour de présence et les demandes d'absence. Les mêmes événements que rassemble le résumé quotidien ci-dessous."
       },
       "groups_email_off": {
         "commitments": "Vous ne recevrez pas d'e-mail lorsqu'un horaire de répétition ou de concert change. L'application affiche toujours tout — mais seulement si vous l'ouvrez.",
-        "messages": "Vous ne recevrez pas d'e-mail lorsque quelqu'un vous écrit. Le message vous attendra dans l'application."
+        "messages": "Vous ne recevrez pas d'e-mail lorsque quelqu'un vous écrit. Le message vous attendra dans l'application.",
+        "safety_net": "Vous ne recevrez pas d'e-mail lorsqu'une file d'annonces reste non envoyée. Le rappel restera dans l'application — c'est-à-dire là où il ne vous atteindra que si vous l'ouvrez déjà."
       },
       "details_show": "Détails ({{n}})",
       "details_hide": "Masquer les détails",

@@ -4397,6 +4397,7 @@
         "commitments": "Your commitments",
         "messages": "Messages",
         "materials": "Materials & reminders",
+        "safety_net": "Unsent announcements",
         "team": "Team operations"
       },
       "type_desc": {
@@ -4437,11 +4438,13 @@
         "commitments": "Invitations, rehearsal and concert times changing, your own parts, and decisions on your absence requests.",
         "messages": "Someone writing to you — a reply in a conversation, or a message from management.",
         "materials": "New scores and recordings, plus reminders shortly before a rehearsal or concert.",
-        "team": "Singers' responses and the announcement queue waiting to go out. Each of these rows answers for itself."
+        "safety_net": "The one notification about something that has not been done yet: changes are waiting in the queue and the cast still doesn't know. That is why it goes to email too.",
+        "team": "Responses to invitations, attendance updates and absence requests. The same events the daily digest below gathers up."
       },
       "groups_email_off": {
         "commitments": "You will not get an email when a rehearsal or concert time changes. The app still shows everything — but only once you open it.",
-        "messages": "You will not get an email when someone writes to you. The message will be waiting in the app."
+        "messages": "You will not get an email when someone writes to you. The message will be waiting in the app.",
+        "safety_net": "You will not get an email when an announcement queue is left unsent. The reminder will stay in the app — that is, where it only reaches you if you were opening it anyway."
       },
       "details_show": "Details ({{n}})",
       "details_hide": "Hide details",

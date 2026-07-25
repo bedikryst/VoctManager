@@ -258,10 +258,9 @@ class NotificationPreferenceAPIView(views.APIView):
         the ledger cannot state a policy the router does not apply.
 
         Groups come in render order and carry the recommendation their single
-        control targets; ``controllable`` is False where the members genuinely
-        disagree, and that group is rendered as its per-type rows alone. The rows
-        stay a flat list keyed by type — that is still the storage granularity,
-        and the "Szczegóły" disclosure writes at exactly that grain.
+        control targets. The rows stay a flat list keyed by type — that is still
+        the storage granularity, and the "Szczegóły" disclosure writes at exactly
+        that grain.
         """
         is_manager = user_is_manager(request.user)
         stored = {
@@ -283,12 +282,11 @@ class NotificationPreferenceAPIView(views.APIView):
             groups.append({
                 "id": group.id,
                 "manager_only": group.manager_only,
-                "controllable": group.controllable,
-                # A control may only promise what every member shares, so an
-                # uncontrollable group states no recommendation of its own; its
-                # rows carry theirs individually.
-                "recommended_email": group.email if group.controllable else None,
-                "recommended_push": group.push if group.controllable else None,
+                # Every group has a control, and it may only promise what all of
+                # its members share — which is what makes these the same values
+                # each of its rows carries below.
+                "recommended_email": group.email,
+                "recommended_push": group.push,
             })
 
             for ntype in group.types:

@@ -368,18 +368,16 @@ export type NotificationGroupId =
   | "commitments"
   | "messages"
   | "materials"
+  | "safety_net"
   | "team";
 
 export interface NotificationPreferenceGroupDTO {
   id: NotificationGroupId;
   manager_only: boolean;
-  /** False when the members genuinely disagree, so no single switch could state
-   *  the truth about them. Such a group renders as its per-type rows alone. */
-  controllable: boolean;
-  /** What the group's control targets — null on an uncontrollable group, whose
-   *  rows carry their own baseline instead. */
-  recommended_email: boolean | null;
-  recommended_push: boolean | null;
+  /** What the group's control targets. Never null: a type that disagrees with its
+   *  neighbours gets its own group, so every group can state one answer. */
+  recommended_email: boolean;
+  recommended_push: boolean;
 }
 
 export interface NotificationPreferenceDTO {

@@ -30,10 +30,9 @@ const group = (
   overrides: Partial<NotificationPreferenceGroupDTO> = {},
 ): NotificationPreferenceGroupDTO => ({
   id,
-  manager_only: id === "team",
-  controllable: id !== "team",
-  recommended_email: id === "team" ? null : true,
-  recommended_push: id === "team" ? null : true,
+  manager_only: id === "team" || id === "safety_net",
+  recommended_email: true,
+  recommended_push: true,
   ...overrides,
 });
 
@@ -80,7 +79,7 @@ describe("groupNotificationPreferences", () => {
         [group("commitments")],
         [
           row("REHEARSAL_SCHEDULED", "commitments"),
-          row("ANNOUNCEMENT_PENDING", "team"),
+          row("ANNOUNCEMENT_PENDING", "safety_net"),
         ],
       ),
     );
@@ -109,11 +108,16 @@ describe("groupNotificationPreferences", () => {
   });
 
   it("carries the group's contract through to the section", () => {
+    // A one-member group is still a group: it carries a recommendation of its own
+    // and a glyph, exactly like the four-member ones.
     const result = groupNotificationPreferences(
-      matrix([group("team")], [row("ANNOUNCEMENT_PENDING", "team")]),
+      matrix(
+        [group("safety_net", { recommended_email: true })],
+        [row("ANNOUNCEMENT_PENDING", "safety_net")],
+      ),
     );
-    expect(result[0].controllable).toBe(false);
-    expect(result[0].recommended_email).toBeNull();
+    expect(result[0].manager_only).toBe(true);
+    expect(result[0].recommended_email).toBe(true);
     expect(result[0].icon).toBeTruthy();
   });
 

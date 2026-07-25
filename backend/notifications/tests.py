@@ -1409,15 +1409,15 @@ class PreferenceGroupPolicyTests(SimpleTestCase):
         from .delivery import assert_preference_policy_is_coherent
         assert_preference_policy_is_coherent()
 
-    def test_a_controllable_group_governs_what_it_promises(self) -> None:
+    def test_a_group_governs_what_it_promises(self) -> None:
         # The whole premise of one switch over several types: every member must
         # already answer the way the group's control says it does, or the reader
-        # is shown a position their events do not hold.
+        # is shown a position their events do not hold. No group is exempt — a
+        # type that disagrees with its neighbours gets its own group, not an
+        # override.
         from .delivery import PREFERENCE_GROUPS, default_channel_preferences
 
         for group in PREFERENCE_GROUPS:
-            if not group.controllable:
-                continue
             for ntype in group.types:
                 defaults = default_channel_preferences(ntype)
                 self.assertEqual(
@@ -1425,6 +1425,27 @@ class PreferenceGroupPolicyTests(SimpleTestCase):
                     (group.email, group.push),
                     f"{ntype} does not follow its own group '{group.id}'",
                 )
+
+    def test_the_safety_net_is_a_group_of_its_own(self) -> None:
+        # Splitting it out is what let every group carry a switch. Two things
+        # have to survive the split: the net keeps the inbox it needs, and what is
+        # left in `team` is exactly what the daily digest batches — which is the
+        # reason `team` is declared last, directly above the digest control.
+        from .delivery import (
+            DIGESTIBLE_TYPES,
+            GROUP_OF_TYPE,
+            PREFERENCE_GROUPS,
+            default_channel_preferences,
+        )
+
+        self.assertEqual(GROUP_OF_TYPE[NotificationType.ANNOUNCEMENT_PENDING], "safety_net")
+        self.assertTrue(
+            default_channel_preferences(NotificationType.ANNOUNCEMENT_PENDING)["email_enabled"]
+        )
+
+        team = next(group for group in PREFERENCE_GROUPS if group.id == "team")
+        self.assertEqual(set(team.types), set(DIGESTIBLE_TYPES))
+        self.assertIs(PREFERENCE_GROUPS[-1], team)
 
     def test_casting_is_a_commitment(self) -> None:
         # The load-bearing move of the group rewrite. "You now sing S2 instead of
@@ -1506,7 +1527,7 @@ class PreferenceLedgerShapeTests(APITestCase):
         matrix = self._matrix(self.manager)
         self.assertEqual(
             [group["id"] for group in matrix["groups"]],
-            ["commitments", "messages", "materials", "team"],
+            ["commitments", "messages", "materials", "safety_net", "team"],
         )
 
     def test_every_row_names_a_group_the_response_declares(self) -> None:
@@ -1517,32 +1538,40 @@ class PreferenceLedgerShapeTests(APITestCase):
         # …and no group arrives empty, which would render as a control over nothing.
         self.assertEqual(declared, {row["group"] for row in matrix["preferences"]})
 
-    def test_a_controllable_group_states_the_recommendation_it_targets(self) -> None:
+    def test_every_group_states_the_recommendation_its_control_targets(self) -> None:
+        # Every group carries one, because every group has a switch. The safety net
+        # is the one that had to be split out of team ops to be able to say `True`
+        # here; team ops is what remains, and it says `False`.
         groups = {g["id"]: g for g in self._matrix(self.manager)["groups"]}
         self.assertEqual(
-            (groups["commitments"]["recommended_email"], groups["commitments"]["controllable"]),
-            (True, True),
+            {gid: group["recommended_email"] for gid, group in groups.items()},
+            {
+                "commitments": True,
+                "messages": True,
+                "materials": False,
+                "safety_net": True,
+                "team": False,
+            },
         )
-        self.assertEqual(groups["materials"]["recommended_email"], False)
 
-    def test_a_group_whose_members_disagree_promises_nothing(self) -> None:
-        # Team ops mixes three digestible alerts with the queue's safety net, so it
-        # offers no group switch and states no recommendation of its own — its rows
-        # carry theirs individually.
-        team = {g["id"]: g for g in self._matrix(self.manager)["groups"]}["team"]
-        self.assertFalse(team["controllable"])
-        self.assertIsNone(team["recommended_email"])
+    def test_each_row_agrees_with_the_group_that_speaks_for_it(self) -> None:
+        # What the split bought, stated as an invariant rather than as a list of
+        # exceptions: a group control can now promise the same thing every row
+        # under it promises, on both channels.
+        matrix = self._matrix(self.manager)
+        groups = {g["id"]: g for g in matrix["groups"]}
+        for row in matrix["preferences"]:
+            group = groups[row["group"]]
+            self.assertEqual(
+                (row["recommended_email"], row["recommended_push"]),
+                (group["recommended_email"], group["recommended_push"]),
+                f"{row['notification_type']} diverges from group '{row['group']}'",
+            )
 
-        rows = {
-            row["notification_type"]: row
-            for row in self._matrix(self.manager)["preferences"]
-        }
-        self.assertFalse(rows[NotificationType.ATTENDANCE_SUBMITTED.value]["recommended_email"])
-        self.assertTrue(rows[NotificationType.ANNOUNCEMENT_PENDING.value]["recommended_email"])
-
-    def test_the_manager_group_is_absent_entirely_for_an_artist(self) -> None:
+    def test_the_manager_groups_are_absent_entirely_for_an_artist(self) -> None:
         matrix = self._matrix(self.artist)
-        self.assertNotIn("team", {group["id"] for group in matrix["groups"]})
+        declared = {group["id"] for group in matrix["groups"]}
+        self.assertTrue(declared.isdisjoint({"team", "safety_net"}))
         self.assertNotIn(
             NotificationType.ANNOUNCEMENT_PENDING.value,
             {row["notification_type"] for row in matrix["preferences"]},

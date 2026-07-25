@@ -24,14 +24,15 @@ class PreferenceGroup:
     internal event names and one nobody outside this repository can answer.
 
     Because a single control may only state a single answer, the member types of
-    a controllable group share one default per channel. That is enforced by
-    construction: ``DEFAULT_EMAIL_ENABLED_TYPES`` below is *derived* from these
-    groups rather than written beside them, so the ledger a reader is shown and
-    the defaults the router applies cannot drift apart.
+    a group share one default per channel. That is enforced by construction:
+    ``DEFAULT_EMAIL_ENABLED_TYPES`` below is *derived* from these groups rather
+    than written beside them, so the ledger a reader is shown and the defaults the
+    router applies cannot drift apart. A type that disagrees with its neighbours
+    does not get an exception — it gets its own group.
 
-    ``controllable`` is False for the one group whose members genuinely disagree
-    (see ``_EMAIL_OVERRIDES``). It keeps its per-type rows and offers no group
-    switch, because a switch there could only lie about what it governs.
+    A one-member group is therefore legitimate, and ``safety_net`` is one. It is
+    not a control over nothing: it governs exactly one type, honestly, and names a
+    consequence its reader can state, which is the only test a group has to pass.
     """
 
     id: str
@@ -39,12 +40,12 @@ class PreferenceGroup:
     email: bool
     push: bool = True
     manager_only: bool = False
-    controllable: bool = True
 
 
 # The declaration order is the render order of the ledger. Team operations sit
 # last so the manager-only daily digest lands beneath it as the ledger's footer,
-# batching exactly the routine alerts listed directly above it.
+# batching exactly the routine alerts listed directly above it — after the safety
+# net moved out, that group's membership *is* DIGESTIBLE_TYPES.
 #
 # The organizing line is what a change *costs the reader*, which is also the line
 # the router has always drawn:
@@ -55,7 +56,13 @@ class PreferenceGroup:
 #     reason a direct message deserves an inbox.
 #   • materials — preparation and nudges: new scores and recordings, reminders.
 #     Push ON, e-mail OFF. Timely, but not worth an inbox.
-#   • team — the manager's job console. No single answer (see below).
+#   • team — the manager's job console: routine reports of things that already
+#     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
+#   • safety_net — "tell me when I have forgotten to announce something". E-mail
+#     ON + push ON: alone among the manager's alerts it reports that something
+#     has *not* happened, and the failure it guards against is a conductor who
+#     stopped opening the app — precisely the reader push and the in-app badge
+#     cannot reach.
 PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
     PreferenceGroup(
         id="commitments",
@@ -103,33 +110,22 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
         ),
     ),
     PreferenceGroup(
+        id="safety_net",
+        email=True,
+        manager_only=True,
+        types=(NotificationType.ANNOUNCEMENT_PENDING,),
+    ),
+    PreferenceGroup(
         id="team",
         email=False,
         manager_only=True,
-        # The three routine alerts below are digestible; the queue's safety net is
-        # not (it reports that something *hasn't* happened, which cannot wait for
-        # tomorrow's digest). One control over both would have to pick a side.
-        controllable=False,
         types=(
             NotificationType.PARTICIPATION_RESPONSE,
             NotificationType.ATTENDANCE_SUBMITTED,
             NotificationType.ABSENCE_REQUESTED,
-            NotificationType.ANNOUNCEMENT_PENDING,
         ),
     ),
 )
-
-# The only members that do not follow their group. Every entry here is a reason
-# its group is `controllable=False`; a controllable group containing one would be
-# a control that lies, and `assert_preference_policy_is_coherent` refuses it.
-_EMAIL_OVERRIDES: dict[str, bool] = {
-    # The queue's safety net, and the one manager alert that belongs in an inbox.
-    # Every other team signal reports something that already happened; this one
-    # reports that something has not — and the failure it guards against is a
-    # conductor who stopped opening the app, which is precisely the reader push
-    # and the in-app badge cannot reach.
-    NotificationType.ANNOUNCEMENT_PENDING: True,
-}
 
 # Types with no row in the ledger, and therefore no group: a group *is* a
 # control, so a type nobody can control has nothing to belong to. Their defaults
@@ -180,7 +176,7 @@ DEFAULT_EMAIL_ENABLED_TYPES: frozenset[str] = frozenset(
         ntype
         for group in PREFERENCE_GROUPS
         for ntype in group.types
-        if _EMAIL_OVERRIDES.get(ntype, group.email)
+        if group.email
     ]
     + [ntype for ntype, (email, _push) in UNGROUPED_DEFAULTS.items() if email]
 )
@@ -209,12 +205,13 @@ DIGESTIBLE_TYPES: frozenset[str] = frozenset({
 def assert_preference_policy_is_coherent() -> None:
     """Raise if the group map and the ledger it feeds could disagree.
 
-    Three invariants, each of which has a failure mode this codebase has already
-    met once: a type in no group and no exception list silently renders the raw
-    English Django label; a type in two groups appears twice in the ledger; and a
-    controllable group holding an override ships a switch that does not govern
-    what it claims to. Called from the app's ``ready()`` and asserted directly by
-    the test suite.
+    Two invariants, each of which has a failure mode this codebase has already met
+    once: a type in two groups appears twice in the ledger, and a type in no group
+    and no exception list silently renders the raw English Django label. Called
+    from the app's ``ready()`` and asserted directly by the test suite.
+
+    A group's control promising something its members do not hold needs no check
+    here — the defaults are derived from the group, so the two cannot differ.
     """
     grouped: list[str] = [
         ntype for group in PREFERENCE_GROUPS for ntype in group.types
@@ -227,15 +224,6 @@ def assert_preference_policy_is_coherent() -> None:
     missing = {choice.value for choice in NotificationType} - covered
     if missing:
         raise ValueError(f"Notification types with no delivery group: {sorted(missing)}")
-
-    for group in PREFERENCE_GROUPS:
-        if not group.controllable:
-            continue
-        conflicting = [ntype for ntype in group.types if ntype in _EMAIL_OVERRIDES]
-        if conflicting:
-            raise ValueError(
-                f"Group '{group.id}' offers one control but overrides {sorted(conflicting)}"
-            )
 
 
 def is_digestible(notification_type: str, level: str) -> bool:

@@ -1021,12 +1021,13 @@ glyph on — the client-side twin of the same smell. Removed.
   *only* held rows never nudges — but the moment anything else is pending, the fuse dates from the
   live line. That is the intended reading of Stage 5's recorded trap: holding is a legitimate
   indefinite state and the sweep keeps asking, but it asks about what is actually waiting.
-- **The `team` group has no group control.** See the spec below; the current shape is coherent, and
-  the change is worth making on its own terms rather than as a bug fix.
+- ~~**The `team` group has no group control.**~~ — **done, see below.** It was never a bug; it was
+  coherent and it cost the manager their group controls, which is a different kind of wrong.
 
-### Spec — split the safety net out of `team` (not scheduled)
+## Stage 7 — the safety net becomes its own group · SHIPPED
 
-The one structural change worth making, written down so it does not have to be re-derived.
+Written as a spec under the stages 5–6 audit and executed unchanged; the reasoning is kept because it
+is the argument for the shape, not a record of the work.
 
 **Why.** `team` is `controllable=False` because `ANNOUNCEMENT_PENDING` disagrees with its three
 siblings about e-mail, and a single switch there could only pick a side. The admission is honest, but
@@ -1042,36 +1043,53 @@ something" is a consequence a manager can name, which is the test `PreferenceGro
 being a group.
 
 ```
-team        controllable, manager_only, email=False
-  PARTICIPATION_RESPONSE / ATTENDANCE_SUBMITTED / ABSENCE_REQUESTED
-safety_net  controllable, manager_only, email=True
+safety_net  manager_only, email=True
   ANNOUNCEMENT_PENDING
+team        manager_only, email=False
+  PARTICIPATION_RESPONSE / ATTENDANCE_SUBMITTED / ABSENCE_REQUESTED
 ```
 
-**What it touches.**
-1. `delivery.py` — split the group; delete `_EMAIL_OVERRIDES` and the `controllable` field; drop the
-   third invariant from `assert_preference_policy_is_coherent` (the first two stay and are the ones
-   that matter).
-2. `views.py` — `recommended_email`/`recommended_push` lose their `if group.controllable else None`
-   branch and are always the group's own.
-3. `NotificationsTab.tsx` — `showRows = expanded` unconditionally, `showActionBar` likewise; the
-   `group.controllable &&` guard around `ChannelCells` goes. The DTO keeps `controllable` for one
-   release or drops it with the server — it is our own client either way.
-4. `notificationPreferenceGroups.ts` — one glyph for `safety_net` (`Megaphone`, matching the bell row).
-5. Locales ×3 — `settings.notifications.groups.safety_net` and `.groups_desc.safety_net`. **Not**
-   `groups_email_off.safety_net`: it recommends e-mail ON, so the consequence sentence applies —
-   write it. That makes three keys × three languages.
-6. Tests — `PreferenceGroupPolicyTests` loses the override assertions and gains the new group's
-   membership; `PreferenceLedgerShapeTests` render-order and "uncontrollable group promises nothing"
-   cases are rewritten.
+The ledger now renders `commitments · messages · materials · safety_net · team`, and `team` stays
+last for the reason it always was: the daily-digest control sits directly beneath it. That argument
+got stronger rather than weaker — after the split, `team`'s membership *is* `DIGESTIBLE_TYPES`, and a
+test asserts both the equality and the fact that `team` is declared last.
 
-**No data migration.** No type changes group *default*: `ANNOUNCEMENT_PENDING` was already e-mail ON
-through `_EMAIL_OVERRIDES` and stays ON through its new group. Rows minted at the old default remain
-correct — which is exactly the check migration `0014` had to fail before it was written.
+**What it touched.**
+1. `delivery.py` — the group split; `_EMAIL_OVERRIDES` and the `controllable` field deleted; the
+   third invariant dropped from `assert_preference_policy_is_coherent` (the first two stay and are
+   the ones that matter). What the deleted invariant checked is now unrepresentable: the defaults are
+   derived from the group, so a control cannot promise what its members do not hold.
+2. `views.py` — `recommended_email`/`recommended_push` are always the group's own.
+3. `NotificationsTab.tsx` — `showRows`/`showActionBar` are gone (`expanded` alone decides the rows,
+   the action bar is unconditional), and so is the `group.controllable &&` guard around
+   `ChannelCells`. The dead `!showActionBar` separator class went with them.
+4. `notificationPreferenceGroups.ts` — `safety_net: Megaphone`, the same glyph its single row draws.
+5. Locales ×3 — `groups.safety_net`, `groups_desc.safety_net`, `groups_email_off.safety_net`.
+6. Tests — `test_a_group_governs_what_it_promises` now covers every group with no exemption;
+   `test_the_safety_net_is_a_group_of_its_own` carries the membership and the digest adjacency; the
+   ledger's "uncontrollable group promises nothing" case became
+   `test_each_row_agrees_with_the_group_that_speaks_for_it`, which states what the split bought as an
+   invariant over every row rather than as a list of exceptions.
 
-**The trap.** `groupChannelState` returns `"off"` for an empty row list, and a one-member group makes
-the mixed state unreachable — fine, but do not "simplify" the mixed handling away on the strength of
-it; `commitments` still needs it.
+**One thing the spec did not foresee: `groups_desc.team` had become false.** It read "singers'
+responses and the announcement queue waiting to go out — each of these rows answers for itself",
+which described both the departed member and the missing control. Rewritten in all three locales to
+name the three remaining events and their tie to the digest below. The `team` *label* still fits and
+did not move.
+
+**No data migration, as predicted.** No type changed group *default*: `ANNOUNCEMENT_PENDING` was
+already e-mail ON through `_EMAIL_OVERRIDES` and is ON through its new group. Rows minted at the old
+default remain correct — which is exactly the check migration `0014` had to fail before it was
+written.
+
+**The trap, avoided.** `groupChannelState` returns `"off"` for an empty row list, and a one-member
+group makes the mixed state unreachable — the mixed handling is untouched, because `commitments`
+still needs it.
+
+**The DTO dropped `controllable` with the server** rather than keeping it a release. Holding it would
+not have bought a stale cached client anything: `safety_net` is a group id that client has never
+seen, so its label falls back to the raw key regardless. The degradation is cosmetic and survives one
+refresh either way.
 
 ## Open decisions
 

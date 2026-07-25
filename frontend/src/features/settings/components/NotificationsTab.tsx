@@ -258,7 +258,7 @@ export const NotificationsTab: React.FC = () => {
   const [unsubConfirmOpen, setUnsubConfirmOpen] = useState(false);
   // Every group's control is visible from the start — it is the decision the page
   // exists for. The per-event rows behind it open on request, so the ledger reads
-  // as three or four choices rather than a wall of near-synonyms.
+  // as three choices (five for a manager) rather than a wall of near-synonyms.
   const [expanded, setExpanded] = useState<ReadonlySet<NotificationGroupId>>(
     () => new Set<NotificationGroupId>(),
   );
@@ -473,13 +473,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
   // Only when the whole group is off: the sentence speaks for every member, and
   // under a mixed state it would claim silence about events that still e-mail.
   // A partial group is described by its chip and its rows' own markers instead.
-  const showEmailConsequence =
-    group.controllable && group.recommended_email === true && emailState === "off";
-
-  // A group with no control of its own is nothing but its rows, so they are
-  // always open; behind a control, they are the fine grain nobody has to look at.
-  const showRows = expanded || !group.controllable;
-  const showActionBar = group.controllable || hasCustomized;
+  const showEmailConsequence = group.recommended_email && emailState === "off";
 
   const channelLabel = (channel: PreferenceChannel, state: GroupChannelState) =>
     t(
@@ -524,21 +518,16 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
           </div>
         </div>
 
-        {/* An uncontrollable group offers no switch at all — no single answer
-            exists for it, and its rows below carry the decisions individually.
-            The grid simply leaves those columns empty. */}
-        {group.controllable && (
-          <ChannelCells
-            t={t}
-            showPushColumn={showPushColumn}
-            canManagePush={canManagePush}
-            emailState={emailState}
-            pushState={pushState}
-            onToggle={onGroupToggle}
-            emailLabel={channelLabel("email_enabled", emailState)}
-            pushLabel={channelLabel("push_enabled", pushState)}
-          />
-        )}
+        <ChannelCells
+          t={t}
+          showPushColumn={showPushColumn}
+          canManagePush={canManagePush}
+          emailState={emailState}
+          pushState={pushState}
+          onToggle={onGroupToggle}
+          emailLabel={channelLabel("email_enabled", emailState)}
+          pushLabel={channelLabel("push_enabled", pushState)}
+        />
       </div>
 
       {showEmailConsequence && (
@@ -550,59 +539,46 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
         </div>
       )}
 
-      {showActionBar && (
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-ethereal-parchment/30 pt-2">
-          {group.controllable ? (
-            <button
-              type="button"
-              onClick={onToggleExpanded}
-              aria-expanded={expanded}
-              className="flex items-center gap-1.5 rounded-lg px-1 -mx-1 py-1 text-ethereal-graphite/70 hover:text-ethereal-ink transition-colors outline-none focus-visible:ring-2 ring-ethereal-gold/50"
-            >
-              <ChevronDown
-                className={cn(
-                  "w-3.5 h-3.5 transition-transform duration-200",
-                  !expanded && "-rotate-90",
-                )}
-              />
-              <Eyebrow>
-                {expanded
-                  ? t("settings.notifications.details_hide")
-                  : // `n`, not `count` — the number is parenthesised, so no locale
-                    // needs to agree with it and i18next's plural machinery would
-                    // only add suffixed keys nobody writes.
-                    t("settings.notifications.details_show", {
-                      n: group.preferences.length,
-                    })}
-              </Eyebrow>
-            </button>
-          ) : (
-            <span />
-          )}
-
-          {hasCustomized && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onRestore}
-              isLoading={isRestoring}
-              leftIcon={!isRestoring ? <RotateCcw className="w-3.5 h-3.5" /> : undefined}
-            >
-              {t("settings.notifications.restore_recommended")}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {showRows && (
-        <div
-          className={cn(
-            "flex flex-col divide-y divide-ethereal-parchment/30",
-            // An uncontrollable group with nothing customized has no action bar
-            // above it, so the rows carry their own separator.
-            !showActionBar && "mt-3 border-t border-ethereal-parchment/30",
-          )}
+      <div className="mt-3 flex items-center justify-between gap-3 border-t border-ethereal-parchment/30 pt-2">
+        <button
+          type="button"
+          onClick={onToggleExpanded}
+          aria-expanded={expanded}
+          className="flex items-center gap-1.5 rounded-lg px-1 -mx-1 py-1 text-ethereal-graphite/70 hover:text-ethereal-ink transition-colors outline-none focus-visible:ring-2 ring-ethereal-gold/50"
         >
+          <ChevronDown
+            className={cn(
+              "w-3.5 h-3.5 transition-transform duration-200",
+              !expanded && "-rotate-90",
+            )}
+          />
+          <Eyebrow>
+            {expanded
+              ? t("settings.notifications.details_hide")
+              : // `n`, not `count` — the number is parenthesised, so no locale
+                // needs to agree with it and i18next's plural machinery would
+                // only add suffixed keys nobody writes.
+                t("settings.notifications.details_show", {
+                  n: group.preferences.length,
+                })}
+          </Eyebrow>
+        </button>
+
+        {hasCustomized && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onRestore}
+            isLoading={isRestoring}
+            leftIcon={!isRestoring ? <RotateCcw className="w-3.5 h-3.5" /> : undefined}
+          >
+            {t("settings.notifications.restore_recommended")}
+          </Button>
+        )}
+      </div>
+
+      {expanded && (
+        <div className="flex flex-col divide-y divide-ethereal-parchment/30">
           {group.preferences.map((pref) => (
             <PreferenceRow
               key={pref.notification_type}

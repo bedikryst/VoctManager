@@ -4413,6 +4413,7 @@
         "commitments": "Twoje zobowiązania",
         "messages": "Wiadomości",
         "materials": "Materiały i przypomnienia",
+        "safety_net": "Niewysłane ogłoszenia",
         "team": "Operacje zespołu"
       },
       "type_desc": {
@@ -4453,11 +4454,13 @@
         "commitments": "Zaproszenia, zmiany terminów prób i koncertów, Twoje partie oraz decyzje w sprawie Twoich nieobecności.",
         "messages": "Ktoś pisze do Ciebie — odpowiedź w rozmowie albo wiadomość od zarządu.",
         "materials": "Nowe nuty i nagrania oraz przypomnienia tuż przed próbą i koncertem.",
-        "team": "Zgłoszenia od śpiewaków i kolejka ogłoszeń czekająca na wysyłkę. Każdy z tych wierszy odpowiada za siebie."
+        "safety_net": "Jedyne powiadomienie o tym, czego jeszcze nie zrobiono: zmiany czekają w kolejce, a obsada wciąż o nich nie wie. Dlatego trafia też na e-mail.",
+        "team": "Odpowiedzi na zaproszenia, zgłoszenia obecności i prośby o nieobecność. Te same zdarzenia, które zbiera dzienne podsumowanie poniżej."
       },
       "groups_email_off": {
         "commitments": "Nie dostaniesz e-maila, gdy zmieni się termin próby albo koncertu. W aplikacji nadal zobaczysz wszystko — ale tylko wtedy, gdy do niej zajrzysz.",
-        "messages": "Nie dostaniesz e-maila, gdy ktoś do Ciebie napisze. Wiadomość poczeka w aplikacji."
+        "messages": "Nie dostaniesz e-maila, gdy ktoś do Ciebie napisze. Wiadomość poczeka w aplikacji.",
+        "safety_net": "Nie dostaniesz e-maila, gdy kolejka ogłoszeń czeka niewysłana. Przypomnienie zostanie w aplikacji — czyli tam, gdzie dotrze do Ciebie tylko wtedy, gdy i tak do niej zaglądasz."
       },
       "details_show": "Szczegóły ({{n}})",
       "details_hide": "Ukryj szczegóły",
