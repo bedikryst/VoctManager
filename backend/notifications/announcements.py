@@ -32,13 +32,46 @@ from typing import TYPE_CHECKING, Any
 from django.db import transaction
 
 from .announcement_queue import AnnouncementQueue
-from .models import NotificationLevel
+from .models import NotificationLevel, NotificationType
 from .tasks import send_bulk_notifications_task, send_notification_task
 
 if TYPE_CHECKING:
     from roster.models import Project
 
 logger = logging.getLogger(__name__)
+
+# Every event type that may wait in the queue, declared rather than inferred.
+#
+# Two things depend on knowing this set, and neither can derive it from the call
+# sites. A queued event may be folded into a PROJECT_BRIEFING, which is one type
+# carrying several — so every member here has to share one preference group, or
+# the fold would deliver news past a switch the reader had turned off (see
+# NotificationRouter._route_briefing, which enforces that per item, and
+# test_everything_a_briefing_can_carry_shares_one_group, which reads this set).
+# The alternative — a list written out in a test — cannot fail for the case it
+# exists for: a new queued emitter simply would not appear in it.
+QUEUEABLE_TYPES: frozenset[str] = frozenset({
+    NotificationType.PROJECT_UPDATED,
+    NotificationType.REHEARSAL_SCHEDULED,
+    NotificationType.REHEARSAL_UPDATED,
+    NotificationType.PIECE_CASTING_ASSIGNED,
+    NotificationType.PIECE_CASTING_UPDATED,
+})
+
+
+def _assert_queueable(notification_type: str) -> None:
+    """Refuse to queue a type that has not been declared above.
+
+    Loud on purpose, and the same bargain `assert_preference_policy_is_coherent`
+    strikes at boot: an undeclared type would queue, fold and deliver perfectly
+    well while quietly bypassing the group its reader answers for. A new emitter
+    registers itself here or fails the first time it fires.
+    """
+    if notification_type not in QUEUEABLE_TYPES:
+        raise ValueError(
+            f"[{notification_type}] is not declared in QUEUEABLE_TYPES — a queued type "
+            "must share a preference group with everything else a briefing can carry."
+        )
 
 
 def is_announceable(project: Project | None) -> bool:
@@ -118,6 +151,7 @@ def queue_announcement(
     metadata: dict[str, Any] | None = None,
 ) -> None:
     """Hold a change addressed to one artist until the conductor publishes it."""
+    _assert_queueable(notification_type)
     if not is_announceable(project):
         _log_withheld(project, notification_type, 1)
         return
@@ -150,6 +184,7 @@ def queue_broadcast(
     is resolved from the live cast at publish time, so someone who confirms in the
     meantime is included rather than missed.
     """
+    _assert_queueable(notification_type)
     if not is_announceable(project):
         _log_withheld(project, notification_type, None)
         return
