@@ -15,6 +15,8 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.utils import timezone
 
+from notifications.announcement_queue import AnnouncementQueue
+from notifications.dtos import AnnouncementPendingMetadata
 from notifications.models import NotificationLevel, NotificationType
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task
@@ -133,6 +135,9 @@ def generate_score_package_task(self, package_id: str):
 
 def _dispatch_rehearsal_reminders(now) -> int:
     lead = timedelta(hours=getattr(settings, "REHEARSAL_REMINDER_LEAD_HOURS", 24))
+    # Drafts are filtered here rather than after the claim below, so a rehearsal whose
+    # project is published later is still reminded — skipping it must not burn its
+    # one-shot `reminder_sent_at`.
     due = (
         Rehearsal.objects.filter(
             is_deleted=False,
@@ -140,7 +145,7 @@ def _dispatch_rehearsal_reminders(now) -> int:
             date_time__gt=now,
             date_time__lte=now + lead,
         )
-        .exclude(project__status=Project.Status.CANCELLED)
+        .exclude(project__status__in=[Project.Status.CANCELLED, Project.Status.DRAFT])
     )
     ids = list(due.values_list("id", flat=True))
     if not ids:
@@ -204,7 +209,10 @@ def _dispatch_project_reminders(now) -> int:
         reminder_sent_at__isnull=True,
         date_time__gt=now,
         date_time__lte=now + lead,
-        status__in=[Project.Status.DRAFT, Project.Status.ACTIVE],
+        # A draft is invisible to its cast; reminding them of a concert they were
+        # never told about would be the first they hear of it. Filtered before the
+        # claim below so publishing later still leaves the reminder available.
+        status=Project.Status.ACTIVE,
     )
     ids = list(due.values_list("id", flat=True))
     if not ids:
@@ -250,6 +258,69 @@ def _dispatch_project_reminders(now) -> int:
         )
         sent += 1
     return sent
+
+
+# ──────────────────────────────────────────────────────────────────────────── #
+# Unpublished announcement queues                                               #
+# The safety net under the announcement queue: batching only pays if somebody    #
+# eventually presses send. Hourly beat; each project's own fuse and cooldown are  #
+# decided by the queue (see AnnouncementQueue.stale).                             #
+# ──────────────────────────────────────────────────────────────────────────── #
+
+@shared_task(name="roster.dispatch_announcement_nudges")
+def dispatch_announcement_nudges() -> dict:
+    """Tell the managers about queues that have been waiting longer than they should.
+
+    Addressed to every manager rather than to one owner, and that is a consequence
+    of a decision taken twice already: nothing records *who* queued a change
+    (`queued_by` was deferred in Stage 1 and again in Stage 4), and `conductor` is
+    an Artist link, not a permission. Publishing is a manager capability, so an
+    unpublished queue is a manager's responsibility — addressing it to the people
+    who can actually act on it is the honest reading.
+
+    One nudge per project, not one per manager per day. The queue is per project,
+    the fuse is per project, and the action is per project: opening *that* review
+    sheet. Folding several projects into one message would buy a smaller inbox at
+    the price of the one tap that resolves it.
+    """
+    # Imported here, not at module scope: services.py pulls in the whole roster
+    # service layer, and this module is loaded by every Celery worker at startup.
+    from .services import ManagerNotificationHelper
+
+    now = timezone.now()
+    stale = AnnouncementQueue.stale(now)
+    if not stale:
+        return {"nudged": 0}
+
+    # Claim before dispatching, exactly as the reminder sweep does: a second beat
+    # (or a second worker) must not be able to send the same nudge twice. Unlike a
+    # reminder this claim is a cooldown rather than a one-shot, so a dispatch that
+    # then fails costs one cycle instead of the message itself.
+    Project.objects.filter(id__in=[item.project.id for item in stale]).update(
+        announcement_nudged_at=now
+    )
+
+    for item in stale:
+        metadata = AnnouncementPendingMetadata(
+            project_id=item.project.id,
+            project_name=item.project.title,
+            change_count=item.change_count,
+            recipient_count=item.recipient_count,
+            waiting_hours=int((now - item.waiting_since).total_seconds() // 3600),
+        ).model_dump(mode="json")
+
+        ManagerNotificationHelper.notify_managers(
+            notification_type=NotificationType.ANNOUNCEMENT_PENDING,
+            metadata=metadata,
+            level=item.level,
+        )
+
+    logger.info(
+        "[AnnouncementNudge] %d project queue(s) waiting past their fuse: %s",
+        len(stale),
+        ", ".join(str(item.project.id) for item in stale),
+    )
+    return {"nudged": len(stale)}
 
 
 @shared_task(name="roster.dispatch_due_reminders")

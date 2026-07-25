@@ -168,6 +168,15 @@ class Project(EnterpriseBaseModel):
         null=True, blank=True, db_index=True,
         help_text=_("When the automated upcoming-event reminder was dispatched. Null = not yet sent.")
     )
+    announcement_nudged_at = models.DateTimeField(
+        null=True, blank=True, db_index=True,
+        help_text=_(
+            "When the managers were last told this project's announcement queue is "
+            "waiting. Unlike reminder_sent_at this is a cooldown, not a one-shot "
+            "claim: the sweep re-raises a queue that is still sitting, and a short "
+            "fuse on urgent news can break through a stamp left by a calm one."
+        )
+    )
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
     spotify_playlist_url = models.URLField(blank=True, help_text=_("Spotify playlist URL"), verbose_name=_("Spotify Playlist"))
     score_pdf = models.FileField(

@@ -69,9 +69,12 @@ class NotificationService:
         
 class NotificationRecipientPolicy:
     """
-    Enforces the business rule that mass project notifications are delivered
-    exclusively to participants with CON (Confirmed) status.
+    Resolves who a project notification is addressed to.
     Accepts either a Django QuerySet or a plain list of Participation objects.
+
+    Two audiences, and the difference matters: `from_participations` narrows to
+    CON (a report about people who committed), while `in_conversation` is the one
+    to use for anything the cast is *told* about a live project.
     """
 
     @staticmethod
@@ -87,6 +90,32 @@ class NotificationRecipientPolicy:
             for p in participations
             if p.artist_id and p.artist.user_id
         ]
+
+    @staticmethod
+    def in_conversation(participations) -> list[str]:
+        """Everyone a live project's news still concerns: confirmed *and* still
+        deciding, never declined.
+
+        The single rule for the audience of a project announcement, so the queue
+        and the alarms that bypass it (a cancellation) cannot drift apart. They
+        did: cancellations addressed CON only while the queue reached CON+INV, and
+        since publication leaves the whole cast INVITED by mechanism, a concert
+        called off the day after it went live reached nobody at all.
+
+        Someone still weighing the invitation needs the news most — what they are
+        deciding on has changed. A decline ends the conversation.
+        """
+        from django.db.models import QuerySet
+
+        if isinstance(participations, QuerySet):
+            participations = participations.exclude(status='DEC').select_related('artist')
+        else:
+            participations = [
+                p for p in participations if getattr(p, 'status', None) != 'DEC'
+            ]
+        return NotificationRecipientPolicy.from_participations(
+            participations, confirmed_only=False
+        )
 
 
 class NotificationPreferenceService:

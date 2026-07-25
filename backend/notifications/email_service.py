@@ -187,43 +187,57 @@ class EmailDispatcherService:
     @staticmethod
     def _build_ics_attachment(metadata: dict[str, Any]) -> list[tuple[str, str, str]] | None:
         """
-        Builds a localized 'add to calendar' .ics attachment from an `ics` payload
+        Builds a localized 'add to calendar' .ics attachment from the `ics` payload
         in the notification metadata (rehearsal/concert events). Must run inside the
         recipient's translation.override so the event title/description are localized.
+
+        The payload is one event for a single-event notification, or several for a
+        briefing announcing more than one date — in which case they travel as ONE
+        multi-event calendar. Several separate attachments would read as several
+        pieces of news, which is exactly what the briefing exists to prevent.
         """
-        ics = (metadata or {}).get("ics")
-        if not isinstance(ics, dict) or not ics.get("start") or not ics.get("end"):
+        payload = (metadata or {}).get("ics")
+        candidates = payload if isinstance(payload, list) else [payload]
+        entries: list[dict[str, Any]] = [
+            entry for entry in candidates
+            if isinstance(entry, dict) and entry.get("start") and entry.get("end")
+        ]
+        if not entries:
             return None
 
         from django.utils.translation import gettext as _gettext
 
         from core.ical_service import ICalGeneratorService
 
-        project_name = ics.get("project_name") or ""
-        kind = ics.get("kind")
-        label = _gettext("Concert") if kind == "project" else _gettext("Rehearsal")
-        summary = f"[{label}] {project_name}".strip()
+        events = []
+        for entry in entries:
+            project_name = entry.get("project_name") or ""
+            label = (
+                _gettext("Concert") if entry.get("kind") == "project" else _gettext("Rehearsal")
+            )
+            description_parts = []
+            if entry.get("focus"):
+                description_parts.append(f"{_gettext('Focus')}: {entry['focus']}")
+            if project_name:
+                description_parts.append(f"{_gettext('Project')}: {project_name}")
 
-        description_parts = []
-        if ics.get("focus"):
-            description_parts.append(f"{_gettext('Focus')}: {ics['focus']}")
-        if project_name:
-            description_parts.append(f"{_gettext('Project')}: {project_name}")
+            events.append({
+                "uid": entry.get("uid") or "voct-event@voctensemble.com",
+                "summary": f"[{label}] {project_name}".strip(),
+                "start_iso": str(entry["start"]),
+                "end_iso": str(entry["end"]),
+                "location": entry.get("location") or "",
+                "description": "\n".join(description_parts),
+            })
 
         try:
-            content = ICalGeneratorService.build_single_event(
-                uid=ics.get("uid") or "voct-event@voctensemble.com",
-                summary=summary,
-                start_iso=str(ics["start"]),
-                end_iso=str(ics["end"]),
-                location=ics.get("location") or "",
-                description="\n".join(description_parts),
-            )
+            content = ICalGeneratorService.build_events(events)
         except Exception:
             logger.warning("[EmailService] Failed to build .ics attachment.", exc_info=True)
             return None
 
-        return [("invite.ics", content, "text/calendar; charset=utf-8; method=PUBLISH")]
+        filename = "invite.ics" if len(events) == 1 else "schedule.ics"
+        return [(filename, content, "text/calendar; charset=utf-8; method=PUBLISH")]
 
     @classmethod
     def _dispatch_core(

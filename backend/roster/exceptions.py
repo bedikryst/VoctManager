@@ -56,6 +56,24 @@ class ProjectException(RosterDomainException):
     """Raised for invalid project lifecycle operations."""
     pass
 
+class ProjectAlreadyPublishedException(ProjectException):
+    """Raised when publication is attempted on a project that has already left
+    DRAFT. Publication is the moment the cast is told the concert exists, so it
+    happens exactly once — a second run would re-invite people who have already
+    answered. Carries its own code so the client can say so rather than render a
+    generic failure."""
+    code = "project_already_published"
+    default_message = "This project has already been published."
+
+class ProjectUnpublishException(ProjectException):
+    """Raised when a live project is sent back to DRAFT. Publication cannot be
+    taken back — the cast has read the invitation — so a return to draft would
+    only re-open the silence around a concert people are already preparing, and
+    would strand whatever is waiting in the announcement queue. Ending a project
+    is what CANCELLED is for."""
+    code = "project_cannot_unpublish"
+    default_message = "A published project cannot be turned back into a draft."
+
 class CastingValidationException(RosterDomainException):
     """Raised when a piece casting assignment violates domain rules (e.g., non-confirmed participation)."""
     pass

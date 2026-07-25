@@ -151,10 +151,14 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
       program_item.piece.prefetched_tracks  → list[Track]
       program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
     """
+    # Unpublished projects are withheld: the singer has not been told the concert
+    # exists, so its scores and recordings must not surface in their materials
+    # either. The conductor's slice (get_conductor_materials_projects) keeps drafts —
+    # they need the tree they are still assembling.
     base_qs: QuerySet[Participation] = Participation.objects.filter(
         artist__user=user,
         is_deleted=False,
-    )
+    ).exclude(project__status=Project.Status.DRAFT)
 
     # Materialise once: used to build bounded sub-queries.
     # Typical cardinality is <50, so the IN-clause is cheap.

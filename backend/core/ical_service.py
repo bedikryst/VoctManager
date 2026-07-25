@@ -1,4 +1,5 @@
 # core/ical_service.py
+from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 
 from django.utils import timezone
@@ -72,6 +73,24 @@ class ICalGeneratorService:
         attachment. start_iso/end_iso are ISO-8601 timestamps (aware preferred;
         naive is treated as UTC). The caller localizes summary/description.
         """
+        return cls.build_events([{
+            "uid": uid,
+            "summary": summary,
+            "start_iso": start_iso,
+            "end_iso": end_iso,
+            "location": location,
+            "description": description,
+        }])
+
+    @classmethod
+    def build_events(cls, events: Sequence[Mapping[str, str]]) -> str:
+        """
+        Builds one RFC-5545 calendar carrying several events, for an email that
+        announces more than one date. A briefing about five rehearsals attaches
+        this once instead of five separate invites — five attachments read as five
+        pieces of news, which is precisely what the announcement queue exists to
+        avoid. The caller localizes summary/description.
+        """
         def _fmt(iso: str) -> str:
             dt = datetime.fromisoformat(iso)
             if dt.tzinfo is None:
@@ -85,17 +104,20 @@ class ICalGeneratorService:
             "PRODID:-//VoctManager Enterprise//EN",
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
-            "BEGIN:VEVENT",
-            f"UID:{uid}",
-            f"DTSTAMP:{now_utc}",
-            f"DTSTART:{_fmt(start_iso)}",
-            f"DTEND:{_fmt(end_iso)}",
-            f"SUMMARY:{cls._escape_ics_text(summary)}",
-            f"LOCATION:{cls._escape_ics_text(location)}",
-            f"DESCRIPTION:{cls._escape_ics_text(description)}",
-            "END:VEVENT",
-            "END:VCALENDAR",
         ]
+        for event in events:
+            lines.extend([
+                "BEGIN:VEVENT",
+                f"UID:{event['uid']}",
+                f"DTSTAMP:{now_utc}",
+                f"DTSTART:{_fmt(event['start_iso'])}",
+                f"DTEND:{_fmt(event['end_iso'])}",
+                f"SUMMARY:{cls._escape_ics_text(event.get('summary', ''))}",
+                f"LOCATION:{cls._escape_ics_text(event.get('location', ''))}",
+                f"DESCRIPTION:{cls._escape_ics_text(event.get('description', ''))}",
+                "END:VEVENT",
+            ])
+        lines.append("END:VCALENDAR")
         return "\r\n".join(lines)
 
     @classmethod

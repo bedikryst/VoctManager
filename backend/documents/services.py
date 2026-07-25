@@ -324,8 +324,10 @@ class EnsembleDirectoryService:
     (roster.dashboard_serializers.CastingSnippetSerializer).
     """
 
-    # Upcoming / in-prep concerts only — closed and cancelled projects drop off.
-    _OPEN_PROJECT_STATUSES: ClassVar[tuple[str, ...]] = ('DRAFT', 'ACTIVE')
+    # Published, in-prep concerts only. Closed and cancelled projects drop off, and
+    # so do drafts: an unpublished concert has not been announced to its cast, so it
+    # must not reveal who else is singing it.
+    _OPEN_PROJECT_STATUSES: ClassVar[tuple[str, ...]] = ('ACTIVE',)
 
     @classmethod
     def get_ensemble(cls, user: object, request: "Request | None" = None) -> MyEnsembleDTO:

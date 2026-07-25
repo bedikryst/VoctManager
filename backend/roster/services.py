@@ -9,7 +9,7 @@ Encapsulates all database transactions, state mutations, and side-effects.
 Views MUST delegate all business logic to these stateless classes.
 """
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
@@ -17,23 +17,37 @@ from uuid import UUID
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
+from archive.models import Piece
 from core.exceptions import EmailAlreadyInUseException
 from core.models import UserProfile
 from core.services import UserIdentityService
 from logistics.models import Location
+from notifications.announcement_queue import AnnouncementQueue
+from notifications.announcements import (
+    announce,
+    announce_bulk,
+    is_announceable,
+    queue_announcement,
+    queue_broadcast,
+)
 from notifications.dtos import (
     AbsenceStatusMetadata,
     ManagerActionMetadata,
     PieceCastingMetadata,
     ProjectCancelledMetadata,
-    ProjectInvitationMetadata,
     ProjectUpdatedMetadata,
     RehearsalCancelledMetadata,
     RehearsalScheduledMetadata,
     RehearsalUpdatedMetadata,
 )
-from notifications.models import NotificationLevel, NotificationType
+from notifications.models import (
+    AnnouncementKind,
+    AnnouncementSubject,
+    NotificationLevel,
+    NotificationType,
+)
 from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task, send_notification_task
 from notifications.time_metadata import build_event_time_metadata
@@ -41,6 +55,7 @@ from notifications.time_metadata import build_event_time_metadata
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRecordDTO,
+    PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
     ProjectCreateDTO,
@@ -56,7 +71,10 @@ from .exceptions import (
     AttendanceValidationException,
     CastingValidationException,
     ParticipationException,
+    ProjectAlreadyPublishedException,
+    ProjectUnpublishException,
 )
+from .invitations import build_invitation_context, build_invitation_metadata
 from .models import (
     DEFAULT_EVENT_TIMEZONE,
     Artist,
@@ -64,6 +82,7 @@ from .models import (
     CrewAssignment,
     Participation,
     PieceReadiness,
+    ProgramItem,
     Project,
     ProjectPieceCasting,
     Rehearsal,
@@ -113,6 +132,45 @@ def _change(field: str, old: object, new: object) -> dict[str, str | None]:
     `old`/`new` are language-neutral display values. The human label is resolved
     per language at render time (push/email composer + in-app NotificationItem)."""
     return {"field": field, "old": _format_change_value(old), "new": _format_change_value(new)}
+
+
+# One sentence for both casting paths (single assignment and the whole board), so
+# the singer-facing rule reads identically wherever it is enforced.
+DECLINED_CASTING_MESSAGE = _(
+    "Cannot assign artist to a voice line: the artist declined this project."
+)
+
+
+def _casting_metadata(
+    casting: ProjectPieceCasting,
+    project: Project,
+    changes: list[dict[str, str | None]] | None = None,
+) -> dict[str, Any]:
+    """Payload for an announcement about a seat the singer still holds."""
+    return PieceCastingMetadata(
+        piece_id=casting.piece_id,
+        piece_title=casting.piece.title,
+        # Language-neutral CODE — localized per surface at render time.
+        voice_line=casting.voice_line,
+        project_id=project.id,
+        project_name=project.title,
+        **build_event_time_metadata(
+            project.date_time,
+            project.timezone,
+            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+        ),
+        changes=changes,
+    ).model_dump(mode="json")
+
+
+def _casting_removed_metadata(piece_title: str, project: Project) -> dict[str, Any]:
+    """Payload for a seat that no longer exists — no voice line, nothing to open."""
+    return PieceCastingMetadata(
+        piece_title=piece_title,
+        project_id=project.id,
+        project_name=project.title,
+        event="removed",
+    ).model_dump(mode="json")
 
 
 class ArtistHRService:
@@ -374,6 +432,159 @@ class ArtistHRService:
             logger.info(f"Artist {artist.email} restored and user access granted.")
 
 
+class ProjectPublicationService:
+    """The one act that takes a project out of silence.
+
+    While a project is a DRAFT nothing reaches its cast (see
+    notifications/announcements.py). Publication is therefore not a status field
+    the conductor happens to flip — it is the moment every invited singer learns
+    the concert exists, and the only message they get before deciding whether to
+    sing it. It runs through here so the preview the conductor is shown and the
+    fan-out that follows are computed by the same code.
+    """
+
+    # Language-neutral codes; the client localizes them. These are warnings, never
+    # blockers: an incomplete project may still be a deliberate publication (a date
+    # announced before the programme is settled), and refusing it would put this
+    # service in charge of an editorial decision that is the conductor's.
+    _WARNING_NO_CAST = "no_cast"
+    _WARNING_NO_REHEARSALS = "no_rehearsals"
+    _WARNING_NO_PROGRAM = "no_program"
+    _WARNING_NO_LOCATION = "no_location"
+    _WARNING_UNREACHABLE = "unreachable_artists"
+
+    @staticmethod
+    def preview(project: Project) -> dict[str, Any]:
+        """What publishing this project would do, without doing it.
+
+        Publication is irreversible in the only sense that matters — a message
+        cannot be recalled — so the conductor sees the recipients and the gaps
+        first.
+        """
+        participations = list(
+            Participation.objects.filter(project=project, is_deleted=False)
+            .select_related("artist")
+            .order_by("artist__last_name", "artist__first_name")
+        )
+        addressable = [
+            participation for participation in participations
+            if participation.status == Participation.Status.INVITED
+        ]
+        unreachable = [
+            participation for participation in addressable
+            if not participation.artist.user_id
+        ]
+
+        warnings: list[str] = []
+        if not participations:
+            warnings.append(ProjectPublicationService._WARNING_NO_CAST)
+        if not Rehearsal.objects.filter(project=project).exists():
+            warnings.append(ProjectPublicationService._WARNING_NO_REHEARSALS)
+        if not ProgramItem.objects.filter(project=project).exists():
+            warnings.append(ProjectPublicationService._WARNING_NO_PROGRAM)
+        if project.location_id is None:
+            warnings.append(ProjectPublicationService._WARNING_NO_LOCATION)
+        if unreachable:
+            warnings.append(ProjectPublicationService._WARNING_UNREACHABLE)
+
+        return {
+            "project_id": str(project.id),
+            "status": project.status,
+            # Already-published projects are reported rather than rejected, so the
+            # client can render the reason instead of an error.
+            "is_publishable": project.status == Project.Status.DRAFT,
+            "recipient_count": len(addressable) - len(unreachable),
+            "recipients": [
+                {
+                    "participation_id": str(participation.id),
+                    "artist_name": (
+                        f"{participation.artist.first_name} "
+                        f"{participation.artist.last_name}"
+                    ).strip(),
+                    "is_reachable": bool(participation.artist.user_id),
+                }
+                for participation in addressable
+            ],
+            # Confirmed and declined participations are deliberately not addressed
+            # (see send_invitations); surfacing the count keeps the conductor from
+            # reading a smaller recipient list as a bug.
+            "skipped_count": len(participations) - len(addressable),
+            "warnings": warnings,
+        }
+
+    @staticmethod
+    def publish(project: Project) -> Project:
+        """Take the project live and invite everyone still awaiting an answer."""
+        if project.status != Project.Status.DRAFT:
+            raise ProjectAlreadyPublishedException(
+                _("Only a draft can be published; this project is already live.")
+            )
+
+        with transaction.atomic():
+            project.status = Project.Status.ACTIVE
+            project.save(update_fields=["status", "updated_at"])
+            ProjectPublicationService.send_invitations(project)
+
+        logger.info("Project '%s' published; invitations dispatched.", project.title)
+        return project
+
+    @staticmethod
+    def send_invitations(
+        project: Project,
+        participations: Sequence[Participation] | None = None,
+    ) -> int:
+        """Fan the full invitation out, and return how many were dispatched.
+
+        Called with no participations it addresses everyone still awaiting an
+        answer — the publication fan-out. Called with one it is the same message
+        for a singer added to an already-live project: for them the whole project
+        is news, so they get the full picture rather than the bare concert date
+        the rest of the cast has long since read.
+
+        Confirmed and declined participations are never addressed: a confirmed
+        singer has already accepted (the project creator is auto-confirmed on
+        their own project) and a declined one has answered. Both would read a
+        fresh invitation as a mistake.
+        """
+        if not is_announceable(project):
+            # `announce` withholds each of these anyway; returning here keeps the
+            # context queries off every participation write on a draft.
+            return 0
+
+        if participations is None:
+            participations = list(
+                Participation.objects.filter(
+                    project=project,
+                    is_deleted=False,
+                    status=Participation.Status.INVITED,
+                ).select_related(
+                    "artist", "project", "project__location", "project__conductor"
+                )
+            )
+        else:
+            participations = [
+                participation for participation in participations
+                if participation.status == Participation.Status.INVITED
+            ]
+        if not participations:
+            return 0
+
+        context = build_invitation_context(project)
+        dispatched = 0
+        for participation in participations:
+            if not participation.artist.user_id:
+                continue
+            announce(
+                project=project,
+                recipient_id=str(participation.artist.user_id),
+                notification_type=NotificationType.PROJECT_INVITATION,
+                level=NotificationLevel.INFO,
+                metadata=build_invitation_metadata(participation, context),
+            )
+            dispatched += 1
+        return dispatched
+
+
 class ProjectManagementService:
     """Service handling the lifecycle of concert projects and artist participations."""
 
@@ -411,8 +622,6 @@ class ProjectManagementService:
         "call_time": "call_time", "status": "status", "conductor": "conductor",
         "dress_code_male": "dress_code", "dress_code_female": "dress_code",
     }
-    # A change to any of these fields is time-critical → escalate to URGENT.
-    _PROJECT_URGENT_FIELDS: ClassVar[frozenset[str]] = frozenset({"date_time", "call_time"})
 
     @staticmethod
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
@@ -425,6 +634,18 @@ class ProjectManagementService:
         )
         if 'run_sheet' in dto.model_fields_set:
             update_data['run_sheet'] = list(dto.run_sheet or ())
+
+        # Leaving DRAFT is the project's publication: the cast has heard nothing so
+        # far, so this save owes them an invitation rather than a field diff.
+        was_draft = project.status == Project.Status.DRAFT
+
+        # Publication is one-way. Sending a live project back to DRAFT would
+        # silence a concert the cast is already preparing for and would leave its
+        # pending announcements unreachable behind the draft gate.
+        if not was_draft and update_data.get('status') == Project.Status.DRAFT:
+            raise ProjectUnpublishException(
+                _("A published project cannot be turned back into a draft.")
+            )
 
         with transaction.atomic():
             # Resolve location and timezone if location_id was provided in the update DTO
@@ -475,26 +696,47 @@ class ProjectManagementService:
 
             project.save()
 
-            qs = Participation.objects.filter(project=project, is_deleted=False)
-            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
+            # A project leaving DRAFT is being published, and publication supersedes
+            # the field diff of the same save: the invitation already carries every
+            # fact the diff would have listed, and the cast has no prior state to
+            # diff against anyway. A draft abandoned or cancelled before it was ever
+            # published stays silent for the same reason — nobody was told it existed.
+            #
+            # The publish endpoint is the intended door and shows a preview first;
+            # this branch is the backstop for a bare status PATCH, so no path can
+            # take a project live and leave its cast uninvited.
+            if was_draft:
+                if project.status == Project.Status.ACTIVE:
+                    ProjectPublicationService.send_invitations(project)
+                return project
 
-            if recipient_ids and changes:
+            if changes:
                 # A move to CANCELLED is an alarm of its own — not one field change
                 # among several. It supersedes any other edit in the same save, so
                 # the cast reads "cancelled" instead of decoding "Status: … → CANC".
+                # It also supersedes the whole pending queue: nothing held back about
+                # a concert that is off is worth publishing afterwards.
                 if project.status == Project.Status.CANCELLED and any(
                     c["field"] == "status" for c in changes
                 ):
+                    AnnouncementQueue.discard(project)
                     cancelled_metadata = ProjectCancelledMetadata(
                         project_id=project.id,
                         project_name=project.title,
                     ).model_dump(mode="json")
-                    transaction.on_commit(lambda: send_bulk_notifications_task.delay(
-                        recipient_ids=recipient_ids,
+                    announce_bulk(
+                        project=project,
+                        # Everyone still in the conversation, not only the
+                        # confirmed: right after publication the whole cast is
+                        # INVITED, and they are precisely the people whose pending
+                        # decision this cancellation answers.
+                        recipient_ids=NotificationRecipientPolicy.in_conversation(
+                            Participation.objects.filter(project=project, is_deleted=False)
+                        ),
                         notification_type=NotificationType.PROJECT_CANCELLED,
                         level=NotificationLevel.URGENT,
                         metadata=cancelled_metadata,
-                    ))
+                    )
                     return project
 
                 # De-duplicate on the structured key (dress_code_male/female both map
@@ -506,42 +748,64 @@ class ProjectManagementService:
                     changes=unique_changes,
                 ).model_dump(mode="json")
 
-                level = (
-                    NotificationLevel.URGENT
-                    if any(c["field"] in ProjectManagementService._PROJECT_URGENT_FIELDS for c in unique_changes)
-                    else NotificationLevel.WARNING
-                )
-
-                transaction.on_commit(lambda: send_bulk_notifications_task.delay(
-                    recipient_ids=recipient_ids,
+                # WARNING is the baseline; the queue escalates the individual rows
+                # that move a time the cast has to keep, so a reschedule that is
+                # reverted before publication loses its urgency with its row.
+                queue_broadcast(
+                    project=project,
+                    subject_type=AnnouncementSubject.PROJECT,
+                    subject_id=str(project.id),
+                    kind=AnnouncementKind.CHANGED,
                     notification_type=NotificationType.PROJECT_UPDATED,
-                    level=level,
-                    metadata=metadata
-                ))
+                    level=NotificationLevel.WARNING,
+                    metadata=metadata,
+                )
 
         return project
 
-    
     @staticmethod
     def delete_participation(participation: Participation) -> None:
+        artist_id = participation.artist_id
         user_id = participation.artist.user_id
-        project_name = participation.project.title
-        
+        project = participation.project
+        project_name = project.title
+
         with transaction.atomic():
             participation.delete()
-            
+
             if user_id:
+                # Whatever was queued about this person's part is moot now — they
+                # are off the cast and it would arrive as news about a project they
+                # can no longer open. Dropped before the removal is queued, so the
+                # row recording it survives.
+                AnnouncementQueue.discard_recipient(project, str(user_id))
+
                 metadata = ProjectUpdatedMetadata(
                     project_name=project_name,
                     event="removed",
                 ).model_dump(mode="json")
 
-                transaction.on_commit(lambda: send_notification_task.delay(
+                # Queued like every other edit, and for the reason the queue exists
+                # at all: a mis-click must be undoable. Told at once, "you're off
+                # the roster" is the one announcement that cannot be taken back, and
+                # re-adding the singer a minute later cannot unsay it. Held, it
+                # cancels out against the re-add and nobody is ever the wiser.
+                #
+                # Published, it never folds into a briefing (see
+                # _STANDALONE_SUBJECTS): this is a message about leaving, not a
+                # bullet under "what's new in Requiem". The subject is the artist
+                # rather than the participation row, because a re-add may create a
+                # fresh one and the two must still cancel.
+                queue_announcement(
+                    project=project,
                     recipient_id=str(user_id),
+                    subject_type=AnnouncementSubject.PARTICIPATION,
+                    subject_id=str(artist_id),
+                    kind=AnnouncementKind.REMOVED,
                     notification_type=NotificationType.PROJECT_UPDATED,
                     level=NotificationLevel.WARNING,
-                    metadata=metadata
-                ))
+                    metadata=metadata,
+                )
     @staticmethod
     def create_or_restore_participation(validated_data: dict[str, Any]) -> Participation:
         """
@@ -570,39 +834,23 @@ class ProjectManagementService:
                 # 2B. CREATE PATH
                 participation = Participation.objects.create(**validated_data)
 
-            # 3. Dispatch Notification (an invitation, whether fresh or restored)
-            if participation.artist.user_id:
-                # Blank when unset → the composer falls back to localized neutral copy
-                # (e.g. "the management team", and it simply omits a missing venue).
-                location_name = participation.project.location.name if participation.project.location else ""
-                inviter_name = (
-                    f"{participation.project.conductor.first_name} {participation.project.conductor.last_name}"
-                    if participation.project.conductor else ""
-                )
+            # 3. Undo a removal that was never announced. Taking someone off a cast
+            # is queued (see delete_participation), so a mis-click put back before
+            # the conductor publishes must leave no trace — the singer is not told
+            # they left, because as far as anyone outside this app is concerned they
+            # never did.
+            AnnouncementQueue.discard_subject(
+                participation.project,
+                AnnouncementSubject.PARTICIPATION,
+                str(participation.artist_id),
+            )
 
-                event_time_metadata = build_event_time_metadata(
-                    participation.project.date_time,
-                    participation.project.timezone,
-                    fallback_timezone=DEFAULT_EVENT_TIMEZONE,
-                )
-
-                metadata = ProjectInvitationMetadata(
-                    project_id=participation.project_id,
-                    project_name=participation.project.title,
-                    participation_id=participation.id,
-                    inviter_name=inviter_name,
-                    **event_time_metadata,
-                    date_range=event_time_metadata["starts_at_display"],
-                    location=location_name,
-                    description=participation.project.description or "",
-                ).model_dump(mode="json")
-                
-                transaction.on_commit(lambda: send_notification_task.delay(
-                    recipient_id=str(participation.artist.user_id),
-                    notification_type=NotificationType.PROJECT_INVITATION,
-                    level=NotificationLevel.INFO,
-                    metadata=metadata
-                ))
+            # 4. Dispatch Notification (an invitation, whether fresh or restored).
+            # On a draft this is withheld — the cast is assembled in silence and every
+            # pending invitation goes out together when the project is published.
+            ProjectPublicationService.send_invitations(
+                participation.project, [participation]
+            )
 
         return participation
     
@@ -700,24 +948,26 @@ class RehearsalOperationsService:
             if invited_participations:
                 rehearsal.invited_participations.set(invited_participations)
 
-            qs = invited_participations if invited_participations else Participation.objects.filter(project=rehearsal.project, is_deleted=False)
-            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
+            metadata = RehearsalScheduledMetadata(
+                rehearsal_id=rehearsal.id,
+                project_id=rehearsal.project_id,
+                project_name=rehearsal.project.title,
+                **_rehearsal_notification_context(rehearsal),
+            ).model_dump(mode="json")
+            metadata["ics"] = _rehearsal_ics_payload(rehearsal)
 
-            if recipient_ids:
-                metadata = RehearsalScheduledMetadata(
-                    rehearsal_id=rehearsal.id,
-                    project_id=rehearsal.project_id,
-                    project_name=rehearsal.project.title,
-                    **_rehearsal_notification_context(rehearsal),
-                ).model_dump(mode="json")
-                metadata["ics"] = _rehearsal_ics_payload(rehearsal)
-
-                transaction.on_commit(lambda: send_bulk_notifications_task.delay(
-                    recipient_ids=recipient_ids,
-                    notification_type=NotificationType.REHEARSAL_SCHEDULED,
-                    level=NotificationLevel.INFO,
-                    metadata=metadata
-                ))
+            # No recipients are resolved here: a sectional's audience is read off
+            # the rehearsal when the queue is published, so singers invited to it
+            # later are still reached by this same announcement.
+            queue_broadcast(
+                project=rehearsal.project,
+                subject_type=AnnouncementSubject.REHEARSAL,
+                subject_id=str(rehearsal.id),
+                kind=AnnouncementKind.CREATED,
+                notification_type=NotificationType.REHEARSAL_SCHEDULED,
+                level=NotificationLevel.INFO,
+                metadata=metadata,
+            )
         return rehearsal
 
     # Stable, localizable change keys (not English labels). `is_mandatory` is
@@ -764,13 +1014,7 @@ class RehearsalOperationsService:
             if invited_participations is not None:
                 rehearsal.invited_participations.set(invited_participations)
 
-            qs = rehearsal.invited_participations.all()
-            if not qs.exists():
-                qs = Participation.objects.filter(project=rehearsal.project, is_deleted=False)
-
-            recipient_ids = NotificationRecipientPolicy.from_participations(qs)
-
-            if recipient_ids and changes:
+            if changes:
                 metadata = RehearsalUpdatedMetadata(
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
@@ -780,43 +1024,64 @@ class RehearsalOperationsService:
                 ).model_dump(mode="json")
                 metadata["ics"] = _rehearsal_ics_payload(rehearsal)
 
-                level = NotificationLevel.URGENT if any(c["field"] == "date_time" for c in changes) else NotificationLevel.WARNING
-                
-                transaction.on_commit(lambda: send_bulk_notifications_task.delay(
-                    recipient_ids=recipient_ids,
+                # WARNING is the baseline; a move of `date_time` is escalated per
+                # row by the queue, which owns that rule for every field diff.
+                queue_broadcast(
+                    project=rehearsal.project,
+                    subject_type=AnnouncementSubject.REHEARSAL,
+                    subject_id=str(rehearsal.id),
+                    kind=AnnouncementKind.CHANGED,
                     notification_type=NotificationType.REHEARSAL_UPDATED,
-                    level=level,
-                    metadata=metadata
-                ))
+                    level=NotificationLevel.WARNING,
+                    metadata=metadata,
+                )
         return rehearsal
 
     @staticmethod
     def delete_rehearsal(rehearsal: Rehearsal) -> None:
-        qs = rehearsal.invited_participations.all()
+        qs = rehearsal.invited_participations.filter(is_deleted=False)
         if not qs.exists():
             qs = Participation.objects.filter(project=rehearsal.project, is_deleted=False)
 
-        recipient_ids = NotificationRecipientPolicy.from_participations(qs)
-        project_name = rehearsal.project.title
+        # Same audience the queue would have reached with this rehearsal's
+        # creation or move (AnnouncementQueue.recipients_for): telling only the
+        # confirmed that it is off would leave everyone still deciding holding a
+        # date that no longer exists.
+        recipient_ids = NotificationRecipientPolicy.in_conversation(qs)
+        project = rehearsal.project
+        project_name = project.title
         metadata_context = _rehearsal_notification_context(rehearsal)
-        
+
+        # A rehearsal that was scheduled but never announced is cancelled in
+        # silence — nobody was told it existed, so its removal is not news. Either
+        # way its pending rows go: the cancellation supersedes every edit made to
+        # it, and a queued announcement about a rehearsal that no longer exists
+        # would resolve to nothing at publish time.
+        never_announced = AnnouncementQueue.has_unannounced_creation(
+            project, AnnouncementSubject.REHEARSAL, str(rehearsal.id)
+        )
+
         with transaction.atomic():
             rehearsal.delete()
-            
-            if recipient_ids:
+            AnnouncementQueue.discard_subject(
+                project, AnnouncementSubject.REHEARSAL, str(rehearsal.id)
+            )
+
+            if recipient_ids and not never_announced:
                 metadata = RehearsalCancelledMetadata(
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
                     project_name=project_name,
                     **metadata_context,
                 ).model_dump(mode="json")
-                
-                transaction.on_commit(lambda: send_bulk_notifications_task.delay(
+
+                announce_bulk(
+                    project=project,
                     recipient_ids=recipient_ids,
                     notification_type=NotificationType.REHEARSAL_CANCELLED,
                     level=NotificationLevel.URGENT,
-                    metadata=metadata
-                ))
+                    metadata=metadata,
+                )
 
     @staticmethod
     def record_attendance(dto: AttendanceRecordDTO) -> Attendance:
@@ -913,6 +1178,37 @@ class RehearsalOperationsService:
 
 class ParticipationService:
     @staticmethod
+    def update_by_manager(
+        participation: Participation, changes: Mapping[str, Any]
+    ) -> Participation:
+        """Apply a manager's edit to one seat in the cast.
+
+        Mostly contractual (a fee, a note), but one transition is an act rather
+        than a field: **moving someone back to INVITED asks them again.** That is
+        what the cast tab does when a singer who declined is re-added, and until
+        the invitation follows it, the project simply reappears in their schedule
+        with nobody ever having put the question. On a draft this is a no-op — the
+        whole cast is invited together at publication — so the invitation only
+        goes out on a project that is already speaking.
+
+        Every other status the manager can set is administrative and stays silent:
+        answering CONFIRMED or DECLINED *for* someone is not a message to them.
+        """
+        was_invited = participation.status == Participation.Status.INVITED
+
+        with transaction.atomic():
+            for attr, value in dict(changes).items():
+                setattr(participation, attr, value)
+            participation.save()
+
+            if not was_invited and participation.status == Participation.Status.INVITED:
+                ProjectPublicationService.send_invitations(
+                    participation.project, [participation]
+                )
+
+        return participation
+
+    @staticmethod
     def update_status_by_artist(participation: Participation, new_status: str) -> Participation:
         with transaction.atomic():
             old_status = participation.status
@@ -1003,42 +1299,36 @@ class PieceReadinessService:
 
 
 class CastingAndCrewService:
+    # The three columns of a divisi seat. Everything the board can edit, and
+    # therefore everything a save may have to diff and announce.
+    _BOARD_FIELDS: ClassVar[tuple[str, ...]] = ("voice_line", "gives_pitch", "notes")
+
     @staticmethod
     def assign_piece_casting(validated_data: dict[str, Any]) -> ProjectPieceCasting:
         participation = validated_data.get('participation')
-        if participation and participation.status != Participation.Status.CONFIRMED:
-            raise CastingValidationException(
-                f"Cannot assign artist to a voice line: participation status is "
-                f"'{participation.status}', expected '{Participation.Status.CONFIRMED}'. "
-                f"Only confirmed (CON) participants may be cast."
-            )
+        # Casting is a plan, not a record of consent: the conductor decides who sings
+        # which line before the singers answer — and on a draft nobody has even been
+        # asked yet. Only a decline is a genuine mistake to block, because that seat
+        # is known to be empty.
+        if participation and participation.status == Participation.Status.DECLINED:
+            raise CastingValidationException(DECLINED_CASTING_MESSAGE)
 
         with transaction.atomic():
             casting = ProjectPieceCasting.objects.create(**validated_data)
             user_id = casting.participation.artist.user_id
-            
+
             if user_id:
                 project = casting.participation.project
-                metadata = PieceCastingMetadata(
-                    piece_id=casting.piece_id,
-                    piece_title=casting.piece.title,
-                    # Language-neutral CODE — localized per surface at render time.
-                    voice_line=casting.voice_line,
-                    project_id=project.id,
-                    project_name=project.title,
-                    **build_event_time_metadata(
-                        project.date_time,
-                        project.timezone,
-                        fallback_timezone=DEFAULT_EVENT_TIMEZONE,
-                    ),
-                ).model_dump(mode="json")
-
-                transaction.on_commit(lambda: send_notification_task.delay(
+                queue_announcement(
+                    project=project,
                     recipient_id=str(user_id),
+                    subject_type=AnnouncementSubject.CASTING,
+                    subject_id=str(casting.piece_id),
+                    kind=AnnouncementKind.CREATED,
                     notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
                     level=NotificationLevel.INFO,
-                    metadata=metadata
-                ))
+                    metadata=_casting_metadata(casting, project),
+                )
         return casting
 
     @staticmethod
@@ -1057,31 +1347,22 @@ class CastingAndCrewService:
             user_id = casting.participation.artist.user_id
             if user_id and changes:
                 project = casting.participation.project
-                metadata = PieceCastingMetadata(
-                    piece_id=casting.piece_id,
-                    piece_title=casting.piece.title,
-                    voice_line=casting.voice_line,
-                    project_id=project.id,
-                    project_name=project.title,
-                    **build_event_time_metadata(
-                        project.date_time,
-                        project.timezone,
-                        fallback_timezone=DEFAULT_EVENT_TIMEZONE,
-                    ),
-                    changes=changes,
-                ).model_dump(mode="json")
-                
-                transaction.on_commit(lambda: send_notification_task.delay(
+                queue_announcement(
+                    project=project,
                     recipient_id=str(user_id),
+                    subject_type=AnnouncementSubject.CASTING,
+                    subject_id=str(casting.piece_id),
+                    kind=AnnouncementKind.CHANGED,
                     notification_type=NotificationType.PIECE_CASTING_UPDATED,
                     level=NotificationLevel.INFO,
-                    metadata=metadata
-                ))
+                    metadata=_casting_metadata(casting, project, changes),
+                )
         return casting
 
     @staticmethod
     def delete_piece_casting(casting: ProjectPieceCasting) -> None:
         user_id = casting.participation.artist.user_id
+        piece_id = casting.piece_id
         piece_title = casting.piece.title
         project = casting.participation.project
 
@@ -1089,19 +1370,176 @@ class CastingAndCrewService:
             casting.delete()
 
             if user_id:
-                metadata = PieceCastingMetadata(
-                    piece_title=piece_title,
-                    project_id=project.id,
-                    project_name=project.title,
-                    event="removed",
-                ).model_dump(mode="json")
-                
-                transaction.on_commit(lambda: send_notification_task.delay(
+                queue_announcement(
+                    project=project,
                     recipient_id=str(user_id),
+                    subject_type=AnnouncementSubject.CASTING,
+                    subject_id=str(piece_id),
+                    kind=AnnouncementKind.REMOVED,
                     notification_type=NotificationType.PIECE_CASTING_UPDATED,
                     level=NotificationLevel.WARNING,
-                    metadata=metadata
-                ))
+                    metadata=_casting_removed_metadata(piece_title, project),
+                )
+
+    @staticmethod
+    def save_piece_board(
+        *,
+        project: Project,
+        piece: Piece,
+        rows: Sequence[PieceCastingRowDTO],
+    ) -> list[ProjectPieceCasting]:
+        """Reconcile one piece's divisi board against what the conductor submitted.
+
+        The payload is the board, not a list of edits: rows that are absent are
+        deleted, rows that are new are created, rows that differ are updated. That
+        is what collapses a Save into one request and — because each singer can
+        hold at most one seat per piece — into at most one announcement each,
+        instead of one per drag.
+
+        Last save wins. Two managers editing the same piece at once will overwrite
+        each other rather than merge; the board is a single-editor surface and the
+        alternative (per-row edits) is exactly the flood this replaces.
+
+        Returns the resulting board, ordered for display.
+        """
+        participations = {
+            participation.id: participation
+            for participation in Participation.objects.filter(
+                project=project, is_deleted=False
+            ).select_related("artist")
+        }
+        if any(row.participation not in participations for row in rows):
+            raise CastingValidationException(
+                _("Cannot cast an artist who is not a participant of this project.")
+            )
+
+        # Castings hanging off a soft-deleted participation are deliberately out of
+        # scope: they are not on the board, so a save must not silently reap them.
+        existing: dict[UUID, list[ProjectPieceCasting]] = {}
+        for casting in ProjectPieceCasting.objects.filter(
+            piece=piece,
+            participation__project=project,
+            participation__is_deleted=False,
+        ).select_related("piece"):
+            existing.setdefault(casting.participation_id, []).append(casting)
+
+        to_create: list[PieceCastingRowDTO] = []
+        to_update: list[tuple[ProjectPieceCasting, PieceCastingRowDTO, list[dict[str, str | None]]]] = []
+        # Two kinds of deletion, and only one of them is news: a seat the conductor
+        # emptied (the singer is no longer cast) versus a duplicate row for a singer
+        # who keeps their seat — nothing changed for them, so nobody is told.
+        emptied: list[ProjectPieceCasting] = []
+        superseded: list[ProjectPieceCasting] = []
+
+        for row in rows:
+            held = existing.pop(row.participation, [])
+            if not held:
+                to_create.append(row)
+                continue
+            casting, *duplicates = held
+            superseded.extend(duplicates)
+            changes = [
+                _change(field, getattr(casting, field), getattr(row, field))
+                for field in CastingAndCrewService._BOARD_FIELDS
+                if getattr(casting, field) != getattr(row, field)
+            ]
+            if changes:
+                to_update.append((casting, row, changes))
+
+        for orphaned in existing.values():
+            emptied.extend(orphaned)
+
+        # Same rule as the single-casting path, applied to what this save actually
+        # touches: a declined seat cannot be filled or moved. An untouched row for
+        # someone who declined after being cast stays — that hole has to remain
+        # visible to the conductor rather than quietly reading as filled.
+        touched = [row.participation for row in to_create]
+        touched += [casting.participation_id for casting, _row, _changes in to_update]
+        if any(
+            participations[participation_id].status == Participation.Status.DECLINED
+            for participation_id in touched
+        ):
+            raise CastingValidationException(DECLINED_CASTING_MESSAGE)
+
+        with transaction.atomic():
+            for casting in (*emptied, *superseded):
+                casting.delete()
+
+            for casting, row, _changes in to_update:
+                for field in CastingAndCrewService._BOARD_FIELDS:
+                    setattr(casting, field, getattr(row, field))
+                casting.save(update_fields=list(CastingAndCrewService._BOARD_FIELDS))
+
+            created = [
+                ProjectPieceCasting.objects.create(
+                    participation=participations[row.participation],
+                    piece=piece,
+                    voice_line=row.voice_line,
+                    gives_pitch=row.gives_pitch,
+                    notes=row.notes,
+                )
+                for row in to_create
+            ]
+
+            if is_announceable(project):
+                for casting in created:
+                    CastingAndCrewService._queue_casting(
+                        project, participations[casting.participation_id], piece.id,
+                        AnnouncementKind.CREATED,
+                        NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO,
+                        _casting_metadata(casting, project),
+                    )
+                for casting, _row, changes in to_update:
+                    CastingAndCrewService._queue_casting(
+                        project, participations[casting.participation_id], piece.id,
+                        AnnouncementKind.CHANGED,
+                        NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.INFO,
+                        _casting_metadata(casting, project, changes),
+                    )
+                for casting in emptied:
+                    CastingAndCrewService._queue_casting(
+                        project, participations[casting.participation_id], piece.id,
+                        AnnouncementKind.REMOVED,
+                        NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.WARNING,
+                        _casting_removed_metadata(casting.piece.title, project),
+                    )
+
+        return list(
+            ProjectPieceCasting.objects
+            .filter(piece=piece, participation__project=project, participation__is_deleted=False)
+            .select_related("piece", "participation__artist")
+            .order_by("voice_line", "participation__artist__last_name")
+        )
+
+    @staticmethod
+    def _queue_casting(
+        project: Project,
+        participation: Participation,
+        piece_id: UUID,
+        kind: str,
+        notification_type: str,
+        level: str,
+        metadata: dict[str, Any],
+    ) -> None:
+        """Queue one singer's own seat, if there is an account to tell.
+
+        The piece is the subject, the singer the recipient: two singers moved on
+        the same piece are two announcements, while one singer moved twice on it
+        is one.
+        """
+        user_id = participation.artist.user_id
+        if not user_id:
+            return
+        queue_announcement(
+            project=project,
+            recipient_id=str(user_id),
+            subject_type=AnnouncementSubject.CASTING,
+            subject_id=str(piece_id),
+            kind=kind,
+            notification_type=notification_type,
+            level=level,
+            metadata=metadata,
+        )
 
     @staticmethod
     def assign_crew(validated_data: dict[str, Any]) -> CrewAssignment:

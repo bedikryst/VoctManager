@@ -276,6 +276,13 @@ CELERY_RESULT_SERIALIZER = 'json'
 REHEARSAL_REMINDER_LEAD_HOURS = env.int('REHEARSAL_REMINDER_LEAD_HOURS', default=24)
 PROJECT_REMINDER_LEAD_HOURS = env.int('PROJECT_REMINDER_LEAD_HOURS', default=48)
 
+# How long a project's announcement queue may sit before the managers are told it
+# is waiting — and how long before the same queue is raised again. Two fuses: news
+# about *when* people have to be somewhere goes stale the moment they have left for
+# the old time, so it cannot wait out a full day like a dress code can.
+ANNOUNCEMENT_NUDGE_HOURS = env.int('ANNOUNCEMENT_NUDGE_HOURS', default=24)
+ANNOUNCEMENT_NUDGE_URGENT_HOURS = env.int('ANNOUNCEMENT_NUDGE_URGENT_HOURS', default=4)
+
 # Scheduled tasks — requires the `celery beat` process to be running alongside
 # the worker. Hourly sweeps: fail out abandoned PENDING donations; remind
 # participants of upcoming rehearsals/concerts.
@@ -298,6 +305,13 @@ CELERY_BEAT_SCHEDULE = {
     },
     'roster-dispatch-due-reminders': {
         'task': 'roster.dispatch_due_reminders',
+        'schedule': timedelta(hours=1),
+    },
+    # Hourly, but each project's own fuse and cooldown decide whether anything is
+    # actually said — this is the sweep that stops the announcement queue becoming
+    # the place news quietly dies.
+    'roster-dispatch-announcement-nudges': {
+        'task': 'roster.dispatch_announcement_nudges',
         'schedule': timedelta(hours=1),
     },
     # Hourly; each recipient's digest_hour gates the actual send to once a day.
