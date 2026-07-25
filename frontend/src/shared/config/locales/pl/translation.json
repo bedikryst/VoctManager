@@ -3266,7 +3266,8 @@
       },
       "mobile": {
         "assigned": "Obsada",
-        "available": "Baza"
+        "available": "Baza",
+        "switch_aria": "Przełącz listę obsady"
       },
       "search_placeholder": "Szukaj artysty...",
       "sections": {
@@ -3289,7 +3290,7 @@
         "hire_label": "Zatrudnij z bazy",
         "role_label": "Rola na tym koncercie",
         "role_placeholder": "np. Akustyk FOH",
-        "select_placeholder": "— Wybierz współpracownika —",
+        "select_placeholder": "Wybierz współpracownika",
         "submit": "Przypisz",
         "title": "Dodaj do zespołu"
       },
@@ -3376,7 +3377,11 @@
       },
       "placeholders": {
         "description": "np. Proszę o punktualność...",
-        "spotify": "Wklej link do playlisty z referencjami..."
+        "spotify": "Wklej link do playlisty z referencjami...",
+        "location": "Wybierz zapisaną lokalizację",
+        "location_clear": "Bez lokalizacji",
+        "conductor": "Wybierz dyrygenta",
+        "conductor_clear": "Bez dyrygenta"
       },
       "run_sheet": {
         "description": "Opis (opcjonalny)",
@@ -3699,7 +3704,7 @@
         "focus": "Plan Próby / Repertuar (Focus)",
         "focus_placeholder": "np. Requiem cz. 1-3...",
         "location": "Lokalizacja (Sala) *",
-        "location_placeholder": "np. Sala 102, Akademia",
+        "location_placeholder": "Wybierz salę",
         "mandatory": "Obecność obowiązkowa dla wezwanych",
         "submit": "Zapisz w kalendarzu",
         "timezone": "Strefa czasowa",

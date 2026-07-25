@@ -16,10 +16,10 @@ import {
   useProjectRehearsals,
   useProjectParticipations,
 } from "../../api/project.read.queries";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import {
@@ -63,7 +63,7 @@ export const RehearsalsWidget = ({
   );
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.rehearsals.upcoming", "Najbliższe Próby")}
       icon={<Calendar size={15} aria-hidden="true" />}
       onActivate={onEdit}
@@ -71,7 +71,7 @@ export const RehearsalsWidget = ({
       bodyClassName="gap-4"
     >
       {sortedRehearsals.length > 0 ? (
-        <ul className="divide-y divide-ethereal-ink/5">
+        <ul className="divide-y divide-hairline">
             {upcomingRehearsals.map((rehearsal, index) => {
               const invitedCount = rehearsal.invited_participations?.length || 0;
               const isTutti =
@@ -95,7 +95,10 @@ export const RehearsalsWidget = ({
                     />
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <Text as="span" size="sm" weight="medium">
+                        {/* Date and time are one datum and must share a size:
+                            at two different sizes on one baseline the larger
+                            half reads as an emphasis nobody intended. */}
+                        <Text as="span" size="base" weight="medium">
                           {formatLocalizedDate(
                             rehearsal.date_time,
                             { day: "numeric", month: "short" },
@@ -130,10 +133,10 @@ export const RehearsalsWidget = ({
                       {absences > 0 && (
                         <div className="mt-0.5 flex items-center gap-1 text-ethereal-crimson">
                           <UserMinus size={11} aria-hidden="true" />
-                          <Caption color="crimson" weight="bold" className="uppercase tracking-[0.16em]">
+                          <Eyebrow color="crimson">
                             {t("projects.rehearsals.absences_reported", "Zgłoszono braki:")}{" "}
                             {absences}
-                          </Caption>
+                          </Eyebrow>
                         </div>
                       )}
                     </div>
@@ -163,6 +166,6 @@ export const RehearsalsWidget = ({
           </Text>
         </div>
       )}
-    </WidgetCard>
+    </SectionCard>
   );
 };

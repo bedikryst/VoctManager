@@ -3260,7 +3260,8 @@
       },
       "mobile": {
         "assigned": "Distribution",
-        "available": "Base"
+        "available": "Base",
+        "switch_aria": "Changer de liste"
       },
       "search_placeholder": "Rechercher un artiste...",
       "sections": {
@@ -3283,7 +3284,7 @@
         "hire_label": "Recruter depuis la base",
         "role_label": "Rôle pour ce concert",
         "role_placeholder": "ex. ingénieur FOH",
-        "select_placeholder": "— Sélectionner un collaborateur —",
+        "select_placeholder": "Choisir un collaborateur",
         "submit": "Assigner",
         "title": "Ajouter à l'équipe"
       },
@@ -3370,7 +3371,11 @@
       },
       "placeholders": {
         "description": "ex. merci d'être ponctuel...",
-        "spotify": "Collez le lien de la playlist de référence..."
+        "spotify": "Collez le lien de la playlist de référence...",
+        "location": "Choisir un lieu enregistré",
+        "location_clear": "Aucun lieu",
+        "conductor": "Choisir un chef de chœur",
+        "conductor_clear": "Aucun chef de chœur"
       },
       "run_sheet": {
         "description": "Description (optionnelle)",
@@ -3693,7 +3698,7 @@
         "focus": "Plan / Focus de répétition",
         "focus_placeholder": "ex. Requiem pt. 1-3...",
         "location": "Lieu (salle) *",
-        "location_placeholder": "ex. salle 102, académie",
+        "location_placeholder": "Choisir une salle",
         "mandatory": "Présence obligatoire pour les invités",
         "submit": "Enregistrer dans le calendrier",
         "timezone": "Fuseau horaire",

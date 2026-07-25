@@ -13,7 +13,7 @@ import { ArrowDownUp, LayoutGrid, List, ListChecks, Search } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import type { RosterSort, RosterView } from "../hooks/useArtistData";
 
 interface RosterToolbarProps {
@@ -77,7 +77,7 @@ export const RosterToolbar = ({
         </button>
 
         <div className="w-full sm:w-56">
-          <Select
+          <NativeSelect
             variant="solid"
             leftIcon={<ArrowDownUp />}
             aria-label={t("artists.toolbar.sort_label", "Sortuj")}
@@ -93,7 +93,7 @@ export const RosterToolbar = ({
             <option value="skill">
               {t("artists.toolbar.sort_skill", "Czytanie a vista")}
             </option>
-          </Select>
+          </NativeSelect>
         </div>
 
         <div

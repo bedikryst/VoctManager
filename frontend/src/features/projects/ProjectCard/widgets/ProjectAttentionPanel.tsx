@@ -30,8 +30,8 @@ import {
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import {
   useProjectRehearsals,
   useProjectParticipations,
@@ -196,24 +196,24 @@ export const ProjectAttentionPanel = ({
   const HeaderIcon = isClear ? CheckCircle2 : AlertTriangle;
 
   return (
-    <GlassCard variant="solid" padding="none" isHoverable={false} className="flex flex-col">
-      <header className="flex items-center gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
+    <SectionCard
+      bodyClassName="p-0"
+      title={t("projects.overview.attention.title", "Wymaga uwagi")}
+      icon={
         <span
           className={cn(
-            "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border",
+            "flex h-8 w-8 items-center justify-center rounded-control border",
             headerToneClass,
           )}
-          aria-hidden="true"
         >
           <HeaderIcon size={16} />
         </span>
-        <Eyebrow as="h3" color="graphite" className="flex-1 truncate">
-          {t("projects.overview.attention.title", "Wymaga uwagi")}
-        </Eyebrow>
-        {!isClear && (
+      }
+      action={
+        !isClear ? (
           <span
             className={cn(
-              "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums",
+              "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-overline font-bold tabular-nums",
               hasAlarm
                 ? "bg-ethereal-crimson/10 text-ethereal-crimson"
                 : "bg-ethereal-gold/10 text-ethereal-gold",
@@ -221,9 +221,9 @@ export const ProjectAttentionPanel = ({
           >
             {items.length}
           </span>
-        )}
-      </header>
-
+        ) : undefined
+      }
+    >
       {isClear ? (
         <div className="flex items-center gap-3 px-5 py-4">
           <span
@@ -243,7 +243,7 @@ export const ProjectAttentionPanel = ({
           </div>
         </div>
       ) : (
-        <ul className="divide-y divide-ethereal-ink/5">
+        <ul className="divide-y divide-hairline">
           {items.map((item) => {
             const Icon = item.icon;
             return (
@@ -289,6 +289,6 @@ export const ProjectAttentionPanel = ({
           })}
         </ul>
       )}
-    </GlassCard>
+    </SectionCard>
   );
 };

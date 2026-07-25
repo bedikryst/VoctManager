@@ -20,7 +20,7 @@ import {
 
 import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import type { CrewContactCompleteness } from "../types/crew.dto";
 import type { CrewSort, CrewView } from "../hooks/useCrewData";
 
@@ -118,7 +118,7 @@ export const CrewToolbar = ({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Select
+        <NativeSelect
           variant="solid"
           leftIcon={<Building2 />}
           aria-label={t("crew.filters.company_label", "Firma / Marka")}
@@ -134,9 +134,9 @@ export const CrewToolbar = ({
               {company}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
 
-        <Select
+        <NativeSelect
           variant="solid"
           leftIcon={<PhoneCall />}
           aria-label={t("crew.filters.contact_label", "Stan kontaktu")}
@@ -150,9 +150,9 @@ export const CrewToolbar = ({
               {t(option.labelKey, option.defaultLabel)}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
 
-        <Select
+        <NativeSelect
           variant="solid"
           leftIcon={<ArrowDownUp />}
           aria-label={t("crew.toolbar.sort_label", "Sortuj")}
@@ -168,7 +168,7 @@ export const CrewToolbar = ({
           <option value="company">
             {t("crew.toolbar.sort_company", "Firma")}
           </option>
-        </Select>
+        </NativeSelect>
       </div>
     </div>
   );

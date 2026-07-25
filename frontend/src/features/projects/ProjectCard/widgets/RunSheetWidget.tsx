@@ -15,8 +15,8 @@ import { Clock } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface RunSheetWidgetProps {
   project: Project;
@@ -39,14 +39,14 @@ export function RunSheetWidget({
   const overflow = sortedRunSheet.length - DISPLAY_LIMIT;
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
       icon={<Clock size={15} aria-hidden="true" />}
       onActivate={onEdit}
       ariaLabel={t("projects.run_sheet.aria_label", "Zarządzaj harmonogramem dnia")}
     >
       {sortedRunSheet.length > 0 ? (
-        <ul className="relative ml-1 space-y-4 border-l border-ethereal-ink/10 pl-5">
+        <ul className="relative ml-1 space-y-4 border-l border-hairline-strong pl-5">
           {sortedRunSheet.slice(0, DISPLAY_LIMIT).map((item, index) => (
             <li key={item.id || index} className="relative">
               <span
@@ -68,11 +68,11 @@ export function RunSheetWidget({
           ))}
           {overflow > 0 && (
             <li className="relative">
-              <Caption color="muted" weight="bold" className="uppercase tracking-[0.16em]">
+              <Eyebrow color="muted">
                 {t("projects.program.and_more", "...i {{count}} więcej", {
                   count: overflow,
                 })}
-              </Caption>
+              </Eyebrow>
             </li>
           )}
         </ul>
@@ -84,6 +84,6 @@ export function RunSheetWidget({
           </Text>
         </div>
       )}
-    </WidgetCard>
+    </SectionCard>
   );
 }

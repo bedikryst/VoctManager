@@ -16,7 +16,7 @@ import { ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from "lucide-rea
 import type { Composer } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
@@ -143,7 +143,7 @@ export const ArchiveSearchBar = ({
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.composer", "Kompozytor")}
                 </Eyebrow>
-                <Select
+                <NativeSelect
                   value={composerFilter}
                   onChange={(event) => onComposerFilterChange(event.target.value)}
                 >
@@ -155,13 +155,13 @@ export const ArchiveSearchBar = ({
                       {composer.last_name} {composer.first_name || ""}
                     </option>
                   ))}
-                </Select>
+                </NativeSelect>
               </div>
               <div>
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.epoch", "Epoka")}
                 </Eyebrow>
-                <Select
+                <NativeSelect
                   value={epochFilter}
                   onChange={(event) => onEpochFilterChange(event.target.value)}
                 >
@@ -173,13 +173,13 @@ export const ArchiveSearchBar = ({
                       {epoch.label}
                     </option>
                   ))}
-                </Select>
+                </NativeSelect>
               </div>
               <div>
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.voicing", "Obsada")}
                 </Eyebrow>
-                <Select
+                <NativeSelect
                   value={voicingFilter}
                   onChange={(event) => onVoicingFilterChange(event.target.value)}
                 >
@@ -191,7 +191,7 @@ export const ArchiveSearchBar = ({
                       {voicing}
                     </option>
                   ))}
-                </Select>
+                </NativeSelect>
               </div>
             </div>
           </motion.div>

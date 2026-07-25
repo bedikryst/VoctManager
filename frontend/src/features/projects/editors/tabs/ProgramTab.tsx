@@ -42,7 +42,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { Piece } from "@/shared/types";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -213,12 +213,12 @@ function SortablePieceItem({
     <div ref={setNodeRef} style={style}>
       <div
         className={cn(
-          "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-colors",
+          "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
           isDragging
             ? "border-ethereal-gold/40 bg-ethereal-marble shadow-glass-ethereal-hover"
             : item.is_encore
               ? "border-ethereal-amethyst/25 bg-ethereal-amethyst/5"
-              : "border-ethereal-ink/6 bg-ethereal-marble hover:border-ethereal-gold/30",
+              : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
         )}
       >
         <div
@@ -236,7 +236,7 @@ function SortablePieceItem({
             className="text-ethereal-graphite/30 transition-colors group-hover:text-ethereal-gold"
             aria-hidden="true"
           />
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-ethereal-ink/8 bg-ethereal-alabaster text-[10px] font-bold tabular-nums text-ethereal-gold">
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-chip border border-hairline-strong bg-ethereal-alabaster text-[10px] font-bold tabular-nums text-ethereal-gold">
             {index + 1}
           </span>
         </div>
@@ -374,19 +374,13 @@ export const ProgramTab = ({
       />
 
       {/* ── Setlist ───────────────────────────────────────────────────────── */}
-      <GlassCard
-        variant="solid"
-        padding="none"
-        isHoverable={false}
-        className="flex max-h-[70dvh] flex-col lg:col-span-3"
-      >
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <ListOrdered size={15} className="text-ethereal-gold/70" aria-hidden="true" />
-            <Eyebrow as="h2" color="graphite">
-              {t("projects.program.sections.setlist", "Setlista wydarzenia")}
-            </Eyebrow>
-          </div>
+      <SectionCard
+        as="h2"
+        scroll
+        className="max-h-[70dvh] lg:col-span-3"
+        icon={<ListOrdered size={15} aria-hidden="true" />}
+        title={t("projects.program.sections.setlist", "Setlista wydarzenia")}
+        action={
           <div className="flex items-center gap-2">
             <Badge variant="neutral">
               {t("projects.program.badges.tracks_count", "Utworów: {{count}}", {
@@ -399,10 +393,9 @@ export const ProgramTab = ({
               </Badge>
             )}
           </div>
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {programItems.length > 0 ? (
+        }
+      >
+        {programItems.length > 0 ? (
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -454,24 +447,17 @@ export const ProgramTab = ({
               </Text>
             </div>
           )}
-        </div>
-      </GlassCard>
+      </SectionCard>
 
-      {/* ── Composition database (sticky on desktop) ──────────────────────── */}
-      <GlassCard
-        variant="solid"
-        padding="none"
-        isHoverable={false}
-        className="flex max-h-[70dvh] flex-col lg:col-span-2 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-9rem)]"
-      >
-        <header className="flex shrink-0 items-center gap-2.5 border-b border-ethereal-ink/6 px-5 py-3.5">
-          <Library size={15} className="text-ethereal-gold/70" aria-hidden="true" />
-          <Eyebrow as="h2" color="graphite">
-            {t("projects.program.sections.database", "Baza kompozycji")}
-          </Eyebrow>
-        </header>
-
-        <div className="shrink-0 px-5 pt-4">
+      {/*── Composition database (sticky on desktop) ──────────────────────── */}
+      <SectionCard
+        as="h2"
+        scroll
+        className="max-h-[70dvh] lg:col-span-2 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-9rem)]"
+        bodyClassName="space-y-2 pt-4"
+        icon={<Library size={15} aria-hidden="true" />}
+        title={t("projects.program.sections.database", "Baza kompozycji")}
+        toolbar={
           <Input
             type="text"
             placeholder={t(
@@ -482,9 +468,8 @@ export const ProgramTab = ({
             onChange={(event) => setSearchQuery(event.target.value)}
             leftIcon={<Search size={16} aria-hidden="true" />}
           />
-        </div>
-
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-5 pt-4">
+        }
+      >
           {filteredPieces.length > 0 ? (
             filteredPieces.map((piece, index) => {
               const safePieceId = piece.id || `db-piece-${index}`;
@@ -495,10 +480,10 @@ export const ProgramTab = ({
                 <div
                   key={safePieceId}
                   className={cn(
-                    "group flex items-center gap-2.5 rounded-xl border px-2.5 py-2 transition-colors",
+                    "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
                     isAdded
-                      ? "border-ethereal-ink/6 bg-ethereal-alabaster/40 opacity-60"
-                      : "border-ethereal-ink/6 bg-ethereal-marble hover:border-ethereal-gold/30",
+                      ? "border-hairline bg-ethereal-alabaster/40 opacity-60"
+                      : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
                   )}
                 >
                   <div className="flex min-w-0 flex-1 flex-col">
@@ -559,8 +544,7 @@ export const ProgramTab = ({
               </Eyebrow>
             </div>
           )}
-        </div>
-      </GlassCard>
+      </SectionCard>
     </div>
   );
 };

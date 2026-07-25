@@ -505,9 +505,9 @@ const ChangeRow = ({
   return (
     <li
       className={cn(
-        "flex items-start gap-3 rounded-2xl border p-3 transition-colors",
+        "flex items-start gap-3 rounded-nested border p-3 transition-colors",
         held
-          ? "border-ethereal-ink/6 bg-ethereal-ink/2 opacity-55"
+          ? "border-hairline bg-ethereal-ink/2 opacity-55"
           : danger
             ? "border-ethereal-crimson/25 bg-ethereal-crimson/5"
             : "border-ethereal-incense/15 bg-ethereal-alabaster/60",
@@ -566,7 +566,7 @@ const RecipientSummary = ({
 }: RecipientSummaryProps): React.JSX.Element => {
   if (review.message_count === 0) {
     return (
-      <Caption color="muted" className="rounded-2xl bg-ethereal-ink/2 p-3">
+      <Caption color="muted" className="rounded-nested bg-ethereal-ink/2 p-3">
         {t(
           "projects.announce.nothing_leaves",
           "Nic nie wyjdzie — wszystkie zmiany są wstrzymane.",
@@ -592,7 +592,7 @@ const RecipientSummary = ({
       : allNames;
 
   return (
-    <div className="flex flex-col gap-1.5 rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/6 p-3.5">
+    <div className="flex flex-col gap-1.5 rounded-nested border border-ethereal-gold/20 bg-ethereal-gold/6 p-3.5">
       <Text size="sm" weight="medium" color="graphite">
         {t("projects.announce.summary_headline", {
           count: review.message_count,

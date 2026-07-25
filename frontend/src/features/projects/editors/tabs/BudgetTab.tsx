@@ -16,6 +16,7 @@ import { useBudgetTab } from "../hooks/useBudgetTab";
 import { cn } from "@/shared/lib/utils";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import {
@@ -83,9 +84,13 @@ const FeeRow = ({
           isDirty && "border-ethereal-gold! bg-white/50!",
         )}
       />
-      <Text className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-wider text-ethereal-graphite/40">
+      <Eyebrow
+        size="overline-sm"
+        color="muted"
+        className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2"
+      >
         {currencyLabel}
-      </Text>
+      </Eyebrow>
     </div>
   </div>
 );
@@ -134,7 +139,7 @@ export const BudgetTab = ({
               </div>
             </div>
 
-            <div className="flex flex-col border-l border-ethereal-ink/8 pl-6">
+            <div className="flex flex-col border-l border-hairline-strong pl-6">
               <Eyebrow color="muted" className="mb-1">
                 {t("projects.budget.kpi.crew_fees", "Stawki (Ekipa)")}
               </Eyebrow>
@@ -144,7 +149,7 @@ export const BudgetTab = ({
               </div>
             </div>
 
-            <div className="flex flex-col border-l border-ethereal-ink/8 pl-6">
+            <div className="flex flex-col border-l border-hairline-strong pl-6">
               <div className="mb-1 flex items-center gap-1.5">
                 <Eyebrow color="muted">
                   {t("projects.budget.kpi.missing", "Braki")}
@@ -173,7 +178,7 @@ export const BudgetTab = ({
               </div>
             </div>
 
-            <div className="flex flex-col rounded-2xl border border-ethereal-sage/20 bg-ethereal-sage/5 px-5 py-3">
+            <div className="flex flex-col rounded-nested border border-ethereal-sage/20 bg-ethereal-sage/5 px-5 py-3">
               <Eyebrow color="sage" className="mb-1">
                 {t("projects.budget.kpi.total", "Suma Kosztów")}
               </Eyebrow>
@@ -195,29 +200,19 @@ export const BudgetTab = ({
           )}
         >
           {enrichedCast.length > 0 ? (
-            <GlassCard
-              variant="solid"
-              padding="none"
-              isHoverable={false}
-              className="flex max-h-[55dvh] flex-col"
-            >
-              <header className="flex shrink-0 items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Users
-                    size={15}
-                    className="text-ethereal-gold/70"
-                    aria-hidden="true"
-                  />
-                  <Eyebrow as="h2" color="graphite">
-                    {t("projects.budget.sections.cast", "Obsada Wykonawcza")}
-                  </Eyebrow>
-                </div>
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[55dvh]"
+              bodyClassName="divide-y divide-hairline p-0"
+              icon={<Users size={15} aria-hidden="true" />}
+              title={t("projects.budget.sections.cast", "Obsada Wykonawcza")}
+              action={
                 <Badge variant="neutral">
                   {enrichedCast.length} {t("common.people_short", "os.")}
                 </Badge>
-              </header>
-
-              <div className="min-h-0 flex-1 divide-y divide-ethereal-ink/6 overflow-y-auto">
+              }
+            >
                 {enrichedCast.map((participation) => {
                   const safeId = String(participation.id);
                   const isItemDirty = !!dirtyFees[safeId];
@@ -242,8 +237,7 @@ export const BudgetTab = ({
                     />
                   );
                 })}
-              </div>
-            </GlassCard>
+            </SectionCard>
           ) : (
             <GlassCard
               variant="solid"
@@ -262,29 +256,19 @@ export const BudgetTab = ({
           )}
 
           {enrichedCrew.length > 0 && (
-            <GlassCard
-              variant="solid"
-              padding="none"
-              isHoverable={false}
-              className="flex max-h-[55dvh] flex-col"
-            >
-              <header className="flex shrink-0 items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
-                <div className="flex items-center gap-2.5">
-                  <Wrench
-                    size={15}
-                    className="text-ethereal-gold/70"
-                    aria-hidden="true"
-                  />
-                  <Eyebrow as="h2" color="graphite">
-                    {t("projects.budget.sections.crew", "Ekipa Realizacyjna")}
-                  </Eyebrow>
-                </div>
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[55dvh]"
+              bodyClassName="divide-y divide-hairline p-0"
+              icon={<Wrench size={15} aria-hidden="true" />}
+              title={t("projects.budget.sections.crew", "Ekipa Realizacyjna")}
+              action={
                 <Badge variant="neutral">
                   {enrichedCrew.length} {t("common.people_short", "os.")}
                 </Badge>
-              </header>
-
-              <div className="min-h-0 flex-1 divide-y divide-ethereal-ink/6 overflow-y-auto">
+              }
+            >
                 {enrichedCrew.map((assignment) => {
                   const safeId = String(assignment.id);
                   const isItemDirty = !!dirtyFees[safeId];
@@ -311,8 +295,7 @@ export const BudgetTab = ({
                     />
                   );
                 })}
-              </div>
-            </GlassCard>
+            </SectionCard>
           )}
         </div>
       </div>

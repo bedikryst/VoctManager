@@ -27,7 +27,7 @@ import { cn } from "@/shared/lib/utils";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import type { SegmentedTabItem } from "@/shared/ui/composites/SegmentedTabs";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
@@ -236,14 +236,14 @@ export function ScorePackagePanel({
   })();
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.score_package.title", "Partytura koncertowa")}
       icon={<FileText size={15} aria-hidden="true" />}
       bodyClassName="flex flex-col gap-5"
     >
       {/* Empty programme — nothing to assemble yet */}
       {state && !hasProgram && (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-ethereal-ink/10 px-4 py-10 text-center">
+        <div className="flex flex-col items-center gap-2 rounded-nested border border-dashed border-hairline-strong px-4 py-10 text-center">
           <FileText size={22} aria-hidden="true" className="text-ethereal-graphite/40" />
           <Text size="sm" color="muted">
             {t(
@@ -257,7 +257,7 @@ export function ScorePackagePanel({
       {hasProgram && (
         <>
           {/* ── Status hero: state + the primary action, in view ───────────── */}
-          <div className="flex flex-col gap-4 rounded-2xl border border-ethereal-ink/8 bg-ethereal-marble/40 p-4 sm:p-5">
+          <div className="flex flex-col gap-4 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex min-w-0 flex-col gap-1.5">
                 <div className="flex flex-wrap items-center gap-2">
@@ -387,7 +387,7 @@ export function ScorePackagePanel({
 
           {/* ── Settings: two-tier, one pill/segmented control language ─────── */}
           {config && (
-            <div className="rounded-2xl border border-ethereal-ink/8">
+            <div className="rounded-nested border border-hairline-strong">
               <button
                 type="button"
                 onClick={() => setSettingsOpen((open) => !open)}
@@ -409,7 +409,7 @@ export function ScorePackagePanel({
               </button>
 
               {settingsOpen && (
-                <div className="flex flex-col gap-5 border-t border-ethereal-ink/6 px-4 py-4">
+                <div className="flex flex-col gap-5 border-t border-hairline px-4 py-4">
                   {/* Tier 1 — content choices */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
@@ -459,7 +459,7 @@ export function ScorePackagePanel({
                   </div>
 
                   {/* Tier 2 — set-once structure, de-emphasised */}
-                  <div className="flex flex-col gap-2 border-t border-ethereal-ink/6 pt-4">
+                  <div className="flex flex-col gap-2 border-t border-hairline pt-4">
                     <Caption color="muted">
                       {t("projects.score_package.structure.label", "Struktura książki")}
                     </Caption>
@@ -572,6 +572,6 @@ export function ScorePackagePanel({
         docKey={`book-${projectId}-${state?.generated_at ?? ""}`}
         onClose={() => setBookPreviewOpen(false)}
       />
-    </WidgetCard>
+    </SectionCard>
   );
 }

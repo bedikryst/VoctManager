@@ -58,7 +58,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { cn } from "@/shared/lib/utils";
@@ -814,7 +814,7 @@ const DigestPanel: React.FC = () => {
             )}
           </div>
           <div className="w-32 shrink-0">
-            <Select
+            <NativeSelect
               variant="solid"
               value={String(hour)}
               aria-label={t("settings.notifications.digest.hour_label")}
@@ -825,7 +825,7 @@ const DigestPanel: React.FC = () => {
                   {String(h).padStart(2, "0")}:00
                 </option>
               ))}
-            </Select>
+            </NativeSelect>
           </div>
         </div>
       )}

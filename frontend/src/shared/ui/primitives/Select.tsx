@@ -1,75 +1,140 @@
 /**
  * @file Select.tsx
- * @description Enterprise-grade select field aligned with the Ethereal design system.
- * Wraps a native <select> for accessibility while enforcing ethereal tokens.
+ * @description The panel's select field: an Ethereal trigger over a real,
+ * portalled listbox (`@radix-ui/react-select`). The popup is ours, not the
+ * operating system's — which is the whole point, since an OS-drawn dropdown was
+ * the one place the design language stopped at the component boundary.
+ * The content skin is deliberately identical to `DropdownMenu` so the two
+ * popovers read as one material.
+ * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/Select
  */
 
-import React, { SelectHTMLAttributes, forwardRef, useId } from "react";
-import { ChevronDown } from "lucide-react";
+import React from "react";
+import * as RadixSelect from "@radix-ui/react-select";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/shared/lib/utils";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
 
-const selectVariants = cva(
-  "w-full appearance-none rounded-xl text-sm text-ethereal-ink transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+import { cn } from "@/shared/lib/utils";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+
+/**
+ * Radix reserves the empty string for "nothing selected", so an item may not
+ * carry it. The explicit clear entry rides on a sentinel that is translated
+ * back to "" before it ever reaches the caller.
+ */
+const CLEAR_VALUE = "__select_clear__";
+
+const triggerVariants = cva(
+  "relative flex w-full items-center justify-between gap-2 rounded-control py-3 text-sm text-ethereal-ink transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 data-placeholder:text-ethereal-incense",
   {
     variants: {
       variant: {
         glass:
-          "bg-ethereal-alabaster/60 backdrop-blur-md border border-ethereal-incense/20 shadow-glass-ethereal focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
+          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
         solid:
-          "bg-ethereal-marble border border-ethereal-ink/10 shadow-glass-solid focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
+          "bg-ethereal-marble border border-hairline-strong shadow-glass-solid hover:border-ethereal-gold/40 focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
         ghost:
           "bg-transparent border border-transparent hover:bg-ethereal-incense/10 focus:bg-ethereal-marble focus:border-ethereal-incense/30",
       },
       hasError: {
-        true: "border-ethereal-crimson bg-ethereal-crimson-light/20 text-ethereal-crimson focus:border-ethereal-crimson focus:ring-ethereal-crimson/20",
+        true: "border-ethereal-crimson bg-ethereal-crimson/5 text-ethereal-crimson focus:border-ethereal-crimson focus:ring-ethereal-crimson/20",
       },
     },
-    defaultVariants: {
-      variant: "glass",
-      hasError: false,
-    },
+    defaultVariants: { variant: "glass", hasError: false },
   },
 );
 
-export interface SelectProps
-  extends
-    Omit<SelectHTMLAttributes<HTMLSelectElement>, "variant">,
-    VariantProps<typeof selectVariants> {
-  label?: string;
-  error?: string;
-  leftIcon?: React.ReactNode;
+export interface SelectOption {
+  readonly value: string;
+  readonly label: string;
+  readonly disabled?: boolean;
+  /**
+   * Semantic emphasis carried by the item itself — a piece whose casting is
+   * short, a slot already complete. Crimson stays alarm-only here as everywhere.
+   */
+  readonly tone?: "default" | "sage" | "crimson";
 }
 
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  (
-    { label, error, variant, leftIcon, className, id, children, ...props },
-    ref,
-  ) => {
-    const internalId = useId();
-    const selectId = id || internalId;
-    const errorId = `${selectId}-error`;
-    const hasError = Boolean(error);
+export interface SelectProps extends VariantProps<typeof triggerVariants> {
+  readonly options: readonly SelectOption[];
+  /** `""` means nothing is selected — the placeholder shows instead. */
+  readonly value: string;
+  readonly onValueChange: (value: string) => void;
+  readonly label?: string;
+  readonly error?: string;
+  readonly placeholder?: string;
+  readonly leftIcon?: React.ReactNode;
+  readonly disabled?: boolean;
+  readonly required?: boolean;
+  readonly name?: string;
+  readonly id?: string;
+  readonly ariaLabel?: string;
+  /**
+   * Adds an explicit entry that returns the field to "nothing selected". Only
+   * for fields where clearing is a real choice — where it is not, a placeholder
+   * alone says the same thing without offering an action that means nothing.
+   */
+  readonly clearLabel?: string;
+  readonly className?: string;
+}
 
-    return (
-      <div className="flex w-full flex-col gap-1.5">
-        {label && (
-          <Eyebrow
-            as="label"
-            htmlFor={selectId}
-            color="muted"
-            className="ml-1"
-          >
-            {label}
-          </Eyebrow>
-        )}
+export const Select = ({
+  options,
+  value,
+  onValueChange,
+  label,
+  error,
+  placeholder,
+  leftIcon,
+  variant,
+  disabled,
+  required,
+  name,
+  id,
+  ariaLabel,
+  clearLabel,
+  className,
+}: SelectProps): React.JSX.Element => {
+  const internalId = React.useId();
+  const selectId = id || internalId;
+  const errorId = `${selectId}-error`;
+  const hasError = Boolean(error);
 
-        <div className="relative flex items-center">
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      {label && (
+        <Eyebrow as="label" htmlFor={selectId} color="muted" className="ml-1">
+          {label}
+        </Eyebrow>
+      )}
+
+      <RadixSelect.Root
+        value={value || undefined}
+        onValueChange={(next) =>
+          onValueChange(next === CLEAR_VALUE ? "" : next)
+        }
+        disabled={disabled}
+        required={required}
+        name={name}
+      >
+        <RadixSelect.Trigger
+          id={selectId}
+          aria-label={ariaLabel}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? errorId : undefined}
+          className={cn(
+            triggerVariants({ variant, hasError }),
+            // The icon is hidden on phones, so its inset is only reserved from
+            // sm up — same contract as `Input`.
+            leftIcon ? "pl-4 sm:pl-11" : "pl-4",
+            "pr-4",
+            className,
+          )}
+        >
           {leftIcon && (
-            <div
-              className="pointer-events-none absolute left-4 z-10 hidden items-center justify-center text-ethereal-graphite/60 sm:flex"
+            <span
+              className="pointer-events-none absolute left-4 hidden text-ethereal-graphite/55 sm:flex"
               aria-hidden="true"
             >
               {React.isValidElement(leftIcon)
@@ -81,45 +146,112 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                     { size: 16, strokeWidth: 1.5 },
                   )
                 : leftIcon}
-            </div>
+            </span>
           )}
 
-          <select
-            id={selectId}
-            ref={ref}
-            aria-invalid={hasError}
-            aria-describedby={hasError ? errorId : undefined}
-            className={cn(
-              selectVariants({ variant, hasError, className }),
-              // Icon padding only from sm+, since the icon is hidden on phones.
-              leftIcon ? "pl-4 sm:pl-11" : "px-4",
-              "pr-10 py-3",
-            )}
-            {...props}
-          >
-            {children}
-          </select>
-
-          <ChevronDown
-            size={16}
-            strokeWidth={1.5}
-            className="pointer-events-none absolute right-4 text-ethereal-graphite/60"
-            aria-hidden="true"
-          />
-        </div>
-
-        {hasError && (
-          <span
-            id={errorId}
-            role="alert"
-            className="ml-1 text-[10px] font-medium text-ethereal-crimson"
-          >
-            {error}
+          <span className="min-w-0 flex-1 truncate text-left">
+            <RadixSelect.Value placeholder={placeholder} />
           </span>
-        )}
-      </div>
-    );
-  },
-);
 
-Select.displayName = "Select";
+          <RadixSelect.Icon asChild>
+            <ChevronDown
+              size={16}
+              strokeWidth={1.5}
+              className="shrink-0 text-ethereal-graphite/60"
+              aria-hidden="true"
+            />
+          </RadixSelect.Icon>
+        </RadixSelect.Trigger>
+
+        <RadixSelect.Portal>
+          <RadixSelect.Content
+            position="popper"
+            sideOffset={8}
+            className={cn(
+              "z-nav-sheet max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
+              "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+            )}
+          >
+            <RadixSelect.ScrollUpButton className="flex h-5 items-center justify-center text-ethereal-graphite/60">
+              <ChevronUp size={14} aria-hidden="true" />
+            </RadixSelect.ScrollUpButton>
+
+            <RadixSelect.Viewport className="max-h-72">
+              {clearLabel && (
+                <SelectItem value={CLEAR_VALUE} label={clearLabel} muted />
+              )}
+              {options.map((option) => (
+                <SelectItem
+                  key={option.value}
+                  value={option.value}
+                  label={option.label}
+                  disabled={option.disabled}
+                  tone={option.tone}
+                />
+              ))}
+            </RadixSelect.Viewport>
+
+            <RadixSelect.ScrollDownButton className="flex h-5 items-center justify-center text-ethereal-graphite/60">
+              <ChevronDown size={14} aria-hidden="true" />
+            </RadixSelect.ScrollDownButton>
+          </RadixSelect.Content>
+        </RadixSelect.Portal>
+      </RadixSelect.Root>
+
+      {hasError && (
+        <Text
+          as="span"
+          id={errorId}
+          role="alert"
+          size="xs"
+          color="crimson"
+          className="ml-1 font-medium"
+        >
+          {error}
+        </Text>
+      )}
+    </div>
+  );
+};
+
+interface SelectItemProps {
+  readonly value: string;
+  readonly label: string;
+  readonly disabled?: boolean;
+  readonly tone?: SelectOption["tone"];
+  readonly muted?: boolean;
+}
+
+const ITEM_TONE: Record<NonNullable<SelectOption["tone"]>, string> = {
+  default: "text-ethereal-graphite",
+  sage: "font-bold text-ethereal-sage",
+  crimson: "font-bold text-ethereal-crimson",
+};
+
+const SelectItem = ({
+  value,
+  label,
+  disabled,
+  tone = "default",
+  muted,
+}: SelectItemProps): React.JSX.Element => (
+  <RadixSelect.Item
+    value={value}
+    disabled={disabled}
+    className={cn(
+      "flex cursor-pointer select-none items-center gap-2.5 rounded-control px-3 py-2 outline-none transition-colors",
+      "data-highlighted:bg-ethereal-marble/70 data-highlighted:text-ethereal-ink",
+      "data-disabled:pointer-events-none data-disabled:opacity-50",
+      muted ? "text-ethereal-graphite/70 italic" : ITEM_TONE[tone],
+    )}
+  >
+    <RadixSelect.ItemText asChild>
+      <Text as="span" size="sm" weight="medium" color="inherit" truncate className="flex-1">
+        {label}
+      </Text>
+    </RadixSelect.ItemText>
+    <RadixSelect.ItemIndicator className="shrink-0 text-ethereal-gold">
+      <Check size={14} aria-hidden="true" />
+    </RadixSelect.ItemIndicator>
+  </RadixSelect.Item>
+);

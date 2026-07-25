@@ -30,7 +30,7 @@ import {
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
@@ -129,7 +129,7 @@ const EditionLicenseControl = ({
         {t("archive.editions.license.label", "Licencja")}
       </Caption>
       <div className="w-56">
-        <Select
+        <NativeSelect
           variant="solid"
           value={licenseType}
           onChange={(event) =>
@@ -143,7 +143,7 @@ const EditionLicenseControl = ({
               {licenseLabels[key]}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       </div>
 
       {isLicensedCopies && (

@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 
 import type { Composer } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import type { InlineComposerDraft } from "../hooks/usePieceFormState";
@@ -105,7 +105,7 @@ export const ComposerPicker = ({
           </div>
         </div>
       ) : (
-        <Select
+        <NativeSelect
           value={composerId}
           onChange={(e) => setComposerId(e.target.value)}
           disabled={isBusy}
@@ -121,7 +121,7 @@ export const ComposerPicker = ({
                 : ""}
             </option>
           ))}
-        </Select>
+        </NativeSelect>
       )}
     </div>
   );

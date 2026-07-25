@@ -17,7 +17,7 @@ import { useWatch } from "react-hook-form";
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
-import { Select } from "@ui/primitives/Select";
+import { NativeSelect } from "@ui/primitives/NativeSelect";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
@@ -265,7 +265,7 @@ export default function ArtistEditorPanel({
 
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <div>
-                        <Select
+                        <NativeSelect
                           label={t(
                             "artists.editor.language",
                             "Język wiadomości *",
@@ -277,7 +277,7 @@ export default function ArtistEditorPanel({
                           <option value="pl">Polski</option>
                           <option value="en">English</option>
                           <option value="fr">Français</option>
-                        </Select>
+                        </NativeSelect>
                         {artist?.id && (
                           <Text
                             as="p"
@@ -293,7 +293,7 @@ export default function ArtistEditorPanel({
                         )}
                       </div>
                       <div>
-                        <Select
+                        <NativeSelect
                           label={t("common.salutation.label", "Forma zwrotu")}
                           {...form.register("salutation")}
                           className="font-bold"
@@ -302,7 +302,7 @@ export default function ArtistEditorPanel({
                           <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
                           <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
                           <option value="M">{t("common.salutation.masculine", "Męska")}</option>
-                        </Select>
+                        </NativeSelect>
                         <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
                           {artist?.id
                             ? t(
@@ -323,7 +323,7 @@ export default function ArtistEditorPanel({
                       {t("artists.editor.section_voice", "Profil Wokalny")}
                     </SectionTitle>
 
-                    <Select
+                    <NativeSelect
                       label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
                       {...form.register("voice_type")}
                       className="font-bold"
@@ -341,7 +341,7 @@ export default function ArtistEditorPanel({
                           {t("artists.editor.loading", "Ładowanie...")}
                         </option>
                       )}
-                    </Select>
+                    </NativeSelect>
 
                     <div className="grid grid-cols-2 gap-5">
                       <Input
@@ -376,7 +376,7 @@ export default function ArtistEditorPanel({
                       />
                     </div>
 
-                    <Select
+                    <NativeSelect
                       label={t(
                         "artists.editor.sight_reading",
                         "Czytanie a vista (Ocena)",
@@ -396,7 +396,7 @@ export default function ArtistEditorPanel({
                           })}
                         </option>
                       ))}
-                    </Select>
+                    </NativeSelect>
                   </div>
 
                   {artist?.id && (

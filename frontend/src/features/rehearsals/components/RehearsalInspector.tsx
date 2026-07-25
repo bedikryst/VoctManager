@@ -199,7 +199,7 @@ export const RehearsalInspector = ({
               </div>
               <div className="text-right">
                 <Eyebrow color="muted">{t("rehearsals.stats.rate", "Frekwencja")}</Eyebrow>
-                <Metric size="xl" className={cn("leading-none tabular-nums", accentText)}>
+                <Metric size="xl" className={cn("leading-none", accentText)}>
                   {stats.rate}%
                 </Metric>
               </div>

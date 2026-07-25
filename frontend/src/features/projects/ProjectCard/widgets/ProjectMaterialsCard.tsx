@@ -22,8 +22,8 @@ import {
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { useScorePackageState } from "../../api/project.score-package";
 
@@ -109,7 +109,7 @@ const MaterialRow = ({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className={cn(rowClass, "rounded-lg hover:text-ethereal-gold")}
+        className={cn(rowClass, "rounded-chip hover:text-ethereal-gold")}
       >
         {content}
       </a>
@@ -122,7 +122,7 @@ const MaterialRow = ({
       onClick={onClick}
       className={cn(
         rowClass,
-        "rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "rounded-chip focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
       )}
     >
       {content}
@@ -158,12 +158,12 @@ export function ProjectMaterialsCard({
   })();
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.overview.materials.title", "Materiały")}
       icon={<FolderOpen size={15} aria-hidden="true" />}
       bodyClassName="py-2"
     >
-      <div className="divide-y divide-ethereal-ink/5">
+      <div className="divide-y divide-hairline">
         <MaterialRow
           icon={FileText}
           label={t("projects.exports.score_pdf", "Partytura (PDF)")}
@@ -199,17 +199,17 @@ export function ProjectMaterialsCard({
               <div className="flex flex-col gap-1">
                 {project.dress_code_female && (
                   <Text size="sm" color="graphite" className="leading-snug">
-                    <Caption as="span" color="amethyst" weight="bold" className="uppercase tracking-[0.16em]">
+                    <Eyebrow as="span" color="amethyst">
                       {t("projects.details.dress_code_female", "Panie")}
-                    </Caption>{" "}
+                    </Eyebrow>{" "}
                     {project.dress_code_female}
                   </Text>
                 )}
                 {project.dress_code_male && (
                   <Text size="sm" color="graphite" className="leading-snug">
-                    <Caption as="span" color="sage" weight="bold" className="uppercase tracking-[0.16em]">
+                    <Eyebrow as="span" color="sage">
                       {t("projects.details.dress_code_male", "Panowie")}
-                    </Caption>{" "}
+                    </Eyebrow>{" "}
                     {project.dress_code_male}
                   </Text>
                 )}
@@ -222,6 +222,6 @@ export function ProjectMaterialsCard({
           </div>
         </div>
       </div>
-    </WidgetCard>
+    </SectionCard>
   );
 }

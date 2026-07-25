@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, BookOpen } from "lucide-react";
 
-import { WidgetCard } from "@/shared/ui/composites/WidgetCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption } from "@/shared/ui/primitives/typography";
@@ -66,7 +66,7 @@ export function ScorePackageBridge({
   })();
 
   return (
-    <WidgetCard
+    <SectionCard
       title={t("projects.score_package.title", "Partytura koncertowa")}
       icon={<BookOpen size={15} aria-hidden="true" />}
       bodyClassName="flex flex-wrap items-center justify-between gap-3"
@@ -90,6 +90,6 @@ export function ScorePackageBridge({
           <ArrowRight size={14} aria-hidden="true" />
         </Link>
       </Button>
-    </WidgetCard>
+    </SectionCard>
   );
 }

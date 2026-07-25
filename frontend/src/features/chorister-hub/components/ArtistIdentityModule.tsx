@@ -51,7 +51,7 @@ const MetricTile = ({
       {icon}
     </div>
     <div>
-      <Metric size="4xl" color="graphite" className="leading-none tabular-nums">
+      <Metric size="4xl" color="graphite" className="leading-none">
         {value}
       </Metric>
       <Text size="xs" weight="semibold" className="mt-1 block text-ethereal-graphite">

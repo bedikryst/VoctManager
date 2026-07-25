@@ -14,8 +14,18 @@ import { formatLocalizedTime } from "@/shared/lib/time/intl";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { cn } from "@/shared/lib/utils";
 
-const containerVariants = cva("flex flex-col transition-all duration-300", {
+const containerVariants = cva("flex transition-colors duration-300", {
   variants: {
+    /**
+     * Which way the two times stack. This is an explicit axis because callers
+     * used to fight the hard-coded column by passing `items-center` — which
+     * tailwind-merge keeps alongside `flex-col`, silently centring the local
+     * time under the event time instead of putting it beside it.
+     */
+    orientation: {
+      column: "flex-col",
+      row: "flex-row items-baseline",
+    },
     spacing: {
       default: "gap-1",
       compact: "gap-0.5",
@@ -26,12 +36,17 @@ const containerVariants = cva("flex flex-col transition-all duration-300", {
     },
   },
   defaultVariants: {
+    orientation: "column",
     spacing: "default",
     variant: "default",
   },
 });
 
-const primaryTimeVariants = cva("flex items-baseline gap-2 tracking-wide", {
+// No letter-spacing on the clock face: the <time> below renders `tabular-nums`,
+// whose digits already carry an equalised advance, and every caller sets this at
+// body scale (11–16px). Tracking on top of padded digits reads as stretched, and
+// makes a time sitting next to a date look a size larger than it is.
+const primaryTimeVariants = cva("flex items-baseline gap-2", {
   variants: {
     typography: {
       serif: "font-serif",
@@ -112,6 +127,7 @@ export const DualTimeDisplay = ({
   timeZone,
   label,
   icon,
+  orientation,
   spacing,
   typography,
   color,
@@ -142,18 +158,34 @@ export const DualTimeDisplay = ({
   const userTimezone = user?.profile?.timezone || fallbackTz;
   const eventTimezone = timeZone || "Europe/Warsaw";
 
-  const hasDiffTz = eventTimezone !== userTimezone;
+  const localTimeOptions: Intl.DateTimeFormatOptions = {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  };
+
+  // Compared by what the reader would actually SEE, not by IANA name.
+  // Europe/Paris and Europe/Warsaw are different zones that never differ in
+  // offset, so a name comparison printed "01:45 CEST" and, right under it,
+  // "01:45 CEST (twój czas)" — the same instant twice, as pure noise.
+  const eventRendering = formatLocalizedTime(
+    value,
+    localTimeOptions,
+    undefined,
+    eventTimezone,
+  );
+  const localRendering = formatLocalizedTime(
+    value,
+    localTimeOptions,
+    undefined,
+    userTimezone,
+  );
+  const hasDiffTz = eventRendering !== localRendering;
 
   const primaryTimeOptions: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
     minute: "2-digit",
     ...(hasDiffTz && { timeZoneName: "short" }),
-  };
-
-  const localTimeOptions: Intl.DateTimeFormatOptions = {
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZoneName: "short",
   };
 
   // Resolve defaults based on variant if not explicitly provided
@@ -162,7 +194,7 @@ export const DualTimeDisplay = ({
   return (
     <div
       className={cn(
-        containerVariants({ spacing, variant }),
+        containerVariants({ orientation, spacing, variant }),
         className,
         containerClassName,
       )}

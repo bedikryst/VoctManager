@@ -30,7 +30,7 @@ const glassCardVariants = cva(
   // to their own compositor layer up-front is a net loss (GPU memory + compositing
   // overhead, worse scrolling). The browser promotes a card only when it actually
   // animates (hover lift), which is exactly when promotion pays off.
-  "group relative isolate overflow-hidden rounded-3xl contain-paint",
+  "group relative isolate overflow-hidden rounded-surface contain-paint",
   {
     variants: {
       // backdrop-filter is kept ONLY where a card floats over real CONTENT
@@ -47,7 +47,7 @@ const glassCardVariants = cva(
         surface:
           "bg-ethereal-ink/40 backdrop-blur-xl border border-white/5 shadow-glass-ethereal",
         solid:
-          "bg-ethereal-alabaster border border-ethereal-ink/6 shadow-glass-solid",
+          "bg-ethereal-alabaster border border-hairline shadow-glass-solid",
         dark: "bg-ethereal-ink/90 border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
         outline:
           "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-glass-outline-hover",
@@ -55,10 +55,11 @@ const glassCardVariants = cva(
           "bg-glass-surface/50 backdrop-blur-[4px] border border-glass-border shadow-glass-ethereal",
       },
       isHoverable: {
-        // No static `will-change-transform`: it permanently reserves a compositor
-        // layer on every hoverable card even at rest. The lift is a simple
-        // transform the browser composites fine on hover-intent without it.
-        true: "hover:-translate-y-1 cursor-pointer hover:shadow-glass-ethereal-hover",
+        // Gold border, no translate-lift: the locked design-language decision
+        // (see .ai/04_design_system.md). A lift also has to be paid for on
+        // touch, where there is no hover to preview it — the border reads the
+        // same on both and costs one repaint instead of a promoted layer.
+        true: "cursor-pointer hover:border-ethereal-gold/45 hover:shadow-glass-ethereal-hover",
         false: "",
       },
       padding: {
@@ -81,7 +82,10 @@ const glassCardVariants = cva(
     defaultVariants: {
       variant: "ethereal",
       padding: "md",
-      isHoverable: true,
+      // Cards are inert unless told otherwise. A default of `true` made every
+      // static surface — modals, empty states, viewers — advertise a click it
+      // does not have.
+      isHoverable: false,
       animationEngine: "css",
     },
   },

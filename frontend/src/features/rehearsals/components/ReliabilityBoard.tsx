@@ -162,7 +162,7 @@ const SingerRow = ({
           <span className="text-ethereal-crimson">{singer.absent}</span>
         </Caption>
         <div className="w-12 text-right">
-          <Metric size="lg" className={cn("leading-none tabular-nums", TONE_TEXT[tone])}>
+          <Metric size="lg" className={cn("leading-none", TONE_TEXT[tone])}>
             {singer.attendanceRate === null ? "—" : `${singer.attendanceRate}%`}
           </Metric>
         </div>
@@ -240,7 +240,7 @@ export const ReliabilityBoard = ({
           ].map((cell) => (
             <div key={cell.label} className="bg-ethereal-alabaster px-5 py-4">
               <Eyebrow color="muted">{cell.label}</Eyebrow>
-              <Metric size="2xl" className={cn("mt-1 block leading-none tabular-nums", cell.tone)}>
+              <Metric size="2xl" className={cn("mt-1 block leading-none", cell.tone)}>
                 {cell.value}
               </Metric>
             </div>

@@ -21,7 +21,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { Select } from "@/shared/ui/primitives/Select";
+import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useArtists } from "@/features/artists/api/artist.queries";
 import {
@@ -53,7 +53,7 @@ const ManagerArtistField: React.FC<{
   const { t } = useTranslation();
   const { data: artists = [] } = useArtists();
   return (
-    <Select
+    <NativeSelect
       label={t("messages.compose.artist", "Adresat (artysta)")}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -66,7 +66,7 @@ const ManagerArtistField: React.FC<{
           {artist.first_name} {artist.last_name}
         </option>
       ))}
-    </Select>
+    </NativeSelect>
   );
 };
 
@@ -78,7 +78,7 @@ const RecipientField: React.FC<{
   const { data: recipients = [] } = useRecipients();
   return (
     <div className="flex flex-col gap-1.5">
-      <Select
+      <NativeSelect
         label={t("messages.compose.recipient", "Do kogo (opcjonalnie)")}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -91,7 +91,7 @@ const RecipientField: React.FC<{
             {recipient.name}
           </option>
         ))}
-      </Select>
+      </NativeSelect>
       <Text size="xs" color="muted">
         {t(
           "messages.compose.recipient_hint",
@@ -113,7 +113,7 @@ const ProjectContextField: React.FC<{
     [projects],
   );
   return (
-    <Select
+    <NativeSelect
       label={t("messages.compose.project_context", "Dotyczy projektu (opcjonalnie)")}
       value={value}
       onChange={(e) => onChange(e.target.value)}
@@ -124,7 +124,7 @@ const ProjectContextField: React.FC<{
           {project.title}
         </option>
       ))}
-    </Select>
+    </NativeSelect>
   );
 };
 
@@ -290,7 +290,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                     </Text>
                   ) : (
                     <>
-                      <Select
+                      <NativeSelect
                         label={t("messages.compose.channel", "Kanał projektu")}
                         value={channelId}
                         onChange={(e) => setChannelId(e.target.value)}
@@ -303,7 +303,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                             {channel.project_name}
                           </option>
                         ))}
-                      </Select>
+                      </NativeSelect>
                       <Textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}

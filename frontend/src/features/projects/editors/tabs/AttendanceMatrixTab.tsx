@@ -49,7 +49,7 @@ const STATUS_DEF: Record<NonNullable<AttendanceStatus> | "null", StatusDefinitio
     labelKey: "projects.matrix.status.none",
     defaultLabel: "Brak wpisu",
     swatchClass:
-      "bg-ethereal-parchment/50 hover:bg-ethereal-parchment text-ethereal-graphite/40 border border-ethereal-ink/8",
+      "bg-ethereal-parchment/50 hover:bg-ethereal-parchment text-ethereal-graphite/40 border border-hairline-strong",
     icon: (
       <span
         className="h-1.5 w-1.5 rounded-full bg-ethereal-graphite/30"
@@ -117,7 +117,7 @@ const MatrixCell = React.memo(
     const config = isStatusKey(rawKey) ? STATUS_DEF[rawKey] : STATUS_DEF.null;
 
     return (
-      <td className="group relative border-b border-l border-ethereal-ink/6 p-1 text-center">
+      <td className="group relative border-b border-l border-hairline p-1 text-center">
         {isDirtyCell && (
           <span
             className="pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-ethereal-gold shadow-[0_0_0_2px_rgba(255,255,255,0.7)]"
@@ -128,7 +128,7 @@ const MatrixCell = React.memo(
           type="button"
           onClick={() => onToggle(rehearsalId, participationId, record)}
           className={cn(
-            "mx-auto flex h-7 w-7 items-center justify-center rounded-md transition-transform duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+            "mx-auto flex h-7 w-7 items-center justify-center rounded-chip transition-transform duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
             config.swatchClass,
           )}
           title={t(config.labelKey, config.defaultLabel)}
@@ -200,7 +200,7 @@ export const AttendanceMatrixTab = ({
                 <div key={key} className="flex items-center gap-1.5">
                   <div
                     className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-md",
+                      "flex h-4 w-4 items-center justify-center rounded-chip",
                       config.swatchClass,
                     )}
                     aria-hidden="true"
@@ -226,7 +226,7 @@ export const AttendanceMatrixTab = ({
             <table className="w-full min-w-200 border-collapse text-left text-sm">
               <thead className="sticky top-0 z-20">
                 <tr>
-                  <th className="sticky left-0 z-30 min-w-55 border-b border-ethereal-ink/8 bg-ethereal-marble p-4">
+                  <th className="sticky left-0 z-30 min-w-55 border-b border-hairline-strong bg-ethereal-marble p-4">
                     <Eyebrow color="muted">
                       {t("projects.matrix.table.rehearsal_date", "Próba / Data")}
                     </Eyebrow>
@@ -234,7 +234,7 @@ export const AttendanceMatrixTab = ({
                   {enrichedParticipations.map((participation) => (
                     <th
                       key={participation.id}
-                      className="min-w-15 border-b border-l border-ethereal-ink/6 bg-ethereal-marble p-4 text-center"
+                      className="min-w-15 border-b border-l border-hairline bg-ethereal-marble p-4 text-center"
                     >
                       <div className="flex flex-col items-center gap-1">
                         <Text
@@ -253,14 +253,14 @@ export const AttendanceMatrixTab = ({
                       </div>
                     </th>
                   ))}
-                  <th className="min-w-20 border-b border-l border-ethereal-ink/6 bg-ethereal-marble p-4 text-center">
+                  <th className="min-w-20 border-b border-l border-hairline bg-ethereal-marble p-4 text-center">
                     <Eyebrow color="gold">
                       {t("projects.matrix.table.rate", "Frekwencja")}
                     </Eyebrow>
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ethereal-ink/6">
+              <tbody className="divide-y divide-hairline">
                 {projectRehearsals.length === 0 && (
                   <tr>
                     <td
@@ -371,7 +371,7 @@ export const AttendanceMatrixTab = ({
                           return (
                             <td
                               key={`empty-${rehearsal.id}-${participation.id}`}
-                              className="border-b border-l border-ethereal-ink/6 bg-ethereal-alabaster/50 p-1"
+                              className="border-b border-l border-hairline bg-ethereal-alabaster/50 p-1"
                             >
                               <div
                                 className="flex h-full w-full items-center justify-center opacity-20"
@@ -404,10 +404,10 @@ export const AttendanceMatrixTab = ({
                         );
                       })}
 
-                      <td className="border-b border-l border-ethereal-ink/6 p-4 text-center">
+                      <td className="border-b border-l border-hairline p-4 text-center">
                         <Text
                           className={cn(
-                            "inline-block rounded-lg border px-2.5 py-1.5 text-[10px] font-bold tracking-widest",
+                            "inline-block rounded-chip border px-2.5 py-1.5 text-[10px] font-bold tracking-widest",
                             rateClass,
                           )}
                         >
