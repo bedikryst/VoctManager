@@ -2,8 +2,9 @@
  * @file preferences.ts
  * @description Pure, dependency-light helpers over notification preference rows:
  * the recommended-baseline resolver, the "customized vs recommended" predicate,
- * and the minimal Restore-recommended payload. Shared by the preferences API and
- * the settings ledger so the divergence rule has a single definition.
+ * how a group's control reads when its members are polled, and the minimal
+ * payloads for Restore-recommended and a whole-group channel decision. Shared by
+ * the preferences API and the settings ledger so each rule has one definition.
  * @architecture Enterprise SaaS 2026
  * @module notifications/lib/preferences
  */
@@ -43,9 +44,55 @@ export const isPreferenceCustomized = (
   return includePush && target.push_enabled !== pref.push_enabled;
 };
 
+export type PreferenceChannel = keyof PreferenceChannels;
+
+/**
+ * How a group's control reads when its members are polled. `mixed` is the state
+ * a reader arrives in when they once answered per type — it is displayed rather
+ * than resolved, because coercing it would overwrite a choice they actually made.
+ */
+export type GroupChannelState = "on" | "off" | "mixed";
+
+export const groupChannelState = (
+  rows: readonly NotificationPreferenceDTO[],
+  channel: PreferenceChannel,
+): GroupChannelState => {
+  if (rows.length === 0) return "off";
+  const on = rows.filter((pref) => pref[channel]).length;
+  if (on === rows.length) return "on";
+  if (on === 0) return "off";
+  return "mixed";
+};
+
+/**
+ * What clicking a group's control means. A mixed group resolves to "on" — the
+ * conventional reading of a partially-set control, and the safe direction: it
+ * adds delivery rather than silencing something the reader never asked to lose.
+ */
+export const nextGroupChannelValue = (state: GroupChannelState): boolean =>
+  state !== "on";
+
 export interface PreferenceRestoreItem extends PreferenceChannels {
   notification_type: NotificationType;
 }
+
+/**
+ * The minimal payload that puts one channel of a whole group at `value`. Only
+ * rows that actually differ are written, and the untouched channel travels at its
+ * stored value so a group decision never silently moves the other one.
+ */
+export const groupChannelPayload = (
+  rows: readonly NotificationPreferenceDTO[],
+  channel: PreferenceChannel,
+  value: boolean,
+): PreferenceRestoreItem[] =>
+  rows
+    .filter((pref) => pref[channel] !== value)
+    .map((pref) => ({
+      notification_type: pref.notification_type,
+      email_enabled: channel === "email_enabled" ? value : pref.email_enabled,
+      push_enabled: channel === "push_enabled" ? value : pref.push_enabled,
+    }));
 
 /**
  * The minimal Restore-recommended payload for a set of rows: only the rows that

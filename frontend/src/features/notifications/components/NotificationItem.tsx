@@ -22,34 +22,31 @@ import {
   Headphones,
   ClipboardCheck,
   MessageCircle,
+  Megaphone,
   type LucideIcon,
 } from "lucide-react";
 
-import type { EventMomentMetadata, NotificationDTO } from "../types/notifications.dto";
+import type {
+  BriefingItemMetadata,
+  NotificationDTO,
+} from "../types/notifications.dto";
 import { useMarkNotificationRead } from "../api/notifications.queries";
+import {
+  briefingItemSummary,
+  compactMetaLine,
+  formatEventMoment,
+  renderChanges,
+  voiceLineLabel,
+  type TFunc,
+} from "../lib/notificationFormat";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
-
-type TFunc = ReturnType<typeof useTranslation>["t"];
 
 interface NotificationItemProps {
   notification: NotificationDTO;
   onClosePanel: () => void;
 }
-
-/** Localized human label for a structured change field key. */
-const changeLabel = (t: TFunc, fieldKey: string): string =>
-  t(`notifications.changes.${fieldKey}`, fieldKey.replace(/_/g, " "));
-
-/**
- * Localized label for a VoiceLine CODE (e.g. "B1" → "Bas 1"), rendered in the
- * viewer's current UI language. Falls back to the raw value so a legacy row that
- * still carries a pre-rendered label ("Bass 1") — or an unknown code — never
- * renders blank.
- */
-const voiceLineLabel = (t: TFunc, code?: string): string =>
-  code ? t(`notifications.voiceLines.${code}`, code) : "";
 
 /** Localized label for a material kind ("score" | "recording"). Unknown/blank
  *  kinds yield no pill. */
@@ -58,43 +55,6 @@ const materialKindLabel = (t: TFunc, kind?: string): string =>
     ? t(`notifications.materialKinds.${kind}`)
     : "";
 
-/**
- * Renders one change entry as a compact localized chip label. Tolerant of loose
- * or legacy metadata shapes — a change persisted before the structured-codes
- * refactor may arrive as a plain string, or as an object without a stable
- * `field` key. We never assume the shape, so a single stale row can't blank the
- * whole panel (the `field.replace` it used to crash on is now guarded).
- */
-const renderChange = (t: TFunc, change: unknown): string => {
-  if (typeof change === "string") return change;
-  if (!change || typeof change !== "object") return "";
-
-  const { field, old, new: next } = change as {
-    field?: unknown;
-    old?: unknown;
-    new?: unknown;
-  };
-  const fieldKey = typeof field === "string" ? field : "";
-  const label = fieldKey ? changeLabel(t, fieldKey) : "";
-  // The voice line arrives as a language-neutral code — localize its values too,
-  // not just the field label.
-  const value = (raw: unknown): string =>
-    raw == null ? "" : fieldKey === "voice_line" ? voiceLineLabel(t, String(raw)) : String(raw);
-  const from = value(old);
-  const to = value(next);
-
-  if (from && to) return label ? `${label}: ${from} → ${to}` : `${from} → ${to}`;
-  if (to) return label ? `${label}: ${to}` : to;
-  return label;
-};
-
-/** Maps a (possibly legacy/loose) `changes` payload to chip labels, dropping
- *  any entry that can't be rendered. Never assumes an array of structured objects. */
-const renderChanges = (t: TFunc, changes: unknown): string[] =>
-  Array.isArray(changes)
-    ? changes.map((change) => renderChange(t, change)).filter(Boolean)
-    : [];
-
 /** Verb phrase for a roster status code (attendance or RSVP). */
 const statusPhrase = (
   t: TFunc,
@@ -102,84 +62,27 @@ const statusPhrase = (
   code?: string,
 ): string => (code ? t(`notifications.status.${kind}.${code}`, code) : "");
 
-const compactMetaLine = (...values: readonly unknown[]): string | undefined => {
-  const parts = values
-    .map((value) => (value == null ? "" : String(value).trim()))
-    .filter(Boolean);
-  return parts.length > 0 ? parts.join(" · ") : undefined;
-};
+/** How many briefing items the bell row lists before the rest becomes a count.
+ *  The full account is in the email; this row exists to be scanned. */
+const BRIEFING_BULLET_LIMIT = 5;
 
-const firstText = (...values: readonly unknown[]): string | undefined =>
-  values
-    .map((value) => (value == null ? "" : String(value).trim()))
-    .find(Boolean);
-
-/**
- * Renders an event moment the way a person says it — "jutro o 19:00", "piątek,
- * 24 lipca o 19:00" — in the viewer's UI language and the event's own timezone.
- * Mirrors the backend `humanize_event_time()` so the bell, the push and the
- * email name the same moment the same way.
- *
- * The ISO timestamp outranks the stored `starts_at_display`, which is frozen at
- * emission time in whatever language was then active. Relative wording is
- * resolved against "now" on every render, so an old row never claims "tomorrow".
- */
-const formatEventMoment = (
-  metadata: EventMomentMetadata,
-  lang: string,
+/** The briefing's items as bullet lines, capped so one busy publication can't
+ *  turn a bell row into a page. */
+const briefingBullets = (
   t: TFunc,
-  ...legacyValues: readonly unknown[]
-): string | undefined => {
-  const startsAt = firstText(metadata.starts_at);
-  const parsed = startsAt?.includes("T") ? new Date(startsAt) : null;
-
-  if (parsed && !Number.isNaN(parsed.getTime())) {
-    const locale = lang || "pl";
-    const timeZone = firstText(metadata.timezone);
-    const render = (options: Intl.DateTimeFormatOptions): string => {
-      try {
-        return new Intl.DateTimeFormat(
-          locale,
-          timeZone ? { ...options, timeZone } : options,
-        ).format(parsed);
-      } catch {
-        // An unknown IANA zone must not blank the row — fall back to the viewer's.
-        return new Intl.DateTimeFormat(locale, options).format(parsed);
-      }
-    };
-    // The calendar-day comparison has to happen in the event's own timezone;
-    // en-CA yields an ISO-shaped YYYY-MM-DD that subtracts cleanly.
-    const dayKey = (value: Date): string => {
-      try {
-        return new Intl.DateTimeFormat("en-CA", timeZone ? { timeZone } : {}).format(value);
-      } catch {
-        return new Intl.DateTimeFormat("en-CA").format(value);
-      }
-    };
-
-    const time = render({ hour: "2-digit", minute: "2-digit", hour12: false });
-    const eventDay = dayKey(parsed);
-    const today = dayKey(new Date());
-    const daysAway = Math.round(
-      (Date.parse(eventDay) - Date.parse(today)) / 86_400_000,
-    );
-
-    if (daysAway === 0) return t("notifications.time.today", { time });
-    if (daysAway === 1) return t("notifications.time.tomorrow", { time });
-
-    const sameYear = eventDay.slice(0, 4) === today.slice(0, 4);
-    return t("notifications.time.absolute", {
-      weekday: render({ weekday: "long" }),
-      date: render(
-        sameYear
-          ? { day: "numeric", month: "long" }
-          : { day: "numeric", month: "long", year: "numeric" },
-      ),
-      time,
-    });
-  }
-
-  return firstText(metadata.starts_at_display, startsAt, ...legacyValues);
+  lang: string,
+  items: readonly BriefingItemMetadata[],
+): string[] => {
+  const lines = items
+    .map((item) => briefingItemSummary(t, lang, item))
+    .filter(Boolean);
+  if (lines.length <= BRIEFING_BULLET_LIMIT) return lines;
+  return [
+    ...lines.slice(0, BRIEFING_BULLET_LIMIT),
+    t("notifications.briefing.more", {
+      count: lines.length - BRIEFING_BULLET_LIMIT,
+    }),
+  ];
 };
 
 interface RowContent {
@@ -193,6 +96,8 @@ interface RowContent {
   detail?: string;
   /** Structured field-change chips. */
   changeChips?: string[];
+  /** A briefing's items, one scannable line each. */
+  bullets?: string[];
 }
 
 /**
@@ -233,6 +138,19 @@ const describe = (
         title: notification.metadata.project_name,
         changeChips: renderChanges(t, notification.metadata.changes),
       };
+    case "PROJECT_BRIEFING": {
+      // Everything one singer has not been told about one project. The row lists
+      // the items rather than counting them: "3 changes" tells nobody whether one
+      // of them is their own part.
+      const items = notification.metadata.items ?? [];
+      return {
+        title: notification.metadata.project_name,
+        context: t("notifications.briefing.count", { count: items.length }),
+        // The conductor's own words, if they wrote any — authored text, verbatim.
+        detail: notification.metadata.note || undefined,
+        bullets: briefingBullets(t, lang, items),
+      };
+    }
     case "PROJECT_CANCELLED":
       // The type eyebrow already reads "Project cancelled" — don't echo it in the
       // body. The project name under that eyebrow is unambiguous on its own.
@@ -365,6 +283,31 @@ const describe = (
         ),
         detail: statusPhrase(t, "attendance", notification.metadata.status),
       };
+    case "ANNOUNCEMENT_PENDING": {
+      // The queue's safety net. The project is the title because it is what the
+      // manager has to act on; the counts sit under it as the reason to bother.
+      const waiting = notification.metadata.waiting_hours ?? 0;
+      return {
+        title: notification.metadata.project_name,
+        context: compactMetaLine(
+          t("notifications.inapp.announcement_pending_changes", {
+            count: notification.metadata.change_count ?? 0,
+          }),
+          waiting >= 48
+            ? t("notifications.inapp.announcement_pending_days", {
+                count: Math.floor(waiting / 24),
+              })
+            : t("notifications.inapp.announcement_pending_hours", {
+                count: Math.max(waiting, 1),
+              }),
+        ),
+        detail: notification.metadata.recipient_count
+          ? t("notifications.inapp.announcement_pending_unaware", {
+              count: notification.metadata.recipient_count,
+            })
+          : undefined,
+      };
+    }
     case "MESSAGE_RECEIVED":
       // Subject + snippet are user-authored content — passed through verbatim.
       return {
@@ -472,6 +415,7 @@ const resolveVisual = (
   switch (notification.notification_type) {
     case "PROJECT_INVITATION":
     case "PROJECT_UPDATED":
+    case "PROJECT_BRIEFING":
     case "PROJECT_REMINDER":
     case "PARTICIPATION_RESPONSE":
       return { icon: Briefcase, accent: "gold" };
@@ -494,6 +438,11 @@ const resolveVisual = (
       return { icon: XCircle, accent: "crimson" };
     case "ATTENDANCE_SUBMITTED":
       return { icon: ClipboardCheck, accent: "sage" };
+    case "ANNOUNCEMENT_PENDING":
+      // Gold, not crimson: a queue waiting to be sent is a decision the conductor
+      // has not made yet, not a fault. A queue holding a reschedule arrives at
+      // URGENT and is escalated to crimson above, by level rather than by type.
+      return { icon: Megaphone, accent: "gold" };
     case "MESSAGE_RECEIVED":
     case "CHANNEL_MESSAGE":
       return { icon: MessageCircle, accent: "incense" };
@@ -539,6 +488,15 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       const channelId = notification.metadata.channel_id;
       return navigate(channelId ? `/panel/messages/channel/${channelId}` : "/panel/messages");
     }
+    if (notification.notification_type === "ANNOUNCEMENT_PENDING") {
+      // Straight to the review sheet, not to the project: a nudge that lands the
+      // reader somewhere they still have to go looking is the same silence with
+      // extra steps. `?announce=1` is the hub's contract for opening it.
+      const projectId = notification.metadata.project_id;
+      return navigate(
+        projectId ? `/panel/projects/${projectId}?announce=1` : "/panel/projects",
+      );
+    }
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");
     }
@@ -565,7 +523,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
     onClosePanel();
   };
 
-  const { title, pill, context, detail, changeChips } = describe(notification, t, i18n.language);
+  const { title, pill, context, detail, changeChips, bullets } = describe(
+    notification, t, i18n.language,
+  );
   // The fallback covers a type the client doesn't know yet (a backend deploy
   // ahead of the app); it has to be localized like everything else.
   const typeLabel = t(`notifications.types.${notification.notification_type}`, {
@@ -663,6 +623,23 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
           <p className="mt-1 line-clamp-3 text-[12px] leading-snug text-ethereal-graphite/75">
             {detail}
           </p>
+        )}
+
+        {bullets && bullets.length > 0 && (
+          <ul className="mt-1.5 space-y-0.5">
+            {bullets.map((line, index) => (
+              <li
+                key={index}
+                className="flex gap-1.5 text-[12px] leading-snug text-ethereal-graphite/70"
+              >
+                <span
+                  className="mt-1.75 h-1 w-1 shrink-0 rounded-full bg-ethereal-gold/60"
+                  aria-hidden="true"
+                />
+                <span className="min-w-0 flex-1">{line}</span>
+              </li>
+            ))}
+          </ul>
         )}
 
         {changeChips && changeChips.length > 0 && (
