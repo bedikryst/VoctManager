@@ -12,7 +12,11 @@ from rest_framework.response import Response
 from core.permissions import user_is_manager
 from core.request_utils import request_user
 
-from .delivery import default_channel_preferences
+from .delivery import (
+    HIDDEN_FROM_PREFS,
+    PREFERENCE_GROUPS,
+    default_channel_preferences,
+)
 from .dtos import (
     CustomAdminMessageMetadata,
     NotificationCreateDTO,
@@ -251,54 +255,62 @@ class NotificationPreferenceAPIView(views.APIView):
     permission_classes = [IsAuthenticated]
     
     def get(self, request: Request) -> Response:
-        """Returns the current user's notification preferences in a structured format."""
+        """The settings ledger: the reader's groups, and the rows behind each one.
+
+        A projection of ``notifications.delivery`` and nothing else — the group
+        map, the visibility rules and the recommended baseline all live there, so
+        the ledger cannot state a policy the router does not apply.
+
+        Groups come in render order and carry the recommendation their single
+        control targets; ``controllable`` is False where the members genuinely
+        disagree, and that group is rendered as its per-type rows alone. The rows
+        stay a flat list keyed by type — that is still the storage granularity,
+        and the "Szczegóły" disclosure writes at exactly that grain.
+        """
         is_manager = user_is_manager(request.user)
-
-        MANAGER_ONLY = {
-            NotificationType.PARTICIPATION_RESPONSE.value,
-            NotificationType.ATTENDANCE_SUBMITTED.value,
-            NotificationType.ABSENCE_REQUESTED.value,
+        stored = {
+            pref.notification_type: pref
+            for pref in NotificationPreference.objects.filter(user=request_user(request))
         }
 
-        # Types with no per-channel preference to express, kept out of the matrix:
-        #  • CHANNEL_MESSAGE — project-channel push is an opt-in per channel
-        #    (ChannelMembership.push_enabled), not a global preference.
-        #  • NOTIFICATION_READ_RECEIPT — in-app only; the router never sends it to
-        #    email or push, so channel toggles would be inert.
-        #  • CONTRACT_ISSUED — contracts are currently issued and signed off-platform
-        #    by management; re-expose if/when an in-app contract flow ships.
-        #  • SYSTEM_ALERT — no emitter yet (no admin broadcast UI), so a toggle here
-        #    would govern an event that cannot fire. Re-expose when it is wired.
-        HIDDEN_FROM_PREFS = {
-            NotificationType.CHANNEL_MESSAGE.value,
-            NotificationType.NOTIFICATION_READ_RECEIPT.value,
-            NotificationType.CONTRACT_ISSUED.value,
-            NotificationType.SYSTEM_ALERT.value,
-        }
+        groups: list[dict[str, object]] = []
+        rows: list[dict[str, object]] = []
 
-        prefs = {p.notification_type: p for p in NotificationPreference.objects.filter(user=request_user(request))}
-        data = []
-        for choice in NotificationType:
-            if choice.value in HIDDEN_FROM_PREFS:
+        for group in PREFERENCE_GROUPS:
+            if group.manager_only and not is_manager:
                 continue
-            if choice.value in MANAGER_ONLY and not is_manager:
+            visible = [ntype for ntype in group.types if ntype not in HIDDEN_FROM_PREFS]
+            if not visible:
                 continue
 
-            pref = prefs.get(choice.value)
-            defaults = default_channel_preferences(choice.value)
-
-            # `recommended_*` carries the shared default contract to the client so the
-            # settings UI can flag "at recommended" rows and offer Restore-recommended
-            # without re-deriving (and drifting from) the backend policy.
-            data.append({
-                "notification_type": choice.value,
-                "label": str(choice.label),
-                "email_enabled": pref.email_enabled if pref else defaults["email_enabled"],
-                "push_enabled": pref.push_enabled if pref else defaults["push_enabled"],
-                "recommended_email": defaults["email_enabled"],
-                "recommended_push": defaults["push_enabled"],
+            groups.append({
+                "id": group.id,
+                "manager_only": group.manager_only,
+                "controllable": group.controllable,
+                # A control may only promise what every member shares, so an
+                # uncontrollable group states no recommendation of its own; its
+                # rows carry theirs individually.
+                "recommended_email": group.email if group.controllable else None,
+                "recommended_push": group.push if group.controllable else None,
             })
-        return Response(data)
+
+            for ntype in visible:
+                pref = stored.get(ntype)
+                defaults = default_channel_preferences(ntype)
+                # `recommended_*` carries the shared default contract to the client
+                # so the settings UI can flag below-recommended rows and offer
+                # Restore-recommended without re-deriving (and drifting from) it.
+                rows.append({
+                    "notification_type": ntype,
+                    "group": group.id,
+                    "label": str(NotificationType(ntype).label),
+                    "email_enabled": pref.email_enabled if pref else defaults["email_enabled"],
+                    "push_enabled": pref.push_enabled if pref else defaults["push_enabled"],
+                    "recommended_email": defaults["email_enabled"],
+                    "recommended_push": defaults["push_enabled"],
+                })
+
+        return Response({"groups": groups, "preferences": rows})
     
     def patch(self, request: Request, notification_type: str | None = None) -> Response:
         """Updates specific notification channels based on notification_type."""
