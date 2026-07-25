@@ -487,6 +487,239 @@ class TransactionalEmailTests(TestCase):
         self.assertIn("Rehearsal note", mail.outbox[0].subject)
 
 
+_BRIEFING_META: dict = {
+    "project_id": "p1",
+    "project_name": "Requiem",
+    "note": "",
+    "items": [
+        {
+            "subject_type": "CASTING", "kind": "CHANGED",
+            "notification_type": NotificationType.PIECE_CASTING_UPDATED,
+            "level": "INFO",
+            "metadata": {
+                "piece_title": "Lacrimosa", "voice_line": "S2",
+                "changes": [{"field": "voice_line", "old": "S1", "new": "S2"}],
+            },
+        },
+        {
+            "subject_type": "REHEARSAL", "kind": "CREATED",
+            "notification_type": NotificationType.REHEARSAL_SCHEDULED,
+            "level": "INFO",
+            "metadata": {
+                "project_name": "Requiem", "starts_at": "2026-06-19T17:00:00+00:00",
+                "timezone": "Europe/Warsaw", "location": "St Anne's", "focus": "Intro",
+            },
+        },
+        {
+            "subject_type": "PROJECT", "kind": "CHANGED",
+            "notification_type": NotificationType.PROJECT_UPDATED,
+            "level": "WARNING",
+            "metadata": {
+                "project_name": "Requiem",
+                "changes": [{"field": "location", "old": "St Anne's", "new": "St John's"}],
+            },
+        },
+    ],
+    "ics": [
+        {
+            "kind": "rehearsal", "uid": "rehearsal_a@voctensemble.com",
+            "start": "2026-06-19T17:00:00+00:00", "end": "2026-06-19T20:00:00+00:00",
+            "project_name": "Requiem", "location": "St Anne's",
+        },
+        {
+            "kind": "rehearsal", "uid": "rehearsal_b@voctensemble.com",
+            "start": "2026-06-20T17:00:00+00:00", "end": "2026-06-20T20:00:00+00:00",
+            "project_name": "Requiem", "location": "St Anne's",
+        },
+    ],
+}
+
+
+class BriefingCompositionTests(SimpleTestCase):
+    """A briefing is several pieces of news in one message, so its composition has
+    one job the single-event composers do not: keeping them apart and in an order
+    that puts the reader's own part first."""
+
+    def _build(self, metadata=None, level=NotificationLevel.INFO) -> MessageContent:
+        return MessageContentBuilder.build(
+            NotificationType.PROJECT_BRIEFING, level,
+            _BRIEFING_META if metadata is None else metadata, is_manager=False,
+        )
+
+    def test_sections_lead_with_what_is_the_readers_own(self) -> None:
+        with translation.override("en"):
+            content = self._build()
+
+        self.assertEqual(
+            [section.title for section in content.sections],
+            ["Your part", "Rehearsals", "The concert"],
+        )
+        # The casting item names the piece and the line it moved to.
+        casting = content.sections[0].items[0]
+        self.assertEqual(casting.primary, "Lacrimosa")
+        self.assertEqual(casting.secondary, "Soprano 2")
+        self.assertIn("Soprano 1", casting.detail)
+
+    def test_a_rehearsal_is_named_by_its_moment(self) -> None:
+        with translation.override("en"):
+            content = self._build()
+
+        rehearsal = content.sections[1].items[0]
+        # The moment follows a dash so it never opens the line — Polish and French
+        # both render weekdays lowercase.
+        self.assertTrue(rehearsal.primary.startswith("New rehearsal — "))
+        self.assertIn("19:00", rehearsal.primary)
+        self.assertEqual(rehearsal.secondary, "St Anne's")
+
+    def test_the_title_counts_what_is_inside_and_the_body_previews_it(self) -> None:
+        with translation.override("en"):
+            content = self._build()
+
+        self.assertEqual(content.title, "3 updates — Requiem")
+        self.assertIn("Lacrimosa", content.body)
+        self.assertIn("Requiem", content.subject)
+
+    def test_a_note_leads_the_push_body(self) -> None:
+        with translation.override("en"):
+            content = self._build({**_BRIEFING_META, "note": "Please be punctual."})
+
+        # Truncation trims the tail, so the conductor's words are never the part
+        # that gets cut.
+        self.assertTrue(content.body.startswith("Please be punctual."))
+
+    def test_polish_reads_natively_and_pluralizes(self) -> None:
+        with translation.override("pl"):
+            one = self._build({**_BRIEFING_META, "items": _BRIEFING_META["items"][:1]})
+            few = self._build()
+            sections = [section.title for section in few.sections]
+
+        self.assertEqual(one.title, "1 zmiana — Requiem")
+        self.assertEqual(few.title, "3 zmiany — Requiem")
+        self.assertEqual(sections, ["Twoja partia", "Próby", "Koncert"])
+
+    def test_an_unknown_subject_is_dropped_rather_than_guessed_at(self) -> None:
+        with translation.override("en"):
+            content = self._build({
+                **_BRIEFING_META,
+                "items": [
+                    *_BRIEFING_META["items"],
+                    {"subject_type": "SOMETHING_NEW", "kind": "CHANGED",
+                     "notification_type": "X", "level": "INFO", "metadata": {}},
+                ],
+            })
+
+        # A briefing that half-renders an item it does not understand is worse than
+        # one that is merely shorter.
+        self.assertEqual(len(content.sections), 3)
+        self.assertEqual(content.title, "3 updates — Requiem")
+
+
+class BriefingEmailTests(TestCase):
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="br1", email="br1@test.pl", password="pw123456", first_name="Jan",
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST, language="en")
+
+    def test_the_briefing_email_lays_out_its_sections_and_one_calendar(self) -> None:
+        EmailDispatcherService.dispatch_from_notification(
+            recipient_id=str(self.user.id),
+            notification_type=NotificationType.PROJECT_BRIEFING,
+            template_name="briefing",
+            metadata={**_BRIEFING_META, "note": "Please be punctual."},
+            level=NotificationLevel.WARNING,
+            email_type=EmailType.OPERATIONAL,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+        msg = cast(EmailMultiAlternatives, mail.outbox[0])
+        html = str(msg.alternatives[0][0])
+
+        # The apostrophe in "St John's" arrives HTML-escaped, which is the point —
+        # assert on the part that is not entity-encoded.
+        for expected in ("Your part", "Rehearsals", "The concert",
+                         "Lacrimosa", "St John", "Please be punctual."):
+            self.assertIn(expected, html)
+        # The plain-text alternative carries the same account.
+        self.assertIn("Lacrimosa", msg.body)
+
+        # Two rehearsals, ONE attachment: several invites would read as several
+        # pieces of news, which is what the briefing exists to prevent.
+        self.assertEqual(len(msg.attachments), 1)
+        filename, content, _mimetype = msg.attachments[0]
+        self.assertEqual(filename, "schedule.ics")
+        self.assertEqual(str(content).count("BEGIN:VEVENT"), 2)
+
+    def test_an_authored_note_cannot_smuggle_markup(self) -> None:
+        EmailDispatcherService.dispatch_from_notification(
+            recipient_id=str(self.user.id),
+            notification_type=NotificationType.PROJECT_BRIEFING,
+            template_name="briefing",
+            metadata={**_BRIEFING_META, "note": "<script>alert(1)</script>"},
+            level=NotificationLevel.INFO,
+            email_type=EmailType.OPERATIONAL,
+        )
+
+        html = str(cast(EmailMultiAlternatives, mail.outbox[0]).alternatives[0][0])
+        self.assertNotIn("<script>", html)
+        self.assertIn("&lt;script&gt;", html)
+
+
+class AnnouncementNudgeEmailTests(TestCase):
+    """The nudge's inbox copy — the channel that carries it when the reason it is
+    needed at all is that the conductor stopped opening the app."""
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(
+            username="an-mail", email="an-mail@test.pl", password="pw123456",
+            first_name="Jan",
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER, language="en")
+
+    def test_the_email_renders_through_the_transactional_layout(self) -> None:
+        project_id = "8d79e557-2d1d-4c03-8454-cdc1b8da960d"
+        EmailDispatcherService.dispatch_from_notification(
+            recipient_id=str(self.manager.id),
+            notification_type=NotificationType.ANNOUNCEMENT_PENDING,
+            template_name="transactional",
+            metadata={
+                "project_id": project_id,
+                "project_name": "Requiem",
+                "change_count": 3,
+                "recipient_count": 12,
+                "waiting_hours": 26,
+            },
+            level=NotificationLevel.WARNING,
+            email_type=EmailType.OPERATIONAL,
+        )
+
+        self.assertEqual(len(mail.outbox), 1)
+        msg = cast(EmailMultiAlternatives, mail.outbox[0])
+        html = str(msg.alternatives[0][0])
+
+        self.assertIn("Requiem", msg.subject)
+        for expected in ("Requiem", "3 changes", "12 people", "Announcement queue"):
+            self.assertIn(expected, html)
+        # The button has to land on the sheet itself — an email that returns the
+        # reader to the hub is the nudge asking them to go and find it.
+        self.assertIn(f"/panel/projects/{project_id}?announce=1", html)
+        # Nothing to put in a diary: this is a prompt to act, not an event.
+        self.assertEqual(len(msg.attachments), 0)
+
+    def test_it_is_sent_by_default_and_stays_out_of_the_daily_digest(self) -> None:
+        """Every other manager alert reports something that happened; this one
+        reports that something has *not*. Deferring it by up to a day is exactly
+        how a safety net fails."""
+        from .delivery import default_channel_preferences, is_digestible
+
+        defaults = default_channel_preferences(NotificationType.ANNOUNCEMENT_PENDING)
+        self.assertTrue(defaults["email_enabled"])
+        self.assertTrue(defaults["push_enabled"])
+        self.assertFalse(
+            is_digestible(NotificationType.ANNOUNCEMENT_PENDING, NotificationLevel.INFO)
+        )
+
+
 class RouterDigestGatingTests(TestCase):
     """Routine INFO manager alerts are held back; urgent/non-digestible break through."""
 
@@ -537,20 +770,169 @@ class RouterDigestGatingTests(TestCase):
         push.assert_called_once()
 
     def test_router_uses_shared_defaults_when_creating_preference(self) -> None:
-        # Casting is Tier 2: push-on (subscribers only), email-off. The lazily
-        # created row must reflect that contract, not the model's blanket True.
+        # Materials are preparation, not a commitment: push-on (subscribers only),
+        # email-off. The lazily created row must reflect that contract, not the
+        # model's blanket True.
         self.profile.digest_enabled = False
         self.profile.save(update_fields=["digest_enabled"])
-        email, push = self._route(NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO)
+        email, push = self._route(NotificationType.MATERIAL_UPLOADED, NotificationLevel.INFO)
         email.assert_not_called()
         push.assert_called_once()
 
         pref = NotificationPreference.objects.get(
             user=self.user,
-            notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+            notification_type=NotificationType.MATERIAL_UPLOADED,
         )
         self.assertFalse(pref.email_enabled)
         self.assertTrue(pref.push_enabled)
+
+
+class BriefingRoutingTests(TestCase):
+    """A briefing is a delivery shape, not a category.
+
+    Which events it gathers is an accident of how many things the conductor
+    changed that week, so honouring the envelope's preference would let the fold
+    overrule every per-type choice the reader made. Each item is answered by its
+    own type instead.
+    """
+
+    EMAIL = "notifications.router.send_notification_email_task.delay"
+    PUSH = "notifications.router.send_push_notification_task.delay"
+
+    def setUp(self) -> None:
+        self.user = get_user_model().objects.create_user(
+            username="br-route", email="br-route@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+
+    def _briefing(self, *, with_calendar: bool = True) -> dict:
+        return {
+            "project_id": "8d79e557-2d1d-4c03-8454-cdc1b8da960d",
+            "project_name": "Requiem",
+            "note": "",
+            "items": [
+                {
+                    "subject_type": "REHEARSAL",
+                    "kind": "CHANGED",
+                    "notification_type": NotificationType.REHEARSAL_UPDATED,
+                    "level": NotificationLevel.WARNING,
+                    "metadata": {"project_name": "Requiem"},
+                },
+                {
+                    "subject_type": "CASTING",
+                    "kind": "CREATED",
+                    "notification_type": NotificationType.PIECE_CASTING_ASSIGNED,
+                    "level": NotificationLevel.INFO,
+                    "metadata": {"piece_title": "Pie Jesu", "voice_line": "S1"},
+                },
+            ],
+            "ics": (
+                [{"kind": "rehearsal", "uid": "r1@voct", "start": "x", "end": "y"}]
+                if with_calendar else []
+            ),
+        }
+
+    def _route(self, metadata: dict):
+        from notifications.router import NotificationRouter
+
+        with patch(self.EMAIL) as email, patch(self.PUSH) as push:
+            NotificationRouter.route(
+                recipient_id=str(self.user.id),
+                notification_type=NotificationType.PROJECT_BRIEFING,
+                metadata=metadata,
+                level=NotificationLevel.WARNING,
+            )
+        return email, push
+
+    def _types(self, mock) -> list[str]:
+        return [
+            item["notification_type"]
+            for item in mock.call_args.kwargs["metadata"]["items"]
+        ]
+
+    def test_each_channel_carries_only_the_items_enabled_on_it(self) -> None:
+        # Casting and rehearsals now share one group, so a divergence has to be
+        # asked for — which is the case that matters anyway: a reader who
+        # deliberately silenced one member of a group expects that to hold however
+        # the news happens to travel.
+        NotificationPreference.objects.create(
+            user=self.user,
+            notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+            email_enabled=False,
+            push_enabled=True,
+        )
+
+        email, push = self._route(self._briefing())
+
+        self.assertEqual(self._types(email), [NotificationType.REHEARSAL_UPDATED])
+        self.assertEqual(
+            self._types(push),
+            [NotificationType.REHEARSAL_UPDATED, NotificationType.PIECE_CASTING_ASSIGNED],
+        )
+
+    def test_a_channel_with_nothing_enabled_is_not_written_to(self) -> None:
+        for notification_type in (
+            NotificationType.REHEARSAL_UPDATED,
+            NotificationType.PIECE_CASTING_ASSIGNED,
+        ):
+            NotificationPreference.objects.create(
+                user=self.user, notification_type=notification_type,
+                email_enabled=False, push_enabled=True,
+            )
+
+        email, push = self._route(self._briefing())
+
+        # Turning both off must not be overridden by the envelope's own tier — the
+        # bypass this routing exists to close.
+        email.assert_not_called()
+        push.assert_called_once()
+
+    def test_the_calendar_is_dropped_when_a_rehearsal_is_filtered_out(self) -> None:
+        NotificationPreference.objects.create(
+            user=self.user, notification_type=NotificationType.REHEARSAL_UPDATED,
+            email_enabled=False, push_enabled=False,
+        )
+        # Stated explicitly so the e-mail channel still has something to carry and
+        # the dropped rehearsal is what the assertion is about.
+        NotificationPreference.objects.create(
+            user=self.user, notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
+            email_enabled=True, push_enabled=True,
+        )
+
+        email, push = self._route(self._briefing())
+
+        # The events were lifted out of their items at publication, so they cannot
+        # be matched back one by one. An attachment naming a rehearsal this copy
+        # never mentions would put a phantom date in the reader's diary.
+        self.assertEqual(self._types(email), [NotificationType.PIECE_CASTING_ASSIGNED])
+        self.assertEqual(email.call_args.kwargs["metadata"]["ics"], [])
+        # Push carries no attachment at all, so nothing to strip there.
+        self.assertEqual(self._types(push), [NotificationType.PIECE_CASTING_ASSIGNED])
+
+    def test_the_calendar_survives_when_every_rehearsal_survives(self) -> None:
+        email, _push = self._route(self._briefing())
+        self.assertEqual(len(email.call_args.kwargs["metadata"]["ics"]), 1)
+
+    def test_the_briefing_mints_no_preference_rows(self) -> None:
+        self._route(self._briefing())
+
+        # A briefing merely *mentioning* a type must not create a row for it —
+        # that would freeze today's default as the reader's stated choice.
+        self.assertFalse(
+            NotificationPreference.objects.filter(user=self.user).exists()
+        )
+
+    def test_the_briefing_is_not_offered_as_a_preference(self) -> None:
+        self.client.force_login(self.user)
+        response = self.client.get("/api/notifications/preferences/")
+
+        self.assertEqual(response.status_code, 200)
+        offered = {row["notification_type"] for row in response.json()["preferences"]}
+        self.assertNotIn(NotificationType.PROJECT_BRIEFING.value, offered)
+        # The events it gathers are still individually addressable — that is the
+        # whole point of routing per item.
+        self.assertIn(NotificationType.REHEARSAL_UPDATED.value, offered)
+        self.assertIn(NotificationType.PIECE_CASTING_ASSIGNED.value, offered)
 
 
 @override_settings(
@@ -865,11 +1247,17 @@ class NotificationPreferenceSettingsAPITests(APITestCase):
         )
         UserProfile.objects.create(user=self.artist, role=AppRole.ARTIST)
 
-    def _rows(self, user) -> dict[str, dict]:
+    def _matrix(self, user) -> dict:
         self.client.force_authenticate(user)
         resp = self.client.get(self.URL)
         self.assertEqual(resp.status_code, 200)
-        return {row["notification_type"]: row for row in resp.data}
+        return resp.data
+
+    def _rows(self, user) -> dict[str, dict]:
+        return {
+            row["notification_type"]: row
+            for row in self._matrix(user)["preferences"]
+        }
 
     def test_unpersisted_rows_mirror_the_shared_default_contract(self) -> None:
         rows = self._rows(self.manager)
@@ -911,42 +1299,49 @@ class NotificationPreferenceSettingsAPITests(APITestCase):
             NotificationType.PARTICIPATION_RESPONSE.value,
             NotificationType.ATTENDANCE_SUBMITTED.value,
             NotificationType.ABSENCE_REQUESTED.value,
+            # Only someone who may publish can answer an unpublished queue, and a
+            # singer shown the row would read it as news about their own concert.
+            NotificationType.ANNOUNCEMENT_PENDING.value,
         }
         artist_rows = self._rows(self.artist)
         self.assertTrue(manager_only.isdisjoint(artist_rows))
         self.assertTrue(manager_only.issubset(self._rows(self.manager)))
 
     def test_persisted_choice_overrides_the_default(self) -> None:
-        # Casting email defaults OFF; a saved opt-in must win over the default.
+        # Casting email defaults ON since it joined the commitments group; a saved
+        # opt-out must win over the default.
         NotificationPreference.objects.create(
             user=self.manager,
             notification_type=NotificationType.PIECE_CASTING_ASSIGNED,
-            email_enabled=True,
+            email_enabled=False,
             push_enabled=True,
         )
         row = self._rows(self.manager)[NotificationType.PIECE_CASTING_ASSIGNED.value]
-        self.assertTrue(row["email_enabled"])
+        self.assertFalse(row["email_enabled"])
         self.assertTrue(row["push_enabled"])
+        # …and it still reports the baseline it diverges from, so the ledger can
+        # mark the row below-recommended rather than looking merely different.
+        self.assertTrue(row["recommended_email"])
 
     def test_single_channel_toggle_seeds_untouched_channel_from_contract(self) -> None:
-        # Casting email defaults OFF (≠ model default True). Toggling only push must
-        # create the row with email seeded from the SSOT (False), not the model's
-        # blanket True — proving the untouched channel follows the contract.
+        # Materials email defaults OFF (≠ model default True). Toggling only push
+        # must create the row with email seeded from the SSOT (False), not the
+        # model's blanket True — proving the untouched channel follows the contract.
         self.client.force_authenticate(self.manager)
         resp = self.client.patch(
-            self._detail_url(NotificationType.PIECE_CASTING_ASSIGNED.value),
+            self._detail_url(NotificationType.MATERIAL_UPLOADED.value),
             {"push_enabled": False},
             format="json",
         )
         self.assertEqual(resp.status_code, 200)
 
         pref = NotificationPreference.objects.get(
-            user=self.manager, notification_type=NotificationType.PIECE_CASTING_ASSIGNED
+            user=self.manager, notification_type=NotificationType.MATERIAL_UPLOADED
         )
         self.assertFalse(pref.email_enabled)  # untouched channel keeps the SSOT default
         self.assertFalse(pref.push_enabled)
 
-        row = self._rows(self.manager)[NotificationType.PIECE_CASTING_ASSIGNED.value]
+        row = self._rows(self.manager)[NotificationType.MATERIAL_UPLOADED.value]
         self.assertEqual((row["email_enabled"], row["push_enabled"]), (False, False))
 
     def test_single_channel_toggle_preserves_existing_other_channel(self) -> None:
@@ -1000,3 +1395,281 @@ class NotificationPreferenceSettingsAPITests(APITestCase):
         self.client.force_authenticate(self.manager)
         resp = self.client.put(self.URL, {"preferences": []}, format="json")
         self.assertEqual(resp.status_code, 400)
+
+
+class PreferenceGroupPolicyTests(SimpleTestCase):
+    """The group map is the SSOT the ledger and the router both read.
+
+    These cover the invariants that make a *group* control honest: it governs
+    every type it claims to, it promises only what its members share, and no type
+    is left outside the map where it would render its raw English Django label.
+    """
+
+    def test_every_notification_type_is_placed_exactly_once(self) -> None:
+        from .delivery import assert_preference_policy_is_coherent
+        assert_preference_policy_is_coherent()
+
+    def test_a_controllable_group_governs_what_it_promises(self) -> None:
+        # The whole premise of one switch over several types: every member must
+        # already answer the way the group's control says it does, or the reader
+        # is shown a position their events do not hold.
+        from .delivery import PREFERENCE_GROUPS, default_channel_preferences
+
+        for group in PREFERENCE_GROUPS:
+            if not group.controllable:
+                continue
+            for ntype in group.types:
+                defaults = default_channel_preferences(ntype)
+                self.assertEqual(
+                    (defaults["email_enabled"], defaults["push_enabled"]),
+                    (group.email, group.push),
+                    f"{ntype} does not follow its own group '{group.id}'",
+                )
+
+    def test_casting_is_a_commitment(self) -> None:
+        # The load-bearing move of the group rewrite. "You now sing S2 instead of
+        # S1" changes what the reader has to prepare, so it travels with the moved
+        # rehearsal rather than with the new sheet music.
+        from .delivery import GROUP_OF_TYPE, default_channel_preferences
+
+        for ntype in (
+            NotificationType.PIECE_CASTING_ASSIGNED,
+            NotificationType.PIECE_CASTING_UPDATED,
+        ):
+            self.assertEqual(GROUP_OF_TYPE[ntype], "commitments")
+            self.assertTrue(default_channel_preferences(ntype)["email_enabled"])
+
+    def test_everything_a_briefing_can_carry_lives_in_one_group(self) -> None:
+        # The invariant that retires the fold's bypass in practice. The router
+        # still filters a briefing per item — that stays as the enforcement — but
+        # while every briefable type shares one control, a reader cannot end up
+        # with a preference the fold has to work around. The list mirrors the
+        # queued emitters in roster/services.py.
+        from .delivery import GROUP_OF_TYPE
+
+        briefable = {
+            NotificationType.PROJECT_UPDATED,
+            NotificationType.REHEARSAL_SCHEDULED,
+            NotificationType.REHEARSAL_UPDATED,
+            NotificationType.PIECE_CASTING_ASSIGNED,
+            NotificationType.PIECE_CASTING_UPDATED,
+        }
+        self.assertEqual(
+            {GROUP_OF_TYPE[ntype] for ntype in briefable},
+            {"commitments"},
+        )
+
+    def test_a_type_with_no_control_has_no_group(self) -> None:
+        # A group *is* a control, so the types kept out of the ledger are exactly
+        # the types outside the group map — one rule, not two lists to keep in step.
+        from .delivery import GROUP_OF_TYPE, HIDDEN_FROM_PREFS
+
+        self.assertTrue(HIDDEN_FROM_PREFS.isdisjoint(GROUP_OF_TYPE))
+        self.assertIn(NotificationType.PROJECT_BRIEFING.value, HIDDEN_FROM_PREFS)
+
+
+class PreferenceLedgerShapeTests(APITestCase):
+    """What the settings ledger hands the client: groups in render order, and the
+    rows behind each one tagged with the group that speaks for them."""
+
+    URL = "/api/notifications/preferences/"
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(
+            username="ledger-mgr", email="ledger-mgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.artist = User.objects.create_user(
+            username="ledger-artist", email="ledger-artist@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.artist, role=AppRole.ARTIST)
+
+    def _matrix(self, user) -> dict:
+        self.client.force_authenticate(user)
+        resp = self.client.get(self.URL)
+        self.assertEqual(resp.status_code, 200)
+        return resp.data
+
+    def test_groups_arrive_in_render_order_with_the_reader_first(self) -> None:
+        matrix = self._matrix(self.manager)
+        self.assertEqual(
+            [group["id"] for group in matrix["groups"]],
+            ["commitments", "messages", "materials", "team"],
+        )
+
+    def test_every_row_names_a_group_the_response_declares(self) -> None:
+        matrix = self._matrix(self.manager)
+        declared = {group["id"] for group in matrix["groups"]}
+        for row in matrix["preferences"]:
+            self.assertIn(row["group"], declared)
+        # …and no group arrives empty, which would render as a control over nothing.
+        self.assertEqual(declared, {row["group"] for row in matrix["preferences"]})
+
+    def test_a_controllable_group_states_the_recommendation_it_targets(self) -> None:
+        groups = {g["id"]: g for g in self._matrix(self.manager)["groups"]}
+        self.assertEqual(
+            (groups["commitments"]["recommended_email"], groups["commitments"]["controllable"]),
+            (True, True),
+        )
+        self.assertEqual(groups["materials"]["recommended_email"], False)
+
+    def test_a_group_whose_members_disagree_promises_nothing(self) -> None:
+        # Team ops mixes three digestible alerts with the queue's safety net, so it
+        # offers no group switch and states no recommendation of its own — its rows
+        # carry theirs individually.
+        team = {g["id"]: g for g in self._matrix(self.manager)["groups"]}["team"]
+        self.assertFalse(team["controllable"])
+        self.assertIsNone(team["recommended_email"])
+
+        rows = {
+            row["notification_type"]: row
+            for row in self._matrix(self.manager)["preferences"]
+        }
+        self.assertFalse(rows[NotificationType.ATTENDANCE_SUBMITTED.value]["recommended_email"])
+        self.assertTrue(rows[NotificationType.ANNOUNCEMENT_PENDING.value]["recommended_email"])
+
+    def test_the_manager_group_is_absent_entirely_for_an_artist(self) -> None:
+        matrix = self._matrix(self.artist)
+        self.assertNotIn("team", {group["id"] for group in matrix["groups"]})
+        self.assertNotIn(
+            NotificationType.ANNOUNCEMENT_PENDING.value,
+            {row["notification_type"] for row in matrix["preferences"]},
+        )
+
+
+class CastingDefaultReleaseMigrationTests(TestCase):
+    """The casting rows the router minted on the reader's behalf.
+
+    Flipping casting e-mail ON is only a default change for someone with no stored
+    row — and the router creates one on first delivery. The migration releases
+    exactly the rows that hold the old default on both channels, and nothing else.
+    """
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="casting-default", email="casting-default@test.pl", password="pw123456"
+        )
+
+    def _run(self) -> None:
+        from importlib import import_module
+
+        from django.apps import apps as global_apps
+
+        # The migration module name is not an identifier, so it is imported rather
+        # than `from`-imported. Running the real function keeps this a test of the
+        # rule that ships, not of a copy of it.
+        migration = import_module(
+            "notifications.migrations.0014_release_casting_email_default"
+        )
+        migration.release_system_seeded_casting_rows(global_apps, None)
+
+    def _pref(self, ntype: str, *, email: bool, push: bool) -> NotificationPreference:
+        return NotificationPreference.objects.create(
+            user=self.user, notification_type=ntype, email_enabled=email, push_enabled=push,
+        )
+
+    def test_a_row_at_the_old_default_is_released(self) -> None:
+        self._pref(NotificationType.PIECE_CASTING_ASSIGNED, email=False, push=True)
+        self._run()
+        # Gone, so the reader floats up to the new default instead of being pinned
+        # to a choice the system made for them.
+        self.assertFalse(
+            NotificationPreference.objects.filter(
+                user=self.user, notification_type=NotificationType.PIECE_CASTING_ASSIGNED
+            ).exists()
+        )
+
+    def test_a_row_expressing_a_real_choice_survives(self) -> None:
+        # Push off is an opinion nobody else could have written; the row stays, and
+        # with it the e-mail value beside it.
+        self._pref(NotificationType.PIECE_CASTING_UPDATED, email=False, push=False)
+        self._run()
+        pref = NotificationPreference.objects.get(
+            user=self.user, notification_type=NotificationType.PIECE_CASTING_UPDATED
+        )
+        self.assertEqual((pref.email_enabled, pref.push_enabled), (False, False))
+
+    def test_no_other_type_is_touched(self) -> None:
+        self._pref(NotificationType.MATERIAL_UPLOADED, email=False, push=True)
+        self._run()
+        self.assertTrue(
+            NotificationPreference.objects.filter(
+                user=self.user, notification_type=NotificationType.MATERIAL_UPLOADED
+            ).exists()
+        )
+
+
+class AnnouncementNudgeCopyTests(SimpleTestCase):
+    """How the queue's safety net reads.
+
+    The nudge exists to be answered, so most of what matters here is that it lands
+    the reader on the review sheet in one tap and states honest numbers on the way.
+    """
+
+    META: ClassVar[dict[str, object]] = {
+        "project_id": "8d79e557-2d1d-4c03-8454-cdc1b8da960d",
+        "project_name": "Requiem",
+        "change_count": 3,
+        "recipient_count": 12,
+        "waiting_hours": 26,
+    }
+
+    def _build(self, **overrides):
+        return MessageContentBuilder.build(
+            NotificationType.ANNOUNCEMENT_PENDING,
+            NotificationLevel.WARNING,
+            {**self.META, **overrides},
+            is_manager=True,
+        )
+
+    def test_the_link_opens_the_review_sheet_not_just_the_project(self) -> None:
+        """A nudge that lands the reader somewhere they still have to go looking is
+        the same silence with extra steps."""
+        with translation.override("en"):
+            content = self._build()
+        self.assertEqual(
+            content.url_path,
+            f"/panel/projects/{self.META['project_id']}?announce=1",
+        )
+        self.assertEqual(content.actions[0].url, content.url_path)
+
+    def test_the_tag_is_per_project_so_a_second_nudge_replaces_the_first(self) -> None:
+        with translation.override("en"):
+            first = self._build()
+            again = self._build(change_count=5, waiting_hours=50)
+            other = self._build(project_id="0f2b1c64-1111-4c03-8454-cdc1b8da960d")
+        self.assertEqual(first.tag, again.tag)
+        self.assertNotEqual(first.tag, other.tag)
+
+    def test_waiting_reads_in_hours_below_two_days_and_days_beyond(self) -> None:
+        with translation.override("en"):
+            self.assertIn("26 hours", self._build(waiting_hours=26).body)
+            self.assertIn("3 days", self._build(waiting_hours=74).body)
+
+    def test_a_queue_just_over_the_fuse_never_reads_as_zero(self) -> None:
+        """Integer hours floor to 0 inside the first hour, and "waiting 0 hours"
+        would read as a bug in the very message meant to restore trust."""
+        with translation.override("en"):
+            self.assertIn("1 hour", self._build(waiting_hours=0).body)
+
+    def test_polish_gets_all_three_plural_forms(self) -> None:
+        with translation.override("pl"):
+            one = self._build(change_count=1).body
+            few = self._build(change_count=3).body
+            many = self._build(change_count=5).body
+        self.assertIn("1 zmiana", one)
+        self.assertIn("3 zmiany", few)
+        self.assertIn("5 zmian", many)
+
+    def test_the_project_is_named_on_every_surface(self) -> None:
+        with translation.override("en"):
+            content = self._build()
+        self.assertIn("Requiem", content.title)
+        self.assertIn("Requiem", content.subject)
+        self.assertIn("Requiem", content.email_lead)
+        self.assertIn("Requiem", next(row.value for row in content.details))
+
+    def test_a_cast_of_nobody_leaves_the_row_out_rather_than_saying_zero(self) -> None:
+        with translation.override("en"):
+            labels = [row.label for row in self._build(recipient_count=0).details]
+        self.assertNotIn("Not yet told", labels)
