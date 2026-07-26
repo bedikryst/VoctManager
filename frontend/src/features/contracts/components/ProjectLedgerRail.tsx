@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Briefcase, Calendar, Layers3, Search } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { foldDiacritics } from "@/shared/lib/text";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -69,12 +70,12 @@ export const ProjectLedgerRail = ({
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
+    const needle = foldDiacritics(query.trim());
     if (!needle) {
       return rollups;
     }
     return rollups.filter((rollup) =>
-      rollup.project.title.toLowerCase().includes(needle),
+      foldDiacritics(rollup.project.title).includes(needle),
     );
   }, [rollups, query]);
 

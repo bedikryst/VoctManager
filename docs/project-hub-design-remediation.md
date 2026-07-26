@@ -34,6 +34,12 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   per-feature passes.
 - **`StatePanel` adoption**: `features/messages` is the last hand-rolled centred empty state
   (`ThreadList`, `ConductorDeck`, `MessagesPage`).
+- **Diacritic-folding search is now universal and should stay that way.** Every user-facing search in
+  the panel goes through `shared/lib/text.foldDiacritics`; the archive follow-up swept the last three
+  (both archive lists, plus `useMaterialsData` and `ProjectLedgerRail`, which were found while
+  checking whether the rule in `.ai/04` was actually true — it was not). A new search box is the one
+  place this regresses silently, because an unfolded search fails only for the users whose names
+  carry the diacritics.
 - **The rest of `features/rehearsals` wants a copy pass.** §5.3 fixed the shared status vocabulary;
   the module's own headings and empty states have not been read end to end. Small companion defect:
   the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
@@ -1484,3 +1490,44 @@ abort-ingestion).
 **Declined:** converting `ArchiveTabs` to `SegmentedTabs`. These are routes, and `SegmentedTabs` is
 a controlled tablist — the switch would have traded real `<a>` semantics (middle-click, open in new
 tab) for a shared file. `ProjectTabs` already made this call; archive now matches it instead.
+
+#### Follow-up: what the archive pass did not carry over (SHIPPED 2026-07-27)
+
+The two Phase 3 passes were written in parallel and committed one after the other, so neither could
+see what the other had extracted. Re-reading the five archive screens against the findings the
+roster pass had already settled turned up four things — and, worth saying plainly, **no fifth**: the
+archive's taxonomies (epochs, languages, domains) carry no colour at all, so the crimson-on-a-resting-
+category bug that drove `accents.ts` genuinely does not exist here. Every crimson in the feature is
+a delete hover or a real error.
+
+**Neither archive search folded diacritics.** `foldDiacritics` had reached artists, crew, logistics,
+messages and projects. The one feature it skipped is the one whose index *is* Polish surnames:
+`gorecki` returned nothing, and so did `lukaszewski`. Both the piece list (title + composer) and the
+composer list fold now, on both sides of the `includes()`.
+
+That pulled a real defect out of the shared helper. It was built on `.normalize("NFD")`, which peels
+combining marks off `ó` and `ń` — but `ł` is an atomic codepoint (U+0142) with **no decomposition**,
+so it survived the fold untouched and Łukaszewski was unreachable in *every* feature that had already
+adopted the helper, including the roster pass that introduced it. Stroked letters now go through an
+explicit map. `shared/lib/text.test.ts` exists to pin exactly that case, because a hand-rolled NFD
+fold passes every other assertion in the file.
+
+**The filter row was the fourth hand-rolled copy.** `FilterTokens` was extracted for this and landed
+one commit later, so the archive could not have used it. Adopted now; `archive.search.clear_token`
+retires into `common.filters.remove_token`. One deliberate difference from the crew call site: the
+summary sits behind a guard instead of using the composite's summary-only mode, because crew's
+`{{visible}} z {{total}} osób` is a permanent census while the archive's is the *effect* of a
+filter — the library total is already in the stat line, so unfiltered it would only say `128 z 128`.
+
+**Two figures were still said twice.** The review meter printed `Zweryfikowano 4 z 9` and then, two
+lines below, a legend reading `Zweryfikowane: 4` — one number, twice, in two inflections of the same
+word. The legend's actual job is decoding the provenance dots on the fields underneath, so it keeps
+colour ↔ meaning and hands the arithmetic back to the sentence. This is the atlas-legend call from
+the roster pass, arrived at from the opposite direction: there the legend contradicted the census,
+here it repeated it. Both are now one rule in `.ai/04`.
+
+And the composers stat line printed `0 bez utworów` on a healthy library — the resting state
+announcing itself, which is the locked rule the piece row already follows for `bez nut`. The segment
+appears only when there is an orphan to go and look at. While a search narrows that list it now says
+`{{visible}} z {{total}}`, so the library-wide `128 kompozytorów` above it is never read as the count
+on screen.

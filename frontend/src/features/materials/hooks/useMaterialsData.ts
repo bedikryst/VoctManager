@@ -7,6 +7,7 @@
 
 import { useMemo } from "react";
 import { compareAsc, parseISO } from "date-fns";
+import { foldDiacritics } from "@/shared/lib/text";
 import { useArtistMaterialsDashboard } from "../api/materials.queries";
 import type {
   MaterialsDashboardGroup,
@@ -61,15 +62,15 @@ export const useMaterialsData = (searchQuery = "", enabled = true) => {
   const filteredGroups = useMemo<MaterialsDashboardGroup[]>(() => {
     if (!searchQuery) return groupedMaterials;
 
-    const term = searchQuery.toLowerCase();
+    const term = foldDiacritics(searchQuery);
 
     return groupedMaterials
       .map((group) => ({
         ...group,
         program: group.program.filter(
           (item) =>
-            item.piece.title.toLowerCase().includes(term) ||
-            (item.piece.composer?.last_name ?? "").toLowerCase().includes(term),
+            foldDiacritics(item.piece.title).includes(term) ||
+            foldDiacritics(item.piece.composer?.last_name ?? "").includes(term),
         ),
       }))
       .filter((group) => group.program.length > 0);
