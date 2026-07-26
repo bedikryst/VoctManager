@@ -13,7 +13,7 @@ import { ArrowDownUp, LayoutGrid, List, ListChecks, Search } from "lucide-react"
 
 import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import type { RosterSort, RosterView } from "../hooks/useArtistData";
 
 interface RosterToolbarProps {
@@ -77,23 +77,27 @@ export const RosterToolbar = ({
         </button>
 
         <div className="w-full sm:w-56">
-          <NativeSelect
+          <Select
             variant="solid"
             leftIcon={<ArrowDownUp />}
-            aria-label={t("artists.toolbar.sort_label", "Sortuj")}
+            ariaLabel={t("artists.toolbar.sort_label", "Sortuj")}
             value={sortBy}
-            onChange={(event) => onSort(event.target.value as RosterSort)}
-          >
-            <option value="name">
-              {t("artists.toolbar.sort_name", "Nazwisko (A–Z)")}
-            </option>
-            <option value="section">
-              {t("artists.toolbar.sort_section", "Sekcja (SATB)")}
-            </option>
-            <option value="skill">
-              {t("artists.toolbar.sort_skill", "Czytanie a vista")}
-            </option>
-          </NativeSelect>
+            onValueChange={(value) => onSort(value as RosterSort)}
+            options={[
+              {
+                value: "name",
+                label: t("artists.toolbar.sort_name", "Nazwisko (A–Z)"),
+              },
+              {
+                value: "section",
+                label: t("artists.toolbar.sort_section", "Sekcja (SATB)"),
+              },
+              {
+                value: "skill",
+                label: t("artists.toolbar.sort_skill", "Czytanie a vista"),
+              },
+            ]}
+          />
         </div>
 
         <div

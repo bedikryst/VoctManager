@@ -12,12 +12,12 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { X, CheckCircle2, Send } from "lucide-react";
-import { useWatch } from "react-hook-form";
+import { Controller, useWatch } from "react-hook-form";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
 import { Input } from "@ui/primitives/Input";
-import { NativeSelect } from "@ui/primitives/NativeSelect";
+import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
 import type { Artist, VoiceTypeOption } from "@/shared/types";
 import { useArtistForm } from "../hooks/useArtistForm";
@@ -265,19 +265,27 @@ export default function ArtistEditorPanel({
 
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                       <div>
-                        <NativeSelect
-                          label={t(
-                            "artists.editor.language",
-                            "Język wiadomości *",
+                        <Controller
+                          control={form.control}
+                          name="language"
+                          render={({ field }) => (
+                            <Select
+                              label={t(
+                                "artists.editor.language",
+                                "Język wiadomości *",
+                              )}
+                              name={field.name}
+                              value={field.value ?? ""}
+                              onValueChange={field.onChange}
+                              disabled={isSubmitting || !!artist?.id}
+                              options={[
+                                { value: "pl", label: "Polski" },
+                                { value: "en", label: "English" },
+                                { value: "fr", label: "Français" },
+                              ]}
+                            />
                           )}
-                          {...form.register("language")}
-                          className="font-bold"
-                          disabled={isSubmitting || !!artist?.id}
-                        >
-                          <option value="pl">Polski</option>
-                          <option value="en">English</option>
-                          <option value="fr">Français</option>
-                        </NativeSelect>
+                        />
                         {artist?.id && (
                           <Text
                             as="p"
@@ -293,16 +301,33 @@ export default function ArtistEditorPanel({
                         )}
                       </div>
                       <div>
-                        <NativeSelect
-                          label={t("common.salutation.label", "Forma zwrotu")}
-                          {...form.register("salutation")}
-                          className="font-bold"
-                          disabled={isSubmitting || !!artist?.id}
-                        >
-                          <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
-                          <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
-                          <option value="M">{t("common.salutation.masculine", "Męska")}</option>
-                        </NativeSelect>
+                        <Controller
+                          control={form.control}
+                          name="salutation"
+                          render={({ field }) => (
+                            <Select
+                              label={t("common.salutation.label", "Forma zwrotu")}
+                              name={field.name}
+                              value={field.value ?? ""}
+                              onValueChange={field.onChange}
+                              disabled={isSubmitting || !!artist?.id}
+                              options={[
+                                {
+                                  value: "N",
+                                  label: t("common.salutation.neutral", "Neutralna"),
+                                },
+                                {
+                                  value: "F",
+                                  label: t("common.salutation.feminine", "Kobieca"),
+                                },
+                                {
+                                  value: "M",
+                                  label: t("common.salutation.masculine", "Męska"),
+                                },
+                              ]}
+                            />
+                          )}
+                        />
                         <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
                           {artist?.id
                             ? t(
@@ -323,25 +348,29 @@ export default function ArtistEditorPanel({
                       {t("artists.editor.section_voice", "Profil Wokalny")}
                     </SectionTitle>
 
-                    <NativeSelect
-                      label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
-                      {...form.register("voice_type")}
-                      className="font-bold"
-                      disabled={isSubmitting}
-                      error={errorText(errors.voice_type?.message)}
-                    >
-                      {voiceTypes.length > 0 ? (
-                        voiceTypes.map((voiceType) => (
-                          <option key={voiceType.value} value={voiceType.value}>
-                            {voiceType.label}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="SOP">
-                          {t("artists.editor.loading", "Ładowanie...")}
-                        </option>
+                    <Controller
+                      control={form.control}
+                      name="voice_type"
+                      render={({ field }) => (
+                        <Select
+                          label={t("artists.editor.voice_type", "Rodzaj Głosu *")}
+                          name={field.name}
+                          value={field.value ?? ""}
+                          onValueChange={field.onChange}
+                          // Until the dictionary lands the field says it is
+                          // waiting, rather than offering one placeholder voice
+                          // that would be submitted verbatim.
+                          disabled={isSubmitting || voiceTypes.length === 0}
+                          placeholder={
+                            voiceTypes.length === 0
+                              ? t("artists.editor.loading", "Ładowanie...")
+                              : undefined
+                          }
+                          error={errorText(errors.voice_type?.message)}
+                          options={voiceTypes}
+                        />
                       )}
-                    </NativeSelect>
+                    />
 
                     <div className="grid grid-cols-2 gap-5">
                       <Input
@@ -376,27 +405,31 @@ export default function ArtistEditorPanel({
                       />
                     </div>
 
-                    <NativeSelect
-                      label={t(
-                        "artists.editor.sight_reading",
-                        "Czytanie a vista (Ocena)",
+                    <Controller
+                      control={form.control}
+                      name="sight_reading_skill"
+                      render={({ field }) => (
+                        <Select
+                          label={t(
+                            "artists.editor.sight_reading",
+                            "Czytanie a vista (Ocena)",
+                          )}
+                          name={field.name}
+                          value={field.value ? String(field.value) : ""}
+                          onValueChange={field.onChange}
+                          disabled={isSubmitting}
+                          placeholder={t("artists.editor.no_rating", "Brak oceny")}
+                          clearLabel={t("artists.editor.no_rating", "Brak oceny")}
+                          options={[1, 2, 3, 4, 5].map((value) => ({
+                            value: String(value),
+                            label: t("artists.editor.stars_count", {
+                              defaultValue: "{{count}} Gwiazdki",
+                              count: value,
+                            }),
+                          }))}
+                        />
                       )}
-                      {...form.register("sight_reading_skill")}
-                      className="font-bold"
-                      disabled={isSubmitting}
-                    >
-                      <option value="">
-                        {t("artists.editor.no_rating", "— Brak oceny —")}
-                      </option>
-                      {[1, 2, 3, 4, 5].map((value) => (
-                        <option key={value} value={String(value)}>
-                          {t("artists.editor.stars_count", {
-                            defaultValue: "{{count}} Gwiazdki",
-                            count: value,
-                          })}
-                        </option>
-                      ))}
-                    </NativeSelect>
+                    />
                   </div>
 
                   {artist?.id && (

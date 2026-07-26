@@ -18,7 +18,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import {
   Eyebrow,
   Heading,
@@ -214,23 +214,18 @@ export function CrewEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
-                  <NativeSelect
+                  <Select
                     label={t("crew.editor.specialty", "Specjalizacja *")}
                     value={formData.specialty}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       updateField(
                         "specialty",
-                        event.target.value as CrewFormData["specialty"],
+                        value as CrewFormData["specialty"],
                       )
                     }
                     disabled={isSubmitting}
-                  >
-                    {specialtyOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                    options={specialtyOptions}
+                  />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
                     <Text size="xs" color="graphite">

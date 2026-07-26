@@ -20,7 +20,7 @@ import {
 
 import { cn } from "@/shared/lib/utils";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import type { CrewContactCompleteness } from "../types/crew.dto";
 import type { CrewSort, CrewView } from "../hooks/useCrewData";
 
@@ -118,57 +118,52 @@ export const CrewToolbar = ({
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <NativeSelect
+        {/* An unset filter means "everything", so that reading belongs on the
+            placeholder — and the clear entry is how you get back to it. */}
+        <Select
           variant="solid"
           leftIcon={<Building2 />}
-          aria-label={t("crew.filters.company_label", "Firma / Marka")}
+          ariaLabel={t("crew.filters.company_label", "Firma / Marka")}
           value={companyFilter}
-          onChange={(event) => onCompanyFilter(event.target.value)}
+          onValueChange={onCompanyFilter}
           disabled={availableCompanies.length === 0}
-        >
-          <option value="">
-            {t("crew.filters.all_companies", "Wszystkie firmy")}
-          </option>
-          {availableCompanies.map((company) => (
-            <option key={company} value={company}>
-              {company}
-            </option>
-          ))}
-        </NativeSelect>
+          placeholder={t("crew.filters.all_companies", "Wszystkie firmy")}
+          clearLabel={t("crew.filters.all_companies", "Wszystkie firmy")}
+          options={availableCompanies.map((company) => ({
+            value: company,
+            label: company,
+          }))}
+        />
 
-        <NativeSelect
+        <Select
           variant="solid"
           leftIcon={<PhoneCall />}
-          aria-label={t("crew.filters.contact_label", "Stan kontaktu")}
+          ariaLabel={t("crew.filters.contact_label", "Stan kontaktu")}
           value={contactFilter}
-          onChange={(event) =>
-            onContactFilter(event.target.value as CrewContactCompleteness)
+          onValueChange={(value) =>
+            onContactFilter(value as CrewContactCompleteness)
           }
-        >
-          {CONTACT_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {t(option.labelKey, option.defaultLabel)}
-            </option>
-          ))}
-        </NativeSelect>
+          options={CONTACT_OPTIONS.map((option) => ({
+            value: option.value,
+            label: t(option.labelKey, option.defaultLabel),
+          }))}
+        />
 
-        <NativeSelect
+        <Select
           variant="solid"
           leftIcon={<ArrowDownUp />}
-          aria-label={t("crew.toolbar.sort_label", "Sortuj")}
+          ariaLabel={t("crew.toolbar.sort_label", "Sortuj")}
           value={sortBy}
-          onChange={(event) => onSort(event.target.value as CrewSort)}
-        >
-          <option value="name">
-            {t("crew.toolbar.sort_name", "Nazwisko (A–Z)")}
-          </option>
-          <option value="specialty">
-            {t("crew.toolbar.sort_specialty", "Specjalizacja")}
-          </option>
-          <option value="company">
-            {t("crew.toolbar.sort_company", "Firma")}
-          </option>
-        </NativeSelect>
+          onValueChange={(value) => onSort(value as CrewSort)}
+          options={[
+            { value: "name", label: t("crew.toolbar.sort_name", "Nazwisko (A–Z)") },
+            {
+              value: "specialty",
+              label: t("crew.toolbar.sort_specialty", "Specjalizacja"),
+            },
+            { value: "company", label: t("crew.toolbar.sort_company", "Firma") },
+          ]}
+        />
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ import {
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
@@ -129,21 +129,19 @@ const EditionLicenseControl = ({
         {t("archive.editions.license.label", "Licencja")}
       </Caption>
       <div className="w-56">
-        <NativeSelect
+        <Select
           variant="solid"
           value={licenseType}
-          onChange={(event) =>
-            handleLicenseChange(event.target.value as ScoreLicenseType)
+          onValueChange={(value) =>
+            handleLicenseChange(value as ScoreLicenseType)
           }
           disabled={patch.isPending}
-          aria-label={t("archive.editions.license.label", "Licencja")}
-        >
-          {LICENSE_ORDER.map((key) => (
-            <option key={key} value={key}>
-              {licenseLabels[key]}
-            </option>
-          ))}
-        </NativeSelect>
+          ariaLabel={t("archive.editions.license.label", "Licencja")}
+          options={LICENSE_ORDER.map((key) => ({
+            value: key,
+            label: licenseLabels[key],
+          }))}
+        />
       </div>
 
       {isLicensedCopies && (

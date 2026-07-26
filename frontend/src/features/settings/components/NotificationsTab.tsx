@@ -58,12 +58,18 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { cn } from "@/shared/lib/utils";
 
 type TFunc = ReturnType<typeof useTranslation>["t"];
+
+/** Whole hours of the day, as a clock reads them — language-neutral. */
+const DIGEST_HOURS = Array.from({ length: 24 }, (_, hour) => ({
+  value: String(hour),
+  label: `${String(hour).padStart(2, "0")}:00`,
+}));
 
 /** The grid a group's control, its detail rows and the column headers all lay out
  *  on, so the two channel columns line up down the whole ledger. Written as whole
@@ -814,18 +820,15 @@ const DigestPanel: React.FC = () => {
             )}
           </div>
           <div className="w-32 shrink-0">
-            <NativeSelect
+            <Select
               variant="solid"
               value={String(hour)}
-              aria-label={t("settings.notifications.digest.hour_label")}
-              onChange={(e) => updateDigest.mutate({ digest_hour: Number(e.target.value) })}
-            >
-              {Array.from({ length: 24 }, (_, h) => (
-                <option key={h} value={h}>
-                  {String(h).padStart(2, "0")}:00
-                </option>
-              ))}
-            </NativeSelect>
+              ariaLabel={t("settings.notifications.digest.hour_label")}
+              onValueChange={(value) =>
+                updateDigest.mutate({ digest_hour: Number(value) })
+              }
+              options={DIGEST_HOURS}
+            />
           </div>
         </div>
       )}

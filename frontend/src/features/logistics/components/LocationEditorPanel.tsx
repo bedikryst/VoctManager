@@ -11,6 +11,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Compass, Globe2, MapPin, StickyNote, X } from "lucide-react";
 
@@ -18,7 +19,7 @@ import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import {
   Eyebrow,
@@ -209,29 +210,32 @@ export function LocationEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
-                  <NativeSelect
-                    label={t("logistics.editor.category", "Klasyfikacja *")}
-                    leftIcon={<Compass size={16} aria-hidden="true" />}
-                    {...form.register("category")}
-                    disabled={isSubmitting}
-                    error={
-                      getValidationMessage(
-                        form.formState.errors.category?.message,
-                      )
-                        ? t(
-                            getValidationMessage(
-                              form.formState.errors.category?.message,
-                            ) ?? "",
+                  <Controller
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <Select
+                        label={t("logistics.editor.category", "Klasyfikacja *")}
+                        leftIcon={<Compass size={16} aria-hidden="true" />}
+                        name={field.name}
+                        value={field.value ?? ""}
+                        onValueChange={field.onChange}
+                        disabled={isSubmitting}
+                        options={categoryOptions}
+                        error={
+                          getValidationMessage(
+                            form.formState.errors.category?.message,
                           )
-                        : undefined
-                    }
-                  >
-                    {categoryOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                            ? t(
+                                getValidationMessage(
+                                  form.formState.errors.category?.message,
+                                ) ?? "",
+                              )
+                            : undefined
+                        }
+                      />
+                    )}
+                  />
 
                   <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
                     <Text size="xs" color="graphite">

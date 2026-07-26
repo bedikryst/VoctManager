@@ -21,6 +21,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { foldDiacritics } from "@/shared/lib/text";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager as resolveIsManager } from "@/shared/auth/rbac";
 
@@ -34,10 +35,6 @@ import { NewThreadModal } from "./components/NewThreadModal";
 import type { UserBrief } from "./types/messages.dto";
 
 type TriageFilter = "all" | "unread" | "unassigned" | "mine" | "resolved";
-
-/** Diacritic-insensitive haystack normaliser for the inbox search. */
-const norm = (s: string): string =>
-  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Eyebrow color="muted" size="caption" className="px-2 tracking-[0.12em]">
@@ -88,7 +85,7 @@ const MessagesPage: React.FC = () => {
     ];
   }, [isManager, t]);
 
-  const q = norm(query.trim());
+  const q = foldDiacritics(query.trim());
 
   const visibleThreads = useMemo(
     () =>
@@ -100,7 +97,7 @@ const MessagesPage: React.FC = () => {
         if (filter === "all" && th.status === "ARCHIVED") return false;
         if (q) {
           const counterpart = isManager ? th.artist.name : th.assignee?.name ?? "";
-          if (!norm(`${th.subject} ${th.snippet} ${counterpart}`).includes(q)) return false;
+          if (!foldDiacritics(`${th.subject} ${th.snippet} ${counterpart}`).includes(q)) return false;
         }
         return true;
       }),
@@ -112,7 +109,7 @@ const MessagesPage: React.FC = () => {
     () =>
       channels.filter((ch) => {
         if (filter === "unread" && !ch.unread) return false;
-        if (q && !norm(ch.project_name).includes(q)) return false;
+        if (q && !foldDiacritics(ch.project_name).includes(q)) return false;
         return true;
       }),
     [channels, filter, q],

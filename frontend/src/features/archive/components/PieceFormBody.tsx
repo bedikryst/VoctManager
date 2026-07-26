@@ -12,13 +12,14 @@
  */
 
 import React from "react";
+import { Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type { Composer, VoiceLineOption } from "@/shared/types";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
@@ -62,6 +63,7 @@ export const PieceFormBody = ({
   } = state;
 
   const {
+    control,
     register,
     formState: { errors },
   } = form;
@@ -118,16 +120,22 @@ export const PieceFormBody = ({
             <Eyebrow color="muted" size="caption" className="mb-1 block">
               {t("archive.form.fields.epoch", "Epoka")}
             </Eyebrow>
-            <NativeSelect disabled={isBusy} {...register("epoch")}>
-              <option value="">
-                {t("archive.form.epoch_pick", "— wybierz —")}
-              </option>
-              {epochOptions.map((epoch) => (
-                <option key={epoch.value} value={epoch.value}>
-                  {epoch.label}
-                </option>
-              ))}
-            </NativeSelect>
+            <Controller
+              control={control}
+              name="epoch"
+              render={({ field }) => (
+                <Select
+                  disabled={isBusy}
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  placeholder={t("archive.form.epoch_pick", "Wybierz")}
+                  clearLabel={t("archive.form.epoch_pick", "Wybierz")}
+                  ariaLabel={t("archive.form.fields.epoch", "Epoka")}
+                  options={epochOptions}
+                />
+              )}
+            />
           </div>
           <Input
             label={t("archive.form.fields.year", "Rok powstania")}
@@ -140,16 +148,22 @@ export const PieceFormBody = ({
             <Eyebrow color="muted" size="caption" className="mb-1 block">
               {t("archive.form.fields.language", "Język śpiewu")}
             </Eyebrow>
-            <NativeSelect disabled={isBusy} {...register("language")}>
-              <option value="">
-                {t("archive.form.language_pick", "— wybierz —")}
-              </option>
-              {languageChoices.map((lang) => (
-                <option key={lang.value} value={lang.value}>
-                  {lang.label}
-                </option>
-              ))}
-            </NativeSelect>
+            <Controller
+              control={control}
+              name="language"
+              render={({ field }) => (
+                <Select
+                  disabled={isBusy}
+                  name={field.name}
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  placeholder={t("archive.form.language_pick", "Wybierz")}
+                  clearLabel={t("archive.form.language_pick", "Wybierz")}
+                  ariaLabel={t("archive.form.fields.language", "Język śpiewu")}
+                  options={languageChoices}
+                />
+              )}
+            />
           </div>
         </div>
       </GlassCard>

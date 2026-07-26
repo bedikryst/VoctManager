@@ -16,7 +16,7 @@ import { ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from "lucide-rea
 import type { Composer } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
@@ -143,55 +143,48 @@ export const ArchiveSearchBar = ({
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.composer", "Kompozytor")}
                 </Eyebrow>
-                <NativeSelect
+                {/* An unset filter means "everything" — that reading belongs on
+                    the placeholder, and the clear entry is the way back to it. */}
+                <Select
                   value={composerFilter}
-                  onChange={(event) => onComposerFilterChange(event.target.value)}
-                >
-                  <option value="">
-                    {t("archive.search.all_composers", "Wszyscy")}
-                  </option>
-                  {composers.map((composer) => (
-                    <option key={composer.id} value={composer.id}>
-                      {composer.last_name} {composer.first_name || ""}
-                    </option>
-                  ))}
-                </NativeSelect>
+                  onValueChange={onComposerFilterChange}
+                  placeholder={t("archive.search.all_composers", "Wszyscy")}
+                  clearLabel={t("archive.search.all_composers", "Wszyscy")}
+                  ariaLabel={t("archive.search.composer", "Kompozytor")}
+                  options={composers.map((composer) => ({
+                    value: String(composer.id),
+                    label: `${composer.last_name} ${composer.first_name || ""}`.trim(),
+                  }))}
+                />
               </div>
               <div>
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.epoch", "Epoka")}
                 </Eyebrow>
-                <NativeSelect
+                <Select
                   value={epochFilter}
-                  onChange={(event) => onEpochFilterChange(event.target.value)}
-                >
-                  <option value="">
-                    {t("archive.search.all_epochs", "Wszystkie")}
-                  </option>
-                  {epochOptions.map((epoch) => (
-                    <option key={epoch.value} value={epoch.value}>
-                      {epoch.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                  onValueChange={onEpochFilterChange}
+                  placeholder={t("archive.search.all_epochs", "Wszystkie")}
+                  clearLabel={t("archive.search.all_epochs", "Wszystkie")}
+                  ariaLabel={t("archive.search.epoch", "Epoka")}
+                  options={epochOptions}
+                />
               </div>
               <div>
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.voicing", "Obsada")}
                 </Eyebrow>
-                <NativeSelect
+                <Select
                   value={voicingFilter}
-                  onChange={(event) => onVoicingFilterChange(event.target.value)}
-                >
-                  <option value="">
-                    {t("archive.search.all_voicings", "Wszystkie")}
-                  </option>
-                  {availableVoicings.map((voicing) => (
-                    <option key={voicing} value={voicing}>
-                      {voicing}
-                    </option>
-                  ))}
-                </NativeSelect>
+                  onValueChange={onVoicingFilterChange}
+                  placeholder={t("archive.search.all_voicings", "Wszystkie")}
+                  clearLabel={t("archive.search.all_voicings", "Wszystkie")}
+                  ariaLabel={t("archive.search.voicing", "Obsada")}
+                  options={availableVoicings.map((voicing) => ({
+                    value: voicing,
+                    label: voicing,
+                  }))}
+                />
               </div>
             </div>
           </motion.div>

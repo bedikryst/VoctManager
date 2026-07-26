@@ -21,7 +21,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { useArtists } from "@/features/artists/api/artist.queries";
 import {
@@ -53,20 +53,16 @@ const ManagerArtistField: React.FC<{
   const { t } = useTranslation();
   const { data: artists = [] } = useArtists();
   return (
-    <NativeSelect
+    <Select
       label={t("messages.compose.artist", "Adresat (artysta)")}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">
-        {t("messages.compose.artist_placeholder", "— wybierz artystę —")}
-      </option>
-      {artists.map((artist) => (
-        <option key={artist.id} value={artist.id}>
-          {artist.first_name} {artist.last_name}
-        </option>
-      ))}
-    </NativeSelect>
+      onValueChange={onChange}
+      placeholder={t("messages.compose.artist_placeholder", "Wybierz artystę")}
+      options={artists.map((artist) => ({
+        value: String(artist.id),
+        label: `${artist.first_name} ${artist.last_name}`,
+      }))}
+    />
   );
 };
 
@@ -78,20 +74,19 @@ const RecipientField: React.FC<{
   const { data: recipients = [] } = useRecipients();
   return (
     <div className="flex flex-col gap-1.5">
-      <NativeSelect
+      {/* No recipient is a real, meaningful choice here — it routes the thread
+          to the shared queue — so it is both the resting state and a way back. */}
+      <Select
         label={t("messages.compose.recipient", "Do kogo (opcjonalnie)")}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">
-          {t("messages.compose.recipient_any", "Dowolny dyrygent")}
-        </option>
-        {recipients.map((recipient) => (
-          <option key={recipient.id} value={String(recipient.id)}>
-            {recipient.name}
-          </option>
-        ))}
-      </NativeSelect>
+        onValueChange={onChange}
+        placeholder={t("messages.compose.recipient_any", "Dowolny dyrygent")}
+        clearLabel={t("messages.compose.recipient_any", "Dowolny dyrygent")}
+        options={recipients.map((recipient) => ({
+          value: String(recipient.id),
+          label: recipient.name,
+        }))}
+      />
       <Text size="xs" color="muted">
         {t(
           "messages.compose.recipient_hint",
@@ -113,18 +108,20 @@ const ProjectContextField: React.FC<{
     [projects],
   );
   return (
-    <NativeSelect
-      label={t("messages.compose.project_context", "Dotyczy projektu (opcjonalnie)")}
+    <Select
+      label={t(
+        "messages.compose.project_context",
+        "Dotyczy projektu (opcjonalnie)",
+      )}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">{t("messages.compose.project_none", "Bez powiązania")}</option>
-      {sorted.map((project) => (
-        <option key={project.id} value={project.id}>
-          {project.title}
-        </option>
-      ))}
-    </NativeSelect>
+      onValueChange={onChange}
+      placeholder={t("messages.compose.project_none", "Bez powiązania")}
+      clearLabel={t("messages.compose.project_none", "Bez powiązania")}
+      options={sorted.map((project) => ({
+        value: String(project.id),
+        label: project.title,
+      }))}
+    />
   );
 };
 
@@ -290,20 +287,19 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                     </Text>
                   ) : (
                     <>
-                      <NativeSelect
+                      <Select
                         label={t("messages.compose.channel", "Kanał projektu")}
                         value={channelId}
-                        onChange={(e) => setChannelId(e.target.value)}
-                      >
-                        <option value="">
-                          {t("messages.compose.channel_placeholder", "— wybierz projekt —")}
-                        </option>
-                        {channels.map((channel) => (
-                          <option key={channel.id} value={channel.id}>
-                            {channel.project_name}
-                          </option>
-                        ))}
-                      </NativeSelect>
+                        onValueChange={setChannelId}
+                        placeholder={t(
+                          "messages.compose.channel_placeholder",
+                          "Wybierz projekt",
+                        )}
+                        options={channels.map((channel) => ({
+                          value: String(channel.id),
+                          label: channel.project_name,
+                        }))}
+                      />
                       <Textarea
                         value={body}
                         onChange={(e) => setBody(e.target.value)}

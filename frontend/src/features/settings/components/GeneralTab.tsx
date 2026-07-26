@@ -24,12 +24,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
-import { NativeSelect } from "@ui/primitives/NativeSelect";
+import { Select } from "@ui/primitives/Select";
 import { Text, Caption } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
 import { useGeneralSettings } from "../hooks/useGeneralSettings";
 import { SettingsSaveFooter } from "./SettingsSaveFooter";
+
+/** Each language names itself — the one label set i18n must never touch. */
+const LANGUAGE_OPTIONS = [
+  { value: "pl", label: "Polski" },
+  { value: "en", label: "English" },
+  { value: "fr", label: "Français" },
+];
 
 const TIMEZONES = [
   { value: "UTC", label: "UTC (Uniwersalna)" },
@@ -42,6 +49,12 @@ const TIMEZONES = [
 
 export const GeneralTab = () => {
   const { t } = useTranslation();
+
+  const salutationOptions = [
+    { value: "N", label: t("common.salutation.neutral", "Neutralna") },
+    { value: "F", label: t("common.salutation.feminine", "Kobieca") },
+    { value: "M", label: t("common.salutation.masculine", "Męska") },
+  ];
   const navigate = useNavigate();
   const {
     formData,
@@ -161,40 +174,29 @@ export const GeneralTab = () => {
             withFluidDivider
           />
           <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-            <NativeSelect
+            <Select
               label={t("settings.general.language", "Język interfejsu")}
               leftIcon={<Globe className="h-4 w-4" />}
               value={formData.profile.language}
-              onChange={(e) => handleProfileChange("language", e.target.value)}
-            >
-              <option value="pl">Polski</option>
-              <option value="en">English</option>
-              <option value="fr">Français</option>
-            </NativeSelect>
+              onValueChange={(value) => handleProfileChange("language", value)}
+              options={LANGUAGE_OPTIONS}
+            />
 
-            <NativeSelect
+            <Select
               label={t("settings.general.timezone", "Strefa czasowa")}
               leftIcon={<Clock className="h-4 w-4" />}
               value={formData.profile.timezone}
-              onChange={(e) => handleProfileChange("timezone", e.target.value)}
-            >
-              {TIMEZONES.map((zone) => (
-                <option key={zone.value} value={zone.value}>
-                  {zone.label}
-                </option>
-              ))}
-            </NativeSelect>
+              onValueChange={(value) => handleProfileChange("timezone", value)}
+              options={TIMEZONES}
+            />
 
             <div>
-              <NativeSelect
+              <Select
                 label={t("common.salutation.label", "Forma zwrotu")}
                 value={formData.profile.salutation}
-                onChange={(e) => handleProfileChange("salutation", e.target.value)}
-              >
-                <option value="N">{t("common.salutation.neutral", "Neutralna")}</option>
-                <option value="F">{t("common.salutation.feminine", "Kobieca")}</option>
-                <option value="M">{t("common.salutation.masculine", "Męska")}</option>
-              </NativeSelect>
+                onValueChange={(value) => handleProfileChange("salutation", value)}
+                options={salutationOptions}
+              />
               <Text as="p" size="xs" color="muted" className="ml-1 mt-1.5">
                 {t(
                   "common.salutation.settings_hint",

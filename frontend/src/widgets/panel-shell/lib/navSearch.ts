@@ -9,6 +9,7 @@
 
 import type { TFunction } from "i18next";
 
+import { foldDiacritics } from "@/shared/lib/text";
 import type { NavGroup, NavLinkItem } from "@/shared/config/navigation/dashboard.config";
 
 export interface NavSearchHit {
@@ -19,16 +20,11 @@ export interface NavSearchHit {
 type Translate = TFunction;
 
 /**
- * Fold a string to a comparable form: lowercase, diacritics stripped
- * (Obecności → obecnosci) so a conductor typing on an ASCII keyboard still
- * resolves accented Polish labels.
+ * Nav queries are typed, so they arrive with the whitespace a paste or a
+ * trailing space leaves behind; the fold itself is the shared one.
  */
 export const foldSearchText = (value: string): string =>
-  value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase()
-    .trim();
+  foldDiacritics(value).trim();
 
 const buildLinkHaystack = (
   group: NavGroup,

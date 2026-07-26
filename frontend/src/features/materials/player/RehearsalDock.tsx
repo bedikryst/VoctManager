@@ -32,6 +32,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { Select } from "@/shared/ui/primitives/Select";
 import { PITCH_NOTES, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
 
 import { useUpdateStartingPitches } from "../api/materials.queries";
@@ -52,6 +53,17 @@ interface RehearsalDockProps {
 }
 
 const OCTAVES = [2, 3, 4, 5] as const;
+
+/** Pitch names and octave numbers are notation, not copy — never translated. */
+const NOTE_OPTIONS = PITCH_NOTES.map((label, index) => ({
+  value: String(index),
+  label,
+}));
+
+const OCTAVE_OPTIONS = OCTAVES.map((octave) => ({
+  value: String(octave),
+  label: String(octave),
+}));
 
 /** Sensible first draft when a conductor sets pitches on a blank piece. */
 const DEFAULT_PITCH_TEMPLATE: MaterialsStartingPitch[] = [
@@ -228,38 +240,36 @@ export const RehearsalDock = ({
                       aria-label={t("materials.rehearsal_dock.voice_placeholder", "Głos")}
                       className="h-8 w-16 rounded-lg border border-white/15 bg-white/5 px-2 text-xs text-ethereal-marble outline-none placeholder:text-ethereal-marble/30 focus:border-ethereal-gold/50"
                     />
-                    <select
-                      value={row.note}
-                      onChange={(e) =>
+                    <Select
+                      variant="dark"
+                      size="sm"
+                      value={String(row.note)}
+                      onValueChange={(value) =>
                         setDraft((d) =>
                           d.map((r, i) =>
-                            i === index ? { ...r, note: Number(e.target.value) } : r,
+                            i === index ? { ...r, note: Number(value) } : r,
                           ),
                         )
                       }
-                      aria-label={t("materials.rehearsal_dock.note_label", "Dźwięk")}
-                      className="h-8 flex-1 rounded-lg border border-white/15 bg-ethereal-ink px-1.5 text-xs text-ethereal-marble outline-none focus:border-ethereal-gold/50"
-                    >
-                      {PITCH_NOTES.map((label, value) => (
-                        <option key={label} value={value}>{label}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={row.octave}
-                      onChange={(e) =>
+                      ariaLabel={t("materials.rehearsal_dock.note_label", "Dźwięk")}
+                      className="flex-1"
+                      options={NOTE_OPTIONS}
+                    />
+                    <Select
+                      variant="dark"
+                      size="sm"
+                      value={String(row.octave)}
+                      onValueChange={(value) =>
                         setDraft((d) =>
                           d.map((r, i) =>
-                            i === index ? { ...r, octave: Number(e.target.value) } : r,
+                            i === index ? { ...r, octave: Number(value) } : r,
                           ),
                         )
                       }
-                      aria-label={t("materials.rehearsal_dock.octave_label", "Oktawa")}
-                      className="h-8 w-14 rounded-lg border border-white/15 bg-ethereal-ink px-1.5 text-xs text-ethereal-marble outline-none focus:border-ethereal-gold/50"
-                    >
-                      {OCTAVES.map((o) => (
-                        <option key={o} value={o}>{o}</option>
-                      ))}
-                    </select>
+                      ariaLabel={t("materials.rehearsal_dock.octave_label", "Oktawa")}
+                      className="w-16"
+                      options={OCTAVE_OPTIONS}
+                    />
                     <button
                       type="button"
                       onClick={() => setDraft((d) => d.filter((_, i) => i !== index))}

@@ -15,12 +15,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Input } from "@ui/primitives/Input";
-import { NativeSelect } from "@ui/primitives/NativeSelect";
+import { Select } from "@ui/primitives/Select";
 import { Text } from "@ui/primitives/typography";
 import { EtherealLoader } from "@ui/kinematics/EtherealLoader";
 import { DURATION, EASE } from "@ui/kinematics/motion-presets";
 import { useLogisticsSettings } from "../hooks/useLogisticsSettings";
 import { SettingsSaveFooter } from "./SettingsSaveFooter";
+
+/** Confection sizing — the labels are the international scale, not copy. */
+const CLOTHING_SIZES = ["XS", "S", "M", "L", "XL", "XXL"].map((size) => ({
+  value: size.toLowerCase(),
+  label: size,
+}));
 
 export const LogisticsTab = () => {
   const { t } = useTranslation();
@@ -89,19 +95,17 @@ export const LogisticsTab = () => {
             withFluidDivider
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <NativeSelect
+            <Select
               label={t("settings.logistics.clothing_size", "Rozmiar ubrań")}
               value={formData.clothing_size}
-              onChange={(e) => handleChange("clothing_size", e.target.value)}
-            >
-              <option value="">{t("common.actions.select", "Wybierz")}</option>
-              <option value="xs">XS</option>
-              <option value="s">S</option>
-              <option value="m">M</option>
-              <option value="l">L</option>
-              <option value="xl">XL</option>
-              <option value="xxl">XXL</option>
-            </NativeSelect>
+              onValueChange={(value) => handleChange("clothing_size", value)}
+              placeholder={t("common.actions.select", "Wybierz")}
+              clearLabel={t(
+                "settings.logistics.clothing_size_clear",
+                "Nie podaję",
+              )}
+              options={CLOTHING_SIZES}
+            />
 
             <Input
               label={t("settings.logistics.shoe_size", "Rozmiar buta (EU)")}

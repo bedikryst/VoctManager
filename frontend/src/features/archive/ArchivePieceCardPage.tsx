@@ -26,7 +26,7 @@ import React, {
   useState,
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -55,7 +55,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { ComposerCard, WorkIdentifiersGrid } from "@/shared/ui/composites/repertoire";
@@ -252,15 +252,6 @@ const METADATA_PROVENANCE_FIELDS = [
   "title", "arranger", "opus_catalog", "musical_key", "language",
   "voicing", "epoch", "text_source", "lyrics_original", "lyrics_ipa",
 ] as const;
-
-/**
- * Lifts the native <NativeSelect> from its faint incense/alabaster fill to the firmer
- * gold-on-marble treatment the <Input> already uses, so the two field primitives
- * read as siblings across this dense form. Page-scoped via `className` + twMerge
- * — the shared Select default is deliberately left untouched.
- */
-const FIELD_SELECT_CLASS =
-  "bg-ethereal-marble/90 border-ethereal-gold/35 hover:border-ethereal-gold/55 focus:border-ethereal-gold/70";
 
 /**
  * Trust scoreboard for the metadata section: gives the per-field provenance dots
@@ -476,6 +467,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     defaultValues: initial,
   });
   const {
+    control,
     handleSubmit,
     register,
     formState: { errors, dirtyFields, isDirty },
@@ -1032,39 +1024,59 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         label={t("archive.piece_card.fields.language", "Język śpiewu")}
                         chip={fieldChip("language")}
                       >
-                        <NativeSelect
-                          aria-label={t("archive.piece_card.fields.language", "Język śpiewu")}
-                          className={FIELD_SELECT_CLASS}
-                          {...register("language")}
-                        >
-                          <option value="">
-                            {t("archive.piece_card.language_pick", "— wybierz —")}
-                          </option>
-                          {languageChoices.map((lang) => (
-                            <option key={lang.value} value={lang.value}>
-                              {lang.label}
-                            </option>
-                          ))}
-                        </NativeSelect>
+                        <Controller
+                          control={control}
+                          name="language"
+                          render={({ field }) => (
+                            <Select
+                              ariaLabel={t(
+                                "archive.piece_card.fields.language",
+                                "Język śpiewu",
+                              )}
+                              name={field.name}
+                              value={field.value ?? ""}
+                              onValueChange={field.onChange}
+                              placeholder={t(
+                                "archive.piece_card.language_pick",
+                                "Wybierz",
+                              )}
+                              clearLabel={t(
+                                "archive.piece_card.language_pick",
+                                "Wybierz",
+                              )}
+                              options={languageChoices}
+                            />
+                          )}
+                        />
                       </LabeledField>
                       <LabeledField
                         label={t("archive.piece_card.fields.epoch", "Epoka")}
                         chip={fieldChip("epoch")}
                       >
-                        <NativeSelect
-                          aria-label={t("archive.piece_card.fields.epoch", "Epoka")}
-                          className={FIELD_SELECT_CLASS}
-                          {...register("epoch")}
-                        >
-                          <option value="">
-                            {t("archive.piece_card.epoch_pick", "— wybierz —")}
-                          </option>
-                          {epochOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </NativeSelect>
+                        <Controller
+                          control={control}
+                          name="epoch"
+                          render={({ field }) => (
+                            <Select
+                              ariaLabel={t(
+                                "archive.piece_card.fields.epoch",
+                                "Epoka",
+                              )}
+                              name={field.name}
+                              value={field.value ?? ""}
+                              onValueChange={field.onChange}
+                              placeholder={t(
+                                "archive.piece_card.epoch_pick",
+                                "Wybierz",
+                              )}
+                              clearLabel={t(
+                                "archive.piece_card.epoch_pick",
+                                "Wybierz",
+                              )}
+                              options={epochOptions}
+                            />
+                          )}
+                        />
                       </LabeledField>
                       <LabeledField
                         label={t(

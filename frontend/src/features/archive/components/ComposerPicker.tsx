@@ -15,10 +15,21 @@ import { useTranslation } from "react-i18next";
 
 import type { Composer } from "@/shared/types";
 import { Input } from "@/shared/ui/primitives/Input";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 import type { InlineComposerDraft } from "../hooks/usePieceFormState";
+
+/**
+ * Surname first, given name after it, and the lifespan in brackets — the form
+ * a catalogue is read in, and the only way two Bachs tell themselves apart.
+ */
+const composerOptionLabel = (composer: Composer): string => {
+  const name = `${composer.last_name} ${composer.first_name || ""}`.trim();
+  if (!composer.birth_year) return name;
+  const death = composer.death_year ? `–${composer.death_year}` : "";
+  return `${name} (${composer.birth_year}${death})`;
+};
 
 interface ComposerPickerProps {
   readonly composers: Composer[];
@@ -105,23 +116,18 @@ export const ComposerPicker = ({
           </div>
         </div>
       ) : (
-        <NativeSelect
+        <Select
           value={composerId}
-          onChange={(e) => setComposerId(e.target.value)}
+          onValueChange={setComposerId}
           disabled={isBusy}
-        >
-          <option value="">
-            {t("archive.form.composer_none", "— Tradycyjny / nieznany —")}
-          </option>
-          {composers.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.last_name} {c.first_name || ""}
-              {c.birth_year
-                ? ` (${c.birth_year}${c.death_year ? `–${c.death_year}` : ""})`
-                : ""}
-            </option>
-          ))}
-        </NativeSelect>
+          placeholder={t("archive.form.composer_none", "Tradycyjny / nieznany")}
+          clearLabel={t("archive.form.composer_none", "Tradycyjny / nieznany")}
+          ariaLabel={label ?? t("archive.form.fields.composer", "Kompozytor")}
+          options={composers.map((composer) => ({
+            value: String(composer.id),
+            label: composerOptionLabel(composer),
+          }))}
+        />
       )}
     </div>
   );
