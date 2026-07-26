@@ -1,10 +1,10 @@
 /**
  * @file ProjectScorePage.tsx
  * @description The concert score-book work area — the single home that owns
- * `project.score_pdf`. Hosts the auto-assembly cockpit and the hand-upload
- * fallback side by side, so the conductor has one coherent place to produce the
- * book (generate or upload) instead of the old split between the Program tab and
- * the Details upload. Reuses the hub's shared score viewer for preview.
+ * `project.score_pdf`. One cockpit produces the book by either route: the
+ * generator assembles it, and the hand-upload alternative rides the cockpit's
+ * own footer, because both write the same field and the cockpit's status hero
+ * already describes whichever book exists.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectScorePage
  */
@@ -14,21 +14,13 @@ import { useOutletContext } from "react-router-dom";
 
 import type { ProjectHubContext } from "./ProjectHubLayout";
 import { ScorePackagePanel } from "./components/ScorePackagePanel";
-import { ScoreManualUploadCard } from "./components/ScoreManualUploadCard";
 
 export default function ProjectScorePage(): React.JSX.Element {
-  const { project, openScore } = useOutletContext<ProjectHubContext>();
+  const { project } = useOutletContext<ProjectHubContext>();
   return (
-    <div className="flex flex-col gap-6">
-      <ScorePackagePanel
-        projectId={String(project.id)}
-        projectTitle={project.title}
-      />
-      <ScoreManualUploadCard
-        projectId={String(project.id)}
-        hasScorePdf={Boolean(project.score_pdf)}
-        onPreview={openScore}
-      />
-    </div>
+    <ScorePackagePanel
+      projectId={String(project.id)}
+      projectTitle={project.title}
+    />
   );
 }

@@ -73,7 +73,9 @@ export function ScorePackageBridge({
     >
       <div className="flex items-center gap-2">
         <Badge variant={status.tone}>{status.label}</Badge>
-        {state && !state.is_manual_upload && state.has_pdf && (
+        {/* Version 0 means no completed build stands behind the file — a stamp
+            that says so is noise, not information. */}
+        {state && !state.is_manual_upload && state.has_pdf && state.build_version > 0 && (
           <Caption color="muted">
             {t("projects.score_package.bridge.version", "Wersja {{v}}", {
               v: state.build_version,

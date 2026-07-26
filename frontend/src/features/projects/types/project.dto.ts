@@ -53,6 +53,16 @@ export interface CrewAssignmentCreateDTO {
 
 export type CrewAssignmentUpdateDTO = Partial<CrewAssignmentCreateDTO>;
 
+/**
+ * One rate for a whole project's cast or crew. The server rejects unknown keys
+ * (`extra="forbid"`), so this payload is exactly two fields — `fee` is the
+ * public name of what the backend DTO calls `new_fee`.
+ */
+export interface ProjectBulkFeeDTO {
+  project_id: string;
+  fee: number;
+}
+
 export interface RehearsalCreateDTO {
   project_id: string;
   date_time: string;

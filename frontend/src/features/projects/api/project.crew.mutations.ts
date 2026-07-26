@@ -22,7 +22,27 @@ import { buildOptimisticCrewAssignment } from "./project.optimistic";
 import type {
   CrewAssignmentCreateDTO,
   CrewAssignmentUpdateDTO,
+  ProjectBulkFeeDTO,
 } from "../types/project.dto";
+
+/** One standard rate across the whole crew; the server skips settled rows. */
+export const useApplyBulkCrewFee = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (fee: number) =>
+      ProjectService.applyBulkCrewFee({
+        project_id: projectId,
+        fee,
+      } satisfies ProjectBulkFeeDTO),
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.crewAssignments.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+    },
+  });
+};
 
 export const useCreateCrewAssignment = (projectId: string) => {
   const queryClient = useQueryClient();

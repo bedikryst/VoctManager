@@ -23,7 +23,31 @@ import { buildOptimisticParticipation } from "./project.optimistic";
 import type {
   ParticipationCreateDTO,
   ParticipationUpdateDTO,
+  ProjectBulkFeeDTO,
 } from "../types/project.dto";
+
+/**
+ * One standard rate across the whole cast. No optimistic write: the server
+ * decides which rows it may touch (settled fees and declines are excluded), so
+ * guessing the result here would show a repricing that did not happen.
+ */
+export const useApplyBulkCastFee = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (fee: number) =>
+      ProjectService.applyBulkCastFee({
+        project_id: projectId,
+        fee,
+      } satisfies ProjectBulkFeeDTO),
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.participations.byProject(projectId),
+      });
+      queryClient.invalidateQueries({ queryKey: projectKeys.projects.all });
+    },
+  });
+};
 
 export const useCreateParticipation = (projectId: string) => {
   const queryClient = useQueryClient();

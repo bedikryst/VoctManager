@@ -1,183 +1,258 @@
 /**
  * @file CrewTab.tsx
- * @description Technical-crew console: a compact "add collaborator" form (left) beside the
- * live crew roster (right). Assignments persist on the explicit submit / remove actions
- * (deliberate single ops — no per-keystroke lag), so no deferred buffer is needed here.
- * Two columns on desktop, stacked on tablet/phone; the roster is height-capped with scroll.
+ * @description Who runs this concert from the technical side: the booked crew
+ * on the left, the collaborator base still available on the right.
+ * It is the same two-pane transfer board as Program and Obsada, and now the
+ * same row language and search placement — it used to be a form column beside
+ * a list, a third composition for a job the hub already does twice.
+ * Every write is immediate; the shared `AutosaveStatus` pill confirms it.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CrewTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Wrench, Trash2 } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Search, UsersRound, Wrench } from "lucide-react";
 
-import { useCrewAssignments } from "../hooks/useCrewAssignments";
-import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { TabLoadingCard } from "./components/TabLoadingCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { useCrewAssignments } from "../hooks/useCrewAssignments";
+import { CrewRow } from "./components/CrewRow";
+import { ListGroupHeader } from "./components/ListGroupHeader";
+import { PickerRow } from "./components/PickerRow";
 
 interface CrewTabProps {
-  projectId: string;
+  readonly projectId: string;
 }
 
-export const CrewTab = ({
-  projectId,
-}: CrewTabProps): React.JSX.Element | null => {
+/**
+ * What the call sheet prints under "Pokrycie crew". A confirmed booking is the
+ * achievement, so it is the figure that appears; the tentative remainder only
+ * shows up while there is one, because a rail that reads "0 wstępnie" on a
+ * finished crew states the resting case in the loudest slot the card has.
+ */
+function CoverageRail({
+  total,
+  confirmed,
+}: {
+  readonly total: number;
+  readonly confirmed: number;
+}): React.JSX.Element {
   const { t } = useTranslation();
-  const {
-    isMutating,
-    selectedCrewId,
-    setSelectedCrewId,
-    roleDesc,
-    setRoleDesc,
-    availableCrew,
-    projectAssignments,
-    crewMap,
-    handleAssign,
-    handleRemove,
-  } = useCrewAssignments(projectId);
+  const tentative = total - confirmed;
 
   return (
-    <>
-      <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
-        {/* ── Add collaborator ─────────────────────────────────────────── */}
-        <form onSubmit={handleAssign} className="lg:col-span-4">
-          <SectionCard
-            as="h2"
-            bodyClassName="gap-5"
-            icon={<Plus size={15} aria-hidden="true" />}
-            title={t("projects.crew.form.title", "Dodaj do zespołu")}
-          >
-            <Select
-              label={t("projects.crew.form.hire_label", "Zatrudnij z bazy")}
-              required
-              value={selectedCrewId}
-              onValueChange={setSelectedCrewId}
-              disabled={isMutating}
-              placeholder={t(
-                "projects.crew.form.select_placeholder",
-                "Wybierz współpracownika",
-              )}
-              options={availableCrew.map((collaborator) => ({
-                value: String(collaborator.id),
-                label: `${collaborator.first_name} ${collaborator.last_name} (${collaborator.specialty})`,
-              }))}
-            />
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+      {confirmed > 0 && (
+        <Eyebrow as="span" color="sage">
+          {t("projects.crew.footer.confirmed", "Potwierdzonych: {{count}}", {
+            count: confirmed,
+          })}
+        </Eyebrow>
+      )}
+      {tentative > 0 && (
+        <Eyebrow as="span" color="gold">
+          {t("projects.crew.footer.tentative", "Wstępnie: {{count}}", {
+            count: tentative,
+          })}
+        </Eyebrow>
+      )}
+    </div>
+  );
+}
 
-            <Input
-              label={t("projects.crew.form.role_label", "Rola na tym koncercie")}
-              type="text"
-              value={roleDesc}
-              onChange={(event) => setRoleDesc(event.target.value)}
-              placeholder={t("projects.crew.form.role_placeholder", "np. Akustyk FOH")}
-              disabled={isMutating}
-            />
+export const CrewTab = ({ projectId }: CrewTabProps): React.JSX.Element => {
+  const { t } = useTranslation();
+  const {
+    isLoading,
+    isMutating,
+    crewGroups,
+    poolGroups,
+    crewCount,
+    poolCount,
+    confirmedCount,
+    isBaseExhausted,
+    searchQuery,
+    setSearchQuery,
+    processingId,
+    assign,
+    remove,
+    setRole,
+    setConfirmed,
+  } = useCrewAssignments(projectId);
 
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              disabled={isMutating || !selectedCrewId}
-              isLoading={isMutating}
-              leftIcon={
-                !isMutating ? <Plus size={14} aria-hidden="true" /> : undefined
-              }
-            >
-              {t("projects.crew.form.submit", "Przypisz")}
-            </Button>
-          </SectionCard>
-        </form>
+  const isSearching = searchQuery.trim().length > 0;
 
-        {/* ── Crew roster ──────────────────────────────────────────────── */}
+  if (isLoading) {
+    return (
+      <TabLoadingCard
+        icon={<Wrench size={15} aria-hidden="true" />}
+        title={t("projects.crew.sections.assigned", "Ekipa techniczna")}
+      />
+    );
+  }
+
+  return (
+    <div className="flex w-full flex-col pb-8">
+      <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
+        {/* ── The booked crew ──────────────────────────────────────────────── */}
         <SectionCard
           as="h2"
           scroll
-          className="max-h-[70dvh] lg:col-span-8"
-          bodyClassName="divide-y divide-hairline p-0"
+          className="max-h-[70dvh] lg:col-span-3"
+          bodyClassName="p-0 [scrollbar-gutter:stable]"
           icon={<Wrench size={15} aria-hidden="true" />}
-          title={t("projects.crew.list.title", "Skład Ekipy (Crew)")}
-          action={
-            projectAssignments.length > 0 ? (
-              <Badge variant="neutral">{projectAssignments.length}</Badge>
+          title={t("projects.crew.sections.assigned", "Ekipa techniczna")}
+          action={<Badge variant="neutral">{crewCount}</Badge>}
+          footer={
+            crewCount > 0 ? (
+              <CoverageRail total={crewCount} confirmed={confirmedCount} />
             ) : undefined
           }
         >
-          <AnimatePresence initial={false}>
-              {projectAssignments.length > 0 ? (
-                projectAssignments.map((assignment) => {
-                  const person = crewMap.get(String(assignment.collaborator));
-                  if (!person) return null;
-
-                  return (
-                    <motion.div
-                      key={assignment.id}
-                      layout
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="group flex items-center justify-between gap-3 px-5 py-3.5 transition-colors hover:bg-ethereal-alabaster/55"
-                    >
-                      <div className="flex min-w-0 flex-col gap-0.5">
-                        <Text size="sm" weight="bold" truncate>
-                          {person.first_name} {person.last_name}
-                        </Text>
-                        <Eyebrow color="muted" className="truncate">
-                          {assignment.role_description || person.specialty}
-                          {person.company_name ? ` · ${person.company_name}` : ""}
-                        </Eyebrow>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemove(String(assignment.id))}
-                        disabled={isMutating}
-                        title={t(
-                          "projects.crew.list.remove_title",
-                          "Usuń z ekipy technicznej",
-                        )}
-                        aria-label={t(
-                          "projects.crew.list.remove_title",
-                          "Usuń z ekipy technicznej",
-                        )}
-                        className="shrink-0 text-ethereal-graphite/50 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-                      >
-                        <Trash2 size={16} aria-hidden="true" />
-                      </Button>
-                    </motion.div>
-                  );
-                })
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center"
-                >
-                  <Wrench
-                    size={28}
-                    className="text-ethereal-incense/30"
-                    aria-hidden="true"
-                  />
-                  <Text color="muted" className="italic">
-                    {t(
-                      "projects.crew.empty",
-                      "Brak przypisanej ekipy technicznej.",
-                    )}
-                  </Text>
-                </motion.div>
+          {crewCount > 0 ? (
+            crewGroups.map((group) => (
+              <section key={group.key}>
+                <ListGroupHeader
+                  label={group.label}
+                  count={group.entries.length}
+                  icon={<group.Icon size={12} aria-hidden="true" />}
+                />
+                <ul className="divide-y divide-hairline">
+                  <AnimatePresence initial={false}>
+                    {group.entries.map((entry) => (
+                      <CrewRow
+                        key={entry.assignmentId}
+                        entry={entry}
+                        isBusy={processingId === entry.assignmentId}
+                        onSetRole={(role) =>
+                          void setRole(entry.assignmentId, role)
+                        }
+                        onToggleConfirmed={() =>
+                          void setConfirmed(
+                            entry.assignmentId,
+                            entry.status !== "CON",
+                          )
+                        }
+                        onRemove={() => void remove(entry.assignmentId)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </ul>
+              </section>
+            ))
+          ) : (
+            <StatePanel
+              variant="inline"
+              className="px-5 py-10"
+              icon={<Wrench size={26} aria-hidden="true" />}
+              title={t("projects.crew.empty_assigned", "Nikt jeszcze nie obsługuje tego koncertu")}
+              description={t(
+                "projects.crew.empty_assigned_desc",
+                "Zatrudnij współpracowników z bazy — ekipa nie dostaje kont ani powiadomień, to notatka produkcyjna dla dyrygenta.",
               )}
-          </AnimatePresence>
+            />
+          )}
+        </SectionCard>
+
+        {/* ── The collaborator base (pinned on desktop) ─────────────────────── */}
+        <SectionCard
+          as="h2"
+          scroll
+          className="max-h-[70dvh] lg:col-span-2 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-9rem)]"
+          bodyClassName="p-0 pt-2 [scrollbar-gutter:stable]"
+          icon={<UsersRound size={15} aria-hidden="true" />}
+          title={t("projects.crew.sections.available", "Baza współpracowników")}
+          action={<Badge variant="neutral">{poolCount}</Badge>}
+          toolbar={
+            <Input
+              type="text"
+              placeholder={t(
+                "projects.crew.search_placeholder",
+                "Szukaj po nazwisku, firmie lub specjalizacji...",
+              )}
+              aria-label={t(
+                "projects.crew.search_placeholder",
+                "Szukaj po nazwisku, firmie lub specjalizacji...",
+              )}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              leftIcon={<Search size={16} aria-hidden="true" />}
+            />
+          }
+        >
+          {poolCount > 0 ? (
+            poolGroups.map((group) => (
+              <section key={group.key}>
+                <ListGroupHeader
+                  label={group.label}
+                  count={group.entries.length}
+                  icon={<group.Icon size={12} aria-hidden="true" />}
+                />
+                <ul className="divide-y divide-hairline">
+                  {group.entries.map((entry) => (
+                    <PickerRow
+                      key={entry.collaboratorId}
+                      title={entry.displayName}
+                      meta={entry.company}
+                      isBusy={processingId === entry.collaboratorId}
+                      onPick={() => void assign(entry.collaboratorId)}
+                      pickLabel={t(
+                        "projects.crew.card.add_aria",
+                        "Dodaj {{name}} do ekipy",
+                        { name: entry.displayName },
+                      )}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          ) : (
+            <StatePanel
+              variant="inline"
+              className="px-5 py-10"
+              icon={
+                isSearching ? (
+                  <Search size={24} aria-hidden="true" />
+                ) : (
+                  <UsersRound size={24} aria-hidden="true" />
+                )
+              }
+              title={
+                isSearching
+                  ? t("projects.crew.empty_no_matches", "Brak wyników")
+                  : isBaseExhausted
+                    ? t("projects.crew.empty_base", "Baza współpracowników jest pusta")
+                    : t(
+                        "projects.crew.empty_available",
+                        "Cała baza jest już w ekipie",
+                      )
+              }
+              // The base is managed outside the project, so an empty one is a
+              // dead end here unless the card says where it is filled.
+              actions={
+                !isSearching && isBaseExhausted ? (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/panel/crew">
+                      {t("projects.crew.empty_base_action", "Otwórz bazę")}
+                    </Link>
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
         </SectionCard>
       </div>
 
       <AutosaveStatus isSaving={isMutating} />
-    </>
+    </div>
   );
 };

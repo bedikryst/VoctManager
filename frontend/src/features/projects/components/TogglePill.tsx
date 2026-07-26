@@ -1,9 +1,9 @@
 /**
  * @file TogglePill.tsx
- * @description Unified binary control for the score-book cockpit — a rounded pill
- * with a filled check when active. Replaces the raw square checkboxes (a form
- * texture) with one premium control language shared across the panel and the
- * per-item rows.
+ * @description The score-book cockpit's only binary control — a rounded pill with
+ * a filled check when active. Every on/off decision in the tab goes through it
+ * (book structure, card elements), so "on" is stated one way everywhere instead
+ * of a check circle on one row and a bare gold fill on the next.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/TogglePill
  */
@@ -20,6 +20,12 @@ interface TogglePillProps {
   disabled?: boolean;
   /** Smaller, quieter variant for secondary (set-once) structural options. */
   subtle?: boolean;
+  /**
+   * Marker rendered after the label — the card-element pills ride a data-confidence
+   * dot here, which is about the piece's data rather than the toggle's state.
+   */
+  trailing?: React.ReactNode;
+  title?: string;
 }
 
 export function TogglePill({
@@ -28,6 +34,8 @@ export function TogglePill({
   onChange,
   disabled = false,
   subtle = false,
+  trailing,
+  title,
 }: TogglePillProps): React.JSX.Element {
   return (
     <button
@@ -35,6 +43,7 @@ export function TogglePill({
       role="switch"
       aria-checked={active}
       disabled={disabled}
+      title={title}
       onClick={() => onChange(!active)}
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border font-medium transition-all duration-200",
@@ -59,6 +68,7 @@ export function TogglePill({
         {active && <Check size={subtle ? 8 : 9} strokeWidth={3} />}
       </span>
       {label}
+      {trailing}
     </button>
   );
 }

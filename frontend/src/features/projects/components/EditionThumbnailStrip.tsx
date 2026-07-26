@@ -4,9 +4,9 @@
  * the resolved edition's pages as a horizontal thumbnail strip so the conductor
  * trims the publisher's front matter by eye — tap a page to start the music there,
  * use the corner control to cut the tail — instead of typing page numbers blind.
- * Pages outside the kept range dim out; the AI-suggested start is flagged. The
- * strip degrades to nothing (the manual page inputs remain) when the host has no
- * rasteriser or the item has no readable edition, so it is purely additive.
+ * Pages outside the kept range dim out; the AI-suggested start is flagged.
+ * Presentational: the row owns the manifest query, because whether the strip can
+ * render at all decides what the row shows in its place.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/EditionThumbnailStrip
  */
@@ -18,56 +18,26 @@ import { Scissors, Sparkles } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Caption } from "@/shared/ui/primitives/typography";
 
-import { useScorePackageThumbnails } from "../api/project.score-package";
 import type {
   ScorePackageItem,
   ScorePackageItemPatch,
+  ScorePackageThumbnail,
 } from "../api/project.service";
 
 interface EditionThumbnailStripProps {
-  projectId: string;
   item: ScorePackageItem;
-  /** Fetch only when the row is expanded — a long programme stays cheap. */
-  enabled: boolean;
+  thumbnails: readonly ScorePackageThumbnail[];
   onPatch: (patch: Partial<ScorePackageItemPatch>) => void;
 }
 
-const SKELETON_TILES = [0, 1, 2, 3, 4] as const;
-
 export function EditionThumbnailStrip({
-  projectId,
   item,
-  enabled,
+  thumbnails,
   onPatch,
-}: EditionThumbnailStripProps): React.JSX.Element | null {
+}: EditionThumbnailStripProps): React.JSX.Element {
   const { t } = useTranslation();
-  const { data, isLoading } = useScorePackageThumbnails(
-    projectId,
-    item.id,
-    item.selected_edition_id,
-    enabled,
-  );
 
-  if (isLoading) {
-    return (
-      <div className="flex gap-2 overflow-hidden" aria-hidden="true">
-        {SKELETON_TILES.map((i) => (
-          <div
-            key={i}
-            className="h-28 w-20 shrink-0 animate-pulse rounded-chip bg-ethereal-ink/5"
-          />
-        ))}
-      </div>
-    );
-  }
-
-  // No rasteriser on this host, or no readable edition — fall back silently to the
-  // manual page-number inputs that sit above this strip.
-  if (!data || !data.available || data.thumbnails.length === 0) {
-    return null;
-  }
-
-  const pageCount = data.thumbnails.length;
+  const pageCount = thumbnails.length;
   const effectiveStart = item.pdf_page_start ?? 1;
   const effectiveEnd = item.pdf_page_end ?? pageCount;
 
@@ -100,7 +70,7 @@ export function EditionThumbnailStrip({
         )}
       </Caption>
       <ul className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        {data.thumbnails.map(({ page, src }) => {
+        {thumbnails.map(({ page, src }) => {
           const isKept = page >= effectiveStart && page <= effectiveEnd;
           const isStart = page === effectiveStart;
           const isEnd = item.pdf_page_end != null && page === item.pdf_page_end;
@@ -200,6 +170,20 @@ export function EditionThumbnailStrip({
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+/** Placeholder while the manifest is in flight, so the trimmer doesn't pop in. */
+export function EditionThumbnailSkeleton(): React.JSX.Element {
+  return (
+    <div className="flex gap-2 overflow-hidden" aria-hidden="true">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="h-28 w-20 shrink-0 animate-pulse rounded-chip bg-ethereal-ink/5"
+        />
+      ))}
     </div>
   );
 }

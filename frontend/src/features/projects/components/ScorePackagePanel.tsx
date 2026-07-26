@@ -1,18 +1,19 @@
 /**
  * @file ScorePackagePanel.tsx
- * @description Conductor build cockpit for the auto-assembled concert score book.
- * Reorganised from a flat settings form into a focused tool: a status hero that
- * carries the book state + the primary action, a two-tier settings disclosure
- * (content choices up front, set-once structure de-emphasised) built from one
- * pill/segmented control language, then the per-item build list with a live card
- * + edition preview and the whole-book preview. Flags a stale/distributed output
- * and offers the gated download. Empty state until the programme has pieces.
+ * @description Conductor build cockpit for the concert score book, ranked by the
+ * order the questions are asked: is the book current, what is it made of, which
+ * piece still needs a hand. The hero states the book's condition ONCE — a word, a
+ * stamp, and the figures that decide whether to press build — instead of the four
+ * stacked sentences that used to say "stale" four ways. Settings summarise
+ * themselves while collapsed; the hand-upload alternative rides the footer rather
+ * than a second card of equal weight.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/ScorePackagePanel
  */
 
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -20,17 +21,20 @@ import {
   ChevronDown,
   Download,
   FileText,
+  ListOrdered,
   Users,
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import type { SegmentedTabItem } from "@/shared/ui/composites/SegmentedTabs";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Heading, Metric, Text } from "@/shared/ui/primitives/typography";
 
 import { projectKeys } from "../api/project.query-keys";
 import { ProjectService } from "../api/project.service";
@@ -38,6 +42,7 @@ import type {
   CardElement,
   ScorePackageConfig,
   ScorePackageItem,
+  ScorePackageState,
 } from "../api/project.service";
 import {
   useGenerateScorePackage,
@@ -46,6 +51,7 @@ import {
   useUpdateScorePackageItem,
 } from "../api/project.score-package";
 import { CardElementPills } from "./CardElementPills";
+import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
 import { TogglePill } from "./TogglePill";
 
@@ -56,19 +62,17 @@ interface ScorePackagePanelProps {
 
 type DensityId = ScorePackageConfig["density_mode"];
 type LangId = (typeof TRANSLATION_LANGUAGES)[number];
+type StatusTone = "sage" | "gold" | "graphite" | "crimson";
+type FigureTone = "default" | "gold";
 
 const TRANSLATION_LANGUAGES = ["pl", "en", "fr"] as const;
 
-// Mirrors the per-element dots in ScorePackageItemRow, so the legend explains
-// exactly what the conductor sees against each card element.
-const READINESS_LEGEND = [
-  { dot: "bg-ethereal-sage", key: "projects.score_package.element_status.ready", fallback: "Dane gotowe" },
-  { dot: "bg-ethereal-gold", key: "projects.score_package.element_status.low", fallback: "Niska pewność" },
-  { dot: "bg-ethereal-ink/20", key: "projects.score_package.element_status.missing", fallback: "Brak danych" },
-  { dot: "border border-ethereal-ink/30 bg-transparent", key: "projects.score_package.element_status.na", fallback: "Nie dotyczy" },
-] as const;
-
-type StatusTone = "sage" | "gold" | "graphite" | "crimson";
+interface Figure {
+  key: string;
+  value: string;
+  label: string;
+  tone: FigureTone;
+}
 
 interface PreviewTarget {
   item: ScorePackageItem;
@@ -92,6 +96,13 @@ const sanitizeFilename = (title: string): string =>
     .replace(/[^\p{L}\p{N} _-]/gu, "")
     .trim()
     .replace(/\s+/g, "_") || "partytura";
+
+/** A piece the conductor has to look at before the book is trustworthy: no bound
+ *  edition, more singers than licensed copies, or card data the AI is unsure of. */
+const needsAttention = (item: ScorePackageItem): boolean =>
+  !item.has_pdf ||
+  item.copies_shortfall !== null ||
+  item.readiness.overall === "low";
 
 export function ScorePackagePanel({
   projectId,
@@ -159,6 +170,7 @@ export function ScorePackagePanel({
   const busy = isBuilding || generate.isPending;
   const nothingToBind = state ? state.bindable_pieces === 0 : true;
   const hasProgram = (state?.total_pieces ?? 0) > 0;
+  const hasBook = state?.status === "RDY" && state.has_pdf;
 
   // CTA escalation: once a current book exists, rebuilding is optional, so quiet
   // it and let Download carry the gold. Rebuild escalates back to primary only
@@ -215,7 +227,7 @@ export function ScorePackagePanel({
   const status: { word: string; tone: StatusTone } = (() => {
     if (busy) return { word: buildStatusLabel, tone: "gold" };
     if (state?.status === "FAIL") return { word: t("projects.score_package.failed", "Błąd składania"), tone: "crimson" };
-    if (state?.status === "RDY" && state.has_pdf) {
+    if (hasBook && state) {
       if (state.is_manual_upload) return { word: t("projects.score_package.manual.badge", "Wgrana ręcznie"), tone: "graphite" };
       if (state.is_stale) return { word: t("projects.score_package.stale", "Program zmieniony"), tone: "gold" };
       return { word: t("projects.score_package.ready", "Gotowa"), tone: "sage" };
@@ -223,82 +235,124 @@ export function ScorePackagePanel({
     return { word: t("projects.score_package.bridge.none", "Nie złożona"), tone: "graphite" };
   })();
 
-  const generatedLabel = formatTimestamp(state?.generated_at ?? null, i18n.language);
-  const statusSub = (() => {
-    if (!state || state.status !== "RDY" || !state.has_pdf) return null;
-    if (state.is_manual_upload) return generatedLabel;
+  // The stamp under the headline: which build this is and when it was made. The
+  // counter starts at zero and only a completed build raises it, so version 0 is
+  // "no build behind this file" and saying so would be noise.
+  const statusStamp = (() => {
+    if (!hasBook || !state) return null;
+    const generatedLabel = formatTimestamp(state.generated_at, i18n.language);
     const parts = [
-      t("projects.score_package.bridge.version", "Wersja {{v}}", { v: state.build_version }),
-      t("projects.score_package.pages", "{{n}} stron", { n: state.page_count ?? 0 }),
+      !state.is_manual_upload && state.build_version > 0
+        ? t("projects.score_package.bridge.version", "Wersja {{v}}", {
+            v: state.build_version,
+          })
+        : "",
       generatedLabel,
     ].filter(Boolean);
-    return parts.join(" · ");
+    return parts.length > 0 ? parts.join(" · ") : null;
   })();
+
+  // The hero's figures: the ratio that decides whether the book is worth building,
+  // plus the two facts that only exist when they exist. A zero is never a tile —
+  // "0 bez nut" states the resting case in the loudest slot on the screen.
+  const figures = ((current: ScorePackageState | undefined): Figure[] => {
+    if (!current) return [];
+    const list: Figure[] = [
+      {
+        key: "bound",
+        value: `${current.bindable_pieces}/${current.total_pieces}`,
+        label: t("projects.score_package.figures.bound", "Utwory z nutami"),
+        tone: current.bindable_pieces < current.total_pieces ? "gold" : "default",
+      },
+    ];
+    if (hasBook && !current.is_manual_upload && current.page_count) {
+      list.push({
+        key: "pages",
+        value: String(current.page_count),
+        label: t("projects.score_package.figures.pages", "Stron w książce"),
+        tone: "default",
+      });
+    }
+    if (current.pieces_over_copies.length > 0) {
+      list.push({
+        key: "copies",
+        value: String(current.pieces_over_copies.length),
+        label: t("projects.score_package.figures.over_copies", "Bez egzemplarzy"),
+        tone: "gold",
+      });
+    }
+    return list;
+  })(state);
+
+  const attentionCount = state ? state.items.filter(needsAttention).length : 0;
+
+  const settingsSummary = config
+    ? [
+        config.density_mode === "CONCERT"
+          ? t("projects.score_package.density.concert", "Koncert")
+          : t("projects.score_package.density.mass", "Msza"),
+        config.translation_language.toUpperCase(),
+        config.include_cards
+          ? t("projects.score_package.cards.summary", "Karty: {{count}}", {
+              count: config.card_default_elements.length,
+            })
+          : t("projects.score_package.cards.summary_off", "Bez kart"),
+      ].join(" · ")
+    : "";
 
   return (
     <SectionCard
+      as="h2"
       title={t("projects.score_package.title", "Partytura koncertowa")}
       icon={<FileText size={15} aria-hidden="true" />}
       bodyClassName="flex flex-col gap-5"
+      footer={
+        <ScoreManualUploadRail
+          projectId={projectId}
+          hasScorePdf={state?.has_pdf ?? false}
+          isManual={state?.is_manual_upload ?? false}
+        />
+      }
     >
-      {/* Empty programme — nothing to assemble yet */}
+      {isLoading && !state && <EtherealLoader fullHeight={false} />}
+
       {state && !hasProgram && (
-        <div className="flex flex-col items-center gap-2 rounded-nested border border-dashed border-hairline-strong px-4 py-10 text-center">
-          <FileText size={22} aria-hidden="true" className="text-ethereal-graphite/40" />
-          <Text size="sm" color="muted">
-            {t(
-              "projects.score_package.empty",
-              "Dodaj utwory do programu powyżej, aby złożyć partyturę.",
-            )}
-          </Text>
-        </div>
+        <StatePanel
+          variant="inline"
+          className="py-10"
+          icon={<ListOrdered size={24} aria-hidden="true" />}
+          title={t("projects.score_package.empty_title", "Program jest pusty")}
+          description={t(
+            "projects.score_package.empty",
+            "Partytura składa się z utworów programu — najpierw ułóż program koncertu.",
+          )}
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="../program">
+                {t("projects.score_package.empty_action", "Otwórz program")}
+              </Link>
+            </Button>
+          }
+        />
       )}
 
-      {hasProgram && (
+      {state && hasProgram && (
         <>
-          {/* ── Status hero: state + the primary action, in view ───────────── */}
+          {/* ── Status hero: the book's condition, its figures, one advisory ── */}
           <div className="flex flex-col gap-4 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-col gap-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Heading as="p" size="lg" weight="medium" color={status.tone}>
                     {status.word}
                   </Heading>
-                  {state?.is_distributed && (
+                  {state.is_distributed && (
                     <Badge variant="neutral" icon={<Users size={11} aria-hidden="true" />}>
                       {t("projects.score_package.distributed", "Udostępniona")}
                     </Badge>
                   )}
                 </div>
-                {statusSub && <Caption color="muted">{statusSub}</Caption>}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Text size="sm" color="graphite">
-                    {t(
-                      "projects.score_package.readiness",
-                      "{{bindable}} z {{total}} utworów ma dołączone nuty",
-                      {
-                        bindable: state?.bindable_pieces ?? 0,
-                        total: state?.total_pieces ?? 0,
-                      },
-                    )}
-                  </Text>
-                  {state && state.pieces_without_pdf.length > 0 && (
-                    <Badge variant="warning" icon={<AlertTriangle size={11} aria-hidden="true" />}>
-                      {t("projects.score_package.missing_count", "{{n}} bez nut", {
-                        n: state.pieces_without_pdf.length,
-                      })}
-                    </Badge>
-                  )}
-                  {state && state.pieces_over_copies.length > 0 && (
-                    <Badge variant="warning" icon={<AlertTriangle size={11} aria-hidden="true" />}>
-                      {t(
-                        "projects.score_package.over_copies_count",
-                        "{{n}} bez egzemplarzy",
-                        { n: state.pieces_over_copies.length },
-                      )}
-                    </Badge>
-                  )}
-                </div>
+                {statusStamp && <Caption color="muted">{statusStamp}</Caption>}
               </div>
 
               <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -311,38 +365,56 @@ export function ScorePackagePanel({
                 >
                   {busy
                     ? buildStatusLabel
-                    : state?.has_pdf
+                    : state.has_pdf
                       ? t("projects.score_package.regenerate", "Wygeneruj ponownie")
                       : t("projects.score_package.generate", "Złóż partyturę")}
                 </Button>
 
-                {state?.status === "RDY" && state.has_pdf && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    leftIcon={<BookOpen size={14} aria-hidden="true" />}
-                    onClick={() => setBookPreviewOpen(true)}
-                  >
-                    {t("projects.score_package.preview_book", "Podgląd")}
-                  </Button>
-                )}
-
-                {state?.status === "RDY" && state.has_pdf && (
-                  <Button
-                    variant={state.is_stale ? "outline" : "primary"}
-                    size="sm"
-                    leftIcon={<Download size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      void handleDownload();
-                    }}
-                  >
-                    {state.is_stale
-                      ? t("projects.score_package.download_stale", "Pobierz mimo to")
-                      : t("projects.score_package.download", "Pobierz")}
-                  </Button>
+                {hasBook && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<BookOpen size={14} aria-hidden="true" />}
+                      onClick={() => setBookPreviewOpen(true)}
+                    >
+                      {t("projects.score_package.preview_book", "Podgląd")}
+                    </Button>
+                    <Button
+                      variant={state.is_stale ? "outline" : "primary"}
+                      size="sm"
+                      leftIcon={<Download size={14} aria-hidden="true" />}
+                      onClick={() => {
+                        void handleDownload();
+                      }}
+                    >
+                      {state.is_stale
+                        ? t("projects.score_package.download_stale", "Pobierz mimo to")
+                        : t("projects.score_package.download", "Pobierz")}
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
+
+            {figures.length > 0 && (
+              <div className="flex flex-wrap gap-x-10 gap-y-4 border-t border-hairline pt-4">
+                {figures.map((figure) => (
+                  <div key={figure.key} className="flex flex-col gap-1.5">
+                    <Eyebrow size="overline-sm" color="muted">
+                      {figure.label}
+                    </Eyebrow>
+                    <Metric
+                      as="span"
+                      color={figure.tone}
+                      className="text-2xl leading-none"
+                    >
+                      {figure.value}
+                    </Metric>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {busy && (
               <Caption color="muted">
@@ -360,7 +432,11 @@ export function ScorePackagePanel({
               </Caption>
             )}
 
-            {state?.status === "RDY" && state.has_pdf && state.is_stale && (
+            {state.status === "FAIL" && state.error && (
+              <Caption color="crimson">{state.error}</Caption>
+            )}
+
+            {hasBook && state.is_stale && (
               <Caption color="gold" className="flex items-start gap-1.5">
                 <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
                 {t(
@@ -370,7 +446,7 @@ export function ScorePackagePanel({
               </Caption>
             )}
 
-            {state?.is_distributed && !busy && (
+            {state.is_distributed && !busy && (
               <Caption color="muted" className="flex items-start gap-1.5">
                 <Users size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
                 {t(
@@ -379,30 +455,31 @@ export function ScorePackagePanel({
                 )}
               </Caption>
             )}
-
-            {state?.status === "FAIL" && state.error && (
-              <Caption color="crimson">{state.error}</Caption>
-            )}
           </div>
 
-          {/* ── Settings: two-tier, one pill/segmented control language ─────── */}
+          {/* ── Settings: two-tier, and legible while shut ──────────────────── */}
           {config && (
             <div className="rounded-nested border border-hairline-strong">
               <button
                 type="button"
                 onClick={() => setSettingsOpen((open) => !open)}
                 aria-expanded={settingsOpen}
-                className="flex w-full items-center gap-2 px-4 py-3 text-left"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-ethereal-incense/5"
               >
                 <Eyebrow color="muted">
                   {t("projects.score_package.settings", "Ustawienia")}
                 </Eyebrow>
                 <span className="flex-1" />
+                {!settingsOpen && (
+                  <Caption color="muted" className="min-w-0 truncate">
+                    {settingsSummary}
+                  </Caption>
+                )}
                 <ChevronDown
                   size={15}
                   aria-hidden="true"
                   className={cn(
-                    "text-ethereal-graphite/60 transition-transform duration-300",
+                    "shrink-0 text-ethereal-graphite/60 transition-transform duration-300",
                     settingsOpen && "rotate-180",
                   )}
                 />
@@ -413,9 +490,9 @@ export function ScorePackagePanel({
                   {/* Tier 1 — content choices */}
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
-                      <Caption color="muted">
+                      <Eyebrow as="span" color="muted" className="ml-1">
                         {t("projects.score_package.density.label", "Układ")}
-                      </Caption>
+                      </Eyebrow>
                       <SegmentedTabs<DensityId>
                         items={densityItems}
                         value={config.density_mode}
@@ -424,9 +501,9 @@ export function ScorePackagePanel({
                       />
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <Caption color="muted">
+                      <Eyebrow as="span" color="muted" className="ml-1">
                         {t("projects.score_package.language.label", "Język tłumaczeń")}
-                      </Caption>
+                      </Eyebrow>
                       <SegmentedTabs<LangId>
                         items={languageItems}
                         value={config.translation_language as LangId}
@@ -460,9 +537,9 @@ export function ScorePackagePanel({
 
                   {/* Tier 2 — set-once structure, de-emphasised */}
                   <div className="flex flex-col gap-2 border-t border-hairline pt-4">
-                    <Caption color="muted">
+                    <Eyebrow size="overline-sm" color="muted">
                       {t("projects.score_package.structure.label", "Struktura książki")}
-                    </Caption>
+                    </Eyebrow>
                     <div className="flex flex-wrap gap-1.5">
                       <TogglePill
                         subtle
@@ -508,20 +585,25 @@ export function ScorePackagePanel({
           )}
 
           {/* ── Build cockpit — per-item list ──────────────────────────────── */}
-          {state && state.items.length > 0 && (
+          {state.items.length > 0 && (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
                 <Eyebrow color="muted">
                   {t("projects.score_package.items_heading", "Utwory w programie")}
                 </Eyebrow>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  {READINESS_LEGEND.map(({ dot, key, fallback }) => (
-                    <span key={key} className="flex items-center gap-1.5">
-                      <span className={cn("h-1.5 w-1.5 rounded-full", dot)} aria-hidden="true" />
-                      <Caption color="muted">{t(key, fallback)}</Caption>
-                    </span>
-                  ))}
-                </div>
+                {attentionCount > 0 && (
+                  <Text
+                    as="span"
+                    size="sm"
+                    weight="medium"
+                    color="gold"
+                    className="tabular-nums"
+                  >
+                    {t("projects.score_package.attention_count", "Wymaga uwagi: {{count}}", {
+                      count: attentionCount,
+                    })}
+                  </Text>
+                )}
               </div>
               <div className="flex flex-col gap-2">
                 {state.items.map((item) => (
@@ -541,10 +623,6 @@ export function ScorePackagePanel({
         </>
       )}
 
-      {isLoading && !state && (
-        <Caption color="muted">{t("common.loading", "Ładowanie…")}</Caption>
-      )}
-
       <PdfViewerModal
         isOpen={preview !== null}
         title={preview?.item.title ?? ""}
@@ -559,17 +637,25 @@ export function ScorePackagePanel({
             ? `${preview.mode}-${preview.item.id}-${preview.item.selected_edition_id ?? ""}`
             : undefined
         }
+        // An edition is a stored file and its id is its version. A card is
+        // rendered from the item's override fields on every request, so editing
+        // the copy and previewing again has to show the new card.
+        volatile={preview?.mode === "card"}
         onClose={() => setPreview(null)}
       />
 
+      {/* The doc key carries the build stamp: the viewer caches a fetched blob
+          for the session, so a key that ignored the rebuild would show the old
+          book after pressing "Wygeneruj ponownie". */}
       <PdfViewerModal
         isOpen={bookPreviewOpen}
         title={projectTitle ?? t("projects.score_package.title", "Partytura koncertowa")}
         subtitle={t("projects.score_package.preview_book_full", "Podgląd partytury")}
+        fileName={`${sanitizeFilename(projectTitle ?? "partytura")}.pdf`}
         fetchBlob={
           bookPreviewOpen ? () => ProjectService.fetchScorePdfBlob(projectId) : null
         }
-        docKey={`book-${projectId}-${state?.generated_at ?? ""}`}
+        docKey={`book-${projectId}-${state?.build_version ?? 0}-${state?.generated_at ?? ""}`}
         onClose={() => setBookPreviewOpen(false)}
       />
     </SectionCard>
