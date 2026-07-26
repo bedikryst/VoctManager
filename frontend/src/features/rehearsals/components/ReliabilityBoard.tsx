@@ -90,7 +90,7 @@ const HeatStrip = ({
             <span
               key={cell.rehearsalId + index}
               className="h-3.5 w-3.5 rounded-[3px] border border-dashed border-ethereal-ink/12"
-              title={`${date} · ${t("rehearsals.reliability.not_summoned", "Nie wezwany")}`}
+              title={`${date} · ${t("rehearsals.reliability.not_summoned", "Bez wezwania")}`}
             />
           );
         }
@@ -329,7 +329,7 @@ export const ReliabilityBoard = ({
                   onClick={() => onOpenRehearsal(String(rehearsal.id))}
                   className="group flex w-10 shrink-0 flex-col items-center gap-1.5 rounded-lg px-0.5 py-1 transition-colors hover:bg-ethereal-marble/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
                   title={`${date} · ${
-                    realised === null ? t("rehearsals.row.status_none", "Nieoznaczony") : `${realised}%`
+                    realised === null ? t("rehearsals.row.status_none", "Bez wpisu") : `${realised}%`
                   } · ${tally.marked}/${tally.total}`}
                   aria-label={`${date}: ${realised === null ? "—" : `${realised}%`}`}
                 >

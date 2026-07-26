@@ -191,7 +191,6 @@ export const RehearsalPulseBar = React.memo(
                   icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
                   containerClassName="flex items-center gap-1.5"
                   primaryTimeClassName="flex items-center gap-1.5 text-xs font-semibold text-ethereal-ink"
-                  localTimeClassName="text-[9px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
                 />
                 <LocationPreview
                   locationRef={next.rehearsal.location}

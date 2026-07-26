@@ -16,7 +16,12 @@ import type { AttendanceStatus, VoiceType } from "@/shared/types";
 export type AttendanceCell = AttendanceStatus | "NONE";
 
 export interface AttendanceStatusMeta {
-  /** i18n key + Polish fallback. */
+  /**
+   * i18n key + Polish fallback. The label names the RECORD, not the person —
+   * "Obecność", not "Obecny". A register writes down what happened, and the
+   * adjective form put a masculine ending on every singer in a choir that is
+   * mostly not. Read by Centrum Obecności and by the hub's Frekwencja matrix.
+   */
   labelKey: string;
   fallback: string;
   /** Ethereal palette token this status maps to (alarm = crimson only). */
@@ -38,7 +43,7 @@ export const ATTENDANCE_STATUS_META: Record<
 > = {
   PRESENT: {
     labelKey: "rehearsals.row.status_present",
-    fallback: "Obecny",
+    fallback: "Obecność",
     token: "sage",
     solid: "bg-ethereal-sage text-ethereal-alabaster border-ethereal-sage",
     soft: "bg-ethereal-sage/10 text-ethereal-sage border-ethereal-sage/30",
@@ -48,7 +53,7 @@ export const ATTENDANCE_STATUS_META: Record<
   },
   LATE: {
     labelKey: "rehearsals.row.status_late",
-    fallback: "Spóźniony",
+    fallback: "Spóźnienie",
     token: "gold",
     solid: "bg-ethereal-gold text-ethereal-graphite border-ethereal-gold",
     soft: "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/40",
@@ -58,7 +63,7 @@ export const ATTENDANCE_STATUS_META: Record<
   },
   ABSENT: {
     labelKey: "rehearsals.row.status_absent",
-    fallback: "Nieobecny",
+    fallback: "Nieobecność",
     token: "crimson",
     solid:
       "bg-ethereal-crimson text-ethereal-alabaster border-ethereal-crimson",
@@ -69,7 +74,7 @@ export const ATTENDANCE_STATUS_META: Record<
   },
   EXCUSED: {
     labelKey: "rehearsals.row.status_excused",
-    fallback: "Usprawiedliwiony",
+    fallback: "Usprawiedliwienie",
     token: "amethyst",
     solid:
       "bg-ethereal-amethyst text-ethereal-alabaster border-ethereal-amethyst",
@@ -80,7 +85,7 @@ export const ATTENDANCE_STATUS_META: Record<
   },
   NONE: {
     labelKey: "rehearsals.row.status_none",
-    fallback: "Nieoznaczony",
+    fallback: "Bez wpisu",
     token: "graphite",
     soft: "bg-ethereal-ink/4 text-ethereal-graphite/60 border-ethereal-ink/8",
     solid: "bg-ethereal-graphite text-ethereal-alabaster border-ethereal-graphite",
@@ -128,8 +133,23 @@ export const voiceSectionOf = (
     : OTHER_SECTION;
 };
 
-/** i18n label key for a section bucket (reuses the shared role dictionary). */
+/**
+ * i18n label key for a section bucket. A section header names a group of
+ * people, so it takes the plural — the shared role dictionary
+ * (`dashboard.layout.roles.*`) holds one singer's voice type ("Sopran") and
+ * reads as a label for the part, not for the dozen women standing under it.
+ */
+const VOICE_SECTION_LABEL_KEY: Record<VoiceSectionKey, string> = {
+  SOP: "rehearsals.voices.sopranos",
+  MEZ: "rehearsals.voices.mezzos",
+  ALT: "rehearsals.voices.altos",
+  CT: "rehearsals.voices.countertenors",
+  TEN: "rehearsals.voices.tenors",
+  BAR: "rehearsals.voices.baritones",
+  BAS: "rehearsals.voices.basses",
+  DIR: "rehearsals.voices.other",
+  [OTHER_SECTION]: "rehearsals.voices.other",
+};
+
 export const voiceSectionLabelKey = (key: VoiceSectionKey): string =>
-  key === OTHER_SECTION
-    ? "rehearsals.voices.other"
-    : `dashboard.layout.roles.${key}`;
+  VOICE_SECTION_LABEL_KEY[key];

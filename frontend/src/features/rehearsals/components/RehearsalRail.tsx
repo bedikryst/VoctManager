@@ -17,7 +17,7 @@ import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
-import { NativeSelect } from "@/shared/ui/primitives/NativeSelect";
+import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   formatLocalizedDate,
@@ -199,18 +199,16 @@ export const RehearsalRail = ({
         </div>
 
         {displayProjects.length > 0 ? (
-          <NativeSelect
-            aria-label={t("rehearsals.rail.project_label", "Projekt")}
+          <Select
+            ariaLabel={t("rehearsals.rail.project_label", "Projekt")}
             leftIcon={<FolderOpen size={16} aria-hidden="true" />}
             value={selectedProjectId}
-            onChange={(event) => onSelectProject(event.target.value)}
-          >
-            {displayProjects.map((project) => (
-              <option key={project.id} value={String(project.id)}>
-                {project.title}
-              </option>
-            ))}
-          </NativeSelect>
+            onValueChange={onSelectProject}
+            options={displayProjects.map((project) => ({
+              value: String(project.id),
+              label: project.title,
+            }))}
+          />
         ) : (
           <Caption className="block px-1 italic">
             {t("rehearsals.dashboard.no_projects", "Brak projektów w tej zakładce.")}

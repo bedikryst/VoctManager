@@ -187,7 +187,7 @@ export const TimelineProjectCard = ({
                   variant="dark"
                   containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/30 text-ethereal-parchment border border-ethereal-incense/50"
                   primaryTimeClassName="flex items-center gap-1.5 font-medium"
-                  localTimeClassName="text-[10px] text-ethereal-parchment/70 border-l border-ethereal-incense/50 pl-1.5"
+                  divider
                 />
               )}
               {/* lifted above the stretched click-layer (z-[2]) so the map
@@ -775,7 +775,8 @@ export const TimelineProjectCard = ({
         subtitle={proj.title}
         fileName={`Karta_${proj.title.replace(/\s+/g, "_")}.pdf`}
         fetchBlob={fetchDaySheetBlob}
-        docKey={proj.id}
+        docKey={`day-sheet-${proj.id}`}
+        volatile
         fullView={{
           type: "project-day-sheet",
           id: proj.id,
@@ -795,7 +796,7 @@ export const TimelineProjectCard = ({
           subtitle={proj.title}
           fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
-          docKey={`score-${proj.id}`}
+          docKey={`score-${proj.id}-${proj.updated_at ?? ""}`}
           fullView={{
             type: "project-score",
             id: proj.id,

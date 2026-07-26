@@ -58,15 +58,16 @@ interface RehearsalInspectorProps {
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
 
+/** The label comes from the shared meta, not from the call site: this strip was
+ *  the second copy of a vocabulary the module already owns. */
 const StatPill = ({
   status,
   value,
-  label,
 }: {
   status: keyof typeof ATTENDANCE_STATUS_META;
   value: number;
-  label: string;
 }) => {
+  const { t } = useTranslation();
   const meta = ATTENDANCE_STATUS_META[status];
   return (
     <div className="inline-flex items-center gap-1.5">
@@ -74,7 +75,7 @@ const StatPill = ({
       <Text as="span" size="sm" weight="semibold" className="tabular-nums">
         {value}
       </Text>
-      <Caption color="muted">{label}</Caption>
+      <Caption color="muted">{t(meta.labelKey, meta.fallback)}</Caption>
     </div>
   );
 };
@@ -231,13 +232,11 @@ export const RehearsalInspector = ({
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <StatPill status="PRESENT" value={stats.present} label={t("rehearsals.row.status_present", "Obecny")} />
-              <StatPill status="LATE" value={stats.late} label={t("rehearsals.row.status_late", "Spóźniony")} />
-              <StatPill status="EXCUSED" value={stats.excused} label={t("rehearsals.row.status_excused", "Usprawiedliwiony")} />
-              <StatPill status="ABSENT" value={stats.absent} label={t("rehearsals.row.status_absent", "Nieobecny")} />
-              {stats.none > 0 && (
-                <StatPill status="NONE" value={stats.none} label={t("rehearsals.row.status_none", "Nieoznaczony")} />
-              )}
+              <StatPill status="PRESENT" value={stats.present} />
+              <StatPill status="LATE" value={stats.late} />
+              <StatPill status="EXCUSED" value={stats.excused} />
+              <StatPill status="ABSENT" value={stats.absent} />
+              {stats.none > 0 && <StatPill status="NONE" value={stats.none} />}
             </div>
           </div>
         )}

@@ -231,7 +231,6 @@ export const TimelineRehearsalCard = ({
                 icon={<Clock size={13} className="text-ethereal-gold" aria-hidden="true" />}
                 containerClassName="flex items-center gap-1.5"
                 primaryTimeClassName="flex items-center gap-1.5 font-semibold text-ethereal-ink"
-                localTimeClassName="text-[10px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
               />
               <span className="relative z-[2] flex min-w-0 max-w-full">
                 <LocationPreview

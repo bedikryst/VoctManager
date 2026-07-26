@@ -157,7 +157,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             variant="dark"
             containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/20 text-ethereal-parchment border border-ethereal-incense/40"
             primaryTimeClassName="flex items-center gap-1.5 font-medium"
-            localTimeClassName="text-[10px] text-ethereal-parchment/70 border-l border-ethereal-incense/50 pl-1.5"
+            divider
           />
           {proj.call_time && (
             <DualTimeDisplay
@@ -168,7 +168,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
               variant="dark"
               containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-gold/20 text-ethereal-parchment border border-ethereal-gold/40"
               primaryTimeClassName="flex items-center gap-1.5 font-medium"
-              localTimeClassName="text-[10px] text-ethereal-parchment/70 border-l border-ethereal-gold/40 pl-1.5"
+              divider
             />
           )}
           <LocationPreview
@@ -249,7 +249,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         subtitle={proj.title}
         fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
         fetchBlob={fetchScoreBlob}
-        docKey={`score-hero-${proj.id}`}
+        docKey={`score-hero-${proj.id}-${proj.updated_at ?? ""}`}
         fullView={{
           type: "project-score",
           id: proj.id,
@@ -361,7 +361,6 @@ const RehearsalHero = ({
             icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
             containerClassName="flex items-center gap-1.5"
             primaryTimeClassName="flex items-center gap-1.5"
-            localTimeClassName="text-[10px] text-ethereal-graphite/50 font-medium normal-case tracking-normal pl-1.5"
           />
           <LocationPreview
             locationRef={event.location}

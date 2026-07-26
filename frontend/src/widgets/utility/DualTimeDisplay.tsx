@@ -88,17 +88,45 @@ const primaryTimeVariants = cva("flex items-baseline gap-2", {
   },
 });
 
+/**
+ * The local time is a TIME, so it is set as one. Its old default —
+ * `9px` bold uppercase at `0.25em` — was the recipe for a machine-written
+ * status label, which is why seven of nine call sites re-typed their way out of
+ * it in two divergent families. Two steps, named after the job:
+ *
+ * - `quiet` — a footnote beside the primary time (the common case);
+ * - `paired` — the two times carry comparable weight, as on the facts card
+ *   where the local reading is a fact the producer works from, not a gloss.
+ *
+ * `divider` is for the dark pills, where both times sit on ONE line inside a
+ * tinted chip and a gap alone does not separate them.
+ */
 const localTimeVariants = cva(
-  "text-[9px] font-bold uppercase tracking-[0.25em] flex items-center gap-1.5",
+  "flex items-center gap-1.5 font-medium normal-case tracking-normal",
   {
     variants: {
       variant: {
-        default: "text-ethereal-incense/80",
-        dark: "text-ethereal-parchment/60",
+        default: "text-ethereal-graphite/60",
+        dark: "text-ethereal-parchment/70",
+      },
+      local: {
+        quiet: "text-[10px]",
+        paired: "text-xs",
+      },
+      divider: {
+        true: "border-l pl-1.5",
+        false: "",
       },
     },
+    compoundVariants: [
+      { variant: "default", local: "paired", class: "text-ethereal-graphite" },
+      { variant: "default", divider: true, class: "border-ethereal-graphite/20" },
+      { variant: "dark", divider: true, class: "border-ethereal-parchment/30" },
+    ],
     defaultVariants: {
       variant: "default",
+      local: "quiet",
+      divider: false,
     },
   },
 );
@@ -115,11 +143,14 @@ export interface DualTimeDisplayProps extends VariantProps<
   size?: VariantProps<typeof primaryTimeVariants>["size"];
   weight?: VariantProps<typeof primaryTimeVariants>["weight"];
   variant?: "default" | "dark";
+  /** Weight of the local-time row against the primary — see `localTimeVariants`. */
+  local?: VariantProps<typeof localTimeVariants>["local"];
+  /** Rule between the two times, for a one-line chip. See `localTimeVariants`. */
+  divider?: boolean;
   className?: string;
   containerClassName?: string;
   timeClassName?: string;
   primaryTimeClassName?: string;
-  localTimeClassName?: string;
 }
 
 export const DualTimeDisplay = ({
@@ -134,11 +165,12 @@ export const DualTimeDisplay = ({
   size,
   weight,
   variant = "default",
+  local,
+  divider,
   className,
   containerClassName,
   timeClassName,
   primaryTimeClassName,
-  localTimeClassName,
 }: DualTimeDisplayProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const { user } = useAuth();
@@ -259,7 +291,11 @@ export const DualTimeDisplay = ({
 
           <time
             dateTime={isoDateString}
-            className={cn(localTimeVariants({ variant }), localTimeClassName)}
+            className={localTimeVariants({
+              variant,
+              local,
+              divider: Boolean(divider),
+            })}
           >
             <span className="sr-only">
               {t("common.time.localAria", "Twój czas lokalny to:")}
@@ -272,12 +308,15 @@ export const DualTimeDisplay = ({
                 userTimezone,
               )}
             </span>
+            {/* An annotation never outweighs the datum: this used to be set at
+                12px beside a 9px time. It rides one step under whatever the row
+                itself is. */}
             <span
               className={cn(
-                "font-sans text-[12px] font-bold lowercase tracking-normal",
+                "font-sans text-[9px] font-medium lowercase tracking-normal",
                 variant === "dark"
-                  ? "text-ethereal-parchment/40"
-                  : "text-ethereal-incense/50",
+                  ? "text-ethereal-parchment/50"
+                  : "text-ethereal-graphite/45",
               )}
             >
               {t("common.time.localSuffix", "(twój czas)")}
