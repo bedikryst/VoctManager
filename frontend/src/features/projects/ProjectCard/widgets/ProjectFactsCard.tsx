@@ -15,7 +15,7 @@ import { Info } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Metric, Text, Unit } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
@@ -89,8 +89,11 @@ export function ProjectFactsCard({
       <dl className="divide-y divide-hairline">
         <FactRow label={t("projects.overview.facts.when", "Termin")}>
           {project.date_time ? (
+            /* Date and time are one datum, so they share a size. At `sm` over
+               `base` the clock came out larger than the day it belongs to and
+               read as an emphasis nobody intended. */
             <div className="flex flex-col gap-0.5">
-              <Text size="sm" weight="medium">
+              <Text size="base" weight="medium">
                 {formatLocalizedDate(
                   project.date_time,
                   { weekday: "long", day: "numeric", month: "long", year: "numeric" },
@@ -105,7 +108,7 @@ export function ProjectFactsCard({
                 spacing="compact"
                 size="base"
                 weight="medium"
-                localTimeClassName="text-xs font-medium normal-case tracking-normal text-ethereal-graphite"
+                local="paired"
               />
             </div>
           ) : (
@@ -140,9 +143,7 @@ export function ProjectFactsCard({
             <Metric as="span" className="text-2xl leading-none text-ethereal-gold">
               {formattedBudget}
             </Metric>
-            <Text as="span" className="text-xs font-medium text-ethereal-graphite/55">
-              {t("common.currency", "PLN")}
-            </Text>
+            <Unit>{t("common.currency", "PLN")}</Unit>
           </div>
         </FactRow>
 

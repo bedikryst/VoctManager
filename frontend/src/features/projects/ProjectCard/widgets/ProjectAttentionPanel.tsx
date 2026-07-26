@@ -211,16 +211,19 @@ export const ProjectAttentionPanel = ({
       }
       action={
         !isClear ? (
-          <span
+          <Text
+            as="span"
+            size="sm"
+            weight="bold"
             className={cn(
-              "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-overline font-bold tabular-nums",
+              "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 tabular-nums",
               hasAlarm
                 ? "bg-ethereal-crimson/10 text-ethereal-crimson"
                 : "bg-ethereal-gold/10 text-ethereal-gold",
             )}
           >
             {items.length}
-          </span>
+          </Text>
         ) : undefined
       }
     >
@@ -269,14 +272,14 @@ export const ProjectAttentionPanel = ({
                     {item.label}
                   </Text>
                   {item.value && (
-                    <span
-                      className={cn(
-                        "text-sm font-bold tabular-nums",
-                        VALUE_TONE[item.tone],
-                      )}
+                    <Text
+                      as="span"
+                      size="base"
+                      weight="bold"
+                      className={cn("tabular-nums", VALUE_TONE[item.tone])}
                     >
                       {item.value}
-                    </span>
+                    </Text>
                   )}
                   <ChevronRight
                     size={16}

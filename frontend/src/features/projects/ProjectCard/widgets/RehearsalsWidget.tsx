@@ -17,6 +17,7 @@ import {
   useProjectParticipations,
 } from "../../api/project.read.queries";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -107,12 +108,19 @@ export const RehearsalsWidget = ({
                           )}
                         </Text>
                         <Caption color="muted">•</Caption>
+                        {/* `orientation` must be explicit: the component's base
+                            is `flex flex-col`, and tailwind-merge keeps that
+                            alongside a caller's `inline-flex items-center`, so
+                            a row asked for by class alone silently centres the
+                            local time under the event time. */}
                         <DualTimeDisplay
                           value={rehearsal.date_time}
                           timeZone={rehearsal.timezone}
-                          containerClassName="inline-flex items-center gap-1"
-                          primaryTimeClassName="inline-flex items-center gap-1 text-sm font-medium text-ethereal-ink"
-                          localTimeClassName="pl-1 text-xs font-medium normal-case tracking-normal text-ethereal-graphite"
+                          orientation="row"
+                          spacing="compact"
+                          size="base"
+                          weight="medium"
+                          local="paired"
                         />
                       </div>
 
@@ -143,14 +151,21 @@ export const RehearsalsWidget = ({
                   </div>
 
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
+                    {/* A partial call is not necessarily a sectional one — the
+                        conductor can name individuals — so the chip states the
+                        headcount rather than guessing at a rehearsal type. */}
                     <Badge variant={isTutti ? "success" : "amethyst"}>
                       {isTutti
-                        ? t("projects.rehearsals.tutti", "TUTTI")
-                        : t("projects.rehearsals.sectional", "SEKCYJNA")}
+                        ? t("projects.rehearsals.status.tutti", "Tutti")
+                        : t(
+                            "projects.rehearsals.status.invited",
+                            "Wezwanych: {{count}}",
+                            { count: invitedCount },
+                          )}
                     </Badge>
                     {!rehearsal.is_mandatory && (
                       <Badge variant="neutral">
-                        {t("projects.rehearsals.optional", "Opcjonalna")}
+                        {t("projects.rehearsals.status.optional", "Opcjonalna")}
                       </Badge>
                     )}
                   </div>
@@ -159,12 +174,11 @@ export const RehearsalsWidget = ({
             })}
           </ul>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <Calendar size={26} className="text-ethereal-incense/30" aria-hidden="true" />
-          <Text color="muted">
-            {t("projects.rehearsals.empty.no_rehearsals", "Brak zaplanowanych prób.")}
-          </Text>
-        </div>
+        <StatePanel
+          variant="inline"
+          icon={<Calendar size={24} aria-hidden="true" />}
+          title={t("projects.rehearsals.empty.no_rehearsals", "Brak zaplanowanych prób")}
+        />
       )}
     </SectionCard>
   );

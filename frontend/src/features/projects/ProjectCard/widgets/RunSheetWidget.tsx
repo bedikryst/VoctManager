@@ -14,8 +14,8 @@ import { useTranslation } from "react-i18next";
 import { Clock } from "lucide-react";
 
 import type { Project } from "@/shared/types";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface RunSheetWidgetProps {
@@ -53,11 +53,24 @@ export function RunSheetWidget({
                 className="absolute -left-[1.6rem] top-1 h-2.5 w-2.5 rounded-full border-2 border-ethereal-gold bg-ethereal-marble"
                 aria-hidden="true"
               />
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="brand">{item.time}</Badge>
-                <Text as="span" size="sm" weight="medium">
-                  {item.title}
+              {/* The clock is the spine of a run sheet, so it is set as time,
+                  not boxed as a chip: a title is optional in this data, and a
+                  row that is only a bordered pill floating in space reads as
+                  something that failed to render. */}
+              <div className="flex flex-wrap items-baseline gap-2">
+                <Text
+                  as="span"
+                  size="sm"
+                  weight="bold"
+                  className="tabular-nums text-ethereal-gold"
+                >
+                  {item.time}
                 </Text>
+                {item.title && (
+                  <Text as="span" size="sm" weight="medium">
+                    {item.title}
+                  </Text>
+                )}
               </div>
               {item.description && (
                 <Text color="graphite" size="sm" className="mt-0.5 text-pretty italic">
@@ -77,12 +90,11 @@ export function RunSheetWidget({
           )}
         </ul>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 py-6 text-center">
-          <Clock size={26} className="text-ethereal-incense/30" aria-hidden="true" />
-          <Text color="muted" className="italic">
-            {t("projects.run_sheet.empty", "Brak harmonogramu dla tego wydarzenia.")}
-          </Text>
-        </div>
+        <StatePanel
+          variant="inline"
+          icon={<Clock size={24} aria-hidden="true" />}
+          title={t("projects.run_sheet.empty", "Brak harmonogramu dnia")}
+        />
       )}
     </SectionCard>
   );

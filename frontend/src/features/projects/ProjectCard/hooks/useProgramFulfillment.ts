@@ -21,6 +21,12 @@ export interface EnrichedProgramItem {
   order: number;
   statusVariant: "success" | "warning" | "neutral";
   statusText: string;
+  /**
+   * Singers still missing across all voice lines of the piece. Zero unless the
+   * status is `warning`. A gap count says what "Nieobsadzony" cannot: how far
+   * the piece is from ready.
+   */
+  missingCount: number;
 }
 
 export const useProgramFulfillment = (project: Project) => {
@@ -76,9 +82,9 @@ export const useProgramFulfillment = (project: Project) => {
 
         let statusVariant: "success" | "warning" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");
+        let missingTotal = 0;
 
         if (requirements.length > 0) {
-          let missingTotal = 0;
           requirements.forEach((req) => {
             const assignedCount = pieceCastings.filter(
               (c) =>
@@ -108,6 +114,7 @@ export const useProgramFulfillment = (project: Project) => {
           order: item.order,
           statusVariant,
           statusText,
+          missingCount: missingTotal,
         };
       });
   }, [project.program, piecesMap, pieceCastings, participationIds, t]);

@@ -22,7 +22,7 @@ import {
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Metric, Unit } from "@/shared/ui/primitives/typography";
 import {
   useProjectRehearsals,
   useProjectParticipations,
@@ -84,6 +84,9 @@ const StatusTile = ({
       />
     </div>
 
+    {/* The figure and its unit are one typographic pair, and it is the pair
+        `MetricBlock` sets: serif lining figure, serif italic unit. The tile
+        keeps its own shell because it is also a link with a progress rail. */}
     <div className="flex items-baseline gap-1.5">
       <Metric
         as="span"
@@ -91,18 +94,14 @@ const StatusTile = ({
       >
         {value}
       </Metric>
-      {unit && (
-        <Text as="span" className="text-xs text-ethereal-graphite/55">
-          {unit}
-        </Text>
-      )}
+      {unit && <Unit>{unit}</Unit>}
     </div>
 
     {typeof progress === "number" && (
-      <div className="h-1 w-full rounded-full bg-ethereal-ink/8">
+      <div className="h-1 w-full rounded-full bg-hairline-strong">
         <div
           className={cn(
-            "h-1 rounded-full transition-all duration-500",
+            "h-1 rounded-full transition-[width] duration-500",
             BAR_TONE[tone],
           )}
           style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
@@ -220,13 +219,6 @@ export const ProjectStatusStrip = ({
           program.withReqs === 0
             ? String(enrichedProgram.length)
             : `${program.cast}/${program.withReqs}`
-        }
-        unit={
-          program.gaps > 0
-            ? t("projects.overview.kpi.gaps", "{{count}} luk", {
-                count: program.gaps,
-              })
-            : undefined
         }
         tone={programTone}
         icon={ListChecks}

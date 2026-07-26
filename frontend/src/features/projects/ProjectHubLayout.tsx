@@ -583,6 +583,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
         fileName={`Runsheet_${project.title}.pdf`}
         fetchBlob={fetchRunsheetBlob}
         docKey={`runsheet-${project.id}`}
+        volatile
         fullView={{
           type: "project-call-sheet",
           id: project.id,
@@ -602,7 +603,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
           subtitle={project.title}
           fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
-          docKey={`score-pdf-${project.id}`}
+          // The generator overwrites the file under the same name, so the id
+          // alone would serve the previous book for the rest of the session.
+          // A completed build saves the project, which moves `updated_at`.
+          docKey={`score-pdf-${project.id}-${project.updated_at ?? ""}`}
           fullView={{
             type: "project-score",
             id: project.id,

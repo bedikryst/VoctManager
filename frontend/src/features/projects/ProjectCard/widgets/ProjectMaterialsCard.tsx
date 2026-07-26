@@ -197,9 +197,12 @@ export function ProjectMaterialsCard({
             </Text>
             {hasDress ? (
               <div className="flex flex-col gap-1">
+                {/* One label colour for one label role: amethyst against sage
+                    colour-coded the two lines as if the tone carried meaning,
+                    and spent the accent palette on a caption. */}
                 {project.dress_code_female && (
                   <Text size="sm" color="graphite" className="leading-snug">
-                    <Eyebrow as="span" color="amethyst">
+                    <Eyebrow as="span" color="muted">
                       {t("projects.details.dress_code_female", "Panie")}
                     </Eyebrow>{" "}
                     {project.dress_code_female}
@@ -207,7 +210,7 @@ export function ProjectMaterialsCard({
                 )}
                 {project.dress_code_male && (
                   <Text size="sm" color="graphite" className="leading-snug">
-                    <Eyebrow as="span" color="sage">
+                    <Eyebrow as="span" color="muted">
                       {t("projects.details.dress_code_male", "Panowie")}
                     </Eyebrow>{" "}
                     {project.dress_code_male}

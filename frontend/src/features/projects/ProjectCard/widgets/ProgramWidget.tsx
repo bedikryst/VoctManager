@@ -8,13 +8,16 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ListOrdered, Music } from "lucide-react";
+import { Check, ListOrdered, Music } from "lucide-react";
 
 import type { Project } from "@/shared/types";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { useProgramFulfillment } from "../hooks/useProgramFulfillment";
+import {
+  useProgramFulfillment,
+  type EnrichedProgramItem,
+} from "../hooks/useProgramFulfillment";
 
 interface ProgramWidgetProps {
   project: Project;
@@ -22,6 +25,48 @@ interface ProgramWidgetProps {
 }
 
 const DISPLAY_LIMIT = 7;
+
+/**
+ * The setlist is a worklist, so only an unfinished piece earns colour: a chip
+ * on every row (and a whole programme of "NIEOBSADZONY" is the normal state of
+ * a young production) flattens the list into noise and buries the one row that
+ * differs. A gap says how many singers are missing; a covered piece gets a
+ * quiet tick; a piece with no casting requirements says nothing at all.
+ */
+const ProgramStatus = ({
+  item,
+}: {
+  item: EnrichedProgramItem;
+}): React.JSX.Element | null => {
+  const { t } = useTranslation();
+
+  if (item.statusVariant === "warning") {
+    return (
+      <Text
+        as="span"
+        size="sm"
+        weight="medium"
+        color="gold"
+        className="shrink-0 tabular-nums"
+      >
+        {t("projects.program.gaps_count", "{{count}} luk", {
+          count: item.missingCount,
+        })}
+      </Text>
+    );
+  }
+
+  if (item.statusVariant === "success") {
+    return (
+      <span className="shrink-0 text-ethereal-sage" title={item.statusText}>
+        <Check size={14} aria-hidden="true" />
+        <span className="sr-only">{item.statusText}</span>
+      </span>
+    );
+  }
+
+  return null;
+};
 
 export function ProgramWidget({
   project,
@@ -40,17 +85,16 @@ export function ProgramWidget({
       onActivate={onEdit}
       ariaLabel={t("projects.program.aria_label", "Zarządzaj programem koncertu")}
       footer={
+        /* A running total is the quietest thing in the card, so it is set as
+           one — a bordered chip here outweighed every piece title above it. */
         enrichedProgram.length > 0 ? (
-          <div className="flex items-center justify-center">
-            {hasDuration ? (
-              <Badge variant="brand" icon={<Music size={12} aria-hidden="true" />}>
-                {formattedDuration}
-              </Badge>
-            ) : (
-              <Eyebrow as="span" color="muted">
-                {t("projects.program.duration_unknown", "Czas nieznany")}
-              </Eyebrow>
-            )}
+          <div className="flex items-center justify-center gap-1.5 text-ethereal-graphite/60">
+            <Music size={12} aria-hidden="true" className="shrink-0" />
+            <Eyebrow as="span" color="inherit">
+              {hasDuration
+                ? formattedDuration
+                : t("projects.program.duration_unknown", "Czas nieznany")}
+            </Eyebrow>
           </div>
         ) : undefined
       }
@@ -63,14 +107,19 @@ export function ProgramWidget({
               className="flex items-center justify-between gap-3 py-1.5"
             >
               <div className="flex min-w-0 items-center gap-2.5">
-                <span className="w-5 shrink-0 text-[10px] font-bold tabular-nums text-ethereal-gold/70">
+                <Text
+                  as="span"
+                  size="xs"
+                  weight="bold"
+                  className="w-5 shrink-0 tabular-nums text-ethereal-gold/70"
+                >
                   {String(index + 1).padStart(2, "0")}
-                </span>
+                </Text>
                 <Text as="span" size="sm" weight="medium" truncate>
                   {item.title}
                 </Text>
               </div>
-              <Badge variant={item.statusVariant}>{item.statusText}</Badge>
+              <ProgramStatus item={item} />
             </li>
           ))}
           {overflow > 0 && (
@@ -84,9 +133,11 @@ export function ProgramWidget({
           )}
         </ul>
       ) : (
-        <Text color="muted" className="flex flex-1 items-center justify-center py-6 italic">
-          {t("projects.program.empty.setlist_title", "Setlista jest pusta.")}
-        </Text>
+        <StatePanel
+          variant="inline"
+          icon={<ListOrdered size={24} aria-hidden="true" />}
+          title={t("projects.program.empty.setlist_title", "Setlista jest pusta")}
+        />
       )}
     </SectionCard>
   );

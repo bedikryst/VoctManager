@@ -42,9 +42,9 @@ const WidgetSkeleton = (): React.JSX.Element => (
   >
     <div className="h-4 w-1/3 animate-pulse rounded-chip bg-ethereal-incense/15" />
     <div className="flex-1 space-y-2.5">
-      <div className="h-3 w-full animate-pulse rounded bg-ethereal-incense/10" />
-      <div className="h-3 w-5/6 animate-pulse rounded bg-ethereal-incense/10" />
-      <div className="h-3 w-2/3 animate-pulse rounded bg-ethereal-incense/10" />
+      <div className="h-3 w-full animate-pulse rounded-chip bg-ethereal-incense/10" />
+      <div className="h-3 w-5/6 animate-pulse rounded-chip bg-ethereal-incense/10" />
+      <div className="h-3 w-2/3 animate-pulse rounded-chip bg-ethereal-incense/10" />
     </div>
   </GlassCard>
 );
@@ -57,8 +57,8 @@ const StatusStripSkeleton = (): React.JSX.Element => (
         key={tile}
         className="flex min-h-26 flex-col gap-3 rounded-nested border border-hairline bg-ethereal-marble p-4"
       >
-        <div className="h-2.5 w-1/2 animate-pulse rounded bg-ethereal-incense/15" />
-        <div className="h-7 w-1/3 animate-pulse rounded bg-ethereal-incense/15" />
+        <div className="h-2.5 w-1/2 animate-pulse rounded-chip bg-ethereal-incense/15" />
+        <div className="h-7 w-1/3 animate-pulse rounded-chip bg-ethereal-incense/15" />
       </div>
     ))}
   </div>

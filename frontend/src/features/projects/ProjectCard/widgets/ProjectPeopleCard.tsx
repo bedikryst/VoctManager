@@ -18,6 +18,7 @@ import type { Collaborator, Project } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { getCrewSpecialtyOption } from "@/features/crew/constants/crewSpecialties";
 import {
   useProjectArtistsMap,
   useProjectCollaboratorsDictionary,
@@ -73,9 +74,9 @@ const PeopleSection = ({
         <Eyebrow as="span" color="graphite">
           {label}
         </Eyebrow>
-        <span className="text-sm font-bold tabular-nums text-ethereal-ink">
+        <Text as="span" size="base" weight="bold" className="tabular-nums">
           {chips.length}
-        </span>
+        </Text>
         <ChevronRight
           size={15}
           className="ml-auto shrink-0 text-ethereal-graphite/35 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:text-ethereal-gold"
@@ -85,8 +86,10 @@ const PeopleSection = ({
 
       {chips.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* A name is content, not a status: in caps and tracked out it stops
+              being a person and starts reading as a system label. */}
           {visible.map((chip) => (
-            <Badge key={chip.key} variant="neutral">
+            <Badge key={chip.key} variant="neutral" casing="natural">
               {chip.label}
             </Badge>
           ))}
@@ -95,13 +98,15 @@ const PeopleSection = ({
               type="button"
               onClick={() => setExpanded((prev) => !prev)}
               aria-expanded={expanded}
-              className="inline-flex items-center rounded-chip border border-ethereal-incense/30 bg-ethereal-ink/5 px-2.5 py-1.5 text-overline-sm font-bold uppercase tracking-widest text-ethereal-ink transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+              className="inline-flex items-center rounded-chip border border-ethereal-incense/30 bg-ethereal-ink/5 px-2.5 py-1.5 text-ethereal-ink transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
             >
-              {expanded
-                ? t("common.actions.collapse", "Zwiń")
-                : t("projects.overview.people.show_all", "+{{count}} pokaż", {
-                    count: overflow,
-                  })}
+              <Eyebrow as="span" size="overline-sm" color="inherit">
+                {expanded
+                  ? t("common.actions.collapse", "Zwiń")
+                  : t("projects.overview.people.show_all", "+{{count}} pokaż", {
+                      count: overflow,
+                    })}
+              </Eyebrow>
             </button>
           )}
         </div>
@@ -151,15 +156,20 @@ export function ProjectPeopleCard({
       crewAssignments.flatMap((assign, index) => {
         const person = crewMap.get(String(assign.collaborator));
         if (!person) return [];
-        const roleLabel = assign.role_description || person.specialty.substring(0, 4);
+        // Without a role on the assignment, fall back to the crew dictionary's
+        // translated specialty. The previous fallback sliced the raw enum to
+        // four characters and printed "SOUN".
+        const roleLabel =
+          assign.role_description?.trim() ||
+          getCrewSpecialtyOption(t, person.specialty).label;
         return [
           {
             key: String(assign.id || `crew-${index}`),
-            label: `${person.first_name} ${person.last_name.charAt(0)}. (${roleLabel})`,
+            label: `${person.first_name} ${person.last_name.charAt(0)}. · ${roleLabel}`,
           },
         ];
       }),
-    [crewAssignments, crewMap],
+    [crewAssignments, crewMap, t],
   );
 
   return (
@@ -177,7 +187,7 @@ export function ProjectPeopleCard({
         onOpen={onOpenCast}
       />
 
-      <div className="h-px bg-ethereal-ink/6" aria-hidden="true" />
+      <div className="h-px bg-hairline" aria-hidden="true" />
 
       <PeopleSection
         icon={Wrench}
