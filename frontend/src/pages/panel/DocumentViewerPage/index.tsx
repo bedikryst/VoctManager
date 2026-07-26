@@ -46,6 +46,13 @@ interface ResolvedDocument {
   subtitle?: string;
   fileName: string;
   fetchBlob: () => Promise<Blob>;
+  /**
+   * Assembled by the server per request, so the route's `type/id` key says
+   * nothing about the bytes behind it. Stored documents stay cached: this route
+   * is deep-linkable and a chorister on a train should not re-download a book
+   * because they came back to it.
+   */
+  volatile?: boolean;
 }
 
 const sanitizeForFileName = (value: string): string =>
@@ -83,6 +90,7 @@ const resolveDocument = (
         subtitle: hint?.subtitle,
         fileName: hint?.fileName ?? `CallSheet_${idSegment}.pdf`,
         fetchBlob: () => ScheduleService.exportCallSheet(id),
+        volatile: true,
       };
     case "project-day-sheet":
       return {
@@ -95,6 +103,7 @@ const resolveDocument = (
         subtitle: hint?.subtitle,
         fileName: hint?.fileName ?? `Karta_${idSegment}.pdf`,
         fetchBlob: () => ScheduleService.exportDaySheet(id),
+        volatile: true,
       };
     case "chorister-hub":
       return {
@@ -237,6 +246,7 @@ const DocumentViewerPage = (): React.JSX.Element => {
         <PdfViewer
           fetchBlob={resolved.fetchBlob}
           docKey={docKey}
+          volatile={resolved.volatile}
           title={resolved.title}
           subtitle={resolved.subtitle}
           fileName={resolved.fileName}

@@ -47,7 +47,21 @@ export interface PdfPageApi {
 
 export interface PdfViewerProps {
   fetchBlob: (() => Promise<Blob>) | null;
+  /**
+   * Cache identity of the BYTES, not of the record they belong to. The blob is
+   * held at `staleTime: Infinity`, so a key that survives a change of content —
+   * `score-<projectId>` for a file the generator overwrites under the same name —
+   * serves the previous document for the rest of the session. Carry a version
+   * (`build_version`, `updated_at`) in the key, or set `volatile`.
+   */
   docKey?: string | number;
+  /**
+   * The document is assembled by the server on request (a call sheet, a day
+   * sheet) and nothing on the client says whether the output moved. Re-renders
+   * it on every open instead of trusting the key. Window-focus refetch stays off
+   * either way — nobody wants a book re-downloaded because they alt-tabbed.
+   */
+  volatile?: boolean;
   title: string;
   subtitle?: string;
   fileName?: string;

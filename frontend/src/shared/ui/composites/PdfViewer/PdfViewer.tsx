@@ -58,6 +58,7 @@ const CHIP_PAGE_DURATION_MS = 1200;
 export const PdfViewer = ({
   fetchBlob,
   docKey,
+  volatile: isVolatile = false,
   title,
   subtitle,
   fileName,
@@ -116,7 +117,11 @@ export const PdfViewer = ({
       return await fetchBlob();
     },
     enabled: !!fetchBlob && !!docKey,
-    staleTime: Infinity,
+    staleTime: isVolatile ? 0 : Infinity,
+    refetchOnMount: isVolatile ? "always" : true,
+    // Never on focus: the blob is megabytes and alt-tabbing is not a request
+    // for a fresh render.
+    refetchOnWindowFocus: false,
   });
 
   const resolvedFileName = useMemo(

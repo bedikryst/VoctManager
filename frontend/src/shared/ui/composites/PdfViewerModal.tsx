@@ -47,8 +47,10 @@ export interface PdfViewerModalProps {
   subtitle?: string;
   fileName?: string;
   fetchBlob: (() => Promise<Blob>) | null;
-  /** Stable identity used by the underlying PdfViewer to trigger refetch. */
+  /** Cache identity of the bytes — see `PdfViewerProps.docKey`. */
   docKey?: string | number;
+  /** Server-assembled document, re-rendered on every open — see `PdfViewerProps.volatile`. */
+  volatile?: boolean;
   /**
    * The destination path for the "Open full view" affordance. When omitted,
    * the link is hidden — the modal still functions as a contextual preview.
@@ -83,6 +85,7 @@ export const PdfViewerModal = ({
   fileName,
   fetchBlob,
   docKey,
+  volatile: isVolatile,
   fullViewHref,
   fullViewHint,
   fullView,
@@ -179,6 +182,7 @@ export const PdfViewerModal = ({
                 <PdfViewer
                   fetchBlob={fetchBlob}
                   docKey={docKey}
+                  volatile={isVolatile}
                   title={title}
                   subtitle={subtitle}
                   fileName={fileName}
