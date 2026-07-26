@@ -880,7 +880,7 @@
       "last_name": "Nom *",
       "loading": "Chargement...",
       "message_artist": "Écrire un message",
-      "no_rating": "— Aucune évaluation —",
+      "no_rating": "Aucune évaluation",
       "phone": "Téléphone",
       "range_high": "Étendue (aigu)",
       "range_high_placeholder": "ex. C5",
@@ -1315,7 +1315,8 @@
       "retry": "Réessayer",
       "save": "Enregistrer",
       "select": "Sélectionner",
-      "undo": "Annuler"
+      "undo": "Annuler",
+      "change": "Modifier"
     },
     "archive": "Archiver",
     "aria": {
@@ -3037,17 +3038,11 @@
   "projects": {
     "score_package": {
       "title": "Partition de concert",
-      "intro": "Assemblez automatiquement une partition pour les chanteurs à partir de tout le programme : page de titre, table des matières, fiches de texte par œuvre, numérotation continue et signets.",
-      "readiness": "{{bindable}} œuvres sur {{total}} ont une partition jointe",
-      "missing_count": "{{n}} sans partition",
-      "over_copies_count": "{{n}} sans exemplaires",
       "settings": "Réglages",
       "items_heading": "Œuvres du programme",
       "ready": "Prête",
       "stale": "Programme modifié",
       "distributed": "Distribuée",
-      "meta": "{{pages}} pages · {{ts}}",
-      "meta_versioned": "Version {{v}} · {{pages}} pages · {{ts}}",
       "distributed_hint": "Les choristes ont déjà téléchargé cette version. La régénérer la remplacera — la pagination de leurs exemplaires peut changer.",
       "bridge": {
         "none": "Non assemblée",
@@ -3057,9 +3052,9 @@
       "manual": {
         "badge": "Importée manuellement",
         "current": "La partition actuelle a été importée manuellement.",
-        "intro": "Vous avez une partition composée hors de l'application ? Importez-la au lieu de la générer — elle remplacera le livret actuel.",
+        "intro": "Vous avez un recueil composé hors de l'application ? Importez-le au lieu de le générer.",
         "preview": "Aperçu",
-        "remove": "Supprimer",
+        "remove": "Supprimer la partition",
         "replace": "Importer un autre PDF",
         "title": "Votre propre PDF",
         "upload": "Importer un PDF"
@@ -3069,7 +3064,7 @@
       "queued": "En file d'attente…",
       "building_elapsed": "{{label}} ({{s}}s)",
       "build_hint": "Pour un programme volumineux, l'assemblage peut prendre quelques dizaines de secondes.",
-      "empty": "Ajoutez des œuvres au programme ci-dessus pour assembler une partition.",
+      "empty": "La partition se compose des œuvres du programme — commencez par établir le programme.",
       "regenerate": "Régénérer",
       "generate": "Assembler la partition",
       "download": "Télécharger",
@@ -3083,17 +3078,13 @@
         "mass": "Messe"
       },
       "language": {
-        "label": "Langue des traductions",
-        "pl": "Polonais",
-        "en": "Anglais",
-        "fr": "Français"
+        "label": "Langue des traductions"
       },
       "cards": {
         "master": "Fiches d'œuvre",
         "default_hint": "Choisissez ce qui figure sur chaque fiche — les exceptions se règlent par œuvre.",
-        "text": "Texte original",
-        "translation": "Traduction",
-        "note": "Note"
+        "summary": "Fiches : {{count}}",
+        "summary_off": "Sans fiches"
       },
       "structure": {
         "label": "Structure du livret",
@@ -3107,9 +3098,7 @@
       "pages": "{{n}} pages",
       "readiness_state": {
         "ready": "Prête",
-        "low": "Confiance faible",
-        "incomplete": "Incomplète",
-        "no_edition": "Sans partition"
+        "low": "Confiance faible"
       },
       "elements": {
         "eyebrow": "Section",
@@ -3129,12 +3118,10 @@
       },
       "item": {
         "fix_in_archive": "Certaines données sont peu fiables — corrigez-les dans l'archive",
-        "advanced": "Fiche et remplacements",
-        "customized": "personnalisé",
         "no_pdf": "Aucune partition jointe — une page de substitution apparaîtra dans le recueil.",
         "no_pdf_short": "sans partition",
         "over_copies": "L'effectif ({{cast}}) dépasse le nombre d'exemplaires sous licence possédés ({{copies}}). Assurez-vous d'avoir assez de copies ou une licence supplémentaire.",
-        "over_copies_short": "sans exemplaires",
+        "over_copies_short": "exemplaires insuffisants",
         "full_range": "tout",
         "range": "p. {{from}}–{{to}}",
         "edition": "Édition",
@@ -3173,7 +3160,17 @@
         "note_override": "Note (remplacer)",
         "note_override_ph": "Laissez vide pour utiliser la note enregistrée.",
         "preview_card": "Aperçu de la fiche",
-        "reset_elements": "Par défaut"
+        "reset_elements": "Par défaut",
+        "binding": "Reliure",
+        "override_count": "Remplacements : {{count}}"
+      },
+      "empty_title": "Le programme est vide",
+      "empty_action": "Ouvrir le programme",
+      "attention_count": "À vérifier : {{count}}",
+      "figures": {
+        "bound": "Œuvres avec partition",
+        "pages": "Pages du recueil",
+        "over_copies": "Exemplaires manquants"
       }
     },
     "actions": {
@@ -3186,35 +3183,47 @@
     "badge_active": "En préparation",
     "badge_done": "Terminé",
     "budget": {
-      "aria_label": "Gérer le budget du projet",
-      "empty": {
-        "cast": "Aucune distribution assignée au projet."
-      },
       "estimated_cost": "Coût estimé",
-      "fab": {
-        "description": "Vous avez modifié les tarifs."
-      },
-      "input_placeholder": "Saisir un montant...",
-      "kpi": {
-        "calculation": "Calcul",
-        "cast_fees": "Tarifs (distribution)",
-        "crew_fees": "Tarifs (équipe)",
-        "missing": "Manquants",
-        "missing_desc": "éléments sans tarif",
-        "total": "Coût total"
-      },
-      "missing_fee": "Tarif manquant",
       "sections": {
+        "summary": "Coûts de personnel",
         "cast": "Distribution vocale",
-        "crew": "Équipe technique",
-        "description": "Gérer les coûts de personnel",
-        "estimated": "Budget estimé"
+        "crew": "Équipe technique"
       },
-      "title": "Estimation",
+      "kpi": {
+        "total": "Coût total",
+        "outstanding": "Reste à verser",
+        "cast_fees": "Distribution",
+        "crew_fees": "Équipe",
+        "settled": "Réglé",
+        "missing": "Sans tarif"
+      },
+      "empty": {
+        "cast": "Aucune distribution",
+        "cast_desc": "Les cachets apparaîtront ici dès que vous ajouterez des chanteurs dans l'onglet Distribution.",
+        "crew": "Aucune équipe",
+        "crew_desc": "Les tarifs des collaborateurs apparaîtront ici dès que vous les engagerez dans l'onglet Équipe."
+      },
+      "footer": {
+        "subtotal": "Total",
+        "missing": "{{count}} sans tarif",
+        "settled": "Réglés : {{count}}"
+      },
+      "row": {
+        "fee_aria": "Tarif — {{name}}",
+        "settled": "Réglé — ce tarif ne peut plus être modifié"
+      },
+      "standard_rate": {
+        "label": "Tarif pour tous",
+        "hint": "Écrasera {{count}} postes.",
+        "pending": "Concerne {{count}} postes — enregistrez pour appliquer"
+      },
+      "fab": {
+        "description": "Modifications des tarifs."
+      },
       "toast": {
-        "save_error_desc": "Impossible d'enregistrer tous les tarifs.",
+        "saving": "Enregistrement du budget...",
         "save_success": "Tarifs enregistrés et budget recalculé",
-        "saving": "Enregistrement du budget..."
+        "save_error_desc": "Impossible d'enregistrer tous les tarifs."
       }
     },
     "call_time": "Convocation :",
@@ -3242,22 +3251,16 @@
     "cast": {
       "aria_label": "Gérer la distribution vocale",
       "card": {
-        "a_vista": "Déchiffrage :",
-        "add": "Ajouter",
-        "add_aria": "Ajouter à la distribution",
+        "a_vista": "déchiffrage {{score}}/5",
+        "add_aria": "Ajouter {{name}} à la distribution",
         "declined": "Refusé",
-        "pending": "Invité",
-        "remove": "Retirer",
-        "remove_aria": "Retirer de la distribution"
+        "pending": "En attente",
+        "remove_aria": "Retirer {{name}} de la distribution",
+        "unknown": "Participant inconnu"
       },
-      "employed": "Recrutés :",
       "empty": "Aucune distribution vocale.",
       "empty_assigned": "La distribution est vide",
-      "empty_available": "Aucun disponible",
-      "header": {
-        "subtitle": "Gérez les chanteurs. Le réglage [scrollbar-gutter] neutralise les sauts de mise en page.",
-        "title": "Casting principal"
-      },
+      "empty_available": "Tout l'ensemble est distribué",
       "mobile": {
         "assigned": "Distribution",
         "available": "Base",
@@ -3270,46 +3273,46 @@
       },
       "title": "Distribution vocale",
       "title_short": "artistes",
-      "toast": {
-        "added": "Ajouté à la distribution",
-        "removed": "Retiré de la distribution"
-      },
-      "voice_unknown": "Sans voix"
+      "voice_unknown": "Sans voix",
+      "empty_assigned_desc": "Ajoutez des chanteurs depuis la base pour constituer la distribution.",
+      "empty_no_matches": "Aucun résultat"
     },
     "crew": {
       "aria_label": "Gérer l'équipe technique",
-      "employed": "Recrutés :",
       "empty": "Aucune équipe technique assignée.",
-      "form": {
-        "hire_label": "Recruter depuis la base",
-        "role_label": "Rôle pour ce concert",
-        "role_placeholder": "ex. ingénieur FOH",
-        "select_placeholder": "Choisir un collaborateur",
-        "submit": "Assigner",
-        "title": "Ajouter à l'équipe"
-      },
-      "header": {
-        "subtitle": "Engagez des collaborateurs et attribuez-leur des rôles pour cette production.",
-        "title": "Équipe technique"
-      },
-      "list": {
-        "assigned_count_one": "{{count}} personne assignée",
-        "assigned_count_few": "{{count}} personnes assignées",
-        "assigned_count_many": "{{count}} personnes assignées",
-        "assigned_count_other": "{{count}} personnes assignées",
-        "remove_title": "Retirer de l'équipe technique",
-        "title": "Membres de l'équipe"
-      },
-      "title": "Équipe",
+      "title": "Équipe technique",
       "title_short": "tech",
+      "sections": {
+        "assigned": "Équipe technique",
+        "available": "Base de collaborateurs"
+      },
+      "search_placeholder": "Rechercher par nom, société ou spécialité...",
+      "specialty_unknown": "Sans spécialité",
+      "empty_assigned": "Personne n'assure encore ce concert",
+      "empty_assigned_desc": "Engagez des collaborateurs depuis la base — l'équipe n'a ni compte ni notifications, c'est une note de production pour le chef de chœur.",
+      "empty_available": "Toute la base fait déjà partie de l'équipe",
+      "empty_no_matches": "Aucun résultat",
+      "empty_base": "La base de collaborateurs est vide",
+      "empty_base_action": "Ouvrir la base",
+      "card": {
+        "unknown": "Collaborateur inconnu",
+        "add_aria": "Ajouter {{name}} à l'équipe",
+        "remove_aria": "Retirer {{name}} de l'équipe",
+        "confirm": "Marquer la réservation comme confirmée",
+        "unconfirm": "Annuler la confirmation de la réservation",
+        "role_aria": "Rôle pour ce concert — {{name}}",
+        "role_placeholder": "ex. ingénieur FOH",
+        "role_empty": "Ajouter un rôle"
+      },
+      "footer": {
+        "confirmed": "Confirmés : {{count}}",
+        "tentative": "Provisoires : {{count}}"
+      },
       "toast": {
-        "assign_error": "Erreur d'affectation",
         "assign_error_desc": "Impossible d'affecter ce membre d'équipe au projet.",
-        "assign_success": "Membre d'équipe affecté avec succès",
-        "assigning": "Affectation du membre d'équipe...",
         "remove_error_desc": "Impossible de retirer ce membre d'équipe du projet.",
-        "remove_success": "Affectation supprimée du projet",
-        "removing": "Suppression de l'affectation..."
+        "role_error_desc": "Impossible d'enregistrer le rôle pour ce concert.",
+        "status_error_desc": "Impossible de modifier le statut de la réservation."
       }
     },
     "dashboard": {
@@ -3343,36 +3346,45 @@
     },
     "details_tab": {
       "buttons": {
-        "add_run_sheet": "Ajouter un élément à la feuille de route"
+        "add_run_sheet": "Ajouter une étape"
       },
       "empty": {
-        "run_sheet": "Aucun élément de feuille de route. Ajoutez le premier !"
+        "run_sheet": "Aucun déroulé de journée",
+        "run_sheet_frame": "Convocation à {{call}}, concert à {{concert}} — organisez ce qui se passe entre les deux.",
+        "run_sheet_hint": "Ajoutez une première étape pour organiser la journée."
       },
       "fab": {
-        "description": "Vous avez modifié les paramètres du projet.",
+        "description": "Modifications des détails de l'événement et du déroulé.",
         "save": "Enregistrer les modifications"
       },
       "fields": {
         "call_time": "Convocation",
-        "conductor": "Chef d'orchestre",
-        "conductor_placeholder": "--- Sélectionner un chef ---",
+        "conductor": "Chef de chœur",
         "date_time": "Date et heure *",
         "description": "Description de l'événement",
-        "dress_code_female": "Dress code : femmes",
-        "dress_code_male": "Dress code : hommes",
-        "location": "Lieu / salle",
-        "spotify": "Playlist (Spotify)",
-        "timezone": "Fuseau horaire",
+        "dress_code_female": "Tenue : femmes",
+        "dress_code_male": "Tenue : hommes",
+        "location": "Lieu du concert",
+        "spotify": "Playlist Spotify",
         "title": "Titre du projet *"
       },
-      "header": {
-        "subtitle": "Titre, chronologie, code vestimentaire et documents de référence.",
-        "title": "Détails de l'événement"
+      "call_time": {
+        "offset_h": "{{hours}} h avant le concert",
+        "offset_hm": "{{hours}} h {{minutes}} min avant le concert",
+        "offset_m": "{{minutes}} min avant le concert",
+        "offset_after": "La convocation n'est pas avant le concert"
+      },
+      "day_plan": {
+        "anchor_call": "Convocation",
+        "anchor_concert": "Concert",
+        "untitled_count": "Sans nom : {{count}}"
       },
       "placeholders": {
-        "description": "ex. merci d'être ponctuel...",
-        "spotify": "Collez le lien de la playlist de référence...",
-        "location": "Choisir un lieu enregistré",
+        "description": "ex. merci d'être ponctuel",
+        "dress_code_female": "ex. robe de chœur noire",
+        "dress_code_male": "ex. frac, nœud papillon blanc",
+        "spotify": "Collez le lien de la playlist de référence",
+        "location": "Choisir un lieu",
         "location_clear": "Aucun lieu",
         "conductor": "Choisir un chef de chœur",
         "conductor_clear": "Aucun chef de chœur"
@@ -3380,24 +3392,15 @@
       "run_sheet": {
         "description": "Description (optionnelle)",
         "time": "Heure",
-        "title": "Titre"
-      },
-      "score_pdf": {
-        "current": "Fichier PDF actuel",
-        "delete_aria": "Supprimer le PDF",
-        "modal_title": "Partition du concert",
-        "pending_removal": "Le PDF sera supprimé après l'enregistrement des modifications.",
-        "preview": "Aperçu",
-        "replace": "Cliquez pour remplacer le PDF",
-        "upload": "Cliquez pour ajouter les partitions / programme (PDF)"
+        "title": "Nom de l'étape"
       },
       "sections": {
-        "logistics": "Convocation et dress code",
-        "notes": "Notes de production",
-        "references": "Références musicales",
-        "run_sheet": "Feuille de route du jour du concert",
-        "score_pdf": "Partition du concert (PDF)",
-        "title_desc": "Titre et description"
+        "day_plan": "Déroulé du jour du concert",
+        "ensemble_info": "Informations pour l'ensemble",
+        "event": "Événement"
+      },
+      "markers": {
+        "concert": "Concert"
       }
     },
     "editor": {
@@ -3468,84 +3471,103 @@
         "description_other": "{{count}} entrées de présence modifiées.",
         "save": "Enregistrer la présence"
       },
-      "empty": {
-        "cast": "Aucune distribution assignée à ce projet.",
-        "rehearsals": "Aucune répétition planifiée dans ce projet."
+      "actions": {
+        "mark_present": "Marquer les non-saisis comme présents"
       },
-      "header": {
-        "subtitle": "Marquage rapide des présences aux répétitions. Gérez le statut en cliquant sur les tuiles sous chaque nom.",
-        "title": "Matrice de présence"
+      "caption": "Liste de présence : les lignes sont les choristes, les colonnes les répétitions.",
+      "empty": {
+        "cast_action": "Ouvrir la distribution",
+        "cast_desc": "Affectez des choristes au projet — chacun aura sa ligne ici.",
+        "cast_title": "Aucune distribution",
+        "no_matches": "Aucun résultat",
+        "rehearsals_action": "Ouvrir les répétitions",
+        "rehearsals_desc": "La présence se relève en répétition. Ajoutez la première : elle apparaîtra ici en colonne.",
+        "rehearsals_title": "Aucune répétition"
       },
       "legend": {
-        "title": "Statut de présence"
+        "hint": "Cliquez pour changer le statut · Maj + clic revient en arrière"
       },
-      "not_invited": "N/A",
+      "not_called": "Sans convocation pour cette répétition",
+      "search": {
+        "placeholder": "Rechercher une personne…"
+      },
+      "summary": {
+        "label": "Présence",
+        "missing": "{{count}} sans saisie"
+      },
       "table": {
-        "rate": "Taux",
-        "rehearsal_date": "Répétition / Date"
+        "rate": "Présence",
+        "session_rate": "Présence à la répétition",
+        "singer": "Choriste"
       },
+      "title": "Liste de présence",
       "toast": {
-        "save_error": "Impossible d'enregistrer la modification.",
         "save_error_desc": "Vérifiez votre connexion et réessayez.",
         "save_success": "Présence enregistrée",
         "saving": "Enregistrement de la présence…"
-      }
+      },
+      "tooltip": {
+        "breakdown": "Présents : {{present}} · en retard : {{late}} · absents : {{absent}} · excusés : {{excused}}",
+        "missing": "sans saisie : {{count}}"
+      },
+      "unknown_member": "Membre inconnu"
     },
     "micro_cast": {
       "action_bar": {
-        "description_one": "Vous avez glissé {{count}} modification. Enregistrez.",
-        "description_few": "{{count}} changements glissés. Enregistrez pour synchroniser la distribution.",
-        "description_many": "Vous avez glissé {{count}} modifications. Enregistrez.",
-        "description_other": "Vous avez glissé {{count}} modifications. Enregistrez.",
+        "description": "Distribution de : {{piece}}",
         "save": "Enregistrer casting"
       },
       "artist": {
         "add_note": "Ajouter une note",
         "drag_aria": "Faire glisser {{name}}",
-        "note_placeholder": "Note...",
+        "gives_pitch": "Donne le ton",
+        "note_placeholder": "ex. Haut",
         "pending_label": "En attente",
         "awaiting": "Sans réponse",
-        "declined": "Refus"
+        "declined": "Refus",
+        "unknown": "Participant inconnu"
+      },
+      "board": {
+        "cast_label": "Distribué",
+        "define_requirements": "Compléter les exigences",
+        "free_mode": "Affectation libre",
+        "free_mode_hint": "Cette pièce n'a aucune exigence vocale enregistrée — affectez les chanteurs à n'importe quelle ligne.",
+        "title": "Distribution de la pièce"
       },
       "bucket": {
-        "aria": "Section de dépôt: ",
-        "aria_with_title": "Section de dépôt: {{title}}"
+        "aria": "Zone de dépôt",
+        "aria_with_title": "Zone de dépôt : {{title}}"
       },
       "buttons": {
-        "play_reference": "Lire la référence"
+        "play_reference": "Écouter : {{platform}}"
       },
       "empty": {
-        "no_requirements": "Aucune exigence vocale définie pour cette pièce dans la base du répertoire. Mode d'affectation libre (Divisi) utilisé.",
-        "pieces": "Aucune pièce",
-        "section": "Aucune affectation dans cette section",
-        "unassigned": "Tout le monde a été assigné à des rôles dans cette pièce."
-      },
-      "header": {
-        "subtitle": "Faites glisser les chanteurs entre les sections dans la pièce sélectionnée.",
-        "title": "Divisi et micro-casting"
+        "no_matches": "Aucun résultat",
+        "pieces": "Le programme est vide",
+        "pieces_action": "Ouvrir le programme",
+        "pieces_desc": "Le divisi répartit les voix d'une pièce — composez d'abord le programme du concert.",
+        "unassigned": "Tout le monde est affecté"
       },
       "label": {
         "pieces_in_program": "Pièces du programme"
-      },
-      "meta": {
-        "unsaved_one": "Non enregistré: {{count}}",
-        "unsaved_few": "Non enregistrés : {{count}}",
-        "unsaved_many": "Non enregistrés: {{count}}",
-        "unsaved_other": "Non enregistrés: {{count}}"
       },
       "piece_switch": {
         "description": "Changer de pièce supprimera les affectations non enregistrées. Continuer ?",
         "discard": "Ignorer et changer",
         "title": "Modifications de casting"
       },
-      "sections": {
-        "unassigned": "Non assignés (base de roster)"
+      "program": {
+        "ready": "Pièces distribuées : {{done}} sur {{total}}"
       },
-      "select_piece": "Sélectionner une pièce pour le casting",
+      "search": {
+        "placeholder": "Rechercher une personne..."
+      },
+      "sections": {
+        "unassigned": "Non assignés"
+      },
       "status": {
-        "deficit": "Déficit : ",
-        "drop_here": "Déposer ici",
-        "free": "Poste vacant"
+        "missing": "Il manque {{count}}",
+        "over": "Au-delà du plan : {{count}}"
       },
       "toast": {
         "save_success": "Casting enregistré",
@@ -3553,12 +3575,11 @@
       },
       "voices": {
         "altos": "Altos",
-        "baritones": "Barytons",
         "basses": "Basses",
-        "countertenors": "Contreténors",
-        "mezzos": "Mezzos",
         "sopranos": "Sopranos",
-        "tenors": "Ténors"
+        "special": "Lignes spéciales",
+        "tenors": "Ténors",
+        "unknown": "Voix non définie"
       }
     },
     "overview": {
@@ -3590,10 +3611,6 @@
         "days": "jours",
         "ensemble": "Ensemble",
         "ensemble_aria": "Aller à la distribution",
-        "gaps_one": "{{count}} lacune",
-        "gaps_few": "{{count}} lacunes",
-        "gaps_many": "{{count}} lacunes",
-        "gaps_other": "{{count}} lacunes",
         "past": "Passé",
         "program": "Distribution du programme",
         "program_aria": "Aller aux divisi",
@@ -3624,7 +3641,7 @@
         "add_encore": "Marquer comme bis",
         "already_added": "La pièce est déjà dans la setlist",
         "drag_aria": "Faire glisser la pièce {{title}}",
-        "remove_encore": "Retirer comme bis",
+        "remove_encore": "Retirer la mention bis",
         "remove_from_program": "Retirer du programme"
       },
       "and_more_one": "et 1 de plus...",
@@ -3633,26 +3650,20 @@
       "and_more_other": "et {{count}} de plus...",
       "aria_label": "Gérer le programme du concert",
       "badges": {
-        "encore": "BIS",
-        "tracks_count_one": "{{count}} piste",
-        "tracks_count_few": "{{count}} pistes",
-        "tracks_count_many": "{{count}} pistes",
-        "tracks_count_other": "{{count}} pistes"
+        "encore": "BIS"
       },
       "duration_unknown": "Durée inconnue",
       "empty": {
         "no_results": "Aucun résultat",
-        "setlist_desc": "Sélectionnez des compositions dans la base à droite pour construire le programme du concert.",
+        "setlist_desc": "Choisissez des compositions dans la base pour construire le programme du concert.",
         "setlist_title": "La setlist est vide"
       },
       "fab": {
-        "description": "Vous avez modifié l'ordre du programme."
+        "description": "L'ordre du programme a changé."
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min de musique",
-        "duration_mins": "~ {{m}} min de musique",
-        "minutes": "{{m}} min",
-        "seconds": "{{s}} s"
+        "duration_mins": "~ {{m}} min de musique"
       },
       "fulfilled": "Couvert",
       "music_time_min": "min de musique",
@@ -3662,7 +3673,7 @@
         "tooltip": "Préparation de l'ensemble — maîtrisent : {{ready}}, en travail : {{practising}}, pas commencé : {{untouched}}"
       },
       "search": {
-        "placeholder": "Rechercher une pièce..."
+        "placeholder": "Rechercher une pièce ou un compositeur..."
       },
       "sections": {
         "database": "Base des compositions",
@@ -3681,7 +3692,19 @@
         "save_order_success": "Ordre enregistré avec succès",
         "saving_order": "Enregistrement du nouvel ordre..."
       },
-      "unfulfilled": "Non couvert"
+      "unfulfilled": "Non couvert",
+      "gaps_count_one": "{{count}} à pourvoir",
+      "gaps_count_few": "{{count}} à pourvoir",
+      "gaps_count_many": "{{count}} à pourvoir",
+      "gaps_count_other": "{{count}} à pourvoir",
+      "duration_label": "Durée",
+      "footer": {
+        "pieces_one": "{{count}} pièce",
+        "pieces_few": "{{count}} pièces",
+        "pieces_many": "{{count}} pièces",
+        "pieces_other": "{{count}} pièces",
+        "untimed": "{{count}} sans durée"
+      }
     },
     "rehearsals": {
       "absences_reported": "Absences signalées :",
@@ -3691,47 +3714,44 @@
       },
       "aria_label": "Gérer les répétitions du projet",
       "empty": {
-        "no_rehearsals": "Aucune répétition planifiée."
+        "no_rehearsals": "Aucune répétition planifiée",
+        "no_rehearsals_desc": "La première répétition enregistrée apparaîtra dans ce calendrier, avant la date du concert."
       },
       "form": {
         "date_time": "Date et heure *",
-        "focus": "Plan / Focus de répétition",
-        "focus_placeholder": "ex. Requiem pt. 1-3...",
-        "location": "Lieu (salle) *",
+        "focus": "Plan de répétition / répertoire",
+        "focus_placeholder": "ex. Requiem, mvts 1–3",
+        "location": "Salle de répétition *",
         "location_placeholder": "Choisir une salle",
-        "mandatory": "Présence obligatoire pour les invités",
-        "submit": "Enregistrer dans le calendrier",
-        "timezone": "Fuseau horaire",
-        "title": "Planifier une nouvelle répétition",
+        "mandatory": "Présence obligatoire",
+        "submit": "Enregistrer au calendrier",
+        "title": "Planifier une répétition",
         "title_edit": "Modifier la répétition",
-        "type_custom": "Personnes sélectionnées",
-        "type_sectional": "Répétition de pupitre",
-        "type_tutti": "Tutti (tout le monde)",
-        "update": "Mettre à jour la répétition",
-        "who": "Qui est convoqué à la répétition ?"
+        "type_custom": "Choisis",
+        "type_sectional": "Pupitres",
+        "type_tutti": "Tutti",
+        "update": "Mettre à jour",
+        "who": "Qui est convoqué ?"
       },
       "header": {
         "subtitle": "Planifiez les répétitions et gérez la présence.",
         "title": "Répétitions"
       },
       "list": {
-        "title": "Planning des répétitions"
+        "title": "Calendrier des répétitions",
+        "group_upcoming": "À venir",
+        "group_past": "Passées",
+        "concert": "Concert"
       },
       "modal": {
         "delete_desc": "Les listes de présence liées à cette répétition seront supprimées définitivement. Cette opération est irréversible.",
         "delete_title": "Supprimer cette répétition ?"
       },
-      "optional": "Optionnel",
       "progress": "Progression",
-      "sectional": "PUPITRE",
       "status": {
-        "finished": "Terminée",
-        "invited_one": "1 invité",
-        "invited_few": "{{count}} invités",
-        "invited_many": "{{count}} invités",
-        "invited_other": "{{count}} invités",
-        "optional": "Optionnel",
-        "tutti": "TUTTI"
+        "optional": "Facultative",
+        "tutti": "Tutti",
+        "invited": "Convoqués : {{count}}"
       },
       "title_short": "répét.",
       "toast": {
@@ -3746,13 +3766,16 @@
         "update_success": "Répétition mise à jour avec succès",
         "updating": "Mise à jour de la répétition..."
       },
-      "tutti": "TUTTI",
-      "upcoming": "Répétitions à venir",
+      "upcoming": "Prochaines répétitions",
       "voices": {
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
         "tenors": "Ténors"
+      },
+      "markers": {
+        "concert": "Concert",
+        "rehearsal": "Répétition"
       }
     },
     "roles": {
@@ -3766,7 +3789,7 @@
     },
     "run_sheet": {
       "aria_label": "Gérer le déroulé de la journée",
-      "empty": "Aucune feuille de route disponible pour cet événement.",
+      "empty": "Aucune feuille de route",
       "title": "Feuille de route du jour du concert"
     },
     "spotify": {
@@ -3856,6 +3879,10 @@
       "leave_desc_other": "{{count}} modifications attendent dans la file d'annonces. Elles sont enregistrées — seul le message à la distribution manque.",
       "leave_review": "Relire et envoyer",
       "leave_later": "Plus tard"
+    },
+    "timezone_field": {
+      "label": "Fuseau horaire",
+      "resolved": "Heures en : {{timezone}}"
     }
   },
   "pwa": {
@@ -3953,7 +3980,7 @@
       "headcount_many": "{{count}} pers.",
       "headcount_other": "{{count}} pers.",
       "no_singers": "Aucun choriste dans ce projet.",
-      "not_summoned": "Non convoqué",
+      "not_summoned": "Sans convocation",
       "overall": "Présence globale",
       "roster_size": "Choristes",
       "singers": "Fiabilité des choristes",
@@ -3963,11 +3990,11 @@
     "row": {
       "minutes_placeholder": "Combien de min ?",
       "note_placeholder": "Note (optionnelle)",
-      "status_absent": "Absent",
-      "status_excused": "Excusé",
-      "status_late": "En retard",
-      "status_none": "Non marqué",
-      "status_present": "Présent"
+      "status_absent": "Absence",
+      "status_excused": "Absence justifiée",
+      "status_late": "Retard",
+      "status_none": "Aucune saisie",
+      "status_present": "Présence"
     },
     "stats": {
       "absent": "Absents",
@@ -3999,6 +4026,7 @@
       "basses": "Basses",
       "countertenors": "Contreténors",
       "mezzos": "Mezzo-sopranos",
+      "other": "Autres",
       "sopranos": "Sopranos",
       "tenors": "Ténors"
     }
@@ -4294,6 +4322,7 @@
     },
     "logistics": {
       "clothing_size": "Taille de vêtement",
+      "clothing_size_clear": "Je préfère ne pas dire",
       "height": "Taille (cm)",
       "height_placeholder": "ex. 175",
       "sections": {
@@ -4562,6 +4591,20 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronisation des partitions..."
+    },
+    "datetime": {
+      "placeholder": "Choisissez une date et une heure",
+      "time": "Heure",
+      "hours": "Heures",
+      "minutes": "Minutes",
+      "step_up": "Augmenter : {{segment}}",
+      "step_down": "Diminuer : {{segment}}",
+      "previous_month": "Mois précédent",
+      "next_month": "Mois suivant",
+      "previous_year": "Année précédente",
+      "next_year": "Année suivante",
+      "today": "Aujourd'hui",
+      "done": "Terminé"
     }
   },
   "voice_types": {

@@ -881,7 +881,7 @@
       "last_name": "Nazwisko *",
       "loading": "Ładowanie...",
       "message_artist": "Napisz wiadomość",
-      "no_rating": "— Brak oceny —",
+      "no_rating": "Brak oceny",
       "phone": "Telefon",
       "range_high": "Skala (Góra)",
       "range_high_placeholder": "np. C5",
@@ -1316,7 +1316,8 @@
       "retry": "Spróbuj ponownie",
       "save": "Zapisz",
       "select": "Wybierz",
-      "undo": "Cofnij"
+      "undo": "Cofnij",
+      "change": "Zmień"
     },
     "archive": "Archiwizuj",
     "aria": {
@@ -3043,17 +3044,11 @@
   "projects": {
     "score_package": {
       "title": "Partytura koncertowa",
-      "intro": "Złóż automatycznie partyturę dla śpiewaków z całego programu: strona tytułowa, spis treści, karty utworów z tekstem, ciągła numeracja i zakładki.",
-      "readiness": "{{bindable}} z {{total}} utworów ma dołączone nuty",
-      "missing_count": "{{n}} bez nut",
-      "over_copies_count": "{{n}} bez egzemplarzy",
       "settings": "Ustawienia",
       "items_heading": "Utwory w programie",
       "ready": "Gotowa",
       "stale": "Program zmieniony",
       "distributed": "Udostępniona",
-      "meta": "{{pages}} stron · {{ts}}",
-      "meta_versioned": "Wersja {{v}} · {{pages}} stron · {{ts}}",
       "distributed_hint": "Tę wersję pobrali już śpiewacy. Ponowne złożenie ją zastąpi — w ich egzemplarzach mogą zmienić się numery stron.",
       "bridge": {
         "none": "Nie złożona",
@@ -3063,9 +3058,9 @@
       "manual": {
         "badge": "Wgrana ręcznie",
         "current": "Obecna partytura została wgrana ręcznie.",
-        "intro": "Masz gotową partyturę złożoną poza aplikacją? Wgraj ją zamiast generować — zastąpi obecną książkę.",
+        "intro": "Masz gotową książkę złożoną poza aplikacją? Wgraj ją zamiast generować.",
         "preview": "Podgląd",
-        "remove": "Usuń",
+        "remove": "Usuń partyturę",
         "replace": "Wgraj inny PDF",
         "title": "Własny plik PDF",
         "upload": "Wgraj PDF"
@@ -3075,7 +3070,7 @@
       "queued": "W kolejce…",
       "building_elapsed": "{{label}} ({{s}}s)",
       "build_hint": "Przy dużym programie składanie może potrwać kilkadziesiąt sekund.",
-      "empty": "Dodaj utwory do programu powyżej, aby złożyć partyturę.",
+      "empty": "Partytura składa się z utworów programu — najpierw ułóż program koncertu.",
       "regenerate": "Wygeneruj ponownie",
       "generate": "Złóż partyturę",
       "download": "Pobierz",
@@ -3089,17 +3084,13 @@
         "mass": "Msza"
       },
       "language": {
-        "label": "Język tłumaczeń",
-        "pl": "Polski",
-        "en": "Angielski",
-        "fr": "Francuski"
+        "label": "Język tłumaczeń"
       },
       "cards": {
         "master": "Karty utworów",
         "default_hint": "Zaznacz, co pojawia się na każdej karcie — w utworze dostosujesz wyjątki.",
-        "text": "Tekst oryginalny",
-        "translation": "Tłumaczenie",
-        "note": "Nota"
+        "summary": "Karty: {{count}}",
+        "summary_off": "Bez kart"
       },
       "structure": {
         "label": "Struktura książki",
@@ -3113,9 +3104,7 @@
       "pages": "{{n}} stron",
       "readiness_state": {
         "ready": "Gotowe",
-        "low": "Niska pewność",
-        "incomplete": "Niekompletna",
-        "no_edition": "Brak nut"
+        "low": "Niska pewność"
       },
       "elements": {
         "eyebrow": "Sekcja",
@@ -3135,12 +3124,10 @@
       },
       "item": {
         "fix_in_archive": "Część danych ma niską pewność — popraw w archiwum",
-        "advanced": "Karta i nadpisania",
-        "customized": "dostosowane",
         "no_pdf": "Brak dołączonych nut — w partyturze pojawi się strona-zastępka.",
         "no_pdf_short": "brak nut",
         "over_copies": "Obsada ({{cast}}) przewyższa liczbę posiadanych egzemplarzy licencji ({{copies}}). Upewnij się, że masz dość kopii lub dodatkową licencję.",
-        "over_copies_short": "za mało egz.",
+        "over_copies_short": "za mało egzemplarzy",
         "full_range": "całość",
         "range": "s. {{from}}–{{to}}",
         "edition": "Wydanie",
@@ -3179,7 +3166,17 @@
         "note_override": "Nota (nadpisanie)",
         "note_override_ph": "Zostaw puste, aby użyć noty z bazy.",
         "preview_card": "Podgląd karty",
-        "reset_elements": "Domyślne"
+        "reset_elements": "Domyślne",
+        "binding": "Oprawa",
+        "override_count": "Nadpisania: {{count}}"
+      },
+      "empty_title": "Program jest pusty",
+      "empty_action": "Otwórz program",
+      "attention_count": "Wymaga uwagi: {{count}}",
+      "figures": {
+        "bound": "Utwory z nutami",
+        "pages": "Stron w książce",
+        "over_copies": "Bez egzemplarzy"
       }
     },
     "actions": {
@@ -3192,35 +3189,47 @@
     "badge_active": "W przygotowaniu",
     "badge_done": "Zrealizowano",
     "budget": {
-      "aria_label": "Zarządzaj budżetem projektu",
-      "empty": {
-        "cast": "Brak obsady przypisanej do projektu."
-      },
-      "estimated_cost": "Przewidywany Koszt",
-      "fab": {
-        "description": "Wprowadziłeś zmiany w stawkach."
-      },
-      "input_placeholder": "Wpisz kwotę...",
-      "kpi": {
-        "calculation": "Kalkulacja",
-        "cast_fees": "Stawki (Obsada)",
-        "crew_fees": "Stawki (Ekipa)",
-        "missing": "Braki",
-        "missing_desc": "poz. bez stawki",
-        "total": "Suma Kosztów"
-      },
-      "missing_fee": "Brak stawki",
+      "estimated_cost": "Przewidywany koszt",
       "sections": {
-        "cast": "Obsada Wykonawcza",
-        "crew": "Ekipa Techniczna",
-        "description": "Zarządzaj kosztami osobowymi",
-        "estimated": "Szacowany Budżet"
+        "summary": "Koszty osobowe",
+        "cast": "Obsada wokalna",
+        "crew": "Ekipa techniczna"
       },
-      "title": "Kosztorys",
+      "kpi": {
+        "total": "Suma kosztów",
+        "outstanding": "Do wypłaty",
+        "cast_fees": "Obsada",
+        "crew_fees": "Ekipa",
+        "settled": "Rozliczone",
+        "missing": "Bez stawki"
+      },
+      "empty": {
+        "cast": "Brak obsady",
+        "cast_desc": "Honoraria pojawią się tutaj, gdy dodasz śpiewaków w zakładce Obsada.",
+        "crew": "Brak ekipy",
+        "crew_desc": "Stawki współpracowników pojawią się tutaj, gdy zatrudnisz ich w zakładce Zespół."
+      },
+      "footer": {
+        "subtotal": "Razem",
+        "missing": "{{count}} bez stawki",
+        "settled": "Rozliczonych: {{count}}"
+      },
+      "row": {
+        "fee_aria": "Stawka — {{name}}",
+        "settled": "Rozliczone — stawki nie można już zmienić"
+      },
+      "standard_rate": {
+        "label": "Stawka dla wszystkich",
+        "hint": "Nadpisze {{count}} poz.",
+        "pending": "Obejmie {{count}} poz. — zapisz, aby zastosować"
+      },
+      "fab": {
+        "description": "Zmiany w stawkach honorariów."
+      },
       "toast": {
-        "save_error_desc": "Nie udało się zapisać wszystkich stawek.",
+        "saving": "Zapisywanie budżetu...",
         "save_success": "Zapisano stawki i przeliczono budżet",
-        "saving": "Zapisywanie budżetu..."
+        "save_error_desc": "Nie udało się zapisać wszystkich stawek."
       }
     },
     "call_time": "Zbiórka:",
@@ -3248,22 +3257,16 @@
     "cast": {
       "aria_label": "Zarządzaj obsadą wokalną",
       "card": {
-        "a_vista": "A vista:",
-        "add": "Dodaj",
-        "add_aria": "Dodaj do obsady",
+        "a_vista": "a vista {{score}}/5",
+        "add_aria": "Dodaj {{name}} do obsady",
         "declined": "Odmowa",
-        "pending": "Zaproszony",
-        "remove": "Usuń",
-        "remove_aria": "Usuń z obsady"
+        "pending": "Czeka",
+        "remove_aria": "Usuń {{name}} z obsady",
+        "unknown": "Nieznany uczestnik"
       },
-      "employed": "Zatrudnionych:",
       "empty": "Brak obsady wokalnej.",
       "empty_assigned": "Obsada jest pusta",
-      "empty_available": "Brak dostępnych",
-      "header": {
-        "subtitle": "Zarządzaj wokalistami. Ustawienie [scrollbar-gutter] neutralizuje skoki układu.",
-        "title": "Casting Główny"
-      },
+      "empty_available": "Cały zespół jest w obsadzie",
       "mobile": {
         "assigned": "Obsada",
         "available": "Baza",
@@ -3271,51 +3274,51 @@
       },
       "search_placeholder": "Szukaj artysty...",
       "sections": {
-        "assigned": "Obsada Projektu",
-        "available": "Baza Artystów"
+        "assigned": "Obsada projektu",
+        "available": "Baza artystów"
       },
-      "title": "Obsada Wokalna",
+      "title": "Obsada wokalna",
       "title_short": "artystów",
-      "toast": {
-        "added": "Dodano do obsady",
-        "removed": "Usunięto z obsady"
-      },
-      "voice_unknown": "Bez głosu"
+      "voice_unknown": "Bez głosu",
+      "empty_assigned_desc": "Dodaj śpiewaków z bazy, aby zbudować obsadę projektu.",
+      "empty_no_matches": "Brak wyników"
     },
     "crew": {
       "aria_label": "Zarządzaj ekipą techniczną",
-      "employed": "Zatrudnionych:",
       "empty": "Brak przypisanej ekipy technicznej.",
-      "form": {
-        "hire_label": "Zatrudnij z bazy",
-        "role_label": "Rola na tym koncercie",
-        "role_placeholder": "np. Akustyk FOH",
-        "select_placeholder": "Wybierz współpracownika",
-        "submit": "Przypisz",
-        "title": "Dodaj do zespołu"
-      },
-      "header": {
-        "subtitle": "Zatrudnij współpracowników z bazy i przypisz im role na tym koncercie.",
-        "title": "Ekipa realizacyjna"
-      },
-      "list": {
-        "assigned_count_one": "{{count}} osoba przypisana",
-        "assigned_count_few": "{{count}} osoby przypisane",
-        "assigned_count_many": "{{count}} osób przypisanych",
-        "assigned_count_other": "{{count}} osób przypisanych",
-        "remove_title": "Usuń z ekipy technicznej",
-        "title": "Skład Ekipy (Crew)"
-      },
-      "title": "Ekipa (Crew)",
+      "title": "Ekipa techniczna",
       "title_short": "technika",
+      "sections": {
+        "assigned": "Ekipa techniczna",
+        "available": "Baza współpracowników"
+      },
+      "search_placeholder": "Szukaj po nazwisku, firmie lub specjalizacji...",
+      "specialty_unknown": "Bez specjalizacji",
+      "empty_assigned": "Nikt jeszcze nie obsługuje tego koncertu",
+      "empty_assigned_desc": "Zatrudnij współpracowników z bazy — ekipa nie dostaje kont ani powiadomień, to notatka produkcyjna dla dyrygenta.",
+      "empty_available": "Cała baza jest już w ekipie",
+      "empty_no_matches": "Brak wyników",
+      "empty_base": "Baza współpracowników jest pusta",
+      "empty_base_action": "Otwórz bazę",
+      "card": {
+        "unknown": "Nieznany współpracownik",
+        "add_aria": "Dodaj {{name}} do ekipy",
+        "remove_aria": "Usuń {{name}} z ekipy",
+        "confirm": "Oznacz rezerwację jako potwierdzoną",
+        "unconfirm": "Cofnij potwierdzenie rezerwacji",
+        "role_aria": "Rola na tym koncercie — {{name}}",
+        "role_placeholder": "np. Akustyk FOH",
+        "role_empty": "Dodaj rolę"
+      },
+      "footer": {
+        "confirmed": "Potwierdzonych: {{count}}",
+        "tentative": "Wstępnie: {{count}}"
+      },
       "toast": {
-        "assign_error": "Błąd przypisania",
         "assign_error_desc": "Nie udało się przypisać członka ekipy do projektu.",
-        "assign_success": "Członek ekipy przypisany pomyślnie",
-        "assigning": "Przypisywanie członka ekipy...",
         "remove_error_desc": "Nie udało się odpiąć członka ekipy z projektu.",
-        "remove_success": "Usunięto przypisanie z projektu",
-        "removing": "Usuwanie członka ekipy..."
+        "role_error_desc": "Nie udało się zapisać roli na tym koncercie.",
+        "status_error_desc": "Nie udało się zmienić statusu rezerwacji."
       }
     },
     "dashboard": {
@@ -3349,61 +3352,61 @@
     },
     "details_tab": {
       "buttons": {
-        "add_run_sheet": "Dodaj punkt harmonogramu"
+        "add_run_sheet": "Dodaj punkt"
       },
       "empty": {
-        "run_sheet": "Brak punktów harmonogramu. Dodaj pierwszy!"
+        "run_sheet": "Brak planu dnia",
+        "run_sheet_frame": "Zbiórka {{call}}, koncert {{concert}} — ułóż przebieg pomiędzy.",
+        "run_sheet_hint": "Dodaj pierwszy punkt, aby ułożyć przebieg dnia."
       },
       "fab": {
-        "description": "Zmodyfikowałeś ustawienia projektu.",
-        "save": "Zapisz Zmiany"
+        "description": "Zmiany w szczegółach wydarzenia i planie dnia.",
+        "save": "Zapisz zmiany"
       },
       "fields": {
-        "call_time": "Zbiórka (Call Time)",
+        "call_time": "Zbiórka",
         "conductor": "Dyrygent",
-        "conductor_placeholder": "--- Wybierz Dyrygenta ---",
-        "date_time": "Data i Czas *",
+        "date_time": "Data i godzina *",
         "description": "Opis wydarzenia",
-        "dress_code_female": "Dress Code: Panie",
-        "dress_code_male": "Dress Code: Panowie",
-        "location": "Lokalizacja / Miejsce",
-        "spotify": "Playlista (Spotify)",
-        "timezone": "Strefa czasowa",
-        "title": "Tytuł Projektu *"
+        "dress_code_female": "Ubiór: panie",
+        "dress_code_male": "Ubiór: panowie",
+        "location": "Miejsce koncertu",
+        "spotify": "Playlista Spotify",
+        "title": "Tytuł projektu *"
       },
-      "header": {
-        "subtitle": "Tytuł, harmonogram, dress code i materiały referencyjne projektu.",
-        "title": "Szczegóły Wydarzenia"
+      "call_time": {
+        "offset_h": "{{hours}} godz. przed koncertem",
+        "offset_hm": "{{hours}} godz. {{minutes}} min przed koncertem",
+        "offset_m": "{{minutes}} min przed koncertem",
+        "offset_after": "Zbiórka nie wypada przed koncertem"
+      },
+      "day_plan": {
+        "anchor_call": "Zbiórka",
+        "anchor_concert": "Koncert",
+        "untitled_count": "Bez nazwy: {{count}}"
       },
       "placeholders": {
-        "description": "np. Proszę o punktualność...",
-        "spotify": "Wklej link do playlisty z referencjami...",
-        "location": "Wybierz zapisaną lokalizację",
+        "description": "np. proszę o punktualność",
+        "dress_code_female": "np. czarna suknia chóralna",
+        "dress_code_male": "np. frak, biała muszka",
+        "spotify": "Wklej link do playlisty z referencjami",
+        "location": "Wybierz miejsce",
         "location_clear": "Bez lokalizacji",
         "conductor": "Wybierz dyrygenta",
         "conductor_clear": "Bez dyrygenta"
       },
       "run_sheet": {
         "description": "Opis (opcjonalny)",
-        "time": "Godz.",
-        "title": "Tytuł"
-      },
-      "score_pdf": {
-        "current": "Bieżący plik PDF",
-        "delete_aria": "Usuń PDF",
-        "modal_title": "Partytura Koncertu",
-        "pending_removal": "PDF zostanie usunięty po zapisaniu zmian.",
-        "preview": "Podgląd",
-        "replace": "Kliknij, aby zastąpić plik PDF",
-        "upload": "Kliknij, aby dodać partytury / program (PDF)"
+        "time": "Godzina",
+        "title": "Nazwa punktu"
       },
       "sections": {
-        "logistics": "Zbiórka i Dress Code",
-        "notes": "Notatki Produkcyjne",
-        "references": "Referencje Muzyczne",
-        "run_sheet": "Harmonogram Dnia Koncertu",
-        "score_pdf": "Partytura Koncertu (PDF)",
-        "title_desc": "Tytuł i Opis"
+        "day_plan": "Plan dnia koncertu",
+        "ensemble_info": "Informacje dla zespołu",
+        "event": "Wydarzenie"
+      },
+      "markers": {
+        "concert": "Koncert"
       }
     },
     "editor": {
@@ -3468,90 +3471,109 @@
     },
     "matrix": {
       "action_bar": {
-        "description_one": "Zmieniono {{count}} wpisów frekwencji.",
-        "description_few": "Zmieniono {{count}} wpisów frekwencji.",
+        "description_one": "Zmieniono {{count}} wpis frekwencji.",
+        "description_few": "Zmieniono {{count}} wpisy frekwencji.",
         "description_many": "Zmieniono {{count}} wpisów frekwencji.",
         "description_other": "Zmieniono {{count}} wpisów frekwencji.",
         "save": "Zapisz frekwencję"
       },
-      "empty": {
-        "cast": "Brak obsady przypisanej do projektu.",
-        "rehearsals": "Brak zaplanowanych prób w tym projekcie."
+      "actions": {
+        "mark_present": "Oznacz nieoznaczonych jako obecnych"
       },
-      "header": {
-        "subtitle": "Szybkie oznaczanie frekwencji na próbach. Zarządzaj statusem klikając w kafelki pod nazwiskiem.",
-        "title": "Macierz Obecności i Frekwencji"
+      "caption": "Lista obecności: wiersze to śpiewacy, kolumny to próby.",
+      "empty": {
+        "cast_action": "Otwórz obsadę",
+        "cast_desc": "Przypisz śpiewaków do projektu — każdy z nich dostanie tu swój wiersz.",
+        "cast_title": "Brak obsady",
+        "no_matches": "Brak wyników",
+        "rehearsals_action": "Otwórz próby",
+        "rehearsals_desc": "Listę obecności prowadzi się na próbach. Dodaj pierwszą, a pojawi się tu jako kolumna.",
+        "rehearsals_title": "Brak prób"
       },
       "legend": {
-        "title": "Status frekwencji"
+        "hint": "Klikaj, aby zmieniać status · Shift + klik cofa"
       },
-      "not_invited": "Nie dotyczy",
+      "not_called": "Nie wezwano na tę próbę",
+      "search": {
+        "placeholder": "Szukaj osoby…"
+      },
+      "summary": {
+        "label": "Frekwencja",
+        "missing": "{{count}} bez wpisu"
+      },
       "table": {
         "rate": "Frekwencja",
-        "rehearsal_date": "Próba / Data"
+        "session_rate": "Frekwencja próby",
+        "singer": "Śpiewak"
       },
+      "title": "Lista obecności",
       "toast": {
-        "save_error": "Nie udało się zapisać zmiany.",
         "save_error_desc": "Sprawdź połączenie i spróbuj ponownie.",
         "save_success": "Zapisano frekwencję",
-        "saving": "Zapisywanie frekwencji..."
-      }
+        "saving": "Zapisywanie frekwencji…"
+      },
+      "tooltip": {
+        "breakdown": "Obecni: {{present}} · spóźnieni: {{late}} · nieobecni: {{absent}} · usprawiedliwieni: {{excused}}",
+        "missing": "bez wpisu: {{count}}"
+      },
+      "unknown_member": "Nieznany członek"
     },
     "micro_cast": {
       "action_bar": {
-        "description_one": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
-        "description_few": "Przeciągnięto {{count}} zmiany. Zapisz, aby zsynchronizować obsadę.",
-        "description_many": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
-        "description_other": "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
+        "description": "Casting utworu: {{piece}}",
         "save": "Zapisz casting"
       },
       "artist": {
         "add_note": "Dodaj notatkę",
         "drag_aria": "Przeciągnij {{name}}",
-        "note_placeholder": "Notatka...",
+        "gives_pitch": "Podaje ton",
+        "note_placeholder": "np. góra",
         "pending_label": "Niezapisane",
         "awaiting": "Czeka",
-        "declined": "Odmowa"
+        "declined": "Odmowa",
+        "unknown": "Nieznany uczestnik"
+      },
+      "board": {
+        "cast_label": "Obsadzone",
+        "define_requirements": "Uzupełnij wymagania",
+        "free_mode": "Tryb dowolny",
+        "free_mode_hint": "Ten utwór nie ma zapisanych wymagań głosowych — przypisz śpiewaków do dowolnych linii.",
+        "title": "Obsada utworu"
       },
       "bucket": {
-        "aria": "Sekcja upuszczania: ",
+        "aria": "Sekcja upuszczania",
         "aria_with_title": "Sekcja upuszczania: {{title}}"
       },
       "buttons": {
-        "play_reference": "Odtwórz Referencję"
+        "play_reference": "Odtwórz: {{platform}}"
       },
       "empty": {
-        "no_requirements": "Brak zdefiniowanych wymagań głosowych dla tego utworu w bazie repertuarowej. Używamy trybu dowolnego przypisania (Divisi).",
-        "pieces": "Brak utworów",
-        "section": "Brak przypisań w tej sekcji",
-        "unassigned": "Wszyscy zostali przypisani do ról w tym utworze."
-      },
-      "header": {
-        "subtitle": "Przeciągaj wokalistów między sekcjami w ramach wybranego utworu.",
-        "title": "Divisi i Mikro-Casting"
+        "no_matches": "Brak wyników",
+        "pieces": "Program jest pusty",
+        "pieces_action": "Otwórz program",
+        "pieces_desc": "Divisi rozdziela głosy w konkretnym utworze — najpierw ułóż program koncertu.",
+        "unassigned": "Wszyscy są przypisani"
       },
       "label": {
         "pieces_in_program": "Utwory w programie"
-      },
-      "meta": {
-        "unsaved_one": "Niezapisane: {{count}}",
-        "unsaved_few": "Niezapisane: {{count}}",
-        "unsaved_many": "Niezapisane: {{count}}",
-        "unsaved_other": "Niezapisane: {{count}}"
       },
       "piece_switch": {
         "description": "Przełączenie utworu odrzuci wszystkie niezapisane przypisania w tej sekcji. Czy chcesz kontynuować?",
         "discard": "Odrzuć i przełącz",
         "title": "Niezapisane zmiany castingu"
       },
-      "sections": {
-        "unassigned": "Nieprzypisani (Baza Osobowa)"
+      "program": {
+        "ready": "Obsadzone utwory: {{done}} z {{total}}"
       },
-      "select_piece": "Wybierz utwór do castingu",
+      "search": {
+        "placeholder": "Szukaj osoby..."
+      },
+      "sections": {
+        "unassigned": "Nieprzypisani"
+      },
       "status": {
-        "deficit": "Braki: ",
-        "drop_here": "Upuść tu",
-        "free": "Wolny Wakat"
+        "missing": "Brakuje {{count}}",
+        "over": "Ponad plan: {{count}}"
       },
       "toast": {
         "save_success": "Casting zapisany",
@@ -3559,12 +3581,11 @@
       },
       "voices": {
         "altos": "Alty",
-        "baritones": "Barytony",
         "basses": "Basy",
-        "countertenors": "Kontratenory",
-        "mezzos": "Mezzosoprany",
         "sopranos": "Soprany",
-        "tenors": "Tenory"
+        "special": "Linie specjalne",
+        "tenors": "Tenory",
+        "unknown": "Głos nieokreślony"
       }
     },
     "overview": {
@@ -3596,10 +3617,6 @@
         "days": "dni",
         "ensemble": "Zespół",
         "ensemble_aria": "Przejdź do obsady",
-        "gaps_one": "{{count}} luk",
-        "gaps_few": "{{count}} luk",
-        "gaps_many": "{{count}} luk",
-        "gaps_other": "{{count}} luk",
         "past": "Po terminie",
         "program": "Obsada programu",
         "program_aria": "Przejdź do divisi",
@@ -3630,7 +3647,7 @@
         "add_encore": "Oznacz jako BIS",
         "already_added": "Utwór jest już na setliście",
         "drag_aria": "Przeciągnij utwór {{title}}",
-        "remove_encore": "Usuń jako BIS",
+        "remove_encore": "Usuń oznaczenie BIS",
         "remove_from_program": "Usuń z programu"
       },
       "and_more_one": "i jeszcze 1...",
@@ -3639,26 +3656,20 @@
       "and_more_other": "i jeszcze {{count}}...",
       "aria_label": "Zarządzaj programem koncertu",
       "badges": {
-        "encore": "BIS",
-        "tracks_count_one": "{{count}} ścieżka",
-        "tracks_count_few": "{{count}} ścieżki",
-        "tracks_count_many": "{{count}} ścieżek",
-        "tracks_count_other": "{{count}} ścieżek"
+        "encore": "BIS"
       },
       "duration_unknown": "Czas nieznany",
       "empty": {
         "no_results": "Brak wyników",
-        "setlist_desc": "Wybierz kompozycje z bazy po prawej stronie, aby zbudować program koncertu.",
+        "setlist_desc": "Wybierz kompozycje z bazy, aby zbudować program koncertu.",
         "setlist_title": "Setlista jest pusta"
       },
       "fab": {
-        "description": "Zmodyfikowałeś kolejność programu."
+        "description": "Zmieniono kolejność programu."
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min muzyki",
-        "duration_mins": "~ {{m}} min muzyki",
-        "minutes": "{{m}} min",
-        "seconds": "{{s}} sek"
+        "duration_mins": "~ {{m}} min muzyki"
       },
       "fulfilled": "Obsadzony",
       "music_time_min": "min muzyki",
@@ -3668,13 +3679,13 @@
         "tooltip": "Gotowość zespołu — zna partię: {{ready}}, ćwiczy: {{practising}}, nie zaczęło: {{untouched}}"
       },
       "search": {
-        "placeholder": "Szukaj utworu..."
+        "placeholder": "Szukaj utworu lub kompozytora..."
       },
       "sections": {
-        "database": "Baza Kompozycji",
-        "setlist": "Setlista Wydarzenia"
+        "database": "Baza kompozycji",
+        "setlist": "Setlista wydarzenia"
       },
-      "title": "Program Koncertu",
+      "title": "Program koncertu",
       "toast": {
         "add_error": "Nie powiodło się dodanie utworu.",
         "add_success": "Dodano do setlisty",
@@ -3687,7 +3698,19 @@
         "save_order_success": "Układ zapisany pomyślnie",
         "saving_order": "Zapisywanie nowego układu..."
       },
-      "unfulfilled": "Nieobsadzony"
+      "unfulfilled": "Nieobsadzony",
+      "gaps_count_one": "{{count}} luka",
+      "gaps_count_few": "{{count}} luki",
+      "gaps_count_many": "{{count}} luk",
+      "gaps_count_other": "{{count}} luk",
+      "duration_label": "Czas trwania",
+      "footer": {
+        "pieces_one": "{{count}} utwór",
+        "pieces_few": "{{count}} utwory",
+        "pieces_many": "{{count}} utworów",
+        "pieces_other": "{{count}} utworów",
+        "untimed": "{{count}} bez podanego czasu"
+      }
     },
     "rehearsals": {
       "absences_reported": "Zgłoszono braki:",
@@ -3697,47 +3720,44 @@
       },
       "aria_label": "Zarządzaj próbami projektu",
       "empty": {
-        "no_rehearsals": "Brak zaplanowanych prób."
+        "no_rehearsals": "Brak zaplanowanych prób",
+        "no_rehearsals_desc": "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą koncertu."
       },
       "form": {
-        "date_time": "Data i Godzina *",
-        "focus": "Plan Próby / Repertuar (Focus)",
-        "focus_placeholder": "np. Requiem cz. 1-3...",
-        "location": "Lokalizacja (Sala) *",
+        "date_time": "Data i godzina *",
+        "focus": "Plan próby / repertuar",
+        "focus_placeholder": "np. Requiem cz. 1–3",
+        "location": "Sala próby *",
         "location_placeholder": "Wybierz salę",
-        "mandatory": "Obecność obowiązkowa dla wezwanych",
+        "mandatory": "Obecność obowiązkowa",
         "submit": "Zapisz w kalendarzu",
-        "timezone": "Strefa czasowa",
         "title": "Zaplanuj nową próbę",
         "title_edit": "Edytuj próbę",
-        "type_custom": "Wybrane osoby",
-        "type_sectional": "Próba Sekcyjna",
-        "type_tutti": "Tutti (Wszyscy)",
+        "type_custom": "Wybrani",
+        "type_sectional": "Sekcyjna",
+        "type_tutti": "Tutti",
         "update": "Aktualizuj próbę",
-        "who": "Kto jest wezwany na próbę?"
+        "who": "Kto jest wezwany?"
       },
       "header": {
         "subtitle": "Planuj próby, zarządzaj uczestnictwem sekcji oraz frekwencją.",
         "title": "Próby"
       },
       "list": {
-        "title": "Harmonogram Prób"
+        "title": "Harmonogram prób",
+        "group_upcoming": "Najbliższe",
+        "group_past": "Zakończone",
+        "concert": "Koncert"
       },
       "modal": {
         "delete_desc": "Powiązane z tą próbą listy obecności zostaną bezpowrotnie wykasowane. Tej operacji nie można cofnąć.",
         "delete_title": "Usunąć tę próbę?"
       },
-      "optional": "Opcjonalna",
       "progress": "Postęp",
-      "sectional": "SEKCYJNA",
       "status": {
-        "finished": "Zakończona",
-        "invited_one": "1 zaproszony",
-        "invited_few": "{{count}} zaproszonych",
-        "invited_many": "{{count}} zaproszonych",
-        "invited_other": "{{count}} zaproszonych",
         "optional": "Opcjonalna",
-        "tutti": "TUTTI"
+        "tutti": "Tutti",
+        "invited": "Wezwanych: {{count}}"
       },
       "title_short": "prób",
       "toast": {
@@ -3752,13 +3772,16 @@
         "update_success": "Próba zaktualizowana pomyślnie",
         "updating": "Aktualizowanie próby..."
       },
-      "tutti": "TUTTI",
-      "upcoming": "Najbliższe Próby",
+      "upcoming": "Najbliższe próby",
       "voices": {
         "altos": "Alty",
         "basses": "Basy",
         "sopranos": "Soprany",
         "tenors": "Tenory"
+      },
+      "markers": {
+        "concert": "Koncert",
+        "rehearsal": "Próba"
       }
     },
     "roles": {
@@ -3772,7 +3795,7 @@
     },
     "run_sheet": {
       "aria_label": "Zarządzaj harmonogramem dnia",
-      "empty": "Brak harmonogramu dostępnego dla tego wydarzenia.",
+      "empty": "Brak harmonogramu dnia",
       "title": "Harmonogram dnia koncertu"
     },
     "spotify": {
@@ -3871,6 +3894,10 @@
       "leave_desc_many": "{{count}} zmian czeka w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
       "leave_review": "Przejrzyj i wyślij",
       "leave_later": "Później"
+    },
+    "timezone_field": {
+      "label": "Strefa czasowa",
+      "resolved": "Czas w strefie: {{timezone}}"
     }
   },
   "pwa": {
@@ -3968,7 +3995,7 @@
       "headcount_many": "{{count}} os.",
       "headcount_other": "{{count}} os.",
       "no_singers": "Brak śpiewaków w tym projekcie.",
-      "not_summoned": "Nie wezwany",
+      "not_summoned": "Bez wezwania",
       "overall": "Frekwencja ogółem",
       "roster_size": "Śpiewacy",
       "singers": "Rzetelność śpiewaków",
@@ -3978,11 +4005,11 @@
     "row": {
       "minutes_placeholder": "Ile min?",
       "note_placeholder": "Notatka (opcjonalnie)",
-      "status_absent": "Nieobecny",
-      "status_excused": "Usprawiedliwiony",
-      "status_late": "Spóźniony",
-      "status_none": "Nieoznaczony",
-      "status_present": "Obecny"
+      "status_absent": "Nieobecność",
+      "status_excused": "Usprawiedliwienie",
+      "status_late": "Spóźnienie",
+      "status_none": "Bez wpisu",
+      "status_present": "Obecność"
     },
     "stats": {
       "absent": "Braki",
@@ -4014,6 +4041,7 @@
       "basses": "Basy",
       "countertenors": "Kontratenory",
       "mezzos": "Mezzosoprany",
+      "other": "Pozostali",
       "sopranos": "Soprany",
       "tenors": "Tenory"
     }
@@ -4309,6 +4337,7 @@
     },
     "logistics": {
       "clothing_size": "Rozmiar ubrań",
+      "clothing_size_clear": "Nie podaję",
       "height": "Wzrost (cm)",
       "height_placeholder": "Np. 175",
       "sections": {
@@ -4577,6 +4606,20 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronizacja nut..."
+    },
+    "datetime": {
+      "placeholder": "Wybierz datę i godzinę",
+      "time": "Godzina",
+      "hours": "Godziny",
+      "minutes": "Minuty",
+      "step_up": "Zwiększ: {{segment}}",
+      "step_down": "Zmniejsz: {{segment}}",
+      "previous_month": "Poprzedni miesiąc",
+      "next_month": "Następny miesiąc",
+      "previous_year": "Poprzedni rok",
+      "next_year": "Następny rok",
+      "today": "Dziś",
+      "done": "Gotowe"
     }
   },
   "voice_types": {

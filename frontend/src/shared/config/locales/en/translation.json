@@ -880,7 +880,7 @@
       "last_name": "Last Name *",
       "loading": "Loading...",
       "message_artist": "Write a message",
-      "no_rating": "— No rating —",
+      "no_rating": "No rating",
       "phone": "Phone",
       "range_high": "Range (High)",
       "range_high_placeholder": "e.g., C5",
@@ -1315,7 +1315,8 @@
       "retry": "Retry",
       "save": "Save",
       "select": "Select",
-      "undo": "Undo"
+      "undo": "Undo",
+      "change": "Change"
     },
     "archive": "Archive",
     "aria": {
@@ -3036,17 +3037,11 @@
   "projects": {
     "score_package": {
       "title": "Concert score book",
-      "intro": "Auto-assemble a singers' score book from the whole programme: title page, table of contents, per-piece text cards, continuous numbering and bookmarks.",
-      "readiness": "{{bindable}} of {{total}} pieces have scores attached",
-      "missing_count": "{{n}} without scores",
-      "over_copies_count": "{{n}} short of copies",
       "settings": "Settings",
       "items_heading": "Pieces in the programme",
       "ready": "Ready",
       "stale": "Programme changed",
       "distributed": "Distributed",
-      "meta": "{{pages}} pages · {{ts}}",
-      "meta_versioned": "Version {{v}} · {{pages}} pages · {{ts}}",
       "distributed_hint": "Singers have already downloaded this version. Rebuilding replaces it — the page numbers in their copies may change.",
       "bridge": {
         "none": "Not assembled",
@@ -3056,9 +3051,9 @@
       "manual": {
         "badge": "Uploaded manually",
         "current": "The current score was uploaded manually.",
-        "intro": "Already have a score typeset outside the app? Upload it instead of generating — it replaces the current book.",
+        "intro": "Already have a book typeset outside the app? Upload it instead of generating one.",
         "preview": "Preview",
-        "remove": "Remove",
+        "remove": "Remove the score",
         "replace": "Upload another PDF",
         "title": "Your own PDF",
         "upload": "Upload PDF"
@@ -3068,7 +3063,7 @@
       "queued": "Queued…",
       "building_elapsed": "{{label}} ({{s}}s)",
       "build_hint": "For a large programme, assembly can take a few dozen seconds.",
-      "empty": "Add pieces to the programme above to assemble a score.",
+      "empty": "The score book is built from the programme — start by setting the setlist.",
       "regenerate": "Rebuild",
       "generate": "Assemble score",
       "download": "Download",
@@ -3082,17 +3077,13 @@
         "mass": "Mass"
       },
       "language": {
-        "label": "Translation language",
-        "pl": "Polish",
-        "en": "English",
-        "fr": "French"
+        "label": "Translation language"
       },
       "cards": {
         "master": "Piece cards",
         "default_hint": "Pick what appears on every card — you can tune exceptions per piece.",
-        "text": "Original text",
-        "translation": "Translation",
-        "note": "Note"
+        "summary": "Cards: {{count}}",
+        "summary_off": "No cards"
       },
       "structure": {
         "label": "Book structure",
@@ -3106,9 +3097,7 @@
       "pages": "{{n}} pages",
       "readiness_state": {
         "ready": "Ready",
-        "low": "Low confidence",
-        "incomplete": "Incomplete",
-        "no_edition": "No score"
+        "low": "Low confidence"
       },
       "elements": {
         "eyebrow": "Section",
@@ -3128,8 +3117,6 @@
       },
       "item": {
         "fix_in_archive": "Some data is low-confidence — fix it in the archive",
-        "advanced": "Card & overrides",
-        "customized": "customised",
         "no_pdf": "No score attached — a placeholder page will appear in the book.",
         "no_pdf_short": "no score",
         "over_copies": "The cast ({{cast}}) exceeds the licensed copies owned ({{copies}}). Make sure you have enough copies or an extra licence.",
@@ -3172,7 +3159,17 @@
         "note_override": "Note (override)",
         "note_override_ph": "Leave empty to use the stored note.",
         "preview_card": "Preview card",
-        "reset_elements": "Default"
+        "reset_elements": "Default",
+        "binding": "Binding",
+        "override_count": "Overrides: {{count}}"
+      },
+      "empty_title": "The programme is empty",
+      "empty_action": "Open the programme",
+      "attention_count": "Needs attention: {{count}}",
+      "figures": {
+        "bound": "Pieces with scores",
+        "pages": "Pages in the book",
+        "over_copies": "Short of copies"
       }
     },
     "actions": {
@@ -3185,35 +3182,47 @@
     "badge_active": "In preparation",
     "badge_done": "Completed",
     "budget": {
-      "aria_label": "Manage project budget",
-      "empty": {
-        "cast": "No cast assigned to the project."
-      },
-      "estimated_cost": "Estimated Cost",
-      "fab": {
-        "description": "You have made changes to the rates."
-      },
-      "input_placeholder": "Enter amount...",
-      "kpi": {
-        "calculation": "Calculation",
-        "cast_fees": "Rates (Cast)",
-        "crew_fees": "Rates (Crew)",
-        "missing": "Missing",
-        "missing_desc": "items without rate",
-        "total": "Total Cost"
-      },
-      "missing_fee": "Missing fee",
+      "estimated_cost": "Estimated cost",
       "sections": {
-        "cast": "Vocal Cast",
-        "crew": "Technical Crew",
-        "description": "Manage personnel costs",
-        "estimated": "Estimated Budget"
+        "summary": "Personnel costs",
+        "cast": "Vocal cast",
+        "crew": "Technical crew"
       },
-      "title": "Estimate",
+      "kpi": {
+        "total": "Total cost",
+        "outstanding": "Still owed",
+        "cast_fees": "Cast",
+        "crew_fees": "Crew",
+        "settled": "Settled",
+        "missing": "Unpriced"
+      },
+      "empty": {
+        "cast": "No cast",
+        "cast_desc": "Fees will appear here once you add singers on the Cast tab.",
+        "crew": "No crew",
+        "crew_desc": "Collaborator rates will appear here once you hire them on the Crew tab."
+      },
+      "footer": {
+        "subtotal": "Subtotal",
+        "missing": "{{count}} unpriced",
+        "settled": "Settled: {{count}}"
+      },
+      "row": {
+        "fee_aria": "Fee — {{name}}",
+        "settled": "Settled — this fee can no longer be changed"
+      },
+      "standard_rate": {
+        "label": "Rate for everyone",
+        "hint": "Overwrites {{count}} positions.",
+        "pending": "Covers {{count}} positions — save to apply"
+      },
+      "fab": {
+        "description": "Changes to the fee rates."
+      },
       "toast": {
-        "save_error_desc": "Failed to save all rates.",
+        "saving": "Saving budget...",
         "save_success": "Rates saved and budget recalculated",
-        "saving": "Saving budget..."
+        "save_error_desc": "Failed to save all rates."
       }
     },
     "call_time": "Call Time:",
@@ -3241,22 +3250,16 @@
     "cast": {
       "aria_label": "Manage vocal cast",
       "card": {
-        "a_vista": "Sight-reading:",
-        "add": "Add",
-        "add_aria": "Add to cast",
+        "a_vista": "sight-reading {{score}}/5",
+        "add_aria": "Add {{name}} to the cast",
         "declined": "Declined",
-        "pending": "Invited",
-        "remove": "Remove",
-        "remove_aria": "Remove from cast"
+        "pending": "Awaiting",
+        "remove_aria": "Remove {{name}} from the cast",
+        "unknown": "Unknown participant"
       },
-      "employed": "Employed:",
       "empty": "No vocal cast.",
       "empty_assigned": "The cast is empty",
-      "empty_available": "None available",
-      "header": {
-        "subtitle": "Manage vocalists. The [scrollbar-gutter] setting neutralizes layout shifts.",
-        "title": "Main Casting"
-      },
+      "empty_available": "The whole ensemble is cast",
       "mobile": {
         "assigned": "Cast",
         "available": "Database",
@@ -3269,46 +3272,46 @@
       },
       "title": "Vocal Cast",
       "title_short": "artists",
-      "toast": {
-        "added": "Added to cast",
-        "removed": "Removed from cast"
-      },
-      "voice_unknown": "No voice"
+      "voice_unknown": "No voice",
+      "empty_assigned_desc": "Add singers from the database to build the project cast.",
+      "empty_no_matches": "No results"
     },
     "crew": {
       "aria_label": "Manage technical crew",
-      "employed": "Employed:",
       "empty": "No technical crew assigned.",
-      "form": {
-        "hire_label": "Hire from database",
-        "role_label": "Role for this concert",
-        "role_placeholder": "e.g., FOH Engineer",
-        "select_placeholder": "Choose a collaborator",
-        "submit": "Assign",
-        "title": "Add to the team"
-      },
-      "header": {
-        "subtitle": "Hire collaborators from the database and assign them roles for this concert.",
-        "title": "Production crew"
-      },
-      "list": {
-        "assigned_count_one": "{{count}} assigned",
-        "assigned_count_few": "{{count}} people assigned",
-        "assigned_count_many": "{{count}} people assigned",
-        "assigned_count_other": "{{count}} assigned",
-        "remove_title": "Remove from technical crew",
-        "title": "Crew Members"
-      },
       "title": "Crew",
       "title_short": "tech",
+      "sections": {
+        "assigned": "Technical crew",
+        "available": "Collaborator database"
+      },
+      "search_placeholder": "Search by name, company or specialty...",
+      "specialty_unknown": "No specialty",
+      "empty_assigned": "Nobody is running this concert yet",
+      "empty_assigned_desc": "Hire collaborators from the database — the crew gets no accounts and no notifications, this is a production note for the conductor.",
+      "empty_available": "The whole database is already on the crew",
+      "empty_no_matches": "No results",
+      "empty_base": "The collaborator database is empty",
+      "empty_base_action": "Open the database",
+      "card": {
+        "unknown": "Unknown collaborator",
+        "add_aria": "Add {{name}} to the crew",
+        "remove_aria": "Remove {{name}} from the crew",
+        "confirm": "Mark this booking as confirmed",
+        "unconfirm": "Undo the booking confirmation",
+        "role_aria": "Role for this concert — {{name}}",
+        "role_placeholder": "e.g., FOH Engineer",
+        "role_empty": "Add a role"
+      },
+      "footer": {
+        "confirmed": "Confirmed: {{count}}",
+        "tentative": "Tentative: {{count}}"
+      },
       "toast": {
-        "assign_error": "Assignment error",
         "assign_error_desc": "Failed to assign crew member to the project.",
-        "assign_success": "Crew member assigned successfully",
-        "assigning": "Assigning crew member...",
         "remove_error_desc": "Failed to unassign crew member from the project.",
-        "remove_success": "Removed assignment from the project",
-        "removing": "Removing crew member..."
+        "role_error_desc": "Failed to save the role for this concert.",
+        "status_error_desc": "Failed to change the booking status."
       }
     },
     "dashboard": {
@@ -3342,36 +3345,45 @@
     },
     "details_tab": {
       "buttons": {
-        "add_run_sheet": "Add run sheet item"
+        "add_run_sheet": "Add item"
       },
       "empty": {
-        "run_sheet": "No run sheet items. Add the first one!"
+        "run_sheet": "No day plan yet",
+        "run_sheet_frame": "Call at {{call}}, concert at {{concert}} — plan what happens in between.",
+        "run_sheet_hint": "Add the first item to lay out the day."
       },
       "fab": {
-        "description": "You modified the project settings.",
-        "save": "Save Changes"
+        "description": "Changes to the event details and the day plan.",
+        "save": "Save changes"
       },
       "fields": {
-        "call_time": "Call Time",
+        "call_time": "Call time",
         "conductor": "Conductor",
-        "conductor_placeholder": "--- Select Conductor ---",
-        "date_time": "Date and Time *",
+        "date_time": "Date and time *",
         "description": "Event description",
-        "dress_code_female": "Dress Code: Women",
-        "dress_code_male": "Dress Code: Men",
-        "location": "Location / Venue",
-        "spotify": "Playlist (Spotify)",
-        "timezone": "Time Zone *",
-        "title": "Project Title *"
+        "dress_code_female": "Attire: women",
+        "dress_code_male": "Attire: men",
+        "location": "Concert venue",
+        "spotify": "Spotify playlist",
+        "title": "Project title *"
       },
-      "header": {
-        "subtitle": "Title, schedule, dress code and reference materials for the project.",
-        "title": "Event Details"
+      "call_time": {
+        "offset_h": "{{hours}} h before the concert",
+        "offset_hm": "{{hours}} h {{minutes}} min before the concert",
+        "offset_m": "{{minutes}} min before the concert",
+        "offset_after": "Call time is not before the concert"
+      },
+      "day_plan": {
+        "anchor_call": "Call",
+        "anchor_concert": "Concert",
+        "untitled_count": "Unnamed: {{count}}"
       },
       "placeholders": {
-        "description": "e.g., Please be punctual...",
-        "spotify": "Paste link to reference playlist...",
-        "location": "Choose a saved location",
+        "description": "e.g. please be punctual",
+        "dress_code_female": "e.g. black choir dress",
+        "dress_code_male": "e.g. tailcoat, white bow tie",
+        "spotify": "Paste a link to the reference playlist",
+        "location": "Choose a venue",
         "location_clear": "No location",
         "conductor": "Choose a conductor",
         "conductor_clear": "No conductor"
@@ -3379,24 +3391,15 @@
       "run_sheet": {
         "description": "Description (optional)",
         "time": "Time",
-        "title": "Title"
-      },
-      "score_pdf": {
-        "current": "Current PDF file",
-        "delete_aria": "Delete PDF",
-        "modal_title": "Concert Score",
-        "pending_removal": "PDF will be removed after saving changes.",
-        "preview": "Preview",
-        "replace": "Click to replace PDF file",
-        "upload": "Click to add scores / program (PDF)"
+        "title": "Item name"
       },
       "sections": {
-        "logistics": "Call Time and Dress Code",
-        "notes": "Production Notes",
-        "references": "Musical References",
-        "run_sheet": "Concert Day Run Sheet",
-        "score_pdf": "Concert Score (PDF)",
-        "title_desc": "Title and Description"
+        "day_plan": "Concert day plan",
+        "ensemble_info": "Information for the ensemble",
+        "event": "Event"
+      },
+      "markers": {
+        "concert": "Concert"
       }
     },
     "editor": {
@@ -3467,84 +3470,103 @@
         "description_other": "Changed {{count}} attendance entries.",
         "save": "Save attendance"
       },
-      "empty": {
-        "cast": "No cast assigned to the project.",
-        "rehearsals": "No rehearsals scheduled in this project."
+      "actions": {
+        "mark_present": "Mark everyone unmarked as present"
       },
-      "header": {
-        "subtitle": "Quick attendance marking for rehearsals. Manage status by clicking tiles under the name.",
-        "title": "Attendance Matrix"
+      "caption": "Attendance register: rows are singers, columns are rehearsals.",
+      "empty": {
+        "cast_action": "Open cast",
+        "cast_desc": "Assign singers to the project — each of them gets a row here.",
+        "cast_title": "No cast",
+        "no_matches": "No results",
+        "rehearsals_action": "Open rehearsals",
+        "rehearsals_desc": "Attendance is taken at rehearsals. Add the first one and it will appear here as a column.",
+        "rehearsals_title": "No rehearsals"
       },
       "legend": {
-        "title": "Attendance status"
+        "hint": "Click to change status · Shift-click steps back"
       },
-      "not_invited": "N/A",
+      "not_called": "Not called to this rehearsal",
+      "search": {
+        "placeholder": "Search for a person…"
+      },
+      "summary": {
+        "label": "Attendance",
+        "missing": "{{count}} unmarked"
+      },
       "table": {
-        "rate": "Rate",
-        "rehearsal_date": "Rehearsal / Date"
+        "rate": "Attendance",
+        "session_rate": "Rehearsal attendance",
+        "singer": "Singer"
       },
+      "title": "Attendance register",
       "toast": {
-        "save_error": "Failed to save the change.",
         "save_error_desc": "Check your connection and try again.",
         "save_success": "Attendance saved",
         "saving": "Saving attendance…"
-      }
+      },
+      "tooltip": {
+        "breakdown": "Present: {{present}} · late: {{late}} · absent: {{absent}} · excused: {{excused}}",
+        "missing": "unmarked: {{count}}"
+      },
+      "unknown_member": "Unknown member"
     },
     "micro_cast": {
       "action_bar": {
-        "description_one": "Dragged {{count}} change. Save to synchronize cast.",
-        "description_few": "Dragged {{count}} changes. Save to sync the cast.",
-        "description_many": "Dragged {{count}} changes. Save to sync the cast.",
-        "description_other": "Dragged {{count}} changes. Save to synchronize cast.",
+        "description": "Casting for: {{piece}}",
         "save": "Save casting"
       },
       "artist": {
         "add_note": "Add note",
         "drag_aria": "Drag {{name}}",
-        "note_placeholder": "Note...",
+        "gives_pitch": "Gives the starting pitch",
+        "note_placeholder": "e.g. down",
         "pending_label": "Unsaved",
         "awaiting": "Awaiting",
-        "declined": "Declined"
+        "declined": "Declined",
+        "unknown": "Unknown member"
+      },
+      "board": {
+        "cast_label": "Cast",
+        "define_requirements": "Add requirements",
+        "free_mode": "Open assignment",
+        "free_mode_hint": "This piece has no voice requirements on record — assign singers to any line.",
+        "title": "Piece casting"
       },
       "bucket": {
-        "aria": "Droppable Section",
-        "aria_with_title": "Droppable Section: {{title}}"
+        "aria": "Drop zone",
+        "aria_with_title": "Drop zone: {{title}}"
       },
       "buttons": {
-        "play_reference": "Play Reference"
+        "play_reference": "Play: {{platform}}"
       },
       "empty": {
-        "no_requirements": "No voice requirements defined for this piece in the repertoire database. Using open assignment mode (Divisi).",
-        "pieces": "No pieces",
-        "section": "No assignments in this section",
-        "unassigned": "Everyone has been assigned to roles in this piece."
-      },
-      "header": {
-        "subtitle": "Drag vocalists between sections within the selected piece.",
-        "title": "Divisi and Micro-Casting"
+        "no_matches": "No matches",
+        "pieces": "The programme is empty",
+        "pieces_action": "Open programme",
+        "pieces_desc": "Divisi splits the voices of one piece — build the concert programme first.",
+        "unassigned": "Everyone is assigned"
       },
       "label": {
-        "pieces_in_program": "Pieces in program"
-      },
-      "meta": {
-        "unsaved_one": "Unsaved: {{count}}",
-        "unsaved_few": "Unsaved: {{count}}",
-        "unsaved_many": "Unsaved: {{count}}",
-        "unsaved_other": "Unsaved: {{count}}"
+        "pieces_in_program": "Pieces in programme"
       },
       "piece_switch": {
         "description": "Switching the piece will discard all unsaved assignments in this section. Do you want to continue?",
         "discard": "Discard and switch",
         "title": "Unsaved casting changes"
       },
-      "sections": {
-        "unassigned": "Unassigned (Roster Base)"
+      "program": {
+        "ready": "Pieces cast: {{done}} of {{total}}"
       },
-      "select_piece": "Select piece for casting",
+      "search": {
+        "placeholder": "Search person..."
+      },
+      "sections": {
+        "unassigned": "Unassigned"
+      },
       "status": {
-        "deficit": "Deficit: ",
-        "drop_here": "Drop here",
-        "free": "Open Vacancy"
+        "missing": "{{count}} missing",
+        "over": "Over plan: {{count}}"
       },
       "toast": {
         "save_success": "Casting saved",
@@ -3552,12 +3574,11 @@
       },
       "voices": {
         "altos": "Altos",
-        "baritones": "Baritones",
         "basses": "Basses",
-        "countertenors": "Countertenors",
-        "mezzos": "Mezzos",
         "sopranos": "Sopranos",
-        "tenors": "Tenors"
+        "special": "Special lines",
+        "tenors": "Tenors",
+        "unknown": "Voice not set"
       }
     },
     "overview": {
@@ -3589,10 +3610,6 @@
         "days": "days",
         "ensemble": "Ensemble",
         "ensemble_aria": "Go to the cast",
-        "gaps_one": "{{count}} gap",
-        "gaps_few": "{{count}} gaps",
-        "gaps_many": "{{count}} gaps",
-        "gaps_other": "{{count}} gaps",
         "past": "Past",
         "program": "Programme casting",
         "program_aria": "Go to divisi",
@@ -3620,10 +3637,10 @@
     "program": {
       "actions": {
         "add": "Add to program",
-        "add_encore": "Mark as Encore",
+        "add_encore": "Mark as encore",
         "already_added": "Piece is already in the setlist",
         "drag_aria": "Drag piece {{title}}",
-        "remove_encore": "Remove as Encore",
+        "remove_encore": "Remove encore mark",
         "remove_from_program": "Remove from program"
       },
       "and_more_one": "and 1 more...",
@@ -3632,26 +3649,20 @@
       "and_more_other": "and {{count}} more...",
       "aria_label": "Manage concert program",
       "badges": {
-        "encore": "ENCORE",
-        "tracks_count_one": "{{count}} track",
-        "tracks_count_few": "{{count}} tracks",
-        "tracks_count_many": "{{count}} tracks",
-        "tracks_count_other": "{{count}} tracks"
+        "encore": "ENCORE"
       },
       "duration_unknown": "Duration unknown",
       "empty": {
         "no_results": "No results",
-        "setlist_desc": "Select compositions from the database on the right to build the concert program.",
+        "setlist_desc": "Pick compositions from the database to build the concert programme.",
         "setlist_title": "Setlist is empty"
       },
       "fab": {
-        "description": "You modified the program order."
+        "description": "The programme order has changed."
       },
       "format": {
         "duration_hours": "~ {{h}}h {{m}}min of music",
-        "duration_mins": "~ {{m}} min of music",
-        "minutes": "{{m}} min",
-        "seconds": "{{s}} sec"
+        "duration_mins": "~ {{m}} min of music"
       },
       "fulfilled": "Fulfilled",
       "music_time_min": "min of music",
@@ -3661,7 +3672,7 @@
         "tooltip": "Ensemble readiness — know their part: {{ready}}, practising: {{practising}}, not started: {{untouched}}"
       },
       "search": {
-        "placeholder": "Search piece..."
+        "placeholder": "Search piece or composer..."
       },
       "sections": {
         "database": "Composition Database",
@@ -3680,7 +3691,19 @@
         "save_order_success": "Order saved successfully",
         "saving_order": "Saving new order..."
       },
-      "unfulfilled": "Unfulfilled"
+      "unfulfilled": "Unfulfilled",
+      "gaps_count_one": "{{count}} missing",
+      "gaps_count_few": "{{count}} missing",
+      "gaps_count_many": "{{count}} missing",
+      "gaps_count_other": "{{count}} missing",
+      "duration_label": "Duration",
+      "footer": {
+        "pieces_one": "{{count}} piece",
+        "pieces_few": "{{count}} pieces",
+        "pieces_many": "{{count}} pieces",
+        "pieces_other": "{{count}} pieces",
+        "untimed": "{{count}} without a duration"
+      }
     },
     "rehearsals": {
       "absences_reported": "Reported absences:",
@@ -3690,47 +3713,44 @@
       },
       "aria_label": "Manage project rehearsals",
       "empty": {
-        "no_rehearsals": "No scheduled rehearsals."
+        "no_rehearsals": "No rehearsals scheduled",
+        "no_rehearsals_desc": "The first rehearsal you save will appear on this schedule, ahead of the concert date."
       },
       "form": {
-        "date_time": "Date and Time *",
-        "focus": "Rehearsal Plan / Focus",
-        "focus_placeholder": "e.g., Requiem pt. 1-3...",
-        "location": "Location (Room) *",
+        "date_time": "Date and time *",
+        "focus": "Rehearsal plan / repertoire",
+        "focus_placeholder": "e.g. Requiem, mvts 1–3",
+        "location": "Rehearsal room *",
         "location_placeholder": "Choose a room",
-        "mandatory": "Mandatory attendance for invitees",
+        "mandatory": "Attendance mandatory",
         "submit": "Save to calendar",
-        "timezone": "Time Zone *",
-        "title": "Schedule new rehearsal",
+        "title": "Schedule a rehearsal",
         "title_edit": "Edit rehearsal",
-        "type_custom": "Selected people",
-        "type_sectional": "Sectional Rehearsal",
-        "type_tutti": "Tutti (Everyone)",
+        "type_custom": "Selected",
+        "type_sectional": "Sectional",
+        "type_tutti": "Tutti",
         "update": "Update rehearsal",
-        "who": "Who is called for the rehearsal?"
+        "who": "Who is called?"
       },
       "header": {
         "subtitle": "Plan rehearsals, manage section participation and attendance.",
         "title": "Rehearsals"
       },
       "list": {
-        "title": "Rehearsal Schedule"
+        "title": "Rehearsal schedule",
+        "group_upcoming": "Upcoming",
+        "group_past": "Past",
+        "concert": "Concert"
       },
       "modal": {
         "delete_desc": "Attendance lists associated with this rehearsal will be permanently deleted. This operation cannot be undone.",
         "delete_title": "Delete this rehearsal?"
       },
-      "optional": "Optional",
       "progress": "Progress",
-      "sectional": "SECTIONAL",
       "status": {
-        "finished": "Finished",
-        "invited_one": "1 invited",
-        "invited_few": "{{count}} invited",
-        "invited_many": "{{count}} invited",
-        "invited_other": "{{count}} invited",
         "optional": "Optional",
-        "tutti": "TUTTI"
+        "tutti": "Tutti",
+        "invited": "Called: {{count}}"
       },
       "title_short": "rehearsals",
       "toast": {
@@ -3745,13 +3765,16 @@
         "update_success": "Rehearsal updated successfully",
         "updating": "Updating rehearsal..."
       },
-      "tutti": "TUTTI",
-      "upcoming": "Upcoming Rehearsals",
+      "upcoming": "Next rehearsals",
       "voices": {
         "altos": "Altos",
         "basses": "Basses",
         "sopranos": "Sopranos",
         "tenors": "Tenors"
+      },
+      "markers": {
+        "concert": "Concert",
+        "rehearsal": "Rehearsal"
       }
     },
     "roles": {
@@ -3765,7 +3788,7 @@
     },
     "run_sheet": {
       "aria_label": "Manage the day schedule",
-      "empty": "No run sheet available for this event.",
+      "empty": "No run sheet yet",
       "title": "Concert Day Run Sheet"
     },
     "spotify": {
@@ -3855,6 +3878,10 @@
       "leave_desc_other": "{{count}} changes are waiting in the announcement queue. They are saved in full — only the message to the cast is missing.",
       "leave_review": "Review and send",
       "leave_later": "Later"
+    },
+    "timezone_field": {
+      "label": "Time zone",
+      "resolved": "Times in: {{timezone}}"
     }
   },
   "pwa": {
@@ -3998,6 +4025,7 @@
       "basses": "Basses",
       "countertenors": "Countertenors",
       "mezzos": "Mezzo-sopranos",
+      "other": "Other",
       "sopranos": "Sopranos",
       "tenors": "Tenors"
     }
@@ -4293,6 +4321,7 @@
     },
     "logistics": {
       "clothing_size": "Clothing Size",
+      "clothing_size_clear": "Prefer not to say",
       "height": "Height (cm)",
       "height_placeholder": "e.g. 175",
       "sections": {
@@ -4561,6 +4590,20 @@
   "shared": {
     "loader": {
       "authorizing": "Synchronizing..."
+    },
+    "datetime": {
+      "placeholder": "Pick a date and time",
+      "time": "Time",
+      "hours": "Hours",
+      "minutes": "Minutes",
+      "step_up": "Increase: {{segment}}",
+      "step_down": "Decrease: {{segment}}",
+      "previous_month": "Previous month",
+      "next_month": "Next month",
+      "previous_year": "Previous year",
+      "next_year": "Next year",
+      "today": "Today",
+      "done": "Done"
     }
   },
   "voice_types": {
