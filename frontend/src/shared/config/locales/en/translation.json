@@ -502,8 +502,8 @@
       },
       "identifiers_section": "Piece identifiers",
       "language_pick": "— select —",
-      "legend_ai": "To review: {{count}}",
-      "legend_verified": "Verified: {{count}}",
+      "legend_ai": "To review",
+      "legend_verified": "Verified",
       "movements_section": "Movements",
       "next_awaiting": "Next to review",
       "no_composer": "No composer",
@@ -649,8 +649,7 @@
       "placeholder": "Search piece or composer…",
       "reset": "Clear",
       "summary_filtered": "{{visible}} of {{total}}",
-      "voicing": "Voicing",
-      "clear_token": "Remove filter: {{label}}"
+      "voicing": "Voicing"
     },
     "stat_strip": {
       "pieces": "pieces",

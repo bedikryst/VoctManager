@@ -16,6 +16,7 @@ import {
 } from "../api/archive.queries";
 import { useVoiceLines } from "@/shared/api/options.queries";
 import { INGESTION_STATUS } from "@/shared/types";
+import { foldDiacritics } from "@/shared/lib/text";
 import { EnrichedPiece } from "../types/archive.dto";
 import { hasPdf } from "../constants/piecePdfs";
 
@@ -43,7 +44,9 @@ export const useArchiveData = () => {
   const [epochFilter, setEpochFilter] = useState<string>("");
   const [composerFilter, setComposerFilter] = useState<string>("");
   const [voicingFilter, setVoicingFilter] = useState<string>("");
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  // Folded, not merely lowercased: this library is Polish, so "gorecki" has to
+  // find Górecki and "lukaszewski" Łukaszewski.
+  const normalizedSearchTerm = foldDiacritics(searchTerm.trim());
 
   // Modal & Context State
   const [pieceToDelete, setPieceToDelete] = useState<{
@@ -56,13 +59,13 @@ export const useArchiveData = () => {
   const displayPieces: EnrichedPiece[] = useMemo(() => {
     return pieces.filter((piece) => {
       const composerLabel = piece.composer
-        ? `${piece.composer.first_name ?? ""} ${piece.composer.last_name}`
-            .toLowerCase()
-            .trim()
+        ? foldDiacritics(
+            `${piece.composer.first_name ?? ""} ${piece.composer.last_name}`.trim(),
+          )
         : "";
       const matchesSearch =
         normalizedSearchTerm.length === 0 ||
-        piece.title.toLowerCase().includes(normalizedSearchTerm) ||
+        foldDiacritics(piece.title).includes(normalizedSearchTerm) ||
         composerLabel.includes(normalizedSearchTerm);
       const matchesEpoch = epochFilter ? piece.epoch === epochFilter : true;
       const matchesComposer = composerFilter

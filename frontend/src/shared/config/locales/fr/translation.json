@@ -502,8 +502,8 @@
       },
       "identifiers_section": "Identifiants de la pièce",
       "language_pick": "— choisir —",
-      "legend_ai": "À vérifier : {{count}}",
-      "legend_verified": "Vérifiés : {{count}}",
+      "legend_ai": "À vérifier",
+      "legend_verified": "Vérifiés",
       "movements_section": "Mouvements",
       "next_awaiting": "Suivante à vérifier",
       "no_composer": "Aucun compositeur",
@@ -649,8 +649,7 @@
       "placeholder": "Rechercher une pièce ou un compositeur…",
       "reset": "Effacer",
       "summary_filtered": "{{visible}} sur {{total}}",
-      "voicing": "Distribution",
-      "clear_token": "Supprimer le filtre : {{label}}"
+      "voicing": "Distribution"
     },
     "stat_strip": {
       "pieces": "pièces",

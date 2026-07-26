@@ -336,20 +336,19 @@ const MetadataReviewMeter = ({
         />
       </div>
       {progress.pending > 0 && (
+        // A legend decodes the dots on the fields below — colour ↔ meaning, and
+        // nothing else. It used to carry counts too, so "Zweryfikowano 4 z 9"
+        // sat two lines above "Zweryfikowane: 4": the same figure twice, in two
+        // inflections of the same word. The arithmetic belongs to the sentence
+        // that owns it.
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
           <LegendDot
             toneClass="border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
-            label={t("archive.piece_card.legend_ai", "Do sprawdzenia: {{count}}", {
-              count: progress.pending,
-            })}
+            label={t("archive.piece_card.legend_ai", "Do sprawdzenia")}
           />
           <LegendDot
             toneClass="border-ethereal-sage/45 bg-ethereal-sage/15"
-            label={t(
-              "archive.piece_card.legend_verified",
-              "Zweryfikowane: {{count}}",
-              { count: progress.verified },
-            )}
+            label={t("archive.piece_card.legend_verified", "Zweryfikowane")}
           />
         </div>
       )}

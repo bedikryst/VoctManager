@@ -35,6 +35,7 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { foldDiacritics } from "@/shared/lib/text";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import type { Composer } from "@/shared/types";
@@ -63,11 +64,14 @@ const EMPTY_DRAFT: AddComposerDraft = {
   death_year: "",
 };
 
+// Folded, not merely lowercased: this library is Polish, so "gorecki" has to
+// find Górecki and "lukaszewski" Łukaszewski.
 const composerSearchableLabel = (composer: Composer): string =>
-  [composer.first_name, composer.last_name, composer.nationality, composer.bio]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  foldDiacritics(
+    [composer.first_name, composer.last_name, composer.nationality, composer.bio]
+      .filter(Boolean)
+      .join(" "),
+  );
 
 export default function ArchiveComposersPage(): React.JSX.Element {
   const { t } = useTranslation();
@@ -90,7 +94,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
   );
 
   const filtered = useMemo(() => {
-    const normalized = searchTerm.trim().toLowerCase();
+    const normalized = foldDiacritics(searchTerm.trim());
     if (!normalized) return composers;
     return composers.filter((c) =>
       composerSearchableLabel(c).includes(normalized),
@@ -220,6 +224,9 @@ export default function ArchiveComposersPage(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
+  // "0 bez utworów" is the healthy state announcing itself — the same silence
+  // rule the piece row follows for `bez nut`. The segment appears only when
+  // there is actually an orphan to go and look at.
   const composerStats: ArchiveStat[] = [
     {
       id: "total",
@@ -231,11 +238,15 @@ export default function ArchiveComposersPage(): React.JSX.Element {
       value: withPortrait,
       label: t("archive.composers.stat_portrait", "z portretem"),
     },
-    {
-      id: "orphans",
-      value: orphans,
-      label: t("archive.composers.stat_orphan", "bez utworów"),
-    },
+    ...(orphans > 0
+      ? [
+          {
+            id: "orphans",
+            value: orphans,
+            label: t("archive.composers.stat_orphan", "bez utworów"),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -560,6 +571,20 @@ export default function ArchiveComposersPage(): React.JSX.Element {
             "Szukaj kompozytora",
           )}
         />
+
+        {/* The stat line above is library-wide by design (one denominator for
+            all three figures). While a search narrows the list, say so here —
+            the same sentence the pieces list prints under its filter tokens —
+            so "128 kompozytorów" is never read as the count of what is on
+            screen. */}
+        {searchTerm.trim() && filtered.length > 0 && (
+          <Caption color="muted">
+            {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
+              visible: filtered.length,
+              total: totalComposers,
+            })}
+          </Caption>
+        )}
 
         {filtered.length === 0 ? (
           <StatePanel

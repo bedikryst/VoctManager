@@ -11,21 +11,18 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, RotateCcw, Search, SlidersHorizontal } from "lucide-react";
 
 import type { Composer } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { FilterTokens, type FilterToken } from "@/shared/ui/composites/FilterTokens";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
-export interface ArchiveActiveFilter {
-  id: string;
-  label: string;
-  clear: () => void;
-}
+export type ArchiveActiveFilter = FilterToken;
 
 interface EpochOption {
   value: string;
@@ -191,36 +188,25 @@ export const ArchiveSearchBar = ({
         )}
       </AnimatePresence>
 
-      {/* Active filter chips — total/visible counts live in the header stat strip */}
+      {/* Unlike the crew roster's permanent census, this summary is the *effect*
+          of a filter — the library total is already stated in the stat line
+          above, so with nothing narrowing the view it would only say "128 z
+          128". Hence the guard rather than `FilterTokens`' summary-only mode.
+          `onClearAll` is deliberately not passed either: "Wyczyść" already sits
+          beside the Filtry toggle, and a second clear-everything control is the
+          same sentence twice. */}
       {activeFilters.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <Caption color="muted">
-            {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
-              visible: visibleCount,
-              total: totalCount,
-            })}
-          </Caption>
-          <div className="flex flex-wrap gap-1.5">
-            {/* A token carries a value the user typed or picked, so it keeps its
-                own casing; the X inside it is what makes it a control. */}
-            {activeFilters.map((filterToken) => (
-              <button
-                key={filterToken.id}
-                type="button"
-                onClick={filterToken.clear}
-                aria-label={t("archive.search.clear_token", "Usuń filtr: {{label}}", {
-                  label: filterToken.label,
-                })}
-                className="rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 hover:text-ethereal-ink"
-              >
-                <Badge variant="outline" casing="natural" className="py-0.5">
-                  {filterToken.label}
-                  <X size={10} aria-hidden="true" />
-                </Badge>
-              </button>
-            ))}
-          </div>
-        </div>
+        <FilterTokens
+          tokens={activeFilters}
+          summary={
+            <Caption color="muted">
+              {t("archive.search.summary_filtered", "{{visible}} z {{total}}", {
+                visible: visibleCount,
+                total: totalCount,
+              })}
+            </Caption>
+          }
+        />
       )}
     </div>
   );
