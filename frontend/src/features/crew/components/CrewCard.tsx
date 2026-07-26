@@ -68,19 +68,17 @@ const CrewCardComponent = ({
     >
       <div className="flex items-start gap-3.5 p-5 pb-4">
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-glass-solid"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster shadow-glass-solid"
           aria-hidden="true"
         >
-          <Eyebrow color="incense" className="!tracking-[0.16em]">
-            {initials}
-          </Eyebrow>
+          <Eyebrow color="incense">{initials}</Eyebrow>
         </div>
         <div className="min-w-0 flex-1">
           <Heading as="h3" size="sm" weight="bold" truncate>
             {fullName}
           </Heading>
           <div className="mt-1.5">
-            <CrewSpecialtyBadge specialty={person.specialty} size="sm" />
+            <CrewSpecialtyBadge specialty={person.specialty} />
           </div>
         </div>
         <button
@@ -91,13 +89,13 @@ const CrewCardComponent = ({
           }}
           title={t("crew.card.btn_delete", "Usuń")}
           aria-label={t("crew.card.btn_delete", "Usuń")}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ethereal-graphite/40 transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-chip text-ethereal-graphite/40 transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
         >
           <Trash2 size={14} aria-hidden="true" />
         </button>
       </div>
 
-      <div className="mx-5 flex items-center justify-between gap-3 rounded-xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 px-3.5 py-2.5">
+      <div className="mx-5 flex items-center justify-between gap-3 rounded-control border border-hairline bg-ethereal-alabaster/70 px-3.5 py-2.5">
         <span className="inline-flex items-center gap-1.5 text-ethereal-graphite/70">
           <Briefcase size={12} strokeWidth={1.6} aria-hidden="true" />
           <Eyebrow color="muted">{t("crew.card.company", "Firma / Marka")}</Eyebrow>
@@ -161,9 +159,9 @@ const CrewCardComponent = ({
         )}
       </div>
 
-      <div className="mt-auto flex items-center justify-end border-t border-ethereal-ink/6 px-5 py-3">
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
-          {t("crew.card.btn_edit", "Edytuj")}
+      <div className="mt-auto flex items-center justify-end border-t border-hairline px-5 py-3">
+        <span className="inline-flex items-center gap-1 text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
+          <Eyebrow color="inherit">{t("crew.card.btn_edit", "Edytuj")}</Eyebrow>
           <ChevronRight
             size={14}
             aria-hidden="true"

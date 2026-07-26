@@ -43,6 +43,7 @@ import {
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { formatLocalizedDate, formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { useArtistDossier } from "../api/artist.queries";
 import { getSectionPresentation } from "../constants/voiceSections";
@@ -114,7 +115,7 @@ const RateTile = ({
 }) => {
   const tone = rateTone(rate);
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+    <div className="flex flex-col gap-1 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
       <Eyebrow color="muted">{label}</Eyebrow>
       <Metric size="3xl" className={cn("leading-none", TONE_TEXT[tone])}>
         {formatPercent(rate)}
@@ -124,6 +125,8 @@ const RateTile = ({
   );
 };
 
+// One figure recipe for the whole dossier: the rates, the engagement counts and
+// the money all read as display figures, so they all wear `Metric`.
 const CountTile = ({
   icon,
   label,
@@ -133,13 +136,13 @@ const CountTile = ({
   label: string;
   value: number;
 }) => (
-  <div className="flex flex-col gap-1.5 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+  <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
     <span className="flex items-center gap-1.5 text-ethereal-incense/70" aria-hidden="true">
       {icon}
     </span>
-    <Text size="lg" weight="bold" className="tabular-nums leading-none">
+    <Metric size="2xl" className="leading-none">
       {value}
-    </Text>
+    </Metric>
     <Caption color="muted">{label}</Caption>
   </div>
 );
@@ -193,13 +196,13 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
             {t("artists.dossier.earnings", "Rozliczenia")}
           </Eyebrow>
           <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+            <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
               <span className="text-ethereal-sage" aria-hidden="true">
                 <BadgeCheck size={15} />
               </span>
-              <Text size="lg" weight="bold" className="tabular-nums leading-none text-ethereal-sage">
+              <Metric size="xl" className="leading-none text-ethereal-sage">
                 {formatPln(stats.earnings_paid)}
-              </Text>
+              </Metric>
               <Caption color="muted">
                 {t("artists.dossier.earnings_paid", "Wypłacono")}
                 {stats.projects_paid > 0 &&
@@ -208,7 +211,7 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
                   })}`}
               </Caption>
             </div>
-            <div className="flex flex-col gap-1.5 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+            <div className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
               <span
                 className={cn(
                   stats.earnings_outstanding > 0
@@ -219,18 +222,17 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
               >
                 <Coins size={15} />
               </span>
-              <Text
-                size="lg"
-                weight="bold"
+              <Metric
+                size="xl"
                 className={cn(
-                  "tabular-nums leading-none",
+                  "leading-none",
                   stats.earnings_outstanding > 0
                     ? "text-ethereal-crimson"
                     : "text-ethereal-ink",
                 )}
               >
                 {formatPln(stats.earnings_outstanding)}
-              </Text>
+              </Metric>
               <Caption color="muted">
                 {t("artists.dossier.earnings_outstanding", "Do wypłaty")}
               </Caption>
@@ -271,7 +273,7 @@ const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
     : null;
 
   return (
-    <div className="rounded-xl border border-ethereal-ink/6 bg-ethereal-alabaster/60 p-3.5">
+    <div className="rounded-control border border-hairline bg-ethereal-alabaster/60 p-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Text weight="semibold" truncate className="text-ethereal-ink">
@@ -290,7 +292,7 @@ const ProjectHistoryItem = ({ project }: { project: DossierProject }) => {
       </div>
 
       {project.castings.length > 0 ? (
-        <div className="mt-2.5 flex flex-col gap-1.5 border-t border-ethereal-ink/6 pt-2.5">
+        <div className="mt-2.5 flex flex-col gap-1.5 border-t border-hairline pt-2.5">
           {project.castings.map((casting, index) => (
             <div
               key={`${casting.piece_title}-${casting.voice_line}-${index}`}
@@ -373,8 +375,7 @@ export const ArtistDossier = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ zIndex: 99 }}
-            className="fixed inset-0 bg-ethereal-ink/30 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-ethereal-ink/30 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -384,13 +385,12 @@ export const ArtistDossier = ({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ zIndex: 100 }}
-            className="fixed inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
+            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
             {/* Header */}
-            <div className="z-20 flex flex-shrink-0 items-center justify-between gap-3 border-b border-ethereal-ink/8 bg-ethereal-alabaster/80 p-5 backdrop-blur-xl md:p-6">
+            <div className="z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline-strong bg-ethereal-alabaster/80 p-5 backdrop-blur-xl md:p-6">
               <div className="flex min-w-0 items-center gap-3.5">
                 <Avatar
                   src={artist.avatar_thumb_url}
@@ -405,7 +405,10 @@ export const ArtistDossier = ({
                     {artist.first_name} {artist.last_name}
                   </Heading>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <Badge variant={section ? section.badge : "neutral"} icon={<Music2 size={9} />}>
+                    <Badge
+                      variant={section ? ACCENT_BADGE[section.accent] : "neutral"}
+                      icon={<Music2 size={9} />}
+                    >
                       {voiceLabel}
                     </Badge>
                   </div>
@@ -415,7 +418,7 @@ export const ArtistDossier = ({
                 type="button"
                 onClick={onClose}
                 aria-label={t("common.actions.close", "Zamknij")}
-                className="shrink-0 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
+                className="shrink-0 rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
               >
                 <X size={20} aria-hidden="true" />
               </button>
@@ -426,7 +429,7 @@ export const ArtistDossier = ({
               {accountPending && (
                 <div
                   className={cn(
-                    "mb-6 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between",
+                    "mb-6 flex flex-col gap-3 rounded-nested border p-4 sm:flex-row sm:items-center sm:justify-between",
                     linkExpired
                       ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
                       : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
@@ -529,14 +532,14 @@ export const ArtistDossier = ({
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-xl border border-dashed border-ethereal-ink/12 bg-ethereal-alabaster/40 p-6 text-center">
-                        <Text size="sm" color="muted">
-                          {t(
-                            "artists.dossier.empty_history",
-                            "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
-                          )}
-                        </Text>
-                      </div>
+                      <StatePanel
+                        variant="inline"
+                        icon={<Layers size={22} aria-hidden="true" />}
+                        title={t(
+                          "artists.dossier.empty_history",
+                          "Ten artysta nie brał jeszcze udziału w żadnym projekcie.",
+                        )}
+                      />
                     )}
                   </div>
                 </div>
@@ -544,7 +547,7 @@ export const ArtistDossier = ({
             </div>
 
             {/* Footer actions */}
-            <div className="flex flex-shrink-0 items-center gap-3 border-t border-ethereal-ink/8 bg-ethereal-alabaster/85 p-4 backdrop-blur-xl md:px-6">
+            <div className="flex shrink-0 items-center gap-3 border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 backdrop-blur-xl md:px-6">
               <Button
                 variant="secondary"
                 onClick={() => onMessage(artist)}

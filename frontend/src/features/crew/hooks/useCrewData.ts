@@ -13,6 +13,7 @@ import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { foldDiacritics } from "@/shared/lib/text";
 import type { Collaborator, CollaboratorSpecialty } from "@/shared/types";
 
 import { useCrewMembers, useDeleteCrewMember } from "../api/crew.queries";
@@ -136,7 +137,9 @@ export const useCrewData = () => {
     null,
   );
 
-  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+  // Folded, so "sniadecki" finds Śniadecki — the one fold, shared with every
+  // other search in the panel.
+  const normalizedSearchTerm = foldDiacritics(searchTerm.trim());
 
   const availableCompanies = useMemo(
     () =>
@@ -157,8 +160,9 @@ export const useCrewData = () => {
       `${person.last_name} ${person.first_name}`.trim().toLowerCase();
 
     const filtered = crew.filter((person) => {
-      const haystack =
-        `${person.first_name} ${person.last_name} ${person.company_name ?? ""} ${person.email ?? ""}`.toLowerCase();
+      const haystack = foldDiacritics(
+        `${person.first_name} ${person.last_name} ${person.company_name ?? ""} ${person.email ?? ""}`,
+      );
       const matchesSearch =
         normalizedSearchTerm.length === 0 ||
         haystack.includes(normalizedSearchTerm);
@@ -260,13 +264,6 @@ export const useCrewData = () => {
       companyFilter ||
       contactFilter !== "ALL",
   );
-
-  const activeFilterCount = [
-    normalizedSearchTerm,
-    specialtyFilter,
-    companyFilter,
-    contactFilter !== "ALL" ? contactFilter : "",
-  ].filter(Boolean).length;
 
   const activeFilters = useMemo<CrewActiveFilter[]>(() => {
     const tokens: CrewActiveFilter[] = [];
@@ -418,7 +415,6 @@ export const useCrewData = () => {
     specialtyOptions,
     activeFilters,
     hasActiveFilters,
-    activeFilterCount,
 
     // Filter state
     searchTerm,

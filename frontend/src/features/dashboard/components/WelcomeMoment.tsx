@@ -27,27 +27,17 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
 import { VocalClefShadow } from "@/shared/ui/kinematics/VocalClefShadow";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Eyebrow } from "@/shared/ui/primitives/typography/Eyebrow";
 import { Heading } from "@/shared/ui/primitives/typography/Heading";
 import { Text } from "@/shared/ui/primitives/typography/Text";
 import { useWelcomeTone } from "@/shared/ui/instruments/useWelcomeTone";
 import { useProjectInvitationQueue } from "@/features/notifications/hooks/useProjectInvitationQueue";
 import { useInstallPrompt } from "@/shared/pwa/useInstallPrompt";
-import {
-  getSectionPresentation,
-  type SectionPresentation,
-} from "@/features/artists/constants/voiceSections";
+import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
 import { settingsService } from "@/features/settings/api/settings.service";
-
-// Section accent for the "Your voice" chip — borrowed from the roster's SATB
-// colour language so a singer's section reads the same everywhere.
-const VOICE_ACCENT: Record<SectionPresentation["textColor"], string> = {
-  crimson: "border-ethereal-crimson/30 text-ethereal-crimson",
-  amethyst: "border-ethereal-amethyst/30 text-ethereal-amethyst",
-  gold: "border-ethereal-gold/40 text-ethereal-gold",
-  sage: "border-ethereal-sage/30 text-ethereal-sage",
-};
 
 const STAVE_LINES = [0, 1, 2, 3, 4] as const;
 
@@ -243,18 +233,20 @@ export const WelcomeMoment = ({
               </Heading>
 
               {voiceLabel && (
-                <span
-                  className={cn(
-                    "mt-5 inline-flex items-center gap-2 rounded-full border bg-white/50 px-3.5 py-1.5",
-                    voicePresentation
-                      ? VOICE_ACCENT[voicePresentation.textColor]
-                      : "border-ethereal-incense/25 text-ethereal-graphite",
-                  )}
-                >
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/55">
+                <span className="mt-5 inline-flex items-center gap-2">
+                  <Eyebrow color="muted">
                     {t("dashboard.artist.welcome.voice_label", "Twój głos")}
-                  </span>
-                  <span className="text-sm font-semibold">{voiceLabel}</span>
+                  </Eyebrow>
+                  <Badge
+                    casing="natural"
+                    variant={
+                      voicePresentation
+                        ? ACCENT_BADGE[voicePresentation.accent]
+                        : "outline"
+                    }
+                  >
+                    {voiceLabel}
+                  </Badge>
                 </span>
               )}
 

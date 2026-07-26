@@ -21,18 +21,20 @@ import {
   Map as MapIcon,
   Plus,
   Search,
-  X,
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { foldDiacritics } from "@/shared/lib/text";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FilterTokens } from "@/shared/ui/composites/FilterTokens";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Text } from "@/shared/ui/primitives/typography";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import {
   StaggeredBentoContainer,
@@ -128,15 +130,15 @@ export const LocationsManager = (): React.JSX.Element => {
   }, [isVenueFocused, selectLocation]);
 
   const filteredUpcoming = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = foldDiacritics(searchTerm.trim());
     return upcomingEvents.filter((event) => {
       const matchesCategory = categoryFilter
         ? event.location?.category === categoryFilter
         : true;
       const matchesSearch =
         term.length === 0 ||
-        event.title.toLowerCase().includes(term) ||
-        (event.location?.name ?? "").toLowerCase().includes(term);
+        foldDiacritics(event.title).includes(term) ||
+        foldDiacritics(event.location?.name ?? "").includes(term);
       return matchesCategory && matchesSearch;
     });
   }, [upcomingEvents, searchTerm, categoryFilter]);
@@ -153,17 +155,24 @@ export const LocationsManager = (): React.JSX.Element => {
     requestArchive(location);
   };
 
+  // The counts ride in the labels: both are scoped to exactly what the tab
+  // will show, so the number a reader compares is the number they will count.
   const RAIL_TABS = [
     {
       id: "locations" as const,
-      label: t("logistics.rail.tab_locations", "Lokacje"),
-      count: deferredLocations.length,
+      label: `${t("logistics.rail.tab_locations", "Lokacje")} ${deferredLocations.length}`,
+      Icon: MapPin,
     },
     {
       id: "upcoming" as const,
-      label: t("logistics.rail.tab_upcoming", "Nadchodzące"),
-      count: filteredUpcoming.length,
+      label: `${t("logistics.rail.tab_upcoming", "Nadchodzące")} ${filteredUpcoming.length}`,
+      Icon: CalendarClock,
     },
+  ];
+
+  const MOBILE_VIEWS = [
+    { id: "map" as const, label: t("logistics.rail.view_map", "Mapa"), Icon: MapIcon },
+    { id: "list" as const, label: t("logistics.rail.view_list", "Lista"), Icon: List },
   ];
 
   return (
@@ -219,35 +228,12 @@ export const LocationsManager = (): React.JSX.Element => {
 
           {/* Mobile-only map ↔ list switch (both panes show side-by-side on lg) */}
           <StaggeredBentoItem className="lg:hidden">
-            <div
-              role="group"
-              aria-label={t("logistics.rail.view_label", "Widok")}
-              className="grid grid-cols-2 gap-1 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
-            >
-              {[
-                { id: "map" as const, label: t("logistics.rail.view_map", "Mapa"), Icon: MapIcon },
-                { id: "list" as const, label: t("logistics.rail.view_list", "Lista"), Icon: List },
-              ].map(({ id, label, Icon }) => {
-                const isActive = mobileView === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => setMobileView(id)}
-                    className={cn(
-                      "flex items-center justify-center gap-2 rounded-xl py-2 text-sm font-semibold transition-colors",
-                      isActive
-                        ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                        : "text-ethereal-graphite hover:text-ethereal-ink",
-                    )}
-                  >
-                    <Icon size={15} aria-hidden="true" />
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+            <SegmentedTabs
+              items={MOBILE_VIEWS}
+              value={mobileView}
+              onChange={setMobileView}
+              ariaLabel={t("logistics.rail.view_label", "Widok")}
+            />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
@@ -265,7 +251,6 @@ export const LocationsManager = (): React.JSX.Element => {
                 <LocationsAtlas
                   locations={deferredLocations}
                   venueActivity={venueActivity}
-                  categoryStats={categoryStats}
                   activeLocationId={activeLocationId}
                   onSelectLocation={selectLocation}
                   fullscreen={mobileFocus}
@@ -308,7 +293,7 @@ export const LocationsManager = (): React.JSX.Element => {
                     />
                   ) : (
                     <>
-                  <div className="shrink-0 space-y-3 border-b border-ethereal-ink/6 p-4">
+                  <div className="shrink-0 space-y-3 border-b border-hairline p-4">
                     <Input
                       leftIcon={<Search size={16} />}
                       type="search"
@@ -321,63 +306,15 @@ export const LocationsManager = (): React.JSX.Element => {
                       onChange={(event) => setSearchTerm(event.target.value)}
                     />
 
-                    <div
-                      role="tablist"
-                      aria-label={t("logistics.rail.tabs_label", "Zawartość szyny")}
-                      className="grid grid-cols-2 gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
-                    >
-                      {RAIL_TABS.map((tab) => {
-                        const isActive = railTab === tab.id;
-                        return (
-                          <button
-                            key={tab.id}
-                            type="button"
-                            role="tab"
-                            aria-selected={isActive}
-                            onClick={() => setRailTab(tab.id)}
-                            className={cn(
-                              "flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-colors",
-                              isActive
-                                ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                                : "text-ethereal-graphite hover:text-ethereal-ink",
-                            )}
-                          >
-                            {tab.id === "locations" ? (
-                              <MapPin size={14} aria-hidden="true" />
-                            ) : (
-                              <CalendarClock size={14} aria-hidden="true" />
-                            )}
-                            {tab.label}
-                            <span className="tabular-nums opacity-60">
-                              {tab.count}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <SegmentedTabs
+                      items={RAIL_TABS}
+                      value={railTab}
+                      onChange={setRailTab}
+                      wrap
+                      ariaLabel={t("logistics.rail.tabs_label", "Zawartość szyny")}
+                    />
 
-                    {hasActiveFilters && (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {activeFilters.map((filter) => (
-                          <button
-                            key={filter.id}
-                            type="button"
-                            onClick={filter.clear}
-                            className="inline-flex items-center gap-1 rounded-full border border-ethereal-ink/10 bg-ethereal-alabaster px-2.5 py-1 text-xs text-ethereal-graphite transition-colors hover:border-ethereal-crimson/30 hover:text-ethereal-crimson"
-                          >
-                            {filter.label}
-                            <X size={11} aria-hidden="true" />
-                          </button>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={resetFilters}
-                          className="text-xs font-semibold text-ethereal-graphite/60 underline-offset-2 hover:text-ethereal-gold hover:underline"
-                        >
-                          {t("logistics.filters.clear_filters", "Wyczyść filtry")}
-                        </button>
-                      </div>
-                    )}
+                    <FilterTokens tokens={activeFilters} onClearAll={resetFilters} />
                   </div>
 
                   <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
@@ -404,6 +341,7 @@ export const LocationsManager = (): React.JSX.Element => {
                         </AnimatePresence>
                       ) : (
                         <StatePanel
+                          variant="inline"
                           icon={<MapPin size={22} aria-hidden="true" />}
                           title={t(
                             "logistics.empty_state.title",
@@ -453,6 +391,7 @@ export const LocationsManager = (): React.JSX.Element => {
                       </AnimatePresence>
                     ) : (
                       <StatePanel
+                        variant="inline"
                         icon={<CalendarClock size={22} aria-hidden="true" />}
                         title={t(
                           "logistics.rail.no_upcoming_title",
@@ -469,12 +408,19 @@ export const LocationsManager = (): React.JSX.Element => {
                   )}
                 </GlassCard>
 
-                <Eyebrow color="muted" className="mt-3 block px-1 text-center lg:hidden">
+                {/* A sentence, so it is set as prose — an overline would put a
+                    label's clothing on a full instruction. */}
+                <Text
+                  as="p"
+                  size="xs"
+                  color="muted"
+                  className="mt-3 px-1 text-center lg:hidden"
+                >
                   {t(
                     "logistics.rail.hint",
                     "Wybierz lokację, aby zobaczyć szczegóły i wydarzenia.",
                   )}
-                </Eyebrow>
+                </Text>
               </div>
             </div>
           </StaggeredBentoItem>

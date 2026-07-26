@@ -90,7 +90,7 @@ export const CrewToolbar = ({
         <div
           role="group"
           aria-label={t("crew.toolbar.view_label", "Widok")}
-          className="inline-flex shrink-0 gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
+          className="inline-flex shrink-0 gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1"
         >
           {VIEW_OPTIONS.map(({ mode, Icon, labelKey, fallback }) => {
             const isActive = viewMode === mode;
@@ -104,10 +104,10 @@ export const CrewToolbar = ({
                 aria-label={label}
                 onClick={() => onViewMode(mode)}
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                  "flex h-9 w-9 items-center justify-center rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                   isActive
                     ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+                    : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
                 )}
               >
                 <Icon size={16} aria-hidden="true" />

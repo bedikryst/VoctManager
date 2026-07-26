@@ -14,6 +14,7 @@ import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
+import { foldDiacritics } from "@/shared/lib/text";
 import type { LocationCategory } from "@/shared/types";
 import { useDeleteLocation, useLocations } from "../api/logistics.queries";
 import {
@@ -155,10 +156,12 @@ export const useLocationsData = () => {
     useState<LocationDto | null>(null);
 
   const displayLocations = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    // Folded, so "kosciol" finds Kościół — the one fold, shared with every
+    // other search in the panel.
+    const term = foldDiacritics(searchTerm.trim());
     return locations.filter((loc) => {
-      const name = (loc.name ?? "").toLowerCase();
-      const address = (loc.formatted_address ?? "").toLowerCase();
+      const name = foldDiacritics(loc.name ?? "");
+      const address = foldDiacritics(loc.formatted_address ?? "");
       const matchesSearch =
         term.length === 0 || name.includes(term) || address.includes(term);
       const matchesCategory = categoryFilter

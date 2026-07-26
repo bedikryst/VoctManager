@@ -1,8 +1,9 @@
 # Project Hub — design remediation
 
-**Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3 and the primitive unification (D4, D5)
-are SHIPPED** (2026-07-25 → 2026-07-26). Written 2026-07-25 · surface: `/panel/projects/:id/*`
-(hub shell + 10 tabs) and the shared primitives it exposes.
+**Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and the
+first two Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
+`/panel/projects/:id/*` (hub shell + 10 tabs) and the shared primitives it exposes, now widening per
+feature (§8).
 
 ## How to read this file
 
@@ -19,34 +20,39 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
 ## Still open
 
-- **~54 raw uppercase micro-labels outside the Phase 0 scope.** Measured 2026-07-26 at ~75; the
-  archive pass (§6) cleared its 21. What remains: auth 12, dashboard 7, artists 6, contracts 5,
-  notifications 4, logistics 4, materials 3, annotations 3, settings 2, crew 2, plus
-  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`, the widest outliers left in the tree.
-- **Radius/hairline tokens** are applied in `shared/ui`, `features/projects` and `features/archive`.
-  Raw `ethereal-ink/6|8|10` and neutral `ethereal-incense/1x–3x` rules remain everywhere else. This
-  is **not** a sweep — see the note opening §5 — it rides along with per-feature passes.
-- **`StatePanel` adoption outside `features/projects` + `features/archive`**: hand-rolled centred
-  empty states remain in crew, logistics and messages.
+- **44 raw uppercase micro-labels remain**, re-measured 2026-07-27 after both Phase 3 passes cleared
+  their 21 and 12. Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]` class, minus
+  the four primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`). What is
+  left: auth 12 (`pages/auth` 9 + `features/auth` 3), dashboard 6, contracts 5, notifications 4,
+  `shared/ui` composites 4 (`AutosaveStatus`, `ComposerCard`, `ErrorScreen`, `EtherealLoader`),
+  materials 3, annotations 3, `widgets/utility` 3, settings 2, schedule 1, rehearsals 1. The widest
+  outliers in the tree are still `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
+- **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive` and
+  artists+crew+logistics.** 83 raw `ethereal-ink/6|8|10|12` rules remain outside them — contracts 22,
+  rehearsals 19, messages 13, settings 10, chorister-hub 5, annotations 5, notifications 3, and a
+  scattering of 2s. This is **not** a sweep — see the note opening §5 — it rides along with
+  per-feature passes.
+- **`StatePanel` adoption**: `features/messages` is the last hand-rolled centred empty state
+  (`ThreadList`, `ConductorDeck`, `MessagesPage`).
 - **The rest of `features/rehearsals` wants a copy pass.** §5.3 fixed the shared status vocabulary;
   the module's own headings and empty states have not been read end to end. Small companion defect:
   the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
   a tab left open across the downbeat keeps the previous state until it remounts.
+- **Two companion defects left for the passes that own them**: `NextRehearsalAlert`'s chip pulses
+  unconditionally (the resting default in the loudest slot, and now the one axis `Badge` kept from
+  D5 — a dashboard-pass call), and the contracts ledger paints a *confirmed* contract gold and a
+  *pending* one sage, which reads backwards (a contracts-pass call). Both were preserved exactly.
 - **~120 dead `archive.*` i18n keys predate this work** and were left alone: the whole
   `archive.card.*`, `archive.hero.*`, `archive.metrics.*`, `archive.tracks.*`, `archive.editor.*`
   nodes and most of `archive.form.placeholders.*` — fossils of the pre-2026-07 panel/slide-over
-  archive. §6 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
+  archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-Suggested split for what is left: artists+crew+logistics, then
-settings+dashboard+notifications+contracts — each a per-feature pass carrying all three concerns at
-once. Rehearsals is its own chat. Run them sequentially, not in parallel: they all touch the three
-locale files.
-
-Two companion defects found while unifying the primitives and left for the passes that own them:
-`NextRehearsalAlert`'s chip pulses unconditionally (the resting default in the loudest slot — a
-dashboard-pass call), and the contracts ledger paints a *confirmed* contract gold and a *pending*
-one sage, which reads backwards (a contracts-pass call). Both were preserved exactly as they were.
+Suggested split for what is left: settings+dashboard+notifications+contracts as one per-feature pass
+carrying all three concerns at once, then messages (the last `StatePanel` holdout, and 13 raw
+hairline rules), then auth — which is the single largest remaining pocket of raw overlines and spans
+`pages/auth` and `features/auth` together. Rehearsals is its own chat. Run them sequentially, not in
+parallel: they all touch the three locale files.
 
 ## Decisions, settled
 
@@ -1323,6 +1329,102 @@ a second copy of a list is how this document's problem started.
 Each of these carries all three concerns at once (raw overlines, `StatePanel`, radius/hairline
 tokens) over one feature, read screen by screen rather than swept by regex. They run sequentially:
 they all touch the same three locale files.
+
+### `features/artists` + `features/crew` + `features/logistics` (SHIPPED 2026-07-27)
+
+One pass, because the three share a shape — a person/venue row, a card, an editor with a sticky
+footer, a dossier — and the same three locale files. All 12 raw overlines are gone, both
+hand-rolled empty states are `StatePanel`, and `grep -E "rounded-(xl|2xl|3xl|lg|md|sm)"` over the
+three features now returns nothing. But the pass found three things that were **not**
+micro-decisions.
+
+**Three taxonomies were spending the alarm colour on a resting category.** Sopranos were
+`ethereal-crimson`. So was the "Wizualizacje" crew specialty, and so was every HOTEL — chip *and*
+atlas pin. On a 44-voice roster that is a dozen crimson chips beside the one singer whose
+invitation had actually expired; on the map it is a crimson pin for every night the ensemble sleeps
+somewhere. `eventImminence.ts` had already written the rule down ("crimson stays an alarm, so
+'today' reads as gold") and the three dictionaries next to it had never been told.
+
+The fix is structural rather than three edits: `shared/ui/primitives/accents.ts` is now the SSOT for
+a **category accent** — `gold | amethyst | sage | graphite | incense | ink`, and *the type has no
+crimson*, so a taxonomy cannot reach for it. It carries the chip variant, the `Eyebrow` colour, the
+balance-bar fill, the active/idle tile treatment and the raw CSS variable for a Google Maps pin, so
+a chip can no longer disagree with the marker for the same thing. The three dictionaries had
+independently typed the same class table three times; those copies are gone. `Badge` gains one tone,
+`incense`, which is what the scale needed to reach six.
+
+- artists: S → `incense`; A/T/B unchanged.
+- crew: VISUALS → `ink`; the rest unchanged.
+- logistics: **eight categories, five accents, deliberately.** The accent says what KIND of place
+  it is (a stage, a sanctuary, our own rooms, a transfer point, a bed); the icon says which one.
+  Chasing eight distinct colours is what put a hotel in crimson — and it had already failed anyway,
+  since two pairs shared a colour by accident.
+
+**The roster said "not activated" four times.** A gold/crimson dot on the avatar, a chip beside the
+name, a gold `Wysłano {date}` caption, and a whole tinted panel with a resend button — all for one
+singer, on one row. Worse, the *resting* case was painted too: a sage dot on every activated
+account, i.e. on almost every row of a healthy roster. That is the archive's `AI ✓` and the hub's
+`TUTTI` again.
+
+- The avatar dots are **deleted**, both of them. The sage one was the resting default in the
+  loudest slot; the gold one restated the chip 40px away.
+- The row keeps the chip (the exception) and the resend button (the work). The `Wysłano …` stamp
+  loses its tint — when the invitation went out is a fact, and the chip already carries the alarm.
+- The chip and the `Archiwum` badge were `hidden sm:inline-flex`, so on a phone the row had *only*
+  the dot; with the dots gone they show at every width. They are rare, which is the point.
+- The card keeps the one panel that carries the resend, and nothing else.
+- `Skala` / `A Vista` were `Eyebrow`s repeated on all 40 rows, each with an em-dash when empty.
+  In the list they are gone: the range reads as a plain `Caption` where one exists, the stars
+  appear where somebody was rated, and an unrated singer says nothing. The grid card keeps the
+  labels — a card has no column context to inherit them from.
+
+**Three figures were counted over sets their neighbours were not.** All in the same family as the
+archive's `awaitingCount`:
+
+- The atlas legend printed a per-category count over the **whole** base while the map drew the
+  **filtered** one — filter to "Kościoły" and the legend still cheerfully reported twelve concert
+  halls with no pin on screen. The legend now shows colour ↔ meaning only, for the categories
+  actually on the map, and drops a category the map has none of. The census lives in the overview
+  bar, which has one denominator.
+- `N aktywnych` was stated twice with two denominators — the overview bar over every venue with
+  something booked, a badge over the map over the geo-tagged filtered ones. The map badge is gone;
+  in its place the map speaks only when it *disagrees* with the bar, i.e. `N bez współrzędnych`
+  when some venues cannot be drawn at all. Silent otherwise.
+- The SATB tiles count singing members while the list below them also shows the archived, so
+  "44 w zespole" sat above 51 rows. The strip header now states `N w archiwum` when there is one,
+  and the arithmetic closes.
+
+Smaller, but the same job: **the two search boxes did not fold diacritics** (`zielinska` found
+nothing, `kosciol` found nothing) — all four searches now use the one `foldDiacritics` · the crew
+strip printed `e-mail 0%` over an empty base, which is not a low rate but no data, and now prints an
+em-dash · `LocationPreview` — the venue chip used on the dashboard, the schedule, rehearsal rows and
+project cards — printed `location.category` **verbatim**, so a reader saw the string `CONCERT_HALL`
+set as a sage overline; it resolves through the dictionary now · that same popover labelled its
+footer "Wyznacz trasę" and ran a *place search*, so the two Maps deep-links moved into
+`lib/mapsLinks.ts` and the footer became a real `<a>` to a route while the card opens the venue ·
+both editors carried a "Wybrana specjalizacja / kategoria" preview restating the select two rows
+above it, deleted · the location editor printed the record's raw UUID under its title · `Nie
+aktywowano`'s prose hints in the artist editor were set as `Eyebrow`s, i.e. sentences in a label's
+clothing · the artist editor's raw `<input type="checkbox">` is now the `Checkbox` primitive (via
+`Controller` — the primitive draws its tick from the prop, so it cannot ride on `register`) ·
+`LogisticsTimezoneBand` counted the zones above the list of the zones · the venue row printed an
+em-dash for "no events" on every quiet venue.
+
+Three components were extracted, each because the tree already had two or three copies:
+`shared/ui/primitives/accents.ts` (above), `shared/ui/composites/FilterTokens` (crew, logistics and
+archive each hand-rolled the same removable `rounded-full` pill — off the radius scale, and the
+shape `Badge` exists to prevent; archive's copy is still there and switches over with its own pass)
+and `features/logistics/lib/mapsLinks.ts`.
+
+`CrewSpecialtyBadge` and `LocationCategoryBadge` were the fourth and fifth private copies of the
+chip, both at `rounded-md` and `tracking-[0.18em]`. They are domain wrappers over `Badge` now —
+they map a state to a tone, an icon and a sentence, and own no surface. `CrewEmptyState.tsx` is
+deleted; both rosters now render `StatePanel` inline, so the two mirror each other exactly.
+
+**Declined:** giving each of the eight location categories its own colour (see above), and turning
+the crew/artists specialty and section chips into plain type. A voice part and a trade are the
+primary axis those two rosters are sorted, filtered and balanced by — the same call the archive
+pass made for voice-part labels.
 
 ### `features/archive` (SHIPPED 2026-07-27)
 

@@ -1,8 +1,10 @@
 /**
  * @file crewSpecialties.ts
  * @description Domain dictionary for collaborator specialties.
- * Centralises i18n keys, lucide icons, and Ethereal accent tokens so every
- * downstream surface (cards, badges, filters, hero) speaks the same dialect.
+ * Centralises i18n keys, lucide icons, and the shared accent so every
+ * downstream surface (cards, badges, filters, balance bar) speaks the same
+ * dialect. The accent scale has no crimson, so a trade cannot claim the alarm
+ * colour — "Wizualizacje" wore it, on every projection specialist in the base.
  * @architecture Enterprise SaaS 2026
  * @module features/crew/constants/crewSpecialties
  */
@@ -19,14 +21,7 @@ import {
 } from "lucide-react";
 
 import type { CollaboratorSpecialty } from "@/shared/types";
-
-export type CrewSpecialtyAccent =
-  | "gold"
-  | "amethyst"
-  | "crimson"
-  | "sage"
-  | "graphite"
-  | "incense";
+import type { EtherealAccent } from "@/shared/ui/primitives/accents";
 
 interface CrewSpecialtyDefinition {
   value: CollaboratorSpecialty;
@@ -35,7 +30,7 @@ interface CrewSpecialtyDefinition {
   descriptionKey: string;
   defaultDescription: string;
   icon: LucideIcon;
-  accent: CrewSpecialtyAccent;
+  accent: EtherealAccent;
 }
 
 export interface CrewSpecialtyOption {
@@ -43,7 +38,7 @@ export interface CrewSpecialtyOption {
   label: string;
   description: string;
   icon: LucideIcon;
-  accent: CrewSpecialtyAccent;
+  accent: EtherealAccent;
 }
 
 const CREW_SPECIALTY_DEFINITIONS: CrewSpecialtyDefinition[] = [
@@ -72,7 +67,7 @@ const CREW_SPECIALTY_DEFINITIONS: CrewSpecialtyDefinition[] = [
     descriptionKey: "crew.specialty_descriptions.VISUALS",
     defaultDescription: "Multimedia, projekcje, materiał ekranowy.",
     icon: Sparkles,
-    accent: "crimson",
+    accent: "ink",
   },
   {
     value: "INSTRUMENT",

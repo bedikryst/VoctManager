@@ -1,8 +1,14 @@
 /**
  * @file locationCategories.ts
  * @description Domain dictionary for logistics location categories.
- * Centralises i18n keys, lucide icons, and Ethereal accent tokens so every
- * downstream surface (cards, badges, filters, atlas, editor) speaks the same dialect.
+ * Centralises i18n keys, lucide icons, and the shared accent so every
+ * downstream surface (rows, chips, filters, atlas pins) speaks the same dialect.
+ *
+ * Eight categories, five accents — deliberately. The accent says what KIND of
+ * place this is (a stage, a sanctuary, our own rooms, a transfer point, a bed);
+ * the icon says which one. Chasing eight distinct colours is what put a hotel
+ * in `ethereal-crimson`, so every hotel pin on the atlas wore the colour this
+ * product reserves for something being wrong.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/constants/locationCategories
  */
@@ -21,14 +27,10 @@ import {
 } from "lucide-react";
 
 import type { LocationCategory } from "@/shared/types";
-
-export type LocationCategoryAccent =
-  | "gold"
-  | "amethyst"
-  | "crimson"
-  | "sage"
-  | "graphite"
-  | "incense";
+import {
+  ACCENT_MARKER,
+  type EtherealAccent,
+} from "@/shared/ui/primitives/accents";
 
 interface LocationCategoryDefinition {
   value: LocationCategory;
@@ -39,9 +41,7 @@ interface LocationCategoryDefinition {
   descriptionKey: string;
   defaultDescription: string;
   icon: LucideIcon;
-  accent: LocationCategoryAccent;
-  /** Marker color rendered on the global atlas. Token-driven via CSS variable. */
-  atlasMarker: string;
+  accent: EtherealAccent;
 }
 
 export interface LocationCategoryOption {
@@ -50,7 +50,8 @@ export interface LocationCategoryOption {
   plural: string;
   description: string;
   icon: LucideIcon;
-  accent: LocationCategoryAccent;
+  accent: EtherealAccent;
+  /** The accent as a raw colour, for the Google Maps pins a class cannot style. */
   atlasMarker: string;
 }
 
@@ -65,7 +66,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Filharmonie, opery i sceny koncertowe.",
     icon: Music,
     accent: "gold",
-    atlasMarker: "var(--color-ethereal-gold)",
   },
   {
     value: "CHURCH",
@@ -77,7 +77,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Świątynie, bazyliki i sale parafialne.",
     icon: Church,
     accent: "sage",
-  atlasMarker: "var(--color-ethereal-sage)",
   },
   {
     value: "REHEARSAL_ROOM",
@@ -89,7 +88,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Studia akustyczne i sale przygotowań.",
     icon: Building2,
     accent: "amethyst",
-    atlasMarker: "var(--color-ethereal-amethyst)",
   },
   {
     value: "HOTEL",
@@ -100,8 +98,7 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     descriptionKey: "logistics.category_descriptions.hotel",
     defaultDescription: "Zakwaterowanie zespołu i artystów gościnnych.",
     icon: Hotel,
-    accent: "crimson",
-    atlasMarker: "var(--color-ethereal-crimson)",
+    accent: "incense",
   },
   {
     value: "AIRPORT",
@@ -113,7 +110,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Porty lotnicze obsługujące transfery zespołu.",
     icon: Plane,
     accent: "graphite",
-    atlasMarker: "var(--color-ethereal-graphite)",
   },
   {
     value: "TRANSIT_STATION",
@@ -124,8 +120,7 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     descriptionKey: "logistics.category_descriptions.transit",
     defaultDescription: "Stacje kolejowe, autobusowe i węzły transferowe.",
     icon: TrainFront,
-    accent: "incense",
-    atlasMarker: "var(--color-ethereal-incense)",
+    accent: "graphite",
   },
   {
     value: "WORKSPACE",
@@ -137,7 +132,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Biura zespołu, studia i zaplecze produkcyjne.",
     icon: Briefcase,
     accent: "amethyst",
-    atlasMarker: "var(--color-ethereal-amethyst)",
   },
   {
     value: "OTHER",
@@ -149,7 +143,6 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     defaultDescription: "Lokacje spoza standardowych grup.",
     icon: MapPin,
     accent: "incense",
-    atlasMarker: "var(--color-ethereal-incense)",
   },
 ];
 
@@ -167,7 +160,6 @@ export const getLocationCategoryOptions = (
       defaultDescription,
       icon,
       accent,
-      atlasMarker,
     }) => ({
       value,
       label: t(labelKey, defaultLabel),
@@ -175,7 +167,7 @@ export const getLocationCategoryOptions = (
       description: t(descriptionKey, defaultDescription),
       icon,
       accent,
-      atlasMarker,
+      atlasMarker: ACCENT_MARKER[accent],
     }),
   );
 

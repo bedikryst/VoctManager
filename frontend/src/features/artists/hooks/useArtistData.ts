@@ -18,6 +18,7 @@ import {
   useToggleArtistStatus,
 } from "../api/artist.queries";
 import { useVoiceTypes } from "@/shared/api/options.queries";
+import { foldDiacritics } from "@/shared/lib/text";
 import type { Artist } from "@/shared/types";
 import {
   getVoiceSection,
@@ -42,6 +43,9 @@ const readStoredView = (): RosterView => {
 
 const sortName = (artist: Artist): string =>
   `${artist.last_name} ${artist.first_name}`.trim().toLowerCase();
+
+const searchHaystack = (artist: Artist): string =>
+  foldDiacritics(`${artist.first_name} ${artist.last_name}`);
 
 export const useArtistData = () => {
   const { t } = useTranslation();
@@ -140,15 +144,18 @@ export const useArtistData = () => {
     return { active, archived, total: selectedIds.size };
   }, [artists, selectedIds]);
 
+  const archivedCount = useMemo(
+    () => artists.length - activeArtists.length,
+    [artists.length, activeArtists.length],
+  );
+
   const displayArtists = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    // Folded, so "zielinska" finds Zielińska — a Polish roster is typed
+    // without diacritics far more often than with them.
+    const term = foldDiacritics(searchTerm.trim());
 
     const filtered = artists.filter((artist) => {
-      const matchesSearch = term
-        ? `${artist.first_name} ${artist.last_name}`
-            .toLowerCase()
-            .includes(term)
-        : true;
+      const matchesSearch = term ? searchHaystack(artist).includes(term) : true;
       const matchesVoice = voiceFilter
         ? getVoiceSection(artist.voice_type) === voiceFilter
         : true;
@@ -378,6 +385,7 @@ export const useArtistData = () => {
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    archivedCount,
     displayArtists,
     isPanelOpen,
     editingArtist,

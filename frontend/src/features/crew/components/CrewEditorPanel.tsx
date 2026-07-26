@@ -19,17 +19,11 @@ import { Divider } from "@/shared/ui/primitives/Divider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
-import {
-  Eyebrow,
-  Heading,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 
 import { getCrewSpecialtyOptions } from "../constants/crewSpecialties";
 import { useCrewForm } from "../hooks/useCrewForm";
 import type { CrewFormData } from "../types/crew.dto";
-
-import { CrewSpecialtyBadge } from "./CrewSpecialtyBadge";
 
 interface CrewEditorPanelProps {
   isOpen: boolean;
@@ -135,7 +129,7 @@ export function CrewEditorPanel({
                 type="button"
                 onClick={handleCloseRequest}
                 aria-label={t("crew.editor.close_aria", "Zamknij panel")}
-                className="rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
+                className="rounded-control border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -144,7 +138,7 @@ export function CrewEditorPanel({
             <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
               <form
                 onSubmit={handleSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-3xl border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
               >
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">
@@ -214,6 +208,8 @@ export function CrewEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
+                  {/* No "chosen specialty" preview under it: the select prints
+                      the same label two rows higher. */}
                   <Select
                     label={t("crew.editor.specialty", "Specjalizacja *")}
                     value={formData.specialty}
@@ -226,19 +222,6 @@ export function CrewEditorPanel({
                     disabled={isSubmitting}
                     options={specialtyOptions}
                   />
-
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
-                    <Text size="xs" color="graphite">
-                      {t(
-                        "crew.editor.specialty_preview",
-                        "Wybrana specjalizacja",
-                      )}
-                    </Text>
-                    <CrewSpecialtyBadge
-                      specialty={formData.specialty}
-                      size="sm"
-                    />
-                  </div>
 
                   <Input
                     label={t(

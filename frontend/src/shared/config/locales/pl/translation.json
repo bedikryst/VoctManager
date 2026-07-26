@@ -775,7 +775,6 @@
     },
     "card": {
       "activate_action": "Aktywuj",
-      "active_account_title": "Konto aktywne i połączone z platformą",
       "archive_action": "Archiwum",
       "archive_badge": "Archiwum",
       "detached_account": "Konto odłączone",
@@ -783,22 +782,17 @@
       "edit": "Edytuj",
       "invite_sent_at": "Wysłano {{when}}",
       "link_expired": "Link wygasł",
-      "link_expired_title": "Link aktywacyjny wygasł — wyślij zaproszenie ponownie",
       "message": "Napisz",
       "message_title": "Napisz wiadomość",
       "no_phone": "Brak telefonu",
-      "none": "Brak",
       "open_profile_aria": "Otwórz profil: {{name}}",
       "pending_activation": "Nie aktywowano",
-      "pending_activation_title": "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
       "resend_activation": "Wyślij ponownie zaproszenie",
       "resend_activation_short": "Wyślij ponownie",
-      "resending": "Wysyłanie…",
       "sight_reading": "A Vista",
       "sight_reading_title": "Czytanie a vista: {{level}}/5",
       "unverified": "Brak weryfikacji",
-      "voice_range": "Skala Głosu",
-      "voice_range_short": "Skala"
+      "voice_range": "Skala Głosu"
     },
     "dashboard": {
       "activate_desc": "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów.",
@@ -824,7 +818,9 @@
       "sync_warning_desc": "Nie udało się pobrać danych o artystach.",
       "sync_warning_title": "Ostrzeżenie",
       "title_highlight": "Zespołem",
-      "title_prefix": "Zarządzanie"
+      "title_prefix": "Zarządzanie",
+      "archived_members": "w archiwum",
+      "archived_members_hint": "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą."
     },
     "dossier": {
       "acceptance": "Akceptacja zaproszeń",
@@ -1368,6 +1364,10 @@
       "masculine": "Męska (Drogi…)",
       "neutral": "Neutralna",
       "settings_hint": "Używana tylko w powitaniach w e-mailach i powiadomieniach."
+    },
+    "filters": {
+      "remove_token": "Usuń filtr: {{label}}",
+      "clear_all": "Wyczyść filtry"
     }
   },
   "contact_filters": {
@@ -1549,9 +1549,10 @@
       "all": "Wszyscy",
       "companies": "firm",
       "email_pct": "e-mail {{n}}%",
-      "people_total": "osób",
       "phone_pct": "tel. {{n}}%",
-      "title": "Specjalizacje"
+      "title": "Specjalizacje",
+      "email_unknown": "e-mail —",
+      "phone_unknown": "tel. —"
     },
     "card": {
       "btn_delete": "Usuń",
@@ -1601,7 +1602,6 @@
       "last_name": "Nazwisko *",
       "phone": "Telefon",
       "specialty": "Specjalizacja *",
-      "specialty_preview": "Wybrana specjalizacja",
       "title_edit": "Edycja danych",
       "title_new": "Nowy współpracownik"
     },
@@ -1611,7 +1611,9 @@
       "filters_blocked": "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
       "search_results": "Nie znaleźliśmy osoby ani firmy \"{{term}}\". Możesz dodać nowy wpis lub usunąć część filtrów.",
       "start_building": "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
-      "title": "Brak osób w bieżącym widoku"
+      "title": "Brak osób w bieżącym widoku",
+      "filtered_title": "Nikt nie pasuje do filtrów",
+      "pristine_title": "Twoja baza ekipy jest pusta"
     },
     "filters": {
       "active_description": "Kliknij filtr, aby usunąć go bez resetowania całego widoku.",
@@ -2230,12 +2232,12 @@
       "live_venues_many": "{{count}} aktywnych",
       "live_venues_other": "{{count}} aktywnych",
       "local_time": "Czas lokalny",
-      "markers_count": "{{count}} markerów",
       "markers_count_one": "{{count}} miejsc",
       "markers_count_few": "{{count}} miejsc",
       "markers_count_many": "{{count}} miejsc",
       "markers_count_other": "{{count}} miejsc",
-      "open_maps": "Mapy Google"
+      "open_maps": "Mapy Google",
+      "missing_count": "{{count}} bez współrzędnych"
     },
     "autocomplete": {
       "placeholder": "Zacznij wpisywać nazwę miejsca..."
@@ -2306,7 +2308,6 @@
       },
       "address": "Oficjalny adres *",
       "category": "Klasyfikacja *",
-      "category_preview": "Wybrana kategoria",
       "close_aria": "Zamknij panel",
       "eyebrow": "Profil lokacji",
       "internal_notes": "Notatki dla zespołu (opcjonalnie)",
@@ -2421,7 +2422,7 @@
     },
     "row": {
       "edit_aria": "Edytuj {{name}}",
-      "no_events": "—"
+      "upcoming_here": "Zaplanowane tutaj: {{count}}"
     },
     "timezone": {
       "count_one": "{{count}} stref",

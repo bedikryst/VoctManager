@@ -9,9 +9,15 @@
  * sing the alto line; baritone sings with the basses. This is also why the old
  * `voice_type.startsWith("A")` filter was lossy — it silently dropped MEZ / CT /
  * BAR from every section view.
+ *
+ * Colour comes from the shared accent scale, which has no crimson: a soprano is
+ * not an alarm, and while the sections wore one, every roster showed a dozen
+ * crimson chips beside the one singer whose invitation had actually expired.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/constants/voiceSections
  */
+
+import type { EtherealAccent } from "@/shared/ui/primitives/accents";
 
 export type SectionKey = "S" | "A" | "T" | "B";
 
@@ -20,16 +26,8 @@ export interface SectionPresentation {
   /** i18n key for the plural section label (Soprany / Alty / ...). */
   readonly labelKey: string;
   readonly defaultLabel: string;
-  /** Badge variant used for the per-artist voice chip. */
-  readonly badge: "danger" | "amethyst" | "warning" | "success";
-  /** Typography colour token for the section accent. */
-  readonly textColor: "crimson" | "amethyst" | "gold" | "sage";
-  /** Tailwind classes for the proportional balance-bar fill. */
-  readonly barClass: string;
-  /** Border + ring + surface treatment when the section is the active filter. */
-  readonly activeClass: string;
-  /** Idle border treatment (hover hints the section accent). */
-  readonly idleClass: string;
+  /** Accent claimed by this section; every surface derives its tone from it. */
+  readonly accent: EtherealAccent;
 }
 
 export const VOICE_SECTIONS: readonly SectionPresentation[] = [
@@ -37,45 +35,25 @@ export const VOICE_SECTIONS: readonly SectionPresentation[] = [
     key: "S",
     labelKey: "artists.filters.sopranos",
     defaultLabel: "Soprany",
-    badge: "danger",
-    textColor: "crimson",
-    barClass: "bg-ethereal-crimson/55",
-    activeClass:
-      "border-ethereal-crimson/45 bg-ethereal-crimson/[0.04] ring-1 ring-ethereal-crimson/30",
-    idleClass: "border-ethereal-ink/8 hover:border-ethereal-crimson/30",
+    accent: "incense",
   },
   {
     key: "A",
     labelKey: "artists.filters.altos",
     defaultLabel: "Alty",
-    badge: "amethyst",
-    textColor: "amethyst",
-    barClass: "bg-ethereal-amethyst/55",
-    activeClass:
-      "border-ethereal-amethyst/45 bg-ethereal-amethyst/[0.04] ring-1 ring-ethereal-amethyst/30",
-    idleClass: "border-ethereal-ink/8 hover:border-ethereal-amethyst/30",
+    accent: "amethyst",
   },
   {
     key: "T",
     labelKey: "artists.filters.tenors",
     defaultLabel: "Tenory",
-    badge: "warning",
-    textColor: "gold",
-    barClass: "bg-ethereal-gold/60",
-    activeClass:
-      "border-ethereal-gold/45 bg-ethereal-gold/[0.05] ring-1 ring-ethereal-gold/30",
-    idleClass: "border-ethereal-ink/8 hover:border-ethereal-gold/30",
+    accent: "gold",
   },
   {
     key: "B",
     labelKey: "artists.filters.basses",
     defaultLabel: "Basy",
-    badge: "success",
-    textColor: "sage",
-    barClass: "bg-ethereal-sage/55",
-    activeClass:
-      "border-ethereal-sage/45 bg-ethereal-sage/[0.04] ring-1 ring-ethereal-sage/30",
-    idleClass: "border-ethereal-ink/8 hover:border-ethereal-sage/30",
+    accent: "sage",
   },
 ];
 

@@ -56,16 +56,14 @@ const CrewRowComponent = ({
         name: fullName,
       })}
       className={cn(
-        "group flex w-full cursor-pointer items-center gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster px-4 py-3 transition-colors hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
+        "group flex w-full cursor-pointer items-center gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster px-4 py-3 transition-colors hover:border-ethereal-gold/30 hover:bg-ethereal-parchment/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
       )}
     >
       <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-glass-solid"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster shadow-glass-solid"
         aria-hidden="true"
       >
-        <Eyebrow color="incense" className="!tracking-[0.14em]">
-          {initials}
-        </Eyebrow>
+        <Eyebrow color="incense">{initials}</Eyebrow>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -73,7 +71,7 @@ const CrewRowComponent = ({
           <Text weight="semibold" truncate className="text-ethereal-ink">
             {fullName}
           </Text>
-          <CrewSpecialtyBadge specialty={person.specialty} size="sm" />
+          <CrewSpecialtyBadge specialty={person.specialty} className="shrink-0" />
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
           {person.company_name && (
@@ -106,7 +104,7 @@ const CrewRowComponent = ({
           }}
           title={t("crew.card.btn_delete", "Usuń")}
           aria-label={t("crew.card.btn_delete", "Usuń")}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-ethereal-graphite/50 transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+          className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/50 transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
         >
           <Trash2 size={13} aria-hidden="true" />
         </button>

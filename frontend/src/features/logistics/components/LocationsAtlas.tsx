@@ -17,7 +17,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { AdvancedMarker, Map, useMap } from "@vis.gl/react-google-maps";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Globe2, Layers, MapPin, Minus, Plus, Radio } from "lucide-react";
+import { Layers, MapPin, MapPinOff, Minus, Plus } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -44,7 +44,6 @@ const DEFAULT_CENTER: google.maps.LatLngLiteral = { lat: 50.0, lng: 14.0 };
 interface LocationsAtlasProps {
   locations: LocationDto[];
   venueActivity: Map<string, VenueActivity>;
-  categoryStats: Partial<Record<LocationCategory, number>>;
   activeLocationId: string | null;
   onSelectLocation: (id: string) => void;
   /** When the map takes over the viewport (tablet/mobile focus mode). */
@@ -241,18 +240,27 @@ const VenueMarker = ({
   );
 };
 
-interface AtlasLegendProps {
-  categoryOptions: LocationCategoryOption[];
-  categoryStats: Partial<Record<LocationCategory, number>>;
-}
-
+/**
+ * Colour ↔ meaning for the pins that are actually on screen. It carried a
+ * per-category count as well, computed over the WHOLE base while the map drew
+ * the filtered one: scoping to "Kościoły" left the legend cheerfully reporting
+ * twelve concert halls that no longer had a single pin. The census lives in the
+ * overview bar, which owns one denominator; here a category simply drops out
+ * when the map has none of it.
+ */
 const AtlasLegend = ({
   categoryOptions,
-  categoryStats,
-}: AtlasLegendProps): React.JSX.Element => {
+  present,
+}: {
+  categoryOptions: LocationCategoryOption[];
+  present: ReadonlySet<LocationCategory>;
+}): React.JSX.Element | null => {
   const { t } = useTranslation();
+  const entries = categoryOptions.filter((option) => present.has(option.value));
+  if (entries.length === 0) return null;
+
   return (
-    <div className="pointer-events-auto absolute left-4 top-4 z-10 hidden max-w-[260px] rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/90 p-4 shadow-glass-solid backdrop-blur-xl sm:block">
+    <div className="pointer-events-auto absolute left-4 top-4 z-10 hidden max-w-[260px] rounded-nested border border-ethereal-incense/20 bg-ethereal-marble/90 p-4 shadow-glass-solid backdrop-blur-xl sm:block">
       <div className="mb-3 flex items-center gap-2 text-ethereal-graphite/70">
         <Layers size={14} strokeWidth={1.5} aria-hidden="true" />
         <Eyebrow color="muted">
@@ -260,29 +268,19 @@ const AtlasLegend = ({
         </Eyebrow>
       </div>
       <ul className="grid grid-cols-2 gap-x-3 gap-y-2">
-        {categoryOptions.map((option) => {
+        {entries.map((option) => {
           const Icon = option.icon;
-          const count = categoryStats[option.value] ?? 0;
           return (
-            <li
-              key={option.value}
-              className={cn(
-                "flex items-center gap-2 transition-opacity duration-300",
-                count === 0 && "opacity-40",
-              )}
-            >
+            <li key={option.value} className="flex items-center gap-2">
               <span
                 aria-hidden="true"
-                className="flex h-5 w-5 items-center justify-center rounded-full border bg-ethereal-marble"
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-ethereal-marble"
                 style={{ borderColor: option.atlasMarker, color: option.atlasMarker }}
               >
                 <Icon size={10} strokeWidth={2} />
               </span>
               <Text size="xs" weight="medium" color="graphite" truncate>
                 {option.plural}
-              </Text>
-              <Text size="xs" weight="bold" color="default" className="ml-auto tabular-nums">
-                {count}
               </Text>
             </li>
           );
@@ -295,7 +293,6 @@ const AtlasLegend = ({
 export const LocationsAtlas = ({
   locations,
   venueActivity,
-  categoryStats,
   activeLocationId,
   onSelectLocation,
   fullscreen = false,
@@ -310,15 +307,13 @@ export const LocationsAtlas = ({
     () => locations.filter(hasCoordinates),
     [locations],
   );
-  const liveVenues = useMemo(() => {
-    let count = 0;
-    taggedLocations.forEach((loc) => {
-      if ((venueActivity.get(String(loc.id))?.upcoming.length ?? 0) > 0) {
-        count += 1;
-      }
-    });
-    return count;
-  }, [taggedLocations, venueActivity]);
+  const presentCategories = useMemo(
+    () => new Set(taggedLocations.map((loc) => loc.category)),
+    [taggedLocations],
+  );
+  // Venues the map cannot show, because nobody gave them coordinates. Silent
+  // when there are none — which is the healthy case and needs no chip.
+  const missingFromMap = locations.length - taggedLocations.length;
 
   const handleZoom = (delta: number): void => {
     if (!map) return;
@@ -333,7 +328,7 @@ export const LocationsAtlas = ({
   useEffect(() => () => zoomFlightRef.current?.(), []);
 
   const controlButtonClass =
-    "flex h-9 w-9 items-center justify-center rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite shadow-glass-solid backdrop-blur-xl transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
+    "flex h-9 w-9 items-center justify-center rounded-control border border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite shadow-glass-solid backdrop-blur-xl transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
   return (
     <motion.div
@@ -388,23 +383,22 @@ export const LocationsAtlas = ({
 
           <AtlasLegend
             categoryOptions={categoryOptions}
-            categoryStats={categoryStats}
+            present={presentCategories}
           />
 
-          <div className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
-            <Badge variant="glass" icon={<Globe2 size={12} />}>
-              {t("logistics.atlas.markers_count", "{{count}} miejsc", {
-                count: taggedLocations.length,
-              })}
-            </Badge>
-            {liveVenues > 0 && (
-              <Badge variant="brand" icon={<Radio size={12} />}>
-                {t("logistics.atlas.live_venues", "{{count}} aktywnych", {
-                  count: liveVenues,
+          {/* The overview bar states how many venues and how many are live.
+              The map only speaks when it disagrees with it — i.e. when some
+              venues are missing from the picture. */}
+          {missingFromMap > 0 && (
+            <div className="pointer-events-none absolute right-4 top-4 z-10 flex flex-col items-end gap-2">
+              <Badge variant="glass" icon={<MapPinOff size={12} />}>
+                {t("logistics.atlas.missing_count", {
+                  defaultValue: "{{count}} bez współrzędnych",
+                  count: missingFromMap,
                 })}
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Zoom cluster — lifted above the peek sheet in fullscreen focus. */}
           <div
@@ -433,7 +427,7 @@ export const LocationsAtlas = ({
 
           {taggedLocations.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
-              <div className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/85 px-6 py-4 text-center shadow-glass-solid backdrop-blur-xl">
+              <div className="rounded-nested border border-ethereal-incense/20 bg-ethereal-marble/85 px-6 py-4 text-center shadow-glass-solid backdrop-blur-xl">
                 <div className="mb-2 flex justify-center text-ethereal-graphite/50">
                   <MapPin size={20} aria-hidden="true" />
                 </div>

@@ -348,7 +348,7 @@ export const LocationMapPicker = ({
   }, []);
 
   const controlButtonClass =
-    "flex h-9 w-9 items-center justify-center rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite shadow-glass-solid backdrop-blur-xl transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
+    "flex h-9 w-9 items-center justify-center rounded-control border border-ethereal-incense/20 bg-ethereal-marble/90 text-ethereal-graphite shadow-glass-solid backdrop-blur-xl transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
   const hasSuggestions = isOpen && suggestions.length > 0;
 
@@ -406,7 +406,7 @@ export const LocationMapPicker = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18, ease: [0.25, 0.1, 0.25, 1] }}
-                className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
+                className="absolute z-20 mt-2 w-full overflow-hidden rounded-nested border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
               >
                 {suggestions.map((suggestion, index) => {
                   if (!suggestion.placePrediction) return null;
@@ -461,7 +461,7 @@ export const LocationMapPicker = ({
         </Button>
       </div>
 
-      <div className="relative h-[360px] w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/40 shadow-[inset_0_1px_2px_rgba(22,20,18,0.04)]">
+      <div className="relative h-[360px] w-full overflow-hidden rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/40 shadow-[inset_0_1px_2px_rgba(22,20,18,0.04)]">
         {!isReady && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-ethereal-alabaster/60 backdrop-blur-sm">
             <Loader2
@@ -527,7 +527,7 @@ export const LocationMapPicker = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ type: "spring", stiffness: 320, damping: 30 }}
-              className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-2xl border border-ethereal-gold/25 bg-ethereal-marble/92 px-4 py-3 shadow-glass-solid backdrop-blur-xl"
+              className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-nested border border-ethereal-gold/25 bg-ethereal-marble/92 px-4 py-3 shadow-glass-solid backdrop-blur-xl"
             >
               <span
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"

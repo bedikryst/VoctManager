@@ -4,6 +4,10 @@
  * (track record); inline quick actions — message, archive/restore — stop
  * propagation. In selection mode the whole card becomes a multi-select toggle
  * (checkbox + gold ring) and the inline actions step aside.
+ *
+ * An unanswered invitation is stated once, in the panel that also carries the
+ * resend — the avatar used to wear a second mark for the same fact, and a sage
+ * one for the ordinary case of an account that works.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/ArtistCard
  */
@@ -11,7 +15,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Check,
   CheckCircle2,
   ChevronRight,
   Mail,
@@ -30,6 +33,9 @@ import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Checkbox } from "@/shared/ui/primitives/Checkbox";
+import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import {
   Caption,
   Eyebrow,
@@ -82,7 +88,6 @@ export const ArtistCard = React.memo(
     const hasAccount = Boolean(artist.user);
     // Activation status is manager-only (undefined otherwise): treat unknown as
     // neither state so we never raise a false "pending" flag on a partial DTO.
-    const accountActivated = artist.account_activated === true;
     const accountPending = hasAccount && artist.account_activated === false;
     // Past its ~3-day validity window: the last link is dead, a resend is required.
     const linkExpired = accountPending && artist.activation_link_expired === true;
@@ -137,49 +142,19 @@ export const ArtistCard = React.memo(
         )}
       >
         <div className="flex items-start gap-3.5 p-5 pb-4">
-          <div className="relative shrink-0">
-            <Avatar
-              src={artist.avatar_thumb_url}
-              name={fullName}
-              size="md"
-              shape="rounded"
-              tone="neutral"
-              className={cn(
-                "border shadow-glass-solid",
-                isActive
-                  ? "border-ethereal-marble bg-ethereal-alabaster"
-                  : "border-ethereal-incense/20 bg-ethereal-marble",
-              )}
-            />
-            {isActive && accountActivated && (
-              <span
-                className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster bg-ethereal-sage shadow-sm"
-                title={t(
-                  "artists.card.active_account_title",
-                  "Konto aktywne i połączone z platformą",
-                )}
-              />
+          <Avatar
+            src={artist.avatar_thumb_url}
+            name={fullName}
+            size="md"
+            shape="rounded"
+            tone="neutral"
+            className={cn(
+              "shrink-0 border shadow-glass-solid",
+              isActive
+                ? "border-ethereal-marble bg-ethereal-alabaster"
+                : "border-ethereal-incense/20 bg-ethereal-marble",
             )}
-            {isActive && accountPending && (
-              <span
-                className={cn(
-                  "absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full border-2 border-ethereal-alabaster shadow-sm",
-                  linkExpired ? "bg-ethereal-crimson" : "bg-ethereal-gold",
-                )}
-                title={
-                  linkExpired
-                    ? t(
-                        "artists.card.link_expired_title",
-                        "Link aktywacyjny wygasł — wyślij zaproszenie ponownie",
-                      )
-                    : t(
-                        "artists.card.pending_activation_title",
-                        "Zaproszenie wysłane — konto nie zostało jeszcze aktywowane",
-                      )
-                }
-              />
-            )}
-          </div>
+          />
 
           <div className="min-w-0 flex-1">
             <Heading as="h3" size="md" weight="bold" truncate>
@@ -187,7 +162,9 @@ export const ArtistCard = React.memo(
             </Heading>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Badge
-                variant={isActive && section ? section.badge : "neutral"}
+                variant={
+                  isActive && section ? ACCENT_BADGE[section.accent] : "neutral"
+                }
                 icon={<Music2 size={9} aria-hidden="true" />}
               >
                 {voiceLabel}
@@ -201,17 +178,14 @@ export const ArtistCard = React.memo(
           </div>
 
           {selectionMode ? (
-            <span
+            <Checkbox
+              size="md"
+              checked={selected}
+              readOnly
+              tabIndex={-1}
               aria-hidden="true"
-              className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors",
-                selected
-                  ? "border-ethereal-gold bg-ethereal-gold text-ethereal-ink"
-                  : "border-ethereal-ink/20 bg-ethereal-alabaster text-transparent",
-              )}
-            >
-              <Check size={14} />
-            </span>
+              className="pointer-events-none"
+            />
           ) : (
             <button
               type="button"
@@ -230,7 +204,7 @@ export const ArtistCard = React.memo(
                   : t("artists.card.activate_action", "Aktywuj")
               }
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-chip transition-colors",
                 isActive
                   ? "text-ethereal-graphite/40 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
                   : "text-ethereal-sage hover:bg-ethereal-sage/10",
@@ -245,8 +219,8 @@ export const ArtistCard = React.memo(
           )}
         </div>
 
-        <div className="mx-5 grid grid-cols-2 overflow-hidden rounded-xl border border-ethereal-ink/6">
-          <div className="flex flex-col gap-1 border-r border-ethereal-ink/6 bg-ethereal-alabaster/70 px-3.5 py-2.5">
+        <div className="mx-5 grid grid-cols-2 overflow-hidden rounded-control border border-hairline">
+          <div className="flex flex-col gap-1 border-r border-hairline bg-ethereal-alabaster/70 px-3.5 py-2.5">
             <Eyebrow color="muted">
               {t("artists.card.voice_range", "Skala Głosu")}
             </Eyebrow>
@@ -255,9 +229,9 @@ export const ArtistCard = React.memo(
                 {rangeText}
               </Text>
             ) : (
-              <Caption color="muted" className="italic">
-                {t("artists.card.none", "Brak")}
-              </Caption>
+              <Text size="sm" color="muted">
+                —
+              </Text>
             )}
           </div>
           <div className="flex flex-col gap-1 bg-ethereal-alabaster/70 px-3.5 py-2.5">
@@ -311,7 +285,7 @@ export const ArtistCard = React.memo(
           {accountPending && (
             <div
               className={cn(
-                "mt-auto flex flex-col gap-2 rounded-lg border px-3 py-2.5",
+                "mt-auto flex flex-col gap-2 rounded-chip border px-3 py-2.5",
                 linkExpired
                   ? "border-ethereal-crimson/25 bg-ethereal-crimson/[0.06]"
                   : "border-ethereal-gold/25 bg-ethereal-gold/[0.07]",
@@ -348,25 +322,24 @@ export const ArtistCard = React.memo(
                 </div>
               </div>
               {onResendActivation && (
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  fullWidth
                   onClick={(event) => {
                     stop(event);
                     onResendActivation(artist);
                   }}
-                  disabled={isResending}
+                  isLoading={isResending}
+                  leftIcon={<Send size={12} aria-hidden="true" />}
                   className={cn(
-                    "inline-flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] transition-colors disabled:opacity-50",
                     linkExpired
-                      ? "border-ethereal-crimson/30 text-ethereal-crimson hover:bg-ethereal-crimson/10"
-                      : "border-ethereal-gold/30 text-ethereal-gold hover:bg-ethereal-gold/12",
+                      ? "border-ethereal-crimson/30 text-ethereal-crimson hover:border-ethereal-crimson hover:text-ethereal-crimson"
+                      : "border-ethereal-gold/30 text-ethereal-gold hover:border-ethereal-gold hover:text-ethereal-gold",
                   )}
                 >
-                  <Send size={11} aria-hidden="true" />
-                  {isResending
-                    ? t("artists.card.resending", "Wysyłanie…")
-                    : t("artists.card.resend_activation_short", "Wyślij ponownie")}
-                </button>
+                  {t("artists.card.resend_activation_short", "Wyślij ponownie")}
+                </Button>
               )}
             </div>
           )}
@@ -381,20 +354,23 @@ export const ArtistCard = React.memo(
         </div>
 
         {!selectionMode && (
-          <div className="mt-auto flex items-center gap-2 border-t border-ethereal-ink/6 px-5 py-3">
-            <button
-              type="button"
+          <div className="mt-auto flex items-center justify-between gap-2 border-t border-hairline px-5 py-3">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={(event) => {
                 stop(event);
                 onMessage(artist);
               }}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-ethereal-amethyst/25 bg-ethereal-amethyst/5 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-amethyst transition-colors hover:bg-ethereal-amethyst/10"
+              leftIcon={<MessageSquare size={13} aria-hidden="true" />}
+              className="text-ethereal-amethyst hover:text-ethereal-amethyst"
             >
-              <MessageSquare size={13} aria-hidden="true" />
               {t("artists.card.message", "Napisz")}
-            </button>
-            <span className="inline-flex items-center gap-1 pr-1 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
-              {t("artists.card.details", "Dossier")}
+            </Button>
+            <span className="inline-flex items-center gap-1 pr-1 text-ethereal-graphite/55 transition-colors group-hover:text-ethereal-gold">
+              <Eyebrow color="inherit">
+                {t("artists.card.details", "Dossier")}
+              </Eyebrow>
               <ChevronRight
                 size={14}
                 aria-hidden="true"

@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowDownUp, LayoutGrid, List, ListChecks, Search } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import type { RosterSort, RosterView } from "../hooks/useArtistData";
@@ -58,23 +59,22 @@ export const RosterToolbar = ({
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="button"
+        <Button
+          variant={selectionMode ? "secondary" : "outline"}
           aria-pressed={selectionMode}
           onClick={onToggleSelectionMode}
           title={t("artists.toolbar.select_mode", "Zaznacz wielu")}
+          aria-label={t("artists.toolbar.select_mode", "Zaznacz wielu")}
+          leftIcon={<ListChecks size={16} aria-hidden="true" />}
           className={cn(
-            "inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border px-3.5 text-[11px] font-bold uppercase tracking-[0.1em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-            selectionMode
-              ? "border-ethereal-gold/40 bg-ethereal-gold/[0.06] text-ethereal-ink"
-              : "border-ethereal-incense/20 bg-ethereal-alabaster/70 text-ethereal-graphite hover:border-ethereal-gold/40 hover:text-ethereal-ink",
+            "shrink-0",
+            selectionMode && "border-ethereal-gold/40 text-ethereal-ink",
           )}
         >
-          <ListChecks size={16} aria-hidden="true" />
           <span className="hidden sm:inline">
             {t("artists.toolbar.select_mode", "Zaznacz wielu")}
           </span>
-        </button>
+        </Button>
 
         <div className="w-full sm:w-56">
           <Select
@@ -103,7 +103,7 @@ export const RosterToolbar = ({
         <div
           role="group"
           aria-label={t("artists.toolbar.view_label", "Widok")}
-          className="inline-flex shrink-0 gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
+          className="inline-flex shrink-0 gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1"
         >
           {VIEW_OPTIONS.map(({ mode, Icon, labelKey, fallback }) => {
             const isActive = viewMode === mode;
@@ -117,10 +117,10 @@ export const RosterToolbar = ({
                 aria-label={label}
                 onClick={() => onViewMode(mode)}
                 className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+                  "flex h-9 w-9 items-center justify-center rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                   isActive
                     ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+                    : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
                 )}
               >
                 <Icon size={16} aria-hidden="true" />

@@ -74,15 +74,15 @@ const LogisticsEventRowComponent = ({
         }
       }}
       className={cn(
-        "group flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group flex items-center gap-3 rounded-nested border px-3 py-2.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isClickable && "cursor-pointer",
         isActive
           ? "border-ethereal-gold/45 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-          : "border-ethereal-ink/8 bg-ethereal-alabaster hover:border-ethereal-gold/30",
+          : "border-hairline-strong bg-ethereal-alabaster hover:border-ethereal-gold/30",
       )}
     >
       <div
-        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl border tabular-nums"
+        className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-control border tabular-nums"
         style={{
           borderColor: imminence.marker,
           backgroundColor: "color-mix(in srgb, var(--color-ethereal-marble) 88%, transparent)",
@@ -94,9 +94,9 @@ const LogisticsEventRowComponent = ({
         >
           {dayNumber}
         </span>
-        <span className="mt-0.5 text-[9px] uppercase tracking-wider text-ethereal-graphite/70">
+        <Eyebrow size="overline-sm" color="muted" className="mt-0.5 block">
           {monthShort}
-        </span>
+        </Eyebrow>
       </div>
 
       <div className="min-w-0 flex-1">

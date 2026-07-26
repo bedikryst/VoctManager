@@ -3,8 +3,11 @@
  * @description Specialty-balance strip — the crew counterpart to the artists'
  * EnsembleBalance. Each tile shows a specialty's head-count + a proportional bar
  * (scaled to the largest specialty) and doubles as the roster filter; the header
- * carries compact contact-coverage stats. Folds the old hero + metrics grid +
- * specialty <select> into one scannable control.
+ * carries the facts the tiles do not: how many firms, and how much of the base
+ * is actually reachable.
+ *
+ * The head-count belongs to the "Wszyscy" tile alone — the header stated it a
+ * second time, forty pixels away from the same number.
  * @architecture Enterprise SaaS 2026
  * @module features/crew/components/CrewSpecialtyBar
  */
@@ -16,69 +19,31 @@ import { Building2, Layers, Mail, Phone, Users } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import {
+  ACCENT_BAR,
+  ACCENT_TEXT,
+  ACCENT_TILE_ACTIVE,
+  ACCENT_TILE_IDLE,
+} from "@/shared/ui/primitives/accents";
+import {
   Caption,
   Eyebrow,
   Metric,
   Text,
 } from "@/shared/ui/primitives/typography";
 import type { CollaboratorSpecialty } from "@/shared/types";
-import type {
-  CrewSpecialtyAccent,
-  CrewSpecialtyOption,
-} from "../constants/crewSpecialties";
+import type { CrewSpecialtyOption } from "../constants/crewSpecialties";
 
 interface CrewSpecialtyBarProps {
   specialtyOptions: CrewSpecialtyOption[];
   counts: Record<CollaboratorSpecialty, number>;
   totalPeople: number;
   uniqueCompanies: number;
-  emailCoverage: number;
-  phoneCoverage: number;
+  /** Percentages, or `null` when there is nobody to compute them over. */
+  emailCoverage: number | null;
+  phoneCoverage: number | null;
   activeSpecialty: string;
   onSelectSpecialty: (value: string) => void;
 }
-
-const ACCENT: Record<
-  CrewSpecialtyAccent,
-  { bar: string; active: string; idle: string }
-> = {
-  gold: {
-    bar: "bg-ethereal-gold/60",
-    active:
-      "border-ethereal-gold/45 bg-ethereal-gold/[0.05] ring-1 ring-ethereal-gold/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-gold/30",
-  },
-  amethyst: {
-    bar: "bg-ethereal-amethyst/55",
-    active:
-      "border-ethereal-amethyst/45 bg-ethereal-amethyst/[0.04] ring-1 ring-ethereal-amethyst/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-amethyst/30",
-  },
-  crimson: {
-    bar: "bg-ethereal-crimson/55",
-    active:
-      "border-ethereal-crimson/45 bg-ethereal-crimson/[0.04] ring-1 ring-ethereal-crimson/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-crimson/30",
-  },
-  sage: {
-    bar: "bg-ethereal-sage/55",
-    active:
-      "border-ethereal-sage/45 bg-ethereal-sage/[0.04] ring-1 ring-ethereal-sage/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-sage/30",
-  },
-  graphite: {
-    bar: "bg-ethereal-graphite/45",
-    active:
-      "border-ethereal-graphite/40 bg-ethereal-graphite/[0.05] ring-1 ring-ethereal-graphite/25",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-graphite/30",
-  },
-  incense: {
-    bar: "bg-ethereal-incense/55",
-    active:
-      "border-ethereal-incense/45 bg-ethereal-incense/[0.05] ring-1 ring-ethereal-incense/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-incense/30",
-  },
-};
 
 const CoverageChip = ({
   icon,
@@ -112,7 +77,7 @@ export const CrewSpecialtyBar = React.memo(
 
     return (
       <GlassCard variant="solid" padding="none" isHoverable={false}>
-        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-ethereal-ink/6 px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <Layers
               size={14}
@@ -124,23 +89,23 @@ export const CrewSpecialtyBar = React.memo(
             </Eyebrow>
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <CoverageChip icon={<Users size={11} />}>
-              <Text as="span" size="sm" weight="semibold" className="text-ethereal-ink">
-                {totalPeople}
-              </Text>
-              {t("crew.bar.people_total", "osób")}
-            </CoverageChip>
             <CoverageChip icon={<Building2 size={11} />}>
               <Text as="span" size="sm" weight="semibold" className="text-ethereal-ink">
                 {uniqueCompanies}
               </Text>
               {t("crew.bar.companies", "firm")}
             </CoverageChip>
+            {/* No base, no rate: an em-dash says "nothing recorded", where a
+                confident 0% would read as a real, terrible coverage figure. */}
             <CoverageChip icon={<Mail size={11} />}>
-              {t("crew.bar.email_pct", "e-mail {{n}}%", { n: emailCoverage })}
+              {emailCoverage === null
+                ? t("crew.bar.email_unknown", "e-mail —")
+                : t("crew.bar.email_pct", "e-mail {{n}}%", { n: emailCoverage })}
             </CoverageChip>
             <CoverageChip icon={<Phone size={11} />}>
-              {t("crew.bar.phone_pct", "tel. {{n}}%", { n: phoneCoverage })}
+              {phoneCoverage === null
+                ? t("crew.bar.phone_unknown", "tel. —")
+                : t("crew.bar.phone_pct", "tel. {{n}}%", { n: phoneCoverage })}
             </CoverageChip>
           </div>
         </header>
@@ -149,7 +114,6 @@ export const CrewSpecialtyBar = React.memo(
           {specialtyOptions.map((option) => {
             const count = counts[option.value];
             const isActive = activeSpecialty === option.value;
-            const accent = ACCENT[option.accent];
             const Icon = option.icon;
             return (
               <button
@@ -159,10 +123,12 @@ export const CrewSpecialtyBar = React.memo(
                 onClick={() =>
                   onSelectSpecialty(isActive ? "" : option.value)
                 }
-                title={option.label}
+                title={option.description}
                 className={cn(
-                  "group flex flex-col gap-2 rounded-2xl border bg-ethereal-alabaster px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
-                  isActive ? accent.active : accent.idle,
+                  "group flex flex-col gap-2 rounded-nested border bg-ethereal-alabaster px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
+                  isActive
+                    ? ACCENT_TILE_ACTIVE[option.accent]
+                    : ACCENT_TILE_IDLE[option.accent],
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -183,7 +149,11 @@ export const CrewSpecialtyBar = React.memo(
                     {count}
                   </Metric>
                 </div>
-                <Eyebrow color={option.accent} truncate className="block">
+                <Eyebrow
+                  color={ACCENT_TEXT[option.accent]}
+                  truncate
+                  className="block"
+                >
                   {option.label}
                 </Eyebrow>
                 <div
@@ -193,7 +163,7 @@ export const CrewSpecialtyBar = React.memo(
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700 ease-out",
-                      accent.bar,
+                      ACCENT_BAR[option.accent],
                     )}
                     style={{ width: `${Math.round((count / peak) * 100)}%` }}
                   />
@@ -207,10 +177,10 @@ export const CrewSpecialtyBar = React.memo(
             aria-pressed={!hasFilter}
             onClick={() => onSelectSpecialty("")}
             className={cn(
-              "group flex flex-col justify-between gap-2 rounded-2xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
+              "group flex flex-col justify-between gap-2 rounded-nested border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
               !hasFilter
                 ? "border-ethereal-gold/40 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-                : "border-dashed border-ethereal-ink/12 bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
+                : "border-dashed border-hairline-strong bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
             )}
           >
             <div className="flex items-center justify-between gap-2">

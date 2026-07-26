@@ -1,9 +1,15 @@
 /**
  * @file LocationPreview.tsx
- * @description Ethereal UI Interactive Location Badge.
- * Features kinematic glassmorphism popovers powered by React Portals,
- * robust z-indexing, and an opaque reading pedestal.
+ * @description The venue chip used everywhere OUTSIDE logistics - the schedule,
+ * the dashboard, rehearsal rows, project cards. Hover or tap opens a portalled
+ * card with a map, the address, and two distinct exits: the card itself opens
+ * the venue on Google Maps, its footer opens a route to it.
+ *
+ * The category line resolves through the shared dictionary. It used to print
+ * `location.category` verbatim, so half the panel showed a reader the string
+ * `CONCERT_HALL`, uppercase and tracked out as though it were a label.
  * @architecture Enterprise SaaS 2026
+ * @module features/logistics/components/LocationPreview
  */
 
 import React, { useState, useRef, useEffect } from "react";
@@ -20,6 +26,8 @@ import type {
 } from "../types/logistics.dto";
 import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { getLocationCategoryOption } from "../constants/locationCategories";
+import { buildDirectionsUrl, buildPlaceUrl } from "../lib/mapsLinks";
 
 interface LocationPreviewProps {
   locationRef: LocationReference | null | undefined;
@@ -112,7 +120,6 @@ export const LocationPreview = ({
       top: `${rect.bottom + 8}px`,
       left: isRightAligned ? "auto" : `${rect.left}px`,
       right: isRightAligned ? `${window.innerWidth - rect.right}px` : "auto",
-      zIndex: 99999,
     });
   };
 
@@ -161,30 +168,20 @@ export const LocationPreview = ({
     timeoutRef.current = setTimeout(() => setIsOpen(false), 300);
   };
 
-  const openInGoogleMaps = (e: React.BaseSyntheticEvent) => {
-    e.stopPropagation();
-    if (!normalizedLocation) return;
+  const mapsTarget = normalizedLocation
+    ? {
+        name: normalizedLocation.name,
+        formattedAddress: normalizedLocation.formattedAddress,
+        googlePlaceId: normalizedLocation.googlePlaceId,
+        latitude: normalizedLocation.latitude,
+        longitude: normalizedLocation.longitude,
+      }
+    : null;
 
-    const {
-      latitude,
-      longitude,
-      googlePlaceId,
-      name,
-      formattedAddress,
-    } = normalizedLocation;
-    const baseUrl = "https://www.google.com/maps/search/?api=1";
-    let url = baseUrl;
-
-    if (googlePlaceId) {
-      url += `&query=${encodeURIComponent(name)}&query_place_id=${googlePlaceId}`;
-    } else if (latitude && longitude) {
-      url += `&query=${latitude},${longitude}`;
-    } else {
-      const query = encodeURIComponent(`${name} ${formattedAddress || ""}`);
-      url += `&query=${query}`;
-    }
-
-    window.open(url, "_blank", "noopener,noreferrer");
+  const openPlaceOnMaps = (event: React.BaseSyntheticEvent) => {
+    event.stopPropagation();
+    if (!mapsTarget) return;
+    window.open(buildPlaceUrl(mapsTarget), "_blank", "noopener,noreferrer");
   };
 
   if (!normalizedLocation) {
@@ -200,7 +197,7 @@ export const LocationPreview = ({
         )}
       >
         <MapPin size={12} className="shrink-0" />
-        <span className="truncate tracking-widest">{displayFallback}</span>
+        <span className="truncate">{displayFallback}</span>
       </Text>
     );
   }
@@ -209,10 +206,16 @@ export const LocationPreview = ({
     normalizedLocation?.latitude !== null &&
     normalizedLocation?.longitude !== null;
 
+  // The stored value is an enum code, not a label - resolve it, or say nothing
+  // more specific than "Lokacja".
+  const categoryLabel = normalizedLocation?.category
+    ? getLocationCategoryOption(t, normalizedLocation.category).label
+    : t("logistics.preview.default_category", "Lokacja");
+
   // Variant Styles Architecture
   const anchorStyles =
     variant === "badge"
-      ? "rounded-lg border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md hover:border-ethereal-gold/40 hover:bg-white/10"
+      ? "rounded-chip border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md hover:border-ethereal-gold/40 hover:bg-white/10"
       : "bg-transparent p-0 hover:text-ethereal-gold transition-colors duration-500";
 
   return (
@@ -263,12 +266,12 @@ export const LocationPreview = ({
                 animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
                 exit={{ opacity: 0, y: -5, scale: 0.95, filter: "blur(4px)" }}
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                className="flex w-72 cursor-pointer flex-col overflow-hidden rounded-[2rem] border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
+                className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
                 style={popoverStyle}
-                onClick={openInGoogleMaps}
+                onClick={openPlaceOnMaps}
               >
                 {/* ... (Wnętrze mapy pozostaje bez zmian, używa Twojego doskonałego kodu) */}
-                <div className="relative z-0 h-32 w-full overflow-hidden rounded-[1.5rem]">
+                <div className="relative z-0 h-32 w-full overflow-hidden rounded-nested">
                   {hasCoordinates ? (
                     <div className="group relative h-full w-full grayscale-[0.2] transition-all duration-700 hover:grayscale-0">
                       <Map
@@ -313,16 +316,14 @@ export const LocationPreview = ({
                 </div>
 
                 {/* DETAILS COMPARTMENT */}
-                <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-[1.5rem] bg-ethereal-marble/95 p-5 shadow-glass-solid backdrop-blur-xl">
+                <div className="group/details relative z-20 mt-1.5 flex flex-col gap-3 rounded-nested bg-ethereal-marble/95 p-5 shadow-glass-solid backdrop-blur-xl">
                   <div>
                     <div className="mb-2 flex items-start justify-between">
-                      <Caption color="sage" weight="bold" className="uppercase tracking-[0.2em]">
-                        {normalizedLocation?.category ||
-                          t("logistics.preview.default_category", "Lokacja")}
-                      </Caption>
+                      <Eyebrow color="graphite">{categoryLabel}</Eyebrow>
                       <ExternalLink
                         size={12}
                         strokeWidth={1.5}
+                        aria-hidden="true"
                         className="text-ethereal-incense/40 transition-colors duration-500 group-hover/details:text-ethereal-gold"
                       />
                     </div>
@@ -333,16 +334,27 @@ export const LocationPreview = ({
                       {normalizedLocation?.formattedAddress}
                     </Caption>
                   </div>
-                  <div className="mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 transition-colors duration-700 group-hover/details:border-ethereal-gold/30">
-                    <Caption color="incense-muted" weight="bold" className="uppercase tracking-[0.25em] transition-colors duration-500 group-hover/details:text-ethereal-gold">
-                      {t("logistics.preview.get_directions", "Wyznacz trasę")}
-                    </Caption>
-                    <Navigation
-                      size={14}
-                      strokeWidth={1.5}
-                      className="text-ethereal-incense/50 transition-all duration-700 group-hover/details:translate-x-1 group-hover/details:text-ethereal-gold"
-                    />
-                  </div>
+                  {/* A separate exit, because it goes somewhere else: the card
+                      opens the venue, this opens a route to it. */}
+                  {mapsTarget && (
+                    <a
+                      href={buildDirectionsUrl(mapsTarget)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(event) => event.stopPropagation()}
+                      className="group/route mt-2 flex items-center justify-between border-t border-ethereal-incense/15 pt-4 text-ethereal-incense/60 transition-colors duration-500 hover:border-ethereal-gold/30 hover:text-ethereal-gold"
+                    >
+                      <Eyebrow color="inherit">
+                        {t("logistics.preview.get_directions", "Wyznacz trasę")}
+                      </Eyebrow>
+                      <Navigation
+                        size={14}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                        className="transition-transform duration-700 group-hover/route:translate-x-1"
+                      />
+                    </a>
+                  )}
                 </div>
               </motion.div>
             )}

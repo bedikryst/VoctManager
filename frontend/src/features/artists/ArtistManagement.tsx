@@ -52,6 +52,7 @@ export default function ArtistManagement(): React.JSX.Element {
     setViewMode,
     ensembleBalance,
     accountPendingCount,
+    archivedCount,
     displayArtists,
     isPanelOpen,
     editingArtist,
@@ -172,6 +173,7 @@ export default function ArtistManagement(): React.JSX.Element {
             <EnsembleBalance
               balance={ensembleBalance}
               accountPending={accountPendingCount}
+              archivedCount={archivedCount}
               activeSection={voiceFilter}
               onSelectSection={setVoiceFilter}
             />

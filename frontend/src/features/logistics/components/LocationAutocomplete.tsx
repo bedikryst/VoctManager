@@ -147,7 +147,7 @@ export const LocationAutocomplete = ({
       {isOpen && suggestions.length > 0 && (
         <ul
           role="listbox"
-          className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
+          className="absolute z-20 mt-2 w-full overflow-hidden rounded-nested border border-ethereal-incense/20 bg-ethereal-marble/95 py-2 shadow-glass-solid backdrop-blur-xl"
         >
           {suggestions.map((suggestion, index) => {
             if (!suggestion.placePrediction) return null;

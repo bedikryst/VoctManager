@@ -4,18 +4,28 @@
  * ensemble shape. Each SATB tile shows the active head-count plus a proportional
  * bar (scaled to the largest section) so under-staffed sections are obvious, and
  * the tile doubles as the roster's section filter: click to scope, click again
- * (or "Tutti") to clear. Folds the old redundant button-row + <select> filter
- * into one elegant control.
+ * (or "Tutti") to clear.
+ *
+ * The tiles count SINGING singers, which is the read a conductor wants, but the
+ * roster below them also lists the archived — so the header states the archived
+ * remainder whenever there is one, and the two figures add up to the rows on
+ * screen instead of quietly disagreeing with them.
  * @architecture Enterprise SaaS 2026
  * @module features/artists/components/EnsembleBalance
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { MailWarning, Users } from "lucide-react";
+import { Archive, MailWarning, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import {
+  ACCENT_BAR,
+  ACCENT_TEXT,
+  ACCENT_TILE_ACTIVE,
+  ACCENT_TILE_IDLE,
+} from "@/shared/ui/primitives/accents";
 import {
   Caption,
   Eyebrow,
@@ -35,14 +45,53 @@ export interface SectionBalance {
 interface EnsembleBalanceProps {
   readonly balance: SectionBalance;
   readonly accountPending: number;
+  readonly archivedCount: number;
   readonly activeSection: SectionKey | "";
   readonly onSelectSection: (section: SectionKey | "") => void;
 }
+
+/** A dot-separated fact in the strip's header. Figures are inline sans. */
+const HeaderFact = ({
+  icon,
+  value,
+  label,
+  tone = "ink",
+  title,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  tone?: "ink" | "gold";
+  title?: string;
+}) => (
+  <Caption
+    color="muted"
+    className="inline-flex items-center gap-1 tabular-nums"
+    title={title}
+  >
+    <span
+      className={tone === "gold" ? "text-ethereal-gold" : "text-ethereal-incense/60"}
+      aria-hidden="true"
+    >
+      {icon}
+    </span>
+    <Text
+      as="span"
+      size="sm"
+      weight="semibold"
+      className={tone === "gold" ? "text-ethereal-gold" : "text-ethereal-ink"}
+    >
+      {value}
+    </Text>
+    {label}
+  </Caption>
+);
 
 export const EnsembleBalance = React.memo(
   ({
     balance,
     accountPending,
+    archivedCount,
     activeSection,
     onSelectSection,
   }: EnsembleBalanceProps): React.JSX.Element => {
@@ -52,7 +101,7 @@ export const EnsembleBalance = React.memo(
 
     return (
       <GlassCard variant="solid" padding="none" isHoverable={false}>
-        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-ethereal-ink/6 px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <Users
               size={14}
@@ -63,45 +112,34 @@ export const EnsembleBalance = React.memo(
               {t("artists.dashboard.balance_title", "Balans zespołu")}
             </Eyebrow>
           </div>
-          <div className="flex items-center gap-4">
-            <Caption
-              color="muted"
-              className="inline-flex items-center gap-1 tabular-nums"
-            >
-              <Text
-                as="span"
-                size="sm"
-                weight="semibold"
-                className="text-ethereal-ink"
-              >
-                {balance.Total}
-              </Text>
-              {t("artists.dashboard.active_members", "w zespole")}
-            </Caption>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <HeaderFact
+              icon={<Users size={11} />}
+              value={balance.Total}
+              label={t("artists.dashboard.active_members", "w zespole")}
+            />
+            {archivedCount > 0 && (
+              <HeaderFact
+                icon={<Archive size={11} />}
+                value={archivedCount}
+                label={t("artists.dashboard.archived_members", "w archiwum")}
+                title={t(
+                  "artists.dashboard.archived_members_hint",
+                  "Zarchiwizowani śpiewacy nadal są na liście poniżej, na jej końcu — sekcje ich nie liczą.",
+                )}
+              />
+            )}
             {accountPending > 0 && (
-              <Caption
-                color="muted"
-                className="inline-flex items-center gap-1 tabular-nums"
+              <HeaderFact
+                icon={<MailWarning size={11} />}
+                value={accountPending}
+                label={t("artists.dashboard.pending_activation", "bez aktywacji")}
+                tone="gold"
                 title={t(
                   "artists.dashboard.pending_activation_hint",
                   "Aktywni artyści, którzy nie aktywowali jeszcze konta na platformie.",
                 )}
-              >
-                <MailWarning
-                  size={11}
-                  className="text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Text
-                  as="span"
-                  size="sm"
-                  weight="semibold"
-                  className="text-ethereal-gold"
-                >
-                  {accountPending}
-                </Text>
-                {t("artists.dashboard.pending_activation", "bez aktywacji")}
-              </Caption>
+              />
             )}
           </div>
         </header>
@@ -117,12 +155,14 @@ export const EnsembleBalance = React.memo(
                 aria-pressed={isActive}
                 onClick={() => onSelectSection(isActive ? "" : section.key)}
                 className={cn(
-                  "group flex flex-col gap-2 rounded-2xl border bg-ethereal-alabaster px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
-                  isActive ? section.activeClass : section.idleClass,
+                  "group flex flex-col gap-2 rounded-nested border bg-ethereal-alabaster px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
+                  isActive
+                    ? ACCENT_TILE_ACTIVE[section.accent]
+                    : ACCENT_TILE_IDLE[section.accent],
                 )}
               >
                 <div className="flex items-baseline justify-between gap-2">
-                  <Eyebrow color={section.textColor}>
+                  <Eyebrow color={ACCENT_TEXT[section.accent]}>
                     {t(section.labelKey, section.defaultLabel)}
                   </Eyebrow>
                   <Metric
@@ -140,7 +180,7 @@ export const EnsembleBalance = React.memo(
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-700 ease-out",
-                      section.barClass,
+                      ACCENT_BAR[section.accent],
                     )}
                     style={{ width: `${Math.round((count / peak) * 100)}%` }}
                   />
@@ -154,10 +194,10 @@ export const EnsembleBalance = React.memo(
             aria-pressed={!hasFilter}
             onClick={() => onSelectSection("")}
             className={cn(
-              "group flex flex-col justify-between gap-2 rounded-2xl border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
+              "group flex flex-col justify-between gap-2 rounded-nested border px-4 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
               !hasFilter
                 ? "border-ethereal-gold/40 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-                : "border-dashed border-ethereal-ink/12 bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
+                : "border-dashed border-hairline-strong bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
             )}
           >
             <div className="flex items-baseline justify-between gap-2">

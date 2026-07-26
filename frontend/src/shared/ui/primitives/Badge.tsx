@@ -36,6 +36,10 @@ const badgeVariants = cva(
           "bg-ethereal-crimson/10 text-ethereal-crimson border-ethereal-crimson/30 shadow-sm",
         amethyst:
           "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/30 shadow-sm",
+        // The warm neutral of the category scale (`accents.ts`) — the tone a
+        // taxonomy claims when it needs one more colour that is not an alarm.
+        incense:
+          "bg-ethereal-incense/12 text-ethereal-incense border-ethereal-incense/35 shadow-sm",
         neutral:
           "bg-ethereal-ink/4 text-ethereal-graphite border-hairline-strong",
         brand:
@@ -53,6 +57,7 @@ const badgeVariants = cva(
   },
 );
 
+/** The tone axis, so a taxonomy can map its accent onto a chip by name. */
 export type BadgeVariant = NonNullable<
   VariantProps<typeof badgeVariants>["variant"]
 >;

@@ -49,7 +49,7 @@ const TimezoneClockTile = ({
   const DayIcon = isDay ? Sun : Moon;
 
   return (
-    <div className="flex w-[8.5rem] shrink-0 flex-col gap-1.5 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 px-3.5 py-3">
+    <div className="flex w-[8.5rem] shrink-0 flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 px-3.5 py-3">
       <div className="flex items-center justify-between gap-2">
         <Eyebrow color="graphite" truncate className="block">
           {clock.city}
@@ -102,18 +102,13 @@ export const LogisticsTimezoneBand = ({
 
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false}>
-      <div className="flex items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3">
-        <div className="flex items-center gap-2.5">
-          <Globe2 size={14} className="text-ethereal-gold/70" aria-hidden="true" />
-          <Eyebrow as="h2" color="graphite">
-            {t("logistics.timezone.title", "Strefy czasowe zespołu")}
-          </Eyebrow>
-        </div>
-        <Caption color="muted">
-          {t("logistics.timezone.count", "{{count}} stref", {
-            count: clocks.length,
-          })}
-        </Caption>
+      {/* No zone count here: the overview bar states it, and this strip IS the
+          list of them — counting a list above the list is chrome. */}
+      <div className="flex items-center gap-2.5 border-b border-hairline px-5 py-3">
+        <Globe2 size={14} className="text-ethereal-gold/70" aria-hidden="true" />
+        <Eyebrow as="h2" color="graphite">
+          {t("logistics.timezone.title", "Strefy czasowe zespołu")}
+        </Eyebrow>
       </div>
 
       <div className="flex gap-2.5 overflow-x-auto p-4 no-scrollbar">

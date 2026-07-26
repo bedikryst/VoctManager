@@ -16,6 +16,7 @@ import { Controller, useWatch } from "react-hook-form";
 
 import { ConfirmModal } from "@ui/composites/ConfirmModal";
 import { Button } from "@ui/primitives/Button";
+import { Checkbox } from "@ui/primitives/Checkbox";
 import { Input } from "@ui/primitives/Input";
 import { Select } from "@ui/primitives/Select";
 import { Eyebrow, Heading, Text } from "@ui/primitives/typography";
@@ -36,10 +37,18 @@ const SectionTitle = ({ children }: { children: React.ReactNode }) => (
   <Eyebrow
     as="h4"
     color="gold"
-    className="block border-b border-ethereal-ink/8 pb-2.5"
+    className="block border-b border-hairline-strong pb-2.5"
   >
     {children}
   </Eyebrow>
+);
+
+/** A sentence under a field. An overline would set it uppercase and tracked
+ *  out, which is a label's clothing on a piece of prose. */
+const FieldHint = ({ children }: { children: React.ReactNode }) => (
+  <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
+    {children}
+  </Text>
 );
 
 export default function ArtistEditorPanel({
@@ -124,8 +133,7 @@ export default function ArtistEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            style={{ zIndex: 99 }}
-            className="fixed inset-0 bg-ethereal-ink/30 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-ethereal-ink/30 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -135,12 +143,11 @@ export default function ArtistEditorPanel({
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            style={{ zIndex: 100 }}
-            className="fixed inset-y-0 right-0 flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
+            className="fixed inset-y-0 right-0 z-focus-trap flex w-full max-w-xl flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-2xl"
             role="dialog"
             aria-modal="true"
           >
-            <div className="z-20 flex flex-shrink-0 items-center justify-between border-b border-ethereal-ink/8 bg-ethereal-alabaster/80 p-6 backdrop-blur-xl md:p-8">
+            <div className="z-20 flex shrink-0 items-center justify-between border-b border-hairline-strong bg-ethereal-alabaster/80 p-6 backdrop-blur-xl md:p-8">
               <Heading as="h3" size="2xl" weight="bold">
                 {artist?.id
                   ? t("artists.editor.title_edit", "Edycja Profilu")
@@ -148,21 +155,21 @@ export default function ArtistEditorPanel({
               </Heading>
               <div className="flex items-center gap-2">
                 {artist?.id && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => setShowNotifyModal(true)}
-                    title={t("artists.editor.message_artist", "Napisz wiadomość")}
-                    className="flex items-center gap-1.5 rounded-xl border border-ethereal-amethyst/30 bg-ethereal-alabaster px-3 py-2 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-amethyst shadow-sm transition-all hover:bg-ethereal-amethyst/10 active:scale-95"
+                    leftIcon={<Send size={14} aria-hidden="true" />}
+                    className="text-ethereal-amethyst hover:text-ethereal-amethyst"
                   >
-                    <Send size={14} aria-hidden="true" />
                     {t("artists.editor.message_artist", "Napisz wiadomość")}
-                  </button>
+                  </Button>
                 )}
                 <button
                   type="button"
                   onClick={handleCloseRequest}
                   aria-label={t("common.actions.close", "Zamknij")}
-                  className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
+                  className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
                 >
                   <X size={20} aria-hidden="true" />
                 </button>
@@ -172,7 +179,7 @@ export default function ArtistEditorPanel({
             <div className="relative flex-1 overflow-y-auto p-6 md:p-8">
               <form
                 onSubmit={onSubmit}
-                className="flex min-h-full flex-col space-y-8 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col space-y-8 rounded-surface border border-hairline bg-ethereal-alabaster/60 p-6 shadow-glass-ethereal backdrop-blur-xl md:p-8"
               >
                 <div className="flex-1 space-y-8">
                   <div className="space-y-5">
@@ -212,17 +219,12 @@ export default function ArtistEditorPanel({
                                 disabled={isSubmitting}
                                 className="font-medium text-ethereal-amethyst"
                               />
-                              <Text
-                                as="p"
-                                size="xs"
-                                color="muted"
-                                className="ml-1 mt-1.5"
-                              >
+                              <FieldHint>
                                 {t(
                                   "artists.editor.first_name_vocative_hint",
                                   "Forma używana w powitaniach, np. w mailach.",
                                 )}
-                              </Text>
+                              </FieldHint>
                             </motion.div>
                           )}
                         </AnimatePresence>
@@ -247,12 +249,12 @@ export default function ArtistEditorPanel({
                           error={errorText(errors.email?.message)}
                         />
                         {isEmailLocked && (
-                          <Eyebrow color="muted" className="mt-2 block">
+                          <FieldHint>
                             {t(
                               "artists.editor.email_locked",
                               "Adres logowania — zmienić może go tylko właściciel konta, w swoich ustawieniach.",
                             )}
-                          </Eyebrow>
+                          </FieldHint>
                         )}
                       </div>
                       <Input
@@ -287,17 +289,12 @@ export default function ArtistEditorPanel({
                           )}
                         />
                         {artist?.id && (
-                          <Text
-                            as="p"
-                            size="xs"
-                            color="muted"
-                            className="ml-1 mt-2"
-                          >
+                          <FieldHint>
                             {t(
                               "artists.editor.language_edit_disabled",
                               "Język jest zarządzany indywidualnie przez artystę w ustawieniach konta.",
                             )}
-                          </Text>
+                          </FieldHint>
                         )}
                       </div>
                       <div>
@@ -328,7 +325,7 @@ export default function ArtistEditorPanel({
                             />
                           )}
                         />
-                        <Text as="p" size="xs" color="muted" className="ml-1 mt-2">
+                        <FieldHint>
                           {artist?.id
                             ? t(
                                 "artists.editor.salutation_edit_disabled",
@@ -338,7 +335,7 @@ export default function ArtistEditorPanel({
                                 "artists.editor.salutation_hint",
                                 "Tylko dla powitań. Podpowiadane na podstawie głosu.",
                               )}
-                        </Text>
+                        </FieldHint>
                       </div>
                     </div>
                   </div>
@@ -433,13 +430,26 @@ export default function ArtistEditorPanel({
                   </div>
 
                   {artist?.id && (
-                    <div className="border-t border-ethereal-ink/8 pt-6">
-                      <label className="flex cursor-pointer items-center gap-4 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
-                        <input
-                          type="checkbox"
-                          {...form.register("is_active")}
-                          className="h-5 w-5 cursor-pointer rounded-md accent-ethereal-gold"
-                          disabled={isSubmitting}
+                    <div className="border-t border-hairline-strong pt-6">
+                      <label className="flex cursor-pointer items-center gap-4 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-4 shadow-glass-ethereal transition-colors hover:border-ethereal-gold/40">
+                        {/* `Checkbox` is a controlled primitive (the tick is
+                            drawn from the prop, not the DOM node), so this one
+                            field cannot ride on `register`. */}
+                        <Controller
+                          control={form.control}
+                          name="is_active"
+                          render={({ field }) => (
+                            <Checkbox
+                              size="md"
+                              checked={Boolean(field.value)}
+                              onChange={(event) =>
+                                field.onChange(event.target.checked)
+                              }
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              disabled={isSubmitting}
+                            />
+                          )}
                         />
                         <div>
                           <Text size="sm" weight="bold">
@@ -448,19 +458,19 @@ export default function ArtistEditorPanel({
                               "Aktywny dostęp do platformy",
                             )}
                           </Text>
-                          <Eyebrow color="muted" className="mt-1 block">
+                          <Text as="p" size="xs" color="muted" className="mt-1">
                             {t(
                               "artists.editor.active_access_desc",
                               "Zablokuje logowanie w przypadku odznaczenia.",
                             )}
-                          </Eyebrow>
+                          </Text>
                         </div>
                       </label>
                     </div>
                   )}
                 </div>
 
-                <div className="sticky bottom-0 left-0 right-0 z-40 -mx-6 -mb-8 mt-8 rounded-b-2xl border-t border-ethereal-ink/8 bg-ethereal-alabaster/85 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:p-6">
+                <div className="sticky bottom-0 left-0 right-0 z-40 -mx-6 -mb-8 mt-8 rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:p-6">
                   <Button
                     type="submit"
                     variant="primary"

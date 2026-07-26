@@ -11,10 +11,15 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarClock, Globe2, Layers, MapPin, Radio, Sun } from "lucide-react";
+import { CalendarClock, Globe2, Layers, Radio, Sun } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import {
+  ACCENT_TILE_ACTIVE,
+  ACCENT_TILE_IDLE,
+  ACCENT_TEXT,
+} from "@/shared/ui/primitives/accents";
 import {
   Caption,
   Eyebrow,
@@ -23,10 +28,7 @@ import {
 } from "@/shared/ui/primitives/typography";
 
 import type { LocationCategory } from "@/shared/types";
-import type {
-  LocationCategoryAccent,
-  LocationCategoryOption,
-} from "../constants/locationCategories";
+import type { LocationCategoryOption } from "../constants/locationCategories";
 import type { LocationsMetrics } from "../hooks/useLocationsData";
 import type { LogisticsScheduleMetrics } from "../hooks/useLogisticsEvents";
 
@@ -38,42 +40,6 @@ interface LogisticsOverviewBarProps {
   activeCategory: LocationCategory | "";
   onSelectCategory: (value: LocationCategory | "") => void;
 }
-
-const ACCENT: Record<
-  LocationCategoryAccent,
-  { active: string; idle: string }
-> = {
-  gold: {
-    active:
-      "border-ethereal-gold/45 bg-ethereal-gold/[0.05] ring-1 ring-ethereal-gold/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-gold/30",
-  },
-  amethyst: {
-    active:
-      "border-ethereal-amethyst/45 bg-ethereal-amethyst/[0.04] ring-1 ring-ethereal-amethyst/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-amethyst/30",
-  },
-  crimson: {
-    active:
-      "border-ethereal-crimson/45 bg-ethereal-crimson/[0.04] ring-1 ring-ethereal-crimson/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-crimson/30",
-  },
-  sage: {
-    active:
-      "border-ethereal-sage/45 bg-ethereal-sage/[0.04] ring-1 ring-ethereal-sage/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-sage/30",
-  },
-  graphite: {
-    active:
-      "border-ethereal-graphite/40 bg-ethereal-graphite/[0.05] ring-1 ring-ethereal-graphite/25",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-graphite/30",
-  },
-  incense: {
-    active:
-      "border-ethereal-incense/45 bg-ethereal-incense/[0.05] ring-1 ring-ethereal-incense/30",
-    idle: "border-ethereal-ink/8 hover:border-ethereal-incense/30",
-  },
-};
 
 const StatChip = ({
   icon,
@@ -126,7 +92,7 @@ export const LogisticsOverviewBar = React.memo(
 
     return (
       <GlassCard variant="solid" padding="none" isHoverable={false}>
-        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-ethereal-ink/6 px-5 py-3.5">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-hairline px-5 py-3.5">
           <div className="flex items-center gap-2.5">
             <Layers
               size={14}
@@ -137,23 +103,23 @@ export const LogisticsOverviewBar = React.memo(
               {t("logistics.overview.title", "Przegląd operacyjny")}
             </Eyebrow>
           </div>
+          {/* The venue census belongs to the "Wszystkie" tile below; this line
+              carries what the tiles cannot say. "Dziś" appears only on a day
+              that has something in it. */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <StatChip
-              icon={<MapPin size={11} />}
-              value={metrics.totalLocations}
-              label={t("logistics.overview.venues", "lokacji")}
-            />
             <StatChip
               icon={<CalendarClock size={11} />}
               value={scheduleMetrics.upcomingCount}
               label={t("logistics.overview.upcoming", "nadchodzących")}
             />
-            <StatChip
-              icon={<Sun size={11} />}
-              value={scheduleMetrics.todayCount}
-              label={t("logistics.overview.today", "dziś")}
-              emphasised={scheduleMetrics.todayCount > 0}
-            />
+            {scheduleMetrics.todayCount > 0 && (
+              <StatChip
+                icon={<Sun size={11} />}
+                value={scheduleMetrics.todayCount}
+                label={t("logistics.overview.today", "dziś")}
+                emphasised
+              />
+            )}
             <StatChip
               icon={<Radio size={11} />}
               value={scheduleMetrics.liveVenues}
@@ -171,7 +137,6 @@ export const LogisticsOverviewBar = React.memo(
           {categoryOptions.map((option) => {
             const count = categoryStats[option.value] ?? 0;
             const isActive = activeCategory === option.value;
-            const accent = ACCENT[option.accent];
             const Icon = option.icon;
             return (
               <button
@@ -184,8 +149,10 @@ export const LogisticsOverviewBar = React.memo(
                 }
                 title={option.plural}
                 className={cn(
-                  "group flex flex-col gap-2 rounded-2xl border bg-ethereal-alabaster px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45",
-                  isActive ? accent.active : accent.idle,
+                  "group flex flex-col gap-2 rounded-nested border bg-ethereal-alabaster px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45",
+                  isActive
+                    ? ACCENT_TILE_ACTIVE[option.accent]
+                    : ACCENT_TILE_IDLE[option.accent],
                 )}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -204,7 +171,11 @@ export const LogisticsOverviewBar = React.memo(
                     {count}
                   </Metric>
                 </div>
-                <Eyebrow color={option.accent} truncate className="block">
+                <Eyebrow
+                  color={ACCENT_TEXT[option.accent]}
+                  truncate
+                  className="block"
+                >
                   {option.plural}
                 </Eyebrow>
                 <div
@@ -229,10 +200,10 @@ export const LogisticsOverviewBar = React.memo(
             aria-pressed={!hasFilter}
             onClick={() => onSelectCategory("")}
             className={cn(
-              "group flex flex-col justify-between gap-2 rounded-2xl border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
+              "group flex flex-col justify-between gap-2 rounded-nested border px-3.5 py-3 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.98]",
               !hasFilter
                 ? "border-ethereal-gold/40 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-                : "border-dashed border-ethereal-ink/12 bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
+                : "border-dashed border-hairline-strong bg-ethereal-alabaster/50 hover:border-ethereal-gold/30",
             )}
           >
             <div className="flex items-center justify-between gap-2">

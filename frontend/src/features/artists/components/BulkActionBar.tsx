@@ -51,7 +51,7 @@ export const BulkActionBar = ({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: "spring", damping: 26, stiffness: 260 }}
-      className="fixed inset-x-0 bottom-dock z-toast mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-dock z-toast mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
       role="region"
       aria-label={t("artists.bulk.bar_aria", "Akcje zbiorcze")}
     >
@@ -62,16 +62,16 @@ export const BulkActionBar = ({
             n: selectedTotal,
           })}
         </Text>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={allSelected ? onClear : onSelectAll}
-          className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite transition-colors hover:text-ethereal-gold"
+          leftIcon={<CheckCheck size={13} aria-hidden="true" />}
         >
-          <CheckCheck size={13} aria-hidden="true" />
           {allSelected
             ? t("artists.bulk.clear", "Wyczyść")
             : t("artists.bulk.select_all", "Zaznacz wszystkich")}
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2">

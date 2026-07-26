@@ -14,6 +14,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Archive,
+  CalendarOff,
   ChevronLeft,
   Clock,
   ExternalLink,
@@ -27,8 +28,8 @@ import {
 
 import { cn } from "@/shared/lib/utils";
 import { useLocalTime } from "@/shared/lib/time/hooks/useLocalTime";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import {
   Caption,
   Eyebrow,
@@ -37,7 +38,7 @@ import {
 } from "@/shared/ui/primitives/typography";
 
 import { getImminenceDefinition } from "../constants/eventImminence";
-import { getLocationCategoryOption } from "../constants/locationCategories";
+import { buildDirectionsUrl, buildPlaceUrl } from "../lib/mapsLinks";
 import type { LogisticsEvent, VenueActivity } from "../hooks/useLogisticsEvents";
 import type { LocationDto } from "../types/logistics.dto";
 
@@ -54,28 +55,14 @@ interface LocationDetailProps {
   className?: string;
 }
 
-const buildMapsUrl = (location: LocationDto): string => {
-  const base = "https://www.google.com/maps/search/?api=1";
-  if (location.google_place_id) {
-    return `${base}&query=${encodeURIComponent(location.name)}&query_place_id=${location.google_place_id}`;
-  }
-  if (location.latitude && location.longitude) {
-    return `${base}&query=${location.latitude},${location.longitude}`;
-  }
-  return `${base}&query=${encodeURIComponent(`${location.name} ${location.formatted_address ?? ""}`)}`;
-};
-
-const buildDirectionsUrl = (location: LocationDto): string => {
-  const base = "https://www.google.com/maps/dir/?api=1";
-  if (location.latitude && location.longitude) {
-    const dest = `${location.latitude},${location.longitude}`;
-    const placeId = location.google_place_id
-      ? `&destination_place_id=${location.google_place_id}`
-      : "";
-    return `${base}&destination=${dest}${placeId}`;
-  }
-  return `${base}&destination=${encodeURIComponent(`${location.name} ${location.formatted_address ?? ""}`)}`;
-};
+/** The shape both deep-link builders read, from a full venue record. */
+const toMapsTarget = (location: LocationDto) => ({
+  name: location.name,
+  formattedAddress: location.formatted_address,
+  googlePlaceId: location.google_place_id,
+  latitude: location.latitude,
+  longitude: location.longitude,
+});
 
 const DetailEventRow = ({
   event,
@@ -94,9 +81,9 @@ const DetailEventRow = ({
   }).format(event.date);
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 px-3 py-2.5">
+    <div className="flex items-center gap-3 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 px-3 py-2.5">
       <span
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-chip border"
         style={{ borderColor: imminence.marker, color: imminence.marker }}
         aria-hidden="true"
       >
@@ -137,19 +124,18 @@ export const LocationDetail = ({
   const { t } = useTranslation();
   const liveTime = useLocalTime(location.timezone ?? "");
 
-  const option = getLocationCategoryOption(t, location.category);
   const upcoming = activity?.upcoming ?? [];
   const pastCount = activity?.past.length ?? 0;
 
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
-      <header className="flex shrink-0 items-start justify-between gap-3 border-b border-ethereal-ink/6 bg-ethereal-marble/60 px-5 py-4">
+      <header className="flex shrink-0 items-start justify-between gap-3 border-b border-hairline bg-ethereal-marble/60 px-5 py-4">
         <div className="flex min-w-0 items-start gap-2.5">
           <button
             type="button"
             onClick={onClose}
             aria-label={backLabel ?? t("logistics.dossier.close", "Zamknij")}
-            className="mt-0.5 shrink-0 rounded-lg border border-ethereal-ink/8 bg-ethereal-marble/70 p-1.5 text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+            className="mt-0.5 shrink-0 rounded-chip border border-hairline-strong bg-ethereal-marble/70 p-1.5 text-ethereal-graphite transition-colors hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
           >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
@@ -160,16 +146,14 @@ export const LocationDetail = ({
             <Heading as="h2" size="lg" truncate className="text-ethereal-ink">
               {location.name}
             </Heading>
-            {option && (
-              <LocationCategoryBadge category={location.category} size="sm" />
-            )}
+            <LocationCategoryBadge category={location.category} />
           </div>
         </div>
       </header>
 
       <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-5 py-5">
         {/* Live local time */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-ink/6 bg-ethereal-marble/50 px-4 py-3">
+        <div className="flex items-center justify-between gap-3 rounded-nested border border-hairline bg-ethereal-marble/50 px-4 py-3">
           <div className="flex items-center gap-2 text-ethereal-graphite/70">
             <Clock size={14} aria-hidden="true" />
             <Eyebrow color="muted">
@@ -194,19 +178,19 @@ export const LocationDetail = ({
           </Text>
           <div className="flex flex-wrap gap-2">
             <a
-              href={buildMapsUrl(location)}
+              href={buildPlaceUrl(toMapsTarget(location))}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-ink/8 bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+              className="inline-flex items-center gap-1.5 rounded-chip border border-hairline-strong bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
             >
               <ExternalLink size={12} aria-hidden="true" />
               {t("logistics.atlas.open_maps", "Mapy Google")}
             </a>
             <a
-              href={buildDirectionsUrl(location)}
+              href={buildDirectionsUrl(toMapsTarget(location))}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-ink/8 bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+              className="inline-flex items-center gap-1.5 rounded-chip border border-hairline-strong bg-ethereal-marble/70 px-3 py-1.5 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
             >
               <Navigation size={12} aria-hidden="true" />
               {t("logistics.preview.get_directions", "Wyznacz trasę")}
@@ -216,7 +200,7 @@ export const LocationDetail = ({
 
         {/* Internal notes */}
         {location.internal_notes && location.internal_notes.trim() && (
-          <div className="flex items-start gap-2 rounded-2xl border border-ethereal-gold/15 bg-ethereal-gold/5 px-4 py-3">
+          <div className="flex items-start gap-2 rounded-nested border border-ethereal-gold/15 bg-ethereal-gold/5 px-4 py-3">
             <StickyNote
               size={14}
               strokeWidth={1.6}
@@ -252,16 +236,19 @@ export const LocationDetail = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-ethereal-ink/10 bg-ethereal-alabaster/50 px-4 py-5 text-center">
-              <Badge variant="glass">
-                {t("logistics.dossier.no_upcoming", "Brak zaplanowanych wydarzeń")}
-              </Badge>
-            </div>
+            <StatePanel
+              variant="inline"
+              icon={<CalendarOff size={20} aria-hidden="true" />}
+              title={t(
+                "logistics.dossier.no_upcoming",
+                "Brak zaplanowanych wydarzeń",
+              )}
+            />
           )}
         </section>
       </div>
 
-      <footer className="flex shrink-0 gap-3 border-t border-ethereal-ink/6 bg-ethereal-marble/40 px-5 py-4">
+      <footer className="flex shrink-0 gap-3 border-t border-hairline bg-ethereal-marble/40 px-5 py-4">
         <Button
           variant="outline"
           onClick={() => onEdit(location)}

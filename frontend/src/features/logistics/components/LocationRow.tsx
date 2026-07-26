@@ -2,9 +2,11 @@
  * @file LocationRow.tsx
  * @description Dense, click-to-open row for a venue in the command rail
  * (replaces the old big LocationCard). Clicking selects the venue — the atlas
- * flies to it and the dossier opens. A "live" chip surfaces the soonest event
- * here so the conductor sees activity without leaving the list. Quiet inline
- * edit stays always-visible (touch-safe), never hover-gated.
+ * flies to it and the dossier opens. The soonest event here is stated where
+ * there is one; a venue with nothing booked simply says nothing, because most
+ * of the atlas is quiet most of the time and forty em-dashes hide the two rows
+ * that matter. Quiet inline edit stays always-visible (touch-safe), never
+ * hover-gated.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/LocationRow
  */
@@ -13,7 +15,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { CalendarClock, MapPin, Pencil } from "lucide-react";
+import { MapPin, Pencil } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import {
@@ -85,14 +87,14 @@ const LocationRowComponent = ({
         }
       }}
       className={cn(
-        "group flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group flex cursor-pointer items-center gap-3 rounded-nested border px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isActive
           ? "border-ethereal-gold/45 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-          : "border-ethereal-ink/8 bg-ethereal-alabaster hover:border-ethereal-gold/30",
+          : "border-hairline-strong bg-ethereal-alabaster hover:border-ethereal-gold/30",
       )}
     >
       <span
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-ethereal-marble"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border bg-ethereal-marble"
         style={{ borderColor: option.atlasMarker, color: option.atlasMarker }}
         aria-hidden="true"
       >
@@ -104,12 +106,18 @@ const LocationRowComponent = ({
           <Text as="p" size="sm" weight="semibold" truncate className="text-ethereal-ink">
             {location.name}
           </Text>
+          {/* How many events are booked here is one of the venue's own facts,
+              so it reads as plain type — a chip would make it an alert. */}
           {upcomingCount > 1 && (
             <Caption
               color="muted"
-              className="shrink-0 rounded-full bg-ethereal-ink/6 px-1.5 tabular-nums"
+              className="shrink-0 tabular-nums"
+              title={t("logistics.row.upcoming_here", {
+                defaultValue: "Zaplanowane tutaj: {{count}}",
+                count: upcomingCount,
+              })}
             >
-              {upcomingCount}
+              ×{upcomingCount}
             </Caption>
           )}
         </div>
@@ -123,7 +131,7 @@ const LocationRowComponent = ({
         </Caption>
       </div>
 
-      {nextEvent && imminence ? (
+      {nextEvent && imminence && (
         <div className="flex shrink-0 items-center gap-1.5">
           <span
             className={cn(
@@ -142,11 +150,6 @@ const LocationRowComponent = ({
             {formatRelativeDay(nextEvent.date, t)}
           </Text>
         </div>
-      ) : (
-        <Caption color="muted" className="hidden shrink-0 items-center gap-1 sm:flex">
-          <CalendarClock size={10} aria-hidden="true" />
-          {t("logistics.row.no_events", "—")}
-        </Caption>
       )}
 
       <button
@@ -158,7 +161,7 @@ const LocationRowComponent = ({
         aria-label={t("logistics.row.edit_aria", "Edytuj {{name}}", {
           name: location.name,
         })}
-        className="shrink-0 rounded-lg p-1.5 text-ethereal-graphite/40 transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+        className="shrink-0 rounded-chip p-1.5 text-ethereal-graphite/40 transition-colors hover:bg-ethereal-ink/4 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
       >
         <Pencil size={14} aria-hidden="true" />
       </button>

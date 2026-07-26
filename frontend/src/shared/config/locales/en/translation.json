@@ -774,7 +774,6 @@
     },
     "card": {
       "activate_action": "Activate",
-      "active_account_title": "Account active and connected to the platform",
       "archive_action": "Archive",
       "archive_badge": "Archive",
       "detached_account": "Account detached",
@@ -782,22 +781,17 @@
       "edit": "Edit",
       "invite_sent_at": "Sent {{when}}",
       "link_expired": "Link expired",
-      "link_expired_title": "Activation link expired — resend the invitation",
       "message": "Message",
       "message_title": "Write a message",
       "no_phone": "No phone",
-      "none": "None",
       "open_profile_aria": "Open profile: {{name}}",
       "pending_activation": "Not activated",
-      "pending_activation_title": "Invitation sent — the account hasn't been activated yet",
       "resend_activation": "Resend invitation",
       "resend_activation_short": "Resend",
-      "resending": "Sending…",
       "sight_reading": "Sight-reading",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
-      "voice_range": "Voice Range",
-      "voice_range_short": "Range"
+      "voice_range": "Voice Range"
     },
     "dashboard": {
       "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
@@ -823,7 +817,9 @@
       "sync_warning_desc": "Failed to fetch artist data.",
       "sync_warning_title": "Warning",
       "title_highlight": "Management",
-      "title_prefix": "Team"
+      "title_prefix": "Team",
+      "archived_members": "archived",
+      "archived_members_hint": "Archived singers are still in the list below, at the end — the sections do not count them."
     },
     "dossier": {
       "acceptance": "Invitation acceptance",
@@ -1367,6 +1363,10 @@
       "masculine": "Masculine",
       "neutral": "Neutral",
       "settings_hint": "Used only in greetings in emails and notifications."
+    },
+    "filters": {
+      "remove_token": "Remove filter: {{label}}",
+      "clear_all": "Clear filters"
     }
   },
   "contact_filters": {
@@ -1548,9 +1548,10 @@
       "all": "All",
       "companies": "companies",
       "email_pct": "email {{n}}%",
-      "people_total": "people",
       "phone_pct": "phone {{n}}%",
-      "title": "Specialities"
+      "title": "Specialities",
+      "email_unknown": "e-mail —",
+      "phone_unknown": "phone —"
     },
     "card": {
       "btn_delete": "Delete",
@@ -1600,7 +1601,6 @@
       "last_name": "Last Name *",
       "phone": "Phone",
       "specialty": "Specialty *",
-      "specialty_preview": "Selected specialty",
       "title_edit": "Edit data",
       "title_new": "New collaborator"
     },
@@ -1610,7 +1610,9 @@
       "filters_blocked": "Current filters hide the entire roster. Clear them to return to the full directory.",
       "search_results": "We couldn't find a person or company \"{{term}}\". Add a new entry or remove some filters.",
       "start_building": "Start building your production team by adding the first collaborator to the database.",
-      "title": "No people in the current view"
+      "title": "No people in the current view",
+      "filtered_title": "Nobody matches the filters",
+      "pristine_title": "Your crew base is empty"
     },
     "filters": {
       "active_description": "Click a filter to remove it without resetting the whole view.",
@@ -2229,12 +2231,12 @@
       "live_venues_many": "{{count}} active",
       "live_venues_other": "{{count}} active",
       "local_time": "Local time",
-      "markers_count": "{{count}} markers",
       "markers_count_one": "{{count}} place",
       "markers_count_few": "{{count}} places",
       "markers_count_many": "{{count}} places",
       "markers_count_other": "{{count}} places",
-      "open_maps": "Google Maps"
+      "open_maps": "Google Maps",
+      "missing_count": "{{count}} without coordinates"
     },
     "autocomplete": {
       "placeholder": "Type a venue, hotel, or address..."
@@ -2305,7 +2307,6 @@
       },
       "address": "Official address *",
       "category": "Classification *",
-      "category_preview": "Selected category",
       "close_aria": "Close panel",
       "eyebrow": "Location profile",
       "internal_notes": "Team notes (optional)",
@@ -2420,7 +2421,7 @@
     },
     "row": {
       "edit_aria": "Edit {{name}}",
-      "no_events": "—"
+      "upcoming_here": "Scheduled here: {{count}}"
     },
     "timezone": {
       "count_one": "{{count}} time zone",

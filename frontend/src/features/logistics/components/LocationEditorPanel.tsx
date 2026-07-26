@@ -31,7 +31,6 @@ import { getLocationCategoryOptions } from "../constants/locationCategories";
 import { useLocationForm } from "../hooks/useLocationForm";
 import type { LocationDto } from "../types/logistics.dto";
 
-import { LocationCategoryBadge } from "./LocationCategoryBadge";
 import { LocationMapPicker } from "./LocationMapPicker";
 
 interface LocationEditorPanelProps {
@@ -84,7 +83,6 @@ export function LocationEditorPanel({
   };
 
   const categoryOptions = getLocationCategoryOptions(t);
-  const watchedCategory = form.watch("category");
   const isNewEntry = !location?.id;
 
   const initialPickerPosition =
@@ -124,33 +122,24 @@ export function LocationEditorPanel({
             role="dialog"
             aria-modal="true"
           >
-            <header className="flex flex-shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 backdrop-blur-xl md:px-8">
+            <header className="flex shrink-0 items-center justify-between gap-4 border-b border-ethereal-incense/15 bg-ethereal-marble/60 px-6 py-5 backdrop-blur-xl md:px-8">
               <div className="min-w-0 space-y-1.5">
                 <Eyebrow color="muted">
                   {t("logistics.editor.eyebrow", "Profil lokacji")}
                 </Eyebrow>
+                {/* No record id under the title: a UUID is something the
+                    database needs, not the producer editing a venue. */}
                 <Heading as="h3" size="2xl" truncate>
                   {isNewEntry
                     ? t("logistics.editor.title_new", "Nowa lokacja")
                     : t("logistics.editor.title_edit", "Edycja lokacji")}
                 </Heading>
-                {!isNewEntry && location?.id && (
-                  <Text
-                    as="p"
-                    size="xs"
-                    color="muted"
-                    className="font-mono"
-                    truncate
-                  >
-                    {location.id}
-                  </Text>
-                )}
               </div>
               <button
                 type="button"
                 onClick={handleCloseRequest}
                 aria-label={t("logistics.editor.close_aria", "Zamknij panel")}
-                className="rounded-xl border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
+                className="rounded-control border border-ethereal-incense/20 bg-ethereal-marble/70 p-2.5 text-ethereal-graphite shadow-sm transition-all duration-300 hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -160,7 +149,7 @@ export function LocationEditorPanel({
               <form
                 id={FORM_ID}
                 onSubmit={onSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-3xl border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
               >
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">
@@ -178,7 +167,7 @@ export function LocationEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
-                  <div className="rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-5">
+                  <div className="rounded-nested border border-ethereal-gold/20 bg-ethereal-gold/5 p-5">
                     <div className="mb-4 flex items-center gap-2 text-ethereal-gold">
                       <Globe2 size={14} strokeWidth={1.6} aria-hidden="true" />
                       <Text size="xs" color="graphite" className="max-w-md">
@@ -210,6 +199,8 @@ export function LocationEditorPanel({
                     <Divider variant="gradient-right" />
                   </div>
 
+                  {/* No "chosen category" preview under it: the select prints
+                      the same label two rows higher. */}
                   <Controller
                     control={form.control}
                     name="category"
@@ -236,19 +227,6 @@ export function LocationEditorPanel({
                       />
                     )}
                   />
-
-                  <div className="flex items-center justify-between gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
-                    <Text size="xs" color="graphite">
-                      {t(
-                        "logistics.editor.category_preview",
-                        "Wybrana kategoria",
-                      )}
-                    </Text>
-                    <LocationCategoryBadge
-                      category={watchedCategory}
-                      size="sm"
-                    />
-                  </div>
 
                   <Input
                     label={t("logistics.editor.name", "Nazwa wyświetlana *")}
@@ -330,7 +308,7 @@ export function LocationEditorPanel({
                     }
                   />
 
-                  <div className="flex items-start gap-2 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
+                  <div className="flex items-start gap-2 rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/60 px-4 py-3">
                     <StickyNote
                       size={13}
                       strokeWidth={1.6}
@@ -346,7 +324,7 @@ export function LocationEditorPanel({
                   </div>
                 </section>
 
-                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto rounded-b-3xl border-t border-ethereal-ink/8 bg-ethereal-alabaster/90 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:-mb-8 md:p-6">
+                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/90 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:-mb-8 md:p-6">
                   <Button
                     type="submit"
                     variant="primary"

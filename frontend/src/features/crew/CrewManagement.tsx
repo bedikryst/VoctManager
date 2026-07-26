@@ -12,11 +12,13 @@
 import React, { useDeferredValue, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, RotateCcw, X } from "lucide-react";
+import { Plus, RotateCcw, UsersRound } from "lucide-react";
 
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { FilterTokens } from "@/shared/ui/composites/FilterTokens";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -29,13 +31,13 @@ import {
 import { CrewCard } from "./components/CrewCard";
 import { CrewRow } from "./components/CrewRow";
 import { CrewEditorPanel } from "./components/CrewEditorPanel";
-import { CrewEmptyState } from "./components/CrewEmptyState";
 import { CrewSpecialtyBar } from "./components/CrewSpecialtyBar";
 import { CrewToolbar } from "./components/CrewToolbar";
 import { useCrewData } from "./hooks/useCrewData";
 
-const formatCoverage = (value: number, total: number): number =>
-  total === 0 ? 0 : Math.round((value / total) * 100);
+/** `null` where there is nobody to compute a rate over — see the strip header. */
+const formatCoverage = (value: number, total: number): number | null =>
+  total === 0 ? null : Math.round((value / total) * 100);
 
 export default function CrewManagement(): React.JSX.Element {
   const { t } = useTranslation();
@@ -148,39 +150,19 @@ export default function CrewManagement(): React.JSX.Element {
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-              <Caption color="muted" className="tabular-nums">
-                {t("crew.filters.summary", {
-                  visible: deferredCrew.length,
-                  total: metrics.totalPeople,
-                  defaultValue: "{{visible}} z {{total}} osób w widoku.",
-                })}
-              </Caption>
-
-              {hasActiveFilters && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {activeFilters.map((token) => (
-                    <button
-                      key={token.id}
-                      type="button"
-                      onClick={token.clear}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-ethereal-ink/10 bg-ethereal-alabaster/70 px-3 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:border-ethereal-gold/35 hover:text-ethereal-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/30"
-                    >
-                      <span>{token.label}</span>
-                      <X size={12} aria-hidden="true" />
-                    </button>
-                  ))}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetFilters}
-                    leftIcon={<RotateCcw size={13} aria-hidden="true" />}
-                  >
-                    {t("crew.filters.clear_filters", "Wyczyść filtry")}
-                  </Button>
-                </div>
-              )}
-            </div>
+            <FilterTokens
+              tokens={activeFilters}
+              onClearAll={resetFilters}
+              summary={
+                <Caption color="muted" className="tabular-nums">
+                  {t("crew.filters.summary", {
+                    visible: deferredCrew.length,
+                    total: metrics.totalPeople,
+                    defaultValue: "{{visible}} z {{total}} osób w widoku.",
+                  })}
+                </Caption>
+              }
+            />
           </StaggeredBentoItem>
 
           <StaggeredBentoItem>
@@ -209,11 +191,68 @@ export default function CrewManagement(): React.JSX.Element {
                 </div>
               )
             ) : (
-              <CrewEmptyState
-                searchTerm={normalizedSearchTerm}
-                hasActiveFilters={hasActiveFilters}
-                onCreatePerson={() => openPanel(null, normalizedSearchTerm)}
-                onResetFilters={resetFilters}
+              <StatePanel
+                icon={<UsersRound size={32} aria-hidden="true" />}
+                eyebrow={t(
+                  "crew.empty_state.title",
+                  "Brak osób w bieżącym widoku",
+                )}
+                title={
+                  hasActiveFilters
+                    ? t(
+                        "crew.empty_state.filtered_title",
+                        "Nikt nie pasuje do filtrów",
+                      )
+                    : t(
+                        "crew.empty_state.pristine_title",
+                        "Twoja baza ekipy jest pusta",
+                      )
+                }
+                description={
+                  normalizedSearchTerm
+                    ? t("crew.empty_state.search_results", {
+                        defaultValue:
+                          'Nie znaleźliśmy osoby ani firmy "{{term}}". Możesz dodać nowy wpis lub usunąć część filtrów.',
+                        term: normalizedSearchTerm,
+                      })
+                    : hasActiveFilters
+                      ? t(
+                          "crew.empty_state.filters_blocked",
+                          "Aktualne filtry ukrywają całą bazę. Wyczyść je, aby wrócić do pełnego spisu.",
+                        )
+                      : t(
+                          "crew.empty_state.start_building",
+                          "Rozpocznij budowę zespołu produkcyjnego, dodając pierwszego współpracownika do bazy.",
+                        )
+                }
+                actions={
+                  <>
+                    <Button
+                      variant="secondary"
+                      onClick={() => openPanel(null, normalizedSearchTerm)}
+                      leftIcon={<Plus size={14} aria-hidden="true" />}
+                    >
+                      {normalizedSearchTerm
+                        ? t("crew.empty_state.add_search", {
+                            defaultValue: 'Dodaj wpis "{{term}}"',
+                            term: normalizedSearchTerm,
+                          })
+                        : t(
+                            "crew.empty_state.add_person",
+                            "Dodaj współpracownika",
+                          )}
+                    </Button>
+                    {hasActiveFilters && (
+                      <Button
+                        variant="ghost"
+                        onClick={resetFilters}
+                        leftIcon={<RotateCcw size={14} aria-hidden="true" />}
+                      >
+                        {t("crew.filters.clear_filters", "Wyczyść filtry")}
+                      </Button>
+                    )}
+                  </>
+                }
               />
             )}
           </StaggeredBentoItem>
