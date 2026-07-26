@@ -13,9 +13,10 @@
 import React from "react";
 import * as RadixSelect from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
-import { cva, type VariantProps } from "class-variance-authority";
+import { type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/shared/lib/utils";
+import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 /**
@@ -25,25 +26,19 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
  */
 const CLEAR_VALUE = "__select_clear__";
 
-const triggerVariants = cva(
-  "relative flex w-full items-center justify-between gap-2 rounded-control py-3 text-sm text-ethereal-ink transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50 data-placeholder:text-ethereal-incense",
-  {
-    variants: {
-      variant: {
-        glass:
-          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
-        solid:
-          "bg-ethereal-marble border border-hairline-strong shadow-glass-solid hover:border-ethereal-gold/40 focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
-        ghost:
-          "bg-transparent border border-transparent hover:bg-ethereal-incense/10 focus:bg-ethereal-marble focus:border-ethereal-incense/30",
-      },
-      hasError: {
-        true: "border-ethereal-crimson bg-ethereal-crimson/5 text-ethereal-crimson focus:border-ethereal-crimson focus:ring-ethereal-crimson/20",
-      },
-    },
-    defaultVariants: { variant: "glass", hasError: false },
-  },
-);
+/** Layout and placeholder colour; the surface itself comes from `fieldShell`. */
+const TRIGGER_LAYOUT =
+  "relative flex items-center justify-between gap-2 data-placeholder:text-ethereal-incense";
+
+/**
+ * `sm` is for a control packed into a dense strip — a dock, a toolbar row —
+ * where a full field would set the height of everything around it. It is a
+ * density, not a hierarchy: nothing about the field means less.
+ */
+const TRIGGER_SIZE = {
+  default: "py-3",
+  sm: "py-1.5 text-xs",
+} as const;
 
 export interface SelectOption {
   readonly value: string;
@@ -56,7 +51,7 @@ export interface SelectOption {
   readonly tone?: "default" | "sage" | "crimson";
 }
 
-export interface SelectProps extends VariantProps<typeof triggerVariants> {
+export interface SelectProps extends VariantProps<typeof fieldShellVariants> {
   readonly options: readonly SelectOption[];
   /** `""` means nothing is selected — the placeholder shows instead. */
   readonly value: string;
@@ -76,6 +71,8 @@ export interface SelectProps extends VariantProps<typeof triggerVariants> {
    * alone says the same thing without offering an action that means nothing.
    */
   readonly clearLabel?: string;
+  /** Vertical density. `sm` for dense strips; see `TRIGGER_SIZE`. */
+  readonly size?: keyof typeof TRIGGER_SIZE;
   readonly className?: string;
 }
 
@@ -94,6 +91,7 @@ export const Select = ({
   id,
   ariaLabel,
   clearLabel,
+  size = "default",
   className,
 }: SelectProps): React.JSX.Element => {
   const internalId = React.useId();
@@ -124,7 +122,9 @@ export const Select = ({
           aria-invalid={hasError}
           aria-describedby={hasError ? errorId : undefined}
           className={cn(
-            triggerVariants({ variant, hasError }),
+            fieldShellVariants({ variant, hasError }),
+            TRIGGER_LAYOUT,
+            TRIGGER_SIZE[size],
             // The icon is hidden on phones, so its inset is only reserved from
             // sm up — same contract as `Input`.
             leftIcon ? "pl-4 sm:pl-11" : "pl-4",
@@ -157,7 +157,13 @@ export const Select = ({
             <ChevronDown
               size={16}
               strokeWidth={1.5}
-              className="shrink-0 text-ethereal-graphite/60"
+              className={cn(
+                "shrink-0",
+                // Graphite disappears into ink; the dark field needs its own.
+                variant === "dark"
+                  ? "text-ethereal-alabaster/60"
+                  : "text-ethereal-graphite/60",
+              )}
               aria-hidden="true"
             />
           </RadixSelect.Icon>
@@ -169,7 +175,7 @@ export const Select = ({
             sideOffset={8}
             className={cn(
               "z-nav-sheet max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
-              "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+              "popover-motion",
             )}
           >
             <RadixSelect.ScrollUpButton className="flex h-5 items-center justify-center text-ethereal-graphite/60">

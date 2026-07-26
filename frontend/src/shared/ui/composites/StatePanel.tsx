@@ -9,18 +9,27 @@ import React from "react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 
 type StateTone = "default" | "warning" | "danger";
+type StateVariant = "page" | "inline";
 
 export interface StatePanelProps extends React.HTMLAttributes<HTMLDivElement> {
   icon: React.ReactNode;
   title: string;
-  description: string;
+  description?: string;
   eyebrow?: string;
   actions?: React.ReactNode;
   tone?: StateTone;
   align?: "left" | "center";
+  /**
+   * `page` owns its own surface and is the state of a whole work area.
+   * `inline` drops the surface, the ring and the heading scale for an empty
+   * that already sits inside a `SectionCard` body — a card nested in a card
+   * reads as a rendering accident, and a 2xl heading outshouts the real
+   * content of every sibling card in the column.
+   */
+  variant?: StateVariant;
 }
 
 const toneClassMap: Record<StateTone, string> = {
@@ -32,6 +41,12 @@ const toneClassMap: Record<StateTone, string> = {
     "border-ethereal-crimson/20 bg-ethereal-crimson/10 text-ethereal-crimson",
 };
 
+const inlineToneClassMap: Record<StateTone, string> = {
+  default: "text-ethereal-incense/40",
+  warning: "text-ethereal-gold/60",
+  danger: "text-ethereal-crimson/60",
+};
+
 export function StatePanel({
   icon,
   title,
@@ -40,10 +55,38 @@ export function StatePanel({
   actions,
   tone = "default",
   align = "center",
+  variant = "page",
   className,
   ...props
 }: StatePanelProps): React.JSX.Element {
   const isCentered = align === "center";
+
+  if (variant === "inline") {
+    return (
+      <div
+        className={cn(
+          "flex flex-1 flex-col justify-center gap-2 py-6",
+          isCentered ? "items-center text-center" : "items-start text-left",
+          className,
+        )}
+        {...props}
+      >
+        <span className={inlineToneClassMap[tone]} aria-hidden="true">
+          {icon}
+        </span>
+        {eyebrow && <Eyebrow color="muted">{eyebrow}</Eyebrow>}
+        <Text size="base" weight="medium" color="graphite">
+          {title}
+        </Text>
+        {description && (
+          <Caption color="muted" className="max-w-xs text-pretty">
+            {description}
+          </Caption>
+        )}
+        {actions && <div className="mt-1 flex items-center gap-2">{actions}</div>}
+      </div>
+    );
+  }
 
   return (
     <GlassCard
@@ -69,9 +112,11 @@ export function StatePanel({
         <Heading as="h3" size="2xl" weight="medium">
           {title}
         </Heading>
-        <Text color="graphite" className="max-w-2xl">
-          {description}
-        </Text>
+        {description && (
+          <Text color="graphite" className="max-w-2xl">
+            {description}
+          </Text>
+        )}
       </div>
 
       {actions && (

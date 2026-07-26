@@ -280,6 +280,52 @@
   will-change: transform, opacity;
 }
 
+/* Entry/exit for a Radix-portalled surface (select listbox, dropdown menu).
+   Radix drives `data-state` and holds the node in the tree until the closing
+   animation ends, so the exit half has to be a real CSS animation — a
+   transition would never run, because the element is removed on the same tick.
+   Scale anchors on the `origin-(--radix-*-transform-origin)` the caller sets,
+   which is why the surface grows out of its trigger rather than its own centre.
+   Transform + opacity only, per the motion rule. */
+@keyframes popover-surface-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popover-surface-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@utility popover-motion {
+  &[data-state="open"] {
+    animation: popover-surface-in 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &[data-state="closed"] {
+    animation: popover-surface-out 110ms ease-in;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &[data-state="open"],
+    &[data-state="closed"] {
+      animation-duration: 1ms;
+    }
+  }
+}
+
 /* ========================================== */
 /* LENIS SMOOTH SCROLLING                     */
 /* ========================================== */

@@ -8,7 +8,7 @@
 import React, { InputHTMLAttributes, forwardRef, useId } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 const inputVariants = cva(
   "w-full rounded-control text-sm transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
@@ -18,8 +18,12 @@ const inputVariants = cva(
         glass:
           "bg-ethereal-marble/90 backdrop-blur-md border border-ethereal-gold/35 text-ethereal-ink shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] placeholder:text-ethereal-incense focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/55",
         dark: "bg-ethereal-ink/80 backdrop-blur-xl border border-ethereal-gold/20 text-ethereal-alabaster shadow-2xl placeholder:text-ethereal-incense focus:bg-ethereal-ink focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/40",
+        // The transparent border is deliberate and must carry a WIDTH: without
+        // one the field is 2px shorter than its glass sibling in the same row,
+        // and `focus:border-*` has nothing to paint on. A caller wanting a
+        // resting edge (the budget ledger's underline) adds its own side.
         ghost:
-          "bg-transparent border-transparent text-ethereal-ink placeholder:text-ethereal-incense hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/30",
+          "bg-transparent border border-transparent text-ethereal-ink placeholder:text-ethereal-incense hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/40 focus:ring-ethereal-gold/20",
       },
       hasError: {
         true: "border-ethereal-crimson bg-ethereal-crimson/5 focus:border-ethereal-crimson focus:ring-ethereal-crimson/20 text-ethereal-ink placeholder:text-ethereal-crimson/70",
@@ -111,23 +115,28 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
 
           {rightElement && (
-            <div
-              className="absolute right-6 flex items-center justify-center text-overline-sm font-bold text-ethereal-incense uppercase tracking-widest"
+            <Eyebrow
+              as="div"
+              size="overline-sm"
+              className="absolute right-6 flex items-center justify-center"
               aria-hidden="true"
             >
               {rightElement}
-            </div>
+            </Eyebrow>
           )}
         </div>
 
         {hasError && (
-          <span
+          <Text
+            as="span"
             id={errorId}
             role="alert"
-            className="ml-1 animate-in fade-in slide-in-from-top-1 text-[10px] font-medium text-ethereal-crimson duration-300"
+            size="xs"
+            color="crimson"
+            className="ml-1 font-medium"
           >
             {error}
-          </span>
+          </Text>
         )}
       </div>
     );

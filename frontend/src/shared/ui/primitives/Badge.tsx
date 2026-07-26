@@ -11,12 +11,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
-  // Chip type is one recipe shared with StatusBadge: the overline-sm size at
-  // the control tracking (0.1em). The wider 0.14em belongs to `Eyebrow` and
-  // must not leak here — a chip sits inline with buttons, not with headings.
-  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip text-overline-sm font-bold uppercase tracking-widest border transition-colors duration-300",
+  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-chip border transition-colors duration-300",
   {
     variants: {
+      // What the chip CARRIES, which is what decides its type — not its colour.
+      // `overline` is a status the system wrote (the recipe shared with
+      // StatusBadge: overline-sm at the control tracking 0.1em; the wider
+      // 0.14em belongs to `Eyebrow` and must not leak here, because a chip
+      // sits inline with buttons, not with headings). `natural` is content
+      // that owns its own casing — a person's name, a filename, a role. Set
+      // in caps and tracked out, a name stops reading as a person.
+      casing: {
+        overline: "text-overline-sm font-bold uppercase tracking-widest",
+        natural: "text-xs font-medium tracking-normal",
+      },
       variant: {
         success:
           "bg-ethereal-sage/10 text-ethereal-sage border-ethereal-sage/30 shadow-sm",
@@ -38,6 +46,7 @@ const badgeVariants = cva(
     },
     defaultVariants: {
       variant: "neutral",
+      casing: "overline",
     },
   },
 );
@@ -52,13 +61,14 @@ export interface BadgeProps
 
 export function Badge({
   variant,
+  casing,
   icon,
   className,
   children,
   ...props
 }: BadgeProps): React.JSX.Element {
   return (
-    <span className={cn(badgeVariants({ variant, className }))} {...props}>
+    <span className={cn(badgeVariants({ variant, casing, className }))} {...props}>
       {icon && (
         <span
           className="shrink-0 flex items-center justify-center"

@@ -40,7 +40,7 @@ export const DropdownMenuContent = ({
       sideOffset={8}
       className={cn(
         "z-(--z-nav-sheet) min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        "popover-motion",
         className,
       )}
     >
