@@ -1,13 +1,15 @@
 /**
  * @file Badge.tsx
- * @description Standardised micro-status indicator.
- * Refactored to Enterprise SaaS 2026 standard. Embraces Ethereal UI token taxonomy.
- * Zero Tech-Debt. Strict TypeScript 7.0 compliance.
+ * @description THE chip. Every status, tag and count the panel prints inline
+ * wears this one — one shape (`rounded-chip`), one type recipe, one set of
+ * tones. A second chip component is how a product ends up with two corner
+ * radii and two glows for the same sentence.
  * @module shared/ui/primitives/Badge
  */
 
 import React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
 
 const badgeVariants = cva(
@@ -15,12 +17,12 @@ const badgeVariants = cva(
   {
     variants: {
       // What the chip CARRIES, which is what decides its type — not its colour.
-      // `overline` is a status the system wrote (the recipe shared with
-      // StatusBadge: overline-sm at the control tracking 0.1em; the wider
-      // 0.14em belongs to `Eyebrow` and must not leak here, because a chip
-      // sits inline with buttons, not with headings). `natural` is content
-      // that owns its own casing — a person's name, a filename, a role. Set
-      // in caps and tracked out, a name stops reading as a person.
+      // `overline` is a status the system wrote (overline-sm at the control
+      // tracking 0.1em; the wider 0.14em belongs to `Eyebrow` and must not leak
+      // here, because a chip sits inline with buttons, not with headings).
+      // `natural` is content that owns its own casing — a person's name, a
+      // filename, a role. Set in caps and tracked out, a name stops reading as
+      // a person.
       casing: {
         overline: "text-overline-sm font-bold uppercase tracking-widest",
         natural: "text-xs font-medium tracking-normal",
@@ -51,24 +53,35 @@ const badgeVariants = cva(
   },
 );
 
+export type BadgeVariant = NonNullable<
+  VariantProps<typeof badgeVariants>["variant"]
+>;
+
 export interface BadgeProps
   extends
     React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof badgeVariants> {
   /** Optional icon rendered prior to the text */
   icon?: React.ReactNode;
+  /**
+   * A light sweep across the chip. It is the panel's only "this is happening
+   * now" signal, so spend it on a state that is genuinely live — a project in
+   * production, a rehearsal under way. A chip that always pulses says nothing.
+   */
+  pulse?: boolean;
 }
 
 export function Badge({
   variant,
   casing,
   icon,
+  pulse = false,
   className,
   children,
   ...props
 }: BadgeProps): React.JSX.Element {
-  return (
-    <span className={cn(badgeVariants({ variant, casing, className }))} {...props}>
+  const content = (
+    <>
       {icon && (
         <span
           className="shrink-0 flex items-center justify-center"
@@ -78,6 +91,34 @@ export function Badge({
         </span>
       )}
       {children}
+    </>
+  );
+
+  return (
+    <span
+      className={cn(
+        badgeVariants({ variant, casing }),
+        pulse && "relative overflow-hidden",
+        className,
+      )}
+      {...props}
+    >
+      {pulse && (
+        <motion.span
+          className="absolute inset-0 z-0 bg-linear-to-r from-transparent via-white/30 to-transparent"
+          animate={{ x: ["-200%", "200%"] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+          aria-hidden="true"
+        />
+      )}
+      {/* The sweep is positioned, so unpositioned text would paint beneath it. */}
+      {pulse ? (
+        <span className="relative z-10 inline-flex items-center gap-1.5">
+          {content}
+        </span>
+      ) : (
+        content
+      )}
     </span>
   );
 }

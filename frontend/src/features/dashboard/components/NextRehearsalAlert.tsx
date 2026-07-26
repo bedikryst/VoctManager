@@ -16,7 +16,6 @@ import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
 import { Label, Heading } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -76,14 +75,9 @@ export function NextRehearsalAlert({
           <div className="flex w-full flex-col gap-4 lg:w-auto">
             {/* Header: Stacked on mobile, row on tablet+ */}
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <StatusBadge
-                variant="upcoming"
-                isPulsing
-                label={t(
-                  "dashboard.admin.next_rehearsal_badge",
-                  "Next Rehearsal",
-                )}
-              />
+              <Badge variant="success" pulse>
+                {t("dashboard.admin.next_rehearsal_badge", "Next Rehearsal")}
+              </Badge>
               <Heading
                 as="h3"
                 size="xl" // roughly subtitle

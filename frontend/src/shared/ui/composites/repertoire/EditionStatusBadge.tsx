@@ -1,8 +1,8 @@
 /**
  * @file EditionStatusBadge.tsx
- * @description Compact badge that visualises a ScoreEdition ingestion phase
- * using Ethereal accent tokens. Spinning pulse for in-progress phases so the
- * conductor can tell the pipeline is still working.
+ * @description A ScoreEdition's ingestion phase as a `Badge` — this file owns
+ * the phase→tone→sentence mapping, never the chip's own surface. The icon spins
+ * while the pipeline is working, so the conductor can tell it has not stalled.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/repertoire/EditionStatusBadge
  */
@@ -18,10 +18,8 @@ import {
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
-import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/shared/lib/utils";
-import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { Badge, type BadgeVariant } from "@/shared/ui/primitives/Badge";
 import { INGESTION_STATUS, type IngestionStatusCode } from "@/shared/types";
 
 type Tone = "neutral" | "progress" | "awaiting" | "ready" | "failed";
@@ -64,28 +62,19 @@ const TONE_ICON: Record<Tone, LucideIcon> = {
   failed: CircleAlert,
 };
 
-const toneVariants = cva(
-  "inline-flex items-center gap-2 rounded-full border px-3 py-1 backdrop-blur-sm transition-colors",
-  {
-    variants: {
-      tone: {
-        neutral:
-          "bg-ethereal-marble/60 border-ethereal-incense/25 text-ethereal-graphite",
-        progress:
-          "bg-ethereal-amethyst/10 border-ethereal-amethyst/30 text-ethereal-amethyst",
-        awaiting:
-          "bg-ethereal-gold/10 border-ethereal-gold/40 text-ethereal-gold",
-        ready:
-          "bg-ethereal-sage/15 border-ethereal-sage/40 text-ethereal-sage",
-        failed:
-          "bg-ethereal-crimson/10 border-ethereal-crimson/40 text-ethereal-crimson",
-      },
-    },
-    defaultVariants: { tone: "neutral" },
-  },
-);
+/**
+ * The pipeline phase is a status the system wrote, so it wears the panel's one
+ * chip. This composite only maps a phase to a tone, an icon and a sentence.
+ */
+const TONE_VARIANT: Record<Tone, BadgeVariant> = {
+  neutral: "neutral",
+  progress: "amethyst",
+  awaiting: "warning",
+  ready: "success",
+  failed: "danger",
+};
 
-export interface EditionStatusBadgeProps extends VariantProps<typeof toneVariants> {
+export interface EditionStatusBadgeProps {
   readonly status: IngestionStatusCode;
   readonly label?: string;
   readonly className?: string;
@@ -103,22 +92,25 @@ export const EditionStatusBadge = ({
   const isProgress = tone === "progress";
 
   return (
-    <span className={cn(toneVariants({ tone }), className)}>
-      {isProgress ? (
-        <motion.span
-          aria-hidden="true"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1.6, ease: "linear", repeat: Infinity }}
-          className="flex"
-        >
-          <Icon size={14} strokeWidth={2} />
-        </motion.span>
-      ) : (
-        <Icon size={14} strokeWidth={2} aria-hidden="true" />
-      )}
-      <Eyebrow color="inherit" size="caption" className="tracking-[0.18em]">
-        {text}
-      </Eyebrow>
-    </span>
+    <Badge
+      variant={TONE_VARIANT[tone]}
+      className={className}
+      icon={
+        isProgress ? (
+          <motion.span
+            aria-hidden="true"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1.6, ease: "linear", repeat: Infinity }}
+            className="flex"
+          >
+            <Icon size={14} strokeWidth={2} />
+          </motion.span>
+        ) : (
+          <Icon size={14} strokeWidth={2} aria-hidden="true" />
+        )
+      }
+    >
+      {text}
+    </Badge>
   );
 };

@@ -24,7 +24,6 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { useSetPaid, useUpdateFee } from "../api/contracts.queries";
 import type { ContractRecordType } from "../api/contracts.service";
@@ -36,6 +35,7 @@ import {
   getSettlementState,
   isFeeMissing,
   parseFeeValue,
+  STATUS_TONE_VARIANT,
 } from "../lib/contractsPresentation";
 import type { ContractRecord } from "../lib/contractsPresentation";
 
@@ -130,10 +130,9 @@ export function ContractRow({
         </Text>
         <div className="mt-1 flex flex-wrap items-center gap-1.5 lg:hidden">
           <Badge variant="glass">{roleLabel}</Badge>
-          <StatusBadge
-            variant={statusMeta.tone}
-            label={t(statusMeta.translationKey, statusMeta.fallback)}
-          />
+          <Badge variant={STATUS_TONE_VARIANT[statusMeta.tone]}>
+            {t(statusMeta.translationKey, statusMeta.fallback)}
+          </Badge>
         </div>
         {paid && record.paid_at && (
           <Caption color="muted" className="mt-0.5 hidden items-center gap-1 lg:inline-flex">
@@ -151,10 +150,9 @@ export function ContractRow({
       {/* Role + status (desktop) */}
       <div className="hidden flex-wrap items-center gap-1.5 lg:flex">
         <Badge variant="glass">{roleLabel}</Badge>
-        <StatusBadge
-          variant={statusMeta.tone}
-          label={t(statusMeta.translationKey, statusMeta.fallback)}
-        />
+        <Badge variant={STATUS_TONE_VARIANT[statusMeta.tone]}>
+          {t(statusMeta.translationKey, statusMeta.fallback)}
+        </Badge>
       </div>
 
       {/* Fee editor */}

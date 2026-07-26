@@ -6,6 +6,7 @@
  */
 
 import type { Project } from "@/shared/types";
+import type { BadgeVariant } from "@/shared/ui/primitives/Badge";
 import type {
   EnrichedCrewAssignment,
   EnrichedParticipation,
@@ -15,6 +16,19 @@ export type ContractRecord = EnrichedParticipation | EnrichedCrewAssignment;
 export type ContractRecordType = "CAST" | "CREW";
 export type ContractStatusTone = "active" | "upcoming" | "archived" | "danger";
 export type ProjectStatusTone = "active" | "upcoming" | "archived" | "danger";
+
+/**
+ * The chip a ledger status wears. The keys are the tones this workspace has
+ * always spoken in; the values are `Badge`'s. `danger` is amethyst, not
+ * crimson: a declined contract or a cancelled project is a fact the producer
+ * has to see, and crimson is reserved for the thing that is actually broken.
+ */
+export const STATUS_TONE_VARIANT: Record<ContractStatusTone, BadgeVariant> = {
+  active: "warning",
+  upcoming: "success",
+  archived: "neutral",
+  danger: "amethyst",
+};
 
 const currencyFormatter = new Intl.NumberFormat("pl-PL", {
   style: "currency",

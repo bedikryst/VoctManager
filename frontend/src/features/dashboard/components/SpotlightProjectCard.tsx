@@ -14,7 +14,7 @@ import {
   ArtifactCard,
   type ArtifactMetric,
 } from "@/shared/ui/composites/ArtifactCard";
-import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Emphasis } from "@/shared/ui/primitives/typography";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
 
@@ -115,15 +115,11 @@ export function SpotlightProjectCard({
   ];
 
   const StatusBadgeSlot = (
-    <StatusBadge
-      variant={isActive ? "active" : "upcoming"}
-      label={
-        isActive
-          ? t("dashboard.admin.spotlight.status_active", "W Produkcji")
-          : t("dashboard.admin.spotlight.status_prep", "W Przygotowaniu")
-      }
-      isPulsing={isActive}
-    />
+    <Badge variant={isActive ? "warning" : "success"} pulse={isActive}>
+      {isActive
+        ? t("dashboard.admin.spotlight.status_active", "W Produkcji")
+        : t("dashboard.admin.spotlight.status_prep", "W Przygotowaniu")}
+    </Badge>
   );
 
   const MetadataSlot = (

@@ -18,14 +18,15 @@ import { cn } from "@/shared/lib/utils";
 import { ExportContractButton } from "@/widgets/domain/ExportContractButton";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Input } from "@/shared/ui/primitives/Input";
-import { StatusBadge } from "@/shared/ui/primitives/StatusBadge";
 import { Caption, Heading } from "@/shared/ui/primitives/typography";
 import type { ContractRecordType } from "../api/contracts.service";
 import type { LedgerFilter, ProjectRollup } from "../hooks/useContractsData";
 import {
   getProjectStatusMeta,
   parseFeeValue,
+  STATUS_TONE_VARIANT,
 } from "../lib/contractsPresentation";
 
 interface LedgerHeaderProps {
@@ -96,11 +97,12 @@ export function LedgerHeader({
       <div className="flex flex-col gap-4 border-b border-ethereal-ink/6 p-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <StatusBadge
-              variant={statusMeta.tone}
-              label={t(statusMeta.translationKey, statusMeta.fallback)}
-              isPulsing={statusMeta.tone === "active"}
-            />
+            <Badge
+              variant={STATUS_TONE_VARIANT[statusMeta.tone]}
+              pulse={statusMeta.tone === "active"}
+            >
+              {t(statusMeta.translationKey, statusMeta.fallback)}
+            </Badge>
           </div>
           <Heading as="h2" size="2xl" weight="medium" className="truncate">
             {project.title}
