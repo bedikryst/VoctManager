@@ -15,9 +15,14 @@ import {
   useDeletePiece,
 } from "../api/archive.queries";
 import { useVoiceLines } from "@/shared/api/options.queries";
-import type { Piece } from "@/shared/types";
+import { INGESTION_STATUS } from "@/shared/types";
 import { EnrichedPiece } from "../types/archive.dto";
 import { hasPdf } from "../constants/piecePdfs";
+
+const isAwaitingReview = (piece: EnrichedPiece): boolean =>
+  (piece.editions ?? []).some(
+    (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
+  );
 
 export const useArchiveData = () => {
   const { t } = useTranslation();
@@ -41,8 +46,6 @@ export const useArchiveData = () => {
   const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
   // Modal & Context State
-  const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
-  const [editingPiece, setEditingPiece] = useState<Piece | null>(null);
   const [pieceToDelete, setPieceToDelete] = useState<{
     id: string;
     title: string;
@@ -92,6 +95,15 @@ export const useArchiveData = () => {
       ).sort((left, right) =>
         left.localeCompare(right, undefined, { sensitivity: "base" }),
       ),
+    [pieces],
+  );
+
+  // The review backlog belongs to the LIBRARY, not to the current filter: read
+  // against a filtered list it silently reported zero pending reviews whenever a
+  // composer filter happened to exclude them, while the two figures beside it
+  // stayed library-wide.
+  const awaitingPieces = useMemo(
+    () => pieces.filter(isAwaitingReview),
     [pieces],
   );
 
@@ -178,6 +190,7 @@ export const useArchiveData = () => {
     isLoading: isLoadingPieces || isLoadingComposers || isLoadingVoiceLines,
     isError: isErrorPieces,
     displayPieces,
+    awaitingPieces,
     composers,
     voiceLines,
     libraryStats,
@@ -197,10 +210,6 @@ export const useArchiveData = () => {
     resetFilters,
 
     // UI Context
-    isPanelOpen,
-    setIsPanelOpen,
-    editingPiece,
-    setEditingPiece,
     pieceToDelete,
     setPieceToDelete,
 

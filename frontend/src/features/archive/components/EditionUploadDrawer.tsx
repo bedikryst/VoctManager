@@ -55,12 +55,14 @@ export const EditionUploadDrawer = ({
             className="fixed inset-0 z-focus-trap bg-ethereal-ink/20 backdrop-blur-sm"
             aria-hidden="true"
           />
+          {/* Focus-trap layer, not the toast layer: a drawer sitting on z-toast
+              puts every toast its uploads raise behind itself. */}
           <motion.div
             initial={{ right: "-100%" }}
             animate={{ right: 0 }}
             exit={{ right: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 z-toast flex w-full flex-col border-l border-ethereal-incense/20 bg-ethereal-parchment shadow-glass-solid md:w-[560px]"
+            className="fixed inset-y-0 right-0 z-focus-trap flex w-full flex-col border-l border-hairline-strong bg-ethereal-parchment shadow-glass-solid md:w-140"
             role="dialog"
             aria-modal="true"
             aria-label={t(
@@ -87,10 +89,11 @@ export const EditionUploadDrawer = ({
                 </Caption>
               </div>
               <Button
-                variant="ghost"
+                variant="icon"
+                size="icon"
                 onClick={onClose}
                 aria-label={t("common.actions.close", "Zamknij")}
-                className="border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3 text-ethereal-graphite hover:bg-ethereal-alabaster hover:text-ethereal-ink"
+                className="shrink-0 border border-hairline-strong bg-ethereal-alabaster/60 text-ethereal-graphite hover:bg-ethereal-alabaster hover:text-ethereal-ink"
               >
                 <X size={18} aria-hidden="true" />
               </Button>

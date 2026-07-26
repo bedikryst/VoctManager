@@ -23,14 +23,17 @@ import {
   Plus,
   Search,
   Sparkles,
+  Users,
   X,
 } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -42,6 +45,7 @@ import {
   useDeleteComposer,
   useMergeComposers,
 } from "./api/archive.queries";
+import { ArchiveStatLine, type ArchiveStat } from "./components/ArchiveStatLine";
 import { ArchiveTabs } from "./components/ArchiveTabs";
 import { ComposerRow } from "./components/ComposerRow";
 
@@ -216,6 +220,24 @@ export default function ArchiveComposersPage(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
+  const composerStats: ArchiveStat[] = [
+    {
+      id: "total",
+      value: totalComposers,
+      label: t("archive.composers.stat_total", "kompozytorów"),
+    },
+    {
+      id: "portrait",
+      value: withPortrait,
+      label: t("archive.composers.stat_portrait", "z portretem"),
+    },
+    {
+      id: "orphans",
+      value: orphans,
+      label: t("archive.composers.stat_orphan", "bez utworów"),
+    },
+  ];
+
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-5xl flex-col gap-5 pb-24 pt-6">
@@ -238,25 +260,10 @@ export default function ArchiveComposersPage(): React.JSX.Element {
 
         <ArchiveTabs />
 
-        <Text size="sm" color="graphite" className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span>
-            <strong className="text-ethereal-ink">{totalComposers}</strong>{" "}
-            {t("archive.composers.stat_total", "kompozytorów")}
-          </span>
-          <span aria-hidden="true" className="text-ethereal-incense/40">·</span>
-          <span>
-            <strong className="text-ethereal-ink">{withPortrait}</strong>{" "}
-            {t("archive.composers.stat_portrait", "z portretem")}
-          </span>
-          <span aria-hidden="true" className="text-ethereal-incense/40">·</span>
-          <span>
-            <strong className="text-ethereal-ink">{orphans}</strong>{" "}
-            {t("archive.composers.stat_orphan", "bez utworów")}
-          </span>
-        </Text>
+        <ArchiveStatLine stats={composerStats} />
 
         {isAdding && (
-          <div className="rounded-2xl border border-ethereal-gold/30 bg-ethereal-gold/5 p-4">
+          <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-4">
             <Eyebrow color="gold" size="caption" className="mb-3 block">
               {t("archive.composers.add_form_title", "Nowy kompozytor")}
             </Eyebrow>
@@ -323,7 +330,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
 
         {/* Bulk merge bar — expands inline with a target picker when invoked */}
         {selectedIds.size > 0 && (
-          <div className="rounded-2xl border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
+          <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <Eyebrow color="gold" size="caption">
@@ -405,12 +412,11 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                           onClick={() => setMergeTargetId(String(c.id))}
                           disabled={mergeComposers.isPending}
                           className={cn(
-                            "group/card relative cursor-pointer rounded-xl border bg-ethereal-alabaster/80 p-3 text-left transition-all",
-                            "hover:-translate-y-px hover:shadow-glass-ethereal-hover",
+                            "group/card relative cursor-pointer rounded-nested border bg-ethereal-alabaster/80 p-3 text-left transition-colors",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50",
                             isTarget
                               ? "border-ethereal-gold/60 bg-ethereal-gold/10 shadow-glass-ethereal"
-                              : "border-ethereal-incense/25 hover:border-ethereal-gold/40",
+                              : "border-hairline-strong hover:border-ethereal-gold/40",
                           )}
                         >
                           {isTarget && (
@@ -423,7 +429,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                           )}
                           <div className="flex items-start gap-2.5">
                             <span
-                              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-ethereal-incense/20 bg-ethereal-alabaster shadow-sm"
+                              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline-strong bg-ethereal-alabaster shadow-sm"
                               aria-hidden="true"
                             >
                               {hasPortrait ? (
@@ -456,25 +462,22 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                                   .join("–") || "—"}
                                 {c.nationality && ` · ${c.nationality}`}
                               </Caption>
-                              <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center gap-0.5 rounded-md border px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest",
-                                    piecesCount > 0
-                                      ? "border-ethereal-amethyst/30 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-                                      : "border-ethereal-incense/25 bg-ethereal-marble/40 text-ethereal-graphite/70",
-                                  )}
-                                >
+                              {/* The merge target is chosen on evidence, so here
+                                  the richer record is the signal worth showing:
+                                  how many pieces would move, and whether this
+                                  row is the one already tied to MusicBrainz. */}
+                              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                <Caption color="muted" className="tabular-nums">
                                   {piecesCount}{" "}
                                   {t(
                                     "archive.composers.merge_card_pieces",
                                     "utw.",
                                   )}
-                                </span>
+                                </Caption>
                                 {hasMB && (
-                                  <span className="inline-flex items-center gap-0.5 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest text-ethereal-sage">
+                                  <Badge variant="success" className="py-0">
                                     MB
-                                  </span>
+                                  </Badge>
                                 )}
                               </div>
                             </div>
@@ -486,14 +489,14 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                 </div>
 
                 {mergeTargetId && (
-                  <div className="rounded-lg border border-ethereal-incense/15 bg-ethereal-alabaster/60 p-3">
+                  <div className="rounded-control border border-hairline bg-ethereal-alabaster/60 p-3">
                     <Caption color="muted" className="mb-1 block">
                       {t(
                         "archive.composers.merge_preview",
                         "Po połączeniu:",
                       )}
                     </Caption>
-                    <ul className="space-y-0.5 text-[12px] text-ethereal-graphite">
+                    <ul className="space-y-0.5 text-xs text-ethereal-graphite">
                       {selectedComposers
                         .filter((c) => String(c.id) !== mergeTargetId)
                         .map((c) => (
@@ -559,20 +562,18 @@ export default function ArchiveComposersPage(): React.JSX.Element {
         />
 
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-ethereal-incense/25 bg-ethereal-alabaster/40 px-6 py-12 text-center">
-            <Heading as="h3" size="lg" weight="medium">
-              {searchTerm
+          <StatePanel
+            icon={<Users size={32} aria-hidden="true" />}
+            title={
+              searchTerm
                 ? t(
                     "archive.composers.empty_search",
                     "Żaden kompozytor nie pasuje do filtra",
                   )
-                : t(
-                    "archive.composers.empty_first",
-                    "Biblioteka jest pusta",
-                  )}
-            </Heading>
-            <Text color="muted" size="sm">
-              {searchTerm
+                : t("archive.composers.empty_first", "Biblioteka jest pusta")
+            }
+            description={
+              searchTerm
                 ? t(
                     "archive.composers.empty_search_hint",
                     "Spróbuj innej frazy lub wyczyść wyszukiwanie.",
@@ -580,9 +581,28 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                 : t(
                     "archive.composers.empty_first_hint",
                     "Kompozytorzy pojawiają się automatycznie gdy AI rozpoznaje utwór z PDF-a, albo dodaj ręcznie.",
-                  )}
-            </Text>
-          </div>
+                  )
+            }
+            actions={
+              searchTerm ? (
+                <Button
+                  variant="ghost"
+                  onClick={() => setSearchTerm("")}
+                  leftIcon={<X size={14} aria-hidden="true" />}
+                >
+                  {t("archive.composers.clear_search", "Wyczyść wyszukiwanie")}
+                </Button>
+              ) : (
+                <Button
+                  variant="secondary"
+                  onClick={() => setIsAdding(true)}
+                  leftIcon={<Plus size={14} aria-hidden="true" />}
+                >
+                  {t("archive.composers.add_btn", "Dodaj kompozytora")}
+                </Button>
+              )
+            }
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {filtered.map((composer) => (

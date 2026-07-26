@@ -15,16 +15,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Check,
-  ExternalLink,
-  Loader2,
-  Sparkles,
-  Star,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ExternalLink, Sparkles, Star, Trash2 } from "lucide-react";
 
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
@@ -51,6 +44,7 @@ import {
   useUpdateTranslation,
   useVerifyPieceField,
 } from "../api/archive.queries";
+import { InlineConfirmAction } from "./InlineConfirmAction";
 import { ProvenanceChip, childFieldProvenance } from "./ProvenanceChip";
 
 /** The canonical (project-less) AI program note, if generated. Language-agnostic:
@@ -60,7 +54,8 @@ const canonicalNote = (piece: Piece) =>
   (piece.program_notes ?? []).find((n) => !n.project);
 
 // ---------------------------------------------------------------------------
-// A two-click delete affordance — no separate modal, no accidental wipes.
+// A two-click delete affordance — no separate modal, no accidental wipes. The
+// shape comes from `InlineConfirmAction`, which the ingestion panel shares.
 // ---------------------------------------------------------------------------
 
 interface DeleteButtonProps {
@@ -75,46 +70,14 @@ const DeleteButton = ({
   label,
 }: DeleteButtonProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const [armed, setArmed] = useState(false);
-
-  if (!armed) {
-    return (
-      <button
-        type="button"
-        onClick={() => setArmed(true)}
-        aria-label={label}
-        title={label}
-        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60 transition-colors hover:border-ethereal-crimson/40 hover:text-ethereal-crimson"
-      >
-        <Trash2 size={13} strokeWidth={1.8} aria-hidden="true" />
-      </button>
-    );
-  }
   return (
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={onConfirm}
-        disabled={isPending}
-        aria-label={t("archive.review.confirm_delete", "Potwierdź usunięcie")}
-        className="flex h-7 items-center gap-1 rounded-lg border border-ethereal-crimson/40 bg-ethereal-crimson/10 px-2 text-[11px] font-semibold text-ethereal-crimson"
-      >
-        {isPending ? (
-          <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-        ) : (
-          <Check size={12} strokeWidth={2.2} aria-hidden="true" />
-        )}
-        {t("archive.review.delete", "Usuń")}
-      </button>
-      <button
-        type="button"
-        onClick={() => setArmed(false)}
-        aria-label={t("archive.review.cancel", "Anuluj")}
-        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60"
-      >
-        <X size={13} strokeWidth={1.8} aria-hidden="true" />
-      </button>
-    </div>
+    <InlineConfirmAction
+      icon={Trash2}
+      label={label}
+      confirmLabel={t("archive.review.delete", "Usuń")}
+      isPending={isPending}
+      onConfirm={onConfirm}
+    />
   );
 };
 
@@ -174,7 +137,7 @@ const MovementRow = ({
   };
 
   return (
-    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+    <li className="rounded-nested border border-hairline bg-ethereal-alabaster/60 p-3">
       <div className="mb-2 flex items-center gap-2">
         <Caption color="muted" className="font-mono">
           {movement.order_index + 1}.
@@ -284,11 +247,11 @@ const TranslationRow = ({
   const dirty = text !== translation.text || translator !== translation.translator;
 
   return (
-    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+    <li className="rounded-nested border border-hairline bg-ethereal-alabaster/60 p-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded-md border border-ethereal-incense/30 bg-ethereal-parchment px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ethereal-graphite">
+        <Badge variant="neutral" className="py-0.5">
           {translation.target_language}
-        </span>
+        </Badge>
         <ProvenanceChip
           entry={childFieldProvenance(piece, translation.id, "text")}
           onVerify={() =>
@@ -416,7 +379,7 @@ const RecordingRow = ({
   };
 
   return (
-    <li className="flex items-center gap-2 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+    <li className="flex items-center gap-2 rounded-nested border border-hairline bg-ethereal-alabaster/60 p-3">
       <button
         type="button"
         onClick={toggleFeatured}
@@ -432,10 +395,10 @@ const RecordingRow = ({
             : t("archive.review.feature", "Ustaw jako polecane")
         }
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-control border transition-colors",
           recording.is_featured
             ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
-            : "border-ethereal-incense/25 text-ethereal-graphite/50 hover:text-ethereal-gold",
+            : "border-hairline-strong text-ethereal-graphite/50 hover:text-ethereal-gold",
         )}
       >
         <Star
@@ -461,7 +424,7 @@ const RecordingRow = ({
         rel="noreferrer"
         aria-label={t("archive.review.open_recording", "Otwórz nagranie")}
         title={t("archive.review.open_recording", "Otwórz nagranie")}
-        className="flex h-7 w-7 items-center justify-center rounded-lg border border-ethereal-incense/25 text-ethereal-graphite/60 transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
+        className="flex h-8 w-8 items-center justify-center rounded-control border border-hairline-strong text-ethereal-graphite/60 transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-gold"
       >
         <ExternalLink size={13} strokeWidth={1.8} aria-hidden="true" />
       </a>
@@ -543,11 +506,11 @@ const ProgramNoteEditor = ({
   };
 
   return (
-    <li className="rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-3">
+    <li className="rounded-nested border border-hairline bg-ethereal-alabaster/60 p-3">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded-md border border-ethereal-incense/30 bg-ethereal-parchment px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-ethereal-graphite">
+        <Badge variant="neutral" className="py-0.5">
           {note.language}
-        </span>
+        </Badge>
         {note.target_tone ? (
           <Caption color="muted">{note.target_tone}</Caption>
         ) : null}

@@ -75,10 +75,7 @@
     "active": {
       "aria": "AI processing in progress",
       "pages": "pp.",
-      "title_one": "AI is working on {{count}} score",
-      "title_few": "AI is working on {{count}} scores",
-      "title_many": "AI is working on {{count}} scores",
-      "title_other": "AI is working on {{count}} scores"
+      "section": "AI analysis"
     },
     "ai_warning": {
       "before_birth": "Composition year ({{year}}) predates the composer's birth ({{birth}}).",
@@ -86,17 +83,6 @@
       "title": "AI may have got it wrong — verify the data before approving",
       "arrangement_epoch": "This work has an arranger but its epoch is marked as contemporary — make sure it isn't an arrangement of a traditional work (in which case the epoch = the original's origin).",
       "ipa_misaligned": "The IPA transcription has {{ipa}} lines and the text {{lyrics}} — the line-by-line alignment may be wrong."
-    },
-    "awaiting_banner": {
-      "aria": "Editions awaiting review",
-      "body": "AI has finished extracting the metadata. Check it didn't make anything up — composer, title, IPA — and approve so the choir gets the materials.",
-      "review_first": "Start with the first",
-      "review_one": "Review edition",
-      "title_one": "1 edition awaiting your review",
-      "title_many_one": "{{count}} editions awaiting your review",
-      "title_many_few": "{{count}} editions awaiting your review",
-      "title_many_many": "{{count}} editions awaiting your review",
-      "title_many_other": "{{count}} editions awaiting your review"
     },
     "card": {
       "actions": {
@@ -153,14 +139,14 @@
       "edit_last": "Surname",
       "edit_nationality": "Nationality",
       "first_empty": "first?",
-      "mb_tooltip": "Linked to MusicBrainz",
       "nationality_empty": "country?",
       "no_mb_tooltip": "No MBID — consider 'Refresh from MusicBrainz'",
       "pieces_tooltip_one": "{{count}} piece in the library",
       "pieces_tooltip_few": "{{count}} pieces in the library",
       "pieces_tooltip_many": "{{count}} pieces in the library",
       "pieces_tooltip_other": "{{count}} pieces in the library",
-      "select_aria": "Select {{name}} for merging"
+      "select_aria": "Select {{name}} for merging",
+      "no_mb": "no MB"
     },
     "composers": {
       "add_birth": "Year of birth",
@@ -210,7 +196,8 @@
       "stat_total": "composers",
       "subtitle": "Sheet music library",
       "title": "Composers",
-      "title_highlight": "and arrangers"
+      "title_highlight": "and arrangers",
+      "clear_search": "Clear search"
     },
     "dashboard": {
       "add_manual": "Add manually",
@@ -317,7 +304,7 @@
         "save_changes": "Save Changes",
         "save_close": "Save and Close"
       },
-      "add_new_composer": "+ Add new",
+      "add_new_composer": "Add new",
       "arranger_placeholder": "e.g. John Rutter",
       "back_to_picker": "Pick from list",
       "composer": {
@@ -489,7 +476,7 @@
       "duration_secs": "Seconds",
       "editions_section": "Score editions",
       "epoch_pick": "— select —",
-      "fetch_error": "Couldn't load the piece details:",
+      "fetch_error": "Couldn't load the piece details",
       "fetch_unknown": "unknown error",
       "fields": {
         "arranger": "Arrangement",
@@ -520,7 +507,7 @@
       "movements_section": "Movements",
       "next_awaiting": "Next to review",
       "no_composer": "No composer",
-      "no_pdf": "No PDF for this piece. Upload a file below.",
+      "no_pdf": "No PDF for this piece",
       "open_score": "Open score",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
@@ -550,11 +537,10 @@
       "toast_save_error": "Couldn't save the changes.",
       "toast_save_success": "Changes saved.",
       "translations_section": "Translations",
-      "verify_failed": "Couldn't mark the field as correct."
+      "verify_failed": "Couldn't mark the field as correct.",
+      "no_pdf_hint": "Upload a score below — the AI will fill in the metadata, IPA and translations."
     },
     "review": {
-      "cancel": "Cancel",
-      "confirm_delete": "Confirm deletion",
       "delete": "Delete",
       "delete_failed": "Couldn't delete.",
       "delete_movement": "Delete movement",
@@ -598,23 +584,17 @@
       "audio_count_tooltip_few": "{{count}} audio tracks",
       "audio_count_tooltip_many": "{{count}} audio tracks",
       "audio_count_tooltip_other": "{{count}} audio tracks",
-      "badge_awaiting": "AI · to review",
-      "badge_failed": "AI · error",
-      "badge_progress": "AI · in progress",
       "delete_aria": "Delete piece {{title}}",
       "edit_title": "Title",
       "edit_voicing": "Voicing",
       "edit_year": "Composition year",
-      "pdf_attached": "PDF available",
-      "status_awaiting": "AI finished — awaiting review",
-      "status_failed": "AI pipeline failed",
-      "status_progress": "AI is working…",
-      "status_ready": "Approved by you",
       "title_placeholder": "Piece title",
       "traditional": "Traditional",
       "year_anomaly_aria": "Warning: the composition year looks suspicious",
       "year_anomaly_tooltip": "AI may have got it wrong — the year doesn't match the composer's lifespan",
-      "year_placeholder": "year?"
+      "year_placeholder": "year?",
+      "no_pdf": "no score",
+      "no_pdf_tooltip": "No score attached — upload a PDF so the AI can fill in the metadata"
     },
     "row_expanded": {
       "ai_empty_hint": "Piece entered manually. Upload a PDF so AI can fill in the metadata, IPA, translations and programme note.",
@@ -669,13 +649,16 @@
       "placeholder": "Search piece or composer…",
       "reset": "Clear",
       "summary_filtered": "{{visible}} of {{total}}",
-      "voicing": "Voicing"
+      "voicing": "Voicing",
+      "clear_token": "Remove filter: {{label}}"
     },
     "stat_strip": {
-      "awaiting_one": "to review",
-      "awaiting_many": "to review",
       "pieces": "pieces",
-      "with_pdf": "with PDF"
+      "with_pdf": "with PDF",
+      "review_cta_one": "{{count}} to review",
+      "review_cta_few": "{{count}} to review",
+      "review_cta_many": "{{count}} to review",
+      "review_cta_other": "{{count}} to review"
     },
     "tabs": {
       "aria": "Archive sections",

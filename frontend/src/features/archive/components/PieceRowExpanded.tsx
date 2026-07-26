@@ -20,8 +20,9 @@ import {
   UploadCloud,
 } from "lucide-react";
 
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { ComposerCard, EditionStatusBadge } from "@/shared/ui/composites/repertoire";
 import { ScoreStandModal } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
@@ -103,13 +104,16 @@ export const PieceRowExpanded = ({
               </Eyebrow>
               <div className="flex flex-wrap gap-1.5">
                 {requirements.map((requirement) => (
-                  <span
+                  <Badge
                     key={requirement.id ?? requirement.voice_line}
-                    className="inline-flex items-baseline gap-1 rounded-md border border-ethereal-gold/25 bg-ethereal-gold/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-gold"
+                    variant="warning"
+                    className="gap-1 py-0.5"
                   >
                     {requirement.voice_line_display ?? requirement.voice_line}
-                    <span className="text-ethereal-gold/70">×{requirement.quantity}</span>
-                  </span>
+                    <Text as="span" size="xs" className="text-ethereal-gold/70">
+                      ×{requirement.quantity}
+                    </Text>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -154,21 +158,21 @@ export const PieceRowExpanded = ({
                     <button
                       type="button"
                       onClick={() => setOpenEditionId(pdf.id)}
-                      className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-ethereal-amethyst/30 bg-ethereal-amethyst/5 px-3 py-1.5 text-[12px] font-medium text-ethereal-amethyst transition-colors hover:bg-ethereal-amethyst/10"
+                      className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-control border border-ethereal-amethyst/30 bg-ethereal-amethyst/5 px-3 py-1.5 text-xs font-medium text-ethereal-amethyst transition-colors hover:bg-ethereal-amethyst/10"
                     >
                       <FileText size={12} aria-hidden="true" />
                       <span className="truncate">{pdf.label}</span>
                       {pdf.is_default && pdfLinks.length > 1 && (
-                        <span className="text-[10px] text-ethereal-amethyst/60">
+                        <Text as="span" size="xs" className="text-ethereal-amethyst/60">
                           {t("archive.row_expanded.default_marker", "domyślne")}
-                        </span>
+                        </Text>
                       )}
                     </button>
                     <a
                       href={pdf.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-ethereal-incense/25 bg-ethereal-alabaster/70 text-ethereal-graphite transition-colors hover:text-ethereal-ink"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control border border-hairline-strong bg-ethereal-alabaster/70 text-ethereal-graphite transition-colors hover:text-ethereal-ink"
                       aria-label={t("archive.row_expanded.pdf_download", "Pobierz PDF")}
                       title={t("archive.row_expanded.pdf_download", "Pobierz PDF")}
                     >
@@ -190,7 +194,7 @@ export const PieceRowExpanded = ({
       </div>
 
       {/* Audio tracks subsection */}
-      <div className="rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/55 p-4">
+      <div className="rounded-nested border border-hairline bg-ethereal-alabaster/55 p-4">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <Eyebrow color="muted" size="caption" className="inline-flex items-center gap-1.5">
             <Headphones size={11} aria-hidden="true" />
@@ -207,7 +211,7 @@ export const PieceRowExpanded = ({
       {/* Footer CTA — one handoff to the full Piece Card */}
       <div
         onClick={(event) => event.stopPropagation()}
-        className="flex flex-wrap items-center justify-end gap-2 border-t border-ethereal-incense/15 pt-3"
+        className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline pt-3"
       >
         <Button asChild variant="primary" size="sm">
           <Link to={cardPath}>

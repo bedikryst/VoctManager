@@ -114,12 +114,12 @@ export const ComposerRowExpanded = ({
                   `${composer.first_name ?? ""} ${composer.last_name}`.trim(),
               },
             )}
-            className="h-40 w-40 rounded-2xl border border-ethereal-incense/20 object-cover"
+            className="h-40 w-40 rounded-nested border border-hairline-strong object-cover"
             loading="lazy"
           />
         ) : (
           <div
-            className="flex h-40 w-40 items-center justify-center rounded-2xl border border-dashed border-ethereal-incense/30 bg-ethereal-marble/40"
+            className="flex h-40 w-40 items-center justify-center rounded-nested border border-dashed border-hairline-strong bg-ethereal-marble/40"
             aria-hidden="true"
           >
             <Sparkles size={28} className="text-ethereal-gold/40" />
@@ -142,28 +142,40 @@ export const ComposerRowExpanded = ({
               )}
             </Caption>
           )}
+          {/* These leave the app, so they are controls with proper names, not
+              chips: a catalogue's brand set as an overline read as a status. */}
           <div className="flex flex-wrap items-center gap-2">
             {composer.mbid && (
-              <a
-                href={`https://musicbrainz.org/artist/${composer.mbid}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-ethereal-incense/30 bg-ethereal-marble/60 px-2.5 py-1 text-[10px] uppercase tracking-[0.15em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold"
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                rightIcon={<ExternalLink size={12} aria-hidden="true" />}
               >
-                MusicBrainz
-                <ExternalLink size={11} aria-hidden="true" />
-              </a>
+                <a
+                  href={`https://musicbrainz.org/artist/${composer.mbid}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  MusicBrainz
+                </a>
+              </Button>
             )}
             {composer.wikidata_qid && (
-              <a
-                href={`https://www.wikidata.org/wiki/${composer.wikidata_qid}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 rounded-full border border-ethereal-incense/30 bg-ethereal-marble/60 px-2.5 py-1 text-[10px] uppercase tracking-[0.15em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold"
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                rightIcon={<ExternalLink size={12} aria-hidden="true" />}
               >
-                Wikidata
-                <ExternalLink size={11} aria-hidden="true" />
-              </a>
+                <a
+                  href={`https://www.wikidata.org/wiki/${composer.wikidata_qid}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Wikidata
+                </a>
+              </Button>
             )}
             {composer.portrait_license && (
               <Caption color="muted">
@@ -248,7 +260,7 @@ export const ComposerRowExpanded = ({
       </div>
 
       {/* Pieces by this composer */}
-      <div className="rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/55 p-4">
+      <div className="rounded-nested border border-hairline bg-ethereal-alabaster/55 p-4">
         <Eyebrow color="muted" size="caption" className="mb-3 inline-flex items-center gap-1.5">
           <Library size={11} aria-hidden="true" />
           {piecesByThis.length === 0
@@ -275,7 +287,7 @@ export const ComposerRowExpanded = ({
               <li key={piece.id}>
                 <Link
                   to={`/panel/archive-management/${piece.id}`}
-                  className="inline-flex max-w-full items-center gap-2 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster/60 px-3 py-1.5 text-[12px] font-medium text-ethereal-ink transition-colors hover:border-ethereal-gold/35 hover:bg-ethereal-parchment/50"
+                  className="inline-flex max-w-full items-center gap-2 rounded-control border border-hairline bg-ethereal-alabaster/60 px-3 py-1.5 text-xs font-medium text-ethereal-ink transition-colors hover:border-ethereal-gold/35 hover:bg-ethereal-parchment/50"
                 >
                   <Music size={11} aria-hidden="true" className="text-ethereal-gold" />
                   <span className="truncate">{piece.title}</span>

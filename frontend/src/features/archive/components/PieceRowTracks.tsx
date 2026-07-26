@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { Loader2, Plus, Trash2, UploadCloud, X } from "lucide-react";
 
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
@@ -117,14 +118,15 @@ export const PieceRowTracks = ({
           {tracks.map((track) => (
             <li
               key={track.id}
-              className="flex items-center gap-3 rounded-lg border border-ethereal-incense/15 bg-ethereal-alabaster/70 px-3 py-2"
+              className="flex items-center gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/70 px-3 py-2"
             >
-              <span
-                className="inline-flex h-6 min-w-12 items-center justify-center rounded-md border border-ethereal-gold/25 bg-ethereal-gold/10 px-2 text-[10px] font-bold uppercase tracking-widest text-ethereal-gold"
+              <Badge
+                variant="warning"
+                className="min-w-12 shrink-0 justify-center py-0.5"
                 aria-hidden="true"
               >
                 {track.voice_part_display || track.voice_part}
-              </span>
+              </Badge>
               <audio
                 controls
                 controlsList="nodownload"
@@ -156,7 +158,7 @@ export const PieceRowTracks = ({
       {isAdding ? (
         <form
           onSubmit={handleUpload}
-          className="flex flex-col gap-2 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/5 p-3 md:flex-row md:items-center"
+          className="flex flex-col gap-2 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3 md:flex-row md:items-center"
         >
           <Select
             value={voicePart}
@@ -171,6 +173,8 @@ export const PieceRowTracks = ({
               ...voiceLines,
             ]}
           />
+          {/* The native file button is a CONTROL, so it wears the control
+              recipe (radius, sentence case) rather than an overline. */}
           <input
             ref={fileInputRef}
             type="file"
@@ -178,7 +182,7 @@ export const PieceRowTracks = ({
             onChange={(event) => setFile(event.target.files?.[0] || null)}
             required
             disabled={uploadMutation.isPending}
-            className="flex-1 text-[12px] text-ethereal-graphite file:mr-3 file:rounded-md file:border-0 file:bg-ethereal-gold/10 file:px-3 file:py-1.5 file:text-[10px] file:font-bold file:uppercase file:tracking-widest file:text-ethereal-gold hover:file:bg-ethereal-gold/20"
+            className="flex-1 text-xs text-ethereal-graphite file:mr-3 file:rounded-control file:border-0 file:bg-ethereal-gold/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-ethereal-gold hover:file:bg-ethereal-gold/20"
           />
           <div className="flex gap-1.5">
             <Button

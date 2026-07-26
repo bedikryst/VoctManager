@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 
 import type { Composer } from "@/shared/types";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -92,30 +93,29 @@ export const ArchiveSearchBar = ({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
+          <Button
+            variant={activeFilterCount > 0 ? "secondary" : "outline"}
             onClick={() => setIsAdvancedOpen((open) => !open)}
-            className={cn(
-              "inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-medium uppercase tracking-[0.18em] transition-colors",
-              activeFilterCount > 0
-                ? "border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
-                : "border-ethereal-incense/25 bg-ethereal-alabaster/60 text-ethereal-graphite hover:border-ethereal-gold/30 hover:text-ethereal-ink",
-            )}
             aria-expanded={isAdvancedOpen}
+            leftIcon={<SlidersHorizontal size={13} aria-hidden="true" />}
+            rightIcon={
+              <ChevronDown
+                size={13}
+                aria-hidden="true"
+                className={cn(
+                  "transition-transform",
+                  isAdvancedOpen && "rotate-180",
+                )}
+              />
+            }
           >
-            <SlidersHorizontal size={13} aria-hidden="true" />
             {t("archive.search.filters_btn", "Filtry")}
             {activeFilterCount > 0 && (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-ethereal-gold px-1 text-[10px] font-bold text-white">
+              <Badge variant="warning" className="ml-2 px-1.5 py-0">
                 {activeFilterCount}
-              </span>
+              </Badge>
             )}
-            <ChevronDown
-              size={13}
-              aria-hidden="true"
-              className={cn("transition-transform", isAdvancedOpen && "rotate-180")}
-            />
-          </button>
+          </Button>
           {hasActiveFilters && (
             <Button
               variant="ghost"
@@ -138,7 +138,7 @@ export const ArchiveSearchBar = ({
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="grid gap-3 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/40 p-3 md:grid-cols-3">
+            <div className="grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3 md:grid-cols-3">
               <div>
                 <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
                   {t("archive.search.composer", "Kompozytor")}
@@ -201,15 +201,22 @@ export const ArchiveSearchBar = ({
             })}
           </Caption>
           <div className="flex flex-wrap gap-1.5">
+            {/* A token carries a value the user typed or picked, so it keeps its
+                own casing; the X inside it is what makes it a control. */}
             {activeFilters.map((filterToken) => (
               <button
                 key={filterToken.id}
                 type="button"
                 onClick={filterToken.clear}
-                className="inline-flex items-center gap-1.5 rounded-full border border-ethereal-incense/25 bg-ethereal-alabaster/70 px-2.5 py-0.5 text-[11px] text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink"
+                aria-label={t("archive.search.clear_token", "Usuń filtr: {{label}}", {
+                  label: filterToken.label,
+                })}
+                className="rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 hover:text-ethereal-ink"
               >
-                <span>{filterToken.label}</span>
-                <X size={10} aria-hidden="true" />
+                <Badge variant="outline" casing="natural" className="py-0.5">
+                  {filterToken.label}
+                  <X size={10} aria-hidden="true" />
+                </Badge>
               </button>
             ))}
           </div>

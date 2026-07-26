@@ -75,26 +75,12 @@
     "active": {
       "aria": "Przetwarzanie AI w toku",
       "pages": "str.",
-      "title_one": "AI pracuje nad {{count}} partyturą",
-      "title_few": "AI pracuje nad {{count}} partyturami",
-      "title_many": "AI pracuje nad {{count}} partyturami",
-      "title_other": "AI pracuje nad {{count}} partyturami"
+      "section": "Analiza AI"
     },
     "ai_warning": {
       "before_birth": "Rok kompozycji ({{year}}) jest przed urodzeniem kompozytora ({{birth}}).",
       "long_after_death": "Rok kompozycji ({{year}}) jest dużo po śmierci kompozytora ({{death}}).",
       "title": "AI mógł się pomylić — sprawdź dane przed zatwierdzeniem"
-    },
-    "awaiting_banner": {
-      "aria": "Wydania oczekujące na weryfikację",
-      "body": "AI skończyło ekstrakcję metadanych. Sprawdź czy nic nie zmyślił — kompozytor, tytuł, IPA — i zatwierdź, żeby chór dostał materiały.",
-      "review_first": "Zacznij od pierwszego",
-      "review_one": "Przejrzyj wydanie",
-      "title_one": "1 wydanie czeka na Twoją weryfikację",
-      "title_many_one": "{{count}} wydań czeka na Twoją weryfikację",
-      "title_many_few": "{{count}} wydań czeka na Twoją weryfikację",
-      "title_many_many": "{{count}} wydań czeka na Twoją weryfikację",
-      "title_many_other": "{{count}} wydań czeka na Twoją weryfikację"
     },
     "card": {
       "actions": {
@@ -151,14 +137,14 @@
       "edit_last": "Nazwisko",
       "edit_nationality": "Narodowość",
       "first_empty": "imię?",
-      "mb_tooltip": "Powiązany z MusicBrainz",
       "nationality_empty": "kraj?",
       "no_mb_tooltip": "Brak MBID — rozważ 'Odśwież z MusicBrainz'",
       "pieces_tooltip_one": "{{count}} utworów w bibliotece",
       "pieces_tooltip_few": "{{count}} utworów w bibliotece",
       "pieces_tooltip_many": "{{count}} utworów w bibliotece",
       "pieces_tooltip_other": "{{count}} utworów w bibliotece",
-      "select_aria": "Zaznacz {{name}} do łączenia"
+      "select_aria": "Zaznacz {{name}} do łączenia",
+      "no_mb": "bez MB"
     },
     "composers": {
       "add_birth": "Rok urodzenia",
@@ -208,7 +194,8 @@
       "stat_total": "kompozytorów",
       "subtitle": "Biblioteka nut",
       "title": "Kompozytorzy",
-      "title_highlight": "i aranżerzy"
+      "title_highlight": "i aranżerzy",
+      "clear_search": "Wyczyść wyszukiwanie"
     },
     "dashboard": {
       "add_manual": "Dodaj ręcznie",
@@ -315,7 +302,7 @@
         "save_changes": "Zapisz zmiany",
         "save_close": "Zapisz i zamknij"
       },
-      "add_new_composer": "+ Dodaj nowego",
+      "add_new_composer": "Dodaj nowego",
       "arranger_placeholder": "np. John Rutter",
       "back_to_picker": "Wybierz z listy",
       "composer": {
@@ -489,7 +476,7 @@
       "duration_secs": "Sekundy",
       "editions_section": "Wydania nutowe",
       "epoch_pick": "— wybierz —",
-      "fetch_error": "Nie udało się pobrać szczegółów utworu:",
+      "fetch_error": "Nie udało się pobrać szczegółów utworu",
       "fetch_unknown": "nieznany błąd",
       "fields": {
         "arranger": "Opracowanie / aranżacja",
@@ -520,7 +507,7 @@
       "movements_section": "Części",
       "next_awaiting": "Następne do przeglądu",
       "no_composer": "Brak kompozytora",
-      "no_pdf": "Brak PDF dla tego utworu. Wgraj plik poniżej.",
+      "no_pdf": "Brak PDF dla tego utworu",
       "open_score": "Otwórz partyturę",
       "page_count_one": "{{count}} strona",
       "page_count_few": "{{count}} strony",
@@ -554,11 +541,10 @@
       "toast_save_error": "Nie udało się zapisać zmian.",
       "toast_save_success": "Zapisano zmiany.",
       "translations_section": "Tłumaczenia",
-      "verify_failed": "Nie udało się oznaczyć pola jako poprawne."
+      "verify_failed": "Nie udało się oznaczyć pola jako poprawne.",
+      "no_pdf_hint": "Wgraj partyturę poniżej — AI uzupełni metadane, IPA i tłumaczenia."
     },
     "review": {
-      "cancel": "Anuluj",
-      "confirm_delete": "Potwierdź usunięcie",
       "delete": "Usuń",
       "delete_failed": "Nie udało się usunąć.",
       "delete_movement": "Usuń część",
@@ -602,23 +588,17 @@
       "audio_count_tooltip_few": "{{count}} ścieżek audio",
       "audio_count_tooltip_many": "{{count}} ścieżek audio",
       "audio_count_tooltip_other": "{{count}} ścieżek audio",
-      "badge_awaiting": "AI · do przeglądu",
-      "badge_failed": "AI · błąd",
-      "badge_progress": "AI · w toku",
       "delete_aria": "Usuń utwór {{title}}",
       "edit_title": "Tytuł",
       "edit_voicing": "Obsada",
       "edit_year": "Rok kompozycji",
-      "pdf_attached": "PDF dostępne",
-      "status_awaiting": "AI zakończyło — czeka na weryfikację",
-      "status_failed": "Pipeline AI się nie powiódł",
-      "status_progress": "AI pracuje…",
-      "status_ready": "Zatwierdzone przez Ciebie",
       "title_placeholder": "Tytuł utworu",
       "traditional": "Tradycyjny",
       "year_anomaly_aria": "Ostrzeżenie: rok kompozycji jest podejrzany",
       "year_anomaly_tooltip": "AI mógł się pomylić — rok nie pasuje do dat życia kompozytora",
-      "year_placeholder": "rok?"
+      "year_placeholder": "rok?",
+      "no_pdf": "bez nut",
+      "no_pdf_tooltip": "Utwór bez partytury — wgraj PDF, żeby AI uzupełnił metadane"
     },
     "row_expanded": {
       "ai_empty_hint": "Utwór wprowadzony ręcznie. Wgraj PDF żeby AI uzupełnił metadane, IPA, tłumaczenia i notkę programową.",
@@ -675,13 +655,16 @@
       "placeholder": "Szukaj utworu lub kompozytora…",
       "reset": "Wyczyść",
       "summary_filtered": "{{visible}} z {{total}}",
-      "voicing": "Obsada"
+      "voicing": "Obsada",
+      "clear_token": "Usuń filtr: {{label}}"
     },
     "stat_strip": {
-      "awaiting_one": "do przeglądu",
-      "awaiting_many": "do przeglądu",
       "pieces": "utworów",
-      "with_pdf": "z PDF"
+      "with_pdf": "z PDF",
+      "review_cta_one": "{{count}} do przeglądu",
+      "review_cta_few": "{{count}} do przeglądu",
+      "review_cta_many": "{{count}} do przeglądu",
+      "review_cta_other": "{{count}} do przeglądu"
     },
     "tabs": {
       "aria": "Sekcje archiwum",

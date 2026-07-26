@@ -38,6 +38,7 @@ import {
   BookOpen,
   Check,
   ChevronRight,
+  CircleAlert,
   Disc3,
   FileText,
   Languages,
@@ -52,7 +53,9 @@ import {
 
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -106,10 +109,11 @@ import { getPrimaryPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece, type VoiceLine } from "@/shared/types";
 
 /**
- * Label + provenance chip header over a control. Mirrors the Input primitive's
- * own label styling so the chip can sit beside the label (the Input API has no
- * label-adornment slot). The wrapped control uses `aria-label`, not a second
- * visible label.
+ * Label + provenance chip header over a control. It exists because the `Input`
+ * API has no label-adornment slot, so the chip cannot ride along inside it — but
+ * the label itself is the same `Eyebrow` the primitive renders, at the same
+ * size, colour and offset. The wrapped control uses `aria-label`, not a second
+ * visible label, which is why this one is not an `as="label"`.
  */
 const LabeledField = ({
   label,
@@ -122,9 +126,9 @@ const LabeledField = ({
 }): React.JSX.Element => (
   <div className="flex w-full flex-col gap-1.5">
     <div className="flex items-center gap-2">
-      <span className="ml-1 text-[10px] font-bold uppercase tracking-widest text-ethereal-graphite antialiased">
+      <Eyebrow color="muted" className="ml-1">
         {label}
-      </span>
+      </Eyebrow>
       {chip}
     </div>
     {children}
@@ -168,9 +172,9 @@ const CockpitSection = ({
           {label}
         </Eyebrow>
         {typeof count === "number" && (
-          <span className="rounded-full border border-ethereal-incense/25 bg-ethereal-alabaster/70 px-2 text-[10px] font-bold tabular-nums text-ethereal-graphite">
+          <Badge variant="neutral" className="py-0 tabular-nums">
             {count}
-          </span>
+          </Badge>
         )}
         <motion.span
           animate={{ rotate: open ? 90 : 0 }}
@@ -220,7 +224,7 @@ const FieldGroup = ({
       </Eyebrow>
       <span
         aria-hidden="true"
-        className="h-px flex-1 bg-gradient-to-r from-ethereal-incense/25 to-transparent"
+        className="h-px flex-1 bg-linear-to-r from-hairline-strong to-transparent"
       />
     </div>
     <div className={className}>{children}</div>
@@ -297,7 +301,7 @@ const MetadataReviewMeter = ({
   const ratio = progress.verified / progress.total;
   const allClear = progress.pending === 0;
   return (
-    <div className="mb-5 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/50 px-4 py-3">
+    <div className="mb-5 rounded-nested border border-hairline bg-ethereal-alabaster/50 px-4 py-3">
       <div className="flex items-center gap-2">
         {allClear ? (
           <ShieldCheck
@@ -325,7 +329,7 @@ const MetadataReviewMeter = ({
               )}
         </Text>
       </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-ethereal-incense/15">
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-hairline-strong">
         <div
           className="h-full origin-left rounded-full bg-ethereal-sage transition-transform duration-500"
           style={{ transform: `scaleX(${ratio})` }}
@@ -660,21 +664,31 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   if (isLoading || !piece) {
     if (isError) {
       return (
-        <div className="mx-auto max-w-md py-16 text-center">
-          <Text color="crimson">
-            {t(
+        <div className="mx-auto max-w-xl py-10">
+          <StatePanel
+            tone="danger"
+            icon={<CircleAlert size={32} aria-hidden="true" />}
+            title={t(
               "archive.piece_card.fetch_error",
-              "Nie udało się pobrać szczegółów utworu:",
-            )}{" "}
-            {error instanceof Error
-              ? error.message
-              : t("archive.piece_card.fetch_unknown", "nieznany błąd")}
-          </Text>
-          <Button asChild variant="outline" size="sm" className="mt-6">
-            <Link to="/panel/archive-management">
-              {t("archive.piece_card.back", "Wróć do biblioteki")}
-            </Link>
-          </Button>
+              "Nie udało się pobrać szczegółów utworu",
+            )}
+            description={
+              error instanceof Error
+                ? error.message
+                : t("archive.piece_card.fetch_unknown", "nieznany błąd")
+            }
+            actions={
+              <Button
+                asChild
+                variant="outline"
+                leftIcon={<ArrowLeft size={14} aria-hidden="true" />}
+              >
+                <Link to="/panel/archive-management">
+                  {t("archive.piece_card.back", "Wróć do biblioteki")}
+                </Link>
+              </Button>
+            }
+          />
         </div>
       );
     }
@@ -813,7 +827,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
           {/* Score preview — the elevated hero panel: rounded so the PDF's own
               corners round with it, resting on a soft glass shadow. */}
           <section
-            className="relative shrink-0 overflow-hidden rounded-3xl border border-glass-border bg-glass-surface shadow-glass-ethereal lg:w-1/2"
+            className="relative shrink-0 overflow-hidden rounded-surface border border-glass-border bg-glass-surface shadow-glass-ethereal lg:w-1/2"
             aria-label={t(
               "archive.piece_card.pdf_preview_aria",
               "Podgląd PDF partytury",
@@ -825,7 +839,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   {/* Slim filename bar. Download is intentionally NOT duplicated
                       here — the viewer's own toolbar owns it, over the gated blob
                       path, rather than this raw-file URL. */}
-                  <div className="flex shrink-0 items-center gap-2 border-b border-ethereal-incense/10 bg-ethereal-alabaster/40 px-3 py-2">
+                  <div className="flex shrink-0 items-center gap-2 border-b border-hairline bg-ethereal-alabaster/40 px-3 py-2">
                     <FileText
                       size={13}
                       className="shrink-0 text-ethereal-graphite/45"
@@ -861,7 +875,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                 <div className="flex flex-col gap-3 p-4">
                   <div className="flex items-center gap-3">
                     <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
                       aria-hidden="true"
                     >
                       <FileText size={18} strokeWidth={1.6} />
@@ -891,18 +905,19 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                 </div>
               )
             ) : (
-              <div className="flex h-[40vh] flex-col items-center justify-center gap-4 p-6 text-center lg:h-full">
-                <FileText
-                  size={32}
-                  className="text-ethereal-graphite/30"
-                  aria-hidden="true"
-                />
-                <Text color="muted">
-                  {t(
+              <div className="flex h-[40vh] flex-col items-center justify-center gap-2 p-6 lg:h-full">
+                <StatePanel
+                  variant="inline"
+                  icon={<FileText size={32} aria-hidden="true" />}
+                  title={t(
                     "archive.piece_card.no_pdf",
-                    "Brak PDF dla tego utworu. Wgraj plik poniżej.",
+                    "Brak PDF dla tego utworu",
                   )}
-                </Text>
+                  description={t(
+                    "archive.piece_card.no_pdf_hint",
+                    "Wgraj partyturę poniżej — AI uzupełni metadane, IPA i tłumaczenia.",
+                  )}
+                />
                 <div className="w-full max-w-md">
                   <EditionUploadZone pieceId={String(piece.id)} compact />
                 </div>
@@ -1266,7 +1281,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   defaultOpen
                 >
                   <EditionsList editions={editions} />
-                  <div className="mt-5 border-t border-ethereal-incense/15 pt-5">
+                  <div className="mt-5 border-t border-hairline pt-5">
                     <EditionUploadZone pieceId={String(piece.id)} compact />
                   </div>
                 </CockpitSection>
@@ -1321,7 +1336,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                 edits so the Save affordance reads at a glance. */}
             <footer
               className={cn(
-                "mx-2 mb-1 mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 rounded-2xl border px-4 py-3 shadow-glass-ethereal",
+                "mx-2 mb-1 mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 rounded-nested border px-4 py-3 shadow-glass-ethereal",
                 hasChanges
                   ? "border-ethereal-gold/40 bg-ethereal-gold/10"
                   : "border-glass-border bg-glass-surface",

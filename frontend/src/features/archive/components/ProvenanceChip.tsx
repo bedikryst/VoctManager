@@ -32,11 +32,14 @@ import type { Piece, ProvenanceEntry } from "@/shared/types";
 
 type Tone = "verified" | "canonical" | "ai" | "external";
 
+/** Three tones, not four: "a catalogue said so" and "some other source said so"
+ *  are one trust tier, and drawing them one alpha step apart only made two
+ *  neutral greys where the eye reads a single meaning. */
 const TONE_CLASS: Record<Tone, string> = {
   verified: "border-ethereal-sage/45 bg-ethereal-sage/12 text-ethereal-sage",
   canonical: "border-ethereal-incense/40 bg-ethereal-parchment text-ethereal-graphite",
   ai: "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst",
-  external: "border-ethereal-incense/30 bg-ethereal-parchment/60 text-ethereal-graphite",
+  external: "border-ethereal-incense/40 bg-ethereal-parchment text-ethereal-graphite",
 };
 
 const AI_SOURCES = new Set(["AIS", "AIH", "AIO"]);

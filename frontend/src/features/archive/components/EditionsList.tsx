@@ -124,7 +124,7 @@ const EditionLicenseControl = ({
   };
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-ethereal-incense/10 pt-3">
+    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
       <Caption color="muted" className="shrink-0">
         {t("archive.editions.license.label", "Licencja")}
       </Caption>
@@ -289,12 +289,12 @@ export const EditionsList = ({
           return (
             <li
               key={edition.id}
-              className="rounded-3xl border border-ethereal-incense/15 bg-ethereal-alabaster/65 p-4"
+              className="rounded-nested border border-hairline bg-ethereal-alabaster/65 p-4"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div className="flex min-w-0 items-start gap-3">
                   <span
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-control border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
                     aria-hidden="true"
                   >
                     <FileText size={16} strokeWidth={1.6} />

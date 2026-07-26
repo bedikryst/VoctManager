@@ -17,7 +17,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { AlertTriangle } from "lucide-react";
 
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import type { Piece } from "@/shared/types";
 
 interface AIHallucinationWarningProps {
@@ -102,10 +102,10 @@ export const AIHallucinationWarning = ({
   return (
     <div
       role="alert"
-      className="flex items-start gap-3 rounded-2xl border border-ethereal-crimson/30 bg-ethereal-crimson/5 p-3"
+      className="flex items-start gap-3 rounded-nested border border-ethereal-crimson/30 bg-ethereal-crimson/5 p-3"
     >
       <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-ethereal-crimson/40 bg-ethereal-crimson/10 text-ethereal-crimson"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control border border-ethereal-crimson/40 bg-ethereal-crimson/10 text-ethereal-crimson"
         aria-hidden="true"
       >
         <AlertTriangle size={14} strokeWidth={2} />
@@ -117,9 +117,13 @@ export const AIHallucinationWarning = ({
             "AI mógł się pomylić — sprawdź dane przed zatwierdzeniem",
           )}
         </Caption>
-        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-[12px] text-ethereal-crimson/85">
+        <ul className="mt-1 list-disc space-y-0.5 pl-5">
           {reasons.map((reason) => (
-            <li key={reason}>{reason}</li>
+            <li key={reason}>
+              <Text as="span" size="xs" className="text-ethereal-crimson/85">
+                {reason}
+              </Text>
+            </li>
           ))}
         </ul>
       </div>

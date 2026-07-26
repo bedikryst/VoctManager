@@ -28,24 +28,22 @@ import React, {
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { Plus, UploadCloud } from "lucide-react";
+import { Plus, Sparkles, UploadCloud } from "lucide-react";
 
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { Button } from "@/shared/ui/primitives/Button";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import { INGESTION_STATUS } from "@/shared/types";
 
 import { ActiveIngestionsPanel } from "./components/ActiveIngestionsPanel";
-import { ArchiveAwaitingBanner } from "./components/ArchiveAwaitingBanner";
 import { ArchiveEmptyState } from "./components/ArchiveEmptyState";
 import { ArchiveTabs } from "./components/ArchiveTabs";
 import {
   ArchiveSearchBar,
   type ArchiveActiveFilter,
 } from "./components/ArchiveSearchBar";
-import { ArchiveStatStrip } from "./components/ArchiveStatStrip";
+import { ArchiveStatLine, type ArchiveStat } from "./components/ArchiveStatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { PieceRow } from "./components/PieceRow";
@@ -69,6 +67,7 @@ export default function ArchiveManagement(): React.JSX.Element {
     libraryStats,
     availableVoicings,
     displayPieces,
+    awaitingPieces,
     hasActiveFilters,
     activeFilterCount,
     searchTerm,
@@ -193,17 +192,21 @@ export default function ArchiveManagement(): React.JSX.Element {
 
   const isFreshArchive = !isLoading && totalPieces === 0;
 
-  const awaitingCount = deferredPieces.filter((p) =>
-    (p.editions ?? []).some(
-      (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
-    ),
-  ).length;
+  const awaitingCount = awaitingPieces.length;
+  const firstAwaitingPiece = awaitingPieces[0];
 
-  const firstAwaitingPiece = deferredPieces.find((p) =>
-    (p.editions ?? []).some(
-      (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
-    ),
-  );
+  const libraryStatSegments: ArchiveStat[] = [
+    {
+      id: "pieces",
+      value: totalPieces,
+      label: t("archive.stat_strip.pieces", "utworów"),
+    },
+    {
+      id: "pdf",
+      value: `${pdfCoverage}%`,
+      label: t("archive.stat_strip.with_pdf", "z PDF"),
+    },
+  ];
 
   return (
     <PageTransition>
@@ -240,13 +243,27 @@ export default function ArchiveManagement(): React.JSX.Element {
 
         {!isFreshArchive && <ArchiveTabs />}
 
+        {/* Facts stay a sentence; the review backlog is the one thing here that
+            is work, so it is a control and not a fourth restatement of the count
+            the rows already carry. */}
         {!isFreshArchive && (
-          <ArchiveStatStrip
-            totalPieces={totalPieces}
-            pdfCoverage={pdfCoverage}
-            awaitingCount={awaitingCount}
-            onJumpToAwaiting={() =>
-              firstAwaitingPiece && navigateToReview(String(firstAwaitingPiece.id))
+          <ArchiveStatLine
+            stats={libraryStatSegments}
+            action={
+              awaitingCount > 0 && firstAwaitingPiece ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftIcon={<Sparkles size={13} aria-hidden="true" />}
+                  onClick={() => navigateToReview(String(firstAwaitingPiece.id))}
+                >
+                  {t(
+                    "archive.stat_strip.review_cta",
+                    "{{count}} do przeglądu",
+                    { count: awaitingCount },
+                  )}
+                </Button>
+              ) : undefined
             }
           />
         )}
@@ -259,13 +276,6 @@ export default function ArchiveManagement(): React.JSX.Element {
           <ArchiveWelcomeState onAddManually={navigateToNew} />
         ) : (
           <>
-            {awaitingCount > 0 && (
-              <ArchiveAwaitingBanner
-                pieces={deferredPieces}
-                onOpenReview={(piece) => navigateToReview(String(piece.id))}
-              />
-            )}
-
             <ArchiveSearchBar
               searchTerm={searchTerm}
               composerFilter={composerFilter}

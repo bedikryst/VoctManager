@@ -13,9 +13,11 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Ban, Check, Loader2, Sparkles, X } from "lucide-react";
+import { Ban, Loader2, Sparkles } from "lucide-react";
 
-import { Caption, Heading, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
@@ -25,6 +27,7 @@ import {
   liveAnalysisDetail,
   liveIngestionLabel,
 } from "../constants/ingestionProgress";
+import { InlineConfirmAction } from "./InlineConfirmAction";
 
 const fmtCents = (cents?: number): string =>
   cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
@@ -51,32 +54,27 @@ export const ActiveIngestionsPanel = (): React.JSX.Element | null => {
   if (active.length === 0) return null;
 
   return (
-    <section
-      role="region"
-      aria-live="polite"
-      aria-label={t("archive.active.aria", "Przetwarzanie AI w toku")}
-      className="relative overflow-hidden rounded-3xl border border-ethereal-amethyst/30 bg-gradient-to-r from-ethereal-amethyst/10 via-ethereal-parchment/40 to-transparent p-5 md:p-6"
+    // The card header is a label slot, not a sentence: the count rides in the
+    // action chip, and the sentence stays where it does real work — the region's
+    // accessible name.
+    <SectionCard
+      as="h2"
+      title={t("archive.active.section", "Analiza AI")}
+      icon={<Sparkles size={14} strokeWidth={1.8} aria-hidden="true" />}
+      action={
+        <Badge variant="amethyst" className="py-0 tabular-nums">
+          {active.length}
+        </Badge>
+      }
+      ariaLabel={t("archive.active.aria", "Przetwarzanie AI w toku")}
+      bodyClassName="gap-2"
     >
-      <div className="mb-3 flex items-center gap-3">
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-          aria-hidden="true"
-        >
-          <Sparkles size={18} strokeWidth={1.6} />
-        </span>
-        <Heading as="h2" size="lg" weight="medium">
-          {t("archive.active.title", "AI pracuje nad {{count}} partyturą", {
-            count: active.length,
-          })}
-        </Heading>
-      </div>
-
-      <ul role="list" className="flex flex-col gap-2">
+      <ul role="list" aria-live="polite" className="flex flex-col gap-2">
         {active.map((item) => (
           <ActiveRow key={item.id} item={item} now={now} />
         ))}
       </ul>
-    </section>
+    </SectionCard>
   );
 };
 
@@ -104,13 +102,13 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
   return (
     <li
       className={cn(
-        "flex items-center gap-3 rounded-2xl border bg-ethereal-alabaster/70 px-4 py-3",
-        overloaded ? "border-ethereal-gold/40" : "border-ethereal-incense/20",
+        "flex items-center gap-3 rounded-nested border bg-ethereal-alabaster/70 px-4 py-3",
+        overloaded ? "border-ethereal-gold/40" : "border-hairline",
       )}
     >
       <span
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-control border",
           overloaded
             ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
             : "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst",
@@ -148,56 +146,25 @@ const CancelControl = ({
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const cancel = useCancelEdition();
-  const [armed, setArmed] = useState(false);
 
-  if (!armed) {
-    return (
-      <button
-        type="button"
-        onClick={() => setArmed(true)}
-        aria-label={t("archive.active.cancel", "Przerwij przetwarzanie")}
-        title={t("archive.active.cancel", "Przerwij przetwarzanie")}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-ethereal-incense/25 text-ethereal-graphite/55 transition-colors hover:border-ethereal-crimson/40 hover:text-ethereal-crimson"
-      >
-        <Ban size={15} strokeWidth={1.8} aria-hidden="true" />
-      </button>
-    );
-  }
   return (
-    <div className="flex shrink-0 items-center gap-1">
-      <button
-        type="button"
-        disabled={cancel.isPending}
-        onClick={() =>
-          cancel.mutate(editionId, {
-            onSuccess: () =>
-              toast.success(
-                t("archive.active.cancelled", "Przerwano przetwarzanie."),
-              ),
-            onError: () =>
-              toast.error(
-                t("archive.active.cancel_failed", "Nie udało się przerwać."),
-              ),
-          })
-        }
-        aria-label={t("archive.active.cancel_confirm", "Potwierdź przerwanie")}
-        className="flex h-8 items-center gap-1 rounded-xl border border-ethereal-crimson/40 bg-ethereal-crimson/10 px-2 text-[11px] font-semibold text-ethereal-crimson"
-      >
-        {cancel.isPending ? (
-          <Loader2 size={12} className="animate-spin" aria-hidden="true" />
-        ) : (
-          <Check size={12} strokeWidth={2.2} aria-hidden="true" />
-        )}
-        {t("archive.active.cancel_short", "Przerwij")}
-      </button>
-      <button
-        type="button"
-        onClick={() => setArmed(false)}
-        aria-label={t("archive.review.cancel", "Anuluj")}
-        className="flex h-8 w-8 items-center justify-center rounded-xl border border-ethereal-incense/25 text-ethereal-graphite/55"
-      >
-        <X size={14} strokeWidth={1.8} aria-hidden="true" />
-      </button>
-    </div>
+    <InlineConfirmAction
+      icon={Ban}
+      label={t("archive.active.cancel", "Przerwij przetwarzanie")}
+      confirmLabel={t("archive.active.cancel_short", "Przerwij")}
+      isPending={cancel.isPending}
+      onConfirm={() =>
+        cancel.mutate(editionId, {
+          onSuccess: () =>
+            toast.success(
+              t("archive.active.cancelled", "Przerwano przetwarzanie."),
+            ),
+          onError: () =>
+            toast.error(
+              t("archive.active.cancel_failed", "Nie udało się przerwać."),
+            ),
+        })
+      }
+    />
   );
 };

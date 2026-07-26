@@ -75,10 +75,7 @@
     "active": {
       "aria": "Traitement IA en cours",
       "pages": "p.",
-      "title_one": "L’IA traite {{count}} partition",
-      "title_few": "L’IA traite {{count}} partitions",
-      "title_many": "L’IA traite {{count}} partitions",
-      "title_other": "L’IA traite {{count}} partitions"
+      "section": "Analyse IA"
     },
     "ai_warning": {
       "before_birth": "L'année de composition ({{year}}) précède la naissance du compositeur ({{birth}}).",
@@ -86,17 +83,6 @@
       "title": "L'IA a pu se tromper — vérifiez les données avant de valider",
       "arrangement_epoch": "Cette œuvre a un arrangeur mais son époque est marquée comme contemporaine — vérifiez qu'il ne s'agit pas d'un arrangement d'une œuvre traditionnelle (auquel cas l'époque = l'origine de l'original).",
       "ipa_misaligned": "La transcription API a {{ipa}} lignes et le texte {{lyrics}} — l'alignement ligne à ligne peut être erroné."
-    },
-    "awaiting_banner": {
-      "aria": "Éditions en attente de vérification",
-      "body": "L'IA a terminé l'extraction des métadonnées. Vérifiez qu'elle n'a rien inventé — compositeur, titre, IPA — puis validez pour que le chœur reçoive les supports.",
-      "review_first": "Commencer par la première",
-      "review_one": "Vérifier l'édition",
-      "title_one": "1 édition attend votre vérification",
-      "title_many_one": "{{count}} éditions attendent votre vérification",
-      "title_many_few": "{{count}} éditions attendent votre vérification",
-      "title_many_many": "{{count}} éditions attendent votre vérification",
-      "title_many_other": "{{count}} éditions attendent votre vérification"
     },
     "card": {
       "actions": {
@@ -153,14 +139,14 @@
       "edit_last": "Nom",
       "edit_nationality": "Nationalité",
       "first_empty": "prénom ?",
-      "mb_tooltip": "Lié à MusicBrainz",
       "nationality_empty": "pays ?",
       "no_mb_tooltip": "Aucun MBID — pensez à « Actualiser depuis MusicBrainz »",
       "pieces_tooltip_one": "{{count}} pièce dans la bibliothèque",
       "pieces_tooltip_few": "{{count}} pièces dans la bibliothèque",
       "pieces_tooltip_many": "{{count}} pièces dans la bibliothèque",
       "pieces_tooltip_other": "{{count}} pièces dans la bibliothèque",
-      "select_aria": "Sélectionner {{name}} pour la fusion"
+      "select_aria": "Sélectionner {{name}} pour la fusion",
+      "no_mb": "sans MB"
     },
     "composers": {
       "add_birth": "Année de naissance",
@@ -210,7 +196,8 @@
       "stat_total": "compositeurs",
       "subtitle": "Bibliothèque de partitions",
       "title": "Compositeurs",
-      "title_highlight": "et arrangeurs"
+      "title_highlight": "et arrangeurs",
+      "clear_search": "Effacer la recherche"
     },
     "dashboard": {
       "add_manual": "Ajouter manuellement",
@@ -317,7 +304,7 @@
         "save_changes": "Enregistrer les modifications",
         "save_close": "Enregistrer et fermer"
       },
-      "add_new_composer": "+ Ajouter",
+      "add_new_composer": "Ajouter",
       "arranger_placeholder": "p. ex. John Rutter",
       "back_to_picker": "Choisir dans la liste",
       "composer": {
@@ -489,7 +476,7 @@
       "duration_secs": "Secondes",
       "editions_section": "Éditions de partition",
       "epoch_pick": "— choisir —",
-      "fetch_error": "Impossible de charger les détails de la pièce :",
+      "fetch_error": "Impossible de charger les détails de la pièce",
       "fetch_unknown": "erreur inconnue",
       "fields": {
         "arranger": "Arrangement",
@@ -520,7 +507,7 @@
       "movements_section": "Mouvements",
       "next_awaiting": "Suivante à vérifier",
       "no_composer": "Aucun compositeur",
-      "no_pdf": "Aucun PDF pour cette pièce. Importez un fichier ci-dessous.",
+      "no_pdf": "Aucun PDF pour cette pièce",
       "open_score": "Ouvrir la partition",
       "page_count_one": "{{count}} page",
       "page_count_other": "{{count}} pages",
@@ -550,11 +537,10 @@
       "toast_save_error": "Impossible d'enregistrer les modifications.",
       "toast_save_success": "Modifications enregistrées.",
       "translations_section": "Traductions",
-      "verify_failed": "Impossible de marquer le champ comme correct."
+      "verify_failed": "Impossible de marquer le champ comme correct.",
+      "no_pdf_hint": "Importez une partition ci-dessous — l'IA complétera les métadonnées, l'IPA et les traductions."
     },
     "review": {
-      "cancel": "Annuler",
-      "confirm_delete": "Confirmer la suppression",
       "delete": "Supprimer",
       "delete_failed": "Échec de la suppression.",
       "delete_movement": "Supprimer le mouvement",
@@ -598,23 +584,17 @@
       "audio_count_tooltip_few": "{{count}} pistes audio",
       "audio_count_tooltip_many": "{{count}} pistes audio",
       "audio_count_tooltip_other": "{{count}} pistes audio",
-      "badge_awaiting": "IA · à vérifier",
-      "badge_failed": "IA · erreur",
-      "badge_progress": "IA · en cours",
       "delete_aria": "Supprimer la pièce {{title}}",
       "edit_title": "Titre",
       "edit_voicing": "Distribution",
       "edit_year": "Année de composition",
-      "pdf_attached": "PDF disponible",
-      "status_awaiting": "IA terminée — en attente de vérification",
-      "status_failed": "Le pipeline IA a échoué",
-      "status_progress": "L'IA travaille…",
-      "status_ready": "Validé par vous",
       "title_placeholder": "Titre de la pièce",
       "traditional": "Traditionnel",
       "year_anomaly_aria": "Avertissement : l'année de composition semble douteuse",
       "year_anomaly_tooltip": "L'IA a pu se tromper — l'année ne correspond pas aux dates du compositeur",
-      "year_placeholder": "année ?"
+      "year_placeholder": "année ?",
+      "no_pdf": "sans partition",
+      "no_pdf_tooltip": "Aucune partition — importez un PDF pour que l'IA complète les métadonnées"
     },
     "row_expanded": {
       "ai_empty_hint": "Pièce saisie manuellement. Importez un PDF pour que l'IA complète les métadonnées, l'IPA, les traductions et la note de programme.",
@@ -669,13 +649,16 @@
       "placeholder": "Rechercher une pièce ou un compositeur…",
       "reset": "Effacer",
       "summary_filtered": "{{visible}} sur {{total}}",
-      "voicing": "Distribution"
+      "voicing": "Distribution",
+      "clear_token": "Supprimer le filtre : {{label}}"
     },
     "stat_strip": {
-      "awaiting_one": "à vérifier",
-      "awaiting_many": "à vérifier",
       "pieces": "pièces",
-      "with_pdf": "avec PDF"
+      "with_pdf": "avec PDF",
+      "review_cta_one": "{{count}} à vérifier",
+      "review_cta_few": "{{count}} à vérifier",
+      "review_cta_many": "{{count}} à vérifier",
+      "review_cta_other": "{{count}} à vérifier"
     },
     "tabs": {
       "aria": "Sections de l'archive",

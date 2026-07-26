@@ -214,10 +214,10 @@ export const EditionUploadZone = ({
       <div
         {...getRootProps({
           className: cn(
-            "group/dropzone relative flex flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-12 text-center transition-all duration-300 cursor-pointer outline-none",
+            "group/dropzone relative flex flex-col items-center justify-center gap-3 rounded-surface border-2 border-dashed px-6 py-12 text-center transition-all duration-300 cursor-pointer outline-none",
             isDragActive
               ? "border-ethereal-gold/70 bg-ethereal-gold/10 scale-[1.01]"
-              : "border-ethereal-incense/30 hover:border-ethereal-gold/40 hover:bg-ethereal-parchment/30",
+              : "border-hairline-strong hover:border-ethereal-gold/40 hover:bg-ethereal-parchment/30",
             isFocused &&
               "ring-2 ring-ethereal-gold/40 ring-offset-2 ring-offset-transparent",
             compact && "py-6",
@@ -233,10 +233,10 @@ export const EditionUploadZone = ({
           animate={{ y: isDragActive ? -4 : 0, scale: isDragActive ? 1.05 : 1 }}
           transition={{ type: "spring", stiffness: 320, damping: 22 }}
           className={cn(
-            "flex h-14 w-14 items-center justify-center rounded-2xl border transition-colors",
+            "flex h-14 w-14 items-center justify-center rounded-nested border transition-colors",
             isDragActive
               ? "border-ethereal-gold/60 bg-ethereal-gold/15 text-ethereal-gold"
-              : "border-ethereal-incense/30 bg-ethereal-marble/70 text-ethereal-graphite group-hover/dropzone:text-ethereal-gold",
+              : "border-hairline-strong bg-ethereal-marble/70 text-ethereal-graphite group-hover/dropzone:text-ethereal-gold",
           )}
           aria-hidden="true"
         >
@@ -372,7 +372,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
           ? "border-ethereal-gold/50 bg-ethereal-gold/10 text-ethereal-gold"
           : view === "ingesting"
             ? "border-ethereal-amethyst/40 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-            : "border-ethereal-incense/30 bg-ethereal-marble/80 text-ethereal-graphite";
+            : "border-hairline-strong bg-ethereal-marble/80 text-ethereal-graphite";
 
   return (
     <motion.li
@@ -381,11 +381,11 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.18 }}
-      className="flex items-center gap-3 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/70 px-4 py-3"
+      className="flex items-center gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/70 px-4 py-3"
     >
       <span
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-control border",
           avatarTone,
         )}
         aria-hidden="true"
@@ -455,7 +455,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}
-            className="mt-2 h-1 w-full overflow-hidden rounded-full bg-ethereal-incense/15"
+            className="mt-2 h-1 w-full overflow-hidden rounded-full bg-hairline-strong"
           >
             <motion.div
               className="h-full bg-ethereal-gold/70"

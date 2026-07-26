@@ -12,7 +12,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 
 import type { VoiceLine, VoiceLineOption } from "@/shared/types";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -75,7 +75,7 @@ export const DivisiEditor = ({
             type="button"
             onClick={() => addRequirement(vl.value)}
             disabled={isBusy}
-            className="inline-flex items-center gap-1 rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster/70 px-3 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink disabled:opacity-40"
+            className="inline-flex items-center gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 px-3 py-1 text-xs font-medium text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink disabled:opacity-40"
           >
             <Plus size={11} aria-hidden="true" /> {vl.label}
           </button>
@@ -90,7 +90,7 @@ export const DivisiEditor = ({
             return (
               <div
                 key={`${requirement.voice_line}-${index}`}
-                className="flex items-center justify-between gap-3 rounded-md border border-ethereal-gold/25 bg-ethereal-gold/5 px-3 py-1.5"
+                className="flex items-center justify-between gap-3 rounded-control border border-ethereal-gold/25 bg-ethereal-gold/5 px-3 py-1.5"
               >
                 <Eyebrow color="gold" size="caption">
                   {display || requirement.voice_line}
@@ -100,10 +100,10 @@ export const DivisiEditor = ({
                     type="button"
                     onClick={() => adjustRequirement(index, -1)}
                     disabled={requirement.quantity <= 1 || isBusy}
-                    className="flex h-6 w-6 items-center justify-center rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink disabled:opacity-30"
+                    className="flex h-6 w-6 items-center justify-center rounded-control border border-hairline-strong bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink disabled:opacity-30"
                     aria-label={t("archive.form.decrement", "Zmniejsz")}
                   >
-                    −
+                    <Minus size={12} aria-hidden="true" />
                   </button>
                   <Text
                     size="xs"
@@ -116,16 +116,16 @@ export const DivisiEditor = ({
                     type="button"
                     onClick={() => adjustRequirement(index, 1)}
                     disabled={isBusy}
-                    className="flex h-6 w-6 items-center justify-center rounded-md border border-ethereal-incense/25 bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink disabled:opacity-30"
+                    className="flex h-6 w-6 items-center justify-center rounded-control border border-hairline-strong bg-ethereal-alabaster text-ethereal-graphite hover:text-ethereal-ink disabled:opacity-30"
                     aria-label={t("archive.form.increment", "Zwiększ")}
                   >
-                    +
+                    <Plus size={12} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     onClick={() => removeRequirement(index)}
                     disabled={isBusy}
-                    className="ml-1 flex h-6 w-6 items-center justify-center rounded-md text-ethereal-incense hover:text-ethereal-crimson disabled:opacity-40"
+                    className="ml-1 flex h-6 w-6 items-center justify-center rounded-control text-ethereal-incense hover:text-ethereal-crimson disabled:opacity-40"
                     aria-label={t("archive.form.remove_divisi", "Usuń")}
                   >
                     <X size={12} aria-hidden="true" />

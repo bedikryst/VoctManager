@@ -17,7 +17,7 @@ import { Plus, Sparkles } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Heading, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 
 import { EditionUploadZone } from "./EditionUploadZone";
 
@@ -35,7 +35,7 @@ export const ArchiveWelcomeState = ({
       <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
         <div className="flex flex-col items-center gap-4 py-8 text-center md:py-12">
           <span
-            className="flex h-16 w-16 items-center justify-center rounded-3xl border border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
+            className="flex h-16 w-16 items-center justify-center rounded-surface border border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
             aria-hidden="true"
           >
             <Sparkles size={28} strokeWidth={1.5} />
@@ -57,9 +57,7 @@ export const ArchiveWelcomeState = ({
       </GlassCard>
 
       <div className="flex flex-col items-center gap-2">
-        <Text size="xs" color="muted" className="uppercase tracking-widest">
-          {t("archive.welcome.or", "Albo")}
-        </Text>
+        <Eyebrow color="muted">{t("archive.welcome.or", "Albo")}</Eyebrow>
         <Button
           variant="outline"
           onClick={onAddManually}

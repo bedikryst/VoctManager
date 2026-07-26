@@ -13,7 +13,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
+import { List, Plus } from "lucide-react";
+
 import type { Composer } from "@/shared/types";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -63,19 +66,27 @@ export const ComposerPicker = ({
         <Eyebrow color="muted" size="caption">
           {label ?? t("archive.form.fields.composer", "Kompozytor")}
         </Eyebrow>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setIsAddingComposer(!isAddingComposer)}
           disabled={isBusy}
-          className="text-[10px] font-bold uppercase tracking-widest text-ethereal-gold hover:underline disabled:opacity-40"
+          leftIcon={
+            isAddingComposer ? (
+              <List size={13} aria-hidden="true" />
+            ) : (
+              <Plus size={13} aria-hidden="true" />
+            )
+          }
         >
           {isAddingComposer
             ? t("archive.form.back_to_picker", "Wybierz z listy")
-            : t("archive.form.add_new_composer", "+ Dodaj nowego")}
-        </button>
+            : t("archive.form.add_new_composer", "Dodaj nowego")}
+        </Button>
       </div>
       {isAddingComposer ? (
-        <div className="space-y-2 rounded-xl border border-ethereal-incense/25 bg-ethereal-alabaster/50 p-3">
+        <div className="space-y-2 rounded-nested border border-hairline-strong bg-ethereal-alabaster/50 p-3">
           <div className="grid grid-cols-2 gap-2">
             <Input
               placeholder={t("archive.form.composer_first", "Imię")}

@@ -14,16 +14,16 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronDown,
   Library,
   Sparkles,
   Trash2,
 } from "lucide-react";
 
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
-import { Text } from "@/shared/ui/primitives/typography";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import type { Composer } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
@@ -48,8 +48,11 @@ const lifespanString = (composer: Composer): string | null => {
 };
 
 // ---------------------------------------------------------------------------
-// Stat chips — pieces-count + MusicBrainz link state. Shared between the
-// desktop right rail and the mobile meta line so the markup lives in one place.
+// The pieces count is an intrinsic fact and reads as one — plain type, no chip.
+// The MusicBrainz link only speaks when it is MISSING: a sage "MB ✓" beside a
+// gold "MB?" put a chip on every composer in the library and left the eye with
+// nothing to find. Shared between the desktop right rail and the mobile meta
+// line so the markup lives in one place.
 // ---------------------------------------------------------------------------
 
 interface ComposerStatsProps {
@@ -64,13 +67,9 @@ const ComposerStats = ({
   const { t } = useTranslation();
   return (
     <>
-      <span
-        className={cn(
-          "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest",
-          piecesCount > 0
-            ? "border-ethereal-amethyst/30 bg-ethereal-amethyst/10 text-ethereal-amethyst"
-            : "border-ethereal-incense/25 bg-ethereal-marble/40 text-ethereal-graphite/70",
-        )}
+      <Caption
+        color="muted"
+        className="inline-flex items-center gap-1 tabular-nums"
         title={t(
           "archive.composer_row.pieces_tooltip",
           "{{count}} utworów w bibliotece",
@@ -79,26 +78,18 @@ const ComposerStats = ({
       >
         <Library size={10} aria-hidden="true" />
         {piecesCount}
-      </span>
-      {hasMB ? (
-        <span
-          className="inline-flex items-center gap-1 rounded-md border border-ethereal-sage/35 bg-ethereal-sage/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-sage"
-          title={t("archive.composer_row.mb_tooltip", "Powiązany z MusicBrainz")}
-        >
-          <CheckCircle2 size={10} aria-hidden="true" />
-          MB
-        </span>
-      ) : (
-        <span
-          className="inline-flex items-center gap-1 rounded-md border border-ethereal-gold/40 bg-ethereal-gold/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-ethereal-gold"
+      </Caption>
+      {!hasMB && (
+        <Badge
+          variant="warning"
+          icon={<AlertTriangle size={11} aria-hidden="true" />}
           title={t(
             "archive.composer_row.no_mb_tooltip",
             "Brak MBID — rozważ 'Odśwież z MusicBrainz'",
           )}
         >
-          <AlertTriangle size={10} aria-hidden="true" />
-          MB?
-        </span>
+          {t("archive.composer_row.no_mb", "bez MB")}
+        </Badge>
       )}
     </>
   );
@@ -133,10 +124,10 @@ export const ComposerRow = ({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border bg-ethereal-alabaster/60 transition-all",
+        "overflow-hidden rounded-nested border bg-ethereal-alabaster/60 transition-all",
         isExpanded
           ? "border-ethereal-gold/30 shadow-glass-ethereal"
-          : "border-ethereal-incense/20 hover:border-ethereal-gold/25 hover:bg-ethereal-parchment/30",
+          : "border-hairline hover:border-ethereal-gold/25 hover:bg-ethereal-parchment/30",
         isSelected && "ring-2 ring-ethereal-gold/40",
       )}
     >
@@ -174,7 +165,7 @@ export const ComposerRow = ({
 
         {/* Avatar */}
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-ethereal-incense/20 bg-ethereal-alabaster shadow-sm"
+          className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-hairline-strong bg-ethereal-alabaster shadow-sm"
           aria-hidden="true"
         >
           {hasPortrait ? (
@@ -304,7 +295,7 @@ export const ComposerRow = ({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden border-t border-ethereal-incense/15"
+            className="overflow-hidden border-t border-hairline"
           >
             <ComposerRowExpanded composer={composer} />
           </motion.div>
