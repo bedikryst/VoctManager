@@ -1,9 +1,17 @@
 /**
  * @file useAttendanceMatrix.ts
- * @description Deferred-persistence controller for the Attendance Matrix. Clicking a cell
- * only cycles a LOCAL draft (instant — no per-click round-trip, so a director can rattle
- * through a column without lag); the diff against the server baseline is flushed in one
- * batch on explicit Save through the shared EditorActionBar. Discard restores the baseline.
+ * @description Deferred-persistence controller for the attendance grid. A click
+ * writes only to a local OVERLAY over the server state — instant, no per-click
+ * round-trip, so a conductor can rattle down a column — and the diff is flushed
+ * on explicit Save through the shared EditorActionBar.
+ *
+ * The overlay is the point. The previous version re-seeded a full local copy
+ * from the query on every change of its data reference, and attendance is
+ * fetched with `RECONCILING_REFETCH`: alt-tabbing away and back mid-roll-call
+ * silently discarded every unsaved mark. An overlay holds only the cells that
+ * were touched, so a background refetch updates the untouched ones underneath
+ * and cannot destroy work — and after a partial save the flushed cells simply
+ * stop differing from the server and drop out of the diff on their own.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useAttendanceMatrix
  */
@@ -15,76 +23,106 @@ import { toast } from "sonner";
 
 import { toastApiError } from "@/shared/api/errors";
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
-import { compareProjectDateAsc } from "../../lib/projectPresentation";
+import { getLocationLabel } from "../../lib/projectPresentation";
+import {
+  buildRoster,
+  buildSessions,
+  cellKeyOf,
+  filterRoster,
+  indexAttendances,
+  isCalled,
+  stepMark,
+  tallyMarks,
+  type AttendanceMark,
+  type MarkTally,
+  type MatrixSection,
+  type MatrixSession,
+} from "../../lib/attendanceMatrix";
+import { ProjectService } from "../../api/project.service";
 import {
   projectKeys,
-  useCreateAttendance,
-  useDeleteAttendance,
   useProjectArtistsDictionary,
   useProjectAttendances,
   useProjectParticipations,
   useProjectRehearsals,
-  useUpdateAttendance,
 } from "../../api/project.queries";
-
-export type AttendanceStatus = "PRESENT" | "ABSENT" | "LATE" | "EXCUSED" | null;
 
 const EMPTY_ARTISTS: Artist[] = [];
 const EMPTY_ATTENDANCES: Attendance[] = [];
 const EMPTY_PARTICIPATIONS: Participation[] = [];
 const EMPTY_REHEARSALS: Rehearsal[] = [];
 
-export interface AttendanceRecord {
-  id: string;
-  rehearsal: string;
-  participation: string;
-  status: AttendanceStatus;
+/** Above this many singers the roster needs a search field to stay usable. */
+export const ROSTER_SEARCH_THRESHOLD = 8;
+
+/**
+ * A whole column can be filled in one gesture, so a save is no longer bounded
+ * by how fast someone can click. Requests go out in small waves rather than as
+ * one 44-wide burst that would occupy every gunicorn worker at once.
+ */
+const SAVE_CHUNK_SIZE = 6;
+
+const runChunked = async <T>(
+  items: readonly T[],
+  run: (item: T) => Promise<unknown>,
+): Promise<void> => {
+  for (let index = 0; index < items.length; index += SAVE_CHUNK_SIZE) {
+    await Promise.all(items.slice(index, index + SAVE_CHUNK_SIZE).map(run));
+  }
+};
+
+interface DraftCell {
+  readonly rehearsalId: string;
+  readonly participationId: string;
+  readonly mark: AttendanceMark;
 }
 
-export interface EnrichedParticipation extends Participation {
-  artistData: Artist;
-}
-
-export const STATUS_CYCLE: AttendanceStatus[] = [
-  null,
-  "PRESENT",
-  "ABSENT",
-  "LATE",
-  "EXCUSED",
-];
-
-const toAttendanceRecord = (attendance: Attendance): AttendanceRecord => ({
-  id: String(attendance.id),
-  rehearsal: String(attendance.rehearsal),
-  participation: String(attendance.participation),
-  status: attendance.status,
-});
-
-const cellKeyOf = (rehearsalId: string, participationId: string): string =>
-  `${rehearsalId}-${participationId}`;
-
-export interface PendingCounts {
-  creates: number;
-  updates: number;
-  deletes: number;
-  total: number;
-}
+/**
+ * A drafted cell WINS even when its mark is `null` — "the conductor cleared
+ * this" and "nothing was ever recorded here" are the same value but not the
+ * same fact. Reaching for it with `draft.get(key)?.mark ?? server` collapses
+ * the two and makes a cleared cell resume its saved status: the next click on
+ * it would skip a step of the cycle, and a column fill would step over it.
+ */
+const resolveMark = (
+  draft: ReadonlyMap<string, DraftCell>,
+  serverMarks: ReadonlyMap<string, { status: AttendanceMark }>,
+  key: string,
+): AttendanceMark => {
+  const drafted = draft.get(key);
+  if (drafted) return drafted.mark;
+  return serverMarks.get(key)?.status ?? null;
+};
 
 export interface UseAttendanceMatrixResult {
-  projectRehearsals: Rehearsal[];
-  enrichedParticipations: EnrichedParticipation[];
-  attendanceMap: Map<string, AttendanceRecord>;
-  dirtyCells: Set<string>;
-  isDirty: boolean;
-  isSaving: boolean;
-  pendingCounts: PendingCounts;
-  cycleCell: (
+  readonly sessions: readonly MatrixSession[];
+  /** Roster after the search filter; `rosterSize` is the unfiltered headcount. */
+  readonly sections: readonly MatrixSection[];
+  readonly rosterSize: number;
+  readonly query: string;
+  readonly setQuery: (value: string) => void;
+  readonly isFiltered: boolean;
+
+  readonly markOf: (rehearsalId: string, participationId: string) => AttendanceMark;
+  readonly isDirtyCell: (rehearsalId: string, participationId: string) => boolean;
+
+  readonly sessionTally: ReadonlyMap<string, MarkTally>;
+  readonly singerTally: ReadonlyMap<string, MarkTally>;
+  readonly overall: MarkTally;
+
+  readonly cycleCell: (
     rehearsalId: string,
     participationId: string,
-    currentRecord: AttendanceRecord | undefined,
+    direction: 1 | -1,
   ) => void;
-  saveChanges: () => Promise<void>;
-  discardChanges: () => void;
+  /** Fill a past session's still-blank seats with PRESENT; never overwrites a mark. */
+  readonly markSessionPresent: (rehearsalId: string) => void;
+
+  readonly pendingCount: number;
+  readonly isDirty: boolean;
+  readonly isSaving: boolean;
+  readonly saveChanges: () => Promise<void>;
+  readonly discardChanges: () => void;
 }
 
 export const useAttendanceMatrix = (
@@ -97,197 +135,210 @@ export const useAttendanceMatrix = (
   const rehearsalsQuery = useProjectRehearsals(projectId);
   const participationsQuery = useProjectParticipations(projectId);
   const artistsQuery = useProjectArtistsDictionary();
-  const fetchedAttendancesQuery = useProjectAttendances(projectId);
+  const attendancesQuery = useProjectAttendances(projectId);
+
   const rehearsals = rehearsalsQuery.data ?? EMPTY_REHEARSALS;
   const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
   const artists = artistsQuery.data ?? EMPTY_ARTISTS;
-  const fetchedAttendances = fetchedAttendancesQuery.data ?? EMPTY_ATTENDANCES;
+  const attendances = attendancesQuery.data ?? EMPTY_ATTENDANCES;
 
-  const createMutation = useCreateAttendance(projectId);
-  const updateMutation = useUpdateAttendance(projectId);
-  const deleteMutation = useDeleteAttendance(projectId);
-
-  const [attendances, setAttendances] = useState<AttendanceRecord[]>([]);
+  const [draft, setDraft] = useState<ReadonlyMap<string, DraftCell>>(new Map());
+  const [query, setQuery] = useState<string>("");
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
-  // Re-seed the local draft from the server whenever the saved baseline changes
-  // (initial load + after a successful Save invalidates the query).
-  useEffect(() => {
-    setAttendances(fetchedAttendances.map(toAttendanceRecord));
-  }, [fetchedAttendances]);
-
-  const projectRehearsals = useMemo(
-    () =>
-      [...rehearsals].sort((left, right) =>
-        compareProjectDateAsc(left.date_time, right.date_time),
-      ),
+  const sessions = useMemo(
+    () => buildSessions(rehearsals, (rehearsal) => getLocationLabel(rehearsal.location)),
     [rehearsals],
   );
 
-  const enrichedParticipations = useMemo<EnrichedParticipation[]>(
+  const artistById = useMemo(
+    () => new Map(artists.map((artist) => [String(artist.id), artist])),
+    [artists],
+  );
+
+  const roster = useMemo(
     () =>
-      participations
-        .map((participation) => ({
-          ...participation,
-          artistData: artists.find(
-            (artist) => String(artist.id) === String(participation.artist),
-          ),
-        }))
-        .filter(
-          (participation): participation is EnrichedParticipation =>
-            participation.artistData !== undefined,
-        )
-        .sort((left, right) =>
-          left.artistData.last_name.localeCompare(right.artistData.last_name),
-        ),
-    [artists, participations],
+      buildRoster({
+        participations,
+        artistById,
+        unknownName: t("projects.matrix.unknown_member", "Nieznany członek"),
+      }),
+    [artistById, participations, t],
   );
 
-  const attendanceMap = useMemo(() => {
-    const map = new Map<string, AttendanceRecord>();
-    attendances.forEach((attendance) => {
-      map.set(cellKeyOf(attendance.rehearsal, attendance.participation), attendance);
-    });
-    return map;
-  }, [attendances]);
+  const sections = useMemo(() => filterRoster(roster, query), [roster, query]);
 
-  // Diff the local draft against the server baseline. Compared by cell, never by
-  // string-splitting the composite key (ids may contain hyphens).
-  const diff = useMemo(() => {
-    const originalMap = new Map<string, { id: string; status: AttendanceStatus }>();
-    fetchedAttendances.forEach((attendance) => {
-      originalMap.set(
-        cellKeyOf(String(attendance.rehearsal), String(attendance.participation)),
-        { id: String(attendance.id), status: attendance.status },
-      );
-    });
-
-    const creates: {
-      rehearsal: string;
-      participation: string;
-      status: NonNullable<AttendanceStatus>;
-    }[] = [];
-    const updates: { id: string; status: NonNullable<AttendanceStatus> }[] = [];
-    const dirtyCells = new Set<string>();
-    const seen = new Set<string>();
-
-    attendances.forEach((record) => {
-      if (record.status === null) return;
-      const key = cellKeyOf(record.rehearsal, record.participation);
-      seen.add(key);
-      const original = originalMap.get(key);
-      if (!original) {
-        creates.push({
-          rehearsal: record.rehearsal,
-          participation: record.participation,
-          status: record.status,
-        });
-        dirtyCells.add(key);
-      } else if (original.status !== record.status) {
-        updates.push({ id: original.id, status: record.status });
-        dirtyCells.add(key);
-      }
-    });
-
-    const deletes: string[] = [];
-    originalMap.forEach((original, key) => {
-      if (!seen.has(key)) {
-        deletes.push(original.id);
-        dirtyCells.add(key);
-      }
-    });
-
-    return { creates, updates, deletes, dirtyCells };
-  }, [attendances, fetchedAttendances]);
-
-  const pendingCounts = useMemo<PendingCounts>(
-    () => ({
-      creates: diff.creates.length,
-      updates: diff.updates.length,
-      deletes: diff.deletes.length,
-      total: diff.creates.length + diff.updates.length + diff.deletes.length,
-    }),
-    [diff],
+  const rosterSize = useMemo(
+    () => roster.reduce((total, section) => total + section.singers.length, 0),
+    [roster],
   );
 
-  const isDirty = pendingCounts.total > 0;
+  const serverMarks = useMemo(() => indexAttendances(attendances), [attendances]);
+
+  const markOf = useCallback(
+    (rehearsalId: string, participationId: string): AttendanceMark =>
+      resolveMark(draft, serverMarks, cellKeyOf(rehearsalId, participationId)),
+    [draft, serverMarks],
+  );
+
+  /** Only the cells that actually differ — a re-click back to the saved value is not a change. */
+  const dirtyKeys = useMemo(() => {
+    const keys = new Set<string>();
+    draft.forEach((cell, key) => {
+      const saved = serverMarks.get(key)?.status ?? null;
+      if (saved !== cell.mark) keys.add(key);
+    });
+    return keys;
+  }, [draft, serverMarks]);
+
+  const isDirtyCell = useCallback(
+    (rehearsalId: string, participationId: string): boolean =>
+      dirtyKeys.has(cellKeyOf(rehearsalId, participationId)),
+    [dirtyKeys],
+  );
+
+  const pendingCount = dirtyKeys.size;
+  const isDirty = pendingCount > 0;
 
   useEffect(() => {
     onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
+  /* ── Aggregates ─────────────────────────────────────────────────────────
+   * Per session: over that session's summoned seats, past or not — a column
+   * with nothing recorded simply has no rate. Per singer and overall: past
+   * sessions ONLY, because a planned rehearsal cannot be missing its entries
+   * and counting it would report a shortfall against work nobody could do yet.
+   */
+
+  const allSingers = useMemo(
+    () => roster.flatMap((section) => section.singers),
+    [roster],
+  );
+
+  const sessionTally = useMemo(() => {
+    const tallies = new Map<string, MarkTally>();
+    sessions.forEach((session) => {
+      const marks = allSingers
+        .filter((singer) => isCalled(session, singer.participationId))
+        .map((singer) => markOf(session.rehearsalId, singer.participationId));
+      tallies.set(session.rehearsalId, tallyMarks(marks));
+    });
+    return tallies;
+  }, [allSingers, markOf, sessions]);
+
+  const pastSessions = useMemo(
+    () => sessions.filter((session) => session.isPast),
+    [sessions],
+  );
+
+  const singerTally = useMemo(() => {
+    const tallies = new Map<string, MarkTally>();
+    allSingers.forEach((singer) => {
+      const marks = pastSessions
+        .filter((session) => isCalled(session, singer.participationId))
+        .map((session) => markOf(session.rehearsalId, singer.participationId));
+      tallies.set(singer.participationId, tallyMarks(marks));
+    });
+    return tallies;
+  }, [allSingers, markOf, pastSessions]);
+
+  const overall = useMemo(() => {
+    const marks: AttendanceMark[] = [];
+    pastSessions.forEach((session) => {
+      allSingers.forEach((singer) => {
+        if (!isCalled(session, singer.participationId)) return;
+        marks.push(markOf(session.rehearsalId, singer.participationId));
+      });
+    });
+    return tallyMarks(marks);
+  }, [allSingers, markOf, pastSessions]);
+
+  /* ── Editing ────────────────────────────────────────────────────────────── */
+
   const cycleCell = useCallback(
-    (
-      rehearsalId: string,
-      participationId: string,
-      currentRecord: AttendanceRecord | undefined,
-    ): void => {
-      const currentStatus = currentRecord?.status ?? null;
-      const currentIndex = STATUS_CYCLE.indexOf(currentStatus);
-      const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length];
-
-      setAttendances((previous) => {
-        const filtered = previous.filter(
-          (attendance) =>
-            !(
-              attendance.rehearsal === rehearsalId &&
-              attendance.participation === participationId
-            ),
-        );
-
-        if (nextStatus === null) {
-          return filtered;
-        }
-
-        return [
-          ...filtered,
-          {
-            id: currentRecord?.id ?? `local-${cellKeyOf(rehearsalId, participationId)}`,
-            rehearsal: rehearsalId,
-            participation: participationId,
-            status: nextStatus,
-          },
-        ];
+    (rehearsalId: string, participationId: string, direction: 1 | -1): void => {
+      const key = cellKeyOf(rehearsalId, participationId);
+      setDraft((previous) => {
+        const next = new Map(previous);
+        next.set(key, {
+          rehearsalId,
+          participationId,
+          mark: stepMark(resolveMark(previous, serverMarks, key), direction),
+        });
+        return next;
       });
     },
-    [],
+    [serverMarks],
+  );
+
+  const markSessionPresent = useCallback(
+    (rehearsalId: string): void => {
+      const session = sessions.find(
+        (candidate) => candidate.rehearsalId === rehearsalId,
+      );
+      if (!session) return;
+
+      setDraft((previous) => {
+        const next = new Map(previous);
+        allSingers.forEach((singer) => {
+          if (!isCalled(session, singer.participationId)) return;
+          const key = cellKeyOf(rehearsalId, singer.participationId);
+          if (resolveMark(previous, serverMarks, key) !== null) return;
+          next.set(key, {
+            rehearsalId,
+            participationId: singer.participationId,
+            mark: "PRESENT",
+          });
+        });
+        return next;
+      });
+    },
+    [allSingers, serverMarks, sessions],
   );
 
   const discardChanges = useCallback(() => {
-    setAttendances(fetchedAttendances.map(toAttendanceRecord));
-  }, [fetchedAttendances]);
+    setDraft(new Map());
+  }, []);
 
   const saveChanges = useCallback(async (): Promise<void> => {
-    if (
-      diff.creates.length === 0 &&
-      diff.updates.length === 0 &&
-      diff.deletes.length === 0
-    ) {
-      return;
-    }
+    if (dirtyKeys.size === 0) return;
+
+    // `record_attendance` upserts on (rehearsal, participation), so a create and
+    // an edit are the same POST; only a cleared cell needs its row deleting.
+    const writes: DraftCell[] = [];
+    const deletions: string[] = [];
+    const flushed = new Map<string, DraftCell>();
+
+    dirtyKeys.forEach((key) => {
+      const cell = draft.get(key);
+      if (!cell) return;
+      flushed.set(key, cell);
+      if (cell.mark === null) {
+        const saved = serverMarks.get(key);
+        if (saved) deletions.push(saved.id);
+        return;
+      }
+      writes.push(cell);
+    });
 
     setIsSaving(true);
     const toastId = toast.loading(
-      t("projects.matrix.toast.saving", "Zapisywanie frekwencji..."),
+      t("projects.matrix.toast.saving", "Zapisywanie frekwencji…"),
     );
 
     try {
-      await Promise.all([
-        ...diff.creates.map((create) =>
-          createMutation.mutateAsync({
-            rehearsal: create.rehearsal,
-            participation: create.participation,
-            status: create.status,
-          }),
-        ),
-        ...diff.updates.map((update) =>
-          updateMutation.mutateAsync({
-            id: update.id,
-            data: { status: update.status },
-          }),
-        ),
-        ...diff.deletes.map((id) => deleteMutation.mutateAsync(id)),
-      ]);
+      // Written through the service rather than the per-row mutations: those
+      // invalidate twice each on settle, which for a filled column meant ~90
+      // refetches for one save.
+      await runChunked(writes, (cell) =>
+        ProjectService.createAttendance({
+          rehearsal: cell.rehearsalId,
+          participation: cell.participationId,
+          status: cell.mark as NonNullable<AttendanceMark>,
+        }),
+      );
+      await runChunked(deletions, (id) => ProjectService.deleteAttendance(id));
 
       await queryClient.invalidateQueries({
         queryKey: projectKeys.attendances.byProject(projectId),
@@ -296,10 +347,22 @@ export const useAttendanceMatrix = (
         queryKey: projectKeys.rehearsals.byProject(projectId),
       });
 
-      toast.success(
-        t("projects.matrix.toast.save_success", "Zapisano frekwencję"),
-        { id: toastId },
-      );
+      // Retired only once the refetch has landed — dropping the overlay earlier
+      // would flash every cell back to its pre-save value for the length of the
+      // trip — and only cell by cell, by identity: the grid stays live during a
+      // save, and a mark made while it was in flight is not one of the ones
+      // that just went out.
+      setDraft((previous) => {
+        const next = new Map(previous);
+        flushed.forEach((cell, key) => {
+          if (previous.get(key) === cell) next.delete(key);
+        });
+        return next;
+      });
+
+      toast.success(t("projects.matrix.toast.save_success", "Zapisano frekwencję"), {
+        id: toastId,
+      });
     } catch (error) {
       toastApiError(error, t, {
         id: toastId,
@@ -308,32 +371,34 @@ export const useAttendanceMatrix = (
           "Sprawdź połączenie i spróbuj ponownie.",
         ),
       });
-      // Re-pull the authoritative state so the draft can't drift from the server.
+      // Re-pull the authoritative state. Whatever did get through stops
+      // differing from the server and leaves the diff by itself; the rest stays
+      // in the overlay, so a retry is one more click on Save.
       await queryClient.invalidateQueries({
         queryKey: projectKeys.attendances.byProject(projectId),
       });
     } finally {
       setIsSaving(false);
     }
-  }, [
-    createMutation,
-    deleteMutation,
-    diff,
-    projectId,
-    queryClient,
-    t,
-    updateMutation,
-  ]);
+  }, [dirtyKeys, draft, projectId, queryClient, serverMarks, t]);
 
   return {
-    projectRehearsals,
-    enrichedParticipations,
-    attendanceMap,
-    dirtyCells: diff.dirtyCells,
+    sessions,
+    sections,
+    rosterSize,
+    query,
+    setQuery,
+    isFiltered: query.trim().length > 0,
+    markOf,
+    isDirtyCell,
+    sessionTally,
+    singerTally,
+    overall,
+    cycleCell,
+    markSessionPresent,
+    pendingCount,
     isDirty,
     isSaving,
-    pendingCounts,
-    cycleCell,
     saveChanges,
     discardChanges,
   };

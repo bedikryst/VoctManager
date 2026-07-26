@@ -1,32 +1,58 @@
 /**
  * @file AttendanceMatrixTab.tsx
- * @description Attendance matrix for directors. Cells cycle a local draft on click
- * (instant, lag-free) and persist in one batch via the shared EditorActionBar. A capped,
- * scroll-locked grid with a sticky header row and sticky name column keeps a large matrix
- * navigable without running the page off the screen. Changed-but-unsaved cells carry a dot.
+ * @description The project's attendance register. Rows are the singers, columns
+ * are the rehearsals — the transposition matters: a choir has ~44 members and a
+ * project ~8 rehearsals, so the previous orientation put the long, long-labelled
+ * axis across a horizontal scrollbar and truncated every surname to fit, while
+ * the only aggregate it could offer was per-rehearsal. Read this way the roster
+ * scrolls the way the page already does, a name has room to be a name, and the
+ * question a conductor actually opens this tab with — *who keeps missing* — has
+ * a column of its own.
+ *
+ * Marks are a local draft until Save; see `useAttendanceMatrix` for why that is
+ * an overlay rather than a copy.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/AttendanceMatrixTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Check, Clock, ShieldAlert, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { CalendarX2, ClipboardList, Search, Users } from "lucide-react";
 
-import {
-  formatLocalizedDate,
-  formatLocalizedTime,
-} from "@/shared/lib/time/intl";
+import { voiceSectionLabelKey } from "@/features/rehearsals/constants/attendanceMeta";
 import { cn } from "@/shared/lib/utils";
-import { getLocationLabel } from "../../lib/projectPresentation";
 import {
+  EMPTY_TALLY,
+  LOW_ATTENDANCE_RATE,
+  MARK_CYCLE,
+  isCalled,
+  type AttendanceMark,
+  type MarkTally,
+} from "../../lib/attendanceMatrix";
+import {
+  ROSTER_SEARCH_THRESHOLD,
   useAttendanceMatrix,
-  type AttendanceRecord,
-  type AttendanceStatus,
 } from "../hooks/useAttendanceMatrix";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { AttendanceCell } from "./components/AttendanceCell";
+import {
+  AttendanceMarker,
+  attendanceMarkFallback,
+  attendanceMarkLabelKey,
+} from "./components/AttendanceMarker";
+import { AttendanceSessionHeader } from "./components/AttendanceSessionHeader";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import {
+  Caption,
+  Eyebrow,
+  Metric,
+  Text,
+  Unit,
+} from "@/shared/ui/primitives/typography";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
@@ -37,114 +63,48 @@ interface AttendanceMatrixTabProps {
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
-interface StatusDefinition {
-  labelKey: string;
-  defaultLabel: string;
-  swatchClass: string;
-  icon: React.ReactNode;
-}
+/** The frozen name and rate rails; the grid between them is what scrolls. */
+const STICKY_HEAD_CELL =
+  "sticky top-0 z-30 border-b border-hairline-strong bg-ethereal-marble px-4 py-3 text-left align-bottom font-normal";
+const STICKY_FOOT_CELL =
+  "sticky bottom-0 z-30 border-t border-hairline-strong bg-ethereal-marble px-4 py-2.5 text-left font-normal";
 
-const STATUS_DEF: Record<NonNullable<AttendanceStatus> | "null", StatusDefinition> = {
-  null: {
-    labelKey: "projects.matrix.status.none",
-    defaultLabel: "Brak wpisu",
-    swatchClass:
-      "bg-ethereal-parchment/50 hover:bg-ethereal-parchment text-ethereal-graphite/40 border border-hairline-strong",
-    icon: (
-      <span
-        className="h-1.5 w-1.5 rounded-full bg-ethereal-graphite/30"
-        aria-hidden="true"
-      />
-    ),
-  },
-  PRESENT: {
-    labelKey: "projects.matrix.status.present",
-    defaultLabel: "Obecny",
-    swatchClass:
-      "bg-ethereal-sage hover:bg-ethereal-sage/90 text-white shadow-glass-ethereal",
-    icon: <Check size={14} strokeWidth={3} aria-hidden="true" />,
-  },
-  LATE: {
-    labelKey: "projects.matrix.status.late",
-    defaultLabel: "Spóźnienie",
-    swatchClass:
-      "bg-ethereal-gold hover:bg-ethereal-gold/90 text-white shadow-glass-ethereal",
-    icon: <Clock size={14} strokeWidth={3} aria-hidden="true" />,
-  },
-  ABSENT: {
-    labelKey: "projects.matrix.status.absent",
-    defaultLabel: "Nieobecny",
-    swatchClass:
-      "bg-ethereal-crimson hover:bg-ethereal-crimson/90 text-white shadow-glass-ethereal",
-    icon: <X size={14} strokeWidth={3} aria-hidden="true" />,
-  },
-  EXCUSED: {
-    labelKey: "projects.matrix.status.excused",
-    defaultLabel: "Zwolniony",
-    swatchClass:
-      "bg-ethereal-amethyst hover:bg-ethereal-amethyst/90 text-white shadow-glass-ethereal",
-    icon: <ShieldAlert size={14} strokeWidth={3} aria-hidden="true" />,
-  },
-};
-
-type StatusKey = NonNullable<AttendanceStatus> | "null";
-
-const isStatusKey = (key: string): key is StatusKey => key in STATUS_DEF;
-
-interface MatrixCellProps {
-  rehearsalId: string;
-  participationId: string;
-  record: AttendanceRecord | undefined;
-  onToggle: (
-    rehearsalId: string,
-    participationId: string,
-    record: AttendanceRecord | undefined,
-  ) => void;
-  isDirtyCell: boolean;
-}
-
-const MatrixCell = React.memo(
-  ({
-    rehearsalId,
-    participationId,
-    record,
-    onToggle,
-    isDirtyCell,
-  }: MatrixCellProps) => {
-    const { t } = useTranslation();
-    const currentStatus = record?.status || null;
-    const rawKey = String(currentStatus);
-    const config = isStatusKey(rawKey) ? STATUS_DEF[rawKey] : STATUS_DEF.null;
-
+/**
+ * A rate is a figure that aligns down a column, so it is the one place D1 sends
+ * to sans + `tabular-nums`… except that it also has to sit beside the calendar
+ * stamps, which are serif. `Metric` wins: the column is two digits wide, where
+ * alignment is not at stake, and a third type family in one card would be.
+ */
+const RateFigure = ({
+  tally,
+  title,
+}: {
+  readonly tally: MarkTally;
+  readonly title: string;
+}): React.JSX.Element => {
+  // No breakdown behind a dash: a tooltip reading "present: 0 · late: 0 · …"
+  // dresses "nothing recorded" up as data.
+  if (tally.rate === null) {
     return (
-      <td className="group relative border-b border-l border-hairline p-1 text-center">
-        {isDirtyCell && (
-          <span
-            className="pointer-events-none absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-ethereal-gold shadow-[0_0_0_2px_rgba(255,255,255,0.7)]"
-            aria-hidden="true"
-          />
-        )}
-        <button
-          type="button"
-          onClick={() => onToggle(rehearsalId, participationId, record)}
-          className={cn(
-            "mx-auto flex h-7 w-7 items-center justify-center rounded-chip transition-transform duration-150 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-            config.swatchClass,
-          )}
-          title={t(config.labelKey, config.defaultLabel)}
-          aria-label={t(config.labelKey, config.defaultLabel)}
-        >
-          {config.icon}
-        </button>
-      </td>
+      <Text size="sm" color="muted">
+        —
+      </Text>
     );
-  },
-  (previousProps, nextProps) =>
-    previousProps.record?.status === nextProps.record?.status &&
-    previousProps.isDirtyCell === nextProps.isDirtyCell,
-);
+  }
 
-MatrixCell.displayName = "MatrixCell";
+  return (
+    <span className="inline-flex items-baseline gap-0.5" title={title}>
+      <Metric
+        as="span"
+        size="base"
+        color={tally.rate < LOW_ATTENDANCE_RATE ? "gold" : "default"}
+      >
+        {tally.rate}
+      </Metric>
+      <Unit size="xs">%</Unit>
+    </span>
+  );
+};
 
 export const AttendanceMatrixTab = ({
   projectId,
@@ -152,274 +112,400 @@ export const AttendanceMatrixTab = ({
 }: AttendanceMatrixTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
-    projectRehearsals,
-    enrichedParticipations,
-    attendanceMap,
-    dirtyCells,
+    sessions,
+    sections,
+    rosterSize,
+    query,
+    setQuery,
+    isFiltered,
+    markOf,
+    isDirtyCell,
+    sessionTally,
+    singerTally,
+    overall,
+    cycleCell,
+    markSessionPresent,
+    pendingCount,
     isDirty,
     isSaving,
-    pendingCounts,
-    cycleCell,
     saveChanges,
     discardChanges,
   } = useAttendanceMatrix(projectId, onDirtyStateChange);
 
-  const pendingMetrics: React.ReactNode[] = [];
-  if (pendingCounts.creates > 0) {
-    pendingMetrics.push(
-      <Badge key="creates" variant="success">
-        +{pendingCounts.creates}
-      </Badge>,
+  // Resolved once for the whole grid rather than once per cell: several hundred
+  // cells each opening their own translator subscription is pure overhead.
+  const markLabels = React.useMemo(() => {
+    const labels = new Map<string, string>();
+    MARK_CYCLE.forEach((mark) => {
+      labels.set(
+        String(mark),
+        t(attendanceMarkLabelKey(mark), attendanceMarkFallback(mark)),
+      );
+    });
+    return labels;
+  }, [t]);
+
+  const labelOf = React.useCallback(
+    (mark: AttendanceMark): string => markLabels.get(String(mark)) ?? "",
+    [markLabels],
+  );
+
+  const notCalledLabel = t(
+    "projects.matrix.not_called",
+    "Niewezwany na tę próbę",
+  );
+
+  /**
+   * The shortfall clause is appended, not interpolated: a rehearsal three weeks
+   * out has forty "missing" entries by arithmetic and none by any reading a
+   * human would give it, so a column that cannot yet be incomplete does not say
+   * it is.
+   */
+  const describeTally = React.useCallback(
+    (tally: MarkTally, countMissing: boolean): string => {
+      const breakdown = t(
+        "projects.matrix.tooltip.breakdown",
+        "Obecni: {{present}} · spóźnieni: {{late}} · nieobecni: {{absent}} · usprawiedliwieni: {{excused}}",
+        {
+          present: tally.byStatus.PRESENT,
+          late: tally.byStatus.LATE,
+          absent: tally.byStatus.ABSENT,
+          excused: tally.byStatus.EXCUSED,
+        },
+      );
+
+      if (!countMissing || tally.missing === 0) return breakdown;
+
+      return `${breakdown} · ${t(
+        "projects.matrix.tooltip.missing",
+        "bez wpisu: {{count}}",
+        { count: tally.missing },
+      )}`;
+    },
+    [t],
+  );
+
+  const hasSessions = sessions.length > 0;
+  const hasRoster = rosterSize > 0;
+  const showSearch = hasSessions && rosterSize > ROSTER_SEARCH_THRESHOLD;
+
+  // The card states the project's own figure once. Nothing recorded yet is not
+  // "0%" — it is no rate at all, and printing a red nought over a rehearsal
+  // nobody has marked is the loudest possible way to say nothing.
+  const summary =
+    overall.rate === null ? undefined : (
+      <span className="flex items-baseline gap-2">
+        <Eyebrow size="overline-sm" color="muted">
+          {t("projects.matrix.summary.label", "Frekwencja")}
+        </Eyebrow>
+        <span className="inline-flex items-baseline gap-0.5">
+          <Metric
+            as="span"
+            size="md"
+            color={overall.rate < LOW_ATTENDANCE_RATE ? "gold" : "default"}
+          >
+            {overall.rate}
+          </Metric>
+          <Unit size="xs">%</Unit>
+        </span>
+        {overall.missing > 0 && (
+          <Caption color="muted" className="hidden sm:inline">
+            {"· "}
+            {t("projects.matrix.summary.missing", "{{count}} bez wpisu", {
+              count: overall.missing,
+            })}
+          </Caption>
+        )}
+      </span>
     );
-  }
-  if (pendingCounts.updates > 0) {
-    pendingMetrics.push(
-      <Badge key="updates" variant="warning">
-        ~{pendingCounts.updates}
-      </Badge>,
+
+  const renderBody = (): React.JSX.Element => {
+    if (!hasSessions) {
+      return (
+        <StatePanel
+          variant="inline"
+          className="px-5 py-10"
+          icon={<CalendarX2 size={24} aria-hidden="true" />}
+          title={t("projects.matrix.empty.rehearsals_title", "Brak prób")}
+          description={t(
+            "projects.matrix.empty.rehearsals_desc",
+            "Listę obecności prowadzi się na próbach. Dodaj pierwszą, a pojawi się tu jako kolumna.",
+          )}
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="../rehearsals">
+                {t("projects.matrix.empty.rehearsals_action", "Otwórz próby")}
+              </Link>
+            </Button>
+          }
+        />
+      );
+    }
+
+    if (!hasRoster) {
+      return (
+        <StatePanel
+          variant="inline"
+          className="px-5 py-10"
+          icon={<Users size={24} aria-hidden="true" />}
+          title={t("projects.matrix.empty.cast_title", "Brak obsady")}
+          description={t(
+            "projects.matrix.empty.cast_desc",
+            "Przypisz śpiewaków do projektu — każdy z nich dostanie tu swój wiersz.",
+          )}
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="../cast">
+                {t("projects.matrix.empty.cast_action", "Otwórz obsadę")}
+              </Link>
+            </Button>
+          }
+        />
+      );
+    }
+
+    if (sections.length === 0) {
+      return (
+        <StatePanel
+          variant="inline"
+          className="px-5 py-10"
+          icon={<Search size={22} aria-hidden="true" />}
+          title={t("projects.matrix.empty.no_matches", "Brak wyników")}
+        />
+      );
+    }
+
+    return (
+      // `border-separate` rather than `collapse`: a collapsed border belongs to
+      // the table, not to the cell, and detaches from a sticky cell as it
+      // scrolls — the frozen name rail loses its rule mid-scroll in every
+      // browser. Verticals are dropped between data columns on purpose; the
+      // rows are the reading direction and a full lattice only adds ink.
+      <table className="w-full border-separate border-spacing-0 text-left">
+        <caption className="sr-only">
+          {t(
+            "projects.matrix.caption",
+            "Lista obecności: wiersze to śpiewacy, kolumny to próby.",
+          )}
+        </caption>
+
+        <thead>
+          <tr>
+            <th
+              scope="col"
+              className={cn(STICKY_HEAD_CELL, "left-0 min-w-52 border-r border-r-hairline-strong")}
+            >
+              <Eyebrow size="overline-sm" color="muted">
+                {t("projects.matrix.table.singer", "Śpiewak")}
+              </Eyebrow>
+            </th>
+
+            {sessions.map((session) => (
+              <AttendanceSessionHeader
+                key={session.rehearsalId}
+                session={session}
+                tally={sessionTally.get(session.rehearsalId) ?? EMPTY_TALLY}
+                onMarkPresent={markSessionPresent}
+              />
+            ))}
+
+            <th
+              scope="col"
+              className={cn(
+                STICKY_HEAD_CELL,
+                "right-0 min-w-20 border-l border-l-hairline-strong text-right",
+              )}
+            >
+              <Eyebrow size="overline-sm" color="muted">
+                {t("projects.matrix.table.rate", "Frekwencja")}
+              </Eyebrow>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {sections.map((section) => (
+            <React.Fragment key={section.key}>
+              {/* The label rides the frozen rail; a `colSpan` band would carry
+                  it off-screen the moment the grid scrolls sideways. */}
+              <tr>
+                <th
+                  scope="colgroup"
+                  className="sticky left-0 z-10 border-y border-hairline bg-ethereal-parchment px-4 py-1.5 text-left font-normal"
+                >
+                  <span className="flex items-baseline gap-2">
+                    <Eyebrow size="overline-sm" color="gold">
+                      {t(voiceSectionLabelKey(section.key), section.key)}
+                    </Eyebrow>
+                    <Caption color="muted">{section.singers.length}</Caption>
+                  </span>
+                </th>
+                <td
+                  colSpan={sessions.length + 1}
+                  className="border-y border-hairline bg-ethereal-parchment"
+                />
+              </tr>
+
+              {section.singers.map((singer) => {
+                const tally =
+                  singerTally.get(singer.participationId) ?? EMPTY_TALLY;
+
+                return (
+                  <tr key={singer.participationId} className="group/row">
+                    <th
+                      scope="row"
+                      className="sticky left-0 z-10 border-b border-r border-hairline border-r-hairline-strong bg-ethereal-alabaster px-4 text-left font-normal group-hover/row:bg-ethereal-gold/6"
+                    >
+                      <span className="flex min-w-0 items-baseline gap-1.5">
+                        <Text
+                          size="base"
+                          weight="medium"
+                          color={singer.isUnresolved ? "muted" : "default"}
+                          className="truncate"
+                        >
+                          {singer.lastName}
+                        </Text>
+                        {singer.firstName && (
+                          <Caption color="muted" className="truncate">
+                            {singer.firstName}
+                          </Caption>
+                        )}
+                      </span>
+                    </th>
+
+                    {sessions.map((session) => {
+                      const called = isCalled(session, singer.participationId);
+                      const mark = called
+                        ? markOf(session.rehearsalId, singer.participationId)
+                        : null;
+
+                      return (
+                        <AttendanceCell
+                          key={session.rehearsalId}
+                          rehearsalId={session.rehearsalId}
+                          participationId={singer.participationId}
+                          mark={mark}
+                          isCalled={called}
+                          isDirty={
+                            called &&
+                            isDirtyCell(
+                              session.rehearsalId,
+                              singer.participationId,
+                            )
+                          }
+                          label={called ? labelOf(mark) : notCalledLabel}
+                          onCycle={cycleCell}
+                        />
+                      );
+                    })}
+
+                    <td className="sticky right-0 z-10 border-b border-l border-hairline border-l-hairline-strong bg-ethereal-alabaster px-3 text-right group-hover/row:bg-ethereal-gold/6">
+                      <RateFigure
+                        tally={tally}
+                        title={describeTally(tally, true)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </tbody>
+
+        {/* Hidden while a search is active: a per-rehearsal total sitting under
+            two filtered rows reads as the total FOR those two. */}
+        {!isFiltered && (
+          <tfoot>
+            <tr>
+              <th scope="row" className={cn(STICKY_FOOT_CELL, "left-0 border-r border-r-hairline-strong")}>
+                <Eyebrow size="overline-sm" color="muted">
+                  {t("projects.matrix.table.session_rate", "Frekwencja próby")}
+                </Eyebrow>
+              </th>
+
+              {sessions.map((session) => {
+                const tally =
+                  sessionTally.get(session.rehearsalId) ?? EMPTY_TALLY;
+                return (
+                  <td
+                    key={session.rehearsalId}
+                    className="sticky bottom-0 z-20 border-t border-hairline-strong bg-ethereal-marble px-1 py-2.5 text-center"
+                  >
+                    <RateFigure
+                      tally={tally}
+                      title={describeTally(tally, session.isPast)}
+                    />
+                  </td>
+                );
+              })}
+
+              <td
+                className={cn(STICKY_FOOT_CELL, "right-0 border-l border-l-hairline-strong")}
+              />
+            </tr>
+          </tfoot>
+        )}
+      </table>
     );
-  }
-  if (pendingCounts.deletes > 0) {
-    pendingMetrics.push(
-      <Badge key="deletes" variant="danger">
-        −{pendingCounts.deletes}
-      </Badge>,
-    );
-  }
+  };
 
   return (
     <>
-      <StaggeredBentoContainer className="w-full space-y-5 pb-24">
+      <StaggeredBentoContainer className="w-full pb-24">
         <StaggeredBentoItem>
-          <GlassCard variant="solid" padding="sm" isHoverable={false}>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-              <Eyebrow color="muted" className="mr-1">
-                {t("projects.matrix.legend.title", "Status frekwencji")}
-              </Eyebrow>
-              {Object.entries(STATUS_DEF).map(([key, config]) => (
-                <div key={key} className="flex items-center gap-1.5">
-                  <div
-                    className={cn(
-                      "flex h-4 w-4 items-center justify-center rounded-chip",
-                      config.swatchClass,
-                    )}
-                    aria-hidden="true"
-                  >
-                    {config.icon}
-                  </div>
-                  <Text size="sm" color="graphite" weight="medium">
-                    {t(config.labelKey, config.defaultLabel)}
-                  </Text>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        </StaggeredBentoItem>
-
-        <StaggeredBentoItem>
-          <GlassCard
-            variant="solid"
-            padding="none"
-            isHoverable={false}
-            className="max-h-[75dvh] overflow-auto"
-          >
-            <table className="w-full min-w-200 border-collapse text-left text-sm">
-              <thead className="sticky top-0 z-20">
-                <tr>
-                  <th className="sticky left-0 z-30 min-w-55 border-b border-hairline-strong bg-ethereal-marble p-4">
-                    <Eyebrow color="muted">
-                      {t("projects.matrix.table.rehearsal_date", "Próba / Data")}
-                    </Eyebrow>
-                  </th>
-                  {enrichedParticipations.map((participation) => (
-                    <th
-                      key={participation.id}
-                      className="min-w-15 border-b border-l border-hairline bg-ethereal-marble p-4 text-center"
-                    >
-                      <div className="flex flex-col items-center gap-1">
-                        <Text
-                          size="xs"
-                          weight="bold"
-                          color="graphite"
-                          truncate
-                          className="max-w-20"
-                          title={participation.artistData.last_name}
-                        >
-                          {participation.artistData.last_name}
-                        </Text>
-                        <Text size="xs" color="muted">
-                          {participation.artistData.first_name}
-                        </Text>
-                      </div>
-                    </th>
-                  ))}
-                  <th className="min-w-20 border-b border-l border-hairline bg-ethereal-marble p-4 text-center">
-                    <Eyebrow color="gold">
-                      {t("projects.matrix.table.rate", "Frekwencja")}
-                    </Eyebrow>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hairline">
-                {projectRehearsals.length === 0 && (
-                  <tr>
-                    <td
-                      colSpan={enrichedParticipations.length + 2}
-                      className="py-12 text-center"
-                    >
-                      <Text size="sm" color="muted" className="italic">
-                        {t(
-                          "projects.matrix.empty.rehearsals",
-                          "Brak zaplanowanych prób w tym projekcie.",
-                        )}
-                      </Text>
-                    </td>
-                  </tr>
-                )}
-
-                {projectRehearsals.length > 0 &&
-                  enrichedParticipations.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={projectRehearsals.length + 2}
-                        className="py-12 text-center"
-                      >
-                        <Text size="sm" color="muted" className="italic">
-                          {t(
-                            "projects.matrix.empty.cast",
-                            "Brak obsady przypisanej do projektu.",
-                          )}
-                        </Text>
-                      </td>
-                    </tr>
+          <SectionCard
+            as="h2"
+            icon={<ClipboardList size={15} aria-hidden="true" />}
+            title={t("projects.matrix.title", "Lista obecności")}
+            action={summary}
+            scroll
+            className="max-h-[70dvh]"
+            bodyClassName="overflow-x-auto p-0"
+            toolbar={
+              showSearch ? (
+                // `text`, not `search`: the search type brings the OS's own
+                // clear button, which is the one kind of chrome this whole
+                // remediation is about removing.
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  leftIcon={<Search size={16} aria-hidden="true" />}
+                  placeholder={t(
+                    "projects.matrix.search.placeholder",
+                    "Szukaj osoby…",
                   )}
-
-                {projectRehearsals.map((rehearsal) => {
-                  let presentCount = 0;
-                  let totalAssigned = 0;
-                  const rehearsalLocationLabel = getLocationLabel(
-                    rehearsal.location,
-                  );
-
-                  enrichedParticipations.forEach((participation) => {
-                    const isInvited =
-                      !rehearsal.invited_participations ||
-                      rehearsal.invited_participations.length === 0 ||
-                      rehearsal.invited_participations.includes(
-                        String(participation.id),
-                      );
-
-                    if (!isInvited) {
-                      return;
-                    }
-
-                    totalAssigned += 1;
-
-                    const cellKey = `${rehearsal.id}-${participation.id}`;
-                    const record = attendanceMap.get(cellKey);
-                    if (record?.status === "PRESENT" || record?.status === "LATE") {
-                      presentCount += 1;
-                    }
-                  });
-
-                  const attendanceRate =
-                    totalAssigned > 0
-                      ? Math.round((presentCount / totalAssigned) * 100)
-                      : 0;
-
-                  const rateClass =
-                    attendanceRate >= 80
-                      ? "border-ethereal-sage/30 bg-ethereal-sage/10 text-ethereal-sage"
-                      : attendanceRate >= 50
-                        ? "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
-                        : "border-ethereal-crimson/30 bg-ethereal-crimson-light/20 text-ethereal-crimson";
-
-                  return (
-                    <tr
-                      key={rehearsal.id}
-                      className="group transition-colors hover:bg-ethereal-gold/5"
+                  aria-label={t(
+                    "projects.matrix.search.placeholder",
+                    "Szukaj osoby…",
+                  )}
+                />
+              ) : undefined
+            }
+            footer={
+              hasSessions && hasRoster ? (
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {MARK_CYCLE.map((mark) => (
+                    <span
+                      key={String(mark)}
+                      className="flex items-center gap-1.5"
                     >
-                      <td className="sticky left-0 z-10 bg-ethereal-marble p-4">
-                        <div className="flex flex-col gap-0.5">
-                          <Text size="sm" weight="bold" color="gold">
-                            {formatLocalizedDate(rehearsal.date_time, {
-                              weekday: "short",
-                              day: "2-digit",
-                              month: "short",
-                            })}{" "}
-                            {formatLocalizedTime(rehearsal.date_time, {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </Text>
-                          <Text size="xs" color="muted" truncate className="max-w-50">
-                            {rehearsalLocationLabel}
-                            {rehearsal.focus ? ` • ${rehearsal.focus}` : ""}
-                          </Text>
-                        </div>
-                      </td>
-
-                      {enrichedParticipations.map((participation) => {
-                        const isInvited =
-                          !rehearsal.invited_participations ||
-                          rehearsal.invited_participations.length === 0 ||
-                          rehearsal.invited_participations.includes(
-                            String(participation.id),
-                          );
-
-                        if (!isInvited) {
-                          return (
-                            <td
-                              key={`empty-${rehearsal.id}-${participation.id}`}
-                              className="border-b border-l border-hairline bg-ethereal-alabaster/50 p-1"
-                            >
-                              <div
-                                className="flex h-full w-full items-center justify-center opacity-20"
-                                title={t(
-                                  "projects.matrix.not_invited",
-                                  "Nie dotyczy",
-                                )}
-                              >
-                                <div
-                                  className="h-px w-6 rotate-45 bg-ethereal-graphite/40"
-                                  aria-hidden="true"
-                                />
-                              </div>
-                            </td>
-                          );
-                        }
-
-                        const cellKey = `${rehearsal.id}-${participation.id}`;
-                        const record = attendanceMap.get(cellKey);
-
-                        return (
-                          <MatrixCell
-                            key={cellKey}
-                            rehearsalId={rehearsal.id}
-                            participationId={participation.id}
-                            record={record}
-                            onToggle={cycleCell}
-                            isDirtyCell={dirtyCells.has(cellKey)}
-                          />
-                        );
-                      })}
-
-                      <td className="border-b border-l border-hairline p-4 text-center">
-                        <Text
-                          className={cn(
-                            "inline-block rounded-chip border px-2.5 py-1.5 text-[10px] font-bold tracking-widest",
-                            rateClass,
-                          )}
-                        >
-                          {attendanceRate}%
-                        </Text>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </GlassCard>
+                      <AttendanceMarker mark={mark} className="h-5 w-5" />
+                      <Caption color="graphite">{labelOf(mark)}</Caption>
+                    </span>
+                  ))}
+                  <Caption color="muted" className="sm:ml-auto">
+                    {t(
+                      "projects.matrix.legend.hint",
+                      "Klikaj, aby zmieniać status · Shift + klik cofa",
+                    )}
+                  </Caption>
+                </div>
+              ) : undefined
+            }
+          >
+            {renderBody()}
+          </SectionCard>
         </StaggeredBentoItem>
       </StaggeredBentoContainer>
 
@@ -428,9 +514,8 @@ export const AttendanceMatrixTab = ({
         description={t(
           "projects.matrix.action_bar.description",
           "Zmieniono {{count}} wpisów frekwencji.",
-          { count: pendingCounts.total },
+          { count: pendingCount },
         )}
-        metrics={pendingMetrics.length > 0 ? <>{pendingMetrics}</> : undefined}
         onCancel={discardChanges}
         onConfirm={saveChanges}
         cancelText={t("common.actions.discard", "Odrzuć")}

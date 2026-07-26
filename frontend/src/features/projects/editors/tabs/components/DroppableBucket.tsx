@@ -47,16 +47,19 @@ export function DroppableBucket({
           : t("projects.micro_cast.bucket.aria", "Sekcja upuszczania")
       }
       className={cn(
-        "relative rounded-control transition-[background-color,box-shadow,border-color] duration-200",
+        // The highlight is drawn INSIDE the box: a drop target that fills its
+        // card edge-to-edge (the unassigned pool) would have an outward ring
+        // clipped away by the card's own overflow.
+        "relative rounded-control border border-transparent transition-[background-color,box-shadow] duration-200",
         isOver
-          ? "bg-ethereal-gold/8 ring-2 ring-ethereal-gold/40 shadow-[inset_0_0_0_1px_rgba(194,168,120,0.15)]"
-          : "border border-transparent bg-transparent",
+          ? "bg-ethereal-gold/8 shadow-[inset_0_0_0_2px_rgba(194,168,120,0.45)]"
+          : "bg-transparent",
         className,
       )}
     >
       {isOver && (
         <div
-          className="absolute inset-0 pointer-events-none rounded-control bg-gradient-to-b from-ethereal-gold/8 via-transparent to-transparent"
+          className="absolute inset-0 pointer-events-none rounded-control bg-linear-to-b from-ethereal-gold/8 via-transparent to-transparent"
           aria-hidden="true"
         />
       )}

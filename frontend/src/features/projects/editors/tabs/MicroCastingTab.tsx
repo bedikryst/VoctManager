@@ -1,15 +1,19 @@
 /**
  * @file MicroCastingTab.tsx
- * @description Divisi & micro-casting Kanban with deferred persistence.
- * Drag and drop edits a local draft. Mutations only fire on explicit Save through
- * the shared `EditorActionBar`. Piece-switching is gated behind a confirmation
- * dialog whenever the draft is dirty.
+ * @description The divisi board: the programme as a worklist on the left, the
+ * people still to place under it, and the voice lines of the open piece on the
+ * right. Drag and drop edits a local draft; mutations only fire on an explicit
+ * save through the shared `EditorActionBar`, and switching pieces while the
+ * draft is dirty is gated behind a confirmation.
+ * The pool stays pinned beside the board rather than under it, so a long piece
+ * can be scrolled while the people to place remain a short drag away.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/MicroCastingTab
  */
 
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   DndContext,
@@ -23,62 +27,76 @@ import {
 } from "@dnd-kit/core";
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import {
-  AlertCircle,
-  CheckCircle2,
-  Users,
-  PlayCircleIcon,
+  Info,
   ListOrdered,
+  MicVocal,
+  PlayCircleIcon,
+  Search,
+  Users,
 } from "lucide-react";
 
-import type { VoiceRequirement } from "@/shared/types";
+import type { Project, VoiceRequirement } from "@/shared/types";
 
-import { useMicroCasting } from "../hooks/useMicroCasting";
+import { useMicroCasting, type CastMember } from "../hooks/useMicroCasting";
+import { PROJECT_STATUS } from "../../constants/projectDomain";
+import {
+  VOICE_FAMILY_ORDER,
+  voiceFamilyOf,
+  voiceFamilyRank,
+  type VoiceFamilyId,
+} from "../../lib/voiceFamilies";
+import { foldDiacritics } from "@/shared/lib/text";
 import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
-import { DraggableArtist } from "./components/DraggableArtist";
+import { CastMemberChip } from "./components/CastMemberChip";
+import { DivisiBucket } from "./components/DivisiBucket";
 import { DroppableBucket } from "./components/DroppableBucket";
+import {
+  ProgramCastingRail,
+  type ProgramCastingRailItem,
+} from "./components/ProgramCastingRail";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Select } from "@/shared/ui/primitives/Select";
+import { TabLoadingCard } from "./components/TabLoadingCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Button } from "@/shared/ui/primitives/Button";
+import { Input } from "@/shared/ui/primitives/Input";
+import {
+  Caption,
+  Eyebrow,
+  Heading,
+  Text,
+} from "@/shared/ui/primitives/typography";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
-import { cn } from "@/shared/lib/utils";
 
 interface MicroCastingTabProps {
-  projectId: string;
-  onDirtyStateChange?: (isDirty: boolean) => void;
+  readonly project: Project;
+  readonly onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
+interface PoolGroup {
+  readonly key: string;
+  readonly label: string;
+  readonly members: CastMember[];
+}
+
+/** Below this the pool is one glance and a search field is just another control. */
+const POOL_SEARCH_THRESHOLD = 6;
+
 export const MicroCastingTab = ({
-  projectId,
+  project,
   onDirtyStateChange,
 }: MicroCastingTabProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const projectId = String(project.id);
 
-  const VOICE_GROUPS = [
-    { label: t("projects.micro_cast.voices.sopranos", "Soprany"), filter: "S" },
-    {
-      label: t("projects.micro_cast.voices.mezzos", "Mezzosoprany"),
-      filter: "M",
-    },
-    { label: t("projects.micro_cast.voices.altos", "Alty"), filter: "A" },
-    {
-      label: t("projects.micro_cast.voices.countertenors", "Kontratenory"),
-      filter: "C",
-    },
-    { label: t("projects.micro_cast.voices.tenors", "Tenory"), filter: "T" },
-    {
-      label: t("projects.micro_cast.voices.baritones", "Barytony"),
-      filter: "BAR",
-    },
-    { label: t("projects.micro_cast.voices.basses", "Basy"), filter: "B" },
-  ];
+  // Before publication nobody has been asked anything, so an answer state on
+  // every chip would state the default forty times over.
+  const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
 
   const {
     program,
@@ -87,10 +105,10 @@ export const MicroCastingTab = ({
     selectedPieceId,
     localCastings,
     activeDragId,
-    artistMap,
-    participationStatusMap,
-    pieceStatuses,
-    projectParticipations,
+    members,
+    memberMap,
+    pieceProgress,
+    isLoading,
     isDirty,
     isSaving,
     pendingCounts,
@@ -99,11 +117,14 @@ export const MicroCastingTab = ({
     confirmPieceSwitch,
     cancelPieceSwitch,
     handleUpdateNote,
+    handleTogglePitch,
     handleDragStart,
     handleDragEnd,
     saveChanges,
     discardChanges,
   } = useMicroCasting(projectId);
+
+  const [poolQuery, setPoolQuery] = useState<string>("");
 
   useEffect(() => {
     onDirtyStateChange?.(isDirty);
@@ -131,145 +152,112 @@ export const MicroCastingTab = ({
   const referenceUrl = selectedPiece
     ? getPrimaryReferenceRecording(selectedPiece)
     : null;
-  const requirements: VoiceRequirement[] =
-    selectedPiece?.voice_requirements_read || [];
+  const requirements = useMemo<VoiceRequirement[]>(
+    () => selectedPiece?.voice_requirements_read ?? [],
+    [selectedPiece],
+  );
+  const progress = selectedPieceId ? pieceProgress[selectedPieceId] : undefined;
 
-  // Keep divisi lines of the same voice family adjacent (S1, S2, A1, A2, …)
-  // instead of letting the raw requirement order scatter them across the grid.
-  const familyRank = (voiceLine: string): number => {
-    const upper = voiceLine.toUpperCase();
-    const index = VOICE_GROUPS.findIndex((group) =>
-      upper.startsWith(group.filter),
-    );
-    return index === -1 ? VOICE_GROUPS.length : index;
-  };
-  const sortedRequirements = [...requirements].sort((left, right) => {
-    const rankDelta = familyRank(left.voice_line) - familyRank(right.voice_line);
-    if (rankDelta !== 0) return rankDelta;
-    return left.voice_line.localeCompare(right.voice_line, undefined, {
-      numeric: true,
-    });
-  });
-
-  const unassignedParticipations = projectParticipations.filter(
-    (part) =>
-      !localCastings.some((c) => String(c.participation) === String(part.id)),
+  const railItems = useMemo<ProgramCastingRailItem[]>(
+    () =>
+      [...program]
+        .sort((a, b) => a.order - b.order)
+        .map((item, index) => {
+          const pieceId = String(item.piece);
+          const piece = pieces.find((p) => String(p.id) === pieceId);
+          return {
+            pieceId,
+            position: index + 1,
+            title: item.piece_title || piece?.title || "",
+            progress: pieceProgress[pieceId] ?? {
+              required: 0,
+              filled: 0,
+              missing: 0,
+              hasRequirements: false,
+            },
+          };
+        }),
+    [program, pieces, pieceProgress],
   );
 
-  // Casting state rides on the option itself, so the picker says which pieces
-  // are still short before you open any of them.
-  const pieceOptions = [...program]
-    .sort((a, b) => a.order - b.order)
-    .map((item, index) => {
-      const piece = pieces.find((p) => String(p.id) === String(item.piece));
-      const status = pieceStatuses[String(item.piece)];
-      return {
-        value: String(item.piece),
-        label: `${index + 1}. ${item.piece_title || piece?.title || ""}`,
-        tone:
-          status === "OK"
-            ? ("sage" as const)
-            : status === "DEFICIT"
-              ? ("crimson" as const)
-              : ("default" as const),
-      };
-    });
+  // Keep divisi lines of the same family adjacent (S1, S2, A1, A2, …) instead of
+  // letting the raw requirement order scatter them across the grid.
+  const sortedRequirements = useMemo(
+    () =>
+      [...requirements].sort((left, right) => {
+        const rankDelta =
+          voiceFamilyRank(left.voice_line) - voiceFamilyRank(right.voice_line);
+        if (rankDelta !== 0) return rankDelta;
+        return left.voice_line.localeCompare(right.voice_line, undefined, {
+          numeric: true,
+        });
+      }),
+    [requirements],
+  );
 
-  const renderBucket = (
-    bucketId: string,
-    title: string,
-    requirementCount: number | null,
-  ) => {
-    const bucketCastings = localCastings.filter(
-      (c) => c.voice_line === bucketId,
+  const assignedIds = useMemo(
+    () =>
+      new Set(localCastings.map((casting) => String(casting.participation))),
+    [localCastings],
+  );
+
+  const unassignedMembers = useMemo(
+    () => members.filter((member) => !assignedIds.has(member.participationId)),
+    [members, assignedIds],
+  );
+
+  const poolGroups = useMemo<PoolGroup[]>(() => {
+    const needle = foldDiacritics(poolQuery.trim());
+    const visible = needle
+      ? unassignedMembers.filter((member) =>
+          foldDiacritics(member.displayName).includes(needle),
+        )
+      : unassignedMembers;
+
+    const unknownVoice = t(
+      "projects.micro_cast.voices.unknown",
+      "Głos nieokreślony",
     );
-    const deficit =
-      requirementCount !== null
-        ? requirementCount - bucketCastings.length
-        : null;
 
-    const filled = bucketCastings.length;
-    const isExact = deficit !== null && deficit === 0;
-    const isOver = deficit !== null && deficit < 0;
-    const hasDeficit = deficit !== null && deficit > 0;
+    // `members` already arrives in roster order, so a sequential walk is the
+    // whole grouping.
+    return visible.reduce<PoolGroup[]>((groups, member) => {
+      const key = member.voiceType ?? "UNKNOWN";
+      const last = groups[groups.length - 1];
+      if (last && last.key === key) {
+        last.members.push(member);
+        return groups;
+      }
+      groups.push({
+        key,
+        label: member.voiceLabel || unknownVoice,
+        members: [member],
+      });
+      return groups;
+    }, []);
+  }, [unassignedMembers, poolQuery, t]);
 
-    return (
-      <DroppableBucket key={bucketId} id={bucketId} title={title}>
-        <div
-          className={cn(
-            "flex h-full flex-col gap-1.5 rounded-nested border p-2.5 transition-colors",
-            hasDeficit
-              ? "border-ethereal-crimson/20 bg-ethereal-crimson/3"
-              : isOver
-                ? "border-ethereal-gold/30 bg-ethereal-gold/5"
-                : isExact
-                  ? "border-ethereal-sage/25 bg-ethereal-sage/4"
-                  : "border-hairline bg-ethereal-alabaster/50",
-          )}
-        >
-          <div className="flex items-center justify-between gap-2 px-0.5">
-            <Eyebrow color="default" className="truncate">
-              {title}
-            </Eyebrow>
-            {requirementCount !== null ? (
-              <span
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1 text-[11px] font-bold tabular-nums",
-                  isExact
-                    ? "text-ethereal-sage"
-                    : isOver
-                      ? "text-ethereal-gold"
-                      : "text-ethereal-crimson",
-                )}
-              >
-                {isExact && <CheckCircle2 size={12} aria-hidden="true" />}
-                {filled}/{requirementCount}
-              </span>
-            ) : (
-              <span className="shrink-0 text-[11px] font-bold tabular-nums text-ethereal-graphite/55">
-                {filled}
-              </span>
-            )}
-          </div>
+  const freeModeGroups = useMemo(
+    () =>
+      VOICE_FAMILY_ORDER.map((family) => ({
+        family,
+        lines: voiceLines.filter(
+          (line) => voiceFamilyOf(String(line.value)) === family,
+        ),
+      })).filter((group) => group.lines.length > 0),
+    [voiceLines],
+  );
 
-          <div className="flex flex-1 flex-col gap-1.5">
-            {bucketCastings.map((casting) => {
-              const artist = artistMap.get(String(casting.participation));
-              if (!artist) return null;
-              return (
-                <DraggableArtist
-                  key={casting.id}
-                  participationId={String(casting.participation)}
-                  artist={artist}
-                  participationStatus={participationStatusMap.get(
-                    String(casting.participation),
-                  )}
-                  casting={casting}
-                  onUpdateNote={handleUpdateNote}
-                />
-              );
-            })}
-
-            {hasDeficit && (
-              <div className="flex items-center justify-center rounded-control border border-dashed border-ethereal-crimson/20 px-2 py-1">
-                <Eyebrow size="overline-sm" className="text-ethereal-crimson/45">
-                  {t("projects.micro_cast.status.drop_here", "Upuść tu")}
-                </Eyebrow>
-              </div>
-            )}
-
-            {filled === 0 && requirementCount === null && (
-              <div className="flex items-center justify-center rounded-control border border-dashed border-hairline-strong px-2 py-1">
-                <Eyebrow size="overline-sm" color="muted">
-                  {t("projects.micro_cast.status.free", "Wolny wakat")}
-                </Eyebrow>
-              </div>
-            )}
-          </div>
-        </div>
-      </DroppableBucket>
-    );
+  const familyLabels: Record<VoiceFamilyId, string> = {
+    S: t("projects.micro_cast.voices.sopranos", "Soprany"),
+    A: t("projects.micro_cast.voices.altos", "Alty"),
+    T: t("projects.micro_cast.voices.tenors", "Tenory"),
+    B: t("projects.micro_cast.voices.basses", "Basy"),
+    ROLE: t("projects.micro_cast.voices.special", "Linie specjalne"),
   };
+
+  const castingsFor = (voiceLine: string) =>
+    localCastings.filter((casting) => casting.voice_line === voiceLine);
 
   const pendingMetrics: React.ReactNode[] = [];
   if (pendingCounts.creates > 0) {
@@ -294,6 +282,48 @@ export const MicroCastingTab = ({
     );
   }
 
+  if (isLoading) {
+    return (
+      <TabLoadingCard
+        icon={<MicVocal size={15} aria-hidden="true" />}
+        title={t("projects.micro_cast.board.title", "Obsada utworu")}
+      />
+    );
+  }
+
+  if (program.length === 0) {
+    return (
+      <SectionCard
+        as="h2"
+        icon={<MicVocal size={15} aria-hidden="true" />}
+        title={t("projects.micro_cast.board.title", "Obsada utworu")}
+      >
+        <StatePanel
+          variant="inline"
+          className="py-10"
+          icon={<ListOrdered size={24} aria-hidden="true" />}
+          title={t("projects.micro_cast.empty.pieces", "Program jest pusty")}
+          description={t(
+            "projects.micro_cast.empty.pieces_desc",
+            "Divisi rozdziela głosy w konkretnym utworze — najpierw ułóż program koncertu.",
+          )}
+          actions={
+            <Button asChild variant="outline" size="sm">
+              <Link to="../program">
+                {t("projects.micro_cast.empty.pieces_action", "Otwórz program")}
+              </Link>
+            </Button>
+          }
+        />
+      </SectionCard>
+    );
+  }
+
+  const composer = selectedPiece?.composer;
+  const composerLabel = composer
+    ? `${composer.first_name ?? ""} ${composer.last_name}`.trim()
+    : "";
+
   return (
     <div className="flex w-full flex-col pb-2">
       <DndContext
@@ -303,56 +333,140 @@ export const MicroCastingTab = ({
         onDragEnd={handleDragEnd}
       >
         <StaggeredBentoContainer className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:items-start">
-          {/* LEFT SIDEBAR — Piece selector + Unassigned pool */}
-          <StaggeredBentoItem className="col-span-1 flex flex-col gap-6 lg:col-span-4 xl:col-span-3 lg:sticky lg:top-6">
-            <GlassCard
-              variant="solid"
-              padding="md"
-              isHoverable={false}
-              className="shrink-0"
-              contentClassName="gap-4"
+          {/* ── Programme + the people still to place ─────────────────────── */}
+          <StaggeredBentoItem className="col-span-1 flex flex-col gap-6 lg:sticky lg:top-6 lg:col-span-4 xl:col-span-3">
+            <ProgramCastingRail
+              items={railItems}
+              selectedPieceId={selectedPieceId}
+              onSelect={requestSelectPiece}
+            />
+
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[42dvh]"
+              bodyClassName="p-0"
+              icon={<Users size={15} aria-hidden="true" />}
+              title={t(
+                "projects.micro_cast.sections.unassigned",
+                "Nieprzypisani",
+              )}
+              action={
+                <Badge variant="neutral">{unassignedMembers.length}</Badge>
+              }
+              toolbar={
+                unassignedMembers.length > POOL_SEARCH_THRESHOLD ? (
+                  <Input
+                    type="text"
+                    value={poolQuery}
+                    onChange={(event) => setPoolQuery(event.target.value)}
+                    leftIcon={<Search size={16} aria-hidden="true" />}
+                    placeholder={t(
+                      "projects.micro_cast.search.placeholder",
+                      "Szukaj osoby...",
+                    )}
+                    aria-label={t(
+                      "projects.micro_cast.search.placeholder",
+                      "Szukaj osoby...",
+                    )}
+                  />
+                ) : undefined
+              }
             >
-              <div className="flex items-center gap-2">
-                <ListOrdered
-                  size={14}
-                  className="text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Eyebrow color="muted">
-                  {t(
-                    "projects.micro_cast.label.pieces_in_program",
-                    "Utwory w programie",
-                  )}
-                </Eyebrow>
-              </div>
-
-              <Select
-                ariaLabel={t(
-                  "projects.micro_cast.select_piece",
-                  "Wybierz utwór z programu",
+              <DroppableBucket
+                id="UNASSIGNED"
+                title={t(
+                  "projects.micro_cast.sections.unassigned",
+                  "Nieprzypisani",
                 )}
-                value={selectedPieceId || ""}
-                onValueChange={requestSelectPiece}
-                placeholder={t(
-                  "projects.micro_cast.empty.pieces",
-                  "Brak utworów",
-                )}
-                options={pieceOptions}
-              />
+                className="min-h-full"
+              >
+                {poolGroups.map((group) => (
+                  <section key={group.key}>
+                    <div className="sticky top-0 z-10 border-b border-hairline bg-ethereal-alabaster/92 px-4 py-1.5 backdrop-blur-sm">
+                      <Eyebrow size="overline-sm" color="muted">
+                        {group.label}
+                      </Eyebrow>
+                    </div>
+                    <div className="flex flex-col gap-1.5 px-3 py-2.5">
+                      {group.members.map((member) => (
+                        <CastMemberChip
+                          key={member.participationId}
+                          member={member}
+                          showAnswerState={showAnswerState}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))}
 
-              {selectedPiece && (() => {
-                const composer = selectedPiece.composer;
-                const composerLabel = composer
-                  ? `${composer.first_name ?? ""} ${composer.last_name}`.trim()
-                  : "";
-                return (
-                  <div className="flex flex-col items-start gap-2 border-t border-ethereal-incense/15 pt-3">
-                    <div className="flex flex-col gap-1">
-                      <Text size="sm" weight="bold" className="truncate">
+                {poolGroups.length === 0 && (
+                  <StatePanel
+                    variant="inline"
+                    className="px-5 py-8"
+                    icon={<Users size={22} aria-hidden="true" />}
+                    title={
+                      poolQuery.trim()
+                        ? t(
+                            "projects.micro_cast.empty.no_matches",
+                            "Brak wyników",
+                          )
+                        : t(
+                            "projects.micro_cast.empty.unassigned",
+                            "Wszyscy są przypisani",
+                          )
+                    }
+                  />
+                )}
+              </DroppableBucket>
+            </SectionCard>
+          </StaggeredBentoItem>
+
+          {/* ── The open piece ────────────────────────────────────────────── */}
+          <StaggeredBentoItem className="col-span-1 lg:col-span-8 xl:col-span-9">
+            <SectionCard
+              as="h2"
+              scroll
+              className="max-h-[78dvh]"
+              icon={<MicVocal size={15} aria-hidden="true" />}
+              title={t("projects.micro_cast.board.title", "Obsada utworu")}
+              action={
+                progress?.hasRequirements ? (
+                  <div className="flex items-baseline gap-2">
+                    <Eyebrow size="overline-sm" color="muted">
+                      {t("projects.micro_cast.board.cast_label", "Obsadzone")}
+                    </Eyebrow>
+                    <Text
+                      as="span"
+                      size="base"
+                      weight="medium"
+                      color={progress.missing === 0 ? "sage" : "gold"}
+                      className="tabular-nums"
+                    >
+                      {progress.filled}/{progress.required}
+                    </Text>
+                  </div>
+                ) : (
+                  <Badge variant="neutral">
+                    {t("projects.micro_cast.board.free_mode", "Tryb dowolny")}
+                  </Badge>
+                )
+              }
+              toolbar={
+                selectedPiece ? (
+                  <div className="flex flex-wrap items-end justify-between gap-3 border-b border-hairline pb-4">
+                    <div className="min-w-0">
+                      <Heading as="h3" size="lg" weight="normal" truncate>
                         {selectedPiece.title}
-                      </Text>
+                      </Heading>
                       {composerLabel && (
-                        <Eyebrow color="muted">{composerLabel}</Eyebrow>
+                        <Eyebrow
+                          size="overline-sm"
+                          color="muted"
+                          className="mt-1 block"
+                        >
+                          {composerLabel}
+                        </Eyebrow>
                       )}
                     </div>
                     {referenceUrl && (
@@ -360,7 +474,6 @@ export const MicroCastingTab = ({
                         asChild
                         variant="outline"
                         size="sm"
-                        className="border-ethereal-sage/30 text-ethereal-sage hover:border-ethereal-sage/50 hover:text-ethereal-sage"
                         leftIcon={
                           <PlayCircleIcon size={12} aria-hidden="true" />
                         }
@@ -379,139 +492,82 @@ export const MicroCastingTab = ({
                       </Button>
                     )}
                   </div>
-                );
-              })()}
-            </GlassCard>
-
-            <SectionCard
-              as="h2"
-              scroll
-              className="max-h-[55dvh] border-ethereal-gold/20"
-              bodyClassName="[scrollbar-gutter:stable]"
-              icon={<Users size={15} aria-hidden="true" />}
-              title={t(
-                "projects.micro_cast.sections.unassigned",
-                "Nieprzypisani",
-              )}
-              action={
-                <Badge variant="neutral">
-                  {unassignedParticipations.length}
-                </Badge>
+                ) : undefined
               }
             >
-                  <DroppableBucket
-                    id="UNASSIGNED"
-                    title={t(
-                      "projects.micro_cast.sections.unassigned",
-                      "Nieprzypisani",
-                    )}
-                  >
-                    <div className="grid grid-cols-1 gap-2 pb-2 sm:grid-cols-[repeat(auto-fill,minmax(130px,1fr))]">
-                      {unassignedParticipations.map((part) => {
-                        const artist = artistMap.get(String(part.id));
-                        if (!artist) return null;
-                        return (
-                          <DraggableArtist
-                            key={part.id}
-                            participationId={String(part.id)}
-                            artist={artist}
-                            participationStatus={participationStatusMap.get(
-                              String(part.id),
-                            )}
-                          />
-                        );
-                      })}
-                      {unassignedParticipations.length === 0 && (
-                        <div className="col-span-full py-8 text-center opacity-60">
-                          <CheckCircle2
-                            size={32}
-                            className="mx-auto mb-2 text-ethereal-sage"
-                            aria-hidden="true"
-                          />
-                          <Eyebrow color="muted">
-                            {t(
-                              "projects.micro_cast.empty.unassigned",
-                              "Wszyscy zostali przypisani do ról.",
-                            )}
-                          </Eyebrow>
-                        </div>
+              {requirements.length === 0 ? (
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-nested border border-hairline bg-ethereal-alabaster/60 px-3 py-2">
+                    <Info
+                      size={14}
+                      className="shrink-0 text-ethereal-graphite/40"
+                      aria-hidden="true"
+                    />
+                    <Caption color="muted" className="min-w-0 flex-1">
+                      {t(
+                        "projects.micro_cast.board.free_mode_hint",
+                        "Ten utwór nie ma zapisanych wymagań głosowych — przypisz śpiewaków do dowolnych linii.",
                       )}
-                    </div>
-                  </DroppableBucket>
-            </SectionCard>
-          </StaggeredBentoItem>
-
-          {/* MAIN — Casting buckets */}
-          <StaggeredBentoItem className="col-span-1 flex flex-col lg:col-span-8 xl:col-span-9">
-            <GlassCard
-              variant="solid"
-              padding="md"
-              isHoverable={false}
-              className="flex max-h-[78dvh] flex-col overflow-hidden"
-            >
-              <div className="flex h-full min-h-0 flex-col">
-                <div className="-mr-2 min-h-0 flex-1 overflow-y-auto pr-2 [scrollbar-gutter:stable]">
-                  {requirements.length === 0 ? (
-                    <div className="space-y-6 pb-4">
-                      <GlassCard
-                        variant="outline"
-                        padding="sm"
-                        isHoverable={false}
-                        className="mb-6 border-ethereal-gold/30 bg-ethereal-gold/10"
-                        contentClassName="flex-row items-center gap-2"
-                      >
-                        <AlertCircle
-                          size={16}
-                          className="shrink-0 text-ethereal-gold"
-                          aria-hidden="true"
-                        />
-                        <Text size="xs" color="graphite" weight="medium">
-                          {t(
-                            "projects.micro_cast.empty.no_requirements",
-                            "Brak zdefiniowanych wymagań głosowych dla tego utworu w bazie repertuarowej. Używamy trybu dowolnego przypisania (Divisi).",
-                          )}
-                        </Text>
-                      </GlassCard>
-
-                      {VOICE_GROUPS.map((group) => (
-                        <div
-                          key={group.label}
-                          className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 xl:grid-cols-4"
+                    </Caption>
+                    {selectedPieceId && (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link
+                          to={`/panel/archive-management/${selectedPieceId}`}
                         >
-                          <div className="border-b border-hairline-strong pb-1.5 md:col-span-2 xl:col-span-4">
-                            <Eyebrow color="gold">{group.label}</Eyebrow>
-                          </div>
-                          {voiceLines
-                            .filter((vl) =>
-                              String(vl.value).startsWith(group.filter),
-                            )
-                            .map((vl) =>
-                              renderBucket(
-                                String(vl.value),
-                                vl.label || String(vl.value),
-                                null,
-                              ),
-                            )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 items-start gap-3 pb-4 md:grid-cols-2 xl:grid-cols-4">
-                      {sortedRequirements.map((req) => {
-                        const displayLabel = (
-                          req as typeof req & { voice_line_display?: string }
-                        ).voice_line_display;
-                        return renderBucket(
-                          req.voice_line,
-                          displayLabel || req.voice_line,
-                          req.quantity,
-                        );
-                      })}
-                    </div>
-                  )}
+                          {t(
+                            "projects.micro_cast.board.define_requirements",
+                            "Uzupełnij wymagania",
+                          )}
+                        </Link>
+                      </Button>
+                    )}
+                  </div>
+
+                  {freeModeGroups.map((group) => (
+                    <section key={group.family} className="flex flex-col gap-3">
+                      <div className="border-b border-hairline-strong pb-1.5">
+                        <Eyebrow color="gold">
+                          {familyLabels[group.family]}
+                        </Eyebrow>
+                      </div>
+                      <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                        {group.lines.map((line) => (
+                          <DivisiBucket
+                            key={String(line.value)}
+                            voiceLine={String(line.value)}
+                            title={line.label || String(line.value)}
+                            requirement={null}
+                            castings={castingsFor(String(line.value))}
+                            memberMap={memberMap}
+                            showAnswerState={showAnswerState}
+                            onUpdateNote={handleUpdateNote}
+                            onTogglePitch={handleTogglePitch}
+                          />
+                        ))}
+                      </div>
+                    </section>
+                  ))}
                 </div>
-              </div>
-            </GlassCard>
+              ) : (
+                <div className="grid grid-cols-1 items-stretch gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {sortedRequirements.map((requirement) => (
+                    <DivisiBucket
+                      key={requirement.voice_line}
+                      voiceLine={requirement.voice_line}
+                      title={
+                        requirement.voice_line_display || requirement.voice_line
+                      }
+                      requirement={requirement.quantity}
+                      castings={castingsFor(requirement.voice_line)}
+                      memberMap={memberMap}
+                      showAnswerState={showAnswerState}
+                      onUpdateNote={handleUpdateNote}
+                      onTogglePitch={handleTogglePitch}
+                    />
+                  ))}
+                </div>
+              )}
+            </SectionCard>
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
 
@@ -524,16 +580,15 @@ export const MicroCastingTab = ({
           >
             {(() => {
               if (!activeDragId) return null;
-              const dragArtist = artistMap.get(activeDragId);
-              if (!dragArtist) return null;
+              const dragged = memberMap.get(activeDragId);
+              if (!dragged) return null;
 
               return (
-                <DraggableArtist
-                  participationId={activeDragId}
-                  artist={dragArtist}
-                  isOverlay={true}
+                <CastMemberChip
+                  member={dragged}
+                  isOverlay
                   casting={localCastings.find(
-                    (c) => String(c.participation) === activeDragId,
+                    (casting) => String(casting.participation) === activeDragId,
                   )}
                 />
               );
@@ -547,17 +602,14 @@ export const MicroCastingTab = ({
         isOpen={isDirty}
         description={t(
           "projects.micro_cast.action_bar.description",
-          "Przeciągnięto {{count}} zmian. Zapisz, aby zsynchronizować obsadę.",
-          { count: pendingCounts.total },
+          "Casting utworu: {{piece}}",
+          { piece: selectedPiece?.title ?? "" },
         )}
         metrics={pendingMetrics.length > 0 ? <>{pendingMetrics}</> : undefined}
         onCancel={discardChanges}
         onConfirm={saveChanges}
         cancelText={t("common.actions.discard", "Odrzuć")}
-        confirmText={t(
-          "projects.micro_cast.action_bar.save",
-          "Zapisz casting",
-        )}
+        confirmText={t("projects.micro_cast.action_bar.save", "Zapisz casting")}
         isLoading={isSaving}
       />
 

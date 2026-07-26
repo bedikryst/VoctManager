@@ -30,6 +30,7 @@ import type {
   ProgramItem,
   VoiceLineOption,
   VoiceRequirement,
+  VoiceType,
 } from "@/shared/types";
 import {
   useProjectArtistsDictionary,
@@ -40,8 +41,37 @@ import {
   useProjectVoiceLinesDictionary,
   useSavePieceCastingBoard,
 } from "../../api/project.queries";
+import { voiceTypeRank } from "../../lib/voiceFamilies";
 
-export type PieceCastingStatus = "FREE" | "OK" | "DEFICIT";
+/**
+ * One castable person on this project. The board used to read the artist
+ * dictionary directly and skip whatever it could not resolve, which let the
+ * unassigned counter promise four people and the list show two — holes the
+ * conductor was told about but could not see. A participation always yields a
+ * member here, falling back to the name the participation itself carries.
+ */
+export interface CastMember {
+  readonly participationId: string;
+  readonly displayName: string;
+  readonly voiceType: VoiceType | null;
+  /** Localised voice type ("Sopran"); empty when the roster record is gone. */
+  readonly voiceLabel: string;
+  readonly status: ParticipationStatus;
+  /** No roster record behind this participation — identity is a fallback. */
+  readonly isUnresolved: boolean;
+}
+
+/**
+ * How far one piece is from being cast. `filled` counts covered SEATS, so
+ * over-filling one line can never mask a hole in another, and a declined singer
+ * never counts as cover.
+ */
+export interface PieceProgress {
+  readonly required: number;
+  readonly filled: number;
+  readonly missing: number;
+  readonly hasRequirements: boolean;
+}
 
 export interface PendingCounts {
   creates: number;
@@ -57,10 +87,16 @@ export interface UseMicroCastingResult {
   selectedPieceId: string | null;
   localCastings: PieceCasting[];
   activeDragId: string | null;
-  artistMap: Map<string, Artist>;
-  participationStatusMap: Map<string, ParticipationStatus>;
-  pieceStatuses: Record<string, PieceCastingStatus>;
-  projectParticipations: Participation[];
+  /** Everyone on the project, in roster order (voice type, then name). */
+  members: CastMember[];
+  memberMap: Map<string, CastMember>;
+  pieceProgress: Record<string, PieceProgress>;
+  /**
+   * The board cannot be drawn from a half-loaded cache: a programme without its
+   * piece dictionary reads as "this piece declares no voice requirements", which
+   * is a different screen entirely.
+   */
+  isLoading: boolean;
   isDirty: boolean;
   isSaving: boolean;
   pendingCounts: PendingCounts;
@@ -69,6 +105,7 @@ export interface UseMicroCastingResult {
   confirmPieceSwitch: () => void;
   cancelPieceSwitch: () => void;
   handleUpdateNote: (castingId: string, newNote: string) => void;
+  handleTogglePitch: (castingId: string) => void;
   handleDragStart: (event: DragStartEvent) => void;
   handleDragEnd: (event: DragEndEvent) => void;
   saveChanges: () => Promise<void>;
@@ -109,6 +146,11 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
   const saveMutation = useSavePieceCastingBoard(projectId);
   const isSaving = saveMutation.isPending;
+  const isLoading =
+    piecesQuery.isLoading ||
+    programQuery.isLoading ||
+    participationsQuery.isLoading ||
+    pieceCastingsQuery.isLoading;
 
   const [selectedPieceId, setSelectedPieceId] = useState<string | null>(null);
   const [originalCastings, setOriginalCastings] = useState<PieceCasting[]>([]);
@@ -131,24 +173,46 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     [participations, projectId],
   );
 
-  const artistMap = useMemo(() => {
-    const map = new Map<string, Artist>();
-    projectParticipations.forEach((participation) => {
-      const artist = artistDictionary.get(String(participation.artist));
-      if (artist) {
-        map.set(String(participation.id), artist);
-      }
-    });
-    return map;
-  }, [artistDictionary, projectParticipations]);
+  const members = useMemo<CastMember[]>(() => {
+    const unknownName = t(
+      "projects.micro_cast.artist.unknown",
+      "Nieznany uczestnik",
+    );
 
-  const participationStatusMap = useMemo(() => {
-    const map = new Map<string, ParticipationStatus>();
-    projectParticipations.forEach((participation) => {
-      map.set(String(participation.id), participation.status);
-    });
-    return map;
-  }, [projectParticipations]);
+    return projectParticipations
+      .map((participation) => {
+        const artist = artistDictionary.get(String(participation.artist));
+        const voiceType = artist?.voice_type ?? null;
+
+        return {
+          participationId: String(participation.id),
+          displayName: artist
+            ? `${artist.first_name} ${artist.last_name}`.trim()
+            : participation.artist_name?.trim() || unknownName,
+          voiceType,
+          voiceLabel: voiceType
+            ? t(
+                `dashboard.layout.roles.${voiceType}`,
+                artist?.voice_type_display ?? voiceType,
+              )
+            : (participation.artist_voice_type_display ?? ""),
+          status: participation.status,
+          isUnresolved: !artist,
+        };
+      })
+      .sort((left, right) => {
+        const rankDelta =
+          voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
+        if (rankDelta !== 0) return rankDelta;
+        return left.displayName.localeCompare(right.displayName);
+      });
+  }, [artistDictionary, projectParticipations, t]);
+
+  const memberMap = useMemo(
+    () =>
+      new Map(members.map((member) => [member.participationId, member])),
+    [members],
+  );
 
   // Auto-select first program piece when none is chosen yet.
   useEffect(() => {
@@ -229,11 +293,11 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     };
   }, [localCastings, originalCastings]);
 
-  // Status indicator for each piece in the program dropdown.
-  // For the currently selected piece, factor the user's draft (so deficits
-  // reflect the still-unsaved roster).
-  const pieceStatuses = useMemo<Record<string, PieceCastingStatus>>(() => {
-    const statuses: Record<string, PieceCastingStatus> = {};
+  // Fulfilment of every piece in the programme, so the rail can say which ones
+  // are still short before any of them is opened. The selected piece is scored
+  // against the user's draft, so the rail moves while the board is being built.
+  const pieceProgress = useMemo<Record<string, PieceProgress>>(() => {
+    const progress: Record<string, PieceProgress> = {};
 
     program.forEach((item) => {
       const pieceId = String(item.piece);
@@ -244,7 +308,12 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         piece?.voice_requirements_read ?? [];
 
       if (requirements.length === 0) {
-        statuses[pieceId] = "FREE";
+        progress[pieceId] = {
+          required: 0,
+          filled: 0,
+          missing: 0,
+          hasRequirements: false,
+        };
         return;
       }
 
@@ -255,32 +324,31 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
               (casting) => String(casting.piece) === pieceId,
             );
 
+      let required = 0;
+      let filled = 0;
       let missing = 0;
+
       requirements.forEach((requirement) => {
         // A declined singer left on a line does not fill it — the seat is a hole the
         // conductor has to see, so it keeps counting towards the deficit.
         const assigned = effectiveCastings.filter(
           (casting) =>
             casting.voice_line === requirement.voice_line &&
-            participationStatusMap.get(String(casting.participation)) !== "DEC",
+            memberMap.get(String(casting.participation))?.status !== "DEC",
         ).length;
+
+        required += requirement.quantity;
+        filled += Math.min(assigned, requirement.quantity);
         if (assigned < requirement.quantity) {
           missing += requirement.quantity - assigned;
         }
       });
 
-      statuses[pieceId] = missing > 0 ? "DEFICIT" : "OK";
+      progress[pieceId] = { required, filled, missing, hasRequirements: true };
     });
 
-    return statuses;
-  }, [
-    pieceCastings,
-    pieces,
-    program,
-    selectedPieceId,
-    localCastings,
-    participationStatusMap,
-  ]);
+    return progress;
+  }, [pieceCastings, pieces, program, selectedPieceId, localCastings, memberMap]);
 
   const handleUpdateNote = useCallback(
     (castingId: string, newNote: string): void => {
@@ -294,6 +362,19 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     },
     [],
   );
+
+  // Who sounds the starting pitch for this piece. The flag is read by the call
+  // sheet, the score package and the singer's own piece page; until now it could
+  // only be set in the Django admin, which is why it was always false.
+  const handleTogglePitch = useCallback((castingId: string): void => {
+    setLocalCastings((previous) =>
+      previous.map((casting) =>
+        String(casting.id) === castingId
+          ? { ...casting, gives_pitch: !casting.gives_pitch }
+          : casting,
+      ),
+    );
+  }, []);
 
   const handleDragStart = useCallback((event: DragStartEvent): void => {
     setActiveDragId(String(event.active.id));
@@ -439,10 +520,10 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     selectedPieceId,
     localCastings,
     activeDragId,
-    artistMap,
-    participationStatusMap,
-    pieceStatuses,
-    projectParticipations,
+    members,
+    memberMap,
+    pieceProgress,
+    isLoading,
     isDirty,
     isSaving,
     pendingCounts,
@@ -451,6 +532,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     confirmPieceSwitch,
     cancelPieceSwitch,
     handleUpdateNote,
+    handleTogglePitch,
     handleDragStart,
     handleDragEnd,
     saveChanges,

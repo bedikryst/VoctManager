@@ -14,5 +14,5 @@ import { CastTab } from "./editors/tabs/CastTab";
 
 export default function ProjectCastPage(): React.JSX.Element {
   const { project } = useOutletContext<ProjectHubContext>();
-  return <CastTab projectId={project.id} />;
+  return <CastTab project={project} />;
 }

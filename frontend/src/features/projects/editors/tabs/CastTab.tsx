@@ -1,391 +1,385 @@
 /**
  * @file CastTab.tsx
- * @description Primary Casting Manager Module for Vocal Assignments.
- * Implements absolute DOM continuity via Unified AnimatePresence preventing cross-list visual popping.
- * Delegates caching and mutation state exclusively to the useCastTab hook.
+ * @description Who sings this project: the cast on the left, the roster still
+ * available on the right. It is the same two-pane transfer board as the Program
+ * tab and now shares its row language, its picker and its search placement —
+ * the two used to read as two different products doing one job.
+ * Every write is immediate; the shared `AutosaveStatus` pill confirms it.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  MicVocal,
-  BookOpen,
-  Users,
-  Search,
-  UserCheck,
-  UserPlus,
-  Trash2,
-} from "lucide-react";
+import type { TFunction } from "i18next";
 import { motion } from "framer-motion";
+import { Search, Trash2, UserCheck, Users } from "lucide-react";
 
-import type { Artist, ParticipationStatus } from "@/shared/types";
-import { Input } from "@/shared/ui/primitives/Input";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Badge } from "@/shared/ui/primitives/Badge";
-import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
-import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
-import { useCastTab } from "../hooks/useCastTab";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { TabLoadingCard } from "./components/TabLoadingCard";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { PROJECT_STATUS } from "../../constants/projectDomain";
+import {
+  useCastTab,
+  type CastBalanceEntry,
+  type CastEntry,
+} from "../hooks/useCastTab";
+import { ListGroupHeader } from "./components/ListGroupHeader";
+import { PickerRow } from "./components/PickerRow";
 
 interface CastTabProps {
-  projectId: string;
+  readonly project: Project;
 }
 
-interface ArtistCardProps {
-  artist: Artist;
-  isAssigned: boolean;
-  participationId?: string;
-  participationStatus?: ParticipationStatus;
-  isProcessing: boolean;
-  onToggle: (artistId: string, isAssigned: boolean, partId?: string) => void;
-}
+/**
+ * The second line of a roster row: range · sight-reading. It used to be two
+ * icon-prefixed pills, which put sixty glyphs on a screen whose content is
+ * forty names.
+ */
+const buildSingerMeta = (
+  entry: { rangeLabel: string | null; sightReading: number | null },
+  t: TFunction,
+): string | null => {
+  const parts = [
+    entry.rangeLabel,
+    entry.sightReading !== null
+      ? t("projects.cast.card.a_vista", "a vista {{score}}/5", {
+          score: entry.sightReading,
+        })
+      : null,
+  ].filter((part): part is string => Boolean(part));
 
-const VOICE_ORDER: readonly string[] = ["S", "M", "A", "C", "T", "BAR", "B"];
-
-interface VoiceGroup {
-  readonly key: string;
-  readonly artists: Artist[];
-}
-
-/** Buckets an already voice-sorted artist list into ordered SATB sections. */
-const groupArtistsByVoice = (list: Artist[]): VoiceGroup[] => {
-  const groups = new Map<string, Artist[]>();
-  for (const artist of list) {
-    const key = artist.voice_type || "?";
-    const bucket = groups.get(key);
-    if (bucket) bucket.push(artist);
-    else groups.set(key, [artist]);
-  }
-
-  const rank = (key: string): number => {
-    const index = VOICE_ORDER.indexOf(key);
-    return index === -1 ? VOICE_ORDER.length : index;
-  };
-
-  return [...groups.entries()]
-    .sort(([a], [b]) => rank(a) - rank(b))
-    .map(([key, artists]) => ({ key, artists }));
+  return parts.length > 0 ? parts.join(" · ") : null;
 };
 
-const ArtistCard = React.memo(
-  ({
-    artist,
-    isAssigned,
-    participationId,
-    participationStatus,
-    isProcessing,
-    onToggle,
-  }: ArtistCardProps) => {
-    const { t } = useTranslation();
+interface CastRowProps {
+  readonly entry: CastEntry;
+  /**
+   * Whether an answer is worth printing. Before publication nobody has been
+   * asked, so "Zaproszony" on all forty rows states the resting case in the
+   * loudest chip the vocabulary has — and buries the one person who declined.
+   */
+  readonly showAnswerState: boolean;
+  readonly isBusy: boolean;
+  readonly onRemove: () => void;
+}
 
-    const isDeclined = isAssigned && participationStatus === "DEC";
-    const isPending = isAssigned && participationStatus === "INV";
+function CastRow({
+  entry,
+  showAnswerState,
+  isBusy,
+  onRemove,
+}: CastRowProps): React.JSX.Element {
+  const { t } = useTranslation();
+  const meta = buildSingerMeta(entry, t);
 
-    const voiceInitial = artist.voice_type
-      ? t(`dashboard.layout.roles.${artist.voice_type}`).substring(0, 1)
-      : artist.voice_type_display?.substring(0, 1) || "?";
+  const isDeclined = entry.status === "DEC";
+  const isAwaiting = showAnswerState && entry.status === "INV";
 
-    return (
-      <motion.div
-        layoutId={`artist-card-${artist.id}`}
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
-        layout="position"
-        className="mb-1.5"
-      >
-        <div
-          className={cn(
-            "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
-            isDeclined
-              ? "border-ethereal-crimson/30 bg-ethereal-crimson/5"
-              : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
-            isPending && "opacity-70",
-          )}
-        >
-          <span
-            className={cn(
-              "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-chip border text-[10px] font-bold uppercase",
-              isAssigned
-                ? "border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-gold"
-                : "border-hairline-strong bg-ethereal-alabaster text-ethereal-graphite/70",
-            )}
-            aria-hidden="true"
-          >
-            {voiceInitial}
-          </span>
+  const removeLabel = t(
+    "projects.cast.card.remove_aria",
+    "Usuń {{name}} z obsady",
+    {
+      name: entry.displayName,
+    },
+  );
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <Text
-                size="sm"
-                weight="semibold"
-                truncate
-                className={isDeclined ? "text-ethereal-crimson" : undefined}
-              >
-                {artist.first_name} {artist.last_name}
-              </Text>
-              {isDeclined && (
-                <Badge variant="danger">
-                  {t("projects.cast.card.declined", "Odmowa")}
-                </Badge>
-              )}
-              {isPending && (
-                <Badge variant="warning">
-                  {t("projects.cast.card.pending", "Zaproszony")}
-                </Badge>
-              )}
-            </div>
-
-            {(artist.vocal_range_bottom ||
-              artist.vocal_range_top ||
-              artist.sight_reading_skill) && (
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
-                {(artist.vocal_range_bottom || artist.vocal_range_top) && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ethereal-graphite/55">
-                    <MicVocal
-                      size={11}
-                      className="text-ethereal-gold/50"
-                      aria-hidden="true"
-                    />
-                    {artist.vocal_range_bottom || "?"}–
-                    {artist.vocal_range_top || "?"}
-                  </span>
-                )}
-                {artist.sight_reading_skill && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-ethereal-graphite/55">
-                    <BookOpen
-                      size={11}
-                      className="text-ethereal-gold/50"
-                      aria-hidden="true"
-                    />
-                    {t("projects.cast.card.a_vista", "A vista:")}{" "}
-                    {artist.sight_reading_skill}/5
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          <Button
-            type="button"
-            variant={isAssigned ? "ghost" : "secondary"}
+  return (
+    <motion.li
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={cn(
+        "group/cast flex items-center gap-3 px-5 py-2.5 transition-colors",
+        isDeclined ? "bg-ethereal-crimson/4" : "hover:bg-ethereal-ink/3",
+        isBusy && "opacity-50",
+      )}
+    >
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="flex min-w-0 items-center gap-2">
+          <Text
+            as="span"
             size="sm"
-            disabled={isProcessing}
-            isLoading={isProcessing}
-            onClick={() =>
-              onToggle(String(artist.id), isAssigned, participationId)
+            weight="medium"
+            truncate
+            color={
+              isDeclined ? "crimson" : entry.isUnresolved ? "muted" : "graphite"
             }
-            leftIcon={
-              isAssigned ? (
-                <Trash2 size={13} aria-hidden="true" />
-              ) : (
-                <UserPlus size={13} aria-hidden="true" />
-              )
-            }
-            className={cn(
-              "shrink-0",
-              isAssigned &&
-                "text-ethereal-crimson/70 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson",
-            )}
-            aria-label={
-              isAssigned
-                ? t("projects.cast.card.remove_aria", "Usuń z obsady", {
-                    name: artist.first_name,
-                  })
-                : t("projects.cast.card.add_aria", "Dodaj do obsady", {
-                    name: artist.first_name,
-                  })
-            }
+            className={entry.isUnresolved ? "italic" : undefined}
           >
-            {isAssigned
-              ? t("projects.cast.card.remove", "Usuń")
-              : t("projects.cast.card.add", "Dodaj")}
-          </Button>
-        </div>
-      </motion.div>
-    );
-  },
-  (prevProps, nextProps) =>
-    prevProps.artist.id === nextProps.artist.id &&
-    prevProps.isAssigned === nextProps.isAssigned &&
-    prevProps.isProcessing === nextProps.isProcessing &&
-    prevProps.participationId === nextProps.participationId &&
-    prevProps.participationStatus === nextProps.participationStatus,
-);
+            {entry.displayName}
+          </Text>
+          {isDeclined && (
+            <Badge variant="danger" className="shrink-0">
+              {t("projects.cast.card.declined", "Odmowa")}
+            </Badge>
+          )}
+          {isAwaiting && (
+            <Badge variant="outline" className="shrink-0">
+              {t("projects.cast.card.pending", "Czeka")}
+            </Badge>
+          )}
+        </span>
+        {meta && (
+          <Caption as="span" color="muted" className="truncate">
+            {meta}
+          </Caption>
+        )}
+      </span>
 
-ArtistCard.displayName = "ArtistCard";
+      <button
+        type="button"
+        onClick={onRemove}
+        disabled={isBusy}
+        title={removeLabel}
+        aria-label={removeLabel}
+        className={cn(
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip text-ethereal-graphite/35 transition-colors",
+          "hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+          "pointer-coarse:h-9 pointer-coarse:w-9",
+        )}
+      >
+        <Trash2 size={14} aria-hidden="true" />
+      </button>
+    </motion.li>
+  );
+}
 
-export const CastTab = ({
-  projectId,
-}: CastTabProps): React.JSX.Element | null => {
+/**
+ * The question this tab could not answer: is the ensemble balanced? A voice
+ * type reads gold at zero only when the roster actually holds candidates for
+ * it — nobody cast with nobody available is an ensemble without that voice,
+ * not a hole in the casting.
+ */
+function BalanceRail({
+  balance,
+}: {
+  balance: readonly CastBalanceEntry[];
+}): React.JSX.Element {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+      {balance.map((entry) => {
+        const isGap = entry.castCount === 0 && entry.poolCount > 0;
+        return (
+          <span
+            key={entry.voiceType}
+            className="inline-flex items-baseline gap-1.5"
+          >
+            <Eyebrow as="span" size="overline-sm" color="muted">
+              {entry.label}
+            </Eyebrow>
+            <Text
+              as="span"
+              size="base"
+              weight="medium"
+              color={isGap ? "gold" : "graphite"}
+            >
+              {entry.castCount}
+            </Text>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
   const { t } = useTranslation();
   const {
-    participations,
+    isLoading,
+    castSections,
+    poolSections,
+    castCount,
+    poolCount,
+    castBalance,
     searchQuery,
     setSearchQuery,
     processingId,
     mobileView,
     setMobileView,
-    allArtists,
-    assignedIds,
-    toggleCasting,
-  } = useCastTab(projectId);
+    addToCast,
+    removeFromCast,
+  } = useCastTab(String(project.id));
 
-  const availableArtists = allArtists.filter(
-    (artist) => !assignedIds.has(String(artist.id)),
-  );
-  const assignedArtists = allArtists.filter((artist) =>
-    assignedIds.has(String(artist.id)),
-  );
-  const availableGroups = groupArtistsByVoice(availableArtists);
-  const assignedGroups = groupArtistsByVoice(assignedArtists);
-  const unassignedCount = availableArtists.length;
+  const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
+  const isSearching = searchQuery.trim().length > 0;
 
-  const voiceLabel = (key: string): string =>
-    key === "?"
-      ? t("projects.cast.voice_unknown", "Bez głosu")
-      : t(`dashboard.layout.roles.${key}`, key);
-
-  const renderGroup = (
-    group: VoiceGroup,
-    assigned: boolean,
-  ): React.JSX.Element => (
-    <div key={group.key} className="mb-2 last:mb-0">
-      <div className="sticky top-0 z-10 mb-1 flex items-center justify-between rounded-chip bg-ethereal-alabaster/85 px-2 py-1 backdrop-blur-sm">
-        <Eyebrow size="overline-sm" color="muted">
-          {voiceLabel(group.key)}
-        </Eyebrow>
-        <Text
-          as="span"
-          size="xs"
-          color="muted"
-          className="font-bold tabular-nums"
-        >
-          {group.artists.length}
-        </Text>
-      </div>
-      {group.artists.map((artist) => {
-        const participation = assigned
-          ? participations.find((p) => String(p.artist) === String(artist.id))
-          : undefined;
-        return (
-          <ArtistCard
-            key={artist.id}
-            artist={artist}
-            isAssigned={assigned}
-            participationId={participation?.id}
-            participationStatus={participation?.status}
-            isProcessing={processingId === String(artist.id)}
-            onToggle={toggleCasting}
-          />
-        );
-      })}
-    </div>
-  );
+  if (isLoading) {
+    return (
+      <TabLoadingCard
+        icon={<UserCheck size={15} aria-hidden="true" />}
+        title={t("projects.cast.sections.assigned", "Obsada projektu")}
+      />
+    );
+  }
 
   return (
-    <div className="flex w-full flex-col">
-      <div className="mb-5 flex shrink-0 justify-end">
-        <div className="w-full md:w-80">
-          <Input
-            type="text"
-            placeholder={t(
-              "projects.cast.search_placeholder",
-              "Szukaj artysty...",
-            )}
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            leftIcon={<Search size={16} aria-hidden="true" />}
-          />
-        </div>
-      </div>
-
-      <div className="mb-6 shrink-0 lg:hidden">
+    <div className="flex w-full flex-col pb-8">
+      <div className="mb-5 shrink-0 lg:hidden">
         <SegmentedTabs
           value={mobileView}
           onChange={setMobileView}
-          ariaLabel={t("projects.cast.mobile.switch_aria", "Przełącz listę obsady")}
+          ariaLabel={t(
+            "projects.cast.mobile.switch_aria",
+            "Przełącz listę obsady",
+          )}
           items={[
             {
-              id: "AVAILABLE",
-              label: `${t("projects.cast.mobile.available", "Baza")} (${unassignedCount})`,
-              Icon: Users,
+              id: "ASSIGNED",
+              label: `${t("projects.cast.mobile.assigned", "Obsada")} (${castCount})`,
+              Icon: UserCheck,
             },
             {
-              id: "ASSIGNED",
-              label: `${t("projects.cast.mobile.assigned", "Obsada")} (${participations.length})`,
-              Icon: UserCheck,
+              id: "AVAILABLE",
+              label: `${t("projects.cast.mobile.available", "Baza")} (${poolCount})`,
+              Icon: Users,
             },
           ]}
         />
       </div>
 
-      <div className="grid w-full grid-cols-1 gap-6 pb-8 lg:grid-cols-2 lg:gap-8 lg:items-start">
-          <div
-            className={`flex-col ${
-              mobileView === "AVAILABLE" ? "flex" : "hidden lg:flex"
-            }`}
-          >
-            <SectionCard
-              as="h2"
-              scroll
-              className="max-h-[70dvh]"
-              bodyClassName="overflow-x-hidden p-3.5 [scrollbar-gutter:stable]"
-              icon={<Users size={15} aria-hidden="true" />}
-              title={t("projects.cast.sections.available", "Baza Artystów")}
-              action={<Badge variant="neutral">{unassignedCount}</Badge>}
-            >
-              {availableGroups.map((group) => renderGroup(group, false))}
-              {unassignedCount === 0 && (
-                <div className="flex h-full min-h-0 flex-col items-center justify-center p-6 text-center opacity-60">
-                  <Users
-                    size={24}
-                    className="mb-2 text-ethereal-graphite/40"
-                    aria-hidden="true"
-                  />
-                  <Eyebrow color="muted">
-                    {t("projects.cast.empty_available", "Brak dostępnych")}
-                  </Eyebrow>
-                </div>
+      <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-5 lg:items-start">
+        {/* ── The cast ─────────────────────────────────────────────────────── */}
+        <SectionCard
+          as="h2"
+          scroll
+          className={cn(
+            "max-h-[70dvh] lg:col-span-3",
+            mobileView === "ASSIGNED" ? "flex" : "hidden lg:flex",
+          )}
+          bodyClassName="p-0 [scrollbar-gutter:stable]"
+          icon={<UserCheck size={15} aria-hidden="true" />}
+          title={t("projects.cast.sections.assigned", "Obsada projektu")}
+          action={<Badge variant="neutral">{castCount}</Badge>}
+          footer={
+            castCount > 0 && castBalance.length > 0 ? (
+              <BalanceRail balance={castBalance} />
+            ) : undefined
+          }
+        >
+          {castCount > 0 ? (
+            castSections.map((section) => (
+              <section key={section.key}>
+                <ListGroupHeader
+                  label={section.label}
+                  count={section.entries.length}
+                />
+                <ul className="divide-y divide-hairline">
+                  {section.entries.map((entry) => (
+                    <CastRow
+                      key={entry.participationId}
+                      entry={entry}
+                      showAnswerState={showAnswerState}
+                      isBusy={processingId === entry.artistId}
+                      onRemove={() =>
+                        void removeFromCast(
+                          entry.artistId,
+                          entry.participationId,
+                        )
+                      }
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          ) : (
+            <StatePanel
+              variant="inline"
+              className="px-5 py-10"
+              icon={<UserCheck size={26} aria-hidden="true" />}
+              title={t("projects.cast.empty_assigned", "Obsada jest pusta")}
+              description={t(
+                "projects.cast.empty_assigned_desc",
+                "Dodaj śpiewaków z bazy, aby zbudować obsadę projektu.",
               )}
-            </SectionCard>
-          </div>
+            />
+          )}
+        </SectionCard>
 
-          <div
-            className={`flex-col ${
-              mobileView === "ASSIGNED" ? "flex" : "hidden lg:flex"
-            }`}
-          >
-            <SectionCard
-              as="h2"
-              scroll
-              className="max-h-[70dvh] border-ethereal-gold/25"
-              bodyClassName="overflow-x-hidden p-3.5 [scrollbar-gutter:stable]"
-              icon={<UserCheck size={15} aria-hidden="true" />}
-              title={t("projects.cast.sections.assigned", "Obsada Projektu")}
-              action={<Badge variant="neutral">{participations.length}</Badge>}
-            >
-              {assignedGroups.map((group) => renderGroup(group, true))}
-              {participations.length === 0 && (
-                <div className="flex h-full flex-col items-center justify-center p-6 text-center opacity-60">
-                  <UserCheck
-                    size={24}
-                    className="mb-2 text-ethereal-graphite/40"
-                    aria-hidden="true"
-                  />
-                  <Eyebrow color="muted">
-                    {t("projects.cast.empty_assigned", "Obsada jest pusta")}
-                  </Eyebrow>
-                </div>
+        {/* ── The roster still available (pinned on desktop) ────────────────── */}
+        <SectionCard
+          as="h2"
+          scroll
+          className={cn(
+            "max-h-[70dvh] lg:col-span-2 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-9rem)]",
+            mobileView === "AVAILABLE" ? "flex" : "hidden lg:flex",
+          )}
+          bodyClassName="p-0 pt-2 [scrollbar-gutter:stable]"
+          icon={<Users size={15} aria-hidden="true" />}
+          title={t("projects.cast.sections.available", "Baza artystów")}
+          action={<Badge variant="neutral">{poolCount}</Badge>}
+          toolbar={
+            <Input
+              type="text"
+              placeholder={t(
+                "projects.cast.search_placeholder",
+                "Szukaj artysty...",
               )}
-            </SectionCard>
-          </div>
-        </div>
+              aria-label={t(
+                "projects.cast.search_placeholder",
+                "Szukaj artysty...",
+              )}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              leftIcon={<Search size={16} aria-hidden="true" />}
+            />
+          }
+        >
+          {poolCount > 0 ? (
+            poolSections.map((section) => (
+              <section key={section.key}>
+                <ListGroupHeader
+                  label={section.label}
+                  count={section.entries.length}
+                />
+                <ul className="divide-y divide-hairline">
+                  {section.entries.map((entry) => (
+                    <PickerRow
+                      key={entry.artistId}
+                      title={entry.displayName}
+                      meta={buildSingerMeta(entry, t)}
+                      isBusy={processingId === entry.artistId}
+                      onPick={() => void addToCast(entry.artistId)}
+                      pickLabel={t(
+                        "projects.cast.card.add_aria",
+                        "Dodaj {{name}} do obsady",
+                        { name: entry.displayName },
+                      )}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          ) : (
+            <StatePanel
+              variant="inline"
+              className="px-5 py-10"
+              icon={
+                isSearching ? (
+                  <Search size={24} aria-hidden="true" />
+                ) : (
+                  <Users size={24} aria-hidden="true" />
+                )
+              }
+              title={
+                isSearching
+                  ? t("projects.cast.empty_no_matches", "Brak wyników")
+                  : t(
+                      "projects.cast.empty_available",
+                      "Cały zespół jest w obsadzie",
+                    )
+              }
+            />
+          )}
+        </SectionCard>
+      </div>
 
       <AutosaveStatus isSaving={processingId !== null} />
     </div>

@@ -6,7 +6,6 @@
  */
 
 import type {
-  Attendance,
   CrewAssignment,
   Participation,
   ProgramItem,
@@ -17,7 +16,6 @@ import type {
 import { PROJECT_STATUS } from "../constants/projectDomain";
 import { compareProjectDateAsc } from "../lib/projectPresentation";
 import type {
-  AttendanceCreateDTO,
   CrewAssignmentCreateDTO,
   ParticipationCreateDTO,
   ProgramItemCreateDTO,
@@ -108,14 +106,4 @@ export const buildOptimisticProgramItem = (
   piece: data.piece,
   order: data.order,
   is_encore: data.is_encore,
-});
-
-export const buildOptimisticAttendance = (
-  data: AttendanceCreateDTO,
-  optimisticId: string,
-): Attendance => ({
-  id: optimisticId,
-  rehearsal: data.rehearsal,
-  participation: data.participation,
-  status: data.status,
 });

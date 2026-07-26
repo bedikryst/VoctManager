@@ -14,7 +14,5 @@ import { MicroCastingTab } from "./editors/tabs/MicroCastingTab";
 
 export default function ProjectDivisiPage(): React.JSX.Element {
   const { project, setDirty } = useOutletContext<ProjectHubContext>();
-  return (
-    <MicroCastingTab projectId={project.id} onDirtyStateChange={setDirty} />
-  );
+  return <MicroCastingTab project={project} onDirtyStateChange={setDirty} />;
 }

@@ -1,10 +1,11 @@
 /**
  * @file ProgramTab.tsx
- * @description Setlist builder with drag & drop reordering and a piece-database search.
- * Defers reorder commits via dirty-state tracking surfaced through the shared `EditorActionBar`.
- * Two consistent solid panels: the ordered setlist (left) and a sticky composition database
- * (right). Row actions are always visible — never hover-gated — so the encore/remove controls
- * stay reachable on touch. Each row carries the composer so a title is never ambiguous.
+ * @description The running order and the archive it is drawn from — a picker
+ * column beside the work product, the same composition the Obsada tab uses and
+ * now the same row language: a flat divided list, a gold ordinal, one line of
+ * metadata, and the figure on the right edge.
+ * Reordering is a deferred edit committed through the shared `EditorActionBar`;
+ * adding, removing and the encore flag write immediately.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/ProgramTab
  */
@@ -12,18 +13,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import {
-  ListOrdered,
-  GripVertical,
-  Trash2,
-  Search,
-  Plus,
-  CheckCircle2,
-  Star,
-  Clock,
-  Music,
-  Library,
-} from "lucide-react";
+import { ListOrdered, Library, Music, Search } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -36,22 +26,21 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
-import type { Piece } from "@/shared/types";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
-import { Button } from "@/shared/ui/primitives/Button";
-import { Input } from "@/shared/ui/primitives/Input";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import { cn } from "@/shared/lib/utils";
+import { Input } from "@/shared/ui/primitives/Input";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { useProgramTab } from "../hooks/useProgramTab";
 import { useProjectReadinessSummary } from "../../api/project.read.queries";
-import type { ProjectReadinessSummaryEntry } from "../../api/project.service";
-import type { ProgramTabItem } from "../types";
+import { buildPieceMeta } from "../../lib/pieceLabels";
+import { DurationCell } from "./components/DurationCell";
+import { PickerRow } from "./components/PickerRow";
+import { SetlistRow } from "./components/SetlistRow";
+import { TabLoadingCard } from "./components/TabLoadingCard";
 
 interface ProgramTabProps {
   projectId: string;
@@ -59,264 +48,29 @@ interface ProgramTabProps {
 }
 
 const formatTotalDuration = (
-  totalSeconds: number | null | undefined,
+  totalSeconds: number,
   t: TFunction,
 ): string | null => {
-  if (!totalSeconds || totalSeconds === 0) return null;
-  const m = Math.floor(totalSeconds / 60);
-  const h = Math.floor(m / 60);
-  const remainingMins = m % 60;
-  if (h > 0)
+  if (totalSeconds <= 0) return null;
+
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(totalMinutes / 60);
+
+  if (hours > 0) {
     return t(
       "projects.program.format.duration_hours",
       "~ {{h}}h {{m}}min muzyki",
       {
-        h,
-        m: remainingMins,
+        h: hours,
+        m: totalMinutes % 60,
       },
     );
+  }
+
   return t("projects.program.format.duration_mins", "~ {{m}} min muzyki", {
-    m,
+    m: totalMinutes,
   });
 };
-
-const formatPieceDuration = (
-  totalSeconds: number | null | undefined,
-  t: TFunction,
-): string | null => {
-  if (!totalSeconds) return null;
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  const minStr =
-    m > 0
-      ? t("projects.program.format.minutes", "{{m}} min").replace(
-          "{{m}}",
-          String(m),
-        )
-      : "";
-  const secStr =
-    s > 0
-      ? t("projects.program.format.seconds", "{{s}} sek").replace(
-          "{{s}}",
-          String(s),
-        )
-      : "";
-  return `${minStr} ${secStr}`.trim();
-};
-
-/** Composer display name for a piece, tolerant of the partial AI-enriched shape. */
-const getComposerName = (piece?: Piece): string | null => {
-  const composer = piece?.composer;
-  if (!composer) return null;
-  const fromParts = [composer.first_name, composer.last_name]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
-  return composer.full_name?.trim() || fromParts || null;
-};
-
-/** Joins the secondary meta line (composer · voicing · duration), skipping blanks. */
-const buildMetaLine = (piece: Piece | undefined, t: TFunction): string => {
-  const parts = [
-    getComposerName(piece),
-    piece?.voicing?.trim() || null,
-    formatPieceDuration(piece?.estimated_duration, t),
-  ].filter((part): part is string => Boolean(part));
-  return parts.join(" · ");
-};
-
-/**
- * Compact readiness strip: how much of the cast reported "I know my part"
- * (sage) vs "practising" (gold) from chorister self-reports in the Songbook.
- */
-function ReadinessStrip({
-  readiness,
-  t,
-}: {
-  readiness: ProjectReadinessSummaryEntry;
-  t: TFunction;
-}): React.JSX.Element | null {
-  if (readiness.total_cast === 0) return null;
-
-  const readyPct = (readiness.ready / readiness.total_cast) * 100;
-  const practisingPct = (readiness.in_progress / readiness.total_cast) * 100;
-  const tooltip = t(
-    "projects.program.readiness.tooltip",
-    "Gotowość zespołu — zna partię: {{ready}}, ćwiczy: {{practising}}, nie zaczęło: {{untouched}}",
-    {
-      ready: readiness.ready,
-      practising: readiness.in_progress,
-      untouched: readiness.not_started,
-    },
-  );
-
-  return (
-    <div className="mt-1 flex items-center gap-1.5" title={tooltip}>
-      <div className="flex h-1 w-24 overflow-hidden rounded-full bg-ethereal-marble/90">
-        <div
-          className="h-full bg-ethereal-sage"
-          style={{ width: `${readyPct}%` }}
-        />
-        <div
-          className="h-full bg-ethereal-gold/70"
-          style={{ width: `${practisingPct}%` }}
-        />
-      </div>
-      <span className="text-[10px] font-semibold tabular-nums text-ethereal-graphite/60">
-        {t("projects.program.readiness.count", "{{ready}}/{{total}} zna partię", {
-          ready: readiness.ready,
-          total: readiness.total_cast,
-        })}
-      </span>
-    </div>
-  );
-}
-
-interface SortablePieceItemProps {
-  item: ProgramTabItem;
-  index: number;
-  pieceObj?: Piece;
-  readiness?: ProjectReadinessSummaryEntry;
-  onToggleEncore: (item: ProgramTabItem) => void;
-  onDelete: (id: string) => void;
-  t: TFunction;
-}
-
-function SortablePieceItem({
-  item,
-  index,
-  pieceObj,
-  readiness,
-  onToggleEncore,
-  onDelete,
-  t,
-}: SortablePieceItemProps): React.JSX.Element {
-  const safeId = item.id || `program-item-${item.piece}-${index}`;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: safeId });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 10 : 1,
-  };
-
-  const meta = buildMetaLine(pieceObj, t);
-
-  return (
-    <div ref={setNodeRef} style={style}>
-      <div
-        className={cn(
-          "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
-          isDragging
-            ? "border-ethereal-gold/40 bg-ethereal-marble shadow-glass-ethereal-hover"
-            : item.is_encore
-              ? "border-ethereal-amethyst/25 bg-ethereal-amethyst/5"
-              : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
-        )}
-      >
-        <div
-          {...attributes}
-          {...listeners}
-          className="flex shrink-0 cursor-grab items-center gap-2 self-stretch outline-none active:cursor-grabbing"
-          aria-label={t(
-            "projects.program.actions.drag_aria",
-            "Przeciągnij utwór {{title}}",
-            { title: item.piece_title },
-          )}
-        >
-          <GripVertical
-            size={14}
-            className="text-ethereal-graphite/30 transition-colors group-hover:text-ethereal-gold"
-            aria-hidden="true"
-          />
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-chip border border-hairline-strong bg-ethereal-alabaster text-[10px] font-bold tabular-nums text-ethereal-gold">
-            {index + 1}
-          </span>
-        </div>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-w-0 items-center gap-2">
-            <Text
-              size="sm"
-              weight="semibold"
-              color={item.is_encore ? "amethyst" : "default"}
-              truncate
-              className={item.is_encore ? "italic" : ""}
-            >
-              {item.piece_title}
-            </Text>
-            {item.is_encore && (
-              <Badge variant="amethyst">
-                {t("projects.program.badges.encore", "BIS")}
-              </Badge>
-            )}
-          </div>
-          {meta && (
-            <Text as="span" size="xs" color="muted" truncate className="mt-0.5">
-              {meta}
-            </Text>
-          )}
-          {readiness && <ReadinessStrip readiness={readiness} t={t} />}
-        </div>
-
-        <div className="flex shrink-0 items-center">
-          <Button
-            type="button"
-            variant="icon"
-            size="icon"
-            onClick={() => onToggleEncore(item)}
-            className={cn(
-              "h-8 w-8",
-              item.is_encore
-                ? "text-ethereal-amethyst"
-                : "text-ethereal-graphite/40 hover:text-ethereal-amethyst",
-            )}
-            title={
-              item.is_encore
-                ? t("projects.program.actions.remove_encore", "Usuń jako BIS")
-                : t("projects.program.actions.add_encore", "Oznacz jako BIS")
-            }
-            aria-label={
-              item.is_encore
-                ? t("projects.program.actions.remove_encore", "Usuń jako BIS")
-                : t("projects.program.actions.add_encore", "Oznacz jako BIS")
-            }
-          >
-            <Star
-              size={14}
-              className={item.is_encore ? "fill-ethereal-amethyst" : ""}
-              aria-hidden="true"
-            />
-          </Button>
-          <Button
-            type="button"
-            variant="icon"
-            size="icon"
-            onClick={() => onDelete(safeId)}
-            className="h-8 w-8 text-ethereal-graphite/40 hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-            title={t(
-              "projects.program.actions.remove_from_program",
-              "Usuń z programu",
-            )}
-            aria-label={t(
-              "projects.program.actions.remove_from_program",
-              "Usuń z programu",
-            )}
-          >
-            <Trash2 size={14} aria-hidden="true" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export const ProgramTab = ({
   projectId,
@@ -325,11 +79,13 @@ export const ProgramTab = ({
   const { t } = useTranslation();
   const {
     programItems,
+    isLoading,
     isSaving,
     isDirty,
     searchQuery,
     setSearchQuery,
     totalConcertDurationSeconds,
+    untimedPieceCount,
     addedPieceIds,
     filteredPieces,
     pieces,
@@ -353,6 +109,19 @@ export const ProgramTab = ({
     [readinessSummary],
   );
 
+  const pieceById = React.useMemo(
+    () => new Map(pieces.map((piece) => [String(piece.id), piece])),
+    [pieces],
+  );
+
+  const sortableIds = React.useMemo(
+    () =>
+      programItems.map(
+        (item, index) => item.id || `program-item-${item.piece}-${index}`,
+      ),
+    [programItems],
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, {
@@ -360,109 +129,140 @@ export const ProgramTab = ({
     }),
   );
 
+  const totalDurationLabel = formatTotalDuration(
+    totalConcertDurationSeconds,
+    t,
+  );
+
+  if (isLoading) {
+    return (
+      <TabLoadingCard
+        icon={<ListOrdered size={15} aria-hidden="true" />}
+        title={t("projects.program.sections.setlist", "Setlista wydarzenia")}
+      />
+    );
+  }
+
   return (
     <div className="relative grid w-full grid-cols-1 gap-5 pb-24 lg:grid-cols-5 lg:items-start">
       <EditorActionBar
         isOpen={isDirty}
         description={t(
           "projects.program.fab.description",
-          "Zmodyfikowałeś kolejność programu.",
+          "Zmieniono kolejność programu.",
         )}
         onCancel={handleCancel}
         onConfirm={handleSaveChanges}
         isLoading={isSaving}
       />
 
-      {/* ── Setlist ───────────────────────────────────────────────────────── */}
+      {/* ── The running order ─────────────────────────────────────────────── */}
       <SectionCard
         as="h2"
         scroll
         className="max-h-[70dvh] lg:col-span-3"
+        bodyClassName="p-0"
         icon={<ListOrdered size={15} aria-hidden="true" />}
         title={t("projects.program.sections.setlist", "Setlista wydarzenia")}
-        action={
-          <div className="flex items-center gap-2">
-            <Badge variant="neutral">
-              {t("projects.program.badges.tracks_count", "Utworów: {{count}}", {
-                count: programItems.length,
-              })}
-            </Badge>
-            {totalConcertDurationSeconds > 0 && (
-              <Badge variant="brand" icon={<Clock size={12} aria-hidden="true" />}>
-                {formatTotalDuration(totalConcertDurationSeconds, t)}
-              </Badge>
-            )}
-          </div>
+        footer={
+          programItems.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <Eyebrow as="span" color="muted">
+                {t("projects.program.footer.pieces", "{{count}} utworów", {
+                  count: programItems.length,
+                })}
+              </Eyebrow>
+              {totalDurationLabel && (
+                <span className="inline-flex items-center gap-1.5 text-ethereal-graphite/60">
+                  <Music size={12} aria-hidden="true" className="shrink-0" />
+                  <Eyebrow as="span" color="inherit">
+                    {totalDurationLabel}
+                  </Eyebrow>
+                </span>
+              )}
+              {untimedPieceCount > 0 && (
+                <Eyebrow as="span" color="gold">
+                  {t(
+                    "projects.program.footer.untimed",
+                    "{{count}} bez podanego czasu",
+                    { count: untimedPieceCount },
+                  )}
+                </Eyebrow>
+              )}
+            </div>
+          ) : undefined
         }
       >
         {programItems.length > 0 ? (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={sortableIds}
+              strategy={verticalListSortingStrategy}
             >
-              <SortableContext
-                items={programItems.map(
-                  (item, index) =>
-                    item.id || `program-item-${item.piece}-${index}`,
-                )}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {programItems.map((item, index) => {
-                    const pieceObj = pieces.find(
-                      (p) => String(p.id) === String(item.piece_id || item.piece),
-                    );
-                    const safeId =
-                      item.id || `program-item-${item.piece}-${index}`;
-                    return (
-                      <SortablePieceItem
-                        key={safeId}
-                        item={item}
-                        index={index}
-                        pieceObj={pieceObj}
-                        readiness={readinessByPiece.get(
-                          String(item.piece_id || item.piece),
-                        )}
-                        onToggleEncore={handleToggleEncore}
-                        onDelete={handleDeleteItem}
-                        t={t}
-                      />
-                    );
-                  })}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-              <Music size={28} className="text-ethereal-incense/30" aria-hidden="true" />
-              <Eyebrow color="muted">
-                {t("projects.program.empty.setlist_title", "Setlista jest pusta")}
-              </Eyebrow>
-              <Text size="sm" color="muted" className="max-w-xs">
-                {t(
-                  "projects.program.empty.setlist_desc",
-                  "Wybierz kompozycje z bazy obok, aby zbudować program koncertu.",
-                )}
-              </Text>
-            </div>
-          )}
+              <ul className="divide-y divide-hairline">
+                {programItems.map((item, index) => {
+                  const piece = pieceById.get(
+                    String(item.piece_id || item.piece),
+                  );
+                  return (
+                    <SetlistRow
+                      key={sortableIds[index]}
+                      item={item}
+                      sortableId={sortableIds[index]}
+                      position={index + 1}
+                      meta={buildPieceMeta(piece)}
+                      durationSeconds={piece?.estimated_duration}
+                      readiness={readinessByPiece.get(
+                        String(item.piece_id || item.piece),
+                      )}
+                      onToggleEncore={handleToggleEncore}
+                      onDelete={handleDeleteItem}
+                    />
+                  );
+                })}
+              </ul>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <StatePanel
+            variant="inline"
+            className="px-5 py-10"
+            icon={<Music size={26} aria-hidden="true" />}
+            title={t(
+              "projects.program.empty.setlist_title",
+              "Setlista jest pusta",
+            )}
+            description={t(
+              "projects.program.empty.setlist_desc",
+              "Wybierz kompozycje z bazy, aby zbudować program koncertu.",
+            )}
+          />
+        )}
       </SectionCard>
 
-      {/*── Composition database (sticky on desktop) ──────────────────────── */}
+      {/* ── The archive to draw from (pinned on desktop) ──────────────────── */}
       <SectionCard
         as="h2"
         scroll
         className="max-h-[70dvh] lg:col-span-2 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-9rem)]"
-        bodyClassName="space-y-2 pt-4"
+        bodyClassName="p-0 pt-2"
         icon={<Library size={15} aria-hidden="true" />}
         title={t("projects.program.sections.database", "Baza kompozycji")}
+        action={<Badge variant="neutral">{filteredPieces.length}</Badge>}
         toolbar={
           <Input
             type="text"
             placeholder={t(
               "projects.program.search.placeholder",
-              "Szukaj utworu...",
+              "Szukaj utworu lub kompozytora...",
+            )}
+            aria-label={t(
+              "projects.program.search.placeholder",
+              "Szukaj utworu lub kompozytora...",
             )}
             value={searchQuery || ""}
             onChange={(event) => setSearchQuery(event.target.value)}
@@ -470,80 +270,38 @@ export const ProgramTab = ({
           />
         }
       >
-          {filteredPieces.length > 0 ? (
-            filteredPieces.map((piece, index) => {
-              const safePieceId = piece.id || `db-piece-${index}`;
-              const isAdded = addedPieceIds.includes(String(piece.id));
-              const meta = buildMetaLine(piece, t);
-
+        {filteredPieces.length > 0 ? (
+          <ul className="divide-y divide-hairline">
+            {filteredPieces.map((piece, index) => {
+              const pieceId = String(piece.id);
               return (
-                <div
-                  key={safePieceId}
-                  className={cn(
-                    "group flex items-center gap-2.5 rounded-control border px-2.5 py-2 transition-colors",
-                    isAdded
-                      ? "border-hairline bg-ethereal-alabaster/40 opacity-60"
-                      : "border-hairline bg-ethereal-marble hover:border-ethereal-gold/30",
+                <PickerRow
+                  key={piece.id || `db-piece-${index}`}
+                  title={piece.title}
+                  meta={buildPieceMeta(piece)}
+                  trailing={<DurationCell seconds={piece.estimated_duration} />}
+                  isTaken={addedPieceIds.includes(pieceId)}
+                  onPick={() => void handleAddPiece(pieceId)}
+                  pickLabel={t(
+                    "projects.program.actions.add",
+                    "Dodaj do programu",
                   )}
-                >
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <Text
-                      size="sm"
-                      weight="semibold"
-                      color={isAdded ? "muted" : "default"}
-                      truncate
-                      className={isAdded ? "line-through" : ""}
-                    >
-                      {piece.title}
-                    </Text>
-                    {meta && (
-                      <Text as="span" size="xs" color="muted" truncate className="mt-0.5">
-                        {meta}
-                      </Text>
-                    )}
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant={isAdded ? "ghost" : "secondary"}
-                    size="icon"
-                    disabled={isAdded}
-                    onClick={() => handleAddPiece(String(piece.id))}
-                    className="h-8 w-8 shrink-0"
-                    title={
-                      isAdded
-                        ? t(
-                            "projects.program.actions.already_added",
-                            "Utwór jest już na setliście",
-                          )
-                        : t("projects.program.actions.add", "Dodaj do programu")
-                    }
-                    aria-label={t(
-                      "projects.program.actions.add",
-                      "Dodaj do programu",
-                    )}
-                  >
-                    {isAdded ? (
-                      <CheckCircle2 size={15} aria-hidden="true" />
-                    ) : (
-                      <Plus size={15} aria-hidden="true" />
-                    )}
-                  </Button>
-                </div>
+                  takenLabel={t(
+                    "projects.program.actions.already_added",
+                    "Utwór jest już na setliście",
+                  )}
+                />
               );
-            })
-          ) : (
-            <div className="flex flex-col items-center py-12 text-center">
-              <Search
-                size={28}
-                className="mb-3 text-ethereal-graphite/30"
-                aria-hidden="true"
-              />
-              <Eyebrow color="muted">
-                {t("projects.program.empty.no_results", "Brak wyników")}
-              </Eyebrow>
-            </div>
-          )}
+            })}
+          </ul>
+        ) : (
+          <StatePanel
+            variant="inline"
+            className="px-5 py-10"
+            icon={<Search size={24} aria-hidden="true" />}
+            title={t("projects.program.empty.no_results", "Brak wyników")}
+          />
+        )}
       </SectionCard>
     </div>
   );

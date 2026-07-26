@@ -20,7 +20,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import { toastApiError } from "@/shared/api/errors";
+import { foldDiacritics } from "@/shared/lib/text";
 import type { Piece, ProgramItem } from "@/shared/types";
+import { getComposerName } from "../../lib/pieceLabels";
 import {
   projectKeys,
   useCreateProgramItem,
@@ -34,11 +36,24 @@ import type { ProgramTabItem } from "../types";
 
 export interface UseProgramTabResult {
   programItems: ProgramTabItem[];
+  /**
+   * The setlist and the piece dictionary are still in flight. The tab has to
+   * hold its empty state until both land — "the programme is empty" is a claim
+   * about the concert, and on a cold cache it would be made before anything
+   * was known.
+   */
+  isLoading: boolean;
   isSaving: boolean;
   isDirty: boolean;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
   totalConcertDurationSeconds: number;
+  /**
+   * Pieces on the setlist the archive gives no duration for. The running total
+   * silently skips them, so a programme half of which is unmeasured still
+   * prints a confident "~ 35 min" — the count is what makes that honest.
+   */
+  untimedPieceCount: number;
   addedPieceIds: string[];
   filteredPieces: Piece[];
   pieces: Piece[];
@@ -92,13 +107,17 @@ export const useProgramTab = (
 
   useEffect(() => {
     setProgramItems(
-      fetchedProgram.map((programItem) => normalizeProgramItem(programItem, pieces)),
+      fetchedProgram.map((programItem) =>
+        normalizeProgramItem(programItem, pieces),
+      ),
     );
   }, [fetchedProgram, pieces]);
 
   const isDirty = useMemo(() => {
     const currentOrderIds = programItems.map((item) => item.id).join(",");
-    const originalOrderIds = fetchedProgram.map((item) => String(item.id)).join(",");
+    const originalOrderIds = fetchedProgram
+      .map((item) => String(item.id))
+      .join(",");
     return currentOrderIds !== originalOrderIds;
   }, [fetchedProgram, programItems]);
 
@@ -110,9 +129,23 @@ export const useProgramTab = (
     () =>
       programItems.reduce((sum, item) => {
         const pieceId = item.piece_id ?? item.piece;
-        const piece = pieces.find((candidate) => String(candidate.id) === pieceId);
+        const piece = pieces.find(
+          (candidate) => String(candidate.id) === pieceId,
+        );
         return sum + (piece?.estimated_duration || 0);
       }, 0),
+    [pieces, programItems],
+  );
+
+  const untimedPieceCount = useMemo(
+    () =>
+      programItems.filter((item) => {
+        const pieceId = item.piece_id ?? item.piece;
+        const piece = pieces.find(
+          (candidate) => String(candidate.id) === pieceId,
+        );
+        return !piece?.estimated_duration;
+      }).length,
     [pieces, programItems],
   );
 
@@ -122,14 +155,19 @@ export const useProgramTab = (
   );
 
   const filteredPieces = useMemo(() => {
-    if (!searchQuery) {
+    const query = foldDiacritics(searchQuery.trim());
+
+    if (!query) {
       return pieces;
     }
 
-    const normalizedQuery = searchQuery.toLowerCase();
-
+    // The composer is half of how a piece is named out loud ("that Mozart"),
+    // and it is already on the row — searching only the title made the visible
+    // second line unsearchable.
     return pieces.filter((piece) =>
-      piece.title.toLowerCase().includes(normalizedQuery),
+      foldDiacritics(`${piece.title} ${getComposerName(piece) ?? ""}`).includes(
+        query,
+      ),
     );
   }, [pieces, searchQuery]);
 
@@ -244,7 +282,9 @@ export const useProgramTab = (
 
   const handleCancel = (): void => {
     setProgramItems(
-      fetchedProgram.map((programItem) => normalizeProgramItem(programItem, pieces)),
+      fetchedProgram.map((programItem) =>
+        normalizeProgramItem(programItem, pieces),
+      ),
     );
   };
 
@@ -272,7 +312,8 @@ export const useProgramTab = (
 
       const sortedByTargetOrder = [...items].sort(
         (left, right) =>
-          (targetOrderById.get(left.id) ?? 0) - (targetOrderById.get(right.id) ?? 0),
+          (targetOrderById.get(left.id) ?? 0) -
+          (targetOrderById.get(right.id) ?? 0),
       );
 
       for (const item of sortedByTargetOrder) {
@@ -293,7 +334,10 @@ export const useProgramTab = (
       }));
 
       const originalById = new Map(
-        fetchedProgram.map((programItem) => [String(programItem.id), programItem]),
+        fetchedProgram.map((programItem) => [
+          String(programItem.id),
+          programItem,
+        ]),
       );
       const targetOrderById = new Map(
         reorderedItems.map((item) => [item.id, item.order]),
@@ -352,7 +396,10 @@ export const useProgramTab = (
         order: index + 1,
       }));
       const originalById = new Map(
-        fetchedProgram.map((programItem) => [String(programItem.id), programItem]),
+        fetchedProgram.map((programItem) => [
+          String(programItem.id),
+          programItem,
+        ]),
       );
       const changedItems = reorderedItems.filter((item) => {
         const originalItem = originalById.get(item.id);
@@ -403,11 +450,13 @@ export const useProgramTab = (
 
   return {
     programItems,
+    isLoading: projectPiecesQuery.isLoading || projectProgramQuery.isLoading,
     isSaving,
     isDirty,
     searchQuery,
     setSearchQuery,
     totalConcertDurationSeconds,
+    untimedPieceCount,
     addedPieceIds,
     filteredPieces,
     pieces,
