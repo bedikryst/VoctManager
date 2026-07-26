@@ -1,56 +1,76 @@
 # Project Hub — design remediation
 
-Status: **Phase 0 SHIPPED** (2026-07-25) · **Phase 1: Przegląd SHIPPED** (2026-07-26) ·
-**Próby SHIPPED** (2026-07-26) · **Divisi SHIPPED** (2026-07-26) ·
-**Partytura SHIPPED** (2026-07-26) · **Szczegóły SHIPPED** (2026-07-26) ·
-**Program + Obsada SHIPPED** (2026-07-26) · **Frekwencja SHIPPED** (2026-07-26) ·
-**Ekipa + Budżet SHIPPED** (2026-07-26) — **Phase 1 complete** ·
-**Phase 2: §5.1–§5.3 SHIPPED** (2026-07-26) ·
-Written 2026-07-25 ·
-Surface under review: `/panel/projects/:id/*` (hub shell + 10 tabs), plus the shared primitives
-it exposes.
+**Phase 0, all ten Phase 1 tab passes and Phase 2 §5.1–§5.3 are SHIPPED** (2026-07-25 → 2026-07-26).
+Written 2026-07-25 · surface: `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared
+primitives it exposes.
 
-Decision D3 was taken as recommended: the `Select` migration covered the primitive plus
-`features/projects` in Phase 0, the remaining 17 files in Phase 2 (§5.2). **D2 is settled the other
-way** — the native date/time pickers were not accepted; `shared/ui/composites/DateTimeField` was
-built (Radix Popover on a pointer, the same panel in a `BottomSheet` on touch, keyboard-typed HH/MM
-segments, rehearsal/concert markers on the calendar), and there is no `type="date"`,
-`type="time"` or `type="datetime-local"` left anywhere in the tree.
+## How to read this file
 
-**D1 did NOT land as written here.** Display figures stayed serif — the `metric` typography
-variant is `font-serif lining-nums`, and `tabular-nums` is deliberately absent (Cormorant pads
-every tabular digit to a uniform 491/1000 advance, which opens visible gaps around the narrow
-ones). What made `15` read as `I5` was the OLDSTYLE default figure set plus `font-light`, not the
-family; `lnum` at weight 400 fixed it without flattening the panel's voice. Sans + `tabular-nums`
-is reserved for figures that genuinely align down a column — ledgers, the attendance matrix, the
-clock. Do not re-propose moving metrics to Inter.
+**Everything below "## 1. Diagnosis" is a RECORD, not a plan** — what each pass found, what it
+declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
-**Phase 0 is done — §3 below is now a record, not a plan.** What actually landed, measured over
-`shared/ui` + `features/projects`: raw uppercase micro-labels 84 → 10 (all remaining are dense
-in-chip markers, deliberately left to the tab passes); raw `rounded-*` steps → 0; ad-hoc ink
-hairlines → 0 in card chrome; hand-rolled card headers 13 → 0; native `<select>` in projects → 0.
-Two defects from §1.7 were fixed on the way (the `DualTimeDisplay` orientation bug and its
-false timezone comparison); §1.7-3, the Divisi count/list desync, was deliberately left to the
-Divisi pass, because fixing it meant deciding what to render for a participation with no artist
-record — see §4 for what that turned out to be.
+- **Doing a design pass anywhere in the panel?** The rules this project produced were promoted into
+  `.ai/04_design_system.md` — that is the canon, and it is 12 KB. Read it, plus the two short
+  sections below.
+- **Picking up the remaining work?** Everything open is listed below. §5.4 no longer duplicates it.
+- **Reading the record?** Only when you need the reasoning behind a specific tab's shape — e.g.
+  before re-proposing something a pass already declined. Jump to the tab's section in §4.
 
-Also fixed while in the files: `projects.rehearsals.form.location_placeholder` read
-"np. Sala 102, Akademia" — an input hint used as a listbox placeholder — now "Wybierz salę"
-in all three locales.
+## Still open
 
-This is a **staged plan, not a line-exact spec**. Read the code, disagree where the code says
+- **`Input` and `Textarea` still hand-roll the field surface** instead of drawing from `fieldShell`
+  — three copies of one recipe. Deliberate: every form in the product sits on it, so it wants its
+  own pass with the developer's eyes on the result.
+- **`Badge` and `StatusBadge` are two components for one job.** Their type is unified; their shapes
+  (tag vs pill) and glow still differ. Decide whether that distinction earns two components.
+- **~75 raw uppercase micro-labels outside the Phase 0 scope**, measured 2026-07-26: archive 21,
+  auth 12, dashboard 7, artists 6, contracts 5, notifications 4, logistics 4, materials 3,
+  annotations 3, settings 2, crew 2, plus `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`, the
+  widest outliers left in the tree.
+- **Radius/hairline tokens are applied in `shared/ui` + `features/projects` only.** 138 raw
+  `ethereal-ink/6|8|10` remain elsewhere. This is **not** a sweep — see the note opening §5 — it
+  rides along with per-feature passes.
+- **`StatePanel` adoption outside `features/projects`**: hand-rolled centred empty states remain in
+  archive, crew, logistics and messages.
+- **The rest of `features/rehearsals` wants a copy pass.** §5.3 fixed the shared status vocabulary;
+  the module's own headings and empty states have not been read end to end. Small companion defect:
+  the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
+  a tab left open across the downbeat keeps the previous state until it remounts.
+
+Suggested split: the first two items are one chat, alone and first (they touch the primitives
+everything else sits on). The next three are per-feature passes that carry all three concerns at
+once — archive alone, then artists+crew+logistics, then settings+dashboard+notifications+contracts.
+The last is its own chat. Run them sequentially, not in parallel: they all touch the three locale
+files.
+
+## Decisions, settled
+
+- **D1 — display figures stay serif.** The `metric` variant is `font-serif lining-nums` at weight
+  400; `tabular-nums` is deliberately absent. What made `15` read as `I5` was the oldstyle figure
+  set plus `font-light`, not the family. Sans + `tabular-nums` is for figures that genuinely align
+  down a column. **Do not re-propose moving metrics to Inter.**
+- **D2 — settled against this file's original recommendation: the picker was built.**
+  `shared/ui/composites/DateTimeField` (Radix Popover on a pointer, the same panel in a
+  `BottomSheet` on touch, typed HH/MM segments, domain markers). No `type="date|time|
+  datetime-local"` remains anywhere in the tree.
+- **D3 — Select migration staged**, as recommended: primitive + `features/projects` in Phase 0, the
+  remaining 17 files in §5.2. `NativeSelect.tsx` is deleted.
+
+## The finding that shaped the project
+
+**Almost nothing here was a layout problem.** The compositions were sound — the hub, the KPI strip,
+the two-column tabs, the divisi board all held up. What read as "glued together in a hurry" was a
+small set of micro-decisions (a label, a corner, a hairline, a card header) taken slightly
+differently in every file: 16 letter-spacing values and 5 font sizes for one typographic role. The
+eye reads that as sloppiness without being able to name it. So this was an **enforcement** job, not
+a redesign — which is why the durable output is `.ai/04_design_system.md`, not this document.
+
+Two passes proved the diagnosis incomplete: Próby and Frekwencja had real structural problems
+(a flat list that should have been a runway; a grid turned ninety degrees from its data). When a
+pass finds that, say so and reorganise — but check the micro-decisions first.
+
+This was a **staged plan, not a line-exact spec**. Read the code, disagree where the code says
 something different, and update this file when you do.
-
-The finding that shapes everything below: **almost nothing here is a layout problem.** The
-compositions are sound — the hub, the KPI strip, the two-column tabs, the divisi board all hold up.
-What reads as "glued together in a hurry" is a small set of micro-decisions (a label, a corner, a
-hairline, a card header) taken slightly differently in every file. There are 16 distinct
-letter-spacing values and 5 distinct font sizes in the panel for what is one typographic role. The
-eye reads that as sloppiness without being able to name it.
-
-So this is mostly an **enforcement** job, not a redesign. `.ai/04_design_system.md` already locks
-most of the right answers; the Project Hub violates several of them, and three of the composites the
-doc points to (`StatePanel`, `MetricBlock`, `TabHeader`) are barely or never used on this surface.
 
 ---
 
@@ -216,6 +236,15 @@ Project Hub is just where it was noticed.
 ## 3. Phase 0 — Foundations (SHIPPED)
 
 Five steps. Each one mechanical; none of them changed a composition.
+
+What actually landed, measured over `shared/ui` + `features/projects`: raw uppercase micro-labels
+84 → 10 (the remainder dense in-chip markers, left to the tab passes); raw `rounded-*` steps → 0;
+ad-hoc ink hairlines → 0 in card chrome; hand-rolled card headers 13 → 0; native `<select>` in
+projects → 0. Two defects from §1.7 were fixed on the way (the `DualTimeDisplay` orientation bug and
+its false timezone comparison); §1.7-3, the count/list desync, was left to the Divisi pass, because
+fixing it meant deciding what to render for a participation with no artist record. Also fixed while
+in the files: `projects.rehearsals.form.location_placeholder` read "np. Sala 102, Akademia" — an
+input hint used as a listbox placeholder — now "Wybierz salę" in all three locales.
 
 Two things were deliberately **descoped** from what this section originally proposed:
 
@@ -1199,19 +1228,8 @@ prop.
 
 ### 5.4 Still open
 
-- **~74 raw uppercase micro-labels outside the Phase 0 scope**, plus `UserLocalClock`'s
-  `tracking-[0.4em]` / `[0.2em]` — the widest outliers left in the tree.
-- **`Badge` and `StatusBadge` are two components for one job.** Phase 0 unified their type; their
-  shapes (tag vs pill) and glow still differ. Decide whether that distinction earns two components.
-- **Radius/hairline tokens are applied in `shared/ui` + `features/projects` only** — see the note
-  at the top of this section for why the rest is not a sweep.
-- **The rest of `features/rehearsals` still wants a copy pass.** §5.3 fixed the shared status
-  vocabulary; the module's own headings and empty states have not been read end to end.
-- **`Input` still hand-rolls the field surface** instead of drawing from `fieldShell`. Three copies
-  of one recipe is how §1 started; this one is deliberate (every form in the product sits on it) and
-  wants its own pass with the developer's eyes on the result. `Textarea` is the third copy.
-- **StatePanel adoption outside `features/projects`.** Hand-rolled centred empty states remain in
-  archive, crew, logistics and messages.
+**Moved to "Still open" at the head of this file**, with the counts re-measured after the passes —
+a second copy of a list is how this document's problem started.
 
 ---
 
