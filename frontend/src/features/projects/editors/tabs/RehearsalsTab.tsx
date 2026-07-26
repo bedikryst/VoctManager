@@ -1,50 +1,59 @@
 /**
  * @file RehearsalsTab.tsx
- * @description Rehearsal-scheduling console: a compose form (left) paired with the live
- * schedule (right) so a conductor adds a session and sees it land in the calendar without
- * leaving the view. Two columns on desktop, a single stacked scroll on tablet/phone. The
- * schedule is height-capped with internal scroll so it never runs the page off the screen.
+ * @description Rehearsal-scheduling console: a compose form (left) paired with the
+ * project's runway to the concert (right), so a conductor adds a session and sees
+ * it land in the schedule without leaving the view. Two columns on desktop, a
+ * single stacked scroll on tablet/phone. The schedule is height-capped with
+ * internal scroll so it never runs the page off the screen.
+ * The form asks four things and states one (the timezone, which follows the room
+ * it was booked in); everything else it used to ask was a control competing with
+ * the only action on the card.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/RehearsalsTab
  */
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
+import { formatInTimeZone } from "date-fns-tz";
 import {
-  Calendar1,
-  Clock,
-  Edit2,
+  CalendarClock,
+  CalendarRange,
   MapPin,
   MicVocal,
-  Target,
-  Trash2,
   UserCheck,
   Users,
 } from "lucide-react";
 
 import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
 import type { RehearsalTargetType } from "../types";
+import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
 import { cn } from "@/shared/lib/utils";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Input } from "@/shared/ui/primitives/Input";
+import {
+  DateTimeField,
+  type CalendarMarker,
+} from "@/shared/ui/composites/DateTimeField";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Checkbox } from "@/shared/ui/primitives/Checkbox";
-import { LocationPreview } from "@/features/logistics/components/LocationPreview";
-import { getAvailableTimezones } from "@/shared/lib/time/timezone";
+import { TogglePill } from "../../components/TogglePill";
+import { TimezoneField } from "../../components/TimezoneField";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
-import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import {
-  getLocationLabel,
-  isPastProjectDate,
-} from "../../lib/projectPresentation";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+
+/** Weeknight rehearsals are the house pattern; the picker only proposes it. */
+const REHEARSAL_DEFAULT_TIME = "18:00";
+const DEFAULT_TIMEZONE = "Europe/Warsaw";
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -54,11 +63,10 @@ export const RehearsalsTab = ({
   projectId,
 }: RehearsalsTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const timezones = getAvailableTimezones();
 
   const {
     isSubmitting,
-    isEditing,
+    editingRehearsal,
     rehearsalToDelete,
     setRehearsalToDelete,
     isDeleting,
@@ -68,7 +76,11 @@ export const RehearsalsTab = ({
     setTargetType,
     selectedSections,
     customParticipants,
+    invitedCount,
+    project,
     projectRehearsals,
+    upcomingTimeline,
+    pastTimeline,
     projectParticipations,
     artistMap,
     locations,
@@ -81,6 +93,108 @@ export const RehearsalsTab = ({
     toggleCustomParticipant,
   } = useRehearsalsTab(projectId);
 
+  const isEditing = editingRehearsal !== null;
+
+  /**
+   * What the project already occupies, in the timezone each entry was booked
+   * in — a rehearsal stored as an instant is only "the 14th" when read back
+   * through the room's own zone.
+   */
+  const calendarMarkers = useMemo<CalendarMarker[]>(() => {
+    const markers: CalendarMarker[] = [];
+
+    if (project?.date_time) {
+      markers.push({
+        date: formatInTimeZone(
+          new Date(project.date_time),
+          project.timezone || DEFAULT_TIMEZONE,
+          "yyyy-MM-dd",
+        ),
+        tone: "gold",
+        label: t("projects.rehearsals.markers.concert", "Koncert"),
+      });
+    }
+
+    projectRehearsals.forEach((rehearsal) => {
+      // The session being edited is the one moving; marking its current day
+      // would read as a clash with itself.
+      if (editingRehearsal && rehearsal.id === editingRehearsal.id) {
+        return;
+      }
+
+      markers.push({
+        date: formatInTimeZone(
+          new Date(rehearsal.date_time),
+          rehearsal.timezone || DEFAULT_TIMEZONE,
+          "yyyy-MM-dd",
+        ),
+        tone: "sage",
+        label: t("projects.rehearsals.markers.rehearsal", "Próba"),
+      });
+    });
+
+    return markers;
+  }, [editingRehearsal, project?.date_time, project?.timezone, projectRehearsals, t]);
+
+  const targetOptions: readonly SegmentedTabItem<RehearsalTargetType>[] = [
+    {
+      id: "TUTTI",
+      label: t("projects.rehearsals.form.type_tutti", "Tutti"),
+      Icon: Users,
+    },
+    {
+      id: "SECTIONAL",
+      label: t("projects.rehearsals.form.type_sectional", "Sekcyjna"),
+      Icon: MicVocal,
+    },
+    {
+      id: "CUSTOM",
+      label: t("projects.rehearsals.form.type_custom", "Wybrani"),
+      Icon: UserCheck,
+    },
+  ];
+
+  const voiceSections = [
+    { id: "S", label: t("projects.rehearsals.voices.sopranos", "Soprany") },
+    { id: "A", label: t("projects.rehearsals.voices.altos", "Alty") },
+    { id: "T", label: t("projects.rehearsals.voices.tenors", "Tenory") },
+    { id: "B", label: t("projects.rehearsals.voices.basses", "Basy") },
+  ];
+
+  const nextUpcomingKey = upcomingTimeline.find(
+    (entry) => entry.rehearsal !== null,
+  )?.key;
+
+  const concertTitle = project?.title ?? "";
+
+  const renderTimeline = (
+    entries: typeof upcomingTimeline,
+    isPast: boolean,
+  ): React.JSX.Element => (
+    <ul className="divide-y divide-hairline">
+      {entries.map((entry) => (
+        <RehearsalTimelineRow
+          key={entry.key}
+          entry={entry}
+          castSize={projectParticipations.length}
+          isNext={!isPast && entry.key === nextUpcomingKey}
+          isEditing={
+            entry.rehearsal !== null &&
+            entry.key === String(editingRehearsal?.id)
+          }
+          isPast={isPast}
+          concertTitle={concertTitle}
+          onEdit={() => {
+            if (entry.rehearsal) handleEditClick(entry.rehearsal);
+          }}
+          onDelete={() => {
+            if (entry.rehearsal) handleDeleteClick(entry.rehearsal.id);
+          }}
+        />
+      ))}
+    </ul>
+  );
+
   return (
     <>
       <div className="grid w-full grid-cols-1 gap-6 pb-12 lg:grid-cols-12 lg:items-start">
@@ -90,7 +204,7 @@ export const RehearsalsTab = ({
             as="h2"
             bodyClassName="gap-5"
             icon={
-              <Clock
+              <CalendarClock
                 size={15}
                 className={
                   isEditing ? "text-ethereal-amethyst" : "text-ethereal-gold"
@@ -103,71 +217,128 @@ export const RehearsalsTab = ({
                 ? t("projects.rehearsals.form.title_edit", "Edytuj próbę")
                 : t("projects.rehearsals.form.title", "Zaplanuj nową próbę")
             }
+            // Which session is on the bench. "Edit mode" alone is not enough
+            // when the row being edited sits in the other column.
+            action={
+              editingRehearsal ? (
+                <Badge variant="amethyst">
+                  {formatLocalizedDate(
+                    editingRehearsal.date_time,
+                    { day: "numeric", month: "short" },
+                    undefined,
+                    editingRehearsal.timezone,
+                  )}
+                </Badge>
+              ) : undefined
+            }
+            footer={
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <label className="flex cursor-pointer items-center gap-2.5 self-start rounded-control px-1.5 py-1 transition-colors hover:bg-ethereal-ink/3">
+                  <Checkbox
+                    checked={formData.is_mandatory}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        is_mandatory: event.target.checked,
+                      })
+                    }
+                    disabled={isSubmitting}
+                  />
+                  <Text as="span" size="sm" color="graphite">
+                    {t(
+                      "projects.rehearsals.form.mandatory",
+                      "Obecność obowiązkowa",
+                    )}
+                  </Text>
+                </label>
+
+                <div className="flex gap-2">
+                  {isEditing && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={handleCancelEdit}
+                      disabled={isSubmitting}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {t("common.actions.cancel", "Anuluj")}
+                    </Button>
+                  )}
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    disabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    className="flex-1 sm:flex-none"
+                  >
+                    {isEditing
+                      ? t("projects.rehearsals.form.update", "Aktualizuj")
+                      : t(
+                          "projects.rehearsals.form.submit",
+                          "Zapisz w kalendarzu",
+                        )}
+                  </Button>
+                </div>
+              </div>
+            }
           >
-            <Input
+            <DateTimeField
               label={t("projects.rehearsals.form.date_time", "Data i godzina *")}
-              type="datetime-local"
               required
               value={formData.date_time}
-              onChange={(event) =>
-                setFormData({ ...formData, date_time: event.target.value })
-              }
+              onChange={(date_time) => setFormData({ ...formData, date_time })}
               disabled={isSubmitting}
+              // The runway in the other column, folded into the month itself:
+              // what the conductor needs while picking a date is which days the
+              // project already occupies.
+              markers={calendarMarkers}
+              defaultTime={REHEARSAL_DEFAULT_TIME}
             />
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <Select
-                label={t("projects.rehearsals.form.timezone", "Strefa czasowa *")}
-                required
-                value={formData.timezone}
-                onValueChange={(timezone) =>
-                  setFormData({ ...formData, timezone })
-                }
-                disabled={isSubmitting}
-                options={timezones.map((timezone) => ({
-                  value: timezone,
-                  label: timezone.replace(/_/g, " "),
-                }))}
-              />
+            <Select
+              label={t("projects.rehearsals.form.location", "Sala próby *")}
+              required
+              leftIcon={<MapPin aria-hidden="true" />}
+              value={formData.location_id}
+              onValueChange={(nextLocationId) => {
+                const selectedLocation =
+                  locations.find(
+                    (location) => String(location.id) === nextLocationId,
+                  ) ?? null;
 
-              <Select
-                label={t("projects.rehearsals.form.location", "Lokalizacja *")}
-                required
-                value={formData.location_id}
-                onValueChange={(nextLocationId) => {
-                  const selectedLocation =
-                    locations.find(
-                      (location) => String(location.id) === nextLocationId,
-                    ) ?? null;
+                setFormData({
+                  ...formData,
+                  location_id: nextLocationId,
+                  timezone: selectedLocation?.timezone ?? formData.timezone,
+                });
+              }}
+              disabled={isSubmitting}
+              placeholder={t(
+                "projects.rehearsals.form.location_placeholder",
+                "Wybierz salę",
+              )}
+              options={locations.map((location) => ({
+                value: String(location.id),
+                label: location.name,
+              }))}
+            />
 
-                  setFormData({
-                    ...formData,
-                    location_id: nextLocationId,
-                    timezone: selectedLocation?.timezone ?? formData.timezone,
-                  });
-                }}
-                disabled={isSubmitting}
-                placeholder={t(
-                  "projects.rehearsals.form.location_placeholder",
-                  "Wybierz lokalizację",
-                )}
-                options={locations.map((location) => ({
-                  value: String(location.id),
-                  label: location.name,
-                }))}
-              />
-            </div>
+            <TimezoneField
+              timezone={formData.timezone}
+              onChange={(timezone) => setFormData({ ...formData, timezone })}
+              disabled={isSubmitting}
+            />
 
             <Textarea
               label={t(
                 "projects.rehearsals.form.focus",
-                "Plan próby / repertuar (Focus)",
+                "Plan próby / repertuar",
               )}
-              rows={2}
+              rows={3}
               value={formData.focus}
               placeholder={t(
                 "projects.rehearsals.form.focus_placeholder",
-                "np. Requiem cz. 1-3",
+                "np. Requiem cz. 1–3",
               )}
               onChange={(event) =>
                 setFormData({ ...formData, focus: event.target.value })
@@ -175,97 +346,62 @@ export const RehearsalsTab = ({
               disabled={isSubmitting}
             />
 
-            <GlassCard
-              variant="light"
-              padding="sm"
-              isHoverable={false}
-              className="overflow-hidden"
-            >
-              <Eyebrow color="muted" className="mb-4 ml-1">
-                {t("projects.rehearsals.form.who", "Kto jest wezwany na próbę?")}
+            {/* No second surface for this group: a card inside a card is what
+                made the form read as two stacked panels. A hairline and an
+                overline carry the same division for a tenth of the ink. */}
+            <div className="flex flex-col gap-3 border-t border-hairline pt-5">
+              <Eyebrow color="muted">
+                {t("projects.rehearsals.form.who", "Kto jest wezwany?")}
               </Eyebrow>
 
-              <div className="mb-4 flex flex-col gap-2">
-                {[
-                  {
-                    id: "TUTTI",
-                    label: t("projects.rehearsals.form.type_tutti", "Tutti"),
-                    icon: <Users size={14} aria-hidden="true" />,
-                  },
-                  {
-                    id: "SECTIONAL",
-                    label: t(
-                      "projects.rehearsals.form.type_sectional",
-                      "Próba sekcyjna",
-                    ),
-                    icon: <MicVocal size={14} aria-hidden="true" />,
-                  },
-                  {
-                    id: "CUSTOM",
-                    label: t(
-                      "projects.rehearsals.form.type_custom",
-                      "Wybrane osoby",
-                    ),
-                    icon: <UserCheck size={14} aria-hidden="true" />,
-                  },
-                ].map((type) => (
-                  <Button
-                    key={type.id}
-                    type="button"
-                    variant={targetType === type.id ? "primary" : "ghost"}
-                    onClick={() => setTargetType(type.id as RehearsalTargetType)}
-                    fullWidth
-                    className="justify-start"
-                    leftIcon={type.icon}
-                  >
-                    {type.label}
-                  </Button>
-                ))}
+              <SegmentedTabs
+                wrap
+                items={targetOptions}
+                value={targetType}
+                onChange={setTargetType}
+                ariaLabel={t(
+                  "projects.rehearsals.form.who",
+                  "Kto jest wezwany?",
+                )}
+              />
+
+              <div className="flex items-center gap-1.5 pl-1">
+                <Users
+                  size={12}
+                  className={cn(
+                    "shrink-0",
+                    invitedCount === 0
+                      ? "text-ethereal-gold"
+                      : "text-ethereal-graphite/40",
+                  )}
+                  aria-hidden="true"
+                />
+                <Caption color={invitedCount === 0 ? "gold" : "muted"}>
+                  {t(
+                    "projects.rehearsals.status.invited",
+                    "Wezwanych: {{count}}",
+                    { count: invitedCount },
+                  )}
+                </Caption>
               </div>
 
               <AnimatePresence mode="wait">
                 {targetType === "SECTIONAL" && (
                   <motion.div
                     key="sectional"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="flex flex-wrap gap-2 overflow-hidden border-t border-hairline pt-4"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    className="flex flex-wrap gap-2 border-t border-hairline pt-4"
                   >
-                    {[
-                      {
-                        id: "S",
-                        label: t(
-                          "projects.rehearsals.voices.sopranos",
-                          "Soprany",
-                        ),
-                      },
-                      {
-                        id: "A",
-                        label: t("projects.rehearsals.voices.altos", "Alty"),
-                      },
-                      {
-                        id: "T",
-                        label: t("projects.rehearsals.voices.tenors", "Tenory"),
-                      },
-                      {
-                        id: "B",
-                        label: t("projects.rehearsals.voices.basses", "Basy"),
-                      },
-                    ].map((section) => (
-                      <Button
+                    {voiceSections.map((section) => (
+                      <TogglePill
                         key={section.id}
-                        type="button"
-                        variant={
-                          selectedSections.includes(section.id)
-                            ? "secondary"
-                            : "ghost"
-                        }
-                        size="sm"
-                        onClick={() => toggleSection(section.id)}
-                      >
-                        {section.label}
-                      </Button>
+                        label={section.label}
+                        active={selectedSections.includes(section.id)}
+                        onChange={() => toggleSection(section.id)}
+                        disabled={isSubmitting}
+                      />
                     ))}
                   </motion.div>
                 )}
@@ -273,9 +409,9 @@ export const RehearsalsTab = ({
                 {targetType === "CUSTOM" && (
                   <motion.div
                     key="custom"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
                     className="grid max-h-50 grid-cols-1 gap-2 overflow-y-auto border-t border-hairline pr-1 pt-4 sm:grid-cols-2"
                   >
                     {projectParticipations.map((participation) => {
@@ -312,6 +448,7 @@ export const RehearsalsTab = ({
                           </Text>
                           <Eyebrow
                             as="span"
+                            size="overline-sm"
                             color={isSelected ? "gold" : "incense-muted"}
                             className="shrink-0"
                           >
@@ -327,66 +464,17 @@ export const RehearsalsTab = ({
                   </motion.div>
                 )}
               </AnimatePresence>
-            </GlassCard>
-
-            <div className="flex flex-col items-start justify-between gap-4 border-t border-hairline pt-4 md:flex-row md:items-center">
-              <label className="flex cursor-pointer items-center gap-3 rounded-control px-1 py-1.5 transition-colors hover:bg-ethereal-alabaster/60">
-                <Checkbox
-                  checked={formData.is_mandatory}
-                  onChange={(event) =>
-                    setFormData({
-                      ...formData,
-                      is_mandatory: event.target.checked,
-                    })
-                  }
-                  disabled={isSubmitting}
-                />
-                <Eyebrow color="default">
-                  {t(
-                    "projects.rehearsals.form.mandatory",
-                    "Obecność obowiązkowa",
-                  )}
-                </Eyebrow>
-              </label>
-
-              <div className="flex w-full gap-3 md:w-auto">
-                {isEditing && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleCancelEdit}
-                    disabled={isSubmitting}
-                    className="w-full md:w-auto"
-                  >
-                    {t("common.actions.cancel", "Anuluj")}
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isSubmitting}
-                  isLoading={isSubmitting}
-                  className="w-full md:w-auto"
-                >
-                  {isEditing
-                    ? t("projects.rehearsals.form.update", "Aktualizuj")
-                    : t(
-                        "projects.rehearsals.form.submit",
-                        "Zapisz w kalendarzu",
-                      )}
-                </Button>
-              </div>
             </div>
           </SectionCard>
         </form>
 
-        {/* ── Live schedule ────────────────────────────────────────────── */}
+        {/* ── The runway ───────────────────────────────────────────────── */}
         <SectionCard
           as="h2"
           scroll
           className="max-h-[78dvh] lg:col-span-7"
           bodyClassName="p-0"
-          icon={<Calendar1 size={15} aria-hidden="true" />}
+          icon={<CalendarRange size={15} aria-hidden="true" />}
           title={t("projects.rehearsals.list.title", "Harmonogram prób")}
           action={
             projectRehearsals.length > 0 ? (
@@ -394,162 +482,44 @@ export const RehearsalsTab = ({
             ) : undefined
           }
         >
-            {projectRehearsals.length > 0 ? (
-              <ul className="divide-y divide-hairline">
-                {projectRehearsals.map((rehearsal) => {
-                  const isPast = isPastProjectDate(rehearsal.date_time);
-                  const invitedCount =
-                    rehearsal.invited_participations?.length || 0;
-                  const isTutti =
-                    invitedCount === 0 ||
-                    invitedCount === projectParticipations.length;
-                  const locationLabel = getLocationLabel(rehearsal.location);
+          {projectRehearsals.length > 0 ? (
+            <>
+              {upcomingTimeline.length > 0 && (
+                <section>
+                  <TimelineGroupHeader
+                    label={t(
+                      "projects.rehearsals.list.group_upcoming",
+                      "Najbliższe",
+                    )}
+                  />
+                  {renderTimeline(upcomingTimeline, false)}
+                </section>
+              )}
 
-                  return (
-                    <li
-                      key={rehearsal.id}
-                      className={cn(
-                        "flex flex-col justify-between gap-4 p-4 transition-opacity md:flex-row md:items-start",
-                        isPast && "opacity-60",
-                      )}
-                    >
-                      <div className="flex-1 space-y-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="neutral">
-                            {formatLocalizedDate(
-                              rehearsal.date_time,
-                              { day: "numeric", month: "short" },
-                              undefined,
-                              rehearsal.timezone,
-                            )}
-                          </Badge>
-
-                          <DualTimeDisplay
-                            value={rehearsal.date_time}
-                            timeZone={rehearsal.timezone}
-                            icon={<Clock size={14} aria-hidden="true" />}
-                            orientation="row"
-                            containerClassName={cn(
-                              "rounded-chip border px-3 py-1.5",
-                              isPast
-                                ? "border-hairline-strong bg-ethereal-marble text-ethereal-graphite"
-                                : "border-ethereal-gold/25 bg-ethereal-gold/10 text-ethereal-ink",
-                            )}
-                            primaryTimeClassName="text-sm font-bold tracking-tight"
-                            localTimeClassName="ml-2 border-l border-current pl-2 text-[10px] opacity-60"
-                          />
-
-                          {isPast && (
-                            <Badge variant="neutral">
-                              {t(
-                                "projects.rehearsals.status.finished",
-                                "Zakończona",
-                              )}
-                            </Badge>
-                          )}
-
-                          <Badge variant={isTutti ? "success" : "neutral"}>
-                            {isTutti
-                              ? t("projects.rehearsals.status.tutti", "TUTTI")
-                              : t(
-                                  "projects.rehearsals.status.invited",
-                                  "Wezwanych: {{count}}",
-                                  { count: invitedCount },
-                                )}
-                          </Badge>
-
-                          {!rehearsal.is_mandatory && (
-                            <Badge variant="neutral">
-                              {t(
-                                "projects.rehearsals.status.optional",
-                                "Opcjonalna",
-                              )}
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <MapPin
-                              size={14}
-                              className="text-ethereal-graphite/40"
-                              aria-hidden="true"
-                            />
-                            {rehearsal.location ? (
-                              <LocationPreview
-                                locationRef={rehearsal.location}
-                                variant="minimal"
-                                fallback={locationLabel || undefined}
-                              />
-                            ) : (
-                              <Text size="xs" color="muted">
-                                {t("common.labels.not_available", "Brak danych")}
-                              </Text>
-                            )}
-                          </div>
-                          {rehearsal.focus && (
-                            <div className="flex items-start gap-2 pl-0.5">
-                              <Target
-                                size={14}
-                                className="mt-0.5 shrink-0 text-ethereal-gold"
-                                aria-hidden="true"
-                              />
-                              <Text size="sm" color="graphite" className="italic">
-                                {rehearsal.focus}
-                              </Text>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 items-center justify-end gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEditClick(rehearsal)}
-                          title={t("projects.rehearsals.actions.edit", "Edytuj")}
-                          aria-label={t(
-                            "projects.rehearsals.actions.edit",
-                            "Edytuj",
-                          )}
-                        >
-                          <Edit2 size={16} aria-hidden="true" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteClick(rehearsal.id)}
-                          title={t("projects.rehearsals.actions.delete", "Usuń")}
-                          aria-label={t(
-                            "projects.rehearsals.actions.delete",
-                            "Usuń",
-                          )}
-                          className="text-ethereal-crimson hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
-                        >
-                          <Trash2 size={16} aria-hidden="true" />
-                        </Button>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">
-                <Calendar1
-                  size={28}
-                  className="text-ethereal-incense/30"
-                  aria-hidden="true"
-                />
-                <Eyebrow color="muted">
-                  {t(
-                    "projects.rehearsals.empty.no_rehearsals",
-                    "Brak zaplanowanych prób",
-                  )}
-                </Eyebrow>
-              </div>
-            )}
+              {pastTimeline.length > 0 && (
+                <section>
+                  <TimelineGroupHeader
+                    label={t("projects.rehearsals.list.group_past", "Zakończone")}
+                  />
+                  {renderTimeline(pastTimeline, true)}
+                </section>
+              )}
+            </>
+          ) : (
+            <StatePanel
+              variant="inline"
+              className="px-6 py-12"
+              icon={<CalendarRange size={24} aria-hidden="true" />}
+              title={t(
+                "projects.rehearsals.empty.no_rehearsals",
+                "Brak zaplanowanych prób",
+              )}
+              description={t(
+                "projects.rehearsals.empty.no_rehearsals_desc",
+                "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą koncertu.",
+              )}
+            />
+          )}
         </SectionCard>
       </div>
 
@@ -571,3 +541,19 @@ export const RehearsalsTab = ({
     </>
   );
 };
+
+/**
+ * Sticky inside the card's own scroll region, so a long record never leaves the
+ * reader guessing which side of "now" they are looking at.
+ */
+const TimelineGroupHeader = ({
+  label,
+}: {
+  readonly label: string;
+}): React.JSX.Element => (
+  <div className="sticky top-0 z-10 border-b border-hairline bg-ethereal-alabaster/92 px-5 py-2 backdrop-blur-sm">
+    <Eyebrow size="overline-sm" color="muted">
+      {label}
+    </Eyebrow>
+  </div>
+);

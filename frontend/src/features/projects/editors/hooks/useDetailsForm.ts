@@ -3,6 +3,9 @@
  * @description Encapsulates dirty-state tracking, payload construction,
  * and optimistic form mutations for the Project Details tab.
  * Implements the Baseline State Pattern to prevent Stale Dirty State loops.
+ * The run sheet is held chronologically, but only ever re-sorted on an explicit
+ * commit — the day is a list the user types into, and reordering it under an
+ * active cursor is the one thing it must not do.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useDetailsForm
  */
@@ -27,6 +30,7 @@ import {
   useProjects,
   useUpdateProject,
 } from "../../api/project.queries";
+import { suggestRunSheetTime } from "../../lib/dayTimeline";
 import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
@@ -36,7 +40,11 @@ import type { ProjectFormData } from "../types";
 export interface UseDetailsFormResult {
   formData: ProjectFormData;
   setFormData: Dispatch<SetStateAction<ProjectFormData>>;
-  sortedRunSheet: RunSheetItem[];
+  /**
+   * Chronological, but only as of the last commit — see
+   * `handleCommitRunSheetOrder`.
+   */
+  runSheet: RunSheetItem[];
   isDirty: boolean;
   isSubmitting: boolean;
   handleAddRunSheetItem: () => void;
@@ -45,6 +53,12 @@ export interface UseDetailsFormResult {
     field: keyof RunSheetItem,
     value: string,
   ) => void;
+  /**
+   * Re-sorts the day. Bound to the time field's blur, never to its change: a
+   * half-typed hour is a valid time (typing 19 passes through 01), so sorting
+   * per keystroke threw the row being edited across the list under the cursor.
+   */
+  handleCommitRunSheetOrder: () => void;
   handleRemoveRunSheetItem: (id: string) => void;
   handleSubmit: (event: FormEvent) => Promise<void>;
 }
@@ -59,6 +73,34 @@ const normalizeRunSheetItem = (
   title: typeof item.title === "string" ? item.title : "",
   description: typeof item.description === "string" ? item.description : "",
 });
+
+const sortRunSheetByTime = (items: readonly RunSheetItem[]): RunSheetItem[] =>
+  [...items].sort((left, right) =>
+    (left.time || "").localeCompare(right.time || ""),
+  );
+
+const toComparableRunSheet = (
+  items: readonly RunSheetItem[] | null | undefined,
+): string =>
+  JSON.stringify(
+    sortRunSheetByTime(items ?? []).map((item) => ({
+      time: item.time || "",
+      title: item.title || "",
+      description: item.description || "",
+    })),
+  );
+
+const normalizeRunSheet = (
+  items: readonly RunSheetItem[] | null | undefined,
+): RunSheetItem[] => {
+  const stamp = Date.now();
+
+  return sortRunSheetByTime(
+    (items ?? []).map((item, index) =>
+      normalizeRunSheetItem(item, `runsheet-init-${index}-${stamp}`),
+    ),
+  );
+};
 
 const getProjectLocationId = (
   project: Project | null | undefined,
@@ -141,9 +183,7 @@ export const useDetailsForm = (
   });
 
   const [runSheet, setRunSheet] = useState<RunSheetItem[]>(() =>
-    (project?.run_sheet || []).map((item, index) =>
-      normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
-    ),
+    normalizeRunSheet(project?.run_sheet),
   );
 
   const resetFormToProject = useCallback((source: Project) => {
@@ -160,11 +200,7 @@ export const useDetailsForm = (
       spotify_playlist_url: source.spotify_playlist_url || "",
       description: source.description || "",
     });
-    setRunSheet(
-      (source.run_sheet || []).map((item, index) =>
-        normalizeRunSheetItem(item, `runsheet-init-${index}-${Date.now()}`),
-      ),
-    );
+    setRunSheet(normalizeRunSheet(source.run_sheet));
   }, []);
 
   useEffect(() => {
@@ -198,21 +234,11 @@ export const useDetailsForm = (
       formData.spotify_playlist_url !== (baseline.spotify_playlist_url || "") ||
       formData.description !== (baseline.description || "");
 
-    const cleanLocalRunSheet = runSheet.map((item) => ({
-      time: item.time || "",
-      title: item.title || "",
-      description: item.description || "",
-    }));
-
-    const cleanBaselineRunSheet = (baseline.run_sheet || []).map((item) => ({
-      time: item.time || "",
-      title: item.title || "",
-      description: item.description || "",
-    }));
-
+    // Compared chronologically on both sides: the form keeps the day sorted and
+    // the server does not promise to, so a purely positional diff would open
+    // the save bar on load for any project stored out of order.
     const runSheetChanged =
-      JSON.stringify(cleanLocalRunSheet) !==
-      JSON.stringify(cleanBaselineRunSheet);
+      toComparableRunSheet(runSheet) !== toComparableRunSheet(baseline.run_sheet);
 
     return basicFieldsChanged || runSheetChanged;
   }, [baseline, formData, runSheet]);
@@ -221,21 +247,26 @@ export const useDetailsForm = (
     onDirtyStateChange?.(isDirty);
   }, [isDirty, onDirtyStateChange]);
 
-  const sortedRunSheet = useMemo(
-    () => [...runSheet].sort((left, right) => left.time.localeCompare(right.time)),
-    [runSheet],
-  );
-
   const handleAddRunSheetItem = useCallback((): void => {
-    setRunSheet((previous) => [
-      ...previous,
-      {
-        id: `temp-${Date.now()}`,
-        time: "12:00",
-        title: "",
-        description: "",
-      },
-    ]);
+    setRunSheet((previous) =>
+      sortRunSheetByTime([
+        ...previous,
+        {
+          id: `temp-${Date.now()}`,
+          time: suggestRunSheetTime({
+            runSheet: previous,
+            callTime: formData.call_time,
+            concertTime: formData.date_time,
+          }),
+          title: "",
+          description: "",
+        },
+      ]),
+    );
+  }, [formData.call_time, formData.date_time]);
+
+  const handleCommitRunSheetOrder = useCallback((): void => {
+    setRunSheet((previous) => sortRunSheetByTime(previous));
   }, []);
 
   const handleUpdateRunSheetItem = useCallback(
@@ -269,7 +300,7 @@ export const useDetailsForm = (
     );
 
     try {
-      const sanitizedRunSheet = sortedRunSheet.map((item) => ({
+      const sanitizedRunSheet = sortRunSheetByTime(runSheet).map((item) => ({
         time: item.time || "",
         title: item.title || "",
         description: item.description || "",
@@ -347,12 +378,13 @@ export const useDetailsForm = (
   return {
     formData,
     setFormData,
-    sortedRunSheet,
+    runSheet,
     isDirty,
     isSubmitting:
       createProjectMutation.isPending || updateProjectMutation.isPending,
     handleAddRunSheetItem,
     handleUpdateRunSheetItem,
+    handleCommitRunSheetOrder,
     handleRemoveRunSheetItem,
     handleSubmit,
   };

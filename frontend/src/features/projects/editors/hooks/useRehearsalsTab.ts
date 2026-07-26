@@ -1,6 +1,8 @@
 /**
  * @file useRehearsalsTab.ts
- * @description Encapsulates mutation logic and state management for rehearsal scheduling.
+ * @description Mutation logic and state for rehearsal scheduling, plus the shape
+ * the tab reads: one chronological runway (rehearsals + the concert) split at
+ * "now" into what can still be acted on and what is already on the record.
  * Uses explicit location relations and timezone-safe payload construction.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useRehearsalsTab
@@ -36,12 +38,29 @@ import {
   useProjects,
   useUpdateRehearsal,
 } from "../../api/project.queries";
-import { compareProjectDateAsc } from "../../lib/projectPresentation";
+import {
+  compareProjectDateAsc,
+  isPastProjectDate,
+} from "../../lib/projectPresentation";
 import type { RehearsalFormData, RehearsalTargetType } from "../types";
+
+/**
+ * One stop on the project's runway to the concert. The concert itself rides in
+ * this list (`rehearsal: null`) rather than in a block of its own: read in
+ * order, a rehearsal that lands BELOW the concert row is visibly a planning
+ * mistake, so the ordering carries the warning and no advisory copy has to.
+ */
+export interface RehearsalTimelineEntry {
+  readonly key: string;
+  readonly at: string;
+  readonly timezone: string;
+  readonly rehearsal: Rehearsal | null;
+}
 
 export interface UseRehearsalsTabResult {
   isSubmitting: boolean;
-  isEditing: boolean;
+  /** The session the form is currently bound to — `null` means "compose new". */
+  editingRehearsal: Rehearsal | null;
   rehearsalToDelete: string | null;
   setRehearsalToDelete: Dispatch<SetStateAction<string | null>>;
   isDeleting: boolean;
@@ -51,7 +70,12 @@ export interface UseRehearsalsTabResult {
   setTargetType: Dispatch<SetStateAction<RehearsalTargetType>>;
   selectedSections: string[];
   customParticipants: string[];
+  /** How many people the current target selection actually calls, live. */
+  invitedCount: number;
+  project: Project | null;
   projectRehearsals: Rehearsal[];
+  upcomingTimeline: RehearsalTimelineEntry[];
+  pastTimeline: RehearsalTimelineEntry[];
   projectParticipations: Participation[];
   artistMap: Map<string, Artist>;
   locations: Location[];
@@ -160,6 +184,40 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     [artists],
   );
 
+  const timeline = useMemo<RehearsalTimelineEntry[]>(() => {
+    const entries: RehearsalTimelineEntry[] = projectRehearsals.map(
+      (rehearsal) => ({
+        key: String(rehearsal.id),
+        at: rehearsal.date_time,
+        timezone: rehearsal.timezone,
+        rehearsal,
+      }),
+    );
+
+    if (project?.date_time) {
+      entries.push({
+        key: "concert",
+        at: project.date_time,
+        timezone: project.timezone,
+        rehearsal: null,
+      });
+    }
+
+    return entries.sort((left, right) =>
+      compareProjectDateAsc(left.at, right.at),
+    );
+  }, [project?.date_time, project?.timezone, projectRehearsals]);
+
+  const upcomingTimeline = useMemo<RehearsalTimelineEntry[]>(
+    () => timeline.filter((entry) => !isPastProjectDate(entry.at)),
+    [timeline],
+  );
+
+  const pastTimeline = useMemo<RehearsalTimelineEntry[]>(
+    () => timeline.filter((entry) => isPastProjectDate(entry.at)),
+    [timeline],
+  );
+
   const locationMap = useMemo(
     () => new Map(locations.map((location) => [String(location.id), location])),
     [locations],
@@ -196,6 +254,14 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     selectedSections,
     targetType,
   ]);
+
+  // Recomputed with the selection so the form can state, before submitting, how
+  // many people the chosen target actually reaches — the number the conductor
+  // is really deciding on when they tick sections or names.
+  const invitedCount = useMemo(
+    () => resolveInvitedParticipants().length,
+    [resolveInvitedParticipants],
+  );
 
   const resetForm = useCallback(() => {
     setEditingRehearsalId(null);
@@ -370,7 +436,10 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
   return {
     isSubmitting:
       createRehearsalMutation.isPending || updateRehearsalMutation.isPending,
-    isEditing: editingRehearsalId !== null,
+    editingRehearsal:
+      projectRehearsals.find(
+        (rehearsal) => String(rehearsal.id) === editingRehearsalId,
+      ) ?? null,
     rehearsalToDelete,
     setRehearsalToDelete,
     isDeleting: deleteRehearsalMutation.isPending,
@@ -380,7 +449,11 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     setTargetType,
     selectedSections,
     customParticipants,
+    invitedCount,
+    project,
     projectRehearsals,
+    upcomingTimeline,
+    pastTimeline,
     projectParticipations,
     artistMap,
     locations,
