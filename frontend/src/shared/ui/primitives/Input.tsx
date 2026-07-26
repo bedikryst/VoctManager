@@ -1,45 +1,54 @@
 /**
  * @file Input.tsx
- * @description Enterprise-grade input field with integrated label and error handling.
- * Optimised for react-hook-form and Zod validation schemas. Uses Ethereal Theme tokens.
+ * @description The single-line field: `fieldShell`'s surface plus this
+ * primitive's own layout (label, icon insets, error copy). Optimised for
+ * react-hook-form and Zod validation schemas.
  * @module shared/ui/primitives/Input
  */
 
 import React, { InputHTMLAttributes, forwardRef, useId } from "react";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import {
+  fieldShellVariants,
+  type FieldShellVariantProps,
+} from "@/shared/ui/primitives/fieldShell";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
-const inputVariants = cva(
-  "w-full rounded-control text-sm transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
-  {
-    variants: {
-      variant: {
-        glass:
-          "bg-ethereal-marble/90 backdrop-blur-md border border-ethereal-gold/35 text-ethereal-ink shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] placeholder:text-ethereal-incense focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/55",
-        dark: "bg-ethereal-ink/80 backdrop-blur-xl border border-ethereal-gold/20 text-ethereal-alabaster shadow-2xl placeholder:text-ethereal-incense focus:bg-ethereal-ink focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20 hover:border-ethereal-gold/40",
-        // The transparent border is deliberate and must carry a WIDTH: without
-        // one the field is 2px shorter than its glass sibling in the same row,
-        // and `focus:border-*` has nothing to paint on. A caller wanting a
-        // resting edge (the budget ledger's underline) adds its own side.
-        ghost:
-          "bg-transparent border border-transparent text-ethereal-ink placeholder:text-ethereal-incense hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/40 focus:ring-ethereal-gold/20",
-      },
-      hasError: {
-        true: "border-ethereal-crimson bg-ethereal-crimson/5 focus:border-ethereal-crimson focus:ring-ethereal-crimson/20 text-ethereal-ink placeholder:text-ethereal-crimson/70",
-      },
-    },
-    defaultVariants: {
-      variant: "glass",
-      hasError: false,
-    },
-  },
-);
+export interface InputFieldClassesArgs extends FieldShellVariantProps {
+  readonly hasLeftIcon?: boolean;
+  readonly hasRightElement?: boolean;
+  readonly className?: string;
+}
+
+/**
+ * The class list the `<input>` element itself wears. Exported so the resolved
+ * surface can be asserted against `fieldShell` in a test instead of compared by
+ * eye — `cn()` is where a drift would actually show up.
+ *
+ * `className` is merged LAST, so a caller's layout wins over the primitive's
+ * padding (the same contract as `Select`). A padding passed in is a padding
+ * applied.
+ */
+export const inputFieldClasses = ({
+  variant,
+  hasError,
+  hasLeftIcon,
+  hasRightElement,
+  className,
+}: InputFieldClassesArgs): string =>
+  cn(
+    fieldShellVariants({ variant, hasError }),
+    // Icon padding only from sm+, since the icon itself is hidden on phones.
+    hasLeftIcon ? "pl-4 sm:pl-10" : "pl-4",
+    hasRightElement ? "pr-12" : "pr-4",
+    "py-3",
+    className,
+  );
 
 export interface InputProps
   extends
     Omit<InputHTMLAttributes<HTMLInputElement>, "variant">,
-    VariantProps<typeof inputVariants> {
+    FieldShellVariantProps {
   /** Text label displayed above the input */
   label?: string;
   /** Error message derived from validation schema */
@@ -52,13 +61,26 @@ export interface InputProps
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
-    { label, error, variant, leftIcon, rightElement, className, id, ...props },
+    {
+      label,
+      error,
+      variant,
+      hasError: hasErrorFlag,
+      leftIcon,
+      rightElement,
+      className,
+      id,
+      ...props
+    },
     ref,
   ) => {
     const internalId = useId();
     const inputId = id || internalId;
     const errorId = `${inputId}-error`;
-    const hasError = Boolean(error);
+    // A caller either hands over the message or just says the field is wrong —
+    // a form whose error copy lives beside the field (the auth screens) uses the
+    // flag, and it has to tint the field like a message would.
+    const hasError = Boolean(error) || Boolean(hasErrorFlag);
 
     return (
       <div className="flex w-full flex-col gap-1.5">
@@ -74,10 +96,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               className={cn(
                 // Hidden on phones — the icon ate ~24px of an already narrow
                 // field and the value clipped; the padding is reclaimed below.
-                // z-10: the field's backdrop-blur makes it a stacking context, and
-                // since the icon precedes it in the DOM the field's (near-opaque)
-                // background paints OVER the icon and hides it — z-10 lifts the
-                // icon back on top. pointer-events-none keeps click-to-focus.
+                // z-10: the dark variant's backdrop-blur makes the field a
+                // stacking context, and since the icon precedes it in the DOM
+                // the field's background would paint OVER it. pointer-events-none
+                // keeps click-to-focus.
                 "pointer-events-none absolute left-3 z-10 hidden items-center justify-center sm:flex",
                 // Incense reads on the dark variant but is too faint on the light
                 // fills; graphite gives the icon real contrast on desktop.
@@ -103,14 +125,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             ref={ref}
             aria-invalid={hasError}
-            aria-describedby={hasError ? errorId : undefined}
-            className={cn(
-              inputVariants({ variant, hasError, className }),
-              // Icon padding only from sm+, since the icon itself is hidden on phones.
-              leftIcon ? "pl-4 sm:pl-10" : "pl-4",
-              rightElement ? "pr-12" : "pr-4",
-              "py-3",
-            )}
+            aria-describedby={error ? errorId : undefined}
+            className={inputFieldClasses({
+              variant,
+              hasError,
+              hasLeftIcon: Boolean(leftIcon),
+              hasRightElement: Boolean(rightElement),
+              className,
+            })}
             {...props}
           />
 
@@ -126,7 +148,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
 
-        {hasError && (
+        {error && (
           <Text
             as="span"
             id={errorId}

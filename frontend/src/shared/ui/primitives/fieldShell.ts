@@ -1,11 +1,13 @@
 /**
  * @file fieldShell.ts
  * @description The surface a form control wears — fill, hairline, inner shadow,
- * focus ring — with no layout in it. Every control that is not a bare `<input>`
- * (the select trigger, the date field, the segmented clock) draws from here, so
- * a field built from a button and a field built from a listbox cannot drift into
- * two different golds. Padding, flex and typography stay at the call site: the
- * shell says what the box is made of, not how its contents are arranged.
+ * focus ring, placeholder colour — with no layout in it. Every field in the
+ * product draws from here: the bare `<input>` and `<textarea>`, the select
+ * trigger, the date field, the segmented clock. That is the point — a field
+ * built from an input and a field built from a listbox sit in the same form and
+ * cannot be allowed to drift into two different golds. Padding, flex and
+ * typography stay at the call site: the shell says what the box is made of, not
+ * how its contents are arranged.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/primitives/fieldShell
  */
@@ -13,25 +15,39 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
 export const fieldShellVariants = cva(
-  "w-full rounded-control text-sm text-ethereal-ink transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+  // `placeholder:` is inert on the controls that are not inputs (a button has no
+  // `::placeholder`); it lives here anyway so the one field that does have a
+  // placeholder cannot state its colour twice. Select's own placeholder is a
+  // Radix data-attribute and stays with its layout.
+  "w-full rounded-control text-sm text-ethereal-ink placeholder:text-ethereal-incense transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {
+        // No backdrop-blur: the fill is 90% opaque, so a blur behind it buys
+        // nothing but a compositing layer per field — the same call `GlassCard`
+        // made for its default surface.
         glass:
-          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
+          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
         solid:
           "bg-ethereal-marble border border-hairline-strong shadow-glass-solid hover:border-ethereal-gold/40 focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
         // For a field sitting ON ink — the practice dock, the viewer chrome.
-        // Byte-for-byte `Input`'s dark, so the two cannot drift into two darks.
         dark: "bg-ethereal-ink/80 backdrop-blur-xl border border-ethereal-gold/20 text-ethereal-alabaster shadow-2xl hover:border-ethereal-gold/40 focus:bg-ethereal-ink focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20",
         // The base turns the ring on for every variant; without a colour here it
         // would fall back to `currentColor` and draw a 2px ink halo round a
-        // field whose whole point is to be almost invisible at rest.
+        // field whose whole point is to be almost invisible at rest. The
+        // transparent border must carry a WIDTH, or the field is 2px shorter
+        // than its glass sibling in the same row and `focus:border-*` has
+        // nothing to paint on. A caller wanting a resting edge (the budget
+        // ledger's underline) adds its own side.
         ghost:
-          "bg-transparent border border-transparent hover:bg-ethereal-incense/10 focus:bg-ethereal-marble focus:border-ethereal-gold/40 focus:ring-ethereal-gold/20",
+          "bg-transparent border border-transparent hover:bg-ethereal-parchment/40 focus:bg-ethereal-marble/80 focus:border-ethereal-gold/40 focus:ring-ethereal-gold/20",
       },
+      // The fill is tinted and the placeholder goes crimson, but the value stays
+      // ink: what the user typed or picked is not the alarm — the border, the
+      // tint and the message under the field are. Crimson text here would also
+      // be unreadable on the dark variant.
       hasError: {
-        true: "border-ethereal-crimson bg-ethereal-crimson/5 text-ethereal-crimson focus:border-ethereal-crimson focus:ring-ethereal-crimson/20",
+        true: "border-ethereal-crimson bg-ethereal-crimson/5 placeholder:text-ethereal-crimson/70 focus:border-ethereal-crimson focus:ring-ethereal-crimson/20",
       },
     },
     defaultVariants: { variant: "glass", hasError: false },
