@@ -1,8 +1,8 @@
 # Project Hub — design remediation
 
-**Phase 0, all ten Phase 1 tab passes and Phase 2 §5.1–§5.3 are SHIPPED** (2026-07-25 → 2026-07-26).
-Written 2026-07-25 · surface: `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared
-primitives it exposes.
+**Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3 and the primitive unification (D4, D5)
+are SHIPPED** (2026-07-25 → 2026-07-26). Written 2026-07-25 · surface: `/panel/projects/:id/*`
+(hub shell + 10 tabs) and the shared primitives it exposes.
 
 ## How to read this file
 
@@ -14,34 +14,39 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   sections below.
 - **Picking up the remaining work?** Everything open is listed below. §5.4 no longer duplicates it.
 - **Reading the record?** Only when you need the reasoning behind a specific tab's shape — e.g.
-  before re-proposing something a pass already declined. Jump to the tab's section in §4.
+  before re-proposing something a pass already declined. Jump to the tab's section in §4, or to a
+  feature's section in §8.
 
 ## Still open
 
-- **`Input` and `Textarea` still hand-roll the field surface** instead of drawing from `fieldShell`
-  — three copies of one recipe. Deliberate: every form in the product sits on it, so it wants its
-  own pass with the developer's eyes on the result.
-- **`Badge` and `StatusBadge` are two components for one job.** Their type is unified; their shapes
-  (tag vs pill) and glow still differ. Decide whether that distinction earns two components.
-- **~75 raw uppercase micro-labels outside the Phase 0 scope**, measured 2026-07-26: archive 21,
-  auth 12, dashboard 7, artists 6, contracts 5, notifications 4, logistics 4, materials 3,
-  annotations 3, settings 2, crew 2, plus `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`, the
-  widest outliers left in the tree.
-- **Radius/hairline tokens are applied in `shared/ui` + `features/projects` only.** 138 raw
-  `ethereal-ink/6|8|10` remain elsewhere. This is **not** a sweep — see the note opening §5 — it
-  rides along with per-feature passes.
-- **`StatePanel` adoption outside `features/projects`**: hand-rolled centred empty states remain in
-  archive, crew, logistics and messages.
+- **~54 raw uppercase micro-labels outside the Phase 0 scope.** Measured 2026-07-26 at ~75; the
+  archive pass (§6) cleared its 21. What remains: auth 12, dashboard 7, artists 6, contracts 5,
+  notifications 4, logistics 4, materials 3, annotations 3, settings 2, crew 2, plus
+  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`, the widest outliers left in the tree.
+- **Radius/hairline tokens** are applied in `shared/ui`, `features/projects` and `features/archive`.
+  Raw `ethereal-ink/6|8|10` and neutral `ethereal-incense/1x–3x` rules remain everywhere else. This
+  is **not** a sweep — see the note opening §5 — it rides along with per-feature passes.
+- **`StatePanel` adoption outside `features/projects` + `features/archive`**: hand-rolled centred
+  empty states remain in crew, logistics and messages.
 - **The rest of `features/rehearsals` wants a copy pass.** §5.3 fixed the shared status vocabulary;
   the module's own headings and empty states have not been read end to end. Small companion defect:
   the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
   a tab left open across the downbeat keeps the previous state until it remounts.
+- **~120 dead `archive.*` i18n keys predate this work** and were left alone: the whole
+  `archive.card.*`, `archive.hero.*`, `archive.metrics.*`, `archive.tracks.*`, `archive.editor.*`
+  nodes and most of `archive.form.placeholders.*` — fossils of the pre-2026-07 panel/slide-over
+  archive. §6 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
+  remediation already has open, not to a design pass.
 
-Suggested split: the first two items are one chat, alone and first (they touch the primitives
-everything else sits on). The next three are per-feature passes that carry all three concerns at
-once — archive alone, then artists+crew+logistics, then settings+dashboard+notifications+contracts.
-The last is its own chat. Run them sequentially, not in parallel: they all touch the three locale
-files.
+Suggested split for what is left: artists+crew+logistics, then
+settings+dashboard+notifications+contracts — each a per-feature pass carrying all three concerns at
+once. Rehearsals is its own chat. Run them sequentially, not in parallel: they all touch the three
+locale files.
+
+Two companion defects found while unifying the primitives and left for the passes that own them:
+`NextRehearsalAlert`'s chip pulses unconditionally (the resting default in the loudest slot — a
+dashboard-pass call), and the contracts ledger paints a *confirmed* contract gold and a *pending*
+one sage, which reads backwards (a contracts-pass call). Both were preserved exactly as they were.
 
 ## Decisions, settled
 
@@ -55,6 +60,32 @@ files.
   datetime-local"` remains anywhere in the tree.
 - **D3 — Select migration staged**, as recommended: primitive + `features/projects` in Phase 0, the
   remaining 17 files in §5.2. `NativeSelect.tsx` is deleted.
+- **D4 — `fieldShell` is the only field surface** (2026-07-26). `Input` and `Textarea` no longer
+  carry copies of it. Every difference between the three was either lifted into the shell or
+  deleted, and `shared/ui/primitives/fieldShell.test.ts` freezes the three old recipes and asserts
+  on resolved `cn()` output that nothing else moved:
+  - LIFTED — the glass focus fill (`focus:bg-ethereal-marble`; the shell's `dark` already had one,
+    so glass lacking it was drift *inside* the shell) · the placeholder colours (inert on a button
+    or a div, but one copy beats three) · `solid`'s hover border (a hover is the surface's answer,
+    on every variant). `Input` gains `solid`, `Textarea` gains `dark`, for free.
+  - DELETED — `backdrop-blur-md` on glass: the fill is 90% opaque, so it bought a compositing layer
+    per field and nothing else — the same call `GlassCard` made · the ghost variant's second hover
+    and focus tint (`incense/10`, `marble`), keeping the pair with live callers · crimson VALUE text
+    on error: the border, the tint and the message are the alarm, and on the dark field ink-on-ink
+    was unreadable.
+  - CONTRACT — `className` now merges LAST in both, as it already did in `Select`. Three call sites
+    had layout classes that were being silently dropped and now apply: `PasswordInput`'s `pr-12`
+    (the secret no longer runs under the eye toggle) and the two ledger fee inputs' `py-2`.
+  - BUG — `Input` declared `hasError` and then ignored it (it fell through to the DOM as an unknown
+    attribute). Two settings fields asked for a crimson field and got nothing; they work now.
+- **D5 — `Badge` is the only chip** (2026-07-26). `StatusBadge.tsx` is deleted; its four call sites
+  (contracts ×3, dashboard ×2) render `Badge` with the same colours. The differences did NOT earn a
+  second component: `rounded-full` is off the radius scale, and the `0_0_12px` glows were ad-hoc
+  shadows on three of four variants. What survives is one axis, `pulse` — the light sweep, kept
+  because "this is live right now" is a real signal, and documented so it stays one. Chips are
+  ~2px tighter (the shell's `px-2.5`) and no longer blur their backdrop. `EditionStatusBadge` was
+  the third copy of the chip (a fourth tracking value at `0.18em`) and now composes `Badge` too;
+  its ready/failed tones shift by one alpha step to the shared tones.
 
 ## The finding that shaped the project
 
@@ -1284,3 +1315,70 @@ a second copy of a list is how this document's problem started.
   the routing semantics (`NavLink` + `end`) — do not convert it to a controlled tablist.
 - **The Windows checkout is CRLF**: ruff-style import-order noise has a frontend analogue in
   spurious whole-file diffs. Keep sweeps mechanical and per-commit so review stays possible.
+
+---
+
+## 8. Phase 3 — per-feature passes
+
+Each of these carries all three concerns at once (raw overlines, `StatePanel`, radius/hairline
+tokens) over one feature, read screen by screen rather than swept by regex. They run sequentially:
+they all touch the same three locale files.
+
+### `features/archive` (SHIPPED 2026-07-27)
+
+Biggest single debt in the tree at the 2026-07-26 measurement: 21 raw overlines, zero radius or
+hairline tokens, hand-rolled empty states. All 21 are gone, both empty states are `StatePanel`, and
+`grep -E "rounded-(xl|2xl|3xl|lg|md|sm)"` over the feature now returns nothing. But the pass found
+two things that were **not** micro-decisions.
+
+**The list said "something needs review" four times.** A gold gradient banner
+(`ArchiveAwaitingBanner`), a gold shortcut in the stat strip, a gold chip on every awaiting row,
+and a count inside the expanded row. Above it sat a second full-width gradient section
+(`ActiveIngestionsPanel`) with the same anatomy in amethyst — so on any day with an upload in
+flight, two hero banners pushed the actual library below the fold. This is the Przegląd tab's
+"the gap count stopped being said three times", at four:
+
+- `ArchiveAwaitingBanner` is **deleted**. Its whole content was a restatement plus a button that
+  went where the stat line's own count already went.
+- The stat line keeps the facts as a sentence and promotes the backlog to a real `Button`
+  (`Sparkles` + `N do przeglądu`), because it is the one thing on the page that is *work*. A gold
+  underline pretending to be a control was part of how this got said four times.
+- `ActiveIngestionsPanel` is a `SectionCard` — header on the hairline rule, count in the `action`
+  slot. Its title was a full sentence set as an `Eyebrow`; card headers are a label slot.
+
+**The row wore chips for its resting state.** `StatusChip` (a third private copy of
+`EditionStatusBadge`, at `rounded-full`) printed a sage `AI ✓` on every approved piece, and a
+`PDF` chip on every piece that had one — i.e. on nearly every row of a healthy archive. Composers
+had the same bug spelled as a pair: `MB ✓` **or** `MB?`, so every composer wore a chip and none
+stood out. Now:
+
+- `StatusChip` is deleted; the row renders `EditionStatusBadge` and only for a phase that has **not
+  settled** (READY drops out of the priority list entirely).
+- The PDF chip is inverted: silence when a score exists, a gold `bez nut` when it does not — which
+  is also the exception the stat line's `% z PDF` is counting.
+- Intrinsic facts (duration, voicing, track count) lost their chip chrome and read as `Caption`
+  beside the title, matching the comment the file already carried and had stopped honouring.
+- Composers keep only the gold `bez MB`.
+
+**One real defect, found while wiring the stat line.** `awaitingCount` was computed from the
+*filtered* list while `totalPieces` and `pdfCoverage` came from `libraryStats` (unfiltered) — three
+figures on one line, two denominators. Filtering to a composer who happened to have nothing pending
+reported an empty review queue. Now `useArchiveData` exposes `awaitingPieces` over the library, and
+`isPanelOpen` / `editingPiece` — dead since the slide-over was removed — went with it.
+
+Smaller, but the same job: `ArchiveTabs` now mirrors `ProjectTabs` exactly (it was its own
+recipe) · `EditionUploadDrawer`'s panel sat on `z-toast`, so every toast its own uploads raised
+rendered *behind* it (now `z-focus-trap`) · the merge-target cards had a `hover:-translate-y-px`,
+against the locked no-lift rule · `ProvenanceChip` had four tones for three trust tiers, two of them
+one alpha step apart · `ComposerRowExpanded`'s MusicBrainz/Wikidata links were chips (a catalogue's
+brand set as an overline reads as a status) and are now `Button asChild` · the filter tokens,
+divisi pills, language codes, voice-part labels and the section count are all `Badge` now.
+
+Two components were extracted because the archive had typed them twice:
+`ArchiveStatLine` (both list pages hand-rolled the same `<strong>` sentence) and
+`InlineConfirmAction` (arm-then-confirm, previously in two heights and two radii for delete and for
+abort-ingestion).
+
+**Declined:** converting `ArchiveTabs` to `SegmentedTabs`. These are routes, and `SegmentedTabs` is
+a controlled tablist — the switch would have traded real `<a>` semantics (middle-click, open in new
+tab) for a shared file. `ProjectTabs` already made this call; archive now matches it instead.
