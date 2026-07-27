@@ -199,7 +199,7 @@ const ogLocaleAlternates =
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
       if (fine && !reduce) {
-        // Awwwards-grade cinematic feel without lag:
+        // Cinematic feel without lag:
         //   • lerp 0.085 (≈10% slower than default 0.1) — the sacred tone reads as "deliberate",
         //     but stays well above the 0.05 threshold where users start perceiving lag.
         //   • duration 1.6s for programmatic scrollTo (vs default 1.2) — when an anchor jumps,

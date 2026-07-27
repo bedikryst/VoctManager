@@ -2,7 +2,7 @@
  * @file useSiteCursor.ts
  * @description Custom site cursor with lerp easing + magnetic snap + click feedback.
  *
- *  Awwwards-grade refinements layered onto the original lerp follower:
+ *  Refinements layered onto the original lerp follower:
  *   • Magnetic snap (15% weight) — over interactive elements the target nudges toward the
  *     element's centre, so the cursor settles ON the link/button instead of next to it.
  *     Subtle enough not to feel "draggy" — just polished. Precision surfaces whose centre

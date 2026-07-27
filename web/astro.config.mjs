@@ -16,8 +16,7 @@
  *    locale set (and populates `Astro.currentLocale`). See `src/i18n/config.ts` for the path
  *    helpers that keep un-translated links pointing at the Polish original instead of 404-ing
  *    into an empty locale folder.
- *  - Prefetch + ClientRouter (set in BaseLayout) give Awwwards-grade cross-page transitions
- *    without a CSR shell.
+ *  - Prefetch + ClientRouter (set in BaseLayout)
  * @architecture Astro islands 2026
  * @module build/astro
  */

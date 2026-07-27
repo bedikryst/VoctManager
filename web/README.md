@@ -9,7 +9,7 @@
 
 This directory contains the source code for the **public marketing site** of VoctEnsemble (voctensemble.com / .pl) and VoctFoundation (voctfoundation.pl / .com / .org) — all five domains resolve to the same Astro build. The site is an art-directed sacred-minimalism landing in the spirit of *"Nawa światła"*: hand-authored CSS, art-directed images, sparse React islands for the genuinely stateful pieces (donation Vault, audio Threshold gate, header chrome). Built as a separate app from the panel SPA at [`../frontend/`](../frontend/); both share the Django backend at `/api/*`.
 
-> **Why Astro and not the SPA?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro gives crawlable static HTML + native View Transitions + selective hydration — Awwwards-grade transitions without the empty-`#root` shell. Decision locked 2026-05-27; rationale archived in `MEMORY.md` (`project_react_landing_migration`).
+> **Why Astro and not the SPA?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro gives crawlable static HTML + native View Transitions + selective hydration – transitions without the empty-`#root` shell. 
 
 ---
 

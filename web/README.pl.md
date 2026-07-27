@@ -9,7 +9,7 @@
 
 Ten katalog zawiera kod **publicznej strony marketingowej** VoctEnsemble (voctensemble.com / .pl) i VoctFoundation (voctfoundation.pl / .com / .org) — wszystkie pięć domen rozwiązuje się do tego samego buildu Astro. Strona to art-directed sakralny minimalizm w duchu *„Nawy światła”*: ręcznie pisany CSS, art-directed obrazy, oszczędne wyspy React dla genuinely-stateful kawałków (lejek datków Vault, brama audio Threshold, chrome nagłówka). Zbudowane jako osobna aplikacja od panelu SPA w [`../frontend/`](../frontend/); oba buildy współdzielą backend Django pod `/api/*`.
 
-> **Dlaczego Astro, a nie SPA?** Powłoka CSR React była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro daje crawlable statyczny HTML + natywne View Transitions + selektywną hydratację — przejścia na poziomie Awwwards bez pustej powłoki `#root`. Decyzja zapadła 2026-05-27; uzasadnienie zarchiwizowane w `MEMORY.md` (`project_react_landing_migration`).
+> **Dlaczego Astro, a nie SPA?** Powłoka CSR React była regresją SEO/perf dla strony fundacji starającej się o Google Ad Grants. Astro daje crawlable statyczny HTML + natywne View Transitions + selektywną hydratację — przejścia bez pustej powłoki `#root`. Decyzja zapadła 2026-05-27; uzasadnienie zarchiwizowane w `MEMORY.md` (`project_react_landing_migration`).
 
 ---
 
