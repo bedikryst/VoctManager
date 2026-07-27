@@ -68,7 +68,9 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             aria-hidden="true"
           />
 
-          <div className="relative w-full max-w-4xl">
+          {/* Same width as the printable `/legal/:type` page: one document, one
+              size, whichever way a member opens it. */}
+          <div className="relative w-full max-w-3xl">
             <GlassCard
               as={motion.div}
               animationEngine="framer"
@@ -120,7 +122,8 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               </div>
 
               {/* Content Area */}
-              <div className="custom-scrollbar pointer-events-auto min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain bg-white/40 p-6 touch-pan-y">
+              {/* No `space-y` here — the document owns its own vertical rhythm. */}
+              <div className="custom-scrollbar pointer-events-auto min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white/40 p-6 touch-pan-y">
                 {type === "privacy" ? <PrivacyContent /> : <TermsContent />}
               </div>
 

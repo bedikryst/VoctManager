@@ -67,8 +67,15 @@ interface RehearsalInspectorProps {
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
 type DensityId = "LIST" | "ROLL_CALL";
 
-/** The label comes from the shared meta, not from the call site: this strip was
- *  the second copy of a vocabulary the module already owns. */
+/**
+ * The label comes from the shared meta, not from the call site: this strip was
+ * the second copy of a vocabulary the module already owns.
+ *
+ * It carries the census AND doubles as the roster's legend, which is why the
+ * swatch is the status glyph on its lit fill rather than a bare dot — it is
+ * pixel-for-pixel what a roll-call card's chosen segment looks like, so the
+ * icon-only cards below need no legend of their own to decode.
+ */
 const StatPill = ({
   status,
   value,
@@ -78,9 +85,15 @@ const StatPill = ({
 }) => {
   const { t } = useTranslation();
   const meta = ATTENDANCE_STATUS_META[status];
+  const Icon = meta.Icon;
   return (
     <div className="inline-flex items-center gap-1.5">
-      <span className={cn("h-2 w-2 rounded-full", meta.dot)} aria-hidden="true" />
+      <span
+        className={cn("flex size-5 items-center justify-center rounded-chip", meta.solid)}
+        aria-hidden="true"
+      >
+        <Icon size={11} />
+      </span>
       <Text as="span" size="sm" weight="semibold" className="tabular-nums">
         {value}
       </Text>

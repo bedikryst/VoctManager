@@ -172,19 +172,24 @@ export default function LoginPage(): React.JSX.Element {
                 has a password but forgot it, and a singer who has no account at
                 all. They used to share one accordion, one question and three
                 competing controls. */}
+            {/* Three ranks under the submit, and they must stay three: a real
+                action at the card's body size, the one sentence for someone
+                with no account a step below it, and the legal pair quieter
+                again. All three sat at 10–12px, which put the fine print level
+                with the action it is not. */}
             <div className="mt-5 text-center">
               <Link
                 to="/reset-password"
                 className="text-ethereal-graphite underline decoration-ethereal-incense/40 underline-offset-4 transition-colors hover:text-ethereal-gold"
               >
-                <Text as="span" size="sm" color="inherit">
+                <Text as="span" size="base" color="inherit">
                   {t("auth.login.forgot_password")}
                 </Text>
               </Link>
             </div>
 
             <div className="mt-6 space-y-3 border-t border-hairline pt-5 text-center">
-              <Text size="xs" color="graphite" className="leading-6">
+              <Text size="sm" color="graphite">
                 {t("auth.login.no_account")}{" "}
                 <a
                   href={`mailto:${supportEmail}`}
@@ -200,13 +205,13 @@ export default function LoginPage(): React.JSX.Element {
                   onClick={(e) => handleOpenLegalModal("terms", e)}
                   className="text-ethereal-graphite/60 underline decoration-ethereal-incense/40 underline-offset-4 transition-colors hover:text-ethereal-gold"
                 >
-                  <Text as="span" size="xs" color="inherit">
+                  <Text as="span" size="sm" color="inherit">
                     {t("auth.login.terms_link")}
                   </Text>
                 </button>
                 <Text
                   as="span"
-                  size="xs"
+                  size="sm"
                   color="inherit"
                   className="text-ethereal-graphite/25"
                   aria-hidden="true"
@@ -218,7 +223,7 @@ export default function LoginPage(): React.JSX.Element {
                   onClick={(e) => handleOpenLegalModal("privacy", e)}
                   className="text-ethereal-graphite/60 underline decoration-ethereal-incense/40 underline-offset-4 transition-colors hover:text-ethereal-gold"
                 >
-                  <Text as="span" size="xs" color="inherit">
+                  <Text as="span" size="sm" color="inherit">
                     {t("auth.login.privacy_link")}
                   </Text>
                 </button>

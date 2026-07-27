@@ -23,7 +23,7 @@ import {
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -45,7 +45,6 @@ interface ToneStyle {
   headerBorder: string;
   bodyBorder: string;
   text: string;
-  countBg: string;
 }
 
 // Static class strings (Tailwind can't see interpolated tokens). Each group is a
@@ -58,54 +57,61 @@ const TONE: Record<GroupTone, ToneStyle> = {
     headerBorder: "border-ethereal-gold/30",
     bodyBorder: "border-ethereal-gold/20",
     text: "text-ethereal-gold",
-    countBg: "bg-ethereal-gold/20 text-ethereal-gold",
   },
   sage: {
     headerBg: "bg-ethereal-sage/12",
     headerBorder: "border-ethereal-sage/30",
     bodyBorder: "border-ethereal-sage/20",
     text: "text-ethereal-sage",
-    countBg: "bg-ethereal-sage/20 text-ethereal-sage",
   },
   graphite: {
     headerBg: "bg-ethereal-graphite/8",
     headerBorder: "border-ethereal-graphite/20",
     bodyBorder: "border-ethereal-graphite/15",
     text: "text-ethereal-graphite/70",
-    countBg: "bg-ethereal-graphite/12 text-ethereal-graphite/70",
   },
 };
 
+/**
+ * Three ranks and no more: the name at the panel's body size, the addresses one
+ * step under it, and the absence of an address quieter still. The row used to
+ * set a name at 16px bold — louder than anything else on the sheet — over a
+ * contact line that was a raw 14px span, so a name and its own e-mail sat 2px
+ * apart while "no contact" (10px) and an e-mail (14px) filled the same slot at
+ * wildly different weights on adjacent rows.
+ */
 const RosterRow = ({ row }: { row: InvitationRosterRow }): React.JSX.Element => {
   const { t } = useTranslation();
   const hasContact = Boolean(row.email || row.phone);
 
   return (
-    <li className="border-b border-hairline py-3 last:border-0">
+    <li className="border-b border-hairline py-2.5 last:border-0">
       <div className="flex items-baseline justify-between gap-2">
-        <Text size="md" weight="bold" truncate className="min-w-0">
+        <Text size="base" weight="semibold" truncate className="min-w-0">
           {row.name}
         </Text>
         {row.voice && (
-          <Eyebrow color="muted" className="shrink-0">
+          <Eyebrow size="overline-sm" color="muted" className="shrink-0">
             {row.voice}
           </Eyebrow>
         )}
       </div>
 
       {hasContact ? (
-        <div className="mt-1.5 flex flex-col gap-1">
+        <div className="mt-1 flex flex-col gap-0.5">
           {row.email && (
             <a
               href={`mailto:${row.email}`}
               className="group/c inline-flex items-center gap-2 text-ethereal-graphite transition-colors hover:text-ethereal-sage"
             >
               <Mail
-                size={13}
+                size={12}
                 className="shrink-0 text-ethereal-graphite/45 transition-colors group-hover/c:text-ethereal-sage"
                 aria-hidden="true"
               />
-              <span className="break-all text-sm">{row.email}</span>
+              <Text as="span" size="sm" color="inherit" className="break-all">
+                {row.email}
+              </Text>
             </a>
           )}
           {row.phone && (
@@ -114,18 +120,20 @@ const RosterRow = ({ row }: { row: InvitationRosterRow }): React.JSX.Element => 
               className="group/c inline-flex items-center gap-2 text-ethereal-graphite transition-colors hover:text-ethereal-sage"
             >
               <Phone
-                size={13}
+                size={12}
                 className="shrink-0 text-ethereal-graphite/45 transition-colors group-hover/c:text-ethereal-sage"
                 aria-hidden="true"
               />
-              <span className="text-sm tabular-nums">{row.phone}</span>
+              <Text as="span" size="sm" color="inherit" className="tabular-nums">
+                {row.phone}
+              </Text>
             </a>
           )}
         </div>
       ) : (
-        <Text size="xs" color="muted" className="mt-1 block italic">
+        <Caption className="mt-1 block italic">
           {t("dashboard.admin.roster.no_contact", "Brak danych kontaktowych")}
-        </Text>
+        </Caption>
       )}
     </li>
   );
@@ -148,25 +156,23 @@ const RosterGroup = ({
     <section className="mt-4 first:mt-0">
       <div
         className={cn(
-          "flex items-center justify-between rounded-t-nested border px-4 py-2.5",
+          "flex items-center justify-between rounded-t-nested border px-4 py-2",
           c.headerBg,
           c.headerBorder,
         )}
       >
         <div className={cn("flex items-center gap-2", c.text)}>
-          <Icon size={15} aria-hidden="true" />
-          <Eyebrow as="h3" color="inherit">
+          <Icon size={14} aria-hidden="true" />
+          <Eyebrow as="h3" size="overline-sm" color="inherit">
             {label}
           </Eyebrow>
         </div>
-        <span
-          className={cn(
-            "rounded-chip px-2 py-0.5 text-xs font-bold tabular-nums",
-            c.countBg,
-          )}
-        >
+        {/* How many people are in the group is a measurement, not a status, so
+            it is plain type in the group's own tone — a filled chip inside an
+            already-tinted band is a second surface saying the same thing. */}
+        <Text as="span" size="sm" weight="semibold" className={cn("tabular-nums", c.text)}>
           {rows.length}
-        </span>
+        </Text>
       </div>
       <ul className={cn("rounded-b-nested border border-t-0 bg-white/40 px-4", c.bodyBorder)}>
         {rows.map((row) => (

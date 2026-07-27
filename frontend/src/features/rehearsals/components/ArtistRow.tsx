@@ -3,8 +3,10 @@
  * @description One singer's attendance control. Two densities share the same
  * autosave form: `compact` for the scanning roster and `rollcall` for the
  * large-tap-target focus mode a conductor uses on a tablet in front of the
- * choir. Status presentation is sourced from the shared attendance meta so the
- * colour of "late" never drifts between surfaces.
+ * choir — where the toggle drops to glyphs alone, because a card in a grid has
+ * no room for four long Polish status words and no viewport breakpoint can
+ * know that. Status presentation is sourced from the shared attendance meta so
+ * the colour and the glyph of "late" never drift between surfaces.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/ArtistRow
  */
@@ -150,10 +152,14 @@ export const ArtistRow = React.memo(
         className={cn(
           "rounded-nested border border-hairline-strong bg-ethereal-alabaster",
           isRollCall
-            ? "grid grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-4"
-            : // Compact: the four long PL status words ("USPRAWIEDLIWIONY"…) can't
+            ? // A roll-call card is sized by the grid that lays the cards out,
+              // never by the viewport, so this toggle gets no responsive
+              // breakpoints: four fixed columns that hold at any card width.
+              // They are also the reason the labels are gone — see below.
+              "grid grid-cols-4 gap-1.5 p-1.5"
+            : // Compact: the four long PL status words ("USPRAWIEDLIWIENIE"…) can't
               // fit one row on phones/tablets, so the toggle wraps (each keeps its
-              // full label) rather than forcing the card — and the page — past the
+              // full label) rather than forcing the row — and the page — past the
               // viewport. Only at xl, beside the note fields, does it collapse back
               // to a single content-width row.
               "flex w-full flex-wrap gap-1 p-1 xl:w-auto",
@@ -163,6 +169,7 @@ export const ArtistRow = React.memo(
           const meta = ATTENDANCE_STATUS_META[key];
           const Icon = meta.Icon;
           const active = status === key;
+          const label = t(meta.labelKey, meta.fallback);
           return (
             <button
               key={key}
@@ -173,24 +180,27 @@ export const ArtistRow = React.memo(
               onClick={() => handleStatusChange(key)}
               disabled={isSyncing}
               aria-pressed={active}
+              // Roll call taps the same four positions forty times over; the
+              // glyph is the word there, decoded once by the legend in the
+              // inspector's header rather than reprinted on every card.
+              aria-label={isRollCall ? label : undefined}
+              title={isRollCall ? label : undefined}
               className={cn(
                 "flex items-center justify-center gap-1.5 rounded-chip transition-colors duration-200 disabled:opacity-50",
-                isRollCall ? "min-h-12 px-2 py-2" : "flex-1 px-3 py-1.5 sm:flex-none",
+                isRollCall ? "min-h-12" : "flex-1 px-3 py-1.5 sm:flex-none",
                 active
                   ? meta.solid + " shadow-sm"
                   : "text-ethereal-graphite hover:bg-ethereal-marble hover:text-ethereal-ink",
               )}
             >
-              <Icon size={isRollCall ? 15 : 12} />
+              <Icon size={isRollCall ? 18 : 12} />
               {/* The overline is the primitive's role, not a per-button recipe —
                   this was the module's last hand-typed uppercase micro-label. */}
-              <Eyebrow
-                as="span"
-                size={isRollCall ? "overline" : "overline-sm"}
-                color="inherit"
-              >
-                {t(meta.labelKey, meta.fallback)}
-              </Eyebrow>
+              {!isRollCall && (
+                <Eyebrow as="span" size="overline-sm" color="inherit">
+                  {label}
+                </Eyebrow>
+              )}
             </button>
           );
         })}

@@ -42,6 +42,33 @@ export const LEGAL_DOCS_UPDATED_DISPLAY = "09.07.2026";
  * listed — it is not enabled; if a DSN is ever set, disclose it here first.
  */
 
+/**
+ * Both surfaces that render this document are wide — a 4xl modal and a 3xl page
+ * — and a legal text is read, not scanned, so the column is capped at a normal
+ * measure and centred rather than run to the edge of whatever contains it.
+ */
+const DOCUMENT_COLUMN = "mx-auto max-w-prose space-y-8";
+
+/**
+ * A section title outranks its body by size, family, weight AND colour: ink
+ * serif over graphite sans. It used to be 16px graphite semibold above 16px
+ * graphite text — the same size and the same colour as the paragraph under it,
+ * so the only thing marking a heading was the serif, and the document read as
+ * one undifferentiated slab. Five call sites had each typed that recipe out.
+ */
+const LegalHeading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Heading as="h3" size="lg" weight="semibold" color="default">
+    {children}
+  </Heading>
+);
+
+/** Document prose, at the panel's own body size. */
+const LegalText: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Text size="base" color="graphite">
+    {children}
+  </Text>
+);
+
 interface LegalSectionProps {
   titleKey: string;
   descKey: string;
@@ -51,13 +78,9 @@ const LegalSection: React.FC<LegalSectionProps> = ({ titleKey, descKey }) => {
   const { t } = useTranslation();
 
   return (
-    <div>
-      <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
-        {t(titleKey)}
-      </Heading>
-      <Text size="md" color="graphite" className="mt-2">
-        {t(descKey)}
-      </Text>
+    <div className="space-y-2">
+      <LegalHeading>{t(titleKey)}</LegalHeading>
+      <LegalText>{t(descKey)}</LegalText>
     </div>
   );
 };
@@ -66,7 +89,7 @@ export const PrivacyContent: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <div className={DOCUMENT_COLUMN}>
       <LegalSection
         titleKey="auth.legal.privacy.administrator"
         descKey="auth.legal.privacy.administrator_desc"
@@ -77,20 +100,18 @@ export const PrivacyContent: React.FC = () => {
         descKey="auth.legal.privacy.source_desc"
       />
 
-      <div>
-        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
-          {t("auth.legal.privacy.goals_and_basis")}
-        </Heading>
-        <ul className="space-y-4 list-none pl-0 m-0">
+      <div className="space-y-2">
+        <LegalHeading>{t("auth.legal.privacy.goals_and_basis")}</LegalHeading>
+        <ul className="m-0 list-none space-y-3 pl-0">
           {(["account", "voice", "logistics", "contracts"] as const).map(
             (item) => (
               <li key={item}>
-                <Text weight="bold" color="default" size={"md"} className="mt-2">
+                <Text size="base" weight="semibold" color="default">
                   {t(`auth.legal.privacy.goals_items.${item}.title`)}:
                 </Text>
-                <Text size="md" color="graphite" className="mt-1">
+                <LegalText>
                   {t(`auth.legal.privacy.goals_items.${item}.desc`)}
-                </Text>
+                </LegalText>
               </li>
             ),
           )}
@@ -112,16 +133,10 @@ export const PrivacyContent: React.FC = () => {
         descKey="auth.legal.privacy.recipients_desc"
       />
 
-      <div>
-        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
-          {t("auth.legal.privacy.internal_comm_title")}
-        </Heading>
-        <Text size="md" color="graphite" className="mt-2">
-          {t("auth.legal.privacy.internal_comm_desc")}
-        </Text>
-        <Text size="md" color="graphite" className="mt-3">
-          {t("auth.legal.privacy.internal_comm_retention")}
-        </Text>
+      <div className="space-y-2">
+        <LegalHeading>{t("auth.legal.privacy.internal_comm_title")}</LegalHeading>
+        <LegalText>{t("auth.legal.privacy.internal_comm_desc")}</LegalText>
+        <LegalText>{t("auth.legal.privacy.internal_comm_retention")}</LegalText>
       </div>
 
       <LegalSection
@@ -166,7 +181,7 @@ export const TermsContent: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <div className={DOCUMENT_COLUMN}>
       <LegalSection
         titleKey="auth.legal.terms.provider_title"
         descKey="auth.legal.terms.provider_desc"
@@ -192,12 +207,11 @@ export const TermsContent: React.FC = () => {
         descKey="auth.legal.terms.tech_desc"
       />
 
-      <div>
-        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
-          {t("auth.legal.terms.intellectual_property")}
-        </Heading>
-        <div className="bg-ethereal-gold/10 p-4 border-l-2 border-ethereal-gold mt-2">
-          <Text size="md" color="graphite" className="italic mt-2">
+      <div className="space-y-2">
+        <LegalHeading>{t("auth.legal.terms.intellectual_property")}</LegalHeading>
+        {/* The one clause the foundation needs a member to actually notice. */}
+        <div className="border-l-2 border-ethereal-gold bg-ethereal-gold/10 p-4">
+          <Text size="base" color="graphite" className="italic">
             {t("auth.legal.terms.intellectual_property_desc")}
           </Text>
         </div>
@@ -223,15 +237,13 @@ export const TermsContent: React.FC = () => {
         descKey="auth.legal.terms.embeds_desc"
       />
 
-      <div>
-        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
-          {t("auth.legal.terms.support_title")}
-        </Heading>
-        <Text size="md" color="graphite" className="mt-2">
+      <div className="space-y-2">
+        <LegalHeading>{t("auth.legal.terms.support_title")}</LegalHeading>
+        <Text size="base" color="graphite">
           {t("auth.legal.terms.support_desc_prefix")}{" "}
-          <span className="font-medium text-ethereal-ink">
+          <Text as="span" size="base" weight="medium" color="default">
             {t("auth.legal.privacy.contact_email")}
-          </span>{" "}
+          </Text>{" "}
           {t("auth.legal.terms.support_desc_suffix")}
         </Text>
       </div>
