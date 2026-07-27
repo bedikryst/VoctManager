@@ -111,11 +111,35 @@ crontab -e
 # Daily DB + media backup at 03:30 (script handles off-site + healthcheck).
 30 3 * * * cd $HOME/VoctManager && /usr/bin/bash infra/backup.sh >> $HOME/voct-backups/backup.log 2>&1
 
-# Reclaim Docker disk (rollback is git-based, so pruning old images is safe):
-#   dangling images daily; build cache weekly, keeping 5 GB warm for fast rebuilds.
-0 4 * * *  /usr/bin/docker image prune -f                          >> $HOME/voct-backups/prune.log 2>&1
-0 4 * * 0  /usr/bin/docker builder prune -f --keep-storage 5GB     >> $HOME/voct-backups/prune.log 2>&1
+# Reclaim Docker disk daily (rollback is git-based, so pruning old images is safe).
+0 4 * * *  cd $HOME/VoctManager && /usr/bin/bash infra/docker-gc.sh >> $HOME/voct-backups/prune.log 2>&1
+
+# Monthly deep clean — also drops the BuildKit cache MOUNTS (npm downloads,
+# Astro's image-encode cache) that the daily budget deliberately keeps warm.
+# The first build after this re-encodes every image variant and is slow.
+0 5 1 * *  cd $HOME/VoctManager && /usr/bin/bash infra/docker-gc.sh --deep >> $HOME/voct-backups/prune.log 2>&1
 ```
+
+### Why daily, and why also inside `make deploy`
+
+One production build writes ~4–5 GB: a ~960 MB BuildKit layer for the photo and
+video originals copied into the web-builder stage, another ~1.1 GB for the Astro
+`dist/` it produces, the same ~1.1 GB again in the new nginx image (which
+orphans the previous one), plus panel and backend layers. Nothing evicts the old
+records on its own.
+
+The earlier schedule — dangling images daily, build cache *weekly* — could not
+keep up: five deploys between two Sunday runs left ~15 GB of build cache sitting
+on the disk, so the droplet still grew by gigabytes per build. `make deploy` now
+runs [`infra/docker-gc.sh`](../infra/docker-gc.sh) before and after the build;
+these cron lines only catch garbage from manual `docker compose build` runs.
+
+**If disk still grows, read `prune.log` first.** A failed prune is silent from
+the outside: Docker 28 deprecated `--keep-storage` in favour of
+`--max-used-space`, and the hand-written cron line that used the old flag would
+have errored into that log every week while reclaiming nothing. The script
+detects the flag, and prints `docker system df` plus `df -h /` before and after
+every run — so the log shows exactly what was reclaimed, or that nothing was.
 
 ## Restore drill (routine — non-destructive)
 
