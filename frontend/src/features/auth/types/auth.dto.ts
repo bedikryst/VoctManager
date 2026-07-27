@@ -15,6 +15,8 @@ export interface ActivateAccountResponse {
 export interface ActivationPreviewResponse {
   first_name: string;
   first_name_vocative: string;
+  /** The address the invitation was sent to — the login the member will use. */
+  email: string;
   /** The invitee's chosen language (pl|en|fr) — drives the activation screen. */
   language?: string;
 }

@@ -925,67 +925,50 @@
       "back_to_home": "Powrót na stronę główną",
       "badge": "Aktywacja zaproszenia",
       "checking_link": "Sprawdzamy zaproszenie…",
-      "description": "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
+      "description": "Zostało ostatnie: ustaw własne hasło. Po drugiej stronie czekają próby, projekty i materiały Twojego zespołu.",
       "errors": {
         "activation_failed": "Nie udało się aktywować konta. Spróbuj ponownie za chwilę.",
-        "expired_link": "Ten link aktywacyjny wygasł. Poproś opiekuna zespołu o nowe zaproszenie.",
-        "invalid_link": "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany.",
+        "expired_link": "Ten link aktywacyjny już nie działa. Jeśli hasło jest już ustawione, po prostu się zaloguj.",
+        "invalid_link": "Ten link aktywacyjny jest niepełny lub nieprawidłowy. Otwórz zaproszenie ponownie i skopiuj cały adres.",
         "password_mismatch": "Hasła nie są identyczne.",
         "password_too_short": "Hasło musi mieć co najmniej 8 znaków.",
         "terms_required": "Zaznacz akceptację regulaminu i polityki prywatności."
       },
-      "features": {
-        "access": {
-          "desc": "Po aktywacji możesz od razu zalogować się i sprawdzić próby, projekty oraz materiały organizacyjne.",
-          "title": "Szybki start"
-        },
-        "security": {
-          "desc": "Link aktywacyjny jest przypisany do zaproszonego konta i odblokowuje prywatny panel dopiero po ustawieniu hasła.",
-          "title": "Bezpieczna aktywacja"
-        },
-        "workspace": {
-          "desc": "VoctManager centralizuje komunikację artystyczną, dane zespołu i logistykę produkcyjną w jednym miejscu.",
-          "title": "Panel pracy zespołu"
-        }
-      },
-      "features_title": "Co czeka na Ciebie w środku",
       "form": {
         "activate_btn": "Aktywuj konto",
         "activating_btn": "Aktywowanie konta",
         "confirm_password": "Potwierdź hasło",
         "confirm_password_placeholder": "Powtórz hasło",
-        "description": "Ustaw hasło do swojego konta. Tym hasłem i swoim adresem e-mail będziesz logować się do panelu.",
         "new_password": "Nowe hasło",
         "new_password_placeholder": "Utwórz bezpieczne hasło",
         "privacy_link": "Politykę Prywatności",
-        "subtitle": "Ustawienie hasła",
         "terms_and": " oraz ",
         "terms_link": "Regulamin serwisu VoctManager",
         "terms_prefix": "Akceptuję ",
-        "title": "Dokończ aktywację"
+        "title": "Ustaw hasło"
       },
       "greeting_word": "Witaj",
       "invalid": {
-        "cta_home": "Powrót na stronę główną",
-        "cta_login": "Mam już konto — zaloguj się",
-        "expired_desc": "Ten link aktywacyjny stracił ważność. Poproś opiekuna zespołu o ponowne wysłanie zaproszenia.",
-        "expired_title": "Link wygasł",
+        "cta_login": "Przejdź do logowania",
+        "expired_desc": "Zaproszenia mają swój termin, a jednorazowy link przestaje działać także wtedy, gdy konto zostało już aktywowane.",
+        "expired_title": "Ten link już nie działa",
         "eyebrow": "Zaproszenie",
-        "invalid_desc": "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany. Poproś opiekuna zespołu o nowe zaproszenie.",
-        "invalid_title": "Link nieprawidłowy"
+        "help_prefix": "Potrzebujesz nowego zaproszenia? Napisz na",
+        "invalid_desc": "Adres wygląda na niepełny — programy pocztowe potrafią łamać długie linki. Otwórz zaproszenie ponownie i skopiuj cały adres.",
+        "invalid_title": "To nie jest poprawny link"
       },
+      "login_hint": "Tym adresem i nowym hasłem zalogujesz się do panelu.",
+      "login_label": "Twój login do panelu",
       "subtitle": "Dostęp do VoctManagera",
       "success": {
         "copied": "Skopiowano",
         "copy_login": "Skopiuj login",
         "desc": "Konto jest aktywne. Do panelu wchodzisz adresem e-mail poniżej i swoim nowym hasłem.",
         "go_to_login": "Przejdź do logowania",
-        "return_home": "Wróć na stronę główną",
         "subtitle": "Aktywacja zakończona",
         "title": "Twój panel jest gotowy",
         "tone_cta": "Kamerton · ton A",
-        "tone_playing": "Brzmi… wycisz",
-        "your_username": "Twój login do panelu"
+        "tone_playing": "Brzmi… wycisz"
       },
       "title_1": "Aktywuj swój",
       "title_2": "panel artysty"

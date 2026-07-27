@@ -114,6 +114,10 @@ export const useAccountActivation = () => {
     : "";
   const inviteeName = resolvedName.trim() || null;
 
+  // The address the invitation was sent to — stated while the password is being
+  // set, because it is the login half of the credential the member is creating.
+  const inviteeEmail = invitee?.email?.trim() || null;
+
   const activationMutation = useMutation({
     mutationFn: authService.activateAccount,
     onSuccess: (data) => {
@@ -187,6 +191,7 @@ export const useAccountActivation = () => {
     activatedData,
     isSubmitting: activationMutation.isPending,
     inviteeName,
+    inviteeEmail,
     linkStatus,
     handleSubmit,
   };

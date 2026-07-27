@@ -924,67 +924,50 @@
       "back_to_home": "Back to homepage",
       "badge": "Invite Activation",
       "checking_link": "Checking your invitation…",
-      "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
+      "description": "One step left: choose your own password. On the other side are your ensemble's rehearsals, projects and materials.",
       "errors": {
         "activation_failed": "Couldn't activate the account. Please try again in a moment.",
-        "expired_link": "This activation link has expired. Ask your team coordinator for a new invitation.",
-        "invalid_link": "This activation link is invalid or has already been used.",
+        "expired_link": "This activation link no longer works. If your password is already set, simply sign in.",
+        "invalid_link": "This activation link is incomplete or invalid. Open the invitation again and copy the whole address.",
         "password_mismatch": "The passwords do not match.",
         "password_too_short": "The password must be at least 8 characters long.",
         "terms_required": "Please accept the Terms and the Privacy Policy to continue."
       },
-      "features": {
-        "access": {
-          "desc": "After activation you can sign in immediately and review rehearsals, projects, and operational materials.",
-          "title": "One-step access"
-        },
-        "security": {
-          "desc": "The activation link is bound to your invited account and unlocks the private dashboard only after password setup.",
-          "title": "Secure onboarding"
-        },
-        "workspace": {
-          "desc": "VoctManager centralizes artistic communication, roster data, and production logistics in one panel.",
-          "title": "Professional workspace"
-        }
-      },
-      "features_title": "What awaits you inside",
       "form": {
         "activate_btn": "Activate account",
         "activating_btn": "Activating account",
         "confirm_password": "Confirm password",
         "confirm_password_placeholder": "Repeat the password",
-        "description": "Set a password for your account. You'll sign in to the panel with it and your email address.",
         "new_password": "New password",
         "new_password_placeholder": "Create a secure password",
         "privacy_link": "VoctManager Privacy Policy",
-        "subtitle": "Password setup",
         "terms_and": " and ",
         "terms_link": "VoctManager Terms of Service",
         "terms_prefix": "I accept the ",
-        "title": "Finalize your access"
+        "title": "Set your password"
       },
       "greeting_word": "Welcome",
       "invalid": {
-        "cta_home": "Back to homepage",
-        "cta_login": "I already have an account — sign in",
-        "expired_desc": "This activation link has expired. Ask your team coordinator to resend the invitation.",
-        "expired_title": "Link expired",
+        "cta_login": "Go to sign-in",
+        "expired_desc": "Invitations have a time limit, and a single-use link also stops working once the account has been activated.",
+        "expired_title": "This link no longer works",
         "eyebrow": "Invitation",
-        "invalid_desc": "This activation link is invalid or has already been used. Ask your team coordinator for a new invitation.",
-        "invalid_title": "Invalid link"
+        "help_prefix": "Need a new invitation? Write to",
+        "invalid_desc": "The address looks incomplete — mail clients sometimes break long links. Open the invitation again and copy the whole address.",
+        "invalid_title": "That isn't a valid link"
       },
+      "login_hint": "You'll sign in with this address and your new password.",
+      "login_label": "Your panel login",
       "subtitle": "VoctManager Access",
       "success": {
         "copied": "Copied",
         "copy_login": "Copy login",
         "desc": "Your account is active. Sign in with the email address below and your new password.",
         "go_to_login": "Go to login",
-        "return_home": "Return home",
         "subtitle": "Activation complete",
         "title": "Your panel is ready",
         "tone_cta": "Tuning fork · the A",
-        "tone_playing": "Ringing… silence it",
-        "your_username": "Your username to log in"
+        "tone_playing": "Ringing… silence it"
       },
       "title_1": "Activate your",
       "title_2": "artist panel"

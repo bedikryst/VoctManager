@@ -283,6 +283,9 @@ class ActivationPreviewViewTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["first_name"], "Ada")
         self.assertIn("first_name_vocative", response.data)
+        # The screen names the credential the member is about to secure, so the
+        # login is known before the password exists rather than only after.
+        self.assertEqual(response.data["email"], "preview@example.com")
 
     @patch(EMAIL_TASK)
     def test_preview_returns_invitee_language(self, _enqueue):

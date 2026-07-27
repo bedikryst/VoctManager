@@ -196,11 +196,17 @@ class UserIdentityService:
     @staticmethod
     def get_activation_invitee(uidb64: str, token: str) -> dict[str, str]:
         """
-        Read-only lookup of the invited member's display name (and chosen language)
-        for a still-valid activation link, so the activation screen can greet them
-        by name and render in their language before they set a password. Requires
-        the signed token (which the invitee already holds), never consumes it, and
-        mutates nothing.
+        Read-only lookup of the invited member's display name, e-mail and chosen
+        language for a still-valid activation link, so the activation screen can
+        greet them by name, state the credential they are about to secure and
+        render in their language before they set a password. Requires the signed
+        token (which the invitee already holds), never consumes it, and mutates
+        nothing.
+
+        The e-mail discloses nothing to the bearer: the token was delivered to
+        that very address, so whoever holds the link already read it in their own
+        inbox. Naming it here is what lets the screen say "this is your login"
+        before the password is set rather than only after.
         """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
@@ -218,6 +224,7 @@ class UserIdentityService:
             # Raw, not language-resolved: the activation screen greets in the
             # language the invitee is about to pick, which is its own decision.
             "first_name_vocative": getattr(profile, "first_name_vocative", "") or "",
+            "email": user.email or "",
             # Authoritative confirmation of the link's ?lang= (server-side source).
             "language": language,
         }

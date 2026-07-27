@@ -924,67 +924,50 @@
       "back_to_home": "Retour à la page d'accueil",
       "badge": "Activation d'invitation",
       "checking_link": "Vérification de votre invitation…",
-      "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
+      "description": "Il ne reste qu'une chose : choisissez votre mot de passe. De l'autre côté vous attendent les répétitions, les projets et les documents de votre ensemble.",
       "errors": {
         "activation_failed": "Impossible d'activer le compte. Réessayez dans un instant.",
-        "expired_link": "Ce lien d'activation a expiré. Demandez une nouvelle invitation au responsable de l'ensemble.",
-        "invalid_link": "Ce lien d'activation est invalide ou a déjà été utilisé.",
+        "expired_link": "Ce lien d'activation ne fonctionne plus. Si votre mot de passe est déjà défini, connectez-vous simplement.",
+        "invalid_link": "Ce lien d'activation est incomplet ou invalide. Rouvrez l'invitation et copiez l'adresse entière.",
         "password_mismatch": "Les mots de passe ne correspondent pas.",
         "password_too_short": "Le mot de passe doit contenir au moins 8 caractères.",
         "terms_required": "Acceptez les conditions et la politique de confidentialité pour continuer."
       },
-      "features": {
-        "access": {
-          "desc": "Après activation, vous pouvez vous connecter immédiatement et consulter les répétitions, les projets et les matériels opérationnels.",
-          "title": "Accès en une étape"
-        },
-        "security": {
-          "desc": "Le lien d'activation est lié à votre compte invité et déverrouille le tableau de bord privé uniquement après la configuration du mot de passe.",
-          "title": "Intégration sécurisée"
-        },
-        "workspace": {
-          "desc": "VoctManager centralise la communication artistique, les données de l'équipe et la logistique de production dans un seul panneau.",
-          "title": "Espace de travail professionnel"
-        }
-      },
-      "features_title": "Ce qui vous attend à l'intérieur",
       "form": {
         "activate_btn": "Activer le compte",
         "activating_btn": "Activation du compte",
         "confirm_password": "Confirmer le mot de passe",
         "confirm_password_placeholder": "Répétez le mot de passe",
-        "description": "Définissez un mot de passe pour votre compte. Vous vous connecterez au panneau avec celui-ci et votre adresse e-mail.",
         "new_password": "Nouveau mot de passe",
         "new_password_placeholder": "Créez un mot de passe sécurisé",
         "privacy_link": "Politique de confidentialité",
-        "subtitle": "Configuration du mot de passe",
         "terms_and": " et ",
         "terms_link": "Conditions d'utilisation de VoctManager",
         "terms_prefix": "J'accepte les ",
-        "title": "Finalisez votre accès"
+        "title": "Définissez votre mot de passe"
       },
       "greeting_word": "Bienvenue",
       "invalid": {
-        "cta_home": "Retour à la page d'accueil",
-        "cta_login": "J'ai déjà un compte — se connecter",
-        "expired_desc": "Ce lien d'activation a expiré. Demandez au responsable de l'ensemble de renvoyer l'invitation.",
-        "expired_title": "Lien expiré",
+        "cta_login": "Aller à la connexion",
+        "expired_desc": "Les invitations ont une durée limitée, et un lien à usage unique cesse aussi de fonctionner une fois le compte activé.",
+        "expired_title": "Ce lien ne fonctionne plus",
         "eyebrow": "Invitation",
-        "invalid_desc": "Ce lien d'activation est invalide ou a déjà été utilisé. Demandez une nouvelle invitation au responsable de l'ensemble.",
-        "invalid_title": "Lien invalide"
+        "help_prefix": "Besoin d'une nouvelle invitation ? Écrivez à",
+        "invalid_desc": "L'adresse semble incomplète — les logiciels de messagerie coupent parfois les liens longs. Rouvrez l'invitation et copiez l'adresse entière.",
+        "invalid_title": "Ce lien n'est pas valide"
       },
+      "login_hint": "Vous vous connecterez avec cette adresse et votre nouveau mot de passe.",
+      "login_label": "Votre identifiant",
       "subtitle": "Accès VoctManager",
       "success": {
         "copied": "Copié",
         "copy_login": "Copier l'identifiant",
         "desc": "Votre compte est actif. Connectez-vous avec l'adresse e-mail ci-dessous et votre nouveau mot de passe.",
         "go_to_login": "Aller à la connexion",
-        "return_home": "Retour à l'accueil",
         "subtitle": "Activation terminée",
         "title": "Votre panneau est prêt",
         "tone_cta": "Diapason · le la",
-        "tone_playing": "Il résonne… coupez-le",
-        "your_username": "Votre nom d'utilisateur pour vous connecter"
+        "tone_playing": "Il résonne… coupez-le"
       },
       "title_1": "Activez votre",
       "title_2": "panneau artiste"

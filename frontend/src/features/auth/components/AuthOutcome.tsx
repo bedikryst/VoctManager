@@ -7,6 +7,11 @@
  * stack, two of them inside a second tinted box nested in the card that already
  * was the surface. The tone lives in the medallion and the overline; the card
  * around it stays the card.
+ *
+ * There is no alarm tone. A dead invitation is not a failure of anything — it is
+ * almost always an account that already exists — and crimson is the panel's
+ * alarm, spent on the one thing that is genuinely wrong. A genuine failure with
+ * no field to blame is `AuthAlert`, which is a banner, not an outcome.
  * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthOutcome
  */
@@ -17,19 +22,18 @@ import { cn } from "@/shared/lib/utils";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import type { TypographyProps } from "@/shared/ui/primitives/typography";
 
-type OutcomeTone = "success" | "info" | "alert";
+type OutcomeTone = "success" | "info";
 
 const MEDALLION: Record<OutcomeTone, string> = {
-  success: "bg-ethereal-sage/15 text-ethereal-sage",
-  info: "bg-ethereal-gold/15 text-ethereal-gold",
-  alert: "bg-ethereal-crimson/10 text-ethereal-crimson",
+  success:
+    "bg-ethereal-sage/12 text-ethereal-sage border border-ethereal-sage/25",
+  info: "bg-ethereal-gold/12 text-ethereal-gold border border-ethereal-gold/30",
 };
 
 const EYEBROW_COLOR: Record<OutcomeTone, NonNullable<TypographyProps["color"]>> =
   {
     success: "sage",
     info: "incense-muted",
-    alert: "crimson",
   };
 
 interface AuthOutcomeProps {
@@ -37,12 +41,17 @@ interface AuthOutcomeProps {
   readonly tone: OutcomeTone;
   readonly eyebrow: string;
   readonly title: string;
-  /** `h2` where the screen already has a headline above it (the Nave rail). */
+  /** `h2` where the screen already has a headline above it. */
   readonly headingAs?: "h1" | "h2";
   readonly description?: string;
   /** Anything the outcome hands over — a credential to copy, a tuning fork. */
   readonly children?: React.ReactNode;
-  /** Where the member goes next; a row on desktop, stacked on a phone. */
+  /**
+   * Where the member goes next. A stack, not a row: two uppercase CTAs side by
+   * side at equal width are two slabs shouting the same volume, and the second
+   * way forward is almost never the equal of the first. Pass one `fullWidth`
+   * button, and let a quieter alternative follow it as a line of type.
+   */
   readonly actions?: React.ReactNode;
 }
 
@@ -56,7 +65,7 @@ export const AuthOutcome = ({
   children,
   actions,
 }: AuthOutcomeProps): React.JSX.Element => (
-  <div className="flex h-full flex-col justify-center text-center">
+  <div className="flex flex-col text-center">
     <motion.div
       initial={{ scale: 0.6, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
@@ -84,15 +93,6 @@ export const AuthOutcome = ({
 
     {children}
 
-    {/* Two uppercase CTAs at 0.1em tracking do not shrink — `Button` is
-        `whitespace-nowrap` — so a fixed row makes the pair's full width the
-        outcome's minimum, and in a grid that minimum is paid for by the column
-        NEXT to it. Wrapping lets the second action drop to its own line when the
-        card is narrow, and keeps the outcome's min-content down to one button. */}
-    {actions && (
-      <div className="mt-7 flex flex-wrap justify-center gap-3 *:min-w-48 *:flex-1">
-        {actions}
-      </div>
-    )}
+    {actions && <div className="mt-7 flex flex-col gap-4">{actions}</div>}
   </div>
 );
