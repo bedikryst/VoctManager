@@ -122,9 +122,9 @@ crontab -e
 
 ### Why daily, and why also inside `make deploy`
 
-One production build writes ~4–5 GB: a ~960 MB BuildKit layer for the photo and
-video originals copied into the web-builder stage, another ~1.1 GB for the Astro
-`dist/` it produces, the same ~1.1 GB again in the new nginx image (which
+One production build writes several GB: a ~960 MB BuildKit layer for the photo
+and video originals copied into the web-builder stage, another ~550 MB for the
+Astro `dist/` it produces, the same ~550 MB again in the new nginx image (which
 orphans the previous one), plus panel and backend layers. Nothing evicts the old
 records on its own.
 

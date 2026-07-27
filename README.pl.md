@@ -438,7 +438,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 **Backupy:** [`infra/backup.sh`](infra/backup.sh) robi dzienny dump PostgreSQL + tar mediów, kopiuje je off-site na fundacyjny Google Shared Drive i pinguje monitor healthcheck, więc nieudany run alarmuje zamiast przejść po cichu. Instalacja crona, konfiguracja rclone/service-accountu oraz próba odtworzenia (restore drill) są w [`docs/backups.md`](docs/backups.md).
 
-**Higiena dysku:** build zapisuje ~4–5 GB warstw obrazów i cache'u BuildKita, a nic nie usuwa tego, co zostało po poprzednim — dominującym składnikiem jest `dist/` Astro (~1,1 GB), zapisany raz jako rekord build-cache i drugi raz wewnątrz obrazu nginx. Dlatego `make deploy` uruchamia [`infra/docker-gc.sh`](infra/docker-gc.sh) przed buildem (zapas miejsca) i po nim (kasuje obraz osierocony przez build, przycina cache do budżetu); dzienny wpis crona w [`docs/backups.md`](docs/backups.md) wyłapuje ręczne `docker compose build`. Ręczny odzysk: `make gc`, albo `make gc DEEP=--deep` żeby zrzucić też cache-mounty npm/Astro.
+**Higiena dysku:** build zapisuje kilka GB warstw obrazów i cache'u BuildKita, a nic nie usuwa tego, co zostało po poprzednim — dominującym składnikiem jest `dist/` Astro (~550 MB, w większości self-hostowane wideo), zapisany raz jako rekord build-cache i drugi raz wewnątrz obrazu nginx. Dlatego `make deploy` uruchamia [`infra/docker-gc.sh`](infra/docker-gc.sh) przed buildem (zapas miejsca) i po nim (kasuje obraz osierocony przez build, przycina cache do budżetu); dzienny wpis crona w [`docs/backups.md`](docs/backups.md) wyłapuje ręczne `docker compose build`. Ręczny odzysk: `make gc`, albo `make gc DEEP=--deep` żeby zrzucić też cache-mounty npm/Astro.
 
 ---
 

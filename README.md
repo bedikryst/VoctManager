@@ -445,7 +445,7 @@ Make aborts on the first failing step, so a broken build never reaches the datab
 
 **Backups:** [`infra/backup.sh`](infra/backup.sh) takes a daily PostgreSQL dump + media tar, mirrors it off-site to the foundation's Google Shared Drive, and pings a healthcheck monitor so a failed run alerts instead of passing silently. Cron install, the rclone/service-account setup, and the restore drill are in [`docs/backups.md`](docs/backups.md).
 
-**Disk hygiene:** a build writes ~4–5 GB of image layers and BuildKit cache, and nothing evicts the previous build's — the dominant term is the Astro `dist/` (~1.1 GB), which is stored once as a build-cache record and again inside the nginx image. `make deploy` therefore runs [`infra/docker-gc.sh`](infra/docker-gc.sh) before the build (headroom) and after it (drops the image the build orphaned, trims the cache to a budget); a daily cron line in [`docs/backups.md`](docs/backups.md) catches manual `docker compose build` runs. Reclaim by hand with `make gc`, or `make gc DEEP=--deep` to also drop the npm/Astro cache mounts.
+**Disk hygiene:** a build writes several GB of image layers and BuildKit cache, and nothing evicts the previous build's — the dominant term is the Astro `dist/` (~550 MB, mostly self-hosted video), which is stored once as a build-cache record and again inside the nginx image. `make deploy` therefore runs [`infra/docker-gc.sh`](infra/docker-gc.sh) before the build (headroom) and after it (drops the image the build orphaned, trims the cache to a budget); a daily cron line in [`docs/backups.md`](docs/backups.md) catches manual `docker compose build` runs. Reclaim by hand with `make gc`, or `make gc DEEP=--deep` to also drop the npm/Astro cache mounts.
 
 ---
 

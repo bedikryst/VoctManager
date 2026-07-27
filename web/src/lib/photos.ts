@@ -5,6 +5,13 @@
  *  swapping the source extension never touches page code. Returns Astro `ImageMetadata` for
  *  use with <Image>, <Picture>, <BleedImage>, or getImage(). Eager glob = metadata only
  *  (dimensions/format), resolved at build time; the actual bytes are still optimized per use.
+ *
+ *  CONSTRAINT: eager also means every original joins the module graph, so Vite emits each one
+ *  as a build asset — it cannot know the file will only ever reach <Picture>, which writes its
+ *  own renditions under different names. Left alone that ships the untouched camera JPEGs
+ *  (~490 MB) next to the variants. `prune-orphan-assets.mjs` deletes the unreferenced ones at
+ *  the end of the build; anything reached through `.src` stays, because the URL lands in the
+ *  page output. Keep it that way — reading `.src` is what marks an original as really needed.
  * @architecture Astro islands 2026
  * @module lib/photos
  */

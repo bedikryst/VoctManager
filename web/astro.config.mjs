@@ -24,6 +24,8 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 
+import { pruneOrphanAssets } from "./prune-orphan-assets.mjs";
+
 export default defineConfig({
   site: "https://voctensemble.com",
   build: {
@@ -63,5 +65,9 @@ export default defineConfig({
         locales: { pl: "pl", en: "en", fr: "fr" },
       },
     }),
+    // The eager image glob in src/lib/photos.ts makes Vite emit every camera original
+    // next to the optimized renditions, unreferenced. Runs last so it sees the finished
+    // output of every integration above it. See prune-orphan-assets.mjs.
+    pruneOrphanAssets(),
   ],
 });
