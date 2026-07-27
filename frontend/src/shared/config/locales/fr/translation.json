@@ -2638,26 +2638,21 @@
       "view_project": "Ouvrir le projet"
     },
     "deck": {
-      "all_clear": "Boîte vide — toutes les conversations traitées.",
       "channels": "Canaux de projet",
-      "empty": "Aucune conversation. Commencez un nouveau message.",
+      "channels_census": "{{visible}} sur {{total}}",
+      "empty": "Aucune conversation pour l'instant. Commencez par un nouveau message.",
+      "empty_title": "La boîte est silencieuse",
       "eyebrow": "Boîte du chef de chœur",
       "eyebrow_artist": "Votre boîte",
+      "in_my_care": "Sous votre responsabilité",
+      "lead_assign": "Des demandes attendent d'être attribuées.",
+      "lead_unread": "De nouveaux messages sont arrivés.",
+      "lead_unread_artist": "Vous avez de nouveaux messages.",
+      "my_threads": "Vos conversations",
       "needs_assignment": "À attribuer",
       "needs_attention": "À traiter",
-      "stat_open": "ouvertes",
-      "stat_unassigned": "sans suivi",
-      "stat_unread": "non lus",
-      "summary_assign_one": "{{count}} en attente d'attribution",
-      "summary_assign_few": "{{count}} en attente d'attribution",
-      "summary_assign_many": "{{count}} en attente d'attribution",
-      "summary_assign_other": "{{count}} en attente d'attribution",
       "summary_clear": "Tout est à jour.",
-      "summary_clear_artist": "Aucun nouveau message.",
-      "summary_unread_one": "{{count}} non lu",
-      "summary_unread_few": "{{count}} non lues",
-      "summary_unread_many": "{{count}} non lues",
-      "summary_unread_other": "{{count}} non lus"
+      "summary_clear_artist": "Aucun nouveau message."
     },
     "eyebrow": "Communication",
     "filter": {
@@ -2669,10 +2664,12 @@
       "unread": "Nouvelles"
     },
     "list": {
-      "empty": "Aucune conversation. Commencez un nouveau message.",
+      "empty": "Aucune conversation pour l'instant. Commencez par un nouveau message.",
+      "empty_title": "La boîte est silencieuse",
       "loading": "Chargement…",
       "management": "Direction",
       "no_match": "Aucune conversation pour ce filtre.",
+      "reset": "Tout afficher",
       "unread": "Non lus"
     },
     "new": "Nouveau",

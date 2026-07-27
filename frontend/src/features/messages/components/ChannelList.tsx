@@ -37,10 +37,10 @@ export const ChannelList: React.FC<ChannelListProps> = ({ channels, activeId, on
             onClick={() => onSelect(channel.id)}
             whileTap={{ scale: 0.99 }}
             className={cn(
-              "flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              "flex w-full items-center gap-3 rounded-nested border px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               isActive
                 ? "border-ethereal-gold/40 bg-ethereal-gold/10"
-                : "border-ethereal-ink/8 bg-ethereal-alabaster/40 hover:bg-ethereal-alabaster/70",
+                : "border-hairline-strong bg-ethereal-alabaster/40 hover:bg-ethereal-alabaster/70",
             )}
           >
             <Avatar size="sm" shape="rounded" tone="neutral" name={channel.project_name} />

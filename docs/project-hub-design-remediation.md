@@ -1,9 +1,9 @@
 # Project Hub — design remediation
 
 **Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and the
-first two Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
+first four Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
 `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared primitives it exposes, now widening per
-feature (§8).
+feature (§8). `StatePanel` adoption and the `SegmentedTabs` unification are both closed.
 
 ## How to read this file
 
@@ -20,30 +20,34 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
 ## Still open
 
-- **27 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the third Phase 3 pass
-  cleared its 17. Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]` class, minus
-  the primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`, `SegmentedTabs`).
-  What is left: auth 12 (`pages/auth` 9 + `features/auth` 3), `shared/ui` composites 4
-  (`AutosaveStatus`, `ComposerCard`, `ErrorScreen`, `EtherealLoader`), materials 3, annotations 3,
-  `widgets/utility` 3, schedule 1, rehearsals 1. The widest outliers in the tree are still
-  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
+- **29 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the messages pass (which
+  had none of them; it cleared a rogue `tracking-[0.12em]` on an `Eyebrow` instead, which this
+  recipe does not catch). Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]`
+  class, minus the primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`,
+  `SegmentedTabs`). What is left: auth 12 (`pages/auth` 9 + `features/auth` 3), `shared/ui` 6 (the
+  earlier "4" undercounted), materials 3, annotations 3, `widgets/utility` 3, schedule 1,
+  rehearsals 1. The widest outliers in the tree are still `UserLocalClock`'s `tracking-[0.4em]` /
+  `[0.2em]`.
 - **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive`,
-  artists+crew+logistics and settings+dashboard+notifications+contracts.** ~59 raw
-  `ethereal-ink/6|8|10|12` rules remain outside them — rehearsals 19, messages 13, `shared/ui` 9,
-  annotations 5, chorister-hub 4, projects 3, and a scattering of 2s. This is **not** a sweep — see
-  the note opening §5 — it rides along with per-feature passes. Note the false positives: a bar
-  track, a slider groove and a scrim are *fills* at those alphas, not 1px rules, and stay as they
-  are; every cleared feature still greps 1.
-- **`SegmentedTabs` has five hand-rolled copies left.** The gold-pill-on-alabaster track was typed
-  privately in eight places; the contracts pass adopted its three and gave the composite the
-  optional `count` those call sites needed. Still open: `features/artists/RosterToolbar`,
-  `features/crew/CrewToolbar`, `features/projects/DashboardFilterMenu`,
-  `features/rehearsals/RehearsalRail` and `features/rehearsals/Rehearsals`. Two of those belong to
-  features whose pass already shipped — worth one small follow-up rather than waiting.
-- **`StatePanel` adoption**: `features/messages` is the last hand-rolled centred empty state
-  (`ThreadList`, `ConductorDeck`, `MessagesPage`). `features/dashboard`'s `ArtistEmptyState` was
-  left deliberately: it is a named scene with its own breathing-ring scenography, not the ad-hoc
-  icon stack the rule targets, and `StatePanel` cannot carry a `backgroundElement`.
+  artists+crew+logistics, settings+dashboard+notifications+contracts and messages.** 38 raw
+  `ethereal-ink/6|8|10|12` rules remain outside them — rehearsals 17, `shared/ui` 5,
+  chorister-hub 4, projects 2, annotations 2, and nine features on 1 each. This is **not** a sweep
+  — see the note opening §5 — it rides along with per-feature passes. Note the false positives: a
+  bar track, a slider groove and a scrim are *fills* at those alphas, not 1px rules, and stay as
+  they are; every cleared feature still greps 1.
+- ~~`SegmentedTabs` has five hand-rolled copies left~~ — **closed 2026-07-27.** All eight private
+  copies of the gold-pill-on-alabaster track are gone; `grep "bg-ethereal-gold text-ethereal-ink
+  shadow-sm"` returns the composite and nothing else. The composite gained `iconOnly` for the two
+  density toggles that were never mechanical adoptions (§8).
+- ~~`StatePanel` adoption~~ — **closed 2026-07-27** with the messages pass. `features/dashboard`'s
+  `ArtistEmptyState` is the one deliberate exception: a named scene with its own breathing-ring
+  scenography, not the ad-hoc icon stack the rule targets, and `StatePanel` cannot carry a
+  `backgroundElement`.
+- **`Eyebrow size="caption"` is used 42× and is off-role.** The overline has exactly two declared
+  sizes (`overline`, `overline-sm`); `caption` is an 11px escape hatch that half the panel reaches
+  for, the archive pass included. Deciding it is a `shared/ui` call, not a feature pass's — either
+  legitimise it in `Eyebrow` or migrate the 42 to `overline-sm`. The messages pass deliberately
+  left the size alone and removed only the local letter-spacing override.
 - **Diacritic-folding search is now universal and should stay that way.** Every user-facing search in
   the panel goes through `shared/lib/text.foldDiacritics`; the archive follow-up swept the last three
   (both archive lists, plus `useMaterialsData` and `ProjectLedgerRail`, which were found while
@@ -63,11 +67,12 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-Suggested split for what is left: messages (the last `StatePanel` holdout, and 13 raw hairline
-rules), then auth — the single largest remaining pocket of raw overlines, spanning `pages/auth` and
-`features/auth` together. Rehearsals is its own chat (19 hairline rules, plus the copy pass and the
-`isPast`/`isLive` timer above). The five `SegmentedTabs` copies are a small standalone follow-up.
-Run them sequentially, not in parallel: they all touch the three locale files.
+Suggested split for what is left: **auth next** — the single largest remaining pocket of raw
+overlines (12), spanning `pages/auth` and `features/auth` together, on surfaces a first-time user
+meets before anything else. Then rehearsals as its own chat (17 hairline rules, plus the copy pass
+and the `isPast`/`isLive` timer above), and `shared/ui` last, since its 6 overlines and 5 hairlines
+sit in composites every feature renders and a change there is a change everywhere. Run them
+sequentially, not in parallel: they all touch the three locale files.
 
 ## Decisions, settled
 
@@ -1344,6 +1349,88 @@ a second copy of a list is how this document's problem started.
 Each of these carries all three concerns at once (raw overlines, `StatePanel`, radius/hairline
 tokens) over one feature, read screen by screen rather than swept by regex. They run sequentially:
 they all touch the same three locale files.
+
+### `features/messages` + the last five `SegmentedTabs` copies (SHIPPED 2026-07-27)
+
+All 13 raw hairline rules are on the tokens, every off-scale radius with them, and `grep` over
+`features/messages` for `ethereal-ink/6|8|10|12`, `rounded-(lg|xl|2xl)`, `z-[…]` and stock-palette
+colours now returns nothing. The three hand-rolled empty states are `StatePanel variant="inline"` —
+that was the tree's last holdout, so `StatePanel` adoption is closed except for `dashboard`'s
+`ArtistEmptyState`, which stays a named scene on purpose. Two token violations were carried along
+because they were sitting in the same lines: `NewThreadModal` painted its panel at a hand-written
+`z-9999` above every declared layer (`z-toast` now, matching `ConfirmModal`), and its close button
+was the last `text-stone-400` in the feature — a stock Tailwind grey on an Ethereal surface.
+
+The semantics were read out of `backend/messaging/views.py`, not guessed, and nothing about them
+moved: a manager's queryset is `Q(assignee=me) | Q(assignee__isnull=True)`, so 1:1 threads stay
+private to their assignee with no cross-manager visibility and no superuser override, and channels
+stay in-app + opt-in push (`ChannelService`, not the notifications router). **One premise in the
+brief did not hold:** threads are not paginated. Both viewsets set `pagination_class = None`
+deliberately, to mirror the notifications inbox and the 30 s polling model. The only narrowing in
+the feature was a `slice()`, below.
+
+But the pass found four things that were not micro-decisions, all of them in the same file.
+
+**`ConductorDeck` computed a bucket it never rendered.** `mineOpen` — open threads the manager has
+claimed and already read — was built in the `useMemo`, returned in the object, and used nowhere. So
+the deck's answer to "what am I responsible for" was: for a manager whose queue is claimed and read,
+a sage "Skrzynka czysta" banner and a list of project channels. Their entire caseload was
+invisible on the one screen built to show it. It renders now as *Pod Twoją opieką* (artists get
+*Twoje rozmowy*, the same bucket without the assignee test).
+
+**The four buckets were four independent filters over one list, so rows appeared two and three
+times.** A thread that was unassigned *and* unread was drawn under both *Wymaga przydziału* and
+*Wymaga uwagi*; an unread channel was drawn under *Wymaga uwagi* and again under *Kanały projektów*.
+Nothing was wrong with any single filter — the sharing did it, the same shape as the contracts tone
+table. The buckets are a partition now: a precedence, a `claimed` set, and each bucket skipping what
+the one above it took. That rule is in `.ai/04`.
+
+**Three voices for one number, and the wrong one was chosen.** The deck printed the headline
+(`3 czeka na przydział`), a row of three `StatChip`s (`3 bez opieki`, and `0 nieprzeczytane` on a
+calm inbox — the resting default in the loudest slot), and then the three rows themselves. Two of
+the chips spent `ethereal-crimson` on "unread" and "unassigned", which are ordinary work in
+progress, not alarms; a fourth crimson came from `Section tone="alarm"`. The chips are gone and the
+figures moved to the inbox filter tabs, on the argument that decided it: **the deck is desktop-only
+and evaporates on the first click, while the tabs are on screen at both breakpoints and never
+leave** — a count that vanishes when you start working is a count that is not there when you need
+it. The deck's headline is now a lead with no figure, and its sections state the work by listing it.
+
+**A tab count is only as honest as the predicate behind it.** Adding `count` to five filters is
+where the archive header bug gets re-introduced, so `MessagesPage` now has one `select` memo
+exposing `threads(filter)` and `channels(filter)`, and the visible list and every count call the
+same two functions — the counts respect the active search, and `Nowe` counts the channels it will
+actually render. Counts go only on `Nowe` / `Bez opieki` / `Moje`, and only above zero: `Wszystkie`
+is the resting default and `Zamknięte` is an archive, not a backlog. Writing that predicate surfaced
+a defect underneath: `Moje` had no status test at all, so it listed `ARCHIVED` threads that
+`Wszystkie` excludes — the default view hid a thread a sibling tab put back. All five now agree on
+scope.
+
+Smaller, in the same pass: `recentChannels.slice(0, 6)` was a silent narrowing under its own heading
+and now states `{{visible}} z {{total}}` (managers see *every* channel, so the cap is worth keeping);
+the all-clear sage banner said what the headline two lines above already said; `ThreadList`'s empty
+branch was dead (all four callers gate on length) and was the second, conflicting default for
+`messages.list.empty`; the thread-status pill and the project-context chip were three hand-rolled
+`rounded-full` chips and are now `Badge` (the context chip had been two chips — gold for a manager,
+neutral for an artist — for one fact whose only real difference is that the manager's is a link);
+`ChannelRow` and `MessageBubble` drew the same object at two radii; the back button, the channel
+push toggle and the modal close were hand-rolled `<button>`s where `Button variant="icon"` exists;
+and `SectionLabel`'s `tracking-[0.12em]` was a 17th letter-spacing for the overline role.
+
+Two searches were widened while the predicate was being written: channels searched `project_name`
+but not the `snippet` the row displays, and a manager's thread search could not find the assignee's
+name. Both still fold through `shared/lib/text`. `FilterTokens` was **declined** here: the two
+narrowings are the search input and the gold tab pill, and both are already legible as themselves.
+`Badge`'s `pulse` was audited and is correctly absent — the feature's only pulse is the optimistic
+send's clock, which resolves in a heartbeat and passes the "still true in an hour?" test.
+
+**The `SegmentedTabs` follow-up closed all five copies**, so the composite is now the only gold pill
+on an alabaster track in the tree. Three were mechanical (`DashboardFilterMenu`, which also had a
+`rounded-full` count pill off the radius scale; `RehearsalRail`; `Rehearsals`). **Two were not, and
+the brief's "adopcja jest mechaniczna" did not hold for them:** `RosterToolbar` and `CrewToolbar`
+are icon-only 36px density toggles, and `SegmentedTabs` always rendered a visible `Label`. Rather
+than make two toolbars grow word labels that would push the search field off a phone, the composite
+gained `iconOnly` — square segments, label as `aria-label` + `title` — documented so it stays a
+*density* affordance and never becomes a licence to hide the name of a content view.
 
 ### `features/settings` + `dashboard` + `notifications` + `contracts` (SHIPPED 2026-07-27)
 

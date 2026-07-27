@@ -2639,26 +2639,21 @@
       "view_project": "Otwórz projekt"
     },
     "deck": {
-      "all_clear": "Skrzynka czysta — wszystkie rozmowy obsłużone.",
       "channels": "Kanały projektów",
-      "empty": "Brak rozmów. Zacznij nową wiadomością.",
+      "channels_census": "{{visible}} z {{total}}",
+      "empty": "Nie ma jeszcze żadnych rozmów. Zacznij nową wiadomością.",
+      "empty_title": "Cisza w skrzynce",
       "eyebrow": "Skrzynka dyrygenta",
       "eyebrow_artist": "Twoja skrzynka",
+      "in_my_care": "Pod Twoją opieką",
+      "lead_assign": "Zgłoszenia czekają na przydział.",
+      "lead_unread": "Są nowe wiadomości.",
+      "lead_unread_artist": "Masz nowe wiadomości.",
+      "my_threads": "Twoje rozmowy",
       "needs_assignment": "Wymaga przydziału",
       "needs_attention": "Wymaga uwagi",
-      "stat_open": "otwarte",
-      "stat_unassigned": "bez opieki",
-      "stat_unread": "nieprzeczytane",
-      "summary_assign_one": "{{count}} czeka na przydział",
-      "summary_assign_few": "{{count}} czekają na przydział",
-      "summary_assign_many": "{{count}} czeka na przydział",
-      "summary_assign_other": "{{count}} czeka na przydział",
       "summary_clear": "Wszystko ogarnięte.",
-      "summary_clear_artist": "Brak nowych wiadomości.",
-      "summary_unread_one": "{{count}} nieprzeczytana",
-      "summary_unread_few": "{{count}} nieprzeczytane",
-      "summary_unread_many": "{{count}} nieprzeczytanych",
-      "summary_unread_other": "{{count}} nieprzeczytanych"
+      "summary_clear_artist": "Brak nowych wiadomości."
     },
     "eyebrow": "Komunikacja",
     "filter": {
@@ -2670,10 +2665,12 @@
       "unread": "Nowe"
     },
     "list": {
-      "empty": "Brak rozmów. Zacznij nową wiadomością.",
+      "empty": "Nie ma jeszcze żadnych rozmów. Zacznij nową wiadomością.",
+      "empty_title": "Cisza w skrzynce",
       "loading": "Ładowanie…",
       "management": "Zarząd",
       "no_match": "Brak rozmów dla tego filtra.",
+      "reset": "Pokaż wszystkie",
       "unread": "Nieprzeczytane"
     },
     "new": "Nowa",

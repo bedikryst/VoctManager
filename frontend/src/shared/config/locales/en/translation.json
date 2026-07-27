@@ -2638,26 +2638,21 @@
       "view_project": "Open project"
     },
     "deck": {
-      "all_clear": "Inbox clear — every conversation handled.",
       "channels": "Project channels",
+      "channels_census": "{{visible}} of {{total}}",
       "empty": "No conversations yet. Start a new message.",
+      "empty_title": "The inbox is quiet",
       "eyebrow": "Conductor's inbox",
       "eyebrow_artist": "Your inbox",
+      "in_my_care": "In your care",
+      "lead_assign": "Requests are waiting to be assigned.",
+      "lead_unread": "There are new messages.",
+      "lead_unread_artist": "You have new messages.",
+      "my_threads": "Your conversations",
       "needs_assignment": "Needs assignment",
       "needs_attention": "Needs attention",
-      "stat_open": "open",
-      "stat_unassigned": "unattended",
-      "stat_unread": "unread",
-      "summary_assign_one": "{{count}} awaiting assignment",
-      "summary_assign_few": "{{count}} awaiting assignment",
-      "summary_assign_many": "{{count}} awaiting assignment",
-      "summary_assign_other": "{{count}} awaiting assignment",
       "summary_clear": "All caught up.",
-      "summary_clear_artist": "No new messages.",
-      "summary_unread_one": "{{count}} unread",
-      "summary_unread_few": "{{count}} unread",
-      "summary_unread_many": "{{count}} unread",
-      "summary_unread_other": "{{count}} unread"
+      "summary_clear_artist": "No new messages."
     },
     "eyebrow": "Communication",
     "filter": {
@@ -2670,9 +2665,11 @@
     },
     "list": {
       "empty": "No conversations yet. Start a new message.",
+      "empty_title": "The inbox is quiet",
       "loading": "Loading…",
       "management": "Management",
       "no_match": "No conversations for this filter.",
+      "reset": "Show all",
       "unread": "Unread"
     },
     "new": "New",

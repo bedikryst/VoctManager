@@ -12,6 +12,10 @@ import { useTranslation } from "react-i18next";
 import { ArrowDownUp, LayoutGrid, List, ListChecks, Search } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -28,11 +32,6 @@ interface RosterToolbarProps {
   readonly onToggleSelectionMode: () => void;
 }
 
-const VIEW_OPTIONS = [
-  { mode: "grid" as const, Icon: LayoutGrid, labelKey: "artists.toolbar.view_grid", fallback: "Siatka" },
-  { mode: "list" as const, Icon: List, labelKey: "artists.toolbar.view_list", fallback: "Lista" },
-];
-
 export const RosterToolbar = ({
   searchTerm,
   onSearch,
@@ -44,6 +43,11 @@ export const RosterToolbar = ({
   onToggleSelectionMode,
 }: RosterToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
+
+  const viewItems: SegmentedTabItem<RosterView>[] = [
+    { id: "grid", label: t("artists.toolbar.view_grid", "Siatka"), Icon: LayoutGrid },
+    { id: "list", label: t("artists.toolbar.view_list", "Lista"), Icon: List },
+  ];
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -100,34 +104,14 @@ export const RosterToolbar = ({
           />
         </div>
 
-        <div
-          role="group"
-          aria-label={t("artists.toolbar.view_label", "Widok")}
-          className="inline-flex shrink-0 gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1"
-        >
-          {VIEW_OPTIONS.map(({ mode, Icon, labelKey, fallback }) => {
-            const isActive = viewMode === mode;
-            const label = t(labelKey, fallback);
-            return (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={isActive}
-                title={label}
-                aria-label={label}
-                onClick={() => onViewMode(mode)}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                  isActive
-                    ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
-                )}
-              >
-                <Icon size={16} aria-hidden="true" />
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          items={viewItems}
+          value={viewMode}
+          onChange={onViewMode}
+          ariaLabel={t("artists.toolbar.view_label", "Widok")}
+          className="shrink-0"
+          iconOnly
+        />
       </div>
     </div>
   );

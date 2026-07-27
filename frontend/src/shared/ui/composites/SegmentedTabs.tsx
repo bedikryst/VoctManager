@@ -36,6 +36,14 @@ interface SegmentedTabsProps<TId extends string> {
   className?: string;
   /** Wrap segments onto a second row in narrow containers instead of h-scrolling. */
   wrap?: boolean;
+  /**
+   * Square 36px segments carrying the icon alone; `label` becomes the accessible
+   * name and the tooltip. Reserved for a two-or-three-state *density* toggle
+   * (grid ↔ list) sitting inside a toolbar row, where a spelled-out label would
+   * push the search field off a phone. A switcher between two bodies of CONTENT
+   * always keeps its words — an icon cannot say "Frekwencja".
+   */
+  iconOnly?: boolean;
 }
 
 export function SegmentedTabs<TId extends string>({
@@ -45,6 +53,7 @@ export function SegmentedTabs<TId extends string>({
   ariaLabel,
   className,
   wrap = false,
+  iconOnly = false,
 }: SegmentedTabsProps<TId>): React.JSX.Element {
   return (
     <div
@@ -52,9 +61,11 @@ export function SegmentedTabs<TId extends string>({
       aria-label={ariaLabel}
       className={cn(
         "flex w-full max-w-full gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1",
-        wrap
-          ? "flex-wrap"
-          : "overflow-x-auto no-scrollbar sm:inline-flex sm:w-max",
+        iconOnly
+          ? "inline-flex w-auto"
+          : wrap
+            ? "flex-wrap"
+            : "overflow-x-auto no-scrollbar sm:inline-flex sm:w-max",
         className,
       )}
     >
@@ -67,19 +78,28 @@ export function SegmentedTabs<TId extends string>({
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(id)}
+            aria-label={iconOnly ? label : undefined}
+            title={iconOnly ? label : undefined}
             className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-chip px-3.5 py-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-              wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
+              "inline-flex items-center justify-center gap-2 rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+              iconOnly
+                ? "h-9 w-9 shrink-0 p-0"
+                : cn(
+                    "px-3.5 py-2",
+                    wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
+                  ),
               isActive
                 ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                : "text-ethereal-graphite hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+                : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
             )}
           >
-            {Icon && <Icon size={14} aria-hidden="true" />}
-            <Label size="sm" weight="semibold" color="inherit">
-              {label}
-            </Label>
-            {count !== undefined && (
+            {Icon && <Icon size={iconOnly ? 16 : 14} aria-hidden="true" />}
+            {!iconOnly && (
+              <Label size="sm" weight="semibold" color="inherit">
+                {label}
+              </Label>
+            )}
+            {!iconOnly && count !== undefined && (
               <span
                 className={cn(
                   "rounded-chip px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",

@@ -15,6 +15,10 @@ import { Archive, CalendarClock, CalendarPlus, FolderOpen } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -157,9 +161,9 @@ export const RehearsalRail = ({
 }: RehearsalRailProps): React.JSX.Element => {
   const { t } = useTranslation();
 
-  const TABS: Array<{ id: ProjectTabType; label: string }> = [
+  const TABS: SegmentedTabItem<ProjectTabType>[] = [
     { id: "ACTIVE", label: t("rehearsals.tabs.active", "Aktywne") },
-    { id: "ARCHIVE", label: t("rehearsals.tabs.archive", "Archiwum") },
+    { id: "ARCHIVE", label: t("rehearsals.tabs.archive", "Archiwum"), Icon: Archive },
   ];
 
   return (
@@ -170,33 +174,13 @@ export const RehearsalRail = ({
       className="flex flex-col lg:max-h-[calc(100dvh-7rem)]"
     >
       <div className="shrink-0 space-y-3 border-b border-ethereal-ink/6 p-4">
-        <div
-          role="tablist"
-          aria-label={t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
-          className="grid grid-cols-2 gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1"
-        >
-          {TABS.map((tab) => {
-            const isActive = projectTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onProjectTab(tab.id)}
-                className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-semibold transition-colors",
-                  isActive
-                    ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:text-ethereal-ink",
-                )}
-              >
-                {tab.id === "ARCHIVE" && <Archive size={13} aria-hidden="true" />}
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          items={TABS}
+          value={projectTab}
+          onChange={onProjectTab}
+          ariaLabel={t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
+          wrap
+        />
 
         {displayProjects.length > 0 ? (
           <Select

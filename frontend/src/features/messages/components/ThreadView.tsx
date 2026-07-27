@@ -15,6 +15,7 @@ import { ArrowLeft, Check, Hand, FolderOpen, RotateCcw, Send, Undo2 } from "luci
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
@@ -114,16 +115,18 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-ethereal-ink/8 px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-hairline-strong px-5 py-4">
         {onBack && (
-          <button
+          <Button
+            variant="icon"
+            size="icon"
             type="button"
             onClick={onBack}
             aria-label={t("common.back", "Wstecz")}
-            className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ethereal-graphite/60 transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink md:hidden"
+            className="-ml-2 shrink-0 md:hidden"
           >
             <ArrowLeft size={18} />
-          </button>
+          </Button>
         )}
         <Avatar
           size="md"
@@ -139,25 +142,33 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
             <Label size="xs" color="muted" weight="medium">
               {counterpartName}
             </Label>
+            {/* One chip for one fact. Only a manager can open the project, so the
+                link — not a second colour — is what marks it as reachable. */}
             {projectContext &&
               (isManager ? (
                 <Link
                   to={`/panel/projects/${projectContext.id}`}
                   title={t("messages.context.view_project", "Otwórz projekt")}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-ethereal-gold/25 bg-ethereal-gold/10 px-2.5 py-0.5 transition-colors hover:border-ethereal-gold/50 hover:bg-ethereal-gold/15"
+                  className="min-w-0 max-w-full"
                 >
-                  <FolderOpen size={11} className="shrink-0 text-ethereal-gold" aria-hidden="true" />
-                  <Label size="xs" color="graphite" weight="medium" className="truncate">
-                    {projectContext.name}
-                  </Label>
+                  <Badge
+                    casing="natural"
+                    variant="neutral"
+                    icon={<FolderOpen size={11} className="text-ethereal-gold" />}
+                    className="min-w-0 max-w-full py-0.5 transition-colors hover:border-ethereal-gold/50 hover:bg-ethereal-gold/10"
+                  >
+                    <span className="truncate">{projectContext.name}</span>
+                  </Badge>
                 </Link>
               ) : (
-                <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-ethereal-ink/10 bg-ethereal-alabaster px-2.5 py-0.5">
-                  <FolderOpen size={11} className="shrink-0 text-ethereal-gold/70" aria-hidden="true" />
-                  <Label size="xs" color="muted" weight="medium" className="truncate">
-                    {projectContext.name}
-                  </Label>
-                </span>
+                <Badge
+                  casing="natural"
+                  variant="neutral"
+                  icon={<FolderOpen size={11} className="text-ethereal-gold/70" />}
+                  className="min-w-0 max-w-full py-0.5"
+                >
+                  <span className="truncate">{projectContext.name}</span>
+                </Badge>
               ))}
           </div>
         </div>
@@ -226,7 +237,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       </div>
 
       {/* Composer */}
-      <div className="border-t border-ethereal-ink/8 p-3">
+      <div className="border-t border-hairline-strong p-3">
         {isResolved && (
           <Text size="xs" color="muted" className="mb-2 px-1">
             {t(

@@ -57,10 +57,11 @@ const ChannelRow: React.FC<ChannelRowProps> = ({ message, isManager, onTogglePin
       />
       <div
         className={cn(
-          "group/row flex min-w-0 flex-1 flex-col rounded-xl border px-4 py-2.5",
+          // Same radius as a thread bubble — one object, one corner.
+          "group/row flex min-w-0 flex-1 flex-col rounded-nested border px-4 py-2.5",
           message.is_mine
             ? "bg-ethereal-gold/10 border-ethereal-gold/20"
-            : "bg-ethereal-alabaster/60 border-ethereal-ink/8",
+            : "bg-ethereal-alabaster/60 border-hairline",
           pending && "opacity-70",
         )}
       >
@@ -146,16 +147,18 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-ethereal-ink/8 px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-hairline-strong px-5 py-4">
         {onBack && (
-          <button
+          <Button
+            variant="icon"
+            size="icon"
             type="button"
             onClick={onBack}
             aria-label={t("common.back", "Wstecz")}
-            className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-ethereal-graphite/60 transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink md:hidden"
+            className="-ml-2 shrink-0 md:hidden"
           >
             <ArrowLeft size={18} />
-          </button>
+          </Button>
         )}
         <Avatar size="md" shape="rounded" tone="neutral" name={channel.project_name} />
         <div className="min-w-0 flex-1">
@@ -168,16 +171,19 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
             })}
           </Label>
         </div>
-        <button
+        {/* Channel push is opt-in per member: this control is the whole opt-in,
+            so its state has to read from across the header. */}
+        <Button
+          variant="icon"
+          size="icon"
           type="button"
           onClick={() => setPush.mutate(!channel.my_push_enabled)}
           disabled={setPush.isPending}
           aria-label={t("messages.channel.toggle_push", "Powiadomienia push")}
+          aria-pressed={channel.my_push_enabled}
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors",
-            channel.my_push_enabled
-              ? "bg-ethereal-gold/15 text-ethereal-gold"
-              : "text-ethereal-graphite/50 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
+            "shrink-0",
+            channel.my_push_enabled && "bg-ethereal-gold/15 text-ethereal-gold",
           )}
           title={
             channel.my_push_enabled
@@ -186,12 +192,12 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
           }
         >
           {channel.my_push_enabled ? <Bell size={16} /> : <BellOff size={16} />}
-        </button>
+        </Button>
       </div>
 
       {/* Pinned banner */}
       {pinned.length > 0 && (
-        <div className="border-b border-ethereal-gold/20 bg-ethereal-gold/[0.06] px-5 py-3">
+        <div className="border-b border-ethereal-gold/20 bg-ethereal-gold/6 px-5 py-3">
           <div className="mb-1 flex items-center gap-1.5">
             <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />
             <Label size="xs" color="muted" weight="semibold">
@@ -227,7 +233,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
       </div>
 
       {/* Composer */}
-      <div className="border-t border-ethereal-ink/8 p-3">
+      <div className="border-t border-hairline-strong p-3">
         <div className="flex items-end gap-2">
           {/* min-w-0 defeats the textarea's intrinsic `cols` width, which would
               otherwise keep the composer wider than a phone. */}

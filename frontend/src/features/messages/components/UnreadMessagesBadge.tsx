@@ -1,8 +1,9 @@
 /**
  * @file UnreadMessagesBadge.tsx
- * @description Reusable unread-threads count badge for navigation surfaces (desktop
- * sidebar, mobile dock, mobile sheet). Self-gating: renders nothing at zero. Must be
- * placed inside a `relative` positioned slot.
+ * @description Unread-conversation count for navigation surfaces (desktop sidebar,
+ * mobile dock, mobile sheet). The server counts 1:1 threads AND project channels into
+ * one figure, so this matches the inbox rather than a subset of it. Self-gating:
+ * renders nothing at zero. Must be placed inside a `relative` positioned slot.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */

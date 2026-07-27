@@ -18,7 +18,10 @@ import {
   Search,
 } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import type { CrewContactCompleteness } from "../types/crew.dto";
@@ -50,11 +53,6 @@ const CONTACT_OPTIONS: ReadonlyArray<{
   { value: "MISSING_CONTACT", labelKey: "crew.contact_filters.missing_contact", defaultLabel: "Niekompletny kontakt" },
 ];
 
-const VIEW_OPTIONS = [
-  { mode: "grid" as const, Icon: LayoutGrid, labelKey: "crew.toolbar.view_grid", fallback: "Siatka" },
-  { mode: "list" as const, Icon: List, labelKey: "crew.toolbar.view_list", fallback: "Lista" },
-];
-
 export const CrewToolbar = ({
   searchTerm,
   onSearch,
@@ -69,6 +67,11 @@ export const CrewToolbar = ({
   onViewMode,
 }: CrewToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
+
+  const viewItems: SegmentedTabItem<CrewView>[] = [
+    { id: "grid", label: t("crew.toolbar.view_grid", "Siatka"), Icon: LayoutGrid },
+    { id: "list", label: t("crew.toolbar.view_list", "Lista"), Icon: List },
+  ];
 
   return (
     <div className="flex flex-col gap-3">
@@ -87,34 +90,14 @@ export const CrewToolbar = ({
           />
         </div>
 
-        <div
-          role="group"
-          aria-label={t("crew.toolbar.view_label", "Widok")}
-          className="inline-flex shrink-0 gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1"
-        >
-          {VIEW_OPTIONS.map(({ mode, Icon, labelKey, fallback }) => {
-            const isActive = viewMode === mode;
-            const label = t(labelKey, fallback);
-            return (
-              <button
-                key={mode}
-                type="button"
-                aria-pressed={isActive}
-                title={label}
-                aria-label={label}
-                onClick={() => onViewMode(mode)}
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-chip transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                  isActive
-                    ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
-                )}
-              >
-                <Icon size={16} aria-hidden="true" />
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          items={viewItems}
+          value={viewMode}
+          onChange={onViewMode}
+          ariaLabel={t("crew.toolbar.view_label", "Widok")}
+          className="shrink-0"
+          iconOnly
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

@@ -247,7 +247,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-none fixed inset-0 z-9999 flex items-center justify-center p-4"
+            className="pointer-events-none fixed inset-0 z-toast flex items-center justify-center p-4"
           >
             <GlassCard
               variant="solid"
@@ -260,14 +260,16 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                     ? t("messages.compose.heading_announce", "Nowe ogłoszenie")
                     : t("messages.compose.heading", "Nowa wiadomość")}
                 </Heading>
-                <button
+                <Button
+                  variant="icon"
+                  size="icon"
                   type="button"
                   onClick={handleClose}
                   aria-label={t("common.close", "Zamknij")}
-                  className="rounded-lg p-2 text-stone-400 transition-colors hover:bg-black/5"
+                  className="-mr-2 -mt-2 shrink-0"
                 >
                   <X size={18} />
-                </button>
+                </Button>
               </div>
 
               <div className="flex flex-col gap-4 p-6">
@@ -327,7 +329,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                   <>
                     {isManager ? (
                       presetArtistId ? (
-                        <div className="rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/40 px-4 py-3">
+                        <div className="rounded-control border border-hairline bg-ethereal-alabaster/40 px-4 py-3">
                           <Eyebrow color="muted" size="caption">
                             {t("messages.compose.recipient_to", "Do")}
                           </Eyebrow>

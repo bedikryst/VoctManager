@@ -48,10 +48,10 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           // min-w-0 keeps the 78% cap honest: a flex item's automatic minimum is
           // its content, so one long word would otherwise widen the bubble past
           // the pane — off-screen on the right, since mine align to the end.
-          "min-w-0 max-w-[78%] rounded-2xl border px-4 py-2.5",
+          "min-w-0 max-w-[78%] rounded-nested border px-4 py-2.5",
           mine
             ? "bg-ethereal-gold/12 border-ethereal-gold/25"
-            : "bg-ethereal-alabaster/70 border-ethereal-ink/8",
+            : "bg-ethereal-alabaster/70 border-hairline",
           pending && "opacity-70",
         )}
       >

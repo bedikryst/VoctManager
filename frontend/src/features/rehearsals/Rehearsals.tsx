@@ -13,11 +13,14 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { ListChecks, MousePointerClick, TrendingUp } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import {
   StaggeredBentoContainer,
@@ -92,47 +95,26 @@ export default function Rehearsals(): React.JSX.Element {
     return <EtherealLoader />;
   }
 
-  const VIEWS: Array<{ id: RehearsalView; label: string; icon: React.ReactNode }> = [
+  const VIEWS: SegmentedTabItem<RehearsalView>[] = [
     {
       id: "ROLL_CALL",
       label: t("rehearsals.views.roll_call", "Odprawa"),
-      icon: <ListChecks size={14} aria-hidden="true" />,
+      Icon: ListChecks,
     },
     {
       id: "RELIABILITY",
       label: t("rehearsals.views.reliability", "Frekwencja"),
-      icon: <TrendingUp size={14} aria-hidden="true" />,
+      Icon: TrendingUp,
     },
   ];
 
   const viewSwitch = (
-    <div
-      role="tablist"
-      aria-label={t("rehearsals.views.label", "Widok")}
-      className="flex w-full gap-1 rounded-2xl border border-ethereal-ink/8 bg-ethereal-alabaster/70 p-1 md:w-auto"
-    >
-      {VIEWS.map((item) => {
-        const isActive = view === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => setView(item.id)}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold transition-colors md:flex-none",
-              isActive
-                ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                : "text-ethereal-graphite hover:text-ethereal-ink",
-            )}
-          >
-            {item.icon}
-            {item.label}
-          </button>
-        );
-      })}
-    </div>
+    <SegmentedTabs
+      items={VIEWS}
+      value={view}
+      onChange={setView}
+      ariaLabel={t("rehearsals.views.label", "Widok")}
+    />
   );
 
   return (
