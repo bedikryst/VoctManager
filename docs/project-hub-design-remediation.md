@@ -1,7 +1,7 @@
 # Project Hub — design remediation
 
 **Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and the
-first five Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
+first six Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
 `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared primitives it exposes, now widening per
 feature (§8). `StatePanel` adoption and the `SegmentedTabs` unification are both closed.
 
@@ -20,21 +20,35 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
 ## Still open
 
-- **17 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the auth pass (which
-  cleared all 12 of its own). Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]`
-  class, minus the primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`,
-  `SegmentedTabs`). What is left: `widgets/utility` 3, annotations 3, `shared/ui` 6
-  (`typography` 2 — the role's own declarations — plus kinematics, feedback, composites,
-  repertoire on 1 each), materials 3, schedule 1, rehearsals 1. The widest outliers in the tree
-  are still `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
+- **15 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the rehearsals pass (which
+  cleared its one). Reproducible recipe — run it rather than trusting this number:
+
+  ```
+  grep -rInE 'uppercase' frontend/src --include=*.tsx --include=*.ts \
+    | grep -E 'tracking-|text-\[0' \
+    | grep -vE 'typography/Typography|primitives/(Badge|Button)\.tsx|SegmentedTabs'
+  ```
+
+  What is left: `shared/ui` 5, `widgets/utility` 3, annotations 3, materials 3, schedule 1. On top
+  of those, `typography/Typography.tsx` carries 2 — the role's own declarations, excluded above
+  because they are the definition and not a defect. The widest outliers in the tree are still
+  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
 - **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive`,
-  artists+crew+logistics, settings+dashboard+notifications+contracts, messages and auth.** This is
-  **not** a sweep — see the note opening §5 — it rides along with per-feature passes. The auth pass
-  re-measured the number the way the next pass actually needs it, **counting rules and fills
-  separately**, because the old figure (38) mixed them: greping for a `border-`/`divide-`/`ring-`
-  prefix leaves **19 true 1px rules** — rehearsals 14, annotations 2, and schedule, projects and
-  chorister-hub on 1 each. Everything else at those alphas is a bar track, a dot, a groove or a
-  scrim — a *fill*, which stays. Auth now greps 2 and both are fills.
+  artists+crew+logistics, settings+dashboard+notifications+contracts, messages, auth and
+  rehearsals.** This is **not** a sweep — see the note opening §5 — it rides along with per-feature
+  passes. The auth pass re-measured the number the way each pass actually needs it, **counting
+  rules and fills separately**, because the old figure (38) mixed them. Reproducible recipe — the
+  low-alpha ink rules the `hairline` tokens exist to replace, as opposed to `incense/20`, which is
+  the design system's own surface border and stays:
+
+  ```
+  grep -rInE '(border|divide|ring)-ethereal-ink/(4|6|8|10|12)' frontend/src --include=*.tsx --include=*.ts
+  ```
+
+  **8 true 1px rules remain** — projects 3, annotations 3, schedule 1, chorister-hub 1. (The
+  previous figure of 19, with its per-feature split, does not reproduce; only the rehearsals part
+  of it, 14, did — and that is now 0.) Everything else at those alphas is a bar track, a dot, a
+  groove or a scrim: a *fill*, which stays.
 - ~~`SegmentedTabs` has five hand-rolled copies left~~ — **closed 2026-07-27.** All eight private
   copies of the gold-pill-on-alabaster track are gone; `grep "bg-ethereal-gold text-ethereal-ink
   shadow-sm"` returns the composite and nothing else. The composite gained `iconOnly` for the two
@@ -54,10 +68,12 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   checking whether the rule in `.ai/04` was actually true — it was not). A new search box is the one
   place this regresses silently, because an unfolded search fails only for the users whose names
   carry the diacritics.
-- **The rest of `features/rehearsals` wants a copy pass.** §5.3 fixed the shared status vocabulary;
-  the module's own headings and empty states have not been read end to end. Small companion defect:
-  the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
-  a tab left open across the downbeat keeps the previous state until it remounts.
+- ~~The rest of `features/rehearsals` wants a copy pass~~ — **closed 2026-07-27** (§8), together with
+  its companion defect: the Frekwencja matrix (and the whole rehearsals module) computed
+  `isPast` / `isLive` once per data change rather than on a timer. Both now read a
+  minute-quantised `useNow`. What the pass found underneath the copy is in §8; the one open thread
+  it leaves is that `ArchiveStatLine` now has two features reading it and belongs in
+  `shared/ui/composites`, which is the next pass's layer.
 - ~~Two companion defects left for the passes that own them~~ — both fixed by the
   settings+dashboard+notifications+contracts pass (§8). See that section for what the second one
   turned out to be underneath.
@@ -67,11 +83,12 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-Suggested split for what is left: **rehearsals next** — 14 of the 19 remaining hairline rules, plus
-the copy pass and the `isPast`/`isLive` timer above, all in one module. Then `shared/ui` last, since
-its 6 overlines sit in composites every feature renders and a change there is a change everywhere
-(two of them are `typography`'s own declarations of the role and are not defects). Run them
-sequentially, not in parallel: they all touch the three locale files.
+What is left: **`shared/ui`** — its 6 overlines sit in composites every feature renders, so a change
+there is a change everywhere (two of them are `typography`'s own declarations of the role and are
+not defects), plus the `Eyebrow size="caption"` decision above and the `ArchiveStatLine` promotion.
+After that, the stragglers that never earned a pass of their own: `widgets/utility` (3 overlines,
+including the `tracking-[0.4em]` outlier), annotations (3 overlines + the last 2 hairline rules),
+materials (3), schedule (1).
 
 ## Decisions, settled
 
@@ -1817,3 +1834,121 @@ announcing itself, which is the locked rule the piece row already follows for `b
 appears only when there is an orphan to go and look at. While a search narrows that list it now says
 `{{visible}} z {{total}}`, so the library-wide `128 kompozytorów` above it is never read as the count
 on screen.
+
+### `features/rehearsals` — Centrum Obecności (SHIPPED 2026-07-27)
+
+The last big pocket of raw hairlines — 14 of the 22 low-alpha ink rules in the tree, now 0 (the
+recipe is in "Still open"; the feature also greps clean for `incense/1x` rules) — and the last raw
+uppercase micro-label outside `shared/ui` and the three straggler areas. Radii are on the scale
+except three deliberate chart marks. But, as with Próby and Frekwencja in Phase 1, the
+micro-decisions were not the interesting part.
+
+**Nothing in the module knew what time it was.** `isPast`, `isRehearsalLive`, `isToday` and the
+countdown were each evaluated inside a `useMemo` keyed on the *data*, or read `Date.now()` during a
+render nothing re-triggered — in five places across the feature, plus `buildSessions` behind the
+hub's Frekwencja matrix (the companion defect this file had open). So a workspace left open across a
+downbeat kept the previous answer until it remounted: the row stayed dim, the "Teraz" marker never
+lit, the countdown froze at whatever it said when the fetch landed, and the matrix column that had
+just started still refused to be filled. Fixed with one clock: `useRehearsalsData` holds a
+`useNow(60_000)` quantised to the minute (`Math.floor(t/60_000)*60_000`, so the memos recompute once
+a minute, not once a tick) and threads `nowMs` into the rail rows, the pulse countdown and
+`useRehearsalAnalytics`; `useAttendanceMatrix` does the same for `buildSessions`. One clock rather
+than five, because two surfaces disagreeing about the time is worse than both being stale. Promoted
+to `.ai/04`.
+
+**One measurement, three scales — in two features.** The inspector painted a rehearsal's rate gold
+≥80 and crimson <50 (`rateAccent`); the reliability board painted the same measurement sage ≥85,
+gold ≥60, crimson below (`reliabilityTone` + `TONE_TEXT`, plus two inline ternary chains typing the
+bar colours a third and fourth time); and the hub's Frekwencja matrix — already remediated in
+Phase 1 — had settled it at ink normally, gold under `LOW_ATTENDANCE_RATE = 70`. A 90% rehearsal
+therefore read "work pending" on one card and "settled" on the next, and an ordinary dip wore the
+alarm colour. The settled scale won: `attendanceMeta.tsx` now owns `attendanceRateTone` +
+`RATE_TONE_TEXT / _BAR / _ACCENT` **and** `LOW_ATTENDANCE_RATE`, which moved there from
+`attendanceMatrix.ts` — importing it the other way looked natural and was an import cycle, since
+the matrix already reads this module for its status labels. Normal
+spends no colour (ink for a figure; the warm neutral for a bar, which is entirely colour and has no
+ink option), gold marks the shortfall, crimson leaves the rate scale entirely — the chronic-absence
+chip is the module's one alarm. The same file lost three dead class tables (`token`, `soft`, `text`)
+that nothing had read in months.
+
+**The rate itself was measured over people nobody had asked about.** `tallyAttendance` divided by
+`total` (invited), so opening a fresh roll call printed a confident, crimson **0%** above the roster
+and it climbed as the conductor tapped. That is this file's own "a rate over data nobody has entered
+is not a low rate, it is no data" — and the module already knew it: the pulse bar and the analytics
+hook both divided by `marked`, and the hub matrix's `MarkTally.rate` is documented as `null` while
+nothing is recorded. `AttendanceTally.rate` is now `number | null` over `marked`, which made the
+board's fourth hand-rolled copy of the formula disappear too.
+
+**The spotlight contradicted itself for two hours.** The pulse bar showed a pulsing `Próba trwa`
+badge beside a `Za 2 godz.` countdown — because the live window opens two hours before the downbeat
+while the countdown reads from the start time — and once the rehearsal actually began the two chips
+said the same sentence twice. Both are now one `Badge`: the countdown, pulsing (and only then) once
+`nowMs >= start`. The third chip, `Najbliższa próba`, was a label restating what the only card on
+screen was already about, and is gone.
+
+**The header strip counted four things and acted on one.** `dziś · w tym tygodniu · do uzupełnienia
+· frekwencja`, all four printed at zero. `w tym tygodniu` is a horizon nobody acts on beside a rail
+that lists the dates; `frekwencja` was a cross-project rate sitting three hundred pixels from the
+Frekwencja view's own per-project `Frekwencja ogółem` — same word, different denominator, which is
+the sibling-denominator rule read across two cards. Both deleted from `RehearsalPulse` (not just
+hidden). The two that survive appear only when they are non-zero, so a quiet day leaves the header
+carrying its title alone. `do uzupełnienia` also stopped being crimson: an unwritten roll call is
+outstanding work, which is gold — the same call, and the same reasoning, as the rail's completion
+ring, where `past && none > 0` had been painting crimson on ordinary paperwork.
+
+**`TUTTI` on every rehearsal — the locked rule's own first example, still in place.** The inspector
+printed `Próba Tutti` *and* `Tutti (Cały Zespół)`: the resting default, twice, in the loudest slot
+the card has. Now a sectional call carries one amethyst badge naming the sections it summoned
+(`Tylko: Soprany, Alty`) and tutti says nothing. `Opcjonalna` stays, because non-mandatory is the
+exception. The `Praca Bieżąca` headline went with them — a rehearsal without a focus note is not
+working on "current work"; it is a session identified by *when* it is, so the date is the title and
+the focus is the subtitle when there is one.
+
+**`stats.none` was printed three times in a 200px header** — `(28 do uzupełnienia)` beside the
+`Oznaczono 12 / 40` fraction it is the arithmetic of, a `Bez wpisu 28` pill in the composition
+legend, and the filter button's own count. The filter keeps it (a control's size belongs on the
+control); the other two are gone.
+
+**Two gold buttons, one of them a mode.** `Tryb odprawy` used `variant="primary"` to signal that it
+was on, so the toolbar had two gold controls and the loud one was a toggle. It is a switch between
+two densities of the same roster, which is exactly what `SegmentedTabs`' `iconOnly` was added for in
+the messages pass — adopted, and `Uzupełnij luki` is the card's one primary again.
+
+**Card headers, and the card that correctly refused one.** Six surfaces hand-rolled `GlassCard` +
+`<header>` + icon + `Eyebrow` + hairline. Five became `SectionCard`: the pulse bar, and all four
+reliability cards — the singers card putting its status legend in `footer` (it decodes the strips
+above it and, per the settled rule, carries no counts) and its rows on `divide-hairline`. The rail
+became one too, which fixed the opposite defect: it had *no* title at all, just a control block
+floating over a list, and `title` + `toolbar` + `scroll` is the shape of a navigator. The inspector
+stayed a bare `GlassCard` on purpose — its top is a subject block (badges, date, progress bar), not
+a label slot, and forcing `SectionCard` there would be the same mistake from the other side.
+
+**Four hand-rolled centred icon stacks** became `StatePanel` (`inline` in every case — the rail's
+was a `page` panel nested inside its own card, with a `!p-6` override to make it fit). Two of them
+were sentences set as uppercase overlines: `Wszyscy oznaczeni — komplet!` and `Nikt nie został
+wezwany na tę próbę`. The second was also a misdiagnosis: with no explicit invite list the invited
+set *is* the project cast, so an empty roster means the project has no cast — the panel now says so
+and offers the cast tab.
+
+**Smaller findings.** The reliability board's per-singer rate was a serif `Metric` in a column of
+forty rates; D1 says a figure that aligns down a column is sans + `tabular-nums`. Its
+`present · late · absent` triple printed a crimson `0` on every clean singer beside a heat strip
+that already shows every cell, so it now prints only the non-zero exceptions. The headline's four
+KPI tiles (one of which, `Do rozmowy`, was crimson at zero) became one `MetricBlock` for the rate
+plus an `ArchiveStatLine` for the two sets it is measured over — the flagged singers are stated by
+the card below *listing* them, flagged first. That count now comes from `singer.needsAttention`,
+declared once in the hook the sort already used, instead of a copy of the predicate at the render
+site. The roll-call card's status dot was deleted (the lit toggle segment below it says the same
+thing in words, and its resting value was a grey pip on every untouched card). And the workspace
+joins six queries but gated on `isLoading && displayProjects.length === 0`, so with projects warm
+and rehearsals cold the rail asserted `Brak prób` and the inspector `Wybierz próbę` — it gates on
+the data now, and a failed load gets a `danger` `StatePanel` instead of an empty workspace plus a
+toast.
+
+**Declined.** The roll-call card's gold edge on an unmarked seat stays, even though it means every
+card is gold at the start: it is a work surface whose gold *clears* as the roll call proceeds, not a
+status report — and clearing it is the entire affordance of the mode.
+
+**i18n.** 23 keys added, 20 retired (only ones this pass killed), 1 reworded, across pl/en/fr.
+`reliability.graded` / `roster_size` became plural families, because they moved from tile labels
+into a sentence where Polish inflects them.

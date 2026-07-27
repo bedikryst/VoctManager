@@ -261,7 +261,7 @@ export const ComposerRowExpanded = ({
 
       {/* Pieces by this composer */}
       <div className="rounded-nested border border-hairline bg-ethereal-alabaster/55 p-4">
-        <Eyebrow color="muted" size="caption" className="mb-3 inline-flex items-center gap-1.5">
+        <Eyebrow color="muted" className="mb-3 inline-flex items-center gap-1.5">
           <Library size={11} aria-hidden="true" />
           {piecesByThis.length === 0
             ? t(

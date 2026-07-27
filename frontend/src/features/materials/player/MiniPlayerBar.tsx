@@ -40,7 +40,7 @@ export const MiniPlayerBar = (): React.JSX.Element => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}
           transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="pointer-events-none fixed inset-x-0 bottom-dock z-toast flex justify-center px-4"
+          className="pointer-events-none fixed inset-x-0 bottom-dock z-dock-bar flex justify-center px-4"
         >
           <div className="pointer-events-auto flex w-full max-w-xl items-center gap-3 overflow-hidden rounded-2xl border border-glass-border bg-ethereal-alabaster/95 py-2.5 pl-3 pr-2 shadow-[0_10px_32px_-12px_rgba(22,20,18,0.25),0_2px_6px_rgba(22,20,18,0.08)] backdrop-blur-md">
             <button

@@ -14,12 +14,13 @@ import { useTranslation } from "react-i18next";
 import { Archive, CalendarClock, CalendarPlus, FolderOpen } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import {
   SegmentedTabs,
   type SegmentedTabItem,
 } from "@/shared/ui/composites/SegmentedTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -45,16 +46,19 @@ interface RehearsalRailProps {
   activeRehearsalId: string | null;
   onSelectRehearsal: (id: string) => void;
   getLocationName: (ref: Rehearsal["location"], fallback: string) => string;
+  /** Ticking clock, so "past" and "now" age without a remount. */
+  nowMs: number;
 }
 
-const ringToneFor = (
-  tally: AttendanceTally,
-  past: boolean,
-): "gold" | "sage" | "crimson" | "graphite" => {
+/**
+ * The ring measures how much of the roll call is written down. An unfinished
+ * one is outstanding work — gold — whether or not the session has happened;
+ * crimson used to mark every past session with a gap, which put the panel's
+ * alarm colour on ordinary paperwork and left nothing louder for a real fault.
+ */
+const ringToneFor = (tally: AttendanceTally): "gold" | "sage" | "graphite" => {
   if (tally.total === 0) return "graphite";
-  if (tally.completion >= 100) return "sage";
-  if (past && tally.none > 0) return "crimson";
-  return "gold";
+  return tally.completion >= 100 ? "sage" : "gold";
 };
 
 const RehearsalRow = ({
@@ -63,17 +67,18 @@ const RehearsalRow = ({
   isActive,
   onSelect,
   getLocationName,
+  nowMs,
 }: {
   rehearsal: Rehearsal;
   tally: AttendanceTally;
   isActive: boolean;
   onSelect: (id: string) => void;
   getLocationName: RehearsalRailProps["getLocationName"];
+  nowMs: number;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const past = isPast(rehearsal.date_time);
-  const live = isRehearsalLive(rehearsal.date_time);
-  const tone = ringToneFor(tally, past);
+  const past = isPast(rehearsal.date_time, nowMs);
+  const live = isRehearsalLive(rehearsal.date_time, nowMs);
 
   return (
     <button
@@ -81,10 +86,10 @@ const RehearsalRow = ({
       aria-pressed={isActive}
       onClick={() => onSelect(String(rehearsal.id))}
       className={cn(
-        "flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]",
+        "flex w-full items-center gap-3 rounded-nested border px-3 py-2.5 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]",
         isActive
-          ? "border-ethereal-gold/45 bg-ethereal-gold/[0.06] ring-1 ring-ethereal-gold/25"
-          : "border-ethereal-ink/8 bg-ethereal-alabaster hover:border-ethereal-gold/30",
+          ? "border-ethereal-gold/45 bg-ethereal-gold/6 ring-1 ring-ethereal-gold/25"
+          : "border-hairline-strong bg-ethereal-alabaster hover:border-ethereal-gold/30",
         past && !isActive && !live && "opacity-70",
       )}
     >
@@ -118,15 +123,9 @@ const RehearsalRow = ({
             )}
           </Text>
           {live && (
-            <span className="inline-flex items-center gap-1 text-ethereal-gold">
-              <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ethereal-gold opacity-60" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-ethereal-gold" />
-              </span>
-              <Eyebrow as="span" color="gold">
-                {t("rehearsals.rail.live", "Teraz")}
-              </Eyebrow>
-            </span>
+            <Badge variant="warning" pulse>
+              {t("rehearsals.rail.live", "Teraz")}
+            </Badge>
           )}
         </div>
         <Caption color="muted" truncate className="mt-0.5 block">
@@ -138,7 +137,12 @@ const RehearsalRow = ({
         </Caption>
       </div>
 
-      <CompletionRing value={tally.completion} tone={tone} size={38} strokeWidth={3.5}>
+      <CompletionRing
+        value={tally.completion}
+        tone={ringToneFor(tally)}
+        size={38}
+        strokeWidth={3.5}
+      >
         <span className="text-[9px] font-bold tabular-nums text-ethereal-ink">
           {tally.total > 0 ? `${tally.marked}/${tally.total}` : "—"}
         </span>
@@ -158,6 +162,7 @@ export const RehearsalRail = ({
   activeRehearsalId,
   onSelectRehearsal,
   getLocationName,
+  nowMs,
 }: RehearsalRailProps): React.JSX.Element => {
   const { t } = useTranslation();
 
@@ -167,73 +172,83 @@ export const RehearsalRail = ({
   ];
 
   return (
-    <GlassCard
-      variant="solid"
-      padding="none"
-      isHoverable={false}
-      className="flex flex-col lg:max-h-[calc(100dvh-7rem)]"
-    >
-      <div className="shrink-0 space-y-3 border-b border-ethereal-ink/6 p-4">
-        <SegmentedTabs
-          items={TABS}
-          value={projectTab}
-          onChange={onProjectTab}
-          ariaLabel={t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
-          wrap
-        />
-
-        {displayProjects.length > 0 ? (
-          <Select
-            ariaLabel={t("rehearsals.rail.project_label", "Projekt")}
-            leftIcon={<FolderOpen size={16} aria-hidden="true" />}
-            value={selectedProjectId}
-            onValueChange={onSelectProject}
-            options={displayProjects.map((project) => ({
-              value: String(project.id),
-              label: project.title,
-            }))}
-          />
-        ) : (
-          <Caption className="block px-1 italic">
-            {t("rehearsals.dashboard.no_projects", "Brak projektów w tej zakładce.")}
+    <SectionCard
+      as="h2"
+      title={t("rehearsals.rail.title", "Próby")}
+      icon={<CalendarClock size={14} />}
+      action={
+        projectRehearsals.length > 0 ? (
+          <Caption color="muted" className="tabular-nums">
+            {projectRehearsals.length}
           </Caption>
-        )}
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
-        {projectRehearsals.length > 0 ? (
-          projectRehearsals.map((rehearsal) => (
-            <RehearsalRow
-              key={rehearsal.id}
-              rehearsal={rehearsal}
-              tally={rehearsalTallies.get(String(rehearsal.id)) ?? EMPTY_TALLY}
-              isActive={String(rehearsal.id) === activeRehearsalId}
-              onSelect={onSelectRehearsal}
-              getLocationName={getLocationName}
-            />
-          ))
-        ) : (
-          <StatePanel
-            icon={<CalendarClock size={20} aria-hidden="true" />}
-            title={t("rehearsals.rail.no_rehearsals_title", "Brak prób")}
-            description={t(
-              "rehearsals.rail.no_rehearsals_desc",
-              "Ten projekt nie ma jeszcze zaplanowanych prób. Dodasz je w karcie projektu → Harmonogram.",
-            )}
-            className="!p-6"
-            actions={
-              selectedProjectId ? (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={`/panel/projects/${selectedProjectId}/rehearsals`}>
-                    <CalendarPlus size={14} aria-hidden="true" />
-                    {t("rehearsals.rail.schedule_cta", "Zaplanuj próbę")}
-                  </Link>
-                </Button>
-              ) : undefined
-            }
+        ) : undefined
+      }
+      toolbar={
+        // Full-bleed rule: the list scrolls under this block, so it needs a lip.
+        <div className="-mx-5 space-y-3 border-b border-hairline px-5 pb-4">
+          <SegmentedTabs
+            items={TABS}
+            value={projectTab}
+            onChange={onProjectTab}
+            ariaLabel={t("rehearsals.dashboard.project_context", "Kontekst Projektu")}
+            wrap
           />
-        )}
-      </div>
-    </GlassCard>
+
+          {displayProjects.length > 0 ? (
+            <Select
+              ariaLabel={t("rehearsals.rail.project_label", "Projekt")}
+              leftIcon={<FolderOpen size={16} aria-hidden="true" />}
+              value={selectedProjectId}
+              onValueChange={onSelectProject}
+              options={displayProjects.map((project) => ({
+                value: String(project.id),
+                label: project.title,
+              }))}
+            />
+          ) : (
+            <Caption color="muted" className="block px-1">
+              {t("rehearsals.dashboard.no_projects", "Brak projektów w tej zakładce.")}
+            </Caption>
+          )}
+        </div>
+      }
+      scroll
+      bodyClassName="space-y-2 p-3"
+      className="lg:max-h-[calc(100dvh-7rem)]"
+    >
+      {projectRehearsals.length > 0 ? (
+        projectRehearsals.map((rehearsal) => (
+          <RehearsalRow
+            key={rehearsal.id}
+            rehearsal={rehearsal}
+            tally={rehearsalTallies.get(String(rehearsal.id)) ?? EMPTY_TALLY}
+            isActive={String(rehearsal.id) === activeRehearsalId}
+            onSelect={onSelectRehearsal}
+            getLocationName={getLocationName}
+            nowMs={nowMs}
+          />
+        ))
+      ) : (
+        <StatePanel
+          variant="inline"
+          icon={<CalendarClock size={20} aria-hidden="true" />}
+          title={t("rehearsals.rail.no_rehearsals_title", "Brak prób")}
+          description={t(
+            "rehearsals.rail.no_rehearsals_desc",
+            "Ten projekt nie ma jeszcze zaplanowanych prób. Dodasz je w karcie projektu → Harmonogram.",
+          )}
+          actions={
+            selectedProjectId ? (
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/panel/projects/${selectedProjectId}/rehearsals`}>
+                  <CalendarPlus size={14} aria-hidden="true" />
+                  {t("rehearsals.rail.schedule_cta", "Zaplanuj próbę")}
+                </Link>
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
+    </SectionCard>
   );
 };

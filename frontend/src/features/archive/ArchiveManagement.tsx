@@ -43,7 +43,7 @@ import {
   ArchiveSearchBar,
   type ArchiveActiveFilter,
 } from "./components/ArchiveSearchBar";
-import { ArchiveStatLine, type ArchiveStat } from "./components/ArchiveStatLine";
+import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
 import { PieceRow } from "./components/PieceRow";
@@ -195,7 +195,7 @@ export default function ArchiveManagement(): React.JSX.Element {
   const awaitingCount = awaitingPieces.length;
   const firstAwaitingPiece = awaitingPieces[0];
 
-  const libraryStatSegments: ArchiveStat[] = [
+  const libraryStatSegments: StatLineItem[] = [
     {
       id: "pieces",
       value: totalPieces,
@@ -247,7 +247,7 @@ export default function ArchiveManagement(): React.JSX.Element {
             is work, so it is a control and not a fourth restatement of the count
             the rows already carry. */}
         {!isFreshArchive && (
-          <ArchiveStatLine
+          <StatLine
             stats={libraryStatSegments}
             action={
               awaitingCount > 0 && firstAwaitingPiece ? (

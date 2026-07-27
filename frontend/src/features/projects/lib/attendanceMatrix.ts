@@ -275,13 +275,6 @@ export const tallyMarks = (marks: readonly AttendanceMark[]): MarkTally => {
   };
 };
 
-/**
- * Below this the figure turns gold. There is no sage counterpart on purpose:
- * full attendance is the resting case, and painting the expected outcome green
- * on forty rows is what buries the two rows that need a conversation.
- */
-export const LOW_ATTENDANCE_RATE = 70;
-
 /* ── Server state ─────────────────────────────────────────────────────────── */
 
 export interface ServerMark {

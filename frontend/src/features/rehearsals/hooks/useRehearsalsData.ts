@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
+import { useNow } from "@/shared/lib/dom/useNow";
 import type {
   Artist,
   Attendance,
@@ -56,8 +57,6 @@ function extractData<T>(data: T[] | PaginatedResponse<T> | unknown): T[] {
   return [];
 }
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 export interface NextRehearsal {
   rehearsal: Rehearsal;
   project: Project;
@@ -66,16 +65,24 @@ export interface NextRehearsal {
 
 export interface RehearsalPulse {
   next: NextRehearsal | null;
+  /** Rehearsals starting today, across active projects. */
   todayCount: number;
-  weekCount: number;
   /** Past rehearsals (active projects) still carrying unrecorded singers. */
   unmarkedCount: number;
-  /** Realised attendance across past active rehearsals (present+late / recorded); null until any history exists. */
-  overallRate: number | null;
 }
 
 export const useRehearsalsData = () => {
   const { t } = useTranslation();
+  /**
+   * The module reads the clock in four places (is this rehearsal past, live,
+   * today; how long until the downbeat) and every one of them used to be
+   * evaluated once per data change — a tab left open across a start time kept
+   * the previous answer until it remounted. One ticking clock, quantised to the
+   * minute so the memos below recompute exactly once a minute rather than on
+   * every tick of the underlying interval.
+   */
+  const now = useNow(60_000);
+  const nowMs = Math.floor(now.getTime() / 60_000) * 60_000;
   const [view, setView] = useState<RehearsalView>("ROLL_CALL");
   const [projectTab, setProjectTab] = useState<ProjectTabType>("ACTIVE");
   const [selectedProjectId, setSelectedProjectId] = useState("");
@@ -271,7 +278,8 @@ export const useRehearsalsData = () => {
 
   /* ── Cross-project pulse ─────────────────────────────────────────────── */
   const pulse: RehearsalPulse = useMemo(() => {
-    const now = Date.now();
+    const now = nowMs;
+    const today = new Date(nowMs);
     const activeIds = new Set(activeProjects.map((p) => String(p.id)));
     const activeRehearsals = safeRehearsals.filter((r) =>
       activeIds.has(String(r.project)),
@@ -304,15 +312,11 @@ export const useRehearsalsData = () => {
     }
 
     let todayCount = 0;
-    let weekCount = 0;
     let unmarkedCount = 0;
-    let realisedNumerator = 0;
-    let realisedDenominator = 0;
 
     activeRehearsals.forEach((rehearsal) => {
-      const start = new Date(rehearsal.date_time).getTime();
-      if (isToday(rehearsal.date_time)) todayCount += 1;
-      if (start >= now && start <= now + WEEK_MS) weekCount += 1;
+      if (isToday(rehearsal.date_time, today)) todayCount += 1;
+      if (!isPast(rehearsal.date_time, now)) return;
 
       const invited = resolveInvited(
         rehearsal,
@@ -320,29 +324,13 @@ export const useRehearsalsData = () => {
       );
       if (invited.length === 0) return;
       const records = attendanceIndex.get(String(rehearsal.id));
-      const tally = tallyAttendance(invited, (id) => records?.get(id));
-
-      if (isPast(rehearsal.date_time, now)) {
-        if (tally.none > 0) unmarkedCount += 1;
-        // Realised attendance is measured against *recorded* singers only —
-        // unmarked rows are missing data, not absences, so they never drag
-        // the headline rate down (matches useRehearsalAnalytics).
-        realisedNumerator += tally.present + tally.late;
-        realisedDenominator += tally.marked;
-      }
+      if (tallyAttendance(invited, (id) => records?.get(id)).none > 0)
+        unmarkedCount += 1;
     });
 
-    return {
-      next,
-      todayCount,
-      weekCount,
-      unmarkedCount,
-      overallRate:
-        realisedDenominator > 0
-          ? Math.round((realisedNumerator / realisedDenominator) * 100)
-          : null,
-    };
+    return { next, todayCount, unmarkedCount };
   }, [
+    nowMs,
     activeProjects,
     safeRehearsals,
     projectMap,
@@ -413,6 +401,8 @@ export const useRehearsalsData = () => {
   return {
     isLoading,
     isError,
+    /** Minute-quantised clock every time-window in the module reads from. */
+    nowMs,
     // view
     view,
     setView,

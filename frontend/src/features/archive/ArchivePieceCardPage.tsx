@@ -168,7 +168,7 @@ const CockpitSection = ({
             {icon}
           </span>
         )}
-        <Eyebrow color="graphite" size="base" className="flex-1">
+        <Eyebrow color="graphite" className="flex-1">
           {label}
         </Eyebrow>
         {typeof count === "number" && (
@@ -219,7 +219,7 @@ const FieldGroup = ({
 }): React.JSX.Element => (
   <div className="space-y-3">
     <div className="flex items-center gap-2.5">
-      <Eyebrow color="graphite" size="caption" className="shrink-0">
+      <Eyebrow color="graphite" className="shrink-0">
         {title}
       </Eyebrow>
       <span
@@ -1187,7 +1187,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       <ComposerCard composer={composer} bare />
                     )}
                     <div>
-                      <Eyebrow color="muted" size="caption" className="mb-1 block">
+                      <Eyebrow color="muted" className="mb-1 block">
                         {t("archive.piece_card.fields.duration", "Czas trwania")}
                       </Eyebrow>
                       <div className="flex items-center gap-2">
@@ -1231,7 +1231,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       isBusy={isBusy}
                     />
                     <div>
-                      <Eyebrow color="muted" size="caption" className="mb-1 block">
+                      <Eyebrow color="muted" className="mb-1 block">
                         {t(
                           "archive.piece_card.fields.description",
                           "Notatki dyrygenta (wewnętrzne)",

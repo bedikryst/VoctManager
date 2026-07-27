@@ -44,6 +44,13 @@ export interface SingerReliability {
   chronicAbsence: boolean;
   chronicLateness: boolean;
   spotless: boolean;
+  /**
+   * The singer belongs in the conductor's "have a word" list. Declared once
+   * here because three readers wanted it — the sort, the flag chips and the
+   * headline count — and the count used to carry its own copy of the rule at
+   * the render site, free to drift from the rows it claimed to describe.
+   */
+  needsAttention: boolean;
 }
 
 export interface SectionReliability {
@@ -68,6 +75,8 @@ export interface RehearsalAnalytics {
   sections: SectionReliability[];
   trend: TrendPoint[];
   overallRate: number | null;
+  /** Singers with `needsAttention` — the same predicate that ranks the rows. */
+  flaggedCount: number;
   hasData: boolean;
 }
 
@@ -82,11 +91,13 @@ export const useRehearsalAnalytics = (
   projectParticipations: Participation[],
   attendanceIndex: Map<string, Map<string, Attendance>>,
   artistMap: Map<string, Artist>,
+  /** Ticking clock from the workspace — "graded" is a time window, not a fact
+   *  of the payload, so it has to be re-derived as the clock moves. */
+  nowMs: number,
 ): RehearsalAnalytics =>
   useMemo(() => {
-    const now = Date.now();
     const gradedRehearsals = projectRehearsals.filter((rehearsal) =>
-      isPast(rehearsal.date_time, now),
+      isPast(rehearsal.date_time, nowMs),
     );
 
     // Pre-resolve invited sets so we touch each rehearsal once.
@@ -164,13 +175,14 @@ export const useRehearsalAnalytics = (
           chronicAbsence,
           chronicLateness,
           spotless,
+          needsAttention: chronicAbsence || chronicLateness,
         } satisfies SingerReliability;
       })
       .filter((entry): entry is SingerReliability => entry !== null)
       .sort((a, b) => {
         // Surface the singers who need a conversation first.
-        const aFlag = a.chronicAbsence || a.chronicLateness ? 1 : 0;
-        const bFlag = b.chronicAbsence || b.chronicLateness ? 1 : 0;
+        const aFlag = a.needsAttention ? 1 : 0;
+        const bFlag = b.needsAttention ? 1 : 0;
         if (aFlag !== bFlag) return bFlag - aFlag;
         const aRate = a.attendanceRate ?? 101;
         const bRate = b.attendanceRate ?? 101;
@@ -229,7 +241,7 @@ export const useRehearsalAnalytics = (
     let realisedDenominator = 0;
     trend.forEach(({ tally }) => {
       realisedNumerator += tally.present + tally.late;
-      realisedDenominator += tally.total - tally.none;
+      realisedDenominator += tally.marked;
     });
 
     return {
@@ -241,6 +253,13 @@ export const useRehearsalAnalytics = (
         realisedDenominator > 0
           ? Math.round((realisedNumerator / realisedDenominator) * 100)
           : null,
+      flaggedCount: singers.filter((singer) => singer.needsAttention).length,
       hasData: gradedRehearsals.length > 0 && singers.length > 0,
     };
-  }, [projectRehearsals, projectParticipations, attendanceIndex, artistMap]);
+  }, [
+    nowMs,
+    projectRehearsals,
+    projectParticipations,
+    attendanceIndex,
+    artistMap,
+  ]);

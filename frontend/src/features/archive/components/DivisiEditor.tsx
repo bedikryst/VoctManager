@@ -59,7 +59,7 @@ export const DivisiEditor = ({
 
   return (
     <div>
-      <Eyebrow color="muted" size="caption" className="mb-1 block">
+      <Eyebrow color="muted" className="mb-1 block">
         {t("archive.form.fields.divisi", "Divisi (opcjonalnie)")}
       </Eyebrow>
       <Caption color="muted" className="mb-3 block">
@@ -92,7 +92,7 @@ export const DivisiEditor = ({
                 key={`${requirement.voice_line}-${index}`}
                 className="flex items-center justify-between gap-3 rounded-control border border-ethereal-gold/25 bg-ethereal-gold/5 px-3 py-1.5"
               >
-                <Eyebrow color="gold" size="caption">
+                <Eyebrow color="gold">
                   {display || requirement.voice_line}
                 </Eyebrow>
                 <div className="flex items-center gap-2">

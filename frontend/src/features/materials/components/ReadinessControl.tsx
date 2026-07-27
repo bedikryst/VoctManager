@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { CircleCheck, CircleDashed, CircleDotDashed } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import type { MaterialsReadinessStatus } from "../types/materials.dto";
 
 const STATES: readonly {
@@ -63,7 +64,7 @@ export const ReadinessControl = ({
       role="radiogroup"
       aria-label={t("materials.readiness.group_label", "Twoja gotowość")}
       className={cn(
-        "flex w-full items-center gap-1 rounded-xl border border-ethereal-incense/20 bg-ethereal-alabaster p-1 shadow-glass-ethereal",
+        "flex w-full items-center gap-1 rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-1 shadow-glass-ethereal",
         className,
       )}
     >
@@ -80,14 +81,16 @@ export const ReadinessControl = ({
               if (!isActive) onChange(id);
             }}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[11px] font-bold uppercase tracking-[0.08em] transition-all duration-200 active:scale-[0.97] disabled:opacity-50",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-chip border px-2 py-2 transition-all duration-200 active:scale-[0.97] disabled:opacity-50",
               isActive
                 ? activeClass
                 : "border-transparent text-ethereal-graphite/55 hover:bg-ethereal-marble/40 hover:text-ethereal-ink",
             )}
           >
             <Icon size={14} aria-hidden="true" className="shrink-0" />
-            <span className="truncate">{t(labelKey, fallback)}</span>
+            <Eyebrow color="inherit" className="truncate">
+              {t(labelKey, fallback)}
+            </Eyebrow>
           </button>
         );
       })}

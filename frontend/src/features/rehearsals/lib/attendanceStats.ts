@@ -32,8 +32,13 @@ export interface AttendanceTally {
   total: number;
   /** Recorded rows (total − none). */
   marked: number;
-  /** % of invited that are present or late (the "showed up" rate). */
-  rate: number;
+  /**
+   * % of RECORDED singers that were in the room (present or late); `null` while
+   * nothing has been recorded. Measured against `marked`, never against
+   * `total`: an unmarked seat is missing data, not an absence, so a roll-call
+   * nobody has started is no rate at all rather than a confident 0%.
+   */
+  rate: number | null;
   /** % of invited that have any record yet (roll-call progress). */
   completion: number;
 }
@@ -46,7 +51,7 @@ export const EMPTY_TALLY: AttendanceTally = {
   none: 0,
   total: 0,
   marked: 0,
-  rate: 0,
+  rate: null,
   completion: 0,
 };
 
@@ -97,7 +102,7 @@ export const tallyAttendance = (
     none,
     total,
     marked,
-    rate: total > 0 ? Math.round(((present + late) / total) * 100) : 0,
+    rate: marked > 0 ? Math.round(((present + late) / marked) * 100) : null,
     completion: total > 0 ? Math.round((marked / total) * 100) : 0,
   };
 };
@@ -183,9 +188,5 @@ export const isToday = (dateTimeIso: string, now = new Date()): boolean => {
     date.getDate() === now.getDate()
   );
 };
-
-/** Accent token for an attendance rate (gold ≥ 80, neutral ≥ 50, crimson <50). */
-export const rateAccent = (rate: number): "gold" | "default" | "crimson" =>
-  rate >= 80 ? "gold" : rate >= 50 ? "default" : "crimson";
 
 export type { AttendanceStatus };

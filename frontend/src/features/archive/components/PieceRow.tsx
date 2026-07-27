@@ -228,7 +228,6 @@ export const PieceRow = ({
             {epochLabel && (
               <Eyebrow
                 color="muted"
-                size="caption"
                 className="hidden shrink-0 md:inline"
               >
                 {epochLabel}

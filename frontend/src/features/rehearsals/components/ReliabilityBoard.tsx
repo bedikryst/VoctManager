@@ -15,23 +15,26 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, BarChart3, Clock3, Sparkles, TrendingUp, Users } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SectionCard } from "@/shared/ui/composites/SectionCard";
+import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import {
-  Caption,
-  Eyebrow,
-  Heading,
-  Metric,
-  Text,
-} from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
+// The dot-separated facts line the archive pass settled. Its home should move
+// to `shared/ui/composites` when that layer gets its pass — retyping it here
+// would be the third copy of a shape the design system has already decided.
+import { ArchiveStatLine } from "@/features/archive/components/ArchiveStatLine";
 
 import type { Rehearsal } from "@/shared/types";
 import type { RehearsalAnalytics, SingerReliability } from "../hooks/useRehearsalAnalytics";
 import {
   ATTENDANCE_STATUS_META,
+  RATE_TONE_ACCENT,
+  RATE_TONE_BAR,
+  RATE_TONE_TEXT,
+  attendanceRateTone,
   voiceSectionLabelKey,
   type AttendanceCell,
 } from "../constants/attendanceMeta";
@@ -43,21 +46,14 @@ interface ReliabilityBoardProps {
   onOpenRehearsal: (rehearsalId: string) => void;
 }
 
-const reliabilityTone = (
-  rate: number | null,
-): "sage" | "gold" | "crimson" | "graphite" => {
-  if (rate === null) return "graphite";
-  if (rate >= 85) return "sage";
-  if (rate >= 60) return "gold";
-  return "crimson";
-};
+/** The statuses worth counting per singer — present is the rate's numerator and
+ *  the bulk of the strip, so printing it again taught the eye nothing. */
+const EXCEPTION_STATUSES = ["LATE", "ABSENT", "EXCUSED"] as const;
 
-const TONE_TEXT: Record<"sage" | "gold" | "crimson" | "graphite", string> = {
-  sage: "text-ethereal-sage",
-  gold: "text-ethereal-gold",
-  crimson: "text-ethereal-crimson",
-  graphite: "text-ethereal-graphite/60",
-};
+const LEGEND_STATUSES = ["PRESENT", "LATE", "ABSENT", "EXCUSED"] as const;
+
+const rateLabel = (rate: number | null): string =>
+  rate === null ? "—" : `${rate}%`;
 
 /* ── Per-singer wrapping heatmap ─────────────────────────────────────────── */
 const HeatStrip = ({
@@ -89,7 +85,7 @@ const HeatStrip = ({
           return (
             <span
               key={cell.rehearsalId + index}
-              className="h-3.5 w-3.5 rounded-[3px] border border-dashed border-ethereal-ink/12"
+              className="h-3.5 w-3.5 rounded-[3px] border border-dashed border-hairline-strong"
               title={`${date} · ${t("rehearsals.reliability.not_summoned", "Bez wezwania")}`}
             />
           );
@@ -115,11 +111,15 @@ const SingerRow = ({
   rehearsalById: Map<string, Rehearsal>;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const tone = reliabilityTone(singer.attendanceRate);
   const fullName = `${singer.artist.first_name} ${singer.artist.last_name}`;
+  const countOf: Record<(typeof EXCEPTION_STATUSES)[number], number> = {
+    LATE: singer.late,
+    ABSENT: singer.absent,
+    EXCUSED: singer.excused,
+  };
 
   return (
-    <div className="flex flex-col gap-3 border-b border-ethereal-incense/10 px-5 py-3.5 last:border-b-0 sm:flex-row sm:items-center sm:gap-4">
+    <div className="flex flex-col gap-3 px-5 py-3.5 sm:flex-row sm:items-center sm:gap-4">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <Avatar src={singer.artist.avatar_thumb_url} name={fullName} size="sm" shape="rounded" />
         <div className="min-w-0">
@@ -153,19 +153,43 @@ const SingerRow = ({
         <HeatStrip cells={singer.cells} rehearsalById={rehearsalById} />
       </div>
 
-      <div className="flex shrink-0 items-center gap-4 sm:w-44 sm:justify-end">
-        <Caption color="muted" className="tabular-nums">
-          <span className="text-ethereal-sage">{singer.present}</span>
-          {" · "}
-          <span className="text-ethereal-gold">{singer.late}</span>
-          {" · "}
-          <span className="text-ethereal-crimson">{singer.absent}</span>
-        </Caption>
-        <div className="w-12 text-right">
-          <Metric size="lg" className={cn("leading-none", TONE_TEXT[tone])}>
-            {singer.attendanceRate === null ? "—" : `${singer.attendanceRate}%`}
-          </Metric>
+      <div className="flex shrink-0 items-center justify-end gap-4 sm:w-40">
+        {/* Only what departed from plain attendance; a row with nothing to note
+            says nothing, which is what makes the ones that do stand out. */}
+        <div className="flex items-center gap-2.5">
+          {EXCEPTION_STATUSES.map((status) =>
+            countOf[status] === 0 ? null : (
+              <Caption
+                key={status}
+                color="muted"
+                className="inline-flex items-center gap-1 tabular-nums"
+                title={t(
+                  ATTENDANCE_STATUS_META[status].labelKey,
+                  ATTENDANCE_STATUS_META[status].fallback,
+                )}
+              >
+                <span
+                  className={cn("h-2 w-2 rounded-full", ATTENDANCE_STATUS_META[status].dot)}
+                  aria-hidden="true"
+                />
+                {countOf[status]}
+              </Caption>
+            ),
+          )}
         </div>
+        {/* A rate in a column of forty rates is a figure that must align, so it
+            is sans + tabular — the serif display figure is for a KPI read once. */}
+        <Text
+          as="span"
+          size="md"
+          weight="semibold"
+          className={cn(
+            "w-12 text-right tabular-nums",
+            RATE_TONE_TEXT[attendanceRateTone(singer.attendanceRate)],
+          )}
+        >
+          {rateLabel(singer.attendanceRate)}
+        </Text>
       </div>
     </div>
   );
@@ -197,181 +221,166 @@ export const ReliabilityBoard = ({
     );
   }
 
+  const overallTone = attendanceRateTone(analytics.overallRate);
+
   return (
     <div className="space-y-5">
-      {/* Headline */}
-      <GlassCard variant="solid" padding="none" isHoverable={false}>
-        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-ethereal-ink/6 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <TrendingUp size={14} className="text-ethereal-gold/70" aria-hidden="true" />
-            <Eyebrow as="h2" color="graphite">
-              {t("rehearsals.reliability.title", "Frekwencja projektu")}
-            </Eyebrow>
-          </div>
-          <Caption color="muted" truncate className="max-w-xs">
+      {/* Headline — one display figure, and the two sets it is measured over. */}
+      <SectionCard
+        as="h2"
+        title={t("rehearsals.reliability.title", "Frekwencja projektu")}
+        icon={<TrendingUp size={14} />}
+        action={
+          <Caption color="muted" truncate className="block max-w-56">
             {projectTitle}
           </Caption>
-        </header>
-
-        <div className="grid grid-cols-2 gap-px bg-ethereal-ink/6 sm:grid-cols-4">
-          {[
+        }
+        bodyClassName="gap-4 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <MetricBlock
+          label={t("rehearsals.reliability.overall", "Frekwencja ogółem")}
+          value={analytics.overallRate === null ? "—" : analytics.overallRate}
+          unit={analytics.overallRate === null ? undefined : "%"}
+          accentColor={RATE_TONE_ACCENT[overallTone]}
+        />
+        {/* The singers who need a conversation are not counted here: the card
+            below states them by listing them, flagged rows first. */}
+        <ArchiveStatLine
+          stats={[
             {
-              label: t("rehearsals.reliability.overall", "Frekwencja ogółem"),
-              value: analytics.overallRate === null ? "—" : `${analytics.overallRate}%`,
-              tone: TONE_TEXT[reliabilityTone(analytics.overallRate)],
-            },
-            {
-              label: t("rehearsals.reliability.graded", "Zakończone próby"),
+              id: "graded",
               value: analytics.gradedRehearsals.length,
-              tone: "text-ethereal-ink",
+              label: t("rehearsals.reliability.graded", "zakończonych prób", {
+                count: analytics.gradedRehearsals.length,
+              }),
             },
             {
-              label: t("rehearsals.reliability.roster_size", "Śpiewacy"),
+              id: "singers",
               value: analytics.singers.length,
-              tone: "text-ethereal-ink",
+              label: t("rehearsals.reliability.roster_size", "śpiewaków", {
+                count: analytics.singers.length,
+              }),
             },
-            {
-              label: t("rehearsals.reliability.flagged", "Do rozmowy"),
-              value: analytics.singers.filter(
-                (s) => s.chronicAbsence || s.chronicLateness,
-              ).length,
-              tone: "text-ethereal-crimson",
-            },
-          ].map((cell) => (
-            <div key={cell.label} className="bg-ethereal-alabaster px-5 py-4">
-              <Eyebrow color="muted">{cell.label}</Eyebrow>
-              <Metric size="2xl" className={cn("mt-1 block leading-none", cell.tone)}>
-                {cell.value}
-              </Metric>
-            </div>
-          ))}
-        </div>
-      </GlassCard>
+          ]}
+        />
+      </SectionCard>
 
       {/* Sections + trend */}
       <div className="grid gap-5 lg:grid-cols-2">
-        <GlassCard variant="solid" padding="none" isHoverable={false}>
-          <header className="flex items-center gap-2.5 border-b border-ethereal-ink/6 px-5 py-3.5">
-            <Users size={14} className="text-ethereal-gold/70" aria-hidden="true" />
-            <Eyebrow as="h3" color="graphite">
-              {t("rehearsals.reliability.by_section", "Frekwencja sekcji")}
-            </Eyebrow>
-          </header>
-          <div className="space-y-3 p-4">
-            {analytics.sections.map((section) => {
-              const tone = reliabilityTone(section.rate);
-              return (
-                <div key={section.key}>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <Caption className="inline-flex items-center gap-2">
-                      <span className="font-semibold text-ethereal-ink">
-                        {t(voiceSectionLabelKey(section.key), section.key)}
-                      </span>
-                      <span className="text-ethereal-graphite/50">
-                        {t("rehearsals.reliability.headcount", "{{count}} os.", {
-                          count: section.headcount,
-                        })}
-                      </span>
-                    </Caption>
-                    <Text as="span" size="sm" weight="semibold" className={cn("tabular-nums", TONE_TEXT[tone])}>
-                      {section.rate === null ? "—" : `${section.rate}%`}
-                    </Text>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-ethereal-ink/6">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-700 ease-out",
-                        tone === "sage"
-                          ? "bg-ethereal-sage"
-                          : tone === "gold"
-                            ? "bg-ethereal-gold"
-                            : tone === "crimson"
-                              ? "bg-ethereal-crimson"
-                              : "bg-ethereal-graphite/40",
-                      )}
-                      style={{ width: `${section.rate ?? 0}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </GlassCard>
-
-        <GlassCard variant="solid" padding="none" isHoverable={false}>
-          <header className="flex items-center gap-2.5 border-b border-ethereal-ink/6 px-5 py-3.5">
-            <BarChart3 size={14} className="text-ethereal-gold/70" aria-hidden="true" />
-            <Eyebrow as="h3" color="graphite">
-              {t("rehearsals.reliability.trend", "Trend frekwencji")}
-            </Eyebrow>
-          </header>
-          <div className="flex items-end gap-2 overflow-x-auto p-4" style={{ minHeight: 160 }}>
-            {analytics.trend.map(({ rehearsal, tally }) => {
-              // Realised attendance among recorded singers — consistent with the
-              // headline + section + singer rates (unmarked rows excluded).
-              const realised =
-                tally.marked > 0
-                  ? Math.round(((tally.present + tally.late) / tally.marked) * 100)
-                  : null;
-              const tone = reliabilityTone(realised);
-              // Absolute 0–100 scale so a weak rehearsal reads as short, not tall.
-              const height = realised === null ? 4 : Math.max(4, Math.round((realised / 100) * 120));
-              const date = formatLocalizedDate(
-                rehearsal.date_time,
-                { day: "numeric", month: "short" },
-                undefined,
-                rehearsal.timezone,
-              );
-              return (
-                <button
-                  key={rehearsal.id}
-                  type="button"
-                  onClick={() => onOpenRehearsal(String(rehearsal.id))}
-                  className="group flex w-10 shrink-0 flex-col items-center gap-1.5 rounded-lg px-0.5 py-1 transition-colors hover:bg-ethereal-marble/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
-                  title={`${date} · ${
-                    realised === null ? t("rehearsals.row.status_none", "Bez wpisu") : `${realised}%`
-                  } · ${tally.marked}/${tally.total}`}
-                  aria-label={`${date}: ${realised === null ? "—" : `${realised}%`}`}
-                >
-                  <Text as="span" size="xs" weight="semibold" className={cn("tabular-nums", TONE_TEXT[tone])}>
-                    {realised === null ? "—" : realised}
+        <SectionCard
+          title={t("rehearsals.reliability.by_section", "Frekwencja sekcji")}
+          icon={<Users size={14} />}
+          bodyClassName="gap-3"
+        >
+          {analytics.sections.map((section) => {
+            const tone = attendanceRateTone(section.rate);
+            return (
+              <div key={section.key}>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <Caption className="inline-flex items-center gap-2">
+                    <span className="font-semibold text-ethereal-ink">
+                      {t(voiceSectionLabelKey(section.key), section.key)}
+                    </span>
+                    <span className="text-ethereal-graphite/50">
+                      {t("rehearsals.reliability.headcount", "{{count}} os.", {
+                        count: section.headcount,
+                      })}
+                    </span>
+                  </Caption>
+                  <Text
+                    as="span"
+                    size="sm"
+                    weight="semibold"
+                    className={cn("tabular-nums", RATE_TONE_TEXT[tone])}
+                  >
+                    {rateLabel(section.rate)}
                   </Text>
-                  <div className="flex w-full flex-1 items-end justify-center">
-                    <div
-                      className={cn(
-                        "w-5 rounded-t-md transition-all duration-700 ease-out group-hover:opacity-80",
-                        tone === "sage"
-                          ? "bg-ethereal-sage"
-                          : tone === "gold"
-                            ? "bg-ethereal-gold"
-                            : tone === "crimson"
-                              ? "bg-ethereal-crimson"
-                              : "bg-ethereal-graphite/40",
-                      )}
-                      style={{ height }}
-                    />
-                  </div>
-                  <Eyebrow as="span" color="muted" className="whitespace-nowrap">
-                    {date}
-                  </Eyebrow>
-                </button>
-              );
-            })}
-          </div>
-        </GlassCard>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-ethereal-ink/6">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-700 ease-out",
+                      RATE_TONE_BAR[tone],
+                    )}
+                    style={{ width: `${section.rate ?? 0}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </SectionCard>
+
+        <SectionCard
+          title={t("rehearsals.reliability.trend", "Trend frekwencji")}
+          icon={<BarChart3 size={14} />}
+          bodyClassName="min-h-40 flex-row items-end gap-2 overflow-x-auto p-4"
+        >
+          {analytics.trend.map(({ rehearsal, tally }) => {
+            const tone = attendanceRateTone(tally.rate);
+            // Absolute 0–100 scale so a weak rehearsal reads as short, not tall.
+            const height =
+              tally.rate === null ? 4 : Math.max(4, Math.round((tally.rate / 100) * 120));
+            const date = formatLocalizedDate(
+              rehearsal.date_time,
+              { day: "numeric", month: "short" },
+              undefined,
+              rehearsal.timezone,
+            );
+            return (
+              <button
+                key={rehearsal.id}
+                type="button"
+                onClick={() => onOpenRehearsal(String(rehearsal.id))}
+                className="group flex w-10 shrink-0 flex-col items-center gap-1.5 rounded-chip px-0.5 py-1 transition-colors hover:bg-ethereal-marble/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+                aria-label={t(
+                  "rehearsals.reliability.trend_bar",
+                  "{{date}}: frekwencja {{rate}}, oznaczono {{marked}} z {{total}}",
+                  {
+                    date,
+                    rate: rateLabel(tally.rate),
+                    marked: tally.marked,
+                    total: tally.total,
+                  },
+                )}
+              >
+                <Text
+                  as="span"
+                  size="xs"
+                  weight="semibold"
+                  className={cn("tabular-nums", RATE_TONE_TEXT[tone])}
+                >
+                  {tally.rate === null ? "—" : tally.rate}
+                </Text>
+                <div className="flex w-full flex-1 items-end justify-center">
+                  <div
+                    className={cn(
+                      "w-5 rounded-t-md transition-all duration-700 ease-out group-hover:opacity-80",
+                      RATE_TONE_BAR[tone],
+                    )}
+                    style={{ height }}
+                  />
+                </div>
+                <Eyebrow as="span" color="muted" className="whitespace-nowrap">
+                  {date}
+                </Eyebrow>
+              </button>
+            );
+          })}
+        </SectionCard>
       </div>
 
       {/* Singer reliability */}
-      <GlassCard variant="solid" padding="none" isHoverable={false}>
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ethereal-ink/6 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <Users size={14} className="text-ethereal-gold/70" aria-hidden="true" />
-            <Eyebrow as="h3" color="graphite">
-              {t("rehearsals.reliability.singers", "Rzetelność śpiewaków")}
-            </Eyebrow>
-          </div>
+      <SectionCard
+        title={t("rehearsals.reliability.singers", "Rzetelność śpiewaków")}
+        icon={<Users size={14} />}
+        scroll
+        className="lg:max-h-[60vh]"
+        bodyClassName="divide-y divide-hairline p-0"
+        // The legend decodes colour ↔ meaning for the strips above it and
+        // carries no counts of its own; the arithmetic belongs to the rows.
+        footer={
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {(["PRESENT", "LATE", "ABSENT", "EXCUSED"] as const).map((status) => {
+            {LEGEND_STATUSES.map((status) => {
               const meta = ATTENDANCE_STATUS_META[status];
               return (
                 <Caption key={status} color="muted" className="inline-flex items-center gap-1.5">
@@ -381,26 +390,25 @@ export const ReliabilityBoard = ({
               );
             })}
           </div>
-        </header>
-
-        <div className="lg:max-h-[60vh] lg:overflow-y-auto">
-          {analytics.singers.length === 0 ? (
-            <div className="px-5 py-12 text-center">
-              <Heading as="p" size="lg" weight="medium" color="muted">
-                {t("rehearsals.reliability.no_singers", "Brak śpiewaków w tym projekcie.")}
-              </Heading>
-            </div>
-          ) : (
-            analytics.singers.map((singer) => (
-              <SingerRow
-                key={singer.participation.id}
-                singer={singer}
-                rehearsalById={rehearsalById}
-              />
-            ))
-          )}
-        </div>
-      </GlassCard>
+        }
+      >
+        {analytics.singers.length === 0 ? (
+          <StatePanel
+            variant="inline"
+            className="py-10"
+            icon={<Users size={22} aria-hidden="true" />}
+            title={t("rehearsals.reliability.no_singers", "Brak śpiewaków w tym projekcie")}
+          />
+        ) : (
+          analytics.singers.map((singer) => (
+            <SingerRow
+              key={singer.participation.id}
+              singer={singer}
+              rehearsalById={rehearsalById}
+            />
+          ))
+        )}
+      </SectionCard>
     </div>
   );
 };

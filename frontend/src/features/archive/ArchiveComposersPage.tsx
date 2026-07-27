@@ -46,7 +46,7 @@ import {
   useDeleteComposer,
   useMergeComposers,
 } from "./api/archive.queries";
-import { ArchiveStatLine, type ArchiveStat } from "./components/ArchiveStatLine";
+import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveTabs } from "./components/ArchiveTabs";
 import { ComposerRow } from "./components/ComposerRow";
 
@@ -227,7 +227,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
   // "0 bez utworów" is the healthy state announcing itself — the same silence
   // rule the piece row follows for `bez nut`. The segment appears only when
   // there is actually an orphan to go and look at.
-  const composerStats: ArchiveStat[] = [
+  const composerStats: StatLineItem[] = [
     {
       id: "total",
       value: totalComposers,
@@ -271,11 +271,11 @@ export default function ArchiveComposersPage(): React.JSX.Element {
 
         <ArchiveTabs />
 
-        <ArchiveStatLine stats={composerStats} />
+        <StatLine stats={composerStats} />
 
         {isAdding && (
           <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-4">
-            <Eyebrow color="gold" size="caption" className="mb-3 block">
+            <Eyebrow color="gold" className="mb-3 block">
               {t("archive.composers.add_form_title", "Nowy kompozytor")}
             </Eyebrow>
             <div className="grid gap-3 md:grid-cols-2">
@@ -344,7 +344,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
           <div className="rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <Eyebrow color="gold" size="caption">
+                <Eyebrow color="gold">
                   {t(
                     "archive.composers.selected",
                     "Zaznaczono {{count}}",
@@ -395,7 +395,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
             {isMergeOpen && (
               <div className="mt-3 space-y-3 border-t border-ethereal-gold/25 pt-3">
                 <div>
-                  <Eyebrow color="muted" size="caption" className="mb-2 block">
+                  <Eyebrow color="muted" className="mb-2 block">
                     {t(
                       "archive.composers.merge_target_label",
                       "Wybierz kompozytora docelowego — pozostali zostaną do niego przepięci i usunięci",

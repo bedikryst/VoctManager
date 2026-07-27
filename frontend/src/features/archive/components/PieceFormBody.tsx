@@ -86,7 +86,7 @@ export const PieceFormBody = ({
     <>
       {/* ── Identity ───────────────────────────────────────────────────── */}
       <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
-        <Eyebrow color="muted" size="caption" className="mb-2 block">
+        <Eyebrow color="muted" className="mb-2 block">
           {t("archive.form.fields.title", "Tytuł utworu *")}
         </Eyebrow>
         <Input
@@ -117,7 +117,7 @@ export const PieceFormBody = ({
 
         <div className="mt-5 grid gap-4 md:grid-cols-4">
           <div className="md:col-span-2">
-            <Eyebrow color="muted" size="caption" className="mb-1 block">
+            <Eyebrow color="muted" className="mb-1 block">
               {t("archive.form.fields.epoch", "Epoka")}
             </Eyebrow>
             <Controller
@@ -145,7 +145,7 @@ export const PieceFormBody = ({
             {...register("composition_year")}
           />
           <div>
-            <Eyebrow color="muted" size="caption" className="mb-1 block">
+            <Eyebrow color="muted" className="mb-1 block">
               {t("archive.form.fields.language", "Język śpiewu")}
             </Eyebrow>
             <Controller
@@ -184,7 +184,7 @@ export const PieceFormBody = ({
             {...register("voicing")}
           />
           <div>
-            <Eyebrow color="muted" size="caption" className="mb-1 block">
+            <Eyebrow color="muted" className="mb-1 block">
               {t("archive.form.fields.duration", "Czas trwania")}
             </Eyebrow>
             <div className="flex items-center gap-2">

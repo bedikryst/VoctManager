@@ -32,6 +32,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { Divider } from "@/shared/ui/primitives/Divider";
 import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 
 import {
@@ -122,7 +123,9 @@ const ScaleRow = ({
 
 const pillButton =
   "flex h-9 w-9 items-center justify-center rounded-full text-ethereal-marble transition-colors";
-const Divider = () => <div className="mx-1 h-4 w-px bg-white/15" aria-hidden="true" />;
+const ToolSeparator = () => (
+  <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-4" />
+);
 
 // Self-contained chrome: the toolbar owns its glass pill (PdfViewer just gives
 // it a top-left slot with a capped width), so collapsed = a clean trigger and
@@ -234,7 +237,7 @@ export const AnnotationToolbar = ({
         >
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
-        <Divider />
+        <ToolSeparator />
         <button
           type="button"
           onClick={onUndo}
@@ -256,7 +259,7 @@ export const AnnotationToolbar = ({
           <Redo2 size={16} aria-hidden="true" />
         </button>
 
-        <Divider />
+        <ToolSeparator />
 
         {visibleTools.map(({ id, icon: Icon, labelKey, fallback }) => (
           <button
@@ -284,7 +287,7 @@ export const AnnotationToolbar = ({
           </span>
         )}
 
-        <Divider />
+        <ToolSeparator />
         {mode === "conductor" ? (
           <button
             type="button"
@@ -333,7 +336,7 @@ export const AnnotationToolbar = ({
 
         {clearableCount > 0 && (
           <>
-            <Divider />
+            <ToolSeparator />
             {confirmingClear ? (
               <button
                 type="button"

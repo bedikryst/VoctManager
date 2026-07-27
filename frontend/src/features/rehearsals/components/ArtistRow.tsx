@@ -28,7 +28,7 @@ import {
   useUpsertAttendanceRecord,
 } from "../api/rehearsals.queries";
 import { cn } from "@/shared/lib/utils";
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import {
@@ -148,7 +148,7 @@ export const ArtistRow = React.memo(
     const statusToggle = (
       <div
         className={cn(
-          "rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster",
+          "rounded-nested border border-hairline-strong bg-ethereal-alabaster",
           isRollCall
             ? "grid grid-cols-2 gap-1.5 p-1.5 sm:grid-cols-4"
             : // Compact: the four long PL status words ("USPRAWIEDLIWIONY"…) can't
@@ -174,17 +174,23 @@ export const ArtistRow = React.memo(
               disabled={isSyncing}
               aria-pressed={active}
               className={cn(
-                "flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest transition-colors duration-200 disabled:opacity-50",
-                isRollCall
-                  ? "min-h-12 rounded-lg px-2 py-2 text-[11px]"
-                  : "flex-1 rounded-lg px-3 py-1.5 text-[9px] sm:flex-none",
+                "flex items-center justify-center gap-1.5 rounded-chip transition-colors duration-200 disabled:opacity-50",
+                isRollCall ? "min-h-12 px-2 py-2" : "flex-1 px-3 py-1.5 sm:flex-none",
                 active
                   ? meta.solid + " shadow-sm"
                   : "text-ethereal-graphite hover:bg-ethereal-marble hover:text-ethereal-ink",
               )}
             >
               <Icon size={isRollCall ? 15 : 12} />
-              {t(meta.labelKey, meta.fallback)}
+              {/* The overline is the primitive's role, not a per-button recipe —
+                  this was the module's last hand-typed uppercase micro-label. */}
+              <Eyebrow
+                as="span"
+                size={isRollCall ? "overline" : "overline-sm"}
+                color="inherit"
+              >
+                {t(meta.labelKey, meta.fallback)}
+              </Eyebrow>
             </button>
           );
         })}
@@ -256,12 +262,15 @@ export const ArtistRow = React.memo(
 
     /* ── Roll-call card ─────────────────────────────────────────────────── */
     if (isRollCall) {
-      const meta = status ? ATTENDANCE_STATUS_META[status] : ATTENDANCE_STATUS_META.NONE;
       return (
         <div
           className={cn(
-            "flex flex-col gap-3 rounded-2xl border bg-ethereal-marble/20 p-4 transition-colors",
-            status ? "border-ethereal-ink/8" : "border-ethereal-gold/25 bg-ethereal-gold/[0.03]",
+            // The gold edge is the seat still waiting for a tap — it clears as
+            // the roll call proceeds, which is the whole affordance of this mode.
+            "flex flex-col gap-3 rounded-nested border bg-ethereal-marble/20 p-4 transition-colors",
+            status
+              ? "border-hairline-strong"
+              : "border-ethereal-gold/25 bg-ethereal-gold/3",
           )}
         >
           <div className="flex items-center gap-3">
@@ -274,7 +283,9 @@ export const ArtistRow = React.memo(
                 {voiceLabel}
               </Caption>
             </div>
-            <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", meta.dot)} aria-hidden="true" />
+            {/* No status dot: the lit segment of the toggle below already says
+                it, in words, and the dot's resting value was a grey pip on
+                every card that had not been touched yet. */}
           </div>
           {statusToggle}
           {hasExtras && extraFields}
@@ -284,7 +295,7 @@ export const ArtistRow = React.memo(
 
     /* ── Compact roster row ─────────────────────────────────────────────── */
     return (
-      <div className="group flex flex-col items-start justify-between gap-3 border-b border-ethereal-incense/10 bg-ethereal-marble/20 px-5 py-3 transition-colors duration-200 hover:bg-ethereal-marble/50 md:flex-row md:items-center">
+      <div className="group flex flex-col items-start justify-between gap-3 border-b border-hairline bg-ethereal-marble/20 px-5 py-3 transition-colors duration-200 hover:bg-ethereal-marble/50 md:flex-row md:items-center">
         <div className="flex w-full shrink-0 items-center gap-3 md:w-60">
           <Avatar src={artist.avatar_thumb_url} name={fullName} size="sm" shape="rounded" />
           <div className="flex min-w-0 flex-col">

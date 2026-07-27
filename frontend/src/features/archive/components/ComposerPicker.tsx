@@ -63,7 +63,7 @@ export const ComposerPicker = ({
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between">
-        <Eyebrow color="muted" size="caption">
+        <Eyebrow color="muted">
           {label ?? t("archive.form.fields.composer", "Kompozytor")}
         </Eyebrow>
         <Button

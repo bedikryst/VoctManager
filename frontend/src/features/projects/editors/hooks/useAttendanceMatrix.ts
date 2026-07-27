@@ -22,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { toastApiError } from "@/shared/api/errors";
+import { useNow } from "@/shared/lib/dom/useNow";
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
 import { getLocationLabel } from "../../lib/projectPresentation";
 import {
@@ -146,9 +147,24 @@ export const useAttendanceMatrix = (
   const [query, setQuery] = useState<string>("");
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
+  /**
+   * `isPast` / `isLive` are time windows, not properties of the payload, so the
+   * columns have to be rebuilt as the clock moves — keyed on the data alone, a
+   * matrix left open across a downbeat kept yesterday's answer until it
+   * remounted, and the session that had just started still refused to be
+   * filled. Quantised to the minute: one rebuild a minute, not one a tick.
+   */
+  const now = useNow(60_000);
+  const nowMs = Math.floor(now.getTime() / 60_000) * 60_000;
+
   const sessions = useMemo(
-    () => buildSessions(rehearsals, (rehearsal) => getLocationLabel(rehearsal.location)),
-    [rehearsals],
+    () =>
+      buildSessions(
+        rehearsals,
+        (rehearsal) => getLocationLabel(rehearsal.location),
+        nowMs,
+      ),
+    [rehearsals, nowMs],
   );
 
   const artistById = useMemo(

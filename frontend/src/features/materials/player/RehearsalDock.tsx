@@ -32,9 +32,11 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { Text } from "@/shared/ui/primitives/typography";
 import { Select } from "@/shared/ui/primitives/Select";
 import { PITCH_NOTES, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
 
+import { SectionLabel } from "../components/SectionLabel";
 import { useUpdateStartingPitches } from "../api/materials.queries";
 import type { MaterialsPiece, MaterialsStartingPitch } from "../types/materials.dto";
 import {
@@ -88,8 +90,12 @@ const PRESETS: readonly {
 const pitchLabel = (pitch: MaterialsStartingPitch): string =>
   `${PITCH_NOTES[pitch.note] ?? "?"}${pitch.octave}`;
 
-const sectionLabel =
-  "mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50";
+/** The dock's sections wear the feature's label, in its dark tone. */
+const DockLabel = ({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element => <SectionLabel tone="dark">{children}</SectionLabel>;
 
 export const RehearsalDock = ({
   piece,
@@ -186,10 +192,10 @@ export const RehearsalDock = ({
     <div className="pointer-events-none absolute bottom-20 left-3 z-10 sm:bottom-24 sm:left-6">
       <div className="pointer-events-auto flex w-[19.5rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-3xl border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-          <span className="flex items-center gap-2 text-sm font-semibold">
+          <Text as="span" weight="semibold" className="flex items-center gap-2">
             <Music4 size={15} aria-hidden="true" />
             {t("materials.rehearsal_dock.title", "Instrumenty próby")}
-          </span>
+          </Text>
           <button
             type="button"
             onClick={() => {
@@ -208,9 +214,9 @@ export const RehearsalDock = ({
           {/* ── starting pitches ─────────────────────────────────────── */}
           <section>
             <div className="flex items-center justify-between">
-              <p className={sectionLabel}>
+              <DockLabel>
                 {t("materials.rehearsal_dock.starting_pitches", "Dźwięki startowe")}
-              </p>
+              </DockLabel>
               {canEditPitches && !editing && (
                 <button
                   type="button"
@@ -402,9 +408,9 @@ export const RehearsalDock = ({
           {/* ── practice-player transport ────────────────────────────── */}
           {hasTracks && (
             <section>
-              <p className={sectionLabel}>
+              <DockLabel>
                 {t("materials.rehearsal_dock.recordings", "Nagrania do ćwiczeń")}
-              </p>
+              </DockLabel>
               {!isCurrentPiece ? (
                 <button
                   type="button"

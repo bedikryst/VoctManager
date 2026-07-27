@@ -22,6 +22,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import {
   isComment,
@@ -100,10 +101,10 @@ export const AnnotationSidebar = ({
             className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
             <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-              <span className="flex items-center gap-2 text-sm font-semibold">
+              <Text as="span" weight="semibold" className="flex items-center gap-2">
                 <ListTree size={15} aria-hidden="true" />
                 {t("annotations.panel.title", "Adnotacje")}
-              </span>
+              </Text>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
@@ -116,9 +117,9 @@ export const AnnotationSidebar = ({
 
             <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-3">
               <section className="mb-4">
-                <p className="mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50">
+                <Eyebrow as="p" color="marble-muted" className="mb-2">
                   {t("annotations.panel.layers", "Widoczność warstw")}
-                </p>
+                </Eyebrow>
                 <div className="flex flex-col gap-1">
                   {mode === "conductor" ? (
                     <>
@@ -158,9 +159,9 @@ export const AnnotationSidebar = ({
 
               {annotatedPages.length > 0 && (
                 <section className="mb-4">
-                  <p className="mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50">
+                  <Eyebrow as="p" color="marble-muted" className="mb-2">
                     {t("annotations.panel.pages", "Oznaczone strony")}
-                  </p>
+                  </Eyebrow>
                   <div className="flex flex-wrap gap-1.5">
                     {annotatedPages.map(([page, count]) => (
                       <button
@@ -184,9 +185,9 @@ export const AnnotationSidebar = ({
               )}
 
               <section>
-                <p className="mb-2 text-[11px] uppercase tracking-wide text-ethereal-marble/50">
+                <Eyebrow as="p" color="marble-muted" className="mb-2">
                   {t("annotations.panel.notes", "Notatki")}
-                </p>
+                </Eyebrow>
                 {notes.length === 0 ? (
                   <p className="text-xs text-ethereal-marble/50">
                     {t("annotations.panel.no_notes", "Brak notatek tekstowych.")}

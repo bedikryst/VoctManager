@@ -2,28 +2,35 @@
  * @file RehearsalInspector.tsx
  * @description The protagonist surface: everything the conductor needs to take
  * and read attendance for one rehearsal. A composition-aware progress header,
- * a roll-call toolbar (focus mode · only-unmarked filter · fill gaps · pitch
- * pipe) and a voice-grouped roster that swaps between a scanning list and large
- * tap-target cards.
+ * a roll-call toolbar (density · only-unmarked filter · fill gaps · pitch pipe)
+ * and a voice-grouped roster that swaps between a scanning list and large tap
+ * targets.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/components/RehearsalInspector
  */
 
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   Clock,
   Filter,
-  ListChecks,
+  LayoutGrid,
+  List,
   Radio,
-  Sparkles,
+  UserPlus,
   Users,
 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import {
+  SegmentedTabs,
+  type SegmentedTabItem,
+} from "@/shared/ui/composites/SegmentedTabs";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Metric, Text } from "@/shared/ui/primitives/typography";
@@ -34,9 +41,10 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 
 import type { Artist, Attendance, Participation, Rehearsal } from "@/shared/types";
 import type { AttendanceTally, VoiceGroup } from "../lib/attendanceStats";
-import { rateAccent } from "../lib/attendanceStats";
 import {
   ATTENDANCE_STATUS_META,
+  RATE_TONE_TEXT,
+  attendanceRateTone,
   voiceSectionLabelKey,
 } from "../constants/attendanceMeta";
 import { ArtistRow } from "./ArtistRow";
@@ -57,6 +65,7 @@ interface RehearsalInspectorProps {
 }
 
 const SEGMENTS = ["PRESENT", "LATE", "EXCUSED", "ABSENT"] as const;
+type DensityId = "LIST" | "ROLL_CALL";
 
 /** The label comes from the shared meta, not from the call site: this strip was
  *  the second copy of a vocabulary the module already owns. */
@@ -64,7 +73,7 @@ const StatPill = ({
   status,
   value,
 }: {
-  status: keyof typeof ATTENDANCE_STATUS_META;
+  status: (typeof SEGMENTS)[number];
   value: number;
 }) => {
   const { t } = useTranslation();
@@ -99,13 +108,13 @@ export const RehearsalInspector = ({
 
   const isSectional = (rehearsal.invited_participations?.length ?? 0) > 0;
 
-  const sectionalSummary = useMemo(() => {
-    if (!isSectional) return t("rehearsals.dashboard.tutti", "Tutti (Cały Zespół)");
-    const labels = voiceGroups.map((group) =>
-      t(voiceSectionLabelKey(group.key), group.key),
-    );
-    return `${t("rehearsals.dashboard.only", "Tylko:")} ${labels.join(", ")}`;
-  }, [isSectional, voiceGroups, t]);
+  const calledSections = useMemo(
+    () =>
+      voiceGroups
+        .map((group) => t(voiceSectionLabelKey(group.key), group.key))
+        .join(", "),
+    [voiceGroups, t],
+  );
 
   // Apply the only-unmarked filter without mutating the source groups.
   const displayGroups = useMemo(() => {
@@ -120,58 +129,80 @@ export const RehearsalInspector = ({
       .filter((group) => group.participations.length > 0);
   }, [voiceGroups, showOnlyUnmarked, attendanceMap]);
 
-  const accent = rateAccent(stats.rate);
-  const accentText =
-    accent === "gold"
-      ? "text-ethereal-gold"
-      : accent === "crimson"
-        ? "text-ethereal-crimson"
-        : "text-ethereal-ink";
+  const focus = rehearsal.focus?.trim();
+  const dateLabel = formatLocalizedDate(
+    rehearsal.date_time,
+    { weekday: "long", day: "numeric", month: "long" },
+    undefined,
+    rehearsal.timezone,
+  );
+
+  const rateTone = attendanceRateTone(stats.rate);
+
+  /** One reading of the tally, shared by the composition bar and its legend. */
+  const countOf: Record<(typeof SEGMENTS)[number], number> = {
+    PRESENT: stats.present,
+    LATE: stats.late,
+    EXCUSED: stats.excused,
+    ABSENT: stats.absent,
+  };
+
+  /* The roster is one body of content at two densities, which is what the
+     composite's icon-only mode exists for — and it takes the gold back off a
+     mode toggle, so the card's one primary button is the one that writes. */
+  const DENSITIES: SegmentedTabItem<DensityId>[] = [
+    { id: "LIST", label: t("rehearsals.inspector.density_list", "Lista"), Icon: List },
+    {
+      id: "ROLL_CALL",
+      label: t("rehearsals.inspector.density_cards", "Karty odprawy"),
+      Icon: LayoutGrid,
+    },
+  ];
 
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false} className="flex flex-col">
       {/* ── Header ────────────────────────────────────────────────────── */}
-      <div className="border-b border-ethereal-ink/6 p-5 md:p-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={isSectional ? "amethyst" : "brand"} icon={<Users size={11} />}>
-            {isSectional
-              ? t("rehearsals.dashboard.sectional", "Próba Sekcyjna")
-              : t("rehearsals.dashboard.tutti_badge", "Próba Tutti")}
-          </Badge>
-          <Badge variant="neutral">{sectionalSummary}</Badge>
-          {!rehearsal.is_mandatory && (
-            <Badge variant="outline">
-              {t("rehearsals.dashboard.optional", "Opcjonalna")}
-            </Badge>
-          )}
-        </div>
+      <div className="border-b border-hairline p-5 md:p-6">
+        {/* Tutti is the resting case and says nothing; a sectional call is the
+            exception, and the sections it summoned are the whole payload. */}
+        {(isSectional || !rehearsal.is_mandatory) && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {isSectional && (
+              <Badge variant="amethyst" icon={<Users size={11} />}>
+                {t("rehearsals.dashboard.sectional_only", "Tylko: {{sections}}", {
+                  sections: calledSections,
+                })}
+              </Badge>
+            )}
+            {!rehearsal.is_mandatory && (
+              <Badge variant="outline">
+                {t("rehearsals.dashboard.optional", "Opcjonalna")}
+              </Badge>
+            )}
+          </div>
+        )}
 
-        <Text size="lg" weight="semibold" className="mt-4 block leading-tight">
-          {rehearsal.focus?.trim() ||
-            t("rehearsals.dashboard.general_work", "Praca Bieżąca")}
+        {/* A session is identified by WHEN it is; what it works on is the
+            subtitle, and only when the conductor wrote one. */}
+        <Text size="lg" weight="semibold" className="block capitalize leading-tight">
+          {dateLabel}
         </Text>
+        {focus && (
+          <Text size="sm" color="graphite" className="mt-1 block font-serif italic">
+            {focus}
+          </Text>
+        )}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster px-3 py-1.5">
-            <Clock size={12} className="shrink-0 text-ethereal-gold" aria-hidden="true" />
-            <Caption>
-              {formatLocalizedDate(
-                rehearsal.date_time,
-                { weekday: "long", day: "numeric", month: "long" },
-                undefined,
-                rehearsal.timezone,
-              )}
-            </Caption>
-          </div>
-          <div className="flex items-center rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster px-3 py-1.5">
-            <DualTimeDisplay
-              value={rehearsal.date_time}
-              timeZone={rehearsal.timezone}
-              className="border-none bg-transparent p-0"
-              typography="sans"
-              size="sm"
-            />
-          </div>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <DualTimeDisplay
+            value={rehearsal.date_time}
+            timeZone={rehearsal.timezone}
+            className="border-none bg-transparent p-0"
+            typography="sans"
+            size="sm"
+            weight="semibold"
+            icon={<Clock size={12} className="text-ethereal-gold/70" aria-hidden="true" />}
+          />
           <LocationPreview
             locationRef={rehearsal.location}
             fallback={t("rehearsals.dashboard.no_location", "Brak lok.")}
@@ -187,21 +218,16 @@ export const RehearsalInspector = ({
                 <Eyebrow color="muted">
                   {t("rehearsals.inspector.recorded", "Oznaczono")}
                 </Eyebrow>
-                <Text size="sm" weight="semibold" className="tabular-nums">
+                <Text size="sm" weight="semibold" className="block tabular-nums">
                   {stats.marked} / {stats.total}
-                  {stats.none > 0 && (
-                    <Caption as="span" color="muted" className="ml-2">
-                      {t("rehearsals.inspector.remaining", "({{count}} do uzupełnienia)", {
-                        count: stats.none,
-                      })}
-                    </Caption>
-                  )}
                 </Text>
               </div>
               <div className="text-right">
                 <Eyebrow color="muted">{t("rehearsals.stats.rate", "Frekwencja")}</Eyebrow>
-                <Metric size="xl" className={cn("leading-none", accentText)}>
-                  {stats.rate}%
+                {/* Measured over what is written down: before the first tap this
+                    is no rate at all, not a 0% the conductor has to explain. */}
+                <Metric size="xl" className={cn("leading-none", RATE_TONE_TEXT[rateTone])}>
+                  {stats.rate === null ? "—" : `${stats.rate}%`}
                 </Metric>
               </div>
             </div>
@@ -211,32 +237,25 @@ export const RehearsalInspector = ({
               role="img"
               aria-label={t("rehearsals.inspector.composition", "Skład obecności")}
             >
-              {SEGMENTS.map((status) => {
-                const count =
-                  status === "PRESENT"
-                    ? stats.present
-                    : status === "LATE"
-                      ? stats.late
-                      : status === "EXCUSED"
-                        ? stats.excused
-                        : stats.absent;
-                if (count === 0) return null;
-                return (
+              {SEGMENTS.map((status) =>
+                countOf[status] === 0 ? null : (
                   <span
                     key={status}
                     className={cn("h-full", ATTENDANCE_STATUS_META[status].dot)}
-                    style={{ width: `${(count / stats.total) * 100}%` }}
+                    style={{ width: `${(countOf[status] / stats.total) * 100}%` }}
                   />
-                );
-              })}
+                ),
+              )}
             </div>
 
+            {/* The recorded statuses only. What is still blank is the filter's
+                figure below and the "Oznaczono" fraction above — printing it a
+                third time here made the one number the eye had to find into
+                wallpaper. */}
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <StatPill status="PRESENT" value={stats.present} />
-              <StatPill status="LATE" value={stats.late} />
-              <StatPill status="EXCUSED" value={stats.excused} />
-              <StatPill status="ABSENT" value={stats.absent} />
-              {stats.none > 0 && <StatPill status="NONE" value={stats.none} />}
+              {SEGMENTS.map((status) => (
+                <StatPill key={status} status={status} value={countOf[status]} />
+              ))}
             </div>
           </div>
         )}
@@ -244,16 +263,17 @@ export const RehearsalInspector = ({
 
       {/* ── Toolbar ───────────────────────────────────────────────────── */}
       {invitedCount > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ethereal-ink/6 bg-ethereal-marble/30 px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-ethereal-marble/30 px-4 py-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant={isRollCall ? "primary" : "outline"}
-              size="sm"
-              onClick={onToggleRollCall}
-              leftIcon={<ListChecks size={14} aria-hidden="true" />}
-            >
-              {t("rehearsals.inspector.roll_call_mode", "Tryb odprawy")}
-            </Button>
+            <SegmentedTabs
+              iconOnly
+              items={DENSITIES}
+              value={isRollCall ? "ROLL_CALL" : "LIST"}
+              onChange={(id) => {
+                if ((id === "ROLL_CALL") !== isRollCall) onToggleRollCall();
+              }}
+              ariaLabel={t("rehearsals.inspector.density", "Widok listy")}
+            />
             <Button
               variant={showOnlyUnmarked ? "secondary" : "ghost"}
               size="sm"
@@ -297,7 +317,7 @@ export const RehearsalInspector = ({
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden border-b border-ethereal-ink/6 bg-ethereal-parchment/30"
+            className="overflow-hidden border-b border-hairline bg-ethereal-parchment/30"
           >
             <div className="p-4">
               <PitchPipe />
@@ -312,23 +332,39 @@ export const RehearsalInspector = ({
           height-capped panel so the two columns stay aligned. */}
       <div className="overflow-x-hidden lg:max-h-[64vh] lg:overflow-y-auto">
         {invitedCount === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <Users size={26} className="text-ethereal-incense/30" aria-hidden="true" />
-            <Eyebrow color="muted">
-              {t("rehearsals.inspector.no_invited", "Nikt nie został wezwany na tę próbę")}
-            </Eyebrow>
-          </div>
+          <StatePanel
+            variant="inline"
+            className="py-12"
+            icon={<Users size={22} aria-hidden="true" />}
+            title={t("rehearsals.inspector.no_invited_title", "Nikogo nie wezwano")}
+            description={t(
+              "rehearsals.inspector.no_invited_desc",
+              "Na tej próbie nie ma ani jednego śpiewaka. Sprawdź obsadę projektu.",
+            )}
+            actions={
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/panel/projects/${String(rehearsal.project)}/cast`}>
+                  <UserPlus size={14} aria-hidden="true" />
+                  {t("rehearsals.inspector.open_cast", "Otwórz obsadę")}
+                </Link>
+              </Button>
+            }
+          />
         ) : displayGroups.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 px-6 py-16 text-center">
-            <Sparkles size={26} className="text-ethereal-sage/60" aria-hidden="true" />
-            <Eyebrow color="sage">
-              {t("rehearsals.inspector.all_marked", "Wszyscy oznaczeni — komplet!")}
-            </Eyebrow>
-          </div>
+          <StatePanel
+            variant="inline"
+            className="py-12"
+            icon={<CheckCircle2 size={22} aria-hidden="true" />}
+            title={t("rehearsals.inspector.all_marked_title", "Wszyscy oznaczeni")}
+            description={t(
+              "rehearsals.inspector.all_marked_desc",
+              "Nikt z wezwanych nie czeka już na wpis.",
+            )}
+          />
         ) : (
           displayGroups.map((group) => (
             <div key={group.key}>
-              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-ethereal-incense/10 bg-ethereal-alabaster/95 px-5 py-2.5 backdrop-blur-sm">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-hairline bg-ethereal-alabaster/95 px-5 py-2.5 backdrop-blur-sm">
                 <Eyebrow color="gold">{t(voiceSectionLabelKey(group.key), group.key)}</Eyebrow>
                 <Caption color="muted" className="tabular-nums">
                   {group.participations.length}

@@ -11,7 +11,12 @@
 import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { ListChecks, MousePointerClick, TrendingUp } from "lucide-react";
+import {
+  ListChecks,
+  MousePointerClick,
+  TrendingUp,
+  WifiOff,
+} from "lucide-react";
 
 import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
@@ -39,6 +44,7 @@ export default function Rehearsals(): React.JSX.Element {
   const {
     isLoading,
     isError,
+    nowMs,
     view,
     setView,
     isRollCall,
@@ -82,6 +88,7 @@ export default function Rehearsals(): React.JSX.Element {
     projectParticipations,
     attendanceIndex,
     artistMap,
+    nowMs,
   );
 
   useEffect(() => {
@@ -91,8 +98,30 @@ export default function Rehearsals(): React.JSX.Element {
       });
   }, [isError, t]);
 
-  if (isLoading && displayProjects.length === 0) {
+  // The workspace joins six queries; while any of them is still cold the rail
+  // has no rehearsals to list and the inspector has no roster, and the empty
+  // states would report that as fact. `isLoading` is only true when something
+  // genuinely has no data yet, so a warm cache never sees this gate.
+  if (isLoading) {
     return <EtherealLoader />;
+  }
+
+  if (isError && displayProjects.length === 0) {
+    return (
+      <PageTransition>
+        <div className="mx-auto max-w-3xl pt-10">
+          <StatePanel
+            tone="danger"
+            icon={<WifiOff size={22} aria-hidden="true" />}
+            title={t("rehearsals.error.title", "Nie udało się wczytać dziennika")}
+            description={t(
+              "rehearsals.error.desc",
+              "Dane obecności nie odpowiedziały. Sprawdź połączenie i odśwież stronę.",
+            )}
+          />
+        </div>
+      </PageTransition>
+    );
   }
 
   const VIEWS: SegmentedTabItem<RehearsalView>[] = [
@@ -134,6 +163,7 @@ export default function Rehearsals(): React.JSX.Element {
           <StaggeredBentoItem>
             <RehearsalPulseBar
               pulse={pulse}
+              nowMs={nowMs}
               onOpenNext={() =>
                 pulse.next &&
                 goToRehearsal(pulse.next.project.id, pulse.next.rehearsal.id)
@@ -158,6 +188,7 @@ export default function Rehearsals(): React.JSX.Element {
                   activeRehearsalId={activeRehearsalId}
                   onSelectRehearsal={openRehearsal}
                   getLocationName={getLocationName}
+                  nowMs={nowMs}
                 />
               </div>
 

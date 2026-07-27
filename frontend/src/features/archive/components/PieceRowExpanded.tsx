@@ -98,7 +98,7 @@ export const PieceRowExpanded = ({
           {/* Divisi summary */}
           {requirements.length > 0 ? (
             <div>
-              <Eyebrow color="muted" size="caption" className="mb-2 block">
+              <Eyebrow color="muted" className="mb-2 block">
                 <Mic size={11} className="mr-1 inline" aria-hidden="true" />
                 {t("archive.row_expanded.divisi", "Divisi")}
               </Eyebrow>
@@ -127,7 +127,7 @@ export const PieceRowExpanded = ({
           {pdfLinks.length > 0 ? (
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">
-                <Eyebrow color="muted" size="caption">
+                <Eyebrow color="muted">
                   <FileText size={11} className="mr-1 inline" aria-hidden="true" />
                   {pdfLinks.length === 1
                     ? t("archive.row_expanded.pdf_one", "Partytura PDF")
@@ -196,7 +196,7 @@ export const PieceRowExpanded = ({
       {/* Audio tracks subsection */}
       <div className="rounded-nested border border-hairline bg-ethereal-alabaster/55 p-4">
         <div className="mb-3 flex items-baseline justify-between gap-3">
-          <Eyebrow color="muted" size="caption" className="inline-flex items-center gap-1.5">
+          <Eyebrow color="muted" className="inline-flex items-center gap-1.5">
             <Headphones size={11} aria-hidden="true" />
             {audioCount === 0
               ? t("archive.row_expanded.no_audio", "Brak ścieżek MP3")
@@ -213,13 +213,19 @@ export const PieceRowExpanded = ({
         onClick={(event) => event.stopPropagation()}
         className="flex flex-wrap items-center justify-end gap-2 border-t border-hairline pt-3"
       >
-        <Button asChild variant="primary" size="sm">
-          <Link to={cardPath}>
-            {hasAIContent ? (
-              <BookOpen size={13} aria-hidden="true" className="mr-1.5" />
+        <Button
+          asChild
+          variant="primary"
+          size="sm"
+          leftIcon={
+            hasAIContent ? (
+              <BookOpen size={13} aria-hidden="true" />
             ) : (
-              <UploadCloud size={13} aria-hidden="true" className="mr-1.5" />
-            )}
+              <UploadCloud size={13} aria-hidden="true" />
+            )
+          }
+        >
+          <Link to={cardPath}>
             {t("archive.row_expanded.cta_open_card", "Otwórz kartę utworu")}
           </Link>
         </Button>

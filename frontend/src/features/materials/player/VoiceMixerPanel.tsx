@@ -141,16 +141,16 @@ export const VoiceMixerPanel = ({
                     : undefined
                 }
                 className={cn(
-                  "flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-xl border px-1.5 py-2 text-center transition-all active:scale-[0.97] disabled:opacity-40",
+                  "flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-nested border px-1.5 py-2 text-center transition-all active:scale-[0.97] disabled:opacity-40",
                   isActive
                     ? cn(activeClass, "shadow-glass-ethereal")
                     : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-graphite shadow-glass-solid hover:border-ethereal-gold/30 hover:text-ethereal-ink",
                 )}
               >
                 <Icon size={17} aria-hidden="true" className="shrink-0" />
-                <span className="text-[10.5px] font-bold uppercase leading-tight tracking-[0.06em]">
+                <Eyebrow size="overline-sm" color="inherit">
                   {t(labelKey, fallback)}
-                </span>
+                </Eyebrow>
               </button>
             );
           })}

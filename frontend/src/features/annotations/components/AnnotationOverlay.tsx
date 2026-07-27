@@ -18,6 +18,7 @@ import { Lock, MessageSquare, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
 import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
 
 import {
@@ -619,7 +620,7 @@ export const AnnotationOverlay = ({
 
             {/* Read-only preview popover for pin notes the user can't edit. */}
             {!modifiable && selectedId === a.id && !inline && (
-              <div className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-xl border border-ethereal-ink/10 bg-white p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal">
+              <div className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal">
                 {payload.text}
               </div>
             )}
@@ -728,7 +729,7 @@ const NoteCard = ({
 
   return (
     <div
-      className="absolute z-20 w-60 -translate-x-1/2 rounded-xl border border-ethereal-ink/10 bg-white p-2.5 shadow-glass-ethereal"
+      className="absolute z-20 w-60 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-2.5 shadow-glass-ethereal"
       style={{
         // The 260px-wide card (±130 half + margin) can't be kept inside a
         // narrower page — the min/max bounds cross and shove it off-screen — so
@@ -754,7 +755,10 @@ const NoteCard = ({
           if (event.key === "Escape") onCancel();
         }}
         rows={2}
-        className="w-full resize-none rounded-lg border border-ethereal-ink/15 bg-ethereal-marble/40 p-2 text-xs text-ethereal-ink outline-none focus:border-ethereal-ink/40"
+        className={cn(
+          fieldShellVariants({ variant: "solid" }),
+          "resize-none p-2 text-xs",
+        )}
         placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
       />
 

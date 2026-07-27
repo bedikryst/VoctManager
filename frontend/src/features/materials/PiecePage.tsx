@@ -54,6 +54,7 @@ import { useMaterialsData } from "./hooks/useMaterialsData";
 import { useSetPieceReadiness } from "./api/materials.queries";
 import { MaterialsService } from "./api/materials.service";
 import { ReadinessControl } from "./components/ReadinessControl";
+import { SectionLabel } from "./components/SectionLabel";
 import { PieceLyricsViewer } from "./components/PieceLyricsViewer";
 import { PieceDivisiRoster } from "./components/PieceDivisiRoster";
 import { VoiceMixerPanel } from "./player/VoiceMixerPanel";
@@ -61,21 +62,6 @@ import { RehearsalDock } from "./player/RehearsalDock";
 import type { MaterialsReadinessStatus } from "./types/materials.dto";
 
 type PieceTab = "practice" | "text" | "cast";
-
-const SectionLabel = ({
-  icon,
-  children,
-}: {
-  icon: React.ReactNode;
-  children: React.ReactNode;
-}): React.JSX.Element => (
-  <div className="mb-2.5 flex items-center gap-2">
-    <span className="text-ethereal-gold" aria-hidden="true">
-      {icon}
-    </span>
-    <Eyebrow color="muted">{children}</Eyebrow>
-  </div>
-);
 
 const pdfFileName = (label: string): string =>
   label.toLowerCase().endsWith(".pdf") ? label : `${label}.pdf`;
@@ -418,14 +404,15 @@ export default function PiecePage(): React.JSX.Element {
                   </div>
                 )}
 
-                {/* lyrics, IPA, translations, program notes */}
+                {/* lyrics, IPA, translations, program notes — the block brings
+                    its own label, because it is also the thing that knows
+                    whether there is any text to label */}
                 <div className={tabVisibility("text")}>
                   <PieceLyricsViewer
                     originalLyrics={piece.lyrics_original}
                     lyricsIpa={piece.lyrics_ipa}
                     translations={piece.translations}
                     programNotes={piece.program_notes}
-                    defaultExpanded
                   />
                 </div>
               </div>

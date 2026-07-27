@@ -20,11 +20,13 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { CalendarX2, ClipboardList, Search, Users } from "lucide-react";
 
-import { voiceSectionLabelKey } from "@/features/rehearsals/constants/attendanceMeta";
+import {
+  LOW_ATTENDANCE_RATE,
+  voiceSectionLabelKey,
+} from "@/features/rehearsals/constants/attendanceMeta";
 import { cn } from "@/shared/lib/utils";
 import {
   EMPTY_TALLY,
-  LOW_ATTENDANCE_RATE,
   MARK_CYCLE,
   isCalled,
   type AttendanceMark,

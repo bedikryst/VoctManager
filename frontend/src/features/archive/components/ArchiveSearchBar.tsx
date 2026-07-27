@@ -137,7 +137,7 @@ export const ArchiveSearchBar = ({
           >
             <div className="grid gap-3 rounded-nested border border-hairline bg-ethereal-alabaster/40 p-3 md:grid-cols-3">
               <div>
-                <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
+                <Eyebrow color="muted" className="mb-1 ml-1 block">
                   {t("archive.search.composer", "Kompozytor")}
                 </Eyebrow>
                 {/* An unset filter means "everything" — that reading belongs on
@@ -155,7 +155,7 @@ export const ArchiveSearchBar = ({
                 />
               </div>
               <div>
-                <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
+                <Eyebrow color="muted" className="mb-1 ml-1 block">
                   {t("archive.search.epoch", "Epoka")}
                 </Eyebrow>
                 <Select
@@ -168,7 +168,7 @@ export const ArchiveSearchBar = ({
                 />
               </div>
               <div>
-                <Eyebrow color="muted" size="caption" className="mb-1 ml-1 block">
+                <Eyebrow color="muted" className="mb-1 ml-1 block">
                   {t("archive.search.voicing", "Obsada")}
                 </Eyebrow>
                 <Select

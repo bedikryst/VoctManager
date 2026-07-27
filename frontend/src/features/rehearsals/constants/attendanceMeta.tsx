@@ -1,9 +1,10 @@
 /**
  * @file attendanceMeta.tsx
- * @description Single source of truth for attendance status presentation and
- * vocal-section taxonomy across the Rehearsals (Centrum Obecności) module.
- * Keeps row toggles, roster headers, roll-call cards and the reliability board
- * visually in lock-step so a status colour means the same thing everywhere.
+ * @description Single source of truth for attendance status presentation, the
+ * attendance-rate scale and the vocal-section taxonomy across the Rehearsals
+ * (Centrum Obecności) module. Keeps row toggles, roster headers, roll-call
+ * cards and the reliability board in lock-step so a status colour — and a rate
+ * colour — means the same thing on every surface.
  * @architecture Enterprise SaaS 2026
  * @module features/rehearsals/constants/attendanceMeta
  */
@@ -24,16 +25,10 @@ export interface AttendanceStatusMeta {
    */
   labelKey: string;
   fallback: string;
-  /** Ethereal palette token this status maps to (alarm = crimson only). */
-  token: "sage" | "gold" | "crimson" | "amethyst" | "graphite";
   /** Solid fill — used by the active segment of a toggle / roll-call button. */
   solid: string;
-  /** Soft tinted chip — used by badges and analytics legends. */
-  soft: string;
-  /** Bare dot fill — used in the reliability heatmap. */
+  /** Bare dot fill — the status legend, the heatmap, the composition bar. */
   dot: string;
-  /** Foreground text colour. */
-  text: string;
   Icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
@@ -44,53 +39,38 @@ export const ATTENDANCE_STATUS_META: Record<
   PRESENT: {
     labelKey: "rehearsals.row.status_present",
     fallback: "Obecność",
-    token: "sage",
     solid: "bg-ethereal-sage text-ethereal-alabaster border-ethereal-sage",
-    soft: "bg-ethereal-sage/10 text-ethereal-sage border-ethereal-sage/30",
     dot: "bg-ethereal-sage",
-    text: "text-ethereal-sage",
     Icon: Check,
   },
   LATE: {
     labelKey: "rehearsals.row.status_late",
     fallback: "Spóźnienie",
-    token: "gold",
     solid: "bg-ethereal-gold text-ethereal-graphite border-ethereal-gold",
-    soft: "bg-ethereal-gold/10 text-ethereal-gold border-ethereal-gold/40",
     dot: "bg-ethereal-gold",
-    text: "text-ethereal-gold",
     Icon: Clock3,
   },
   ABSENT: {
     labelKey: "rehearsals.row.status_absent",
     fallback: "Nieobecność",
-    token: "crimson",
     solid:
       "bg-ethereal-crimson text-ethereal-alabaster border-ethereal-crimson",
-    soft: "bg-ethereal-crimson/10 text-ethereal-crimson border-ethereal-crimson/30",
     dot: "bg-ethereal-crimson",
-    text: "text-ethereal-crimson",
     Icon: X,
   },
   EXCUSED: {
     labelKey: "rehearsals.row.status_excused",
     fallback: "Usprawiedliwienie",
-    token: "amethyst",
     solid:
       "bg-ethereal-amethyst text-ethereal-alabaster border-ethereal-amethyst",
-    soft: "bg-ethereal-amethyst/10 text-ethereal-amethyst border-ethereal-amethyst/30",
     dot: "bg-ethereal-amethyst",
-    text: "text-ethereal-amethyst",
     Icon: FileText,
   },
   NONE: {
     labelKey: "rehearsals.row.status_none",
     fallback: "Bez wpisu",
-    token: "graphite",
-    soft: "bg-ethereal-ink/4 text-ethereal-graphite/60 border-ethereal-ink/8",
     solid: "bg-ethereal-graphite text-ethereal-alabaster border-ethereal-graphite",
     dot: "bg-ethereal-ink/15",
-    text: "text-ethereal-graphite/50",
     Icon: Minus,
   },
 };
@@ -102,6 +82,56 @@ export const SELECTABLE_STATUSES: AttendanceStatus[] = [
   "ABSENT",
   "EXCUSED",
 ];
+
+/* ── The attendance rate, and the one scale it is read on ────────────────── */
+
+/**
+ * Below this the figure turns gold. There is no sage counterpart on purpose:
+ * full attendance is the resting case, and painting the expected outcome green
+ * on forty rows is what buries the two rows that need a conversation.
+ *
+ * It lives here, with the rest of the attendance vocabulary, because the hub's
+ * Frekwencja matrix reads it too — and that module already imports this one, so
+ * the reverse edge would have been an import cycle. One low-attendance line in
+ * the product, not one per surface.
+ */
+export const LOW_ATTENDANCE_RATE = 70;
+
+/**
+ * A rate earns a colour only when it is SHORT. This module used to carry two
+ * further scales for the one measurement — the board's (sage ≥85, gold ≥60,
+ * crimson below) and the inspector's (gold ≥80, crimson <50) — so the same 90%
+ * read "settled" on one card and "work pending" on the next, and an ordinary
+ * dip wore the panel's alarm colour.
+ */
+export type AttendanceRateTone = "unknown" | "low" | "normal";
+
+export const attendanceRateTone = (rate: number | null): AttendanceRateTone =>
+  rate === null ? "unknown" : rate < LOW_ATTENDANCE_RATE ? "low" : "normal";
+
+/** A figure spends no colour when it is fine; the em-dash case stays muted. */
+export const RATE_TONE_TEXT: Record<AttendanceRateTone, string> = {
+  unknown: "text-ethereal-graphite/50",
+  low: "text-ethereal-gold",
+  normal: "text-ethereal-ink",
+};
+
+/** `MetricBlock`'s accent axis, for the same rate rendered as a KPI. */
+export const RATE_TONE_ACCENT: Record<AttendanceRateTone, "default" | "gold"> = {
+  unknown: "default",
+  low: "gold",
+  normal: "default",
+};
+
+/**
+ * A bar is entirely colour — it has no ink option — so its resting fill is the
+ * warm neutral and gold still marks the shortfall.
+ */
+export const RATE_TONE_BAR: Record<AttendanceRateTone, string> = {
+  unknown: "bg-ethereal-ink/10",
+  low: "bg-ethereal-gold",
+  normal: "bg-ethereal-incense/50",
+};
 
 /* ── Vocal sections ──────────────────────────────────────────────────────
  * Canonical choral ordering (high → low), with mezzo / counter-tenor /
