@@ -68,17 +68,33 @@ if [ "$DEEP" -eq 1 ]; then
   log "deep prune: dropping ALL build cache including cache mounts…"
   docker builder prune -af
 else
-  # Docker 28 renamed the budget flag (`--keep-storage` → `--max-used-space`)
-  # and deprecated the old one. Detect instead of guessing: a rejected flag
-  # makes this exit non-zero and reclaim nothing, which is exactly how the
-  # weekly cron line failed silently before.
+  # Docker 28 replaced `--keep-storage` with `--reserved-space`, and the two are
+  # NOT equivalent: reserved-space is "never prune below N", not "prune down to
+  # N". A cron line carrying the old flag is silently accepted, warns about the
+  # rename, and reclaims exactly 0 B — which is how ~14 GB of build cache
+  # accumulated unnoticed. `--max-used-space` is the flag with the intended
+  # "trim to a budget" meaning, so prefer it and detect rather than assume.
   if docker builder prune --help 2>/dev/null | grep -q -- '--max-used-space'; then
     budget_flag="--max-used-space"
   else
     budget_flag="--keep-storage"
   fi
   log "trimming build cache to $GC_KEEP ($budget_flag)…"
-  docker builder prune -f "$budget_flag" "$GC_KEEP"
+  prune_out="$(docker builder prune -f "$budget_flag" "$GC_KEEP" 2>&1)" || true
+  printf '%s\n' "$prune_out"
+
+  # A prune that reclaims nothing while the cache is still over budget means the
+  # flag was accepted but did not do what it says. Never let that pass quietly
+  # again — an unread warning in prune.log is what this whole script exists for.
+  if printf '%s' "$prune_out" | grep -qi 'reclaimed space: *0B'; then
+    if printf '%s' "$prune_out" | grep -qi 'deprecated'; then
+      log "WARNING: reclaimed 0 B and Docker reported a deprecated flag."
+      log "WARNING: this docker build cache is NOT being trimmed — check the flag"
+      log "WARNING: names in \`docker builder prune --help\` and fix this script."
+    else
+      log "note: reclaimed 0 B (cache already at or below $GC_KEEP)."
+    fi
+  fi
 fi
 
 log "disk after:"
