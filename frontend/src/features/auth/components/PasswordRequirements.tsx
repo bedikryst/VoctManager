@@ -1,19 +1,20 @@
 /**
  * @file PasswordRequirements.tsx
  * @description Live "set a password" requirement checklist (≥8 chars, match)
- * shared by the activation and password-reset flows. Coaching only — it mirrors
- * the same rules the hooks enforce on submit.
+ * shared by the activation and password-reset flows. It is the only place
+ * either screen states the rule: it is visible from the first paint, before
+ * anything is typed, so nobody has to guess what will be accepted and no static
+ * prose above the field has to repeat it. Mirrors the rules the hooks enforce
+ * on submit.
  * @architecture Enterprise SaaS 2026
  * @module features/auth/components/PasswordRequirements
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
-import { EASE } from "@/shared/ui/kinematics/motion-presets";
 
 const Row = ({
   met,
@@ -60,25 +61,9 @@ export const PasswordRequirements = ({
   const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
   return (
-    <AnimatePresence>
-      {password.length > 0 && (
-        <motion.ul
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          transition={{ duration: 0.3, ease: EASE.buttery }}
-          className="space-y-2 overflow-hidden rounded-2xl border border-ethereal-incense/15 bg-white/30 p-4"
-        >
-          <Row
-            met={meetsLength}
-            label={t("auth.requirements.length", "Co najmniej 8 znaków")}
-          />
-          <Row
-            met={meetsMatch}
-            label={t("auth.requirements.match", "Hasła są zgodne")}
-          />
-        </motion.ul>
-      )}
-    </AnimatePresence>
+    <ul className="space-y-2 rounded-nested border border-hairline-strong bg-white/30 p-4">
+      <Row met={meetsLength} label={t("auth.requirements.length")} />
+      <Row met={meetsMatch} label={t("auth.requirements.match")} />
+    </ul>
   );
 };

@@ -23,7 +23,13 @@ interface PasswordInputProps {
   readonly placeholder?: string;
   readonly autoComplete: string;
   readonly name?: string;
+  /** A message: tints the field AND prints the sentence under it. */
   readonly error?: string;
+  /**
+   * A flag: tints the field only, for a form whose copy lives elsewhere (the
+   * login card names one failure for both fields, in one banner).
+   */
+  readonly hasError?: boolean;
   readonly disabled?: boolean;
   readonly required?: boolean;
   readonly autoFocus?: boolean;
@@ -42,6 +48,7 @@ export const PasswordInput = ({
   autoComplete,
   name,
   error,
+  hasError,
   disabled,
   required,
   autoFocus,
@@ -84,7 +91,7 @@ export const PasswordInput = ({
           onBlur={() => setCapsOn(false)}
           autoComplete={autoComplete}
           autoFocus={autoFocus}
-          hasError={Boolean(error)}
+          hasError={Boolean(error) || Boolean(hasError)}
           disabled={disabled}
           required={required}
           className="pr-12"

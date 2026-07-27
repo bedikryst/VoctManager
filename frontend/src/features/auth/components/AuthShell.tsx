@@ -14,6 +14,7 @@ import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { AuthLanguageSwitcher } from "@features/auth/components/AuthLanguageSwitcher";
 
 interface AuthShellProps {
@@ -54,13 +55,13 @@ export const AuthShell = ({
       <header className="absolute inset-x-0 top-0 z-20 flex items-center justify-between px-6 py-6 sm:px-8 sm:py-8">
         <Link
           to={backTo}
-          className="group flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-ethereal-graphite/70 transition-colors hover:text-ethereal-gold"
+          className="group flex items-center gap-2 text-ethereal-graphite/70 transition-colors hover:text-ethereal-gold"
         >
           <ArrowLeft
             className="h-4 w-4 transition-transform group-hover:-translate-x-0.5"
             aria-hidden="true"
           />
-          <span>{backLabel}</span>
+          <Eyebrow color="inherit">{backLabel}</Eyebrow>
         </Link>
 
         <AuthLanguageSwitcher />

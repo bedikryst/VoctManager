@@ -12,7 +12,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { AlertCircle, ArrowLeft, CheckCircle2, Mail, MailCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Mail, MailCheck } from "lucide-react";
 
 import { usePasswordReset } from "@features/auth/hooks/usePasswordReset";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -24,6 +24,8 @@ import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
 import { AuthShell } from "@features/auth/components/AuthShell";
 import { AuthBrand } from "@features/auth/components/AuthBrand";
+import { AuthAlert } from "@features/auth/components/AuthAlert";
+import { AuthOutcome } from "@features/auth/components/AuthOutcome";
 import { PasswordRequirements } from "@features/auth/components/PasswordRequirements";
 
 const CARD_SHADOW =
@@ -37,6 +39,7 @@ export default function ResetPasswordPage(): React.JSX.Element {
     mode,
     email,
     setEmail,
+    emailError,
     requestError,
     requestSubmitted,
     isRequesting,
@@ -45,42 +48,26 @@ export default function ResetPasswordPage(): React.JSX.Element {
     setPassword,
     confirmPassword,
     setConfirmPassword,
+    passwordError,
+    confirmError,
     formError,
     resetData,
     isConfirming,
     handleConfirmSubmit,
   } = usePasswordReset();
 
-  const meetsLength = password.length >= 8;
-  const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
-
   const backToLogin = (
     <button
       type="button"
       onClick={() => navigate("/login")}
-      className="mt-7 flex w-full items-center justify-center gap-2 border-t border-ethereal-incense/10 pt-5 text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/55 transition-colors hover:text-ethereal-gold"
+      className="group mt-7 flex w-full items-center justify-center gap-2 border-t border-hairline pt-5 text-ethereal-graphite/70 transition-colors hover:text-ethereal-gold"
     >
-      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-      {t("auth.reset.back_to_login", "Powrót do logowania")}
+      <ArrowLeft
+        className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5"
+        aria-hidden="true"
+      />
+      <Eyebrow color="inherit">{t("auth.reset.back_to_login")}</Eyebrow>
     </button>
-  );
-
-  const errorBanner = (message: string) => (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-ethereal-crimson/20 bg-ethereal-crimson/5 p-4"
-    >
-      <div className="flex items-start gap-3">
-        <AlertCircle
-          className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-crimson"
-          aria-hidden="true"
-        />
-        <Text size="sm" color="crimson" className="leading-6">
-          {t(message, message)}
-        </Text>
-      </div>
-    </motion.div>
   );
 
   const renderBody = () => {
@@ -88,71 +75,54 @@ export default function ResetPasswordPage(): React.JSX.Element {
     if (mode === "confirm") {
       if (resetData) {
         return (
-          <div className="text-center">
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 320, damping: 18 }}
-              className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-ethereal-sage/15"
-            >
-              <CheckCircle2 className="h-7 w-7 text-ethereal-sage" aria-hidden="true" />
-            </motion.div>
-            <Eyebrow color="sage" as="p" className="mb-2">
-              {t("auth.reset.success_eyebrow", "Gotowe")}
-            </Eyebrow>
-            <Heading as="h1" size="2xl" color="default">
-              {t("auth.reset.success_title", "Hasło zostało zmienione")}
-            </Heading>
-            <Text size="sm" color="graphite" className="mx-auto mt-3 max-w-sm leading-7">
-              {t(
-                "auth.reset.success_desc",
-                "Twoje nowe hasło jest aktywne. Zaloguj się, aby wejść do panelu.",
-              )}
-            </Text>
-            <Button
-              type="button"
-              variant="primary"
-              size="lg"
-              fullWidth
-              className="mt-7"
-              onClick={() => navigate("/login")}
-            >
-              {t("auth.reset.go_to_login", "Przejdź do logowania")}
-            </Button>
-          </div>
+          <AuthOutcome
+            tone="success"
+            icon={<CheckCircle2 className="h-7 w-7" />}
+            eyebrow={t("auth.reset.success_eyebrow")}
+            title={t("auth.reset.success_title")}
+            description={t("auth.reset.success_desc")}
+            actions={
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={() => navigate("/login")}
+              >
+                {t("auth.reset.go_to_login")}
+              </Button>
+            }
+          />
         );
       }
 
       return (
         <>
           <Eyebrow color="incense-muted" as="p" className="mb-1.5">
-            {t("auth.reset.confirm_eyebrow", "Nowe hasło")}
+            {t("auth.reset.confirm_eyebrow")}
           </Eyebrow>
           <Heading as="h1" size="2xl" color="default">
-            {t("auth.reset.confirm_title", "Ustaw nowe hasło")}
+            {t("auth.reset.confirm_title")}
           </Heading>
           <Text size="sm" color="graphite" className="mt-3 leading-7">
-            {t(
-              "auth.reset.confirm_description",
-              "Wybierz nowe, bezpieczne hasło do swojego konta.",
-            )}
+            {t("auth.reset.confirm_description")}
           </Text>
 
-          <form className="mt-7 space-y-5" onSubmit={handleConfirmSubmit}>
+          <form className="mt-7 space-y-5" onSubmit={handleConfirmSubmit} noValidate>
             <div className="space-y-1">
               <PasswordInput
                 id="new-password"
                 name="new-password"
-                label={t("auth.reset.new_password", "Nowe hasło")}
+                label={t("auth.reset.new_password")}
                 autoComplete="new-password"
                 required
                 disabled={isConfirming}
                 value={password}
                 onChange={setPassword}
-                placeholder={t(
-                  "auth.reset.new_password_placeholder",
-                  "Utwórz bezpieczne hasło",
-                )}
+                placeholder={t("auth.reset.new_password_placeholder")}
+                error={
+                  passwordError ? t(passwordError, passwordError) : undefined
+                }
               />
               <PasswordStrengthMeter password={password} />
             </div>
@@ -160,13 +130,14 @@ export default function ResetPasswordPage(): React.JSX.Element {
             <PasswordInput
               id="confirm-password"
               name="confirm-password"
-              label={t("auth.reset.confirm_password", "Potwierdź hasło")}
+              label={t("auth.reset.confirm_password")}
               autoComplete="new-password"
               required
               disabled={isConfirming}
               value={confirmPassword}
               onChange={setConfirmPassword}
-              placeholder={t("auth.reset.confirm_password_placeholder", "Powtórz hasło")}
+              placeholder={t("auth.reset.confirm_password_placeholder")}
+              error={confirmError ? t(confirmError) : undefined}
             />
 
             <PasswordRequirements
@@ -174,7 +145,7 @@ export default function ResetPasswordPage(): React.JSX.Element {
               confirmPassword={confirmPassword}
             />
 
-            <div aria-live="polite">{formError && errorBanner(formError)}</div>
+            <AuthAlert message={formError ? t(formError, formError) : null} />
 
             <Button
               type="submit"
@@ -182,11 +153,10 @@ export default function ResetPasswordPage(): React.JSX.Element {
               size="lg"
               fullWidth
               isLoading={isConfirming}
-              disabled={isConfirming || !meetsLength || !meetsMatch}
             >
               {isConfirming
-                ? t("auth.reset.submitting_confirm", "Zapisywanie…")
-                : t("auth.reset.submit_confirm", "Ustaw nowe hasło")}
+                ? t("auth.reset.submitting_confirm")
+                : t("auth.reset.submit_confirm")}
             </Button>
           </form>
 
@@ -198,45 +168,29 @@ export default function ResetPasswordPage(): React.JSX.Element {
     /* ── Request: ask for the reset link ─────────────────────────── */
     if (requestSubmitted) {
       return (
-        <div className="text-center">
-          <motion.div
-            initial={{ scale: 0.6, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 320, damping: 18 }}
-            className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-ethereal-gold/15"
-          >
-            <MailCheck className="h-7 w-7 text-ethereal-gold" aria-hidden="true" />
-          </motion.div>
-          <Eyebrow color="incense-muted" as="p" className="mb-2">
-            {t("auth.reset.sent_eyebrow", "Link wysłany")}
-          </Eyebrow>
-          <Heading as="h1" size="2xl" color="default">
-            {t("auth.reset.sent_title", "Sprawdź skrzynkę")}
-          </Heading>
-          <Text size="sm" color="graphite" className="mx-auto mt-3 max-w-sm leading-7">
-            {t(
-              "auth.reset.sent_desc",
-              "Jeśli konto powiązane z tym adresem istnieje, wysłaliśmy na nie link do zresetowania hasła. Sprawdź też folder ze spamem.",
-            )}
-          </Text>
+        <>
+          <AuthOutcome
+            tone="info"
+            icon={<MailCheck className="h-7 w-7" />}
+            eyebrow={t("auth.reset.sent_eyebrow")}
+            title={t("auth.reset.sent_title")}
+            description={t("auth.reset.sent_desc")}
+          />
           {backToLogin}
-        </div>
+        </>
       );
     }
 
     return (
       <>
         <Eyebrow color="incense-muted" as="p" className="mb-1.5">
-          {t("auth.reset.request_eyebrow", "Odzyskiwanie dostępu")}
+          {t("auth.reset.request_eyebrow")}
         </Eyebrow>
         <Heading as="h1" size="2xl" color="default">
-          {t("auth.reset.request_title", "Zresetuj hasło")}
+          {t("auth.reset.request_title")}
         </Heading>
         <Text size="sm" color="graphite" className="mt-3 leading-7">
-          {t(
-            "auth.reset.request_description",
-            "Podaj adres e-mail powiązany z kontem. Jeśli istnieje, wyślemy link do ustawienia nowego hasła.",
-          )}
+          {t("auth.reset.request_description")}
         </Text>
 
         <form className="mt-7 space-y-5" onSubmit={handleRequestSubmit} noValidate>
@@ -252,9 +206,10 @@ export default function ResetPasswordPage(): React.JSX.Element {
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t("auth.login.email_placeholder")}
             leftIcon={<Mail className="h-4 w-4" />}
+            error={emailError ? t(emailError) : undefined}
           />
 
-          <div aria-live="polite">{requestError && errorBanner(requestError)}</div>
+          <AuthAlert message={requestError ? t(requestError, requestError) : null} />
 
           <Button
             type="submit"
@@ -262,11 +217,10 @@ export default function ResetPasswordPage(): React.JSX.Element {
             size="lg"
             fullWidth
             isLoading={isRequesting}
-            disabled={isRequesting || !email}
           >
             {isRequesting
-              ? t("auth.reset.submitting_request", "Wysyłanie…")
-              : t("auth.reset.submit_request", "Wyślij link resetujący")}
+              ? t("auth.reset.submitting_request")
+              : t("auth.reset.submit_request")}
           </Button>
         </form>
 

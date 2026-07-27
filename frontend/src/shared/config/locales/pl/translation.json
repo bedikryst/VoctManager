@@ -924,14 +924,15 @@
     "activate": {
       "back_to_home": "Powrót na stronę główną",
       "badge": "Aktywacja zaproszenia",
+      "checking_link": "Sprawdzamy zaproszenie…",
       "description": "Dokończ ostatni krok wdrożenia, aby zabezpieczyć konto i uzyskać dostęp do panelu używanego do projektów, prób i koordynacji zespołu.",
       "errors": {
         "activation_failed": "Nie udało się aktywować konta. Spróbuj ponownie za chwilę.",
         "expired_link": "Ten link aktywacyjny wygasł. Poproś opiekuna zespołu o nowe zaproszenie.",
-        "incomplete_link": "W tym linku brakuje parametrów aktywacyjnych.",
         "invalid_link": "Ten link aktywacyjny jest nieprawidłowy lub został już wykorzystany.",
         "password_mismatch": "Hasła nie są identyczne.",
-        "password_too_short": "Hasło musi mieć co najmniej 8 znaków."
+        "password_too_short": "Hasło musi mieć co najmniej 8 znaków.",
+        "terms_required": "Zaznacz akceptację regulaminu i polityki prywatności."
       },
       "features": {
         "access": {
@@ -953,14 +954,12 @@
         "activating_btn": "Aktywowanie konta",
         "confirm_password": "Potwierdź hasło",
         "confirm_password_placeholder": "Powtórz hasło",
-        "description": "Ustaw bezpieczne hasło dla zaproszonego konta. Po aktywacji zalogujesz się do panelu przez standardową stronę logowania.",
-        "missing_params": "W tym linku brakuje parametrów aktywacyjnych. Otwórz najnowszy e-mail z zaproszeniem i użyj pełnego przycisku lub adresu URL.",
+        "description": "Ustaw hasło do swojego konta. Tym hasłem i swoim adresem e-mail będziesz logować się do panelu.",
         "new_password": "Nowe hasło",
         "new_password_placeholder": "Utwórz bezpieczne hasło",
         "privacy_link": "Politykę Prywatności",
-        "security_desc": "Użyj co najmniej 8 znaków. Zalecane jest dłuższe hasło z małymi i wielkimi literami, cyframi oraz znakami specjalnymi.",
-        "security_title": "Standard bezpieczeństwa",
         "subtitle": "Ustawienie hasła",
+        "terms_and": " oraz ",
         "terms_link": "Regulamin serwisu VoctManager",
         "terms_prefix": "Akceptuję ",
         "title": "Dokończ aktywację"
@@ -979,15 +978,13 @@
       "success": {
         "copied": "Skopiowano",
         "copy_login": "Skopiuj login",
-        "desc": "Twoje konto zostało zabezpieczone i aktywowane.",
+        "desc": "Konto jest aktywne. Do panelu wchodzisz adresem e-mail poniżej i swoim nowym hasłem.",
         "go_to_login": "Przejdź do logowania",
-        "instruction": "Przejdź do strony logowania i użyj swojego adresu e-mail oraz nowo utworzonego hasła, aby wejść do panelu.",
         "return_home": "Wróć na stronę główną",
         "subtitle": "Aktywacja zakończona",
         "title": "Twój panel jest gotowy",
         "tone_cta": "Kamerton · ton A",
         "tone_playing": "Brzmi… wycisz",
-        "tone_stop": "Wycisz ton",
         "your_username": "Twój login do panelu"
       },
       "title_1": "Aktywuj swój",
@@ -1097,23 +1094,29 @@
       }
     },
     "login": {
-      "access_contact_cta": "Napisz do zarządu",
-      "access_help": "Nie masz jeszcze dostępu? Konta w VoctManagerze zakłada zarząd zespołu — napisz na {{email}}, a pomożemy Ci wejść do panelu.",
-      "access_reset_cta": "Zresetuj hasło",
-      "access_trouble": "Problem z dostępem do konta?",
       "back_to_lobby": "Powrót do przedsionka",
       "email_label": "Adres e-mail",
       "email_placeholder": "np. jan.kowalski@voctensemble.pl",
-      "error_default": "Autoryzacja nie powiodła się.",
-      "footer_security": "Zabezpieczone przez JWT Auth • 2026",
+      "errors": {
+        "bad_credentials": "Nie rozpoznajemy tej pary adresu i hasła. Jeśli konto czeka jeszcze na aktywację, użyj najpierw linku z zaproszenia.",
+        "email_required": "Podaj adres e-mail.",
+        "offline": "Brak połączenia z siecią. Sprawdź internet i spróbuj ponownie.",
+        "password_required": "Podaj hasło.",
+        "too_many_attempts": "Zbyt wiele prób logowania. Odczekaj chwilę i spróbuj ponownie.",
+        "unavailable": "Nie udało się połączyć z panelem. Spróbuj ponownie za chwilę.",
+        "unexpected": "Coś poszło nie tak przy logowaniu. Spróbuj ponownie."
+      },
+      "forgot_password": "Nie pamiętasz hasła?",
       "heading": "Zaloguj się do panelu",
-      "password_label": "Klucz dostępu",
+      "no_account": "Nie masz jeszcze konta? Konta w VoctManagerze zakłada zarząd zespołu — napisz na",
+      "password_label": "Hasło",
       "password_placeholder": "••••••••",
-      "privacy_link": "Politykę Prywatności",
-      "submit_button": "Autoryzuj dostęp",
-      "submitting": "Autoryzacja...",
+      "privacy_link": "Polityka prywatności",
+      "submit_button": "Zaloguj się",
+      "submitting": "Logowanie…",
       "subtitle": "Panel zespołu VoctEnsemble",
-      "terms_link": "Regulamin serwisu",
+      "support_email": "kontakt@voctensemble.com",
+      "terms_link": "Regulamin",
       "welcome": "Witaj ponownie"
     },
     "logout": "Wyloguj się",

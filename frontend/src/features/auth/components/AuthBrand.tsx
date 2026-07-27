@@ -11,7 +11,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/shared/lib/utils";
-import { Heading } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 import { EASE } from "@/shared/ui/kinematics/motion-presets";
 
 interface AuthBrandProps {
@@ -70,16 +70,12 @@ export const AuthBrand = ({
       </span>
 
       {tagline && (
-        <span
-          className={cn(
-            "relative mt-3 text-[10px] font-bold uppercase tracking-[0.28em]",
-            tone === "ink"
-              ? "text-ethereal-graphite/55"
-              : "text-ethereal-parchment/55",
-          )}
+        <Eyebrow
+          color={tone === "ink" ? "muted" : "parchment-muted"}
+          className="relative mt-3"
         >
           {tagline}
-        </span>
+        </Eyebrow>
       )}
     </div>
   );

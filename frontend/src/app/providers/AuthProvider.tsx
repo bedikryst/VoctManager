@@ -24,6 +24,7 @@ import type { AuthProfile, AuthUser } from "@/shared/auth/auth.types";
 import { settingsKeys } from "@/features/settings/api/settings.queries";
 import type { UserMeDTO } from "@/features/settings/types/settings.dto";
 import { notificationKeys } from "@/features/notifications/api/notifications.queries";
+import { parseApiError, type ApiErrorKind } from "@/shared/api/errors";
 
 interface UserIdentityResponse {
   id: string | number;
@@ -48,8 +49,25 @@ interface ArtistSelfResponse {
 
 export interface LoginResponse {
   success: boolean;
-  error?: string;
+  /**
+   * An i18n key, never a server sentence. The token endpoint answers a failed
+   * sign-in with SimpleJWT's own English copy, and by design it cannot tell
+   * "wrong password" from "never activated" without disclosing which accounts
+   * exist — so the threshold owns the words. The transport outcome picks the
+   * key; the login page says it in the member's language.
+   */
+  errorKey?: string;
 }
+
+const LOGIN_ERROR_KEYS: Partial<Record<ApiErrorKind, string>> = {
+  auth: "auth.login.errors.bad_credentials",
+  validation: "auth.login.errors.bad_credentials",
+  domain: "auth.login.errors.bad_credentials",
+  rate_limit: "auth.login.errors.too_many_attempts",
+  offline: "auth.login.errors.offline",
+  network: "auth.login.errors.unavailable",
+  server: "auth.login.errors.unavailable",
+};
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -216,14 +234,10 @@ export const AuthProvider = ({
 
       return { success: true };
     } catch (error: unknown) {
-      const errorMessage =
-        isAxiosError(error) && error.response?.data?.detail
-          ? error.response.data.detail
-          : "Błąd logowania. Sprawdź dane wejściowe.";
-
+      const { kind } = parseApiError(error);
       return {
         success: false,
-        error: errorMessage,
+        errorKey: LOGIN_ERROR_KEYS[kind] ?? "auth.login.errors.unexpected",
       };
     }
   };

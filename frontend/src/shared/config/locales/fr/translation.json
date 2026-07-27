@@ -923,14 +923,15 @@
     "activate": {
       "back_to_home": "Retour à la page d'accueil",
       "badge": "Activation d'invitation",
+      "checking_link": "Vérification de votre invitation…",
       "description": "Complétez l'étape finale d'intégration pour sécuriser votre compte et accéder à l'espace de travail opérationnel utilisé pour les projets, les répétitions et la coordination de l'ensemble.",
       "errors": {
         "activation_failed": "Impossible d'activer le compte. Réessayez dans un instant.",
         "expired_link": "Ce lien d'activation a expiré. Demandez une nouvelle invitation au responsable de l'ensemble.",
-        "incomplete_link": "Ce lien manque de paramètres d'activation.",
         "invalid_link": "Ce lien d'activation est invalide ou a déjà été utilisé.",
         "password_mismatch": "Les mots de passe ne correspondent pas.",
-        "password_too_short": "Le mot de passe doit contenir au moins 8 caractères."
+        "password_too_short": "Le mot de passe doit contenir au moins 8 caractères.",
+        "terms_required": "Acceptez les conditions et la politique de confidentialité pour continuer."
       },
       "features": {
         "access": {
@@ -952,14 +953,12 @@
         "activating_btn": "Activation du compte",
         "confirm_password": "Confirmer le mot de passe",
         "confirm_password_placeholder": "Répétez le mot de passe",
-        "description": "Choisissez un mot de passe sécurisé pour le compte invité. Une fois activé, vous utiliserez la page de connexion standard pour accéder au panneau.",
-        "missing_params": "Ce lien manque de paramètres d'activation. Ouvrez le dernier e-mail d'invitation et utilisez le bouton ou l'URL complet.",
+        "description": "Définissez un mot de passe pour votre compte. Vous vous connecterez au panneau avec celui-ci et votre adresse e-mail.",
         "new_password": "Nouveau mot de passe",
         "new_password_placeholder": "Créez un mot de passe sécurisé",
         "privacy_link": "Politique de confidentialité",
-        "security_desc": "Utilisez au moins 8 caractères. Un mot de passe plus long avec des lettres majuscules et minuscules, des chiffres et des symboles est recommandé.",
-        "security_title": "Norme de sécurité",
         "subtitle": "Configuration du mot de passe",
+        "terms_and": " et ",
         "terms_link": "Conditions d'utilisation de VoctManager",
         "terms_prefix": "J'accepte les ",
         "title": "Finalisez votre accès"
@@ -978,15 +977,13 @@
       "success": {
         "copied": "Copié",
         "copy_login": "Copier l'identifiant",
-        "desc": "Votre compte a été sécurisé et activé.",
+        "desc": "Votre compte est actif. Connectez-vous avec l'adresse e-mail ci-dessous et votre nouveau mot de passe.",
         "go_to_login": "Aller à la connexion",
-        "instruction": "Allez à la page de connexion et utilisez votre adresse e-mail avec votre nouveau mot de passe pour accéder au panneau.",
         "return_home": "Retour à l'accueil",
         "subtitle": "Activation terminée",
         "title": "Votre panneau est prêt",
         "tone_cta": "Diapason · le la",
         "tone_playing": "Il résonne… coupez-le",
-        "tone_stop": "Couper le son",
         "your_username": "Votre nom d'utilisateur pour vous connecter"
       },
       "title_1": "Activez votre",
@@ -1096,22 +1093,28 @@
       }
     },
     "login": {
-      "access_contact_cta": "Écrire au bureau",
-      "access_help": "Vous n'avez pas encore accès ? Les comptes VoctManager sont créés par le bureau — écrivez à {{email}} et nous vous aiderons à entrer.",
-      "access_reset_cta": "Réinitialiser le mot de passe",
-      "access_trouble": "Problème d'accès à votre compte ?",
       "back_to_lobby": "Retour à l'accueil",
       "email_label": "Adresse e-mail",
       "email_placeholder": "ex. jean.dupont@voctensemble.pl",
-      "error_default": "L'autorisation a échoué.",
-      "footer_security": "Sécurisé par JWT Auth • 2026",
+      "errors": {
+        "bad_credentials": "Nous ne reconnaissons pas cette adresse et ce mot de passe. Si le compte attend encore son activation, utilisez d'abord le lien d'invitation.",
+        "email_required": "Saisissez votre adresse e-mail.",
+        "offline": "Vous semblez hors ligne. Vérifiez votre connexion et réessayez.",
+        "password_required": "Saisissez votre mot de passe.",
+        "too_many_attempts": "Trop de tentatives de connexion. Patientez un instant avant de réessayer.",
+        "unavailable": "Impossible de joindre le panneau. Réessayez dans un instant.",
+        "unexpected": "Une erreur est survenue lors de la connexion. Réessayez."
+      },
+      "forgot_password": "Mot de passe oublié ?",
       "heading": "Connectez-vous au panneau",
-      "password_label": "Clé d'accès",
+      "no_account": "Pas encore de compte ? Les comptes VoctManager sont créés par le bureau de l'ensemble — écrivez à",
+      "password_label": "Mot de passe",
       "password_placeholder": "••••••••",
       "privacy_link": "Politique de confidentialité",
-      "submit_button": "Autoriser l'accès",
-      "submitting": "Autorisation en cours...",
+      "submit_button": "Se connecter",
+      "submitting": "Connexion…",
       "subtitle": "L'espace de l'ensemble VoctEnsemble",
+      "support_email": "kontakt@voctensemble.com",
       "terms_link": "Conditions d'utilisation",
       "welcome": "Bon retour"
     },

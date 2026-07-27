@@ -923,14 +923,15 @@
     "activate": {
       "back_to_home": "Back to homepage",
       "badge": "Invite Activation",
+      "checking_link": "Checking your invitation…",
       "description": "Complete the final onboarding step to secure your account and enter the operational workspace used for projects, rehearsals, and ensemble coordination.",
       "errors": {
         "activation_failed": "Couldn't activate the account. Please try again in a moment.",
         "expired_link": "This activation link has expired. Ask your team coordinator for a new invitation.",
-        "incomplete_link": "This link is missing activation parameters.",
         "invalid_link": "This activation link is invalid or has already been used.",
         "password_mismatch": "The passwords do not match.",
-        "password_too_short": "The password must be at least 8 characters long."
+        "password_too_short": "The password must be at least 8 characters long.",
+        "terms_required": "Please accept the Terms and the Privacy Policy to continue."
       },
       "features": {
         "access": {
@@ -952,14 +953,12 @@
         "activating_btn": "Activating account",
         "confirm_password": "Confirm password",
         "confirm_password_placeholder": "Repeat the password",
-        "description": "Choose a secure password for the invited account. Once activated, you will use the standard login page to enter the panel.",
-        "missing_params": "This link is missing activation parameters. Open the latest invitation email and use the full button or URL.",
+        "description": "Set a password for your account. You'll sign in to the panel with it and your email address.",
         "new_password": "New password",
         "new_password_placeholder": "Create a secure password",
         "privacy_link": "VoctManager Privacy Policy",
-        "security_desc": "Use at least 8 characters. A longer password with mixed letter case, numbers, and symbols is recommended.",
-        "security_title": "Security standard",
         "subtitle": "Password setup",
+        "terms_and": " and ",
         "terms_link": "VoctManager Terms of Service",
         "terms_prefix": "I accept the ",
         "title": "Finalize your access"
@@ -978,15 +977,13 @@
       "success": {
         "copied": "Copied",
         "copy_login": "Copy login",
-        "desc": "Your account has been secured and activated.",
+        "desc": "Your account is active. Sign in with the email address below and your new password.",
         "go_to_login": "Go to login",
-        "instruction": "Proceed to the login page and use your email along with your newly created password to access the panel.",
         "return_home": "Return home",
         "subtitle": "Activation complete",
         "title": "Your panel is ready",
         "tone_cta": "Tuning fork · the A",
         "tone_playing": "Ringing… silence it",
-        "tone_stop": "Silence the tone",
         "your_username": "Your username to log in"
       },
       "title_1": "Activate your",
@@ -1096,22 +1093,28 @@
       }
     },
     "login": {
-      "access_contact_cta": "Email the board",
-      "access_help": "Don't have access yet? Accounts in VoctManager are created by the ensemble's board — email {{email}} and we'll help you in.",
-      "access_reset_cta": "Reset password",
-      "access_trouble": "Trouble accessing your account?",
       "back_to_lobby": "Back to lobby",
       "email_label": "Email address",
       "email_placeholder": "e.g. john.doe@voctensemble.pl",
-      "error_default": "Authorization failed.",
-      "footer_security": "Secured by JWT Auth • 2026",
+      "errors": {
+        "bad_credentials": "We don't recognise that email and password. If the account is still waiting to be activated, use the invitation link first.",
+        "email_required": "Enter your email address.",
+        "offline": "You appear to be offline. Check your connection and try again.",
+        "password_required": "Enter your password.",
+        "too_many_attempts": "Too many sign-in attempts. Wait a moment and try again.",
+        "unavailable": "We couldn't reach the panel. Please try again in a moment.",
+        "unexpected": "Something went wrong signing you in. Please try again."
+      },
+      "forgot_password": "Forgotten your password?",
       "heading": "Sign in to the panel",
-      "password_label": "Access key",
+      "no_account": "No account yet? Accounts in VoctManager are created by the ensemble's board — write to",
+      "password_label": "Password",
       "password_placeholder": "••••••••",
       "privacy_link": "Privacy Policy",
-      "submit_button": "Authorize access",
-      "submitting": "Authorizing...",
+      "submit_button": "Sign in",
+      "submitting": "Signing in…",
       "subtitle": "The VoctEnsemble workspace",
+      "support_email": "kontakt@voctensemble.com",
       "terms_link": "Terms of Service",
       "welcome": "Welcome back"
     },

@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { Globe } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { changeAppLanguage } from "@/shared/config/i18n";
 
 const SUPPORTED_LANGUAGES = ["pl", "en", "fr"] as const;
@@ -32,8 +33,8 @@ const LANGUAGE_FULL_NAMES = {
 
 const buttonVariants = cva(
   [
-    "relative px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]",
-    "transition-colors duration-150 rounded-lg",
+    "relative px-2.5 py-1",
+    "transition-colors duration-150 rounded-chip",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/60",
   ],
   {
@@ -89,23 +90,25 @@ export const AuthLanguageSwitcher: React.FC<AuthLanguageSwitcherProps> = ({
             {currentLang === lang && (
               <motion.span
                 layoutId="lang-indicator"
-                className="absolute inset-0 rounded-lg bg-ethereal-gold/12"
+                className="absolute inset-0 rounded-chip bg-ethereal-gold/12"
                 transition={{ type: "spring", stiffness: 500, damping: 35 }}
                 aria-hidden="true"
               />
             )}
-            <span className="relative">
+            <Eyebrow color="inherit" className="relative">
               {LANGUAGE_DISPLAY[lang]}
-            </span>
+            </Eyebrow>
           </button>
 
           {index < SUPPORTED_LANGUAGES.length - 1 && (
-            <span
-              className="text-[10px] text-ethereal-graphite/20 select-none"
+            <Text
+              as="span"
+              size="xs"
+              className="select-none text-ethereal-graphite/20"
               aria-hidden="true"
             >
               /
-            </span>
+            </Text>
           )}
         </React.Fragment>
       ))}

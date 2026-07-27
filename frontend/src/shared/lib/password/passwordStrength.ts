@@ -38,10 +38,20 @@ export interface PasswordStrengthLevel {
   readonly text: NonNullable<TypographyProps["color"]>;
 }
 
-/** Ordered weakest → strongest. Index = score − 1. */
+/**
+ * Ordered weakest → strongest. Index = score − 1.
+ *
+ * Three tones over four rungs, on purpose. The meter is coaching a password
+ * that is still being typed, and crimson is the panel's alarm — a member three
+ * characters into a new secret has done nothing wrong. The number of lit
+ * segments is the measurement; the colour says only which of three states the
+ * password is in (barely started · getting there · done), and the word says the
+ * rest. `fair` and `good` share gold because a deficit that is ordinary work in
+ * progress is gold.
+ */
 export const PASSWORD_STRENGTH_LEVELS: readonly PasswordStrengthLevel[] = [
-  { key: "password.strength.weak", fallback: "Słabe", bar: "bg-ethereal-crimson", text: "crimson" },
-  { key: "password.strength.fair", fallback: "Przeciętne", bar: "bg-ethereal-incense", text: "incense" },
+  { key: "password.strength.weak", fallback: "Słabe", bar: "bg-ethereal-incense/50", text: "incense" },
+  { key: "password.strength.fair", fallback: "Przeciętne", bar: "bg-ethereal-gold", text: "gold" },
   { key: "password.strength.good", fallback: "Dobre", bar: "bg-ethereal-gold", text: "gold" },
   { key: "password.strength.strong", fallback: "Mocne", bar: "bg-ethereal-sage", text: "sage" },
 ];

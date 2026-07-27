@@ -1,7 +1,7 @@
 # Project Hub — design remediation
 
 **Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and the
-first four Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
+first five Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
 `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared primitives it exposes, now widening per
 feature (§8). `StatePanel` adoption and the `SegmentedTabs` unification are both closed.
 
@@ -20,21 +20,21 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
 ## Still open
 
-- **29 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the messages pass (which
-  had none of them; it cleared a rogue `tracking-[0.12em]` on an `Eyebrow` instead, which this
-  recipe does not catch). Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]`
+- **17 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the auth pass (which
+  cleared all 12 of its own). Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]`
   class, minus the primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`,
-  `SegmentedTabs`). What is left: auth 12 (`pages/auth` 9 + `features/auth` 3), `shared/ui` 6 (the
-  earlier "4" undercounted), materials 3, annotations 3, `widgets/utility` 3, schedule 1,
-  rehearsals 1. The widest outliers in the tree are still `UserLocalClock`'s `tracking-[0.4em]` /
-  `[0.2em]`.
+  `SegmentedTabs`). What is left: `widgets/utility` 3, annotations 3, `shared/ui` 6
+  (`typography` 2 — the role's own declarations — plus kinematics, feedback, composites,
+  repertoire on 1 each), materials 3, schedule 1, rehearsals 1. The widest outliers in the tree
+  are still `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
 - **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive`,
-  artists+crew+logistics, settings+dashboard+notifications+contracts and messages.** 38 raw
-  `ethereal-ink/6|8|10|12` rules remain outside them — rehearsals 17, `shared/ui` 5,
-  chorister-hub 4, projects 2, annotations 2, and nine features on 1 each. This is **not** a sweep
-  — see the note opening §5 — it rides along with per-feature passes. Note the false positives: a
-  bar track, a slider groove and a scrim are *fills* at those alphas, not 1px rules, and stay as
-  they are; every cleared feature still greps 1.
+  artists+crew+logistics, settings+dashboard+notifications+contracts, messages and auth.** This is
+  **not** a sweep — see the note opening §5 — it rides along with per-feature passes. The auth pass
+  re-measured the number the way the next pass actually needs it, **counting rules and fills
+  separately**, because the old figure (38) mixed them: greping for a `border-`/`divide-`/`ring-`
+  prefix leaves **19 true 1px rules** — rehearsals 14, annotations 2, and schedule, projects and
+  chorister-hub on 1 each. Everything else at those alphas is a bar track, a dot, a groove or a
+  scrim — a *fill*, which stays. Auth now greps 2 and both are fills.
 - ~~`SegmentedTabs` has five hand-rolled copies left~~ — **closed 2026-07-27.** All eight private
   copies of the gold-pill-on-alabaster track are gone; `grep "bg-ethereal-gold text-ethereal-ink
   shadow-sm"` returns the composite and nothing else. The composite gained `iconOnly` for the two
@@ -67,11 +67,10 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-Suggested split for what is left: **auth next** — the single largest remaining pocket of raw
-overlines (12), spanning `pages/auth` and `features/auth` together, on surfaces a first-time user
-meets before anything else. Then rehearsals as its own chat (17 hairline rules, plus the copy pass
-and the `isPast`/`isLive` timer above), and `shared/ui` last, since its 6 overlines and 5 hairlines
-sit in composites every feature renders and a change there is a change everywhere. Run them
+Suggested split for what is left: **rehearsals next** — 14 of the 19 remaining hairline rules, plus
+the copy pass and the `isPast`/`isLive` timer above, all in one module. Then `shared/ui` last, since
+its 6 overlines sit in composites every feature renders and a change there is a change everywhere
+(two of them are `typography`'s own declarations of the role and are not defects). Run them
 sequentially, not in parallel: they all touch the three locale files.
 
 ## Decisions, settled
@@ -1349,6 +1348,99 @@ a second copy of a list is how this document's problem started.
 Each of these carries all three concerns at once (raw overlines, `StatePanel`, radius/hairline
 tokens) over one feature, read screen by screen rather than swept by regex. They run sequentially:
 they all touch the same three locale files.
+
+### `pages/auth` + `features/auth` — the threshold (SHIPPED 2026-07-27)
+
+The oldest code in the tree and the first thing a new member sees. All 12 raw overlines are gone,
+every off-scale radius with them, and `grep` over both directories for `uppercase.*tracking`,
+`border-ethereal-incense/[0-9]+`, `rounded-(lg|xl|2xl|3xl)` and stock-palette colours now returns
+nothing. What the reading found underneath was mostly not typography.
+
+**One thing on several voices.** The login card called the same secret three names in one
+viewport — the field label said *Klucz dostępu*, the button said *Autoryzuj dostęp*, and the
+recovery link two lines below said *Zresetuj hasło*. It is a password; every surface now says so
+(`Hasło` · `Zaloguj się` · `Logowanie…`). The activation success screen said "you are done" five
+times — an overline, a headline, a sentence, a paragraph of instructions and a button — where the
+composition already said it: the paragraph is deleted and the one surviving sentence does the work
+the instructions used to (`success.instruction` gone). The activation form carried a static
+*Standard bezpieczeństwa* box repeating the 8-character rule that the live checklist two elements
+below already enforced; the box is gone and `PasswordRequirements` now renders from first paint
+instead of waiting for the first keystroke, so the rule is stated once and is visible to the person
+who has not typed yet.
+
+**The loudest control was inert, and it hid the form's own validation.** All three forms disabled
+their gold full-width submit on exactly the conditions their submit handler validated. The
+consequence was not only the inverted hierarchy: five translated error strings were unreachable,
+because the guard that would have rendered them sat behind the guard that hid the button —
+`auth.reset.errors.email_required`, `password_too_short` and `password_mismatch`, and both
+activation password errors, had never once appeared on screen. The submits are live, validation
+runs on submit, and every failing rule is named at once rather than one refusal at a time.
+
+**`error` vs `hasError`, finally used as documented.** `Input`'s own comment claimed the auth
+screens used the flag; none of them did. Now the login card tints *both* fields and states the one
+sentence in the banner (the server cannot say which half was wrong without disclosing which
+accounts exist), while a verdict on one field — too short, mismatched, a server-side password rule
+— goes to that field's `error`. `PasswordInput` gained the `hasError` flag it was missing, so the
+password half of that pair was even possible.
+
+**The message said less than it knew, and in the wrong language.** `AuthProvider.login` returned
+SimpleJWT's `detail` verbatim, so a Polish member could be told *"No active account found with the
+given credentials"* — and `auth.login.error_default` was dead, because `result.error || t(…)` never
+reached the fallback. The provider now maps `parseApiError().kind` to an i18n key and the page says
+it. The `bad_credentials` copy also names the one case the endpoint deliberately cannot
+distinguish: an account that exists but has never been activated (`has_usable_password()` is
+false), whose owner should use the invitation link rather than keep guessing.
+
+**Loading painted as a fact, inverted.** The activation screen treated "the signed preview is still
+in flight" as "the link is fine": it drew the full password form and the generic headline, then
+replaced both with a crimson dead-end, or swapped *Aktywuj swój panel artysty* for *Witaj,
+Krzysztofie*, once the answer arrived. `linkStatus` gained `checking` and the page waits on
+`EtherealLoader` — the headline here IS the personal greeting, so there is nothing honest to say
+before it resolves. A link with no parameters at all used to render that same form, disabled, under
+an amber advisory box (the only stock-Tailwind colour left in auth); it is simply an invalid link
+and now says so, which retired `form.missing_params` and `errors.incomplete_link`.
+
+**Crimson on a state that is not a failure.** `PASSWORD_STRENGTH_LEVELS` spent the alarm colour on
+rung one, so a member three characters into their first password wore it while still typing. The
+ramp is now incense → gold → gold → sage: three colours for three meanings, with the lit-segment
+count carrying the measurement. This lives in `shared/lib`, so security settings got the same fix.
+
+**Hand-rolled surfaces where a primitive existed.** The crimson error banner was typed three times
+(→ `AuthAlert`, which owns its live region). Four outcome scenes — reset link sent, reset done,
+activation done, activation link dead — were four copies of one medallion-and-headline stack, two
+of them inside a tinted box nested in the card that already was the surface (→ `AuthOutcome`; the
+tone lives in the medallion now). The consent control was a hand-drawn `peer sr-only` checkbox
+beside the real `Checkbox` primitive. The kamerton and the copy-login control were `<button>`s
+dressed as buttons (→ `Button variant="outline" size="sm"`).
+
+**Two ways in, told apart.** "I forgot my password" and "I have no account at all" shared one
+accordion, one question and three competing controls — a `<Link>` dressed as a gold pill, a
+paragraph and a mailto. The common need is now a plain link under the submit; the rare one is one
+sentence below the rule. Related: the help sentence pointed a locked-out member at
+`auth.legal.privacy.contact_email`, i.e. the **RODO mailbox** — the privacy policy's own text names
+`kontakt@voctensemble.com` as general contact, and that is what `auth.login.support_email` holds.
+`footer_security` ("Zabezpieczone przez JWT Auth • 2026") is deleted: it named an implementation to
+a chorister and hard-coded a year into a translated string.
+
+**Rendering defects found by reading.** `LegalModal` was `fixed z-20` *inside* `AuthShell`'s
+`<main z-10>`, below the shell's own `z-20` header — the back link and the language switcher
+floated over the modal's own scrim. It portals to `document.body` at `z-focus-trap` now, closes on
+Escape, is `aria-labelledby` its title, and its `AnimatePresence` sits outside the `isOpen` guard so
+the exit animation it declared can actually run. Companion defect in `shared/ui`: `Checkbox`'s focus
+ring is a sibling styled with `peer-focus-visible:`, but the input it reads was never marked
+`peer` — the ring had never rendered, on every checkbox in the panel.
+
+**Copy carried along.** Login's legal links were inflected accusatives left over from a sentence
+they no longer sit in (*Politykę Prywatności* standing alone) and set as uppercase machine labels;
+they are natural-case document names now. The consent line joined its two documents with `&`, an
+anglicism in Polish prose (`terms_and` → " oraz " / " and " / " et ").
+
+**Declined.** The dark Nave rail and its three highlight tiles stay — activation is deliberately
+more ceremony than login, and the rail's copy is about the invitation, not marketing filler; only
+its three hand-rolled tile overlines became `Eyebrow`. `AuthLanguageSwitcher` was not migrated to
+`SegmentedTabs`: a gold pill on an alabaster track is a view switcher inside a work area, not a
+three-glyph nav in a page corner — it kept its shape and only handed its type to `Eyebrow`. The
+`ethereal-ink/8` behind an unmet checklist dot stays: it is a fill, not a rule.
 
 ### `features/messages` + the last five `SegmentedTabs` copies (SHIPPED 2026-07-27)
 

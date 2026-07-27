@@ -53,7 +53,7 @@ export default function LegalPage(): React.JSX.Element {
         </div>
 
         {/* Document header */}
-        <header className="mb-10 border-b border-ethereal-incense/20 pb-6">
+        <header className="mb-10 border-b border-hairline-strong pb-6">
           <Eyebrow color="muted" className="mb-2">
             VoctManager
           </Eyebrow>

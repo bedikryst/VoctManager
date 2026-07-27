@@ -16,18 +16,13 @@ import { changeAppLanguage } from "@/shared/config/i18n";
 /** Mirrors i18n `supportedLngs` — guards what we'll adopt from an untrusted link. */
 const SUPPORTED_LANGS = new Set(["pl", "en", "fr"]);
 
-// Returns either an i18n key (translated by the page) or, for a server-provided
-// password rule, the message verbatim. Reads the canonical error envelope via
-// `parseApiError`, so it survives the `message` → `detail` field transition.
-const getActivationErrorMessage = (error: unknown): string => {
-  const { code, fieldErrors, serverMessage } = parseApiError(error);
-
-  if (fieldErrors.new_password) return fieldErrors.new_password;
-  if (code === "expired_activation_link") return "auth.activate.errors.expired_link";
-  if (code === "invalid_activation_link") return "auth.activate.errors.invalid_link";
-
-  return serverMessage ?? "auth.activate.errors.activation_failed";
-};
+/**
+ * What we know about the link the member arrived on. `checking` is a real state
+ * and not a variant of `ok`: until the signed preview answers we do not know
+ * whose invitation this is, nor whether it is still alive, so the screen must
+ * not paint a password form that a dead link will yank away a moment later.
+ */
+export type ActivationLinkStatus = "checking" | "ok" | "expired" | "invalid";
 
 export const useAccountActivation = () => {
   const [searchParams] = useSearchParams();
@@ -35,6 +30,14 @@ export const useAccountActivation = () => {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Three separate slots, because they are read in three places: the two field
+  // messages sit under the fields they judge, and `formError` is the banner for
+  // whatever the server refused.
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [termsError, setTermsError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const [activatedData, setActivatedData] = useState<{
@@ -80,15 +83,20 @@ export const useAccountActivation = () => {
   // *before* the member wastes effort on the password form. Only the two
   // definitive link codes gate the form; a transient failure (offline, 500)
   // stays "ok" so they can still try to submit and get a precise error then.
+  // A link with no parameters at all is simply an invalid link — it used to
+  // render the whole form, disabled, under an advisory box.
   const previewErrorCode = previewQuery.error
     ? parseApiError(previewQuery.error).code
     : null;
-  const linkStatus: "ok" | "expired" | "invalid" =
-    previewErrorCode === "expired_activation_link"
-      ? "expired"
-      : previewErrorCode === "invalid_activation_link"
-        ? "invalid"
-        : "ok";
+  const linkStatus: ActivationLinkStatus = !hasActivationParams
+    ? "invalid"
+    : previewQuery.isLoading
+      ? "checking"
+      : previewErrorCode === "expired_activation_link"
+        ? "expired"
+        : previewErrorCode === "invalid_activation_link"
+          ? "invalid"
+          : "ok";
 
   // Reaffirm from the server's authoritative value once the preview resolves —
   // covers a missing/tampered ?lang= on the link.
@@ -113,31 +121,50 @@ export const useAccountActivation = () => {
       setFormError(null);
     },
     onError: (error: unknown) => {
-      setFormError(getActivationErrorMessage(error));
+      const { code, fieldErrors, serverMessage } = parseApiError(error);
+
+      // A server-side password rule is a verdict on one field, so it belongs
+      // under that field rather than in the banner.
+      if (fieldErrors.new_password) {
+        setPasswordError(fieldErrors.new_password);
+        return;
+      }
+      if (code === "expired_activation_link") {
+        setFormError("auth.activate.errors.expired_link");
+        return;
+      }
+      if (code === "invalid_activation_link") {
+        setFormError("auth.activate.errors.invalid_link");
+        return;
+      }
+      setFormError(serverMessage ?? "auth.activate.errors.activation_failed");
     },
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!hasActivationParams) {
-      setFormError("auth.activate.errors.incomplete_link");
-      return;
-    }
+    // Every failing rule is named at once: a form that reveals its objections
+    // one refusal at a time makes the member guess how many are left.
+    const nextPasswordError =
+      password.length < 8 ? "auth.activate.errors.password_too_short" : null;
+    const nextConfirmError =
+      !nextPasswordError && password !== confirmPassword
+        ? "auth.activate.errors.password_mismatch"
+        : null;
+    const nextTermsError = termsAccepted
+      ? null
+      : "auth.activate.errors.terms_required";
 
-    if (password.length < 8) {
-      setFormError("auth.activate.errors.password_too_short");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setFormError("auth.activate.errors.password_mismatch");
-      return;
-    }
-
+    setPasswordError(nextPasswordError);
+    setConfirmError(nextConfirmError);
+    setTermsError(nextTermsError);
     setFormError(null);
-    // The submit button is gated on the accepted-terms checkbox, so reaching
-    // this point implies acceptance of the currently displayed version.
+
+    if (nextPasswordError || nextConfirmError || nextTermsError) return;
+
+    // Consent is enforced right above, so reaching the mutation means the
+    // member accepted the version of the documents this build displays.
     await activationMutation.mutateAsync({
       uidb64: activationContext.uidb64,
       token: activationContext.token,
@@ -151,10 +178,14 @@ export const useAccountActivation = () => {
     setPassword,
     confirmPassword,
     setConfirmPassword,
+    termsAccepted,
+    setTermsAccepted,
+    passwordError,
+    confirmError,
+    termsError,
     formError,
     activatedData,
     isSubmitting: activationMutation.isPending,
-    hasActivationParams,
     inviteeName,
     linkStatus,
     handleSubmit,

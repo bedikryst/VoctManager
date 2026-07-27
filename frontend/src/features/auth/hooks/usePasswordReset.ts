@@ -13,19 +13,6 @@ import { useMutation } from "@tanstack/react-query";
 import { parseApiError } from "@/shared/api/errors";
 import { authService } from "../api/auth.service";
 
-// Returns either an i18n key (translated by the page) or, for a server-provided
-// password rule, the message verbatim. Reads the canonical error envelope via
-// `parseApiError`, so it survives the `message` → `detail` field transition.
-const getResetErrorMessage = (error: unknown): string => {
-  const { code, fieldErrors, serverMessage } = parseApiError(error);
-
-  if (fieldErrors.new_password) return fieldErrors.new_password;
-  if (code === "expired_reset_link") return "auth.reset.errors.expired_link";
-  if (code === "invalid_reset_link") return "auth.reset.errors.invalid_link";
-
-  return serverMessage ?? "auth.reset.errors.reset_failed";
-};
-
 export const usePasswordReset = () => {
   const [searchParams] = useSearchParams();
 
@@ -43,6 +30,7 @@ export const usePasswordReset = () => {
 
   /* ── Request side (forgot password) ─────────────────────────────── */
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [requestSubmitted, setRequestSubmitted] = useState(false);
 
@@ -61,17 +49,23 @@ export const usePasswordReset = () => {
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+    setRequestError(null);
+
+    // A message about one field belongs under that field, not in the banner
+    // the server failures use.
     if (!email.trim()) {
-      setRequestError("auth.reset.errors.email_required");
+      setEmailError("auth.reset.errors.email_required");
       return;
     }
-    setRequestError(null);
+    setEmailError(null);
     await requestMutation.mutateAsync({ email: email.trim() });
   };
 
   /* ── Confirm side (set a new password) ──────────────────────────── */
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [resetData, setResetData] = useState<{ email: string } | null>(null);
 
@@ -82,7 +76,22 @@ export const usePasswordReset = () => {
       setFormError(null);
     },
     onError: (error: unknown) => {
-      setFormError(getResetErrorMessage(error));
+      const { code, fieldErrors, serverMessage } = parseApiError(error);
+
+      // A server-side password rule is a verdict on one field.
+      if (fieldErrors.new_password) {
+        setPasswordError(fieldErrors.new_password);
+        return;
+      }
+      if (code === "expired_reset_link") {
+        setFormError("auth.reset.errors.expired_link");
+        return;
+      }
+      if (code === "invalid_reset_link") {
+        setFormError("auth.reset.errors.invalid_link");
+        return;
+      }
+      setFormError(serverMessage ?? "auth.reset.errors.reset_failed");
     },
   });
 
@@ -95,16 +104,20 @@ export const usePasswordReset = () => {
       setFormError("auth.reset.errors.incomplete_link");
       return;
     }
-    if (password.length < 8) {
-      setFormError("auth.reset.errors.password_too_short");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setFormError("auth.reset.errors.password_mismatch");
-      return;
-    }
 
+    const nextPasswordError =
+      password.length < 8 ? "auth.reset.errors.password_too_short" : null;
+    const nextConfirmError =
+      !nextPasswordError && password !== confirmPassword
+        ? "auth.reset.errors.password_mismatch"
+        : null;
+
+    setPasswordError(nextPasswordError);
+    setConfirmError(nextConfirmError);
     setFormError(null);
+
+    if (nextPasswordError || nextConfirmError) return;
+
     await confirmMutation.mutateAsync({
       uidb64: resetContext.uidb64,
       token: resetContext.token,
@@ -118,6 +131,7 @@ export const usePasswordReset = () => {
     // request
     email,
     setEmail,
+    emailError,
     requestError,
     requestSubmitted,
     isRequesting: requestMutation.isPending,
@@ -127,6 +141,8 @@ export const usePasswordReset = () => {
     setPassword,
     confirmPassword,
     setConfirmPassword,
+    passwordError,
+    confirmError,
     formError,
     resetData,
     isConfirming: confirmMutation.isPending,

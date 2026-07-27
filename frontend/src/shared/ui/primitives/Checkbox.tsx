@@ -89,7 +89,9 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           checked={Boolean(checked)}
           disabled={disabled}
           onChange={onChange}
-          className="absolute inset-0 cursor-inherit appearance-none opacity-0 focus-visible:outline-none"
+          // `peer` is load-bearing: the focus ring below is a later sibling and
+          // reads this element's focus state through it.
+          className="peer absolute inset-0 cursor-inherit appearance-none opacity-0 focus-visible:outline-none"
           {...inputProps}
         />
         {indeterminate ? (
