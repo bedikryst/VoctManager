@@ -66,6 +66,10 @@ export const BottomSheet = ({
 
   const handleEscape = useCallback(
     (event: KeyboardEvent) => {
+      // A popover opened from inside the sheet (a select, a menu, a calendar)
+      // dismisses itself on Escape and marks the event handled. The sheet must
+      // not ride that same keypress out from under it.
+      if (event.defaultPrevented) return;
       if (event.key === "Escape") onClose();
     },
     [onClose],
@@ -88,7 +92,7 @@ export const BottomSheet = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-(--z-toast) flex items-end justify-center sm:items-center sm:p-4">
+        <div className="fixed inset-0 z-focus-trap flex items-end justify-center sm:items-center sm:p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

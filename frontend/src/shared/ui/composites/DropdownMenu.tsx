@@ -39,7 +39,7 @@ export const DropdownMenuContent = ({
       align={align}
       sideOffset={8}
       className={cn(
-        "z-(--z-nav-sheet) min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
+        "z-popover min-w-56 origin-(--radix-dropdown-menu-content-transform-origin) rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
         "popover-motion",
         className,
       )}

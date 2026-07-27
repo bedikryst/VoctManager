@@ -108,10 +108,22 @@ export const Select = ({
       )}
 
       <RadixSelect.Root
-        value={value || undefined}
-        onValueChange={(next) =>
-          onValueChange(next === CLEAR_VALUE ? "" : next)
-        }
+        // Controlled for the component's whole life, `""` included — Radix reads
+        // `""` as "nothing selected" perfectly well. Handing it `undefined`
+        // instead made the field flip uncontrolled→controlled the moment a value
+        // arrived, and that flip is not cosmetic: Radix answers it by writing the
+        // new value into its hidden native <select> and dispatching a `change`.
+        // The <option> list is registered one render later, so the assignment
+        // finds nothing to match, the event carries `""` — and the field wipes
+        // itself, silently, before anyone has touched it.
+        value={value}
+        onValueChange={(next) => {
+          // Same hidden <select>, same failure mode, defended at the exit: an
+          // item can never carry `""` (Radix forbids it, and our own clear entry
+          // rides a sentinel), so an empty string here never came from a person.
+          if (next === "") return;
+          onValueChange(next === CLEAR_VALUE ? "" : next);
+        }}
         disabled={disabled}
         required={required}
         name={name}
@@ -174,7 +186,7 @@ export const Select = ({
             position="popper"
             sideOffset={8}
             className={cn(
-              "z-nav-sheet max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
+              "z-popover max-h-(--radix-select-content-available-height) w-(--radix-select-trigger-width) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/95 p-1.5 shadow-glass-ethereal backdrop-blur-ethereal",
               "popover-motion",
             )}
           >

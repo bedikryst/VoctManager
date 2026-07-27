@@ -14,8 +14,13 @@ interface CompletionRingProps {
   value: number;
   size?: number;
   strokeWidth?: number;
-  /** Ethereal token for the progress arc. */
-  tone?: "gold" | "sage" | "crimson" | "graphite";
+  /**
+   * Ethereal token for the progress arc. `crimson` is deliberately absent: a
+   * ring is a measurement, and the one caller that reached for it painted a
+   * singer's own attendance in the alarm colour the moment it dipped under 70.
+   * `incense` is the warm resting fill a bar takes when nothing is wrong.
+   */
+  tone?: "gold" | "sage" | "incense" | "graphite";
   children?: React.ReactNode;
   className?: string;
 }
@@ -23,7 +28,7 @@ interface CompletionRingProps {
 const TONE_STROKE: Record<NonNullable<CompletionRingProps["tone"]>, string> = {
   gold: "stroke-ethereal-gold",
   sage: "stroke-ethereal-sage",
-  crimson: "stroke-ethereal-crimson",
+  incense: "stroke-ethereal-incense",
   graphite: "stroke-ethereal-graphite/50",
 };
 

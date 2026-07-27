@@ -14,7 +14,13 @@ export interface MetricBlockProps extends React.HTMLAttributes<HTMLElement> {
   value: string | number | null | undefined;
   unit?: string;
   icon?: React.ReactNode;
-  accentColor?: "default" | "gold" | "crimson";
+  /**
+   * `default` is the resting figure; `gold` marks a shortfall or the one KPI a
+   * screen wants read first. There is deliberately no crimson: a measurement is
+   * not a failure, and the axis had carried one for months with no caller —
+   * `ArtifactCard`, the only composite that forwards it, does not even type it.
+   */
+  accentColor?: "default" | "gold";
   interactiveMode?: "glass" | "minimal";
 }
 
@@ -29,7 +35,6 @@ export function MetricBlock({
   ...props
 }: MetricBlockProps): React.JSX.Element {
   const isGold = accentColor === "gold";
-  const isCrimson = accentColor === "crimson";
 
   const glassClasses =
     interactiveMode === "glass"
@@ -47,12 +52,9 @@ export function MetricBlock({
           interactiveMode === "glass"
             ? "text-ethereal-incense/70"
             : "text-ethereal-incense/60",
-          isGold && "group-hover:text-ethereal-gold hover:text-ethereal-gold",
-          isCrimson &&
-            "group-hover:text-ethereal-crimson hover:text-ethereal-crimson",
-          !isGold &&
-            !isCrimson &&
-            "group-hover:text-ethereal-ink/75 hover:text-ethereal-ink/75",
+          isGold
+            ? "group-hover:text-ethereal-gold hover:text-ethereal-gold"
+            : "group-hover:text-ethereal-ink/75 hover:text-ethereal-ink/75",
         )}
       >
         {icon &&
@@ -68,14 +70,9 @@ export function MetricBlock({
       </div>
 
       <div className="flex items-baseline gap-2">
-        <Metric color={isGold ? "gold" : isCrimson ? "crimson" : "default"}>
-          {value}
-        </Metric>
+        <Metric color={isGold ? "gold" : "default"}>{value}</Metric>
         {unit && (
-          <Unit
-            size="sm"
-            color={isGold ? "gold" : isCrimson ? "crimson" : "muted"}
-          >
+          <Unit size="sm" color={isGold ? "gold" : "muted"}>
             {unit}
           </Unit>
         )}

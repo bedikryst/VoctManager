@@ -6,9 +6,9 @@
  * inside the dashboard content's stacking context (`main` is `z-10` and the
  * page-transition wrapper animates transform/opacity, each of which opens a new
  * stacking context). A `position: fixed` child cannot escape that context, so
- * its `z-(--z-toast)` is only "100 within the page bubble" and the fixed bottom
- * nav (a body-level sibling at `z-70`) paints over it — the bar lands *under*
- * the dock and becomes unclickable. Portalling to <body> lifts the bar into the
+ * its `z-(--z-dock-bar)` is only "75 within the page bubble" and the fixed
+ * bottom nav (a body-level sibling at `z-70`) paints over it — the bar lands
+ * *under* the dock and becomes unclickable. Portalling to <body> lifts it into the
  * root stacking context where its z-index actually wins. React context still
  * flows through the React tree, so hooks/providers keep working across the seam.
  * @module shared/lib/dom/Portal

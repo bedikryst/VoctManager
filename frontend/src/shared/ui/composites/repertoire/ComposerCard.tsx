@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { ExternalLink, Sparkles } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import type { Composer } from "@/shared/types";
 
@@ -23,22 +24,29 @@ interface ComposerCardProps {
 const composerDisplayName = (composer: Composer): string =>
   `${composer.first_name ?? ""} ${composer.last_name}`.trim();
 
-const ExternalChip = ({
+/**
+ * A catalogue is somewhere you GO, not a status the piece wears — set as an
+ * overline in a chip, "MusicBrainz" reads as a phase of the ingestion pipeline.
+ * `ComposerRowExpanded` reached the same conclusion in the archive pass; this
+ * was the older copy of the shape it replaced.
+ */
+const ExternalSource = ({
   href,
   label,
 }: {
   href: string;
   label: string;
 }): React.JSX.Element => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noreferrer"
-    className="inline-flex items-center gap-1 rounded-full border border-ethereal-incense/30 bg-ethereal-marble/60 px-2 py-1 text-[10px] uppercase tracking-[0.15em] text-ethereal-graphite transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-gold"
+  <Button
+    asChild
+    variant="outline"
+    size="sm"
+    rightIcon={<ExternalLink size={11} aria-hidden="true" />}
   >
-    {label}
-    <ExternalLink size={11} aria-hidden="true" />
-  </a>
+    <a href={href} target="_blank" rel="noreferrer">
+      {label}
+    </a>
+  </Button>
 );
 
 export const ComposerCard = ({
@@ -89,13 +97,13 @@ export const ComposerCard = ({
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           {composer.mbid && (
-            <ExternalChip
+            <ExternalSource
               href={`https://musicbrainz.org/artist/${composer.mbid}`}
               label="MusicBrainz"
             />
           )}
           {composer.wikidata_qid && (
-            <ExternalChip
+            <ExternalSource
               href={`https://www.wikidata.org/wiki/${composer.wikidata_qid}`}
               label="Wikidata"
             />
@@ -109,7 +117,7 @@ export const ComposerCard = ({
 
   return (
     <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
-      <Eyebrow color="muted" size="caption" className="mb-3 block">
+      <Eyebrow color="muted" className="mb-3 block">
         {t(
           "repertoire.composer.section",
           "Kompozytor (źródło: MusicBrainz + Wikidata)",

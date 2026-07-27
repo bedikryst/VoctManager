@@ -1,9 +1,19 @@
-# Project Hub — design remediation
+# Project Hub — design remediation — **COMPLETE**
 
-**Phase 0, all ten Phase 1 tab passes, Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and the
-first six Phase 3 passes are SHIPPED** (2026-07-25 → 2026-07-27). Written 2026-07-25 · surface:
-`/panel/projects/:id/*` (hub shell + 10 tabs) and the shared primitives it exposes, now widening per
-feature (§8). `StatePanel` adoption and the `SegmentedTabs` unification are both closed.
+**This project is finished** (2026-07-25 → 2026-07-27). Phase 0, all ten Phase 1 tab passes,
+Phase 2 §5.1–§5.3, the primitive unification (D4, D5) and all EIGHT Phase 3 passes are shipped.
+Written 2026-07-25 · surface: `/panel/projects/:id/*` (hub shell + 10 tabs) and the shared
+primitives it exposes, then widening per feature, then `shared/ui` itself, and finally the
+straggler areas that never earned a pass of their own (§8, the eighth pass).
+
+Every design item that was open is closed: the raw uppercase micro-labels are at **zero**, the
+low-alpha ink hairlines are at **zero**, `StatePanel` and `SegmentedTabs` are single, the
+`Eyebrow size="caption"` question is settled, and the fifth z-index step the modal layer needed was
+taken. The one entry left under "Still open" is the ~120 dead `archive.*` i18n keys, which belong
+to the i18n remediation's dead-key sweep and were never design work.
+
+**Nothing here is a plan any more. This file is a record.** If you are doing design work in the
+panel, the rules are in `.ai/04_design_system.md` — read that, not this.
 
 ## How to read this file
 
@@ -13,15 +23,22 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 - **Doing a design pass anywhere in the panel?** The rules this project produced were promoted into
   `.ai/04_design_system.md` — that is the canon, and it is 12 KB. Read it, plus the two short
   sections below.
-- **Picking up the remaining work?** Everything open is listed below. §5.4 no longer duplicates it.
+- **Looking for open work?** There is none here. The "Still open" section below is kept because its
+  reproducible recipes are how you re-measure the panel after a feature lands — they are a
+  regression check now, not a backlog.
 - **Reading the record?** Only when you need the reasoning behind a specific tab's shape — e.g.
   before re-proposing something a pass already declined. Jump to the tab's section in §4, or to a
   feature's section in §8.
 
 ## Still open
 
-- **15 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the rehearsals pass (which
-  cleared its one). Reproducible recipe — run it rather than trusting this number:
+Nothing, except the i18n entry at the bottom. Kept as the **regression check**: these are the
+recipes that measure the two defects this project existed to remove, and the numbers below are the
+clean baseline a new feature must not move off.
+
+- **Raw uppercase micro-labels: 0.** Cleared 2026-07-27 by the stragglers pass (`widgets/utility` 3,
+  annotations 3, materials 3, schedule 1). Reproducible recipe — run it rather than trusting the
+  number:
 
   ```
   grep -rInE 'uppercase' frontend/src --include=*.tsx --include=*.ts \
@@ -29,10 +46,29 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
     | grep -vE 'typography/Typography|primitives/(Badge|Button)\.tsx|SegmentedTabs'
   ```
 
-  What is left: `shared/ui` 5, `widgets/utility` 3, annotations 3, materials 3, schedule 1. On top
-  of those, `typography/Typography.tsx` carries 2 — the role's own declarations, excluded above
-  because they are the definition and not a defect. The widest outliers in the tree are still
-  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
+  It returns exactly **one** line: the sentence in `Eyebrow`'s own doc comment describing this bug.
+  `typography/Typography.tsx` carries 2 more, excluded by the recipe because they are the role's
+  definition. The widest outliers in the tree were `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`
+  — and the second of those turned out to be `uppercase` on a `dd.MM.yyyy` date, i.e. a casing
+  declaration that could never do anything, tracking figures apart on the one widget whose sibling
+  file already carried a comment explaining why you must not.
+
+- **`Eyebrow` overriding the role's tracking: 0.** The `uppercase` lives in the CVA variant and
+  never appears at the call site, so the first recipe cannot see this and the founding diagnosis
+  hid in its shadow (11 instances, five values). Cleared 2026-07-27 with the `shared/ui` pass.
+
+  **Second recipe — and the one published here was itself broken.** As written it used
+  `(?:\s|[^>])*?`, an alternation whose branches overlap, which backtracks catastrophically:
+  `rg` aborted with `PCRE2: error matching: match limit exceeded` on **23 files** — including
+  `NextEventHero`, `TimelineProjectCard`, `CommandPalette` and `PiecePage` — and an aborted file
+  reports as a clean file. A recipe that skips a quarter of the tree while printing nothing is worse
+  than no recipe. Use the linear form:
+
+  ```
+  rg -U --pcre2 '<Eyebrow\b[^>]{0,600}?\btracking-' frontend/src -g '*.tsx'
+  ```
+
+  (`\btracking-` also catches `tracking-wide|widest|tight`, which the `tracking-\[` version missed.)
 - **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive`,
   artists+crew+logistics, settings+dashboard+notifications+contracts, messages, auth and
   rehearsals.** This is **not** a sweep — see the note opening §5 — it rides along with per-feature
@@ -42,13 +78,32 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   the design system's own surface border and stays:
 
   ```
-  grep -rInE '(border|divide|ring)-ethereal-ink/(4|6|8|10|12)' frontend/src --include=*.tsx --include=*.ts
+  grep -rInE '(border|divide|ring)-ethereal-ink/(4|6|8|10|12)($|[^0-9])' frontend/src --include=*.tsx --include=*.ts
   ```
 
-  **8 true 1px rules remain** — projects 3, annotations 3, schedule 1, chorister-hub 1. (The
-  previous figure of 19, with its per-feature split, does not reproduce; only the rehearsals part
-  of it, 14, did — and that is now 0.) Everything else at those alphas is a bar track, a dot, a
-  groove or a scrim: a *fill*, which stays.
+  **0 remain**, cleared 2026-07-27 by the stragglers pass (annotations 2, projects 1 `TogglePill`,
+  schedule 1 `NextEventHero`, chorister-hub 1). The alpha anchor `($|[^0-9])` matters: without it
+  the old recipe matched `border-ethereal-ink/40` on the `4` and reported two selected-state borders
+  as hairlines, which is where the earlier figure of 8 came from. Everything else at those alphas is
+  a bar track, a dot, a groove or a scrim: a *fill*, which stays.
+
+  **Both known blind spots are now closed too.** The alpha list is not exhaustive — `AnnotationOverlay`
+  had one at `/15`, and it turned out not to be a hairline at all but a hand-rolled *field* surface,
+  so it went to `fieldShellVariants` rather than to a token. And the recipe greps `border|divide|ring`
+  only, so a rule drawn as a filled 1px box is invisible to it:
+
+  ```
+  grep -rInE '(h-px|w-px).*bg-(white|ethereal)' frontend/src --include=*.tsx | grep -v 'Divider.tsx'
+  ```
+
+  That returns **4**, and all four are correct: `AttendanceCell`'s rotated strike-through and
+  `PageHeader`'s gold thread are chart/ornament marks, not rules; `DropdownMenu`'s Radix separator
+  carries the popover skin's own `incense/15`. The fifth (`CommandPalette`) was a real divider and
+  is now `Divider`. **The dark chrome had two more that neither recipe could see**, because they
+  are white-on-ink: `PdfBottomNav` and `AnnotationToolbar` each drew `h-4/5 w-px bg-white/15`, and
+  the second did it under a private component named `Divider` — shadowing the primitive's own export
+  inside a file that did not import it. `Divider` gained a `solid-dark` variant (the warm `solid` is
+  invisible on `ethereal-ink/70`, which is why both had opted out) and both now call it.
 - ~~`SegmentedTabs` has five hand-rolled copies left~~ — **closed 2026-07-27.** All eight private
   copies of the gold-pill-on-alabaster track are gone; `grep "bg-ethereal-gold text-ethereal-ink
   shadow-sm"` returns the composite and nothing else. The composite gained `iconOnly` for the two
@@ -57,11 +112,10 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   `ArtistEmptyState` is the one deliberate exception: a named scene with its own breathing-ring
   scenography, not the ad-hoc icon stack the rule targets, and `StatePanel` cannot carry a
   `backgroundElement`.
-- **`Eyebrow size="caption"` is used 42× and is off-role.** The overline has exactly two declared
-  sizes (`overline`, `overline-sm`); `caption` is an 11px escape hatch that half the panel reaches
-  for, the archive pass included. Deciding it is a `shared/ui` call, not a feature pass's — either
-  legitimise it in `Eyebrow` or migrate the 42 to `overline-sm`. The messages pass deliberately
-  left the size alone and removed only the local letter-spacing override.
+- ~~`Eyebrow size="caption"` is used 42× and is off-role~~ — **closed 2026-07-27**, and neither
+  option in the brief was the answer: `caption` is the same 11px as `overline` minus the role's
+  line-height, so all 52 (it had grown) were paying a prop to render identically and lose the
+  leading. Removed everywhere; `EyebrowProps` narrows `size` so it cannot return. See §8.
 - **Diacritic-folding search is now universal and should stay that way.** Every user-facing search in
   the panel goes through `shared/lib/text.foldDiacritics`; the archive follow-up swept the last three
   (both archive lists, plus `useMaterialsData` and `ProjectLedgerRail`, which were found while
@@ -71,9 +125,33 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 - ~~The rest of `features/rehearsals` wants a copy pass~~ — **closed 2026-07-27** (§8), together with
   its companion defect: the Frekwencja matrix (and the whole rehearsals module) computed
   `isPast` / `isLive` once per data change rather than on a timer. Both now read a
-  minute-quantised `useNow`. What the pass found underneath the copy is in §8; the one open thread
-  it leaves is that `ArchiveStatLine` now has two features reading it and belongs in
-  `shared/ui/composites`, which is the next pass's layer.
+  minute-quantised `useNow`.
+- ~~`ArchiveStatLine` has two features reading it and belongs in `shared/ui/composites`~~ —
+  **closed 2026-07-27**: it is `shared/ui/composites/StatLine` (the feature name went with the
+  feature edge).
+- ~~**The modal layer needs a token the set does not have.**~~ — **taken 2026-07-27**, and the
+  brief's own proposal was one step off. `--z-dock-bar: 75` sits between `nav-dock` (70) and
+  `nav-sheet` (80), NOT between `nav-sheet` and `focus-trap` as this entry originally suggested.
+  A docked bar's job is to clear the nav *dock*; the mobile nav *sheet* is a modal surface with a
+  full-viewport scrim, and a save bar painting through that scrim is the same defect as a save bar
+  painting over a confirmation modal — only nobody had named it. `MiniPlayerBar` and `BulkActionBar`
+  at 100 were doing exactly that.
+
+  The ladder now reads bottom-to-top as five KINDS of surface: the dock the page scrolls under (70)
+  · the bars that ride above it (75: `EditorActionBar`, `AutosaveStatus`, `BulkActionBar`,
+  `MiniPlayerBar`) · the modal navigation sheet (80) · **the dialogs the user opened** (90:
+  `BottomSheet`, `ConfirmModal`, `NewThreadModal`, `PublishProjectModal`, `AvatarEditorModal`,
+  `CommandPalette`, and everything already there) · **the announcements that arrive from outside
+  the task** (100: `ProjectInvitationToasts`, `PushPermissionPrimer`, which must outrank a dialog
+  the member already had open or they render invisibly behind it).
+
+  Two things the entry did not know. **`z-toast` never held the toasts** — sonner ships its own
+  `z-index: 999999999`, so the top rung was named for a tenant that was never in it, and what it
+  actually held was four docked bars, seven dialogs and one tooltip. That tooltip
+  (`NotificationsTab`) is now `z-nav-sheet`, the popover layer its `DropdownMenu` and `Select`
+  siblings use. And the token had to go in **both** `panel.css` and `shared/lib/tailwindMerge.ts`:
+  asserted on resolved `cn()` output in both directions (`cn("z-toast","z-dock-bar")` →
+  `z-dock-bar`, `cn("z-dock-bar","z-10")` → `z-10`) before trusting the build.
 - ~~Two companion defects left for the passes that own them~~ — both fixed by the
   settings+dashboard+notifications+contracts pass (§8). See that section for what the second one
   turned out to be underneath.
@@ -83,12 +161,8 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-What is left: **`shared/ui`** — its 6 overlines sit in composites every feature renders, so a change
-there is a change everywhere (two of them are `typography`'s own declarations of the role and are
-not defects), plus the `Eyebrow size="caption"` decision above and the `ArchiveStatLine` promotion.
-After that, the stragglers that never earned a pass of their own: `widgets/utility` (3 overlines,
-including the `tracking-[0.4em]` outlier), annotations (3 overlines + the last 2 hairline rules),
-materials (3), schedule (1).
+What is left: **nothing.** The stragglers above ran as one pass on 2026-07-27 and closed the last
+design item in the file. See §8 for what that pass found underneath the small list it was given.
 
 ## Decisions, settled
 
@@ -1952,3 +2026,232 @@ status report — and clearing it is the entire affordance of the mode.
 **i18n.** 23 keys added, 20 retired (only ones this pass killed), 1 reworded, across pl/en/fr.
 `reliability.graded` / `roster_size` became plural families, because they moved from tile labels
 into a sentence where Polish inflects them.
+
+### `shared/ui` — the layer every feature renders (SHIPPED 2026-07-27)
+
+Last in the queue and the one where a change is a change everywhere, so it was read as *what does
+the panel duplicate at its own foundation*, not as four grep hits. `shared/ui` now returns nothing
+for either "Still open" recipe (the one remaining `uppercase tracking-*` hit is the sentence in
+`Eyebrow`'s own doc comment describing the bug), and nothing for `rounded-(xl|2xl|3xl|lg|md|sm)`
+outside the PDF chrome. What the reading found underneath was mostly duplication.
+
+**`Eyebrow size="caption"` was never a third size — it was a way to lose the role's leading.** The
+decision four passes had deferred dissolves on measurement: `caption` is `text-[11px]`, `overline`
+is `--text-overline: 0.6875rem`, and those are **the same 11px**. The only difference is that an
+arbitrary value carries no line-height, so all 52 call sites paid a prop to render identically and
+silently drop the role's own `1.15`. So neither option in the brief was right: legitimising it would
+have declared a size indistinguishable from the default, and migrating to `overline-sm` would have
+shrunk 52 labels nobody had asked to shrink. The prop is gone from every call site and
+`EyebrowProps` now narrows `size` to the two sizes `panel.css` declares, so it cannot come back.
+
+Typing it surfaced the drift in the other direction, which no grep would have found: `LegalContent`
+set five legal-document section titles as `Eyebrow size="md"` — 16px uppercase tracked-out prose,
+a sentence in a machine label's clothing, on the one screen a new member reads before they trust the
+product with their data. They are `Heading as="h3"` now. `ArchivePieceCardPage` had an accordion
+header at `size="base"` and `DesktopSidebar` a role line at `size="xs"`, both reaching past a scale
+that already had exactly what they wanted.
+
+**`StaggeredBento` existed twice, and the copy that owned layout had been fought at every call
+site.** Same two export names, different entrance motion, five features importing one and three the
+other — so which stagger a dashboard used depended on which file its author happened to find. The
+`composites/` copy also baked in `grid-cols-1 md:grid-cols-2 xl:grid-cols-3` and concatenated
+`className` as a raw template string rather than through `cn()`: `LocationsManager` and `Rehearsals`
+both wrote `!flex` to escape the grid, and `Schedule` gave up and re-declared the variants privately
+under a comment explaining why. Three call sites fighting a default that was never theirs to
+receive. The `kinematics/` copy survives (it reads `motion-presets`, so one timing governs every
+dashboard), the three imports moved, the two `!flex` and the private variant set are gone, and the
+survivor now passes div props through — `Schedule`'s hero is a scroll anchor and needs its `id`.
+The rule is in `.ai/04`: **an `!important` at a call site is a bug report about the component.**
+
+**A fourth private copy of the SATB colour table, in the shared layer.** `ResonancePillar` typed
+S gold, A amethyst, T sage, B incense. `voiceSections.ts` — the SSOT the roster pass built
+`accents.ts` for — says S incense, A amethyst, T gold, B sage. **Three of the four voices were one
+colour on the manager's dashboard and a different one on the roster two clicks away**, and nobody
+chose that; two copies of one table did. The pillar takes an `EtherealAccent` and reads `ACCENT_BAR`
+now, `TelemetryWidget` feeds it from `VOICE_SECTIONS` (which also retires its own hand-written
+S/MEZ, A/CT, T, B/BAR grouping into one `SECTION_TALLY` beside the taxonomy), and the per-section
+figure stopped being `opacity-0 group-hover:opacity-100` — on a phone that chart had no numbers.
+
+**`Button` accepted `leftIcon`/`rightIcon`/`isLoading` under `asChild` and dropped them on the
+floor.** Radix `Slot` forwards props; the caller's child owns the children; so the composition was
+never rendered. Ten link-buttons across archive, projects, schedule and the PDF modal asked for a
+back arrow or an external-link glyph and drew none — including the two the *archive pass itself*
+wrote when it turned the MusicBrainz/Wikidata chips into buttons. The icons are cloned into the
+child now. This is the same family as `Input`'s `hasError` in D4: a prop a component accepts and
+then ignores is a prop that lies, and it fails silently in both directions.
+
+**Seven files in `shared/ui` had no callers at all.** `EventCard` and `ElegantHeading` (a fourth
+heading recipe, raw `motion.h2` + `motion.p`), and four of the seven `repertoire/*` blocks —
+`LyricsBlock`, `MovementsList`, `ProgramNotesList`, `RecordingsList` — superseded when the Piece
+Card grew inline editors and `materials` grew `PieceLyricsViewer`, but still exported from the
+barrel and still advertised in `.ai/04` as *the* shared piece-detail blocks. That is worse than
+clutter: the next pass reaches for one and gets a fifth voice. `RecordingsList` was also painting
+YouTube in `ethereal-crimson` — the crimson-on-a-resting-category bug `accents.ts` was extracted to
+kill, hiding where no screen would ever have shown it — and printing a hardcoded English
+`" · featured"`. Deleted, with the five i18n keys they owned. `MetricBlock`'s `accentColor="crimson"`
+and `CompletionRing`'s `tone="crimson"` went the same way: a measurement is not a failure, and
+`ArtifactCard`, the only composite that forwards the axis, did not even type it.
+
+**The alarm colour on an ordinary dip, carried along from `features/schedule`.** The rehearsals pass
+consolidated three attendance-rate scales; there was a fourth, and it was the one a *singer* sees:
+`MyAttendancePanel` painted their own rate sage ≥90, gold ≥70, **crimson below**, so somebody who
+had missed three rehearsals in a busy term opened their schedule to the panel's alarm colour. It
+reads `attendanceRateTone` now. `CompletionRing` gained `incense` — the warm resting fill, because
+a ring is entirely colour and has no ink option — which is what let crimson leave the type.
+
+**Eleven `Eyebrow`s were overriding the role's letter-spacing, and the count had never seen them.**
+The "Still open" recipe greps for `uppercase` and a tracking in the same class list, which only
+catches a *hand-rolled* overline — an `Eyebrow` whose `className` says `tracking-[0.16em]` is
+invisible to it, because the `uppercase` lives in the CVA variant. Five values
+(`0.08 / 0.1 / 0.12 / 0.16 / 0.18em`) against the role's `0.14`: the exact diagnosis this project
+opened with, sitting in the shadow of the method used to measure it. Cleared (panel-shell 7,
+notifications 2, dashboard 2), and the second recipe is now in "Still open" beside the first.
+
+**Smaller, but the same job.** `AutosaveStatus` set its label as `Text` + `uppercase
+tracking-widest`, one of five raw overlines left in the tree · `ComposerCard` still carried the
+catalogue-links-as-chips shape the archive pass had already replaced in `ComposerRowExpanded` (a
+catalogue is somewhere you GO) · `ErrorScreen` overrode the overline's tracking locally at `0.28em`,
+a 17th value, and set its dev-details `<summary>` as a raw one at `0.18em` · `EtherealLoader` ran
+`animate-pulse` on its message beside a mark that was already breathing and pinging — three
+animations for one fact, and the dimmed one was the only readable thing on screen · `DayDivider`
+drew its two rules as `bg-ethereal-ink/8` (a 1px rule is a 1px rule whether it is a border or a
+background — the "Still open" recipe only greps borders, so this class of hairline hides from it)
+and its pill as a private `rounded-full` chip · `ArtifactCard` set its title as a raw `<h2>` with
+hand-rolled serif classes in a file whose own header claims it eliminated typography violations, and
+drew its focus ring and skeleton at `rounded-[2.5rem]` against a card that is `rounded-surface`, so
+the ring never matched the corner it traced · `Divider` carried `fade` and `gradient-fade` as two
+names for one identical class string · `InlineEditable` was the last hand-rolled copy of the field
+surface (D4), had drifted to a 1px focus ring on a chip radius, spent crimson on a *cancel*, and
+carried two hardcoded Polish strings in a shared primitive — an `aria-label` a French member's
+screen reader read in Polish, and a save-failure fallback that otherwise passed `err.message`
+through, i.e. the transport's sentence in the transport's language · `Checkbox` drew `sm` on stock
+`rounded` and `md` on `rounded-chip`, one control with two shapes · `WorkIdentifiersGrid` labelled
+its `<dl>` with `Caption` instead of the overline and never used `<dt>`/`<dd>` · `Button`'s `lg`
+size was a fifth control type size at `text-[12px]` · and eight surfaces spelled the z tokens as
+`z-(--z-toast)`, which resolves to the same number but is invisible to the `tailwindMerge` ledger,
+so `cn()` cannot make it lose to anything.
+
+**Declined.** Renumbering the modal layer. `ConfirmModal` and `BottomSheet` sit at `z-toast` (100)
+while the notifications centre was moved to `z-focus-trap` (90) by the settings pass on the argument
+that a toast should paint above a dialog — the two are genuinely inconsistent, but the floating
+`EditorActionBar` and `AutosaveStatus` also live at 100, and dropping the dialogs to 90 would put a
+persistent save bar *over* a confirmation modal, which is worse than the tie that exists today. It
+needs a layer the token set does not have; it is in "Still open" as a question, not a fix.
+Also declined: changing `Divider`'s `solid` variant off `ethereal-incense/10`. A warm rule on an
+in-flow card is drift by `panel.css`'s own note, but four of its six callers are the annotations
+toolbar, which has its own pass coming and its own dark chrome.
+> **Correction (stragglers pass, 2026-07-27).** The second half of that sentence is wrong. Those
+> four calls were a *private* component named `Divider` declared in `AnnotationToolbar` itself —
+> the primitive was never imported there, and it has five callers, not six. The warm `solid`
+> variant stands as-is; the dark bars got a `solid-dark` variant instead. See the stragglers
+> section at the end of §8.
+
+**i18n.** 1 key added (`common.inline_edit.open`), 5 retired (`repertoire.lyrics.*`,
+`repertoire.movements.page_short`, `repertoire.program_notes.approved` — only what this pass
+killed), across pl/en/fr.
+
+### The stragglers — `widgets/utility`, annotations, materials, schedule, chorister-hub (SHIPPED 2026-07-27)
+
+The eighth and last pass. Six small areas that never earned a pass of their own, run together
+because each was a handful of lines: 10 raw overlines, 5 hairline rules, one radius, and the
+z-index question. All of those are done and every recipe now reads zero. What the reading found
+underneath was, as usual, the larger half — and in three places the *brief itself* was wrong,
+because it inherited the previous pass's notes.
+
+**The counting method was broken, and it reported clean.** The `Eyebrow`-tracking recipe published
+in "Still open" used `(?:\s|[^>])*?` — an alternation whose two branches both match a space, which
+is the textbook shape for catastrophic backtracking. `rg` aborted on **23 files** with
+`PCRE2: error matching: match limit exceeded`, and an aborted file is silently a clean file. The
+skipped set included `NextEventHero`, `TimelineProjectCard`, `CommandPalette`, `PiecePage` and
+`MobileNavSheet` — a quarter of the interesting tree. It happens to have been genuinely zero, but
+that was luck, not measurement. The linear form is in "Still open"; `\btracking-` also catches
+`tracking-wide|widest|tight`, which the `tracking-\[` version could never see.
+
+**The annotations toolbar was not calling `Divider`.** The previous pass declined to touch
+`Divider`'s warm `solid` variant on the grounds that "four of its six callers are the annotations
+toolbar", and the brief for this pass repeated it as a real question — is a warm rule correct over
+a PDF? The premise was false in a useful way: those four `<Divider />` calls resolve to a **private
+four-line component declared in the same file**, shadowing the primitive's own export inside a
+module that never imported it. So the question was never live — but there was a real defect wearing
+its clothes, one level up. `PdfBottomNav` drew the identical rule (`h-5 w-px bg-white/15`) a second
+time, because the shared `Divider` has no variant that is visible on `ethereal-ink/70`: the warm
+`solid` disappears there, so both dark bars had quietly opted out. `Divider` gained `solid-dark`,
+both call sites use it, and the local component is `ToolSeparator` — a name that does not lie about
+what it is. Zero pixels changed.
+
+**A dark surface with no variant re-types the whole control.** `SegmentedTabs` was declared closed
+after eight private copies of the track were folded in, verified by grepping the gold-pill recipe
+`bg-ethereal-gold text-ethereal-ink shadow-sm`. A ninth copy survived that grep by not being gold:
+`TimelineProjectCard`'s Logistyka/Repertuar switcher, inside a `BottomSheet tone="dark"`, where the
+active segment took **a different accent per tab** — gold for one, sage for the next. Colour was
+carrying "which tab is open", which the label already says, and it spent two of the six category
+accents on a binary switcher. `SegmentedTabs` gained `tone="dark"` (the same axis `BottomSheet`
+already has, which is what a dark surface should have been able to ask for), and both segments now
+light gold. **A composite without the variant a surface needs does not get skipped — it gets
+retyped, and the copy invents semantics the original never had.**
+
+**Two of four voices disagreed with the SSOT.** `VocalDistributionGrid` — nominally one hairline —
+carried a private fourteen-entry colour table for the SATB taxonomy. Against `voiceSections.ts` it
+had alto sage (canon: amethyst) and bass ink (canon: sage), so a chorister's own card coloured
+their section differently from the roster and the balance strip showing the same taxonomy. This is
+the third time this exact table has been found privately retyped (`ResonancePillar` was the second),
+and each time it disagreed with the SSOT on most of the voices. It also ran an alpha ramp down each
+divisi number (S1 `/15`, S2 `/10`, S3 `/8`) — three shades for a distinction the label already
+makes, since S3 is not less soprano than S1 — and gave `SOLO` soprano's colour outright, though
+`SOLO` is not a voice at all. It reads `getSectionPresentation` now, `SOLO`/`TUTTI` take neutrals
+as the two lines that say *how many* sing rather than *which* part, and the tile is a `Badge`.
+
+**A disclosure over the only body on a tab is a control with nothing to control.**
+`PieceLyricsViewer` is the last reader of a piece's text since the dead `repertoire/*` blocks were
+deleted, and it was a collapsible card: a chevron, an `AnimatePresence` height animation, and a
+header reading *Tekst i Tłumaczenie* — inside the tab called **Tekst**, always rendered with
+`defaultExpanded`. The tab switcher already governs whether the block is on screen, so the chevron
+collapsed the one thing the reader had just asked for, under a header repeating the tab's own name,
+in a button shape where all five sibling blocks on the page use a plain label. It is a label now.
+While extracting that label I created the same shadowing bug I had just fixed in annotations — a
+second `SectionLabel` inside `materials`, three files from the first — so there is one
+`materials/components/SectionLabel` with an optional icon and a `tone`, read by `PiecePage`,
+`RehearsalDock` and the text block.
+
+**Uppercase on a date, and tracking on padded figures.** `UserLocalClock` held the two widest
+letter-spacings in the tree (`0.4em` / `0.2em`). The second was on `dd.MM.yyyy` — an `uppercase`
+declaration that can never do anything to digits and dots, plus 0.2em of tracking on `tabular-nums`
+figures, which is the exact mistake `DualTimeDisplay` carries a comment forbidding *in the same
+directory* ("Tracking on top of padded digits reads as stretched"). One file knew and the file
+beside it did not. The zone is an `Eyebrow`; the date is a `Text`, because a date is figures, not a
+label.
+
+**The attendance trio, decided rather than swept.** `MyAttendancePanel` prints obecności /
+spóźnienia / nieobecności, all three at 0 for a clean singer, which is superficially the
+"never state the resting default" bug that `ReliabilityBoard` was fixed for. It is not, and the
+zeros stay: this is one person's own card, not forty rows to triage, so there is no exception for a
+zero to bury, and the three **partition** the census stated beside them (*na podstawie N prób*) —
+hiding them breaks arithmetic the reader can do. The real defect was the colour. The card's own doc
+comment argues that a dip is not a failure and removes crimson from the ring, then leaves
+`text-ethereal-crimson` on the absence tile two lines below: the fix had stopped halfway, and a
+singer with a perfect record still got the panel's alarm colour painted on a zero. The trio also
+had a private status palette (sage/incense/crimson) that disagreed with `ATTENDANCE_STATUS_META` on
+LATE. Neither survives — **a count over a season is a measurement, not a roll-call record**, so the
+icon says which fact it is, the figures spend no colour, and only the absences take a tone, from
+the same `attendanceRateTone` the ring above them reads. One card, one scale, no contradiction.
+
+**Also fixed.** `NextEventHero` hand-rolled five chips in one file — two at the top for the concert
+hero, three below for the rehearsal hero — each an `Eyebrow` in a `rounded-md` box on the wrong
+corner of the radius scale, one of them re-implementing `Badge`'s `pulse` as a raw `animate-ping`.
+All five are `Badge`; the pulse survives because a rehearsal actually under way is the rare state
+that expires within the hour. `AnnotationOverlay`'s note composer drew its own field surface
+(`border-ethereal-ink/15` plus a hand-picked focus border), which was the `/15` the hairline recipe
+could not see — it is `fieldShellVariants` now, so it cannot drift into a second gold.
+`ReadinessControl` and `VoiceMixerPanel`'s preset tiles took the role for their labels and stepped
+onto the radius scale. `CommandPalette`'s header rule became a `Divider`.
+
+**Declined.** A blanket raw-`<span>`/`<p>` conversion of the dark PDF chrome (`AnnotationSidebar`,
+`RehearsalDock`, `AnnotationToolbar`). CLAUDE.md forbids raw typography and these files are full of
+it, but outside the overlines — the role this project exists to defend — the remainder is inline
+mechanical markup carrying no typographic role, and converting ~30 of them is churn with real
+regression risk and no finding behind it. The overlines and the two panel titles are done; the rest
+is noted here rather than done quietly.
+
+**i18n.** 1 key added (`schedule.card.tabs_aria`), 1 corrected
+(`materials.piece.lyrics_translation` — Polish had a mid-phrase capital, *Tekst i Tłumaczenie*),
+across pl/en/fr. No keys retired; the ~120 dead `archive.*` keys remain the i18n sweep's job.

@@ -11,7 +11,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { ExternalLink } from "lucide-react";
 
-import { Caption, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface WorkIdentifiersGridProps {
   readonly opus_catalog?: string | null;
@@ -35,48 +35,50 @@ export const WorkIdentifiersGrid = ({
     <dl className="grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2">
       {opus_catalog && (
         <div>
-          <Caption color="muted" className="block">
+          <Eyebrow as="dt" color="muted" className="block">
             {t("repertoire.identifiers.opus", "Opus / Katalog")}
-          </Caption>
-          <Text size="sm" weight="semibold">
+          </Eyebrow>
+          <Text as="dd" size="sm" weight="semibold">
             {opus_catalog}
           </Text>
         </div>
       )}
       {musical_key && (
         <div>
-          <Caption color="muted" className="block">
+          <Eyebrow as="dt" color="muted" className="block">
             {t("repertoire.identifiers.key", "Tonacja")}
-          </Caption>
-          <Text size="sm" weight="semibold">
+          </Eyebrow>
+          <Text as="dd" size="sm" weight="semibold">
             {musical_key}
           </Text>
         </div>
       )}
       {text_source && (
         <div className="sm:col-span-2">
-          <Caption color="muted" className="block">
+          <Eyebrow as="dt" color="muted" className="block">
             {t("repertoire.identifiers.text_source", "Źródło tekstu")}
-          </Caption>
-          <Text size="sm" weight="semibold">
+          </Eyebrow>
+          <Text as="dd" size="sm" weight="semibold">
             {text_source}
           </Text>
         </div>
       )}
       {mbid_work && (
         <div className="sm:col-span-2">
-          <Caption color="muted" className="block">
+          <Eyebrow as="dt" color="muted" className="block">
             {t("repertoire.identifiers.mbid", "MusicBrainz Work")}
-          </Caption>
-          <a
-            href={`https://musicbrainz.org/work/${mbid_work}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 font-mono text-xs text-ethereal-gold hover:underline"
-          >
-            {mbid_work}
-            <ExternalLink size={11} aria-hidden="true" />
-          </a>
+          </Eyebrow>
+          <dd>
+            <a
+              href={`https://musicbrainz.org/work/${mbid_work}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 font-mono text-xs text-ethereal-gold hover:underline"
+            >
+              {mbid_work}
+              <ExternalLink size={11} aria-hidden="true" />
+            </a>
+          </dd>
         </div>
       )}
     </dl>

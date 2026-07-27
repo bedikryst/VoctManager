@@ -1,41 +1,33 @@
 /**
  * @file ResonancePillar.tsx
- * @description A kinetically animated, variant-driven acoustic equalizer bar.
- * Uses CVA to strictly type vocal ranges to their respective Ethereal tokens.
+ * @description One column of the ensemble-balance equaliser: a hairline track,
+ * a bar that grows into it on mount, its figure and its label.
+ *
+ * Colour comes from the caller's taxonomy through `accents.ts`, never from a
+ * table here. This file used to type its own — S gold, A amethyst, T sage, B
+ * incense — while `voiceSections.ts` had settled on S incense, A amethyst, T
+ * gold, B sage, so three of the four voices were one colour on the manager's
+ * dashboard and a different one on the roster two clicks away. Nobody chose
+ * that; two private copies of one table did.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/ResonancePillar
  */
 
 import React from "react";
 import { motion } from "framer-motion";
-import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/shared/lib/utils";
+import { ACCENT_BAR, type EtherealAccent } from "@/shared/ui/primitives/accents";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 const EtherealEasing = [0.16, 1, 0.3, 1] as const;
 
-// Strict typing for SATB variants. Prevents arbitrary color injections.
-export const pillarVariants = cva(
-  "w-full rounded-full transition-all duration-700 group-hover:w-[4px] group-hover:-ml-[1px]",
-  {
-    variants: {
-      voice: {
-        S: "bg-ethereal-gold shadow-[0_0_16px_rgba(194,168,120,0.6)]",
-        A: "bg-ethereal-amethyst shadow-[0_0_16px_rgba(155,138,164,0.6)]",
-        T: "bg-ethereal-sage shadow-[0_0_16px_rgba(143,154,138,0.6)]",
-        B: "bg-ethereal-incense shadow-[0_0_16px_rgba(166,146,121,0.6)]",
-      },
-    },
-    defaultVariants: {
-      voice: "S",
-    },
-  },
-);
-
-interface ResonancePillarProps extends VariantProps<typeof pillarVariants> {
+interface ResonancePillarProps {
   value: number;
   heightPercentage: string;
   delayIndex: number;
   label: string;
+  /** The accent this category claims — see `accents.ts`. */
+  accent: EtherealAccent;
 }
 
 export function ResonancePillar({
@@ -43,18 +35,25 @@ export function ResonancePillar({
   heightPercentage,
   delayIndex,
   label,
-  voice,
+  accent,
 }: ResonancePillarProps): React.JSX.Element {
   return (
     <div
       className="group relative flex h-full w-12 flex-col items-center justify-end"
       role="listitem"
     >
-      <span className="absolute -top-6 text-[11px] font-regular text-ethereal-ink opacity-0 transition-opacity duration-500 group-hover:opacity-100 tabular-nums">
+      {/* The figure stays visible. It was `opacity-0 group-hover:opacity-100`,
+          which on a phone meant the chart had no numbers at all. */}
+      <Text
+        as="span"
+        size="xs"
+        color="graphite"
+        className="absolute -top-6 tabular-nums"
+      >
         {value}
-      </span>
+      </Text>
 
-      <div className="relative flex h-full w-[2px] flex-col justify-end overflow-visible rounded-full bg-ethereal-incense/10">
+      <div className="relative flex h-full w-0.5 flex-col justify-end overflow-visible rounded-full bg-hairline">
         <motion.div
           initial={{ height: "0%" }}
           animate={{ height: heightPercentage }}
@@ -63,14 +62,17 @@ export function ResonancePillar({
             delay: 0.4 + delayIndex * 0.1, // Staggering
             ease: EtherealEasing,
           }}
-          className={cn(pillarVariants({ voice }))}
+          className={cn(
+            "w-full rounded-full transition-[width,margin] duration-700 group-hover:-ml-px group-hover:w-1",
+            ACCENT_BAR[accent],
+          )}
           aria-hidden="true"
         />
       </div>
 
-      <span className="mt-3 text-[12px] font-medium text-ethereal-graphite/60 transition-colors duration-500 group-hover:text-ethereal-ink">
+      <Caption className="mt-3 transition-colors duration-500 group-hover:text-ethereal-ink">
         {label}
-      </span>
+      </Caption>
     </div>
   );
 }

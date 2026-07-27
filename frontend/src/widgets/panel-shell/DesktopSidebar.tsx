@@ -285,8 +285,6 @@ export const DesktopSidebar = ({
                     <div className="absolute left-4 top-1 whitespace-nowrap">
                       <Eyebrow
                         color="muted"
-                        size="caption"
-                        className="tracking-[0.12em]"
                       >
                         {t(group.labelKey)}
                       </Eyebrow>
@@ -368,7 +366,7 @@ export const DesktopSidebar = ({
           {/* ---- Footer: identity + actions ---- */}
           <div className="mt-auto shrink-0 z-10 w-full relative pt-4 flex flex-col gap-3">
             <Divider
-              variant="fade"
+              variant="gradient-fade"
               position="absolute-top"
               className="opacity-50"
             />
@@ -409,7 +407,7 @@ export const DesktopSidebar = ({
                 </Label>
                 <Eyebrow
                   color="incense"
-                  size="xs"
+                  size="overline-sm"
                   className="truncate block opacity-80 leading-tight mt-0.5"
                 >
                   {roleLabel}

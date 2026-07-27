@@ -14,6 +14,7 @@ import { ArrowUpRight } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Divider } from "@/shared/ui/primitives/Divider";
+import { Heading } from "@/shared/ui/primitives/typography";
 
 const EtherealEasing = [0.16, 1, 0.3, 1] as const;
 
@@ -60,7 +61,7 @@ export function ArtifactCard({
   if (isLoading) {
     return (
       <div
-        className="h-full min-h-[400px] w-full rounded-[2.5rem] bg-ethereal-incense/5 animate-pulse"
+        className="h-full min-h-[400px] w-full rounded-surface bg-ethereal-incense/5 animate-pulse"
         aria-busy="true"
       />
     );
@@ -79,7 +80,7 @@ export function ArtifactCard({
       {/* 1. SEMANTIC OVERLAY LINK */}
       <Link
         to={to}
-        className="absolute inset-0 z-10 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 rounded-[2.5rem]"
+        className="absolute inset-0 z-10 outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50 rounded-surface"
         aria-label={ariaLabel}
       />
 
@@ -110,9 +111,14 @@ export function ArtifactCard({
           </motion.div>
         )}
 
-        <h2 className="mb-6 max-w-2xl font-serif text-2xl lg:text-3xl leading-[1.05] tracking-tight text-ethereal-ink xl:text-4xl">
+        <Heading
+          as="h2"
+          size="4xl"
+          weight="normal"
+          className="mb-6 max-w-2xl leading-[1.05]"
+        >
           {title}
-        </h2>
+        </Heading>
 
         {subtitleSlot && (
           <motion.div
@@ -127,7 +133,7 @@ export function ArtifactCard({
 
       {/* 4. ARTIFACT STRATUM (Metrics via MetricBlock) */}
       <div className="relative z-10 grid h-auto md:h-full grid-cols-3 overflow-hidden pointer-events-none">
-        <Divider variant="fade" position="absolute-top" />
+        <Divider variant="gradient-fade" position="absolute-top" />
 
         {metrics.map((metric, index) => (
           <div key={metric.id} className="relative">

@@ -18,7 +18,7 @@ import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
-import { Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 export interface AutosaveStatusProps {
   /** True while at least one autosave mutation for this surface is in flight. */
@@ -75,7 +75,7 @@ export const AutosaveStatus = ({
           exit={{ y: 60, opacity: 0, x: "-50%" }}
           transition={SPRING}
           className={cn(
-            "pointer-events-none fixed bottom-dock left-1/2 z-(--z-toast)",
+            "pointer-events-none fixed bottom-dock left-1/2 z-dock-bar",
             className,
           )}
         >
@@ -84,7 +84,7 @@ export const AutosaveStatus = ({
             padding="none"
             isHoverable={false}
             className={cn(
-              "rounded-full px-4 py-2",
+              "rounded-control px-4 py-2",
               isSavingPhase
                 ? "border-ethereal-gold/30"
                 : "border-ethereal-sage/30",
@@ -105,18 +105,14 @@ export const AutosaveStatus = ({
                 aria-hidden="true"
               />
             )}
-            <Text
-              size="xs"
-              weight="bold"
-              className={cn(
-                "uppercase tracking-widest",
-                isSavingPhase ? "text-ethereal-graphite" : "text-ethereal-sage",
-              )}
+            <Eyebrow
+              size="overline-sm"
+              color={isSavingPhase ? "graphite" : "sage"}
             >
               {isSavingPhase
                 ? t("common.autosave.saving", "Zapisywanie…")
                 : t("common.autosave.saved", "Zapisano")}
-            </Text>
+            </Eyebrow>
           </GlassCard>
         </motion.div>
       )}

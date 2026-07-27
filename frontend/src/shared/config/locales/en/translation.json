@@ -1319,6 +1319,9 @@
     "editor_action_bar": {
       "unsaved": "Unsaved changes"
     },
+    "inline_edit": {
+      "open": "{{label}} (click to edit)"
+    },
     "error_occurred": "An error occurred",
     "error_saving": "Error saving",
     "errors": {
@@ -2484,7 +2487,7 @@
       "encore_badge": "Encore",
       "listen_reference_featured": "Best · {{label}}",
       "lyrics_ipa": "Pronunciation (IPA)",
-      "lyrics_translation": "Lyrics and Translation",
+      "lyrics_translation": "Lyrics and translation",
       "no_divisi": "No voice division defined.",
       "no_notes": "The conductor has not added any special notes.",
       "no_pdf": "Sheet music unavailable",
@@ -4030,17 +4033,6 @@
       "opus": "Opus / Catalogue",
       "text_source": "Text source"
     },
-    "lyrics": {
-      "ipa": "IPA · pronunciation",
-      "singable": "singable",
-      "translation": "Translation · {{lang}}"
-    },
-    "movements": {
-      "page_short": "p. {{page}}"
-    },
-    "program_notes": {
-      "approved": "approved"
-    },
     "status": {
       "awaiting": "Awaiting review",
       "enriching": "Finding sources",
@@ -4097,6 +4089,7 @@
       "run_sheet_untitled": "Schedule item",
       "score_pdf_label": "Score / Program",
       "score_pdf_modal_title": "Concert Score",
+      "tabs_aria": "Event sections",
       "tab": {
         "logistics": "Logistics",
         "setlist": "Repertoire"

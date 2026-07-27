@@ -27,7 +27,9 @@ export interface CheckboxProps
 }
 
 const sizeClasses: Record<Size, string> = {
-  sm: "h-4 w-4 rounded",
+  // One control, one corner. `sm` was on stock `rounded` (4px) and `md` on
+  // the chip token, so the same checkbox had two shapes depending on size.
+  sm: "h-4 w-4 rounded-chip",
   md: "h-5 w-5 rounded-chip",
 };
 
@@ -113,7 +115,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         <span
           aria-hidden="true"
           className={cn(
-            "pointer-events-none absolute -inset-1 rounded-[10px] ring-2 ring-ethereal-gold/40 ring-offset-1 opacity-0 transition-opacity",
+            "pointer-events-none absolute -inset-1 rounded-control ring-2 ring-ethereal-gold/40 ring-offset-1 opacity-0 transition-opacity",
             "peer-focus-visible:opacity-100",
           )}
         />

@@ -38,7 +38,7 @@ export const buttonVariants = cva(
         // `touch` guarantees a >=44px hit area for thumb-driven primary actions
         // (schedule RSVP, sheet footers) without shrinking the type like `sm`.
         touch: "min-h-11 px-5 py-3",
-        lg: "px-8 py-3.5 text-[12px]",
+        lg: "px-8 py-3.5 text-xs",
         // 44px, not 40: an icon-only control is the smallest target on the
         // screen and has no label to widen it, so it is exactly where the touch
         // floor matters most.
@@ -63,6 +63,15 @@ export interface ButtonProps
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  /**
+   * Render the styling onto the caller's own element (a `Link`, an `<a>`) via
+   * Radix `Slot`. The icon and loading slots keep working: the composition is
+   * cloned INTO that element rather than being dropped, which is what used to
+   * happen — ten link-buttons across archive, projects and schedule asked for a
+   * back arrow or an external-link glyph and rendered none of it, silently,
+   * because `Slot` only forwards props and the caller's child owned the
+   * children. A prop a component accepts and then ignores is a prop that lies.
+   */
   asChild?: boolean;
 }
 
@@ -86,6 +95,57 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button";
     const isDisabled = isLoading || disabled;
 
+    // Only a plain-text label can be truncated, and only a plain-text label is
+    // safe inside a text box: Preflight sets `svg { display: block }`, so a
+    // caller who composed its own children — every `asChild` link that puts a
+    // glyph next to its text — got that glyph laid out as a block, on its own
+    // line above the label. A composed label gets a flex row of its own instead,
+    // so it stays ONE item of the button's row and the icon slots keep their
+    // spacing.
+    const isPlainText = (node: React.ReactNode): boolean =>
+      typeof node === "string" || typeof node === "number";
+
+    const compose = (label: React.ReactNode): React.JSX.Element => (
+      <>
+        {isLoading && (
+          <Loader2
+            size={14}
+            strokeWidth={1.5}
+            className="animate-spin text-current shrink-0"
+            aria-hidden="true"
+          />
+        )}
+        {!isLoading && leftIcon && (
+          <span className="shrink-0" aria-hidden="true">
+            {leftIcon}
+          </span>
+        )}
+        {isPlainText(label) ? (
+          <span className="truncate">{label}</span>
+        ) : (
+          <span className="inline-flex min-w-0 items-center gap-2">{label}</span>
+        )}
+        {!isLoading && rightIcon && (
+          <span className="shrink-0" aria-hidden="true">
+            {rightIcon}
+          </span>
+        )}
+      </>
+    );
+
+    const slotted = asChild
+      ? (() => {
+          const child = React.Children.only(children) as React.ReactElement<{
+            children?: React.ReactNode;
+          }>;
+          return React.cloneElement(
+            child,
+            undefined,
+            compose(child.props.children),
+          );
+        })()
+      : null;
+
     return (
       <Comp
         ref={ref}
@@ -94,31 +154,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         aria-disabled={isDisabled}
         {...props}
       >
-        {asChild ? (
-          children
-        ) : (
-          <>
-            {isLoading && (
-              <Loader2
-                size={14}
-                strokeWidth={1.5}
-                className="animate-spin text-current shrink-0"
-                aria-hidden="true"
-              />
-            )}
-            {!isLoading && leftIcon && (
-              <span className="shrink-0" aria-hidden="true">
-                {leftIcon}
-              </span>
-            )}
-            <span className="truncate">{children}</span>
-            {!isLoading && rightIcon && (
-              <span className="shrink-0" aria-hidden="true">
-                {rightIcon}
-              </span>
-            )}
-          </>
-        )}
+        {asChild ? slotted : compose(children)}
       </Comp>
     );
   },

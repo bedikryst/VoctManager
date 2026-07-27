@@ -1319,6 +1319,9 @@
     "editor_action_bar": {
       "unsaved": "Modifications non enregistrées"
     },
+    "inline_edit": {
+      "open": "{{label}} (cliquer pour modifier)"
+    },
     "error_occurred": "Une erreur est survenue",
     "error_saving": "Erreur lors de l'enregistrement",
     "errors": {
@@ -4031,17 +4034,6 @@
       "opus": "Opus / Catalogue",
       "text_source": "Source du texte"
     },
-    "lyrics": {
-      "ipa": "IPA · prononciation",
-      "singable": "chantable",
-      "translation": "Traduction · {{lang}}"
-    },
-    "movements": {
-      "page_short": "p. {{page}}"
-    },
-    "program_notes": {
-      "approved": "approuvée"
-    },
     "status": {
       "awaiting": "En attente de révision",
       "enriching": "Recherche de sources",
@@ -4098,6 +4090,7 @@
       "run_sheet_untitled": "Élément du programme",
       "score_pdf_label": "Partition / Programme",
       "score_pdf_modal_title": "Partition du concert",
+      "tabs_aria": "Sections de l’événement",
       "tab": {
         "logistics": "Logistique",
         "setlist": "Répertoire"

@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { cva, type VariantProps } from "class-variance-authority";
 import { formatLocalizedTime } from "@/shared/lib/time/intl";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 
 const containerVariants = cva("flex transition-colors duration-300", {
@@ -258,16 +259,14 @@ export const DualTimeDisplay = ({
         )}
 
         {label && (
-          <span
-            className={cn(
-              "font-sans text-[10px] font-bold uppercase tracking-widest mr-1 self-center",
-              variant === "dark"
-                ? "text-ethereal-parchment/60"
-                : "text-ethereal-graphite/70",
-            )}
+          <Eyebrow
+            as="span"
+            size="overline-sm"
+            color={variant === "dark" ? "parchment-muted" : "muted"}
+            className="mr-1 self-center"
           >
             {label}
-          </span>
+          </Eyebrow>
         )}
 
         <time

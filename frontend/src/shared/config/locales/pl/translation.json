@@ -1320,6 +1320,9 @@
     "editor_action_bar": {
       "unsaved": "Niezapisane zmiany"
     },
+    "inline_edit": {
+      "open": "{{label}} (kliknij, aby edytować)"
+    },
     "error_occurred": "Wystąpił błąd",
     "error_saving": "Błąd podczas zapisywania",
     "errors": {
@@ -2485,7 +2488,7 @@
       "encore_badge": "Bis",
       "listen_reference_featured": "Najlepsze · {{label}}",
       "lyrics_ipa": "Wymowa (IPA)",
-      "lyrics_translation": "Tekst i Tłumaczenie",
+      "lyrics_translation": "Tekst i tłumaczenie",
       "no_divisi": "Brak zdefiniowanego podziału głosów.",
       "no_notes": "Dyrygent nie dodał specjalnych uwag.",
       "no_pdf": "Nuty niedostępne",
@@ -4048,17 +4051,6 @@
       "opus": "Opus / Katalog",
       "text_source": "Źródło tekstu"
     },
-    "lyrics": {
-      "ipa": "IPA · wymowa",
-      "singable": "śpiewalne",
-      "translation": "Tłumaczenie · {{lang}}"
-    },
-    "movements": {
-      "page_short": "s. {{page}}"
-    },
-    "program_notes": {
-      "approved": "zatwierdzona"
-    },
     "status": {
       "awaiting": "Czeka na przegląd",
       "enriching": "Wyszukiwanie źródeł",
@@ -4115,6 +4107,7 @@
       "run_sheet_untitled": "Punkt harmonogramu",
       "score_pdf_label": "Partytura / Program",
       "score_pdf_modal_title": "Partytura Koncertu",
+      "tabs_aria": "Sekcje wydarzenia",
       "tab": {
         "logistics": "Logistyka",
         "setlist": "Repertuar"

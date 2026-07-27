@@ -12,7 +12,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { formatInTimeZone } from "date-fns-tz";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { Label, Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 export const UserLocalClock = (): React.JSX.Element | null => {
   const { user } = useAuth();
@@ -60,23 +60,25 @@ export const UserLocalClock = (): React.JSX.Element | null => {
     >
       {/* UPPER STRATUM: The Marginalia (Tempo & Location) */}
       <div className="mb-1.5 flex items-center gap-3 pr-1 opacity-50 transition-all duration-700 ease-[0.16,1,0.3,1] group-hover:opacity-100 group-hover:-translate-y-0.5">
-        <Label
-          as="span"
-          className="text-[9px] font-bold uppercase leading-none tracking-[0.4em] text-ethereal-graphite"
-        >
+        <Eyebrow as="span" color="graphite" size="overline-sm">
           {displayZone}
-        </Label>
+        </Eyebrow>
         {/* Sacral Golden Thread */}
         <span
           className="h-px w-6 bg-linear-to-r from-transparent via-ethereal-gold/50 to-transparent"
           aria-hidden="true"
         />
-        <Label
+        {/* The date is figures, so it reads as a date rather than a label —
+            tabular, at the same rank as the zone beside it. */}
+        <Text
           as="span"
-          className="text-[9px] font-bold uppercase leading-none tracking-[0.2em] text-ethereal-graphite/80"
+          size="xs"
+          color="graphite"
+          weight="medium"
+          className="leading-none tabular-nums"
         >
           {date}
-        </Label>
+        </Text>
       </div>
 
       {/* CORE STRATUM: Deconstructed Chronometry */}

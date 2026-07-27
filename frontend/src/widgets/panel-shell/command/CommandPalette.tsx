@@ -24,6 +24,7 @@ import { CornerDownLeft, Search, Star, X } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import type { AuthUser } from "@/shared/auth/auth.types";
+import { Divider } from "@/shared/ui/primitives/Divider";
 import { Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
@@ -199,19 +200,17 @@ export const CommandPalette = ({
 
         {item.isCurrent ? (
           <Eyebrow
-            size="caption"
             color="gold"
             weight="medium"
-            className="shrink-0 tracking-[0.16em]"
+            className="shrink-0"
           >
             {t("dashboard.layout.command.current", "Tutaj")}
           </Eyebrow>
         ) : (
           item.hint && (
             <Eyebrow
-              size="caption"
               color="muted"
-              className="shrink-0 tabular-nums tracking-[0.08em]"
+              className="shrink-0 tabular-nums"
             >
               {item.hint}
             </Eyebrow>
@@ -263,7 +262,7 @@ export const CommandPalette = ({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-toast flex justify-center px-4 pt-[14vh]"
+          className="fixed inset-0 z-focus-trap flex justify-center px-4 pt-[14vh]"
           role="presentation"
         >
           <motion.div
@@ -323,7 +322,7 @@ export const CommandPalette = ({
               </button>
             </div>
 
-            <div className="h-px shrink-0 bg-ethereal-graphite/10" />
+            <Divider className="shrink-0" />
 
             <div
               ref={listRef}
@@ -334,7 +333,7 @@ export const CommandPalette = ({
                   <Label size="sm" weight="medium" color="graphite">
                     {t("dashboard.layout.command.no_results", "Brak wyników")}
                   </Label>
-                  <Eyebrow size="caption" color="muted">
+                  <Eyebrow color="muted">
                     {t(
                       "dashboard.layout.command.no_results_hint",
                       "Spróbuj innej frazy",
@@ -345,10 +344,9 @@ export const CommandPalette = ({
                 sections.map((section) => (
                   <div key={section.id} className="mb-1.5 last:mb-0">
                     <Eyebrow
-                      size="caption"
                       color="muted"
                       weight="medium"
-                      className="block px-3 pb-1 pt-2 tracking-[0.18em]"
+                      className="block px-3 pb-1 pt-2"
                     >
                       {t(section.titleKey)}
                     </Eyebrow>
@@ -365,20 +363,20 @@ export const CommandPalette = ({
                 <span className="flex items-center gap-1.5">
                   <KbdHint>↑</KbdHint>
                   <KbdHint>↓</KbdHint>
-                  <Eyebrow size="caption" color="muted">
+                  <Eyebrow color="muted">
                     {t("dashboard.layout.command.hint_move", "nawigacja")}
                   </Eyebrow>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <KbdHint>↵</KbdHint>
-                  <Eyebrow size="caption" color="muted">
+                  <Eyebrow color="muted">
                     {t("dashboard.layout.command.hint_select", "przejdź")}
                   </Eyebrow>
                 </span>
               </div>
               <span className="flex items-center gap-1.5">
                 <KbdHint>esc</KbdHint>
-                <Eyebrow size="caption" color="muted">
+                <Eyebrow color="muted">
                   {t("dashboard.layout.command.hint_close", "zamknij")}
                 </Eyebrow>
               </span>

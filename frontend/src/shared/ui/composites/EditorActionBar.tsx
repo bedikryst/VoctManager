@@ -83,7 +83,7 @@ export const EditorActionBar = ({
           exit={{ y: 100, opacity: 0, x: "-50%" }}
           transition={SPRING}
           className={cn(
-            "fixed bottom-dock left-1/2 z-(--z-toast) w-[min(92vw,32rem)]",
+            "fixed bottom-dock left-1/2 z-dock-bar w-[min(92vw,32rem)]",
             className,
           )}
         >

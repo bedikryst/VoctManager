@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Divider } from "@/shared/ui/primitives/Divider";
 import { Text } from "@/shared/ui/primitives/typography";
 
 interface PdfBottomNavProps {
@@ -63,7 +64,7 @@ export const PdfBottomNav = ({
           <ChevronRight size={18} aria-hidden="true" />
         </Button>
 
-        <div className="mx-1 h-5 w-px bg-white/15" />
+        <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-5" />
 
         <Button
           variant="ghost"

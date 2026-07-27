@@ -22,6 +22,9 @@ import { Check, Loader2, Pencil, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
+import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
+import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 type InlineEditableValue = string | number | null;
 
@@ -104,12 +107,16 @@ export const InlineEditable = ({
         await onSave(trimmed);
         exit();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Błąd zapisu");
+        // `err.message` on a rejected request is the transport's own sentence
+        // ("Request failed with status code 400"), in the transport's own
+        // language. The toolkit picks the words; a raw message is always
+        // truthy, so passing it through is how a fallback key goes unreachable.
+        setError(resolveErrorCopy(parseApiError(err), t).detail);
       } finally {
         setIsSaving(false);
       }
     },
-    [exit, onSave, validate, value],
+    [exit, onSave, t, validate, value],
   );
 
   const displayText = value == null || value === "" ? emptyDisplay ?? "—" : String(value);
@@ -124,7 +131,10 @@ export const InlineEditable = ({
           event.stopPropagation();
           if (!disabled) setIsEditing(true);
         }}
-        aria-label={`${ariaLabel} (kliknij by edytować)`}
+        aria-label={t("common.inline_edit.open", {
+          defaultValue: "{{label}} (kliknij, aby edytować)",
+          label: ariaLabel,
+        })}
         className={cn(
           "group/edit inline-flex items-baseline gap-1.5 rounded-chip py-0.5 text-left transition-colors",
           !disabled && "hover:bg-ethereal-gold/10 hover:text-ethereal-ink cursor-text",
@@ -134,7 +144,11 @@ export const InlineEditable = ({
           className,
         )}
       >
-        <span>{displayText}</span>
+        {/* `size`/`color` stay unset: the wrapping button owns them through the
+            `variant` axis, so the label reads at whatever scale it sits in. */}
+        <Text as="span" size={null} color="inherit">
+          {displayText}
+        </Text>
         <Pencil
           size={11}
           aria-hidden="true"
@@ -172,10 +186,13 @@ export const InlineEditable = ({
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-invalid={error !== null}
+        // The surface comes from the shell like every other field in the
+        // product (D4) — this was the last hand-rolled copy of the gold
+        // hairline and the focus ring, and it had drifted to a 1px ring on a
+        // chip radius. Only layout and the local type scale are added here.
         className={cn(
-          "rounded-chip border border-ethereal-gold/40 bg-ethereal-alabaster px-1.5 py-0.5 outline-none transition-colors",
-          "focus:border-ethereal-gold focus:ring-1 focus:ring-ethereal-gold/40",
-          error && "border-ethereal-crimson/60",
+          fieldShellVariants({ variant: "glass", hasError: Boolean(error) }),
+          "w-auto rounded-chip px-1.5 py-0.5",
           variant === "title" && "font-semibold text-base",
           variant === "subtle" && "text-xs",
           className,
@@ -204,17 +221,17 @@ export const InlineEditable = ({
         onClick={cancel}
         disabled={isSaving}
         aria-label={t("common.actions.cancel")}
-        className="flex h-6 w-6 items-center justify-center rounded-chip text-ethereal-graphite hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson"
+        // Discarding a draft is not destruction — the alarm colour belongs to
+        // the one thing on the screen that is actually wrong, which here is the
+        // validation message below.
+        className="flex h-6 w-6 items-center justify-center rounded-chip text-ethereal-graphite hover:bg-ethereal-incense/10 hover:text-ethereal-ink"
       >
         <X size={12} />
       </button>
       {error && (
-        <span
-          role="alert"
-          className="ml-1 text-[10px] font-medium text-ethereal-crimson"
-        >
+        <Caption role="alert" color="crimson" className="ml-1 font-medium">
           {error}
-        </span>
+        </Caption>
       )}
     </span>
   );

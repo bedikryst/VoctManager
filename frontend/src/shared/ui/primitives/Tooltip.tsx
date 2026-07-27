@@ -64,7 +64,7 @@ export const Tooltip = ({
               forceMount
               side={side}
               sideOffset={14}
-              className="z-[100] pointer-events-none"
+              className="z-popover pointer-events-none"
             >
               <motion.div
                 initial={INITIAL_PROPS[side]}

@@ -157,10 +157,9 @@ export const MobileNavSheet = ({
 
         {item.isCurrent && (
           <Eyebrow
-            size="caption"
             color="gold"
             weight="medium"
-            className="shrink-0 tracking-[0.16em]"
+            className="shrink-0"
           >
             {aura.t("dashboard.layout.command.current", "Tutaj")}
           </Eyebrow>
@@ -284,10 +283,9 @@ export const MobileNavSheet = ({
               </Label>
               <Eyebrow
                 color="incense"
-                size="caption"
                 weight="medium"
                 truncate
-                className="mt-0.5 block leading-tight tracking-[0.16em] opacity-80"
+                className="mt-0.5 block leading-tight opacity-80"
               >
                 {aura.roleLabel}
               </Eyebrow>
@@ -361,7 +359,7 @@ export const MobileNavSheet = ({
               <Label size="sm" weight="medium" color="graphite">
                 {aura.t("dashboard.layout.command.no_results", "Brak wyników")}
               </Label>
-              <Eyebrow size="caption" color="muted">
+              <Eyebrow color="muted">
                 {aura.t(
                   "dashboard.layout.command.no_results_hint",
                   "Spróbuj innej frazy",
@@ -372,10 +370,9 @@ export const MobileNavSheet = ({
             sections.map((section) => (
               <div key={section.id} className="mb-1 last:mb-0">
                 <Eyebrow
-                  size="caption"
                   color="muted"
                   weight="medium"
-                  className="block px-3 pb-1 pt-3 tracking-[0.18em]"
+                  className="block px-3 pb-1 pt-3"
                 >
                   {aura.t(section.titleKey)}
                 </Eyebrow>

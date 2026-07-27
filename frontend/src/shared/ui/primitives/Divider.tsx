@@ -12,17 +12,24 @@ const dividerVariants = cva("shrink-0 pointer-events-none", {
   variants: {
     variant: {
       solid: "bg-ethereal-incense/10",
+      // The same rule on the dark frosted chrome that floats over a score
+      // (`GlassCard variant="surface"`, the PDF toolbars). The warm `solid` is
+      // invisible on `ethereal-ink/70`, which is why both dark bars had drawn
+      // their own — one of them under a private component called `Divider`,
+      // shadowing this file's export in its own module.
+      "solid-dark": "bg-white/15",
       "gradient-right":
         "bg-gradient-to-r from-ethereal-incense/20 to-transparent",
       "gradient-bottom":
         "bg-gradient-to-b from-ethereal-incense/15 to-transparent",
+      // `fade` was a second name for this exact string — two spellings of one
+      // rule is how a divider ends up looking like two components.
       "gradient-fade":
         "bg-gradient-to-r from-transparent via-ethereal-incense/20 to-transparent",
-      fade: "bg-gradient-to-r from-transparent via-ethereal-incense/20 to-transparent",
     },
     orientation: {
-      horizontal: "h-[1px] w-full",
-      vertical: "w-[1px] h-full",
+      horizontal: "h-px w-full",
+      vertical: "w-px h-full",
     },
     position: {
       relative: "",

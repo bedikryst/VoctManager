@@ -44,6 +44,14 @@ interface SegmentedTabsProps<TId extends string> {
    * always keeps its words — an icon cannot say "Frekwencja".
    */
   iconOnly?: boolean;
+  /**
+   * `dark` is the same control on an ink surface — the concert sheet, and any
+   * other `BottomSheet tone="dark"`. It exists so a dark surface does not have
+   * to type its own track: the one that did also gave each segment a DIFFERENT
+   * active colour (gold for one tab, sage for the next), which spends the
+   * accent scale on saying something the label already says.
+   */
+  tone?: "light" | "dark";
 }
 
 export function SegmentedTabs<TId extends string>({
@@ -54,13 +62,18 @@ export function SegmentedTabs<TId extends string>({
   className,
   wrap = false,
   iconOnly = false,
+  tone = "light",
 }: SegmentedTabsProps<TId>): React.JSX.Element {
+  const isDark = tone === "dark";
   return (
     <div
       role="tablist"
       aria-label={ariaLabel}
       className={cn(
-        "flex w-full max-w-full gap-1 rounded-control border border-hairline-strong bg-ethereal-alabaster/70 p-1",
+        "flex w-full max-w-full gap-1 rounded-control border p-1",
+        isDark
+          ? "border-ethereal-incense/20 bg-ethereal-ink/40"
+          : "border-hairline-strong bg-ethereal-alabaster/70",
         iconOnly
           ? "inline-flex w-auto"
           : wrap
@@ -90,7 +103,9 @@ export function SegmentedTabs<TId extends string>({
                   ),
               isActive
                 ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
+                : isDark
+                  ? "text-ethereal-parchment/70 hover:bg-white/8 hover:text-ethereal-parchment"
+                  : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
             )}
           >
             {Icon && <Icon size={iconOnly ? 16 : 14} aria-hidden="true" />}
@@ -102,7 +117,7 @@ export function SegmentedTabs<TId extends string>({
             {!iconOnly && count !== undefined && (
               <span
                 className={cn(
-                  "rounded-chip px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                  "rounded-chip px-1.5 py-0.5 text-overline-sm font-semibold tabular-nums",
                   isActive
                     ? "bg-ethereal-ink/10 text-ethereal-ink"
                     : "bg-ethereal-ink/5 text-ethereal-graphite/70",

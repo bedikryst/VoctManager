@@ -139,7 +139,7 @@ export function ErrorScreen({
         animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "relative flex w-full max-w-md flex-col items-center gap-7 rounded-[28px] px-8 py-12 sm:px-12",
+          "relative flex w-full max-w-md flex-col items-center gap-7 rounded-surface px-8 py-12 sm:px-12",
           isFullscreen
             ? "border border-glass-border bg-glass-surface shadow-glass-ethereal backdrop-blur-[var(--blur-ethereal)]"
             : "border border-ethereal-gold/15 bg-ethereal-alabaster/70 shadow-glass-solid backdrop-blur-md",
@@ -153,9 +153,7 @@ export function ErrorScreen({
         </div>
 
         <div className="flex flex-col items-center gap-3">
-          <Eyebrow size="caption" color="incense" className="tracking-[0.28em]">
-            {eyebrow}
-          </Eyebrow>
+          <Eyebrow color="incense">{eyebrow}</Eyebrow>
           <Heading
             size={isFullscreen ? "3xl" : "2xl"}
             className="text-balance leading-tight text-ethereal-ink"
@@ -194,10 +192,15 @@ export function ErrorScreen({
 
         {import.meta.env.DEV && detail && (
           <details className="w-full max-w-full text-left">
-            <summary className="cursor-pointer select-none text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/50 transition-colors hover:text-ethereal-graphite">
+            <Eyebrow
+              as="summary"
+              size="overline-sm"
+              color="graphite"
+              className="cursor-pointer select-none transition-colors hover:text-ethereal-ink"
+            >
               {t("errors.detail_label", "Szczegóły techniczne")}
-            </summary>
-            <pre className="mt-3 max-h-56 overflow-auto rounded-control bg-ethereal-ink/[0.04] p-3 text-left font-mono text-[11px] leading-relaxed text-ethereal-graphite/80 ring-1 ring-ethereal-ink/5">
+            </Eyebrow>
+            <pre className="mt-3 max-h-56 overflow-auto rounded-control bg-ethereal-ink/[0.04] p-3 text-left font-mono text-[11px] leading-relaxed text-ethereal-graphite/80 ring-1 ring-hairline">
               {detail}
             </pre>
           </details>

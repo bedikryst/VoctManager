@@ -7,6 +7,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
+import { Eyebrow } from "@/shared/ui/primitives/typography";
 
 export interface EtherealLoaderProps {
   message?: string;
@@ -40,9 +41,12 @@ export function EtherealLoader({
         <div className="absolute w-12 h-12 border border-ethereal-gold/30 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
         <div className="w-2 h-2 bg-ethereal-gold rounded-full shadow-[0_0_10px_rgba(194,168,120,0.8)]" />
       </div>
-      <span className="text-[10px] uppercase font-bold tracking-[0.3em] text-ethereal-graphite animate-pulse">
+      {/* The mark carries the motion; the word carries the message. Pulsing the
+          text too said "working" a third time and dimmed the only readable
+          thing on the screen while it did. */}
+      <Eyebrow size="overline-sm" color="graphite">
         {message || defaultMessage}
-      </span>
+      </Eyebrow>
     </div>
   );
 }

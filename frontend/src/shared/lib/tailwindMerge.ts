@@ -57,7 +57,18 @@ export const etherealTwMerge = extendTailwindMerge({
       // A background IMAGE. Left in the colour group it and the surface's
       // background-colour would eat each other, in whichever order they met.
       "bg-image": ["bg-noise"],
-      z: [{ z: ["nav-dock", "nav-sheet", "focus-trap", "toast"] }],
+      z: [
+        {
+          z: [
+            "nav-dock",
+            "dock-bar",
+            "nav-sheet",
+            "focus-trap",
+            "popover",
+            "toast",
+          ],
+        },
+      ],
       // Nav-dock clearance: a real padding-bottom / bottom offset, and must
       // therefore be overridable by (and override) a stock one.
       pb: [{ pb: ["nav-dock"] }],

@@ -35,6 +35,11 @@ export const typographyVariants = cva("transition-colors duration-500", {
       // used on any other variant would carry none.
       overline: "text-overline",
       "overline-sm": "text-overline-sm",
+      // `Caption`'s own size, and nobody else's — it is the same 11px as
+      // `overline` but as an arbitrary value, so it brings no line-height. On
+      // the `caption` variant that is right (the compound below sets
+      // `leading-snug`); on an `Eyebrow` it silently dropped the role's 1.15,
+      // which is why `Eyebrow` no longer accepts it.
       caption: "text-[11px]",
       xs: "text-[10px]",
       sm: "text-xs",

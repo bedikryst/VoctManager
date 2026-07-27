@@ -537,7 +537,7 @@ export const PdfViewer = ({
                           loading={isVisible
                             ? <div className="flex min-h-[12rem] items-center justify-center py-8"><EtherealLoader /></div>
                             : null}
-                          className={cn("overflow-hidden rounded-[1.5rem] bg-white shadow-glass-ethereal", isCompactViewport && "rounded-[1.125rem]")}
+                          className={cn("overflow-hidden rounded-surface bg-white shadow-glass-ethereal", isCompactViewport && "rounded-nested")}
                         />
                       </div>
                     );
