@@ -1429,8 +1429,7 @@
       "col_role": "Rôle",
       "empty_filter": "Aucun élément pour le filtre choisi.",
       "missing": "{{n}} sans cachet",
-      "owed": "{{n}} à payer",
-      "settled": "Réglé"
+      "owed": "{{n}} à payer"
     },
     "loader": {
       "message": "Chargement des registres de règlement…"
@@ -1480,7 +1479,6 @@
       "mix": "{{cast}} distribution · {{crew}} équipe",
       "no_match": "Aucun projet ne correspond à cette recherche.",
       "search": "Rechercher un projet…",
-      "settled": "réglé",
       "title": "Projets"
     },
     "row": {
@@ -1756,12 +1754,13 @@
         "projects_title": "Gestion de projets"
       },
       "next_rehearsal_badge": "Prochaine répétition",
-      "perfect_attendance": "100% de présence",
+      "rehearsal_today_badge": "Répétition aujourd’hui",
+      "absences": "Absences : {{count}}",
       "pipeline": {
-        "complete": "complet",
         "empty": "Aucune production active. Il est temps de planifier le prochain concert.",
         "no_score": "Sans partition",
         "pending_short": "en attente",
+        "narrowed": "{{visible}} productions sur {{total}} — les plus proches par date.",
         "pieces": "{{count}} œuv.",
         "pieces_one": "{{count}} pièce",
         "pieces_few": "{{count}} pièces",
@@ -2815,6 +2814,8 @@
     },
     "title": "Notifications",
     "unread": "Non lues",
+    "unread_count_one": "{{count}} non lue",
+    "unread_count_other": "{{count}} non lues",
     "types": {
       "PROJECT_INVITATION": "Invitation",
       "PROJECT_UPDATED": "Mise à jour du projet",

@@ -269,7 +269,7 @@ export const AvatarEditorModal = ({
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-ethereal-incense/20 bg-ethereal-marble shadow-glass-solid"
+            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-surface border border-ethereal-incense/20 bg-ethereal-marble shadow-glass-solid"
             role="dialog"
             aria-modal="true"
           >
@@ -290,7 +290,7 @@ export const AvatarEditorModal = ({
                   {...getRootProps()}
                   onClick={open}
                   className={cn(
-                    "flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-12 text-center transition-colors",
+                    "flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-nested border-2 border-dashed px-6 py-12 text-center transition-colors",
                     isDragActive
                       ? "border-ethereal-gold bg-ethereal-gold/[0.06]"
                       : "border-ethereal-incense/30 hover:border-ethereal-gold/50 hover:bg-ethereal-alabaster/60",
@@ -310,7 +310,7 @@ export const AvatarEditorModal = ({
               ) : (
                 <>
                   <div
-                    className="relative touch-none overflow-hidden rounded-full border border-ethereal-ink/10 shadow-glass-solid"
+                    className="relative touch-none overflow-hidden rounded-full border border-hairline-strong shadow-glass-solid"
                     style={{ width: VIEWPORT, height: VIEWPORT }}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
@@ -355,7 +355,7 @@ export const AvatarEditorModal = ({
                       type="button"
                       onClick={reset}
                       title={t("settings.avatar.change_photo", "Zmień zdjęcie")}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ethereal-graphite/60 transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control text-ethereal-graphite/60 transition-colors hover:bg-ethereal-ink/4 hover:text-ethereal-ink"
                     >
                       <RotateCcw size={15} aria-hidden="true" />
                     </button>

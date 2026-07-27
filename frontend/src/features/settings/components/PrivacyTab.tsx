@@ -240,7 +240,7 @@ export const PrivacyTab = () => {
               )}
             </Text>
 
-            <div className="border-t border-ethereal-ink/10 pt-4 space-y-1.5">
+            <div className="border-t border-hairline-strong pt-4 space-y-1.5">
               <Input
                 type="password"
                 label={t(

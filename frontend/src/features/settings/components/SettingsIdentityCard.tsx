@@ -12,8 +12,11 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Camera } from "lucide-react";
 
+import { getSectionPresentation } from "@/features/artists/constants/voiceSections";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import type { UserMeDTO } from "../types/settings.dto";
 import { AvatarEditorModal } from "./AvatarEditorModal";
@@ -31,9 +34,6 @@ const ROLE_LABELS: Record<string, { key: string; fallback: string }> = {
   },
 };
 
-const chipClass =
-  "rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-ethereal-graphite";
-
 export const SettingsIdentityCard = ({
   user,
 }: SettingsIdentityCardProps): React.JSX.Element | null => {
@@ -50,6 +50,10 @@ export const SettingsIdentityCard = ({
         user.voice_type_display ?? user.voice_type,
       )
     : null;
+  // The voice reads through the shared category accent, so a soprano wears the
+  // same colour here as on the roster, in the welcome and on every other chip
+  // that names the same section. This card used to hard-code amethyst.
+  const voicePresentation = getSectionPresentation(user.voice_type ?? null);
   const avatarUrl = user.profile?.avatar_url ?? null;
 
   return (
@@ -78,20 +82,18 @@ export const SettingsIdentityCard = ({
         </div>
 
         {(role || voiceLabel) && (
-          <div className="mt-3.5 flex flex-wrap gap-1.5 border-t border-ethereal-ink/6 pt-3.5">
-            {role && (
-              <span
-                className={`${chipClass} border-ethereal-gold/30 bg-ethereal-gold/[0.08]`}
-              >
-                {t(role.key, role.fallback)}
-              </span>
-            )}
+          <div className="mt-3.5 flex flex-wrap gap-1.5 border-t border-hairline pt-3.5">
+            {role && <Badge variant="warning">{t(role.key, role.fallback)}</Badge>}
             {voiceLabel && (
-              <span
-                className={`${chipClass} border-ethereal-amethyst/30 bg-ethereal-amethyst/[0.08]`}
+              <Badge
+                variant={
+                  voicePresentation
+                    ? ACCENT_BADGE[voicePresentation.accent]
+                    : "outline"
+                }
               >
                 {voiceLabel}
-              </span>
+              </Badge>
             )}
           </div>
         )}

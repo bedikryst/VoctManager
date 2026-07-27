@@ -100,20 +100,20 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
             aria-modal="true"
             aria-labelledby={titleId}
             aria-describedby={descriptionId}
-            className="relative w-full max-w-md bg-ethereal-marble rounded-3xl shadow-glass-solid overflow-hidden border border-ethereal-incense/20"
+            className="relative w-full max-w-md bg-ethereal-marble rounded-surface shadow-glass-solid overflow-hidden border border-ethereal-incense/20"
           >
             <button
               type="button"
               onClick={onDismiss}
               disabled={isLoading}
               aria-label={t("common.actions.close")}
-              className="absolute top-4 right-4 p-2 rounded-lg text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-ethereal-parchment/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="absolute top-4 right-4 p-2 rounded-control text-ethereal-graphite/60 hover:text-ethereal-ink hover:bg-ethereal-parchment/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="px-7 pt-7 pb-2">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-ethereal-gold/30 via-ethereal-gold/10 to-transparent flex items-center justify-center mb-5 ring-1 ring-ethereal-gold/30">
+              <div className="w-14 h-14 rounded-control bg-gradient-to-br from-ethereal-gold/30 via-ethereal-gold/10 to-transparent flex items-center justify-center mb-5 ring-1 ring-ethereal-gold/30">
                 <BellRing className="w-6 h-6 text-ethereal-gold" />
               </div>
 
@@ -131,7 +131,7 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
             <ul className="px-7 py-5 space-y-3">
               {HIGHLIGHTS.map((item) => (
                 <li key={item.label} className="flex items-start gap-3">
-                  <span className="mt-0.5 p-1.5 rounded-lg bg-ethereal-parchment/50 text-ethereal-gold shrink-0">
+                  <span className="mt-0.5 p-1.5 rounded-chip bg-ethereal-parchment/50 text-ethereal-gold shrink-0">
                     {item.icon}
                   </span>
                   <div>

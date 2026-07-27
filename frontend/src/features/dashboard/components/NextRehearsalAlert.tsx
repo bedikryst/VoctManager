@@ -14,6 +14,7 @@ import { UserMinus } from "lucide-react";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "../../logistics/components/LocationPreview";
+import { resolveImminence } from "../../logistics/constants/eventImminence";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Label, Heading } from "@/shared/ui/primitives/typography";
@@ -46,6 +47,10 @@ export function NextRehearsalAlert({
 }: NextRehearsalAlertProps): React.JSX.Element {
   const { t } = useTranslation();
   const hasAbsences = (rehearsal.absent_count || 0) > 0;
+  // `pulse` is the panel's one "happening now" sweep, and this card is on screen
+  // for the whole fortnight before a rehearsal. It is spent on the day itself —
+  // gold, because the imminence taxonomy reserves crimson for an alarm.
+  const isToday = resolveImminence(new Date(rehearsal.date_time)) === "TODAY";
 
   return (
     <article className="relative w-full">
@@ -75,8 +80,13 @@ export function NextRehearsalAlert({
           <div className="flex w-full flex-col gap-4 lg:w-auto">
             {/* Header: Stacked on mobile, row on tablet+ */}
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-              <Badge variant="success" pulse>
-                {t("dashboard.admin.next_rehearsal_badge", "Next Rehearsal")}
+              <Badge
+                variant={isToday ? "warning" : "neutral"}
+                pulse={isToday}
+              >
+                {isToday
+                  ? t("dashboard.admin.rehearsal_today_badge", "Próba dziś")
+                  : t("dashboard.admin.next_rehearsal_badge", "Najbliższa próba")}
               </Badge>
               <Heading
                 as="h3"
@@ -147,19 +157,19 @@ export function NextRehearsalAlert({
               <Divider orientation="vertical" variant="gradient-fade" />
             </div>
 
-            <div className="flex w-full items-center justify-between lg:w-auto lg:justify-end lg:gap-4">
-              {hasAbsences ? (
+            <div className="flex w-full items-center justify-end gap-4 lg:w-auto">
+              {/* Only the shortfall speaks. "100% frekwencji" on a rehearsal
+                  nobody has answered yet was a claim about the future, and on a
+                  healthy ensemble it sat on the card every single day. */}
+              {hasAbsences && (
                 <Badge
+                  className="mr-auto"
                   variant="danger"
                   icon={<UserMinus size={12} aria-hidden="true" />}
                 >
-                  {t("dashboard.admin.absences", "Absences: {{count}}", {
+                  {t("dashboard.admin.absences", "Nieobecni: {{count}}", {
                     count: rehearsal.absent_count,
                   })}
-                </Badge>
-              ) : (
-                <Badge variant="success">
-                  {t("dashboard.admin.perfect_attendance", "100% Attendance")}
                 </Badge>
               )}
 

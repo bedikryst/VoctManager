@@ -47,7 +47,7 @@ export function ContractLedger({
 
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false}>
-      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ethereal-ink/6 px-4 py-3">
+      <header className="flex flex-wrap items-center justify-between gap-2 border-b border-hairline px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="text-ethereal-gold/70" aria-hidden="true">
             {icon}
@@ -59,28 +59,25 @@ export function ContractLedger({
             {formatInteger(records.length)}
           </Caption>
         </div>
+        {/* Only the shortfalls speak. A settled section used to wear a sage
+            "Rozliczone", which on a finished project is every section — the
+            expected outcome announced where the exception should stand out. */}
         <div className="flex flex-wrap items-center gap-1.5">
           {missing > 0 && (
             <Badge variant="warning">
               {t("contracts.ledger.missing", "{{n}} bez wyceny", { n: missing })}
             </Badge>
           )}
-          {owed > 0 ? (
+          {owed > 0 && (
             <Badge variant="danger">
               {t("contracts.ledger.owed", "{{n}} do zapłaty", { n: owed })}
             </Badge>
-          ) : (
-            missing === 0 && (
-              <Badge variant="success">
-                {t("contracts.ledger.settled", "Rozliczone")}
-              </Badge>
-            )
           )}
         </div>
       </header>
 
       {/* Column header — desktop */}
-      <div className="hidden border-b border-ethereal-ink/6 px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.7fr)_minmax(190px,0.9fr)_auto] lg:items-center lg:gap-4">
+      <div className="hidden border-b border-hairline px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.7fr)_minmax(190px,0.9fr)_auto] lg:items-center lg:gap-4">
         <Caption color="muted">{t("contracts.ledger.col_person", "Osoba")}</Caption>
         <Caption color="muted">{t("contracts.ledger.col_role", "Rola")}</Caption>
         <Caption color="muted">
@@ -91,7 +88,7 @@ export function ContractLedger({
         </Caption>
       </div>
 
-      <div className="divide-y divide-ethereal-ink/6">
+      <div className="divide-y divide-hairline">
         {records.map((record) => (
           <ContractRow
             key={`${type}-${record.id}`}

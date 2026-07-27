@@ -14,20 +14,19 @@ import type {
 
 export type ContractRecord = EnrichedParticipation | EnrichedCrewAssignment;
 export type ContractRecordType = "CAST" | "CREW";
-export type ContractStatusTone = "active" | "upcoming" | "archived" | "danger";
-export type ProjectStatusTone = "active" | "upcoming" | "archived" | "danger";
+export type ProjectStatusTone = "active" | "draft" | "archived" | "cancelled";
 
 /**
- * The chip a ledger status wears. The keys are the tones this workspace has
- * always spoken in; the values are `Badge`'s. `danger` is amethyst, not
- * crimson: a declined contract or a cancelled project is a fact the producer
- * has to see, and crimson is reserved for the thing that is actually broken.
+ * The chip a project's lifecycle wears above its ledger. `cancelled` is
+ * amethyst, not crimson: a cancelled production is a fact the producer has to
+ * see, and crimson is reserved for the thing that is actually broken. A draft
+ * is neutral — nothing has happened to it yet, which is not a success.
  */
-export const STATUS_TONE_VARIANT: Record<ContractStatusTone, BadgeVariant> = {
+export const PROJECT_STATUS_VARIANT: Record<ProjectStatusTone, BadgeVariant> = {
   active: "warning",
-  upcoming: "success",
+  draft: "neutral",
   archived: "neutral",
-  danger: "amethyst",
+  cancelled: "amethyst",
 };
 
 const currencyFormatter = new Intl.NumberFormat("pl-PL", {
@@ -174,19 +173,50 @@ export const getContractRoleLabel = (
       ? { translationKey: "", fallback: normalizeText((record as EnrichedCrewAssignment).collaborator_specialty_display) }
       : { translationKey: "contracts.unknown_specialty", fallback: "Nieznana specjalność" };
 
+export interface ContractStatusMeta {
+  translationKey: string;
+  fallback: string;
+  variant: BadgeVariant;
+}
+
+/**
+ * The RSVP a ledger row wears — and only where it changes what the row means.
+ * A confirmed singer is the resting state of a healthy cast, so it says
+ * nothing: a chip on all forty rows is what buries the two that need reading.
+ * What is left is the pair that touches the money — somebody who has not
+ * answered yet and is about to be paid (gold, work outstanding), and somebody
+ * who withdrew and is therefore not billable at all (amethyst, a fact).
+ */
 export const getContractStatusMeta = (
   record: ContractRecord,
-): { translationKey: string; fallback: string; tone: ContractStatusTone } => {
+): ContractStatusMeta | null => {
   switch (record.status) {
-    case "CON":
-      return { translationKey: "contracts.status.confirmed", fallback: "Potwierdzony", tone: "active" };
     case "DEC":
-      return { translationKey: "contracts.status.declined", fallback: "Odrzucony", tone: "danger" };
+      return {
+        translationKey: "contracts.status.declined",
+        fallback: "Odrzucony",
+        variant: "amethyst",
+      };
+    case "CON":
+      return null;
     case "INV":
     default:
-      return { translationKey: "contracts.status.pending", fallback: "Oczekujący na odpowiedź", tone: "upcoming" };
+      return {
+        translationKey: "contracts.status.pending",
+        fallback: "Oczekujący na odpowiedź",
+        variant: "warning",
+      };
   }
 };
+
+/** The same status as a plain word — the CSV has no colours and no exceptions. */
+export const getContractStatusText = (
+  record: ContractRecord,
+): { translationKey: string; fallback: string } =>
+  getContractStatusMeta(record) ?? {
+    translationKey: "contracts.status.confirmed",
+    fallback: "Potwierdzony",
+  };
 
 export const getProjectStatusMeta = (
   projectStatus: Project["status"] | undefined,
@@ -197,10 +227,10 @@ export const getProjectStatusMeta = (
     case "DONE":
       return { translationKey: "contracts.project_status.archived", fallback: "Zarchiwizowany", tone: "archived" };
     case "CANC":
-      return { translationKey: "contracts.project_status.cancelled", fallback: "Anulowany", tone: "danger" };
+      return { translationKey: "contracts.project_status.cancelled", fallback: "Anulowany", tone: "cancelled" };
     case "DRAFT":
     default:
-      return { translationKey: "contracts.project_status.draft", fallback: "Draft", tone: "upcoming" };
+      return { translationKey: "contracts.project_status.draft", fallback: "Draft", tone: "draft" };
   }
 };
 

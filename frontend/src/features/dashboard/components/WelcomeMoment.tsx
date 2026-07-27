@@ -191,13 +191,15 @@ export const WelcomeMoment = ({
         >
           <WelcomeScene isToneRinging={isPlaying} reduceMotion={reduceMotion} />
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={dismiss}
-            className="absolute right-5 top-5 z-20 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/45 transition-colors hover:bg-ethereal-graphite/6 hover:text-ethereal-ink"
+            className="absolute right-5 top-5 z-20"
           >
             {t("dashboard.artist.welcome.overlay_skip", "Pomiń")}
-          </button>
+          </Button>
 
           {/* Scroll region separate from the scene: on a short viewport the
               words scroll, the light stays. `m-auto` (not items-center) so an
@@ -333,7 +335,7 @@ export const WelcomeMoment = ({
                   in the overlay's own language; full details stay one tap away in
                   the panel afterwards. ── */}
               {invitation.current && (
-                <div className="mt-8 w-full max-w-md rounded-2xl border border-ethereal-gold/30 bg-white/55 p-4 text-left shadow-glass-ethereal">
+                <div className="mt-8 w-full max-w-md rounded-surface border border-ethereal-gold/30 bg-white/55 p-4 text-left shadow-glass-ethereal">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="gold" size="caption">
                       {t(
@@ -342,9 +344,9 @@ export const WelcomeMoment = ({
                       )}
                     </Eyebrow>
                     {invitation.pendingCount > 1 && (
-                      <span className="rounded-full bg-ethereal-ink/[0.06] px-2 py-0.5 text-[11px] font-semibold leading-none text-ethereal-graphite/70">
+                      <Badge variant="neutral" casing="natural" className="tabular-nums">
                         1 / {invitation.pendingCount}
-                      </span>
+                      </Badge>
                     )}
                   </div>
 
@@ -408,16 +410,19 @@ export const WelcomeMoment = ({
                     </Button>
                   </div>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
+                    fullWidth
                     onClick={invitation.defer}
-                    className="mt-2 w-full rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/45 transition-colors hover:bg-ethereal-graphite/6 hover:text-ethereal-ink"
+                    className="mt-2"
                   >
                     {t(
                       "dashboard.artist.welcome.invitation.later",
                       "Zdecyduję później",
                     )}
-                  </button>
+                  </Button>
                 </div>
               )}
 

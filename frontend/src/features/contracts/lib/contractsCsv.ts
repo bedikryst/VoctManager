@@ -12,7 +12,7 @@ import type { LedgerEntry } from "../hooks/useContractsData";
 import {
   getContractPersonName,
   getContractRoleLabel,
-  getContractStatusMeta,
+  getContractStatusText,
   isBillable,
   isPaid,
   parseFeeValue,
@@ -78,7 +78,7 @@ export const buildSettlementCsv = (
         formatAmount(parseFeeValue(record.fee)),
         isPaid(record) ? yes : no,
         formatDate(record.paid_at),
-        resolve(getContractStatusMeta(record), t),
+        resolve(getContractStatusText(record), t),
       ]
         .map((cell) => escapeCell(String(cell)))
         .join(SEPARATOR);

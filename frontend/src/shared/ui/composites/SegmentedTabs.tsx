@@ -19,6 +19,13 @@ export interface SegmentedTabItem<TId extends string> {
   id: TId;
   label: string;
   Icon?: LucideIcon;
+  /**
+   * How many rows the segment would show. A filter's own size is what tells the
+   * reader there is work behind it, so it belongs on the control rather than in
+   * a sentence beside it — but it is the segment's, not a legend's: nothing
+   * else on the surface may restate it.
+   */
+  count?: number;
 }
 
 interface SegmentedTabsProps<TId extends string> {
@@ -51,7 +58,7 @@ export function SegmentedTabs<TId extends string>({
         className,
       )}
     >
-      {items.map(({ id, label, Icon }) => {
+      {items.map(({ id, label, Icon, count }) => {
         const isActive = value === id;
         return (
           <button
@@ -72,6 +79,18 @@ export function SegmentedTabs<TId extends string>({
             <Label size="sm" weight="semibold" color="inherit">
               {label}
             </Label>
+            {count !== undefined && (
+              <span
+                className={cn(
+                  "rounded-chip px-1.5 py-0.5 text-[10px] font-semibold tabular-nums",
+                  isActive
+                    ? "bg-ethereal-ink/10 text-ethereal-ink"
+                    : "bg-ethereal-ink/5 text-ethereal-graphite/70",
+                )}
+              >
+                {count}
+              </span>
+            )}
           </button>
         );
       })}

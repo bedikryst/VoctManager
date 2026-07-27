@@ -20,20 +20,30 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
 
 ## Still open
 
-- **44 raw uppercase micro-labels remain**, re-measured 2026-07-27 after both Phase 3 passes cleared
-  their 21 and 12. Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]` class, minus
-  the four primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`). What is
-  left: auth 12 (`pages/auth` 9 + `features/auth` 3), dashboard 6, contracts 5, notifications 4,
-  `shared/ui` composites 4 (`AutosaveStatus`, `ComposerCard`, `ErrorScreen`, `EtherealLoader`),
-  materials 3, annotations 3, `widgets/utility` 3, settings 2, schedule 1, rehearsals 1. The widest
-  outliers in the tree are still `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
-- **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive` and
-  artists+crew+logistics.** 83 raw `ethereal-ink/6|8|10|12` rules remain outside them — contracts 22,
-  rehearsals 19, messages 13, settings 10, chorister-hub 5, annotations 5, notifications 3, and a
-  scattering of 2s. This is **not** a sweep — see the note opening §5 — it rides along with
-  per-feature passes.
+- **27 raw uppercase micro-labels remain**, re-measured 2026-07-27 after the third Phase 3 pass
+  cleared its 17. Recipe: `uppercase` co-occurring with a `tracking-*` or `text-[0…]` class, minus
+  the primitives that own the recipe (`Typography`, `Eyebrow`, `Badge`, `Button`, `SegmentedTabs`).
+  What is left: auth 12 (`pages/auth` 9 + `features/auth` 3), `shared/ui` composites 4
+  (`AutosaveStatus`, `ComposerCard`, `ErrorScreen`, `EtherealLoader`), materials 3, annotations 3,
+  `widgets/utility` 3, schedule 1, rehearsals 1. The widest outliers in the tree are still
+  `UserLocalClock`'s `tracking-[0.4em]` / `[0.2em]`.
+- **Radius/hairline tokens are applied in `shared/ui`, `features/projects`, `features/archive`,
+  artists+crew+logistics and settings+dashboard+notifications+contracts.** ~59 raw
+  `ethereal-ink/6|8|10|12` rules remain outside them — rehearsals 19, messages 13, `shared/ui` 9,
+  annotations 5, chorister-hub 4, projects 3, and a scattering of 2s. This is **not** a sweep — see
+  the note opening §5 — it rides along with per-feature passes. Note the false positives: a bar
+  track, a slider groove and a scrim are *fills* at those alphas, not 1px rules, and stay as they
+  are; every cleared feature still greps 1.
+- **`SegmentedTabs` has five hand-rolled copies left.** The gold-pill-on-alabaster track was typed
+  privately in eight places; the contracts pass adopted its three and gave the composite the
+  optional `count` those call sites needed. Still open: `features/artists/RosterToolbar`,
+  `features/crew/CrewToolbar`, `features/projects/DashboardFilterMenu`,
+  `features/rehearsals/RehearsalRail` and `features/rehearsals/Rehearsals`. Two of those belong to
+  features whose pass already shipped — worth one small follow-up rather than waiting.
 - **`StatePanel` adoption**: `features/messages` is the last hand-rolled centred empty state
-  (`ThreadList`, `ConductorDeck`, `MessagesPage`).
+  (`ThreadList`, `ConductorDeck`, `MessagesPage`). `features/dashboard`'s `ArtistEmptyState` was
+  left deliberately: it is a named scene with its own breathing-ring scenography, not the ad-hoc
+  icon stack the rule targets, and `StatePanel` cannot carry a `backgroundElement`.
 - **Diacritic-folding search is now universal and should stay that way.** Every user-facing search in
   the panel goes through `shared/lib/text.foldDiacritics`; the archive follow-up swept the last three
   (both archive lists, plus `useMaterialsData` and `ProjectLedgerRail`, which were found while
@@ -44,21 +54,20 @@ declined and why. It is ~1200 lines; do not load it to do ordinary work.
   the module's own headings and empty states have not been read end to end. Small companion defect:
   the Frekwencja matrix computes `isPast` / `isLive` once per data change rather than on a timer, so
   a tab left open across the downbeat keeps the previous state until it remounts.
-- **Two companion defects left for the passes that own them**: `NextRehearsalAlert`'s chip pulses
-  unconditionally (the resting default in the loudest slot, and now the one axis `Badge` kept from
-  D5 — a dashboard-pass call), and the contracts ledger paints a *confirmed* contract gold and a
-  *pending* one sage, which reads backwards (a contracts-pass call). Both were preserved exactly.
+- ~~Two companion defects left for the passes that own them~~ — both fixed by the
+  settings+dashboard+notifications+contracts pass (§8). See that section for what the second one
+  turned out to be underneath.
 - **~120 dead `archive.*` i18n keys predate this work** and were left alone: the whole
   `archive.card.*`, `archive.hero.*`, `archive.metrics.*`, `archive.tracks.*`, `archive.editor.*`
   nodes and most of `archive.form.placeholders.*` — fossils of the pre-2026-07 panel/slide-over
   archive. §8 pruned only what it killed itself. This belongs to the dead-key sweep the i18n
   remediation already has open, not to a design pass.
 
-Suggested split for what is left: settings+dashboard+notifications+contracts as one per-feature pass
-carrying all three concerns at once, then messages (the last `StatePanel` holdout, and 13 raw
-hairline rules), then auth — which is the single largest remaining pocket of raw overlines and spans
-`pages/auth` and `features/auth` together. Rehearsals is its own chat. Run them sequentially, not in
-parallel: they all touch the three locale files.
+Suggested split for what is left: messages (the last `StatePanel` holdout, and 13 raw hairline
+rules), then auth — the single largest remaining pocket of raw overlines, spanning `pages/auth` and
+`features/auth` together. Rehearsals is its own chat (19 hairline rules, plus the copy pass and the
+`isPast`/`isLive` timer above). The five `SegmentedTabs` copies are a small standalone follow-up.
+Run them sequentially, not in parallel: they all touch the three locale files.
 
 ## Decisions, settled
 
@@ -1335,6 +1344,104 @@ a second copy of a list is how this document's problem started.
 Each of these carries all three concerns at once (raw overlines, `StatePanel`, radius/hairline
 tokens) over one feature, read screen by screen rather than swept by regex. They run sequentially:
 they all touch the same three locale files.
+
+### `features/settings` + `dashboard` + `notifications` + `contracts` (SHIPPED 2026-07-27)
+
+One pass over four features, because they share the three locale files and because the same two
+questions ran through all of them: what does this surface say twice, and what does it say on every
+row. All 17 raw overlines are gone, all 41 raw hairline rules and every off-scale radius are on the
+tokens, and `grep -E "rounded-(xl|2xl|3xl|lg|md|sm)"` over the four now returns only three fills —
+a progress-bar track, a slider groove and a scrim, which are not 1px rules. Both companion defects
+the earlier passes had parked here are fixed. But the pass found five things that were **not**
+micro-decisions.
+
+**The contracts ledger was not painting the status backwards — it had one tone table for two
+taxonomies.** `STATUS_TONE_VARIANT` mapped `active → warning` and `upcoming → success`, and *both*
+`getContractStatusMeta` (a person's RSVP) and `getProjectStatusMeta` (a production's lifecycle) read
+from it. The contract states had been squeezed into words built for the project axis, so `CON`
+became "active" and got gold, `INV` became "upcoming" and got sage — a confirmed contract in the
+work-pending colour and a pending one in the settled colour. The same squeeze had also painted a
+DRAFT project sage, i.e. `success` for a production nothing has happened to yet.
+
+The fix is structural, not two swapped strings. The tables are split: `PROJECT_STATUS_VARIANT` keeps
+the lifecycle (`active` gold, `draft` and `archived` neutral, `cancelled` amethyst), and the contract
+RSVP returns its own variant inline — **or `null`**. Because the real finding underneath was that
+`Potwierdzony` sat on every row of a healthy cast, which is the `TUTTI` bug with a colour error on
+top. What survives is the pair that touches the money: somebody who has not answered and is about to
+be paid (gold), and somebody who withdrew and is therefore not billable at all (amethyst). The CSV
+needs the plain word for all three states, so `getContractStatusText` wraps the same function and
+fills the silent case back in — a spreadsheet has no colours and no exceptions.
+
+**Four surfaces were announcing the resting state, in four different shapes.** All the same bug as
+the archive's `AI ✓`, and none of them adjacent enough to have been caught together:
+
+- The rail put a sage `ROZLICZONO` on every settled project, so a healthy season was a column of
+  sage. `SignalChip` returns `null` now; a row speaks only when it is short.
+- `ContractLedger`'s header put a sage `Rozliczone` on a section with nothing outstanding — on a
+  finished project, both sections.
+- `ProductionPipeline` put a sage `komplet` opposite the gold pending count, one or the other on
+  every production. The completion ring already reads full when the cast is.
+- `NextRehearsalAlert` printed `100% Obecności` whenever `absent_count` was 0 — which on an upcoming
+  rehearsal also means *nobody has answered yet*, so it was a claim about the future dressed as a
+  measurement.
+
+**Two figures were counted over sets their neighbours were not**, both in the family the archive
+pass named. `ProductionPipeline`'s header sums confirmed/pending/declined across every non-archived
+production while the rows below are `slice(0, 6)` — the file's own comment claimed "the same
+non-archived set the totals are summed over", which was true right up until the cap. On a
+nine-project season the census read as the count of what was on screen. `invitationStats` now
+carries `projectCount` and the strip states `Pokazano {{visible}} z {{total}}` when it is showing
+fewer. And `SettlementSummary`'s coverage rails drew an empty bar over `0 / 0` for a project with
+nobody cast — a rate over data nobody has entered, which is not a low rate. Em-dash, no bar.
+
+**`pulse` was spent on three resting states.** It is the one axis `Badge` kept from D5, and D5
+documented it as "this is happening right now". It was on `NextRehearsalAlert` unconditionally, on
+`SpotlightProjectCard` for every ACTIVE project, and on `LedgerHeader` for the same. A production
+sits at ACTIVE for months and the rehearsal card is on screen for the fortnight before the
+rehearsal, so all three swept permanently and none of them meant anything. Only the rehearsal earns
+it back, and only on the day: `resolveImminence(...) === "TODAY"`, gold — the taxonomy in
+`logistics/constants/eventImminence.ts` had already settled that today is gold, not crimson, and had
+already declared `pulse: true` for exactly that bucket. The chip reads `Najbliższa próba` (neutral)
+until the morning of, then `Próba dziś`.
+
+**The notification centre sat on `z-[100]`, tying with `z-toast`.** Its scrim was `z-[99]`, above
+`z-focus-trap` (90). This is the archive pass's `EditionUploadDrawer` bug exactly — a portalled
+panel numbered by hand, ending up level with the toasts it raises itself. It is a focus-trapped
+dialog, so both are `z-focus-trap` now and toasts sit above it again. Its drawer and sheet were also
+on `rounded-[26px]` and `rounded-[12px]`, off the scale in both directions.
+
+Smaller, but the same job: `SettingsIdentityCard` hard-coded amethyst for the singer's voice while
+the roster and the welcome moment both read that same voice through `accents.ts` — the exact
+disagreement `accents.ts` was extracted to prevent; it goes through `ACCENT_BADGE` now ·
+`dashboard.admin.absences` had **no key in any locale**, so the one chip on that card had been
+rendering its English code default in Polish and French · the notification header built its subtitle
+by concatenating `${count} ${t("notifications.unread")}`, which cannot inflect — a real plural key
+now, with the Polish `_one/_few/_many` forms · `CustomAdminMessageToast`'s "mark read" button was
+`bg-ethereal-sage hover:bg-emerald-600`, a stock Tailwind palette colour in a tree that forbids them
+· `SeasonSetupConcierge` stated its progress three ways at once (`Krok 1 z 3`, `33%`, and the bar),
+so the percentage — a precision a three-item list does not have — is gone · `NotificationItem`
+rendered its four text lines as raw `<p>`/`<span>` at `text-[13.5px]`, `text-[12px]` and
+`text-[10.5px]`, three sizes that exist nowhere in the type scale · `NotificationsTab`'s "you must
+change this in the browser" line was a crimson sentence set as an overline, padded by an invisible
+`Loader2` used as a spacer, and its switch thumb still carried a `will-change-transform` the 2026-06
+perf audit had removed everywhere else · the notification centre's loading state was a hand-rolled
+rotating bell and its empty state a hand-rolled centred icon stack (`EtherealLoader` and
+`StatePanel` now) · `ContractRow` tinted paid rows sage, so a settled project opened as forty sage
+rows with the one row that still owed money left untinted; only unpriced work is tinted now ·
+`ProjectLedgerRail`'s search box was a second copy of the field surface, hand-rolled against the
+D4 rule, and is the `Input` primitive now.
+
+`shared/ui/composites/SegmentedTabs` gained an optional `count` per item. Contracts had hand-rolled
+the gold-pill-on-alabaster track three times, twice in one file, each with its own count pill; the
+recipe exists in eight places tree-wide and the remaining five are listed in "Still open".
+
+**Declined:** turning `ProductionPipeline`'s pending chip into plain type. It sits beside a
+completion ring showing the same shortfall, which is close to saying it twice — but the ring is a
+measure and the chip is the count of what is *outstanding*, and the row is the conductor's triage
+list. Also declined: rebuilding `ArtistEmptyState` on `StatePanel` (see "Still open"), and
+converting the ledger's voice/specialty column to a chip — it went the other way, to `Caption`,
+because unlike the rosters this ledger is neither sorted nor filtered by voice, and a column of
+chips under a column header that already names them is chrome.
 
 ### `features/artists` + `features/crew` + `features/logistics` (SHIPPED 2026-07-27)
 

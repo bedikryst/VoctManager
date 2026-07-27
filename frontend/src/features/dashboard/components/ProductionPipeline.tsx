@@ -30,11 +30,14 @@ import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
-import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { cn } from "@/shared/lib/utils";
 
 export interface InvitationStatsDto {
+  /** How many non-archived productions the three figures below are summed over. */
+  projectCount: number;
   confirmed: number;
   pending: number;
   declined: number;
@@ -81,7 +84,7 @@ const AggregateChip = ({
   return (
     <div
       title={label}
-      className="flex items-center gap-1.5 rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster px-3 py-1.5 shadow-glass-ethereal"
+      className="flex items-center gap-1.5 rounded-control border border-ethereal-incense/15 bg-ethereal-alabaster px-3 py-1.5 shadow-glass-ethereal"
     >
       <Icon size={14} className={toneClass} aria-hidden="true" />
       <span className="text-sm font-bold tabular-nums text-ethereal-ink">
@@ -117,7 +120,7 @@ const PipelineRow = ({
       type="button"
       onClick={() => onOpen(project)}
       aria-haspopup="dialog"
-      className="group flex w-full items-center gap-3 rounded-2xl border border-ethereal-incense/12 bg-ethereal-alabaster/50 p-3 text-left transition-[transform,border-color,background-color] hover:border-ethereal-gold/30 hover:bg-ethereal-alabaster hover:shadow-glass-ethereal-hover active:scale-[0.99] sm:gap-4 sm:p-3.5"
+      className="group flex w-full items-center gap-3 rounded-nested border border-ethereal-incense/12 bg-ethereal-alabaster/50 p-3 text-left transition-[transform,border-color,background-color] hover:border-ethereal-gold/30 hover:bg-ethereal-alabaster hover:shadow-glass-ethereal-hover active:scale-[0.99] sm:gap-4 sm:p-3.5"
     >
       <CompletionRing
         value={pct}
@@ -136,7 +139,7 @@ const PipelineRow = ({
           {project.title}
         </Heading>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-          <Eyebrow color="muted" className="flex items-center gap-1">
+          <Caption color="muted" className="flex items-center gap-1">
             <CalendarClock size={11} aria-hidden="true" />
             {formatLocalizedDate(
               project.dateTime,
@@ -144,53 +147,46 @@ const PipelineRow = ({
               undefined,
               project.timezone,
             )}
-          </Eyebrow>
-          <Eyebrow color="muted" className="hidden items-center gap-1 sm:flex">
+          </Caption>
+          <Caption color="muted" className="hidden items-center gap-1 sm:flex">
             <Clock size={11} aria-hidden="true" />
             {t("dashboard.admin.pipeline.rehearsals_left", "{{count}} prób", {
               count: project.rehearsalsUpcoming,
             })}
-          </Eyebrow>
-          <Eyebrow color="muted" className="hidden items-center gap-1 sm:flex">
+          </Caption>
+          <Caption color="muted" className="hidden items-center gap-1 sm:flex">
             <ListMusic size={11} aria-hidden="true" />
             {t("dashboard.admin.pipeline.pieces", "{{count}} utw.", {
               count: project.piecesTotal,
             })}
-          </Eyebrow>
-          <Eyebrow color="incense-muted">{statusLabel}</Eyebrow>
+          </Caption>
+          <Caption color="muted">{statusLabel}</Caption>
         </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {/* Only what is outstanding wears a chip. The sage "komplet" that used
+            to sit opposite the pending count put a badge on every healthy
+            production — the ring already reads full when the cast is. */}
         {project.scoreMissing && (
-          <span
+          <Badge
+            variant="warning"
             title={t("dashboard.admin.pipeline.no_score", "Bez partytury")}
-            className="flex items-center gap-1 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1"
+            icon={<FileWarning size={11} aria-hidden="true" />}
           >
-            <FileWarning size={11} className="text-ethereal-gold" aria-hidden="true" />
-            <Eyebrow color="gold" className="hidden md:inline">
+            <span className="hidden md:inline">
               {t("dashboard.admin.pipeline.no_score", "Bez partytury")}
-            </Eyebrow>
-          </span>
-        )}
-        {hasPending ? (
-          <span className="flex items-center gap-1 rounded-lg border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1">
-            <Clock size={11} className="text-ethereal-gold" aria-hidden="true" />
-            <span className="text-xs font-bold tabular-nums text-ethereal-ink">
-              {project.castPending}
             </span>
-            <Eyebrow color="gold" className="hidden md:inline">
+          </Badge>
+        )}
+        {hasPending && (
+          <Badge variant="warning" icon={<Clock size={11} aria-hidden="true" />}>
+            <span className="tabular-nums">{project.castPending}</span>
+            <span className="ml-1 hidden md:inline">
               {t("dashboard.admin.pipeline.pending_short", "czeka")}
-            </Eyebrow>
-          </span>
-        ) : project.castTotal > 0 ? (
-          <span className="hidden items-center gap-1 rounded-lg border border-ethereal-sage/25 bg-ethereal-sage/10 px-2.5 py-1 sm:flex">
-            <UserCheck size={11} className="text-ethereal-sage" aria-hidden="true" />
-            <Eyebrow color="sage">
-              {t("dashboard.admin.pipeline.complete", "komplet")}
-            </Eyebrow>
-          </span>
-        ) : null}
+            </span>
+          </Badge>
+        )}
         <ChevronRight
           size={16}
           className="text-ethereal-graphite/35 transition-transform group-hover:translate-x-0.5"
@@ -258,6 +254,18 @@ export const ProductionPipeline = ({
           </Text>
         )}
       </div>
+
+      {/* The strip is capped, the tally above it is not. Without this line the
+          season-wide census reads as the count of what is on screen. */}
+      {projects.length > 0 && projects.length < stats.projectCount && (
+        <Caption color="muted" className="mt-2.5 block px-1">
+          {t(
+            "dashboard.admin.pipeline.narrowed",
+            "Pokazano {{visible}} z {{total}} produkcji — najbliższe terminem.",
+            { visible: projects.length, total: stats.projectCount },
+          )}
+        </Caption>
+      )}
 
       <Link
         to="/panel/projects"

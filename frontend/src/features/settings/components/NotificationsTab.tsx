@@ -18,7 +18,6 @@ import {
   ChevronDown,
   Inbox,
   Info,
-  Loader2,
   RotateCcw,
   Send,
   ShieldAlert,
@@ -57,6 +56,7 @@ import {
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { SectionHeader } from "@/shared/ui/composites/SectionHeader";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -105,7 +105,7 @@ const NotificationSwitch = ({ state, onToggle, ariaLabel }: NotificationSwitchPr
   >
     <Switch.Thumb
       className={cn(
-        "block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5 will-change-transform",
+        "block w-5 h-5 bg-ethereal-marble rounded-full transition-transform duration-100 translate-x-0.5",
         "data-[state=checked]:translate-x-5.5 group-data-mixed/switch:translate-x-3",
       )}
     />
@@ -144,7 +144,7 @@ const ChannelCells: React.FC<ChannelCellsProps> = ({
   emailLabel,
   pushLabel,
 }) => (
-  <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-lg p-4 sm:p-0">
+  <div className="flex flex-col gap-4 sm:contents px-1 sm:px-0 bg-ethereal-parchment/5 sm:bg-transparent rounded-control p-4 sm:p-0">
     <div className="flex items-center justify-between sm:justify-center w-full">
       <Eyebrow className="sm:hidden">{t("settings.notifications.table.email")}</Eyebrow>
       <NotificationSwitch
@@ -176,7 +176,7 @@ const ChannelCells: React.FC<ChannelCellsProps> = ({
               <Tooltip.Content
                 side="left"
                 sideOffset={6}
-                className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-lg shadow-glass-solid max-w-55 text-center leading-snug z-toast"
+                className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-control shadow-glass-solid max-w-55 text-center leading-snug z-toast"
               >
                 {t("settings.notifications.tooltips.activate_first")}
                 <Tooltip.Arrow className="fill-ethereal-ink" />
@@ -490,7 +490,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
     );
 
   return (
-    <section className="rounded-2xl border border-ethereal-parchment/40 bg-ethereal-parchment/10 px-4 py-4 sm:px-5">
+    <section className="rounded-nested border border-ethereal-parchment/40 bg-ethereal-parchment/10 px-4 py-4 sm:px-5">
       <div
         className={cn(
           "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4",
@@ -498,7 +498,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
         )}
       >
         <div className="flex items-start gap-3 min-w-0">
-          <div className="mt-0.5 p-2 rounded-xl bg-ethereal-gold/10 shrink-0">
+          <div className="mt-0.5 p-2 rounded-control bg-ethereal-gold/10 shrink-0">
             <GroupIcon className="w-4 h-4 text-ethereal-gold" />
           </div>
           <div className="min-w-0">
@@ -507,15 +507,13 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
                 {name}
               </Text>
               {isPartial && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-full bg-ethereal-gold/15 px-2 py-0.5 shrink-0"
+                <Badge
+                  variant="warning"
+                  className="shrink-0"
                   title={t("settings.notifications.partial_hint")}
                 >
-                  <span className="w-1 h-1 rounded-full bg-ethereal-gold" aria-hidden />
-                  <Eyebrow className="text-ethereal-gold">
-                    {t("settings.notifications.partial_badge")}
-                  </Eyebrow>
-                </span>
+                  {t("settings.notifications.partial_badge")}
+                </Badge>
               )}
             </div>
             <Text size="xs" color="muted" className="leading-snug mt-0.5">
@@ -537,7 +535,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
       </div>
 
       {showEmailConsequence && (
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-ethereal-parchment/25 px-3 py-2.5">
+        <div className="mt-3 flex items-start gap-2 rounded-control bg-ethereal-parchment/25 px-3 py-2.5">
           <Info className="w-3.5 h-3.5 text-ethereal-graphite/70 shrink-0 mt-0.5" aria-hidden />
           <Text size="xs" color="muted" className="leading-relaxed">
             {t(`settings.notifications.groups_email_off.${group.id}`)}
@@ -550,7 +548,7 @@ const PreferenceGroupPanel: React.FC<PreferenceGroupPanelProps> = ({
           type="button"
           onClick={onToggleExpanded}
           aria-expanded={expanded}
-          className="flex items-center gap-1.5 rounded-lg px-1 -mx-1 py-1 text-ethereal-graphite/70 hover:text-ethereal-ink transition-colors outline-none focus-visible:ring-2 ring-ethereal-gold/50"
+          className="flex items-center gap-1.5 rounded-control px-1 -mx-1 py-1 text-ethereal-graphite/70 hover:text-ethereal-ink transition-colors outline-none focus-visible:ring-2 ring-ethereal-gold/50"
         >
           <ChevronDown
             className={cn(
@@ -630,27 +628,25 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4 py-4 rounded-xl sm:rounded-none",
+        "flex flex-col sm:grid sm:items-center gap-y-4 sm:gap-4 py-4 rounded-control sm:rounded-none",
         channelGrid(showPushColumn),
       )}
     >
       <div className="flex items-start gap-3 pl-1 sm:pl-3">
-        <div className="mt-0.5 p-1.5 rounded-lg bg-ethereal-parchment/40 shrink-0">
+        <div className="mt-0.5 p-1.5 rounded-chip bg-ethereal-parchment/40 shrink-0">
           <RowIcon className="w-4 h-4 text-ethereal-graphite" />
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Text size="sm">{label}</Text>
             {customized && (
-              <span
-                className="inline-flex items-center gap-1 rounded-full bg-ethereal-gold/15 px-2 py-0.5 shrink-0"
+              <Badge
+                variant="warning"
+                className="shrink-0"
                 title={t("settings.notifications.customized_hint")}
               >
-                <span className="w-1 h-1 rounded-full bg-ethereal-gold" aria-hidden />
-                <Eyebrow className="text-ethereal-gold">
-                  {t("settings.notifications.customized_badge")}
-                </Eyebrow>
-              </span>
+                {t("settings.notifications.customized_badge")}
+              </Badge>
             )}
           </div>
           {description && (
@@ -703,10 +699,10 @@ const PushHero: React.FC<PushHeroProps> = ({
   return (
     <motion.div
       layout
-      className={`relative overflow-hidden flex flex-col gap-4 p-5 sm:p-6 mb-6 rounded-2xl bg-ethereal-parchment/15 border border-ethereal-parchment/40 ring-1 ${palette.ring}`}
+      className={`relative overflow-hidden flex flex-col gap-4 p-5 sm:p-6 mb-6 rounded-nested bg-ethereal-parchment/15 border border-ethereal-parchment/40 ring-1 ${palette.ring}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-        <div className={`p-3 rounded-xl shrink-0 ${palette.iconBg}`}>
+        <div className={`p-3 rounded-control shrink-0 ${palette.iconBg}`}>
           <Icon className={`w-5 h-5 ${palette.iconColor}`} />
         </div>
 
@@ -761,10 +757,9 @@ const PushHero: React.FC<PushHeroProps> = ({
         )}
 
         {variant === "denied" && (
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-widest font-bold text-ethereal-crimson/80">
-            <Loader2 className="w-3 h-3 opacity-0" aria-hidden />
+          <Text size="xs" color="crimson" className="text-right leading-snug">
             {t("settings.notifications.actions.manual_change_required")}
-          </span>
+          </Text>
         )}
       </div>
     </motion.div>
@@ -789,7 +784,7 @@ const DigestPanel: React.FC = () => {
   const timezone = user.profile.timezone;
 
   return (
-    <div className="mt-2 rounded-2xl border border-ethereal-gold/20 bg-ethereal-gold/5 p-4">
+    <div className="mt-2 rounded-nested border border-ethereal-gold/20 bg-ethereal-gold/5 p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

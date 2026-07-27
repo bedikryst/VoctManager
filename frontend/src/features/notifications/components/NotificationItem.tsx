@@ -42,6 +42,8 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 interface NotificationItemProps {
   notification: NotificationDTO;
@@ -544,7 +546,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         }
       }}
       className={cn(
-        "group relative flex cursor-pointer gap-3 rounded-2xl p-3 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group relative flex cursor-pointer gap-3 rounded-nested p-3 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isRead
           ? "hover:bg-ethereal-ink/[0.035]"
           : "bg-ethereal-ink/[0.03] hover:bg-ethereal-ink/[0.055]",
@@ -559,7 +561,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
       <div
         className={cn(
-          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-[1.03]",
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-control transition-transform duration-200 group-hover:scale-[1.03]",
           accentStyle.tile,
         )}
       >
@@ -577,67 +579,69 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
                 aria-hidden="true"
               />
             )}
-            <p
+            <Eyebrow
+              size="caption"
+              color="inherit"
               className={cn(
-                "truncate font-sans text-[10px] font-semibold uppercase tracking-[0.14em]",
+                "truncate",
                 isRead ? "text-ethereal-graphite/55" : "text-ethereal-graphite/85",
               )}
             >
               {typeLabel}
-            </p>
+            </Eyebrow>
           </div>
           <time
             dateTime={notification.created_at}
             title={absoluteTime}
-            className="shrink-0 text-[10.5px] font-medium text-ethereal-graphite/45"
+            className="shrink-0"
           >
-            {timeAgo}
+            <Caption color="muted">{timeAgo}</Caption>
           </time>
         </div>
 
         {title && (
           <div className="mt-1.5 flex items-start justify-between gap-2">
-            <span className="min-w-0 text-[13.5px] font-semibold leading-snug text-ethereal-ink">
+            <Text as="span" size="sm" weight="semibold" className="min-w-0 leading-snug">
               {title}
-            </span>
+            </Text>
             {pill && (
-              <span
-                className={cn(
-                  "mt-0.5 shrink-0 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
-                  accentStyle.tile,
-                )}
+              <Badge
+                variant="outline"
+                className={cn("mt-0.5 shrink-0 border-transparent", accentStyle.tile)}
               >
                 {pill}
-              </span>
+              </Badge>
             )}
           </div>
         )}
 
         {context && (
-          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-ethereal-graphite/60">
+          <Caption color="muted" className="mt-1 line-clamp-2 leading-snug">
             {context}
-          </p>
+          </Caption>
         )}
 
         {detail && (
-          <p className="mt-1 line-clamp-3 text-[12px] leading-snug text-ethereal-graphite/75">
+          <Caption color="graphite" className="mt-1 line-clamp-3 leading-snug">
             {detail}
-          </p>
+          </Caption>
         )}
 
         {bullets && bullets.length > 0 && (
           <ul className="mt-1.5 space-y-0.5">
             {bullets.map((line, index) => (
-              <li
+              <Caption
+                as="li"
                 key={index}
-                className="flex gap-1.5 text-[12px] leading-snug text-ethereal-graphite/70"
+                color="muted"
+                className="flex gap-1.5 leading-snug"
               >
                 <span
                   className="mt-1.75 h-1 w-1 shrink-0 rounded-full bg-ethereal-gold/60"
                   aria-hidden="true"
                 />
                 <span className="min-w-0 flex-1">{line}</span>
-              </li>
+              </Caption>
             ))}
           </ul>
         )}
@@ -645,12 +649,9 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
         {changeChips && changeChips.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {changeChips.map((change, index) => (
-              <span
-                key={index}
-                className="rounded-md border border-ethereal-graphite/15 bg-ethereal-graphite/[0.05] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-ethereal-graphite/65"
-              >
+              <Badge key={index} variant="neutral">
                 {change}
-              </span>
+              </Badge>
             ))}
           </div>
         )}

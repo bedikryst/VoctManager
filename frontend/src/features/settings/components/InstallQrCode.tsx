@@ -45,7 +45,7 @@ export const InstallQrCode = ({
   if (!dataUrl) {
     return (
       <div
-        className="animate-pulse rounded-lg bg-ethereal-ink/5"
+        className="animate-pulse rounded-control bg-ethereal-ink/5"
         style={{ height: size, width: size }}
         aria-hidden="true"
       />
@@ -58,7 +58,7 @@ export const InstallQrCode = ({
       alt=""
       width={size}
       height={size}
-      className="rounded-lg"
+      className="rounded-control"
     />
   );
 };

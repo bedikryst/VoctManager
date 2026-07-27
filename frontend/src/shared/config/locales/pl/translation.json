@@ -1430,8 +1430,7 @@
       "col_role": "Rola",
       "empty_filter": "Brak pozycji dla wybranego filtra.",
       "missing": "{{n}} bez wyceny",
-      "owed": "{{n}} do zapłaty",
-      "settled": "Rozliczone"
+      "owed": "{{n}} do zapłaty"
     },
     "loader": {
       "message": "Wczytuję rejestry rozliczeń…"
@@ -1481,7 +1480,6 @@
       "mix": "{{cast}} obsada · {{crew}} ekipa",
       "no_match": "Brak projektów dla tego zapytania.",
       "search": "Szukaj projektu…",
-      "settled": "rozliczono",
       "title": "Projekty"
     },
     "row": {
@@ -1757,12 +1755,13 @@
         "projects_title": "Zarządzanie Projektami"
       },
       "next_rehearsal_badge": "Najbliższa Próba",
-      "perfect_attendance": "100% Obecności",
+      "rehearsal_today_badge": "Próba dziś",
+      "absences": "Nieobecni: {{count}}",
       "pipeline": {
-        "complete": "komplet",
         "empty": "Brak aktywnych produkcji. Czas zaplanować kolejny koncert.",
         "no_score": "Bez partytury",
         "pending_short": "czeka",
+        "narrowed": "Pokazano {{visible}} z {{total}} produkcji — najbliższe terminem.",
         "pieces": "{{count}} utw.",
         "pieces_one": "{{count}} utw.",
         "pieces_few": "{{count}} utw.",
@@ -2816,6 +2815,10 @@
     },
     "title": "Powiadomienia",
     "unread": "nieprzeczytane",
+    "unread_count_one": "{{count}} nieprzeczytane",
+    "unread_count_few": "{{count}} nieprzeczytane",
+    "unread_count_many": "{{count}} nieprzeczytanych",
+    "unread_count_other": "{{count}} nieprzeczytanych",
     "types": {
       "PROJECT_INVITATION": "Zaproszenie",
       "PROJECT_UPDATED": "Aktualizacja projektu",

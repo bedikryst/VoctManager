@@ -106,7 +106,7 @@ export const ProjectInvitationToasts: React.FC = () => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
-            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
+            className="relative flex w-full max-w-md flex-col overflow-hidden rounded-surface border border-ethereal-gold/30 bg-ethereal-marble shadow-glass-solid"
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
@@ -127,7 +127,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                 so the decision buttons below never leave the viewport. */}
             <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto p-6 no-scrollbar">
               <div className="flex items-start gap-4 pr-8">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ethereal-gold/12 text-ethereal-gold">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-control bg-ethereal-gold/12 text-ethereal-gold">
                   <Calendar size={22} strokeWidth={1.75} aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
@@ -153,7 +153,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-4">
+              <div className="flex flex-col gap-2 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-4">
                 <div className="flex items-center gap-2.5 text-ethereal-graphite">
                   <UserIcon size={15} className="shrink-0 text-ethereal-amethyst" aria-hidden="true" />
                   <Text size="sm">
@@ -215,7 +215,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                       defaultValue: "Próby ({{count}})",
                     })}
                   </Eyebrow>
-                  <ul className="flex flex-col gap-1.5 rounded-2xl border border-ethereal-ink/6 bg-ethereal-alabaster/70 p-3">
+                  <ul className="flex flex-col gap-1.5 rounded-nested border border-hairline bg-ethereal-alabaster/70 p-3">
                     {rehearsals.map((rehearsal) => (
                       <li
                         key={rehearsal.rehearsal_id}

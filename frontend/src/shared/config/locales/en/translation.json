@@ -1429,8 +1429,7 @@
       "col_role": "Role",
       "empty_filter": "No items for the selected filter.",
       "missing": "{{n}} unpriced",
-      "owed": "{{n}} to pay",
-      "settled": "Settled"
+      "owed": "{{n}} to pay"
     },
     "loader": {
       "message": "Loading settlement ledgers…"
@@ -1480,7 +1479,6 @@
       "mix": "{{cast}} cast · {{crew}} crew",
       "no_match": "No projects match this search.",
       "search": "Search projects…",
-      "settled": "settled",
       "title": "Projects"
     },
     "row": {
@@ -1756,12 +1754,13 @@
         "projects_title": "Project Management"
       },
       "next_rehearsal_badge": "Next Rehearsal",
-      "perfect_attendance": "100% Attendance",
+      "rehearsal_today_badge": "Rehearsal today",
+      "absences": "Absences: {{count}}",
       "pipeline": {
-        "complete": "complete",
         "empty": "No active productions. Time to plan the next concert.",
         "no_score": "No score",
         "pending_short": "waiting",
+        "narrowed": "Showing {{visible}} of {{total}} productions — the soonest by date.",
         "pieces": "{{count}} pcs",
         "pieces_one": "{{count}} pc",
         "pieces_few": "{{count}} pcs",
@@ -2815,6 +2814,8 @@
     },
     "title": "Notifications",
     "unread": "Unread",
+    "unread_count_one": "{{count}} unread",
+    "unread_count_other": "{{count}} unread",
     "types": {
       "PROJECT_INVITATION": "Invitation",
       "PROJECT_UPDATED": "Project update",

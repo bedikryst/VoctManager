@@ -8,6 +8,7 @@ import {
 } from "../api/notifications.queries";
 import type { CustomAdminMessageMetadata } from "../types/notifications.dto";
 import { Text, Heading } from "@/shared/ui/primitives/typography";
+import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { useAuth } from "@/app/providers/AuthProvider";
 
@@ -85,15 +86,16 @@ export const CustomAdminMessageToast: React.FC = () => {
               ) : (
                 <span />
               )}
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   toast.dismiss(toastId);
                   markAsRead(notification.id);
                 }}
-                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-ethereal-sage text-white hover:bg-emerald-600 transition-colors shadow-sm"
               >
                 {t("notifications.custom_message.mark_read")}
-              </button>
+              </Button>
             </div>
           </GlassCard>
         ),

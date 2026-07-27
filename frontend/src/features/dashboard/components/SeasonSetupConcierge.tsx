@@ -91,8 +91,8 @@ const SeasonStepCard = ({
 
   if (done) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-ethereal-sage/25 bg-ethereal-sage/[0.07] p-4">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-ethereal-sage/30 bg-ethereal-sage/15 text-ethereal-sage">
+      <div className="flex items-start gap-3 rounded-nested border border-ethereal-sage/25 bg-ethereal-sage/7 p-4">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-ethereal-sage/30 bg-ethereal-sage/15 text-ethereal-sage">
           <Check size={18} strokeWidth={2.5} aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
@@ -111,18 +111,18 @@ const SeasonStepCard = ({
     <Link
       to={to}
       className={cn(
-        "group flex items-start gap-3 rounded-2xl border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-4 shadow-glass-ethereal transition-[border-color,transform] duration-300 hover:shadow-glass-ethereal-hover active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+        "group flex items-start gap-3 rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/60 p-4 shadow-glass-ethereal transition-[border-color,transform] duration-300 hover:shadow-glass-ethereal-hover active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         ring,
       )}
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-ethereal-incense/25 bg-white/50">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-ethereal-incense/25 bg-white/50">
         <Icon size={18} strokeWidth={2} className={tint} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-ethereal-graphite/40">
+          <Eyebrow size="caption" color="muted">
             {String(index).padStart(2, "0")}
-          </span>
+          </Eyebrow>
           <Text size="sm" weight="bold" className="block leading-tight">
             {label}
           </Text>
@@ -193,7 +193,7 @@ export const SeasonSetupConcierge = ({
           type="button"
           onClick={snooze}
           aria-label={t("dashboard.admin.setup.snooze", "Zrobię to później")}
-          className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-lg text-ethereal-graphite/45 transition-colors hover:bg-ethereal-graphite/6 hover:text-ethereal-ink"
+          className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-control text-ethereal-graphite/45 transition-colors hover:bg-ethereal-graphite/6 hover:text-ethereal-ink"
         >
           <X size={16} strokeWidth={2} aria-hidden="true" />
         </button>
@@ -264,17 +264,15 @@ export const SeasonSetupConcierge = ({
 
           {/* ── the founding acts ── */}
           <div className="mt-6 flex-1 lg:mt-0">
-            <div className="flex items-center justify-between gap-3">
-              <Eyebrow color="muted" as="p">
-                {t("dashboard.admin.setup.progress", "Krok {{done}} z {{total}}", {
-                  done: completedCount,
-                  total,
-                })}
-              </Eyebrow>
-              <Eyebrow color={allDone ? "sage" : "gold"} as="p">
-                {progress}%
-              </Eyebrow>
-            </div>
+            {/* The bar draws the fraction and the line says it in words — a
+                percentage over three steps would be the same figure a third
+                time, at a precision the list does not have. */}
+            <Eyebrow color="muted" as="p">
+              {t("dashboard.admin.setup.progress", "Krok {{done}} z {{total}}", {
+                done: completedCount,
+                total,
+              })}
+            </Eyebrow>
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-ethereal-incense/15">
               <motion.div
                 className={cn(
@@ -310,13 +308,9 @@ export const SeasonSetupConcierge = ({
                   {t("dashboard.admin.setup.finish", "Zakończ konfigurację")}
                 </Button>
               ) : (
-                <button
-                  type="button"
-                  onClick={snooze}
-                  className="text-xs font-semibold uppercase tracking-[0.16em] text-ethereal-graphite/45 transition-colors hover:text-ethereal-ink"
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={snooze}>
                   {t("dashboard.admin.setup.snooze", "Zrobię to później")}
-                </button>
+                </Button>
               )}
             </div>
           </div>

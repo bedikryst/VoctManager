@@ -70,7 +70,7 @@ export const GoalConcertCard = ({
           <Eyebrow
             as="span"
             color="gold"
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-ethereal-gold/25 bg-ethereal-gold/10 px-2.5 py-1"
+            className="flex shrink-0 items-center gap-1.5 rounded-chip border border-ethereal-gold/25 bg-ethereal-gold/10 px-2.5 py-1"
           >
             <CalendarClock size={11} aria-hidden="true" />
             {countdown}
@@ -82,7 +82,7 @@ export const GoalConcertCard = ({
         ) : (
           <Link
             to="/panel/materials"
-            className="group inline-flex items-center gap-2 self-start rounded-xl border border-ethereal-incense/20 bg-ethereal-alabaster px-3.5 py-2.5 shadow-glass-ethereal transition-all hover:border-ethereal-sage/40 active:scale-[0.99]"
+            className="group inline-flex items-center gap-2 self-start rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster px-3.5 py-2.5 shadow-glass-ethereal transition-all hover:border-ethereal-sage/40 active:scale-[0.99]"
           >
             <Text size="sm" weight="semibold">
               {t("dashboard.artist.goal.open_songbook", "Otwórz Śpiewnik")}

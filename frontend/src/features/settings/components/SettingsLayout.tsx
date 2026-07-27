@@ -110,13 +110,13 @@ export default function SettingsLayout(): React.JSX.Element {
                         key={item.id}
                         type="button"
                         onClick={() => selectSection(item.id)}
-                        className="relative flex shrink-0 flex-col items-center gap-1 rounded-xl px-3.5 py-2.5 outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                        className="relative flex shrink-0 flex-col items-center gap-1 rounded-control px-3.5 py-2.5 outline-none transition-colors duration-300 focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
                         aria-current={isActive ? "page" : undefined}
                       >
                         {isActive && (
                           <motion.span
                             layoutId="settings-rail-active"
-                            className="absolute inset-0 rounded-xl border border-ethereal-gold/30 bg-ethereal-gold/10"
+                            className="absolute inset-0 rounded-control border border-ethereal-gold/30 bg-ethereal-gold/10"
                             transition={{
                               duration: DURATION.fast,
                               ease: EASE.buttery,
@@ -165,7 +165,7 @@ export default function SettingsLayout(): React.JSX.Element {
                       className={cn(
                         "flex flex-col gap-0.5",
                         groupIndex > 0 &&
-                          "mt-2 border-t border-ethereal-ink/6 pt-3",
+                          "mt-2 border-t border-hairline pt-3",
                       )}
                     >
                       <Eyebrow
@@ -184,7 +184,7 @@ export default function SettingsLayout(): React.JSX.Element {
                             type="button"
                             onClick={() => selectSection(item.id)}
                             className={cn(
-                              "group relative flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left outline-none",
+                              "group relative flex w-full items-center gap-3 rounded-control px-4 py-2.5 text-left outline-none",
                               "transition-colors duration-300",
                               "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ethereal-gold/50",
                               !isActive && "hover:bg-ethereal-ink/[0.03]",
@@ -194,7 +194,7 @@ export default function SettingsLayout(): React.JSX.Element {
                             {isActive && (
                               <motion.span
                                 layoutId="settings-nav-active"
-                                className="absolute inset-0 rounded-xl border border-ethereal-gold/30 bg-ethereal-gold/[0.07]"
+                                className="absolute inset-0 rounded-control border border-ethereal-gold/30 bg-ethereal-gold/7"
                                 transition={{
                                   duration: DURATION.fast,
                                   ease: EASE.buttery,

@@ -13,7 +13,7 @@ import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
-import { AlertTriangle, RefreshCw, Users, Wrench } from "lucide-react";
+import { AlertTriangle, Filter, RefreshCw, Users, Wrench } from "lucide-react";
 
 import { downloadFile } from "@/shared/lib/io/downloadFile";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
@@ -379,12 +379,14 @@ export default function Contracts(): React.JSX.Element {
                   </>
                 ) : (
                   <GlassCard variant="solid" padding="lg" isHoverable={false}>
-                    <Text color="graphite" align="center">
-                      {t(
+                    <StatePanel
+                      variant="inline"
+                      icon={<Filter size={24} strokeWidth={1.5} />}
+                      title={t(
                         "contracts.ledger.empty_filter",
                         "Brak pozycji dla wybranego filtra.",
                       )}
-                    </Text>
+                    />
                   </GlassCard>
                 )}
               </div>

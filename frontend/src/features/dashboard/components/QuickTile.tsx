@@ -38,7 +38,7 @@ const ACCENT: Record<QuickAccent, { wrap: string; icon: string }> = {
 // transition only transform + border-color (cheap); the hover shadow snaps
 // instead of repainting for 300ms. active:scale stays smooth (compositor).
 const TILE_BASE =
-  "group flex min-h-[104px] flex-col items-start gap-3 rounded-2xl border border-ethereal-incense/15 bg-ethereal-alabaster/60 p-4 text-left shadow-glass-ethereal transition-[transform,border-color] duration-300 hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
+  "group flex min-h-[104px] flex-col items-start gap-3 rounded-nested border border-ethereal-incense/15 bg-ethereal-alabaster/60 p-4 text-left shadow-glass-ethereal transition-[transform,border-color] duration-300 hover:border-ethereal-gold/30 hover:shadow-glass-ethereal-hover active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
 interface QuickTileProps {
   Icon: LucideIcon;
@@ -65,7 +65,7 @@ const TileBody = ({
   <>
     <span
       className={cn(
-        "flex h-11 w-11 items-center justify-center rounded-xl border transition-transform duration-300 group-hover:-translate-y-0.5",
+        "flex h-11 w-11 items-center justify-center rounded-control border transition-transform duration-300 group-hover:-translate-y-0.5",
         ACCENT[accent].wrap,
       )}
       aria-hidden="true"

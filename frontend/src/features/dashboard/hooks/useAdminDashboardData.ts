@@ -147,7 +147,9 @@ export const useAdminDashboardData = () => {
     return { activeProjects, totalPieces, satb };
   }, [projects, pieces, artists]);
 
-  // 2. INVITATION STATUS AGGREGATION (non-archived projects only)
+  // 2. INVITATION STATUS AGGREGATION (non-archived projects only). `projectCount`
+  // is the denominator those three figures are summed over — the strip needs it
+  // to state that its capped row list is narrower than its own header.
   const invitationStats: InvitationStatsDto = useMemo(() => {
     const nonArchivedProjects = projects.filter(
       (p) =>
@@ -155,6 +157,7 @@ export const useAdminDashboardData = () => {
         p.status !== PROJECT_STATUS.CANCELLED,
     );
     return {
+      projectCount: nonArchivedProjects.length,
       confirmed: nonArchivedProjects.reduce(
         (sum, p) => sum + (p.cast_confirmed ?? 0),
         0,
@@ -170,9 +173,11 @@ export const useAdminDashboardData = () => {
     };
   }, [projects]);
 
-  // 2b. PRODUCTION PIPELINE — every live/upcoming production with its readiness,
-  // sorted by date. Powers the per-project triage that replaced the aggregate
-  // invitations tile. Uses the same non-archived set the totals are summed over.
+  // 2b. PRODUCTION PIPELINE — the next few live/upcoming productions with their
+  // readiness, sorted by date. Powers the per-project triage that replaced the
+  // aggregate invitations tile. Same non-archived set as the totals above, but
+  // CAPPED — so the strip has to say when it is showing fewer than it counts,
+  // or the header's census reads as the count of what is on screen.
   const pipelineProjects: PipelineProjectDto[] = useMemo(() => {
     const now = Date.now();
     // Only flag a missing score book once the concert is on the horizon — an

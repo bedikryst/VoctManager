@@ -45,7 +45,7 @@ const Benefit = ({
   icon: LucideIcon;
   label: string;
 }): React.JSX.Element => (
-  <div className="flex items-center gap-2.5 rounded-xl border border-ethereal-ink/8 bg-white/40 px-3 py-2.5">
+  <div className="flex items-center gap-2.5 rounded-control border border-hairline-strong bg-white/40 px-3 py-2.5">
     <Icon
       className="h-4 w-4 shrink-0 text-ethereal-gold"
       strokeWidth={1.5}
@@ -118,7 +118,7 @@ export const AppTab = (): React.JSX.Element => {
         </Text>
 
         {isInstalled ? (
-          <div className="flex items-center gap-3 rounded-2xl border border-ethereal-gold/30 bg-ethereal-gold/[0.06] p-4">
+          <div className="flex items-center gap-3 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/6 p-4">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ethereal-gold/15 text-ethereal-gold">
               <Check className="h-5 w-5" />
             </span>
@@ -135,7 +135,7 @@ export const AppTab = (): React.JSX.Element => {
             </div>
           </div>
         ) : canPrompt ? (
-          <div className="flex flex-col gap-4 rounded-2xl border border-ethereal-gold/25 bg-ethereal-gold/[0.05] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 rounded-nested border border-ethereal-gold/25 bg-ethereal-gold/5 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ethereal-gold/15 text-ethereal-gold">
                 <Download className="h-5 w-5" />
@@ -163,7 +163,7 @@ export const AppTab = (): React.JSX.Element => {
             </Button>
           </div>
         ) : isIOS ? (
-          <div className="space-y-3 rounded-2xl border border-ethereal-ink/8 bg-white/40 p-4">
+          <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
             <Text weight="medium">
               {t("settings.app.ios.title", "Dodaj do ekranu początkowego")}
             </Text>
@@ -207,7 +207,7 @@ export const AppTab = (): React.JSX.Element => {
             </ol>
           </div>
         ) : (
-          <div className="space-y-2 rounded-2xl border border-ethereal-ink/8 bg-white/40 p-4">
+          <div className="space-y-2 rounded-nested border border-hairline-strong bg-white/40 p-4">
             <Text weight="medium">
               {t("settings.app.other.title", "Instalacja w tej przeglądarce")}
             </Text>
@@ -253,7 +253,7 @@ export const AppTab = (): React.JSX.Element => {
 
         <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
           <div className="min-w-0 space-y-3">
-            <div className="flex items-center gap-2 rounded-xl border border-ethereal-ink/10 bg-white/50 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-control border border-hairline-strong bg-white/50 px-3 py-2.5">
               <Link2
                 size={15}
                 className="shrink-0 text-ethereal-graphite/50"
@@ -294,11 +294,11 @@ export const AppTab = (): React.JSX.Element => {
           </div>
 
           <div className="flex flex-col items-center gap-2 justify-self-center sm:justify-self-end">
-            <div className="rounded-2xl border border-ethereal-ink/10 bg-white p-3 shadow-sm">
+            <div className="rounded-nested border border-hairline-strong bg-white p-3 shadow-sm">
               <Suspense
                 fallback={
                   <div
-                    className="animate-pulse rounded-lg bg-ethereal-ink/5"
+                    className="animate-pulse rounded-control bg-ethereal-ink/5"
                     style={{ height: 156, width: 156 }}
                     aria-hidden="true"
                   />

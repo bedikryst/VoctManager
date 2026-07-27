@@ -35,7 +35,6 @@ import {
   getSettlementState,
   isFeeMissing,
   parseFeeValue,
-  STATUS_TONE_VARIANT,
 } from "../lib/contractsPresentation";
 import type { ContractRecord } from "../lib/contractsPresentation";
 
@@ -118,8 +117,11 @@ export function ContractRow({
     <div
       className={cn(
         "grid gap-3 px-4 py-3 transition-colors lg:grid-cols-[minmax(0,1.5fr)_minmax(0,0.7fr)_minmax(190px,0.9fr)_auto] lg:items-center lg:gap-4",
-        settlementState === "unpriced" && "bg-ethereal-gold/[0.04]",
-        paid && "bg-ethereal-sage/[0.04]",
+        // Only work is tinted. A settled project would otherwise open as forty
+        // sage rows — the destination painted on every one of them, leaving the
+        // eye nothing to find. Paid rows sort to the bottom and the toggle
+        // already reads as pressed.
+        settlementState === "unpriced" && "bg-ethereal-gold/4",
         settlementState === "inactive" && "opacity-60",
       )}
     >
@@ -128,11 +130,13 @@ export function ContractRow({
         <Text size="sm" weight="semibold" truncate>
           {personName}
         </Text>
-        <div className="mt-1 flex flex-wrap items-center gap-1.5 lg:hidden">
-          <Badge variant="glass">{roleLabel}</Badge>
-          <Badge variant={STATUS_TONE_VARIANT[statusMeta.tone]}>
-            {t(statusMeta.translationKey, statusMeta.fallback)}
-          </Badge>
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 lg:hidden">
+          <Caption color="muted">{roleLabel}</Caption>
+          {statusMeta && (
+            <Badge variant={statusMeta.variant}>
+              {t(statusMeta.translationKey, statusMeta.fallback)}
+            </Badge>
+          )}
         </div>
         {paid && record.paid_at && (
           <Caption color="muted" className="mt-0.5 hidden items-center gap-1 lg:inline-flex">
@@ -147,12 +151,16 @@ export function ContractRow({
         )}
       </div>
 
-      {/* Role + status (desktop) */}
-      <div className="hidden flex-wrap items-center gap-1.5 lg:flex">
-        <Badge variant="glass">{roleLabel}</Badge>
-        <Badge variant={STATUS_TONE_VARIANT[statusMeta.tone]}>
-          {t(statusMeta.translationKey, statusMeta.fallback)}
-        </Badge>
+      {/* Role + status (desktop). The role sits under a column header that
+          already names it — an intrinsic fact reads as plain type, so the one
+          chip that survives here is genuinely an exception. */}
+      <div className="hidden flex-wrap items-center gap-x-2 gap-y-1 lg:flex">
+        <Caption color="muted">{roleLabel}</Caption>
+        {statusMeta && (
+          <Badge variant={statusMeta.variant}>
+            {t(statusMeta.translationKey, statusMeta.fallback)}
+          </Badge>
+        )}
       </div>
 
       {/* Fee editor */}
@@ -198,8 +206,9 @@ export function ContractRow({
 
       {/* Settle + document */}
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => void handleTogglePaid()}
           disabled={feeMissing || setPaid.isPending}
           title={
@@ -210,20 +219,21 @@ export function ContractRow({
                 : t("contracts.row.mark_paid", "Oznacz jako zapłacone")
           }
           aria-pressed={paid}
+          leftIcon={paid ? <BadgeCheck size={14} /> : <Check size={14} />}
           className={cn(
-            "inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-bold uppercase tracking-wider transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed disabled:opacity-40",
-            paid
-              ? "border-ethereal-sage/40 bg-ethereal-sage/10 text-ethereal-sage hover:bg-ethereal-sage/15"
-              : "border-ethereal-ink/12 bg-ethereal-alabaster text-ethereal-graphite hover:border-ethereal-sage/40 hover:text-ethereal-sage",
+            // The label is a phone-width casualty, so the icon must not keep its
+            // gap when it is the only thing left in the button.
+            "h-9 px-2.5 max-sm:gap-0",
+            paid &&
+              "border-ethereal-sage/40 bg-ethereal-sage/10 text-ethereal-sage hover:border-ethereal-sage hover:bg-ethereal-sage/15 hover:text-ethereal-sage",
           )}
         >
-          {paid ? <BadgeCheck size={14} /> : <Check size={14} />}
           <span className="hidden sm:inline">
             {paid
               ? t("contracts.row.paid", "Zapłacone")
               : t("contracts.row.to_pay", "Do zapłaty")}
           </span>
-        </button>
+        </Button>
 
         <Button
           variant="outline"

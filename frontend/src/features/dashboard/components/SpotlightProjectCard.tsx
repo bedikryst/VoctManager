@@ -114,8 +114,10 @@ export function SpotlightProjectCard({
     },
   ];
 
+  // No pulse and no sage: a production sits at ACTIVE for months, and a draft
+  // that nothing has happened to yet is not a success — it is the quiet state.
   const StatusBadgeSlot = (
-    <Badge variant={isActive ? "warning" : "success"} pulse={isActive}>
+    <Badge variant={isActive ? "warning" : "neutral"}>
       {isActive
         ? t("dashboard.admin.spotlight.status_active", "W Produkcji")
         : t("dashboard.admin.spotlight.status_prep", "W Przygotowaniu")}
@@ -142,7 +144,7 @@ export function SpotlightProjectCard({
           locationRef={project.locationId}
           fallback={project.locationFallbackName || "TBA"}
           variant="minimal"
-          className="text-[10px] font-medium uppercase tracking-[0.25em] transition-colors duration-500 hover:text-ethereal-gold"
+          className="text-overline-sm transition-colors duration-500 hover:text-ethereal-gold"
         />
       </motion.div>
     </>

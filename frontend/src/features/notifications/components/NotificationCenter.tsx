@@ -21,7 +21,7 @@ import {
   type Transition,
 } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Bell, BellOff, BellRing, Check, ChevronDown, Info, X } from "lucide-react";
+import { Bell, BellOff, Check, ChevronDown, Info, X } from "lucide-react";
 
 import {
   useNotifications,
@@ -34,6 +34,10 @@ import { NotificationItem } from "./NotificationItem";
 import { NotificationItemBoundary } from "./NotificationItemBoundary";
 
 import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
+import { StatePanel } from "@/shared/ui/composites/StatePanel";
+import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { cn } from "@/shared/lib/utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useIsFinePointer } from "@/shared/lib/dom/useMediaQuery";
@@ -123,8 +127,8 @@ const groupByDay = (
 const FallbackRow: React.FC = () => {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-3 rounded-2xl p-3">
-      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-ethereal-graphite/10 text-ethereal-graphite/45">
+    <div className="flex items-center gap-3 rounded-nested p-3">
+      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control bg-ethereal-graphite/10 text-ethereal-graphite/45">
         <Info size={16} strokeWidth={2} aria-hidden="true" />
       </div>
       <Text size="sm" color="muted">
@@ -214,9 +218,9 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           {label}
         </Eyebrow>
         {withCount && (
-          <span className="grid h-4 min-w-4 place-items-center rounded-full bg-ethereal-gold/15 px-1 text-[10px] font-semibold text-ethereal-gold">
+          <Badge variant="warning" casing="natural" className="tabular-nums">
             {items.length}
-          </span>
+          </Badge>
         )}
       </div>
       <div className="flex flex-col gap-0.5">
@@ -232,7 +236,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const header = (
     <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-4 pb-3">
       <div className="flex min-w-0 items-center gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/20 to-transparent">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-control border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/20 to-transparent">
           <Bell size={17} strokeWidth={2} className="text-ethereal-gold" aria-hidden="true" />
         </div>
         <div className="flex min-w-0 flex-col">
@@ -241,7 +245,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           </Heading>
           <Eyebrow size="caption" color="muted" className="mt-0.5 tracking-[0.1em]">
             {unreadCount > 0
-              ? `${unreadCount} ${t("notifications.unread")}`
+              ? t("notifications.unread_count", { count: unreadCount })
               : t("notifications.all_read", "Wszystko przeczytane")}
           </Eyebrow>
         </div>
@@ -254,7 +258,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             onClick={() => markAllRead()}
             title={t("notifications.mark_all_read")}
             aria-label={t("notifications.mark_all_read")}
-            className="grid h-9 w-9 place-items-center rounded-lg text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+            className="grid h-9 w-9 place-items-center rounded-control text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/5 hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
           >
             <Check size={16} strokeWidth={2} aria-hidden="true" />
           </button>
@@ -263,7 +267,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           type="button"
           onClick={close}
           aria-label={t("common.close", "Zamknij")}
-          className="grid h-9 w-9 place-items-center rounded-lg text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+          className="grid h-9 w-9 place-items-center rounded-control text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
         >
           <X size={16} strokeWidth={2} aria-hidden="true" />
         </button>
@@ -275,32 +279,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-[max(env(safe-area-inset-bottom),1rem)]">
       {isLoading ? (
         <div className="flex h-40 items-center justify-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 2.4, ease: "linear" }}
-          >
-            <BellRing size={22} className="text-ethereal-gold/40" aria-hidden="true" />
-          </motion.div>
+          <EtherealLoader fullHeight={false} />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="flex h-full min-h-[240px] flex-col items-center justify-center gap-3 px-6 text-center">
-          <div className="grid h-14 w-14 place-items-center rounded-full border border-ethereal-gold/20 bg-ethereal-alabaster">
-            <BellOff
-              size={22}
-              strokeWidth={1.5}
-              className="text-ethereal-graphite/40"
-              aria-hidden="true"
-            />
-          </div>
-          <div>
-            <Heading size="md" className="text-ethereal-ink">
-              {t("notifications.empty_title")}
-            </Heading>
-            <Text size="sm" color="muted" className="mt-1">
-              {t("notifications.empty_subtitle")}
-            </Text>
-          </div>
-        </div>
+        <StatePanel
+          variant="inline"
+          className="min-h-[240px] px-6"
+          icon={<BellOff size={26} strokeWidth={1.5} aria-hidden="true" />}
+          title={t("notifications.empty_title")}
+          description={t("notifications.empty_subtitle")}
+        />
       ) : (
         <>
           {unread.length > 0 &&
@@ -318,20 +306,16 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
           {hasNextPage && (
             <div className="flex justify-center pb-2 pt-1">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ethereal-graphite/55 outline-none transition-colors hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:cursor-not-allowed disabled:opacity-50"
+                isLoading={isFetchingNextPage}
+                leftIcon={<ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" />}
               >
-                <ChevronDown
-                  size={14}
-                  strokeWidth={2.5}
-                  aria-hidden="true"
-                  className={isFetchingNextPage ? "animate-bounce" : undefined}
-                />
                 {t("notifications.show_older", "Pokaż starsze")}
-              </button>
+              </Button>
             </div>
           )}
         </>
@@ -362,7 +346,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           aria-label={label ?? t("notifications.title")}
           aria-haspopup="dialog"
           className={cn(
-            "relative flex flex-1 select-none flex-col items-center justify-center gap-1.5 rounded-xl pt-2 pb-1 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.95]",
+            "relative flex flex-1 select-none flex-col items-center justify-center gap-1.5 rounded-control pt-2 pb-1 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.95]",
             newCount > 0
               ? "text-ethereal-gold"
               : "text-ethereal-graphite/55 hover:text-ethereal-ink",
@@ -388,7 +372,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           aria-label={t("notifications.title")}
           aria-haspopup="dialog"
           className={cn(
-            "relative flex h-full w-full items-center justify-center rounded-[12px] text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+            "relative flex h-full w-full items-center justify-center rounded-control text-ethereal-graphite/60 outline-none transition-colors hover:bg-ethereal-ink/[0.05] hover:text-ethereal-ink focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
             className,
           )}
         >
@@ -410,7 +394,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 onClick={close}
                 aria-hidden="true"
                 className={cn(
-                  "fixed inset-0 z-[99]",
+                  "fixed inset-0 z-focus-trap",
                   isFinePointer
                     ? "bg-ethereal-ink/10"
                     : "bg-ethereal-ink/45 backdrop-blur-[3px]",
@@ -431,10 +415,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   exit={{ opacity: 0, x: -16, scale: 0.98 }}
                   transition={DRAWER_SPRING}
                   style={{ originX: 0, originY: 0.5 }}
-                  className="fixed bottom-4 left-4 top-4 z-[100] flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-[26px] border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
+                  className="fixed bottom-4 left-4 top-4 z-focus-trap flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-surface border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
                 >
                   {header}
-                  <div className="mx-3 h-px shrink-0 bg-ethereal-graphite/10" />
+                  <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
                   {body}
                 </motion.div>
               ) : (
@@ -455,7 +439,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   dragConstraints={{ top: 0, bottom: 0 }}
                   dragElastic={0.05}
                   onDragEnd={handleDragEnd}
-                  className="fixed inset-x-0 bottom-0 z-[100] flex max-h-[85dvh] flex-col overflow-hidden rounded-t-[26px] border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.2)] outline-none"
+                  className="fixed inset-x-0 bottom-0 z-focus-trap flex max-h-[85dvh] flex-col overflow-hidden rounded-t-surface border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.2)] outline-none"
                 >
                   <div
                     className="flex w-full shrink-0 cursor-grab justify-center py-3 touch-none active:cursor-grabbing"
@@ -465,7 +449,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     <span className="block h-[3px] w-9 rounded-full bg-ethereal-graphite/15" />
                   </div>
                   {header}
-                  <div className="mx-3 h-px shrink-0 bg-ethereal-graphite/10" />
+                  <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
                   {body}
                 </motion.div>
               ))}

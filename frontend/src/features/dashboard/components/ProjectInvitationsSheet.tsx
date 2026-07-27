@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -80,7 +81,7 @@ const RosterRow = ({ row }: { row: InvitationRosterRow }): React.JSX.Element => 
   const hasContact = Boolean(row.email || row.phone);
 
   return (
-    <li className="border-b border-ethereal-incense/10 py-3 last:border-0">
+    <li className="border-b border-hairline py-3 last:border-0">
       <div className="flex items-baseline justify-between gap-2">
         <Text size="md" weight="bold" truncate className="min-w-0">
           {row.name}
@@ -147,32 +148,27 @@ const RosterGroup = ({
     <section className="mt-4 first:mt-0">
       <div
         className={cn(
-          "flex items-center justify-between rounded-t-2xl border px-4 py-2.5",
+          "flex items-center justify-between rounded-t-nested border px-4 py-2.5",
           c.headerBg,
           c.headerBorder,
         )}
       >
-        <div className="flex items-center gap-2">
-          <Icon size={15} className={c.text} aria-hidden="true" />
-          <span
-            className={cn(
-              "text-xs font-bold uppercase tracking-[0.12em]",
-              c.text,
-            )}
-          >
+        <div className={cn("flex items-center gap-2", c.text)}>
+          <Icon size={15} aria-hidden="true" />
+          <Eyebrow as="h3" color="inherit">
             {label}
-          </span>
+          </Eyebrow>
         </div>
         <span
           className={cn(
-            "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+            "rounded-chip px-2 py-0.5 text-xs font-bold tabular-nums",
             c.countBg,
           )}
         >
           {rows.length}
         </span>
       </div>
-      <ul className={cn("rounded-b-2xl border border-t-0 bg-white/40 px-4", c.bodyBorder)}>
+      <ul className={cn("rounded-b-nested border border-t-0 bg-white/40 px-4", c.bodyBorder)}>
         {rows.map((row) => (
           <RosterRow key={row.id} row={row} />
         ))}
@@ -198,12 +194,14 @@ export const ProjectInvitationsSheet = ({
       subtitle={t("dashboard.admin.roster.subtitle", "Status zaproszeń")}
       headerBadge={
         roster.total > 0 ? (
-          <span className="flex items-center gap-1 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster px-2 py-0.5">
-            <Users size={11} className="text-ethereal-graphite/60" aria-hidden="true" />
-            <span className="text-xs font-bold tabular-nums text-ethereal-ink">
-              {roster.total}
-            </span>
-          </span>
+          <Badge
+            variant="neutral"
+            casing="natural"
+            className="tabular-nums"
+            icon={<Users size={11} aria-hidden="true" />}
+          >
+            {roster.total}
+          </Badge>
         ) : undefined
       }
       footer={

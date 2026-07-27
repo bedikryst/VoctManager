@@ -45,7 +45,7 @@ export const UnreadMessagesAlert: React.FC<UnreadMessagesAlertProps> = ({
         aria-label={t("messages.alert.aria", "Otwórz wiadomości")}
       />
       <div className="pointer-events-none relative z-20 flex items-center gap-4 px-6 py-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/20 to-transparent">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-control border border-ethereal-gold/30 bg-gradient-to-br from-ethereal-gold/20 to-transparent">
           <MessageCircle size={20} strokeWidth={2} className="text-ethereal-gold" />
         </div>
         <div className="min-w-0 flex-1">

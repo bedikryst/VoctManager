@@ -14,19 +14,19 @@ import { BadgeCheck, CalendarClock, Calculator, MapPin } from "lucide-react";
 
 import { getLocationLabel } from "@/features/projects/lib/projectPresentation";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
-import { cn } from "@/shared/lib/utils";
 import { ExportContractButton } from "@/widgets/domain/ExportContractButton";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Caption, Heading } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Heading } from "@/shared/ui/primitives/typography";
 import type { ContractRecordType } from "../api/contracts.service";
 import type { LedgerFilter, ProjectRollup } from "../hooks/useContractsData";
 import {
   getProjectStatusMeta,
   parseFeeValue,
-  STATUS_TONE_VARIANT,
+  PROJECT_STATUS_VARIANT,
 } from "../lib/contractsPresentation";
 
 interface LedgerHeaderProps {
@@ -94,13 +94,12 @@ export function LedgerHeader({
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false}>
       {/* Context + export */}
-      <div className="flex flex-col gap-4 border-b border-ethereal-ink/6 p-5 lg:flex-row lg:items-start lg:justify-between">
+      <div className="flex flex-col gap-4 border-b border-hairline p-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Badge
-              variant={STATUS_TONE_VARIANT[statusMeta.tone]}
-              pulse={statusMeta.tone === "active"}
-            >
+            {/* No pulse: a production stays ACTIVE for months, so the sweep
+                would run permanently and stop meaning "right now". */}
+            <Badge variant={PROJECT_STATUS_VARIANT[statusMeta.tone]}>
               {t(statusMeta.translationKey, statusMeta.fallback)}
             </Badge>
           </div>
@@ -150,12 +149,9 @@ export function LedgerHeader({
               "Oznacza wszystkie wycenione, niezapłacone honoraria w projekcie jako zapłacone.",
             )}
           >
+            {/* The count lives on the "Do zapłaty" filter one row below; saying
+                it again on the button made one figure into three on one card. */}
             {t("contracts.mark_all.button", "Oznacz zapłacone")}
-            {unpaidCount > 0 && (
-              <span className="ml-1.5 rounded-full bg-ethereal-ink/10 px-1.5 py-0.5 text-[10px] tabular-nums">
-                {unpaidCount}
-              </span>
-            )}
           </Button>
           <ExportContractButton projectId={String(project.id)} />
         </div>
@@ -163,72 +159,24 @@ export function LedgerHeader({
 
       {/* Filters + bulk valuation */}
       <div className="flex flex-col gap-4 p-4 xl:flex-row xl:items-end xl:justify-between">
-        <div
-          className="inline-flex flex-wrap gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/60 p-1"
-          role="group"
-          aria-label={t("contracts.filters.aria", "Filtr rozliczeń")}
-        >
-          {filters.map((filter) => {
-            const isActive = ledgerFilter === filter.id;
-            return (
-              <button
-                key={filter.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => onFilterChange(filter.id)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                  isActive
-                    ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-parchment/50",
-                )}
-              >
-                {filter.label}
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",
-                    isActive
-                      ? "bg-ethereal-ink/10 text-ethereal-ink"
-                      : "bg-ethereal-ink/5 text-ethereal-graphite/70",
-                  )}
-                >
-                  {filter.count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <SegmentedTabs
+          items={filters}
+          value={ledgerFilter}
+          onChange={onFilterChange}
+          ariaLabel={t("contracts.filters.aria", "Filtr rozliczeń")}
+        />
 
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1.5">
-            <Caption color="muted" className="ml-1">
+            <Eyebrow as="p" color="muted" className="ml-1">
               {t("contracts.bulk.target_label", "Stawka zbiorcza dla")}
-            </Caption>
-            <div
-              className="inline-flex gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/60 p-1"
-              role="group"
-              aria-label={t("contracts.bulk.target_label", "Stawka zbiorcza dla")}
-            >
-              {bulkTargets.map((target) => {
-                const isActive = bulkTarget === target.id;
-                return (
-                  <button
-                    key={target.id}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => onBulkTargetChange(target.id)}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                      isActive
-                        ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                        : "text-ethereal-graphite hover:bg-ethereal-parchment/50",
-                    )}
-                  >
-                    {target.label}
-                  </button>
-                );
-              })}
-            </div>
+            </Eyebrow>
+            <SegmentedTabs
+              items={bulkTargets}
+              value={bulkTarget}
+              onChange={onBulkTargetChange}
+              ariaLabel={t("contracts.bulk.target_label", "Stawka zbiorcza dla")}
+            />
           </div>
           <div className="w-32">
             <Input

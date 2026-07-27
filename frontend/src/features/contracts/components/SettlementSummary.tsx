@@ -48,25 +48,35 @@ const CoverageRail = ({
     <div className="flex items-baseline justify-between gap-2">
       <Caption color="muted">{label}</Caption>
       <Caption color="muted" className="tabular-nums">
-        <Text as="span" size="xs" weight="semibold" className="text-ethereal-ink">
-          {formatInteger(done)}
-        </Text>
-        {" / "}
-        {formatInteger(total)}
+        {total > 0 ? (
+          <>
+            <Text as="span" size="xs" weight="semibold" className="text-ethereal-ink">
+              {formatInteger(done)}
+            </Text>
+            {" / "}
+            {formatInteger(total)}
+          </>
+        ) : (
+          "—"
+        )}
       </Caption>
     </div>
-    <div
-      className="h-1.5 w-full overflow-hidden rounded-full bg-ethereal-ink/6"
-      aria-hidden="true"
-    >
+    {/* An empty bar over an empty denominator reads as "nothing done yet"; a
+        project with nobody to price has no rate at all, only no data. */}
+    {total > 0 && (
       <div
-        className={cn(
-          "h-full rounded-full transition-all duration-700 ease-out",
-          accent === "gold" ? "bg-ethereal-gold/70" : "bg-ethereal-sage/70",
-        )}
-        style={{ width: `${rate}%` }}
-      />
-    </div>
+        className="h-1.5 w-full overflow-hidden rounded-full bg-ethereal-ink/6"
+        aria-hidden="true"
+      >
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-700 ease-out",
+            accent === "gold" ? "bg-ethereal-gold/70" : "bg-ethereal-sage/70",
+          )}
+          style={{ width: `${rate}%` }}
+        />
+      </div>
+    )}
   </div>
 );
 
@@ -79,7 +89,7 @@ export const SettlementSummary = React.memo(
     return (
       <GlassCard variant="solid" padding="none" isHoverable={false}>
         {/* Hero: outstanding liability */}
-        <div className="border-b border-ethereal-ink/6 p-5">
+        <div className="border-b border-hairline p-5">
           <div className="mb-2 flex items-center gap-2">
             <span
               className={cn(

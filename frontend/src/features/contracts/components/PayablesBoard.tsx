@@ -20,8 +20,8 @@ import {
   ListChecks,
 } from "lucide-react";
 
-import { cn } from "@/shared/lib/utils";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -123,30 +123,32 @@ const PayableRow = ({
 
       <div className="flex shrink-0 items-center gap-1">
         {state === "unpaid" ? (
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void handlePay()}
             disabled={setPaid.isPending}
             title={t("contracts.row.mark_paid", "Oznacz jako zapłacone")}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ethereal-ink/12 bg-ethereal-alabaster px-2.5 text-[11px] font-bold uppercase tracking-wider text-ethereal-graphite transition-all hover:border-ethereal-sage/40 hover:text-ethereal-sage focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:opacity-40"
+            leftIcon={<Check size={13} />}
+            className="h-8 px-2.5 max-sm:gap-0"
           >
-            <Check size={13} />
             <span className="hidden sm:inline">
               {t("contracts.payables.pay", "Zapłacone")}
             </span>
-          </button>
+          </Button>
         ) : (
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onOpenProject(String(project.id))}
             title={t("contracts.payables.open", "Otwórz w projekcie")}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-ethereal-ink/12 bg-ethereal-alabaster px-2.5 text-[11px] font-bold uppercase tracking-wider text-ethereal-graphite transition-all hover:border-ethereal-gold/40 hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40"
+            leftIcon={<ArrowUpRight size={13} />}
+            className="h-8 px-2.5 max-sm:gap-0"
           >
-            <ArrowUpRight size={13} />
             <span className="hidden sm:inline">
               {t("contracts.payables.open_short", "Wyceń")}
             </span>
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -228,7 +230,7 @@ export function PayablesBoard({
 
   return (
     <GlassCard variant="solid" padding="none" isHoverable={false}>
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-ethereal-ink/6 px-5 py-3.5">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-3.5">
         <div className="flex items-center gap-2">
           <ListChecks size={15} className="text-ethereal-gold/70" aria-hidden="true" />
           <Eyebrow as="h2" color="graphite">
@@ -241,41 +243,16 @@ export function PayablesBoard({
 
         <div className="flex flex-wrap items-center gap-2">
           {exportButton}
-          <div className="inline-flex flex-wrap gap-1 rounded-xl border border-ethereal-ink/8 bg-ethereal-alabaster/60 p-1">
-            {filters.map((option) => {
-            const isActive = filter === option.id;
-            return (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setFilter(option.id)}
-                aria-pressed={isActive}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-                  isActive
-                    ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
-                    : "text-ethereal-graphite hover:bg-ethereal-parchment/50",
-                )}
-              >
-                {option.label}
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",
-                    isActive
-                      ? "bg-ethereal-ink/10 text-ethereal-ink"
-                      : "bg-ethereal-ink/5 text-ethereal-graphite/70",
-                  )}
-                >
-                  {option.count}
-                </span>
-              </button>
-              );
-            })}
-          </div>
+          <SegmentedTabs
+            items={filters}
+            value={filter}
+            onChange={setFilter}
+            ariaLabel={t("contracts.filters.aria", "Filtr rozliczeń")}
+          />
         </div>
       </header>
 
-      <div className="max-h-[64vh] divide-y divide-ethereal-ink/6 overflow-y-auto overflow-x-hidden">
+      <div className="max-h-[64vh] divide-y divide-hairline overflow-y-auto overflow-x-hidden">
         {visible.map((entry) => (
           <PayableRow key={entry.id} entry={entry} onOpenProject={onOpenProject} />
         ))}
