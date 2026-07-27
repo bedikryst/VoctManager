@@ -8,7 +8,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Heading, Text } from "@/shared/ui/primitives/typography";
 
 /**
  * Date-stamped version of BOTH legal documents. Bump on every content change:
@@ -52,9 +52,9 @@ const LegalSection: React.FC<LegalSectionProps> = ({ titleKey, descKey }) => {
 
   return (
     <div>
-      <Eyebrow color="muted" size={"md"} className="mb-4">
+      <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
         {t(titleKey)}
-      </Eyebrow>
+      </Heading>
       <Text size="md" color="graphite" className="mt-2">
         {t(descKey)}
       </Text>
@@ -78,9 +78,9 @@ export const PrivacyContent: React.FC = () => {
       />
 
       <div>
-        <Eyebrow color="muted" size={"md"} className="mb-4">
+        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
           {t("auth.legal.privacy.goals_and_basis")}
-        </Eyebrow>
+        </Heading>
         <ul className="space-y-4 list-none pl-0 m-0">
           {(["account", "voice", "logistics", "contracts"] as const).map(
             (item) => (
@@ -113,9 +113,9 @@ export const PrivacyContent: React.FC = () => {
       />
 
       <div>
-        <Eyebrow color="muted" size={"md"} className="mb-4">
+        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
           {t("auth.legal.privacy.internal_comm_title")}
-        </Eyebrow>
+        </Heading>
         <Text size="md" color="graphite" className="mt-2">
           {t("auth.legal.privacy.internal_comm_desc")}
         </Text>
@@ -193,9 +193,9 @@ export const TermsContent: React.FC = () => {
       />
 
       <div>
-        <Eyebrow color="muted" size={"md"} className="mb-4">
+        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
           {t("auth.legal.terms.intellectual_property")}
-        </Eyebrow>
+        </Heading>
         <div className="bg-ethereal-gold/10 p-4 border-l-2 border-ethereal-gold mt-2">
           <Text size="md" color="graphite" className="italic mt-2">
             {t("auth.legal.terms.intellectual_property_desc")}
@@ -224,9 +224,9 @@ export const TermsContent: React.FC = () => {
       />
 
       <div>
-        <Eyebrow color="muted" size={"md"} className="mb-4">
+        <Heading as="h3" size="md" weight="semibold" color="graphite" className="mb-4">
           {t("auth.legal.terms.support_title")}
-        </Eyebrow>
+        </Heading>
         <Text size="md" color="graphite" className="mt-2">
           {t("auth.legal.terms.support_desc_prefix")}{" "}
           <span className="font-medium text-ethereal-ink">

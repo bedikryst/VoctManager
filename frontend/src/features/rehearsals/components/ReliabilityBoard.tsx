@@ -25,7 +25,7 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 // The dot-separated facts line the archive pass settled. Its home should move
 // to `shared/ui/composites` when that layer gets its pass — retyping it here
 // would be the third copy of a shape the design system has already decided.
-import { ArchiveStatLine } from "@/features/archive/components/ArchiveStatLine";
+import { StatLine } from "@/shared/ui/composites/StatLine";
 
 import type { Rehearsal } from "@/shared/types";
 import type { RehearsalAnalytics, SingerReliability } from "../hooks/useRehearsalAnalytics";
@@ -245,7 +245,7 @@ export const ReliabilityBoard = ({
         />
         {/* The singers who need a conversation are not counted here: the card
             below states them by listing them, flagged rows first. */}
-        <ArchiveStatLine
+        <StatLine
           stats={[
             {
               id: "graded",

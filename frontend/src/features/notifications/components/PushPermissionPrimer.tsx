@@ -80,8 +80,10 @@ export const PushPermissionPrimer: React.FC<PushPermissionPrimerProps> = ({
 
   return createPortal(
     <AnimatePresence>
+      {/* `z-toast`, not the dialog layer — the primer interrupts from outside
+          the current task and must sit above anything already open. */}
       {isOpen && (
-        <div className="fixed inset-0 z-(--z-toast) flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

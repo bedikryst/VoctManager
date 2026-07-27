@@ -71,6 +71,9 @@ export function LocationEditorPanel({
   useEffect(() => {
     if (!isOpen || showExitConfirm) return;
     const handleKeyDown = (event: KeyboardEvent): void => {
+      // An open select inside the panel dismisses itself on Escape and marks the
+      // event handled; the panel must not close on that same keypress.
+      if (event.defaultPrevented) return;
       if (event.key === "Escape") handleCloseRequest();
     };
     window.addEventListener("keydown", handleKeyDown);

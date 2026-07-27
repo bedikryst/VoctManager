@@ -315,7 +315,7 @@ export const WelcomeMoment = ({
                 </button>
               </div>
 
-              <Eyebrow color="gold" as="p" className="mt-5 tracking-[0.16em]">
+              <Eyebrow color="gold" as="p" className="mt-5">
                 {t("dashboard.artist.welcome.tone_label", "Kamerton · A 440 Hz")}
               </Eyebrow>
               <Text size="xs" color="muted" className="mt-1.5">
@@ -337,7 +337,7 @@ export const WelcomeMoment = ({
               {invitation.current && (
                 <div className="mt-8 w-full max-w-md rounded-surface border border-ethereal-gold/30 bg-white/55 p-4 text-left shadow-glass-ethereal">
                   <div className="flex items-center gap-2">
-                    <Eyebrow color="gold" size="caption">
+                    <Eyebrow color="gold">
                       {t(
                         "dashboard.artist.welcome.invitation.eyebrow",
                         "Czeka na Ciebie zaproszenie",

@@ -14,7 +14,28 @@ import { CheckCircle2, Clock, Flame, XCircle } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
+import {
+  attendanceRateTone,
+  type AttendanceRateTone,
+} from "@/features/rehearsals/constants/attendanceMeta";
 import type { ScheduleAttendanceStats } from "../types/schedule.dto";
+
+/**
+ * The ring is entirely colour, so its resting fill is the warm neutral and gold
+ * marks the shortfall — the same scale the reliability board, the inspector and
+ * the hub matrix read. This card was the fourth copy and the only one still
+ * alive: sage ≥90, gold ≥70, crimson below, so a singer who had missed three
+ * rehearsals in a busy term opened their own schedule to the panel's alarm
+ * colour. A dip is not a failure.
+ */
+const RATE_TONE_RING: Record<
+  AttendanceRateTone,
+  "gold" | "graphite" | "incense"
+> = {
+  unknown: "graphite",
+  low: "gold",
+  normal: "incense",
+};
 
 interface MyAttendancePanelProps {
   stats: ScheduleAttendanceStats;
@@ -26,28 +47,40 @@ export const MyAttendancePanel = ({
   const { t } = useTranslation();
   if (stats.rate == null) return null;
 
-  const tone = stats.rate >= 90 ? "sage" : stats.rate >= 70 ? "gold" : "crimson";
+  const rateTone = attendanceRateTone(stats.rate);
+  const tone = RATE_TONE_RING[rateTone];
 
+  /**
+   * The three counts stay on screen at zero, unlike a chip in a list: they
+   * partition the census stated beside them ("na podstawie N prób"), and this
+   * is one person's own card, not forty rows to triage — there is nothing here
+   * for a zero to bury. What they do NOT do is carry a status palette. A count
+   * over a season is a measurement, not a roll-call record, so the icon says
+   * which fact it is and the figure spends no colour; only the absences take a
+   * tone, from the same scale the ring above them reads, so the card cannot
+   * say "fine" in one place and "short" in the other.
+   */
   const counts = [
     {
       key: "present",
       value: stats.present,
       Icon: CheckCircle2,
-      className: "text-ethereal-sage",
+      className: "text-ethereal-graphite/60",
       label: t("schedule.attendance.present", "Obecności"),
     },
     {
       key: "late",
       value: stats.late,
       Icon: Clock,
-      className: "text-ethereal-incense",
+      className: "text-ethereal-graphite/60",
       label: t("schedule.attendance.late", "Spóźnienia"),
     },
     {
       key: "absent",
       value: stats.absent,
       Icon: XCircle,
-      className: "text-ethereal-crimson",
+      className:
+        rateTone === "low" ? "text-ethereal-gold" : "text-ethereal-graphite/60",
       label: t("schedule.attendance.absent", "Nieobecności"),
     },
   ];
@@ -81,7 +114,7 @@ export const MyAttendancePanel = ({
             <div
               key={key}
               title={label}
-              className="flex items-center gap-1.5 rounded-xl border border-ethereal-incense/15 bg-ethereal-alabaster px-3 py-2 shadow-glass-ethereal"
+              className="flex items-center gap-1.5 rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster px-3 py-2 shadow-glass-ethereal"
             >
               <Icon size={14} className={className} aria-hidden="true" />
               <span className="text-sm font-bold tabular-nums text-ethereal-ink">
@@ -94,7 +127,7 @@ export const MyAttendancePanel = ({
           ))}
 
           {stats.streak > 1 && (
-            <div className="flex items-center gap-1.5 rounded-xl border border-ethereal-gold/30 bg-ethereal-gold/10 px-3 py-2">
+            <div className="flex items-center gap-1.5 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/10 px-3 py-2">
               <Flame size={14} className="text-ethereal-gold" aria-hidden="true" />
               <span className="text-sm font-bold tabular-nums text-ethereal-ink">
                 {stats.streak}

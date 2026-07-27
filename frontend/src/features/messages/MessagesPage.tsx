@@ -45,7 +45,7 @@ type TriageFilter = "all" | "unread" | "unassigned" | "mine" | "resolved";
 const COUNTED_FILTERS: ReadonlySet<TriageFilter> = new Set(["unread", "unassigned", "mine"]);
 
 const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <Eyebrow color="muted" size="caption" className="px-2">
+  <Eyebrow color="muted" className="px-2">
     {children}
   </Eyebrow>
 );

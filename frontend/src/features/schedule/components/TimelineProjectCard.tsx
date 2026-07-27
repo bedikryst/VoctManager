@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -222,42 +223,25 @@ export const TimelineProjectCard = ({
           subtitle={t("schedule.card.project_badge", "Koncert / Wydarzenie")}
         >
           <div className="flex flex-col gap-4">
-              {/* sub-tab bar — full-width on mobile */}
-              <div className="flex gap-2">
-                {(
-                  [
-                    {
-                      id: "LOGISTICS",
-                      Icon: Wrench,
-                      labelKey: "schedule.card.tab.logistics",
-                      fallback: "Logistyka",
-                    },
-                    {
-                      id: "SETLIST",
-                      Icon: Music,
-                      labelKey: "schedule.card.tab.setlist",
-                      fallback: "Repertuar",
-                    },
-                  ] as const
-                ).map(({ id, Icon, labelKey, fallback }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setActiveSubTab(id)}
-                    className={cn(
-                      "flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2 sm:px-4 rounded-xl text-xs font-medium tracking-wide uppercase transition-all duration-200 border",
-                      activeSubTab === id
-                        ? id === "LOGISTICS"
-                          ? "border-ethereal-gold/50 text-ethereal-gold bg-ethereal-gold/15"
-                          : "border-ethereal-sage/50 text-ethereal-sage bg-ethereal-sage/20"
-                        : "border-transparent text-ethereal-parchment/60 hover:text-ethereal-parchment/90 hover:bg-ethereal-incense/10",
-                    )}
-                  >
-                    <Icon size={13} aria-hidden="true" />
-                    {t(labelKey, fallback)}
-                  </button>
-                ))}
-              </div>
+              {/* sub-tab bar */}
+              <SegmentedTabs
+                tone="dark"
+                value={activeSubTab}
+                onChange={setActiveSubTab}
+                ariaLabel={t("schedule.card.tabs_aria", "Sekcje wydarzenia")}
+                items={[
+                  {
+                    id: "LOGISTICS",
+                    Icon: Wrench,
+                    label: t("schedule.card.tab.logistics", "Logistyka"),
+                  },
+                  {
+                    id: "SETLIST",
+                    Icon: Music,
+                    label: t("schedule.card.tab.setlist", "Repertuar"),
+                  },
+                ]}
+              />
 
               <div className="min-w-0">
                 {isUpcoming && (

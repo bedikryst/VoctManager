@@ -120,7 +120,7 @@ const SeasonStepCard = ({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <Eyebrow size="caption" color="muted">
+          <Eyebrow color="muted">
             {String(index).padStart(2, "0")}
           </Eyebrow>
           <Text size="sm" weight="bold" className="block leading-tight">
@@ -254,7 +254,7 @@ export const SeasonSetupConcierge = ({
                 )}
                 aria-hidden="true"
               />
-              <Eyebrow color={isPlaying ? "gold" : "muted"} as="span" className="tracking-[0.16em]">
+              <Eyebrow color={isPlaying ? "gold" : "muted"} as="span">
                 {isPlaying
                   ? t("dashboard.admin.setup.tone_playing", "Brzmi… wycisz")
                   : t("dashboard.admin.setup.tone_cta", "Kamerton · ton A")}

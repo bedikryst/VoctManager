@@ -238,7 +238,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-toast bg-ethereal-ink/40 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-ethereal-ink/40 backdrop-blur-sm"
             onClick={handleClose}
           />
           <motion.div
@@ -247,7 +247,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 12 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-none fixed inset-0 z-toast flex items-center justify-center p-4"
+            className="pointer-events-none fixed inset-0 z-focus-trap flex items-center justify-center p-4"
           >
             <GlassCard
               variant="solid"
@@ -330,7 +330,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
                     {isManager ? (
                       presetArtistId ? (
                         <div className="rounded-control border border-hairline bg-ethereal-alabaster/40 px-4 py-3">
-                          <Eyebrow color="muted" size="caption">
+                          <Eyebrow color="muted">
                             {t("messages.compose.recipient_to", "Do")}
                           </Eyebrow>
                           <Text size="sm" color="graphite" weight="medium">

@@ -176,7 +176,7 @@ const ChannelCells: React.FC<ChannelCellsProps> = ({
               <Tooltip.Content
                 side="left"
                 sideOffset={6}
-                className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-control shadow-glass-solid max-w-55 text-center leading-snug z-toast"
+                className="bg-ethereal-ink text-ethereal-marble text-xs px-3 py-1.5 rounded-control shadow-glass-solid max-w-55 text-center leading-snug z-nav-sheet"
               >
                 {t("settings.notifications.tooltips.activate_first")}
                 <Tooltip.Arrow className="fill-ethereal-ink" />

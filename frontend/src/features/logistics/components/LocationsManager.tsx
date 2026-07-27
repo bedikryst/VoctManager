@@ -39,7 +39,7 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
-} from "@/shared/ui/composites/StaggeredBento";
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 import { getLocationCategoryOptions } from "../constants/locationCategories";
 import { useLocationsData } from "../hooks/useLocationsData";
@@ -178,7 +178,7 @@ export const LocationsManager = (): React.JSX.Element => {
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 pb-24 pt-6">
-        <StaggeredBentoContainer className="!flex flex-col gap-5">
+        <StaggeredBentoContainer className="flex flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"

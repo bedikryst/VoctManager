@@ -30,7 +30,7 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import {
   StaggeredBentoContainer,
   StaggeredBentoItem,
-} from "@/shared/ui/composites/StaggeredBento";
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 
 import { useRehearsalsData, type RehearsalView } from "./hooks/useRehearsalsData";
 import { useRehearsalAnalytics } from "./hooks/useRehearsalAnalytics";
@@ -149,7 +149,7 @@ export default function Rehearsals(): React.JSX.Element {
   return (
     <PageTransition>
       <div className="relative mx-auto flex max-w-[1500px] flex-col gap-5 pb-24 pt-6">
-        <StaggeredBentoContainer className="!flex min-w-0 flex-col gap-5">
+        <StaggeredBentoContainer className="flex min-w-0 flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"

@@ -580,7 +580,6 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
               />
             )}
             <Eyebrow
-              size="caption"
               color="inherit"
               className={cn(
                 "truncate",

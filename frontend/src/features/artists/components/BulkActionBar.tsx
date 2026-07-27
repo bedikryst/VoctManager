@@ -51,7 +51,7 @@ export const BulkActionBar = ({
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}
       transition={{ type: "spring", damping: 26, stiffness: 260 }}
-      className="fixed inset-x-0 bottom-dock z-toast mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
+      className="fixed inset-x-0 bottom-dock z-dock-bar mx-auto flex w-[min(100%-2rem,44rem)] flex-wrap items-center justify-between gap-3 rounded-nested border border-hairline-strong bg-ethereal-alabaster/90 px-4 py-3 shadow-glass-ethereal backdrop-blur-xl"
       role="region"
       aria-label={t("artists.bulk.bar_aria", "Akcje zbiorcze")}
     >

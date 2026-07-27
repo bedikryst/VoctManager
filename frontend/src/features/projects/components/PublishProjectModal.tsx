@@ -104,7 +104,7 @@ export const PublishProjectModal = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-focus-trap flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -138,7 +138,7 @@ export const PublishProjectModal = ({
 
             <div className="flex flex-col gap-4 p-6">
               <div className="pr-8">
-                <Eyebrow color="gold" size="caption">
+                <Eyebrow color="gold">
                   {t("projects.publish.eyebrow", "Publikacja projektu")}
                 </Eyebrow>
                 <Heading

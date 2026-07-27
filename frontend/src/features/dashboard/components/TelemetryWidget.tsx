@@ -15,6 +15,10 @@ import { MetricBlock } from "@/shared/ui/composites/MetricBlock";
 import { Eyebrow, Text, Unit } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { ResonancePillar } from "@/shared/ui/kinematics/ResonancePillar";
+import {
+  VOICE_SECTIONS,
+  type SectionKey,
+} from "@/features/artists/constants/voiceSections";
 
 export interface VoiceStatsDto {
   S: number;
@@ -37,6 +41,18 @@ export interface TelemetryWidgetProps {
   adminStats?: AdminTelemetryStatsDto;
 }
 
+/**
+ * The SATB spine the roster sorts by — mezzo sings the alto line, baritone
+ * sings with the basses. The accent beside each count comes from the same
+ * taxonomy, so a voice is one colour here and on the roster.
+ */
+const SECTION_TALLY: Record<SectionKey, (satb: VoiceStatsDto) => number> = {
+  S: (satb) => satb.S + satb.MEZ,
+  A: (satb) => satb.A + satb.CT,
+  T: (satb) => satb.T,
+  B: (satb) => satb.B + satb.BAR,
+};
+
 export function TelemetryWidget({
   adminStats,
 }: TelemetryWidgetProps): React.JSX.Element {
@@ -49,24 +65,12 @@ export function TelemetryWidget({
   };
 
   const voices = useMemo(
-    () => [
-      {
-        label: "S",
-        val: stats.satb.S + stats.satb.MEZ,
-        voiceType: "S" as const,
-      },
-      {
-        label: "A",
-        val: stats.satb.A + stats.satb.CT,
-        voiceType: "A" as const,
-      },
-      { label: "T", val: stats.satb.T, voiceType: "T" as const },
-      {
-        label: "B",
-        val: stats.satb.B + stats.satb.BAR,
-        voiceType: "B" as const,
-      },
-    ],
+    () =>
+      VOICE_SECTIONS.map((section) => ({
+        label: section.key,
+        val: SECTION_TALLY[section.key](stats.satb),
+        accent: section.accent,
+      })),
     [stats.satb],
   );
 
@@ -154,7 +158,7 @@ export function TelemetryWidget({
               heightPercentage={`${(v.val / maxVoiceVal) * 100}%`}
               delayIndex={index}
               label={v.label}
-              voice={v.voiceType}
+              accent={v.accent}
             />
           ))}
         </div>

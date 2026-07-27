@@ -52,7 +52,7 @@ export function TogglePill({
         disabled && "cursor-not-allowed opacity-40",
         active
           ? "border-ethereal-gold/45 bg-ethereal-gold/12 text-ethereal-ink"
-          : "border-ethereal-ink/12 bg-transparent text-ethereal-graphite/70 hover:border-ethereal-gold/35 hover:text-ethereal-ink",
+          : "border-hairline-strong bg-transparent text-ethereal-graphite/70 hover:border-ethereal-gold/35 hover:text-ethereal-ink",
       )}
     >
       <span

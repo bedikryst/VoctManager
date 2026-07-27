@@ -84,8 +84,15 @@ export const AuthOutcome = ({
 
     {children}
 
+    {/* Two uppercase CTAs at 0.1em tracking do not shrink — `Button` is
+        `whitespace-nowrap` — so a fixed row makes the pair's full width the
+        outcome's minimum, and in a grid that minimum is paid for by the column
+        NEXT to it. Wrapping lets the second action drop to its own line when the
+        card is narrow, and keeps the outcome's min-content down to one button. */}
     {actions && (
-      <div className="mt-7 flex flex-col gap-3 sm:flex-row">{actions}</div>
+      <div className="mt-7 flex flex-wrap justify-center gap-3 *:min-w-48 *:flex-1">
+        {actions}
+      </div>
     )}
   </div>
 );

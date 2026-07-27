@@ -106,6 +106,10 @@ export default function ArtistEditorPanel({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // A Radix layer inside the panel — an open select, a menu — dismisses
+      // itself on Escape and marks the event handled. Without this the same
+      // keypress also closes the panel behind it, unsaved-changes prompt and all.
+      if (event.defaultPrevented) return;
       if (event.key === "Escape" && isOpen && !showExitConfirm) {
         handleCloseRequest();
       }
@@ -280,6 +284,7 @@ export default function ArtistEditorPanel({
                               value={field.value ?? ""}
                               onValueChange={field.onChange}
                               disabled={isSubmitting || !!artist?.id}
+                              error={errorText(errors.language?.message)}
                               options={[
                                 { value: "pl", label: "Polski" },
                                 { value: "en", label: "English" },
@@ -308,6 +313,10 @@ export default function ArtistEditorPanel({
                               value={field.value ?? ""}
                               onValueChange={field.onChange}
                               disabled={isSubmitting || !!artist?.id}
+                              // Both prefs are disabled on edit, so a rejection
+                              // here is unreachable by the user and used to stop
+                              // the submit with nothing on screen to explain it.
+                              error={errorText(errors.salutation?.message)}
                               options={[
                                 {
                                   value: "N",

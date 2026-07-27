@@ -1,29 +1,42 @@
-// chorister-hub/components/VocalDistributionGrid.tsx
+/**
+ * @file VocalDistributionGrid.tsx
+ * @description How often this singer has been cast on each voice line across
+ * completed projects — a labelled bar per line, longest-first by count.
+ * @module features/chorister-hub/components
+ */
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Text, Eyebrow } from '@/shared/ui/primitives/typography';
-import { cn } from '@/shared/lib/utils';
+import { Badge } from '@/shared/ui/primitives/Badge';
+import { ACCENT_BADGE, type EtherealAccent } from '@/shared/ui/primitives/accents';
+import { getSectionPresentation } from '@/features/artists/constants/voiceSections';
 import type { VocalLineEntry } from '../types/chorister-hub.dto';
 
-const VOICE_LINE_ACCENT: Record<string, string> = {
-  S1: 'bg-ethereal-incense/15 border-ethereal-incense/30 text-ethereal-incense',
-  S2: 'bg-ethereal-incense/10 border-ethereal-incense/20 text-ethereal-incense',
-  S3: 'bg-ethereal-incense/8 border-ethereal-incense/15 text-ethereal-incense',
-  A1: 'bg-ethereal-sage/15 border-ethereal-sage/30 text-ethereal-sage',
-  A2: 'bg-ethereal-sage/10 border-ethereal-sage/20 text-ethereal-sage',
-  A3: 'bg-ethereal-sage/8 border-ethereal-sage/15 text-ethereal-sage',
-  T1: 'bg-ethereal-gold/15 border-ethereal-gold/30 text-ethereal-gold',
-  T2: 'bg-ethereal-gold/10 border-ethereal-gold/20 text-ethereal-gold',
-  T3: 'bg-ethereal-gold/8 border-ethereal-gold/15 text-ethereal-gold',
-  B1: 'bg-ethereal-ink/10 border-ethereal-ink/20 text-ethereal-ink',
-  B2: 'bg-ethereal-ink/8 border-ethereal-ink/15 text-ethereal-ink',
-  B3: 'bg-ethereal-ink/6 border-ethereal-ink/12 text-ethereal-ink',
-  SOLO: 'bg-ethereal-incense/15 border-ethereal-incense/30 text-ethereal-incense',
-  TUTTI: 'bg-ethereal-marble/20 border-ethereal-marble/40 text-ethereal-graphite',
+/**
+ * `SOLO` and `TUTTI` are the only lines that are not a section: they say how
+ * many people sing the part, not which part it is, so they take neutrals rather
+ * than borrowing a voice's colour. Everything else resolves through
+ * `voiceSections.ts` on its leading letter.
+ *
+ * This file used to carry its own fourteen-entry table, and it disagreed with
+ * that SSOT on two of the four voices — alto came out sage, bass came out ink —
+ * so a chorister's own card coloured their section differently from the roster
+ * and the balance strip showing the same taxonomy. It also ran a private alpha
+ * ramp down each divisi number (S1 at /15, S2 at /10, S3 at /8), which is three
+ * shades for a distinction the label already makes: S3 is not less soprano than
+ * S1. And `SOLO` shared soprano's colour outright.
+ */
+const NON_SECTION_ACCENT: Record<string, EtherealAccent> = {
+  SOLO: 'amethyst',
+  TUTTI: 'graphite',
 };
 
-const DEFAULT_ACCENT = 'bg-ethereal-graphite/10 border-ethereal-graphite/20 text-ethereal-graphite';
+const accentOf = (voiceLine: string): EtherealAccent => {
+  const nonSection = NON_SECTION_ACCENT[voiceLine.toUpperCase()];
+  if (nonSection) return nonSection;
+  return getSectionPresentation(voiceLine)?.accent ?? 'graphite';
+};
 
 interface VocalDistributionGridProps {
   distribution: VocalLineEntry[];
@@ -51,20 +64,19 @@ export const VocalDistributionGrid = ({
       </Eyebrow>
       {distribution.map((entry) => {
         const barWidth = maxCount > 0 ? Math.round((entry.count / maxCount) * 100) : 0;
-        const accentClass = VOICE_LINE_ACCENT[entry.voice_line] ?? DEFAULT_ACCENT;
 
         return (
           <div key={entry.voice_line} className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex-shrink-0 w-14 h-7 rounded-lg border flex items-center justify-center',
-                accentClass,
-              )}
+            {/* Fixed width so every bar starts on the same x — a chart needs its
+                keys to align, which is the one thing the chip does not own. The
+                padding goes with it: `TUTTI` is the longest code and has to fit
+                the same box as `S1`. */}
+            <Badge
+              variant={ACCENT_BADGE[accentOf(entry.voice_line)]}
+              className="w-14 shrink-0 justify-center px-0"
             >
-              <Text size="xs" weight="bold" color="inherit" className="font-mono">
-                {entry.voice_line}
-              </Text>
-            </div>
+              {entry.voice_line}
+            </Badge>
 
             <div className="flex-1 relative h-2 bg-ethereal-marble/40 rounded-full overflow-hidden">
               <div

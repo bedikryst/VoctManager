@@ -89,8 +89,11 @@ export const ProjectInvitationToasts: React.FC = () => {
 
   return createPortal(
     <AnimatePresence>
+      {/* `z-toast`, not the dialog layer: an invitation arrives from outside
+          whatever the member is doing, so it has to outrank a dialog they
+          already had open rather than render invisibly behind it. */}
       {current && metadata && (
-        <div className="fixed inset-0 z-(--z-toast) flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-toast flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -132,7 +135,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Eyebrow color="gold" size="caption">
+                    <Eyebrow color="gold">
                       {t("notifications.invitation_toast.title")}
                     </Eyebrow>
                     {pendingCount > 1 && (
@@ -209,7 +212,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                   before the answer, so they are shown in full, not summarised. */}
               {rehearsals.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  <Eyebrow color="muted" size="caption">
+                  <Eyebrow color="muted">
                     {t("notifications.invitation_toast.rehearsals", {
                       count: rehearsals.length,
                       defaultValue: "Próby ({{count}})",
@@ -259,7 +262,7 @@ export const ProjectInvitationToasts: React.FC = () => {
                     aria-hidden="true"
                   />
                   <div className="min-w-0">
-                    <Eyebrow color="muted" size="caption">
+                    <Eyebrow color="muted">
                       {t("notifications.invitation_toast.program", "Program")}
                     </Eyebrow>
                     <Text size="sm" className="mt-0.5">

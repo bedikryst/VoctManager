@@ -155,7 +155,11 @@ export default function ActivatePage(): React.JSX.Element {
           </Heading>
         </motion.div>
 
-        <div className="grid w-full items-stretch gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+        {/* `minmax(0,…)` is what makes the ratio a ratio: a bare `fr` floors at
+            the column's min-content, so the widest thing the right card ever
+            renders — a row of CTAs, a long e-mail — silently annexes the rail's
+            share and the welcome ends up set in a gutter. */}
+        <div className="grid w-full items-stretch gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8">
           {/* ── Left: the Nave rail (desktop) — welcome the new member ── */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}

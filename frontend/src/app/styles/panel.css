@@ -105,9 +105,23 @@
   --spacing-sheet-expanded: 85dvh;
   --spacing-sidebar: 104px;
 
+  /* The ladder, bottom to top. Each step is a KIND of surface, not a guess:
+     the dock the page scrolls under, the bars that ride above it, the modal
+     navigation sheet, the dialogs the user opened, and the announcements that
+     arrive from outside the task. `dock-bar` sits BELOW `nav-sheet` on purpose:
+     a save bar's job is to clear the nav dock, and the sheet is a modal surface
+     with a full-viewport scrim — a bar painting through it is the same defect
+     as a bar painting over a confirmation modal.
+     `popover` sits ABOVE `focus-trap` because a listbox, a menu or a calendar is
+     always opened BY the surface below it: a dialog, a slide-over, a sheet. Rank
+     it under them and the popup renders behind the panel that spawned it — still
+     mounted, still hit-testable (Radix drops `pointer-events` on the body while
+     it is open), so the field can be changed by a click nobody can see. */
   --z-nav-dock: 70;
+  --z-dock-bar: 75;
   --z-nav-sheet: 80;
   --z-focus-trap: 90;
+  --z-popover: 95;
   --z-toast: 100;
 }
 
@@ -223,12 +237,20 @@
   z-index: var(--z-nav-dock);
 }
 
+@utility z-dock-bar {
+  z-index: var(--z-dock-bar);
+}
+
 @utility z-nav-sheet {
   z-index: var(--z-nav-sheet);
 }
 
 @utility z-focus-trap {
   z-index: var(--z-focus-trap);
+}
+
+@utility z-popover {
+  z-index: var(--z-popover);
 }
 
 @utility z-toast {
@@ -358,6 +380,23 @@ html {
    */
   scrollbar-gutter: stable;
   overflow-y: scroll;
+}
+
+/*
+ * …and the other half of that contract. Because `html` owns the scrollbar and
+ * keeps it declared, `body { overflow: hidden }` never removes it — but
+ * `react-remove-scroll` (inside every Radix Select, DropdownMenu, Popover and
+ * Dialog) does not know that. It measures a gap and pays it back as a
+ * `margin-right` on the body, compensating for a scrollbar that is still there,
+ * so the whole page narrows by its width the moment a dropdown opens and
+ * springs back when it closes. Zeroing it costs nothing: the actual scroll lock
+ * is the library's wheel/touch handlers, not this margin. The `html` prefix is
+ * load-bearing — the rule it overrides is injected into <head> at runtime and
+ * carries `!important`, so it wins any tie on source order.
+ */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
 }
 
 /* ========================================== */

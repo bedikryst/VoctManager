@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, MotionConfig, type Variants } from "framer-motion";
+import { MotionConfig } from "framer-motion";
 import {
   CalendarHeart,
   History,
@@ -23,7 +23,10 @@ import { DayDivider } from "@/shared/ui/composites/DayDivider";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { PageHeader } from "@/shared/ui/composites/PageHeader";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
-import { StaggeredBentoItem } from "@/shared/ui/composites/StaggeredBento";
+import {
+  StaggeredBentoContainer,
+  StaggeredBentoItem,
+} from "@/shared/ui/kinematics/StaggeredBentoGrid";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
@@ -33,15 +36,6 @@ const TABS = [
   { id: "UPCOMING" as const, labelKey: "schedule.tabs.upcoming", fallback: "Nadchodzące", Icon: CalendarClock },
   { id: "PAST" as const,     labelKey: "schedule.tabs.past",     fallback: "Historia",     Icon: History },
 ];
-
-// Local vertical-stagger container — StaggeredBento's own container is a CSS
-// grid (2/3-up on wide screens). The schedule reads as a single focused feed,
-// so we drive the same entrance stagger over a plain flex column and reuse the
-// shared item for visual parity. (Items resolve "hidden"/"show" by propagation.)
-const feedVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
-};
 
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
@@ -115,12 +109,7 @@ export default function Schedule(): React.JSX.Element {
           (16px mobile / sidebar-aware on desktop). Adding px here double-padded
           the feed to ~32px and made the cards read as a narrow island. */}
       <div className="relative mx-auto max-w-3xl pb-6 pt-6">
-        <motion.div
-          variants={feedVariants}
-          initial="hidden"
-          animate="show"
-          className="flex min-w-0 flex-col gap-5"
-        >
+        <StaggeredBentoContainer className="flex min-w-0 flex-col gap-5">
           <StaggeredBentoItem>
             <PageHeader
               size="standard"
@@ -258,7 +247,7 @@ export default function Schedule(): React.JSX.Element {
               </StaggeredBentoItem>
             </>
           )}
-        </motion.div>
+        </StaggeredBentoContainer>
       </div>
     </PageTransition>
     </MotionConfig>

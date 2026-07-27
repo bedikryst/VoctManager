@@ -35,6 +35,7 @@ import type { AttendanceStatus, ProgramItem, Project, Rehearsal } from "@/shared
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Button } from "@/shared/ui/primitives/Button";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
@@ -122,21 +123,13 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
     <GlassCard variant="dark" glow withNoise isHoverable={false} padding="none">
       <div className="p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
-          <Eyebrow
-            as="span"
-            color="gold"
-            className="flex items-center gap-1.5 rounded-md border border-ethereal-gold/40 bg-ethereal-gold/15 px-2.5 py-1"
+          <Badge
+            variant="warning"
+            icon={<Sparkles size={11} aria-hidden="true" />}
           >
-            <Sparkles size={11} aria-hidden="true" />
             {t("schedule.hero.next_concert", "Najbliższy koncert")}
-          </Eyebrow>
-          <Eyebrow
-            as="span"
-            color="parchment"
-            className="rounded-md border border-ethereal-incense/40 bg-ethereal-incense/20 px-2.5 py-1"
-          >
-            {countdown}
-          </Eyebrow>
+          </Badge>
+          <Badge variant="incense">{countdown}</Badge>
         </div>
 
         <Heading
@@ -310,43 +303,26 @@ const RehearsalHero = ({
     >
       <div className="p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
+          {/* `pulse` is the panel's one live signal and this is the state that
+              earns it: a rehearsal actually under way, which stops being true
+              within the hour. */}
           {isLive ? (
-            <Eyebrow
-              as="span"
-              color="gold"
-              className="flex items-center gap-1.5 rounded-md border border-ethereal-gold/30 bg-ethereal-gold/10 px-2.5 py-1"
-            >
-              <span className="relative flex h-2 w-2" aria-hidden="true">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ethereal-gold opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-ethereal-gold" />
-              </span>
+            <Badge variant="warning" pulse>
               {t("schedule.hero.rehearsal_mode", "Tryb próby")}
-            </Eyebrow>
+            </Badge>
           ) : (
-            <Eyebrow
-              as="span"
-              color="default"
-              className="rounded-md border border-ethereal-ink/10 bg-ethereal-ink/[0.04] px-2.5 py-1"
-            >
+            <Badge variant="brand">
               {t("schedule.hero.next_rehearsal", "Najbliższa próba")}
-            </Eyebrow>
+            </Badge>
           )}
-          <Eyebrow
-            as="span"
-            color="muted"
-            className="rounded-md border border-ethereal-incense/20 bg-ethereal-alabaster px-2.5 py-1 shadow-glass-ethereal"
-          >
-            {countdown}
-          </Eyebrow>
+          <Badge variant="outline">{countdown}</Badge>
           {currentMaskedStatus === "PRESENT" && (
-            <Eyebrow
-              as="span"
-              color="sage"
-              className="flex items-center gap-1 rounded-md border border-ethereal-sage/20 bg-ethereal-sage/10 px-2.5 py-1"
+            <Badge
+              variant="success"
+              icon={<CheckCircle2 size={11} aria-hidden="true" />}
             >
-              <CheckCircle2 size={11} aria-hidden="true" />
               {t("schedule.rehearsal.status_present", "Potwierdzona")}
-            </Eyebrow>
+            </Badge>
           )}
         </div>
 

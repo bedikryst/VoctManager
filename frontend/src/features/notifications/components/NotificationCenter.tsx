@@ -210,10 +210,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     <div className="mb-1.5 last:mb-0">
       <div className="flex items-center gap-2 px-3 pb-1.5 pt-3">
         <Eyebrow
-          size="caption"
           color="muted"
           weight="medium"
-          className="tracking-[0.18em]"
         >
           {label}
         </Eyebrow>
@@ -243,7 +241,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
           <Heading size="lg" className="leading-tight text-ethereal-ink">
             {t("notifications.title")}
           </Heading>
-          <Eyebrow size="caption" color="muted" className="mt-0.5 tracking-[0.1em]">
+          <Eyebrow color="muted" className="mt-0.5">
             {unreadCount > 0
               ? t("notifications.unread_count", { count: unreadCount })
               : t("notifications.all_read", "Wszystko przeczytane")}

@@ -57,7 +57,7 @@ const Section: React.FC<{
       <span className="shrink-0 text-ethereal-gold/70" aria-hidden="true">
         {icon}
       </span>
-      <Eyebrow color="muted" size="caption">
+      <Eyebrow color="muted">
         {title}
       </Eyebrow>
       {meta && (
@@ -142,7 +142,7 @@ export const ConductorDeck: React.FC<ConductorDeckProps> = ({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-5 no-scrollbar">
       <div className="mb-4">
-        <Eyebrow color="muted" size="caption">
+        <Eyebrow color="muted">
           {isManager
             ? t("messages.deck.eyebrow", "Skrzynka dyrygenta")
             : t("messages.deck.eyebrow_artist", "Twoja skrzynka")}
