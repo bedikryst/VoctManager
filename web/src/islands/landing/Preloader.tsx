@@ -193,7 +193,7 @@ export function Preloader(): React.JSX.Element | null {
             Czy wejdziesz<br />w ciszę?
           </p>
           <p className="threshold-subtitle">
-            Ten próg można przekroczyć na dwa sposoby. Wybór zmienisz w każdej chwili.
+            Ten próg można przekroczyć na dwa sposoby. Wybór zmienisz w&nbsp;każdej chwili.
           </p>
           <div className="threshold-actions">
             <button

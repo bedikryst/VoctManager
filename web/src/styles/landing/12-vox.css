@@ -72,10 +72,14 @@
     gap: 10px;
     margin-top: 14px;
     font-family: var(--mono);
-    font-size: 10.5px;
+    /* Full micro scale and soft ink, not muted: this is the only control on the page that
+       lets a visitor actually hear the ensemble, and it sat quieter than the program toggle
+       next to it. Emphasis stays in the type weight — the gold is reserved for the ▸ glyph,
+       so the register gains no new gold surface. */
+    font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--ink-muted);
+    color: var(--ink-soft);
     appearance: none;
     border: 0;
     border-bottom: 1px solid transparent;

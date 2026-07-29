@@ -1,6 +1,6 @@
 /**
  * @file paths.ts
- * @description Past Concerts Spirituels — content for the "wcześniejsze wybrzmienia" section.
+ * @description Past Concerts Spirituels — content for the "Co już zabrzmiało" register.
  *  Each entry maps to a single path card. This file holds only the landing-specific editorial
  *  layer (tag, lead note, provenance credit, video fragment); the repertoire itself is NOT stored
  *  here — every card's expandable "Program koncertu" derives its work list from the `concerts`
@@ -48,7 +48,7 @@ export const PATHS: readonly Path[] = [
     tag: "Koncert Duchowy · debiut",
     title: "Kontemplacja Wcielenia",
     place: "Bazylika NSPJ w Krakowie",
-    note: "Wejście w tajemnicę Wcielenia — od zapowiedzi Izajasza po kantyk Symeona, od renesansowej polifonii po Pärta i Vivancosa.",
+    note: "Wejście w tajemnicę Wcielenia, od zapowiedzi Izajasza po kantyk Symeona. Renesansowa polifonia, Pärt, Vivancos.",
     poster: "poster-wcielenie",
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
@@ -77,7 +77,7 @@ export const PATHS: readonly Path[] = [
     tag: "Cykl psalmów · 6–12 głosów",
     title: "9 Kart z Księgi Psalmów",
     place: "Bazylika św. Antoniego w Rybniku · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
-    note: "Dziewięć psalmów, od pokuty po radość uwielbienia. Miserere Allegriego, podzielone na dziewięć części, oplata cały wieczór.",
+    note: "Dziewięć psalmów: pokuta, lament, uwielbienie. Miserere Allegriego, podzielone na dziewięć części, oplata cały wieczór.",
     poster: "poster-9-kart",
   },
   {
@@ -97,7 +97,7 @@ export const PATHS: readonly Path[] = [
     tag: "Epitafium · 4, 8 i 12 głosów",
     title: "Aeternam — Epitafium dla Gazy",
     place: "Mistrzejowice · Niedzica",
-    note: "Wobec cierpienia mieszkańców Gazy — język współczucia, nie komentarza. Od Aeternam Vivancosa po dwóch Tavenerów: zawierzenie ofiar Matce Bożej.",
+    note: "Wieczór za mieszkańców Gazy. Aeternam Vivancosa, dwaj Tavenerowie, zawierzenie ofiar Matce Bożej.",
     poster: "poster-aeternam",
     video: {
       src: videoAsset("landing-aeternam"),

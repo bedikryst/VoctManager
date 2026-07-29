@@ -10,13 +10,14 @@
  */
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
+import { nbsp } from "../../lib/typo";
 
 const bg = bleedPair("swiatlo-krzyz");
 
 const ROWS = [
   { amount: "100 zł", text: "dokłada się do najbliższego wieczoru cyklu" },
-  { amount: "500 zł", text: "wspiera próby i partytury między koncertami" },
-  { amount: "2 500 zł", text: "współtworzy następne wybrzmienie" },
+  { amount: "500 zł", text: "wspiera próby i partytury między koncertami" },
+  { amount: "2 500 zł", text: "współtworzy następny wieczór cyklu" },
 ] as const;
 ---
 
@@ -33,11 +34,14 @@ const ROWS = [
         <div class="final-lede reveal">
           <div class="micro">Patronat · darowizna · partnerstwo</div>
           <h2>Niech muzyka ma swoje miejsce.</h2>
+          {/* Names the real cost structure instead of a metaphor: the singers are the
+              largest item, and saying so is the honest case for a donation. Deliberately
+              no amounts per item — the tiers below stay qualitative, because published
+              rates for musicians would be both volatile and indiscreet. */}
           <p>
-            Następne wybrzmienia powstaną z darowizn — od światła w nawie po partytury
-            na pulpitach. Dołącz jako darczyńca lub mecenas, albo zaproś VoctEnsemble
-            do siebie: śpiewamy koncerty i liturgie, od mszy ślubnych po kościelne
-            jubileusze.
+            Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
+            światło i&nbsp;dojazdy. Na to idą darowizny. Można też zaprosić nas do
+            siebie: śpiewamy koncerty i&nbsp;liturgie, msze ślubne, jubileusze.
           </p>
         </div>
         <div class="final-contact reveal">
@@ -50,20 +54,25 @@ const ROWS = [
           </a>
           <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
         </div>
+        {/* Unlike the hero's two parallel invitations, these are NOT equal: this section
+            exists to open the vault, and writing an email is the fallback. The donation
+            trigger leads and carries the candle-gold emphasis (.final-actions rule in
+            04-rooms-interludes.css); plausible event names stay as they were so the
+            existing funnel keeps comparing like with like. */}
         <div class="final-actions reveal">
           <a
-            class="primary-link plausible-event-name=napisz+do+nas+dol"
-            href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
-          >
-            Napisz do nas
-          </a>
-          <a
-            class="secondary-link plausible-event-name=wesprzyj+dol"
+            class="primary-link plausible-event-name=wesprzyj+dol"
             href="#wesprzyj"
             data-no-lenis
             data-vault-open="100"
           >
             Wesprzyj
+          </a>
+          <a
+            class="secondary-link plausible-event-name=napisz+do+nas+dol"
+            href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
+          >
+            Napisz do nas
           </a>
         </div>
       </div>
@@ -74,7 +83,7 @@ const ROWS = [
             ROWS.map((row) => (
               <div class="donation-row">
                 <strong>{row.amount}</strong>
-                <span>{row.text}</span>
+                <span>{nbsp(row.text)}</span>
               </div>
             ))
           }

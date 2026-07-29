@@ -39,8 +39,10 @@ import { VideoLightbox } from "../islands/landing/VideoLightbox";
 import { MovementSpine } from "../islands/landing/MovementSpine";
 
 const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
+// Kept under ~160 characters: Google truncates past that, and a description that spends its
+// visible half on a second slogan buries the one fact a searcher needs (who sings what).
 const description =
-  "Zespół wokalny VoctEnsemble pod dyrekcją Florenta de Bazelaire — cykl Koncertów Duchowych. Dwanaście głosów w kamiennej nawie, od Victorii po Pärta. Koncert jako próg: wchodzi się z ulicy, wychodzi się cichszym. Projekt Fundacji VoctFoundation.";
+  "VoctEnsemble: dwanaście głosów w kamiennej nawie, od Victorii po Pärta. Cykl Koncertów Duchowych pod dyrekcją Florenta de Bazelaire.";
 
 const ogImage = (
   await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
@@ -69,7 +71,7 @@ const jsonLd = {
   url: "https://voctensemble.com",
   genre: ["Sacred music", "Choral music", "Polifonia"],
   description:
-    "Zespół wokalny wykonujący muzykę sakralną — cykl Koncerty Duchowe pod dyrekcją Florenta de Bazelaire, od Victorii po Pärta. Rezydujący zespół Fundacji VoctFoundation.",
+    "Zespół wokalny wykonujący muzykę sakralną. Cykl Koncerty Duchowe pod dyrekcją Florenta de Bazelaire. Rezydujący zespół Fundacji VoctFoundation.",
   founder: { "@type": "Person", name: "Florent de Bazelaire" },
   funder: {
     "@type": "NGO",
@@ -120,8 +122,13 @@ const jsonLd = {
       <HeroSection />
       <ManifestSection />
 
-      <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen quaerit">
-        <AetherInterlude variant="passage" roman="I" latin="Lumen quaerit" />
+      {/* Movement inscriptions are real liturgical Latin, never coined: "Lumen Christi" is the
+          Easter Vigil acclamation sung as the paschal candle enters a dark church — the exact
+          rite this movement's interlude performs (parchment cut to night, one flame). Keep any
+          replacement short: the spine label is hidden below 1440px because the gutter is narrow
+          (13-spine.css), and a longer inscription pushes that breakpoint up. */}
+      <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen Christi">
+        <AetherInterlude variant="passage" roman="I" latin="Lumen Christi" />
         <ImageRiteSection />
         <EnsembleSection />
         <DirectorSection />

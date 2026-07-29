@@ -818,3 +818,11 @@
     gap: 22px;
     margin-top: 32px;
   }
+
+  /* The one place on the page where the two link roles are a real hierarchy rather than
+     two parallel invitations (see the hero note in 02-hero-sections.css): this section's
+     purpose is the donation vault. Candle-gold at rest is the same "this one matters"
+     signal the register's next-concert CTA already uses (.path-next-cta). */
+  .final-actions .primary-link {
+    color: var(--candle);
+  }

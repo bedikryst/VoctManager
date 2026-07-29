@@ -1,7 +1,7 @@
 ---
 /**
  * @file PathSection.astro
- * @description "Wcześniejsze wybrzmienia" — typographic register of past Concerts Spirituels.
+ * @description "Co już zabrzmiało" — typographic register of past Concerts Spirituels.
  *  Read as a memorium on an altar, not as a portfolio grid: roman numeral + year + tag in the
  *  left rail, title + place + lead in the right rail, and one uniform expandable "Program
  *  koncertu" (works in order, derived from the concerts collection) + optional credit below.
@@ -13,6 +13,7 @@
  */
 import { getCollection } from "astro:content";
 import { PATHS } from "../../data/landing/paths";
+import { nbsp } from "../../lib/typo";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
 
@@ -24,14 +25,16 @@ const programById = new Map(concerts.map((c) => [c.id, c.data.program] as const)
 const programFor = (id: string) => programById.get(id) ?? [];
 ---
 
-<section class="section path" id="droga" aria-label="Wcześniejsze wybrzmienia">
+<section class="section path" id="droga" aria-label="Co już zabrzmiało">
   <div class="section-grid">
     <div class="section-label micro"><span>Z drogi</span></div>
     <div class="path-body">
-      <h2 class="section-title reveal">Wcześniejsze<br />wybrzmienia.</h2>
+      {/* No hard break: three short words split by <br> leave a lopsided two-word
+          first line. Let the title set on one line and wrap only if it must. */}
+      <h2 class="section-title reveal">Co już zabrzmiało.</h2>
       <p class="path-lede reveal">
-        Każdy koncert cyklu ma własną intencję — od tajemnicy Wcielenia po epitafium
-        dla Gazy. Ten rejestr zapisuje je w kolejności, w jakiej wybrzmiały.
+        Każdy wieczór cyklu miał jedną intencję. Zapisujemy je w&nbsp;kolejności,
+        w&nbsp;jakiej zabrzmiały.
       </p>
 
       <ol class="path-register" aria-label="Wcześniejsze koncerty cyklu">
@@ -45,8 +48,8 @@ const programFor = (id: string) => programById.get(id) ?? [];
               </div>
               <div class="path-entry-body" data-cursor="no-snap">
                 <h3 class="path-entry-title">{path.title}</h3>
-                <p class="path-entry-place">{path.place}</p>
-                <p class="path-entry-summary">{path.note}</p>
+                <p class="path-entry-place">{nbsp(path.place)}</p>
+                <p class="path-entry-summary">{nbsp(path.note)}</p>
                 {path.video && (
                   <button
                     type="button"
@@ -71,12 +74,12 @@ const programFor = (id: string) => programById.get(id) ?? [];
                       {programFor(path.concertId).map((p, i) => (
                         <li class:list={[{ "path-works-bis": p.bis }]}>
                           <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
-                          {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
+                          {p.composer} · <em>{nbsp(p.work)}{p.year ? ` · ${p.year}` : ""}</em>
                         </li>
                       ))}
                     </ol>
                   )}
-                  {path.credit && <p class="path-works-note">{path.credit}</p>}
+                  {path.credit && <p class="path-works-note">{nbsp(path.credit)}</p>}
                 </details>
               </div>
             </li>
@@ -85,22 +88,25 @@ const programFor = (id: string) => programById.get(id) ?? [];
       </ol>
 
       {/* The register's open card — the narrative payoff of the whole section:
-          manifest → memory of past concerts → the next one depends on you. The
-          numeral continues the sequence; the entry stays "unwritten" until the
-          listeners write it. When a concert is scheduled, this card becomes its
-          announcement (title, date, place) and a new blank one takes its seat. */}
+          manifest → memory of past concerts → the next one depends on you. The numeral
+          continues the sequence, and the card states the two real preconditions for the
+          cycle's next evening: a host who invites the ensemble, and the fees for the
+          singers. The ensemble does not book venues on its own, so promising a date here
+          would be false. When one is agreed, this card becomes its announcement (title,
+          date, place) and a new open one takes its seat. */}
       <aside class="path-entry path-next reveal" aria-label="Następny koncert cyklu">
         <div class="path-entry-rail">
           <span class="path-entry-roman">{ROMAN[PATHS.length]}</span>
           <span class="path-entry-year">MMXXVI</span>
-          <span class="path-entry-tag">powstaje teraz</span>
+          <span class="path-entry-tag">czeka na zaproszenie</span>
         </div>
         <div class="path-entry-body">
-          <h3 class="path-entry-title">Następne wybrzmienie.</h3>
-          <p class="path-entry-place">Termin i przestrzeń wyznaczą darczyńcy</p>
+          <h3 class="path-entry-title">Szósty wieczór.</h3>
+          <p class="path-entry-place">Miejsce i termin wciąż otwarte</p>
           <p class="path-entry-summary">
-            Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko
-            przestrzeni, w której wybrzmi. Każda darowizna przybliża jego datę.
+            Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się
+            gospodarz wieczoru i&nbsp;środki na honoraria dla śpiewaków. Każda
+            darowizna ją przybliża.
           </p>
           <a
             class="primary-link path-next-cta plausible-event-name=path+next+wesprzyj"

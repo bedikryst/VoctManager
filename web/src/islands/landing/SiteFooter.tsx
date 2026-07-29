@@ -240,7 +240,9 @@ export function SiteFooter(): React.JSX.Element {
             </span>
           </div>
           <div className="footer-colophon-signature micro">
-            <span>MMXXVI · wszystkie wybrzmienia</span>
+            {/* Latin, like the rest of this footer's vocabulary (INSCRIPTIO FINALIS,
+                CONSILIUM, CORPUS, VOX): the standard rights formula, not a coinage. */}
+            <span>MMXXVI · omnia iura reservata</span>
             <span className="footer-colophon-author">
               Site ·{" "}
               <a

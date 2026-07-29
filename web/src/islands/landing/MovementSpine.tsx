@@ -1,7 +1,7 @@
 /**
  * @file MovementSpine.tsx
  * @description Right-edge orientation spine for the landing's three liturgical movements
- *  (I · Lumen quaerit, II · Vox memoriae, III · Sustinete nos). Turns the conceptual structure
+ *  (I · Lumen Christi, II · Vox memoriae, III · Sustinete nos). Turns the conceptual structure
  *  into a function: a fixed hairline index that marks where the reader is in the rite and lets
  *  them jump between movements. Reveals after the hero; desktop / fine-pointer only (the mobile
  *  nav sheet covers small screens). An IntersectionObserver on a viewport centre-band tracks the
@@ -24,7 +24,7 @@ interface LenisLike {
 }
 
 const MOVEMENTS: readonly Movement[] = [
-  { key: "lumen", roman: "I", latin: "Lumen quaerit" },
+  { key: "lumen", roman: "I", latin: "Lumen Christi" },
   { key: "vox", roman: "II", latin: "Vox memoriae" },
   { key: "sustinete", roman: "III", latin: "Sustinete nos" },
 ];

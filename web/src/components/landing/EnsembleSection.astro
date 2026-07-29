@@ -13,13 +13,14 @@
  */
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
+import { nbsp } from "../../lib/typo";
 
 const ensemble = bleedPair("chor-nawa");
 
 const FACTS = [
-  { num: "44", label: "śpiewaków we wspólnocie · na scenie dwanaście głosów" },
+  { num: "44", label: "śpiewaków we wspólnocie · na scenie dwanaście głosów" },
   { num: "2024", label: "debiut · Kontemplacja Wcielenia · Bazylika NSPJ" },
-  { num: "VII wieków", label: "od Llibre Vermell (XIV w.) po Caroline Shaw (2017)" },
+  { num: "VII wieków", label: "Llibre Vermell (XIV w.) · Caroline Shaw (2017)" },
 ] as const;
 ---
 
@@ -37,21 +38,22 @@ const FACTS = [
         <h2>Zaczęło się<br />od tęsknoty.</h2>
       </div>
       <p class="ensemble-origin reveal">
-        Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy za muzyką,
-        która otula, przenika i zostaje w duszy niczym żywy organizm. Tak powstał Voct:
-        z ciszy i kontemplacji.
+        Jak anachoreci — w&nbsp;odosobnieniu, z&nbsp;daleka od zgiełku — zatęskniliśmy
+        za muzyką, która otula, przenika i&nbsp;zostaje w&nbsp;duszy niczym żywy
+        organizm. Tak powstał Voct: z&nbsp;ciszy i&nbsp;kontemplacji.
       </p>
       <p class="reveal">
         Dziś jest nas ponad czterdzieścioro; na koncert wychodzi zwykle dwanaście
-        głosów. Ubóstwiamy heterofonię, politonalność i polifonię — programy tkamy
-        z utworów, w których słowo i muzyka są swoimi lustrzanymi odbiciami.
+        głosów. Ubóstwiamy heterofonię, politonalność i&nbsp;polifonię — programy tkamy
+        z&nbsp;utworów, w&nbsp;których słowo i&nbsp;muzyka są swoimi lustrzanymi
+        odbiciami.
       </p>
       <div class="ensemble-facts reveal">
         {
           FACTS.map((fact) => (
             <div class="fact">
               <span class="fact-num">{fact.num}</span>
-              <span class="fact-label">{fact.label}</span>
+              <span class="fact-label">{nbsp(fact.label)}</span>
             </div>
           ))
         }
