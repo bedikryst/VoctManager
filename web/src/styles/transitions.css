@@ -9,11 +9,18 @@
  *  = old|new) — the `::view-transition` pseudo-elements simply don't exist there, so styling
  *  only them left those devices with no fade at all. Both paths are choreographed below.
  *
- *  Model — CROSSFADE (variant A). The incoming page is drawn fully opaque UNDERNEATH; the
- *  outgoing page sits ON TOP and dissolves away to reveal it. Because the new layer is complete
- *  the whole time, there is never a transparent gap where the bedrock flashes. The open mobile
- *  "Antyfona" card is part of the outgoing page (a fixed child of the header, not a named
- *  transition group), so it dissolves WITH the page in one motion — no snap.
+ *  Model — TURNED LEAF (crossfade + directional drift). The incoming page is drawn fully opaque
+ *  UNDERNEATH; the outgoing page sits ON TOP, drifts a short way left and dissolves to reveal it.
+ *  Because the new layer is complete the whole time, there is never a transparent gap where the
+ *  bedrock flashes. The open mobile "Antyfona" card is part of the outgoing page (a fixed child
+ *  of the header, not a named transition group), so it leaves WITH the page in one motion.
+ *
+ *  Only the OUTGOING layer moves, and that is the whole point — it is also the correct physics:
+ *  in a book the leaf you turn is the one that travels, while the page beneath was already lying
+ *  there. It is a hard constraint too. Sliding the incoming layer in from an offset would
+ *  uncover a strip of bedrock along one edge for the length of the transition — a dark band
+ *  flashing across the parchment pages, which is exactly the failure this model was built to
+ *  avoid. Keep the drift small (a few percent): this is a page being turned, not a slide deck.
  *
  *  (The previous "przejście przez próg" / variant B — outgoing sinks to black, a dark breath,
  *  then the incoming hero rises out of the dark — is the alternative. To switch back: give the
@@ -36,14 +43,16 @@ html {
 @keyframes voct-dissolve-out {
   to {
     opacity: 0;
+    transform: translateX(-2.5%);
   }
 }
 
 /* ── Native View Transitions path (Chrome, Edge, Safari 18+, Chrome Android) ──
-   New underneath, fully drawn the entire time; old on top dissolves to reveal it. */
+   New underneath, fully drawn the entire time; old on top drifts off and dissolves to reveal it.
+   Slightly longer than a pure fade so the movement reads as travel rather than a twitch. */
 ::view-transition-old(root) {
   z-index: 2;
-  animation: voct-dissolve-out 340ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: voct-dissolve-out 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 ::view-transition-new(root) {
   z-index: 1;
@@ -71,6 +80,7 @@ html {
   @keyframes voct-fallback-out {
     to {
       opacity: 0;
+      transform: translateX(-2.5%);
     }
   }
   @keyframes voct-fallback-in {
@@ -79,7 +89,7 @@ html {
     }
   }
   html[data-astro-transition-fallback="old"] body {
-    animation: voct-fallback-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
+    animation: voct-fallback-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
   }
   html[data-astro-transition-fallback="new"] body {
     animation: voct-fallback-in 240ms cubic-bezier(0, 0, 0.2, 1) both;

@@ -72,7 +72,7 @@ const programFor = (id: string) => programById.get(id) ?? [];
                   {programFor(path.concertId).length > 0 && (
                     <ol class="path-works">
                       {programFor(path.concertId).map((p, i) => (
-                        <li class:list={[{ "path-works-bis": p.bis }]}>
+                        <li class:list={[{ "path-works-bis": p.bis }]} style={`--i:${i}`}>
                           <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
                           {p.composer} · <em>{nbsp(p.work)}{p.year ? ` · ${p.year}` : ""}</em>
                         </li>

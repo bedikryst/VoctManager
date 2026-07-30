@@ -361,12 +361,34 @@
   }
 
   .path-entry {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(140px, 0.32fr) minmax(0, 1fr);
     gap: clamp(24px, 5vw, 80px);
     padding: clamp(28px, 4vw, 56px) 0 clamp(32px, 4.5vw, 64px);
-    border-bottom: 1px solid var(--line);
     transition: background 0.55s var(--ease);
+  }
+
+  /* The entry rule is a drawn line, not a border: it is ruled left to right as the entry
+     arrives, in the same ink language as the interlude and coda strokes, so the register
+     reads as being written rather than rendered. Static (already ruled) for no-JS and
+     reduced-motion visitors — html.voct-motion is the only thing that retracts it. */
+  .path-entry::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 1px;
+    background: var(--line);
+    transform-origin: left center;
+  }
+
+  html.voct-motion .path-entry.reveal::after {
+    transform: scaleX(0);
+  }
+
+  html.voct-motion .path-entry.reveal.is-visible::after {
+    transform: scaleX(1);
+    transition: transform 1.05s var(--ease-slow) 140ms;
   }
 
   .path-entry:hover {
@@ -468,7 +490,11 @@
      od Ciebie. */
   .path-next {
     background: linear-gradient(90deg, rgba(198, 164, 91, 0.05), rgba(198, 164, 91, 0.015));
-    border-bottom: 1px solid rgba(198, 164, 91, 0.3);
+  }
+
+  /* Same drawn rule as every other entry, in candle gold — this one closes the register. */
+  .path-next::after {
+    background: rgba(198, 164, 91, 0.3);
   }
 
   .path-next .path-entry-roman {
@@ -597,6 +623,24 @@
 
   .path-works li {
     padding-left: 0;
+  }
+
+  /* Opening a program reads down the list rather than appearing at once: each work enters
+     a beat after the one above it. `--i` is the work's index, set on the element in
+     PathSection. Keep the step small — at ~26ms a fourteen-work program is still fully
+     legible inside the accordion's own height transition, never a queue to sit through. */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes voct-work-in {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+    }
+
+    html.voct-motion .path-card-detail[open] .path-works li {
+      animation: voct-work-in 0.42s var(--ease) both;
+      animation-delay: calc(var(--i, 0) * 26ms);
+    }
   }
 
   /* Ordinal, inline on the text baseline (no absolute marker — the old dash floated high).
