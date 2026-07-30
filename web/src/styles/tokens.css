@@ -26,7 +26,7 @@
 
   /* ── Type ─────────────────────────────────────────────────────────────── */
   --serif: "Cormorant Garamond", Georgia, serif;
-  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* ── Motion ───────────────────────────────────────────────────────────── */

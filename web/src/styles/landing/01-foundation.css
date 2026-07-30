@@ -29,7 +29,7 @@
     --dark: #080807;
 
     --serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
-    --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
     --h1: clamp(56px, 10vw, 138px);

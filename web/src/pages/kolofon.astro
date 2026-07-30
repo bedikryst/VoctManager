@@ -166,9 +166,9 @@ const jsonLd = {
             <span class="kol-font-sample">Cormorant Garamond</span>
             <span class="kol-font-meta micro">Christian Thalmann · garaldyckie pismo do oddychania</span>
           </li>
-          <li class="kol-font kol-font--inter" tabindex="0">
-            <span class="kol-font-sample">Inter</span>
-            <span class="kol-font-meta micro">Rasmus Andersson · sans-serif do czytania</span>
+          <li class="kol-font kol-font--sans" tabindex="0">
+            <span class="kol-font-sample">IBM Plex Sans</span>
+            <span class="kol-font-meta micro">Bold Monday dla IBM · sans-serif do czytania</span>
           </li>
           <li class="kol-font kol-font--plex" tabindex="0">
             <span class="kol-font-sample">IBM Plex Mono</span>
@@ -359,9 +359,10 @@ const jsonLd = {
   .kol-def dd { margin: 0; font-family: var(--serif); font-size: clamp(15px, 1.3vw, 18px); line-height: 1.5; color: var(--ink); }
 
   /* Fonts list — hover/focus demonstrates each typeface on the axes it actually ships:
-     Cormorant is a variable weight axis (its signature); Inter ships as a variable weight
-     face; Plex ships as two static weights (300/400), so its demo snaps between the real
-     faces and shifts tracking rather than pretending to a weight axis it doesn't have. */
+     Cormorant is a variable weight axis (its signature); Plex Sans ships as a variable
+     weight face (100–700); Plex Mono ships as two static weights (300/400), so its demo
+     snaps between the real faces and shifts tracking rather than pretending to a weight
+     axis it doesn't have. */
   .kol-fonts { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(28px, 4vw, 44px); max-width: 760px; }
   .kol-fonts li.kol-font {
     display: grid;
@@ -401,14 +402,14 @@ const jsonLd = {
     letter-spacing: 0.008em;
   }
 
-  /* Inter — variable weight; on attention the wide weight range opens up with a touch of tracking */
-  .kol-font--inter .kol-font-sample {
-    font-family: 'Inter', -apple-system, sans-serif;
+  /* Plex Sans — variable weight (100–700); on attention the range opens up with a touch of tracking */
+  .kol-font--sans .kol-font-sample {
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
     font-weight: 320;
     letter-spacing: -0.01em;
   }
-  .kol-font--inter:hover .kol-font-sample,
-  .kol-font--inter:focus-visible .kol-font-sample {
+  .kol-font--sans:hover .kol-font-sample,
+  .kol-font--sans:focus-visible .kol-font-sample {
     font-weight: 620;
     letter-spacing: 0.005em;
   }

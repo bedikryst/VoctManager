@@ -236,7 +236,7 @@ export function SiteFooter(): React.JSX.Element {
               Colophon <span aria-hidden="true">↗</span>
             </a>
             <span>
-              <em>Cormorant Garamond</em> · Inter · IBM Plex Mono
+              <em>Cormorant Garamond</em> · IBM Plex Sans · IBM Plex Mono
             </span>
           </div>
           <div className="footer-colophon-signature micro">
