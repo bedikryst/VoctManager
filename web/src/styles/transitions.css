@@ -60,6 +60,25 @@ html {
   opacity: 1;
 }
 
+/* ── Leaving from the open mobile menu ──
+   When the "Antyfona" card is open it IS the outgoing page: an opaque parchment sheet over the
+   full viewport, so the whole snapshot is the card. A leaf-turn drift is the wrong gesture for
+   it — a card that arrived by settling down from above has to leave by being lifted off, and
+   2.5% sideways read as no exit at all. So the same snapshot withdraws upward instead, on the
+   page's clock, uncovering the new page already lying underneath. `data-astro-transition` is
+   set to "menu" in BaseLayout for any navigation that starts with the menu open; Astro holds
+   the attribute for the whole transition and clears it at the end. Desktop never sees this —
+   the card only exists below 760px. */
+@keyframes voct-card-lift {
+  to {
+    opacity: 0;
+    transform: translateY(-4vh);
+  }
+}
+html[data-astro-transition="menu"]::view-transition-old(root) {
+  animation: voct-card-lift 420ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
 /* Persisted islands (site-cursor, scroll-top) ride INSIDE the root snapshot. `transition:persist`
    carries an island's state across the swap but emits no `view-transition-name` (only
    `transition:name`/`animate` do), so there is no group to hold still — and naming them by hand
@@ -89,8 +108,18 @@ html {
       opacity: 0;
     }
   }
+  @keyframes voct-fallback-lift {
+    to {
+      opacity: 0;
+      transform: translateY(-4vh);
+    }
+  }
   html[data-astro-transition-fallback="old"] body {
     animation: voct-fallback-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  /* Same substitution as the native path: leaving the open menu lifts instead of drifting. */
+  html[data-astro-transition="menu"][data-astro-transition-fallback="old"] body {
+    animation: voct-fallback-lift 220ms cubic-bezier(0.4, 0, 1, 1) both;
   }
   html[data-astro-transition-fallback="new"] body {
     animation: voct-fallback-in 240ms cubic-bezier(0, 0, 0.2, 1) both;

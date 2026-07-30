@@ -82,6 +82,11 @@ const mq = `(max-width: ${breakpoint}px)`;
     width: 100%;
     height: 120%;
     will-change: transform;
+    /* The photo's own ground, for every moment it has not painted yet — a cold cache, a
+       cross-page navigation, a failed decode. #080807 is the same bedrock the page transition
+       sits on, so an unpainted hero reads as the site's dark ground rather than as the parchment
+       body showing through, which is what made a navigation flash white. */
+    background-color: #080807;
   }
   .bleed img {
     display: block;

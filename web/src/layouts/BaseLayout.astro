@@ -254,6 +254,63 @@ const ogLocaleAlternates =
         });
       }
 
+      // How this navigation reads. Astro writes `direction` to `<html data-astro-transition>`,
+      // keeps it across the swap and clears it when the transition finishes — so it is the one
+      // marker a transition-long ::view-transition rule can safely key on. A tap inside the open
+      // mobile menu leaves with a card that has to be lifted off the page, not a leaf that turns
+      // (transitions.css). The menu is still open at this point: it is closed at before-swap, on
+      // purpose, so the outgoing snapshot captures the card.
+      document.addEventListener("astro:before-preparation", (event) => {
+        if (document.querySelector(".chrome.menu-open")) event.direction = "menu";
+      });
+
+      // Hold the swap a moment for the incoming hero photo. The new page is drawn fully opaque
+      // underneath the dissolving old one, so whatever its hero has painted by the time the
+      // transition starts is what the visitor looks at for the whole 420ms — an unpainted photo
+      // means the media's ground for the length of the dissolve and then a pop. `prefetchAll`
+      // usually has the HTML cached already, so this waits on the image alone, and it is capped:
+      // past the cap the navigation goes ahead and the photo lands when it lands.
+      const HERO_WARM_MS = 300;
+      document.addEventListener("astro:before-preparation", (event) => {
+        const load = event.loader;
+        event.loader = async () => {
+          await load();
+          if (event.defaultPrevented) return; // not an HTML page — the browser takes it from here
+          await warmHero(event.newDocument, event.signal);
+        };
+      });
+
+      const warmHero = async (doc: Document, signal: AbortSignal): Promise<void> => {
+        // `newDocument` still points at the live document until the loader parses a response.
+        if (doc === document || signal.aborted) return;
+        const hero = doc.querySelector("picture.bleed");
+        if (!hero) return;
+        // Let the LIVE document pick the file. `<source media>` is art direction and
+        // `<source type>` is format negotiation; both resolve against a real viewport, which the
+        // parsed document does not have. A hidden clone here therefore fetches exactly the
+        // candidate the new page will ask for, and warms the HTTP cache for it.
+        const probe = document.importNode(hero, true) as HTMLElement;
+        const img = probe.querySelector("img");
+        if (!img) return;
+        probe.setAttribute("aria-hidden", "true");
+        probe.style.cssText =
+          "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none";
+        img.classList.remove("is-animated"); // no Ken Burns on a 1px probe
+        img.loading = "eager";
+        img.fetchPriority = "high";
+        document.body.append(probe);
+        signal.addEventListener("abort", () => probe.remove(), { once: true });
+        const settled = new Promise<void>((resolve) => {
+          img.addEventListener("load", () => resolve(), { once: true });
+          img.addEventListener("error", () => resolve(), { once: true });
+        });
+        await Promise.race([settled, new Promise((r) => window.setTimeout(r, HERO_WARM_MS))]);
+        // Won the race → the fetch is done, drop the probe. Timed out → leave it: removing an
+        // in-flight <img> can cancel its request, and the incoming page is about to ask for that
+        // exact file. Either way the body swap discards it a moment later.
+        if (img.complete) probe.remove();
+      };
+
       // Navigation composure — the incoming page must arrive ALREADY composed, so the page
       // transition (transitions.css) reveals a finished hero instead of one that then
       // re-animates. This runs inside the swap, before the browser snapshots the new page:
@@ -352,11 +409,22 @@ const ogLocaleAlternates =
         window.addEventListener("scroll", onParallax, { passive: true });
         window.addEventListener("resize", onParallax, { passive: true });
       }
-      document.addEventListener("astro:page-load", () => {
+      // Collect this page's layers and PLACE them. Placement cannot wait for astro:page-load:
+      // until the first run a layer carries no transform and sits at its CSS rest (`top: -10%`),
+      // while its settled position is another `cap` px above that — so the first run always
+      // moves the photo. On a navigation astro:page-load lands after the new page has been
+      // snapshotted, which is why the hero was seen jumping mid-transition; on a cold load it is
+      // the window load event, i.e. after the images finish. Running it inside astro:after-swap
+      // (before the snapshot) and once at module time makes the placement part of the page's
+      // first painted state instead of a correction to it.
+      const refreshParallax = () => {
         if (reduce) return;
         layers = [...document.querySelectorAll<HTMLElement>("[data-parallax]")];
         applyParallax();
-      });
+      };
+      refreshParallax();
+      document.addEventListener("astro:after-swap", refreshParallax);
+      document.addEventListener("astro:page-load", refreshParallax);
     </script>
   </body>
 </html>
