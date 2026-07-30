@@ -3,8 +3,9 @@
  * @file index.astro
  * @description Public landing (`/`). Reads as a partytura: metadata, jsonLd, then the
  *  rite as three movements braided by AetherInterlude (I · Lumen, II · Vox, III · Sustinete).
- *  Session/motion plumbing lives behind named components (PreloaderGate, MotionGate,
- *  VaultBuffer) so this file stays declarative.
+ *  The `rite` flag declares the once-per-session preloader to the shell, which decides the
+ *  `preloader-skip` / `voct-motion` gates for this page (DocumentGates) — they cannot be armed
+ *  from here, because on a navigation into "/" it is the outgoing page that has to arm them.
  * @architecture Astro islands 2026
  * @module pages/index
  */
@@ -25,8 +26,6 @@ import PathSection from "../components/landing/PathSection.astro";
 import SilenceMoment from "../components/landing/SilenceMoment.astro";
 import FinalSupportSection from "../components/landing/FinalSupportSection.astro";
 import CodaSection from "../components/landing/CodaSection.astro";
-import MotionGate from "../components/landing/MotionGate.astro";
-import PreloaderGate from "../components/landing/PreloaderGate.astro";
 import VaultBuffer from "../components/landing/VaultBuffer.astro";
 
 import { AudioController } from "../islands/landing/AudioController";
@@ -101,11 +100,10 @@ const jsonLd = {
   image={ogImage}
   bodyClass="theme-marketing"
   reveal={false}
+  rite
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-    <MotionGate />
-    <PreloaderGate />
     <VaultBuffer />
   </Fragment>
 

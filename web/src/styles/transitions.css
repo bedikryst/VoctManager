@@ -60,13 +60,14 @@ html {
   opacity: 1;
 }
 
-/* Persisted islands carry a `view-transition-name` derived from `transition:persist="…"`
-   (site-cursor, scroll-top). They live above the page and must NOT dim with it — hold them
-   near-instant so they morph in place. */
-::view-transition-group(site-cursor),
-::view-transition-group(scroll-top) {
-  animation-duration: 1ms;
-}
+/* Persisted islands (site-cursor, scroll-top) ride INSIDE the root snapshot. `transition:persist`
+   carries an island's state across the swap but emits no `view-transition-name` (only
+   `transition:name`/`animate` do), so there is no group to hold still — and naming them by hand
+   would cost more than it buys: the cursor is drawn with `mix-blend-mode: difference`, which a
+   named group no longer composites against the page, the same trap registrum.css hit with
+   backdrop-filter. So the live element stays put while a faint copy of it drifts off with the
+   outgoing page. At 2.5% over 420ms that sits below notice; if it ever stops being, hide them on
+   `astro:before-preparation`, which runs before the old snapshot is taken. */
 
 /* ── Fallback path (no native View Transitions) ──
    Astro drives the whole `<html>` through `data-astro-transition-fallback` = "old" then "new",

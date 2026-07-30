@@ -1,0 +1,86 @@
+---
+/**
+ * @file DocumentGates.astro
+ * @description Owner of the `<html>` gate classes every hidden-then-revealed state on the site
+ *  is keyed on: `voct-motion` (JS is live and motion is allowed), `reveal-ready` (this page uses
+ *  the global reveal controller) and `preloader-skip` (the session rite is already spent).
+ *  Content ships visible and only these classes arm the hidden state, so no-JS and
+ *  reduced-motion visitors read the page exactly as it was served.
+ *
+ *  A gate has to be on the document BEFORE that document is painted, and on a ClientRouter
+ *  navigation the arriving page cannot do that for itself. Astro's swap strips every attribute
+ *  off `<html>` and copies the incoming document's, so the classes are dropped; and the incoming
+ *  page's own inline scripts do not run when they are inserted (a script parsed by DOMParser is
+ *  flagged already-started), so Astro re-executes them in `runScripts()` — which happens after
+ *  the view transition has begun. A gate armed by the arriving page therefore lands mid-flight:
+ *  the new page is painted with its text visible, the class arrives, the hidden state engages
+ *  WITH its transition, and the reveal observer then has to bring the text back. That was the
+ *  "text is there, blinks out, replays from scratch" flicker — hitting a different subset of
+ *  elements each time, because which element blinked depended on which frame won.
+ *
+ *  So the outgoing document arms the gate for the incoming one: this script runs once per real
+ *  document load, and on `astro:before-swap` applies the same decision to `event.newDocument`,
+ *  whose `<html>` attributes the swap then copies verbatim. The page is inserted already gated
+ *  and nothing changes underneath it.
+ *
+ *  What a page wants is declared in its markup (`data-reveal`, `data-rite` on `<html>`, written
+ *  by BaseLayout) rather than looked up in the DOM: on the initial load this runs while the body
+ *  is still unparsed, so `<html>` is the only thing there is to read.
+ * @architecture Astro islands 2026
+ * @module components/DocumentGates
+ */
+---
+
+<script is:inline>
+  (function () {
+    var SEEN = "voct.preloader.seen";
+
+    // The rite is a SESSION event: sessionStorage carries "seen" across ClientRouter returns to
+    // "/", while a reload should feel like a fresh start. This script runs exactly once per real
+    // document load, so a reload-typed navigation into the landing is precisely the moment to
+    // forget it — no stamp bookkeeping needed to tell a reload from a swap.
+    if (document.documentElement.getAttribute("data-rite") === "on") {
+      try {
+        var nav = performance.getEntriesByType("navigation")[0];
+        if (nav && nav.type === "reload") window.sessionStorage.removeItem(SEEN);
+      } catch (e) {
+        /* private mode — the rite will just play again */
+      }
+    }
+
+    // `url` is the address the document will live at. At before-swap time `location` is still
+    // the OUTGOING page, so the target must be passed in rather than read off the window.
+    function riteIsSpent(url) {
+      try {
+        // Intent-carrying URLs (donation deep links, gateway returns, synthetic auditors) skip
+        // the rite before paint — mirrors wantsRiteSkipFromUrl in Preloader.tsx.
+        if (url.hash === "#wesprzyj" || url.hash === "#przelew") return true;
+        var params = new URLSearchParams(url.search);
+        if (params.has("donate") || params.has("donated") || params.has("nogate")) return true;
+        return window.sessionStorage.getItem(SEEN) === "1";
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function applyGates(doc, url) {
+      var root = doc.documentElement;
+      // Read the preference per call, not once at load — it can change mid-session.
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // Global, and only says "JS is live and motion is allowed". The landing is currently its
+        // only reader (landing.css ships with "/" alone, so the class is inert elsewhere), but
+        // the fact it states is not landing-specific.
+        root.classList.add("voct-motion");
+        if (root.getAttribute("data-reveal") === "on") root.classList.add("reveal-ready");
+      }
+      if (root.getAttribute("data-rite") === "on" && riteIsSpent(url)) {
+        root.classList.add("preloader-skip");
+      }
+    }
+
+    applyGates(document, new URL(window.location.href));
+    document.addEventListener("astro:before-swap", function (event) {
+      applyGates(event.newDocument, event.to);
+    });
+  })();
+</script>

@@ -72,8 +72,8 @@ type Phase = "shown" | "choice" | "hiding" | "removed";
 export function Preloader(): React.JSX.Element | null {
   // Initial state is deterministic ("shown") so SSR and the first client render agree —
   // hydration mismatches would strand a dead SSR overlay. The session/choice decision
-  // happens in the mount effect below; the CSS gated on `html.preloader-skip` (set by
-  // PreloaderGate's inline head script) prevents any visible flash for returning visitors.
+  // happens in the mount effect below; the CSS gated on `html.preloader-skip` (decided before
+  // paint by DocumentGates) prevents any visible flash for returning visitors.
   const [phase, setPhase] = useState<Phase>("shown");
   const { read, write } = useAudioChoice();
   const choiceRef = useRef<HTMLDivElement>(null);

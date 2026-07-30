@@ -62,6 +62,33 @@ a dark band flashing across the parchment pages. Both paths (native `::view-tran
 attribute-driven `data-astro-transition-fallback`) must always be choreographed together, or the
 "mobile menu doesn't fade" bug returns.
 
+**A page can never arm its own `<html>` gate.** Astro's swap strips every attribute off `<html>`
+and copies the incoming document's, so JS-set classes (`reveal-ready`, `voct-motion`,
+`preloader-skip`) are dropped on every navigation — and the arriving page's inline scripts cannot
+restore them in time: a `<script>` parsed by `DOMParser` is flagged already-started and does not
+execute on insertion, so Astro re-runs it in `runScripts()`, *after* the view transition has begun.
+`data-astro-rerun` is therefore a trap for anything pre-paint: the new page paints with its content
+visible, the gate lands mid-dissolve, the hidden state engages **with its transition**, and the
+reveal observer has to bring the text back — text appears, blinks out, replays, hitting a different
+subset of elements each navigation. This was live for `reveal-ready`, `voct-motion` and
+`preloader-skip` at once, which is why it read as several processes racing. The fix, and the only
+shape that works: the **outgoing** document arms the incoming one — `DocumentGates.astro` decides
+from `<html data-reveal>` / `<html data-rite>` and applies the classes to `event.newDocument` in
+`astro:before-swap`, before the swap copies its attributes. Anything else on `<html>` that CSS keys
+a hidden state on must go through that one place. Corollary: `astro:after-swap` is the only moment
+where the incoming DOM has real layout *and* the new snapshot is not taken yet, so measured work
+(settling above-the-fold reveals) belongs there and nowhere else — and it must skip zero-box nodes,
+or reveals inside a closed `<details>` (the `/koncerty` programme rows) report top 0, get settled,
+and lose their cascade.
+
+**`transition:persist` emits no `view-transition-name`.** Only `transition:name`/`animate` do, so
+`::view-transition-group(site-cursor)` and `(scroll-top)` never matched anything — the persisted
+islands ride inside the root snapshot and a faint copy drifts off with the outgoing page. Do not
+"fix" it by naming them: the cursor is drawn with `mix-blend-mode: difference`, which a named group
+stops compositing against the page (the same trap `registrum.css` hit with `backdrop-filter`). If
+the ghost ever becomes visible enough to matter, hide those elements on
+`astro:before-preparation` — the last event before the old snapshot is taken.
+
 **Movement inscriptions must stay short (~13 characters).** `13-spine.css` hides the spine label
 below 1440px because the gutter is narrow; a longer inscription pushes that breakpoint up until
 the label effectively never shows. This is why `Lumen quaerit` → `Lumen Christi` and not

@@ -8,6 +8,7 @@
  * @module layouts/BaseLayout
  */
 import { ClientRouter } from "astro:transitions";
+import DocumentGates from "../components/DocumentGates.astro";
 import { LOCALE_META, LOCALES, SITE, type Locale } from "../i18n/config";
 import "../styles/tokens.css";
 import "../styles/base.css";
@@ -37,8 +38,16 @@ interface Props {
    * The landing opts OUT (`false`) — it ships its own reveal system (`.is-visible`/`.is-settled`)
    * scoped to its unlayered stylesheet, which the global `.is-in` rules would otherwise clobber.
    * Parallax stays active regardless (same `data-parallax` contract). Subpages keep the default.
+   * Surfaces as `<html data-reveal>` so DocumentGates can arm the gate on the INCOMING document
+   * during a navigation, before it is ever painted.
    */
   reveal?: boolean;
+  /**
+   * This page carries the once-per-session preloader rite (the landing, and only the landing).
+   * Surfaces as `<html data-rite>`, which is what tells DocumentGates whether to decide the
+   * `preloader-skip` gate for this document at all.
+   */
+  rite?: boolean;
   /** Page locale — drives `<html lang>` and og:locale. Defaults to Polish (the un-prefixed site). */
   lang?: Locale;
   /** hreflang alternates for a translated page (absolute URLs incl. x-default). Empty on
@@ -54,6 +63,7 @@ const {
   imageAlt = title,
   bodyClass = "",
   reveal = true,
+  rite = false,
   lang = "pl",
   alternates = [],
 } = Astro.props;
@@ -70,7 +80,11 @@ const ogLocaleAlternates =
 ---
 
 <!doctype html>
-<html lang={LOCALE_META[lang].htmlLang}>
+<html
+  lang={LOCALE_META[lang].htmlLang}
+  data-reveal={reveal ? "on" : undefined}
+  data-rite={rite ? "on" : undefined}
+>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -157,30 +171,14 @@ const ogLocaleAlternates =
     <!-- Native cross-page transitions (View Transition API). -->
     <ClientRouter />
 
-    {/* Apply reveal hidden-state before first paint (JS + motion only) → no flash-then-hide.
-        Skipped when reveal={false} (landing) so the global `.is-in` controller stays dormant.
-        `data-astro-rerun` re-executes this on every ClientRouter swap, otherwise navigating
-        away from the landing (where reveal-ready is intentionally NOT set) into a subpage
-        would arrive with the class missing → setupReveals would early-return and the hero
-        would not animate (the "no reveal on subpages" bug). */}
-    {
-      reveal && (
-        <script is:inline data-astro-rerun>
-          if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            document.documentElement.classList.add("reveal-ready");
-          }
-        </script>
-      )
-    }
-    {/* Landing opts out of the reveal pipeline — strip the class on swap into "/" so the
-        landing's own .is-visible/.is-settled system isn't fighting the global :is-in rules. */}
-    {
-      !reveal && (
-        <script is:inline data-astro-rerun>
-          document.documentElement.classList.remove("reveal-ready");
-        </script>
-      )
-    }
+    {/* Hidden-state gates on <html>, applied before first paint here and to the incoming
+        document at astro:before-swap. Rendered on every page, not only the ones that use a gate:
+        during a navigation it is the OUTGOING document that has to arm the arriving one, so the
+        decision must be present everywhere. Nothing has to strip a gate on the way out — the
+        swap clears every attribute on <html> and copies the incoming document's, so a page that
+        does not ask for a gate simply arrives without it (this is how the landing keeps
+        `reveal-ready` off its own .is-visible/.is-settled system). See DocumentGates. */}
+    <DocumentGates />
 
     <slot name="head" />
   </head>
@@ -258,19 +256,31 @@ const ogLocaleAlternates =
 
       // Navigation composure — the incoming page must arrive ALREADY composed, so the page
       // transition (transitions.css) reveals a finished hero instead of one that then
-      // re-animates (the old "text → blank → text" flash). This fires inside the swap, BEFORE
-      // the browser snapshots the new page, so the above-the-fold reveals are captured settled.
-      // `vt-nav` (base.css) strips their transition so they snap rather than animate; below-the-
-      // fold reveals are left hidden and still animate on scroll. The landing opts out of the
-      // global reveal system (no `reveal-ready`) and owns its own entrance, so skip it there.
+      // re-animates. This runs inside the swap, before the browser snapshots the new page:
+      // the reveal gate is already on the root (DocumentGates armed it on this document at
+      // before-swap, so its hidden state was in force the moment the body was inserted) and
+      // `vt-nav` (base.css) strips the reveal transition, so settling SNAPS instead of playing.
+      // Below-the-fold reveals stay hidden and still animate on scroll. The landing opts out of
+      // the global reveal system and owns its own entrance, so there is nothing to do there.
       document.addEventListener("astro:after-swap", () => {
         const root = document.documentElement;
         if (!root.classList.contains("reveal-ready")) return;
-        root.classList.add("vt-nav");
+        // Measure before touching any class, so one settle cannot shift the next measurement.
+        // The hidden state carries a translateY, which getBoundingClientRect includes — every
+        // top reads ~60px low, which only makes the fold test conservative: an element
+        // straddling the fold is left to the observer, which is where it belongs anyway.
+        // An empty box means the node isn't rendered at all (a reveal inside a closed <details>,
+        // e.g. the /koncerty programme rows) — those report top 0 and must NOT be counted as
+        // above the fold, or they would be settled here and lose their cascade on open.
         const vh = window.innerHeight;
-        document.querySelectorAll<HTMLElement>(".reveal:not(.is-in)").forEach((el) => {
-          if (el.getBoundingClientRect().top < vh) el.classList.add("is-in");
-        });
+        const pending = [...document.querySelectorAll<HTMLElement>(".reveal:not(.is-in)")].filter(
+          (el) => {
+            const rect = el.getBoundingClientRect();
+            return (rect.width > 0 || rect.height > 0) && rect.top < vh;
+          },
+        );
+        root.classList.add("vt-nav");
+        for (const el of pending) el.classList.add("is-in");
       });
 
       // One-shot reveal — animates once on enter, then persists. Re-scans after each

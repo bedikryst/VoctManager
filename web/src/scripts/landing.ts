@@ -332,7 +332,7 @@ function setupKinetic(root: HTMLElement, reduce: boolean): void {
 // close together, so the gap kept biting), and its own blur-into-focus then played where no
 // one was looking. Short reply + a quick entrance (03-manifest-rite.css) keeps the moment.
 function setupManifestLight(root: HTMLElement, reduce: boolean): void {
-  // Under reduced motion MotionGate never adds html.voct-motion, so the CSS half-light
+  // Under reduced motion DocumentGates never adds html.voct-motion, so the CSS half-light
   // states stay inert and the manifest is plain full ink — nothing to drive here.
   if (reduce) return;
   const manifest = root.querySelector<HTMLElement>(".manifest");
