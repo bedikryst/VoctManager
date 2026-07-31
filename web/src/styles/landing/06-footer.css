@@ -588,11 +588,22 @@
     line-height: 0.95;
     font-weight: 300;
     letter-spacing: 0;
-    /* lining-nums — wymusza wersaliki cyfr zamiast figur tekstowych
-       Cormoranta; bez tego "12:36" czytało się jak "I 2:36" (wąska,
-       wpół-wysoka jedynka). tabular-nums trzyma stałą szerokość — zegar
-       nie skacze przy każdym ticku. */
-    font-variant-numeric: lining-nums tabular-nums;
+    /* lining-nums BEZ tabular-nums, i to jest twarde ograniczenie kroju, nie gust.
+       lining-nums podstawia figury .lf — bez niego domyślne cyfry Cormoranta są
+       tekstowe (3/5/7/9 schodzą pod linię, jedynka ma wysokość x) i "12:36"
+       czytało się jak "I 2:36".
+       tabular-nums NIE MOŻE tu wejść: Cormorant ma tabelaryczne figury wyłącznie
+       w wariancie tekstowym (.tosf), wszystkie dopchane do jednej szerokości 491
+       przy naturalnych 391–501. Wersaliki + tabelaryczne to w tym kroju sprzeczne
+       żądanie — dostajesz albo cyfry tekstowe, albo rozstrzelone dziury wokół
+       wąskich glifów. To była przyczyna "rozciągniętych" cyfr.
+       Stabilność bez tabular-nums bierze się stąd, że figury .lf Cormoranta mają
+       szerokość PRAKTYCZNIE niezależną od osi wagi: "12:36" to 1,959em przy wght
+       300 i 1,971em przy 700 — 0,8 px różnicy na 80px. Dlatego oddech (niżej)
+       może pompować wght i zegar się nie przesuwa. Cinzel tego nie ma:
+       ta sama para cyfr rośnie 2,139em → 2,310em na 400→580, czyli ~12 px
+       wędrówki w prawo w każdym cyklu. Nie zmieniaj tu rodziny na --capitalis. */
+    font-variant-numeric: lining-nums;
     margin: 10px 0 10px;
     font-variation-settings: "wght" 380;
   }
@@ -601,7 +612,11 @@
      ~0.34em głównego zegara, raised żeby siedział mniej-więcej na
      wysokości cap line minut. Lekka opacity + osobny wght (340) żeby
      NIE oddychał razem z głównym zegarem (mniej jitter, stabilna obecność).
-     Tabular-nums kasuje skoki szerokości przy każdym tick. */
+     Tu tabular-nums ZOSTAJE, odwrotnie niż w zegarze wyżej: ten element tyka
+     60 razy na minutę, więc stała szerokość jest warta swojej ceny, a przy
+     ~0,34em dopchanie do 491 czyta się jak światło między cyframi, nie jak
+     rozciągnięcie. Rodzina musi być --serif: Cinzel nie ma pliku italic,
+     więc dostawałby pochyłość syntetyczną — ścinaną kapitałę inskrypcyjną. */
   .footer-signal-seconds {
     display: inline-block;
     margin-left: 0.16em;
@@ -641,8 +656,11 @@
       will-change: font-variation-settings;
     }
 
+    /* 300 to dno osi wagi Cormoranta, nie wartość dobrana na oko. Niżej
+       przeglądarka i tak przycina, więc każde 260 czy 200 to martwy odcinek
+       cyklu, w którym zegar stoi zamiast oddychać. */
     @keyframes footer-signal-pulse {
-      0%, 100% { --wght-mark: 260; }
+      0%, 100% { --wght-mark: 300; }
       50%      { --wght-mark: 580; }
     }
   }
