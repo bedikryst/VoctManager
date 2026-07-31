@@ -221,7 +221,7 @@ export const PieceRow = ({
                 value={piece.title}
                 onSave={(next) => patch("title", next)}
                 ariaLabel={t("archive.row.edit_title", "Tytuł")}
-                variant="title"
+                variant="display"
                 placeholder={t("archive.row.title_placeholder", "Tytuł utworu")}
               />
             </div>

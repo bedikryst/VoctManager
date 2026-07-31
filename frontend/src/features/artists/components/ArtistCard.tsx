@@ -39,7 +39,6 @@ import { ACCENT_BADGE } from "@/shared/ui/primitives/accents";
 import {
   Caption,
   Eyebrow,
-  Heading,
   Text,
 } from "@/shared/ui/primitives/typography";
 import { getSectionPresentation } from "../constants/voiceSections";
@@ -157,9 +156,13 @@ export const ArtistCard = React.memo(
           />
 
           <div className="min-w-0 flex-1">
-            <Heading as="h3" size="md" weight="bold" truncate>
+            {/* A heading element, but not the serif: in this system the serif
+                marks a titled work or event, and a person is neither. The name
+                reads the same here as it does in `ArtistRow`, so switching the
+                roster between tiles and rows never changes anyone's voice. */}
+            <Text as="h3" size="md" weight="bold" truncate>
               {fullName}
-            </Heading>
+            </Text>
             <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
               <Badge
                 variant={

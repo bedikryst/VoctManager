@@ -167,17 +167,17 @@ export const ProjectRow = ({
           <span onClick={(event) => event.stopPropagation()}>
             {/* Serif, like the same title at the head of the project hub: a
                 concert is named, not labelled, and the row is where that name is
-                first read. `text-lg` rather than the variant's `text-base`
-                because Cormorant sets a 0.386em x-height against the sans's
-                0.546 — at equal px the title would read smaller than the
-                metadata beneath it. Carried as `className` so the shared
-                `variant="title"` keeps its sans for the archive rows. */}
+                first read. One step above the shared `display` size because this
+                list holds a handful of roomy rows, not a growing catalogue — at
+                Cormorant's 0.386em x-height, 30px reads at about 21px of sans.
+                The step waits for `md`: on a phone the row already wraps a
+                status badge and an announcement chip beside the title. */}
             <InlineEditable
               value={project.title}
               onSave={patchTitle}
               ariaLabel={t("projects.row.edit_title", "Tytuł projektu")}
-              variant="title"
-              className="font-serif text-lg tracking-tight"
+              variant="display"
+              className="md:text-3xl"
               placeholder={t("projects.row.title_placeholder", "Tytuł")}
               validate={(next) =>
                 next.trim()

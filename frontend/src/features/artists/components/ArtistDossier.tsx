@@ -36,7 +36,6 @@ import { Button } from "@/shared/ui/primitives/Button";
 import {
   Caption,
   Eyebrow,
-  Heading,
   Metric,
   Text,
 } from "@/shared/ui/primitives/typography";
@@ -401,9 +400,11 @@ export const ArtistDossier = ({
                   className="border border-ethereal-marble bg-ethereal-alabaster shadow-glass-solid"
                 />
                 <div className="min-w-0">
-                  <Heading as="h3" size="lg" weight="bold" truncate>
+                  {/* Sans, like the roster rows and tiles this opened from: the
+                      serif marks a titled work or event, and a person is neither. */}
+                  <Text as="h3" size="lg" weight="bold" truncate>
                     {artist.first_name} {artist.last_name}
-                  </Heading>
+                  </Text>
                   <div className="mt-1 flex items-center gap-1.5">
                     <Badge
                       variant={section ? ACCENT_BADGE[section.accent] : "neutral"}

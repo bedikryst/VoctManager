@@ -28,6 +28,31 @@ import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 type InlineEditableValue = string | number | null;
 
+export type InlineEditableVariant = "default" | "title" | "subtle" | "display";
+
+/**
+ * Typography the inner `Text` has to carry on its own element.
+ *
+ * `Text` writes `font-sans` and `font-normal` onto the span it renders, and a
+ * declaration on the span beats anything inherited from the button around it.
+ * So family and weight cannot travel in the button's class list the way size
+ * and colour do — a `font-serif`/`font-semibold` there resolves to nothing at
+ * all, with no build or lint error to show for it. They go through props here
+ * instead, and `InlineEditable.test.ts` holds that shut.
+ */
+export const inlineEditableTextProps = (
+  variant: InlineEditableVariant,
+): { weight?: "semibold"; className?: string } => {
+  switch (variant) {
+    case "display":
+      return { weight: "semibold", className: "font-serif" };
+    case "title":
+      return { weight: "semibold" };
+    default:
+      return {};
+  }
+};
+
 export interface InlineEditableProps {
   readonly value: InlineEditableValue;
   readonly onSave: (next: string) => Promise<unknown> | void;
@@ -36,8 +61,18 @@ export interface InlineEditableProps {
   readonly type?: "text" | "number";
   readonly placeholder?: string;
   readonly ariaLabel: string;
-  /** Display variant — adjusts typography and chrome. */
-  readonly variant?: "default" | "title" | "subtle";
+  /**
+   * Display variant — adjusts typography and chrome. `display` is `title` in the
+   * serif: for a row whose subject is a named work or event, so the list sets it
+   * in the same voice the detail view's `Heading` does. A person's name is not
+   * one of those — people stay in the sans, in every view.
+   *
+   * Its much larger step is not decoration. Cormorant's x-height is 0.386em
+   * against the sans's 0.546, so `text-2xl` here lands at roughly the optical
+   * size of 17px of sans — a step above the `title` variant's 16px, not three.
+   * Any smaller and the name reads smaller than the metadata beneath it.
+   */
+  readonly variant?: InlineEditableVariant;
   readonly disabled?: boolean;
   /** When true, the empty input shows the placeholder dimmed instead of "—". */
   readonly emptyDisplay?: string;
@@ -139,14 +174,17 @@ export const InlineEditable = ({
           "group/edit inline-flex items-baseline gap-1.5 rounded-chip py-0.5 text-left transition-colors",
           !disabled && "hover:bg-ethereal-gold/10 hover:text-ethereal-ink cursor-text",
           isEmpty && "text-ethereal-graphite/60 italic",
-          variant === "title" && "font-semibold text-base",
+          variant === "title" && "text-base",
+          variant === "display" && "text-2xl tracking-tight",
           variant === "subtle" && "text-xs text-ethereal-graphite",
           className,
         )}
       >
         {/* `size`/`color` stay unset: the wrapping button owns them through the
-            `variant` axis, so the label reads at whatever scale it sits in. */}
-        <Text as="span" size={null} color="inherit">
+            `variant` axis, so the label reads at whatever scale it sits in.
+            Family and weight cannot travel that way — see
+            `inlineEditableTextProps`. */}
+        <Text as="span" size={null} color="inherit" {...inlineEditableTextProps(variant)}>
           {displayText}
         </Text>
         <Pencil
@@ -194,6 +232,7 @@ export const InlineEditable = ({
           fieldShellVariants({ variant: "glass", hasError: Boolean(error) }),
           "w-auto rounded-chip px-1.5 py-0.5",
           variant === "title" && "font-semibold text-base",
+          variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
           variant === "subtle" && "text-xs",
           className,
         )}
