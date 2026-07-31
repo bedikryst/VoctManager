@@ -48,6 +48,13 @@
       covers the full weight range. Unicode-range subsetting splits latin / latin-ext
       so the browser only downloads what the page actually renders.
       Mirrors the Astro public site strategy for a consistent typographic stack.
+
+      BOTH Plex Sans subsets are preloaded, not just `latin`: the panel is
+      Polish-first, and ą/ć/ę/ł/ń/ś/ź/ż all live in `latin-ext`. Preloading only
+      `latin` left every Polish screen discovering its own diacritics one round
+      trip late — the swap-in was visible as a second reflow. EN and FR fit
+      inside `latin`, so those two locales pay 24 KB they will not draw with;
+      that is the deliberate trade for the primary locale rendering in one pass.
     -->
     <link
       rel="preload"
@@ -61,6 +68,13 @@
       as="font"
       type="font/woff2"
       href="/fonts/IBMPlexSans-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/IBMPlexSans-Variable.latin-ext.woff2"
       crossorigin
     />
     <style>
@@ -96,20 +110,31 @@
         src: url("/fonts/CormorantGaramond-Italic-Variable.latin-ext.woff2") format("woff2");
         unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
       }
-      <!--
-        IBM Plex Sans carries the UI text — same family as the Plex Mono below, so
-        the panel speaks two voices (Cormorant for display, Plex for everything set
-        small) instead of three. Its figures are uniform-width by DEFAULT (0.6em,
-        every digit), which is what the ~40 `tabular-nums` sites rely on: the
-        subset ships no `tnum` feature and needs none. The weight axis really does
-        stop at 700 — never ask for 800/900 (`font-synthesis: none` on the body
-        means a request past the axis clamps rather than fakes it).
-      -->
+      /* IBM Plex Sans carries the UI text — same family as the Plex Mono below, so
+         the panel speaks two voices (Cormorant for display, Plex for everything set
+         small) instead of three. Its figures are uniform-width by DEFAULT (0.6em,
+         every digit), which is what the ~40 `tabular-nums` sites rely on: the
+         subset ships no `tnum` feature and needs none. The weight axis really does
+         stop at 700 — never ask for 800/900 (`font-synthesis: none` on the body
+         means a request past the axis clamps rather than fakes it).
+
+         size-adjust: 105.8% — Plex draws a 0.516em x-height where the panel's scale
+         was drawn around 0.546em, so every size from `text-sm` body down to the 10px
+         overline would read a step small. 0.546/0.516 restores the panel's optical
+         size exactly, without rebasing a single `text-*` token (which would have
+         missed the arbitrary values like `text-[11px]` anyway). It MUST be identical
+         on all six Plex faces: Sans and Mono share one skeleton (both 0.516/0.698)
+         and sit inline together in ledger cells and section badges, and a value that
+         differed between the `latin` and `latin-ext` subsets would render Polish
+         diacritics at a different size than the ASCII around them. Caps land 1.5%
+         above Inter's and the text still sets 1.8% narrower — both below notice.
+         Dial to 100% to see the family at its natural size. */
       @font-face {
         font-family: "IBM Plex Sans";
         font-style: normal;
         font-weight: 100 700;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexSans-Variable.latin.woff2") format("woff2");
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
@@ -118,6 +143,7 @@
         font-style: normal;
         font-weight: 100 700;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexSans-Variable.latin-ext.woff2") format("woff2");
         unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
       }
@@ -126,6 +152,7 @@
         font-style: normal;
         font-weight: 300;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexMono-300.latin.woff2") format("woff2");
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
@@ -134,6 +161,7 @@
         font-style: normal;
         font-weight: 300;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexMono-300.latin-ext.woff2") format("woff2");
         unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
       }
@@ -142,6 +170,7 @@
         font-style: normal;
         font-weight: 400;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexMono-400.latin.woff2") format("woff2");
         unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
       }
@@ -150,6 +179,7 @@
         font-style: normal;
         font-weight: 400;
         font-display: swap;
+        size-adjust: 105.8%;
         src: url("/fonts/IBMPlexMono-400.latin-ext.woff2") format("woff2");
         unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
       }
