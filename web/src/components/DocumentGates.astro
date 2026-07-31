@@ -3,7 +3,9 @@
  * @file DocumentGates.astro
  * @description Owner of the `<html>` gate classes every hidden-then-revealed state on the site
  *  is keyed on: `voct-motion` (JS is live and motion is allowed), `reveal-ready` (this page uses
- *  the global reveal controller) and `preloader-skip` (the session rite is already spent).
+ *  the global reveal controller), `preloader-skip` (the session rite is already spent) and
+ *  `rite-brief` (a remembered audio choice: the rite plays its brief form — the cadence alone —
+ *  from the first painted frame, before the Preloader island hydrates).
  *  Content ships visible and only these classes arm the hidden state, so no-JS and
  *  reduced-motion visitors read the page exactly as it was served.
  *
@@ -48,6 +50,26 @@
       }
     }
 
+    var CHOICE_KEY = "voct.demo.audio";
+    var CHOICE_TTL_MS = 3 * 60 * 60 * 1000;
+
+    // Mirrors useAudioChoice.readChoice (key, legacy raw strings, 3h TTL). Judged here so the
+    // brief-rite CSS runs from the first painted frame; expiry HOUSEKEEPING (removing a stale
+    // key) stays with the hook — this only renders a verdict.
+    function audioChoiceIsValid() {
+      try {
+        var raw = window.localStorage.getItem(CHOICE_KEY);
+        if (!raw) return false;
+        if (raw === "silence" || raw === "voice") return true;
+        var data = JSON.parse(raw);
+        if (data.choice !== "silence" && data.choice !== "voice") return false;
+        if (!isFinite(data.timestamp)) return false;
+        return Date.now() - data.timestamp <= CHOICE_TTL_MS;
+      } catch (e) {
+        return false;
+      }
+    }
+
     // `url` is the address the document will live at. At before-swap time `location` is still
     // the OUTGOING page, so the target must be passed in rather than read off the window.
     function riteIsSpent(url) {
@@ -66,15 +88,25 @@
     function applyGates(doc, url) {
       var root = doc.documentElement;
       // Read the preference per call, not once at load — it can change mid-session.
-      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!reduced) {
         // Global, and only says "JS is live and motion is allowed". The landing is currently its
         // only reader (landing.css ships with "/" alone, so the class is inert elsewhere), but
         // the fact it states is not landing-specific.
         root.classList.add("voct-motion");
         if (root.getAttribute("data-reveal") === "on") root.classList.add("reveal-ready");
       }
-      if (root.getAttribute("data-rite") === "on" && riteIsSpent(url)) {
-        root.classList.add("preloader-skip");
+      // Reduced motion skips the rite outright: the ceremony IS the motion, so holding
+      // someone through it buys them nothing but a wait. Armed here rather than in the
+      // island so the overlay never paints, exactly as for a spent session. A fresh
+      // session with a remembered choice instead gets the BRIEF rite (cadence only,
+      // fixed length) — armed pre-paint so the pen starts writing on the first frame.
+      if (root.getAttribute("data-rite") === "on") {
+        if (reduced || riteIsSpent(url)) {
+          root.classList.add("preloader-skip");
+        } else if (audioChoiceIsValid()) {
+          root.classList.add("rite-brief");
+        }
       }
     }
 

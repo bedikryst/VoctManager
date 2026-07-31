@@ -207,7 +207,10 @@
       radial-gradient(circle at 50% 48%, rgba(198, 164, 91, 0.16), transparent 26rem),
       var(--dark);
     color: var(--paper);
-    pointer-events: none;
+    /* An opaque curtain MUST take the clicks. With `pointer-events: none` a click during
+       the rite landed on the chrome underneath, which the visitor cannot see. It lets go
+       only once it starts leaving. */
+    pointer-events: auto;
     transition: opacity 1s var(--ease-slow), visibility 1s var(--ease-slow), filter 1s var(--ease-slow);
   }
 
@@ -215,6 +218,25 @@
     visibility: hidden;
     opacity: 0;
     filter: blur(18px);
+    pointer-events: none;
+  }
+
+  /* ── The rite's body: a hold that breathes ─────────────────────────────────
+     A curtain covers a wait of unknown length, so the hold is a LOOP, never a
+     film: the candle-spark pulses at the centre, rings radiate like sound in a
+     dark nave, the words surface once and sink to ghosts. Pure CSS — it lives
+     before the island hydrates and cannot look stuck however long `load` takes.
+     Paced at a resting breath (~6–7s cycles), not an animation showreel. */
+  .preloader-rings {
+    position: absolute;
+    inset: 0;
+    transition: opacity 1s var(--ease);
+  }
+
+  .preloader-hold {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.7s var(--ease);
   }
 
   .preloader-spark {
@@ -228,8 +250,8 @@
     box-shadow: 0 0 34px rgba(198, 164, 91, 0.92), 0 0 9px rgba(198, 164, 91, 0.88);
     transform: translate(-50%, -50%) scale(0);
     animation:
-      preloaderSpark 2.6s 0.1s var(--ease-slow) forwards,
-      preloaderSparkPulse 3.4s 2.7s ease-in-out infinite;
+      preloaderSpark 1.5s 0.1s var(--ease-slow) forwards,
+      preloaderSparkPulse 6s 1.6s ease-in-out infinite;
   }
 
   .preloader-ring {
@@ -242,7 +264,7 @@
     border-radius: 50%;
     transform: translate(-50%, -50%);
     opacity: 0;
-    animation: preloaderRing 3.8s ease-in-out infinite;
+    animation: preloaderRing 7.2s ease-in-out infinite;
   }
 
   .preloader-ring.r1 {
@@ -250,12 +272,12 @@
   }
 
   .preloader-ring.r2 {
-    animation-delay: 1.3s;
+    animation-delay: 2.4s;
     border-color: rgba(244, 241, 233, 0.22);
   }
 
   .preloader-ring.r3 {
-    animation-delay: 2.6s;
+    animation-delay: 4.8s;
     border-color: rgba(244, 241, 233, 0.14);
   }
 
@@ -268,53 +290,38 @@
     letter-spacing: 0;
     opacity: 0;
     filter: blur(8px);
-    animation: preloaderWord 3s var(--ease-slow) forwards;
+    animation: preloaderWord 3.4s var(--ease-slow) forwards;
   }
 
   .preloader-word.w1 {
     left: 11vw;
     top: 28vh;
-    animation-delay: 0.9s;
+    animation-delay: 1s;
   }
 
   .preloader-word.w2 {
     right: 10vw;
     bottom: 24vh;
     color: rgba(226, 205, 149, 0.72);
-    animation-delay: 1.5s;
-  }
-
-  .preloader-mark {
-    position: relative;
-    z-index: 1;
-    width: 58px;
-    height: 58px;
-    color: rgba(244, 241, 233, 0.9);
-    opacity: 0;
-    transform: scale(0.92);
-    animation: preloaderMark 1.8s 1.7s var(--ease-slow) forwards;
-  }
-
-  .preloader-mark * {
-    stroke: currentColor;
+    animation-delay: 1.9s;
   }
 
   @keyframes preloaderSpark {
     0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
-    22% { opacity: 1; transform: translate(-50%, -50%) scale(1.8); }
-    100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.9); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.8); }
+    100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.95); }
   }
 
   @keyframes preloaderSparkPulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(0.78); opacity: 0.32; }
-    50% { transform: translate(-50%, -50%) scale(1.04); opacity: 0.7; }
+    0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.34; }
+    50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.72; }
   }
 
   @keyframes preloaderRing {
     0%, 100% { opacity: 0; width: 14px; height: 14px; }
-    18% { opacity: 0.55; }
-    50% { opacity: 0.42; width: 22vmax; height: 22vmax; }
-    82% { opacity: 0.14; }
+    16% { opacity: 0.5; }
+    50% { opacity: 0.4; width: 22vmax; height: 22vmax; }
+    84% { opacity: 0.12; }
   }
 
   @keyframes preloaderWord {
@@ -323,15 +330,170 @@
     100% { opacity: 0.14; filter: blur(5px); transform: translateY(-8px); }
   }
 
-  @keyframes preloaderMark {
-    to { opacity: 1; transform: scale(1); }
+  /* ── The rite's cadence: scriptura + illuminatio ───────────────────────────
+     The site's two motion idioms in their manuscript order. First the pen: it
+     writes the ONE true line of the mark — the long stem descending into the
+     note, its punctum. Only the parts that really are lines get drawn; the V is
+     never a centerline wireframe (uniform stroke turned it into a downward
+     arrow — a different object than the serif letterform). Then the light: it
+     rises from the note and OPENS the V in its real modulated form, upwards,
+     the pen line gaining body as the light re-traces it. Before the cadence
+     begins nothing of the mark exists; the pen writes on darkness.
+     One set of declarations, armed two ways: `.preloader.is-cadence` when the
+     phase machine reaches it, and `html.rite-brief` (DocumentGates, pre-paint)
+     when a remembered choice makes the cadence the whole rite — running from
+     the first painted frame, before the island hydrates. Both selectors MUST
+     stay in the same rules: a differing computed `animation` would restart the
+     already-running cadence when hydration adds `.is-cadence` on top. */
+  .rite {
+    position: relative;
+    width: calc(min(52vh, 420px) * 0.405);
+    height: min(52vh, 420px);
+    /* Every beat below is offset by this, so the whole cadence can be pushed back as one.
+       The full rite needs no lead — the hold has been breathing and the pen simply takes
+       over — but the brief rite IS the first thing the visitor meets, and starting on the
+       frame the page paints reads as walking in on something already in progress. */
+    --rite-lead: 0ms;
+  }
+
+  html.rite-brief .rite {
+    --rite-lead: 300ms;
+  }
+
+  .rite-skel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .rite-skel .rs {
+    stroke: var(--candle);
+    stroke-width: 8;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .rite-skel .rs-note {
+    fill: var(--candle);
+    opacity: 0;
+  }
+
+  .rite-fill {
+    position: absolute;
+    inset: 0;
+    -webkit-mask: url(/voct-mark.svg) center / contain no-repeat;
+    mask: url(/voct-mark.svg) center / contain no-repeat;
+  }
+
+  /* The light. Solid gold below, fading at the leading edge; it travels by transform
+     alone. Height 128% so a full ascent leaves 100% of the mark inside the solid part. */
+  .rite-fill::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 128%;
+    background: linear-gradient(
+      0deg,
+      var(--candle) 0%,
+      var(--candle) 78%,
+      rgba(198, 164, 91, 0) 100%
+    );
+    transform: translateY(100%);
+  }
+
+  /* NO halo under the note. A soft radial glow was tried and cut: the note is a precise
+     10px punctum and the glow was 170px of fog around it, and — the real objection — the
+     rising light IS the illumination, so a glow confirming it afterwards is the page
+     explaining its own metaphor one beat too late. The light passes; that is the whole
+     statement. */
+
+  :is(.preloader.is-cadence, html.rite-brief .preloader) .rs-stem {
+    animation: riteDraw 900ms var(--ease-slow) forwards;
+    animation-delay: var(--rite-lead);
+  }
+
+  :is(.preloader.is-cadence, html.rite-brief .preloader) .rs-note {
+    animation: riteNote 180ms var(--ease) forwards;
+    animation-delay: calc(var(--rite-lead) + 880ms);
+  }
+
+  /* NOT `--ease-slow`, and this is the one place on the site where that token is wrong.
+     It is heavily front-loaded (59% of the distance inside the first 14% of the time),
+     which is right for an object arriving and settling — but here the distance is not
+     uniform in meaning. The V occupies only the middle half of the travel (p 0.28–0.79
+     of the sweep), so under `--ease-slow` the letterform opened in ~240ms while the rest
+     of the duration crept up the bare hairline above it, however long the duration was.
+     This curve is fast-slow-fast instead: the light runs up the drawn stem like a fuse,
+     then crawls while the V opens (~1.05s of the 1.6s), then finishes the invisible tip
+     quickly. Lengthening the duration alone cannot buy this — the proportions are the
+     whole problem. */
+  :is(.preloader.is-cadence, html.rite-brief .preloader) .rite-fill::after {
+    animation: riteIllum 1600ms cubic-bezier(0.1, 0.45, 0.75, 0.72) forwards;
+    animation-delay: calc(var(--rite-lead) + 1000ms);
+  }
+
+  /* The skeleton is never faded out, and must not be. It is drawn at the real geometry's
+     own coordinates and the fill is WIDER than it (13 units against the pen's 8) in the
+     same gold, so the light simply overtakes it: the pen's hairline gains body where the
+     light has passed and stays a hairline above it. Fading the skeleton on a timer instead
+     put out the upper stem while the light was still below the V's apex — the stem
+     vanished and then the rising light re-revealed it, reading as the line being drawn a
+     second time from the middle. Anything that dims the skeleton has to follow the light,
+     and the light already does that job. */
+
+  /* The pen takes over: the spark and the words yield, the rings keep breathing —
+     quieter — through the cadence and on behind the question. */
+  .preloader.is-cadence .preloader-hold {
+    opacity: 0;
+  }
+
+  .preloader.is-cadence .preloader-rings {
+    opacity: 0.6;
+  }
+
+  /* The brief rite is the cadence alone, a fixed bow on darkness — no atmosphere to
+     spin up for a visitor who is only passing the threshold they already crossed. */
+  html.rite-brief .preloader .preloader-hold,
+  html.rite-brief .preloader .preloader-rings {
+    display: none;
+  }
+
+  @keyframes riteDraw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  @keyframes riteNote {
+    to { opacity: 1; }
+  }
+
+  @keyframes riteIllum {
+    to { transform: translateY(0); }
+  }
+
+  /* Reduced motion never sees the rite at all (Preloader.tsx resolves straight through,
+     DocumentGates arms the skip before paint) — but if the overlay is ever shown in that
+     state, it must show the mark lit rather than an empty frame. */
+  @media (prefers-reduced-motion: reduce) {
+    .rite-skel,
+    .preloader-hold,
+    .preloader-rings {
+      display: none;
+    }
+
+    .rite-fill::after {
+      animation: none;
+      transform: translateY(0);
+    }
   }
 
   /* ── The rite's final beat: the threshold choice INSIDE the preloader ──────
      One overlay, one decision. The old standalone `.threshold` modal (a second
      fullscreen gate after the preloader) is gone — its inner classes
-     (.threshold-inner/-title/-actions/-btn…) are reused here verbatim. The
-     preloader's own breathing rings replace the gate's ring choreography. */
+     (.threshold-inner/-title/-actions/-btn…) are reused here verbatim. */
   .preloader-choice {
     position: absolute;
     inset: 0;
@@ -349,10 +511,6 @@
       visibility 0s linear 0.9s;
   }
 
-  .preloader.is-choice {
-    pointer-events: auto;
-  }
-
   .preloader.is-choice .preloader-choice {
     opacity: 1;
     visibility: visible;
@@ -360,12 +518,23 @@
     transition-delay: 0s;
   }
 
-  /* Cross-fade: the rite's own actors yield to the question. `!important` because
-     their opacity is held by animation fill states, which otherwise outrank any
-     normal declaration. The rings keep breathing behind the choice. */
-  .preloader.is-choice :is(.preloader-mark, .preloader-word, .preloader-spark) {
-    opacity: 0 !important;
+  /* Cross-fade: the large rite mark yields to the question, whose own `.threshold-mark`
+     is the same artwork at a smaller size — so this reads as a scale-down, not as one
+     object being swapped for another. The rings stay, dimmer, breathing behind the
+     question; the spark and words go with the mark. (Opacity animates on the rite's
+     CHILDREN, so the container fade needs no `!important`.) These rules must stay after
+     the `.is-cadence` ones — the two classes co-exist and source order breaks the tie. */
+  .preloader.is-choice .rite {
+    opacity: 0;
     transition: opacity 0.6s var(--ease);
+  }
+
+  .preloader.is-choice .preloader-hold {
+    opacity: 0;
+  }
+
+  .preloader.is-choice .preloader-rings {
+    opacity: 0.45;
   }
 
   .threshold-inner {
@@ -703,7 +872,8 @@
     z-index: 1;
     width: 17px;
     height: 40px;
-    /* Maskowany znak PNG: background dziedziczy currentColor, więc logo dalej zmienia barwę. */
+    /* Maskowany raster (master ikonowy — patrz `.brand-glyph-shape` w base.css):
+       background dziedziczy currentColor, więc logo dalej zmienia barwę. */
     background: currentColor;
     -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
     mask: url(/logo-mark.png) center / contain no-repeat;

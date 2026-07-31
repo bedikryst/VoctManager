@@ -302,7 +302,15 @@ button { font: inherit; }
    FailureModal and the QR placeholder. Same masking strategy as the chrome
    header brand-mark (SiteChrome.astro) so every surface inherits a single
    silhouette. Width/height + animation are set by each container — the glyph
-   itself just hands off `currentColor` to the mask. */
+   itself just hands off `currentColor` to the mask.
+
+   TWO MASTERS, split by optical size (see docs/web-landing-guardrails.md):
+   `logo-mark.png` (186×456) below ~110px, `voct-mark.svg` above. The V is a
+   calligraphic letterform whose thin arm measures ~11 of 1000 viewBox units,
+   i.e. 0.19px at the 17×40 footprint — under one device pixel, so a live SVG
+   rasterisation loses it on any repaint that lands on a different subpixel
+   offset (the arm blinks while scrolling). The raster master resolves once
+   and holds. Above ~110px the arm clears a pixel and the vector wins. */
 .brand-glyph-shape {
   display: block;
   background: currentColor;

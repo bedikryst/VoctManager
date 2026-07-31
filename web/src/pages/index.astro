@@ -162,13 +162,17 @@ const jsonLd = {
     }
 
     /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for
-       returning visitors. The body.preload-open scroll-lock is also neutralised so the
-       page is immediately interactive on a ClientRouter return to "/". EXCEPTION: when
-       the rite resolves into the threshold choice (`.is-choice` — e.g. the saved choice
-       expired mid-session), the overlay must show despite the session skip; its scroll
-       lock is `threshold-open`, which this neutralisation deliberately doesn't touch. */
+       returning visitors (and for reduced motion, which never gets the rite). The
+       body.preload-open scroll-lock is also neutralised so the page is immediately
+       interactive on a ClientRouter return to "/". EXCEPTION: when the rite resolves into
+       the threshold choice (`.is-choice` — e.g. the saved choice expired mid-session), the
+       overlay must show despite the session skip; its scroll lock is `threshold-open`,
+       which this neutralisation deliberately doesn't touch.
+       `.is-hidden` belongs in the same exception: dismissing that choice drops `.is-choice`,
+       so without it the overlay hit `display: none` in the same frame and the 700ms
+       dissolve never played — the question just vanished. */
     html.preloader-skip .preloader { display: none !important; }
-    html.preloader-skip .preloader.is-choice { display: grid !important; }
+    html.preloader-skip .preloader:is(.is-choice, .is-hidden) { display: grid !important; }
     html.preloader-skip body.preload-open { overflow: visible !important; }
   </style>
 

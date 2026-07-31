@@ -551,7 +551,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* CTA — the votive glyph closes the page (same mark kontakt's coda carries) */
   .cta-band { text-align: center; overflow: hidden; isolation: isolate; }
   .cta-band::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(60% 50% at 50% 24%, color-mix(in srgb, var(--candle) 10%, transparent) 0%, transparent 62%); }
-  .cta-glyph { display: block; width: 80px; height: 220px; margin: 0 auto 46px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .85; }
+  .cta-glyph { display: block; width: 80px; height: 220px; margin: 0 auto 46px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/voct-mark.svg) center / contain no-repeat; mask: url(/voct-mark.svg) center / contain no-repeat; opacity: .85; }
   .cta-band h2 { font-family: var(--serif); font-weight: 300; font-size: clamp(40px, 7vw, 92px); line-height: 1; color: var(--ink); margin: 0 0 14px; letter-spacing: -.01em; }
   .cta-band p { max-width: 46ch; margin: 0 auto 38px; color: var(--ink-soft); }
   .btn-row { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }

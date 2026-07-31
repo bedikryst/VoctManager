@@ -1,12 +1,13 @@
 /**
  * @file BrandGlyph.tsx
- * @description The candle mark — used in the threshold gate, the chrome brand, the
- * vault head, the gratitude & failure modals, and the QR placeholder. The previous
- * implementation was a thin-line SVG; this one matches the rest of the chrome
- * (SiteChrome.brand-mark, StickyHeader.brand-glyph) by masking the gold logo PNG
- * with `currentColor`, so every host inherits the same brand silhouette plus the
- * radial halo elements its container already provides. The `strokeWidth` prop is
- * preserved purely for source-compat with existing call sites.
+ * @description The house mark — used in the threshold, the chrome brand, the vault head,
+ * the gratitude & failure modals, and the QR placeholder. It matches the rest of the
+ * chrome (SiteChrome.brand-mark, StickyHeader.brand-glyph) by masking the house mark
+ * with `currentColor`, so every host inherits the same silhouette plus the radial halo
+ * elements its container already provides. Every one of these hosts sits under the
+ * ~110px optical-size crossover, so the mask is the raster master — see the note on
+ * `.brand-glyph-shape` in styles/base.css. The `strokeWidth` prop is preserved purely
+ * for source-compat with existing call sites.
  * @architecture Enterprise SaaS 2026
  * @module widgets/landing/BrandGlyph
  */

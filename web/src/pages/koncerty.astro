@@ -495,6 +495,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Liturgy station (no poster) */
   .station--liturgy .station-inner { grid-template-columns: 1fr; max-width: 880px; }
   .station-plate { border: 1px solid var(--paper-line, rgba(244,241,233,.16)); padding: clamp(28px,4vw,52px); background: rgba(244,241,233,.03); }
+  /* Raster master under ~110px — see the dual-master note on `.brand-glyph-shape` (styles/base.css). */
   .station-glyph { width: 26px; height: 60px; flex-shrink: 0; margin-bottom: 20px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .8; }
 
   /* In memoriam (quieter, centered) */

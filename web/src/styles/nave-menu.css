@@ -462,7 +462,8 @@
   color: rgba(22, 21, 20, 0.5);
 }
 /* The small device is the printer's mark of the colophon — ink like the rest of the set matter
-   (rubric red is reserved for "where you are"). */
+   (rubric red is reserved for "where you are"). The smallest mark on the site, so the raster
+   master is mandatory here — see `.brand-glyph-shape` in styles/base.css. */
 .nave-colophon-mark {
   width: 10px;
   height: 26px;

@@ -254,6 +254,8 @@ const langOptions = showLang
   /* z-index 61 lifts the brand ABOVE the "Antyfona" overlay (.nave, z:60) — it is the ONE bar
      element that persists while the card is open, so the mark never blinks out and back in. */
   .chrome-brand { display: inline-flex; align-items: center; gap: 12px; font-family: var(--serif); font-size: 21px; font-weight: 300; letter-spacing: .03em; color: inherit; position: relative; z-index: 61; }
+  /* Raster master at this size — the vector's thin arm is 0.19px here and drops out on repaint.
+     See the dual-master note on `.brand-glyph-shape` in styles/base.css. */
   .chrome-brand .brand-mark { width: 17px; height: 40px; flex-shrink: 0; background: var(--candle); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; transition: background-color .5s var(--ease); }
   .chrome.is-solid .chrome-brand .brand-mark { background: var(--ink); }
 

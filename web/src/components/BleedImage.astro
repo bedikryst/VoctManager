@@ -95,6 +95,17 @@ const mq = `(max-width: ${breakpoint}px)`;
     object-fit: cover;
     object-position: var(--bleed-pos, center);
   }
+  /* A photo that lands after its section is already on screen otherwise appears in a
+     single frame — the one motion this site never makes. The class is added by the
+     script below ONLY to an image that is still in flight (it has no pixels to hide, so
+     nothing can flash), and removed when it can paint. An already-loaded photo is never
+     touched: hiding one mid-navigation is exactly how the hero used to flash. */
+  .bleed img.is-arriving {
+    opacity: 0;
+  }
+  .bleed img {
+    transition: opacity 0.9s ease;
+  }
   .bleed img.is-animated {
     will-change: transform;
     animation: bleedKenBurns 38s ease-in-out infinite alternate;
@@ -110,5 +121,27 @@ const mq = `(max-width: ${breakpoint}px)`;
   @media (prefers-reduced-motion: reduce) {
     .bleed { top: 0; height: 100%; transform: none !important; }
     .bleed img.is-animated { animation: none; transform: scale(1.02); }
+    .bleed img { transition: none; }
   }
 </style>
+
+<script>
+  // Marks the bleed photos that are still in flight, so CSS can bring them in instead of
+  // letting them appear in one frame. Deliberately one-directional: an image that is
+  // already complete is left alone entirely — the fade exists for arrivals, and hiding a
+  // painted hero for even a frame is the flash the transition work went to remove.
+  const settleBleeds = (): void => {
+    const arriving = document.querySelectorAll<HTMLImageElement>("picture.bleed img");
+    arriving.forEach((img) => {
+      if (img.complete || img.dataset.arriving === "1") return;
+      img.dataset.arriving = "1";
+      img.classList.add("is-arriving");
+      const reveal = (): void => img.classList.remove("is-arriving");
+      img.addEventListener("load", reveal, { once: true });
+      img.addEventListener("error", reveal, { once: true });
+    });
+  };
+
+  settleBleeds();
+  document.addEventListener("astro:page-load", settleBleeds);
+</script>

@@ -1,18 +1,33 @@
 /**
  * @file Preloader.tsx
- * @description The single opening rite: dark preloader whose FINAL BEAT is the audio
- *  threshold ("Wejdź w ciszę / Wejdź z głosem"). One overlay, one decision — the old
- *  two-airlock sequence (preloader, then a separate ThresholdGate modal) doubled the
- *  time-to-content for first-time visitors.
+ * @description The single opening rite: a dark threshold whose FINAL BEAT is the audio
+ *  question ("Czy wejdziesz w ciszę?"). One overlay, one decision.
+ *
+ *  Dramaturgy in two parts, because a curtain covers a wait of UNKNOWN length and a
+ *  fixed-length film cannot do that:
+ *   - the HOLD is a loop — the candle-spark breathes at the centre, rings radiate like
+ *     sound in a dark nave, the words "cisza / głos" surface and sink. It lasts as long
+ *     as the page needs and never looks stuck, pre-hydration included (pure CSS).
+ *   - the CADENCE is "scriptura + illuminatio", the site's two motion idioms in their
+ *     manuscript order: the pen WRITES the one true line of the mark — the long stem
+ *     descending into the note, its punctum — then light RISES from that note and OPENS
+ *     the V in its real, modulated letterform. The V is never drawn as a wireframe.
  *
  *  Phase machine, decided per mount:
  *   - donation deep-link (`#wesprzyj`, `#przelew`, `?donate`, `?donated=…`) or `?nogate`
  *     → "removed" (intent-carrying URLs skip the whole rite);
- *   - valid saved audio choice (3h TTL, useAudioChoice)
- *     → rite plays once per session, NO question (the choice is remembered);
- *   - no valid choice
- *     → rite blooms into the choice ("choice" phase); if the rite was already seen this
- *       session (e.g. TTL expired mid-session), the choice appears immediately.
+ *   - reduced motion → no rite at all: the question (or the page) is owed immediately,
+ *     because the ceremony IS the motion;
+ *   - valid saved audio choice (3h TTL, useAudioChoice) → the BRIEF rite: cadence only,
+ *     fixed length, never waiting for `load` — holding a curtain to mask loading when
+ *     there is no question to ask is a performance, not a threshold. DocumentGates arms
+ *     `html.rite-brief` before paint, so the pen starts writing on the first frame,
+ *     before this island hydrates; here we only schedule the resolution off the already
+ *     running animation;
+ *   - no valid choice → the FULL rite: hold (min one breath, elastic until `load`,
+ *     capped) → cadence → the question, with the rings still breathing behind it;
+ *   - rite already seen this session (e.g. TTL expired mid-session) → the question
+ *     immediately, without the ceremony.
  *
  *  The chosen option is written here and broadcast as `voct:audio-choice`; the
  *  always-mounted AudioController starts the ambient inside the same click call stack
@@ -30,11 +45,17 @@ import { useBodyClass } from "./hooks/useBodyClass";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { Typo } from "./lib/Typo";
 
-// 2.2s keeps the candle bloom + ring expansion intact (animations are front-loaded
-// under 2s) while keeping time-to-content tight. SAFETY_CEILING stays a beat above
-// MIN so a slow `load` event still resolves through it.
-const MIN_DURATION = 2200;
+// MIN_HOLD lets the spark finish igniting before the pen takes over; SAFETY_CEILING caps
+// waiting for `load` — past it the cadence begins regardless, because the threshold
+// question is a better place to wait than a curtain: there the visitor has something to
+// do. CADENCE_MS mirrors the CSS timeline (illumination ends ~2900ms on the brief path's
+// lead-in) and is only the fallback — the primary resolution is the `riteIllum`
+// animation's own `finished`. REST_BEAT lets the completed mark land before it parts.
+const MIN_HOLD = 1600;
 const SAFETY_CEILING = 3000;
+const CADENCE_MS = 2950;
+const REST_BEAT = 420;
+const HERO_GRACE = 900;
 const EXIT_DURATION = 700;
 const SEEN_KEY = "voct.preloader.seen";
 
@@ -55,6 +76,27 @@ function markPreloaderSeen(): void {
   }
 }
 
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/**
+ * Resolves when the hero photo can paint, or when `capMs` runs out. A curtain that lifts
+ * onto an unpainted hero shows the media's dark ground for a beat and then snaps the
+ * photo in — the one motion this site never makes. Capped, because the photo is not worth
+ * an open-ended wait: past the cap it lands late and fades in (BleedImage).
+ */
+async function heroSettled(capMs: number): Promise<void> {
+  const img = document.querySelector<HTMLImageElement>("picture.bleed img");
+  if (!img) return;
+  // decode() waits for the fetch AND the decode, so it resolves on the frame the photo
+  // could actually be drawn — `complete` alone can still precede a slow AVIF decode.
+  const painted = img.decode().catch(() => undefined);
+  const cap = new Promise<void>((resolve) => window.setTimeout(resolve, capMs));
+  await Promise.race([painted, cap]);
+}
+
 /** Donation-intent and auditor URLs skip the rite AND the choice. */
 function wantsRiteSkipFromUrl(): boolean {
   if (typeof window === "undefined") return false;
@@ -68,59 +110,136 @@ function wantsRiteSkipFromUrl(): boolean {
   );
 }
 
-type Phase = "shown" | "choice" | "hiding" | "removed";
+type Phase = "hold" | "cadence" | "choice" | "hiding" | "removed";
 
 export function Preloader(): React.JSX.Element | null {
-  // Initial state is deterministic ("shown") so SSR and the first client render agree —
+  // Initial state is deterministic ("hold") so SSR and the first client render agree —
   // hydration mismatches would strand a dead SSR overlay. The session/choice decision
-  // happens in the mount effect below; the CSS gated on `html.preloader-skip` (decided before
-  // paint by DocumentGates) prevents any visible flash for returning visitors.
-  const [phase, setPhase] = useState<Phase>("shown");
+  // happens in the mount effect below; CSS gated on `html.preloader-skip` /
+  // `html.rite-brief` (decided before paint by DocumentGates) makes the pre-hydration
+  // frames already correct for every path.
+  const [phase, setPhase] = useState<Phase>("hold");
   const { read, write } = useAudioChoice();
   const choiceRef = useRef<HTMLDivElement>(null);
+  const riteRef = useRef<HTMLDivElement>(null);
+  // The trail refs keep `.is-cadence` / `.is-choice` on the overlay through later
+  // phases: cadence fill-states must survive into the choice and the dissolve, or the
+  // lit mark would snap back to darkness the moment the phase moves on.
+  const wentCadence = useRef(false);
+  const wentChoice = useRef(false);
 
   useBodyClass(
     phase === "choice" ? "threshold-open" : phase !== "removed" ? "preload-open" : null,
   );
 
   useEffect(() => {
-    if (phase !== "shown") return;
+    if (phase !== "hold") return;
 
     if (wantsRiteSkipFromUrl()) {
       setPhase("removed");
       return;
     }
 
-    // Same session: never replay the rite. If the saved choice expired mid-session,
-    // ask immediately — the question without the ceremony.
-    if (preloaderAlreadySeen()) {
-      setPhase(read() === null ? "choice" : "removed");
+    // Same session: never replay the rite. Reduced motion: never play it at all. Either
+    // way the saved choice decides whether the question is still owed. (DocumentGates
+    // arms `preloader-skip` for both cases before paint, so nothing flashes.)
+    if (prefersReducedMotion() || preloaderAlreadySeen()) {
+      markPreloaderSeen();
+      if (read() === null) {
+        wentChoice.current = true;
+        setPhase("choice");
+      } else {
+        setPhase("removed");
+      }
       return;
     }
 
+    // The brief rite: the choice is remembered, so the cadence is the whole ceremony —
+    // fixed length, already running since first paint via `html.rite-brief`. No waiting
+    // for `load`: the page may keep painting under the dissolve.
+    if (read() !== null) {
+      markPreloaderSeen();
+      wentCadence.current = true;
+      setPhase("cadence");
+      return;
+    }
+
+    // The full rite: the hold loop breathes until the page is ready AND the spark has
+    // finished igniting, then the pen takes over.
     const startedAt = performance.now();
     let timer: number | undefined;
 
-    const beginResolve = () => {
-      const remaining = Math.max(0, MIN_DURATION - (performance.now() - startedAt));
+    const beginCadence = () => {
+      const remaining = Math.max(0, MIN_HOLD - (performance.now() - startedAt));
       timer = window.setTimeout(() => {
         markPreloaderSeen();
-        // The rite's final beat: bloom into the question, or simply part.
-        setPhase(read() === null ? "choice" : "hiding");
+        wentCadence.current = true;
+        setPhase("cadence");
       }, remaining);
     };
 
     if (document.readyState === "complete") {
-      beginResolve();
+      beginCadence();
     } else {
-      window.addEventListener("load", beginResolve, { once: true });
+      window.addEventListener("load", beginCadence, { once: true });
     }
-    const safety = window.setTimeout(beginResolve, SAFETY_CEILING);
+    const safety = window.setTimeout(beginCadence, SAFETY_CEILING);
 
     return () => {
       if (timer) window.clearTimeout(timer);
       window.clearTimeout(safety);
-      window.removeEventListener("load", beginResolve);
+      window.removeEventListener("load", beginCadence);
+    };
+  }, [phase, read]);
+
+  useEffect(() => {
+    if (phase !== "cadence") return;
+
+    let settled = false;
+    let cancelled = false;
+    let beat: number | undefined;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      // The cadence's resolution: into the question, or simply part.
+      if (read() === null) {
+        wentChoice.current = true;
+        setPhase("choice");
+        return;
+      }
+      // The brief rite parts onto the page itself, so unlike the question — which is a
+      // room of its own to wait in — it must not part onto a hero that has no pixels yet.
+      void heroSettled(HERO_GRACE).then(() => {
+        if (!cancelled) setPhase("hiding");
+      });
+    };
+
+    // On the brief path the animation started at paint, not at this mount — hydration
+    // time must not stretch the rite. Schedule off the running illumination itself; the
+    // fixed timer is only the belt for a cancelled animation.
+    const illum = riteRef.current
+      ?.getAnimations({ subtree: true })
+      .find(
+        (anim): anim is CSSAnimation =>
+          anim instanceof CSSAnimation && anim.animationName === "riteIllum",
+      );
+    if (illum) {
+      void illum.finished
+        .then(() => {
+          if (!settled) beat = window.setTimeout(finish, REST_BEAT);
+        })
+        .catch(() => {
+          /* animation cancelled (overlay left the DOM) — the fallback timer owns it */
+        });
+    }
+    const fallback = window.setTimeout(finish, CADENCE_MS + 500);
+
+    return () => {
+      settled = true;
+      cancelled = true;
+      window.clearTimeout(fallback);
+      if (beat) window.clearTimeout(beat);
     };
   }, [phase, read]);
 
@@ -158,30 +277,52 @@ export function Preloader(): React.JSX.Element | null {
   if (phase === "removed") return null;
 
   const isChoice = phase === "choice";
+  const classes = ["preloader"];
+  if (wentCadence.current) classes.push("is-cadence");
+  if (isChoice || (phase === "hiding" && wentChoice.current)) classes.push("is-choice");
+  if (phase === "hiding") classes.push("is-hidden");
 
   return (
     <Typo>
       <div
-        className={`preloader${phase === "hiding" ? " is-hidden" : ""}${isChoice ? " is-choice" : ""}`}
+        className={classes.join(" ")}
         role={isChoice ? "dialog" : undefined}
         aria-modal={isChoice || undefined}
         aria-labelledby={isChoice ? "threshold-title" : undefined}
         aria-hidden={isChoice ? undefined : true}
       >
-        <span className="preloader-spark" />
-        <span className="preloader-ring r1" />
-        <span className="preloader-ring r2" />
-        <span className="preloader-ring r3" />
-        <span className="preloader-word w1">cisza</span>
-        <span className="preloader-word w2">głos</span>
-        <svg className="preloader-mark" viewBox="0 0 64 64" fill="none">
-          <circle cx="32" cy="32" r="3" stroke="currentColor" strokeWidth="1" />
-          <path
-            d="M32 6V22M32 42V58M6 32H22M42 32H58M14 14L25 25M39 39L50 50M50 14L39 25M25 39L14 50"
-            stroke="currentColor"
-            strokeWidth="1"
-          />
-        </svg>
+        <div className="preloader-rings" aria-hidden="true">
+          <span className="preloader-ring r1" />
+          <span className="preloader-ring r2" />
+          <span className="preloader-ring r3" />
+        </div>
+
+        <div className="preloader-hold" aria-hidden="true">
+          <span className="preloader-spark" />
+          <span className="preloader-word w1">cisza</span>
+          <span className="preloader-word w2">głos</span>
+        </div>
+
+        <div className="rite" ref={riteRef} aria-hidden="true">
+          {/* The scriptura beat draws ONLY the parts of the mark that truly are lines —
+              the stem (a 13-unit rect in /voct-mark.svg) and the note ellipse, at their
+              exact coordinates (same viewBox, so the layers register). The V is never
+              drawn as a centerline: a uniform-stroke wireframe of a serif letterform is
+              a different object (it read as a downward arrow), so the V only ever
+              appears in its true modulated form, opened by the rising light. */}
+          <svg className="rite-skel" viewBox="0 0 1000 2469.8" fill="none">
+            <path className="rs rs-stem" d="M 500,4 L 500,2221.7" pathLength={1} />
+            <ellipse
+              className="rs-note"
+              cx="500"
+              cy="2427.3"
+              rx="60.8"
+              ry="38.5"
+              transform="rotate(-22.7 500 2427.3)"
+            />
+          </svg>
+          <span className="rite-fill" />
+        </div>
 
         <div className="preloader-choice">
           <div className="threshold-inner" ref={choiceRef} tabIndex={-1}>
@@ -190,7 +331,9 @@ export function Preloader(): React.JSX.Element | null {
               <BrandGlyph />
             </div>
             <div className="threshold-kicker micro">VoctEnsemble</div>
-            {/* Intentionally NOT an <h1>: the page's h1 is the hero title. */}
+            {/* Intentionally NOT an <h1>: the page's h1 is the hero title. A question,
+                not a declarative — the site's human register (the o-nas catechism); the
+                subtitle reframes it so "Wejdź z głosem" is a real answer to it. */}
             <p className="threshold-title" id="threshold-title">
               Czy wejdziesz<br />w ciszę?
             </p>
@@ -202,6 +345,7 @@ export function Preloader(): React.JSX.Element | null {
                 type="button"
                 className="threshold-btn plausible-event-name=enterSilence"
                 data-choice="silence"
+                aria-label="Wejdź w ciszę — strona bez dźwięku"
                 onClick={() => pick("silence")}
               >
                 <span className="threshold-btn-dots" aria-hidden="true">
@@ -210,12 +354,13 @@ export function Preloader(): React.JSX.Element | null {
                   <span className="threshold-dot" />
                 </span>
                 <span className="threshold-btn-label">Wejdź w ciszę</span>
-                <span className="threshold-btn-hint">bez dźwięku</span>
+                <span className="threshold-btn-hint">tak jak teraz</span>
               </button>
               <button
                 type="button"
                 className="threshold-btn plausible-event-name=enterVoice"
                 data-choice="voice"
+                aria-label="Wejdź z głosem — cichy śpiew zespołu"
                 onClick={() => pick("voice")}
               >
                 <span className="threshold-btn-dots" aria-hidden="true">

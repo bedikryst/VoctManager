@@ -49,11 +49,33 @@ page that ignores a swipe reads as broken. `scripts/landing.ts` says `no scroll-
 pause is spatial — section height and reveal timing. General principle: a musical rest is measured
 time, but on a page the reader holds the clock, so the only honest rest is space.
 
-**`BrandGlyph` is a masked PNG, not SVG.** Any stroke-draw, morph or path animation of the mark is
-impossible until a real vector logo exists. Fade and scale are the only options today, and neither
-is worth doing. Do not generate a *new* logo variant as a workaround: the mark is already
-consistent across chrome, threshold, vault and modals, and two almost-identical marks read worse
-than one static one.
+**The mark is a filled outline (`public/voct-mark.svg`), not centerline strokes — and a
+centerline wireframe of the V is a DIFFERENT OBJECT.** A real vector exists since 2026-07
+(the preloader rite masks it), but neither draw technique
+survives contact with the letterform: tracing the outline path draws both edges of every hairline
+like a plotter, and a hand-authored uniform-stroke skeleton of the full glyph was built, rendered
+and rejected on sight — floating serifs, curlicue arm hooks, and the V-plus-stem gestalt reads as
+a downward arrow / sigil, because the letter's identity lives in stroke modulation that a
+wireframe cannot carry. The only parts that may be *drawn* are the parts that truly are lines:
+the stem (a 13-unit rect) and the note ellipse, at their exact coordinates (inline SVG in
+`Preloader.tsx`, same viewBox so the layers register). The V appears exclusively as the masked
+fill, revealed by the rising light.
+
+**The mark ships as two masters split by optical size, and the vector is NOT the one to reach
+for at icon sizes.** `public/logo-mark.png` (186×456) masks everything below ~110px tall —
+chrome brand-mark, `.brand-glyph`, `.brand-glyph-shape` (threshold / vault / gratitude /
+failure / QR), nave colophon, station glyphs, concert prologue. `public/voct-mark.svg` masks
+only what is bigger: the two 80×220 gold glyphs (`.coda-glyph`, `.cta-glyph`) and the
+preloader rite. The reason is arithmetic, not taste: the V is calligraphic, and its thin right
+arm measures ~11 of the 1000 viewBox units across, so at the 17×40 chrome footprint (scale
+0.016) it is **0.19 CSS px** — the stem rect is 0.21px, the thick left arm 0.79px. Below one
+device pixel the arm exists only as partial coverage, and a mask rasterised live re-resolves
+on every repaint at whatever subpixel offset the layer lands on, so the arm blinks in and out
+while scrolling (verified in Chrome, desktop, 2026-07-31). A raster master resolves once and
+holds. Do not "fix" this by putting a `vector-effect="non-scaling-stroke"` floor on the paths:
+a constant 1px ribbon rescues the 40px case but doubles the thin arm at 220px, flattening the
+stroke modulation exactly where it is the point. If the mark is ever redrawn, BOTH masters
+must be re-exported from the same source.
 
 **`transitions.css` — never animate the incoming layer.** The model is "turned leaf": the outgoing
 page drifts and dissolves on top, the incoming is drawn fully opaque underneath the whole time.
@@ -71,7 +93,8 @@ execute on insertion, so Astro re-runs it in `runScripts()`, *after* the view tr
 visible, the gate lands mid-dissolve, the hidden state engages **with its transition**, and the
 reveal observer has to bring the text back — text appears, blinks out, replays, hitting a different
 subset of elements each navigation. This was live for `reveal-ready`, `voct-motion` and
-`preloader-skip` at once, which is why it read as several processes racing. The fix, and the only
+`preloader-skip` at once, which is why it read as several processes racing. (`rite-brief` — the
+remembered-choice cadence-only rite — is a fourth class under the same contract.) The fix, and the only
 shape that works: the **outgoing** document arms the incoming one — `DocumentGates.astro` decides
 from `<html data-reveal>` / `<html data-rite>` and applies the classes to `event.newDocument` in
 `astro:before-swap`, before the swap copies its attributes. Anything else on `<html>` that CSS keys
@@ -88,6 +111,16 @@ page's first painted state, never a correction to it: it runs at module time and
 `astro:after-swap` (before the new snapshot). Hanging it on `astro:page-load` alone — which is the
 window `load` event on a cold start, and post-snapshot on a navigation — is what made the hero
 visibly jump mid-transition. Same rule for anything else that positions a layer from JS.
+
+**A curtain must not part onto an unpainted hero either.** Same defect, cold-start flavour: the
+preloader's brief rite (remembered choice) resolves on a fixed timeline and deliberately does not
+wait for `load`, so on a cold cache it used to lift onto `#080807` and then snap the photo in.
+`Preloader.tsx` therefore awaits `picture.bleed img`.decode() before parting, capped at 900ms —
+and `BleedImage.astro` fades in any photo that was **still in flight** when its script ran. That
+one-directional rule is load-bearing: an image that is already complete is never touched, because
+hiding a painted hero for even a frame mid-navigation is the flash everything above went to
+remove. Note that `astro dev` generates every optimized variant on demand (Sharp, per request),
+so a first-load hero is seconds late there and only `npm run preview` shows the real timing.
 
 **A hero photo is not painted when the transition starts.** The incoming page is drawn opaque
 underneath the dissolving old one, so an unloaded photo is what the visitor looks at for the whole
@@ -181,8 +214,6 @@ fine print, where orphan control matters least.
 
 ## 4. Open — worth doing next
 
-- **Logo as SVG.** Unlocks a once-per-session draw-in of the mark in the preloader threshold,
-  using the existing `.knot-draw` mechanism. Waiting on the file.
 - **Coda caption.** A fermata over a whole rest already instructs "hold the silence"; the caption
   "Cisza brzmi dalej." restates it in words and is the fourth statement of the motif. Ending on the
   sign alone is the stronger close. Flagged in `CodaSection.astro`, awaiting a decision.
