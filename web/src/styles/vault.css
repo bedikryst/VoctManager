@@ -32,7 +32,7 @@
 }
 
 .micro {
-  font-family: var(--mono);
+  font-family: var(--capitalis);
   font-size: var(--micro);
   letter-spacing: 0.24em;
   line-height: 1.45;

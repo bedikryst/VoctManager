@@ -50,7 +50,7 @@
   }
 
   .movement-spine-roman {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 11px;
     letter-spacing: 0.12em;
     color: inherit;

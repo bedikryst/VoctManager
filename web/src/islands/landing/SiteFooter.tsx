@@ -237,8 +237,32 @@ export function SiteFooter(): React.JSX.Element {
               >
                 Colophon <span aria-hidden="true">↗</span>
               </a>
-              <span>
-                <em>Cormorant Garamond</em> · IBM Plex Sans · IBM Plex Mono
+              {/* Each name is set in the face it names — the list demonstrates the stack
+                  rather than describing it, so it has to stay in sync with base.css.
+                  Focusable: the weight/tracking bloom is the only thing that happens here,
+                  and a keyboard reader deserves it as much as a pointer does. */}
+              <span className="footer-colophon-faces">
+                <span className="ff ff--cormorant" tabIndex={0}>
+                  Cormorant Garamond
+                </span>
+                <span className="ff-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="ff ff--cinzel" tabIndex={0}>
+                  Cinzel
+                </span>
+                <span className="ff-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="ff ff--plex-sans" tabIndex={0}>
+                  IBM Plex Sans
+                </span>
+                <span className="ff-sep" aria-hidden="true">
+                  ·
+                </span>
+                <span className="ff ff--plex-mono" tabIndex={0}>
+                  IBM Plex Mono
+                </span>
               </span>
             </div>
             <div className="footer-colophon-signature micro">

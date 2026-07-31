@@ -29,7 +29,7 @@
   }
 
   .manifest-label {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -50,7 +50,7 @@
   }
 
   .manifest-roman {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: clamp(11px, 1.2vw, 14px);
     color: var(--ink-muted);
     padding-top: clamp(14px, 2vw, 24px);

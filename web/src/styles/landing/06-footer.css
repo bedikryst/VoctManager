@@ -79,14 +79,14 @@
     line-height: 1.6;
   }
 
-  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  /* ═══════════════════════════════════════════════════════════════
      FUNDATIO — single inscription column (right side of diptych).
      Cztery stanze rozdzielone hairline rules:
        1. Mark — VoctFoundation + siedziba + KRS/NIP/REGON
        2. Consilium — zarząd jako italic inscription (nie mailto)
        3. Corpus — dokumenty (Statut, Polityka)
        4. Vox — kontakt (booking/patronat/dyrekcja + RODO)
-     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+     ═══════════════════════════════════════════════════════════════ */
 
   /* Wewnętrzny grid Fundatio — Mark i Vox full-width, Consilium + Corpus
      w jednym rzędzie obok siebie. Wyrównuje pionowo wysokość prawej
@@ -123,13 +123,17 @@
     font-variation-settings: "wght" 380;
   }
 
+  /* Waga 460 i stopień o ~1px wyżej niż reszta pergaminowej kolumny: to kompensacja
+     optyczna za brak osi `opsz` w Cormorancie. Włos narysowany pod 100px na 17px
+     ciemnego na jasnym schodzi poniżej piksela i szarzeje. Nie zmniejszaj tej wagi
+     bez zmniejszenia stopnia — te dwie liczby trzymają się razem. */
   .foundation-seat {
     margin: 0;
     color: var(--ink-soft);
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(15px, 1.25vw, 18px);
-    font-weight: 300;
+    font-size: clamp(16px, 1.35vw, 19px);
+    font-weight: 460;
     line-height: 1.4;
   }
 
@@ -205,12 +209,20 @@
     transform: translateY(-0.05em);
   }
 
+  /* Dwugłos rubryki: łacina w kapitale inskrypcyjnej, polski gloss w minuskule mono.
+     Rozdział NIE jest dekoracyjny — Cinzel nie ma minuskuły (małe litery mapują się na
+     kapitaliki), więc gdyby gloss też był Cinzelem, `text-transform: lowercase` dałby
+     „ZARZĄD" kapitalikami i cichy przypis zacząłby konkurować z łaciną. Kontrast niosą
+     trzy rzeczy naraz: krój, wielkość liter i kolor. Kamień i głos. */
   .foundation-stanza-label .latin {
+    font-family: var(--capitalis);
+    font-weight: 500;
     color: var(--candle);
-    letter-spacing: 0.16em;
+    letter-spacing: 0.12em;
   }
 
   .foundation-stanza-label .pl {
+    font-family: var(--mono);
     color: var(--ink-muted);
     text-transform: lowercase;
     letter-spacing: 0.1em;
@@ -226,8 +238,8 @@
     gap: 2px;
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(16px, 1.25vw, 19px);
-    font-weight: 300;
+    font-size: clamp(17px, 1.35vw, 20px);
+    font-weight: 460;
     color: var(--ink);
     line-height: 1.4;
   }
@@ -380,12 +392,12 @@
     border-color: var(--candle);
   }
 
-  /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  /* ═══════════════════════════════════════════════════════════════
      SOCIAL RIBBON — hairline strip pomiędzy gridem a wordmarkiem.
      Trzy platformy wycentrowane między dwiema liniami; italic
      Cormorant zamiast "follow us" buttons. Ribbon to dechtnięcie
      przed cichym "amen" wordmarka.
-     â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+     ═══════════════════════════════════════════════════════════════ */
   .footer-ribbon {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
@@ -531,7 +543,8 @@
     color: var(--ink-soft);
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(15px, 1.2vw, 18px);
+    font-size: clamp(16px, 1.3vw, 19px);
+    font-weight: 460;
     letter-spacing: 0;
   }
 
@@ -656,14 +669,95 @@
     font-weight: 400;
   }
 
-  .footer-colophon-fonts em {
+  /* ─── Kolofon: lista krojów pisana każdy swoim krojem ───
+     Ten sam gest, co na /kolofon: na uwagę krój „nabiera oddechu" — waga rośnie
+     i światło się otwiera. Tu w miniaturze, bo to stopka, nie ekspozycja.
+     Wagi docelowe są ograniczone tym, co realnie wysyłamy (base.css): Plex Mono
+     ma DWIE statyczne odmiany, 300 i 400 — 620 dałoby syntetyczne pogrubienie
+     przeglądarki, więc jego hover kończy się na 400 i resztę pracy bierze światło. */
+  .footer-colophon-faces {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 9px;
+  }
+
+  .footer-colophon-faces .ff-sep {
+    color: var(--line-strong);
+  }
+
+  .footer-colophon-faces .ff {
     color: var(--ink-soft);
-    font-style: italic;
-    font-family: var(--serif);
-    font-size: 15px;
-    letter-spacing: 0;
     text-transform: none;
+    cursor: default;
+    transition:
+      font-weight 0.9s var(--ease-slow),
+      letter-spacing 0.9s var(--ease-slow),
+      color 0.6s var(--ease);
+  }
+
+  .footer-colophon-faces .ff:hover,
+  .footer-colophon-faces .ff:focus-visible {
+    color: var(--ink);
+  }
+  .footer-colophon-faces .ff:focus-visible {
+    outline: 1px solid var(--candle);
+    outline-offset: 4px;
+  }
+
+  .ff--cormorant {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 15px;
     font-weight: 400;
+    letter-spacing: 0;
+  }
+  .ff--cormorant:hover,
+  .ff--cormorant:focus-visible {
+    font-weight: 560;
+    letter-spacing: 0.01em;
+  }
+
+  .ff--cinzel {
+    font-family: var(--capitalis);
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+  }
+  .ff--cinzel:hover,
+  .ff--cinzel:focus-visible {
+    font-weight: 620;
+    letter-spacing: 0.2em;
+  }
+
+  .ff--plex-sans {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 350;
+    letter-spacing: 0;
+  }
+  .ff--plex-sans:hover,
+  .ff--plex-sans:focus-visible {
+    font-weight: 620;
+    letter-spacing: 0.05em;
+  }
+
+  .ff--plex-mono {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 300;
+    letter-spacing: 0.02em;
+  }
+  .ff--plex-mono:hover,
+  .ff--plex-mono:focus-visible {
+    font-weight: 400;
+    letter-spacing: 0.14em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .footer-colophon-faces .ff {
+      transition: none;
+    }
   }
 
   .footer-colophon-signature {

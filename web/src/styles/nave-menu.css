@@ -455,7 +455,7 @@
   display: inline-flex;
   align-items: center;
   gap: 11px;
-  font-family: var(--mono);
+  font-family: var(--capitalis);
   font-size: 10px;
   letter-spacing: 0.2em;
   text-transform: uppercase;

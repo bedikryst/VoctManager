@@ -216,7 +216,7 @@
     max-width: 44rem;
     margin: 32px 0 0;
     color: var(--ink-muted);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.14em;
     line-height: 1.8;
@@ -320,7 +320,7 @@
 
   .fact-label {
     color: rgba(244, 241, 233, 0.62);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.18em;
     line-height: 1.5;
@@ -414,7 +414,7 @@
   }
 
   .path-entry-year {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 11px;
     letter-spacing: 0.22em;
     color: var(--ink);
@@ -422,7 +422,7 @@
   }
 
   .path-entry-tag {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -552,7 +552,7 @@
     cursor: pointer;
     list-style: none;
     color: var(--ink-muted);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
@@ -679,7 +679,7 @@
     padding-top: 12px;
     border-top: 1px solid var(--line);
     color: var(--ink-muted);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 9.5px;
     letter-spacing: 0.14em;
     line-height: 1.75;
@@ -813,7 +813,7 @@
   .foundation-data {
     margin-top: 28px;
     color: rgba(244, 241, 233, 0.58);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.1em;
     line-height: 1.8;

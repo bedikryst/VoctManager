@@ -263,7 +263,12 @@ const langOptions = showLang
   /* Direct children (+ the registrum's trigger link) ONLY — a bare `.chrome-nav a` also
      dressed the registrum's ribbon anchors (scoped attribute selectors out-specify the
      global registrum.css), turning the index rows into tracked-uppercase mono chips. */
-  .chrome-nav > a, .chrome-nav .registrum > a { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
+  /* Capitalis, not mono: this is the most-repeated rubric on the site and it sits inches
+     from the wordmark — left on the typewriter voice it read as a different system from
+     every eyebrow beneath it. Tracking drops .2em → .14em because Cinzel's capitals are
+     already wide; at .2em the five items stopped fitting between brand and language
+     switcher at the 760px floor. Weight 500 for the same reason .eyebrow uses it. */
+  .chrome-nav > a, .chrome-nav .registrum > a { font-family: var(--capitalis); font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
   .chrome-nav > a::after, .chrome-nav .registrum > a::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
   .chrome-nav > a:hover, .chrome-nav .registrum > a:hover { opacity: 1; }
   .chrome-nav > a:hover::after, .chrome-nav .registrum > a:hover::after,

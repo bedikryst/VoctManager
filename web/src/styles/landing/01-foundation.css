@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @file landing.css
  * @description Design system & component styles for the public landing page (`/`).
  * Verbatim port of the hand-crafted styles from LandingPage.html (concert vault edition).
@@ -592,7 +592,7 @@
   }
 
   .micro {
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: var(--micro);
     letter-spacing: 0.24em;
     line-height: 1.45;
@@ -951,7 +951,7 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.2em;
     text-transform: uppercase;

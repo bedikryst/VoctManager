@@ -1,0 +1,343 @@
+---
+/**
+ * @file specimen.astro
+ * @description TYMCZASOWY przyrząd roboczy do decyzji o krojach (2026-07-31), nie część
+ *  serwisu. Renderuje REALNE stringi strony w kandydatach na trzy warstwy: display,
+ *  pasmo tekstowe 15–18px (miejsce faktycznego defektu) i warstwę rubryki. Każde pasmo
+ *  pokazane na obu gruntach — nocnym (hero) i pergaminowym (stopka) — bo Cormorant
+ *  zachowuje się na nich odwrotnie: jasne na ciemnym optycznie pogrubia włos, ciemne
+ *  na jasnym go zjada.
+ *
+ *  DWA POWODY, DLA KTÓRYCH TA STRONA MUSI ZNIKNĄĆ PO DECYZJI:
+ *   1. Kandydaci lecą z CDN Google Fonts. Reszta serwisu hostuje kroje u siebie
+ *      właśnie po to, by nie było transferu do trzeciej strony (patrz base.css) —
+ *      ta strona ten kontrakt łamie, świadomie i lokalnie.
+ *   2. Jest noindex i wypisana z sitemapy (astro.config.mjs), ale zbudowany serwis
+ *      i tak wyemituje `specimen.html`. Usuń plik, gdy krój będzie wybrany.
+ * @architecture Astro islands 2026
+ * @module pages/specimen
+ */
+import "../styles/tokens.css";
+import "../styles/base.css";
+
+/** Realne stringi z serwisu — specimen na „lorem ipsum" nie mówi nic o polskim tekście. */
+const DIACRITICS = "ąćęłńóśźż ĄĆĘŁŃÓŚŹŻ · œ æ ê ç à ù î ë";
+
+/** Kandydaci na pasmo tekstowe serifu (12–24px). Cormorant = punkt odniesienia. */
+const TEXT_SERIFS = [
+  { name: "Cormorant Garamond", stack: '"Cormorant Garamond", Georgia, serif', note: "dziś — display bez osi opsz, ciągnięty do 12,5px" },
+  { name: "EB Garamond", stack: '"EB Garamond", Georgia, serif', note: "to samo DNA, tekstowa grubość kreski, większa x-height" },
+  { name: "Cardo", stack: "Cardo, Georgia, serif", note: "Bembo/Aldine dla mediewistów — 3 statyczne odmiany" },
+  { name: "Newsreader", stack: "Newsreader, Georgia, serif", note: "jedyny darmowy z PRAWDZIWĄ osią opsz 6–72" },
+];
+
+/** Kandydaci na warstwę rubryki. Dwie rodziny odpowiedzi: „inny mono" i „nie mono". */
+const RUBRIC_MONO = [
+  { name: "IBM Plex Mono", stack: '"IBM Plex Mono", monospace', note: "dziś — kanon stron AI 2021-2026" },
+  { name: "Azeret Mono", stack: '"Azeret Mono", monospace', note: "geometryczny, Displaay — poza kanonem dev-toolowym" },
+  { name: "Martian Mono", stack: '"Martian Mono", monospace', note: "szeroki grotesk, mocny charakter" },
+  { name: "Courier Prime", stack: '"Courier Prime", monospace', note: "maszynopis — rejestr archiwalny, nie terminalowy" },
+  { name: "Fragment Mono", stack: '"Fragment Mono", monospace', note: "neutralny, cichy" },
+];
+
+const RUBRIC_NOT_MONO = [
+  { name: "Cormorant SC", stack: '"Cormorant SC", Georgia, serif', note: "prawdziwe kapitaliki, to samo DNA — zero nowego głosu" },
+  { name: "Alegreya Sans SC", stack: '"Alegreya Sans SC", sans-serif', note: "humanistyczny sans w kapitalikach — ciepły, nie techniczny" },
+  { name: "Cinzel", stack: "Cinzel, Georgia, serif", note: "linia Trajana — kapitała inskrypcyjna wprost" },
+  { name: "IBM Plex Sans", stack: '"IBM Plex Sans", sans-serif', note: "już wczytany — zero nowego pliku" },
+];
+---
+
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Specimen — decyzja o krojach</title>
+
+    <!-- DEV-ONLY. Trzy osobne żądania zamiast jednego: błędna specyfikacja jednej
+         rodziny w css2 wywraca CAŁE żądanie, więc grupy są rozdzielone, by awaria
+         jednego kandydata nie wygasiła pozostałych. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Cardo:ital,wght@0,400;1,400&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;1,6..72,300&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+SC:wght@300;400;500&family=Alegreya+Sans+SC:wght@300;400;500&family=Cinzel:wght@400;500&display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@300;400&family=Courier+Prime:wght@400&family=Fragment+Mono&family=Martian+Mono:wght@300;400&display=swap"
+    />
+  </head>
+
+  <body class="spec">
+    <header class="spec-head">
+      <p class="spec-kicker">Przyrząd roboczy · 31 VII 2026</p>
+      <h1>Specimen</h1>
+      <p class="spec-lead">
+        Trzy pytania, osobno. Nie oceniaj kroju z jednego wiersza — porównuj ten sam
+        string w pionie, w obrębie jednej sekcji.
+      </p>
+      <ol class="spec-toc">
+        <li><a href="#a">A — pasmo tekstowe 15–18px. Tu jest defekt.</a></li>
+        <li><a href="#b">B — display 80px+. Tu Cormorant wygrywa.</a></li>
+        <li><a href="#c">C — gest rubryki. Ten sam krój, trzy ustawienia.</a></li>
+        <li><a href="#d">D — kandydaci na warstwę rubryki.</a></li>
+        <li><a href="#e">E — diakrytyki. Filtr twardy.</a></li>
+      </ol>
+    </header>
+
+    <!-- ── A ─────────────────────────────────────────────────────────────── -->
+    <section id="a">
+      <div class="spec-sec-head">
+        <h2>A · Pasmo tekstowe serifu</h2>
+        <p>
+          15–18px, kursywa, realne stringi ze stopki. Porównaj <em>ten sam wiersz</em>
+          na gruncie nocnym i pergaminowym — Cormorant zachowuje się na nich odwrotnie.
+          Szukasz momentu, w którym włos przestaje trzymać kreskę.
+        </p>
+      </div>
+
+      <div class="ground ground--night">
+        <p class="ground-label">grunt nocny — jasne na ciemnym pogrubia</p>
+        {TEXT_SERIFS.map((f) => (
+          <div class="row">
+            <div class="row-meta"><b>{f.name}</b><span>{f.note}</span></div>
+            <div class="row-body" style={`font-family: ${f.stack}`}>
+              <p class="t-seat">Św. Filipa 23/3 · 31-150 Kraków</p>
+              <p class="t-poem">Completorium · noc się zamyka</p>
+              <p class="t-lede">Dwanaście głosów w kamiennej nawie: od Victorii po Pärta.</p>
+              <p class="t-dia">{DIACRITICS}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="ground ground--paper">
+        <p class="ground-label">grunt pergaminowy — ciemne na jasnym zjada włos</p>
+        {TEXT_SERIFS.map((f) => (
+          <div class="row">
+            <div class="row-meta"><b>{f.name}</b><span>{f.note}</span></div>
+            <div class="row-body" style={`font-family: ${f.stack}`}>
+              <p class="t-seat">Św. Filipa 23/3 · 31-150 Kraków</p>
+              <p class="t-poem">Completorium · noc się zamyka</p>
+              <p class="t-lede">Dwanaście głosów w kamiennej nawie: od Victorii po Pärta.</p>
+              <p class="t-dia">{DIACRITICS}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── B ─────────────────────────────────────────────────────────────── -->
+    <section id="b">
+      <div class="spec-sec-head">
+        <h2>B · Display</h2>
+        <p>
+          Kontrola. Jeśli tu Cormorant nadal wygrywa — a powinien — to znaczy, że
+          decyzja z sekcji A dotyczy <em>drugiego</em> kroju, nie wymiany tego.
+        </p>
+      </div>
+      <div class="ground ground--night">
+        {TEXT_SERIFS.map((f) => (
+          <div class="row row--display">
+            <div class="row-meta"><b>{f.name}</b></div>
+            <p class="t-display" style={`font-family: ${f.stack}`}>Z ciszy głos.</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── C ─────────────────────────────────────────────────────────────── -->
+    <section id="c">
+      <div class="spec-sec-head">
+        <h2>C · Gest rubryki</h2>
+        <p>
+          Ten sam IBM Plex Mono, trzy ustawienia. Ta sekcja odpowiada na pytanie, czy
+          „kanon stron AI" siedzi w <em>kroju</em>, czy w <em>geście</em>. Jeśli wariant 2
+          albo 3 czyta się inaczej niż 1 — problemem nigdy nie był krój.
+        </p>
+      </div>
+      <div class="ground ground--night">
+        <div class="row"><div class="row-meta"><b>1 · dziś</b><span>11px · wersaliki · 0.3em</span></div>
+          <div class="row-body"><p class="g-1">CONCERTS SPIRITUELS</p><p class="g-1">· IV · INSCRIPTIO FINALIS ·</p><p class="g-1">CONSILIUM zarząd</p></div></div>
+        <div class="row"><div class="row-meta"><b>2 · indeks</b><span>12,5px · minuskuła · 0.02em</span></div>
+          <div class="row-body"><p class="g-2">concerts spirituels</p><p class="g-2">· iv · inscriptio finalis ·</p><p class="g-2">consilium zarząd</p></div></div>
+        <div class="row"><div class="row-meta"><b>3 · rubryka</b><span>13px · mieszana · 0.06em</span></div>
+          <div class="row-body"><p class="g-3">Concerts spirituels</p><p class="g-3">· IV · Inscriptio finalis ·</p><p class="g-3">Consilium zarząd</p></div></div>
+      </div>
+    </section>
+
+    <!-- ── D ─────────────────────────────────────────────────────────────── -->
+    <section id="d">
+      <div class="spec-sec-head">
+        <h2>D · Kandydaci na warstwę rubryki</h2>
+        <p>
+          Dwie rodziny odpowiedzi. Pierwsza zostaje w gatunku mono i tylko wychodzi
+          z kanonu. Druga porzuca gatunek: treść tej warstwy to łacińskie rubryki,
+          cyfry rzymskie i inskrypcje — historycznie to <em>kapitała</em>, nie maszynopis.
+        </p>
+      </div>
+
+      <div class="ground ground--night">
+        <p class="ground-label">i. inny mono</p>
+        {RUBRIC_MONO.map((f) => (
+          <div class="row">
+            <div class="row-meta"><b>{f.name}</b><span>{f.note}</span></div>
+            <div class="row-body" style={`font-family: ${f.stack}`}>
+              <p class="r-eyebrow">CONCERTS SPIRITUELS</p>
+              <p class="r-eyebrow">MMXXVI · OMNIA IURA RESERVATA</p>
+              <p class="r-data">KRS 0001237252 · NIP 6762718992</p>
+              <p class="r-data">50°03′41″N · 19°56′18″E</p>
+              <p class="r-dia">{DIACRITICS}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="ground ground--paper">
+        <p class="ground-label">ii. nie mono — kapitała zamiast maszynopisu</p>
+        {RUBRIC_NOT_MONO.map((f) => (
+          <div class="row">
+            <div class="row-meta"><b>{f.name}</b><span>{f.note}</span></div>
+            <div class="row-body" style={`font-family: ${f.stack}`}>
+              <p class="r-eyebrow">CONCERTS SPIRITUELS</p>
+              <p class="r-eyebrow">MMXXVI · OMNIA IURA RESERVATA</p>
+              <p class="r-data">KRS 0001237252 · NIP 6762718992</p>
+              <p class="r-data">50°03′41″N · 19°56′18″E</p>
+              <p class="r-dia">{DIACRITICS}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── E ─────────────────────────────────────────────────────────────── -->
+    <section id="e">
+      <div class="spec-sec-head">
+        <h2>E · Diakrytyki — filtr twardy</h2>
+        <p>
+          Kandydat, któremu brakuje choć jednego znaku, wypada — bez dyskusji o urodzie.
+          Brak objawia się <em>podmianą na krój systemowy</em>: jeśli w wierszu jedna litera
+          nagle ma inny rysunek, ciężar albo szerokość, tego znaku w pliku nie ma.
+          Patrz zwłaszcza na <b>ł Ł</b> (kreska, nie ukośnik), ogonki <b>ą ę</b> i <b>ż ź</b>.
+        </p>
+      </div>
+      <div class="ground ground--paper">
+        {[...TEXT_SERIFS, ...RUBRIC_MONO, ...RUBRIC_NOT_MONO].map((f) => (
+          <div class="row row--dia">
+            <div class="row-meta"><b>{f.name}</b></div>
+            <p class="d-line" style={`font-family: ${f.stack}`}>ą ć ę ł ń ó ś ź ż Ą Ć Ę Ł Ń Ó Ś Ź Ż œ æ ê ç à ù î</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <footer class="spec-foot">
+      <p>
+        Ta strona nie należy do serwisu. Po decyzji: <code>rm web/src/pages/specimen.astro</code>
+        i zdejmij wpis z filtra sitemapy w <code>astro.config.mjs</code>.
+      </p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  /* Specimen jest przyrządem pomiarowym, więc jego własna typografia ma być
+     maksymalnie cicha: cały chrome leci Plex Sans/Mono, żeby nie mieszać się
+     w ocenę mierzonych krojów. */
+  body.spec {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+  }
+
+  .spec-head,
+  .spec-sec-head,
+  .spec-foot {
+    max-width: 760px;
+    margin-inline: auto;
+    padding: 0 24px;
+  }
+  .spec-head { padding-top: 96px; padding-bottom: 64px; }
+  .spec-sec-head { padding-top: 88px; padding-bottom: 28px; }
+  .spec-foot { padding-top: 72px; padding-bottom: 96px; color: var(--ink-muted); font-size: 13px; }
+
+  .spec-kicker {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--candle);
+  }
+  .spec-head h1 { font-family: var(--serif); font-size: 64px; font-weight: 300; line-height: 1; margin: 12px 0 20px; }
+  .spec-sec-head h2 { font-family: var(--mono); font-size: 13px; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: var(--candle); margin-bottom: 10px; }
+  .spec-lead, .spec-sec-head p { font-size: 15px; color: var(--ink-soft); max-width: 62ch; }
+  .spec-sec-head em { font-family: inherit; font-style: italic; }
+
+  .spec-toc { margin-top: 28px; padding-left: 18px; font-size: 14px; }
+  .spec-toc li { margin-bottom: 4px; }
+  .spec-toc a { border-bottom: 1px solid var(--line); }
+  .spec-toc a:hover { border-color: var(--candle); }
+
+  /* ── Grunty ──────────────────────────────────────────────────────────────
+     Dokładne tła z tokens.css. Sekcja A ma sens tylko wtedy, gdy tło jest
+     bit-w-bit tym samym, na którym krój będzie stał w serwisie. */
+  .ground { padding: 40px max(24px, 4vw) 56px; }
+  .ground--night { background: var(--night); color: #e8e3d8; --rule: rgba(232, 227, 216, 0.14); --meta: rgba(232, 227, 216, 0.5); }
+  .ground--paper { background: var(--paper); color: var(--ink); --rule: var(--line); --meta: var(--ink-muted); }
+
+  .ground-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--meta);
+    padding-bottom: 22px;
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 32px;
+    padding: 26px 0;
+    border-top: 1px solid var(--rule);
+    align-items: start;
+  }
+  .row--display { align-items: center; }
+  .row--dia { padding: 14px 0; }
+
+  .row-meta { font-family: var(--mono); font-size: 11px; line-height: 1.5; color: var(--meta); }
+  .row-meta b { display: block; font-weight: 400; letter-spacing: 0.06em; color: inherit; opacity: 0.95; }
+  .row-meta span { display: block; margin-top: 5px; opacity: 0.7; }
+
+  /* ── Mierzone pasma. Stopnie i wagi są zdjęte 1:1 z serwisu, nie dobrane
+     „żeby ładnie wyszło" — inaczej test kłamie. Źródła w komentarzach. */
+  .t-seat { font-style: italic; font-size: 17px; font-weight: 300; line-height: 1.4; }        /* 06-footer.css .foundation-seat */
+  .t-poem { font-style: italic; font-size: 17px; margin-top: 8px; }                            /* 06-footer.css .footer-signal-hora-poem */
+  .t-lede { font-style: italic; font-size: 20px; font-weight: 300; margin-top: 10px; }         /* 02-hero-sections.css hero lede */
+  .t-dia  { font-size: 15px; margin-top: 12px; opacity: 0.85; }
+  .t-display { font-size: clamp(56px, 8vw, 108px); font-weight: 300; line-height: 0.95; }      /* --h1 */
+
+  .r-eyebrow { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; line-height: 2.1; }
+  .r-data { font-size: 12.5px; letter-spacing: 0.08em; line-height: 1.9; }
+  .r-dia { font-size: 12.5px; margin-top: 10px; opacity: 0.8; }
+
+  .g-1 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; line-height: 2.2; color: var(--meta); }
+  .g-2 { font-family: var(--mono); font-size: 12.5px; letter-spacing: 0.02em; line-height: 1.9; color: var(--meta); }
+  .g-3 { font-family: var(--mono); font-size: 13px; letter-spacing: 0.06em; line-height: 1.9; color: var(--meta); }
+
+  .d-line { font-size: 22px; line-height: 1.5; }
+
+  .spec-foot code { font-family: var(--mono); font-size: 12px; background: var(--paper-deep); padding: 2px 6px; border-radius: 3px; }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; gap: 14px; }
+    .spec-head h1 { font-size: 44px; }
+  }
+</style>

@@ -256,7 +256,7 @@
 .ribbon-roman {
   flex: none;
   width: 22px;
-  font-family: var(--mono);
+  font-family: var(--capitalis);
   font-size: 9px;
   letter-spacing: 0.12em;
   opacity: 0.55;

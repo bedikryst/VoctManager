@@ -49,14 +49,18 @@ export default defineConfig({
     // 6 URLs while the build emits 13 indexable pages (every concert detail page, /kolofon and
     // the /en|/fr translations were missing). Regenerates on every build, so adding a concert
     // can no longer leave the sitemap stale.
-    //  - `filter`: drop /press — it ships `<meta name="robots" content="noindex,follow">`, so it
-    //    must not be advertised for indexing (the integration does NOT read the noindex tag itself).
+    //  - `filter`: drop pages that ship `<meta name="robots" content="noindex">` — the integration
+    //    does NOT read the tag itself, so every noindex route must be listed here by hand.
+    //    /press is the permanent EPK; /specimen is a temporary type-decision instrument and goes
+    //    away with its page file (src/pages/specimen.astro).
     //  - `i18n`: emit `<xhtml:link rel="alternate" hreflang>` groups. Only pages that actually
     //    exist in a locale are grouped (currently just /o-nas → pl/en/fr); Polish-only pages get a
     //    single self-referential entry. Mirrors the per-page hreflang already set in BaseLayout.
     // Output lives at /sitemap-index.xml (NOT /sitemap.xml) — robots.txt points there.
     sitemap({
-      filter: (page) => page !== "https://voctensemble.com/press",
+      filter: (page) =>
+        page !== "https://voctensemble.com/press" &&
+        page !== "https://voctensemble.com/specimen",
       // The privacy policy is a hand-authored static file (public/polityka-prywatnosci.html),
       // not an Astro route, so the integration can't discover it — declare it explicitly or it
       // silently drops out of the sitemap (it was present in the old hand-maintained one).

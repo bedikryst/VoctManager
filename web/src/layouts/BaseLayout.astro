@@ -122,6 +122,25 @@ const ogLocaleAlternates =
       href="/fonts/CormorantGaramond-Variable.latin.woff2"
       crossorigin
     />
+    <!-- Cinzel carries the rubric layer, which is above the fold on every page (the eyebrow
+         sits over the first headline) and costs ~40 KB for both subsets — cheap enough to
+         put in the critical path. The Cyrillic subsets are deliberately absent here: their
+         `unicode-range` already limits them to the few concert pages with sung Cyrillic text,
+         and preloading is per-document, so listing them would pull 41 KB onto every page. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/Cinzel-Variable.latin-ext.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/Cinzel-Variable.latin.woff2"
+      crossorigin
+    />
     <link
       rel="preload"
       as="font"

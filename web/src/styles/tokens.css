@@ -24,8 +24,31 @@
   --sage: #5d6b54;
   --crimson: #8c3b3b;
 
-  /* ── Type ─────────────────────────────────────────────────────────────── */
+  /* ── Type ──────────────────────────────────────────────────────────────────
+       --serif      Cormorant, WHOLE serif range — display and text alike.
+       --capitalis  the Latin voice: rubrics, Roman numerals, inscriptions. CAPS ONLY
+                    (Cinzel has no lowercase — small caps stand in), and never ≳16px.
+       --sans       reading text.
+       --mono       data whose alignment carries meaning: live numerals, coordinates,
+                    registry numbers. NOT a label face — that is --capitalis's job.
+
+     The name is `--capitalis`, not `--rubric`, and must stay that way: registrum.css
+     already owns `--rubric` as a COLOUR (the crimson "you are here" stitch), scoped to
+     .registrum-drop. A font token of the same name is shadowed inside that scope, so
+     `font-family: var(--rubric)` there silently resolves to a color-mix() — an invalid
+     font-family that no build step will flag.
+
+     A separate text-grade serif for the ≈12–24px band was built and rejected (EB Garamond,
+     2026-07-31): its italic is a fixed, separately-drawn companion with no slant axis and
+     visibly steeper than Cormorant's, and its weight axis floors at 400 where Cormorant
+     reaches 300 — so it read heavier and more sloped than the design wants, with no way to
+     dial either back. Cormorant carries the small band instead, compensated the only way a
+     face without an `opsz` axis can be: MORE WEIGHT AND MORE SIZE as the text gets smaller
+     (see .foundation-seat, .hero-strap). That compensation is deliberate — if a small serif
+     string here ever looks brittle, raise its weight/size rather than reaching for a second
+     family. */
   --serif: "Cormorant Garamond", Georgia, serif;
+  --capitalis: "Cinzel", Georgia, serif;
   --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 

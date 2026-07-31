@@ -28,21 +28,14 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
     color: var(--ink-muted);
   }
 
-  .vox-eyebrow .lat {
-    color: var(--candle);
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 16px;
-    letter-spacing: 0;
-    text-transform: none;
-  }
+  /* .lat here is the canonical two-tier rubric from base.css — do not restate it. */
 
   .vox-line {
     margin: 0;

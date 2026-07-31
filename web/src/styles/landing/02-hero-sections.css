@@ -72,7 +72,7 @@
     background: rgba(8, 8, 7, 0.26);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
@@ -143,13 +143,16 @@
     color: rgba(244, 241, 233, 0.94);
   }
 
+  /* Waga 400, nie 460 jak bliźniacze pasmo w stopce: tu jasne leży na ciemnym, a to
+     optycznie POGRUBIA kreskę (odwrotnie niż na pergaminie). Ta sama kompensacja
+     przeniesiona wprost z gruntu jasnego wyszłaby tu za ciężka. */
   .hero-strap {
     max-width: 40rem;
     margin: clamp(16px, 1.8vw, 26px) 0 0;
     color: rgba(244, 241, 233, 0.72);
     font-family: var(--serif);
-    font-size: clamp(16px, 1.4vw, 21px);
-    font-weight: 300;
+    font-size: clamp(17px, 1.5vw, 22px);
+    font-weight: 400;
     line-height: 1.4;
   }
 
@@ -183,7 +186,7 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.26em;
     text-transform: uppercase;
@@ -456,7 +459,7 @@
     gap: 18px;
     margin-top: 12px;
     color: var(--ink-muted);
-    font-family: var(--mono);
+    font-family: var(--capitalis);
     font-size: 10px;
     letter-spacing: 0.14em;
     text-transform: uppercase;

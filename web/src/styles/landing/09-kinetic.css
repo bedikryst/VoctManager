@@ -1,7 +1,8 @@
   /* ─────────────────────────────────────────────────────────────────────────
      KINETIC TYPOGRAPHY · MMXXVI
      Variable-axis choreography scrubbed against scroll & view timelines.
-     Cormorant Garamond wght 300–700 (osobny plik italic) + Inter opsz auto.
+     Cormorant Garamond wght 300–700 (osobny plik italic) — jedyna oś, jaką
+     niesie którykolwiek krój na tej stronie.
      CSS-WG L5 primitives: @property, animation-timeline, view-timeline.
      ───────────────────────────────────────────────────────────────────────── */
 
@@ -59,11 +60,6 @@
     syntax: "<percentage>";
     inherits: false;
     initial-value: -14%;
-  }
-
-  /* Inter Variable ma oś opsz — niech browser sam dobiera display vs. text. */
-  html {
-    font-optical-sizing: auto;
   }
 
   /* ── Single kinetic driver ─────────────────────────────────────────────────
