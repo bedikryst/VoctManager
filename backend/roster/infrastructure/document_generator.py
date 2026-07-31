@@ -29,9 +29,16 @@ from django.conf import settings
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
 from core.constants import VoiceLine
-from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
+from roster.infrastructure.print_fonts import (
+    BOOK_FONT_STACK,
+    BRAND_SANS_STACK,
+    BRAND_SERIF_STACK,
+    brand_font_face_css,
+    font_face_css,
+)
 from roster.models import (
     Artist,
     CrewAssignment,
@@ -108,6 +115,23 @@ def _doc_lang() -> str:
     return getattr(settings, "SCORE_BOOK_LANG", "pl")
 
 
+def _brand_font_context() -> dict[str, str]:
+    """Bundled brand typography for outward-facing templates. Every contract
+    template variable that names a face resolves here, so no template can drift
+    back to a CDN import or to a face the host may not have.
+
+    Marked safe at the source, not at each `{{ }}`: a font stack carries the
+    quotes around multi-word family names, and autoescaping them to `&quot;`
+    yields a declaration the renderer drops — silently, since an unparsable
+    `font-family` is not an error, just a fall back to the default serif. These
+    are our own constants, never user input."""
+    return {
+        "font_css": mark_safe(brand_font_face_css()),
+        "font_sans": mark_safe(BRAND_SANS_STACK),
+        "font_serif": mark_safe(BRAND_SERIF_STACK),
+    }
+
+
 class DocumentRenderDependencyError(RuntimeError):
     """Raised when the PDF rendering engine is installed without native runtime libraries."""
 
@@ -172,6 +196,7 @@ class DocumentGenerator:
             'project_location': project.location or 'Miejsce do ustalenia',
             'fee': participation.fee or 0,
             'generation_date': timezone.now(),
+            **_brand_font_context(),
         }
 
         html_string = render_to_string('contracts/contract_pdf.html', context)
@@ -191,6 +216,7 @@ class DocumentGenerator:
             'project_location': project.location or 'Miejsce do ustalenia',
             'fee': assignment.fee or 0,
             'generation_date': timezone.now(),
+            **_brand_font_context(),
         }
 
         html_string = render_to_string('contracts/contract_pdf.html', context)

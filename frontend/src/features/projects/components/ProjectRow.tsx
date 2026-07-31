@@ -165,11 +165,19 @@ export const ProjectRow = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span onClick={(event) => event.stopPropagation()}>
+            {/* Serif, like the same title at the head of the project hub: a
+                concert is named, not labelled, and the row is where that name is
+                first read. `text-lg` rather than the variant's `text-base`
+                because Cormorant sets a 0.386em x-height against the sans's
+                0.546 — at equal px the title would read smaller than the
+                metadata beneath it. Carried as `className` so the shared
+                `variant="title"` keeps its sans for the archive rows. */}
             <InlineEditable
               value={project.title}
               onSave={patchTitle}
               ariaLabel={t("projects.row.edit_title", "Tytuł projektu")}
               variant="title"
+              className="font-serif text-lg tracking-tight"
               placeholder={t("projects.row.title_placeholder", "Tytuł")}
               validate={(next) =>
                 next.trim()

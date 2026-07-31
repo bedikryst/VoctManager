@@ -4,22 +4,26 @@
     <meta charset="UTF-8">
     <title>Umowa o Dzieło - {{ artist_name }}</title>
     <style>
-        /* Import nowoczesnych fontów z Google Fonts */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+        /* Bundled brand faces, injected by roster/infrastructure/print_fonts.py as
+           absolute file:// URIs. Never a webfont CDN here: the contract is a legal
+           artifact, so it has to typeset identically offline and years from now,
+           and a render-time request to a third party is one the signatory never
+           agreed to. */
+        {{ font_css|safe }}
 
         @page {
             size: A4;
             margin: 2.5cm 2cm 3cm 2cm;
             @bottom-right {
                 content: "Strona " counter(page) " z " counter(pages);
-                font-family: 'Inter', sans-serif;
+                font-family: {{ font_sans|safe }};
                 font-size: 8pt;
                 color: #9ca3af;
             }
         }
-        
+
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: {{ font_sans|safe }};
             font-size: 10pt;
             line-height: 1.6;
             color: #1f2937;
@@ -36,9 +40,14 @@
             align-items: flex-end;
         }
 
+        /* Cormorant is a Garamond: it draws a 0.386em x-height, roughly three
+           quarters of what a display serif like the old Playfair set, so the two
+           serif sizes below are nominally larger to hold the same optical weight
+           on the page. Judge them by eye at 100%, not by the numbers. */
         .brand-name {
-            font-family: 'Playfair Display', serif;
-            font-size: 22pt;
+            font-family: {{ font_serif|safe }};
+            font-weight: 600;
+            font-size: 28pt;
             color: #002395;
             margin: 0;
             line-height: 1;
@@ -57,15 +66,16 @@
         }
 
         h1 {
-            font-family: 'Playfair Display', serif;
+            font-family: {{ font_serif|safe }};
+            font-weight: 600;
             text-align: center;
-            font-size: 16pt;
+            font-size: 20pt;
             color: #111827;
             margin-bottom: 30px;
         }
 
         h2 {
-            font-family: 'Inter', sans-serif;
+            font-family: {{ font_sans|safe }};
             font-size: 10pt;
             font-weight: 700;
             text-transform: uppercase;
