@@ -30,7 +30,7 @@ This site is **NOT subject to the project-root `CLAUDE.md` No-Raw-HTML / Tailwin
 web/
 ├── astro.config.mjs   ← Astro config (build.format: "file", React integration, prefetch)
 ├── public/            ← Served verbatim at the site root
-│   ├── fonts/         #   Self-hosted Cormorant Garamond + Inter + IBM Plex Mono (woff2, OFL)
+│   ├── fonts/         #   Self-hosted Cormorant Garamond + IBM Plex Sans/Mono (woff2, OFL)
 │   ├── ambient.m4a    #   Sacred ambient track (gated behind the Threshold choice)
 │   ├── docs/          #   Static PDFs (Statut, regulamin)
 │   ├── donation-progress.json  # Tier progress data (read by the Vault island)
