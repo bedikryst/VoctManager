@@ -358,7 +358,12 @@ const langOptions = showLang
   import { navigate } from "astro:transitions/client";
 
   import { horaForWarsaw } from "../islands/landing/lib/horaeCanonicae";
-  import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../lib/overlayHistory";
+  import {
+    dismissOverlayEntry,
+    isOverlayEntry,
+    navigateFromOverlay,
+    pushOverlayEntry,
+  } from "../lib/overlayHistory";
 
   // Document-delegated so it binds once and survives ClientRouter DOM swaps.
   if (!(window as unknown as { __voctChrome?: boolean }).__voctChrome) {
@@ -469,8 +474,21 @@ const langOptions = showLang
       if (!isOverlayEntry("navOpen")) closeMenu(true);
     });
 
-    // `chrome()` gates both handlers: after a ClientRouter swap onto the landing this script is
-    // still live, but the landing's React StickyHeader (no #chrome id) owns its own menu there.
+    // CAPTURE phase — load-bearing, not stylistic. ClientRouter's own click handler is a
+    // BUBBLING document listener registered ahead of this one (its script is emitted into
+    // <head>, this one into the body), so a bubbling listener here reaches the anchor SECOND:
+    // the router has already preventDefaulted the click and started navigating, and the
+    // preventDefault below lands on a consumed event. The pull beat then never reads, and the
+    // navigate() at the end of the beat hits a navigation already in flight — the router aborts
+    // it and skips its View Transition, then re-fetches and re-swaps the same page. Which of the
+    // three failures the visitor sees (no transition at all / the new page jumping / a stall of
+    // a beat plus a hero warm) only depends on which frame the second call lands in. Capturing
+    // puts our preventDefault before the router ever sees the click; same contract as
+    // scripts/vault-triggers.ts, and the branches that navigate honour defaultPrevented in turn
+    // so a capturing listener registered before this one still wins its own clicks.
+    // `chrome()` gates every branch: after a ClientRouter swap onto the landing this script is
+    // still live, but the landing's React StickyHeader (no #chrome id) owns its own menu there —
+    // React binds on the island root, below document, so it wins that race without capturing.
     document.addEventListener("click", (e) => {
       const t = e.target as Element | null;
       if (!t || !chrome()) return;
@@ -488,6 +506,7 @@ const langOptions = showLang
       // you already are). Reduced motion skips straight to the swap.
       const ribbon = t.closest(".registrum .ribbon");
       if (ribbon && ribbon.getAttribute("aria-current") !== "page") {
+        if (e.defaultPrevented) return;
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const href = ribbon.getAttribute("href");
         if (!href || reduce.matches) return;
@@ -514,13 +533,19 @@ const langOptions = showLang
       }
       const voice = t.closest(".nave .voice");
       if (voice) {
-        // Tapping the page you're already on triggers no swap, so leaving the card open would
-        // hang it — just close instead.
+        // Tapping the page you're already on is a dismissal, not a journey — so it must be
+        // stopped here. Left to the router, a link to the current URL is still a navigation:
+        // it re-fetches and re-swaps the whole document under the card, replaying every reveal
+        // and dropping the reader back at the top of a page they were already reading. Routing
+        // it through dismissMenu (rather than a bare closeMenu) also consumes the card's own
+        // history entry, so the back press it pushed doesn't linger unanswered.
         if (voice.getAttribute("aria-current") === "page") {
-          closeMenu(false);
+          e.preventDefault();
+          dismissMenu();
           return;
         }
         // Modified / middle clicks navigate normally (new tab) — no pull, no classes.
+        if (e.defaultPrevented) return;
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         // A voice is a page — choosing one RUNS THE RIBBON (nave-menu.css): retargeting the
         // vitta's `--vi` makes the ONE ribbon run through the slot to the chosen row (one
@@ -542,11 +567,15 @@ const langOptions = showLang
           vitta.style.setProperty("--vi", vi);
         }
         const href = voice.getAttribute("href");
-        if (!href || reduce.matches) return;
+        if (!href) return;
         e.preventDefault();
-        window.setTimeout(() => {
-          void navigate(href);
-        }, PULL_MS);
+        // navigateFromOverlay, not navigate: the card pushed a history entry on open, and the
+        // destination has to REPLACE it — pushed on top it becomes a shadow entry that eats the
+        // first back press. Reduced motion takes the same path without the hold beat, so the
+        // back button behaves identically however the visitor has their system set.
+        const commit = (): void => void navigateFromOverlay("navOpen", href);
+        if (reduce.matches) commit();
+        else window.setTimeout(commit, PULL_MS);
         // Safety: a no-op navigate leaves no swap to discard the classes — release the
         // committing state (and re-park the ribbon) so the card can't stay stuck mid-choice
         // (harmless on detached nodes after a successful swap).
@@ -563,7 +592,7 @@ const langOptions = showLang
       }
       // The Wesprzyj CTA (→ vault) or any other card link closes immediately (no page swap).
       if (t.closest(".nave a")) closeMenu(false);
-    });
+    }, true);
     document.addEventListener("keydown", (e) => {
       const c = chrome();
       if (!c) return;

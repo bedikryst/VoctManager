@@ -81,6 +81,23 @@ where the incoming DOM has real layout *and* the new snapshot is not taken yet, 
 or reveals inside a closed `<details>` (the `/koncerty` programme rows) report top 0, get settled,
 and lose their cascade.
 
+**The parallax controller's first run always MOVES the layer.** A `[data-parallax]` layer rests at
+its CSS position (`.bleed` is `top: -10%`) but its settled position is another `cap` px above that,
+so the first `applyParallax()` shifts every hero photo. Placement therefore has to be part of a
+page's first painted state, never a correction to it: it runs at module time and in
+`astro:after-swap` (before the new snapshot). Hanging it on `astro:page-load` alone — which is the
+window `load` event on a cold start, and post-snapshot on a navigation — is what made the hero
+visibly jump mid-transition. Same rule for anything else that positions a layer from JS.
+
+**A hero photo is not painted when the transition starts.** The incoming page is drawn opaque
+underneath the dissolving old one, so an unloaded photo is what the visitor looks at for the whole
+420ms. Two defences, both needed: `.bleed` carries `background-color: #080807` (the transition's own
+bedrock, so a gap reads as the site's ground and never as the parchment body — that was the white
+flash), and BaseLayout holds the swap up to `HERO_WARM_MS` while a hidden clone of the incoming
+`picture.bleed` warms the cache. Clone rather than hand-build a preload: `<source media>` is art
+direction and `<source type>` is format negotiation, and both resolve against a real viewport that
+the DOMParser'd document does not have.
+
 **`transition:persist` emits no `view-transition-name`.** Only `transition:name`/`animate` do, so
 `::view-transition-group(site-cursor)` and `(scroll-top)` never matched anything — the persisted
 islands ride inside the root snapshot and a faint copy drifts off with the outgoing page. Do not
@@ -88,6 +105,37 @@ islands ride inside the root snapshot and a faint copy drifts off with the outgo
 stops compositing against the page (the same trap `registrum.css` hit with `backdrop-filter`). If
 the ghost ever becomes visible enough to matter, hide those elements on
 `astro:before-preparation` — the last event before the old snapshot is taken.
+
+**Any delegated link handler on `document` MUST capture.** ClientRouter's own click handler is a
+*bubbling* `document` listener registered from `<head>`, i.e. ahead of every script Astro emits into
+the body — so a bubbling listener of ours reaches the anchor **second**, after the router has
+already `preventDefault`ed it and started navigating. Our `preventDefault` then lands on a consumed
+event and the handler's own `navigate()` becomes a *second* navigation into a live one: the router
+aborts the first, `skipTransition()`s its View Transition, and re-fetches and re-swaps the same page.
+Which of three failures the visitor sees — no transition at all, the new page jumping, or a stall of
+a whole beat plus a hero warm — only depends on which frame the second call lands in, which is why
+it read as intermittent. Field-hit twice: `SiteChrome.astro`'s registrum ribbons and mobile "Vitta"
+voices (every subpage; the landing's React header was immune because React binds on the island root,
+below `document`), and `landing.ts`'s Lenis anchors, where the router quietly took every `#hash`
+click — native jump with no `ANCHOR_OFFSET`, so the fixed bar covered the target, plus a junk
+history entry per click. Capture-phase is the contract (`scripts/vault-triggers.ts` had it right);
+branches that navigate should still honour `defaultPrevented` so capturing listeners can coexist.
+Related: a link to the **current** URL is still a full navigation to Astro — an in-menu row for the
+page you are already on has to `preventDefault` and dismiss, or the whole document re-swaps under
+the card and the reader is thrown back to the top of the page they were reading.
+
+**Leaving a page from inside an overlay must SPEND the overlay's history entry.** The nav card /
+vault / lightbox each push a hash-marked entry on open so the mobile back button dismisses them
+(`lib/overlayHistory.ts`). Navigating away with a plain `navigate()` stacks the destination on top
+of that entry, so the first back press lands on the shadow — same page, hash only — where the
+router's same-page hash path runs and nothing visible happens. The press is simply eaten. The exit
+therefore goes through `navigateFromOverlay`, which uses `history: "replace"`. Two things that owes
+compensation, both inside that helper, and both silent if forgotten: Astro copies the *current*
+entry's stored scroll onto a replaced entry (a push zeroes it), so a later back→forward would
+restore the previous page's offset; and **Plausible hooks `pushState`, never `replaceState`** — the
+navigation is invisible to analytics unless `plausible("pageview")` is called by hand. On a
+mobile-first site that is most of the traffic, so any future switch from push to replace anywhere
+has to carry the same two lines with it.
 
 **Movement inscriptions must stay short (~13 characters).** `13-spine.css` hides the spine label
 below 1440px because the gutter is narrow; a longer inscription pushes that breakpoint up until

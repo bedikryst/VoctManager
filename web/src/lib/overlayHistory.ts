@@ -9,6 +9,9 @@
  *  CANNOT achieve this: the router never learns the hash, treats the back traversal as a
  *  same-URL navigation and swaps the whole document — page scripts/reveals re-run and the
  *  outgoing View Transition snapshot ghosts the overlay back mid-close.
+ *
+ *  Leaving the page from inside an open overlay goes through `navigateFromOverlay`, which spends
+ *  the pushed entry rather than stacking the destination on top of it — see its own note.
  * @architecture Astro islands 2026
  * @module lib/overlayHistory
  */
@@ -50,4 +53,34 @@ export function pushOverlayEntry(flag: OverlayFlag, hash: string): void {
 export function dismissOverlayEntry(flag: OverlayFlag, closeDirectly: () => void): void {
   if (isOverlayEntry(flag)) history.back();
   else closeDirectly();
+}
+
+/**
+ * Leave the page from inside an open overlay, CONSUMING the entry it pushed instead of stranding
+ * it. A plain `navigate()` pushes the destination on top of the overlay's entry, so the first back
+ * press lands on that shadow — same page, hash only — and the router's same-page hash path runs:
+ * no swap, nothing visible. The press is simply eaten, which on touch reads as a broken back
+ * button. `history: "replace"` puts the destination WHERE the overlay's entry was, so back returns
+ * to the page the visitor actually came from, once.
+ *
+ * Two things `replace` does not do for us, both compensated here:
+ *  - Astro copies the CURRENT entry's stored scroll onto a replaced entry (a push would zero it),
+ *    so a later back→forward onto this page would restore the previous page's offset. Re-stamp it
+ *    with where the visitor actually landed.
+ *  - Plausible hooks `pushState`, never `replaceState` — a replaced navigation is invisible to it.
+ *    Without this call every menu-driven navigation would silently stop being counted, which on a
+ *    mobile-first site is most of them. `plausible()` is its documented manual-tracking entry
+ *    point; the optional call covers dev (no script) and blocked-script visitors.
+ */
+export async function navigateFromOverlay(flag: OverlayFlag, href: string): Promise<void> {
+  if (!isOverlayEntry(flag)) {
+    await navigate(href);
+    return;
+  }
+  await navigate(href, { history: "replace" });
+  history.replaceState(
+    { ...history.state, scrollX: window.scrollX, scrollY: window.scrollY },
+    "",
+  );
+  (window as Window & { plausible?: (event: string) => void }).plausible?.("pageview");
 }

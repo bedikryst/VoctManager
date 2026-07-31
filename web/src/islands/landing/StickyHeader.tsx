@@ -14,7 +14,12 @@
 import { navigate } from "astro:transitions/client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { dismissOverlayEntry, isOverlayEntry, pushOverlayEntry } from "../../lib/overlayHistory";
+import {
+  dismissOverlayEntry,
+  isOverlayEntry,
+  navigateFromOverlay,
+  pushOverlayEntry,
+} from "../../lib/overlayHistory";
 import type { RibbonEntry } from "../../lib/registrum";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
@@ -120,11 +125,14 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
     if (vitta && vi) vitta.style.setProperty("--vi", vi);
     const href = voice.getAttribute("href");
     if (!href) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     e.preventDefault();
-    window.setTimeout(() => {
-      void navigate(href);
-    }, RIBBON_PULL_MS);
+    // navigateFromOverlay, not navigate: the card pushed a history entry on open, and the
+    // destination has to REPLACE it — pushed on top it becomes a shadow entry that eats the first
+    // back press. Reduced motion takes the same path without the hold beat, so the back button
+    // behaves identically however the visitor has their system set.
+    const commit = (): void => void navigateFromOverlay("navOpen", href);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) commit();
+    else window.setTimeout(commit, RIBBON_PULL_MS);
   }, []);
 
   // Registrum ribbon: pull the chosen bookmark long, then let the page dissolve onto its concert.

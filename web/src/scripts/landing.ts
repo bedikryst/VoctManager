@@ -222,6 +222,12 @@ function setupSmoothDetails(root: HTMLElement): void {
 }
 
 // ── Lenis anchors: route in-document anchor clicks through the shared Lenis instance ─────────
+// CAPTURE phase, like scripts/vault-triggers.ts: ClientRouter's click handler is a BUBBLING
+// document listener registered ahead of this script (its own sits in <head>), and a bare `#hash`
+// anchor is a same-origin link as far as it is concerned — so bubbling here means the router has
+// already consumed the click and taken its same-page hash path, which jumps natively (no
+// ANCHOR_OFFSET, so the fixed bar covers the target) and leaves a junk history entry per click.
+// The removal below must repeat the flag: capture is part of a listener's identity.
 function setupLenisAnchors(): void {
   const ANCHOR_OFFSET = -80;
   const onClick = (event: MouseEvent): void => {
@@ -244,8 +250,8 @@ function setupLenisAnchors(): void {
       window.scrollTo({ top, behavior: reduceMotion() ? "auto" : "smooth" });
     }
   };
-  document.addEventListener("click", onClick);
-  cleanups.push(() => document.removeEventListener("click", onClick));
+  document.addEventListener("click", onClick, true);
+  cleanups.push(() => document.removeEventListener("click", onClick, true));
 }
 
 // ── Kinetic typography: variable-font breath scrubbed against scroll (one rAF loop) ──────────
