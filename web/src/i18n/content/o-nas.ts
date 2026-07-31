@@ -4,17 +4,19 @@
  *  for the whole site's i18n: PAGE PROSE lives in a typed content module (one object per locale),
  *  the shared component (components/pages/AboutPage.astro) renders it, and the atomic chrome
  *  labels stay in i18n/ui.ts. Polish is the source of truth and is copied VERBATIM from the
- *  pre-i18n o-nas.astro — including the exact &nbsp; pins and the founder's-letter stanzas, which
- *  are quoted founding text, not copywriting (see the letter comment). English and French are
- *  literary translations that keep the contemplative register; proper names (people, venues,
- *  works, the ensemble/foundation) are never translated.
+ *  pre-i18n o-nas.astro — including the founder's-letter stanzas, which are quoted founding text,
+ *  not copywriting (see the letter comment). English and French are literary translations that
+ *  keep the contemplative register; proper names (people, venues, works, the ensemble/foundation)
+ *  are never translated.
  *
  *  FIELD CONVENTION — two kinds of field:
- *   • plain text (…Text, labels, headings): rendered as `{typoFor(lang)(value)}`, so Polish gets
- *     its orphan pins, French its space-before-punctuation, English nothing. Author WITHOUT markup.
- *   • rich HTML (…Html): rendered with `set:html` and NO typography pass (the pass would corrupt
- *     tags/URLs), so any inline <em>/<strong> and hard &nbsp; are authored inline. Polish keeps its
- *     verbatim entities; English/French add their own where a language needs them.
+ *   • plain text (…Text, labels, headings): author WITHOUT markup.
+ *   • rich HTML (…Html): rendered with `set:html`, so inline <em>/<strong> are authored inline.
+ *
+ *  Neither kind carries typography. Write the prose plainly, in any locale: the build pass
+ *  (lib/typo.ts, applied to the finished page) pins Polish orphans and French punctuation
+ *  spacing in the rendered HTML, tags and URLs untouched. Spell `&nbsp;` here only for a binding
+ *  those rules do not make.
  * @architecture Astro islands 2026
  * @module i18n/content/o-nas
  */
@@ -149,25 +151,25 @@ const pl: AboutCopy = {
         lat: "I",
         label: "Z tęsknoty",
         paraHtml:
-          "Z tęsknoty, natchnienia i marzenia. Jak anachoreci, w odosobnieniu, z&nbsp;daleka od zgiełku i&nbsp;muzyki zatęskniono za muzyką. Wizja muzyki jako powiew ducha, który przemienia świat swoją polifonią, otulając i&nbsp;przenikając do głębi człowieka — rezonując i&nbsp;znajdując miejsce w&nbsp;jego duszy niczym żywy organizm.",
+          "Z tęsknoty, natchnienia i marzenia. Jak anachoreci, w odosobnieniu, z daleka od zgiełku i muzyki zatęskniono za muzyką. Wizja muzyki jako powiew ducha, który przemienia świat swoją polifonią, otulając i przenikając do głębi człowieka — rezonując i znajdując miejsce w jego duszy niczym żywy organizm.",
       },
       {
         lat: "II",
         label: "W ciszy",
         paraHtml:
-          "W ciszy rodzi się muzyka. W&nbsp;ciszy się kontempluje. Muzyka jest kontemplacją duszy w&nbsp;czasie. Tak powstał Voct — z&nbsp;ciszy i&nbsp;kontemplacji.",
+          "W ciszy rodzi się muzyka. W ciszy się kontempluje. Muzyka jest kontemplacją duszy w czasie. Tak powstał Voct — z ciszy i kontemplacji.",
       },
       {
         lat: "III",
         label: "Wymiana",
         paraHtml:
-          "Wymiana myśli i&nbsp;próba zanurzenia się w&nbsp;interpretację drugiego człowieka pobudzała inwencję muzyczną, otwierając na nowe ścieżki interpretacyjne. Interpretacja opiera się na wymianie ludzkich umiejętności i&nbsp;intuicji, które dynamicznie splatają się, by odkryć głębie ukryte w&nbsp;utworze.",
+          "Wymiana myśli i próba zanurzenia się w interpretację drugiego człowieka pobudzała inwencję muzyczną, otwierając na nowe ścieżki interpretacyjne. Interpretacja opiera się na wymianie ludzkich umiejętności i intuicji, które dynamicznie splatają się, by odkryć głębie ukryte w utworze.",
       },
       {
         lat: "IV",
         label: "Kruchość",
         paraHtml:
-          "Nie czulibyśmy się sobą, śpiewając muzykę, która nie obejmowałaby całego człowieka, dotykała jego głębi i&nbsp;próbowała urzec go pięknem mimo jego złożoności i&nbsp;kruchości.",
+          "Nie czulibyśmy się sobą, śpiewając muzykę, która nie obejmowałaby całego człowieka, dotykała jego głębi i próbowała urzec go pięknem mimo jego złożoności i kruchości.",
       },
     ],
     signatureMeta: "kierownictwo artystyczne · 2024",
@@ -183,7 +185,7 @@ const pl: AboutCopy = {
     p2Text:
       "Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy dobieramy do programu, przestrzeni i intencji, tak jak dobiera się repertuar.",
     p3Html:
-      "Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w&nbsp;którym dyscyplina i&nbsp;czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i&nbsp;<em>ensemble</em> — obietnicę głosów, które słuchają siebie nawzajem, związanych więzią zarówno muzyczną, jak i&nbsp;międzyludzką.",
+      "Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w którym dyscyplina i czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i <em>ensemble</em> — obietnicę głosów, które słuchają siebie nawzajem, związanych więzią zarówno muzyczną, jak i międzyludzką.",
     collabLabel: "Współpraca",
     collabText:
       "Na scenie i przy realizacjach spotykamy się m.in. z reżyserką świateł Adą Bystrzycką, realizatorem dźwięku Jakubem Garbaczem (Ars Sonora Studio), Sebastianem Kuźmą (animacja wizualna) i skrzypkiem Radu Ropotanem; instytucjonalnie — z Fundacją Carpe Diem i Ośrodkiem Kultury Norwida w krakowskich Mistrzejowicach.",
@@ -240,7 +242,7 @@ const pl: AboutCopy = {
     leadText:
       "VoctFoundation jest prawnym i organizacyjnym zapleczem działalności artystycznej. To dzięki niej zespół może myśleć nie tylko o kolejnym koncercie, ale o archiwum, edukacji, produkcji i długim trwaniu repertuaru.",
     p2Html:
-      "Statutowo Fundacja działa w&nbsp;obszarze <strong>kultury, sztuki, ochrony dóbr kultury i&nbsp;dziedzictwa narodowego</strong>. Może prowadzić projekty artystyczne i&nbsp;interdyscyplinarne, utrwalać nagrania, wspierać młodych artystów oraz działać przez stały zespół artystyczny w&nbsp;formule zespołu-rezydenta.",
+      "Statutowo Fundacja działa w obszarze <strong>kultury, sztuki, ochrony dóbr kultury i dziedzictwa narodowego</strong>. Może prowadzić projekty artystyczne i interdyscyplinarne, utrwalać nagrania, wspierać młodych artystów oraz działać przez stały zespół artystyczny w formule zespołu-rezydenta.",
     goals: [
       "Twórczość muzyczna: produkcja, koprodukcja, organizacja i prezentacja projektów w kraju i za granicą.",
       "Dziedzictwo: dokumentowanie, archiwizowanie i udostępnianie muzyki oraz praktyk wykonawczych.",

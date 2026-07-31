@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BrandGlyph } from "../BrandGlyph";
 import { useLenisLock } from "../hooks/useLenisLock";
+import { Typo } from "../lib/Typo";
 
 function waitForUI(showNow: () => void): () => void {
   let cancelled = false;
@@ -66,34 +67,36 @@ export function GratitudeModal(): React.JSX.Element | null {
   }, [visible, close]);
 
   return (
-    <div
-      className={`gratitude${visible ? " is-visible" : ""}`}
-      id="gratitude"
-      role="dialog"
-      aria-modal="true"
-      aria-hidden={!visible}
-      aria-labelledby="gratitude-title"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) close();
-      }}
-    >
-      <div className="gratitude-inner">
-        <div className="gratitude-mark" aria-hidden="true">
-          <span className="gratitude-mark-halo" />
-          <BrandGlyph />
+    <Typo>
+      <div
+        className={`gratitude${visible ? " is-visible" : ""}`}
+        id="gratitude"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!visible}
+        aria-labelledby="gratitude-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) close();
+        }}
+      >
+        <div className="gratitude-inner">
+          <div className="gratitude-mark" aria-hidden="true">
+            <span className="gratitude-mark-halo" />
+            <BrandGlyph />
+          </div>
+          <div className="gratitude-kicker micro">VoctEnsemble · cykl MMXXVI</div>
+          {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
+          <p className="gratitude-title" id="gratitude-title">
+            Twój głos<br />dołączył do chóru.
+          </p>
+          <p className="gratitude-strap">
+            Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie.
+          </p>
+          <button type="button" className="gratitude-close" onClick={close}>
+            Wróć do strony
+          </button>
         </div>
-        <div className="gratitude-kicker micro">VoctEnsemble · cykl MMXXVI</div>
-        {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
-        <p className="gratitude-title" id="gratitude-title">
-          Twój głos<br />dołączył do chóru.
-        </p>
-        <p className="gratitude-strap">
-          Dziękujemy. Niech ta muzyka wybrzmiewa dalej — także dzięki Tobie.
-        </p>
-        <button type="button" className="gratitude-close" onClick={close}>
-          Wróć do strony
-        </button>
       </div>
-    </div>
+    </Typo>
   );
 }

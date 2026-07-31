@@ -24,6 +24,7 @@ import type { RibbonEntry } from "../../lib/registrum";
 import { useAudioChoice } from "./hooks/useAudioChoice";
 import { useFocusTrap } from "./hooks/useFocusTrap";
 import { horaForWarsaw } from "./lib/horaeCanonicae";
+import { Typo } from "./lib/Typo";
 
 // Sections whose surface is dark enough that the glass chrome must invert to its light brand.
 const DARK_SELECTORS =
@@ -258,215 +259,217 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
   const hora = menuOpen ? horaForWarsaw(new Date()) : null;
 
   return (
-    <header
-      className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
-      aria-label="Nawigacja"
-    >
-      {/* The brand fades through the dark threshold with the page root (transitions.css) — no
-          shared-element morph, which only produced artifacts across the differing header states.
-          It still persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
-          01-foundation.css), so tapping it while the card is open must also close the card
-          (href="#top" is an in-page jump; no navigation swap does it for us). */}
-      <a
-        className="brand"
-        href="#top"
-        aria-label="VoctEnsemble"
-        onClick={() => closeMenu(false)}
+    <Typo>
+      <header
+        className={`chrome${onDark ? " is-on-dark" : ""}${active ? " is-active" : ""}${menuOpen ? " menu-open" : ""}${menuClosing ? " menu-closing" : ""}`}
+        aria-label="Nawigacja"
       >
-        <span className="brand-glyph-wrap" aria-hidden="true">
-          <span className="brand-glyph-halo" />
-          <span className="brand-glyph" />
-        </span>
-        <span>VoctEnsemble</span>
-      </a>
-
-      <div className="chrome-actions">
-        <button
-          type="button"
-          className={`audio-toggle plausible-event-name=przycisk+cisza${audioOn ? " is-on" : ""}`}
-          aria-pressed={audioOn}
-          onClick={toggleAudio}
-        >
-          {audioOn ? "Głos" : "Cisza"}
-        </button>
-        <a className="support-link plausible-event-name=o+nas" href="/o-nas">
-          O nas
-        </a>
-        {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
-            (registrum.css); same markup + CSS choreography as the Astro SiteChrome on
-            subpages. Pure :hover/:focus-within state — the only JS is the Escape blur
-            below (the subpage script's equivalent is gated off this page by its missing
-            #chrome id). */}
-        <div
-          className="registrum"
-          onKeyDown={(e) => {
-            if (e.key !== "Escape") return;
-            (document.activeElement as HTMLElement | null)?.blur();
-          }}
-        >
-          <a className="support-link plausible-event-name=koncerty" href="/koncerty">
-            Koncerty
-          </a>
-          {ribbons.length > 0 && (
-            <>
-              {/* The hush: full-viewport fixed layer quieting the whole page while the
-                  register hangs open — a SIBLING of the drop (the drop's transform would
-                  hijack its fixed containing block, see registrum.css traps). */}
-              <span className="registrum-hush" aria-hidden="true" />
-              <div className="registrum-drop">
-                <div
-                  className="registrum-sleeve"
-                  style={{ "--n": ribbons.length } as React.CSSProperties}
-                >
-                  {ribbons.map((r, i) => (
-                    <a
-                      key={r.id}
-                      className="ribbon"
-                      href={r.href}
-                      style={{ "--rib": r.accent, "--i": i } as React.CSSProperties}
-                      onClick={commitRibbon}
-                    >
-                      <span className="ribbon-line">
-                        <span className="ribbon-roman">{r.roman}</span>
-                        <span className="ribbon-title">{r.title}</span>
-                        <span className="ribbon-thread" aria-hidden="true" />
-                      </span>
-                      <span className="ribbon-meta">{r.meta}</span>
-                      <span className="ribbon-silk" aria-hidden="true">
-                        <span className="ribbon-cord" />
-                        <span className="ribbon-strip" />
-                      </span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        <a className="support-link plausible-event-name=kontakt" href="/kontakt">
-          Kontakt
-        </a>
+        {/* The brand fades through the dark threshold with the page root (transitions.css) — no
+            shared-element morph, which only produced artifacts across the differing header states.
+            It still persists ABOVE the open "Antyfona" card (z-index 61, tinted ink — see
+            01-foundation.css), so tapping it while the card is open must also close the card
+            (href="#top" is an in-page jump; no navigation swap does it for us). */}
         <a
-          className="support-link plausible-event-name=skarbiec+menu"
-          href="#wesprzyj"
-          data-no-lenis
-          onClick={(e) => {
-            e.preventDefault();
-            openVault(100);
-          }}
+          className="brand"
+          href="#top"
+          aria-label="VoctEnsemble"
+          onClick={() => closeMenu(false)}
         >
-          Wesprzyj
+          <span className="brand-glyph-wrap" aria-hidden="true">
+            <span className="brand-glyph-halo" />
+            <span className="brand-glyph" />
+          </span>
+          <span>VoctEnsemble</span>
         </a>
-        <button
-          className="nav-toggle"
-          id="navToggle"
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="navMenu"
-          aria-label="Menu"
-          onClick={openMenu}
-        />
-      </div>
 
-      {/* "Vitta" — shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
-          ribbon hanging down the left margin to the current voice (here always Główna — the
-          landing is the current page); same markup + choreography as the Astro SiteChrome on
-          subpages. The card carries NO brand of its own — the bar's .brand persists above it —
-          so its top row is just "Zamknij" (also the focus trap's initial target). Every row
-          carries a hidden margin ribbon (--i drives its length); choosing a voice lays its
-          ribbon through the head rule while the current one withdraws (pull beat in
-          commitVoice). */}
-      <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
-        <div className="nave-veil" />
-
-        <div className="nave-inner">
-          <div className="nave-top">
-            <button
-              className="nave-close"
-              id="menuClose"
-              type="button"
-              aria-label="Zamknij menu"
-              onClick={dismiss}
-            >
-              Zamknij
-            </button>
+        <div className="chrome-actions">
+          <button
+            type="button"
+            className={`audio-toggle plausible-event-name=przycisk+cisza${audioOn ? " is-on" : ""}`}
+            aria-pressed={audioOn}
+            onClick={toggleAudio}
+          >
+            {audioOn ? "Głos" : "Cisza"}
+          </button>
+          <a className="support-link plausible-event-name=o+nas" href="/o-nas">
+            O nas
+          </a>
+          {/* "Registrum" — mute breviary register silks + ink index under KONCERTY
+              (registrum.css); same markup + CSS choreography as the Astro SiteChrome on
+              subpages. Pure :hover/:focus-within state — the only JS is the Escape blur
+              below (the subpage script's equivalent is gated off this page by its missing
+              #chrome id). */}
+          <div
+            className="registrum"
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              (document.activeElement as HTMLElement | null)?.blur();
+            }}
+          >
+            <a className="support-link plausible-event-name=koncerty" href="/koncerty">
+              Koncerty
+            </a>
+            {ribbons.length > 0 && (
+              <>
+                {/* The hush: full-viewport fixed layer quieting the whole page while the
+                    register hangs open — a SIBLING of the drop (the drop's transform would
+                    hijack its fixed containing block, see registrum.css traps). */}
+                <span className="registrum-hush" aria-hidden="true" />
+                <div className="registrum-drop">
+                  <div
+                    className="registrum-sleeve"
+                    style={{ "--n": ribbons.length } as React.CSSProperties}
+                  >
+                    {ribbons.map((r, i) => (
+                      <a
+                        key={r.id}
+                        className="ribbon"
+                        href={r.href}
+                        style={{ "--rib": r.accent, "--i": i } as React.CSSProperties}
+                        onClick={commitRibbon}
+                      >
+                        <span className="ribbon-line">
+                          <span className="ribbon-roman">{r.roman}</span>
+                          <span className="ribbon-title">{r.title}</span>
+                          <span className="ribbon-thread" aria-hidden="true" />
+                        </span>
+                        <span className="ribbon-meta">{r.meta}</span>
+                        <span className="ribbon-silk" aria-hidden="true">
+                          <span className="ribbon-cord" />
+                          <span className="ribbon-strip" />
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-
-          <div className="nave-list">
-            {/* The ONE ribbon — resting at Główna (the landing is always the current page);
-                commitVoice retargets `--vi` so it RUNS to the chosen row (nave-menu.css). */}
-            <span
-              className="vitta is-set"
-              style={{ "--vi": 0 } as React.CSSProperties}
-              aria-hidden="true"
-            >
-              <span className="vitta-cord" />
-              <span className="vitta-strip" />
-            </span>
-            {/* "Główna" is an in-page jump (#top) — no page swap, so it closes the card. The
-                three cross-page voices leave it open and let the fade-through-dark carry it. */}
-            <a
-              className="voice"
-              href="#top"
-              aria-current="page"
-              style={{ "--i": 0 } as React.CSSProperties}
-              onClick={() => closeMenu(false)}
-            >
-              <span className="voice-lat">Introitus</span>
-              <span className="voice-pl">Główna</span>
-            </a>
-            <a
-              className="voice"
-              href="/o-nas"
-              style={{ "--i": 1 } as React.CSSProperties}
-              onClick={commitVoice}
-            >
-              <span className="voice-lat">De nobis</span>
-              <span className="voice-pl">O nas</span>
-            </a>
-            <a
-              className="voice"
-              href="/koncerty"
-              style={{ "--i": 2 } as React.CSSProperties}
-              onClick={commitVoice}
-            >
-              <span className="voice-lat">Via</span>
-              <span className="voice-pl">Koncerty</span>
-            </a>
-            <a
-              className="voice"
-              href="/kontakt"
-              style={{ "--i": 3 } as React.CSSProperties}
-              onClick={commitVoice}
-            >
-              <span className="voice-lat">Scribe nobis</span>
-              <span className="voice-pl">Kontakt</span>
-            </a>
-          </div>
-
-          <div className="nave-foot">
-            <a
-              className="nave-cta plausible-event-name=skarbiec+menu"
-              href="#wesprzyj"
-              data-no-lenis
-              onClick={(e) => {
-                e.preventDefault();
-                closeMenu(false);
-                openVault(100);
-              }}
-            >
-              Wesprzyj <em>· Sustinete nos</em>
-            </a>
-            {/* The antiphon names its hour — live canonical hour while open (see `hora` above). */}
-            <span className="nave-colophon">
-              <span className="nave-colophon-mark" aria-hidden="true" />
-              <span className="nave-hora">
-                {hora?.name ?? "Hora"} · <em>{hora?.poem ?? "canonica"}</em>
-              </span>
-            </span>
-          </div>
+          <a className="support-link plausible-event-name=kontakt" href="/kontakt">
+            Kontakt
+          </a>
+          <a
+            className="support-link plausible-event-name=skarbiec+menu"
+            href="#wesprzyj"
+            data-no-lenis
+            onClick={(e) => {
+              e.preventDefault();
+              openVault(100);
+            }}
+          >
+            Wesprzyj
+          </a>
+          <button
+            className="nav-toggle"
+            id="navToggle"
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="navMenu"
+            aria-label="Menu"
+            onClick={openMenu}
+          />
         </div>
-      </nav>
-    </header>
+
+        {/* "Vitta" — shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
+            ribbon hanging down the left margin to the current voice (here always Główna — the
+            landing is the current page); same markup + choreography as the Astro SiteChrome on
+            subpages. The card carries NO brand of its own — the bar's .brand persists above it —
+            so its top row is just "Zamknij" (also the focus trap's initial target). Every row
+            carries a hidden margin ribbon (--i drives its length); choosing a voice lays its
+            ribbon through the head rule while the current one withdraws (pull beat in
+            commitVoice). */}
+        <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
+          <div className="nave-veil" />
+
+          <div className="nave-inner">
+            <div className="nave-top">
+              <button
+                className="nave-close"
+                id="menuClose"
+                type="button"
+                aria-label="Zamknij menu"
+                onClick={dismiss}
+              >
+                Zamknij
+              </button>
+            </div>
+
+            <div className="nave-list">
+              {/* The ONE ribbon — resting at Główna (the landing is always the current page);
+                  commitVoice retargets `--vi` so it RUNS to the chosen row (nave-menu.css). */}
+              <span
+                className="vitta is-set"
+                style={{ "--vi": 0 } as React.CSSProperties}
+                aria-hidden="true"
+              >
+                <span className="vitta-cord" />
+                <span className="vitta-strip" />
+              </span>
+              {/* "Główna" is an in-page jump (#top) — no page swap, so it closes the card. The
+                  three cross-page voices leave it open and let the fade-through-dark carry it. */}
+              <a
+                className="voice"
+                href="#top"
+                aria-current="page"
+                style={{ "--i": 0 } as React.CSSProperties}
+                onClick={() => closeMenu(false)}
+              >
+                <span className="voice-lat">Introitus</span>
+                <span className="voice-pl">Główna</span>
+              </a>
+              <a
+                className="voice"
+                href="/o-nas"
+                style={{ "--i": 1 } as React.CSSProperties}
+                onClick={commitVoice}
+              >
+                <span className="voice-lat">De nobis</span>
+                <span className="voice-pl">O nas</span>
+              </a>
+              <a
+                className="voice"
+                href="/koncerty"
+                style={{ "--i": 2 } as React.CSSProperties}
+                onClick={commitVoice}
+              >
+                <span className="voice-lat">Via</span>
+                <span className="voice-pl">Koncerty</span>
+              </a>
+              <a
+                className="voice"
+                href="/kontakt"
+                style={{ "--i": 3 } as React.CSSProperties}
+                onClick={commitVoice}
+              >
+                <span className="voice-lat">Scribe nobis</span>
+                <span className="voice-pl">Kontakt</span>
+              </a>
+            </div>
+
+            <div className="nave-foot">
+              <a
+                className="nave-cta plausible-event-name=skarbiec+menu"
+                href="#wesprzyj"
+                data-no-lenis
+                onClick={(e) => {
+                  e.preventDefault();
+                  closeMenu(false);
+                  openVault(100);
+                }}
+              >
+                Wesprzyj <em>· Sustinete nos</em>
+              </a>
+              {/* The antiphon names its hour — live canonical hour while open (see `hora` above). */}
+              <span className="nave-colophon">
+                <span className="nave-colophon-mark" aria-hidden="true" />
+                <span className="nave-hora">
+                  {hora?.name ?? "Hora"} · <em>{hora?.poem ?? "canonica"}</em>
+                </span>
+              </span>
+            </div>
+          </div>
+        </nav>
+      </header>
+    </Typo>
   );
 }

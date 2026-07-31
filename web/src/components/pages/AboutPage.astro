@@ -4,9 +4,9 @@
  * @description Locale-agnostic body of the "About us" page — the reference i18n component. It owns
  *  ALL the structure, styles and JSON-LD; every word comes from the per-locale copy module
  *  (i18n/content/o-nas.ts) via the `lang` prop, so the three route files (/o-nas, /en/o-nas,
- *  /fr/o-nas) are one-liners that differ only in `lang`. Rich fields (…Html) render with `set:html`
- *  (verbatim markup + hard &nbsp;); plain fields go through `typoFor(lang)` for locale micro-
- *  typography. The milestone list still derives from the `concerts` collection (SSoT with
+ *  /fr/o-nas) are one-liners that differ only in `lang`. Rich fields (…Html) render with `set:html`,
+ *  plain ones as text; neither carries typography — the build-time pass (lib/typo.ts) gives every
+ *  locale its own. The milestone list still derives from the `concerts` collection (SSoT with
  *  /koncerty), reading its localized `about.{en,fr}` block and falling back to Polish. The donation
  *  Vault is a shared island that is still Polish-only (a later pass) — the one deliberate seam.
  * @architecture Astro islands 2026
@@ -19,7 +19,6 @@ import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import { photo, photoOptional, bleedPair } from "../../lib/photos";
-import { typoFor } from "../../lib/typo";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ABOUT } from "../../i18n/content/o-nas";
 import { UI } from "../../i18n/ui";
@@ -33,7 +32,6 @@ interface Props {
 const { lang } = Astro.props;
 
 const c = ABOUT[lang];
-const typo = typoFor(lang);
 // One base path → this render's own URL, its hreflang graph, and the locales the switcher offers.
 const { path, alternates, available } = pageI18n("/o-nas", lang);
 const hrefConcerts = localizePath("/koncerty", lang);
@@ -57,7 +55,7 @@ const milestones = concerts.map((entry, i) => {
     title: loc?.title ?? entry.data.title,
     img: a?.img ? photoOptional(a.img) : undefined,
     d: String((i % 3) + 1),
-    body: typo(loc?.blurb ?? a?.blurb ?? entry.data.essence),
+    body: loc?.blurb ?? a?.blurb ?? entry.data.essence,
   };
 });
 
@@ -157,7 +155,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="line"><span class="reveal">{c.hero.titleLine1}</span></span>
           <span class="line"><span class="reveal" data-d="1" set:html={c.hero.titleLine2Html} /></span>
         </h1>
-        <p class="hero-lede reveal" data-d="2">{typo(c.hero.ledeText)}</p>
+        <p class="hero-lede reveal" data-d="2">{c.hero.ledeText}</p>
         <span class="scroll-cue reveal" data-d="3">{c.hero.scrollCue}</span>
       </div>
     </section>
@@ -212,13 +210,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <h2>{c.ensemble.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{typo(c.ensemble.leadText)}</p>
-          <p>{typo(c.ensemble.p2Text)}</p>
+          <p class="lead">{c.ensemble.leadText}</p>
+          <p>{c.ensemble.p2Text}</p>
           <p set:html={c.ensemble.p3Html}></p>
         </div>
         <div class="voces-collab reveal" data-d="2">
           <span class="collab-label">{c.ensemble.collabLabel}</span>
-          <p>{typo(c.ensemble.collabText)}</p>
+          <p>{c.ensemble.collabText}</p>
         </div>
       </div>
     </section>
@@ -242,14 +240,14 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <h2>{c.doings.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{typo(c.doings.leadText)}</p>
+          <p class="lead">{c.doings.leadText}</p>
         </div>
         <div class="doings-grid">
           {
             c.doings.cards.map((d, i) => (
               <article class="doing reveal" data-d={String((i % 3) + 1)}>
                 <h3>{d.k}</h3>
-                <p>{typo(d.p)}</p>
+                <p>{d.p}</p>
                 {d.cta && (
                   <a class="inline" href={hrefConcerts}>
                     {d.cta}
@@ -270,9 +268,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <h2>{c.cantus.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{typo(c.cantus.leadText)}</p>
-          <p>{typo(c.cantus.p2Text)}</p>
-          <p>{typo(c.cantus.p3Text)}</p>
+          <p class="lead">{c.cantus.leadText}</p>
+          <p>{c.cantus.p2Text}</p>
+          <p>{c.cantus.p3Text}</p>
           <p class="cantus-more">
             <a class="inline" href={`${hrefConcerts}#repertuar`}>{c.cantus.moreLink}</a>
           </p>
@@ -328,7 +326,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <h2>{c.foundation.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
-          <p class="lead">{typo(c.foundation.leadText)}</p>
+          <p class="lead">{c.foundation.leadText}</p>
           <p set:html={c.foundation.p2Html}></p>
         </div>
         <ol class="goals reveal" data-d="2" aria-label={c.foundation.aria}>
@@ -336,7 +334,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             c.foundation.goals.map((g, i) => (
               <li>
                 <span class="g-num">{String(i + 1).padStart(2, "0")}</span>
-                <span>{typo(g)}</span>
+                <span>{g}</span>
               </li>
             ))
           }
@@ -347,7 +345,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             <div><span class="k">NIP</span><span class="v">6762718992</span></div>
             <div><span class="k">REGON</span><span class="v">544621525</span></div>
           </div>
-          <p class="legal-note">{typo(c.foundation.legalNote)}</p>
+          <p class="legal-note">{c.foundation.legalNote}</p>
           <div class="legal-foot">
             <span>Fundacja VoctFoundation · ul. Św. Filipa 23/3, 31-150 Kraków</span>
             <a class="btn" href="/docs/Statut-VoctFoundation.pdf" target="_blank" rel="noopener">
@@ -365,7 +363,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="eyebrow"><span class="lat">{c.governance.eyebrow.lat}</span>  ·  {c.governance.eyebrow.label}</span>
           <h2>{c.governance.h2}</h2>
         </div>
-        <p class="board-intro reveal" data-d="1">{typo(c.governance.intro)}</p>
+        <p class="board-intro reveal" data-d="1">{c.governance.intro}</p>
         <div class="board">
           {
             board.map((b, i) => (
@@ -385,7 +383,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 )}
                 <h3>{b.name}</h3>
                 <p class="role">{b.role}</p>
-                <p class="vision">{typo(b.vision)}</p>
+                <p class="vision">{b.vision}</p>
               </article>
             ))
           }
@@ -398,7 +396,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap reveal">
         <span class="cta-glyph" aria-hidden="true"></span>
         <h2>{c.cta.h2}</h2>
-        <p>{typo(c.cta.p)}</p>
+        <p>{c.cta.p}</p>
         <div class="btn-row">
           <a class="btn btn-gold" href={hrefContact}>{c.cta.write}</a>
           <a class="btn" href={hrefConcerts}>{c.cta.concerts}</a>

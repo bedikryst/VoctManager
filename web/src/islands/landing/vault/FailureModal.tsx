@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BrandGlyph } from "../BrandGlyph";
 import { useLenisLock } from "../hooks/useLenisLock";
 import { useVault } from "../providers/VaultContext";
+import { Typo } from "../lib/Typo";
 
 function waitForUI(showNow: () => void): () => void {
   let cancelled = false;
@@ -73,39 +74,41 @@ export function FailureModal(): React.JSX.Element | null {
   }, [visible, close]);
 
   return (
-    <div
-      className={`failure${visible ? " is-visible" : ""}`}
-      id="failure"
-      role="dialog"
-      aria-modal="true"
-      aria-hidden={!visible}
-      aria-labelledby="failure-title"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) close();
-      }}
-    >
-      <div className="failure-inner">
-        <div className="failure-mark" aria-hidden="true">
-          <span className="failure-mark-halo" />
-          <BrandGlyph />
+    <Typo>
+      <div
+        className={`failure${visible ? " is-visible" : ""}`}
+        id="failure"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!visible}
+        aria-labelledby="failure-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) close();
+        }}
+      >
+        <div className="failure-inner">
+          <div className="failure-mark" aria-hidden="true">
+            <span className="failure-mark-halo" />
+            <BrandGlyph />
+          </div>
+          <div className="failure-kicker micro">VoctEnsemble · cykl MMXXVI</div>
+          {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
+          <p className="failure-title" id="failure-title">
+            Płatność nie<br />doszła do skutku.
+          </p>
+          <p className="failure-strap">
+            Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały
+            pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.
+          </p>
+          <button
+            type="button"
+            className="failure-retry plausible-event-name=sprobuj+ponownie"
+            onClick={retry}
+          >
+            Spróbuj ponownie
+          </button>
         </div>
-        <div className="failure-kicker micro">VoctEnsemble · cykl MMXXVI</div>
-        {/* Not an <h1>: the page's h1 is the hero title — overlays must not add more. */}
-        <p className="failure-title" id="failure-title">
-          Płatność nie<br />doszła do skutku.
-        </p>
-        <p className="failure-strap">
-          Przepraszamy, płatność nie mogła zostać przetworzona. Twoje środki nie zostały
-          pobrane. Prosimy spróbować ponownie lub wybrać inną metodę.
-        </p>
-        <button
-          type="button"
-          className="failure-retry plausible-event-name=sprobuj+ponownie"
-          onClick={retry}
-        >
-          Spróbuj ponownie
-        </button>
       </div>
-    </div>
+    </Typo>
   );
 }

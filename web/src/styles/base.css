@@ -123,6 +123,19 @@ body {
 
 ::selection { background: rgba(198, 164, 91, 0.26); color: var(--ink); }
 
+/* ── Rag: the half of the typography no space can fix ─────────────────────────
+   Orphans (a one-letter word left at a line end) are pinned in the text itself —
+   src/lib/typo.ts runs over every page at build. The other half is the SHAPE of the
+   paragraph, which only the line-breaker can decide:
+     · balance — a heading's lines come out near-equal instead of a long first line and
+       one hanging word. Capped by the browser to a few lines, so it costs nothing on long
+       text, and it leaves the landing's art-directed `<br>` breaks exactly where they are.
+     · pretty — the last line of a paragraph is never left as a single short word (a widow),
+       and the rag as a whole is evened out.
+   Both are progressive: where unsupported, the browser wraps as it always did. */
+h1, h2, h3, h4, h5, h6 { text-wrap: balance; }
+p, li, dt, dd, blockquote, figcaption, summary { text-wrap: pretty; }
+
 img { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 em { font-family: var(--serif); font-style: italic; color: inherit; }

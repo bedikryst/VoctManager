@@ -13,7 +13,6 @@
  */
 import { getCollection } from "astro:content";
 import { PATHS } from "../../data/landing/paths";
-import { nbsp } from "../../lib/typo";
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
 
@@ -33,8 +32,8 @@ const programFor = (id: string) => programById.get(id) ?? [];
           first line. Let the title set on one line and wrap only if it must. */}
       <h2 class="section-title reveal">Co już zabrzmiało.</h2>
       <p class="path-lede reveal">
-        Każdy wieczór cyklu miał jedną intencję. Zapisujemy je w&nbsp;kolejności,
-        w&nbsp;jakiej zostały wykonane.
+        Każdy wieczór cyklu miał jedną intencję. Zapisujemy je w kolejności,
+        w jakiej zostały wykonane.
       </p>
 
       <ol class="path-register" aria-label="Wcześniejsze koncerty cyklu">
@@ -48,8 +47,8 @@ const programFor = (id: string) => programById.get(id) ?? [];
               </div>
               <div class="path-entry-body" data-cursor="no-snap">
                 <h3 class="path-entry-title">{path.title}</h3>
-                <p class="path-entry-place">{nbsp(path.place)}</p>
-                <p class="path-entry-summary">{nbsp(path.note)}</p>
+                <p class="path-entry-place">{path.place}</p>
+                <p class="path-entry-summary">{path.note}</p>
                 {path.video && (
                   <button
                     type="button"
@@ -74,12 +73,12 @@ const programFor = (id: string) => programById.get(id) ?? [];
                       {programFor(path.concertId).map((p, i) => (
                         <li class:list={[{ "path-works-bis": p.bis }]} style={`--i:${i}`}>
                           <span class="path-works-n" aria-hidden="true">{p.bis ? "—" : String(i + 1).padStart(2, "0")}</span>
-                          {p.composer} · <em>{nbsp(p.work)}{p.year ? ` · ${p.year}` : ""}</em>
+                          {p.composer} · <em>{p.work}{p.year ? ` · ${p.year}` : ""}</em>
                         </li>
                       ))}
                     </ol>
                   )}
-                  {path.credit && <p class="path-works-note">{nbsp(path.credit)}</p>}
+                  {path.credit && <p class="path-works-note">{path.credit}</p>}
                 </details>
               </div>
             </li>
@@ -105,7 +104,7 @@ const programFor = (id: string) => programById.get(id) ?? [];
           <p class="path-entry-place">Miejsce i termin wciąż otwarte</p>
           <p class="path-entry-summary">
             Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się
-            gospodarz wieczoru i&nbsp;środki na honoraria dla śpiewaków. Każda
+            gospodarz wieczoru i środki na honoraria dla śpiewaków. Każda
             darowizna ją przybliża.
           </p>
           <a

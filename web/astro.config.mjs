@@ -25,6 +25,7 @@ import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 
 import { pruneOrphanAssets } from "./prune-orphan-assets.mjs";
+import { staticTypography } from "./typography-static.mjs";
 
 export default defineConfig({
   site: "https://voctensemble.com",
@@ -65,6 +66,10 @@ export default defineConfig({
         locales: { pl: "pl", en: "en", fr: "fr" },
       },
     }),
+    // Micro-typography over the finished HTML — the orphan/abbreviation/dash rules in
+    // src/lib/typo.ts, applied to every page including the copied public/*.html. `astro dev`
+    // gets the same pass through src/middleware.ts. See typography-static.mjs.
+    staticTypography(),
     // The eager image glob in src/lib/photos.ts makes Vite emit every camera original
     // next to the optimized renditions, unreferenced. Runs last so it sees the finished
     // output of every integration above it. See prune-orphan-assets.mjs.

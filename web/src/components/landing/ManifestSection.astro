@@ -11,7 +11,6 @@
  * @module components/landing/ManifestSection
  */
 import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLines";
-import { nbsp } from "../../lib/typo";
 ---
 
 <section class="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
@@ -31,9 +30,10 @@ import { nbsp } from "../../lib/typo";
           <div class="manifest-line-group">
             <div class="manifest-roman">{line.index}</div>
             <p class="manifest-statement">
-              {/* nbsp(): at this display size a one-letter Polish preposition left at a line
-                  end ("…duszy w / czasie.") is the most visible typographic fault on the page. */}
-              <span class="manifest-text-inner">{nbsp(line.text)}</span>
+              {/* Set plain: the build pass (lib/typo.ts) pins the orphans. At this display size a
+                  one-letter Polish preposition left at a line end ("…duszy w / czasie.") is the
+                  most visible typographic fault on the page — check it here first. */}
+              <span class="manifest-text-inner">{line.text}</span>
             </p>
           </div>
         ))

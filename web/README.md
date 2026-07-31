@@ -148,6 +148,34 @@ Two endpoints are consumed:
 * **No external CSS frameworks.** Tokens in `tokens.css`, primitives in `base.css`, art-directed CSS per page or section. Tailwind is *not* installed here.
 * **No `any`.** Strict TypeScript. The `astro check` gate must stay at `0 errors / 0 warnings`.
 * **File header comment** required on every new file (project-root `CLAUDE.md` §5 still applies for documentation discipline, even though styling rules don't).
+* **Write prose plainly — do not hand-place `&nbsp;`.** See below.
+
+---
+
+## ✒️ Micro-typography (orphans, widows, the rag)
+
+Polish forbids leaving a one-letter word (`w`, `i`, `z`, `o`, `a`, `u`) at the end of a line, and a title must not be stranded from its name (`św.` / `Filipa`). None of that is something a browser does, and hand-placing `&nbsp;` across a site of this size never stays complete. So it is applied automatically, in two layers.
+
+**1 · Pinned spaces — `src/lib/typo.ts` (the rule SSOT).** Per locale: Polish orphans + abbreviations, French spacing before high punctuation, and language-neutral bindings shared by all three (initials `J. S. Bach`, a numeral and what it counts, thousands groups, year ranges, and the spaced dash — pinned to the word BEFORE it so a dash never opens a line). Every rule only swaps a breakable space for an unbreakable one, so running it twice changes nothing.
+
+Where it runs:
+
+| Surface | Applied by | When |
+|:---|:---|:---|
+| Every rendered page, incl. `set:html` and YAML/content strings | `src/lib/typoHtml.ts` → `typography-static.mjs` | `astro build` (`voct:typography`) |
+| The same, in the browser you proofread in | `src/lib/typoHtml.ts` → `src/middleware.ts` | `astro dev` |
+| `public/*.html` (the hand-authored privacy policy — copied, never routed) | `typography-static.mjs` | `astro build` |
+| React islands | `<Typo>` (`src/islands/landing/lib/Typo.tsx`), wrapping each component's root | render, server **and** client |
+
+Islands are the one seam: the HTML pass deliberately skips `<astro-island>` subtrees, because rewriting text React is about to hydrate is a hydration mismatch — React answers by discarding the server HTML and re-rendering, which would erase the fix a moment after it appeared. `<Typo>` runs the same rules inside the render instead, so both sides agree. It cannot see into a child component, so **an island component that carries prose wraps its own root**; the build prints the exact spot when one is missed.
+
+The escape hatch is `data-typo="off"` on any element whose spacing is layout rather than typesetting.
+
+**2 · Rag and widows — `base.css`.** `text-wrap: balance` on headings, `text-wrap: pretty` on body copy. No space can fix the SHAPE of a paragraph; only the line-breaker can, and these two keep the last line from becoming a lone word. Art-directed `<br>` breaks (the landing's display type) are unaffected.
+
+**Writing copy:** type the sentence, nothing else — in any locale, in `.astro`, in YAML, in a content module. Spell `&nbsp;` only for a binding the rules do NOT make: a full name (`Florent&nbsp;de&nbsp;Bazelaire`), a two-letter preposition pinned for a particular column, or a `·` separator that must not break. Those are decisions, and they survive the pass untouched.
+
+**Verifying:** `npm run build` ends with `[voct:typography] pinned line breaks in N/N pages`. If it also warns, an island needs a `<Typo>` — the warning quotes the sentence.
 
 ---
 

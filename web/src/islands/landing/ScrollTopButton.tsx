@@ -11,6 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { Typo } from "./lib/Typo";
 
 interface LenisLike {
   scrollTo: (target: number, opts?: { duration?: number }) => void;
@@ -48,18 +49,20 @@ export function ScrollTopButton(): React.JSX.Element {
   }, []);
 
   return (
-    <button
-      type="button"
-      className={`scroll-top${visible ? " is-visible" : ""}`}
-      aria-label="Wróć na początek strony"
-      onClick={onClick}
-    >
-      <span className="scroll-top-hint" aria-hidden="true">wróć w ciszę</span>
-      <span className="scroll-top-mark" aria-hidden="true">
-        <svg viewBox="0 0 12 40" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 6 L6 2 L10 6 M6 2 V38" strokeWidth="1" />
-        </svg>
-      </span>
-    </button>
+    <Typo>
+      <button
+        type="button"
+        className={`scroll-top${visible ? " is-visible" : ""}`}
+        aria-label="Wróć na początek strony"
+        onClick={onClick}
+      >
+        <span className="scroll-top-hint" aria-hidden="true">wróć w ciszę</span>
+        <span className="scroll-top-mark" aria-hidden="true">
+          <svg viewBox="0 0 12 40" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 6 L6 2 L10 6 M6 2 V38" strokeWidth="1" />
+          </svg>
+        </span>
+      </button>
+    </Typo>
   );
 }

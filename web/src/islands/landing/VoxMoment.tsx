@@ -14,6 +14,7 @@
 
 import { VOX_VIDEO } from "../../data/landing/video";
 import { VideoPlayer } from "./video/VideoPlayer";
+import { Typo } from "./lib/Typo";
 
 interface VoxMomentProps {
   /** Optimized poster URL, computed by index.astro via getImage. */
@@ -22,16 +23,18 @@ interface VoxMomentProps {
 
 export function VoxMoment({ poster }: VoxMomentProps): React.JSX.Element {
   return (
-    <section className="vox" aria-label="Zobacz i usłysz">
-      <div className="vox-inner">
-        <p className="vox-eyebrow">
-          <span className="lat">Vox</span> · Zobacz i usłysz
-        </p>
-        <p className="vox-line">
-          Z tej ciszy — <em>głos.</em>
-        </p>
-        <VideoPlayer src={VOX_VIDEO.src} poster={poster} caption={VOX_VIDEO.caption} />
-      </div>
-    </section>
+    <Typo>
+      <section className="vox" aria-label="Zobacz i usłysz">
+        <div className="vox-inner">
+          <p className="vox-eyebrow">
+            <span className="lat">Vox</span> · Zobacz i usłysz
+          </p>
+          <p className="vox-line">
+            Z tej ciszy — <em>głos.</em>
+          </p>
+          <VideoPlayer src={VOX_VIDEO.src} poster={poster} caption={VOX_VIDEO.caption} />
+        </div>
+      </section>
+    </Typo>
   );
 }

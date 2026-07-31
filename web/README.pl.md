@@ -92,6 +92,34 @@ Dwa endpointy konsumowane:
 * **Brak zewnętrznych framework'ów CSS.** Tokeny w `tokens.css`, primitivy w `base.css`, art-directed CSS per strona / sekcja. Tailwind nie jest tu zainstalowany.
 * **Brak `any`.** Strict TypeScript. Bramka `astro check` musi zostać przy `0 errors / 0 warnings`.
 * **Komentarz nagłówkowy pliku** wymagany w każdym nowym pliku.
+* **Tekst piszemy czysto — bez ręcznych `&nbsp;`.** Patrz niżej.
+
+---
+
+## ✒️ Mikrotypografia (sierotki, wdowy, chorągiewka)
+
+Polszczyzna nie pozwala zostawić na końcu wiersza jednoliterowego wyrazu (`w`, `i`, `z`, `o`, `a`, `u`), a tytuł nie może zostać oderwany od nazwiska (`św.` / `Filipa`). Przeglądarka tego nie zrobi, a ręczne wstawianie `&nbsp;` na stronie tej wielkości nigdy nie zostaje kompletne. Dlatego dzieje się to automatycznie, w dwóch warstwach.
+
+**1 · Twarde spacje — `src/lib/typo.ts` (jedno źródło reguł).** Per locale: polskie sierotki i skróty, francuskie odstępy przed interpunkcją wysoką, plus wiązania wspólne dla wszystkich trzech języków (inicjały `J. S. Bach`, liczebnik i to, co liczy, grupy tysięcy, zakresy lat oraz myślnik ze spacjami — przypięty do wyrazu PRZED nim, żeby nigdy nie zaczynał wiersza). Każda reguła tylko zamienia łamliwą spację na niełamliwą, więc drugie przejście nic już nie zmienia.
+
+Gdzie działa:
+
+| Powierzchnia | Realizuje | Kiedy |
+|:---|:---|:---|
+| Każda wyrenderowana strona, także `set:html` i teksty z YAML-a | `src/lib/typoHtml.ts` → `typography-static.mjs` | `astro build` (`voct:typography`) |
+| To samo w przeglądarce, w której czytasz korektę | `src/lib/typoHtml.ts` → `src/middleware.ts` | `astro dev` |
+| `public/*.html` (ręcznie pisana polityka prywatności — kopiowana, nie routowana) | `typography-static.mjs` | `astro build` |
+| Wyspy React | `<Typo>` (`src/islands/landing/lib/Typo.tsx`) wokół roota komponentu | render, serwer **i** klient |
+
+Wyspy to jedyny szew: przebieg HTML świadomie omija poddrzewa `<astro-island>`, bo przepisanie tekstu, który React zaraz zhydratuje, to hydration mismatch — React odpowiada porzuceniem serwerowego HTML-a i renderem od nowa, czyli skasowałby poprawkę chwilę po tym, jak się pojawiła. `<Typo>` uruchamia te same reguły wewnątrz renderu, więc obie strony się zgadzają. Nie widzi w głąb komponentu potomnego, więc **wyspa z tekstem opakowuje własny root**; build wypisuje dokładne miejsce, jeśli któraś zostanie pominięta.
+
+Furtka awaryjna: `data-typo="off"` na elemencie, w którym odstępy są układem, a nie składem.
+
+**2 · Chorągiewka i wdowy — `base.css`.** `text-wrap: balance` na nagłówkach, `text-wrap: pretty` na tekście ciągłym. Żadna spacja nie naprawi KSZTAŁTU akapitu — może to zrobić tylko algorytm łamania; te dwie reguły pilnują, by ostatni wiersz nie został samotnym wyrazem. Art-directed łamania `<br>` (display na landingu) pozostają nietknięte.
+
+**Pisanie tekstu:** wpisujesz zdanie i nic więcej — w dowolnym języku, w `.astro`, w YAML-u, w module treści. `&nbsp;` zapisujemy ręcznie tylko tam, gdzie reguły takiego wiązania NIE robią: pełne nazwisko (`Florent&nbsp;de&nbsp;Bazelaire`), dwuliterowy przyimek przypięty pod konkretną szerokość łamu albo separator `·`, który nie może się złamać. To są decyzje — przechodzą przez pass nienaruszone.
+
+**Weryfikacja:** `npm run build` kończy się linią `[voct:typography] pinned line breaks in N/N pages`. Jeśli obok pojawi się ostrzeżenie, jakaś wyspa potrzebuje `<Typo>` — ostrzeżenie cytuje zdanie.
 
 ---
 

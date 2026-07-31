@@ -8,6 +8,7 @@
  */
 
 import { useCopyToClipboard } from "../hooks/useCopyToClipboard";
+import { Typo } from "../lib/Typo";
 
 export interface TransferField {
   readonly label: string;
@@ -45,17 +46,22 @@ export const BANK_TRANSFER_FIELDS: readonly TransferField[] = [
 
 export function TransferFieldButton({ field }: { readonly field: TransferField }): React.JSX.Element {
   const { copied, copy } = useCopyToClipboard();
+  // `display` is typeset (Typo pins "Św." to "Filipa"); `value` is what lands on the clipboard and
+  // is passed as an argument, never as a child — so what the visitor pastes into their bank stays
+  // plain ASCII spacing.
   return (
-    <div className="transfer-field">
-      <span className="transfer-field-label">{field.label}</span>
-      <button
-        type="button"
-        className={`transfer-field-copy plausible-event-name=${field.eventName}`}
-        onClick={() => void copy(field.value)}
-      >
-        <span className="transfer-field-val">{field.display}</span>
-        <span className="transfer-field-copy-action">{copied ? "Skopiowano" : "Kopiuj"}</span>
-      </button>
-    </div>
+    <Typo>
+      <div className="transfer-field">
+        <span className="transfer-field-label">{field.label}</span>
+        <button
+          type="button"
+          className={`transfer-field-copy plausible-event-name=${field.eventName}`}
+          onClick={() => void copy(field.value)}
+        >
+          <span className="transfer-field-val">{field.display}</span>
+          <span className="transfer-field-copy-action">{copied ? "Skopiowano" : "Kopiuj"}</span>
+        </button>
+      </div>
+    </Typo>
   );
 }

@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useFocusTrap } from "../hooks/useFocusTrap";
 import { useVault } from "../providers/VaultContext";
+import { Typo } from "../lib/Typo";
 
 interface RegulaminSection {
   readonly num: string;
@@ -125,86 +126,88 @@ export function RegulaminModal(): React.JSX.Element {
   }, [isRegulaminOpen, syncScrollEnd]);
 
   return (
-    <div
-      className={`regulamin${isRegulaminOpen ? " is-open" : ""}`}
-      id="regulamin"
-      role="dialog"
-      aria-modal="true"
-      aria-hidden={!isRegulaminOpen}
-      aria-labelledby="regulamin-title"
-    >
-      <div className="regulamin-backdrop" onClick={closeRegulamin} aria-hidden="true" />
-      <div className="regulamin-panel" role="document" tabIndex={-1} data-lenis-prevent ref={panelRef}>
-        <header className="regulamin-head">
-          <div className="regulamin-head-text">
-            <span className="micro regulamin-kicker">Dokument · darowizny</span>
-            <h2 className="regulamin-title" id="regulamin-title">
-              Regulamin przekazywania darowizn
-            </h2>
-          </div>
-          <button
-            type="button"
-            className="regulamin-close"
-            onClick={closeRegulamin}
-            aria-label="Zamknij regulamin"
-          >
-            <span />
-            <span />
-          </button>
-        </header>
-
-        <div className={`regulamin-scroll-wrap${atEnd ? " is-end" : ""}`}>
-          <div className="regulamin-scroll" ref={scrollRef} onScroll={syncScrollEnd}>
-            <div className="regulamin-doc">
-              <p className="regulamin-lede">
-                Regulamin określa zasady przekazywania darowizn na rzecz Fundacji
-                VoctFoundation za pośrednictwem strony voctensemble.com — w formie płatności
-                online oraz przelewu bankowego.
-              </p>
-
-              {SECTIONS.map((section) => (
-                <section className="regulamin-section" key={section.num}>
-                  <h3 data-num={section.num}>{section.title}</h3>
-                  <ol>
-                    {section.items.map((item, index) => (
-                      <li key={index}>{item}</li>
-                    ))}
-                  </ol>
-                </section>
-              ))}
-
-              <details className="regulamin-history">
-                <summary>
-                  <span>Historia wersji</span>
-                  <span className="regulamin-history-icon" aria-hidden="true" />
-                </summary>
-                <ul className="regulamin-history-list">
-                  <li>
-                    <strong>Wersja 1.1 · 3 czerwca 2026</strong> — Uzupełniono § 2 o sposoby
-                    przekazania darowizny poza bramką płatności online: zwykły przelew bankowy
-                    (jednorazowy oraz w formie zlecenia stałego) i serwis zbiórkowy Zrzutka.pl.
-                  </li>
-                  <li>
-                    <strong>Wersja 1.0 · 13 maja 2026</strong> — Pierwotna wersja Regulaminu,
-                    opublikowana wraz z uruchomieniem strony voctensemble.com.
-                  </li>
-                </ul>
-              </details>
+    <Typo>
+      <div
+        className={`regulamin${isRegulaminOpen ? " is-open" : ""}`}
+        id="regulamin"
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!isRegulaminOpen}
+        aria-labelledby="regulamin-title"
+      >
+        <div className="regulamin-backdrop" onClick={closeRegulamin} aria-hidden="true" />
+        <div className="regulamin-panel" role="document" tabIndex={-1} data-lenis-prevent ref={panelRef}>
+          <header className="regulamin-head">
+            <div className="regulamin-head-text">
+              <span className="micro regulamin-kicker">Dokument · darowizny</span>
+              <h2 className="regulamin-title" id="regulamin-title">
+                Regulamin przekazywania darowizn
+              </h2>
             </div>
-          </div>
-          <div className="regulamin-scroll-fade" aria-hidden="true" />
-        </div>
+            <button
+              type="button"
+              className="regulamin-close"
+              onClick={closeRegulamin}
+              aria-label="Zamknij regulamin"
+            >
+              <span />
+              <span />
+            </button>
+          </header>
 
-        <footer className="regulamin-foot">
-          <p className="regulamin-foot-note">Wersja 1.1 · obowiązuje od 3 czerwca 2026</p>
-          <button type="button" className="regulamin-accept" onClick={acceptRegulamin}>
-            <span>Akceptuję regulamin</span>
-            <span className="regulamin-accept-arrow" aria-hidden="true">
-              →
-            </span>
-          </button>
-        </footer>
+          <div className={`regulamin-scroll-wrap${atEnd ? " is-end" : ""}`}>
+            <div className="regulamin-scroll" ref={scrollRef} onScroll={syncScrollEnd}>
+              <div className="regulamin-doc">
+                <p className="regulamin-lede">
+                  Regulamin określa zasady przekazywania darowizn na rzecz Fundacji
+                  VoctFoundation za pośrednictwem strony voctensemble.com — w formie płatności
+                  online oraz przelewu bankowego.
+                </p>
+
+                {SECTIONS.map((section) => (
+                  <section className="regulamin-section" key={section.num}>
+                    <h3 data-num={section.num}>{section.title}</h3>
+                    <ol>
+                      {section.items.map((item, index) => (
+                        <li key={index}>{item}</li>
+                      ))}
+                    </ol>
+                  </section>
+                ))}
+
+                <details className="regulamin-history">
+                  <summary>
+                    <span>Historia wersji</span>
+                    <span className="regulamin-history-icon" aria-hidden="true" />
+                  </summary>
+                  <ul className="regulamin-history-list">
+                    <li>
+                      <strong>Wersja 1.1 · 3 czerwca 2026</strong> — Uzupełniono § 2 o sposoby
+                      przekazania darowizny poza bramką płatności online: zwykły przelew bankowy
+                      (jednorazowy oraz w formie zlecenia stałego) i serwis zbiórkowy Zrzutka.pl.
+                    </li>
+                    <li>
+                      <strong>Wersja 1.0 · 13 maja 2026</strong> — Pierwotna wersja Regulaminu,
+                      opublikowana wraz z uruchomieniem strony voctensemble.com.
+                    </li>
+                  </ul>
+                </details>
+              </div>
+            </div>
+            <div className="regulamin-scroll-fade" aria-hidden="true" />
+          </div>
+
+          <footer className="regulamin-foot">
+            <p className="regulamin-foot-note">Wersja 1.1 · obowiązuje od 3 czerwca 2026</p>
+            <button type="button" className="regulamin-accept" onClick={acceptRegulamin}>
+              <span>Akceptuję regulamin</span>
+              <span className="regulamin-accept-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
+          </footer>
+        </div>
       </div>
-    </div>
+    </Typo>
   );
 }

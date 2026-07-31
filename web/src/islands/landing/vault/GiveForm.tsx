@@ -22,6 +22,7 @@ import {
 } from "../constants/giveTiers";
 import { formatMoney } from "../lib/formatMoney";
 import { useVault } from "../providers/VaultContext";
+import { Typo } from "../lib/Typo";
 
 type TierValue = number | "custom";
 
@@ -182,198 +183,200 @@ export function GiveForm(): React.JSX.Element {
   );
 
   return (
-    <form
-      className="give-form"
-      onSubmit={onSubmit}
-      noValidate
-      aria-busy={loading}
-    >
-      <div className="give-field">
-        <div className="give-label-row">
-          <span className="give-label micro">Kwota darowizny</span>
-          <span className="give-amount-current" aria-live="polite">
-            {amountLabel}
-          </span>
-        </div>
-        <div
-          className="give-currency"
-          data-currency={state.currency}
-          role="radiogroup"
-          aria-label="Waluta darowizny"
-        >
-          <button
-            type="button"
-            className={`give-currency-opt${state.currency === "PLN" ? " is-active" : ""}`}
-            role="radio"
-            aria-checked={state.currency === "PLN"}
-            onClick={() => setCurrency("PLN")}
-          >
-            PLN
-          </button>
-          <button
-            type="button"
-            className={`give-currency-opt${state.currency === "EUR" ? " is-active" : ""}`}
-            role="radio"
-            aria-checked={state.currency === "EUR"}
-            onClick={() => setCurrency("EUR")}
-          >
-            EUR
-          </button>
-          <div className="give-currency-thumb" aria-hidden="true" />
-        </div>
-        <div
-          className="give-tiers"
-          role="radiogroup"
-          aria-label="Sugerowana kwota darowizny"
-        >
-          {GIVE_TIERS[state.currency].map((value, index) => (
-            <button
-              key={index}
-              type="button"
-              className={`give-tier${state.tier === index ? " is-active" : ""}`}
-              role="radio"
-              aria-checked={state.tier === index}
-              onClick={() => selectTier(index)}
-            >
-              {formatMoney(value, state.currency)}
-            </button>
-          ))}
-          <button
-            type="button"
-            className={`give-tier give-tier--custom${state.tier === "custom" ? " is-active" : ""}`}
-            role="radio"
-            aria-checked={state.tier === "custom"}
-            onClick={() => selectTier("custom")}
-          >
-            Inna kwota
-          </button>
-        </div>
-        {state.tier === "custom" ? (
-          <div className="give-custom">
-            <div className="give-custom-field">
-              <input
-                ref={customRef}
-                type="number"
-                inputMode="decimal"
-                min="1"
-                max={GIVE_MAX}
-                step="1"
-                placeholder="0"
-                autoComplete="off"
-                aria-label="Własna kwota darowizny"
-                value={state.customAmount}
-                onChange={(event) => {
-                  setState((prev) => ({
-                    ...prev,
-                    customAmount: event.target.value,
-                  }));
-                  setError(null);
-                }}
-                onFocus={(event) => event.currentTarget.select()}
-              />
-              <span className="give-custom-suffix" aria-hidden="true">
-                {CURRENCY_SUFFIX[state.currency]}
-              </span>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="give-field">
-        <label className="give-label micro" htmlFor="giveEmail">
-          E-mail · na ten adres wyślemy potwierdzenie
-        </label>
-        <input
-          ref={emailRef}
-          id="giveEmail"
-          name="email"
-          type="email"
-          className="give-email"
-          placeholder="twoj@adres.pl"
-          required
-          autoComplete="email"
-          inputMode="email"
-          aria-invalid={emailInvalid || undefined}
-          value={state.email}
-          onChange={(event) => {
-            setState((prev) => ({ ...prev, email: event.target.value }));
-            setEmailInvalid(false);
-            if (event.target.value.trim()) setError(null);
-          }}
-        />
-      </div>
-
-      {error ? (
-        <p className="give-error" role="alert">
-          {error}
-        </p>
-      ) : null}
-
-      <label className="give-consent">
-        <input
-          ref={consentRef}
-          type="checkbox"
-          className="give-consent-input"
-          required
-          aria-invalid={consentInvalid || undefined}
-          checked={state.consent}
-          onChange={(event) => {
-            setState((prev) => ({ ...prev, consent: event.target.checked }));
-            if (event.target.checked) {
-              setConsentInvalid(false);
-              setError(null);
-            }
-          }}
-        />
-        <span className="give-consent-box" aria-hidden="true">
-          <svg
-            className="give-consent-check"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M3 8.4 L6.4 11.8 L13 4.6" />
-          </svg>
-        </span>
-        <span className="give-consent-text">
-          Zapoznał(a)m się i akceptuję{" "}
-          <button
-            type="button"
-            className="give-consent-link plausible-event-name=regulamin+darowizn"
-            aria-haspopup="dialog"
-            aria-controls="regulamin"
-            onClick={(event) => {
-              event.stopPropagation();
-              openRegulamin();
-            }}
-          >
-            Regulamin przekazywania darowizn
-          </button>
-          .
-        </span>
-      </label>
-
-      <button
-        type="submit"
-        className={`method-cta give-submit plausible-event-name=wesprzyj+Axepta${loading ? " is-loading" : ""}`}
-        disabled={loading}
+    <Typo>
+      <form
+        className="give-form"
+        onSubmit={onSubmit}
+        noValidate
+        aria-busy={loading}
       >
-        <span className="method-cta-text">{ctaLabel}</span>
-        <span className="method-cta-arrow" aria-hidden="true">
-          →
-        </span>
-      </button>
+        <div className="give-field">
+          <div className="give-label-row">
+            <span className="give-label micro">Kwota darowizny</span>
+            <span className="give-amount-current" aria-live="polite">
+              {amountLabel}
+            </span>
+          </div>
+          <div
+            className="give-currency"
+            data-currency={state.currency}
+            role="radiogroup"
+            aria-label="Waluta darowizny"
+          >
+            <button
+              type="button"
+              className={`give-currency-opt${state.currency === "PLN" ? " is-active" : ""}`}
+              role="radio"
+              aria-checked={state.currency === "PLN"}
+              onClick={() => setCurrency("PLN")}
+            >
+              PLN
+            </button>
+            <button
+              type="button"
+              className={`give-currency-opt${state.currency === "EUR" ? " is-active" : ""}`}
+              role="radio"
+              aria-checked={state.currency === "EUR"}
+              onClick={() => setCurrency("EUR")}
+            >
+              EUR
+            </button>
+            <div className="give-currency-thumb" aria-hidden="true" />
+          </div>
+          <div
+            className="give-tiers"
+            role="radiogroup"
+            aria-label="Sugerowana kwota darowizny"
+          >
+            {GIVE_TIERS[state.currency].map((value, index) => (
+              <button
+                key={index}
+                type="button"
+                className={`give-tier${state.tier === index ? " is-active" : ""}`}
+                role="radio"
+                aria-checked={state.tier === index}
+                onClick={() => selectTier(index)}
+              >
+                {formatMoney(value, state.currency)}
+              </button>
+            ))}
+            <button
+              type="button"
+              className={`give-tier give-tier--custom${state.tier === "custom" ? " is-active" : ""}`}
+              role="radio"
+              aria-checked={state.tier === "custom"}
+              onClick={() => selectTier("custom")}
+            >
+              Inna kwota
+            </button>
+          </div>
+          {state.tier === "custom" ? (
+            <div className="give-custom">
+              <div className="give-custom-field">
+                <input
+                  ref={customRef}
+                  type="number"
+                  inputMode="decimal"
+                  min="1"
+                  max={GIVE_MAX}
+                  step="1"
+                  placeholder="0"
+                  autoComplete="off"
+                  aria-label="Własna kwota darowizny"
+                  value={state.customAmount}
+                  onChange={(event) => {
+                    setState((prev) => ({
+                      ...prev,
+                      customAmount: event.target.value,
+                    }));
+                    setError(null);
+                  }}
+                  onFocus={(event) => event.currentTarget.select()}
+                />
+                <span className="give-custom-suffix" aria-hidden="true">
+                  {CURRENCY_SUFFIX[state.currency]}
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </div>
 
-      <div className="give-fineprint">
-        <p className="give-methods-note">{GIVE_METHODS_NOTE[state.currency]}</p>
-        <p className="give-descriptor">
-          Tytuł transakcji:{" "}
-          <strong>Darowizna na cele statutowe VoctFoundation</strong>
-        </p>
-      </div>
-    </form>
+        <div className="give-field">
+          <label className="give-label micro" htmlFor="giveEmail">
+            E-mail · na ten adres wyślemy potwierdzenie
+          </label>
+          <input
+            ref={emailRef}
+            id="giveEmail"
+            name="email"
+            type="email"
+            className="give-email"
+            placeholder="twoj@adres.pl"
+            required
+            autoComplete="email"
+            inputMode="email"
+            aria-invalid={emailInvalid || undefined}
+            value={state.email}
+            onChange={(event) => {
+              setState((prev) => ({ ...prev, email: event.target.value }));
+              setEmailInvalid(false);
+              if (event.target.value.trim()) setError(null);
+            }}
+          />
+        </div>
+
+        {error ? (
+          <p className="give-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <label className="give-consent">
+          <input
+            ref={consentRef}
+            type="checkbox"
+            className="give-consent-input"
+            required
+            aria-invalid={consentInvalid || undefined}
+            checked={state.consent}
+            onChange={(event) => {
+              setState((prev) => ({ ...prev, consent: event.target.checked }));
+              if (event.target.checked) {
+                setConsentInvalid(false);
+                setError(null);
+              }
+            }}
+          />
+          <span className="give-consent-box" aria-hidden="true">
+            <svg
+              className="give-consent-check"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 8.4 L6.4 11.8 L13 4.6" />
+            </svg>
+          </span>
+          <span className="give-consent-text">
+            Zapoznał(a)m się i akceptuję{" "}
+            <button
+              type="button"
+              className="give-consent-link plausible-event-name=regulamin+darowizn"
+              aria-haspopup="dialog"
+              aria-controls="regulamin"
+              onClick={(event) => {
+                event.stopPropagation();
+                openRegulamin();
+              }}
+            >
+              Regulamin przekazywania darowizn
+            </button>
+            .
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          className={`method-cta give-submit plausible-event-name=wesprzyj+Axepta${loading ? " is-loading" : ""}`}
+          disabled={loading}
+        >
+          <span className="method-cta-text">{ctaLabel}</span>
+          <span className="method-cta-arrow" aria-hidden="true">
+            →
+          </span>
+        </button>
+
+        <div className="give-fineprint">
+          <p className="give-methods-note">{GIVE_METHODS_NOTE[state.currency]}</p>
+          <p className="give-descriptor">
+            Tytuł transakcji:{" "}
+            <strong>Darowizna na cele statutowe VoctFoundation</strong>
+          </p>
+        </div>
+      </form>
+    </Typo>
   );
 }

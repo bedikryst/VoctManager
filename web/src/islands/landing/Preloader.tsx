@@ -28,6 +28,7 @@ import { BrandGlyph } from "./BrandGlyph";
 import { useAudioChoice, type AudioChoice } from "./hooks/useAudioChoice";
 import { useBodyClass } from "./hooks/useBodyClass";
 import { useFocusTrap } from "./hooks/useFocusTrap";
+import { Typo } from "./lib/Typo";
 
 // 2.2s keeps the candle bloom + ring expansion intact (animations are front-loaded
 // under 2s) while keeping time-to-content tight. SAFETY_CEILING stays a beat above
@@ -159,74 +160,76 @@ export function Preloader(): React.JSX.Element | null {
   const isChoice = phase === "choice";
 
   return (
-    <div
-      className={`preloader${phase === "hiding" ? " is-hidden" : ""}${isChoice ? " is-choice" : ""}`}
-      role={isChoice ? "dialog" : undefined}
-      aria-modal={isChoice || undefined}
-      aria-labelledby={isChoice ? "threshold-title" : undefined}
-      aria-hidden={isChoice ? undefined : true}
-    >
-      <span className="preloader-spark" />
-      <span className="preloader-ring r1" />
-      <span className="preloader-ring r2" />
-      <span className="preloader-ring r3" />
-      <span className="preloader-word w1">cisza</span>
-      <span className="preloader-word w2">głos</span>
-      <svg className="preloader-mark" viewBox="0 0 64 64" fill="none">
-        <circle cx="32" cy="32" r="3" stroke="currentColor" strokeWidth="1" />
-        <path
-          d="M32 6V22M32 42V58M6 32H22M42 32H58M14 14L25 25M39 39L50 50M50 14L39 25M25 39L14 50"
-          stroke="currentColor"
-          strokeWidth="1"
-        />
-      </svg>
+    <Typo>
+      <div
+        className={`preloader${phase === "hiding" ? " is-hidden" : ""}${isChoice ? " is-choice" : ""}`}
+        role={isChoice ? "dialog" : undefined}
+        aria-modal={isChoice || undefined}
+        aria-labelledby={isChoice ? "threshold-title" : undefined}
+        aria-hidden={isChoice ? undefined : true}
+      >
+        <span className="preloader-spark" />
+        <span className="preloader-ring r1" />
+        <span className="preloader-ring r2" />
+        <span className="preloader-ring r3" />
+        <span className="preloader-word w1">cisza</span>
+        <span className="preloader-word w2">głos</span>
+        <svg className="preloader-mark" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="3" stroke="currentColor" strokeWidth="1" />
+          <path
+            d="M32 6V22M32 42V58M6 32H22M42 32H58M14 14L25 25M39 39L50 50M50 14L39 25M25 39L14 50"
+            stroke="currentColor"
+            strokeWidth="1"
+          />
+        </svg>
 
-      <div className="preloader-choice">
-        <div className="threshold-inner" ref={choiceRef} tabIndex={-1}>
-          <div className="threshold-mark" aria-hidden="true">
-            <span className="threshold-mark-halo" />
-            <BrandGlyph />
-          </div>
-          <div className="threshold-kicker micro">VoctEnsemble</div>
-          {/* Intentionally NOT an <h1>: the page's h1 is the hero title. */}
-          <p className="threshold-title" id="threshold-title">
-            Czy wejdziesz<br />w ciszę?
-          </p>
-          <p className="threshold-subtitle">
-            Ten próg można przekroczyć na dwa sposoby. Wybór zmienisz w&nbsp;każdej chwili.
-          </p>
-          <div className="threshold-actions">
-            <button
-              type="button"
-              className="threshold-btn plausible-event-name=enterSilence"
-              data-choice="silence"
-              onClick={() => pick("silence")}
-            >
-              <span className="threshold-btn-dots" aria-hidden="true">
-                <span className="threshold-dot" />
-                <span className="threshold-dot" />
-                <span className="threshold-dot" />
-              </span>
-              <span className="threshold-btn-label">Wejdź w ciszę</span>
-              <span className="threshold-btn-hint">bez dźwięku</span>
-            </button>
-            <button
-              type="button"
-              className="threshold-btn plausible-event-name=enterVoice"
-              data-choice="voice"
-              onClick={() => pick("voice")}
-            >
-              <span className="threshold-btn-dots" aria-hidden="true">
-                <span className="threshold-dot is-live" />
-                <span className="threshold-dot is-live" />
-                <span className="threshold-dot is-live" />
-              </span>
-              <span className="threshold-btn-label">Wejdź z głosem</span>
-              <span className="threshold-btn-hint">śpiew zespołu · cicho</span>
-            </button>
+        <div className="preloader-choice">
+          <div className="threshold-inner" ref={choiceRef} tabIndex={-1}>
+            <div className="threshold-mark" aria-hidden="true">
+              <span className="threshold-mark-halo" />
+              <BrandGlyph />
+            </div>
+            <div className="threshold-kicker micro">VoctEnsemble</div>
+            {/* Intentionally NOT an <h1>: the page's h1 is the hero title. */}
+            <p className="threshold-title" id="threshold-title">
+              Czy wejdziesz<br />w ciszę?
+            </p>
+            <p className="threshold-subtitle">
+              Ten próg można przekroczyć na dwa sposoby. Wybór zmienisz w każdej chwili.
+            </p>
+            <div className="threshold-actions">
+              <button
+                type="button"
+                className="threshold-btn plausible-event-name=enterSilence"
+                data-choice="silence"
+                onClick={() => pick("silence")}
+              >
+                <span className="threshold-btn-dots" aria-hidden="true">
+                  <span className="threshold-dot" />
+                  <span className="threshold-dot" />
+                  <span className="threshold-dot" />
+                </span>
+                <span className="threshold-btn-label">Wejdź w ciszę</span>
+                <span className="threshold-btn-hint">bez dźwięku</span>
+              </button>
+              <button
+                type="button"
+                className="threshold-btn plausible-event-name=enterVoice"
+                data-choice="voice"
+                onClick={() => pick("voice")}
+              >
+                <span className="threshold-btn-dots" aria-hidden="true">
+                  <span className="threshold-dot is-live" />
+                  <span className="threshold-dot is-live" />
+                  <span className="threshold-dot is-live" />
+                </span>
+                <span className="threshold-btn-label">Wejdź z głosem</span>
+                <span className="threshold-btn-hint">śpiew zespołu · cicho</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </Typo>
   );
 }

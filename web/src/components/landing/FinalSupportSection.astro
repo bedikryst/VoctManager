@@ -10,7 +10,6 @@
  */
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
-import { nbsp } from "../../lib/typo";
 
 const bg = bleedPair("swiatlo-krzyz");
 
@@ -40,8 +39,8 @@ const ROWS = [
               rates for musicians would be both volatile and indiscreet. */}
           <p>
             Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
-            światło i&nbsp;dojazdy. Na to idą darowizny. Można też zaprosić nas do
-            siebie: śpiewamy koncerty i&nbsp;liturgie, msze ślubne, jubileusze.
+            światło i dojazdy. Na to idą darowizny. Można też zaprosić nas do
+            siebie: śpiewamy koncerty i liturgie, msze ślubne, jubileusze.
           </p>
         </div>
         <div class="final-contact reveal">
@@ -83,7 +82,7 @@ const ROWS = [
             ROWS.map((row) => (
               <div class="donation-row">
                 <strong>{row.amount}</strong>
-                <span>{nbsp(row.text)}</span>
+                <span>{row.text}</span>
               </div>
             ))
           }

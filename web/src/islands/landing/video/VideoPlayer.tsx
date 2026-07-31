@@ -28,6 +28,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { formatTime } from "./formatTime";
 import { clearPosition, readPosition, savePosition } from "./resumeStore";
+import { Typo } from "../lib/Typo";
 
 interface VideoPlayerProps {
   readonly src: string;
@@ -575,110 +576,112 @@ export function VideoPlayer({
     .join(" ");
 
   return (
-    <figure className={classes} ref={rootRef}>
-      <div className="vplayer-stage">
-        {glow && (
-          <canvas
-            className="vplayer-glow"
-            width={portrait ? 18 : 32}
-            height={portrait ? 32 : 18}
-            aria-hidden="true"
-            ref={glowRef}
-          />
-        )}
-        <video
-          ref={videoRef}
-          src={src}
-          poster={poster}
-          preload="metadata"
-          playsInline
-          onClick={toggle}
-        />
-        {poster && (
-          <div
-            className={`vplayer-veil${veiled ? "" : " is-lifted"}`}
-            style={{ backgroundImage: `url("${poster}")` }}
-            aria-hidden="true"
-          />
-        )}
-        <span className="vplayer-buffer" aria-hidden="true" />
-        {!failed && (
-          <button
-            type="button"
-            className={`vplayer-btn${playing ? " is-quiet" : ""}`}
-            aria-label={playing ? "Zatrzymaj odtwarzanie" : "Odtwórz wideo"}
-            aria-pressed={playing}
+    <Typo>
+      <figure className={classes} ref={rootRef}>
+        <div className="vplayer-stage">
+          {glow && (
+            <canvas
+              className="vplayer-glow"
+              width={portrait ? 18 : 32}
+              height={portrait ? 32 : 18}
+              aria-hidden="true"
+              ref={glowRef}
+            />
+          )}
+          <video
+            ref={videoRef}
+            src={src}
+            poster={poster}
+            preload="metadata"
+            playsInline
             onClick={toggle}
-          >
-            {playing ? (
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <rect x="6" y="5" width="4" height="14" rx="1" />
-                <rect x="14" y="5" width="4" height="14" rx="1" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M8 5.5v13l11-6.5z" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-      {/* data-cursor="seek": the site cursor becomes a caret + timestamp over this rail
-          (no snap — over a precision surface the visible cursor must equal the click
-          point). aria-valuemax/valuenow/valuetext + data-duration are kept fresh
-          imperatively (paintProgress/loadedmetadata) to avoid re-rendering on timeupdate. */}
-      <button
-        type="button"
-        role="slider"
-        className="vplayer-scrub"
-        aria-label="Oś czasu wideo"
-        aria-valuemin={0}
-        data-cursor="seek"
-        disabled={failed}
-        ref={scrubRef}
-        onPointerDown={onScrubDown}
-        onPointerMove={onScrubMove}
-        onPointerUp={onScrubEnd}
-        onPointerCancel={onScrubEnd}
-        onKeyDown={onScrubKey}
-      >
-        <span className="vplayer-rail" aria-hidden="true">
-          <span className="vplayer-fill" />
-          <span className="vplayer-dot" />
-        </span>
-      </button>
-      <div className="vplayer-side">
-        {failed ? (
-          <span className="vplayer-error">Materiał chwilowo niedostępny</span>
-        ) : (
-          <span className="vplayer-time" ref={timeRef} aria-hidden="true">
-            0:00 / 0:00
-          </span>
-        )}
+          />
+          {poster && (
+            <div
+              className={`vplayer-veil${veiled ? "" : " is-lifted"}`}
+              style={{ backgroundImage: `url("${poster}")` }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="vplayer-buffer" aria-hidden="true" />
+          {!failed && (
+            <button
+              type="button"
+              className={`vplayer-btn${playing ? " is-quiet" : ""}`}
+              aria-label={playing ? "Zatrzymaj odtwarzanie" : "Odtwórz wideo"}
+              aria-pressed={playing}
+              onClick={toggle}
+            >
+              {playing ? (
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <rect x="6" y="5" width="4" height="14" rx="1" />
+                  <rect x="14" y="5" width="4" height="14" rx="1" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M8 5.5v13l11-6.5z" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
+        {/* data-cursor="seek": the site cursor becomes a caret + timestamp over this rail
+            (no snap — over a precision surface the visible cursor must equal the click
+            point). aria-valuemax/valuenow/valuetext + data-duration are kept fresh
+            imperatively (paintProgress/loadedmetadata) to avoid re-rendering on timeupdate. */}
         <button
           type="button"
-          className="vplayer-fs"
-          aria-label={fullscreen ? "Zamknij pełny ekran" : "Pełny ekran"}
-          onClick={onFullscreen}
+          role="slider"
+          className="vplayer-scrub"
+          aria-label="Oś czasu wideo"
+          aria-valuemin={0}
+          data-cursor="seek"
           disabled={failed}
+          ref={scrubRef}
+          onPointerDown={onScrubDown}
+          onPointerMove={onScrubMove}
+          onPointerUp={onScrubEnd}
+          onPointerCancel={onScrubEnd}
+          onKeyDown={onScrubKey}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            aria-hidden="true"
-          >
-            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-          </svg>
+          <span className="vplayer-rail" aria-hidden="true">
+            <span className="vplayer-fill" />
+            <span className="vplayer-dot" />
+          </span>
         </button>
-      </div>
-      {(caption || note) && (
-        <figcaption className="vplayer-meta">
-          {caption}
-          {note && <span className="vplayer-note">{note}</span>}
-        </figcaption>
-      )}
-    </figure>
+        <div className="vplayer-side">
+          {failed ? (
+            <span className="vplayer-error">Materiał chwilowo niedostępny</span>
+          ) : (
+            <span className="vplayer-time" ref={timeRef} aria-hidden="true">
+              0:00 / 0:00
+            </span>
+          )}
+          <button
+            type="button"
+            className="vplayer-fs"
+            aria-label={fullscreen ? "Zamknij pełny ekran" : "Pełny ekran"}
+            onClick={onFullscreen}
+            disabled={failed}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            >
+              <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+            </svg>
+          </button>
+        </div>
+        {(caption || note) && (
+          <figcaption className="vplayer-meta">
+            {caption}
+            {note && <span className="vplayer-note">{note}</span>}
+          </figcaption>
+        )}
+      </figure>
+    </Typo>
   );
 }
