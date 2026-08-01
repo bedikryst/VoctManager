@@ -4,8 +4,8 @@
  * @description Three-stanza ensemble manifest + the answer line. Rigid editorial grid;
  *  ONE motion system (setupManifestLight in landing.ts + 03-manifest-rite.css): a soft
  *  light edge sweeps each stanza once, left to right, from half-light to full ink —
- *  time-based and one-shot, never scroll-scrubbed. The stanzas deliberately do NOT
- *  carry the site-wide `.reveal` (no translate: light moves, metal doesn't).
+ *  time-based and one-shot, never scroll-scrubbed. The stanzas deliberately carry NO
+ *  entrance register: the sweep is their arrival, and the page's moving light belongs here.
  *  "Odsłania." is its own group: it blurs into focus a beat after stanza III.
  * @architecture Astro islands 2026
  * @module components/landing/ManifestSection
@@ -15,7 +15,9 @@ import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLine
 
 <section class="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
   <div class="manifest-container">
-    <div class="manifest-top reveal">
+    {/* Ink + lead on one node: the header's existing border-bottom is ruled, and the two
+        labels are inked a beat behind it — ruling precedes writing. */}
+    <div class="manifest-top reveal reveal-rule">
       <div class="manifest-meta-col">
         <span class="manifest-label">Manifest</span>
       </div>

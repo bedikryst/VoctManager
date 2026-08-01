@@ -56,6 +56,31 @@
   --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
   --ease-slow: cubic-bezier(0.16, 0.84, 0.24, 1);
 
+  /* Entrance registers — the site has three materials and each one arrives in its
+     own way (see docs/web-landing-guardrails.md §5). These are the shared constants;
+     the mechanisms live in base.css (subpages) and landing/06-footer.css (landing).
+
+     --half-ink is the load-bearing one: NOTHING on this site enters from opacity 0.
+     Copy waits at half-ink and is inked to full when it is reached, so a fast scroll
+     never opens a hole in the page that then fills itself in — that emptiness is what
+     reads as generated, not the movement. The value is not free: 0.44 is the same
+     alpha the manifest's own half-light mask already carries (03-manifest-rite.css),
+     so the whole site half-lights at one strength. */
+  --half-ink: 0.44;
+  --ink-in: 0.9s;
+  --rule-in: 0.85s;
+  --veil-lift: 1.8s;
+
+  /* A ruled line is the one entrance whose easing is a claim about a HAND, and --ease-slow
+     is the wrong claim: cubic-bezier(0.16, 0.84, 0.24, 1) puts 82% of the travel into the
+     first 27% of the clock. On a rule that fires at 88% of the viewport, the whole visible
+     draw therefore happened inside the bottom ~13% of the screen and the last fifth crawled
+     — which is why the lead register read as "technically there, never watched". A hand
+     drawing along a straightedge starts, travels evenly, and stops: this curve is symmetric
+     (x = y = 0.5 at the midpoint), so the line is drawn across the reading zone instead of
+     in the strip below it. Ink and light keep --ease-slow until they are retuned together. */
+  --ease-rule: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+
   /* ── Layout rhythm ────────────────────────────────────────────────────────
      One source of truth for the page gutter. Sections used `max(28px, 5vw)`
      inline; `--gutter` makes that reusable so a full-bleed element can break

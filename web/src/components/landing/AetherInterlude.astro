@@ -18,7 +18,8 @@
  *  Contracts honoured (do not break):
  *   - `.aether-knot` + `--knot-intensity` — landing.ts setupInterludeBreath / audio analyser
  *     write the custom property on this element only (registered `inherits: false`).
- *   - `.reveal` / `.is-visible` — the landing IntersectionObserver drives the entrance.
+ *   - `.reveal-cue` / `.is-visible` — the landing IntersectionObserver only TRIGGERS the
+ *     choreography here; the band itself has no entrance of its own (see the note below).
  *   - `html.voct-motion` — hidden pre-reveal states engage ONLY under this gate (JS live and
  *     no reduced-motion), so no-JS and reduced-motion visitors always see the drawn state.
  *   - Sibling margin rules (`.aether-interlude + section`) — the knot baseline IS the
@@ -40,7 +41,7 @@ interface Props {
 const { variant, roman, latin } = Astro.props;
 ---
 
-<div class="aether-interlude reveal" data-variant={variant} aria-hidden="true">
+<div class="aether-interlude reveal-cue" data-variant={variant} aria-hidden="true">
   <span class="aether-inscription">
     <span class="roman">{roman}</span>
     <span class="dot">·</span>
@@ -184,18 +185,12 @@ const { variant, roman, latin } = Astro.props;
     contain: paint;
   }
 
-  /* Entrance — the interlude materialises out of the manuscript, slower and with
-     more travel than content reveals. The stroke-draw choreography below rides on
-     the same .is-visible flip. */
-  .aether-interlude.reveal {
-    transform: translateY(44px);
-    transition:
-      opacity 1.9s var(--ease-slow),
-      transform 1.9s var(--ease-slow);
-  }
-  .aether-interlude.reveal.is-visible {
-    transform: translateY(0);
-  }
+  /* Entrance — there isn't one, and that is deliberate. The interlude is a `.reveal-cue`:
+     the ONLY thing the observer's `.is-visible` flip does here is start the choreography
+     below (strokes draw, numeral surfaces, inscription settles, flame is lit). It used to
+     also translate 44px as a `.reveal`, which meant the knot wrote itself while the whole
+     band slid upward — a second, unrelated motion stacked on an authored one, exactly what
+     the manifest stanzas were freed from. The drawing IS the arrival. */
 
   /* The section after an interlude carries no border-top of its own — the aether
      baseline IS the boundary line. Two lines at different Y used to drift apart. */
@@ -228,8 +223,8 @@ const { variant, roman, latin } = Astro.props;
     opacity: 0.07;
     user-select: none;
     transition:
-      opacity 3.2s var(--ease-slow) 0.4s,
-      transform 3.2s var(--ease-slow) 0.4s;
+      opacity 2s var(--ease-slow) 0.25s,
+      transform 2s var(--ease-slow) 0.25s;
   }
   html.voct-motion .aether-interlude:not(.is-visible) .aether-numeral {
     opacity: 0;
@@ -250,7 +245,7 @@ const { variant, roman, latin } = Astro.props;
     letter-spacing: 0.32em;
     text-transform: uppercase;
     opacity: 0.78;
-    transition: letter-spacing 2.8s var(--ease-slow);
+    transition: letter-spacing 1.75s var(--ease-slow);
   }
   html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription {
     letter-spacing: 0.5em;
@@ -266,8 +261,8 @@ const { variant, roman, latin } = Astro.props;
     opacity: 0.38;
     transform: rotate(45deg);
     transition:
-      transform 1.4s var(--ease-slow) 1.8s,
-      opacity 1.4s var(--ease-slow) 1.8s;
+      transform 0.88s var(--ease-slow) 1.13s,
+      opacity 0.88s var(--ease-slow) 1.13s;
   }
   html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::before,
   html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::after {
@@ -296,7 +291,14 @@ const { variant, roman, latin } = Astro.props;
 
   /* Gilding sweep — a highlight passes once through the latin words as the
      threshold reveals, like gold leaf catching candlelight. One-shot paint on a
-     tiny strip; gated on voct-motion so reduced-motion never sees the sweep. */
+     tiny strip; gated on voct-motion so reduced-motion never sees the sweep.
+
+     The ONE place the 0.625 tempo factor above is not applied verbatim: at 2.6s + 1.5s this
+     ended 4.1s in — over 1600px of travel, so the sweep was pure cost and no payoff, a
+     per-frame text repaint (background-clip: text has no compositor path) playing two screens
+     above the reader. The delay takes the factor; the duration is then set so the sweep
+     closes with the last strokes at ~2.0s. Nothing is hidden behind it — the gold is already
+     legible — so it is an accent riding the cadence, not a reveal that owes anyone a wait. */
   @supports ((-webkit-background-clip: text) or (background-clip: text)) {
     .aether-inscription .latin {
       background: linear-gradient(105deg, var(--candle) 38%, #efe0ae 50%, var(--candle) 62%);
@@ -306,7 +308,7 @@ const { variant, roman, latin } = Astro.props;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       color: transparent;
-      transition: background-position 2.6s var(--ease) 1.5s;
+      transition: background-position 1.05s var(--ease) 0.94s;
     }
     html.voct-motion .aether-interlude.is-visible .latin {
       background-position: -15% 0;
@@ -325,15 +327,19 @@ const { variant, roman, latin } = Astro.props;
     gap: clamp(18px, 4vw, 40px);
   }
 
+  /* The band's widest marks, and the ones that carried the "I can barely see it" verdict:
+     candle gold at 0.22 on parchment is roughly 1.1:1 against the ground — below the
+     threshold, not subtle. These are also ruled lines drawn from the knot outward, so they
+     take --ease-rule like every other rule on the page. */
   .aether-line {
     position: relative;
     flex: 1;
     height: 1px;
     background: linear-gradient(90deg, transparent, currentColor 60%);
-    opacity: 0.22;
+    opacity: 0.34;
     transition:
-      transform 2.2s var(--ease-slow) 0.15s,
-      opacity 2.2s var(--ease-slow) 0.15s;
+      transform 1.38s var(--ease-rule) 0.09s,
+      opacity 1.38s var(--ease-rule) 0.09s;
   }
   .aether-line:first-child {
     transform-origin: right center;
@@ -406,41 +412,69 @@ const { variant, roman, latin } = Astro.props;
   /* ── Stroke-draw choreography: every .knot-draw path carries pathLength="1" and
      writes itself in when .is-visible lands. Hidden state engages only under
      html.voct-motion, so no-JS / reduced-motion always sees the drawn knot. ── */
+  /* TEMPO — ×0.625 on every duration and delay in this FILE, not just in this block: the
+     numeral, the inscription's letter-spacing settle, the two aether lines and the lumen ray
+     all carry it too. It must stay a single factor rather than a set of hand-picked values —
+     the internal rhythm (which stroke answers which, and how far behind) is the composition;
+     the total is only its tempo marking, and rewriting the numbers individually re-composes
+     it. The one deliberate exception is the gilding sweep, argued where it is declared.
+
+     The reason for the marking is that a choreography's duration is a SCROLL DISTANCE. This
+     band fires when its top crosses 88% of the viewport and then keeps travelling: at an
+     unhurried reading pace (~400px/s through Lenis) the closing mandorla at 3.2s landed
+     1280px later — a screen and a half up — so the interlude, which is the page's structural
+     punctuation, had never once been watched finishing. Worse, the tail ran further than the
+     knot: the ray closed at 3.8s and the gilding at 4.1s, nearly two screens. 0.625 puts the
+     last structural stroke at 2.0s, the ceiling for a gesture to close on screen at all; only
+     the two ambient settles (numeral 2.25s, ray 2.38s) sit past it, which is what an ambient
+     settle is for. If this tempo reads as hurried, change the FACTOR (0.72–0.75 and accept
+     ~2.3s) — never one stroke. See docs/web-reveal-remediation.md for the budget. */
+  /* INK STRENGTH — calibrated here rather than left to the per-path `stroke-opacity`
+     attributes, so the band has one place to be read and tuned (CSS beats a presentation
+     attribute, and the attributes stay as the no-CSS floor). The knot is gold on parchment,
+     which is the weakest pairing on the site: the structural strokes sat at 0.2 and the staff
+     at 0.13, i.e. under ~1.2:1 against the ground — not subtle, invisible. There is no point
+     spending a tempo pass making a drawing happen on screen if the drawing cannot be seen.
+     The waves keep 0.55: they were always the legible ones and they carry the knot's shape,
+     so raising everything by one factor would have flattened the band's own hierarchy. */
+  .aether-knot .d-base { stroke-opacity: 0.3; }
+  .aether-knot .d-staff { stroke-opacity: 0.2; }
+
   .aether-knot .knot-draw {
     stroke-dasharray: 1 1;
     stroke-dashoffset: 0;
-    transition: stroke-dashoffset 1.6s var(--ease-slow);
+    transition: stroke-dashoffset 1s var(--ease-slow);
   }
   html.voct-motion .aether-interlude:not(.is-visible) .knot-draw {
     stroke-dashoffset: 1;
   }
   .aether-knot .d-base {
-    transition-duration: 1.1s;
-    transition-delay: 0.1s;
+    transition-duration: 0.7s;
+    transition-delay: 0.06s;
   }
   .aether-knot .d-wave {
-    transition-duration: 1.9s;
-    transition-delay: 0.5s;
+    transition-duration: 1.19s;
+    transition-delay: 0.31s;
   }
   .aether-knot .d-harmonic {
-    transition-duration: 1.9s;
-    transition-delay: 0.9s;
+    transition-duration: 1.19s;
+    transition-delay: 0.56s;
   }
   .aether-knot .d-staff {
-    transition-duration: 1.4s;
+    transition-duration: 0.88s;
   }
-  .aether-knot .st-1 { transition-delay: 0.3s; }
-  .aether-knot .st-2 { transition-delay: 0.45s; }
-  .aether-knot .st-3 { transition-delay: 0.6s; }
-  .aether-knot .st-4 { transition-delay: 0.75s; }
+  .aether-knot .st-1 { transition-delay: 0.19s; }
+  .aether-knot .st-2 { transition-delay: 0.28s; }
+  .aether-knot .st-3 { transition-delay: 0.38s; }
+  .aether-knot .st-4 { transition-delay: 0.47s; }
   .aether-knot .d-vesica {
-    transition-duration: 2.1s;
+    transition-duration: 1.31s;
   }
-  .aether-knot .v-left { transition-delay: 0.5s; }
-  .aether-knot .v-right { transition-delay: 0.75s; }
+  .aether-knot .v-left { transition-delay: 0.31s; }
+  .aether-knot .v-right { transition-delay: 0.47s; }
   .aether-knot .d-mandorla {
-    transition-duration: 1.6s;
-    transition-delay: 1.6s;
+    transition-duration: 1s;
+    transition-delay: 1s;
   }
 
   /* ── The flame — shared central light: gradient halo + corona ring + core.
@@ -448,8 +482,8 @@ const { variant, roman, latin } = Astro.props;
   .aether-flame {
     transform-origin: 120px 40px;
     transition:
-      transform 1.8s var(--ease-slow) 1.15s,
-      opacity 1.8s var(--ease-slow) 1.15s;
+      transform 1.13s var(--ease-slow) 0.72s,
+      opacity 1.13s var(--ease-slow) 0.72s;
   }
   html.voct-motion .aether-interlude:not(.is-visible) .aether-flame {
     transform: scale(0);
@@ -527,7 +561,7 @@ const { variant, roman, latin } = Astro.props;
   .lumen-ray {
     transform-origin: 120px 38px;
     animation: aetherRay 7s ease-in-out infinite;
-    transition: transform 2.4s var(--ease-slow) 1.4s;
+    transition: transform 1.5s var(--ease-slow) 0.88s;
   }
   html.voct-motion .aether-interlude:not(.is-visible) .lumen-ray {
     transform: scaleY(0);

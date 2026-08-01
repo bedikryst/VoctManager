@@ -18,7 +18,24 @@ export function SiteFooter(): React.JSX.Element {
     <Typo>
       <footer className="site-footer" aria-label="Stopka">
         <div className="site-footer-inner">
-          <div className="site-footer-incipit" aria-hidden="true">
+          {/* The footer had no entrance at all while every block above it was written into
+              being — and it is not chrome: it numbers itself IV, continuing the interludes'
+              I/II/III, so it is the page's last movement and owes the same cadence.
+              Its blocks take the ink register one at a time (inscription, signal, foundation,
+              presence, colophon) rather than one node for the whole footer, which would be
+              far past the height a single ink onset can cover.
+
+              TWO conditions keep an externally-applied class alive on a React island, and the
+              second one is the one that bites. (1) These classNames must stay CONSTANT
+              strings: the clock re-renders this island every second, and React writes
+              `className` to the DOM only when the prop VALUE changed, so a constant is left
+              alone. (2) The island must HYDRATE CLEANLY. A hydration mismatch is not a warning
+              — React answers it by discarding the server DOM and re-rendering, and the shared
+              observer is then holding nodes that are no longer in the document, so nothing it
+              does is ever seen. This footer mismatched on every visit (see the clock note
+              below) and that is exactly how it failed: the reveals were being applied, to
+              elements React had already thrown away. */}
+          <div className="site-footer-incipit reveal" aria-hidden="true">
             <span className="footer-incipit-rule" />
             <span className="aether-inscription">
               <span className="roman">IV</span>
@@ -29,39 +46,69 @@ export function SiteFooter(): React.JSX.Element {
           </div>
 
           <div className="site-footer-grid">
-            <div className="footer-col footer-col-signal">
+            <div className="footer-col footer-col-signal reveal">
               <span className="footer-col-label micro">Sygnał</span>
               <div className="footer-col-body footer-col-signal-body">
                 <div className="footer-signal-block footer-signal-now">
                   <span className="footer-signal-key micro">Kraków · teraz</span>
                   <span className="footer-signal-coord">50°03′41″N · 19°56′18″E</span>
-                  <span className="footer-signal-clock" aria-live="off">
+                  {/* Every node below renders a clock value, and this page is STATIC: the
+                      server text is whatever the time was when the site was built, while the
+                      client renders "now". Without these opt-outs that is a guaranteed
+                      hydration mismatch on every single visit, and React's recovery is to
+                      throw the server HTML for this island away and re-render it — which
+                      silently detaches every element in the footer from anything outside
+                      React that was holding a reference to it. That is what stopped the
+                      footer's reveals from ever firing: the shared observer was watching the
+                      nodes React had already replaced. `useLiturgicalClock` takes a fresh
+                      snapshot on mount, so the build-time text these keep is corrected within
+                      a frame — and a visitor without JS still sees a rendered clock face
+                      rather than the blank one a null initial state would leave. */}
+                  <span
+                    className="footer-signal-clock"
+                    aria-live="off"
+                    suppressHydrationWarning
+                  >
                     {clock.hm}
-                    <span className="footer-signal-seconds" aria-hidden="true">
+                    <span
+                      className="footer-signal-seconds"
+                      aria-hidden="true"
+                      suppressHydrationWarning
+                    >
                       {clock.seconds}
                     </span>
                   </span>
                   <p className="footer-signal-hora-row">
-                    <em className="footer-signal-hora-name" aria-live="off">
+                    <em
+                      className="footer-signal-hora-name"
+                      aria-live="off"
+                      suppressHydrationWarning
+                    >
                       {clock.hora.name}
                     </em>
                     <span className="footer-signal-hora-sep" aria-hidden="true">
                       ·
                     </span>
-                    <span className="footer-signal-hora-poem">{clock.hora.poem}</span>
+                    <span className="footer-signal-hora-poem" suppressHydrationWarning>
+                      {clock.hora.poem}
+                    </span>
                   </p>
                   <p className="footer-signal-tempus-row">
-                    <em className="footer-signal-tempus">{clock.tempus.lat}</em>
+                    <em className="footer-signal-tempus" suppressHydrationWarning>
+                      {clock.tempus.lat}
+                    </em>
                     <span className="footer-signal-tempus-sep" aria-hidden="true">
                       ·
                     </span>
-                    <span className="footer-signal-tempus-pl">{clock.tempus.pl}</span>
+                    <span className="footer-signal-tempus-pl" suppressHydrationWarning>
+                      {clock.tempus.pl}
+                    </span>
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="footer-col footer-col-foundation">
+            <div className="footer-col footer-col-foundation reveal">
               <span className="footer-col-label micro">Fundacja</span>
               <div className="footer-col-body">
                 <div className="foundation-mark">
@@ -191,7 +238,7 @@ export function SiteFooter(): React.JSX.Element {
             </div>
           </div>
 
-          <div className="footer-ribbon" aria-label="Obecność w sieci">
+          <div className="footer-ribbon reveal" aria-label="Obecność w sieci">
             <span className="footer-ribbon-rule" aria-hidden="true" />
             <ul className="footer-ribbon-list">
               <li>
@@ -228,7 +275,7 @@ export function SiteFooter(): React.JSX.Element {
             <span className="footer-ribbon-rule" aria-hidden="true" />
           </div>
 
-          <div className="site-footer-colophon">
+          <div className="site-footer-colophon reveal">
             <div className="footer-colophon-fonts micro">
               <a
                 className="footer-colophon-label"

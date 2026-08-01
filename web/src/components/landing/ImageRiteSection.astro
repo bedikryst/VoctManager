@@ -17,6 +17,10 @@ const rite = bleedPair("chor-spot");
 <section class="image-rite" id="rite" aria-label="Światło">
   <BleedImage desktop={rite.desktop} mobile={rite.mobile} alt="" position="center 42%" />
   <div class="rite-glow" aria-hidden="true"></div>
+  {/* Two registers in one section, which is the point of having registers: the nave is LIT
+      (the veil lifts off the photograph) while the inscription over it is INKED. Sits above
+      the section scrim and below the quote — see --veil-z in the section's CSS. */}
+  <span class="reveal-light" aria-hidden="true"></span>
   <div class="rite-quote reveal">
     <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
       <circle cx="32" cy="32" r="3" stroke="currentColor" stroke-width="1" />

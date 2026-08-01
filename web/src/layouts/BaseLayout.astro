@@ -342,9 +342,8 @@ const ogLocaleAlternates =
         const root = document.documentElement;
         if (!root.classList.contains("reveal-ready")) return;
         // Measure before touching any class, so one settle cannot shift the next measurement.
-        // The hidden state carries a translateY, which getBoundingClientRect includes — every
-        // top reads ~60px low, which only makes the fold test conservative: an element
-        // straddling the fold is left to the observer, which is where it belongs anyway.
+        // The hidden state is opacity-only (the ink register — base.css), so these rects are
+        // the elements' true positions; the fold test needs no allowance for a translate.
         // An empty box means the node isn't rendered at all (a reveal inside a closed <details>,
         // e.g. the /koncerty programme rows) — those report top 0 and must NOT be counted as
         // above the fold, or they would be settled here and lose their cascade on open.

@@ -154,11 +154,19 @@ const jsonLd = {
   </div>
 
   <style is:global>
-    /* Reveal hidden-state gate: only engage when JS marked motion live (mirrors base.css's
-       reveal-ready trick, but for the landing's own unlayered `.reveal` system). */
-    html:not(.voct-motion) .voct-landing .reveal {
+    /* Register hidden-state gate: only engage when JS marked motion live (mirrors base.css's
+       reveal-ready trick, but for the landing's own unlayered register system). Ink and lead
+       resolve to their written state; the light veil resolves to LIFTED, not to opaque — a
+       visitor whose motion never runs must not be left looking through a dark pane with
+       nothing coming to raise it. The lead register needs no entry here: its pseudo-rule is
+       declared inside `html.voct-motion` to begin with, so without the gate the element simply
+       keeps the real border it always had. */
+    html:not(.voct-motion) .voct-landing :is(.reveal, .reveal-rule, .reveal-rule-v) {
       opacity: 1 !important;
       transform: none !important;
+    }
+    html:not(.voct-motion) .voct-landing .reveal-light {
+      opacity: 0 !important;
     }
 
     /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for

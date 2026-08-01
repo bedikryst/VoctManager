@@ -5,19 +5,24 @@
  *  The word is the moment: in a part-book, tacet instructs the voice to stay silent — here
  *  the page rests before the voice enters (VoxMoment follows). No attribution, no aphorism.
  *
- *  The pacing is spatial, NOT behavioural: the section's own height and the ornament's reveal
- *  supply the pause. The page never touches the visitor's scroll — an earlier version halted
- *  Lenis for ~2.8s and read as a frozen page on touch, so the lock was removed (see the note
- *  over setupSilenceMoment in scripts/landing.ts, which now only marks the section settled).
+ *  The pacing is spatial, NOT behavioural: the section's own height supplies the pause. The
+ *  page never touches the visitor's scroll — an earlier version halted Lenis for ~2.8s and read
+ *  as a frozen page on touch, so the lock was removed for good (see the note where
+ *  setupSilenceMoment used to live in scripts/landing.ts).
+ *
+ *  The arrival is a `.reveal-cue`, like the interludes and the coda: the shared observer flips
+ *  `.is-visible` when the visitor actually reaches the section, and 10-silence.css draws the
+ *  ornament outward from its centre dot before `tacet.` is inked behind it. This replaced a
+ *  controller that resolved both states at bind time — the entrance played out while the
+ *  visitor was still in the hero, so the moment was always already over on arrival.
  *  Reduced-motion + no-JS visitors see the line statically (gated by html.voct-motion).
  * @architecture Astro islands 2026
  * @module components/landing/SilenceMoment
  */
 ---
 
-<section class="silence-moment" data-silence aria-label="Chwila ciszy">
-  <div class="silence-sentinel" data-silence-sentinel aria-hidden="true"></div>
-  <div class="silence-inner">
+<section class="silence-moment" aria-label="Chwila ciszy">
+  <div class="silence-inner reveal-cue">
     <svg
       class="silence-ornament"
       viewBox="0 0 120 12"
@@ -26,9 +31,13 @@
       stroke-linecap="round"
       aria-hidden="true"
     >
-      <line x1="0" y1="6" x2="50" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
-      <circle cx="60" cy="6" r="1.6" fill="currentColor" stroke="none" />
-      <line x1="70" y1="6" x2="120" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
+      {/* Both rules start AT the dot and are drawn outward, so the ornament opens from its
+          centre rather than sweeping across. Stroke-dash drawing always runs from x1, so the
+          left rule is authored right-to-left (50 → 0) — reversing the coordinates is the only
+          way to reverse the direction. pathLength="1" puts both on the same clock. */}
+      <line class="silence-rule" pathLength="1" x1="50" y1="6" x2="0" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
+      <circle class="silence-dot" cx="60" cy="6" r="1.6" fill="currentColor" stroke="none" />
+      <line class="silence-rule" pathLength="1" x1="70" y1="6" x2="120" y2="6" stroke-width="0.5" stroke-opacity="0.45" />
     </svg>
 
     <p class="silence-line">

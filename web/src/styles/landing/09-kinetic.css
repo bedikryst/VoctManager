@@ -18,18 +18,6 @@
     initial-value: 360;
   }
 
-  @property --wght-reveal {
-    syntax: "<number>";
-    inherits: false;
-    initial-value: 320;
-  }
-
-  @property --reveal-y {
-    syntax: "<length>";
-    inherits: false;
-    initial-value: 0px;
-  }
-
   /* Wordmark "VoctEnsemble" + zegar w footerze potrzebują wht który CASCADUJE
      do dzieci (litery wordmarka splitowane przez JS przy cursor-reactive
      desktop). Stąd osobny --wght-mark z inherits: true. Reszta strony używa

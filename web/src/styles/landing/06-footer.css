@@ -801,14 +801,17 @@
     color: var(--candle);
   }
 
+  /* ── The hero, in the ink register ──────────────────────────────────────────
+     The threshold is WRITTEN, not materialised: the words already stand at
+     half-ink when the curtain parts, and the cadence (s2…s6) inks them to full
+     in order. The old entrance — translateY(30px) + blur(10px) — was the one
+     place the landing still spoke the stock idiom, and it spoke it in the first
+     frame anyone sees. A blur-up hero is the 2026 signature of a generated page.
+     Half-ink also means there is nothing behind the dissolving curtain waiting to
+     "arrive": the page is already written, the light just reaches it. */
   .intro-stage {
-    opacity: 0;
-    transform: translateY(30px);
-    filter: blur(10px);
-    transition:
-      opacity 1.4s var(--ease-slow),
-      transform 1.4s var(--ease-slow),
-      filter 1.4s var(--ease-slow);
+    opacity: var(--half-ink);
+    transition: opacity 1.4s var(--ease-slow);
   }
 
   .intro-stage.s2 { transition-delay: 0.12s; }
@@ -820,81 +823,142 @@
 
   body:not(.preload-open):not(.threshold-open) .intro-stage {
     opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
   }
 
   @media (pointer: coarse), (hover: none) {
     .intro-stage {
-      transform: translateY(18px);
-      filter: none;
-      transition: opacity 1s var(--ease-slow), transform 1s var(--ease-slow);
+      transition-duration: 1s;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .intro-stage {
       opacity: 1;
-      transform: none;
-      filter: none;
       transition: none;
     }
   }
 
-  /* .reveal — wejście do viewportu (IntersectionObserver).
-     Wycięty filter: blur — Gaussian blur jest jedną z najdroższych operacji GPU,
-     a przy długich sekcjach z wieloma reveal'ami jednocześnie powodował drop frames.
-     Zamiast tego: większy translate i delikatne scale dla "głębi" zamiast blura.
-     Blur zostaje TYLKO w jednorazowym .intro-stage przy load — tam mamy budżet. */
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ENTRANCE REGISTERS — three materials, three arrivals
+     ───────────────────────────────────────────────────────────────────────────
+     A manuscript is made of three things that do not behave alike, so the page
+     enters as three things. Nothing slides up from below any more: travelling in
+     from off-position is the physics of a slide deck, and it was carrying 26 of
+     the landing's 30 entrances while the authored moments (manifest sweep, knot
+     draw, coda score) stayed islands inside it.
+
+       INK   `.reveal`       copy and headings — half-ink → full ink, in place.
+       LEAD  `.reveal-rule`  a hairline THE DESIGN ALREADY HAS is ruled left→right
+                             (`-v`: top→down). A scriptorium page is pricked and
+                             ruled before one letter is written, so a rule that
+                             precedes its text is the only entrance this page can
+                             make that is literally true of the object it imitates.
+                             No hairline was added to have something to animate —
+                             every one is a border the layout already carried.
+                             Inventing lines for the effect is the showreel move
+                             this register exists to make unnecessary.
+       LIGHT `.reveal-light` photography — a veil of the section's own dark lifts
+                             off the image. Photographs are not written; they are lit.
+       CUE   `.reveal-cue`   no appearance of its own; a bare `.is-visible` trigger
+                             for choreography authored elsewhere (interlude knots,
+                             coda score, silence ornament). A node wearing this must
+                             NOT also wear a register — that stacks a second,
+                             unrelated motion on an authored one, which is exactly
+                             what the manifest stanzas were freed from and what the
+                             coda emblem was still doing.
+
+     INK + LEAD may share one node, and only that pair: rule first, ink a beat
+     behind (the delay below) is one causal gesture, not two effects.
+
+     Every register is opacity or transform on a compositor layer. The blur that
+     used to live here is gone for good — cut once for GPU cost, and by now the
+     thing that dated the page. ══════════════════════════════════════════════ */
+
   .reveal {
-    opacity: 0;
-    transform: translateY(42px) scale(0.985);
-    transition:
-      opacity 1.1s var(--ease-slow),
-      transform 1.1s var(--ease-slow);
-  }
-
-  @media (pointer: coarse), (hover: none) {
-    .reveal {
-      transform: translateY(22px) scale(1);
-      transition:
-        opacity 0.85s var(--ease-slow),
-        transform 0.85s var(--ease-slow);
-    }
-
-    .reveal-img img {
-      transform: scale(1.06);
-      transition: transform 1.2s var(--ease-slow);
-    }
-  }
-
-  .reveal-img {
-    overflow: hidden;
-  }
-
-  .reveal-img img {
-    transform: scale(1.12);
-    transition: transform 1.8s var(--ease-slow);
-    will-change: transform;
-  }
-
-  .reveal-img.is-visible img {
-    transform: scale(1);
+    opacity: var(--half-ink);
+    transition: opacity var(--ink-in) var(--ease-slow);
   }
 
   .reveal.is-visible {
     opacity: 1;
-    transform: translateY(0) scale(1);
   }
 
-  .reveal.is-settled {
-    transition: none;
-    will-change: auto;
+  /* The rule leads and the ink follows it onto the page. This delay IS the pairing — and the
+     rule now genuinely finishes first (0.85s against the ink's 0.18 + 0.9 = 1.08s), which it
+     did not when both ended within 30ms of each other. That only became safe once `settle()`
+     stopped accepting the pseudo-rule's transitionend on ink-bearing nodes: `is-settled`
+     strips both transitions, so the shorter one used to cut the longer one off. */
+  .reveal:is(.reveal-rule, .reveal-rule-v).is-visible {
+    transition-delay: 0.18s;
   }
 
-  .reveal-img.is-settled img {
+  /* ── LEAD ──────────────────────────────────────────────────────────────────
+     The element keeps its real border for no-JS and reduced-motion visitors; only
+     under `html.voct-motion` is that border handed to a pseudo-rule that can be
+     drawn. The element's OWN stylesheet must blank the matching border side and
+     set `--rule-ink` to its colour — this file cannot know which side or which ink
+     any given hairline uses, and guessing would repaint the page's borders. */
+  .reveal-rule,
+  .reveal-rule-v {
+    position: relative;
+  }
+
+  html.voct-motion :is(.reveal-rule, .reveal-rule-v)::before {
+    content: "";
+    position: absolute;
+    background: var(--rule-ink, var(--line));
+    pointer-events: none;
+    transition: transform var(--rule-in) var(--ease-rule);
+  }
+
+  html.voct-motion .reveal-rule::before {
+    inset: var(--rule-inset, 0 0 auto 0);
+    height: 1px;
+    transform-origin: var(--rule-from, left) center;
+  }
+  html.voct-motion .reveal-rule:not(.is-visible)::before {
+    transform: scaleX(0);
+  }
+
+  html.voct-motion .reveal-rule-v::before {
+    inset: var(--rule-inset, 0 auto 0 0);
+    width: 1px;
+    transform-origin: center var(--rule-from, top);
+  }
+  html.voct-motion .reveal-rule-v:not(.is-visible)::before {
+    transform: scaleY(0);
+  }
+
+  /* ── LIGHT ─────────────────────────────────────────────────────────────────
+     A self-contained veil span: absolute, inert, and INVISIBLE by default, so a
+     no-JS or reduced-motion visitor is never left looking through a dark pane
+     that nothing will lift. It materialises only under the motion gate, and only
+     until its section is reached. Never fully opaque — 0.58 keeps the photograph
+     legible underneath, the same promise half-ink makes for copy: the page is
+     never blank, only unlit. */
+  .reveal-light {
+    position: absolute;
+    inset: 0;
+    z-index: var(--veil-z, 0);
+    background: var(--veil-ink, rgba(8, 8, 7, 0.58));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--veil-lift) var(--ease-slow);
+  }
+
+  html.voct-motion .reveal-light:not(.is-visible) {
+    opacity: 1;
     transition: none;
-    will-change: auto;
+  }
+
+  /* Spent: drop the transition so the compositor can release the layer. The rule
+     register needs the pseudo-element form — its transition never lived on the
+     element, so stripping only the element would leave the hairline hot. */
+  :is(.reveal, .reveal-light).is-settled {
+    transition: none;
+  }
+  :is(.reveal-rule, .reveal-rule-v).is-settled::before {
+    transition: none;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -910,13 +974,11 @@
       transition-duration: 0.01ms !important;
     }
 
-    .reveal-img img {
-      transform: none;
-    }
-
     .reveal {
       opacity: 1;
-      transform: none;
-      filter: none;
+    }
+
+    .reveal-light {
+      display: none;
     }
   }

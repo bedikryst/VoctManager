@@ -23,6 +23,7 @@ const ROWS = [
 <section class="final-support" id="wesprzyj" aria-label="Wesprzyj VoctEnsemble">
   <div class="final-support-media" aria-hidden="true">
     <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" position="center" />
+    <span class="reveal-light"></span>
   </div>
   <div class="section">
     <div class="final-grid">
@@ -76,7 +77,9 @@ const ROWS = [
         </div>
       </div>
 
-      <div class="donation-list">
+      {/* The ledger's rule is drawn on the wrapper, the tiers are inked inside it — two nodes,
+          because a node may hold ink and lead together only when the rule is its own. */}
+      <div class="donation-list reveal-rule">
         <div class="donation-rows reveal">
           {
             ROWS.map((row) => (
@@ -88,7 +91,7 @@ const ROWS = [
           }
         </div>
 
-        <div class="bank-card reveal" id="przelew" aria-label="Dane do przelewu">
+        <div class="bank-card reveal reveal-rule" id="przelew" aria-label="Dane do przelewu">
           <div class="bank-row">
             <span class="currency">PLN</span>
             <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>

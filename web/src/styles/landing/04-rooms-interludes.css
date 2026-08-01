@@ -37,6 +37,19 @@
     opacity: 0.32;
   }
 
+  /* Ruled outward from the centre as the dark room opens — the rule is symmetric about the
+     page's axis, so drawing it from one end would read as a wipe rather than as ruling. The
+     hidden state must restate translateX: it shares the one transform property. */
+  html.voct-motion .director-dark.reveal-cue::after {
+    transition:
+      transform var(--rule-in) var(--ease-rule),
+      opacity var(--rule-in) var(--ease-rule);
+  }
+  html.voct-motion .director-dark.reveal-cue:not(.is-visible)::after {
+    transform: translateX(-50%) scaleX(0);
+    opacity: 0;
+  }
+
   .director-dark .director-copy .role {
     color: rgba(244, 241, 233, 0.46);
   }
@@ -78,6 +91,9 @@
     aspect-ratio: 3 / 4;
     overflow: hidden;
     background: var(--paper-soft);
+    /* Above the portrait's own two overlays (::before vignette z1, ::after gradient z2), or
+       the veil would lift behind them and barely register. */
+    --veil-z: 3;
   }
 
   .portrait img {
@@ -228,6 +244,9 @@
     overflow: hidden;
     color: var(--paper);
     background: var(--dark);
+    /* The veil is a section-level child so it can sit ABOVE `.ensemble::after` (the scrim);
+       the copy is lifted to 2 to stay above both. */
+    --veil-z: 1;
   }
 
   .ensemble-media {
@@ -251,7 +270,7 @@
 
   .ensemble-inner {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     padding-top: var(--space-xxl);
     padding-bottom: var(--space-xxl);
   }
@@ -296,6 +315,13 @@
     color: rgba(244, 241, 233, 0.82);
   }
 
+  /* The one vertical rule on the page: the founding testimony's gold margin is ruled downward
+     before the quotation is inked beside it, the way a scribe rules a margin. */
+  html.voct-motion .ensemble-copy .ensemble-origin.reveal-rule-v {
+    border-left-color: transparent;
+    --rule-ink: rgba(198, 164, 91, 0.55);
+  }
+
   .ensemble-facts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -303,6 +329,12 @@
     margin-top: 56px;
     border-top: 1px solid rgba(244, 241, 233, 0.22);
     padding-top: 28px;
+  }
+
+  /* The ledger is ruled, then the three facts are written under it. */
+  html.voct-motion .ensemble-facts.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: rgba(244, 241, 233, 0.22);
   }
 
   .fact {
@@ -357,38 +389,44 @@
     list-style: none;
     margin: clamp(48px, 6vw, 88px) 0 0;
     padding: 0;
-    border-top: 1px solid var(--line-strong);
   }
 
+  /* Every rule in this register is on the TOP edge of the entry it opens, and that is a
+     geometry fix, not a restyle: the observer fires on an element's top, so a rule on the
+     BOTTOM of a 280–420px entry was drawn 280–420px lower — at 120–135% of the viewport,
+     off-screen, every entry, every time. Nobody had ever watched this register be written.
+     The lines land on exactly the same boundaries as before (a 1px border moved from the end
+     of entry N to the start of entry N+1 sits at the same y and costs the same flow height),
+     so this is pixel-neutral and purely a matter of WHEN each line is drawn. It is also the
+     truer reading: a scribe rules the line, then writes on it. */
   .path-entry {
     position: relative;
     display: grid;
     grid-template-columns: minmax(140px, 0.32fr) minmax(0, 1fr);
     gap: clamp(24px, 5vw, 80px);
     padding: clamp(28px, 4vw, 56px) 0 clamp(32px, 4.5vw, 64px);
+    border-top: 1px solid var(--line);
     transition: background 0.55s var(--ease);
   }
 
-  /* The entry rule is a drawn line, not a border: it is ruled left to right as the entry
-     arrives, in the same ink language as the interlude and coda strokes, so the register
-     reads as being written rather than rendered. Static (already ruled) for no-JS and
-     reduced-motion visitors — html.voct-motion is the only thing that retracts it. */
-  .path-entry::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 1px;
-    background: var(--line);
-    transform-origin: left center;
+  /* The register's opening rule is the first entry's own — one line, one owner. It used to be
+     `.path-register`'s border-top, which made the <ol> a register node purely to carry it. */
+  .path-register .path-entry:first-child {
+    border-top-color: var(--line-strong);
   }
 
-  html.voct-motion .path-entry.reveal::after {
-    transform: scaleX(0);
+  /* The entry rule is drawn, not rendered — the register reads as being WRITTEN. This is the
+     pattern the site's whole LEAD register was generalised from (06-footer.css), so it now
+     goes through that shared mechanism instead of its own hand-rolled pseudo-element: a real
+     border for no-JS and reduced-motion visitors, handed over to the drawn pseudo-rule only
+     while motion is live. Top edge is `--rule-inset`'s default, so it goes unstated. */
+  html.voct-motion .path-entry.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: var(--line);
   }
 
-  html.voct-motion .path-entry.reveal.is-visible::after {
-    transform: scaleX(1);
-    transition: transform 1.05s var(--ease-slow) 140ms;
+  html.voct-motion .path-register .path-entry.reveal-rule:first-child {
+    --rule-ink: var(--line-strong);
   }
 
   .path-entry:hover {
@@ -488,13 +526,14 @@
      candle-toned tag, a permanent faint gold wash instead of the hover one.
      This is where the page's narrative resolves: pamięć → następny zależy
      od Ciebie. */
+  /* The open card takes its drawn opening rule from `.path-entry` like every other entry. Its
+     candle-gold line is the one that CLOSES the register, below the card — and that one stays
+     a plain static border. It is the last hairline on the page with nothing beneath it to
+     anchor a trigger to, so drawing it would mean drawing it at the card's bottom edge: the
+     single most off-screen position in the section, which is the defect this pass removed. */
   .path-next {
     background: linear-gradient(90deg, rgba(198, 164, 91, 0.05), rgba(198, 164, 91, 0.015));
-  }
-
-  /* Same drawn rule as every other entry, in candle gold — this one closes the register. */
-  .path-next::after {
-    background: rgba(198, 164, 91, 0.3);
+    border-bottom: 1px solid rgba(198, 164, 91, 0.3);
   }
 
   .path-next .path-entry-roman {
@@ -704,6 +743,8 @@
     position: absolute;
     inset: 0;
     z-index: 0;
+    /* Above this wrapper's own ::after scrim (z-auto), below `.final-support .section` (z1). */
+    --veil-z: 1;
   }
   .final-support-media::after {
     content: "";
@@ -748,6 +789,11 @@
     border-top: 1px solid rgba(244, 241, 233, 0.28);
   }
 
+  html.voct-motion .donation-list.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: rgba(244, 241, 233, 0.28);
+  }
+
   .donation-row {
     display: grid;
     grid-template-columns: 105px minmax(0, 1fr);
@@ -770,6 +816,11 @@
   .bank-card {
     margin-top: 34px;
     border-top: 1px solid rgba(244, 241, 233, 0.28);
+  }
+
+  html.voct-motion .bank-card.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: rgba(244, 241, 233, 0.28);
   }
 
   .bank-row {

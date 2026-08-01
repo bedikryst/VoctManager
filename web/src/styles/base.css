@@ -6,10 +6,16 @@
  *  `.is-in`, gated on `html.reveal-ready`), NOT scroll-scrubbed — it animates once and
  *  persists, and degrades to "always visible" without JS or under reduced motion.
  *  CAUTION: `.reveal` has a SECOND, independent definition in landing/06-footer.css for the
- *  landing only, driven by `.is-visible`/`.is-settled` instead of `.is-in` and with the blur
- *  deliberately dropped (GPU cost). The two share a class name but not a controller, so any
- *  bare `.reveal` rule added here also lands on the landing — scope new rules to
- *  `html.reveal-ready` or `:not(.voct-motion)` so they cannot cross over.
+ *  landing only, driven by `.is-visible`/`.is-settled` instead of `.is-in`. Both now express
+ *  the same INK register (half-ink → full ink, no travel, no blur) so the site reads as one
+ *  hand. The other two registers (lead, light) exist only in the landing bundle, which is a
+ *  BOUNDARY, not a judgement: /koncerty rules the same hairlines as `.path-register` and
+ *  /o-nas carries a portrait, so both have material this file cannot yet serve. Lifting the
+ *  three registers into one shared sheet — and collapsing this duplicate definition with it —
+ *  is the open half of the 2026-08 pass (docs/web-reveal-remediation.md).
+ *  The two share a class name but not a controller, so any bare `.reveal` rule added here
+ *  also lands on the landing — scope new rules to `html.reveal-ready` or `:not(.voct-motion)`
+ *  so they cannot cross over.
  * @architecture Astro islands 2026
  * @module styles/base
  */
@@ -278,30 +284,31 @@ button { font: inherit; }
    so no-JS / reduced-motion always show content. Above-the-fold elements intersect at load,
    so they animate in on a time basis (no scroll required) — fixes the "stuck mid-scroll" hero. */
 /* The no-JS / reduced-motion fallback, and ONLY that — hence the `:not(.voct-motion)` gate
-   rather than a bare `.reveal`. The landing ships its own unlayered `.reveal` system
+   rather than a bare `.reveal`. The landing ships its own unlayered register system
    (06-footer.css, driven by `.is-visible` instead of `.is-in`) at the same specificity as a
    bare rule here, and Rollup emits base.css AFTER the landing bundle on `/` — so a bare
    `.reveal { opacity: 1 }` won on order and pinned the landing's reveals opaque, leaving the
-   translate with nothing to fade. Dev did not show it: Vite injects in import order there,
+   entrance with nothing left to play. Dev did not show it: Vite injects in import order there,
    base first. Gated, this rule fires exactly when it should (no `.voct-motion` means JS is
    dead or motion is off, and then content must simply be visible) and is inert otherwise. */
 html:not(.voct-motion) .reveal { opacity: 1; }
 
+/* The INK register — the subpages' half of the site-wide entrance language (the landing runs
+   the full three registers; see landing/06-footer.css). Copy waits at half-ink and is inked to
+   full when it is reached. It does NOT travel and it does NOT blur: entering from an offset is
+   slide-deck physics, and a blur-up is the 2026 signature of a generated page. Above all it
+   never starts at zero — a page that opens holes and then fills them in is what a fast scroll
+   exposes, and that emptiness reads as machine-made regardless of how the filling is eased.
+   `data-d` stays: on a subpage the cadence is authored per element, so it needs no queue (the
+   landing's shared onset queue exists because ITS siblings are generated in bulk). */
 @media (prefers-reduced-motion: no-preference) {
   html.reveal-ready .reveal {
-    opacity: 0;
-    transform: translateY(60px);
-    filter: blur(6px);
-    transition:
-      opacity 0.95s var(--ease-slow),
-      transform 0.95s var(--ease-slow),
-      filter 0.95s var(--ease-slow);
+    opacity: var(--half-ink);
+    transition: opacity var(--ink-in) var(--ease-slow);
     transition-delay: var(--reveal-delay, 0s);
   }
   html.reveal-ready .reveal.is-in {
     opacity: 1;
-    transform: none;
-    filter: blur(0);
   }
   .reveal[data-d="1"] { --reveal-delay: 0.09s; }
   .reveal[data-d="2"] { --reveal-delay: 0.18s; }

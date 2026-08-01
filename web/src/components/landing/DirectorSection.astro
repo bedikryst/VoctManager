@@ -18,9 +18,11 @@ import { photo } from "../../lib/photos";
 const florent = photo("florent");
 ---
 
-<section id="dyrygent" class="section director-dark" aria-label="Kierownictwo artystyczne">
+{/* `.reveal-cue` on the section drives one thing only: the gold hairline at its top edge
+    (`.director-dark::after`), which is ruled outward from the centre as the dark room opens. */}
+<section id="dyrygent" class="section director-dark reveal-cue" aria-label="Kierownictwo artystyczne">
   <div class="director-grid">
-    <div class="portrait reveal reveal-img">
+    <div class="portrait">
       <Picture
         src={florent}
         formats={["avif", "webp"]}
@@ -30,9 +32,13 @@ const florent = photo("florent");
         loading="lazy"
         decoding="async"
       />
+      {/* A portrait is lit, not written: the veil lifts instead of the old scale(1.12)→1
+          de-zoom, which was the landing's only use of that idiom and so never read as one. */}
+      <span class="reveal-light" aria-hidden="true"></span>
     </div>
-    {/* Per-element reveals (not one block) so the copy enters line-by-line as you scroll,
-        the granular register feel of "Z drogi" — the phone no longer pops the whole column. */}
+    {/* Per-element ink (not one block) so the copy is written line-by-line as you scroll,
+        the granular feel of the "Z drogi" register — the phone no longer resolves the whole
+        column at once. */}
     <div class="director-copy">
       <div class="director-lede reveal">
         <div class="role micro">Kierownictwo artystyczne</div>

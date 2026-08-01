@@ -46,8 +46,17 @@ the beam, the nave and the listeners.
 **`SilenceMoment` never takes the scroll.** An enforced ~2.8s scroll-lock was built and then
 deleted: on touch (and in DevTools device emulation, where `pointer` can still report `fine`) a
 page that ignores a swipe reads as broken. `scripts/landing.ts` says `no scroll-lock, ever`. The
-pause is spatial — section height and reveal timing. General principle: a musical rest is measured
-time, but on a page the reader holds the clock, so the only honest rest is space.
+pause is spatial — section height. General principle: a musical rest is measured time, but on a
+page the reader holds the clock, so the only honest rest is space.
+
+*Second landmine in the same section, fixed 2026-08-01:* what replaced the lock was a controller
+that added `is-listening` **and** `is-settled` in one call at bind time. Both resolved to their
+resting opacities immediately, so the 1.6s entrance played while the visitor was still six screens
+up in the hero, and `tacet.` was simply already there on arrival — the page's best idea, spent off
+screen. Two comments meanwhile described a mechanism that did not exist (`.reveal` nodes driving
+it; the component had none). The section is a `.reveal-cue` now. **Anything whose whole point is a
+moment must be triggered by arrival, not by bind** — and if a comment claims an observer drives
+something, grep for the class before trusting it.
 
 **The mark is a filled outline (`public/voct-mark.svg`), not centerline strokes — and a
 centerline wireframe of the V is a DIFFERENT OBJECT.** A real vector exists since 2026-07
@@ -76,6 +85,21 @@ holds. Do not "fix" this by putting a `vector-effect="non-scaling-stroke"` floor
 a constant 1px ribbon rescues the 40px case but doubles the thin arm at 220px, flattening the
 stroke modulation exactly where it is the point. If the mark is ever redrawn, BOTH masters
 must be re-exported from the same source.
+
+**Nothing outside React may hold a class on an island that does not hydrate cleanly.** The
+landing footer's reveals were applied correctly and never appeared: `useLiturgicalClock` takes its
+initial state during *render*, and on a statically built site that means the server HTML carries
+the build-time clock while the client renders `now` — a guaranteed hydration mismatch on every
+visit. React does not merely warn at that; it discards the server DOM for the island and
+re-renders, so the shared IntersectionObserver was left holding elements that were no longer in
+the document, and every class it set landed on a detached node. Nothing looked broken: the footer
+simply sat at half-ink forever. The fix is `suppressHydrationWarning` on each clock-derived text
+node plus a fresh snapshot on mount (so the kept build-time text is corrected within a frame, and
+a no-JS visitor still gets a rendered clock face instead of the blank one a null initial state
+would leave). Before putting `.reveal` — or any externally-driven class — on an island, check that
+it renders the same thing on the server and on the first client pass. Two conditions, both
+required: the `className` prop must be a **constant string** (React writes the attribute only when
+the value changes, so a constant survives re-renders), and the island must **hydrate clean**.
 
 **`transitions.css` — never animate the incoming layer.** The model is "turned leaf": the outgoing
 page drifts and dissolves on top, the incoming is drawn fully opaque underneath the whole time.
@@ -227,10 +251,76 @@ fine print, where orphan control matters least.
 
 ---
 
-## 5. The motion language
+## 5. The motion language — three registers
 
-The site has exactly two motion idioms: **ink being drawn** (`.knot-draw` — interludes, coda,
-finalis, register rules) and **light passing** (gilding sweep, rite spotlight, manifest edge).
-Anything added in one of those two will look native at any strength; anything outside them will
-look bolted on however subtle it is. Coherence is the filter against showreel, not restraint —
-which is why a strong page-turn is fine and a tasteful generic fade-up would not have been.
+Rewritten 2026-08-01, because the previous version of this section ("exactly two idioms: ink
+being drawn and light passing") was *prescriptively* right and *descriptively* false. It did not
+account for the Ken Burns drift, the parallax, the variable-font breath or the interlude flames —
+none of which are ink or light — and, more damagingly, it did not account for the thing that was
+actually carrying **26 of the landing's 30 entrances**: a generic `translateY(42px) scale(0.985)`
+fade-up. The authored moments (manifest sweep, knot draw, coda score) were islands in it.
+
+The site has **three materials**, and each one arrives in its own way. Every entrance belongs to
+exactly one register; the classes are defined in `styles/landing/06-footer.css`.
+
+| Register | Class | Material | Behaviour |
+|---|---|---|---|
+| **Ink** | `.reveal` | copy, headings | half-ink → full ink, **in place** |
+| **Lead** | `.reveal-rule`, `-v` | hairlines the design already has | ruled left→right / top→down |
+| **Light** | `.reveal-light` | photography | a veil of the section's own dark lifts |
+| *(cue)* | `.reveal-cue` | — | no appearance; triggers authored choreography |
+
+Plus one **ambient** layer that is not an entrance at all and is governed by nothing here: Ken
+Burns, parallax, the flames' breathing, the knot's audio/scroll intensity.
+
+Three rules that generate the rest:
+
+1. **Nothing enters from `opacity: 0`.** Copy waits at `--half-ink` (0.44 — the same alpha the
+   manifest's half-light mask already used, so the whole site half-lights at one strength) and is
+   inked to full when reached. A page that opens holes and fills them in is what a fast scroll
+   exposes, and *that emptiness* is what reads as machine-made — not the movement. The veil obeys
+   the same law: 0.58, never opaque, so the photograph is always legible underneath.
+2. **Nothing travels.** Entering from an offset is slide-deck physics. Blur-up is worse: it is
+   the 2026 signature of a generated page, which is why the hero lost it too.
+3. **One node, one register — except ink+lead**, which is a single causal gesture (rule first,
+   ink 180ms behind). A node carrying an authored choreography takes `.reveal-cue` and nothing
+   else; stacking a register on top of a draw is exactly the compounded motion the manifest
+   stanzas were freed from, and it is what the coda emblem was still doing until this pass.
+
+**Do not add a hairline in order to have something to rule.** Every ruled line on the page is a
+border the layout already carried (`.manifest-top`, `.ensemble-facts`, `.ensemble-origin`'s gold
+margin, `.path-register`, `.path-entry`, `.donation-list`, `.bank-card`, the director section's
+centred gold rule). Inventing lines for the effect is the showreel move the register exists to
+make unnecessary.
+
+**Unison is the tell, not the effect.** N siblings flipped in one IntersectionObserver callback
+enter as one block, and that is what makes a page look generated more than any choice of easing.
+`setupReveal` therefore paces every entrance through one shared onset queue (220ms start-to-start,
+document order), the same "points of imitation" mechanism `setupManifestLight` uses for the
+stanzas. Anything new that reveals in bulk goes through that queue.
+
+Coherence is the filter against showreel, not restraint — which is why a strong page-turn is fine
+and a tasteful generic fade-up was not.
+
+**A choreography's duration is a scroll DISTANCE, and it was never budgeted as one.** A node fires
+when its top crosses 88% of the viewport and then keeps travelling: at an unhurried reading pace
+(~400px/s through Lenis) 1s of choreography carries it ~400px, i.e. ~44% of a 900px screen. So the
+budget is ~1.0s to finish in the reading zone and ~2.0s before it leaves the top. Ink (0.90s) and
+lead (0.85s) fit; the interlude knot ran **3.20s** and its gilding sweep **4.10s** — one and a half
+to two screens — so the page's own structural punctuation had never been watched finishing. Fixed
+2026-08-01 by a single tempo factor per choreography (never per-stroke hand-tuning: the internal
+rhythm is the composition, the total is only its tempo marking). The coda is the one exemption —
+the scroll ends under it.
+
+*Second, independent defect in the same place, same date:* the trigger fires on an element's *top*
+while a lead rule is drawn at its *border*, so bottom-ruled nodes like `.path-entry` (280–420px
+tall) drew their hairline at 120–135% vh — off-screen, every entry, every time. **Every rule is
+top-anchored now**, which is also the truer reading: a scribe rules the line, then writes on it.
+`.manifest-top` is the sole exception (short enough to stay inside budget). Do not "fix" a rule
+back onto a bottom border, and do not give the lead register its own trigger line to compensate
+for anything — two trigger lines invert the order of neighbouring nodes (a wrapper's rule would
+draw *after* the rows it opens). One trigger line for every register is a correctness requirement.
+
+Remediation is sequenced in `docs/web-reveal-remediation.md` — read that before retuning any
+timing here, and note its `Rejected` section (left→right on body copy, and line-by-line reveals)
+before proposing either.

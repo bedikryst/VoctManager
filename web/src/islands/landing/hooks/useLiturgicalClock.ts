@@ -44,6 +44,13 @@ export function useLiturgicalClock(): LiturgicalClock {
     let secondInterval: number | undefined;
     let minuteInterval: number | undefined;
 
+    // The initial state is taken during RENDER, which on a statically built page means the
+    // server's copy reads whatever the time was at build. The consumer keeps that text through
+    // hydration on purpose (suppressHydrationWarning in SiteFooter — a mismatch there makes
+    // React discard and rebuild the whole island), so the correction has to happen here, on
+    // mount, rather than waiting for the first minute boundary up to 60s away.
+    setClock(snapshot);
+
     const tickSeconds = () => setClock((prev) => {
       const next = String(new Date().getSeconds()).padStart(2, "0");
       return prev.seconds === next ? prev : { ...prev, seconds: next };

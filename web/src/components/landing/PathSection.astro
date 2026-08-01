@@ -36,19 +36,32 @@ const programFor = (id: string) => programById.get(id) ?? [];
         w jakiej zostały wykonane.
       </p>
 
+      {/* Every entry rules its own opening hairline as it arrives — including the register's
+          first line, which is the first entry's own top rule (the <ol> carries no border and
+          so is not a register node). This register is the pattern the site-wide LEAD register
+          was generalised from; it now goes through that shared mechanism (`.reveal-rule` +
+          its pseudo-rule, landing/06-footer.css).
+
+          An entry carries LEAD only — that opening rule. The INK is on its parts, because an
+          entry is ~380px tall and one `.reveal` on the whole card means one trigger at the
+          card's TOP: the title was watched being written while the summary 200px below it had
+          finished before the reader's eye ever got there. Each part now crosses the trigger on
+          its own, so the entry is written down the page the way it is read. The controls below
+          stay out of the register — a control that is half-ink is a control you are not sure
+          you are allowed to press yet. */}
       <ol class="path-register" aria-label="Wcześniejsze koncerty cyklu">
         {
           PATHS.map((path, i) => (
-            <li class="path-entry reveal">
-              <div class="path-entry-rail">
+            <li class="path-entry reveal-rule">
+              <div class="path-entry-rail reveal">
                 <span class="path-entry-roman">{ROMAN[i]}</span>
                 <span class="path-entry-year">{path.year}</span>
                 <span class="path-entry-tag">{path.tag}</span>
               </div>
               <div class="path-entry-body" data-cursor="no-snap">
-                <h3 class="path-entry-title">{path.title}</h3>
-                <p class="path-entry-place">{path.place}</p>
-                <p class="path-entry-summary">{path.note}</p>
+                <h3 class="path-entry-title reveal">{path.title}</h3>
+                <p class="path-entry-place reveal">{path.place}</p>
+                <p class="path-entry-summary reveal">{path.note}</p>
                 {path.video && (
                   <button
                     type="button"
@@ -93,16 +106,16 @@ const programFor = (id: string) => programById.get(id) ?? [];
           singers. The ensemble does not book venues on its own, so promising a date here
           would be false. When one is agreed, this card becomes its announcement (title,
           date, place) and a new open one takes its seat. */}
-      <aside class="path-entry path-next reveal" aria-label="Następny koncert cyklu">
-        <div class="path-entry-rail">
+      <aside class="path-entry path-next reveal-rule" aria-label="Następny koncert cyklu">
+        <div class="path-entry-rail reveal">
           <span class="path-entry-roman">{ROMAN[PATHS.length]}</span>
           <span class="path-entry-year">MMXXVI</span>
           <span class="path-entry-tag">czeka na zaproszenie</span>
         </div>
         <div class="path-entry-body">
-          <h3 class="path-entry-title">Szósty wieczór.</h3>
-          <p class="path-entry-place">Miejsce i termin wciąż otwarte</p>
-          <p class="path-entry-summary">
+          <h3 class="path-entry-title reveal">Szósty wieczór.</h3>
+          <p class="path-entry-place reveal">Miejsce i termin wciąż otwarte</p>
+          <p class="path-entry-summary reveal">
             Program powstaje na próbach. Data pojawi się tutaj, gdy znajdzie się
             gospodarz wieczoru i środki na honoraria dla śpiewaków. Każda
             darowizna ją przybliża.

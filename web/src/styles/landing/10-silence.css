@@ -1,9 +1,13 @@
   /* ── Silence moment ─────────────────────────────────────────────────────────────────────
-     Wymuszona cisza pomiędzy "Vox memoriae" a katalogiem przeszłych koncertów.
-     Setup w landing.ts: gdy data-silence-sentinel wejdzie w środek viewportu, Lenis się
-     zatrzymuje, wheel/touch/scroll-keys są zablokowane przez ~2.8s, potem strona wraca do
-     ruchu. Reduced-motion + powtórne wejście w tej samej sesji: linia jest po prostu
-     widoczna (klasa .is-settled), bez locka. */
+     Jeden cichy takt między "Vox memoriae" a katalogiem przeszłych koncertów. Pauza jest
+     PRZESTRZENNA — daje ją wysokość sekcji. Strona nigdy nie odbiera gościowi scrolla
+     (wymuszony lock istniał i został usunięty; na dotyku czytał się jako zawieszona strona).
+
+     Wejście prowadzi `.reveal-cue` na .silence-inner: wspólny obserwator (landing.ts) zapala
+     `.is-visible`, gdy gość NAPRAWDĘ dochodzi do sekcji. Kolejność jest kolejnością pisania:
+     najpierw kropka (nakłucie), potem obie kreski rysowane od niej na zewnątrz, na końcu
+     atrament słowa. Wcześniej kontroler ustawiał oba stany naraz przy bindzie — całe wejście
+     odgrywało się, gdy gość stał jeszcze w hero, więc moment był zawsze już po. */
   .silence-moment {
     position: relative;
     padding: clamp(140px, 17vw, 240px) max(28px, 5vw);
@@ -11,12 +15,6 @@
     text-align: center;
     color: var(--ink-soft);
     isolation: isolate;
-  }
-  .silence-sentinel {
-    position: absolute;
-    inset: 50% 0 auto 0;
-    height: 1px;
-    pointer-events: none;
   }
   .silence-inner {
     max-width: 760px;
@@ -30,6 +28,7 @@
     width: clamp(140px, 18vw, 220px);
     height: auto;
     color: var(--candle);
+    opacity: 0.5;
   }
   .silence-line {
     font-family: var(--serif);
@@ -40,25 +39,52 @@
     margin: 0;
     color: var(--ink);
   }
+  /* The whole line is the em, so this is the only ink that renders. It rests below full
+     strength on purpose: the word is a rest, and it keeps its distance from the coda's
+     finalis, which owns the page's last full-strength line. That distance is carried by the
+     COLOUR, never by opacity — opacity belongs to the entrance register, and a resting value
+     there would peg the half-ink state to an arbitrary ceiling instead of to the token. */
   .silence-line em {
     font-style: italic;
     font-weight: 360;
-    color: var(--candle);
+    color: color-mix(in srgb, var(--candle) 82%, transparent);
   }
-  /* No-JS / no-motion: line is just present (gated on html.voct-motion below). */
-  html.voct-motion .silence-moment .silence-ornament,
-  html.voct-motion .silence-moment .silence-line {
+
+  /* No-JS / no-motion: everything above is the resting state, so those visitors simply see the
+     ornament and the word. Only the hidden states below are gated. */
+  /* TEMPO — the whole moment closes at 1.4s (was 1.9s), the same 0.74 factor on all three
+     onsets so the writing order survives: dot 0.5s, rules 1.1s, word 1.4s. A choreography's
+     length is a scroll distance (~400px per second at reading pace), and this one sits
+     mid-page with no exemption — the coda may run long because the scroll ends under it. */
+  html.voct-motion .silence-dot {
+    transition: opacity 0.5s var(--ease-slow);
+  }
+  html.voct-motion .silence-inner:not(.is-visible) .silence-dot {
     opacity: 0;
-    transition: opacity 1.6s var(--ease-slow);
   }
-  html.voct-motion .silence-moment.is-listening .silence-ornament { opacity: 0.55; }
-  html.voct-motion .silence-moment.is-listening .silence-line { opacity: 1; }
 
-  /* After the lock releases, leave the line ambient (don't disappear on scroll-past). */
-  html.voct-motion .silence-moment.is-settled .silence-ornament { opacity: 0.35; }
-  html.voct-motion .silence-moment.is-settled .silence-line { opacity: 0.78; }
-
-  @media (prefers-reduced-motion: reduce) {
-    .silence-moment .silence-line { opacity: 1 !important; }
-    .silence-moment .silence-ornament { opacity: 0.55 !important; }
+  /* Same ink-draw mechanism as the interlude knots and the coda score (pathLength="1" +
+     dashoffset), just not the same selector — `.knot-draw` is scoped to `.aether-knot`. */
+  html.voct-motion .silence-rule {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 0.9s var(--ease-rule) 0.2s;
   }
+  html.voct-motion .silence-inner:not(.is-visible) .silence-rule {
+    stroke-dashoffset: 1;
+  }
+
+  /* The word waits at the site's one half-ink strength like every other line — it is the ink
+     register spelled out by hand here only because its onset has to sit behind the ornament. */
+  html.voct-motion .silence-line {
+    transition: opacity 0.8s var(--ease-slow) 0.6s;
+  }
+  html.voct-motion .silence-inner:not(.is-visible) .silence-line {
+    opacity: var(--half-ink);
+  }
+
+  /* No reduced-motion block: every hidden state above is gated on `html.voct-motion`, and
+     DocumentGates adds that class only when `prefers-reduced-motion` is NOT reduce. A block
+     here would have nothing to override — it would only be four resting values to keep in
+     sync by hand with the rules above, which is how `.silence-ornament` came to be declared
+     at two different opacities at once. */

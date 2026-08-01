@@ -26,9 +26,11 @@ const FACTS = [
 <section class="ensemble" id="zespol" aria-label="Zespół">
   <div class="ensemble-media" aria-hidden="true">
     <BleedImage desktop={ensemble.desktop} mobile={ensemble.mobile} alt="" position="center 32%" />
-    {/* Light register: the nave is unlit until the section is reached. */}
-    <span class="reveal-light"></span>
   </div>
+  {/* Light register: the nave is unlit until the section is reached. A sibling of the media
+      wrapper, not a child of it — this section's scrim is `.ensemble::after`, and a veil
+      underneath that scrim would have its lift compressed to a fraction of itself. */}
+  <span class="reveal-light" aria-hidden="true"></span>
   <div class="ensemble-inner section">
     {/* Each block carries its own register node (not one column-sized block) so the copy is
         written element-by-element as you scroll, paced by the shared onset queue, instead of
