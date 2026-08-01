@@ -136,7 +136,12 @@
   /* Top padding matches the subpage bar's brand row exactly so "Zamknij" sits on the persistent
      bar brand's line; the landing bar sits 2px lower and overrides this via
      `.voct-landing .nave-inner`. */
-  padding: calc(env(safe-area-inset-top, 0px) + 22px) var(--gutter) clamp(30px, 6vh, 64px);
+  /* All four sides clear the safe area: under `viewport-fit=cover` (BaseLayout) this card is the
+     full PHYSICAL screen, so the foot's CTA would otherwise sit on the home indicator and — on a
+     rotated phone — the words would run under the camera. */
+  padding: calc(env(safe-area-inset-top, 0px) + 22px) max(var(--gutter), env(safe-area-inset-right, 0px))
+    calc(env(safe-area-inset-bottom, 0px) + clamp(30px, 6vh, 64px))
+    max(var(--gutter), env(safe-area-inset-left, 0px));
   display: flex;
   flex-direction: column;
   /* Short viewports (landscape phones) scroll INSIDE the overlay instead of crushing the page;

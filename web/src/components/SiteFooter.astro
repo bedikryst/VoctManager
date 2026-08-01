@@ -81,7 +81,10 @@ const tempus = tempusForDate(new Date());
 </footer>
 
 <style>
-  .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw) 40px; }
+  /* The foot is the page's last band, so under `viewport-fit=cover` (BaseLayout) it owns the strip
+     behind the home indicator — its bottom padding absorbs that inset rather than printing the
+     colophon under the bar. Sides take the landscape notch the same way. */
+  .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(28px, 5vw, env(safe-area-inset-left, 0px)); }
   .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
   .foot-col h4 { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .46); margin: 0 0 18px; font-weight: 400; }
   .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }

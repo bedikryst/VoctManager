@@ -240,7 +240,11 @@ const langOptions = showLang
 </header>
 
 <style>
-  .chrome { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: calc(env(safe-area-inset-top, 0px) + 22px) max(28px, 5vw); color: var(--paper); background: transparent; border-bottom: 1px solid transparent; transition: color .5s var(--ease), background-color .5s var(--ease), border-color .5s var(--ease), padding .5s var(--ease), backdrop-filter .5s var(--ease); }
+  /* Padding is written out in all four sides deliberately. The safe-area inset belongs to the TOP
+     alone — under `viewport-fit=cover` (BaseLayout) a two-value shorthand would hand the same
+     ~59px notch calc to the bottom and swell the resting bar. The side gutters take the landscape
+     insets via `max()`, so a rotated phone never sets the brand or the toggle under the camera. */
+  .chrome { position: fixed; inset: 0 0 auto 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: calc(env(safe-area-inset-top, 0px) + 22px) max(28px, 5vw, env(safe-area-inset-right, 0px)) 22px max(28px, 5vw, env(safe-area-inset-left, 0px)); color: var(--paper); background: transparent; border-bottom: 1px solid transparent; transition: color .5s var(--ease), background-color .5s var(--ease), border-color .5s var(--ease), padding .5s var(--ease), backdrop-filter .5s var(--ease); }
   .chrome::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,0) 100%); opacity: 1; transition: opacity .5s var(--ease); }
   /* Glass rides a ::after LAYER, not the .chrome root. A non-`none` backdrop-filter turns its
      element into the containing block for `position: fixed` descendants — and the "Antyfona"

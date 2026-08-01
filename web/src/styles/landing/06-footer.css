@@ -19,7 +19,12 @@
   .site-footer-inner {
     width: min(1580px, 100%);
     margin: 0 auto;
-    padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw) clamp(28px, 3vw, 44px);
+    /* Last band of the page: under `viewport-fit=cover` (BaseLayout) it owns the strip behind the
+       home indicator, so the bottom padding absorbs that inset instead of setting the colophon
+       under the bar. Sides take the landscape notch the same way. */
+    padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw, env(safe-area-inset-right, 0px))
+      calc(env(safe-area-inset-bottom, 0px) + clamp(28px, 3vw, 44px))
+      max(28px, 5vw, env(safe-area-inset-left, 0px));
   }
 
   /* Inskrypcja IV — kanton finalny, dopina sekwencję I/II/III

@@ -268,7 +268,9 @@ button { font: inherit; }
   border-radius: 4px;
   transition: top 0.3s var(--ease);
 }
-.skip-link:focus { top: 16px; }
+/* Clears the notch: under `viewport-fit=cover` (BaseLayout) `top` is measured from the physical
+   edge, and a bare 16px would land the link behind the camera on the devices that have one. */
+.skip-link:focus { top: calc(env(safe-area-inset-top, 0px) + 16px); }
 
 /* The no-JS / reduced-motion fallback for every register-bearing node, and ONLY that — hence
    the `:not(.voct-motion)` gate rather than a bare `.reveal`. It is the exact counterpart of
@@ -293,8 +295,11 @@ html:not(.voct-motion) .reveal { opacity: 1; }
    Hover/focus reveals the "wróć w ciszę" hint to the left. */
 .scroll-top {
   position: fixed;
-  right: clamp(20px, 3vw, 36px);
-  bottom: clamp(20px, 3vw, 36px);
+  /* Offsets clear the safe area before their own inset: under `viewport-fit=cover` (BaseLayout)
+     the fixed corner is the PHYSICAL corner, so a bare clamp would park the mark on the home
+     indicator (and, rotated, under the camera). */
+  right: calc(env(safe-area-inset-right, 0px) + clamp(20px, 3vw, 36px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(20px, 3vw, 36px));
   z-index: 90;
   display: flex;
   align-items: center;
