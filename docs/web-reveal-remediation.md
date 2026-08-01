@@ -9,9 +9,10 @@ fix it, and what was measured to decide that.
 
 **How to read this file.** Etapy 0–4 are done — each keeps its section, because the measurements
 and the corrections inside them are the reasoning the later stages stand on. **`Etap 5`, the
-page-by-page sweep, is the next and last whole thing**, and it now carries five questions this
-pass banked rather than answered. The stages are ordered by dependency, not by value. `Rejected`
-is load-bearing: it records ideas that look right and are not, so they are not re-proposed.
+page-by-page sweep, is the last whole thing**; its census (5a) and its overrides (5c) are done, and
+what remains is **5b geometry** and **5d judgement**, both carrying measured lists rather than
+impressions. The stages are ordered by dependency, not by value. `Rejected` is load-bearing: it
+records ideas that look right and are not, so they are not re-proposed.
 
 **Where the machinery lives, now that it has stopped moving.** `styles/registers.css` — all four
 register classes, the ink press, the ink+lead pairing. `scripts/reveal.ts` — the one controller,
@@ -19,8 +20,8 @@ called by `landing.ts` (cadence `queue`) and `BaseLayout` (cadence `authored`). 
 — every duration, curve and weight. `base.css` keeps exactly one reveal rule, the no-motion
 un-gate. Nothing else on the site should declare a register.
 
-**A method note earned four times.** Etapy 1, 2, 3 and 4 each found the plan's own diagnosis
-wrong once the code was measured:
+**A method note earned seven times.** Every stage so far has found the plan's own diagnosis wrong
+once the code was measured:
 
 - **1b** was dropped outright — two trigger lines invert neighbour ordering.
 - **Etap 2**'s scope turned out to be five pages wider than written.
@@ -39,6 +40,17 @@ wrong once the code was measured:
   that declaration rather than adding to it. Reported from the browser 2026-08-01 and fixed in
   place. This is the same failure mode as every entry above: **each stage checked the property it
   was reasoning about and not the slot it was writing into.**
+- **Etap 5's own framing**, before it started. It filed itself as "judgement, not measurement" and
+  banked five questions on that basis; four of them turned out to be decidable by measuring, and
+  one — the hero `<h1>` press — was banked on a *false* claim about how the press's trigger reads
+  (see 5d). Worse, the five were a residue of measuring other things, so the sweep had no census
+  and could not have found what 5a found in an hour: two live overrides, and 60 photographs in the
+  wrong register. **Calling a stage editorial is how it avoids being measured.**
+- **Etap 4a's "next lever" did not survive its own verdict.** It banked a slower timing function
+  for the press as the move to make if 600 under-read. Watched, 600 read as slightly too *heavy* —
+  and a slower press curve holds the heavy stroke while the ink is already dark, taking the swell
+  from 1.07 to 1.43. The banked lever pointed straight at the reported defect. Recorded in
+  `tokens.css` as unavailable rather than left as advice.
 
 Before implementing any stage below, re-measure its claim against the source — the plan is a
 record of what was true when it was written, and the later stages keep changing what the earlier
@@ -771,19 +783,105 @@ to change the thing it pins.
 ## Etap 5 — the page-by-page sweep
 
 Only after 1–4, because the sweep is a judgement about *which nodes deserve a register*, and that
-judgement is worthless while the registers themselves mistime. Per page: what should gain a
-register, what should lose one, what should change register. Record decisions here as they are
-made, then consolidate into the guardrails when the sweep closes.
+judgement is worthless while the registers themselves mistime.
 
-Questions already banked for it, each arrived at by measuring something else:
+**The stage was mis-filed as judgement, and that framing is what kept it undone.** Of the five
+questions banked below, four are decidable by measuring, with rules the earlier stages already
+settled — only `/press` is genuinely editorial. And the banked five were a *residue*: each fell out
+of measuring something else, so nobody had ever enumerated the register nodes. The sweep had no
+input. It has one now.
 
-| question | where it came from |
+Order, and the stopping rule: **5a census → 5b geometry → 5c overrides → 5d judgement → 5e
+consolidate.** The stage closes when the census has no unflagged row, not when the pages feel
+right.
+
+### 5a. The census — DONE 2026-08-01
+
+`scripts` are throwaway; the method is not. A headless Chromium walks every page of **`dist/` under
+`astro preview`** — never the dev server, for the reason `base.css` already records — and for every
+register node reads its geometry and, critically, **the transition that actually wins on it**. Two
+details make the reading true and both were wrong on the first pass:
+
+- Strip `is-in` *and* `is-settled` before reading. Both change which declarations apply, and
+  `is-settled` strips the transition outright, so a node that has already entered reports nothing.
+- Reading `opacity` straight after stripping `is-in` reads a value **in flight** — removing the
+  class starts a transition *back* to the hidden state. Inject `* { transition: none !important }`
+  first, then read. The first run reported 100 nodes with a wrong hidden state; every one was this.
+
+**648 register nodes across 13 pages** (601 ink, 48 press, 11 lead, 6 cue, **4 light**). Five flags,
+four of them mechanical:
+
+| flag | result |
 |---|---|
-| **Should `/press` join the register system at all?** It has zero `.reveal` nodes, so it speaks none of the site's entrance language. Its heading breath was deleted in 4a rather than converted. | Etap 4a |
-| **Should `.final-support` carry a light register?** Under its own 0.78–0.88 gradient the photograph sits at 26–41/255 at rest; there is no visible image there to light, and no veil alpha rescues it without breaking "never blank, only unlit". | Etap 3d |
-| **Do the three bare hero `<h1>`s want a press?** `/o-nas`, `/kontakt`, `/koncerty` — their `.reveal`s are on inner `<span>`s, below the heading, so a press needs the reveals restructured, not just a class. | Etap 4a |
-| **The tall-node splits**, carried from 1e: `.final-lede`, `.bank-card`, `.donation-rows`, and the subpage blocks (`AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows) now that they are in the register system. | Etap 1e |
-| **Should `/koncerty`'s entry rules take the lead register, and `/o-nas`'s portrait the light?** Possible since 4b; whether they *should* is this sweep's call. | Etap 4b |
+| ink node whose winning transition lost `opacity` | **clear** — the only instance was `.path-entry-title`, fixed the same day |
+| ink node not on the register's clock (0.9 s / `--ease-ink`) | **1 found**, `/koncerty` `.rep-row` — see 5c |
+| ink node whose hidden state is not `--half-ink` | **1 found**, `/koncerty` `.station--memoriam .station-poster` — see 5c |
+| `.ink-press` whose `font-weight` ≠ `--wght-rest` | **clear**, all 48 |
+| ink node taller than the ink's own travel (~360 px @1440×900) | **69 instances, 20 shapes** — this is 5b |
+
+**The systemic finding, and it is the reason both 5c defects were invisible in review.** Astro
+scopes a page's own styles by appending `[data-astro-cid-…]` to **every compound**, so a two-class
+page rule is emitted at (0,4,0) and outranks `html.voct-motion .reveal` (0,2,1) *and* its `.is-in`
+(0,3,1). **Any page-local rule touching a register node's `opacity` or `transition` silently wins.**
+Reading the source cannot tell you this; reading `dist/` can. Add it to the list of things that must
+be measured from the emitted CSS, next to the bundle-order rule 4b turned on.
+
+### 5c. The overrides — DONE 2026-08-01
+
+Both were nodes that carry a register and whose page quietly replaced it. Neither is a question any
+of the banked five would have asked, because all five ask what a node *should gain or lose*.
+
+- **`/koncerty` `.rep-row`** — the repertoire rows ran a private entrance at (0,4,2): a 16 px
+  `translateY` on a 0.5 s clock with `--ease`. Three things at once — a **travel**, which rule 2
+  refuses outright; a **fourth ink**, at neither the register's duration nor its curve; and a gate on
+  `reveal-ready`, which 4c retired as the register's gate. Its comment described the hidden state as
+  `opacity: 0`, which has been `--half-ink` since Etap 0. The block is deleted; the rows keep their
+  `data-d` cascade, which was always CSS and never depended on it.
+- **`/koncerty` `.station--memoriam .station-poster`** — `opacity: .8` quiets the memoriam poster,
+  and at (0,4,0) it pinned the figure there. The register was **inert**: the node was observed, took
+  `.is-in`, settled, and never moved. Now `filter: opacity(.8)`, which composes with the register
+  instead of replacing it — 0.44 × 0.8 hidden, 1 × 0.8 at rest, the authored intent unchanged.
+
+### 5b. Geometry — the measured list, open
+
+69 instances over the ~360 px the ink travels. **They are two different problems and must not be
+treated as one.**
+
+**Photographs, 60 nodes, and they are in the wrong register.** `.kd-shot` ×43 (282–441 px),
+`.kd-poster` ×5, `.station-poster` ×5, `.letter-portrait` ×3, `.kd-film-player` ×3 (699 px),
+`.kol-seal-figure`. A figure cannot be split — it is one object — so the height rule has no move to
+offer here. The doctrine does: **light is the photographic register**, and the site spends it on
+exactly 4 nodes, all on the landing, three of which 3d measured as barely readable because their
+hosts already crushed their own ground. Meanwhile 60 unscrimmed subpage photographs are being
+*inked*. `.portrait` — the one veil that reads, at 82 sRGB levels — is precisely this shape: a host
+smaller than the screen that arrives with its image. This is the sweep's largest single finding and
+it is a **5d** call, not a mechanical one.
+
+**Blocks, 9 shapes, where splitting is the answer.** `.board-card` ×9 (673), `.kd-interlude` ×3
+(672), `.station-plate` (636), `.wrap` ×3 (609–636), `.kd-clasp` ×4, `.station-next-inner` (548),
+`.kol-fonts` (513), `.kol-collab` (479), `.kd-quote` ×2, `.kd-program-item` ×34 (367–469),
+`.footer-col` ×2 (462), `.coda-inner` (460), `.section-head measure` (437), `.final-lede` (424),
+`.kol-defs` (399), `.prose measure` ×2, `.kd-program-arc` (368). 1e's rule applies verbatim: group
+what is read as one thing, split what is read in sequence, and **ask the height question first**.
+Note `.wrap` and `.station-plate` are layout containers carrying a register — a whole section as one
+utterance, which is the shape 1e was written about.
+
+Every split moves `.reveal` **down onto children**, and the children are where the page's own
+`transition` declarations live (`.prog-d summary`, `.kd-verbum-full summary`, `.after-channels a`,
+`.doing a`, `.prose a.inline`). Today those are safe because the register sits on an ancestor. After
+a split they are not, and Astro's scoping means the collision goes the *other* way from
+`.path-entry-title`: the child's rule wins and the ink stops. **Re-run the census after every
+split** — flags 1–3 exist to catch exactly this.
+
+### 5d. The judgement — open
+
+| question | where it came from | status |
+|---|---|---|
+| **Should the 60 subpage photographs move from ink to light?** | 5a census | the sweep's largest finding; needs the developer's eye on one host first |
+| **Should `/press` join the register system at all?** It has zero `.reveal` nodes. | Etap 4a | **cheaper than 4a implied**: `press.astro` uses `BaseLayout` without `reveal={false}`, so the controller already runs there over nothing, and all three heading rules already declare `font-weight: 300`. Adoption is classes only. The question is purely editorial. |
+| **Should `.final-support` carry a light register?** 19 → 10 sRGB levels under its own 0.78–0.88 gradient. | Etap 3d | arithmetic re-verified. But the number **underdetermines** the conclusion: 19 levels on a base of 41 is a 46 % relative change, and the dark end is where relative sensitivity is highest. The answerable form is whether the photograph retains *structure* after the multiply — a histogram of `swiatlo-krzyz-desktop.jpg`, not a vote. |
+| **Do the three bare hero `<h1>`s want a press?** | Etap 4a | **the plan was wrong**: it said the reveals need restructuring. The press reads `.is-in` on itself *or an ancestor*, and the inner `<span class="reveal">` **is** the trigger node, so `class="reveal ink-press"` on that same span needs no restructuring at all. All three h1s already declare `font-weight: 300`. The real cost is one the plan never named: at `clamp(…, 130/116/138px)` inside `.line { overflow: hidden }`, these are the largest advance-width changes on the site. |
+| **Should `/koncerty`'s entry rules take the lead register, and `/o-nas`'s portrait the light?** | Etap 4b | still open; the portrait question folds into the photographs question above |
 | **`/koncerty`'s `.rep-col li.rep-row` is outside the register system while wearing its class.** It out-specifies the ink to run `transform: translateY(16px)` over 0.5 s on `--ease` — a travel entrance, on its own clock and curve, which is the one thing the doctrine's first rule forbids. Found by the sweep for transition-owning reveal nodes; it is a *change register* decision, not a bug to patch. | Etap 4a fix |
 
 ---

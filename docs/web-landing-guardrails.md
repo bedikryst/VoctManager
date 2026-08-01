@@ -223,11 +223,20 @@ not add to what is there — it **replaces** it, and the element's own hover or 
 stop easing and start snapping. Nothing errors; nothing looks wrong until someone hovers. This is
 how `.path-entry-title` lost its weight-and-tracking hover for a month: Etap 1e moved the ink
 onto it for a *geometric* reason (a tall node must be split so its parts arrive where the eye is)
-and never asked the second question. `.rep-col li.rep-row` on `/koncerty` survived the same move
-only by accident, because its selector happened to out-specify the register. When it comes up,
-restate the element's list together with the ink's, using the register's tokens, at a specificity
-clearing both the register and `.is-settled` — a node with a live hover transition is entitled to
-keep one after its entrance is spent.
+and never asked the second question. When it comes up, restate the element's list together with the
+ink's, using the register's tokens, at a specificity clearing both the register and `.is-settled` —
+a node with a live hover transition is entitled to keep one after its entrance is spent.
+
+**And check it the other way round too, because on a subpage the collision usually goes the other
+way.** Astro scopes a page's own styles by appending `[data-astro-cid-…]` to **every compound**, so
+a two-class page rule is emitted at (0,4,0) and outranks `html.voct-motion .reveal` (0,2,1) *and*
+its `.is-in` (0,3,1). A page-local rule touching a register node's `opacity` or `transition` therefore
+wins silently, and the register is what breaks. Both cases were live on `/koncerty` until the Etap 5
+census: `.rep-row` replaced the ink with a private 16 px rise on a 0.5 s clock, and
+`.station--memoriam .station-poster { opacity: .8 }` pinned the figure so the register was **inert**
+— observed, flipped, settled, never moved. The fix for a resting dim is `filter: opacity()`, which
+composes with the register instead of replacing it. None of this is visible in the source; measure
+the emitted CSS, the same rule bundle order already earned.
 
 **A register can never be added with a bare `transition` declaration, and `@property` must be
 registered exactly once.** Both were live at the same time and both fail silently. `transition`

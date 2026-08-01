@@ -500,7 +500,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* In memoriam (quieter, centered) */
   .station--memoriam .station-inner { grid-template-columns: 1fr; max-width: 720px; justify-items: center; text-align: center; gap: clamp(26px, 4vw, 40px); }
-  .station--memoriam .station-poster { max-width: 224px; opacity: .8; }
+  /* The quieting is a FILTER, not `opacity`, because this poster carries `.reveal` and the ink
+     register owns that property. Astro scopes page rules with `[data-astro-cid-…]` on every
+     compound, so this selector is (0,4,0) and outranks both `html.voct-motion .reveal` (0,2,1)
+     and its `.is-in` (0,3,1) — declared as opacity it pinned the figure at .8 and the register
+     went inert, entering and settling with nothing to show. `filter: opacity()` composes with
+     the register instead of replacing it: .44 x .8 hidden, 1 x .8 at rest. */
+  .station--memoriam .station-poster { max-width: 224px; filter: opacity(.8); }
   .station--memoriam .station-essence { margin-left: auto; margin-right: auto; }
   /* Centred memoriam: the incipit loses its left rule and centres like the essence. */
   .station--memoriam .station-inscriptio { margin-left: auto; margin-right: auto; padding-left: 0; border-left: 0; text-align: center; }
@@ -576,19 +582,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     /* Stacked into one column, so column 2 now follows column 1 — its top item needs its rule back. */
     .rep-col-2 li:first-child { border-top: 1px solid var(--line); padding-top: 14px; }
   }
-  /* Per-work line reveal — lighter than the page-level .reveal: dense rows settle from a
-     short drop with NO blur (a whole column of 6px-blur transitions was heavy and busy).
-     opacity:0 is inherited from the global hidden state; data-d gives a rolling cascade
-     (transition-delay longhand re-applies --reveal-delay after the shorthand resets it). */
-  @media (prefers-reduced-motion: no-preference) {
-    html.reveal-ready .rep-col li.rep-row {
-      transform: translateY(16px);
-      filter: none;
-      transition: opacity .5s var(--ease), transform .5s var(--ease);
-      transition-delay: var(--reveal-delay, 0s);
-    }
-    html.reveal-ready .rep-col li.rep-row.is-in { transform: none; }
-  }
+  /* The repertoire rows carry `.reveal` and nothing else: their entrance is the ink register,
+     and their `data-d` gives the rolling cascade down each column. They used to run a private
+     one here — a 16px rise on a 0.5s clock — which outranked the register on Astro's scoped
+     specificity and so replaced it wholesale. Do not reintroduce one: a row that travels is the
+     slide-deck physics the register exists to refuse, and a second ink on one page is a second
+     ink on the site. */
 
   /* CTA (light) */
   .cta-band { background: var(--paper-soft); color: var(--ink); text-align: center; padding: clamp(84px,12vw,160px) max(28px,5vw); }
