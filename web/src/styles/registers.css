@@ -1,16 +1,181 @@
 /**
  * @file registers.css
- * @description Entrance-register mechanics that are not tied to one page's bundle. Today it
- *  carries one thing: the INK PRESS, the variable-font half of the ink gesture, which every
- *  page speaks — the landing and the five subpages that used to scrub the same weight axis
- *  from a scroll timeline. It is also the destination the landing's three register definitions
- *  (landing/06-footer.css) and base.css's duplicate `.reveal` are scheduled to move into — see
- *  docs/web-reveal-remediation.md, Etap 4.
- *  Loaded by BaseLayout on every page; `.ink-press` is authored per element, so a page that
- *  does not use the class pays nothing.
+ * @description The site's entrance-register language: the LEAD and LIGHT registers, the INK
+ *  PRESS, and the ink+lead pairing. Loaded by BaseLayout on every page, so a register is
+ *  available wherever a page wants one; every class is authored per element, so a page that
+ *  uses none pays nothing.
+ *
+ *  The one thing NOT here is the ink register's own hidden state, which is still declared once
+ *  per controller — landing/06-footer.css for the landing, base.css for every other page. That
+ *  is a live duplicate and the note in 06-footer.css explains what it is waiting on: the two
+ *  differ in their gate, not their class name, and merging the gate means choosing one observer
+ *  for the whole site. See docs/web-reveal-remediation.md, Etap 4c.
+ *
+ *  CASCADE: this sheet is emitted BEFORE base.css and before any page's own styles, on every
+ *  page — so at equal specificity it loses to both. Rules here that must win are written to win
+ *  on specificity rather than on order; do not rely on source position when adding to it.
  * @architecture Astro islands 2026
  * @module styles/registers
  */
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ENTRANCE REGISTERS — three materials, three arrivals
+   ───────────────────────────────────────────────────────────────────────────────
+   A manuscript is made of three things that do not behave alike, so the page enters
+   as three things.
+
+     INK   `.reveal`       copy and headings — half-ink → full ink, in place, with
+                           `.ink-press` as its variable-font second dimension. The
+                           ink's own hidden state is the one register still declared
+                           per controller (landing/06-footer.css and base.css); the
+                           note there says why it cannot be merged here yet.
+     LEAD  `.reveal-rule`  a hairline THE DESIGN ALREADY HAS is ruled left→right
+                           (`-v`: top→down). A scriptorium page is pricked and ruled
+                           before one letter is written, so a rule that precedes its
+                           text is the only entrance this site can make that is
+                           literally true of the object it imitates. No hairline was
+                           added to have something to animate — every one is a border
+                           the layout already carried. Inventing lines for the effect
+                           is the showreel move this register exists to make
+                           unnecessary.
+     LIGHT `.reveal-light` photography — a veil of the section's own dark lifts off
+                           the image. Photographs are not written; they are lit.
+     CUE   `.reveal-cue`   no appearance of its own; a bare trigger for choreography
+                           authored elsewhere (interlude knots, coda score, silence
+                           ornament — all landing). A node wearing this must NOT also
+                           wear a register: that stacks a second, unrelated motion on
+                           an authored one.
+
+   INK + LEAD may share one node, and only that pair: rule first, ink a beat behind,
+   is one causal gesture and not two effects.
+
+   Every register is opacity or transform on a compositor layer.
+
+   Both trigger classes are listed throughout — `.is-visible` (the landing's queue)
+   and `.is-in` (BaseLayout's observer). A register cares about the moment, not the
+   mechanism, so it is portable across the two controllers as they stand.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* The rule leads and the ink follows it onto the page. This delay IS the pairing, and it
+   holds on both clocks: nominally the rule ends at 0.85s against the ink's 0.18 + 0.9 =
+   1.08s, and on the eye the rule reaches 82% of its draw at 595ms against the ink's 569ms.
+   It did NOT hold on the eye while both registers shared --ease-slow's front-load, which had
+   the ink 82% done at 429ms — reading as the ink arriving first however the delay was
+   written. Should that return, the lever is --ease-ink (tokens.css), never this delay, which
+   moves the whole pair down the page instead of reordering it. The nominal separation itself
+   only became safe once `settle()` stopped accepting the pseudo-rule's transitionend on
+   ink-bearing nodes: `is-settled` strips both transitions, so the shorter one used to cut the
+   longer one off.
+
+   On a subpage this out-specifies base.css's `data-d` offset, and that is the right way
+   round: a stagger between siblings is decoration, the rule→ink order is the gesture. */
+.reveal:is(.reveal-rule, .reveal-rule-v):is(.is-visible, .is-in) {
+  transition-delay: 0.18s;
+}
+
+/* ── LEAD ───────────────────────────────────────────────────────────────────────
+   The element keeps its real border for no-JS and reduced-motion visitors; only under
+   `html.voct-motion` is that border handed to a pseudo-rule that can be drawn. The
+   element's OWN stylesheet must blank the matching border side and set `--rule-ink` to
+   its colour — this file cannot know which side or which ink any given hairline uses,
+   and guessing would repaint the page's borders.
+
+   Anchor the hairline to the TOP of its element wherever there is a choice. The trigger
+   fires on an element's top edge but the rule is drawn where its border is, so a rule on
+   a 280px block's bottom edge draws a full third of a screen below the line that fired
+   it — off-screen every time. That is the defect Etap 1a fixed on the landing, and it
+   travels with this register to any page that adopts it. */
+.reveal-rule,
+.reveal-rule-v {
+  position: relative;
+}
+
+html.voct-motion :is(.reveal-rule, .reveal-rule-v)::before {
+  content: "";
+  position: absolute;
+  background: var(--rule-ink, var(--line));
+  pointer-events: none;
+  transition: transform var(--rule-in) var(--ease-rule);
+}
+
+html.voct-motion .reveal-rule::before {
+  inset: var(--rule-inset, 0 0 auto 0);
+  height: 1px;
+  transform-origin: var(--rule-from, left) center;
+}
+html.voct-motion .reveal-rule:not(.is-visible):not(.is-in)::before {
+  transform: scaleX(0);
+}
+
+html.voct-motion .reveal-rule-v::before {
+  inset: var(--rule-inset, 0 auto 0 0);
+  width: 1px;
+  transform-origin: center var(--rule-from, top);
+}
+html.voct-motion .reveal-rule-v:not(.is-visible):not(.is-in)::before {
+  transform: scaleY(0);
+}
+
+/* ── LIGHT ──────────────────────────────────────────────────────────────────────
+   A self-contained veil span: absolute, inert, and INVISIBLE by default, so a no-JS or
+   reduced-motion visitor is never left looking through a dark pane that nothing will
+   lift. It materialises only under the motion gate, and only until its section is
+   reached. That default is also why a page adopting this register needs no un-gate of
+   its own: without `voct-motion` the veil is already transparent. Never fully opaque —
+   0.58 keeps the photograph legible underneath, the same promise half-ink makes for
+   copy: the page is never blank, only unlit.
+
+   The veil is `inset: 0` on a host that is usually section-scale (`.image-rite` is
+   96svh), so its top crosses the trigger when the SECTION's top does — the lift plays
+   while the photograph is still arriving from below. That geometry is why this register
+   needs a back-weighted curve and not merely a long duration: --veil-lift buys nothing
+   if the curve spends it before the image is on screen. See --ease-light in tokens.css.
+
+   --veil-delay finishes that argument, and it is authored PER HOST because the geometry
+   is: a section-scale veil fires a full viewport before its photograph is worth looking
+   at, while `.portrait` — the one veil on a host smaller than the screen — arrives with
+   its image and needs no delay at all. It is a delay and deliberately NOT a second
+   trigger line: a trigger line reorders neighbours (the reason Etap 1b was dropped), a
+   delay only moves this element's own clock. Whatever the longest total here becomes, it
+   must stay under `settle()`'s fallback in scripts/landing.ts, which strips the
+   transition when it fires.
+
+   Before granting this register to a new host, measure the delta the veil actually
+   produces on THAT ground rather than trusting the alpha: over a section that already
+   crushes its own photograph with a 0.78 scrim, 0.58 moves single-digit sRGB levels and
+   the register is spent before it starts. */
+.reveal-light {
+  position: absolute;
+  inset: 0;
+  z-index: var(--veil-z, 0);
+  background: var(--veil-ink, rgba(8, 8, 7, 0.58));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--veil-lift) var(--ease-light) var(--veil-delay, 0s);
+}
+
+html.voct-motion .reveal-light:not(.is-visible):not(.is-in) {
+  opacity: 1;
+  transition: none;
+}
+
+/* Spent: drop the transition so the compositor can release the layer. The lead register
+   needs the pseudo-element form — its transition never lived on the element, so stripping
+   only the element would leave the hairline hot. Only the landing's controller reaches
+   this state; a subpage register keeps its transition declaration after arriving, as the
+   subpage ink already does. */
+.reveal-light.is-settled {
+  transition: none;
+}
+:is(.reveal-rule, .reveal-rule-v).is-settled::before {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-light {
+    display: none;
+  }
+}
 
 /* ── INK PRESS ─────────────────────────────────────────────────────────────────
    A heading is written with a nib, and a nib presses. `.ink-press` gives the ink
