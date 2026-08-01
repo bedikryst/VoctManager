@@ -45,7 +45,7 @@
       transform var(--rule-in) var(--ease-rule),
       opacity var(--rule-in) var(--ease-rule);
   }
-  html.voct-motion .director-dark.reveal-cue:not(.is-visible)::after {
+  html.voct-motion .director-dark.reveal-cue:not(.is-in)::after {
     transform: translateX(-50%) scaleX(0);
     opacity: 0;
   }

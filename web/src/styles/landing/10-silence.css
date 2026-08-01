@@ -4,7 +4,7 @@
      (wymuszony lock istniał i został usunięty; na dotyku czytał się jako zawieszona strona).
 
      Wejście prowadzi `.reveal-cue` na .silence-inner: wspólny obserwator (landing.ts) zapala
-     `.is-visible`, gdy gość NAPRAWDĘ dochodzi do sekcji. Kolejność jest kolejnością pisania:
+     `.is-in`, gdy gość NAPRAWDĘ dochodzi do sekcji. Kolejność jest kolejnością pisania:
      najpierw kropka (nakłucie), potem obie kreski rysowane od niej na zewnątrz, na końcu
      atrament słowa. Wcześniej kontroler ustawiał oba stany naraz przy bindzie — całe wejście
      odgrywało się, gdy gość stał jeszcze w hero, więc moment był zawsze już po. */
@@ -59,7 +59,7 @@
   html.voct-motion .silence-dot {
     transition: opacity 0.5s var(--ease-slow);
   }
-  html.voct-motion .silence-inner:not(.is-visible) .silence-dot {
+  html.voct-motion .silence-inner:not(.is-in) .silence-dot {
     opacity: 0;
   }
 
@@ -70,7 +70,7 @@
     stroke-dashoffset: 0;
     transition: stroke-dashoffset 0.9s var(--ease-rule) 0.2s;
   }
-  html.voct-motion .silence-inner:not(.is-visible) .silence-rule {
+  html.voct-motion .silence-inner:not(.is-in) .silence-rule {
     stroke-dashoffset: 1;
   }
 
@@ -79,7 +79,7 @@
   html.voct-motion .silence-line {
     transition: opacity 0.8s var(--ease-slow) 0.6s;
   }
-  html.voct-motion .silence-inner:not(.is-visible) .silence-line {
+  html.voct-motion .silence-inner:not(.is-in) .silence-line {
     opacity: var(--half-ink);
   }
 

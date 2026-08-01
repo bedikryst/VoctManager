@@ -18,7 +18,7 @@
  *  Contracts honoured (do not break):
  *   - `.aether-knot` + `--knot-intensity` — landing.ts setupInterludeBreath / audio analyser
  *     write the custom property on this element only (registered `inherits: false`).
- *   - `.reveal-cue` / `.is-visible` — the landing IntersectionObserver only TRIGGERS the
+ *   - `.reveal-cue` / `.is-in` — the landing IntersectionObserver only TRIGGERS the
  *     choreography here; the band itself has no entrance of its own (see the note below).
  *   - `html.voct-motion` — hidden pre-reveal states engage ONLY under this gate (JS live and
  *     no reduced-motion), so no-JS and reduced-motion visitors always see the drawn state.
@@ -186,7 +186,7 @@ const { variant, roman, latin } = Astro.props;
   }
 
   /* Entrance — there isn't one, and that is deliberate. The interlude is a `.reveal-cue`:
-     the ONLY thing the observer's `.is-visible` flip does here is start the choreography
+     the ONLY thing the observer's `.is-in` flip does here is start the choreography
      below (strokes draw, numeral surfaces, inscription settles, flame is lit). It used to
      also translate 44px as a `.reveal`, which meant the knot wrote itself while the whole
      band slid upward — a second, unrelated motion stacked on an authored one, exactly what
@@ -226,7 +226,7 @@ const { variant, roman, latin } = Astro.props;
       opacity 2s var(--ease-slow) 0.25s,
       transform 2s var(--ease-slow) 0.25s;
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-numeral {
+  html.voct-motion .aether-interlude:not(.is-in) .aether-numeral {
     opacity: 0;
     transform: translate(-50%, -42%) scale(0.97);
   }
@@ -247,7 +247,7 @@ const { variant, roman, latin } = Astro.props;
     opacity: 0.78;
     transition: letter-spacing 1.75s var(--ease-slow);
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription {
+  html.voct-motion .aether-interlude:not(.is-in) .aether-inscription {
     letter-spacing: 0.5em;
   }
 
@@ -264,8 +264,8 @@ const { variant, roman, latin } = Astro.props;
       transform 0.88s var(--ease-slow) 1.13s,
       opacity 0.88s var(--ease-slow) 1.13s;
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::before,
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-inscription::after {
+  html.voct-motion .aether-interlude:not(.is-in) .aether-inscription::before,
+  html.voct-motion .aether-interlude:not(.is-in) .aether-inscription::after {
     transform: rotate(45deg) scale(0);
     opacity: 0;
   }
@@ -310,7 +310,7 @@ const { variant, roman, latin } = Astro.props;
       color: transparent;
       transition: background-position 1.05s var(--ease) 0.94s;
     }
-    html.voct-motion .aether-interlude.is-visible .latin {
+    html.voct-motion .aether-interlude.is-in .latin {
       background-position: -15% 0;
     }
   }
@@ -348,7 +348,7 @@ const { variant, roman, latin } = Astro.props;
     background: linear-gradient(270deg, transparent, currentColor 60%);
     transform-origin: left center;
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-line {
+  html.voct-motion .aether-interlude:not(.is-in) .aether-line {
     transform: scaleX(0.3);
     opacity: 0;
   }
@@ -410,7 +410,7 @@ const { variant, roman, latin } = Astro.props;
   }
 
   /* ── Stroke-draw choreography: every .knot-draw path carries pathLength="1" and
-     writes itself in when .is-visible lands. Hidden state engages only under
+     writes itself in when .is-in lands. Hidden state engages only under
      html.voct-motion, so no-JS / reduced-motion always sees the drawn knot. ── */
   /* TEMPO — ×0.625 on every duration and delay in this FILE, not just in this block: the
      numeral, the inscription's letter-spacing settle, the two aether lines and the lumen ray
@@ -445,7 +445,7 @@ const { variant, roman, latin } = Astro.props;
     stroke-dashoffset: 0;
     transition: stroke-dashoffset 1s var(--ease-slow);
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .knot-draw {
+  html.voct-motion .aether-interlude:not(.is-in) .knot-draw {
     stroke-dashoffset: 1;
   }
   .aether-knot .d-base {
@@ -485,7 +485,7 @@ const { variant, roman, latin } = Astro.props;
       transform 1.13s var(--ease-slow) 0.72s,
       opacity 1.13s var(--ease-slow) 0.72s;
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .aether-flame {
+  html.voct-motion .aether-interlude:not(.is-in) .aether-flame {
     transform: scale(0);
     opacity: 0;
   }
@@ -563,7 +563,7 @@ const { variant, roman, latin } = Astro.props;
     animation: aetherRay 7s ease-in-out infinite;
     transition: transform 1.5s var(--ease-slow) 0.88s;
   }
-  html.voct-motion .aether-interlude:not(.is-visible) .lumen-ray {
+  html.voct-motion .aether-interlude:not(.is-in) .lumen-ray {
     transform: scaleY(0);
   }
 

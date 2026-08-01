@@ -2,21 +2,11 @@
  * @file base.css
  * @description Global primitives shared across every public page: self-hosted variable
  *  fonts (GDPR-safe, zero third-party transfer), reset, body defaults, skip-link, and the
- *  reveal motion. Reveal is a ONE-SHOT IntersectionObserver entrance (BaseLayout adds
- *  `.is-in`, gated on `html.reveal-ready`), NOT scroll-scrubbed — it animates once and
- *  persists, and degrades to "always visible" without JS or under reduced motion.
- *  CAUTION: `.reveal` has a SECOND, independent definition in landing/06-footer.css for the
- *  landing only, driven by `.is-visible`/`.is-settled` instead of `.is-in`. Both express the
- *  same INK register (half-ink → full ink, no travel, no blur) so the site reads as one hand,
- *  and the duplicate survives for one reason: they differ in their GATE. This one hangs on
- *  `html.reveal-ready` — the class that also starts BaseLayout's observer — and the landing
- *  declines that class precisely to keep the observer off its nodes. Merging them means
- *  choosing one observer for the whole site, which is a decision about cadence, not about a
- *  stylesheet. See docs/web-reveal-remediation.md, Etap 4c.
- *  The two share a class name but not a controller, so any bare `.reveal` rule added here
- *  also lands on the landing — scope new rules to `html.reveal-ready` or `:not(.voct-motion)`
- *  so they cannot cross over. The lead and light registers are NOT here: they live in
- *  styles/registers.css and are available to every page.
+ *  reveal motion — of which only the NO-MOTION fallback is left here. The registers
+ *  themselves (ink, lead, light, the ink press) live in styles/registers.css and are fired by
+ *  one shared controller, scripts/reveal.ts, on every page including the landing. What this
+ *  file still owns is the document-level question the register cannot answer for itself: when
+ *  motion is not live, content must simply be visible.
  * @architecture Astro islands 2026
  * @module styles/base
  */
@@ -280,57 +270,17 @@ button { font: inherit; }
 }
 .skip-link:focus { top: 16px; }
 
-/* ── Reveal: one-shot — animates once on enter, then PERSISTS (not scrubbed) ──
-   The hidden state applies only when JS is active (html.reveal-ready) and motion is allowed,
-   so no-JS / reduced-motion always show content. Above-the-fold elements intersect at load,
-   so they animate in on a time basis (no scroll required) — fixes the "stuck mid-scroll" hero. */
-/* The no-JS / reduced-motion fallback, and ONLY that — hence the `:not(.voct-motion)` gate
-   rather than a bare `.reveal`. The landing ships its own unlayered register system
-   (06-footer.css, driven by `.is-visible` instead of `.is-in`) at the same specificity as a
-   bare rule here, and Rollup emits base.css AFTER the landing bundle on `/` — so a bare
-   `.reveal { opacity: 1 }` won on order and pinned the landing's reveals opaque, leaving the
-   entrance with nothing left to play. Dev did not show it: Vite injects in import order there,
-   base first. Gated, this rule fires exactly when it should (no `.voct-motion` means JS is
-   dead or motion is off, and then content must simply be visible) and is inert otherwise. */
+/* The no-JS / reduced-motion fallback for every register-bearing node, and ONLY that — hence
+   the `:not(.voct-motion)` gate rather than a bare `.reveal`. It is the exact counterpart of
+   registers.css's `html.voct-motion .reveal` hidden state, so precisely one of the two ever
+   matches and a visitor without JS, or with motion turned off, reads the page as it was served.
+   It stays in this file rather than moving with the register because it is a property of the
+   DOCUMENT — is motion live at all? — and not of the register.
+   The gate is also load-bearing for a reason worth keeping: a BARE `.reveal { opacity: 1 }`
+   here would win on order over registers.css, which Rollup emits first on every page, and pin
+   every reveal opaque with nothing left to play. Dev would not show it — Vite injects in import
+   order there. Scope anything added here the same way. */
 html:not(.voct-motion) .reveal { opacity: 1; }
-
-/* The INK register — the subpages' half of the site-wide entrance language (the landing runs
-   the full three registers; see landing/06-footer.css). Copy waits at half-ink and is inked to
-   full when it is reached. It does NOT travel and it does NOT blur: entering from an offset is
-   slide-deck physics, and a blur-up is the 2026 signature of a generated page. Above all it
-   never starts at zero — a page that opens holes and then fills them in is what a fast scroll
-   exposes, and that emptiness reads as machine-made regardless of how the filling is eased.
-   `data-d` stays: on a subpage the cadence is authored per element, so it needs no queue (the
-   landing's shared onset queue exists because ITS siblings are generated in bulk).
-   The duration and the curve are the SHARED register tokens, not local values: this rule and
-   the landing's are two controllers for one register, so a curve retuned in tokens.css must
-   reach both or the site grows two inks. `transition-delay` is the one property this rule owns
-   alone — registers.css out-specifies the other three longhands for an ink+press node but
-   deliberately leaves the delay here, so each page keeps its authored `data-d` cadence. */
-@media (prefers-reduced-motion: no-preference) {
-  html.reveal-ready .reveal {
-    opacity: var(--half-ink);
-    transition: opacity var(--ink-in) var(--ease-ink);
-    transition-delay: var(--reveal-delay, 0s);
-  }
-  html.reveal-ready .reveal.is-in {
-    opacity: 1;
-  }
-  .reveal[data-d="1"] { --reveal-delay: 0.09s; }
-  .reveal[data-d="2"] { --reveal-delay: 0.18s; }
-  .reveal[data-d="3"] { --reveal-delay: 0.27s; }
-  .reveal[data-d="4"] { --reveal-delay: 0.36s; }
-
-  /* During a ClientRouter navigation the incoming page must arrive COMPOSED — the page
-     transition (transitions.css) IS the entrance, so reveals must NOT replay. BaseLayout
-     settles the above-the-fold reveals synchronously in astro:after-swap, before the new
-     snapshot is taken; `vt-nav` strips their transition so they snap to the settled state and
-     are captured fully drawn, never mid-animation (the old "text → blank → text" flash).
-     Below-the-fold reveals are left hidden and still animate on scroll via the observer. */
-  html.vt-nav .reveal.is-in {
-    transition: none;
-  }
-}
 
 /* Page-transition choreography lives entirely in transitions.css now. The former blur/drift
    block here was dead code — transitions.css is imported after base.css and overrode every one

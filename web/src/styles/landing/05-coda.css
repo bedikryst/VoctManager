@@ -63,7 +63,7 @@
   .coda .coda-knot .c-fermata { transition-duration: 0.85s; transition-delay: 0.95s; }
   .coda .coda-knot .c-finalis-thin { transition-duration: 0.45s; transition-delay: 1.3s; }
 
-  html.voct-motion .coda .coda-score.reveal-cue:not(.is-visible) .knot-draw {
+  html.voct-motion .coda .coda-score.reveal-cue:not(.is-in) .knot-draw {
     stroke-dashoffset: 1;
   }
 
@@ -80,7 +80,7 @@
   .coda .coda-fermata-hold { opacity: 1; transition-delay: 1.15s; }
   .coda .coda-finalis { opacity: 0.8; transition-delay: 1.4s; }
 
-  html.voct-motion .coda .coda-score.reveal-cue:not(.is-visible) :is(
+  html.voct-motion .coda .coda-score.reveal-cue:not(.is-in) :is(
     .coda-neume,
     .coda-rest,
     .coda-fermata-hold,
@@ -125,7 +125,7 @@
      carry the generic entrance on top of its own draw choreography — the score wrote itself
      while the whole block slid upward — which is the compounded motion the manifest stanzas
      were freed from. It is a `.reveal-cue` now: the flip only starts the drawing. */
-  html.voct-motion .coda .coda-score.reveal-cue:not(.is-visible) .coda-caption {
+  html.voct-motion .coda .coda-score.reveal-cue:not(.is-in) .coda-caption {
     opacity: var(--half-ink);
   }
 

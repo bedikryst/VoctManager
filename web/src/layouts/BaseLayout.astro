@@ -35,12 +35,19 @@ interface Props {
   /** Optional class on <body> for page-level theming hooks. */
   bodyClass?: string;
   /**
-   * Enables the global one-shot reveal controller (adds `reveal-ready`, IO toggles `.is-in`).
-   * The landing opts OUT (`false`) — it ships its own reveal system (`.is-visible`/`.is-settled`)
-   * scoped to its unlayered stylesheet, which the global `.is-in` rules would otherwise clobber.
-   * Parallax stays active regardless (same `data-parallax` contract). Subpages keep the default.
-   * Surfaces as `<html data-reveal>` so DocumentGates can arm the gate on the INCOMING document
-   * during a navigation, before it is ever painted.
+   * THIS LAYOUT drives the page's reveal controller (adds `reveal-ready`; the controller in
+   * scripts/reveal.ts then toggles `.is-in`), with the `authored` cadence — per-element `data-d`
+   * delays and no onset queue.
+   *
+   * The landing opts OUT (`false`) and calls the SAME controller itself from scripts/landing.ts,
+   * because its cadence is the shared onset queue: its siblings are generated in bulk and would
+   * otherwise enter in unison. Opting out is therefore a promise to run the controller yourself
+   * — the register's hidden state is keyed on `html.voct-motion`, so a page that opts out and
+   * then runs nothing sits at half-ink with nothing left to raise it.
+   *
+   * Parallax stays active regardless (same `data-parallax` contract). Surfaces as
+   * `<html data-reveal>` so DocumentGates can arm the gate on the INCOMING document during a
+   * navigation, before it is ever painted.
    */
   reveal?: boolean;
   /**
@@ -196,8 +203,8 @@ const ogLocaleAlternates =
         during a navigation it is the OUTGOING document that has to arm the arriving one, so the
         decision must be present everywhere. Nothing has to strip a gate on the way out — the
         swap clears every attribute on <html> and copies the incoming document's, so a page that
-        does not ask for a gate simply arrives without it (this is how the landing keeps
-        `reveal-ready` off its own .is-visible/.is-settled system). See DocumentGates. */}
+        does not ask for a gate simply arrives without it (this is how the landing arrives
+        without `reveal-ready`, so this layout leaves its reveals alone). See DocumentGates. */}
     <DocumentGates />
 
     <slot name="head" />
@@ -212,6 +219,7 @@ const ogLocaleAlternates =
       // Resilient to ClientRouter navigations: one RAF loop, instance recreated
       // and scroll re-anchored on swap.
       import Lenis from "lenis";
+      import { setupReveal } from "../scripts/reveal";
 
       const fine = window.matchMedia("(pointer: fine) and (hover: hover)").matches;
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -361,20 +369,20 @@ const ogLocaleAlternates =
 
       // One-shot reveal — animates once on enter, then persists. Re-scans after each
       // ClientRouter navigation (fresh DOM). Above-the-fold nodes intersect immediately.
+      // The controller itself is shared with the landing (scripts/reveal.ts); what this page
+      // supplies is the cadence, and `authored` is the right one here: a subpage staggers its
+      // own nodes with `data-d`, which is a CSS delay, so an onset queue on top would delay
+      // them twice. `reveal-ready` means THIS layout drives the page — the landing withholds it
+      // and calls the same controller itself with the queue.
+      let dropReveals: (() => void) | undefined;
       const setupReveals = () => {
+        dropReveals?.();
+        dropReveals = undefined;
         if (!document.documentElement.classList.contains("reveal-ready")) return;
-        const io = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                entry.target.classList.add("is-in");
-                io.unobserve(entry.target);
-              }
-            }
-          },
-          { rootMargin: "0px 0px -8% 0px", threshold: 0.1 },
-        );
-        document.querySelectorAll(".reveal:not(.is-in)").forEach((el) => io.observe(el));
+        dropReveals = setupReveal(document, {
+          reduce: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+          cadence: "authored",
+        });
       };
       document.addEventListener("astro:page-load", () => {
         setupReveals();

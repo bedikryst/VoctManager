@@ -2,8 +2,9 @@
 /**
  * @file DocumentGates.astro
  * @description Owner of the `<html>` gate classes every hidden-then-revealed state on the site
- *  is keyed on: `voct-motion` (JS is live and motion is allowed), `reveal-ready` (this page uses
- *  the global reveal controller), `preloader-skip` (the session rite is already spent) and
+ *  is keyed on: `voct-motion` (JS is live and motion is allowed — also what the entrance
+ *  registers hide behind), `reveal-ready` (BaseLayout drives this page's reveal controller;
+ *  the landing runs the same controller itself), `preloader-skip` (the rite is spent) and
  *  `rite-brief` (a remembered audio choice: the rite plays its brief form — the cadence alone —
  *  from the first painted frame, before the Preloader island hydrates).
  *  Content ships visible and only these classes arm the hidden state, so no-JS and

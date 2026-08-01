@@ -838,45 +838,10 @@
     }
   }
 
-  /* ═══════════════════════════════════════════════════════════════════════════
-     THE INK REGISTER, landing edition — copy and headings, half-ink → full ink,
-     in place. The register LANGUAGE (all four classes, the lead and light
-     mechanisms, the ink press) lives in styles/registers.css and is the same on
-     every page; what is left here is the landing's own ink CONTROLLER, and it is
-     here because the landing runs a different one.
-
-     The difference is not the class name. `.is-visible` versus the subpages'
-     `.is-in` is cosmetic and registers.css already answers both. What cannot be
-     merged is the GATE: this hidden state is bare (index.astro un-gates it under
-     `html:not(.voct-motion) .voct-landing`), while the subpages' is gated on
-     `html.reveal-ready`, the class that also starts BaseLayout's observer. The
-     landing declines that class precisely so that observer stays off its nodes,
-     and a page whose reveals are hidden by a class no controller reads would sit
-     at half-ink forever. So merging the two definitions means choosing one
-     observer for the whole site — a decision about cadence (a shared 220ms onset
-     queue against per-element `data-d`), not about a stylesheet.
-     See docs/web-reveal-remediation.md, Etap 4c.
-
-     Nothing slides up from below: travelling in from off-position is the physics
-     of a slide deck, and it was carrying 26 of the landing's 30 entrances while
-     the authored moments (manifest sweep, knot draw, coda score) stayed islands
-     inside it. The blur that used to live here is gone for good — cut once for
-     GPU cost, and by now the thing that dated the page.
-     ══════════════════════════════════════════════════════════════════════════ */
-
-  .reveal {
-    opacity: var(--half-ink);
-    transition: opacity var(--ink-in) var(--ease-ink);
-  }
-
-  .reveal.is-visible {
-    opacity: 1;
-  }
-
-  /* Spent: drop the transition so the compositor can release the layer. */
-  .reveal.is-settled {
-    transition: none;
-  }
+  /* The entrance registers used to be declared here, which is why the landing could speak
+     three of them and no other page could speak any. They live in styles/registers.css now.
+     Nothing about the landing's entrances is landing-specific except its CADENCE, which is
+     a parameter passed to the shared controller in scripts/landing.ts, not a stylesheet. */
 
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -889,9 +854,5 @@
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
-    }
-
-    .reveal {
-      opacity: 1;
     }
   }

@@ -27,7 +27,7 @@ export function VoxMoment({ poster }: VoxMomentProps): React.JSX.Element {
       <section className="vox" aria-label="Zobacz i usłysz">
         <div className="vox-inner">
           {/* The ink register reaches into this island: both classNames are constant strings, so
-              React writes the attribute once and the shared observer's `.is-visible` survives
+              React writes the attribute once and the shared observer's `.is-in` survives
               every re-render, and nothing here renders differently on the server than on the
               first client pass. Both conditions are required — see the footer's silent failure
               in docs/web-landing-guardrails.md. The player is deliberately left out: it owns a

@@ -5,8 +5,7 @@
  *  CSS expressed via `animation-timeline` / `view-timeline` — neither of which runs in the
  *  target browser (native scroll-driven CSS is unsupported here; that was the parallax bug).
  *
- *  Owns: reveal (`.is-visible`/`.is-settled` across the four register classes, paced by one
- *  shared onset queue), rite-glow (cursor spotlight), smooth-details (animated accordion),
+ *  Owns: rite-glow (cursor spotlight), smooth-details (animated accordion),
  *  Lenis anchor smooth-scroll, the hero's variable-font breath on a single rAF scroll loop,
  *  the manifest light (one-shot `.is-lit` per stanza — the sweep itself is a CSS transition),
  *  the interlude breath (scroll-velocity knot bloom while the ambient is silent) and the
@@ -19,13 +18,18 @@
  *  weight against scroll except the hero, which is keyed to the threshold rather than to an
  *  entrance.
  *
- *  NOT owned here (deliberately): parallax (the global BaseLayout `[data-parallax]` controller,
+ *  NOT owned here (deliberately): the reveal registers — this page runs the SHARED controller
+ *  (`scripts/reveal.ts`) like every other, and passes the one parameter that is genuinely the
+ *  landing's: `cadence: "queue"`, because its siblings are generated in bulk and would otherwise
+ *  enter in unison. Parallax (the global BaseLayout `[data-parallax]` controller,
  *  the fixed cross-browser one), chrome tint (the StickyHeader island owns it via React state),
  *  and the footer wordmark cursor reactivity (the SiteFooter island). All re-bind on
  *  `astro:page-load` so ClientRouter navigations stay live; bindings target only `.voct-landing`.
  * @architecture Astro islands 2026
  * @module scripts/landing
  */
+
+import { setupReveal } from "./reveal";
 
 interface LenisLike {
   scrollTo: (target: number | string | HTMLElement, opts?: { offset?: number }) => void;
@@ -62,129 +66,6 @@ const teardown = (): void => {
     if (fn) fn();
   }
 };
-
-// ── Reveal: one-shot entrance in the page's three registers, then persists ───────────────────
-// Flips `.is-visible` once on every register node — ink (.reveal), lead (.reveal-rule[-v]),
-// light (.reveal-light) and the appearance-less cue (.reveal-cue) — then lets go. What each
-// class then DOES is entirely CSS's business (the register block in landing/06-footer.css);
-// this controller only decides WHEN, and in what order.
-//
-// THE ONSET QUEUE is the part that matters. A bare IntersectionObserver flips everything the
-// scroll crossed inside one callback, so N siblings enter in perfect unison — and unison is
-// what makes a page read as machine-made, far more than the choice of effect does. The seven
-// register entries were the worst case: a single flick of the thumb fired four of them as one
-// block. setupManifestLight already solved this for the stanzas (points of imitation — each
-// onset starts ≥GAP after the previous START, so the next voice enters while the last is still
-// moving), and that queue now governs every entrance on the page. Two properties carry over:
-// document order rather than callback order, so a fast scroll still enters top-down; and an
-// element that arrives later than the gap on its own fires immediately, so a slow reader never
-// pays added latency.
-//
-// The queue is CAPPED, and that cap is not a detail. `lastOnset` accumulates across the whole
-// page, so an unbounded queue means a fling from hero to coda schedules ~30 onsets 220ms apart
-// — a six-second tail in which element after element inks itself well above the visitor, who is
-// already at the bottom. That is precisely the defect this pass removed from SilenceMoment, and
-// it would have been reintroduced by the machinery meant to fix the page's timing. With the cap,
-// a fast scroll degrades gracefully: each node inks at most MAX_BACKLOG_MS after it crossed the
-// trigger, so the stagger falls back to the natural spacing of the scroll itself.
-//
-// THE CAP IS A SCROLL DISTANCE, not a comfort margin. A node fires when its top crosses ~88%
-// of the viewport and then keeps travelling: at an unhurried desktop reading pace (~400px/s
-// through Lenis) every 100ms of latency carries it ~40px further up, so backlog + duration is
-// the whole budget for the gesture to happen where the eye is. 900ms of backlog on top of a
-// 900ms ink put the node ~720px higher by the time it finished — off the top of a laptop
-// screen — and the backlog only ever builds during a fast scroll, i.e. exactly when the node
-// is already moving fastest. Two onsets deep is enough to break unison, which is all the
-// queue is for.
-const REVEAL_SELECTOR = ".reveal, .reveal-rule, .reveal-rule-v, .reveal-light, .reveal-cue";
-const ONSET_GAP_MS = 220;
-const MAX_BACKLOG_MS = 450;
-
-// Guarantees `is-settled` when no transitionend arrives — a node scrolled past while hidden, a
-// transition cancelled mid-flight. It is therefore a HARD CEILING on every register choreography,
-// because `is-settled` strips the transition: a register that runs longer than this is cut off
-// mid-gesture, silently and only on the slowest path. Keep it clear of the longest one, which is
-// light (--veil-delay 0.6s + --veil-lift 1.8s = 2.4s). Cue nodes never reach it — `settle()`
-// returns early for them, which is what keeps the coda's 2.6s caption out of this budget.
-const SETTLE_FALLBACK_MS = 3400;
-
-function setupReveal(root: HTMLElement, reduce: boolean): void {
-  const items = Array.from(root.querySelectorAll<HTMLElement>(REVEAL_SELECTOR));
-  if (!items.length) return;
-
-  if (reduce) {
-    items.forEach((el) => el.classList.add("is-visible", "is-settled"));
-    return;
-  }
-
-  const order = new Map(items.map((el, i) => [el, i] as const));
-  const timers: number[] = [];
-  let lastOnset = Number.NEGATIVE_INFINITY;
-
-  // A cue has no transition of its own, so there is nothing to strip and no end event to wait
-  // for — settling one would only leave a dead timer per interlude.
-  const settle = (el: HTMLElement): void => {
-    if (el.classList.contains("reveal-cue")) return;
-    // A node carrying ink AND lead runs two transitions: opacity on itself, transform on the
-    // pseudo-rule. `is-settled` kills BOTH, so accepting whichever ends first would cut the
-    // other one off. The element's own transition is the one to wait for (it is the later of
-    // the pair by design — the rule leads, the ink follows), and a transition on `::before`
-    // reports the ORIGINATING element as `target`, so the only thing separating them is
-    // `pseudoElement`. Without this guard the pair is locked at their current durations:
-    // giving the rule a shorter clock — which is the natural tuning, a ruled line is fast —
-    // would silently start snapping the ink to full.
-    const inkBearing = el.classList.contains("reveal");
-    const onEnd = (event: TransitionEvent): void => {
-      if (event.target !== el) return;
-      if (inkBearing && event.pseudoElement) return;
-      if (event.propertyName !== "opacity" && event.propertyName !== "transform") return;
-      el.classList.add("is-settled");
-      el.removeEventListener("transitionend", onEnd);
-    };
-    el.addEventListener("transitionend", onEnd);
-    timers.push(
-      window.setTimeout(() => {
-        el.classList.add("is-settled");
-        el.removeEventListener("transitionend", onEnd);
-      }, SETTLE_FALLBACK_MS),
-    );
-  };
-
-  const enter = (el: HTMLElement): void => {
-    el.classList.add("is-visible");
-    settle(el);
-  };
-
-  const io = new IntersectionObserver(
-    (entries) => {
-      const hit = entries
-        .filter((entry) => entry.isIntersecting)
-        .map((entry) => entry.target as HTMLElement)
-        .sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
-
-      for (const el of hit) {
-        io.unobserve(el);
-        const now = performance.now();
-        const onset = Math.min(Math.max(now, lastOnset + ONSET_GAP_MS), now + MAX_BACKLOG_MS);
-        lastOnset = onset;
-        if (onset <= now) enter(el);
-        else timers.push(window.setTimeout(() => enter(el), onset - now));
-      }
-    },
-    // threshold 0 + a bottom inset, NOT a ratio: "12% of the element is visible" means a
-    // different trigger line for a one-line paragraph than for a section-tall veil, so node
-    // size was quietly setting the tempo. A zero threshold against an inset root fires when the
-    // top edge crosses ~88% of the viewport, identically for every node, which is what the
-    // queue needs as input. Same shape setupManifestLight uses.
-    { threshold: 0, rootMargin: "0px 0px -12% 0px" },
-  );
-
-  items.forEach((el) => io.observe(el));
-  cleanups.push(() => {
-    io.disconnect();
-    timers.forEach((t) => window.clearTimeout(t));
-  });
-}
 
 // ── Rite glow: cursor-tracked spotlight on the image-rite section (desktop only) ────────────
 function setupRiteGlow(root: HTMLElement, reduce: boolean): void {
@@ -605,7 +486,7 @@ function bind(): void {
   const root = document.querySelector<HTMLElement>(".voct-landing");
   if (!root) return;
   const reduce = reduceMotion();
-  setupReveal(root, reduce);
+  cleanups.push(setupReveal(root, { reduce, cadence: "queue" }));
   setupRiteGlow(root, reduce);
   setupSmoothDetails(root);
   setupLenisAnchors();

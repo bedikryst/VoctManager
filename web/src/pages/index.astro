@@ -154,20 +154,12 @@ const jsonLd = {
   </div>
 
   <style is:global>
-    /* Register hidden-state gate: only engage when JS marked motion live (mirrors base.css's
-       reveal-ready trick, but for the landing's own unlayered register system). Ink and lead
-       resolve to their written state; the light veil resolves to LIFTED, not to opaque — a
-       visitor whose motion never runs must not be left looking through a dark pane with
-       nothing coming to raise it. The lead register needs no entry here: its pseudo-rule is
-       declared inside `html.voct-motion` to begin with, so without the gate the element simply
-       keeps the real border it always had. */
-    html:not(.voct-motion) .voct-landing :is(.reveal, .reveal-rule, .reveal-rule-v) {
-      opacity: 1 !important;
-      transform: none !important;
-    }
-    html:not(.voct-motion) .voct-landing .reveal-light {
-      opacity: 0 !important;
-    }
+    /* The landing's own no-motion un-gate used to live here, three `!important` rules deep.
+       It is gone because every one of them became a restatement: the registers are declared
+       inside `html.voct-motion` (styles/registers.css), so without that class the ink is
+       un-hidden by base.css, the lead's pseudo-rule is never created and the veil rests at
+       opacity 0. An `!important` that only repeats what the cascade already says is a trap
+       for whoever next tries to change the thing it pins. */
 
     /* Once-per-session preloader skip: hide the SSR'd overlay BEFORE first paint for
        returning visitors (and for reduced motion, which never gets the rite). The
