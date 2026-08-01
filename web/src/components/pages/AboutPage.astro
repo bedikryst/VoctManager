@@ -186,18 +186,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           </p>
         </div>
 
-        <figure class="letter-portrait reveal" data-d="2">
+        <figure class="letter-portrait" data-d="2">
           <span class="frame-rule" aria-hidden="true"></span>
-          <Picture
-            src={florent}
-            formats={["avif", "webp"]}
-            widths={[420, 640, 840]}
-            sizes="(max-width: 880px) min(70vw, 340px), clamp(240px, 26vw, 320px)"
-            alt={c.letter.portraitAlt}
-            loading="lazy"
-            decoding="async"
-          />
-          <figcaption>{c.letter.portraitCaption}</figcaption>
+          <div class="letter-portrait-media">
+            <Picture
+              src={florent}
+              formats={["avif", "webp"]}
+              widths={[420, 640, 840]}
+              sizes="(max-width: 880px) min(70vw, 340px), clamp(240px, 26vw, 320px)"
+              alt={c.letter.portraitAlt}
+              loading="lazy"
+              decoding="async"
+            />
+            <span class="reveal-light" aria-hidden="true"></span>
+          </div>
+          <figcaption class="reveal">{c.letter.portraitCaption}</figcaption>
         </figure>
       </div>
     </section>
@@ -461,6 +464,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Sticky: the portrait is ~400px tall against a ~2000px letter — static it would leave
      the right column dead for most of the section; sticky, it accompanies the reader. */
   .letter-portrait { position: sticky; top: clamp(96px, 12vh, 150px); margin: clamp(10px, 2vw, 30px) 0 0; }
+  .letter-portrait-media { position: relative; display: block; }
   .letter-portrait :global(picture) { display: block; }
   .letter-portrait :global(img) { width: 100%; height: auto; display: block; aspect-ratio: 4 / 5; object-fit: cover; }
   .letter-portrait .frame-rule { position: absolute; left: -1px; top: -1px; width: 34px; height: 34px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; z-index: 1; }

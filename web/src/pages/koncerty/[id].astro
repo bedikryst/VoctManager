@@ -575,22 +575,29 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Obrazy wieczoru</span>
           </span>
+          {/* Photographs are LIT, not written: the veil belongs to the image and the caption keeps
+              the ink. `data-d` therefore sits on the figure, not on either register — it is the
+              row's cadence, both children inherit it, and that is what keeps a grid row from
+              lighting in unison. */}
           <div class="kd-gallery-grid">
             {shots.map((g, i) => (
               <figure
-                class="kd-shot reveal"
+                class="kd-shot"
                 data-d={String((i % 3) + 1)}
                 style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
               >
-                <Image
-                  src={g.img}
-                  widths={[560, 840, 1200]}
-                  sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
-                  alt={g.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
-                {g.caption && <figcaption class="micro">{g.caption}</figcaption>}
+                <div class="kd-shot-media">
+                  <Image
+                    src={g.img}
+                    widths={[560, 840, 1200]}
+                    sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
+                    alt={g.alt}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span class="reveal-light" aria-hidden="true"></span>
+                </div>
+                {g.caption && <figcaption class="micro reveal">{g.caption}</figcaption>}
               </figure>
             ))}
           </div>
@@ -601,18 +608,23 @@ const plDate = (iso: string): string =>
     {/* ── Coda: the poster as keepsake, and the Via that runs on ────────────── */}
     <section class="kd-band kd-coda" aria-label="Droga koncertów">
       <div class="kd-wrap kd-coda-inner">
+        {/* The gold corner is the mount, not the photograph, so it stays outside the media wrapper
+            and above the veil: the frame is already standing when the image lights into it. */}
         {posterImg && (
-          <figure class="kd-poster reveal">
+          <figure class="kd-poster">
             <span class="kd-poster-frame" aria-hidden="true"></span>
-            <Image
-              src={posterImg}
-              widths={[280, 420, 560]}
-              sizes="(max-width: 720px) 62vw, 300px"
-              alt={c.posterAlt ?? `Plakat koncertu ${c.title}`}
-              loading="lazy"
-              decoding="async"
-            />
-            <figcaption class="micro">Plakat wieczoru</figcaption>
+            <div class="kd-poster-media">
+              <Image
+                src={posterImg}
+                widths={[280, 420, 560]}
+                sizes="(max-width: 720px) 62vw, 300px"
+                alt={c.posterAlt ?? `Plakat koncertu ${c.title}`}
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="reveal-light" aria-hidden="true"></span>
+            </div>
+            <figcaption class="micro reveal">Plakat wieczoru</figcaption>
           </figure>
         )}
 
@@ -908,6 +920,9 @@ const plDate = (iso: string): string =>
      photographs, and `center` hangs whatever is left over in the middle. */
   .kd-gallery-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
   .kd-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
+  /* Bounds the veil to the image: `inset: 0` on the figure would also darken the caption, which
+     is copy and belongs to the ink. */
+  .kd-shot-media { position: relative; display: block; }
   /* On a phone the aspect has no room to argue: one shot per row, full measure. */
   @media (max-width: 640px) {
     .kd-shot { flex-basis: 100%; max-width: 100%; }
@@ -928,6 +943,7 @@ const plDate = (iso: string): string =>
   .kd-coda { background: var(--dark, #080807); color: var(--paper); padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }
   .kd-coda-inner { display: grid; grid-template-columns: max-content 1fr; gap: clamp(40px, 6vw, 96px); align-items: center; }
   .kd-poster { position: relative; margin: 0; width: clamp(200px, 24vw, 300px); }
+  .kd-poster-media { position: relative; display: block; }
   .kd-poster :global(img) { width: 100%; height: auto; display: block; box-shadow: 0 40px 90px -34px rgba(0,0,0,.85); }
   .kd-poster-frame { position: absolute; left: -10px; top: -10px; width: 40px; height: 40px; border-top: 1px solid var(--candle); border-left: 1px solid var(--candle); opacity: .8; z-index: 1; }
   .kd-poster figcaption { margin-top: 16px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.5); }

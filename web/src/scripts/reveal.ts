@@ -26,8 +26,10 @@ const MAX_BACKLOG_MS = 450;
  * transition cancelled mid-flight. It is therefore a HARD CEILING on every register choreography,
  * because `is-settled` strips the transition: a register that runs longer than this is cut off
  * mid-gesture, silently and only on the slowest path. Keep it clear of the longest one, which is
- * light (`--veil-delay` 0.6s + `--veil-lift` 1.8s = 2.4s). Cue nodes never reach it — `settle()`
- * returns early for them, which is what keeps the coda's 2.6s caption out of this budget.
+ * light: `--veil-lift` 1.8s plus a delay that is the SUM of the host's `--veil-delay` (0.6s at
+ * most, landing sections) and the subtree's `data-d` (0.36s at most), so 2.76s is the ceiling a
+ * new register has to stay under. Cue nodes never reach it — `settle()` returns early for them,
+ * which is what keeps the coda's 2.6s caption out of this budget.
  */
 const SETTLE_FALLBACK_MS = 3400;
 

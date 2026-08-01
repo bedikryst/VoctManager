@@ -92,10 +92,14 @@ html.voct-motion .reveal.is-in {
   opacity: 1;
 }
 
-.reveal[data-d="1"] { --reveal-delay: 0.09s; }
-.reveal[data-d="2"] { --reveal-delay: 0.18s; }
-.reveal[data-d="3"] { --reveal-delay: 0.27s; }
-.reveal[data-d="4"] { --reveal-delay: 0.36s; }
+/* `data-d` sets an offset for the SUBTREE, not for one node: --reveal-delay is unregistered and
+   therefore inherits, and the attribute frequently sits on a wrapper whose registers live on its
+   children (a figure carrying the row's cadence, its veil and its caption carrying the registers).
+   That is why these carry no class of their own. */
+[data-d="1"] { --reveal-delay: 0.09s; }
+[data-d="2"] { --reveal-delay: 0.18s; }
+[data-d="3"] { --reveal-delay: 0.27s; }
+[data-d="4"] { --reveal-delay: 0.36s; }
 
 /* During a ClientRouter navigation the incoming page must arrive COMPOSED — the page
    transition (transitions.css) IS the entrance, so reveals must NOT replay. BaseLayout
@@ -199,7 +203,21 @@ html.voct-motion .reveal-rule-v:not(.is-in)::before {
    Before granting this register to a new host, measure the delta the veil actually
    produces on THAT ground rather than trusting the alpha: over a section that already
    crushes its own photograph with a 0.78 scrim, 0.58 moves single-digit sRGB levels and
-   the register is spent before it starts. */
+   the register is spent before it starts. The multiply is by 0.42, so the delta is linear
+   in how bright the photograph already is, and the test takes a minute per asset.
+
+   Grant it by ROLE, not per asset. Measured over the 50 photographs on the site, 44 clear
+   the bar and six night frames do not — but those six are dark because the photograph is
+   dark, not because the design crushed it, so the same component would otherwise sit in two
+   registers depending on which file it was handed, and would change register when a photo is
+   swapped. A host whose own scrim spends the range is the different case, and the one this
+   paragraph opened with.
+
+   --reveal-delay is added to --veil-delay rather than replacing it: the host's delay answers
+   a question about GEOMETRY (how far below the trigger this photograph actually arrives) and
+   `data-d` answers one about CADENCE (where this figure sits in its row). A gallery grid
+   crosses the trigger line in one callback, so without the second term a row of photographs
+   lights in unison, which is the tell the whole register language exists to avoid. */
 .reveal-light {
   position: absolute;
   inset: 0;
@@ -207,7 +225,8 @@ html.voct-motion .reveal-rule-v:not(.is-in)::before {
   background: var(--veil-ink, rgba(8, 8, 7, 0.58));
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--veil-lift) var(--ease-light) var(--veil-delay, 0s);
+  transition: opacity var(--veil-lift) var(--ease-light)
+    calc(var(--veil-delay, 0s) + var(--reveal-delay, 0s));
 }
 
 html.voct-motion .reveal-light:not(.is-in) {

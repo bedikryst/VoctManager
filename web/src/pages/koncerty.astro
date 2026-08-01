@@ -197,17 +197,20 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           ) : (
             <div class="station-inner">
               {s.posterImg && (
-                <figure class="station-poster reveal">
+                <figure class="station-poster">
                   <span class="frame" aria-hidden="true" />
-                  <Picture
-                    src={s.posterImg}
-                    formats={["avif", "webp"]}
-                    widths={[280, 420, 560]}
-                    sizes="(max-width: 820px) 72vw, 348px"
-                    alt={s.posterAlt ?? ""}
-                    loading="lazy"
-                    decoding="async"
-                  />
+                  <div class="station-poster-media">
+                    <Picture
+                      src={s.posterImg}
+                      formats={["avif", "webp"]}
+                      widths={[280, 420, 560]}
+                      sizes="(max-width: 820px) 72vw, 348px"
+                      alt={s.posterAlt ?? ""}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span class="reveal-light" aria-hidden="true"></span>
+                  </div>
                 </figure>
               )}
               <div class="station-text">
@@ -446,6 +449,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .station.reverse .station-inner { grid-template-columns: 1fr clamp(220px, 26vw, 348px); }
   .station.reverse .station-poster { order: 2; }
   .station-poster { position: relative; box-shadow: 0 40px 90px -30px rgba(0,0,0,.8); }
+  .station-poster-media { position: relative; display: block; }
   .station-poster :global(picture) { display: block; }
   .station-poster :global(img) { width: 100%; height: auto; display: block; }
   .station-poster .frame { position: absolute; left: -10px; top: -10px; width: 40px; height: 40px; border-top: 1px solid var(--accent, var(--candle)); border-left: 1px solid var(--accent, var(--candle)); opacity: .8; z-index: 1; }
@@ -500,12 +504,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* In memoriam (quieter, centered) */
   .station--memoriam .station-inner { grid-template-columns: 1fr; max-width: 720px; justify-items: center; text-align: center; gap: clamp(26px, 4vw, 40px); }
-  /* The quieting is a FILTER, not `opacity`, because this poster carries `.reveal` and the ink
-     register owns that property. Astro scopes page rules with `[data-astro-cid-…]` on every
-     compound, so this selector is (0,4,0) and outranks both `html.voct-motion .reveal` (0,2,1)
-     and its `.is-in` (0,3,1) — declared as opacity it pinned the figure at .8 and the register
-     went inert, entering and settling with nothing to show. `filter: opacity()` composes with
-     the register instead of replacing it: .44 x .8 hidden, 1 x .8 at rest. */
+  /* A resting dim over a register-bearing subtree is a FILTER, never `opacity`. Astro scopes page
+     rules with `[data-astro-cid-…]` on every compound, so this selector ships at (0,4,0) and
+     outranks anything registers.css can declare — as `opacity` it pinned the figure and the
+     register inside it went inert, observed and settled with nothing to show. `filter: opacity()`
+     composes with whatever the register does instead of replacing it. */
   .station--memoriam .station-poster { max-width: 224px; filter: opacity(.8); }
   .station--memoriam .station-essence { margin-left: auto; margin-right: auto; }
   /* Centred memoriam: the incipit loses its left rule and centres like the essence. */
