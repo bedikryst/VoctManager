@@ -7,11 +7,17 @@ Companion to `docs/web-landing-guardrails.md` §5, which states the *doctrine* (
 three rules). This file is the *work*: what the doctrine does not yet describe, in what order to
 fix it, and what was measured to decide that.
 
-**How to read this file.** Etapy 0–3 are done, and so are 4a and 4b — each keeps its section,
-because the measurements and the corrections inside them are the reasoning the later stages stand
-on. **`Etap 4c` is the next whole thing**, and `Etap 5` after it. The stages are ordered by
-dependency, not by value. `Rejected` is load-bearing: it records ideas that look right and are
-not, so they are not re-proposed.
+**How to read this file.** Etapy 0–4 are done — each keeps its section, because the measurements
+and the corrections inside them are the reasoning the later stages stand on. **`Etap 5`, the
+page-by-page sweep, is the next and last whole thing**, and it now carries five questions this
+pass banked rather than answered. The stages are ordered by dependency, not by value. `Rejected`
+is load-bearing: it records ideas that look right and are not, so they are not re-proposed.
+
+**Where the machinery lives, now that it has stopped moving.** `styles/registers.css` — all four
+register classes, the ink press, the ink+lead pairing. `scripts/reveal.ts` — the one controller,
+called by `landing.ts` (cadence `queue`) and `BaseLayout` (cadence `authored`). `styles/tokens.css`
+— every duration, curve and weight. `base.css` keeps exactly one reveal rule, the no-motion
+un-gate. Nothing else on the site should declare a register.
 
 **A method note earned four times.** Etapy 1, 2, 3 and 4 each found the plan's own diagnosis
 wrong once the code was measured:
@@ -23,6 +29,10 @@ wrong once the code was measured:
   not: a register reads a moment, not a mechanism, so one selector list covering both trigger
   classes shipped the whole thing. The same paragraph filed `/press` as a tuning question when
   the page has **no `.reveal` at all** and can carry no register. Both were one grep away.
+- **Etap 4a's own reasoning**, within hours of shipping. It justified opening the press at 520
+  by matching the landing's weight-units-per-second — but that rate is *derived from* 520, so it
+  could not be evidence for it. Watched, 520 was invisible. A number defended by an argument that
+  assumes the number is the fourth-and-a-half instance of the same habit.
 
 Before implementing any stage below, re-measure its claim against the source — the plan is a
 record of what was true when it was written, and the later stages keep changing what the earlier
@@ -672,28 +682,21 @@ own comments, because they travel with it: anchor a lead rule to the **top** of 
 (Etap 1a), and measure a veil's **real delta against its host's ground** before granting the
 light register (Etap 3d).
 
-### The ink register did NOT move, and this is the finding
+### The ink register did NOT move in 4b, and why that was the right call
 
-The two ink definitions differ in their **gate**, not their class name — and the plan only ever
-looked at the class name.
+The two ink definitions differed in their **gate**, not their class name — and the plan only
+ever looked at the class name.
 
 | | hidden state | un-gated by | trigger |
 |---|---|---|---|
 | landing | bare `.reveal` | `index.astro`, `html:not(.voct-motion) .voct-landing …` | `.is-visible` |
 | every other page | `html.reveal-ready .reveal` | `base.css`, `html:not(.voct-motion) .reveal` | `.is-in` |
 
-`reveal-ready` is the same class that **starts `BaseLayout`'s observer**, and the landing sets
-`reveal={false}` precisely to keep that observer off its nodes. So there are only two ways to
-merge the gate, and both are controller decisions:
-
-- give the landing `reveal-ready` → `BaseLayout`'s observer runs on landing nodes *alongside*
-  `landing.ts`'s queue, and whichever reaches a node first sets its cadence. The landing's
-  authored 220 ms unison is gone.
-- drop the gate to a bare `.reveal` → any future page with `reveal={false}` hides its copy at
-  half-ink with nothing left to reveal it. Silent, and permanent.
-
-Hence 4c below. Both definitions now carry a comment saying what they are waiting on, so the
-duplicate cannot be rediscovered as an oversight.
+`reveal-ready` is the same class that **starts `BaseLayout`'s observer**, and the landing set
+`reveal={false}` precisely to keep that observer off its nodes. So merging the gate was never a
+stylesheet edit; it was a controller decision, which is why it waited for 4c and got a third
+answer there (`html.voct-motion`) rather than either of the two bad ones this section originally
+listed.
 
 ### The cascade measurement 4b actually turned on
 
@@ -712,35 +715,50 @@ at (0,2,0) — which is also the right order of authority, since a stagger betwe
 decoration and rule-then-ink is the gesture. **Verify any further move against the emitted CSS,
 never against the dev server.**
 
-### 4c — one controller — OPEN, and it is not a lift
+### 4c — one controller — DONE 2026-08-01
 
-`BaseLayout.astro`'s observer runs `{ rootMargin: "0px 0px -8% 0px", threshold: 0.1 }`;
-`landing.ts` runs `-12%` with a shared 220 ms onset queue and a `settle()` state machine.
+`scripts/reveal.ts` is now the site's only entrance controller, imported by both `landing.ts`
+and `BaseLayout` and emitted by Rollup as **one shared chunk both entry modules pull in** —
+which is the check that the collapse is real and not just tidier source.
 
-The ratio threshold is a real defect and worth the measurement: a node fires when
-`top = 0.92·vh − 0.1·h`, so on a 900 px viewport a 40 px node fires at 91.6 % vh and an 800 px
-node at 83 % vh — **node size sets the tempo**, which is the thing `landing.ts` was written to
-avoid. (Latent, not yet reachable: a `.reveal` taller than ~8280 px could never reach ratio 0.1
-and would never fire at all.)
+**The defect that made it worth doing.** `BaseLayout` observed at `{ rootMargin: -8%,
+threshold: 0.1 }`. A *ratio* threshold means a node fires at `top = 0.92·vh − 0.1·h`, so on a
+900 px viewport a 40 px paragraph fired at 91.6 % vh and an 800 px block at 83 % — **node size
+was setting the tempo**, the exact thing `landing.ts`'s geometry was written to avoid, and the
+whole timing budget in this document assumes one trigger line. On twelve pages that line did not
+exist. Both now fire flat at 88 % vh with `threshold: 0`. (Latent, and now unreachable: a
+`.reveal` taller than ~8280 px could never have reached ratio 0.1 and would never have fired.)
 
-But "one controller" also means one delay policy, and `data-d` covers about half the nodes:
+**What was deliberately NOT unified: the cadence.** It is a parameter, and it is authored:
 
-| page | `.reveal` | `data-d` |
+| | cadence | why |
 |---|---|---|
-| `koncerty/[id].astro` | 40 | 20 |
-| `koncerty.astro` | 29 | 13 |
-| `AboutPage.astro` | 29 | 18 |
-| `kolofon.astro` | 22 | 14 |
-| `kontakt.astro` | 15 | 7 |
+| landing | `queue` | siblings generated in bulk; without a shared onset queue they enter in unison, which is what makes a page read as machine-made |
+| every other page | `authored` | the page staggered its own nodes with `data-d` — a CSS delay, independent of when the observer fires — so a queue on top would delay them twice |
 
-`data-d` tops out at 0.36 s in 90 ms steps against the queue's 220 ms. So the collapse is a
-**retune of five pages' cadence and a decision about 94 authored attributes**, plus the gate
-choice above. That is Etap 5's kind of judgement, not Etap 4's kind of move, and it may well
-belong *after* the sweep decides which nodes deserve a register at all.
+The 94 `data-d` attributes step 90 ms against the queue's 220 ms, and **the Accepted list already
+settled that argument** ("a threshold is crossed faster than a page is read — do not unify them
+for consistency's sake"). Folding five pages' hand-set cadence onto the queue would have overruled
+a decision this file had already made, for symmetry.
 
-Also waiting on nothing in particular, and cheap once 4c lands: `.is-visible` is shared with
-three unrelated React components (`.scroll-top`, `.movement-spine`, `.gratitude`/`.failure`),
-while `.is-in` collides with nothing. If a single name is chosen, that is the argument.
+**The gate got a third answer**, better than either option 4b could see: `html.voct-motion`. It
+is what the landing already used, and it is true exactly when a controller is running — so
+`reveal-ready` goes back to meaning one thing only, *BaseLayout drives this page*. Opting out
+(`reveal={false}`) is now a promise to call the controller yourself, stated in the prop's own
+doc comment. `base.css` keeps the no-motion un-gate, because that rule answers a question about
+the **document** (is motion live at all?) and not about the register.
+
+**One trigger class, `.is-in`.** `.is-visible` was the landing's name for it *and* four React
+islands' name for their own visibility state (`.scroll-top`, `.movement-spine`, the vault's two
+modals) — and `registers.css` read it through a bare descendant selector, `.is-visible
+.ink-press`, so a press inside any of those would have fired on the wrong event. Two names, two
+meanings, no overlap.
+
+**Deleted on the way past:** `index.astro`'s three-rule `!important` un-gate for the landing.
+Once the registers moved inside `html.voct-motion`, every one of them restated what the cascade
+already said — the ink is un-hidden by `base.css`, the lead's pseudo-rule is never created, the
+veil rests at 0. An `!important` that only repeats the cascade is a trap for whoever next tries
+to change the thing it pins.
 
 ---
 

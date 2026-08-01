@@ -281,11 +281,14 @@ actually carrying **26 of the landing's 30 entrances**: a generic `translateY(42
 fade-up. The authored moments (manifest sweep, knot draw, coda score) were islands in it.
 
 The site has **three materials**, and each one arrives in its own way. Every entrance belongs to
-exactly one register. The mechanisms live in `styles/registers.css`, which `BaseLayout` loads on
-every page, so a register is available to any page that wants one. The single exception is the
-ink register's own hidden state, still declared once per controller — `landing/06-footer.css`
-for the landing, `base.css` for every other page — because the two differ in their *gate* and
-merging it means choosing one observer for the whole site.
+exactly one register. All of it lives in `styles/registers.css`, which `BaseLayout` loads on
+every page, and is fired by one controller, `scripts/reveal.ts`, which the landing and
+`BaseLayout` both call. **One trigger class, `.is-in`** — `.is-visible` is a different thing
+entirely (React islands with their own visibility state) and must never be read as a register
+trigger. The one page-level choice is the CADENCE: the landing passes `queue`, because its
+siblings are generated in bulk and would otherwise enter in unison; every other page passes
+`authored`, because it staggers its own nodes with `data-d` and a queue on top would delay them
+twice.
 
 | Register | Class | Material | Behaviour |
 |---|---|---|---|
