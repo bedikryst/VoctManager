@@ -401,8 +401,10 @@ export const ArtistDossier = ({
                 />
                 <div className="min-w-0">
                   {/* Sans, like the roster rows and tiles this opened from: the
-                      serif marks a titled work or event, and a person is neither. */}
-                  <Text as="h3" size="lg" weight="bold" truncate>
+                      serif marks a titled work or event, and a person is neither.
+                      Weight matches them too, so the name does not gain colour
+                      just because the panel it opened into is larger. */}
+                  <Text as="h3" size="lg" weight="semibold" truncate>
                     {artist.first_name} {artist.last_name}
                   </Text>
                   <div className="mt-1 flex items-center gap-1.5">

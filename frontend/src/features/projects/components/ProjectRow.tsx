@@ -167,17 +167,21 @@ export const ProjectRow = ({
           <span onClick={(event) => event.stopPropagation()}>
             {/* Serif, like the same title at the head of the project hub: a
                 concert is named, not labelled, and the row is where that name is
-                first read. One step above the shared `display` size because this
-                list holds a handful of roomy rows, not a growing catalogue — at
-                Cormorant's 0.386em x-height, 30px reads at about 21px of sans.
-                The step waits for `md`: on a phone the row already wraps a
-                status badge and an announcement chip beside the title. */}
+                first read. Two pixels above the shared `display` size, not a
+                scale step — this list holds a handful of roomy rows, so its
+                titles may sit a hair above the archive's, but a row title that
+                reaches the page's own `Heading` has inverted the hierarchy.
+                Tailwind's next step (`text-3xl`, 30px) does exactly that, which
+                is why this is an explicit value and not a token — and why the
+                leading is spelled out with it: a `text-*` token carries a
+                line-height, an arbitrary size carries none, so without this a
+                wrapped title would fall back to the row's own tighter one. */}
             <InlineEditable
               value={project.title}
               onSave={patchTitle}
               ariaLabel={t("projects.row.edit_title", "Tytuł projektu")}
               variant="display"
-              className="md:text-3xl"
+              className="text-[21px] leading-tight"
               placeholder={t("projects.row.title_placeholder", "Tytuł")}
               validate={(next) =>
                 next.trim()

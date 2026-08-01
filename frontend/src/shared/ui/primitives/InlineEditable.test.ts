@@ -99,15 +99,19 @@ describe("display mode and edit mode agree", () => {
 });
 
 describe("callers can still raise the step", () => {
-  it("lets a className size beat the variant's own", () => {
-    const button = classSet(cn("text-2xl tracking-tight", "text-3xl"));
-    expect(button).toContain("text-3xl");
+  it("lets a caller's explicit size beat the variant's own", () => {
+    // What `ProjectRow` does: two pixels over the shared size, because the next
+    // token up (30px) puts a row title level with the page's own heading.
+    const button = classSet(cn("text-2xl tracking-tight", "text-[26px] leading-tight"));
+    expect(button).toContain("text-[26px]");
     expect(button).not.toContain("text-2xl");
+    expect(button).toContain("tracking-tight");
   });
 
-  it("keeps a responsive bump alongside the base size", () => {
-    const button = classSet(cn("text-2xl tracking-tight", "md:text-3xl"));
-    expect(button).toContain("text-2xl");
-    expect(button).toContain("md:text-3xl");
+  it("keeps the leading a caller pairs with an arbitrary size", () => {
+    // An arbitrary font-size brings no line-height of its own, so the pair has
+    // to survive together or a wrapped title collapses onto the row's leading.
+    const button = classSet(cn("text-2xl tracking-tight", "text-[26px] leading-tight"));
+    expect(button).toContain("leading-tight");
   });
 });
