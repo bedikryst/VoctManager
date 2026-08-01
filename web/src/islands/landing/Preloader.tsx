@@ -15,7 +15,8 @@
  *   - the HINGE into the question is the mark ITSELF: the lit mark shrinks and travels to
  *     the slot above the question rather than dying so a smaller copy can be born there.
  *     One measured FLIP (`armMarkTransit`) — the slot's position follows the question's
- *     content height, so no static CSS can know it.
+ *     content height, so no static CSS can know it — animated by the BOX, not by a
+ *     transform, so the shrinking mark is rasterised honestly at every size it passes.
  *
  *  Phase machine, decided per mount:
  *   - donation deep-link (`#wesprzyj`, `#przelew`, `?donate`, `?donated=…`) or `?nogate`
@@ -103,7 +104,10 @@ async function heroSettled(capMs: number): Promise<void> {
 
 /**
  * Writes the FLIP that carries the lit mark out of the rite's centre and into the
- * question's own mark slot, as `--transit-*` on the overlay (the CSS owns the motion).
+ * question's own mark slot: both rects as `--transit-from-*` / `--transit-to-*` on the
+ * overlay, and the pin that takes the rite out of the grid at exactly where it stands.
+ * The CSS owns the motion — and animates the BOX rather than a transform, for the
+ * rasterisation reason recorded on `.preloader.is-transit .rite`.
  *
  * The slot has to be MEASURED: it sits at the head of the question's content block, so
  * its position follows that block's height — which changes with the viewport, the copy's
@@ -127,19 +131,34 @@ function armMarkTransit(overlay: HTMLElement | null): boolean {
   const to = slot.getBoundingClientRect();
   overlay.classList.remove("is-measuring");
 
-  // Both boxes are height-limited `contain` masks, so their height IS the drawn mark's
-  // height and their centre IS its centre — the two masters' aspects differ by 0.7%,
-  // a fraction of a pixel at the destination size.
   if (from.height < 1 || to.height < 1) return false;
 
-  const scale = to.height / from.height;
-  const dx = to.left + to.width / 2 - (from.left + from.width / 2);
-  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
-  if (!Number.isFinite(scale) || !Number.isFinite(dx) || !Number.isFinite(dy)) return false;
+  // Both boxes are height-limited `contain` masks, so their HEIGHT is the drawn mark's
+  // height and their centre is its centre — but the slot's box is a touch wider than the
+  // mark it draws, so the destination width is derived from the rite's aspect rather than
+  // measured, and the two are matched on their centres.
+  const height = to.height;
+  const width = from.width * (height / from.height);
+  const left = to.left + to.width / 2 - width / 2;
+  const top = to.top + to.height / 2 - height / 2;
+  if (![height, width, left, top].every((n) => Number.isFinite(n))) return false;
 
-  overlay.style.setProperty("--transit-x", `${dx.toFixed(2)}px`);
-  overlay.style.setProperty("--transit-y", `${dy.toFixed(2)}px`);
-  overlay.style.setProperty("--transit-s", scale.toFixed(4));
+  const px = (n: number): string => `${n.toFixed(2)}px`;
+  overlay.style.setProperty("--transit-from-x", px(from.left));
+  overlay.style.setProperty("--transit-from-y", px(from.top));
+  overlay.style.setProperty("--transit-from-w", px(from.width));
+  overlay.style.setProperty("--transit-from-h", px(from.height));
+  overlay.style.setProperty("--transit-to-x", px(left));
+  overlay.style.setProperty("--transit-to-y", px(top));
+  overlay.style.setProperty("--transit-to-w", px(width));
+  overlay.style.setProperty("--transit-to-h", px(height));
+
+  // The pin has to become the BEFORE-CHANGE style in its own style recalc, or the browser
+  // never sees the traveller at its origin and there is nothing to transition from. It is
+  // the rite's current rect to the pixel, so the frame it may cost is identical. React
+  // re-asserts the class on the commit that follows (see the render's class list).
+  overlay.classList.add("is-pinned");
+  void rite.offsetWidth;
   return true;
 }
 
@@ -331,7 +350,7 @@ export function Preloader(): React.JSX.Element | null {
   const classes = ["preloader"];
   if (wentCadence.current) classes.push("is-cadence");
   if (isChoice || (phase === "hiding" && wentChoice.current)) classes.push("is-choice");
-  if (wentTransit.current) classes.push("is-transit");
+  if (wentTransit.current) classes.push("is-pinned", "is-transit");
   if (phase === "hiding") classes.push("is-hidden");
 
   return (
