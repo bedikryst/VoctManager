@@ -431,7 +431,7 @@ velocity**, and a veil whose last shadow vanishes at full speed reads as a switc
 (scrim 0.58 → 0.51 over the first 0.5 s, which costs nothing — an unlit photograph is legible, not
 a hole), floods through the reading zone, then eases to nothing.
 
-### 3c. `--ease-ink` — implemented, NOT committed, awaiting eyes
+### 3c. `--ease-ink` — DONE, confirmed in the browser
 
 `cubic-bezier(0.34, 0.62, 0.28, 1)` — 82 % at 43 % → **0.39 s** of `--ink-in` (was 0.25 s). Still
 a genuine ease-out; the material still floods and then settles.
@@ -451,13 +451,76 @@ Two measurements say "keep the current curve" is no longer right:
    just under the rule's 595 ms. **Do not fix this by lengthening the 0.18 s delay** — that moves
    the whole pair down the page instead of changing its internal order.
 
-Blast radius is why it is separate: this is the one change that touches every entrance on the
-site, landing and subpages alike. It is a one-line revert (`tokens.css`), and the comment block
-there records both numbers so the decision can be re-derived rather than re-measured.
+Blast radius is why it shipped separately: this is the one change that touches every entrance on
+the site, landing and subpages alike. Confirmed in the browser — headings do not change line count
+across the wider range, so the reflow risk flagged in Etap 2 did not materialise.
 
-If the gentler ink reads right for copy but the press still pops, the fallback is to give the
-press its own timing function on the shared clock — **not** to split the duration. Not proposed
-now because it doubles the tuning surface for a defect that may not survive 3c.
+If the press ever needs to differ from the copy, the fallback is to give it its own timing
+function on the **shared clock** — never to split the duration.
+
+### 3d. The light register is still invisible, and the curve was not the main reason — OPEN
+
+Reported from the browser after 3b: the veil reads on the **portrait only**. On `.image-rite` the
+section is simply already standing there on arrival — "wjeżdżam i już stoi" — and on `.ensemble`
+and `.final-support` nothing changes at all.
+
+**My own error to record, because it is the same error the plan keeps making:** 3b measured the
+*curve* and never measured the *delta the veil actually produces*. Two independent causes, and
+contrast is the dominant one.
+
+**Cause 1 — the veil lands on ground its host has already crushed.** `rgba(8, 8, 7, 0.58)` is a
+multiply by 0.42 over whatever is beneath. Taking one mid-bright photo pixel (sRGB 160) through
+each host's own filter and scrim, at that section's **lightest** point:
+
+| host | photo filter | own scrim, lightest | at rest | veiled | delta |
+|---|---|---|---|---|---|
+| `.portrait` | brightness 0.92 | none — `--veil-z: 3` puts the veil above the vignette | 150 | 68 | **82** |
+| `.image-rite` | brightness 0.64 | 0.18 at the radial's centre | 87 | 41 | **46** |
+| `.ensemble` | brightness 0.62 | 0.50 | 55 | 28 | **27** |
+| `.final-support` | none | 0.78 → 0.88 | 41 → 26 | 22 → 16 | **19 → 10** |
+
+That ranking is exactly the ranking of what is visible. The portrait is the **control**: the one
+veil sitting on a near-full-brightness, unscrimmed image is the one that reads. Away from the two
+radial centres the composite scrim reaches ~0.95, where the veil moves single-digit sRGB levels.
+This is Etap 1f's finding one register over — a value calibrated in isolation, landing on ground
+that eats it.
+
+`.final-support` deserves the blunt conclusion: under a 0.78–0.88 gradient its photograph sits at
+26–41/255 at rest. There is no visible photograph there to light, so no veil alpha rescues it —
+the question is whether that section should carry a light register at all. That is an Etap 5
+judgement ("what should lose a register") arriving early.
+
+**Cause 2 — the veil's clock starts before the photograph arrives.** The trigger is 88 % vh on an
+element whose top *is the section's top*. `.image-rite` is `min-height: 96svh`; after 3b the lift
+is 82 % done at 1.13 s ≈ 452 px, i.e. section top at 38 % vh, while the reader "arrives" — section
+filling the screen — between 1.08 s and 1.98 s after the trigger. The lift therefore finishes at
+the moment of arrival rather than during it.
+
+**The precedent is already in the code**: `setupManifestLight` runs `-26%` (trigger at 74 % vh)
+and its comment records *"wjeżdżam i już stoi" was the 85 % defect*. The register observer sits at
+**88 %** — earlier than the value already rejected once. 88 % is right for a short node (a
+paragraph at 88 % vh is genuinely at the bottom edge) and wrong for the tallest nodes on the page,
+which is what every light node is.
+
+Etap 1b forbids giving the light register its **own trigger line** — that inverts neighbour
+ordering and is a correctness requirement. A `transition-delay` is not a trigger line: onset order
+is untouched, only the veil's own clock starts later. So the fix shape is a per-host
+`--veil-delay` (default 0 s, so the portrait — which works — is not touched), not an observer
+change.
+
+**Blocker on that fix, and an undocumented ceiling worth knowing anyway:** `settle()` carries a
+**2400 ms fallback timer** that adds `is-settled`, which strips the transition. The light register
+is 1800 ms, so the margin is 600 ms — a 0.6 s veil delay lands exactly on the timer and the veil
+would snap mid-lift. That timer is a hard ceiling on every register choreography and is written
+down nowhere. (`.reveal-cue` nodes are exempt: `settle()` returns early, which is why the coda's
+2.6 s caption is unaffected.)
+
+**Also open, and not explained by either cause:** the rite's *text* is reported as not drawing
+either. Measured, it should: `.rite-quote` is centred in the 864 px section, so its top crosses
+88 % vh with the section top at ~53 % vh, and its ink runs 0.44 → 1.0 over ~390 px of travel —
+against the rite's centre composite that is 156 → 244 sRGB, a large change squarely in the reading
+zone. No code-level reason found. Needs one disambiguation from the browser: whether copy inks
+anywhere on parchment grounds, or nowhere.
 
 ### Adjacent, fixed in the same pass
 
