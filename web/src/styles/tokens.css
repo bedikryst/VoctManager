@@ -84,7 +84,7 @@
      and the nominal duration stops describing anything:
 
        --ease-slow   82% at 28%.  The site's general curve. NOT an entrance curve.
-       --ease-ink    82% at 28% → 0.25s of --ink-in.  Still --ease-slow's curve; see below.
+       --ease-ink    82% at 43% → 0.39s of --ink-in.
        --ease-rule   82% at 70% → 0.60s of --rule-in.
        --ease-light  82% at 63% → 1.13s of --veil-lift.
 
@@ -101,17 +101,19 @@
      ends at maximum velocity, and a veil whose last shadow vanishes at full speed reads as
      a switch being thrown.
 
-     INK is the one register still on the general curve, written out as a literal rather
-     than as var(--ease-slow) so it can be retuned without also moving the vault, the
-     preloader and the nave menu, which share that token. It is not settled. The register
-     has a second channel now — the ink press moves the variable-font weight axis on this
-     same clock — and a stem width is a far higher-acuity channel than an opacity ramp from
-     0.44: measured, a 520 → 300 press spends 82% of its travel in 249ms, which is a snap
-     and not a nib settling. The same front-load puts a paired node's ink 82% done at 429ms
-     against its lead rule's 595ms, so the 0.18s delay encoding "rule leads, ink follows"
-     (landing/06-footer.css) is inverted on the eye while it holds on the nominal clock.
-     This token is the lever for both; see docs/web-reveal-remediation.md, Etap 3. */
-  --ease-ink: cubic-bezier(0.16, 0.84, 0.24, 1);
+     INK keeps a genuine ease-out — the material floods, then settles — but a gentler one
+     than --ease-slow, and it is written out as a literal rather than as var(--ease-slow)
+     so it can be retuned without also moving the vault, the preloader and the nave menu,
+     which share that token. Two measurements set the value. The register has a second
+     channel since Etap 2 (the ink press moves the variable-font weight axis on this same
+     clock), and a stem width — advance widths and reflow behind it — is a far higher-acuity
+     channel than an opacity ramp from 0.44: under --ease-slow a 520 → 300 press spent 82%
+     of its travel in 249ms, a snap rather than a nib settling. And that front-load put a
+     paired node's ink 82% done at 429ms against its lead rule's 595ms, inverting on the eye
+     the 0.18s delay that encodes "rule leads, ink follows" (landing/06-footer.css); at 43%
+     the ink's 82% lands at 569ms, just under the rule. Do not answer either by moving the
+     delay — that shifts the whole pair down the page instead of reordering it. */
+  --ease-ink: cubic-bezier(0.34, 0.62, 0.28, 1);
   --ease-rule: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   --ease-light: cubic-bezier(0.6, 0.04, 0.34, 1);
 

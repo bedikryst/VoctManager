@@ -883,12 +883,13 @@
     opacity: 1;
   }
 
-  /* The rule leads and the ink follows it onto the page. This delay IS the pairing, and on the
-     nominal clock it holds: the rule ends at 0.85s, the ink at 0.18 + 0.9 = 1.08s. On the eye
-     it does not yet — the two registers run different curves and the ink's is the front-loaded
-     one, so the ink is 82% done at 429ms where the rule reaches 82% at 595ms. Do not answer
-     that by lengthening this delay, which would only push the whole pair down the page: the
-     lever is --ease-ink (tokens.css). The nominal separation itself only became safe once
+  /* The rule leads and the ink follows it onto the page. This delay IS the pairing, and it now
+     holds on both clocks: nominally the rule ends at 0.85s against the ink's 0.18 + 0.9 = 1.08s,
+     and on the eye the rule reaches 82% of its draw at 595ms against the ink's 569ms. It did not
+     hold on the eye while both registers shared --ease-slow's front-load, which had the ink 82%
+     done at 429ms — reading as the ink arriving first however the delay was written. Should that
+     return, the lever is --ease-ink (tokens.css), never this delay, which moves the whole pair
+     down the page instead of reordering it. The nominal separation itself only became safe once
      `settle()` stopped accepting the pseudo-rule's transitionend on ink-bearing nodes:
      `is-settled` strips both transitions, so the shorter one used to cut the longer one off. */
   .reveal:is(.reveal-rule, .reveal-rule-v).is-visible {
