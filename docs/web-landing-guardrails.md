@@ -4,7 +4,7 @@ Record of what has already been tried, decided or rejected on the public site, s
 re-proposed. Companion to `.ai/07_marketing_public_site.md` (rules) — this file is the
 *negative* space: the things that look like good ideas and are not.
 
-Last consolidated: 2026-07-30.
+Last consolidated: 2026-08-01.
 
 ---
 
@@ -360,6 +360,31 @@ Three rules that generate the rest:
    ink 180ms behind). A node carrying an authored choreography takes `.reveal-cue` and nothing
    else; stacking a register on top of a draw is exactly the compounded motion the manifest
    stanzas were freed from, and it is what the coda emblem was still doing until this pass.
+
+**Light is the PHOTOGRAPHIC register, and it is granted by role.** Every photograph on the site
+enters by having a veil of its own dark lift off it — 68 nodes, not the 4 the landing had until the
+Etap 5 sweep, which had 60 subpage photographs *inking* instead while the register meant for them
+sat unused. Before granting it to a new host, measure the delta the veil really produces there: the
+scrim is a multiply by 0.42, so the delta is linear in how bright the photograph already is, and the
+test is a minute with sharp. Six of the site's fifty assets are too dark to clear the bar and keep
+the register anyway, because they are dark by photograph rather than by design — grading per asset
+would put one component in two registers depending on which file it was handed. A host whose OWN
+scrim has spent the range is the opposite case and does not get the register at all: `.final-support`
+lost it, because under that section's 0.78–0.88 gradient the image sits at 26–41/255 before the veil
+arrives, while the same photograph unscrimmed would have moved 32 levels. Two exclusions worth
+naming, since a sweep by filename takes both: a **video player** already carries a veiled state of
+its own (two veils on one node), and a **drawn sigil is not a photograph**.
+
+Bound the veil to the IMAGE, not to the figure: `inset: 0` on a `<figure>` darkens the caption too,
+and a caption is copy — it keeps the ink. So a photograph with a caption is two nodes, which is also
+what the height rule wants.
+
+**Controls stay out of every register.** A half-ink button is a button you are not sure you may
+press. This was written as a rule in 1e and broken in five places until the Etap 5 sweep — container
+nodes holding a glyph, a heading, copy *and* an actions row under one onset. When you find one, the
+fix needs no wrapper: `data-d` sets `--reveal-delay` for a whole **subtree**, so the container
+becomes the cadence carrier and its children take the registers — **the same `data-d` reads as one
+utterance, a step reads as a sequence** — and the actions row simply takes none.
 
 **Do not add a hairline in order to have something to rule.** Every ruled line on the page is a
 border the layout already carried (`.manifest-top`, `.ensemble-facts`, `.ensemble-origin`'s gold

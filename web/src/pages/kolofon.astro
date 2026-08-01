@@ -161,20 +161,23 @@ const jsonLd = {
           <span class="kol-dot" aria-hidden="true">·</span>
           <span>Kroje pisma</span>
         </h2>
-        <ul class="kol-fonts reveal" data-d="1">
-          <li class="kol-font kol-font--cormorant" tabindex="0">
+        {/* Independent rows under one onset was the `.donation-rows` shape: as a single 513px
+            node the last specimens were written before they were reached. Each row now has its
+            own trigger and the list keeps its rolling cadence. */}
+        <ul class="kol-fonts">
+          <li class="kol-font kol-font--cormorant reveal" tabindex="0">
             <span class="kol-font-sample">Cormorant Garamond</span>
             <span class="kol-font-meta micro">Christian Thalmann · garaldyckie pismo do oddychania</span>
           </li>
-          <li class="kol-font kol-font--cinzel" tabindex="0">
+          <li class="kol-font kol-font--cinzel reveal" tabindex="0">
             <span class="kol-font-sample">Cinzel</span>
             <span class="kol-font-meta micro">Natanael Gama · kapitała inskrypcyjna na rubryki i cyfry rzymskie</span>
           </li>
-          <li class="kol-font kol-font--sans" tabindex="0">
+          <li class="kol-font kol-font--sans reveal" tabindex="0">
             <span class="kol-font-sample">IBM Plex Sans</span>
             <span class="kol-font-meta micro">Bold Monday dla IBM · sans-serif do czytania</span>
           </li>
-          <li class="kol-font kol-font--plex" tabindex="0">
+          <li class="kol-font kol-font--plex reveal" tabindex="0">
             <span class="kol-font-sample">IBM Plex Mono</span>
             <span class="kol-font-meta micro">Bold Monday dla IBM · monospace na meta i daty</span>
           </li>
@@ -267,28 +270,28 @@ const jsonLd = {
           Twórczynie i twórcy, których praca składała się na&nbsp;kolejne koncerty cyklu
           — credits z plakatów i programów, ułożone tu&nbsp;jako wpis archiwalny.
         </p>
-        <ul class="kol-collab reveal" data-d="2">
-          <li>
+        <ul class="kol-collab">
+          <li class="reveal">
             <span class="kol-collab-name">Jakub Garbacz · Ars Sonora Studio</span>
             <span class="kol-collab-role micro">realizacja nagrań · Kontemplacja Wcielenia, 2024</span>
           </li>
-          <li>
+          <li class="reveal">
             <span class="kol-collab-name">Ada Bystrzycka · Multiscena</span>
             <span class="kol-collab-role micro">reżyseria świateł · wybrane koncerty 2024–2025</span>
           </li>
-          <li>
+          <li class="reveal">
             <span class="kol-collab-name">Sebastian Kuźma · ART Agencja Rzemieślników Teatralnych</span>
             <span class="kol-collab-role micro">animacja wizualna · wybrane koncerty 2024–2025</span>
           </li>
-          <li>
+          <li class="reveal">
             <span class="kol-collab-name">Radu Ropotan</span>
             <span class="kol-collab-role micro">skrzypce · Wołanie Gór, 2024</span>
           </li>
-          <li>
+          <li class="reveal">
             <span class="kol-collab-name">Krzysztof Michałek · Michał Piechnik</span>
             <span class="kol-collab-role micro">organy · Hymn Poległym, 2025</span>
           </li>
-          <li>
+          <li class="reveal">
             <span class="kol-collab-name">Fundacja Carpe Diem · Ośrodek Kultury Norwida</span>
             <span class="kol-collab-role micro">współorganizacja · wybrane wydarzenia</span>
           </li>

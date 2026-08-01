@@ -135,8 +135,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="lat">Scribe nobis</span>{"  ·  "}Kontakt
         </p>
         <h1>
-          <span class="line"><span class="reveal">Napisz</span></span>
-          <span class="line"><span class="reveal" data-d="1">do <em>nas.</em></span></span>
+          <span class="line"><span class="reveal ink-press">Napisz</span></span>
+          <span class="line"><span class="reveal ink-press" data-d="1">do <em>nas.</em></span></span>
         </h1>
         <p class="hero-lede reveal" data-d="2">
           Archikatedra w Łodzi, dworek w Szczawnicy, Synagoga Tempel, śluby
@@ -270,10 +270,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
     {/* ── Coda — the page wybrzmiewa, nie kończy się drobnym drukiem ────── */}
     <section class="coda" aria-label="Do usłyszenia">
-      <div class="coda-inner reveal">
-        <span class="coda-glyph" aria-hidden="true"></span>
-        <h2 class="ink-press">Do usłyszenia.</h2>
-        <p>A najlepiej — na żywo, w akustyce, która pamięta.</p>
+      <div class="coda-inner">
+        <span class="coda-glyph reveal" aria-hidden="true"></span>
+        <h2 class="reveal ink-press" data-d="1">Do usłyszenia.</h2>
+        <p class="reveal" data-d="2">A najlepiej — na żywo, w akustyce, która pamięta.</p>
+        {/* Controls out of the register — see the station actions on /koncerty. */}
         <div class="coda-links">
           <a href="/koncerty">Zobacz koncerty →</a>
           <a href="/?donate" data-vault-open="100">Wesprzyj fundację →</a>

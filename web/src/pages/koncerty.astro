@@ -121,8 +121,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="intro-inner">
         <p class="eyebrow reveal"><span class="lat">Via</span>  ·  Droga koncertów</p>
         <h1>
-          <span class="line"><span class="reveal">Koncerty</span></span>
-          <span class="line"><span class="reveal" data-d="1"><em>Duchowe.</em></span></span>
+          <span class="line"><span class="reveal ink-press">Koncerty</span></span>
+          <span class="line"><span class="reveal ink-press" data-d="1"><em>Duchowe.</em></span></span>
         </h1>
         <p class="intro-lede reveal" data-d="2">
           Zapis kolejnych intencji cyklu — od Wcielenia, przez góry, psalmy, pamięć
@@ -170,14 +170,18 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
           {s.variant === "liturgy" ? (
             <div class="station-inner">
-              <div class="station-text station-plate reveal">
-                <span class="station-glyph" aria-hidden="true" />
-                <p class="station-num">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
-                <h2 class="station-title ink-press">{s.title}</h2>
-                <p class="station-meta">{s.meta}</p>
-                <p class="station-essence">{s.essence}</p>
+              {/* Element by element, like its non-liturgy sibling below. As one 636px node the
+                  plate fired on the glyph and everything under the heading reached the reading
+                  zone already written. Same `data-d` reads as one utterance, a step as a
+                  sequence. */}
+              <div class="station-text station-plate">
+                <span class="station-glyph reveal" aria-hidden="true" />
+                <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
+                <h2 class="station-title reveal ink-press" data-d="1">{s.title}</h2>
+                <p class="station-meta reveal" data-d="1">{s.meta}</p>
+                <p class="station-essence reveal" data-d="2">{s.essence}</p>
                 {s.facts.length > 0 && (
-                  <div class="station-facts" aria-label="Cechy liturgii">
+                  <div class="station-facts reveal" data-d="2" aria-label="Cechy liturgii">
                     {s.facts.map((f) => (
                       <span>{f}</span>
                     ))}
@@ -232,8 +236,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     ))}
                   </div>
                 )}
+                {/* Out of the register deliberately: a half-ink control is a control you are not
+                    sure you may press. Everything above it inks; these are simply there. */}
                 {(s.hasPage || s.spotify || s.realizacja || s.links.length > 0) && (
-                  <div class="station-actions reveal" data-d="3">
+                  <div class="station-actions">
                     {s.hasPage && (
                       <a class="pill" href={`/koncerty/${s.id}`}>
                         Otwórz stronę koncertu →
@@ -281,12 +287,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           upcoming concert" holds: we promise nothing but say plainly the next one
           waits on patrons. Numeral continues the sequence. ──────────────── */}
     <section class="station-next" aria-label="Następny Koncert Duchowy">
-      <div class="station-next-inner reveal">
-        <span class="station-next-glyph" aria-hidden="true"></span>
-        <p class="station-num">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat">Nondum</span></p>
-        <h2 class="station-title ink-press">Następne wybrzmienie.</h2>
-        <p class="station-meta">Termin i przestrzeń wyznaczą darczyńcy</p>
-        <p class="station-essence">
+      <div class="station-next-inner">
+        <span class="station-next-glyph reveal" aria-hidden="true"></span>
+        <p class="station-num reveal">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat">Nondum</span></p>
+        <h2 class="station-title reveal ink-press" data-d="1">Następne wybrzmienie.</h2>
+        <p class="station-meta reveal" data-d="1">Termin i przestrzeń wyznaczą darczyńcy</p>
+        <p class="station-essence reveal" data-d="2">
           Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko przestrzeni,
           w której wybrzmi. Każda darowizna przybliża jego datę.
         </p>
@@ -389,9 +395,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
     {/* ── CTA ──────────────────────────────────────────────────────────── */}
     <section class="cta-band tone-light" aria-label="Zaproszenie">
-      <div class="reveal">
-        <h2>Śpiewaliśmy w bazylikach, katedrze i wiejskim kościele.</h2>
-        <p>
+      <div>
+        <h2 class="reveal">Śpiewaliśmy w bazylikach, katedrze i wiejskim kościele.</h2>
+        <p class="reveal" data-d="1">
           Bazyliki NSPJ i Mariacka w Krakowie, św. Antoniego w Rybniku, archikatedra w Łodzi,
           sanktuarium w Warszawie, dworek zdrojowy w Szczawnicy, kościół w Niedzicy — każda
           z tych przestrzeni układała program na nowo. Przygotujemy koncert duchowy, oprawę liturgii

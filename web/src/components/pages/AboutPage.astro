@@ -152,8 +152,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="hero-inner">
         <p class="eyebrow reveal"><span class="lat">{c.hero.eyebrow.lat}</span>  ·  {c.hero.eyebrow.label}</p>
         <h1>
-          <span class="line"><span class="reveal">{c.hero.titleLine1}</span></span>
-          <span class="line"><span class="reveal" data-d="1" set:html={c.hero.titleLine2Html} /></span>
+          <span class="line"><span class="reveal ink-press">{c.hero.titleLine1}</span></span>
+          <span class="line"><span class="reveal ink-press" data-d="1" set:html={c.hero.titleLine2Html} /></span>
         </h1>
         <p class="hero-lede reveal" data-d="2">{c.hero.ledeText}</p>
         <span class="scroll-cue reveal" data-d="3">{c.hero.scrollCue}</span>
@@ -370,7 +370,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <div class="board">
           {
             board.map((b, i) => (
-              <article class="board-card reveal" data-d={String(i + 1)}>
+              <article class="board-card" data-d={String(i + 1)}>
                 {boardPortraitsComplete && b.img && (
                   <figure class="board-portrait">
                     <Picture
@@ -382,11 +382,16 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                       loading="lazy"
                       decoding="async"
                     />
+                    <span class="reveal-light" aria-hidden="true"></span>
                   </figure>
                 )}
-                <h3>{b.name}</h3>
-                <p class="role">{b.role}</p>
-                <p class="vision">{b.vision}</p>
+                {/* One person is one utterance, so the three text nodes share the card's inherited
+                    delay and read as a single arrival. The card itself is only the cadence now: as
+                    one 673px register node it fired on the portrait and the vision paragraph was
+                    a screen further down, finished before it was reached. */}
+                <h3 class="reveal">{b.name}</h3>
+                <p class="role reveal">{b.role}</p>
+                <p class="vision reveal">{b.vision}</p>
               </article>
             ))
           }
@@ -396,10 +401,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
     {/* ── CTA — closed by the votive glyph ──── */}
     <section class="band cta-band" aria-label={c.cta.aria}>
-      <div class="wrap reveal">
-        <span class="cta-glyph" aria-hidden="true"></span>
-        <h2>{c.cta.h2}</h2>
-        <p>{c.cta.p}</p>
+      <div class="wrap">
+        <span class="cta-glyph reveal" aria-hidden="true"></span>
+        <h2 class="reveal" data-d="1">{c.cta.h2}</h2>
+        <p class="reveal" data-d="2">{c.cta.p}</p>
+        {/* Controls out of the register — see the station actions on /koncerty. */}
         <div class="btn-row">
           <a class="btn btn-gold" href={hrefContact}>{c.cta.write}</a>
           <a class="btn" href={hrefConcerts}>{c.cta.concerts}</a>

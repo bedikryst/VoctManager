@@ -21,9 +21,17 @@ const ROWS = [
 ---
 
 <section class="final-support" id="wesprzyj" aria-label="Wesprzyj VoctEnsemble">
+  {/* No light register here, and the measurement says why: the photograph itself is fine —
+      swiatlo-krzyz reads p90 64, which the veil would move 32 levels, comfortably above the bar
+      the rest of the site clears. What spends it is this section's OWN 0.78–0.88 gradient, which
+      crushes the image to 26–41/255 before the veil touches it, leaving the register 10–19 levels
+      to work with. A register must not claim a gesture the design has already decided against, and
+      leaving it here invites the one fix that is forbidden: deepening --veil-ink, which reaches
+      threshold only by taking the photograph to 18/255 and breaking "never blank, only unlit" in
+      order to rescue the register whose whole promise that is. If the gradient is ever lightened,
+      the register can come back unchanged. */}
   <div class="final-support-media" aria-hidden="true">
     <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" position="center" />
-    <span class="reveal-light"></span>
   </div>
   <div class="section">
     <div class="final-grid">
@@ -31,14 +39,19 @@ const ROWS = [
           element-by-element as you scroll — the granular feel of the "Z drogi" register —
           instead of a whole tall column popping in at once on the phone. */}
       <div class="final-copy">
-        <div class="final-lede reveal">
-          <div class="micro">Patronat · darowizna · partnerstwo</div>
-          <h2 class="ink-press">Niech muzyka ma swoje miejsce.</h2>
+        {/* Eyebrow and heading are one utterance and share a node; the paragraph is read after
+            them and takes its own, so the queue gives it the beat it needs. As one 424px node the
+            copy under the display heading was already written when the eye arrived. */}
+        <div class="final-lede">
+          <div class="final-lede-head reveal">
+            <div class="micro">Patronat · darowizna · partnerstwo</div>
+            <h2 class="ink-press">Niech muzyka ma swoje miejsce.</h2>
+          </div>
           {/* Names the real cost structure instead of a metaphor: the singers are the
               largest item, and saying so is the honest case for a donation. Deliberately
               no amounts per item — the tiers below stay qualitative, because published
               rates for musicians would be both volatile and indiscreet. */}
-          <p>
+          <p class="reveal">
             Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
             światło i dojazdy. Na to idą darowizny. Można też zaprosić nas do
             siebie: śpiewamy koncerty i liturgie, msze ślubne, jubileusze.

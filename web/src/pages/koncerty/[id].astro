@@ -379,14 +379,17 @@ const plDate = (iso: string): string =>
           <ol class="kd-program">
             {programGroups.map((grp) => (
               <>
+                {/* The Latin is the verse and the Polish is its translation: read in sequence, so
+                    they take a step rather than one 672px onset that finished before the
+                    translation was reached. */}
                 {grp.movement?.interlude && (
-                  <li class="kd-interlude reveal" aria-label="Przerywnik biblijny">
-                    <p class="kd-interlude-lat">{grp.movement.interlude.lat}</p>
+                  <li class="kd-interlude" aria-label="Przerywnik biblijny">
+                    <p class="kd-interlude-lat reveal">{grp.movement.interlude.lat}</p>
                     {grp.movement.interlude.pl && (
-                      <p class="kd-interlude-pl">{grp.movement.interlude.pl}</p>
+                      <p class="kd-interlude-pl reveal" data-d="1">{grp.movement.interlude.pl}</p>
                     )}
                     {grp.movement.interlude.ref && (
-                      <span class="kd-interlude-ref micro">{grp.movement.interlude.ref}</span>
+                      <span class="kd-interlude-ref micro reveal" data-d="1">{grp.movement.interlude.ref}</span>
                     )}
                   </li>
                 )}
@@ -453,10 +456,10 @@ const plDate = (iso: string): string =>
                         it brings words back (9 Kart — Psalm 51 returning between the psalms). It is
                         content either way, so it stays in the accessibility tree. */}
                     {p.clasp && (
-                      <li class:list={["kd-clasp", "reveal", { "is-sung": p.claspText || p.claspTextPl }]}>
-                        <span class="kd-clasp-rule"><span>{p.clasp}</span></span>
-                        {p.claspText && <p class="kd-clasp-lat">{p.claspText}</p>}
-                        {p.claspTextPl && <p class="kd-clasp-pl">{p.claspTextPl}</p>}
+                      <li class:list={["kd-clasp", { "is-sung": p.claspText || p.claspTextPl }]}>
+                        <span class="kd-clasp-rule reveal"><span>{p.clasp}</span></span>
+                        {p.claspText && <p class="kd-clasp-lat reveal">{p.claspText}</p>}
+                        {p.claspTextPl && <p class="kd-clasp-pl reveal" data-d="1">{p.claspTextPl}</p>}
                       </li>
                     )}
                   </>
@@ -494,9 +497,10 @@ const plDate = (iso: string): string =>
     {c.pullQuote && (
       <section class="kd-band kd-pullquote tone-light" aria-label="Cytat">
         <div class="kd-wrap kd-narrow">
-          <blockquote class="kd-quote reveal">
-            <p>{c.pullQuote.text}</p>
-            <cite class="kd-cite">
+          {/* You read the words, then you look for who said them. */}
+          <blockquote class="kd-quote">
+            <p class="reveal">{c.pullQuote.text}</p>
+            <cite class="kd-cite reveal" data-d="1">
               <span class="kd-cite-name">{c.pullQuote.attribution}</span>
               {c.pullQuote.about && <span class="kd-cite-about micro">{c.pullQuote.about}</span>}
             </cite>
@@ -550,7 +554,10 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Zapis wieczoru</span>
           </span>
-          <div class:list={["kd-film-player", "reveal", { "is-portrait": c.video.portrait }]} data-d="1">
+          {/* No register: the player already carries a veil of its own over the poster frame, and
+              a light register on top of it would be two veils on one node — the same call the
+              landing makes for VoxMoment. The section label above it is what inks. */}
+          <div class:list={["kd-film-player", { "is-portrait": c.video.portrait }]}>
             <VideoPlayer
               client:load
               src={filmVideoSrc}

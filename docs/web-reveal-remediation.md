@@ -842,47 +842,96 @@ of the banked five would have asked, because all five ask what a node *should ga
   `.is-in`, settled, and never moved. Now `filter: opacity(.8)`, which composes with the register
   instead of replacing it — 0.44 × 0.8 hidden, 1 × 0.8 at rest, the authored intent unchanged.
 
-### 5b. Geometry — the measured list, open
+### 5b. Geometry — DONE 2026-08-01
 
-69 instances over the ~360 px the ink travels. **They are two different problems and must not be
-treated as one.**
+**72 instances over budget → 41; 22 shapes → 8.** What follows is what the census made decidable
+and what it did not.
 
-**Photographs, 60 nodes, and they are in the wrong register.** `.kd-shot` ×43 (282–441 px),
-`.kd-poster` ×5, `.station-poster` ×5, `.letter-portrait` ×3, `.kd-film-player` ×3 (699 px),
-`.kol-seal-figure`. A figure cannot be split — it is one object — so the height rule has no move to
-offer here. The doctrine does: **light is the photographic register**, and the site spends it on
-exactly 4 nodes, all on the landing, three of which 3d measured as barely readable because their
-hosts already crushed their own ground. Meanwhile 60 unscrimmed subpage photographs are being
-*inked*. `.portrait` — the one veil that reads, at 82 sRGB levels — is precisely this shape: a host
-smaller than the screen that arrives with its image. This is the sweep's largest single finding and
-it is a **5d** call, not a mechanical one.
+**A shape the banked questions never named, and it is a stated rule rather than a measurement:
+controls were in the register.** Five container nodes across four pages (`.station-plate`,
+`.station-next-inner`, `.coda-inner`, `/koncerty`'s CTA `div`, `/o-nas`'s CTA `.wrap`) each held a
+glyph, a heading, copy *and* a row of links or buttons under one onset — so every one of those
+controls sat at half-ink until its block arrived. 1e wrote the rule ("a half-ink button is a button
+you are not sure you may press") and then nobody checked who was breaking it. `.station-actions`
+was breaking it explicitly, with its own `data-d="3"`.
 
-**Blocks, 9 shapes, where splitting is the answer.** `.board-card` ×9 (673), `.kd-interlude` ×3
-(672), `.station-plate` (636), `.wrap` ×3 (609–636), `.kd-clasp` ×4, `.station-next-inner` (548),
-`.kol-fonts` (513), `.kol-collab` (479), `.kd-quote` ×2, `.kd-program-item` ×34 (367–469),
-`.footer-col` ×2 (462), `.coda-inner` (460), `.section-head measure` (437), `.final-lede` (424),
-`.kol-defs` (399), `.prose measure` ×2, `.kd-program-arc` (368). 1e's rule applies verbatim: group
-what is read as one thing, split what is read in sequence, and **ask the height question first**.
-Note `.wrap` and `.station-plate` are layout containers carrying a register — a whole section as one
-utterance, which is the shape 1e was written about.
+**The technique, and it needs no wrappers.** `data-d` now sets `--reveal-delay` for a subtree, so
+**the same `data-d` reads as one utterance and a step reads as a sequence.** A container becomes
+the cadence carrier and its children take the registers, which is layout-neutral — the children
+already had their own margins. `/koncerty`'s liturgy station was the clearest case: it was one
+636 px node while its non-liturgy sibling three lines below already did exactly this.
 
-Every split moves `.reveal` **down onto children**, and the children are where the page's own
-`transition` declarations live (`.prog-d summary`, `.kd-verbum-full summary`, `.after-channels a`,
-`.doing a`, `.prose a.inline`). Today those are safe because the register sits on an ancestor. After
-a split they are not, and Astro's scoping means the collision goes the *other* way from
-`.path-entry-title`: the child's rule wins and the ink stops. **Re-run the census after every
-split** — flags 1–3 exist to catch exactly this.
+Split: `.station-plate`, `.station-next-inner`, both CTA blocks, `.coda-inner`, `.board-card`
+(portrait → light, the three text nodes sharing the card's delay because one person is one
+utterance), `.final-lede`, `.kd-interlude`, `.kd-clasp`, `.kd-quote`, `.kol-fonts`, `.kol-collab`.
+Removed from the register outright: `.kd-film-player`, which carries its own `veiled` state — the
+same call the landing already made for VoxMoment.
 
-### 5d. The judgement — open
+**What stays over budget, deliberately.** 1e's rule is geometric *first* and editorial second; these
+are the ones where the editorial answer wins, and they are recorded so they are not "fixed":
 
-| question | where it came from | status |
+| node | px | why it stays |
 |---|---|---|
-| **Should the 60 subpage photographs move from ink to light?** | 5a census | the sweep's largest finding; needs the developer's eye on one host first |
-| **Should `/press` join the register system at all?** It has zero `.reveal` nodes. | Etap 4a | **cheaper than 4a implied**: `press.astro` uses `BaseLayout` without `reveal={false}`, so the controller already runs there over nothing, and all three heading rules already declare `font-weight: 300`. Adoption is classes only. The question is purely editorial. |
-| **Should `.final-support` carry a light register?** 19 → 10 sRGB levels under its own 0.78–0.88 gradient. | Etap 3d | arithmetic re-verified. But the number **underdetermines** the conclusion: 19 levels on a base of 41 is a 46 % relative change, and the dark end is where relative sensitivity is highest. The answerable form is whether the photograph retains *structure* after the multiply — a histogram of `swiatlo-krzyz-desktop.jpg`, not a vote. |
-| **Do the three bare hero `<h1>`s want a press?** | Etap 4a | **the plan was wrong**: it said the reveals need restructuring. The press reads `.is-in` on itself *or an ancestor*, and the inner `<span class="reveal">` **is** the trigger node, so `class="reveal ink-press"` on that same span needs no restructuring at all. All three h1s already declare `font-weight: 300`. The real cost is one the plan never named: at `clamp(…, 130/116/138px)` inside `.line { overflow: hidden }`, these are the largest advance-width changes on the site. |
-| **Should `/koncerty`'s entry rules take the lead register, and `/o-nas`'s portrait the light?** | Etap 4b | still open; the portrait question folds into the photographs question above |
-| **`/koncerty`'s `.rep-col li.rep-row` is outside the register system while wearing its class.** It out-specifies the ink to run `transform: translateY(16px)` over 0.5 s on `--ease` — a travel entrance, on its own clock and curve, which is the one thing the doctrine's first rule forbids. Found by the sweep for transition-owning reveal nodes; it is a *change register* decision, not a bug to patch. | Etap 4a fix |
+| `.kd-program-item` ×34 | 469 | one programme entry is one bibliographic record; splitting it fragments the unit, and each item already has its own trigger |
+| `.footer-col` ×2 | 462 | the landing footer numbers itself **IV** and the scroll ends under it — the coda's exemption, same reasoning |
+| `.section-head measure` | 437 | eyebrow + h2 is 1e's own cleared example of one utterance, and it is only over budget in French |
+| `.prose measure` ×2 | 388 | a prose block is one utterance; French only |
+| `.kol-defs` | 399 | 39 px over — the node's bottom is still on screen when the ink completes |
+| `.kd-program-arc` | 368 | 8 px over, one paragraph |
+
+**And 1e's own list was half wrong, which is the seventh instance of this file's habit.** It named
+`.bank-card` and `.donation-rows` as needing splits. Measured: **205 px and 219 px** — both
+comfortably inside budget, and both listed before anyone measured them.
+
+### 5d. The judgement — DONE 2026-08-01
+
+Every question is answered and every one was answerable by measuring except the last.
+
+**Photographs moved from ink to light — 56 figures.** The census found 60 photographic nodes in the
+INK register while light, the register the doctrine reserves for photography, was spent on 4 nodes
+on the landing, three of which 3d had measured as barely readable. The register that works was being
+withheld from the hosts it works on. Ground test first, as the register's own comment demands: the
+veil multiplies by 0.42, so its delta is linear in the photograph's own brightness, and over all 50
+assets at p90 **44 clear the bar and six night frames do not**. Granted by ROLE anyway — those six
+are dark because the photograph is dark, not because the design crushed it, so grading per asset
+would put one component in two registers depending on which file it was handed. Each figure now
+carries a media wrapper so the veil is bounded to the image and the caption keeps the ink, which is
+also the split the geometry rule wanted: these were the tallest ink nodes on the site.
+
+Two nodes a name-based sweep would have taken and should not: **`.kd-film-player`** carries its own
+`veiled` state (two veils on one node — the call already made for VoxMoment), and
+**`.kol-seal-figure`** is a drawn sigil, not a photograph.
+
+**`.final-support` loses the light register**, and the measurement answers it differently from the
+way 3d framed it. `swiatlo-krzyz` itself reads p90 **64**, which the veil would move **32 levels** —
+comfortably above the bar the rest of the site clears. What spends the register is the section's own
+**0.78–0.88 gradient**, which crushes the image to 26–41/255 before the veil touches it. So the
+question was never "is this photograph worth lighting" but "has this section already decided not to
+show it", and it has. A register must not claim a gesture the design has ruled out, and leaving it
+invites the one fix 3d forbade. If the gradient is ever lightened the register returns unchanged.
+
+**The three bare hero `<h1>`s took the press, and the plan's reason for deferring them was false.**
+It said the reveals need restructuring. The press reads `.is-in` on itself **or an ancestor**, and
+the inner `<span class="reveal">` *is* the trigger node — so `class="reveal ink-press"` on that same
+span needed no restructuring at all, and all three h1s already declared `font-weight: 300`. Ten
+spans across five pages. **Needs eyes:** at `clamp(…, 130/116/138px)` these are the largest
+advance-width changes on the site, inside `.line { overflow: hidden }` where each `.line` is one
+authored line; the strings are short so a line-count flip is unlikely, but it is the one place it
+could show.
+
+**`/press` stays out — the developer's call, 2026-08-01, and the only genuinely editorial one.** It
+is a page someone opens when they need a specific thing, not one that is read; it is `noindex`, and
+its audience never sees the sequence the registers belong to. Recorded as a decision rather than an
+open question, and note it is *cheap* rather than blocked: `press.astro` uses `BaseLayout` without
+`reveal={false}`, so the controller already runs there over zero nodes, and all three heading rules
+already declare `font-weight: 300`. Adoption would be classes only, if it is ever wanted.
+
+**`/koncerty`'s entry rules and `/o-nas`'s portrait** (Etap 4b): the portrait is answered — it took
+the light register with the other photographs. The entry rules stay ink-only; `/koncerty`'s station
+hairlines are `border-top` on `.rep-col li` and on `.kd-clasp`, which are row separators inside a
+list rather than the rules that *open* a block, and the lead register is a claim about a rule being
+drawn before what it carries.
+
 
 ---
 
