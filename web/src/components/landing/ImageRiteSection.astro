@@ -21,8 +21,14 @@ const rite = bleedPair("chor-spot");
       (the veil lifts off the photograph) while the inscription over it is INKED. Sits above
       the section scrim and below the quote — see --veil-z in the section's CSS. */}
   <span class="reveal-light" aria-hidden="true"></span>
-  <div class="rite-quote reveal">
-    <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+  {/* The mark and the line are one emblem, but 350px of one: 84px of mark, 46px of margin, and
+      a heading that wraps to two lines at desktop sizes. A single register node is triggered by
+      its TOP, so the whole emblem fired on the mark and the inscription — the part that is
+      actually read — was still below the fold, finishing its ink before it reached the reading
+      zone. Two nodes, paced by the shared onset queue, keep it one gesture (mark, then words)
+      while each half is inked where it is watched. */}
+  <div class="rite-quote">
+    <svg class="mark reveal" viewBox="0 0 64 64" fill="none" aria-hidden="true">
       <circle cx="32" cy="32" r="3" stroke="currentColor" stroke-width="1" />
       <path
         d="M32 5V23M32 41V59M5 32H23M41 32H59M13 13L25 25M39 39L51 51M51 13L39 25M25 39L13 51"
@@ -32,6 +38,6 @@ const rite = bleedPair("chor-spot");
     </svg>
     {/* One line only. The photograph already shows the beam, the nave and the listeners;
         a sentence explaining the metaphor underneath would say what the image says. */}
-    <h2>Światło prowadzi słuchacza.</h2>
+    <h2 class="reveal">Światło prowadzi słuchacza.</h2>
   </div>
 </section>

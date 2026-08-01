@@ -100,6 +100,14 @@ const REVEAL_SELECTOR = ".reveal, .reveal-rule, .reveal-rule-v, .reveal-light, .
 const ONSET_GAP_MS = 220;
 const MAX_BACKLOG_MS = 450;
 
+// Guarantees `is-settled` when no transitionend arrives — a node scrolled past while hidden, a
+// transition cancelled mid-flight. It is therefore a HARD CEILING on every register choreography,
+// because `is-settled` strips the transition: a register that runs longer than this is cut off
+// mid-gesture, silently and only on the slowest path. Keep it clear of the longest one, which is
+// light (--veil-delay 0.6s + --veil-lift 1.8s = 2.4s). Cue nodes never reach it — `settle()`
+// returns early for them, which is what keeps the coda's 2.6s caption out of this budget.
+const SETTLE_FALLBACK_MS = 3400;
+
 function setupReveal(root: HTMLElement, reduce: boolean): void {
   const items = Array.from(root.querySelectorAll<HTMLElement>(REVEAL_SELECTOR));
   if (!items.length) return;
@@ -138,7 +146,7 @@ function setupReveal(root: HTMLElement, reduce: boolean): void {
       window.setTimeout(() => {
         el.classList.add("is-settled");
         el.removeEventListener("transitionend", onEnd);
-      }, 2400),
+      }, SETTLE_FALLBACK_MS),
     );
   };
 

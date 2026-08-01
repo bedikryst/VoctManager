@@ -26,10 +26,17 @@ export function VoxMoment({ poster }: VoxMomentProps): React.JSX.Element {
     <Typo>
       <section className="vox" aria-label="Zobacz i usłysz">
         <div className="vox-inner">
-          <p className="vox-eyebrow">
+          {/* The ink register reaches into this island: both classNames are constant strings, so
+              React writes the attribute once and the shared observer's `.is-visible` survives
+              every re-render, and nothing here renders differently on the server than on the
+              first client pass. Both conditions are required — see the footer's silent failure
+              in docs/web-landing-guardrails.md. The player is deliberately left out: it owns a
+              veiled state of its own, and a second veil over it would be two registers on one
+              node. */}
+          <p className="vox-eyebrow reveal">
             <span className="lat">Vox</span> · Zobacz i usłysz
           </p>
-          <p className="vox-line">
+          <p className="vox-line reveal">
             Z tej ciszy — <em>głos.</em>
           </p>
           <VideoPlayer src={VOX_VIDEO.src} poster={poster} caption={VOX_VIDEO.caption} />

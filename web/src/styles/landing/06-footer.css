@@ -945,7 +945,16 @@
      96svh), so its top crosses the trigger when the SECTION's top does — the lift plays
      while the photograph is still arriving from below. That geometry is why this register
      needs a back-weighted curve and not merely a long duration: --veil-lift buys nothing
-     if the curve spends it before the image is on screen. See --ease-light in tokens.css. */
+     if the curve spends it before the image is on screen. See --ease-light in tokens.css.
+
+     --veil-delay finishes that argument, and it is authored PER HOST because the geometry
+     is: a section-scale veil fires a full viewport before its photograph is worth looking
+     at, while `.portrait` — the one veil on a host smaller than the screen — arrives with
+     its image and needs no delay at all. It is a delay and deliberately NOT a second
+     trigger line: a trigger line reorders neighbours (the reason Etap 1b was dropped),
+     a delay only moves this element's own clock. Whatever the longest total here becomes,
+     it must stay under `settle()`'s fallback in scripts/landing.ts, which strips the
+     transition when it fires. */
   .reveal-light {
     position: absolute;
     inset: 0;
@@ -953,7 +962,7 @@
     background: var(--veil-ink, rgba(8, 8, 7, 0.58));
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--veil-lift) var(--ease-light);
+    transition: opacity var(--veil-lift) var(--ease-light) var(--veil-delay, 0s);
   }
 
   html.voct-motion .reveal-light:not(.is-visible) {

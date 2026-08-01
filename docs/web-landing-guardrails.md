@@ -350,6 +350,26 @@ to two screens — so the page's own structural punctuation had never been watch
 rhythm is the composition, the total is only its tempo marking). The coda is the one exemption —
 the scroll ends under it.
 
+**A register's node is judged by its HEIGHT before anything else.** The trigger reads a node's
+top, so a tall node inks its lower half off-screen — and the question "is this one utterance?" is
+editorial, while the defect is geometric. `.rite-quote` was cleared on the editorial question and
+was wrong: 84px mark + 46px margin + a heading wrapping to two lines is 350px, so it fired on the
+mark while the inscription sat at 102% vh. Ask the height question first. The same rule sets the
+light register's `--veil-delay`: a section-scale veil fires a full viewport before its photograph
+is worth looking at, `.portrait` does not, so the delay is authored per host and is **not** a
+second trigger line (that reorders neighbours — Etap 1b). And whatever any register's total
+becomes, it must clear `SETTLE_FALLBACK_MS` in `scripts/landing.ts` — `is-settled` strips the
+transition, so that timer is a hard ceiling on every choreography, silently cutting off anything
+longer.
+
+**A veil cannot out-darken a scrim that already spent the range.** `rgba(8,8,7,0.58)` is a
+multiply by 0.42 over whatever the host left. Measured on one mid-bright photo pixel at each
+section's lightest point: `.portrait` moves 82 sRGB levels (unscrimmed, brightness 0.92),
+`.image-rite` 46, `.ensemble` 27, `.final-support` 19→10 under its own 0.78–0.88 gradient — which
+is exactly the order in which they can be seen. Do not answer this by deepening `--veil-ink`:
+clearing threshold on `.ensemble` needs ~0.78, which leaves the photograph at 18/255 and breaks
+rule 1 to rescue a register whose whole promise is rule 1. Timing is the lever that does not lie.
+
 **Each register owns its easing, and the measure is not the duration.** Read a curve by *at what
 fraction of the clock 82% of the travel is spent* — past that the remainder is under the eye's
 threshold and the nominal duration describes nothing. `--ease-slow` spends 82% in 28% of the

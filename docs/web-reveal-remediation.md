@@ -229,8 +229,15 @@ Still to do, in the page-by-page sweep (Etap 5) — measured as over or near bud
 | subpage blocks | `AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows — inherited when Etap 4 brings them into the register system |
 
 Checked and **correct as they are** — do not split: `.director-lede` (eyebrow + two-line h2 is one
-utterance, and its paragraphs are already separate nodes), `.ensemble-lede` (same shape),
-`.rite-quote` (the mark and its one line are a single emblem).
+utterance, and its paragraphs are already separate nodes), `.ensemble-lede` (same shape).
+
+~~`.rite-quote` (the mark and its one line are a single emblem)~~ — **this clearance was wrong,
+and how it was wrong is the lesson.** The judgement was editorial (is this one utterance?) where
+1e's whole subject is geometric (does it fit the ink's travel?). Measured: 84 px mark + 46 px
+margin + a heading that wraps to **two** lines at desktop sizes — 350 px, and the h2's top is
+130 px below the node's. Fired on the mark, the inscription's top was at 102 % vh and it was 82 %
+inked while still at 85 % vh, so it reached the reading zone already written. Split in Etap 3d.
+When 1e's list is extended, ask the height question first and the editorial one second.
 
 ### 1f. Interlude ink strength
 
@@ -458,7 +465,7 @@ across the wider range, so the reflow risk flagged in Etap 2 did not materialise
 If the press ever needs to differ from the copy, the fallback is to give it its own timing
 function on the **shared clock** — never to split the duration.
 
-### 3d. The light register is still invisible, and the curve was not the main reason — OPEN
+### 3d. The light register is still invisible, and the curve was not the main reason — DONE
 
 Reported from the browser after 3b: the veil reads on the **portrait only**. On `.image-rite` the
 section is simply already standing there on arrival — "wjeżdżam i już stoi" — and on `.ensemble`
@@ -515,12 +522,38 @@ would snap mid-lift. That timer is a hard ceiling on every register choreography
 down nowhere. (`.reveal-cue` nodes are exempt: `settle()` returns early, which is why the coda's
 2.6 s caption is unaffected.)
 
-**Also open, and not explained by either cause:** the rite's *text* is reported as not drawing
-either. Measured, it should: `.rite-quote` is centred in the 864 px section, so its top crosses
-88 % vh with the section top at ~53 % vh, and its ink runs 0.44 → 1.0 over ~390 px of travel —
-against the rite's centre composite that is 156 → 244 sRGB, a large change squarely in the reading
-zone. No code-level reason found. Needs one disambiguation from the browser: whether copy inks
-anywhere on parchment grounds, or nowhere.
+**What was built, and what was deliberately not.**
+
+- **`--veil-delay`, authored per host** (`landing/06-footer.css`, folded into the veil's existing
+  shorthand). 0.6 s on `.image-rite`, `.ensemble` and `.final-support-media`; **`.portrait` keeps
+  0 s** — it is the one host smaller than the screen, it arrives with its image, and it is the one
+  that already reads. A delay is explicitly *not* a second trigger line: onset order between
+  neighbours is untouched, which is what Etap 1b's rejection was protecting.
+- **`settle()`'s fallback 2400 ms → `SETTLE_FALLBACK_MS` 3400 ms** (`scripts/landing.ts`). The
+  old value left 600 ms of headroom over the 1800 ms veil, so a 0.6 s delay would have landed on
+  the timer and snapped the veil mid-lift. Now named and commented as what it is: a hard ceiling
+  on every register choreography, because `is-settled` strips the transition.
+- **The veil alphas were NOT raised, and that reverses the recommendation made when 3d was
+  filed.** Working it through: to clear threshold on `.ensemble` the veil would need ~0.78, which
+  leaves the photograph at 18/255 — that breaks rule 1 ("never blank, only unlit") to fix a
+  register whose whole promise is rule 1. The honest reading is that the doctrine's promise is
+  *already* spent on these hosts by their own scrims, not by the veil. Timing was the lever that
+  could be pulled without lying: a 27-level delta that plays while you are looking at it is far
+  more perceptible than the same delta finishing before you arrive, because change detection is
+  much more sensitive than absolute level. Whether the register is viable at all on a 0.78–0.88
+  scrimmed section is an **Etap 5** question about that section's design, not about the register.
+
+**The rite's text — the developer's own hypothesis, and it was right.** Not a section-level bug:
+`.rite-quote` was a single 350 px register node, so it fired on the mark and its heading was
+below the fold. See the correction folded into Etap 1e's list. Split into two nodes (mark, h2),
+which the shared onset queue paces so the emblem still reads as one gesture.
+
+**Found while measuring it: `VoxMoment` had no entrance at all** — no `.reveal` anywhere in the
+island, the same omission the landing footer had before Etap 1e, and in the section that is the
+heart of movement II. `.vox-eyebrow` and `.vox-line` now take ink. The player is deliberately
+excluded: it carries a `veiled` state of its own, and a light register over it would be two veils
+on one node. Both classNames are constant strings and the island's first client render matches
+the server's, which are the two conditions the footer failed.
 
 ### Adjacent, fixed in the same pass
 

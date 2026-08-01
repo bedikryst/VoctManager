@@ -247,6 +247,9 @@
     /* The veil is a section-level child so it can sit ABOVE `.ensemble::after` (the scrim);
        the copy is lifted to 2 to stay above both. */
     --veil-z: 1;
+    /* Section-scale host: the veil's trigger is the SECTION's top, a full viewport before the
+       photograph is worth looking at. See --veil-delay in landing/06-footer.css. */
+    --veil-delay: 0.6s;
   }
 
   .ensemble-media {
@@ -748,6 +751,11 @@
     z-index: 0;
     /* Above this wrapper's own ::after scrim (z-auto), below `.final-support .section` (z1). */
     --veil-z: 1;
+    /* Section-scale host, as `.ensemble`. Note this is the page's weakest veil by construction:
+       the ::after below runs 0.78–0.88 black, so the photograph sits at 26–41/255 before the
+       veil touches it and the register can only move it a handful of levels. Kept because the
+       section is part of the light register's sequence, not because it reads strongly. */
+    --veil-delay: 0.6s;
   }
   .final-support-media::after {
     content: "";

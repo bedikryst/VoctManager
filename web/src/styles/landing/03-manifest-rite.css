@@ -191,6 +191,9 @@
     /* Veil above the section scrim (`::after`, z-auto) and below the quote (z1, and later in
        DOM order, so it wins the tie). The nave is lit; the inscription over it is inked. */
     --veil-z: 1;
+    /* 96svh tall, so the veil's trigger fires with only a bottom strip of the photograph on
+       screen; the reader is not looking at the nave until roughly a second later. */
+    --veil-delay: 0.6s;
   }
 
   /* Geometry + parallax owned by <BleedImage>; landing keeps only the sacred dimming. */
