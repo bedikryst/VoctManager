@@ -226,7 +226,7 @@ const plDate = (iso: string): string =>
           <span class="kd-dot" aria-hidden="true">·</span>
           <span class="lat">{c.latin}</span>
         </p>
-        <h1 class="kd-hero-title reveal" data-d="1">{c.title}</h1>
+        <h1 class="kd-hero-title reveal ink-press" data-d="1">{c.title}</h1>
         <p class="kd-hero-meta reveal" data-d="1">{c.meta}{c.time ? ` · godz. ${c.time}` : ""}</p>
 
         {c.inscriptio && (
@@ -352,7 +352,9 @@ const plDate = (iso: string): string =>
               <span class="kd-dot" aria-hidden="true">·</span>
               <span>Program koncertu</span>
             </span>
-            {c.programLede && <h2 class="kd-section-title reveal" data-d="1">{c.programLede}</h2>}
+            {c.programLede && (
+              <h2 class="kd-section-title reveal ink-press" data-d="1">{c.programLede}</h2>
+            )}
 
             {(c.credits.length > 0 || realizacjaCredit) && (
               <dl class="kd-credits reveal" data-d="2" aria-label="Obsada">
@@ -942,18 +944,6 @@ const plDate = (iso: string): string =>
   .kd-vianav-side:hover .kd-vianav-name { color: var(--candle); }
   .kd-vianav-all { justify-self: center; text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .kd-vianav-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
-
-  /* ── Variable-font heading breath (matches /koncerty) ──────────────────── */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .kd-hero-title, .kd-section-title {
-        font-variation-settings: "wght" var(--wght);
-        animation: headingBreath linear both;
-        animation-timeline: view();
-        animation-range: entry 0% cover 55%;
-      }
-    }
-  }
 
   @keyframes kdCue { 0%, 100% { transform: scaleX(.4); opacity: .3; } 50% { transform: scaleX(1); opacity: .7; } }
   @media (prefers-reduced-motion: reduce) { .kd-hero-cue::after { animation: none; } }

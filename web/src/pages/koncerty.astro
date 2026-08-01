@@ -173,7 +173,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
               <div class="station-text station-plate reveal">
                 <span class="station-glyph" aria-hidden="true" />
                 <p class="station-num">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
-                <h2 class="station-title">{s.title}</h2>
+                <h2 class="station-title ink-press">{s.title}</h2>
                 <p class="station-meta">{s.meta}</p>
                 <p class="station-essence">{s.essence}</p>
                 {s.facts.length > 0 && (
@@ -212,7 +212,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
               )}
               <div class="station-text">
                 <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
-                <h2 class="station-title reveal" data-d="1">{s.title}</h2>
+                <h2 class="station-title reveal ink-press" data-d="1">{s.title}</h2>
                 <p class="station-meta reveal" data-d="1">{s.meta}</p>
                 <p class="station-essence reveal" data-d="2">{s.essence}</p>
                 {s.inscriptio && (
@@ -281,7 +281,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="station-next-inner reveal">
         <span class="station-next-glyph" aria-hidden="true"></span>
         <p class="station-num">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat">Nondum</span></p>
-        <h2 class="station-title">Następne wybrzmienie.</h2>
+        <h2 class="station-title ink-press">Następne wybrzmienie.</h2>
         <p class="station-meta">Termin i przestrzeń wyznaczą darczyńcy</p>
         <p class="station-essence">
           Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko przestrzeni,
@@ -301,7 +301,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="rite-wrap">
         <div class="rite-head reveal">
           <span class="eyebrow"><span class="lat">Concert spirituel</span>  ·  Reguły wieczoru</span>
-          <h2>Każdy wieczór prowadzą te same cztery reguły.</h2>
+          <h2 class="ink-press">Każdy wieczór prowadzą te same cztery reguły.</h2>
           <p>
             Gdy w XVIII-wiecznym Paryżu na czas świąt milkła opera, w sali pałacu Tuileries
             grano <em>Concerts Spirituels</em> — muzykę sakralną poza ramą nabożeństwa.
@@ -328,7 +328,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="rep-wrap">
         <div class="rep-head reveal">
           <span class="eyebrow"><span class="lat">Repertorium</span>  ·  Siedem wieków</span>
-          <h2>Repertuar, z którego budujemy programy.</h2>
+          <h2 class="ink-press">Repertuar, z którego budujemy programy.</h2>
           <p>
             Renesansowa polifonia, barok, romantyczna modlitwa i współczesny minimalizm
             spotykają się w jednym wieczorze. Liczy się napięcie między epokami — to z niego
@@ -600,17 +600,6 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .btn-gold { border-color: var(--candle); color: var(--ink); background: var(--candle); }
   .btn-gold:hover { background: transparent; color: var(--ink); border-color: var(--candle); }
 
-  /* Variable-font heading breath */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .station-title, .rite-head h2, .rep-head h2 {
-        font-variation-settings: "wght" var(--wght);
-        animation: headingBreath linear both;
-        animation-timeline: view();
-        animation-range: entry 0% cover 55%;
-      }
-    }
-  }
   @media (prefers-reduced-motion: reduce) {
     .scroll-cue::after { animation: none; }
   }

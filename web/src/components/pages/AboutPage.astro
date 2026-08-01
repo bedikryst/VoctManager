@@ -166,7 +166,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap letter-wrap">
         <div class="section-head letter-head reveal">
           <span class="eyebrow"><span class="lat">{c.letter.eyebrow.lat}</span>  ·  {c.letter.eyebrow.label}</span>
-          <h2>{c.letter.h2}</h2>
+          <h2 class="ink-press">{c.letter.h2}</h2>
           <p class="letter-lead" set:html={c.letter.leadHtml}></p>
         </div>
 
@@ -207,7 +207,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">{c.ensemble.eyebrow.lat}</span>  ·  {c.ensemble.eyebrow.label}</span>
-          <h2>{c.ensemble.h2}</h2>
+          <h2 class="ink-press">{c.ensemble.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
           <p class="lead">{c.ensemble.leadText}</p>
@@ -237,7 +237,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">{c.doings.eyebrow.lat}</span>  ·  {c.doings.eyebrow.label}</span>
-          <h2>{c.doings.h2}</h2>
+          <h2 class="ink-press">{c.doings.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
           <p class="lead">{c.doings.leadText}</p>
@@ -265,7 +265,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">{c.cantus.eyebrow.lat}</span>  ·  {c.cantus.eyebrow.label}</span>
-          <h2>{c.cantus.h2}</h2>
+          <h2 class="ink-press">{c.cantus.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
           <p class="lead">{c.cantus.leadText}</p>
@@ -283,7 +283,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">{c.milestones.eyebrow.lat}</span>  ·  {c.milestones.eyebrow.label}</span>
-          <h2>{c.milestones.h2}</h2>
+          <h2 class="ink-press">{c.milestones.h2}</h2>
         </div>
         <ol class="milestones">
           {
@@ -323,7 +323,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal measure">
           <span class="eyebrow"><span class="lat">{c.foundation.eyebrow.lat}</span>  ·  {c.foundation.eyebrow.label}</span>
-          <h2>{c.foundation.h2}</h2>
+          <h2 class="ink-press">{c.foundation.h2}</h2>
         </div>
         <div class="prose measure reveal" data-d="1">
           <p class="lead">{c.foundation.leadText}</p>
@@ -361,7 +361,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="wrap">
         <div class="section-head reveal">
           <span class="eyebrow"><span class="lat">{c.governance.eyebrow.lat}</span>  ·  {c.governance.eyebrow.label}</span>
-          <h2>{c.governance.h2}</h2>
+          <h2 class="ink-press">{c.governance.h2}</h2>
         </div>
         <p class="board-intro reveal" data-d="1">{c.governance.intro}</p>
         <div class="board">
@@ -559,17 +559,6 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .btn-gold { border-color: var(--candle); color: var(--ink); background: var(--candle); }
   .btn-gold:hover { background: transparent; color: var(--ink); border-color: var(--candle); }
 
-  /* Variable-font heading breath (native, sparing). */
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      .hero h1, .section-head h2 {
-        font-variation-settings: "wght" var(--wght);
-        animation: headingBreath linear both;
-        animation-timeline: view();
-        animation-range: entry 0% cover 55%;
-      }
-    }
-  }
   @media (prefers-reduced-motion: reduce) {
     .scroll-cue::after { animation: none; }
   }

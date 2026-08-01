@@ -46,6 +46,6 @@
 
      An earlier `@supports (animation-timeline: scroll())` block here drove the same
      glyphs as the JS every frame (the CSS animation churned --wght while the inline
-     writes won the cascade) and was removed. NOTE that `@keyframes headingBreath` in
-     tokens.css is NOT dead: five subpages still run the scrubbed version, and they
-     adopt the press in Etap 4 (docs/web-reveal-remediation.md). */
+     writes won the cascade) and was removed. The subpages ran their own scroll-timeline
+     version of the same defect until 2026-08; there is now one press on the whole site
+     and `styles/registers.css` is where it lives. */

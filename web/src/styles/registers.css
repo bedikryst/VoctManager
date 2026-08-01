@@ -1,9 +1,11 @@
 /**
  * @file registers.css
  * @description Entrance-register mechanics that are not tied to one page's bundle. Today it
- *  carries one thing: the INK PRESS, the variable-font half of the ink gesture. It is also the
- *  destination the landing's three register definitions (landing/06-footer.css) and base.css's
- *  duplicate `.reveal` are scheduled to move into — see docs/web-reveal-remediation.md, Etap 4.
+ *  carries one thing: the INK PRESS, the variable-font half of the ink gesture, which every
+ *  page speaks — the landing and the five subpages that used to scrub the same weight axis
+ *  from a scroll timeline. It is also the destination the landing's three register definitions
+ *  (landing/06-footer.css) and base.css's duplicate `.reveal` are scheduled to move into — see
+ *  docs/web-reveal-remediation.md, Etap 4.
  *  Loaded by BaseLayout on every page; `.ink-press` is authored per element, so a page that
  *  does not use the class pays nothing.
  * @architecture Astro islands 2026
@@ -41,10 +43,16 @@ html.voct-motion .ink-press {
   font-variation-settings: "wght" var(--wght);
 }
 
+/* A press that is a CHILD of its register node takes the node's own onset offset, or the
+   pair reads as two events: `--reveal-delay` (base.css, from `data-d`) is unregistered and
+   therefore inherits, so the heading starts its stroke exactly when its block starts inking.
+   The landing sets no `data-d` at all — its cadence is the shared onset queue — so the
+   fallback is what runs there. */
 html.voct-motion .ink-press:not(.reveal) {
   transition-property: --wght;
   transition-duration: var(--ink-in);
   transition-timing-function: var(--ease-ink);
+  transition-delay: var(--reveal-delay, 0s);
 }
 
 html.voct-motion .reveal.ink-press {
@@ -55,10 +63,12 @@ html.voct-motion .reveal.ink-press {
 
 /* The trigger is the register node's own class, read either on the press element or on
    the `.reveal` ancestor it belongs to — a heading is usually a child of the block that
-   carries the register, not the block itself. This matches the landing controller's
-   `.is-visible`; subpages fire `.is-in` (base.css) and adopt the press when Etap 4
-   collapses the two controllers into one. */
-html.voct-motion :is(.is-visible.ink-press, .is-visible .ink-press) {
+   carries the register, not the block itself. Both trigger classes are listed because the
+   site still runs two reveal controllers: the landing flips `.is-visible` (scripts/landing.ts),
+   every other page `.is-in` (BaseLayout). The press does not care which — it needs the moment,
+   not the mechanism — so it did NOT have to wait for those controllers to be collapsed. */
+html.voct-motion
+  :is(.is-visible.ink-press, .is-visible .ink-press, .is-in.ink-press, .is-in .ink-press) {
   --wght: var(--wght-rest);
 }
 
@@ -66,5 +76,14 @@ html.voct-motion :is(.is-visible.ink-press, .is-visible .ink-press) {
    declarations above, which would otherwise keep the transition — and on a combined
    node the opacity transition with it — alive for the rest of the session. */
 html.voct-motion :is(.is-settled.ink-press, .is-settled .ink-press) {
+  transition: none;
+}
+
+/* Navigation composure, the press's half of it. base.css strips the transition of every
+   above-the-fold `.reveal` during a ClientRouter swap so the incoming page is snapshotted
+   already written, but that rule reaches the register NODE only — a press living inside one
+   would still have played its stroke while the ink around it snapped. Specificity is a tie
+   with the two rules above (0,3,1), so this has to stay last in the file to win. */
+html.voct-motion.vt-nav .ink-press {
   transition: none;
 }
