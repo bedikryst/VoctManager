@@ -300,11 +300,14 @@ html:not(.voct-motion) .reveal { opacity: 1; }
    never starts at zero — a page that opens holes and then fills them in is what a fast scroll
    exposes, and that emptiness reads as machine-made regardless of how the filling is eased.
    `data-d` stays: on a subpage the cadence is authored per element, so it needs no queue (the
-   landing's shared onset queue exists because ITS siblings are generated in bulk). */
+   landing's shared onset queue exists because ITS siblings are generated in bulk).
+   The duration and the curve are the SHARED register tokens, not local values: this rule and
+   the landing's are two controllers for one register, so a curve retuned in tokens.css must
+   reach both or the site grows two inks — the divergence Etap 4 exists to close, not open. */
 @media (prefers-reduced-motion: no-preference) {
   html.reveal-ready .reveal {
     opacity: var(--half-ink);
-    transition: opacity var(--ink-in) var(--ease-slow);
+    transition: opacity var(--ink-in) var(--ease-ink);
     transition-delay: var(--reveal-delay, 0s);
   }
   html.reveal-ready .reveal.is-in {

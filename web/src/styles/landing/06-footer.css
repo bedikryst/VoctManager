@@ -876,18 +876,21 @@
 
   .reveal {
     opacity: var(--half-ink);
-    transition: opacity var(--ink-in) var(--ease-slow);
+    transition: opacity var(--ink-in) var(--ease-ink);
   }
 
   .reveal.is-visible {
     opacity: 1;
   }
 
-  /* The rule leads and the ink follows it onto the page. This delay IS the pairing — and the
-     rule now genuinely finishes first (0.85s against the ink's 0.18 + 0.9 = 1.08s), which it
-     did not when both ended within 30ms of each other. That only became safe once `settle()`
-     stopped accepting the pseudo-rule's transitionend on ink-bearing nodes: `is-settled`
-     strips both transitions, so the shorter one used to cut the longer one off. */
+  /* The rule leads and the ink follows it onto the page. This delay IS the pairing, and on the
+     nominal clock it holds: the rule ends at 0.85s, the ink at 0.18 + 0.9 = 1.08s. On the eye
+     it does not yet — the two registers run different curves and the ink's is the front-loaded
+     one, so the ink is 82% done at 429ms where the rule reaches 82% at 595ms. Do not answer
+     that by lengthening this delay, which would only push the whole pair down the page: the
+     lever is --ease-ink (tokens.css). The nominal separation itself only became safe once
+     `settle()` stopped accepting the pseudo-rule's transitionend on ink-bearing nodes:
+     `is-settled` strips both transitions, so the shorter one used to cut the longer one off. */
   .reveal:is(.reveal-rule, .reveal-rule-v).is-visible {
     transition-delay: 0.18s;
   }
@@ -935,7 +938,13 @@
      that nothing will lift. It materialises only under the motion gate, and only
      until its section is reached. Never fully opaque — 0.58 keeps the photograph
      legible underneath, the same promise half-ink makes for copy: the page is
-     never blank, only unlit. */
+     never blank, only unlit.
+
+     The veil is `inset: 0` on a host that is usually section-scale (`.image-rite` is
+     96svh), so its top crosses the trigger when the SECTION's top does — the lift plays
+     while the photograph is still arriving from below. That geometry is why this register
+     needs a back-weighted curve and not merely a long duration: --veil-lift buys nothing
+     if the curve spends it before the image is on screen. See --ease-light in tokens.css. */
   .reveal-light {
     position: absolute;
     inset: 0;
@@ -943,7 +952,7 @@
     background: var(--veil-ink, rgba(8, 8, 7, 0.58));
     opacity: 0;
     pointer-events: none;
-    transition: opacity var(--veil-lift) var(--ease-slow);
+    transition: opacity var(--veil-lift) var(--ease-light);
   }
 
   html.voct-motion .reveal-light:not(.is-visible) {

@@ -211,8 +211,11 @@ has its own candle-gold rule. Do not "fix" the hero to match.
 `@font-face`, preloads and tokens. Any font or asset change must touch it by hand — deleting the
 old font files without it silently drops that page to a system font.
 
-**`--sans` is declared in two files**: `styles/tokens.css` and `styles/landing/01-foundation.css`.
-Changing one leaves the landing on the old face.
+**`--sans` and `--ease-slow` are each declared in two files**: `styles/tokens.css` and
+`styles/landing/01-foundation.css`, both on `:root` with identical values, so which one wins is
+bundle order. Changing one leaves the landing on the old face / the old curve. The register
+easings (`--ease-ink`, `--ease-rule`, `--ease-light`) are deliberately in `tokens.css` **only** —
+do not mirror them into the landing sheet for symmetry.
 
 **A register can never be added with a bare `transition` declaration, and `@property` must be
 registered exactly once.** Both were live at the same time and both fail silently. `transition`
@@ -291,8 +294,11 @@ Ink has a **second dimension**, opt-in per element and not a fourth register: `.
 (`styles/registers.css`) travels the variable-font weight axis 520 → 300 on the ink's own clock,
 so a heading's stroke settles as its ink darkens — a nib, which is what a heading is written
 with. It never fires alone and never lands on body copy. Its one hard constraint: the element's
-`font-weight` must equal `--wght-rest`, because under motion the axis overrides `font-weight`
-outright and any gap between them is invisible until motion is turned off.
+`font-weight` must equal `--wght-rest` (`styles/tokens.css`, with `--wght-press`), because under
+motion the axis overrides `font-weight` outright and any gap between them is invisible until
+motion is turned off. Note what sharing the ink's clock implies: the press put a **high-acuity**
+channel (stem width, advance widths, reflow) on a curve chosen for a low-acuity one (opacity from
+0.44). That is what `--ease-ink` is for.
 
 Plus one **ambient** layer that is not an entrance at all and is governed by nothing here: Ken
 Burns, parallax, the flames' breathing, the knot's audio/scroll intensity, the footer clock's
@@ -343,6 +349,17 @@ to two screens — so the page's own structural punctuation had never been watch
 2026-08-01 by a single tempo factor per choreography (never per-stroke hand-tuning: the internal
 rhythm is the composition, the total is only its tempo marking). The coda is the one exemption —
 the scroll ends under it.
+
+**Each register owns its easing, and the measure is not the duration.** Read a curve by *at what
+fraction of the clock 82% of the travel is spent* — past that the remainder is under the eye's
+threshold and the nominal duration describes nothing. `--ease-slow` spends 82% in 28% of the
+clock, so on it the 1.8s veil was a 0.5s event and the 0.9s ink a 0.25s one. Three tokens now
+(`styles/tokens.css`): `--ease-ink`, `--ease-rule` (symmetric — a hand along a straightedge starts,
+travels evenly, stops), `--ease-light` (holds, floods, eases to nothing). Two traps: a register
+easing must be a **literal curve, never `var(--ease-slow)`** — an alias is a synonym, not a seam,
+and `--ease-slow` carries ~40 unrelated declarations; and `--ease-light` must **not** be simplified
+to a plain ease-in, which ends at maximum velocity, so the veil's last shadow vanishes at full
+speed and reads as a switch being thrown.
 
 *Second, independent defect in the same place, same date:* the trigger fires on an element's *top*
 while a lead rule is drawn at its *border*, so bottom-ruled nodes like `.path-entry` (280–420px

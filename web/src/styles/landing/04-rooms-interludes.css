@@ -284,7 +284,7 @@
   }
 
   /* `.ink-press` heading: this weight is the press's landing point, so it must stay equal to
-     --wght-rest (styles/registers.css). Motion visitors never see it — the axis is driven —
+     --wght-rest (styles/tokens.css). Motion visitors never see it — the axis is driven —
      which is exactly why a change here goes unnoticed until motion is off. */
   .ensemble-copy h2 {
     margin: 22px 0 32px;

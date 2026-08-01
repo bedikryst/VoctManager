@@ -7,15 +7,18 @@ Companion to `docs/web-landing-guardrails.md` §5, which states the *doctrine* (
 three rules). This file is the *work*: what the doctrine does not yet describe, in what order to
 fix it, and what was measured to decide that.
 
-**How to read this file.** Etapy 0, 1 and 2 are done — each keeps its section, because the
-measurements and the corrections inside them are the reasoning the later stages stand on.
-`Etap 3` is the next thing. The stages are ordered by dependency, not by value. `Rejected` is
-load-bearing: it records ideas that look right and are not, so they are not re-proposed.
+**How to read this file.** Etapy 0, 1 and 2 are done, and Etap 3 is done but for its last
+sub-stage — each keeps its section, because the measurements and the corrections inside them are
+the reasoning the later stages stand on. `Etap 4` is the next whole thing. The stages are ordered
+by dependency, not by value. `Rejected` is load-bearing: it records ideas that look right and are
+not, so they are not re-proposed.
 
-**A method note earned twice.** Both Etap 1 and Etap 2 found the plan's own diagnosis too
-narrow once the code was measured (1b was dropped outright; Etap 2's scope turned out to be
-five pages wider than written). Before implementing any stage below, re-measure its claim
-against the source — the plan is a record of what was true when it was written.
+**A method note earned three times.** Etap 1, Etap 2 and Etap 3 each found the plan's own
+diagnosis wrong once the code was measured (1b was dropped outright; Etap 2's scope turned out to
+be five pages wider than written; Etap 3's "keep the current ink curve" had been invalidated by
+Etap 2 itself). Before implementing any stage below, re-measure its claim against the source —
+the plan is a record of what was true when it was written, and the later stages keep changing what
+the earlier ones concluded.
 
 Started 2026-08-01.
 
@@ -364,22 +367,109 @@ runs two heading systems, which is recorded in `tokens.css` beside the keyframes
 
 ---
 
-## Etap 3 — one easing per register
+## Etap 3 — one easing per register — 3a/3b done 2026-08-01, 3c open
 
-The thesis is "three materials arrive differently", but all three run on `--ease-slow` and differ
-only in duration and animated property. The differentiation is currently in *what* moves, not in
-*how* — which is the weaker half of the claim.
+The thesis is "three materials arrive differently", but the registers differed only in duration
+and animated property. The differentiation was in *what* moves, not in *how* — the weaker half of
+the claim.
 
-`cubic-bezier(0.16, 0.84, 0.24, 1)` is heavily front-loaded. Concretely wrong twice:
+**The plan's own prescription was wrong once more** (the third time, after 1b and Etap 2's scope).
+It said `--ease-ink` should "keep the current curve". That was true when written and stopped being
+true when **Etap 2 changed what the ink curve carries** — see 3c.
 
-- a line drawn along a straightedge has near-constant speed; the rule currently *shoots* and then
-  crawls to its end.
-- the veil puts ~80 % of its light in the first 400 ms and then spends 1.4 s on the rest. Light
-  entering a nave does the opposite.
+### The measure, and why it is this one
 
-Three tokens — `--ease-ink` (keep the current curve), `--ease-rule` (near-linear),
-`--ease-light` (slow start, then flood). Do this **after** Etap 1, or it will be tuned against
-timings that are about to move.
+Read every curve by: *at what fraction of the clock is 82 % of the travel spent?* Past that point
+the remainder is under the eye's threshold, so the nominal duration stops describing anything.
+`--ease-slow` = `cubic-bezier(0.16, 0.84, 0.24, 1)` spends 50 % of the travel in **11 %** of the
+clock and 82 % in **28 %**. Applied:
+
+| register | nominal | 50 % at | 82 % at | travel at 82 % |
+|---|---|---|---|---|
+| ink `.reveal` | 0.90 s | 102 ms | 249 ms | ~100 px |
+| ink press (`--wght`) | 0.90 s | 102 ms | 249 ms | ~100 px |
+| light `.reveal-light` | 1.80 s | 204 ms | 499 ms | ~200 px |
+| lead (already `--ease-rule`) | 0.85 s | 425 ms | 595 ms | ~238 px |
+
+### 3a. The seam — DONE, no visual change
+
+`--ease-ink` and `--ease-light` exist in `tokens.css` as **literal curves, not aliases of
+`--ease-slow`** — an alias is a synonym, not a seam. `--ease-slow` still carries ~40 unrelated
+declarations (vault, preloader, nave menu, registrum, hover states), so before this the ink could
+not be retuned without moving all of them. Swapped at the five register declarations:
+`landing/06-footer.css` (ink, light), `base.css` (subpage ink), `registers.css` ×2 (the press).
+
+`base.css` is a **scope correction**: the plan filed the subpages under Etap 4, but Etap 4 is
+blocked on collapsing the two *controllers* (`is-in` vs `is-visible`), not on the name of a curve.
+Leaving the subpage ink on `--ease-slow` would have grown a second ink the moment 3c lands —
+exactly the divergence Etap 4 exists to close.
+
+Hover-state and ambient uses of `--ease-slow` were checked and deliberately left
+(`.path-entry-title` tracking, `.ff` colophon faces, `13-spine.css`): they are not entrances.
+
+### 3b. `--ease-light` — DONE, needs eyes
+
+`cubic-bezier(0.6, 0.04, 0.34, 1)` — 82 % at 63 % of the clock → **1.13 s** of `--veil-lift`
+(was 0.50 s). `--veil-lift` stays 1.8 s: duration and curve do not move in the same pass.
+
+The plan's stated reason ("~80 % of its light in the first 400 ms") was roughly right and much
+weaker than the two facts it missed:
+
+- **The 0.58 multiplier.** The veil is `rgba(8, 8, 7, 0.58)`, so real scrim density went
+  0.58 → **0.104** in half a second, then spent 1.3 s fading from 0.10 to 0 over a photograph.
+  The tail was below threshold; the register's effective duration was ~0.5 s, making the
+  *longest* register on paper the *shortest* in practice.
+- **The geometry.** The veil is `inset: 0` on a section-scale host, so it fires when the
+  **section's** top crosses 88 % vh. At 499 ms (~200 px of travel) the section top is at 66 % vh,
+  so the photograph finished lighting with ~306 px of its 864 (`min-height: 96svh`) on screen.
+  **The light register had never been watched either** — the same finding as the rules, one
+  register over. Etap 0's exemption ("section-scale buys double the budget") was granted to a
+  duration the register never spent.
+
+Shape, and it is not the plan's "slow start, then flood": a plain ease-in ends at **maximum
+velocity**, and a veil whose last shadow vanishes at full speed reads as a switch. The curve holds
+(scrim 0.58 → 0.51 over the first 0.5 s, which costs nothing — an unlit photograph is legible, not
+a hole), floods through the reading zone, then eases to nothing.
+
+### 3c. `--ease-ink` — implemented, NOT committed, awaiting eyes
+
+`cubic-bezier(0.34, 0.62, 0.28, 1)` — 82 % at 43 % → **0.39 s** of `--ink-in` (was 0.25 s). Still
+a genuine ease-out; the material still floods and then settles.
+
+Two measurements say "keep the current curve" is no longer right:
+
+1. **Etap 2 changed the channel.** When ink was opacity 0.44 → 1.0 alone, the front-load was
+   defensible: opacity is low-acuity and the last 18 % is genuinely invisible. `.ink-press` put
+   the variable-font weight axis on the same clock, and a stem width — with advance widths and
+   reflow behind it — is high-acuity. Measured, a 520 → 300 press spends 82 % of its travel in
+   **249 ms**. `registers.css` promises "the stroke settles into place while the ink darkens";
+   what runs is a snap. Etap 2's whole deliverable is a quarter-second event.
+2. **Etap 1d inverted the ink+lead pairing and did not notice**, because it compared nominal ends
+   only. With the ink's `transition-delay: 0.18s`: ink 50 % at 282 ms / 82 % at **429 ms**; rule
+   50 % at 425 ms / 82 % at **595 ms**. The ink passes both marks first. "Rule leads, ink follows"
+   holds on the clock and is reversed on the eye. The new curve puts the ink's 82 % at 569 ms,
+   just under the rule's 595 ms. **Do not fix this by lengthening the 0.18 s delay** — that moves
+   the whole pair down the page instead of changing its internal order.
+
+Blast radius is why it is separate: this is the one change that touches every entrance on the
+site, landing and subpages alike. It is a one-line revert (`tokens.css`), and the comment block
+there records both numbers so the decision can be re-derived rather than re-measured.
+
+If the gentler ink reads right for copy but the press still pops, the fallback is to give the
+press its own timing function on the shared clock — **not** to split the duration. Not proposed
+now because it doubles the tuning surface for a defect that may not survive 3c.
+
+### Adjacent, fixed in the same pass
+
+`--wght-press` / `--wght-rest` were **never declared** — they existed only as `var(…, 520)` /
+`var(…, 300)` fallbacks in `registers.css`, while this plan and the guardrails both called them
+"one token" and two other stylesheets pointed at `registers.css` as their home. Now real tokens in
+`tokens.css`, fallbacks dropped (a fallback on a declared token hides a missing-token bug), and
+the three referring comments corrected.
+
+Also noted, not acted on: **`--ease-slow` is declared twice** — `tokens.css` and
+`landing/01-foundation.css`, both on `:root`, identical values. Same shape as the `--sans`
+landmine. Benign today; the new tokens live in `tokens.css` only.
 
 ---
 

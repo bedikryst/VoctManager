@@ -71,15 +71,49 @@
   --rule-in: 0.85s;
   --veil-lift: 1.8s;
 
-  /* A ruled line is the one entrance whose easing is a claim about a HAND, and --ease-slow
-     is the wrong claim: cubic-bezier(0.16, 0.84, 0.24, 1) puts 82% of the travel into the
-     first 27% of the clock. On a rule that fires at 88% of the viewport, the whole visible
-     draw therefore happened inside the bottom ~13% of the screen and the last fifth crawled
-     — which is why the lead register read as "technically there, never watched". A hand
-     drawing along a straightedge starts, travels evenly, and stops: this curve is symmetric
-     (x = y = 0.5 at the midpoint), so the line is drawn across the reading zone instead of
-     in the strip below it. Ink and light keep --ease-slow until they are retuned together. */
+  /* The ink press's two ends (the mechanism is in styles/registers.css). Every `.ink-press`
+     element must declare `font-weight` equal to --wght-rest: the axis overrides `font-weight`
+     only while motion is live, so a gap between them is invisible until motion is turned off. */
+  --wght-press: 520;
+  --wght-rest: 300;
+
+  /* ── One easing per register ──────────────────────────────────────────────
+     The registers differ in HOW their material arrives, not only in what moves, so each
+     owns a curve. Read them all by one measure — at what fraction of the clock is 82% of
+     the travel spent — because past that point the remainder is under the eye's threshold
+     and the nominal duration stops describing anything:
+
+       --ease-slow   82% at 28%.  The site's general curve. NOT an entrance curve.
+       --ease-ink    82% at 28% → 0.25s of --ink-in.  Still --ease-slow's curve; see below.
+       --ease-rule   82% at 70% → 0.60s of --rule-in.
+       --ease-light  82% at 63% → 1.13s of --veil-lift.
+
+     A RULE is a claim about a hand: it starts, travels evenly and stops. Hence a symmetric
+     curve (x = y = 0.5 at the midpoint). Under --ease-slow, on a rule that fires at 88% of
+     the viewport, the whole visible draw happened inside the bottom ~13% of the screen and
+     the last fifth crawled — which is why the lead register read as "technically there,
+     never watched".
+
+     A VEIL is a claim about light, and light does not switch on: it holds, floods through
+     the reading zone, then the last of the shadow retreats to nothing. The slow opening is
+     deliberate and costs nothing, because the scrim is 0.58 and never opaque — a held veil
+     is an unlit photograph, never a hole. Do NOT simplify this to a plain ease-in: that
+     ends at maximum velocity, and a veil whose last shadow vanishes at full speed reads as
+     a switch being thrown.
+
+     INK is the one register still on the general curve, written out as a literal rather
+     than as var(--ease-slow) so it can be retuned without also moving the vault, the
+     preloader and the nave menu, which share that token. It is not settled. The register
+     has a second channel now — the ink press moves the variable-font weight axis on this
+     same clock — and a stem width is a far higher-acuity channel than an opacity ramp from
+     0.44: measured, a 520 → 300 press spends 82% of its travel in 249ms, which is a snap
+     and not a nib settling. The same front-load puts a paired node's ink 82% done at 429ms
+     against its lead rule's 595ms, so the 0.18s delay encoding "rule leads, ink follows"
+     (landing/06-footer.css) is inverted on the eye while it holds on the nominal clock.
+     This token is the lever for both; see docs/web-reveal-remediation.md, Etap 3. */
+  --ease-ink: cubic-bezier(0.16, 0.84, 0.24, 1);
   --ease-rule: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --ease-light: cubic-bezier(0.6, 0.04, 0.34, 1);
 
   /* ── Layout rhythm ────────────────────────────────────────────────────────
      One source of truth for the page gutter. Sections used `max(28px, 5vw)`

@@ -26,31 +26,31 @@
 
    Two constraints, both silent when broken:
 
-   1. The element's `font-weight` MUST equal --wght-rest. Under `html.voct-motion` the
+   1. The element's `font-weight` MUST equal --wght-rest (tokens.css, 300 — the site's
+      resting heading weight, here and on every subpage). Under `html.voct-motion` the
       axis is driven by `font-variation-settings`, which overrides `font-weight`
       outright; without that gate (no JS, reduced motion) `font-weight` is what renders.
       A gap between the two is a difference nobody sees until they turn motion off.
-      300 is the site's resting heading weight, here and on every subpage.
    2. `transition` is a shorthand. On a node that is BOTH the press and the `.reveal`,
       a second `transition` declaration would replace the ink's opacity transition
       rather than add to it, so the pair is declared with longhands — which also leaves
       `transition-delay` alone, so an ink+lead node keeps the lead's 0.18s offset.
    ────────────────────────────────────────────────────────────────────────────── */
 html.voct-motion .ink-press {
-  --wght: var(--wght-press, 520);
+  --wght: var(--wght-press);
   font-variation-settings: "wght" var(--wght);
 }
 
 html.voct-motion .ink-press:not(.reveal) {
   transition-property: --wght;
   transition-duration: var(--ink-in);
-  transition-timing-function: var(--ease-slow);
+  transition-timing-function: var(--ease-ink);
 }
 
 html.voct-motion .reveal.ink-press {
   transition-property: opacity, --wght;
   transition-duration: var(--ink-in);
-  transition-timing-function: var(--ease-slow);
+  transition-timing-function: var(--ease-ink);
 }
 
 /* The trigger is the register node's own class, read either on the press element or on
@@ -59,7 +59,7 @@ html.voct-motion .reveal.ink-press {
    `.is-visible`; subpages fire `.is-in` (base.css) and adopt the press when Etap 4
    collapses the two controllers into one. */
 html.voct-motion :is(.is-visible.ink-press, .is-visible .ink-press) {
-  --wght: var(--wght-rest, 300);
+  --wght: var(--wght-rest);
 }
 
 /* Spent, mirroring the ink register's own release. This has to out-specify both
