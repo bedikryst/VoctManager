@@ -12,6 +12,10 @@
  *     manuscript order: the pen WRITES the one true line of the mark — the long stem
  *     descending into the note, its punctum — then light RISES from that note and OPENS
  *     the V in its real, modulated letterform. The V is never drawn as a wireframe.
+ *   - the HINGE into the question is the mark ITSELF: the lit mark shrinks and travels to
+ *     the slot above the question rather than dying so a smaller copy can be born there.
+ *     One measured FLIP (`armMarkTransit`) — the slot's position follows the question's
+ *     content height, so no static CSS can know it.
  *
  *  Phase machine, decided per mount:
  *   - donation deep-link (`#wesprzyj`, `#przelew`, `?donate`, `?donated=…`) or `?nogate`
@@ -97,6 +101,48 @@ async function heroSettled(capMs: number): Promise<void> {
   await Promise.race([painted, cap]);
 }
 
+/**
+ * Writes the FLIP that carries the lit mark out of the rite's centre and into the
+ * question's own mark slot, as `--transit-*` on the overlay (the CSS owns the motion).
+ *
+ * The slot has to be MEASURED: it sits at the head of the question's content block, so
+ * its position follows that block's height — which changes with the viewport, the copy's
+ * wrapping and the ≤640 responsive variant. And it has to be measured AT REST: the
+ * `is-measuring` frame strips the choice layer's 14px entrance offset and the slot's
+ * breathing scale, both of which would otherwise be baked into the rect. That class is
+ * added and removed inside this one synchronous turn, so it never paints.
+ *
+ * Returns false when the geometry is unreadable; the caller then leaves the overlay on
+ * the plain cross-fade rather than sending the mark somewhere wrong.
+ */
+function armMarkTransit(overlay: HTMLElement | null): boolean {
+  if (!overlay || prefersReducedMotion()) return false;
+
+  const rite = overlay.querySelector<HTMLElement>(".rite");
+  const slot = overlay.querySelector<HTMLElement>(".threshold-mark .brand-glyph-shape");
+  if (!rite || !slot) return false;
+
+  overlay.classList.add("is-measuring");
+  const from = rite.getBoundingClientRect();
+  const to = slot.getBoundingClientRect();
+  overlay.classList.remove("is-measuring");
+
+  // Both boxes are height-limited `contain` masks, so their height IS the drawn mark's
+  // height and their centre IS its centre — the two masters' aspects differ by 0.7%,
+  // a fraction of a pixel at the destination size.
+  if (from.height < 1 || to.height < 1) return false;
+
+  const scale = to.height / from.height;
+  const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+  const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+  if (!Number.isFinite(scale) || !Number.isFinite(dx) || !Number.isFinite(dy)) return false;
+
+  overlay.style.setProperty("--transit-x", `${dx.toFixed(2)}px`);
+  overlay.style.setProperty("--transit-y", `${dy.toFixed(2)}px`);
+  overlay.style.setProperty("--transit-s", scale.toFixed(4));
+  return true;
+}
+
 /** Donation-intent and auditor URLs skip the rite AND the choice. */
 function wantsRiteSkipFromUrl(): boolean {
   if (typeof window === "undefined") return false;
@@ -120,6 +166,7 @@ export function Preloader(): React.JSX.Element | null {
   // frames already correct for every path.
   const [phase, setPhase] = useState<Phase>("hold");
   const { read, write } = useAudioChoice();
+  const overlayRef = useRef<HTMLDivElement>(null);
   const choiceRef = useRef<HTMLDivElement>(null);
   const riteRef = useRef<HTMLDivElement>(null);
   // The trail refs keep `.is-cadence` / `.is-choice` on the overlay through later
@@ -127,6 +174,7 @@ export function Preloader(): React.JSX.Element | null {
   // lit mark would snap back to darkness the moment the phase moves on.
   const wentCadence = useRef(false);
   const wentChoice = useRef(false);
+  const wentTransit = useRef(false);
 
   useBodyClass(
     phase === "choice" ? "threshold-open" : phase !== "removed" ? "preload-open" : null,
@@ -202,8 +250,11 @@ export function Preloader(): React.JSX.Element | null {
     const finish = () => {
       if (settled) return;
       settled = true;
-      // The cadence's resolution: into the question, or simply part.
+      // The cadence's resolution: into the question, or simply part. Measure BEFORE the
+      // phase flips — the transform and the class that starts it must land in one commit,
+      // or the mark would sit at its destination for a frame and then be told to travel.
       if (read() === null) {
+        wentTransit.current = armMarkTransit(overlayRef.current);
         wentChoice.current = true;
         setPhase("choice");
         return;
@@ -280,11 +331,13 @@ export function Preloader(): React.JSX.Element | null {
   const classes = ["preloader"];
   if (wentCadence.current) classes.push("is-cadence");
   if (isChoice || (phase === "hiding" && wentChoice.current)) classes.push("is-choice");
+  if (wentTransit.current) classes.push("is-transit");
   if (phase === "hiding") classes.push("is-hidden");
 
   return (
     <Typo>
       <div
+        ref={overlayRef}
         className={classes.join(" ")}
         role={isChoice ? "dialog" : undefined}
         aria-modal={isChoice || undefined}
@@ -322,6 +375,13 @@ export function Preloader(): React.JSX.Element | null {
             />
           </svg>
           <span className="rite-fill" />
+          {/* The raster master, dark until the mark starts down. The vector is the only
+              legible master at the rite's size and the raster is the only legible one at
+              the question's, so the traveller exchanges them in flight, around 110px
+              where both are true — arriving as the same PNG the question's own mark is.
+              Handing over at the destination instead is what made the hairlines blink
+              out on the way down and snap back on arrival. */}
+          <span className="rite-raster" />
         </div>
 
         <div className="preloader-choice">

@@ -212,6 +212,21 @@
        only once it starts leaving. */
     pointer-events: auto;
     transition: opacity 1s var(--ease-slow), visibility 1s var(--ease-slow), filter 1s var(--ease-slow);
+
+    /* The hinge (see `.is-transit` below). NOT `--ease-slow`: that curve is for something
+       arriving and settling from nowhere, and this is a body already at rest being moved.
+       It leaves the centre gently, crosses, and takes a long time to sit down. */
+    --transit-dur: 1200ms;
+    --transit-ease: cubic-bezier(0.55, 0.06, 0.18, 1);
+    --transit-question-lead: 700ms;
+    --transit-master-swap: 420ms;
+    --transit-master-fade: 400ms;
+    --transit-light-lead: 900ms;
+    --transit-light-dur: 1100ms;
+    /* Slow at the onset: perceived brightness is not linear in opacity, so a linear
+       ramp on a glow reads as a flick followed by a crawl. This one is at 8% / 51% /
+       93% of full at the quarters. */
+    --transit-light-ease: cubic-bezier(0.65, 0.02, 0.35, 1);
   }
 
   .preloader.is-hidden {
@@ -347,8 +362,15 @@
      already-running cadence when hydration adds `.is-cadence` on top. */
   .rite {
     position: relative;
-    width: calc(min(52vh, 420px) * 0.405);
-    height: min(52vh, 420px);
+    /* Matched on HEIGHT, because that is what limits both masters' `contain` masks —
+       so each gets a box of its OWN aspect and the two marks then paint at identical
+       height, centre and scale. They differ by 0.74% (the SVG's viewBox is 1000×2469.8,
+       the PNG's pixel box 186×456); their features register within half a pixel. */
+    --rite-h: min(52vh, 420px);
+    --mark-svg-aspect: 0.4049;
+    --mark-png-aspect: 0.4079;
+    width: calc(var(--rite-h) * var(--mark-svg-aspect));
+    height: var(--rite-h);
     /* Every beat below is offset by this, so the whole cadence can be pushed back as one.
        The full rite needs no lead — the hold has been breathing and the pen simply takes
        over — but the brief rite IS the first thing the visitor meets, and starting on the
@@ -403,6 +425,22 @@
       rgba(198, 164, 91, 0) 100%
     );
     transform: translateY(100%);
+  }
+
+  /* The raster master, carried dark until the descent needs it (see `.is-transit`). Its
+     box is the PNG's own aspect, so `contain` fills it exactly and the mark paints at the
+     full height of the rite — the same height the vector paints at, to the pixel. */
+  .rite-raster {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: calc(var(--rite-h) * var(--mark-png-aspect));
+    margin-left: calc(var(--rite-h) * var(--mark-png-aspect) / -2);
+    height: 100%;
+    background: var(--candle);
+    -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
+    mask: url(/logo-mark.png) center / contain no-repeat;
+    opacity: 0;
   }
 
   /* NO halo under the note. A soft radial glow was tried and cut: the note is a precise
@@ -518,13 +556,13 @@
     transition-delay: 0s;
   }
 
-  /* Cross-fade: the large rite mark yields to the question, whose own `.threshold-mark`
-     is the same artwork at a smaller size — so this reads as a scale-down, not as one
-     object being swapped for another. The rings stay, dimmer, breathing behind the
-     question; the spark and words go with the mark. (Opacity animates on the rite's
-     CHILDREN, so the container fade needs no `!important`.) These rules must stay after
-     the `.is-cadence` ones — the two classes co-exist and source order breaks the tie. */
-  .preloader.is-choice .rite {
+  /* The fallback hinge, for the paths that never ran a cadence (reduced motion, rite
+     already seen this session): there is no lit mark to carry, so the rite simply yields.
+     The rings stay, dimmer, breathing behind the question; the spark and words go with
+     the mark. (Opacity animates on the rite's CHILDREN, so the container fade needs no
+     `!important`.) These rules must stay after the `.is-cadence` ones — the two classes
+     co-exist and source order breaks the tie. */
+  .preloader.is-choice:not(.is-transit) .rite {
     opacity: 0;
     transition: opacity 0.6s var(--ease);
   }
@@ -535,6 +573,117 @@
 
   .preloader.is-choice .preloader-rings {
     opacity: 0.45;
+  }
+
+  /* ── The hinge: the mark itself carries into the question ──────────────────
+     A cross-fade between the full-height rite mark and the question's small one
+     was two objects trading places, however identical the artwork — the eye
+     reads a thing that vanishes and a thing that appears, not one that moved.
+     So it MOVES: a FLIP whose delta is measured by the island (the destination
+     sits at the head of the question's content block, whose height no static
+     CSS can know) and written here as `--transit-*`.
+
+     The traveller EXCHANGES MASTERS in flight, and that is what makes the
+     descent legible. A shrinking VECTOR mark loses its hairlines: the stem is 13
+     of 1000 viewBox units and the V's thin arm ~11, so at a third of full size
+     they measure ~1.3px and ~1.1px, and sub-pixel below that — the line the pen
+     had just written evaporated on the way down and the raster snapped it back
+     on arrival. So the raster is faded in as the mark passes the two-masters
+     crossover (~110px — see styles/base.css) and the vector is cut behind it.
+     The traveller therefore ARRIVES as the same PNG the question's mark is, and
+     the last exchange is like-for-like.
+
+     That last exchange is deliberately an over-draw, not a cross-fade: the
+     question's mark lights to full while the traveller is still opaque beneath
+     it, and the traveller is cut only afterwards. Fading one into the other
+     dips their shared silhouette to ~75% mid-cross, a flicker on the one object
+     that must not flicker — and the over-draw also covers the traveller's final
+     frames, which a 7× composited downscale can leave softer than the
+     destination's native raster. The choice layer's z-index puts the
+     destination on top for the exchange. */
+  .preloader.is-transit .rite {
+    transform: translate(var(--transit-x), var(--transit-y)) scale(var(--transit-s));
+    opacity: 0;
+    transition:
+      transform var(--transit-dur) var(--transit-ease),
+      opacity 1ms linear calc(var(--transit-dur) + 260ms);
+  }
+
+  /* Timed off the SCALE, not off taste: the window opens where the raster stops being
+     upscaled (456px of source ≈ 228 CSS px at 2× DPR) and closes below the crossover,
+     so the raster is never soft while it is visible and the vector is never sub-pixel
+     while it is alone. Retuning `--transit-ease` moves the scale curve under these
+     two beats — check them together. */
+  .preloader.is-transit .rite-raster {
+    animation: riteMasterTakeover var(--transit-master-fade) linear var(--transit-master-swap) forwards;
+  }
+
+  .preloader.is-transit .rite-skel,
+  .preloader.is-transit .rite-fill {
+    opacity: 0;
+    transition: opacity 1ms linear calc(var(--transit-master-swap) + var(--transit-master-fade));
+  }
+
+  @keyframes riteMasterTakeover {
+    to { opacity: 1; }
+  }
+
+  /* The question waits until the shrinking mark has cleared the space the title will
+     occupy — surfacing both at once sent a 420px-tall mark straight through the title
+     while the title was reading in. It does NOT wait for the arrival: `--ease-slow` is
+     front-loaded, so the words are all but formed by the time the mark sits down, and
+     the two land as one gesture rather than a sequence of two. */
+  .preloader.is-transit .preloader-choice {
+    transition-delay: var(--transit-question-lead);
+  }
+
+  /* The silhouette and the light arrive on DIFFERENT clocks, and conflating them was the
+     last tick in the descent. The silhouette's exchange is like-for-like — two identical
+     rasters at identical geometry — so it can be quick and is invisible whatever it does.
+     The halo has no counterpart on the traveller (the rite carries no glow, deliberately):
+     it is NEW light, and 260ms of new light is a lamp being switched on.
+
+     The glyph is therefore gated by its own `color` rather than by the container's
+     opacity — it is `background: currentColor` under a mask, so colour alone hides it —
+     which leaves the halo free to run on a clock of its own. */
+  .preloader.is-transit .threshold-mark {
+    color: transparent;
+    animation: thresholdHandoff 260ms var(--ease) var(--transit-dur) forwards;
+  }
+
+  @keyframes thresholdHandoff {
+    to { color: var(--candle); }
+  }
+
+  /* New light, so it is given the time to become light. It starts under the ARRIVING
+     mark — 93% of the descent is behind it by then, so nothing lights up in an empty
+     seat — and keeps rising for a second after the mark has settled, which is what
+     stops there being a moment when it "comes on". It lands exactly on the breathing
+     loop's own first keyframe (0.55 / scale 0.88), which then takes over with no step;
+     the loop is second in the list, so it wins both properties once it begins. */
+  .preloader.is-transit .threshold-mark-halo {
+    opacity: 0;
+    animation:
+      thresholdLight var(--transit-light-dur) var(--transit-light-ease) var(--transit-light-lead) forwards,
+      thresholdMarkHalo 5.4s ease-in-out calc(var(--transit-light-lead) + var(--transit-light-dur)) infinite;
+  }
+
+  @keyframes thresholdLight {
+    from { opacity: 0; transform: translate(-50%, -50%) scale(0.72); }
+    to { opacity: 0.55; transform: translate(-50%, -50%) scale(0.88); }
+  }
+
+  /* The measuring frame. The island reads the destination here and it must be at REST:
+     the choice layer's 14px entrance offset and the mark's breathing scale both land in
+     `getBoundingClientRect`. Applied and removed inside one synchronous turn, so it
+     never paints — it exists only so those two numbers are not hardcoded in JS. */
+  .preloader.is-measuring .preloader-choice {
+    transform: none;
+    transition: none;
+  }
+
+  .preloader.is-measuring .threshold-mark .brand-glyph-shape {
+    animation: none;
   }
 
   .threshold-inner {
