@@ -66,7 +66,20 @@
 
    `data-d` is the authored cadence: a per-element delay for pages that stagger their
    own nodes. The landing sets none — its siblings are generated in bulk, so it passes
-   the onset queue to the controller instead. */
+   the onset queue to the controller instead.
+
+   BEFORE PUTTING `.reveal` ON AN ELEMENT, CHECK WHETHER IT ALREADY DECLARES A
+   `transition`. There is exactly one `transition-property` slot per element, so this
+   rule does not add to that declaration — it REPLACES it, and the element's own hover
+   or state transitions stop easing and start snapping. Nothing errors and nothing looks
+   wrong until someone hovers. `.path-entry-title` lost its weight-and-tracking hover
+   this way for a month; `.rep-col li.rep-row` on /koncerty survived only because it
+   happened to out-specify this rule. The fix when it comes up is to restate the
+   element's list together with the ink's, using the tokens above, at a specificity that
+   clears both this rule and `.is-settled` (both 0,2,0) — see 04-rooms-interludes.css
+   for the worked example. A node with a live hover transition is entitled to keep one
+   after its entrance is spent, so out-specifying `.is-settled` is correct there, not a
+   leak. */
 html.voct-motion .reveal {
   opacity: var(--half-ink);
   transition-property: opacity;

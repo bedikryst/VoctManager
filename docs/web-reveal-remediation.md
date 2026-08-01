@@ -33,6 +33,12 @@ wrong once the code was measured:
   by matching the landing's weight-units-per-second — but that rate is *derived from* 520, so it
   could not be evidence for it. Watched, 520 was invisible. A number defended by an argument that
   assumes the number is the fourth-and-a-half instance of the same habit.
+- **Etap 1e ate a hover, and nobody noticed for a month.** It moved `.reveal` onto
+  `.path-entry-title` for a *geometric* reason and never asked whether the element already owned
+  a `transition`. It did — the Via titles' weight-and-tracking hover — and a register REPLACES
+  that declaration rather than adding to it. Reported from the browser 2026-08-01 and fixed in
+  place. This is the same failure mode as every entry above: **each stage checked the property it
+  was reasoning about and not the slot it was writing into.**
 
 Before implementing any stage below, re-measure its claim against the source — the plan is a
 record of what was true when it was written, and the later stages keep changing what the earlier
@@ -778,6 +784,7 @@ Questions already banked for it, each arrived at by measuring something else:
 | **Do the three bare hero `<h1>`s want a press?** `/o-nas`, `/kontakt`, `/koncerty` — their `.reveal`s are on inner `<span>`s, below the heading, so a press needs the reveals restructured, not just a class. | Etap 4a |
 | **The tall-node splits**, carried from 1e: `.final-lede`, `.bank-card`, `.donation-rows`, and the subpage blocks (`AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows) now that they are in the register system. | Etap 1e |
 | **Should `/koncerty`'s entry rules take the lead register, and `/o-nas`'s portrait the light?** Possible since 4b; whether they *should* is this sweep's call. | Etap 4b |
+| **`/koncerty`'s `.rep-col li.rep-row` is outside the register system while wearing its class.** It out-specifies the ink to run `transform: translateY(16px)` over 0.5 s on `--ease` — a travel entrance, on its own clock and curve, which is the one thing the doctrine's first rule forbids. Found by the sweep for transition-owning reveal nodes; it is a *change register* decision, not a bug to patch. | Etap 4a fix |
 
 ---
 

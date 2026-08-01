@@ -217,6 +217,18 @@ bundle order. Changing one leaves the landing on the old face / the old curve. T
 easings (`--ease-ink`, `--ease-rule`, `--ease-light`) are deliberately in `tokens.css` **only** —
 do not mirror them into the landing sheet for symmetry.
 
+**Before putting `.reveal` on an element, check whether that element already declares a
+`transition`.** There is exactly one `transition-property` slot per element, so the register does
+not add to what is there — it **replaces** it, and the element's own hover or state transitions
+stop easing and start snapping. Nothing errors; nothing looks wrong until someone hovers. This is
+how `.path-entry-title` lost its weight-and-tracking hover for a month: Etap 1e moved the ink
+onto it for a *geometric* reason (a tall node must be split so its parts arrive where the eye is)
+and never asked the second question. `.rep-col li.rep-row` on `/koncerty` survived the same move
+only by accident, because its selector happened to out-specify the register. When it comes up,
+restate the element's list together with the ink's, using the register's tokens, at a specificity
+clearing both the register and `.is-settled` — a node with a live hover transition is entitled to
+keep one after its entrance is spent.
+
 **A register can never be added with a bare `transition` declaration, and `@property` must be
 registered exactly once.** Both were live at the same time and both fail silently. `transition`
 is a *shorthand*: a node that carries two register dimensions (`.section-title` is the ink node

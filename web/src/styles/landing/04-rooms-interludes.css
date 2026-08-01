@@ -491,10 +491,26 @@
     /* wght driven via the variable axis (not font-weight) so it can transition — Cormorant
        carries a live wght axis (the footer clock breathes on it). */
     font-variation-settings: "wght" 300;
-    transition:
+    /* Named rather than inlined because this element is ALSO an ink node, and there is exactly
+       one `transition-property` slot per element — the rule below has to restate this list, and
+       one list in one place is the only way that stays true. */
+    --title-hover-transition:
       color 0.5s var(--ease),
       letter-spacing 0.6s var(--ease-slow),
       font-variation-settings 0.6s var(--ease-slow);
+    transition: var(--title-hover-transition);
+  }
+
+  /* This title carries `.reveal`, and a register REPLACES the element's transition rather than
+     adding to it: `transition-property: opacity` (styles/registers.css) silently dropped the
+     three properties above, so the hover stopped easing and started snapping. Restated here
+     with the ink's own tokens, at a specificity that clears both the register (0,2,0) and
+     `.is-settled` (0,2,0) — the latter deliberately, because a node whose hover transition must
+     work for the whole session cannot have its transitions stripped when its entrance is spent.
+     The un-gated rule above is what a no-motion visitor gets, and it is already correct for
+     them: without `voct-motion` there is no register to merge with. */
+  html.voct-motion .path-entry-title.reveal {
+    transition: opacity var(--ink-in) var(--ease-ink), var(--title-hover-transition);
   }
 
   /* Illumination on intent: the entry lights to candle gold, gains a touch of weight and
