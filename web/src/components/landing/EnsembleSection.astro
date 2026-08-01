@@ -26,17 +26,21 @@ const FACTS = [
 <section class="ensemble" id="zespol" aria-label="Zespół">
   <div class="ensemble-media" aria-hidden="true">
     <BleedImage desktop={ensemble.desktop} mobile={ensemble.mobile} alt="" position="center 32%" />
+    {/* Light register: the nave is unlit until the section is reached. */}
+    <span class="reveal-light"></span>
   </div>
   <div class="ensemble-inner section">
-    {/* Each block is its own .reveal (not one column-sized block) so it enters
-        element-by-element as you scroll — the granular register feel of "Z drogi" —
-        instead of the whole copy popping in at once on the phone. */}
+    {/* Each block carries its own register node (not one column-sized block) so the copy is
+        written element-by-element as you scroll, paced by the shared onset queue, instead of
+        the whole column resolving at once on the phone. */}
     <div class="ensemble-copy">
       <div class="ensemble-lede reveal">
         <div class="micro">Skąd się wzięliśmy?</div>
         <h2>Zaczęło się<br />od tęsknoty.</h2>
       </div>
-      <p class="ensemble-origin reveal">
+      {/* The founding testimony's gold marginal rule is drawn down the margin, then the
+          quotation is inked beside it. */}
+      <p class="ensemble-origin reveal reveal-rule-v">
         Jak anachoreci — w odosobnieniu, z daleka od zgiełku — zatęskniliśmy
         za muzyką, która otula, przenika i zostaje w duszy niczym żywy
         organizm. Tak powstał Voct: z ciszy i kontemplacji.
@@ -47,7 +51,7 @@ const FACTS = [
         z utworów, w których słowo i muzyka są swoimi lustrzanymi
         odbiciami.
       </p>
-      <div class="ensemble-facts reveal">
+      <div class="ensemble-facts reveal reveal-rule">
         {
           FACTS.map((fact) => (
             <div class="fact">

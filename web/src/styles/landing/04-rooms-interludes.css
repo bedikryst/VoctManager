@@ -291,7 +291,7 @@
     font-family: var(--serif);
     font-style: italic;
     font-weight: 300;
-    font-size: clamp(16px, 1.3vw, 20px);
+    font-size: clamp(17px, 1.4vw, 21px);
     line-height: 1.6;
     color: rgba(244, 241, 233, 0.82);
   }
