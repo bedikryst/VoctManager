@@ -597,20 +597,39 @@ ownership of `transition-delay`, so each subpage's authored `data-d` cadence sur
 Six `@supports` blocks and both keyframe sets deleted; `.ink-press` authored on 22 headings
 across `/koncerty`, `/koncerty/[id]`, `/o-nas`, `/kolofon`, `/kontakt`.
 
-**The press opens at 520, and the choice was measured, not judged.** All six heading sets already
-declare `font-weight: 300` = `--wght-rest`, so only the *origin* was ever in question:
+**The press shipped at 520 and was raised to 600 the same day; the correction is the interesting
+part.** All six heading sets already declare `font-weight: 300` = `--wght-rest`, so only the
+*origin* was ever in question:
 
 | | travel | clock | rate |
 |---|---|---|---|
 | subpage keyframes as they ran | 640 → 300 = 340 | `entry 0% cover 55%` = 0.55·(vh+h) ≈ 550 px ≈ **1.38 s** | 247 u/s |
-| landing press | 520 → 300 = 220 | `--ink-in` 0.9 s | 244 u/s |
-| **640 on the ink's clock** | 340 | 0.9 s | **378 u/s** |
+| landing press, as shipped in 4a | 520 → 300 = 220 | `--ink-in` 0.9 s | 244 u/s |
+| **600, the value that stuck** | 300 | 0.9 s | 333 u/s |
 
-640 would have run the same headings 1.53× faster than they ran before the change and 1.55× the
-landing's rate — on `clamp(36px, 5.4vw, 76px)` headings with `max-width` in `ch`, i.e. headings
-that wrap. 520 is also the only origin already cleared in a browser against that reflow risk
-(Etap 3c). The two numbers agreeing to within 3 u/s is the argument: the press is one gesture at
-one tempo, and the subpages were already running it.
+The argument for keeping the landing's 520 was that the two rates agree to within 3 u/s — one
+gesture at one tempo, which the subpages were already running. **Watched, it was invisible**, and
+the rate argument turns out to be circular: the landing's 244 u/s is itself derived from 520, so
+it cannot be evidence that 520 is right. The non-circular half was only ever the reflow risk, and
+that is a *ceiling* argument, not a *value* argument.
+
+What the measurement should have been:
+
+- **The press shares its clock with an opacity ramp from 0.44 to 1.**  A 2.3× change in lightness
+  is a far louder channel than ~25 % of a weight axis, so the two compete rather than compound.
+  Amplitude therefore buys less than the arithmetic suggests, which is exactly why a value chosen
+  by arithmetic read as nothing.
+- **The site already speaks heavier than 520 at its loudest moments** — the footer wordmark pulses
+  to 580 (`06-footer.css`), the hero's emphasis opens at 620 (`landing.ts`). 520 was not the safe
+  number, it was the timid one, sitting under everything else the design does with this axis.
+
+600, and **the clock did not move with it.** A faster press is a shorter exposure, and change
+detection needs dwell time — speeding it up works against the thing being fixed. If 600 still
+under-reads, the next lever is a timing function of the press's own on the shared clock, which
+`--ease-ink` makes available: it spends 82 % of the travel in 0.39 s of the 0.9 s, so more than
+half the clock currently carries almost nothing. That is sanctioned (Etap 3c) in a way that
+splitting the duration is not. What is *not* available is a heavier origin: past ~620 the press
+would open outside the range the design ever rests in.
 
 **`/press` keeps no press, and its keyframes were deleted rather than adopted.** Two findings,
 either one sufficient:

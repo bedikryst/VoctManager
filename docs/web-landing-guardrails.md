@@ -295,7 +295,7 @@ merging it means choosing one observer for the whole site.
 | *(cue)* | `.reveal-cue` | — | no appearance; triggers authored choreography |
 
 Ink has a **second dimension**, opt-in per element and not a fourth register: `.ink-press`
-(`styles/registers.css`) travels the variable-font weight axis 520 → 300 on the ink's own clock,
+(`styles/registers.css`) travels the variable-font weight axis 600 → 300 on the ink's own clock,
 so a heading's stroke settles as its ink darkens — a nib, which is what a heading is written
 with. It never fires alone and never lands on body copy. Its one hard constraint: the element's
 `font-weight` must equal `--wght-rest` (`styles/tokens.css`, with `--wght-press`), because under

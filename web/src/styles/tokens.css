@@ -73,8 +73,19 @@
 
   /* The ink press's two ends (the mechanism is in styles/registers.css). Every `.ink-press`
      element must declare `font-weight` equal to --wght-rest: the axis overrides `font-weight`
-     only while motion is live, so a gap between them is invisible until motion is turned off. */
-  --wght-press: 520;
+     only while motion is live, so a gap between them is invisible until motion is turned off.
+
+     The press's REST end is fixed — it is the site's heading weight. Only the origin is a
+     choice, and it is an amplitude choice: the press shares its clock with an opacity ramp
+     from 0.44, which is the louder channel by far, so the weight has to travel far enough to
+     be read THROUGH a 2.3x change in lightness rather than alongside it. 600 sits inside the
+     vocabulary the site already speaks at its loudest — the footer wordmark pulses to 580, the
+     hero's emphasis opens at 620 — where the earlier 520 sat below all of it and read as
+     nothing. If it still under-reads, the next lever is a timing function of the press's own
+     on this same clock (--ease-ink front-loads: 82% of the travel is spent in 0.39s of the
+     0.9s), NOT a faster press, which only shortens the exposure, and NOT a heavier origin,
+     which would leave the range the design rests in. */
+  --wght-press: 600;
   --wght-rest: 300;
 
   /* ── One easing per register ──────────────────────────────────────────────
