@@ -3,10 +3,12 @@
  * @file ManifestSection.astro
  * @description Three-stanza ensemble manifest + the answer line. Rigid editorial grid;
  *  ONE motion system (setupManifestLight in landing.ts + 03-manifest-rite.css): a soft
- *  light edge sweeps each stanza once, left to right, from half-light to full ink —
- *  time-based and one-shot, never scroll-scrubbed. The stanzas deliberately carry NO
+ *  light edge sweeps each line-group once, left to right, from half-light to full ink —
+ *  time-based and one-shot, never scroll-scrubbed. The line-groups deliberately carry NO
  *  entrance register: the sweep is their arrival, and the page's moving light belongs here.
- *  "Odsłania." is its own group: it blurs into focus a beat after stanza III.
+ *  "Odsłania." is its own group with no numeral — the manifest's reply — and it takes that
+ *  same light a beat behind stanza III; gold, italic and the beat set it apart, never a
+ *  second effect.
  * @architecture Astro islands 2026
  * @module components/landing/ManifestSection
  */
@@ -31,20 +33,18 @@ import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLine
         MANIFEST_LINES.map((line) => (
           <div class="manifest-line-group">
             <div class="manifest-roman">{line.index}</div>
-            <p class="manifest-statement">
-              {/* Set plain: the build pass (lib/typo.ts) pins the orphans. At this display size a
-                  one-letter Polish preposition left at a line end ("…duszy w / czasie.") is the
-                  most visible typographic fault on the page — check it here first. */}
-              <span class="manifest-text-inner">{line.text}</span>
-            </p>
+            {/* Set plain: the build pass (lib/typo.ts) pins the orphans. At this display size a
+                one-letter Polish preposition left at a line end ("…duszy w / czasie.") is the
+                most visible typographic fault on the page — check it here first. */}
+            <p class="manifest-statement">{line.text}</p>
           </div>
         ))
       }
 
-      {/* The answer — no numeral (it is not a fourth thesis), its own lit moment. */}
+      {/* The answer — no numeral (it is not a fourth thesis), its own beat on the same light. */}
       <div class="manifest-line-group manifest-answer">
         <div class="manifest-roman" aria-hidden="true"></div>
-        <p class="manifest-statement manifest-answer-statement">
+        <p class="manifest-statement">
           <em class="manifest-emphasis">{MANIFEST_ANSWER}</em>
         </p>
       </div>

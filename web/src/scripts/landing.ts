@@ -7,7 +7,8 @@
  *
  *  Owns: rite-glow (cursor spotlight), smooth-details (animated accordion),
  *  Lenis anchor smooth-scroll, the hero's variable-font breath on a single rAF scroll loop,
- *  the manifest light (one-shot `.is-lit` per stanza — the sweep itself is a CSS transition),
+ *  the manifest light (one-shot `.is-lit` per line-group, `.is-spent` when its sweep is over —
+ *  the sweep itself is a CSS transition),
  *  the interlude breath (scroll-velocity knot bloom while the ambient is silent) and the
  *  static-section interactions (IBAN copy, vault and video triggers). (The coda's old
  *  per-letter wave is gone — the "Ostatni takt" coda draws itself via the shared .knot-draw
@@ -271,28 +272,37 @@ function setupHeroBreath(root: HTMLElement, reduce: boolean): void {
 }
 
 // ── Manifest light ──────────────────────────────────────────────────────────────────────────
-// JS owns exactly ONE bit per line: `.is-lit`, set once when the stanza's top crosses ~74%
-// of the viewport (the reading zone), then the observer lets go. Everything visual — the
-// left→right light sweep on the stanzas (--ink-reveal mask transition) and the answer's
-// blur-into-focus + gold bloom — lives in 03-manifest-rite.css, so the draw is TIME-based
-// and always completes: a fast scroll at worst catches it mid-flight, never strands it.
-// This replaced the scroll-scrubbed raking light (per-frame color/textShadow writes +
-// per-word stagger + delayed group reveal): scrubbing tied the tempo to scroll velocity,
-// and its 0.32 "settled floor" left every read stanza regressed to gray — the manifest
-// un-revealing what it had revealed. One-shot light, permanent ink.
+// JS owns exactly two bits per line-group: `.is-lit` when its top crosses ~74% of the viewport
+// (the reading zone), and `.is-spent` when the sweep is over. Everything visual — the left→right
+// light edge crossing the group (--ink-reveal mask transition) — lives in 03-manifest-rite.css,
+// so the draw is TIME-based and always completes: a fast scroll at worst catches it mid-flight,
+// never strands it. Scrubbing it against scroll is not an option and once was one: the tempo
+// followed scroll velocity, and the "settled floor" that approach needs left every read stanza
+// regressed to gray — the manifest un-revealing what it had revealed. One-shot light, permanent
+// ink.
 //
-// CANON ENTRIES: stanza I is one line tall, so a single scroll gesture often carries both
-// I and II past the trigger — and two sweeps running in unison read as a copy-pasted
-// effect, not choreography. The onset queue makes the voices enter in imitation instead:
-// each lit start must come ≥GAP_MS after the previous one's start (start-to-start, like
-// points of imitation — the previous sweep is still running when the next voice enters).
-// A stanza that arrives naturally later than the gap lights immediately: slow readers pay
-// zero added latency. The answer replies a short breath behind III (ANSWER_GAP_MS) — enough
-// that "Odsłania." reads as a response, not a fourth voice firing in unison, but NOT a full-
-// inking wait: it is the manifest's payoff word and must land in view. The old 3.4s hold
-// stranded the reveal off-screen even on slow scroll (III and the answer cross the trigger
-// close together, so the gap kept biting), and its own blur-into-focus then played where no
-// one was looking. Short reply + a quick entrance (03-manifest-rite.css) keeps the moment.
+// CANON ENTRIES. Stanza I is one line tall, so a single scroll gesture often carries two
+// line-groups past the trigger, and sweeps running in unison read as a copy-pasted effect rather
+// than as choreography. The onset queue makes the voices enter in imitation instead: each lit
+// start comes ≥GAP_MS after the previous one's START, so the earlier sweep is still crossing its
+// line when the next voice enters. A group that arrives later than the gap on its own lights
+// immediately — at an unhurried reading pace (~400px/s) that is every one of them, because the
+// natural spacing between these four triggers is only 0.4–0.8s. The queue is for the flick, not
+// for the reader. The answer replies a shorter breath behind III (ANSWER_GAP_MS): enough that
+// "Odsłania." reads as a response and not as a fourth voice in unison.
+//
+// THE CAP IS THE LOAD-BEARING PART, and it is a SCROLL DISTANCE rather than a comfort margin.
+// `lastOnset` accumulates across the whole section, so uncapped the four onsets land at fixed
+// multiples of the gap however fast the page is actually moving. With a 1.6s gap that put the
+// answer 2.4s behind its own trigger at desktop reading pace — a third of a screen above the
+// window — and more than three screens above a visitor flicking through on a phone, so the
+// page's one negation ("Sacrum nie zdobi.") was left standing unanswered on screen. The value
+// matches the shared controller's (scripts/reveal.ts) because the argument is the same one: two
+// onsets deep is enough to break unison, which is all a queue is for.
+//
+// ORDER. A hit lights every unlit group ABOVE it as well. Document order holds only within a
+// single observer callback, so a visitor who loads the page below the manifest and scrolls back
+// up reaches the answer first — and the reply would arrive before the theses it answers.
 function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   // Under reduced motion DocumentGates never adds html.voct-motion, so the CSS half-light
   // states stay inert and the manifest is plain full ink — nothing to drive here.
@@ -302,35 +312,64 @@ function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line-group"));
   if (!lines.length) return;
 
-  const GAP_MS = 1600;
-  const ANSWER_GAP_MS = 1000;
+  const GAP_MS = 480;
+  const ANSWER_GAP_MS = 380;
+  const MAX_BACKLOG_MS = 450;
+  /** `--sweep-in` (03-manifest-rite.css) plus a margin: the guarantee behind `transitionend`
+   *  for a group whose sweep is cancelled or whose browser never reports the custom property.
+   *  It only ever drops a mask that is already fully opaque, so firing late costs nothing and
+   *  firing early is what must not happen — keep it clear of the sweep's clock. */
+  const SPEND_FALLBACK_MS = 2600;
+
   let lastOnset = Number.NEGATIVE_INFINITY;
   const timers: number[] = [];
+  const scheduled = new Set<HTMLElement>();
+
+  const spend = (line: HTMLElement): void => {
+    const onEnd = (event: TransitionEvent): void => {
+      if (event.target !== line || event.propertyName !== "--ink-reveal") return;
+      line.classList.add("is-spent");
+      line.removeEventListener("transitionend", onEnd);
+    };
+    line.addEventListener("transitionend", onEnd);
+    timers.push(
+      window.setTimeout(() => {
+        line.classList.add("is-spent");
+        line.removeEventListener("transitionend", onEnd);
+      }, SPEND_FALLBACK_MS),
+    );
+  };
 
   const light = (line: HTMLElement): void => {
+    line.classList.add("is-lit");
+    spend(line);
+  };
+
+  const schedule = (line: HTMLElement): void => {
+    if (scheduled.has(line)) return;
+    scheduled.add(line);
+    io.unobserve(line);
     const gap = line.classList.contains("manifest-answer") ? ANSWER_GAP_MS : GAP_MS;
     const now = performance.now();
-    const onset = Math.max(now, lastOnset + gap);
+    const onset = Math.min(Math.max(now, lastOnset + gap), now + MAX_BACKLOG_MS);
     lastOnset = onset;
-    if (onset <= now) {
-      line.classList.add("is-lit");
-    } else {
-      timers.push(window.setTimeout(() => line.classList.add("is-lit"), onset - now));
-    }
+    if (onset <= now) light(line);
+    else timers.push(window.setTimeout(() => light(line), onset - now));
   };
 
   const io = new IntersectionObserver(
     (entries) => {
-      // Document order, not callback order — the canon must enter top-down even when
-      // one callback delivers several stanzas at once (fast scroll, mid-page load).
       const hit = entries
         .filter((entry) => entry.isIntersecting)
         .map((entry) => entry.target as HTMLElement)
         .sort((a, b) => lines.indexOf(a) - lines.indexOf(b));
-      hit.forEach((line) => {
-        light(line);
-        io.unobserve(line);
-      });
+      for (const line of hit) {
+        // Everything above enters first, whichever end the visitor arrived from.
+        for (let i = 0; i <= lines.indexOf(line); i += 1) {
+          const above = lines[i];
+          if (above) schedule(above);
+        }
+      }
     },
     // Bottom inset puts the trigger line at ~74% of the viewport: low enough that the
     // visitor watches the light pass ("wjeżdżam i już stoi" was the 85% defect), high

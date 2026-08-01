@@ -3,6 +3,9 @@
     position: relative;
     color: var(--ink);
     padding: clamp(140px, 12vw, 200px) 0;
+    /* The sweep's clock, in one place because it is also a scroll distance — see "The light
+       passes once" below, and keep scripts/landing.ts's spend fallback clear of it. */
+    --sweep-in: 2s;
   }
 
   .manifest-container {
@@ -56,6 +59,13 @@
     grid-template-columns: clamp(40px, 8vw, 120px) 1fr;
     gap: clamp(20px, 4vw, 64px);
     align-items: flex-start;
+    /* The mask's coordinate space IS this box, so the box has to be the text. Stretched to the
+       column, a one-line stanza spends roughly a quarter of the sweep crossing its own empty
+       right margin — travel nobody can see, on the clock that decides whether the gesture is
+       watched at all. Shrink-to-fit moves no glyph: the type is left-aligned, the statement's
+       own max-width still sets the wrap, and a stanza whose text overflows the column (II) is
+       unchanged because its fit-content size is the available width anyway. */
+    width: fit-content;
   }
 
   .manifest-roman {
@@ -75,18 +85,32 @@
     letter-spacing: -0.01em;
     color: var(--ink);
     max-width: 14em;
+    /* Descender clearance, and it is load-bearing for the sweep rather than cosmetic: the
+       mask's paint area is the line-group's border box, so a tail reaching below it is masked
+       by the gradient's own repeated tile instead of by the sweep. */
     padding-bottom: 5px;
-  }
-
-  .manifest-statement .manifest-text-inner {
-    display: inline-block;
   }
 
   /* ── The answer ───────────────────────────────────────────────────────────
      "Odsłania." is its own line-group (no numeral) — the manifest's reply, not a
      fourth thesis. It rides the same grid so its statement column aligns under
      stanza III; the negative top margin pulls it closer than the stanza gap, so
-     answer follows statement instead of opening a new chapter. */
+     answer follows statement instead of opening a new chapter.
+
+     IT TAKES THE SAME LIGHT AS THE THESES, and that is the point rather than a
+     simplification: the word means un-veiling and the sweep is the page's un-veiling
+     gesture, so letting the light take this one word is the most literal thing the page
+     can do with it. Everything that sets the answer apart is carried without a second
+     motion — gold, italic, no numeral, the tighter margin, and its own beat behind stanza
+     III (ANSWER_GAP_MS, scripts/landing.ts).
+
+     WHAT IT MUST NOT DO IS ENTER FROM NOTHING. Every line on this site waits at
+     var(--half-ink) — .silence-line and .coda-caption spell the same thing out — and a
+     blur-up from opacity 0 breaks that twice: it opens a hole under stanza III for as long
+     as the queue takes to reach the answer, so the page's one negation stands unanswered
+     while the reader is looking straight at it; and a blur is an optical effect inside a
+     vocabulary made of ink, lead and light, which styles/registers.css names outright as
+     the signature the register language exists to avoid. */
   .manifest-answer {
     margin-top: calc(-1 * clamp(32px, 5vw, 80px));
   }
@@ -97,12 +121,11 @@
        page's gold climax, so this manifest answer steps back from full saturation.
        Still gold italic — still a moment — just no longer competing with the closure. */
     color: rgba(198, 164, 91, 0.84);
-    display: inline-block;
   }
 
-  /* The header row rides the site-wide ink+lead registers (06-footer.css); the stanzas
-     deliberately carry NO register — their arrival is the light sweep below, and stacking a
-     second entrance on top of it was compounded motion, not choreography. */
+  /* The header row rides the site-wide ink+lead registers (styles/registers.css); the
+     line-groups deliberately carry NO register — their arrival is the light sweep below, and
+     stacking a second entrance on top of it is compounded motion, not choreography. */
 
   /* Desktop Staggering Layout — the answer mirrors stanza III's offset so "Odsłania."
      sits directly beneath "Sacrum nie zdobi." */
@@ -118,19 +141,34 @@
   }
 
   /* ── The light passes once ────────────────────────────────────────────────
-     ONE motion system (it replaces three that fought each other: the scroll-scrubbed
-     raking light, the per-word stagger and the delayed group reveal). setupManifestLight
-     (landing.ts) adds `.is-lit` — one-shot — when a stanza reaches the reading zone;
+     ONE motion system for the whole canon, the answer included. setupManifestLight
+     (landing.ts) adds `.is-lit` — one-shot — when a line-group reaches the reading zone;
      transitioning --ink-reveal (registered in 09-kinetic.css) then sweeps a soft light
-     edge left→right across the line-group: half-light before, full ink after, FOREVER.
-     No settled floor — what the light has revealed must never re-veil ("odsłania").
-     Nothing translates and nothing hides: a fast scroll can at worst catch the sweep
-     mid-flight, and it still completes on its own clock. Time-based, never scrubbed.
-     Gated on html.voct-motion, so no-JS and reduced-motion visitors get plain full
-     ink; browsers without @property drop the whole mask (IACVT → none) — full ink,
-     no sweep, a graceful nothing. The stanzas carry NO gold: the page's gold belongs
-     to "Odsłania." below and to the coda's finalis. */
-  html.voct-motion .manifest-line-group:not(.manifest-answer) {
+     edge left→right across it: half-light before, full ink after, FOREVER. No settled
+     floor — what the light has revealed must never re-veil ("odsłania"). Nothing
+     translates and nothing hides: a fast scroll can at worst catch the sweep mid-flight,
+     and it still completes on its own clock. Time-based, never scrubbed.
+
+     THE CURVE IS THE LIGHT REGISTER'S, not the site's general one, and the difference is
+     not cosmetic. Read by the measure tokens.css uses — at what fraction of the clock is
+     82% of the travel spent — `--ease-slow` spends it at 28%, so on a long clock the edge
+     crosses the text in the first quarter and the rest crawls the last tenth and then
+     holds still: nominal duration describing nothing. That is the defect the lead register
+     was retuned out of, and tokens.css marks `--ease-slow` as NOT an entrance curve.
+     `--ease-light` (82% at 63%) is what a beam wants — it holds at the left edge, floods
+     through the line, and the last of the half-light retreats to nothing.
+
+     THE CLOCK IS A SCROLL DISTANCE. The trigger sits at 74% vh, so a line-group has ~1.7s
+     of screen life at an unhurried reading pace (~400px/s) before its top leaves the
+     window. At `--sweep-in` 2s the light enters the text at 0.67s and finishes it at
+     1.74s, so the whole gesture is watched. A longer clock is not a richer one here; it is
+     one played to an empty room.
+
+     Gated on html.voct-motion, so no-JS and reduced-motion visitors get plain full ink;
+     browsers without @property drop the whole mask (IACVT → none) — full ink, no sweep, a
+     graceful nothing. The stanzas carry NO gold: the page's gold belongs to "Odsłania."
+     and to the coda's finalis. */
+  html.voct-motion .manifest-line-group {
     -webkit-mask-image: linear-gradient(
       100deg,
       rgb(0 0 0) calc(var(--ink-reveal) - 12%),
@@ -141,43 +179,25 @@
       rgb(0 0 0) calc(var(--ink-reveal) - 12%),
       rgb(0 0 0 / 0.44) calc(var(--ink-reveal) + 16%)
     );
-    transition: --ink-reveal 4.6s var(--ease-slow);
+    transition: --ink-reveal var(--sweep-in) var(--ease-light);
   }
 
-  html.voct-motion .manifest-line-group.is-lit:not(.manifest-answer) {
+  html.voct-motion .manifest-line-group.is-lit {
     --ink-reveal: 114%;
   }
 
-  /* The answer keeps its own moment — "odsłania" is the one word that should
-     literally come into focus, so the soft blur lives HERE only. Same one-shot
-     `.is-lit`; the delay holds it a beat behind stanza III when both arrive
-     together. No transform: light moves, metal doesn't. */
-  html.voct-motion .manifest-answer .manifest-emphasis {
-    opacity: 0;
-    filter: blur(5px);
-    /* Short delay + brisk resolve: the payoff word must come into focus while it is
-       still in the reading zone, not 2.5s after the trigger (which stranded it above
-       the fold on slow scroll). The blur-in itself IS the word "odsłania". */
-    transition:
-      opacity 1.3s var(--ease-slow) 0.15s,
-      filter 1.3s var(--ease-slow) 0.15s;
-  }
-
-  html.voct-motion .manifest-answer.is-lit .manifest-emphasis {
-    opacity: 1;
-    filter: blur(0);
-  }
-
-  /* One-shot gold bloom as the answer lands — an animation, not a scroll-coupled
-     value, so it has a beginning and an end. Delay tracks the emphasis entrance. */
-  html.voct-motion .manifest-answer.is-lit {
-    animation: manifestAnswerBloom 3.2s var(--ease-slow) 0.5s both;
-  }
-
-  @keyframes manifestAnswerBloom {
-    0% { text-shadow: 0 0 0 rgba(198, 164, 91, 0); }
-    35% { text-shadow: 0 0 34px rgba(198, 164, 91, 0.5); }
-    100% { text-shadow: 0 0 14px rgba(198, 164, 91, 0.18); }
+  /* Spent, mirroring what `.is-settled` does for every other register: the gesture is over,
+     so release the layer. At the end of the travel the mask is uniformly opaque over the
+     box, so dropping it changes nothing on screen — but a masked element has NO compositor
+     path, every frame of the sweep re-rasterises the whole line-group, and without this the
+     page keeps four masked text layers alive for the rest of the session. It also un-clips
+     glyph overhang: anything painted outside the border box falls on the gradient's repeated
+     tile rather than on the sweep, so once the sweep is over the mask can only do harm.
+     scripts/landing.ts flips it on the sweep's own transitionend, with a timer behind it. */
+  html.voct-motion .manifest-line-group.is-spent {
+    -webkit-mask-image: none;
+    mask-image: none;
+    transition: none;
   }
 
   .image-rite {
