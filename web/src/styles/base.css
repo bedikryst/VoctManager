@@ -6,16 +6,17 @@
  *  `.is-in`, gated on `html.reveal-ready`), NOT scroll-scrubbed — it animates once and
  *  persists, and degrades to "always visible" without JS or under reduced motion.
  *  CAUTION: `.reveal` has a SECOND, independent definition in landing/06-footer.css for the
- *  landing only, driven by `.is-visible`/`.is-settled` instead of `.is-in`. Both now express
- *  the same INK register (half-ink → full ink, no travel, no blur) so the site reads as one
- *  hand. The other two registers (lead, light) exist only in the landing bundle, which is a
- *  BOUNDARY, not a judgement: /koncerty rules the same hairlines as `.path-register` and
- *  /o-nas carries a portrait, so both have material this file cannot yet serve. Lifting the
- *  three registers into one shared sheet — and collapsing this duplicate definition with it —
- *  is the open half of the 2026-08 pass (docs/web-reveal-remediation.md).
+ *  landing only, driven by `.is-visible`/`.is-settled` instead of `.is-in`. Both express the
+ *  same INK register (half-ink → full ink, no travel, no blur) so the site reads as one hand,
+ *  and the duplicate survives for one reason: they differ in their GATE. This one hangs on
+ *  `html.reveal-ready` — the class that also starts BaseLayout's observer — and the landing
+ *  declines that class precisely to keep the observer off its nodes. Merging them means
+ *  choosing one observer for the whole site, which is a decision about cadence, not about a
+ *  stylesheet. See docs/web-reveal-remediation.md, Etap 4c.
  *  The two share a class name but not a controller, so any bare `.reveal` rule added here
  *  also lands on the landing — scope new rules to `html.reveal-ready` or `:not(.voct-motion)`
- *  so they cannot cross over.
+ *  so they cannot cross over. The lead and light registers are NOT here: they live in
+ *  styles/registers.css and are available to every page.
  * @architecture Astro islands 2026
  * @module styles/base
  */
@@ -303,7 +304,9 @@ html:not(.voct-motion) .reveal { opacity: 1; }
    landing's shared onset queue exists because ITS siblings are generated in bulk).
    The duration and the curve are the SHARED register tokens, not local values: this rule and
    the landing's are two controllers for one register, so a curve retuned in tokens.css must
-   reach both or the site grows two inks — the divergence Etap 4 exists to close, not open. */
+   reach both or the site grows two inks. `transition-delay` is the one property this rule owns
+   alone — registers.css out-specifies the other three longhands for an ink+press node but
+   deliberately leaves the delay here, so each page keeps its authored `data-d` cadence. */
 @media (prefers-reduced-motion: no-preference) {
   html.reveal-ready .reveal {
     opacity: var(--half-ink);

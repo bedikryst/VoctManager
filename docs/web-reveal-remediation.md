@@ -7,18 +7,27 @@ Companion to `docs/web-landing-guardrails.md` §5, which states the *doctrine* (
 three rules). This file is the *work*: what the doctrine does not yet describe, in what order to
 fix it, and what was measured to decide that.
 
-**How to read this file.** Etapy 0, 1 and 2 are done, and Etap 3 is done but for its last
-sub-stage — each keeps its section, because the measurements and the corrections inside them are
-the reasoning the later stages stand on. `Etap 4` is the next whole thing. The stages are ordered
-by dependency, not by value. `Rejected` is load-bearing: it records ideas that look right and are
+**How to read this file.** Etapy 0–3 are done, and so are 4a and 4b — each keeps its section,
+because the measurements and the corrections inside them are the reasoning the later stages stand
+on. **`Etap 4c` is the next whole thing**, and `Etap 5` after it. The stages are ordered by
+dependency, not by value. `Rejected` is load-bearing: it records ideas that look right and are
 not, so they are not re-proposed.
 
-**A method note earned three times.** Etap 1, Etap 2 and Etap 3 each found the plan's own
-diagnosis wrong once the code was measured (1b was dropped outright; Etap 2's scope turned out to
-be five pages wider than written; Etap 3's "keep the current ink curve" had been invalidated by
-Etap 2 itself). Before implementing any stage below, re-measure its claim against the source —
-the plan is a record of what was true when it was written, and the later stages keep changing what
-the earlier ones concluded.
+**A method note earned four times.** Etapy 1, 2, 3 and 4 each found the plan's own diagnosis
+wrong once the code was measured:
+
+- **1b** was dropped outright — two trigger lines invert neighbour ordering.
+- **Etap 2**'s scope turned out to be five pages wider than written.
+- **Etap 3**'s "keep the current ink curve" had been invalidated by Etap 2 itself.
+- **Etap 4** claimed the subpage press was *blocked* on collapsing the two controllers. It was
+  not: a register reads a moment, not a mechanism, so one selector list covering both trigger
+  classes shipped the whole thing. The same paragraph filed `/press` as a tuning question when
+  the page has **no `.reveal` at all** and can carry no register. Both were one grep away.
+
+Before implementing any stage below, re-measure its claim against the source — the plan is a
+record of what was true when it was written, and the later stages keep changing what the earlier
+ones concluded. The recurring shape of the error is worth naming: **the plan reasons about what
+things are called, and the code is decided by what things are gated on.**
 
 Started 2026-08-01.
 
@@ -226,7 +235,7 @@ Still to do, in the page-by-page sweep (Etap 5) — measured as over or near bud
 | `.final-lede` | eyebrow + h2 + a four-line paragraph in one node |
 | `.bank-card` | several `.bank-row`s under one onset |
 | `.donation-rows` | three tiers under one onset |
-| subpage blocks | `AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows — inherited when Etap 4 brings them into the register system |
+| subpage blocks | `AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows — these were always in the ink register; Etap 4 only made the *other* registers reachable from them |
 
 Checked and **correct as they are** — do not split: `.director-lede` (eyebrow + two-line h2 is one
 utterance, and its paragraphs are already separate nodes), `.ensemble-lede` (same shape).
@@ -363,18 +372,17 @@ line count between 520 and 300 and shove the paragraph under it. The old system 
 risk smeared across a scroll; on a 0.9 s clock it would show as a jump. If it does, narrow the
 range (`--wght-press: 420`) rather than dropping the press.
 
-### The subpage half — deferred, deliberately, into Etap 4
+### The subpage half — deferred into Etap 4, and closed there as 4a
 
-Not fixed in this pass, and this is a decision rather than an omission: adopting `.ink-press` on
-the five subpages means deciding *which* headings deserve a register, because several breath
-headings there are not `.reveal` at all (`koncerty.astro` lines 176 and 284). That judgement is
-Etap 5's, and Etap 4 is where the shared controller that fires it arrives. Until then the site
-runs two heading systems, which is recorded in `tokens.css` beside the keyframes and in
-`09-kinetic.css`, so it cannot be rediscovered as a surprise.
+Not fixed in this pass, deliberately. **One line of the reasoning was wrong, and it inflated the
+deferral:** "several breath headings there are not `.reveal` at all (`koncerty.astro` lines 176
+and 284)". Both are *inside* a `.reveal` ancestor (lines 173 and 281), which the press's
+descendant selector already covers — so they needed no judgement, only a class. The genuinely
+trigger-less headings turned out to be three hero `<h1>`s and all of `/press`. See Etap 4a.
 
 ---
 
-## Etap 3 — one easing per register — 3a/3b done 2026-08-01, 3c open
+## Etap 3 — one easing per register — done 2026-08-01 (3a–3d)
 
 The thesis is "three materials arrive differently", but the registers differed only in duration
 and animated property. The differentiation was in *what* moves, not in *how* — the weaker half of
@@ -571,13 +579,132 @@ landmine. Benign today; the new tokens live in `tokens.css` only.
 
 ## Etap 4 — lift the registers out of the landing bundle
 
-The registers stop at the landing's edge, and twelve other pages speak ink only — with the exact
-trigger this pass diagnosed as wrong. `BaseLayout.astro`'s subpage observer still runs
-`{ rootMargin: "0px 0px -8% 0px", threshold: 0.1 }`, and `landing.ts` explains at length why a
-ratio threshold lets node size set the tempo.
+Split into three on measurement. **4a and 4b are done; 4c is the open one** and is a bigger,
+different thing than the paragraph that used to stand here assumed.
 
-`data-d` covers about half the nodes, so "a subpage's cadence is authored per element, it needs no
-queue" is half true:
+### The dependency the plan asserted, which does not exist
+
+The plan said the subpage press "is blocked on the very controller collapse above". It is not. A
+register reads a **moment**, not a mechanism: `registers.css`'s trigger rule lists both classes
+(`.is-visible` for the landing's queue, `.is-in` for `BaseLayout`'s observer) and fires on
+whichever arrives. Specificity was the only thing to check, and it lands right —
+`html.voct-motion .reveal.ink-press` (0,3,1) out-specifies `base.css`'s
+`html.reveal-ready .reveal` (0,2,0) for the transition longhands, while `base.css` keeps sole
+ownership of `transition-delay`, so each subpage's authored `data-d` cadence survives untouched.
+
+### 4a. The ink press on the subpages — DONE 2026-08-01
+
+Six `@supports` blocks and both keyframe sets deleted; `.ink-press` authored on 22 headings
+across `/koncerty`, `/koncerty/[id]`, `/o-nas`, `/kolofon`, `/kontakt`.
+
+**The press opens at 520, and the choice was measured, not judged.** All six heading sets already
+declare `font-weight: 300` = `--wght-rest`, so only the *origin* was ever in question:
+
+| | travel | clock | rate |
+|---|---|---|---|
+| subpage keyframes as they ran | 640 → 300 = 340 | `entry 0% cover 55%` = 0.55·(vh+h) ≈ 550 px ≈ **1.38 s** | 247 u/s |
+| landing press | 520 → 300 = 220 | `--ink-in` 0.9 s | 244 u/s |
+| **640 on the ink's clock** | 340 | 0.9 s | **378 u/s** |
+
+640 would have run the same headings 1.53× faster than they ran before the change and 1.55× the
+landing's rate — on `clamp(36px, 5.4vw, 76px)` headings with `max-width` in `ch`, i.e. headings
+that wrap. 520 is also the only origin already cleared in a browser against that reflow risk
+(Etap 3c). The two numbers agreeing to within 3 u/s is the argument: the press is one gesture at
+one tempo, and the subpages were already running it.
+
+**`/press` keeps no press, and its keyframes were deleted rather than adopted.** Two findings,
+either one sufficient:
+
+1. **It has zero `.reveal` nodes** — the whole page, measured. No trigger class ever reaches it,
+   so a press there freezes on the pressed weight forever. This is not a tuning question; it is
+   not answerable in CSS at all.
+2. **`pressHeadingBreath` was a defect, not a third opinion about the gesture.** It ended at
+   **380** while `.press-hero-title`, `.press-section-head h2` and `.press-booking-title` all
+   declare `font-weight: 300`. So the page rested on a weight its own stylesheet never named —
+   and only for visitors with JS, motion *and* scroll-driven-animation support; everyone else got
+   300. That is `registers.css`'s stated constraint 1, violated in the code that the constraint
+   was written next to.
+
+Whether `/press` should join the register system at all is an **Etap 5** question about the page.
+
+**Two constraints found while wiring it, both silent when broken.**
+
+- A press that is a **child** of its register node now inherits `--reveal-delay`. Without it a
+  heading inside a `data-d` block would start its stroke up to 0.36 s before the ink around it —
+  the pair reading as two events. `--reveal-delay` is unregistered, so it inherits; the landing
+  sets no `data-d` at all, so its fallback is what runs there.
+- **`vt-nav` composure reached the register node only.** `base.css` strips the transition of
+  every above-the-fold `.reveal` during a ClientRouter swap so the incoming page is snapshotted
+  already written — but a press *inside* one would have played its stroke while the ink beside it
+  snapped. `registers.css` now carries the matching override, last in the file because it ties
+  the other press rules at (0,3,1).
+
+**Deliberately not covered:** the three bare hero `<h1>`s (`/o-nas`, `/kontakt`, `/koncerty`).
+Their `.reveal`s sit on inner `<span>`s — *below* the heading — and the press reads triggers from
+itself or an ancestor. Etap 5's call.
+
+### 4b. Lead and light out of the landing bundle — DONE 2026-08-01
+
+`.reveal-rule` / `-v` and `.reveal-light` move to `styles/registers.css` with both trigger
+classes, which is what makes the plan's own stated goal (the lead register on `/koncerty`'s entry
+rules, the light on `/o-nas`'s portrait) possible at all — you cannot adopt a register that lives
+in another page's bundle. Two guardrails learned on the landing were written into the mechanism's
+own comments, because they travel with it: anchor a lead rule to the **top** of its element
+(Etap 1a), and measure a veil's **real delta against its host's ground** before granting the
+light register (Etap 3d).
+
+### The ink register did NOT move, and this is the finding
+
+The two ink definitions differ in their **gate**, not their class name — and the plan only ever
+looked at the class name.
+
+| | hidden state | un-gated by | trigger |
+|---|---|---|---|
+| landing | bare `.reveal` | `index.astro`, `html:not(.voct-motion) .voct-landing …` | `.is-visible` |
+| every other page | `html.reveal-ready .reveal` | `base.css`, `html:not(.voct-motion) .reveal` | `.is-in` |
+
+`reveal-ready` is the same class that **starts `BaseLayout`'s observer**, and the landing sets
+`reveal={false}` precisely to keep that observer off its nodes. So there are only two ways to
+merge the gate, and both are controller decisions:
+
+- give the landing `reveal-ready` → `BaseLayout`'s observer runs on landing nodes *alongside*
+  `landing.ts`'s queue, and whichever reaches a node first sets its cadence. The landing's
+  authored 220 ms unison is gone.
+- drop the gate to a bare `.reveal` → any future page with `reveal={false}` hides its copy at
+  half-ink with nothing left to reveal it. Silent, and permanent.
+
+Hence 4c below. Both definitions now carry a comment saying what they are waiting on, so the
+duplicate cannot be rediscovered as an oversight.
+
+### The cascade measurement 4b actually turned on
+
+`base.css` already records this class of bug biting once, with the note that **dev did not show
+it** (Vite injects in import order; Rollup does not). Measured from `dist/` rather than assumed:
+
+```
+/          VaultIsland.css [tokens + registers] → index.css [landing] → base.css
+subpages   VaultIsland.css [tokens + registers] → base.css → vault.css → page.css
+```
+
+`registers.css` is emitted **first on every page**. So every rule moved into it lost every
+equal-specificity tie it used to win, and the moved rules are written to win on **specificity**
+instead. The one that matters: the ink+lead pairing at (0,3,0) beats `base.css`'s `data-d` offset
+at (0,2,0) — which is also the right order of authority, since a stagger between siblings is
+decoration and rule-then-ink is the gesture. **Verify any further move against the emitted CSS,
+never against the dev server.**
+
+### 4c — one controller — OPEN, and it is not a lift
+
+`BaseLayout.astro`'s observer runs `{ rootMargin: "0px 0px -8% 0px", threshold: 0.1 }`;
+`landing.ts` runs `-12%` with a shared 220 ms onset queue and a `settle()` state machine.
+
+The ratio threshold is a real defect and worth the measurement: a node fires when
+`top = 0.92·vh − 0.1·h`, so on a 900 px viewport a 40 px node fires at 91.6 % vh and an 800 px
+node at 83 % vh — **node size sets the tempo**, which is the thing `landing.ts` was written to
+avoid. (Latent, not yet reachable: a `.reveal` taller than ~8280 px could never reach ratio 0.1
+and would never fire at all.)
+
+But "one controller" also means one delay policy, and `data-d` covers about half the nodes:
 
 | page | `.reveal` | `data-d` |
 |---|---|---|
@@ -587,27 +714,14 @@ queue" is half true:
 | `kolofon.astro` | 22 | 14 |
 | `kontakt.astro` | 15 | 7 |
 
-And `data-d` tops out at 0.36 s in 90 ms steps — a different tempo from the 220 ms queue for the
-same gesture.
+`data-d` tops out at 0.36 s in 90 ms steps against the queue's 220 ms. So the collapse is a
+**retune of five pages' cadence and a decision about 94 authored attributes**, plus the gate
+choice above. That is Etap 5's kind of judgement, not Etap 4's kind of move, and it may well
+belong *after* the sweep decides which nodes deserve a register at all.
 
-Work: move the three register definitions from `landing/06-footer.css` into
-`styles/registers.css` — which **already exists** since Etap 2 and is already loaded by
-`BaseLayout` on every page — collapse the duplicate `.reveal` definition and its two trigger
-classes (`is-in` vs `is-visible`) into one controller, and adopt the lead register on
-`/koncerty`'s entry rules and the light register on `/o-nas`'s portrait. The duplication was
-justified while the two definitions differed; since this pass they express the same register, and
-keeping both is now pure cost.
-
-**Carried in from Etap 2, and the reason it lands here:** five subpages still scrub a reversible
-heading weight in CSS (`@keyframes headingBreath` + `animation-timeline: view()` in
-`koncerty.astro`, `koncerty/[id].astro`, `AboutPage.astro`, `kolofon.astro`, `kontakt.astro`,
-plus `press.astro`'s own `pressHeadingBreath`). They take `.ink-press` instead, which deletes six
-`@supports` blocks and both keyframe sets. It waits for this stage because the press fires on the
-register's trigger class and subpages fire `.is-in` — so the adoption is blocked on the very
-controller collapse above. Note the tuning question that comes with it: the subpage keyframes
-open at **640** where the landing's press opens at 520, and `.press-*` runs the opposite
-direction (300 → 380). One of those is the site's gesture; deciding which is part of the work,
-not a detail to preserve three ways.
+Also waiting on nothing in particular, and cheap once 4c lands: `.is-visible` is shared with
+three unrelated React components (`.scroll-top`, `.movement-spine`, `.gratitude`/`.failure`),
+while `.is-in` collides with nothing. If a single name is chosen, that is the argument.
 
 ---
 
@@ -617,6 +731,16 @@ Only after 1–4, because the sweep is a judgement about *which nodes deserve a 
 judgement is worthless while the registers themselves mistime. Per page: what should gain a
 register, what should lose one, what should change register. Record decisions here as they are
 made, then consolidate into the guardrails when the sweep closes.
+
+Questions already banked for it, each arrived at by measuring something else:
+
+| question | where it came from |
+|---|---|
+| **Should `/press` join the register system at all?** It has zero `.reveal` nodes, so it speaks none of the site's entrance language. Its heading breath was deleted in 4a rather than converted. | Etap 4a |
+| **Should `.final-support` carry a light register?** Under its own 0.78–0.88 gradient the photograph sits at 26–41/255 at rest; there is no visible image there to light, and no veil alpha rescues it without breaking "never blank, only unlit". | Etap 3d |
+| **Do the three bare hero `<h1>`s want a press?** `/o-nas`, `/kontakt`, `/koncerty` — their `.reveal`s are on inner `<span>`s, below the heading, so a press needs the reveals restructured, not just a class. | Etap 4a |
+| **The tall-node splits**, carried from 1e: `.final-lede`, `.bank-card`, `.donation-rows`, and the subpage blocks (`AboutPage` `.prose measure`, `.board-card`, `koncerty/[id]` rows) now that they are in the register system. | Etap 1e |
+| **Should `/koncerty`'s entry rules take the lead register, and `/o-nas`'s portrait the light?** Possible since 4b; whether they *should* is this sweep's call. | Etap 4b |
 
 ---
 

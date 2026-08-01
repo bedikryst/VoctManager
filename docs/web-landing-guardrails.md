@@ -224,9 +224,9 @@ is a *shorthand*: a node that carries two register dimensions (`.section-title` 
 full ink instead of inking — nothing errors, the page just loses a gesture. Declare the pair as
 longhands (`transition-property: opacity, --wght` …), which also leaves `transition-delay` alone
 so an ink+lead node keeps its 0.18 s. Two corollaries, both found the same day: a new register
-rule almost always out-specifies `06-footer.css`'s `:is(.reveal, .reveal-light).is-settled
-{ transition: none }` (0,2,0), so it must ship its own settled override or the transition never
-releases; and anything the register hides or offsets must be declared **inside**
+rule almost always out-specifies the `.is-settled { transition: none }` releases (0,2,0), so it
+must ship its own settled override or the transition never releases; and anything the register
+hides or offsets must be declared **inside**
 `html.voct-motion`, because `index.astro`'s no-motion gate neutralises `opacity` and `transform`
 and nothing else — a weight, a mask position or a clip declared outside it strands every node at
 its start value for a no-JS visitor. Separately, `--wght` was registered twice with different
@@ -281,7 +281,11 @@ actually carrying **26 of the landing's 30 entrances**: a generic `translateY(42
 fade-up. The authored moments (manifest sweep, knot draw, coda score) were islands in it.
 
 The site has **three materials**, and each one arrives in its own way. Every entrance belongs to
-exactly one register; the classes are defined in `styles/landing/06-footer.css`.
+exactly one register. The mechanisms live in `styles/registers.css`, which `BaseLayout` loads on
+every page, so a register is available to any page that wants one. The single exception is the
+ink register's own hidden state, still declared once per controller — `landing/06-footer.css`
+for the landing, `base.css` for every other page — because the two differ in their *gate* and
+merging it means choosing one observer for the whole site.
 
 | Register | Class | Material | Behaviour |
 |---|---|---|---|
@@ -296,9 +300,16 @@ so a heading's stroke settles as its ink darkens — a nib, which is what a head
 with. It never fires alone and never lands on body copy. Its one hard constraint: the element's
 `font-weight` must equal `--wght-rest` (`styles/tokens.css`, with `--wght-press`), because under
 motion the axis overrides `font-weight` outright and any gap between them is invisible until
-motion is turned off. Note what sharing the ink's clock implies: the press put a **high-acuity**
-channel (stem width, advance widths, reflow) on a curve chosen for a low-acuity one (opacity from
-0.44). That is what `--ease-ink` is for.
+motion is turned off. `/press` broke exactly that rule for months — its own keyframes ended at
+380 while every rule declared 300 — which is how the constraint earned its place here. Note what
+sharing the ink's clock implies: the press put a **high-acuity** channel (stem width, advance
+widths, reflow) on a curve chosen for a low-acuity one (opacity from 0.44). That is what
+`--ease-ink` is for.
+
+**A register needs a trigger, and a page that runs no reveals cannot be given one by CSS.**
+`.ink-press` and the two other registers all read a trigger class an observer puts on the node
+or an ancestor. A page with no `.reveal` anywhere — `/press` today — would strand a press on its
+opening weight forever. Check the page has a controller before authoring a register onto it.
 
 Plus one **ambient** layer that is not an entrance at all and is governed by nothing here: Ken
 Burns, parallax, the flames' breathing, the knot's audio/scroll intensity, the footer clock's
@@ -308,8 +319,9 @@ visitor crosses once and leaves behind, so a reversible value that tracks positi
 reading. The **editorial** headings were on that same loop until 2026-08 and that was a defect,
 not ambience: an entrance is not a position, and scrolling back up thickened a heading the page
 had already finished writing. Anything that is triggered by *arrival* belongs to a register and
-must be one-shot. (Five subpages still scrub theirs; that is tracked, not accepted — see
-`docs/web-reveal-remediation.md` Etap 4.)
+must be one-shot. The five subpages that ran the same defect from a scroll timeline took
+`.ink-press` in 2026-08; there is one press on the site now and no scroll-driven weight left
+outside the hero.
 
 Three rules that generate the rest:
 
