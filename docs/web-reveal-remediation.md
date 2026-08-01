@@ -7,10 +7,15 @@ Companion to `docs/web-landing-guardrails.md` §5, which states the *doctrine* (
 three rules). This file is the *work*: what the doctrine does not yet describe, in what order to
 fix it, and what was measured to decide that.
 
-**How to read this file.** `Etap 0` is done. `Etap 1` is the next thing and the one that answers
-the complaint that started this ("some reveals arrive already finished"). Etapy 2–5 are ordered
-by dependency, not by value — do not skip 1, because 2 and 3 are retuned against it. `Rejected`
-is load-bearing: it records ideas that look right and are not, so they are not re-proposed.
+**How to read this file.** Etapy 0, 1 and 2 are done — each keeps its section, because the
+measurements and the corrections inside them are the reasoning the later stages stand on.
+`Etap 3` is the next thing. The stages are ordered by dependency, not by value. `Rejected` is
+load-bearing: it records ideas that look right and are not, so they are not re-proposed.
+
+**A method note earned twice.** Both Etap 1 and Etap 2 found the plan's own diagnosis too
+narrow once the code was measured (1b was dropped outright; Etap 2's scope turned out to be
+five pages wider than written). Before implementing any stage below, re-measure its claim
+against the source — the plan is a record of what was true when it was written.
 
 Started 2026-08-01.
 
@@ -244,22 +249,118 @@ too present; they were set to clear a perception threshold, not to a taste judge
 
 ---
 
-## Etap 2 — fold the heading breath into the ink gesture
+## Etap 2 — fold the heading breath into the ink gesture — done 2026-08-01
 
-`setupKinetic` scrubs `wght 520 → 320` against scroll on `.ensemble h2`, `.path h2`,
-`.section-title`, `.final-support h2` — every one of which *is* a `.reveal` node or sits inside
-one. So a heading is simultaneously inked (time-based, one-shot) and re-weighted (scroll-scrubbed,
-**reversible** — scroll up and it thickens again). That is rule 3 of the doctrine broken, and the
-same "un-revealing what it revealed" defect the manifest sweep removed with its settled floor.
+The diagnosis held; **the scope in the plan did not**, which is the second time this file has
+been wrong about the size of its own problem (see 1b). Recorded first, because it is the part a
+later reader needs.
 
-The fix is also the answer to "the ink event is hard to see": drive `wght` **from `.is-visible`,
-on the ink clock**, via the registered `--wght` with a transition over `--ink-in`. The nib presses
-and lifts as the ink darkens — one gesture, more salient than opacity alone, and strictly cheaper
-than the current per-frame rAF write. The hero breath stays scroll-scrubbed: it is keyed to the
-*threshold*, which is an authored moment, not an entrance.
+### What the plan said, and what the code said
 
-Also update `web-landing-guardrails.md` §5 — its ambient list (Ken Burns, parallax, flames, knot)
-omits the heading breath, which is why this survived the rewrite.
+The plan named `setupKinetic`'s four selectors — `.ensemble h2`, `.path h2`, `.section-title`,
+`.final-support h2` — as the whole of the defect. Measured:
+
+- Those four selectors are **three nodes**: `.path h2` and `.section-title` are the same element
+  (`PathSection.astro`). Two of the three are *children* of the `.reveal` node, not the node.
+- The identical defect — a reversible, scroll-scrubbed `wght` on nodes that are being inked —
+  runs on **five subpages in pure CSS**, through `@keyframes headingBreath` +
+  `animation-timeline: view()` with `animation-range: entry 0% cover 55%`: `/koncerty`
+  (`.station-title` is literally `class="station-title reveal"`), `/koncerty/[id]`, `/o-nas`,
+  `/kolofon`, `/kontakt`, plus `/press` with its own 300→380 keyframes.
+- `09-kinetic.css` claimed "Removed; JS is the only driver". True of the landing, false as a
+  statement about the site — and `@keyframes headingBreath` sits in the *shared* `tokens.css`
+  precisely because those five pages still run it.
+
+So a landing-only fix would have left the defect on 12 of 13 pages and opened a divergence.
+See "the subpage half" below for how that was sequenced.
+
+### The measurement
+
+`p = clamp01((vh − rect.top) / (0.75·vh))`, `wght = 520 − 200p`:
+
+| moment | position | wght |
+|---|---|---|
+| breath starts | top at 100 % vh | 520 |
+| **ink triggers** | 88 % vh | 488 — 16 % of the breath already spent |
+| **ink ends** (0.9 s ≈ 390 px) | ~45 % vh | 373 — the breath is 73 % done |
+| breath ends | 25 % vh | 320 |
+
+The breath's travel is 0.75 vh = 675 px = **1.69 s** at reference pace: inside the 2.0 s ceiling,
+but 1.9× the ink's clock and aligned with it at neither end. Reversibility was the headline
+defect; the mistiming is the one that made the two motions read as unrelated.
+
+Two smaller truths fell out: the CSS declares `font-weight: 300` on all three headings while the
+JS settled at **320**, so the stylesheet lied to anyone who scrolled — and the direction 520→320
+does *not* cancel the ink, as it first appears. Ink mass ≈ opacity × stroke goes 0.44·520 = 229 →
+1.0·300 = 300, still rising ~1.3×, while the letterform changes shape. The authored direction was
+kept; only its clock changed.
+
+### What was built
+
+- **`styles/registers.css`** (new, loaded by `BaseLayout` on every page) — the `.ink-press`
+  mechanism. Opt-in per element, so no paragraph ever breathes. `--wght` travels
+  `--wght-press` (520) → `--wght-rest` (300) over `--ink-in` with the ink's own easing, driven
+  by `.is-visible` on the press node **or on its `.reveal` ancestor**. Gated on
+  `html.voct-motion`, so no-JS and reduced-motion visitors render the plain `font-weight` and
+  are never left on the pressed weight. This is Etap 4's destination sheet, seeded early on
+  purpose: a second heading system in `06-footer.css` would have to be moved again in a month.
+- **The rest weight is now 300, not 320** — the value the three type rules already declared. It
+  is one token (`--wght-rest`) and it is also correct for every subpage heading
+  (`.station-title`, `.rite-head h2`, `.coda h2` … all `font-weight: 300`), which is what makes
+  it the site's number rather than the landing's. If the eye disagrees, that is a one-line flip.
+- **`landing.ts`** — `setupKinetic` → `setupHeroBreath`, hero only. The hero stays scrubbed and
+  that is not an oversight: it is keyed to the *threshold*, a moment the visitor crosses and
+  leaves, so tracking position is the honest reading. Removing the headings also took 3
+  `getBoundingClientRect()` per frame out of a loop that runs the length of the page.
+- **`wght()` now writes only on a real change.** Separate finding, same file: past 90 vh the
+  hero's scrubbed value is pinned, but the loop kept re-assigning an identical inline
+  declaration to `.hero-title` and `.hero-title em` on every scroll frame for the rest of the
+  page — which still dirties style. One comparison removes it.
+- **`@property --wght` was registered twice** — `tokens.css` (`inherits: true`, 400) and
+  `09-kinetic.css` (`inherits: false`, 320) — so the effective descriptors were a function of
+  bundle order, not of anything in the source. Collapsed to one registration in `tokens.css`
+  with `inherits: false`, which is safe **only** because every reader sets the property on the
+  same element that reads it; `font-variation-settings` is the inherited property, and it
+  inherits its already-substituted value. Declaring `--wght` on a wrapper and reading it on a
+  child would now fail silently.
+- **Dead registrations deleted**: `--wght-em` and `--wght-add`, neither referenced anywhere
+  (same reasoning as Etap 0). `--wght-add`'s comment described JS that splits the wordmark's
+  letters for cursor reactivity — there is no such code in `SiteFooter.tsx`; `--wght-mark`'s
+  only reader is the footer clock's 9 s pulse. Comment corrected rather than deleted.
+
+### Three implementation traps, all silent when broken
+
+1. **`transition` is a shorthand.** `.section-title` is both the press and the `.reveal` node,
+   so a second `transition` declaration would have *replaced* the ink's opacity transition
+   instead of adding to it — the heading would have snapped to full ink. The combined rule uses
+   longhands, which also leaves `transition-delay` untouched so a future ink+lead+press node
+   keeps the lead's 0.18 s.
+2. **`is-settled` strips transitions, and the press rules out-specify it.** `06-footer.css`'s
+   `:is(.reveal, .reveal-light).is-settled { transition: none }` is (0,2,0); the press rules are
+   (0,3,1) and would have kept the pair hot for the session. `registers.css` carries its own
+   settled override at matching specificity, placed last.
+3. **The `html:not(.voct-motion)` gate in `index.astro` neutralises `opacity` and `transform`
+   only.** A weight declared outside `html.voct-motion` would have stranded every heading at 520
+   for a no-JS visitor. The press therefore declares `font-variation-settings` *inside* the gate,
+   the same contract `.reveal-rule::before` and `.reveal-light` already follow.
+
+### Needs eyes
+
+`font-variation-settings` changes advance widths, so a press re-lays-out its heading each frame.
+`.ensemble h2` has a pinned `<br />` and `.section-title` is short, but **`.final-copy h2`**
+("Niech muzyka ma swoje miejsce.", `clamp(48px, 6.5vw, 108px)`, no pinned break) could change
+line count between 520 and 300 and shove the paragraph under it. The old system carried the same
+risk smeared across a scroll; on a 0.9 s clock it would show as a jump. If it does, narrow the
+range (`--wght-press: 420`) rather than dropping the press.
+
+### The subpage half — deferred, deliberately, into Etap 4
+
+Not fixed in this pass, and this is a decision rather than an omission: adopting `.ink-press` on
+the five subpages means deciding *which* headings deserve a register, because several breath
+headings there are not `.reveal` at all (`koncerty.astro` lines 176 and 284). That judgement is
+Etap 5's, and Etap 4 is where the shared controller that fires it arrives. Until then the site
+runs two heading systems, which is recorded in `tokens.css` beside the keyframes and in
+`09-kinetic.css`, so it cannot be rediscovered as a surprise.
 
 ---
 
@@ -303,12 +404,24 @@ queue" is half true:
 And `data-d` tops out at 0.36 s in 90 ms steps — a different tempo from the 220 ms queue for the
 same gesture.
 
-Work: move the three register definitions from `landing/06-footer.css` into a shared sheet
-(`styles/registers.css`, imported by `base.css`), collapse the duplicate `.reveal` definition and
-its two trigger classes (`is-in` vs `is-visible`) into one controller, and adopt the lead register
-on `/koncerty`'s entry rules and the light register on `/o-nas`'s portrait. The duplication was
+Work: move the three register definitions from `landing/06-footer.css` into
+`styles/registers.css` — which **already exists** since Etap 2 and is already loaded by
+`BaseLayout` on every page — collapse the duplicate `.reveal` definition and its two trigger
+classes (`is-in` vs `is-visible`) into one controller, and adopt the lead register on
+`/koncerty`'s entry rules and the light register on `/o-nas`'s portrait. The duplication was
 justified while the two definitions differed; since this pass they express the same register, and
 keeping both is now pure cost.
+
+**Carried in from Etap 2, and the reason it lands here:** five subpages still scrub a reversible
+heading weight in CSS (`@keyframes headingBreath` + `animation-timeline: view()` in
+`koncerty.astro`, `koncerty/[id].astro`, `AboutPage.astro`, `kolofon.astro`, `kontakt.astro`,
+plus `press.astro`'s own `pressHeadingBreath`). They take `.ink-press` instead, which deletes six
+`@supports` blocks and both keyframe sets. It waits for this stage because the press fires on the
+register's trigger class and subpages fire `.is-in` — so the adoption is blocked on the very
+controller collapse above. Note the tuning question that comes with it: the subpage keyframes
+open at **640** where the landing's press opens at 520, and `.press-*` runs the opposite
+direction (300 → 380). One of those is the site's gesture; deciding which is part of the work,
+not a detail to preserve three ways.
 
 ---
 

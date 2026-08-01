@@ -7,16 +7,17 @@
  *
  *  Owns: reveal (`.is-visible`/`.is-settled` across the four register classes, paced by one
  *  shared onset queue), rite-glow (cursor spotlight), smooth-details (animated accordion),
- *  Lenis anchor smooth-scroll, the kinetic variable-font choreography (hero breath, heading
- *  breath) on a single rAF scroll loop, the manifest light (one-shot `.is-lit` per stanza —
- *  the sweep itself is a CSS transition), the interlude breath (scroll-velocity knot bloom
- *  while the ambient is silent) and the static-section interactions (IBAN copy, vault and
- *  video triggers). (The coda's old per-letter wave is gone — the "Ostatni takt" coda draws
- *  itself via the shared .knot-draw choreography, no JS of its own.)
+ *  Lenis anchor smooth-scroll, the hero's variable-font breath on a single rAF scroll loop,
+ *  the manifest light (one-shot `.is-lit` per stanza — the sweep itself is a CSS transition),
+ *  the interlude breath (scroll-velocity knot bloom while the ambient is silent) and the
+ *  static-section interactions (IBAN copy, vault and video triggers). (The coda's old
+ *  per-letter wave is gone — the "Ostatni takt" coda draws itself via the shared .knot-draw
+ *  choreography, no JS of its own.)
  *
- *  KNOWN, TRACKED: the heading breath is the one motion here that is not in any register —
- *  it scrubs `wght` on nodes that are simultaneously being inked, and it is reversible. It is
- *  scheduled to be folded INTO the ink gesture (docs/web-reveal-remediation.md, Etap 2).
+ *  The editorial headings' weight is NOT driven here any more: it is the ink register's own
+ *  second dimension (`.ink-press`, styles/registers.css). Nothing on this page scrubs a
+ *  weight against scroll except the hero, which is keyed to the threshold rather than to an
+ *  entrance.
  *
  *  NOT owned here (deliberately): parallax (the global BaseLayout `[data-parallax]` controller,
  *  the fixed cross-browser one), chrome tint (the StickyHeader island owns it via React state),
@@ -45,8 +46,13 @@ const breath3 = (p: number, a: number, mid: number, b: number, midAt = 0.55): nu
   return mid + (b - mid) * ((p - midAt) / (1 - midAt));
 };
 
+/** Writes only on a real change. Past the hero's 90vh the scrubbed value is pinned, yet the
+ *  scroll loop keeps running for the rest of the page — and re-setting an identical inline
+ *  declaration still dirties the element's style on every one of those frames. */
 const wght = (el: HTMLElement, value: number): void => {
-  el.style.fontVariationSettings = `"wght" ${Math.round(value)}`;
+  const next = `"wght" ${Math.round(value)}`;
+  if (el.style.fontVariationSettings === next) return;
+  el.style.fontVariationSettings = next;
 };
 
 const cleanups: Array<() => void> = [];
@@ -334,49 +340,30 @@ function setupLenisAnchors(): void {
   cleanups.push(() => document.removeEventListener("click", onClick, true));
 }
 
-// ── Kinetic typography: variable-font breath scrubbed against scroll (one rAF loop) ──────────
-function setupKinetic(root: HTMLElement, reduce: boolean): void {
+// ── Hero breath: the only weight axis on the page scrubbed against scroll ───────────────────
+// Scrubbed deliberately, and this is the one place it is defensible: the hero's weight is keyed
+// to the THRESHOLD — an authored moment the visitor crosses once and leaves behind — so a value
+// that tracks position, and runs backwards when they scroll back, is the honest reading.
+//
+// DO NOT extend this loop to the editorial headings. Their weight is part of the ink register
+// (`.ink-press`, styles/registers.css) and must stay one-shot: an entrance is not a position.
+// Scrubbed, it ran over 0.75vh (~1.7s at reading pace) against the ink's 0.9s, opened 12% of the
+// viewport ahead of the ink's own trigger, and reversed on scroll-up — a page un-writing what it
+// had already written.
+function setupHeroBreath(root: HTMLElement, reduce: boolean): void {
   if (reduce) return;
 
   const heroTitle = root.querySelector<HTMLElement>(".hero-title");
+  if (!heroTitle) return;
   const heroEm = root.querySelector<HTMLElement>(".hero-title em");
-  const headings = Array.from(
-    root.querySelectorAll<HTMLElement>(
-      ".ensemble h2, .path h2, .section-title, .final-support h2",
-    ),
-  );
-
-  if (!heroTitle && !headings.length) {
-    return;
-  }
 
   let ticking = false;
   const update = (): void => {
     ticking = false;
     const vh = window.innerHeight || document.documentElement.clientHeight;
-    const scrollY = window.scrollY;
-
-    // READ phase — gather every layout measurement up front. Mixing a getBoundingClientRect()
-    // read after a font-variation-settings write (below) forces a synchronous reflow on each
-    // iteration; batching the reads keeps the whole frame to a single layout pass.
-    const headingRects = headings.map((h) => h.getBoundingClientRect());
-
-    // WRITE phase — only style mutations from here down.
-    // Hero "breath" — scrubbed against the first 90vh of root scroll.
-    if (heroTitle) {
-      const p = clamp01(scrollY / (vh * 0.9));
-      wght(heroTitle, breath3(p, 540, 380, 300));
-      if (heroEm) wght(heroEm, breath3(p, 620, 380, 300));
-    }
-
-    // Editorial headings — heavier on entry, settling to 320 as they cross the viewport.
-    headings.forEach((h, i) => {
-      const rect = headingRects[i];
-      if (rect.bottom < -100 || rect.top > vh + 100) return;
-      const p = clamp01((vh - rect.top) / (vh * 0.75));
-      wght(h, 520 - 200 * p);
-    });
-
+    const p = clamp01(window.scrollY / (vh * 0.9));
+    wght(heroTitle, breath3(p, 540, 380, 300));
+    if (heroEm) wght(heroEm, breath3(p, 620, 380, 300));
   };
 
   const onScroll = (): void => {
@@ -614,7 +601,7 @@ function bind(): void {
   setupRiteGlow(root, reduce);
   setupSmoothDetails(root);
   setupLenisAnchors();
-  setupKinetic(root, reduce);
+  setupHeroBreath(root, reduce);
   setupManifestLight(root, reduce);
   setupInterludeBreath(root, reduce);
   setupInteractions(root);

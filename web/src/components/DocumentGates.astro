@@ -90,9 +90,9 @@
       // Read the preference per call, not once at load — it can change mid-session.
       var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       if (!reduced) {
-        // Global, and only says "JS is live and motion is allowed". The landing is currently its
-        // only reader (landing.css ships with "/" alone, so the class is inert elsewhere), but
-        // the fact it states is not landing-specific.
+        // Global, and only says "JS is live and motion is allowed". Read by the landing's
+        // register system (landing.css ships with "/" alone) and, on every page, by
+        // styles/registers.css — which is the direction the rest of the registers are moving.
         root.classList.add("voct-motion");
         if (root.getAttribute("data-reveal") === "on") root.classList.add("reveal-ready");
       }

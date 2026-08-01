@@ -283,6 +283,9 @@
     color: rgba(244, 241, 233, 0.5);
   }
 
+  /* `.ink-press` heading: this weight is the press's landing point, so it must stay equal to
+     --wght-rest (styles/registers.css). Motion visitors never see it — the axis is driven —
+     which is exactly why a change here goes unnoticed until motion is off. */
   .ensemble-copy h2 {
     margin: 22px 0 32px;
     font-family: var(--serif);
@@ -767,6 +770,7 @@
     align-items: end;
   }
 
+  /* `.ink-press` heading — weight must equal --wght-rest, as for `.ensemble-copy h2` above. */
   .final-copy h2 {
     margin: 0;
     font-family: var(--serif);

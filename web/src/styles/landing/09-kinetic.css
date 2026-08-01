@@ -6,35 +6,18 @@
      CSS-WG L5 primitives: @property, animation-timeline, view-timeline.
      ───────────────────────────────────────────────────────────────────────── */
 
-  @property --wght {
-    syntax: "<number>";
-    inherits: false;
-    initial-value: 320;
-  }
+  /* `--wght` belongs to styles/tokens.css and must be registered there and nowhere else —
+     duplicate `@property` rules for one name resolve by bundle order, which is not something
+     the source states. This file is landing-only; the axis is not. */
 
-  @property --wght-em {
-    syntax: "<number>";
-    inherits: false;
-    initial-value: 360;
-  }
-
-  /* Wordmark "VoctEnsemble" + zegar w footerze potrzebują wht który CASCADUJE
-     do dzieci (litery wordmarka splitowane przez JS przy cursor-reactive
-     desktop). Stąd osobny --wght-mark z inherits: true. Reszta strony używa
-     scoped --wght (inherits: false) dla taniej invalidation. */
+  /* The footer clock's 9s presence pulse (06-footer.css) is the only reader. It sets and
+     reads the property on one element, so `inherits: true` buys nothing today — it is kept
+     because the wordmark beside it is the obvious next thing to breathe, and flipping the
+     descriptor later is a silent change of behaviour rather than a compile error. */
   @property --wght-mark {
     syntax: "<number>";
     inherits: true;
     initial-value: 320;
-  }
-
-  /* Per-letter bonus dla wordmarka — JS pisze tu wartość zależną od dystansu
-     kursora do litery. Scoped per element (inherits: false) → write na jedną
-     literę inwaliduje tylko ten węzeł, nie całe drzewo. */
-  @property --wght-add {
-    syntax: "<number>";
-    inherits: false;
-    initial-value: 0;
   }
 
   /* Manifest "ink emergence" — pozycja krawędzi mask-gradientu który przechodzi
@@ -50,12 +33,19 @@
     initial-value: -14%;
   }
 
-  /* ── Single kinetic driver ─────────────────────────────────────────────────
-     The hero breath and editorial-heading settle are owned by ONE
-     system: scripts/landing.ts (setupKinetic), which writes inline
-     `font-variation-settings` on a rAF scroll loop with touch heuristics and
-     batched reads. The earlier `@supports (animation-timeline: scroll())` CSS
-     choreography here was written when native scroll-driven animations were
-     unsupported — by 2026 they run in Chrome/Edge/Firefox, so both systems were
-     driving the same glyphs every frame (the CSS animation churned --wght while
-     the JS inline writes won the cascade). Removed; JS is the only driver. */
+  /* ── Where the landing's weight axes are driven ────────────────────────────
+     Two drivers, one each, and neither of them is in this file:
+
+       hero breath      scripts/landing.ts (setupHeroBreath) — inline
+                        `font-variation-settings` on a rAF scroll loop. Scrubbed on
+                        purpose: it is keyed to the THRESHOLD, an authored moment the
+                        visitor leaves behind, not to an entrance.
+       heading press    `.ink-press` in styles/registers.css — the ink register's own
+                        clock. Was a scrubbed settle here until 2026-08; scrubbing made
+                        it reversible, so scrolling back up un-wrote a written heading.
+
+     An earlier `@supports (animation-timeline: scroll())` block here drove the same
+     glyphs as the JS every frame (the CSS animation churned --wght while the inline
+     writes won the cascade) and was removed. NOTE that `@keyframes headingBreath` in
+     tokens.css is NOT dead: five subpages still run the scrubbed version, and they
+     adopt the press in Etap 4 (docs/web-reveal-remediation.md). */

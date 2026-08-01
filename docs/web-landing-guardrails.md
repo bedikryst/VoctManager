@@ -214,6 +214,23 @@ old font files without it silently drops that page to a system font.
 **`--sans` is declared in two files**: `styles/tokens.css` and `styles/landing/01-foundation.css`.
 Changing one leaves the landing on the old face.
 
+**A register can never be added with a bare `transition` declaration, and `@property` must be
+registered exactly once.** Both were live at the same time and both fail silently. `transition`
+is a *shorthand*: a node that carries two register dimensions (`.section-title` is the ink node
+*and* the press node) gets the second declaration REPLACING the first, so the heading snaps to
+full ink instead of inking — nothing errors, the page just loses a gesture. Declare the pair as
+longhands (`transition-property: opacity, --wght` …), which also leaves `transition-delay` alone
+so an ink+lead node keeps its 0.18 s. Two corollaries, both found the same day: a new register
+rule almost always out-specifies `06-footer.css`'s `:is(.reveal, .reveal-light).is-settled
+{ transition: none }` (0,2,0), so it must ship its own settled override or the transition never
+releases; and anything the register hides or offsets must be declared **inside**
+`html.voct-motion`, because `index.astro`'s no-motion gate neutralises `opacity` and `transform`
+and nothing else — a weight, a mask position or a clip declared outside it strands every node at
+its start value for a no-JS visitor. Separately, `--wght` was registered twice with different
+`inherits` and `initial-value` (`tokens.css` and `landing/09-kinetic.css`), which made the
+effective descriptors a function of bundle order; one registration, in the shared sheet, and
+`inherits: false` is only safe while every reader sets the property on the element that reads it.
+
 **WebGL hero: abandoned.** Do not re-pitch.
 
 ---
@@ -270,8 +287,23 @@ exactly one register; the classes are defined in `styles/landing/06-footer.css`.
 | **Light** | `.reveal-light` | photography | a veil of the section's own dark lifts |
 | *(cue)* | `.reveal-cue` | — | no appearance; triggers authored choreography |
 
+Ink has a **second dimension**, opt-in per element and not a fourth register: `.ink-press`
+(`styles/registers.css`) travels the variable-font weight axis 520 → 300 on the ink's own clock,
+so a heading's stroke settles as its ink darkens — a nib, which is what a heading is written
+with. It never fires alone and never lands on body copy. Its one hard constraint: the element's
+`font-weight` must equal `--wght-rest`, because under motion the axis overrides `font-weight`
+outright and any gap between them is invisible until motion is turned off.
+
 Plus one **ambient** layer that is not an entrance at all and is governed by nothing here: Ken
-Burns, parallax, the flames' breathing, the knot's audio/scroll intensity.
+Burns, parallax, the flames' breathing, the knot's audio/scroll intensity, the footer clock's
+9 s presence pulse, and the hero's weight breath. That last one is the only weight on the page
+still scrubbed against scroll, and deliberately so — it is keyed to the *threshold*, a moment the
+visitor crosses once and leaves behind, so a reversible value that tracks position is the honest
+reading. The **editorial** headings were on that same loop until 2026-08 and that was a defect,
+not ambience: an entrance is not a position, and scrolling back up thickened a heading the page
+had already finished writing. Anything that is triggered by *arrival* belongs to a register and
+must be one-shot. (Five subpages still scrub theirs; that is tracked, not accepted — see
+`docs/web-reveal-remediation.md` Etap 4.)
 
 Three rules that generate the rest:
 

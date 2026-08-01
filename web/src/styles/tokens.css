@@ -105,12 +105,30 @@
    `prefers-reduced-motion` / `pointer: coarse` queries are orthogonal and keep
    their own conditions. */
 
-/* Animatable axis for the variable-font heading "breath" (driven by view timelines). */
+/* The variable-font weight axis, as an animatable value. THE ONLY REGISTRATION on the site, and
+   it has to stay that way: a second `@property --wght` anywhere makes the effective descriptors
+   a function of bundle order rather than of anything written in the source.
+
+   `inherits: false` is deliberate and load-bearing for cost: a weight change would otherwise
+   invalidate the whole subtree under a heading. It is safe because every reader sets the
+   property on the SAME element that reads it — the substitution happens there, and it is the
+   resulting `font-variation-settings` (an inherited property) that reaches the children.
+   Declaring --wght on a wrapper and reading it on a child would fail silently.
+
+   `initial-value` is never observed: `.ink-press` (styles/registers.css) always sets the
+   property, and the subpage keyframes below run with `fill: both`, so they hold a value
+   outside their range too. */
 @property --wght {
   syntax: "<number>";
-  inherits: true;
+  inherits: false;
   initial-value: 400;
 }
+
+/* Subpage heading breath — scroll-scrubbed and reversible, i.e. the defect the landing shed in
+   2026-08. It stays until Etap 4 lifts the registers out of the landing bundle and these
+   headings can take `.ink-press` instead; see docs/web-reveal-remediation.md. Six blocks read
+   it: /koncerty, /koncerty/[id], /o-nas, /kolofon, /kontakt (and /press with its own keyframes),
+   which is why it lives in this shared sheet rather than beside any one of them. */
 @keyframes headingBreath {
   0% { --wght: 640; }
   100% { --wght: 300; }

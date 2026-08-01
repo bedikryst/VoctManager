@@ -334,6 +334,8 @@
     padding-top: 18px;
   }
 
+  /* `.ink-press` heading — weight must equal --wght-rest (styles/registers.css); under motion
+     the axis is driven, so a change here only shows up with motion off. */
   .section-title {
     margin: 0;
     font-family: var(--serif);

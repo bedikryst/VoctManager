@@ -1,0 +1,70 @@
+/**
+ * @file registers.css
+ * @description Entrance-register mechanics that are not tied to one page's bundle. Today it
+ *  carries one thing: the INK PRESS, the variable-font half of the ink gesture. It is also the
+ *  destination the landing's three register definitions (landing/06-footer.css) and base.css's
+ *  duplicate `.reveal` are scheduled to move into — see docs/web-reveal-remediation.md, Etap 4.
+ *  Loaded by BaseLayout on every page; `.ink-press` is authored per element, so a page that
+ *  does not use the class pays nothing.
+ * @architecture Astro islands 2026
+ * @module styles/registers
+ */
+
+/* ── INK PRESS ─────────────────────────────────────────────────────────────────
+   A heading is written with a nib, and a nib presses. `.ink-press` gives the ink
+   register a second dimension on the nodes that ask for it: the weight axis travels
+   from --wght-press to --wght-rest on the ink's OWN clock, so the stroke settles into
+   place while the ink darkens. It is not a fourth register — it never fires on its
+   own, it has no hidden state of its own, and it is opt-in per element, because a
+   paragraph that changes weight is not a page being written, it is a page wobbling.
+
+   The clock is the load-bearing part. Do not drive this axis from scroll position:
+   scrubbed, it is a ~1.7s gesture (0.75vh of travel) against the ink's 0.9s, it opens
+   12% of the viewport ahead of the ink's own trigger, and — the part that makes it a
+   defect rather than a mismatch — it is REVERSIBLE, so scrolling back up thickens a
+   heading the page has already finished writing.
+
+   Two constraints, both silent when broken:
+
+   1. The element's `font-weight` MUST equal --wght-rest. Under `html.voct-motion` the
+      axis is driven by `font-variation-settings`, which overrides `font-weight`
+      outright; without that gate (no JS, reduced motion) `font-weight` is what renders.
+      A gap between the two is a difference nobody sees until they turn motion off.
+      300 is the site's resting heading weight, here and on every subpage.
+   2. `transition` is a shorthand. On a node that is BOTH the press and the `.reveal`,
+      a second `transition` declaration would replace the ink's opacity transition
+      rather than add to it, so the pair is declared with longhands — which also leaves
+      `transition-delay` alone, so an ink+lead node keeps the lead's 0.18s offset.
+   ────────────────────────────────────────────────────────────────────────────── */
+html.voct-motion .ink-press {
+  --wght: var(--wght-press, 520);
+  font-variation-settings: "wght" var(--wght);
+}
+
+html.voct-motion .ink-press:not(.reveal) {
+  transition-property: --wght;
+  transition-duration: var(--ink-in);
+  transition-timing-function: var(--ease-slow);
+}
+
+html.voct-motion .reveal.ink-press {
+  transition-property: opacity, --wght;
+  transition-duration: var(--ink-in);
+  transition-timing-function: var(--ease-slow);
+}
+
+/* The trigger is the register node's own class, read either on the press element or on
+   the `.reveal` ancestor it belongs to — a heading is usually a child of the block that
+   carries the register, not the block itself. This matches the landing controller's
+   `.is-visible`; subpages fire `.is-in` (base.css) and adopt the press when Etap 4
+   collapses the two controllers into one. */
+html.voct-motion :is(.is-visible.ink-press, .is-visible .ink-press) {
+  --wght: var(--wght-rest, 300);
+}
+
+/* Spent, mirroring the ink register's own release. This has to out-specify both
+   declarations above, which would otherwise keep the transition — and on a combined
+   node the opacity transition with it — alive for the rest of the session. */
+html.voct-motion :is(.is-settled.ink-press, .is-settled .ink-press) {
+  transition: none;
+}
