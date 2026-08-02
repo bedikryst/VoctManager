@@ -319,7 +319,7 @@ export function SiteFooter(): React.JSX.Element {
               <span className="footer-colophon-author">
                 Site ·{" "}
                 <a
-                  href="mailto:krystbugalski@gmail.com"
+                  href="mailto:krystian.bugalski@voctensemble.com"
                   className="plausible-event-name=author+mail"
                   rel="author"
                 >

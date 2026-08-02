@@ -462,7 +462,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .letter-lead { margin: 20px 0 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2vw, 26px); line-height: 1.45; color: var(--ink-soft); max-width: 36ch; }
   .letter-body { display: grid; gap: clamp(36px, 5vw, 64px); padding: clamp(8px, 2vw, 28px) 0 0; }
   .letter-stanza { display: grid; gap: 14px; }
-  .letter-mark { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; line-height: 1.45; text-transform: uppercase; color: var(--candle); margin: 0; }
+  .letter-mark { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; line-height: 1.45; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
   .letter-para { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.48; color: var(--ink); letter-spacing: -.005em; }
   .letter-signature { margin-top: clamp(40px, 6vw, 80px); padding-top: 22px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
   .letter-sig-name { font-family: var(--serif); font-style: italic; font-size: clamp(18px, 1.8vw, 24px); color: var(--ink); }
@@ -485,7 +485,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Ensemble — collaborators line */
   .voces-collab { margin-top: clamp(36px, 5vw, 56px); padding-top: clamp(22px, 3vw, 30px); border-top: 1px solid var(--line); max-width: 720px; }
-  .collab-label { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .collab-label { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .voces-collab p { margin: 12px 0 0; font-size: 16px; line-height: 1.75; color: var(--ink-muted); max-width: 62ch; }
 
   /* Co robimy — activity cards: category heading + concrete example + optional link */
@@ -493,7 +493,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .doing { display: grid; gap: 12px; padding-top: 24px; border-top: 1px solid var(--line-strong); align-content: start; }
   .doing h3 { margin: 0; font-family: var(--serif); font-size: clamp(24px, 2.5vw, 34px); font-weight: 300; line-height: 1.1; color: var(--ink); }
   .doing p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
-  .doing a { justify-self: start; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid color-mix(in srgb, var(--candle) 45%, transparent); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .doing a { justify-self: start; margin-top: 4px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle-ink); border-bottom: 1px solid color-mix(in srgb, var(--candle-ink) 45%, transparent); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
   .doing a:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
   .cantus-more { margin-top: 6px; }
   @media (max-width: 720px) { .doings-grid { grid-template-columns: 1fr; } }
@@ -503,7 +503,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .milestones li { display: grid; grid-template-columns: max-content clamp(200px, 24vw, 320px) 1fr; gap: clamp(16px, 2.4vw, 36px); padding: clamp(24px, 4vw, 42px) 0; border-top: 1px solid var(--line); align-items: start; }
   /* No about.img in YAML → the image column collapses so the body doesn't land in it. */
   .milestones li.no-media { grid-template-columns: max-content 1fr; }
-  .milestone-date { font-family: var(--capitalis); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); }
+  .milestone-date { font-family: var(--capitalis); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle-ink); }
   .milestone-body { display: grid; gap: 9px; }
   .milestone-body h3 { margin: 0; font-family: var(--serif); font-size: clamp(26px, 3vw, 42px); font-weight: 300; line-height: 1.08; color: var(--ink); }
   .milestone-body p { margin: 0; max-width: 68ch; color: var(--ink-soft); font-size: clamp(15px, 1.18vw, 17px); line-height: 1.75; }
@@ -524,7 +524,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .goals { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 2px; }
   .goals li { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: baseline; padding: 16px 0; border-top: 1px solid var(--line); font-size: clamp(15px, 1.2vw, 17px); color: var(--ink-soft); }
   .goals li:last-child { border-bottom: 1px solid var(--line); }
-  .goals .g-num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--candle); }
+  .goals .g-num { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--candle-ink); }
   .legal-card { margin-top: clamp(36px, 5vw, 56px); background: var(--paper); border: 1px solid var(--line); padding: clamp(26px, 3.4vw, 40px); display: grid; gap: 22px; }
   .legal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
   .legal-grid div { display: grid; gap: 4px; }

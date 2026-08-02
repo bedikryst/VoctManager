@@ -21,9 +21,14 @@
     margin: 0 auto;
     /* Last band of the page: under `viewport-fit=cover` (BaseLayout) it owns the strip behind the
        home indicator, so the bottom padding absorbs that inset instead of setting the colophon
-       under the bar. Sides take the landscape notch the same way. */
+       under the bar. Sides take the landscape notch the same way.
+
+       The fixed term of that bottom padding is the colophon's own breath, and it answers to the
+       24px the colophon takes above itself (`.site-footer-colophon`): an imprint is printed at
+       the foot of the sheet, so a gap below it markedly larger than the one above reads as a line
+       that has come loose from the page's edge. Keep the two within a few px of each other. */
     padding: clamp(32px, 3.5vw, 52px) max(28px, 5vw, env(safe-area-inset-right, 0px))
-      calc(env(safe-area-inset-bottom, 0px) + clamp(28px, 3vw, 44px))
+      calc(env(safe-area-inset-bottom, 0px) + clamp(20px, 1.8vw, 28px))
       max(28px, 5vw, env(safe-area-inset-left, 0px));
   }
 

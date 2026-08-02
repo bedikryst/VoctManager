@@ -24,7 +24,7 @@ const tempus = tempusForDate(new Date());
 <footer class="site-foot">
   <div class="foot-grid">
     <div class="foot-col">
-      <h4>{t.foundation}</h4>
+      <h3>{t.foundation}</h3>
       <p class="foot-mark">VoctFoundation</p>
       <p class="foot-legal">
         ul. Św. Filipa 23/3 · 31-150 Kraków<br />
@@ -35,7 +35,7 @@ const tempus = tempusForDate(new Date());
     </div>
 
     <div class="foot-col">
-      <h4>{t.site}</h4>
+      <h3>{t.site}</h3>
       <ul>
         <li><a href={localizePath("/", lang)}>{t.home}</a></li>
         <li><a href={localizePath("/o-nas", lang)}>{t.about}</a></li>
@@ -48,7 +48,7 @@ const tempus = tempusForDate(new Date());
     </div>
 
     <div class="foot-col">
-      <h4>{t.contactMedia}</h4>
+      <h3>{t.contactMedia}</h3>
       <ul>
         <li><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></li>
         <li><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
@@ -74,7 +74,7 @@ const tempus = tempusForDate(new Date());
   <div class="foot-base">
     <span>© {year} Fundacja VoctFoundation</span>
     <span>
-      {t.realizedBy} · <a href="mailto:krystbugalski@gmail.com" rel="author">Krystian Bugalski ↗</a>
+      {t.realizedBy} · <a href="mailto:krystian.bugalski@voctensemble.com" rel="author">Krystian Bugalski ↗</a>
     </span>
     <a href={localizePath("/", lang)}>voctensemble.com</a>
   </div>
@@ -86,7 +86,9 @@ const tempus = tempusForDate(new Date());
      colophon under the bar. Sides take the landscape notch the same way. */
   .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(28px, 5vw, env(safe-area-inset-left, 0px)); }
   .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
-  .foot-col h4 { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .46); margin: 0 0 18px; font-weight: 400; }
+  /* Selector follows the tag: these are `h3` because every page opens its sections at `h2` and
+     an `h4` here skipped a level in the outline. Styled by tag, so the two must move together. */
+  .foot-col h3 { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .46); margin: 0 0 18px; font-weight: 400; }
   .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }
   .foot-legal { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
   .foot-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }

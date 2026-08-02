@@ -8,6 +8,16 @@
  *  Seed lives in `sessionStorage` (not localStorage) — the sigil is the pieczęć of THIS
  *  visit, not of identity. Each returning visit = new pilgrimage. Side benefit: no
  *  persistent client-side identifier, no privacy-policy update needed under RODO.
+ *
+ *  DRAW HOOKS. Every element carries a `sg-` class naming its step in the seal's writing
+ *  order, and every element in the `sg-draw` family carries `pathLength="1"` so CSS can draw
+ *  it with `stroke-dasharray` alone — no `getTotalLength`, no measurement, no bookkeeping.
+ *  The two families are not interchangeable: `sg-draw` is the seal's structure (rings, rays)
+ *  and is DRAWN; `sg-fade` is everything with no travel worth watching — the dots, the tip
+ *  ticks, the roman inscription — which fades instead. The choreography itself lives in
+ *  `pages/kolofon.astro`, the only consumer; this file owns the hooks and nothing else. An
+ *  element added below needs one of the two classes, or it will sit there fully present
+ *  while the rest of the seal is still being written.
  * @architecture Astro islands 2026
  * @module lib/sigil
  */
@@ -84,14 +94,14 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
     const r = R * (1 + i * 0.08);
     ringRadii.push(r);
     parts.push(
-      `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" stroke-width="${(0.6 - i * 0.12).toFixed(2)}" stroke-opacity="${(0.5 - i * 0.12).toFixed(2)}" />`,
+      `<circle class="sg-draw sg-ring" pathLength="1" cx="${cx}" cy="${cy}" r="${r.toFixed(2)}" stroke-width="${(0.6 - i * 0.12).toFixed(2)}" stroke-opacity="${(0.5 - i * 0.12).toFixed(2)}" />`,
     );
   }
 
   // Inner ring — always present, holds the central candle
   const innerR = R * 0.18;
   parts.push(
-    `<circle cx="${cx}" cy="${cy}" r="${innerR.toFixed(2)}" stroke-width="0.5" stroke-opacity="0.7" />`,
+    `<circle class="sg-draw sg-socket" pathLength="1" cx="${cx}" cy="${cy}" r="${innerR.toFixed(2)}" stroke-width="0.5" stroke-opacity="0.7" />`,
   );
 
   // 8 rays — alternating weight (4 strong cardinal + 4 lighter intercardinal) so the
@@ -106,8 +116,12 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
     const y2 = cy + Math.sin(angle) * endR;
     const w = i % 2 === 0 ? 0.85 : 0.5;
     const op = i % 2 === 0 ? 0.82 : 0.6;
+    // The alternating weight is also the drawing order: the four cardinals establish the
+    // cross, the four intercardinals answer it a beat later, which is the same reason the
+    // weights alternate at all — the shape reads as a star and not as a wheel.
+    const rayStep = i % 2 === 0 ? "sg-ray-a" : "sg-ray-b";
     parts.push(
-      `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke-width="${w}" stroke-opacity="${op}" />`,
+      `<line class="sg-draw ${rayStep}" pathLength="1" x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke-width="${w}" stroke-opacity="${op}" />`,
     );
 
     // Tip decoration
@@ -122,13 +136,13 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
       const cx2 = mx - Math.cos(perp) * len;
       const cy2 = my - Math.sin(perp) * len;
       parts.push(
-        `<line x1="${cx1.toFixed(2)}" y1="${cy1.toFixed(2)}" x2="${cx2.toFixed(2)}" y2="${cy2.toFixed(2)}" stroke-width="0.4" stroke-opacity="0.55" />`,
+        `<line class="sg-fade sg-orn" x1="${cx1.toFixed(2)}" y1="${cy1.toFixed(2)}" x2="${cx2.toFixed(2)}" y2="${cy2.toFixed(2)}" stroke-width="0.4" stroke-opacity="0.55" />`,
       );
     } else if (tipStyle === 2) {
       // Dot at the tip
       const dx = cx + Math.cos(angle) * endR;
       const dy = cy + Math.sin(angle) * endR;
-      parts.push(`<circle cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="1" fill="currentColor" stroke="none" />`);
+      parts.push(`<circle class="sg-fade sg-orn" cx="${dx.toFixed(2)}" cy="${dy.toFixed(2)}" r="1" fill="currentColor" stroke="none" />`);
     }
   }
 
@@ -139,7 +153,7 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
       const r = R * 0.65;
       const x = cx + Math.cos(angle) * r;
       const y = cy + Math.sin(angle) * r;
-      parts.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="0.7" fill="currentColor" stroke="none" />`);
+      parts.push(`<circle class="sg-fade sg-orn" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="0.7" fill="currentColor" stroke="none" />`);
     }
   }
 
@@ -151,12 +165,12 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
       const angle = (i / 4) * Math.PI * 2;
       const x = cx + Math.cos(angle) * outerR;
       const y = cy + Math.sin(angle) * outerR;
-      parts.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.2" fill="currentColor" stroke="none" />`);
+      parts.push(`<circle class="sg-fade sg-orn" cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="1.2" fill="currentColor" stroke="none" />`);
     }
   }
 
   // Central candle dot
-  parts.push(`<circle cx="${cx}" cy="${cy}" r="1.5" fill="currentColor" stroke="none" />`);
+  parts.push(`<circle class="sg-fade sg-candle" cx="${cx}" cy="${cy}" r="1.5" fill="currentColor" stroke="none" />`);
 
   // Inscription along upper arc — roman date as AD · MO · DI (year · month · day). Local
   // fields, not UTC: this is the stamp of THE VISITOR'S visit, so an evening guest west of
@@ -172,7 +186,7 @@ export function buildSigilSvg(seed: string, options: SigilOptions = {}): string 
   const arcId = `sigil-arc-${Math.floor(Math.random() * 1_000_000).toString(36)}`;
   const text = `
     <defs><path id="${arcId}" d="${arcPath}" /></defs>
-    <text font-family="IBM Plex Mono, ui-monospace, monospace" font-size="${(size * 0.048).toFixed(1)}" letter-spacing="0.16em" fill="currentColor" stroke="none" opacity="0.55">
+    <text class="sg-fade sg-date" font-family="IBM Plex Mono, ui-monospace, monospace" font-size="${(size * 0.048).toFixed(1)}" letter-spacing="0.16em" fill="currentColor" stroke="none" opacity="0.55">
       <textPath href="#${arcId}" startOffset="50%" text-anchor="middle">${inscription}</textPath>
     </text>
   `;
