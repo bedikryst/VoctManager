@@ -421,7 +421,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 </BaseLayout>
 
 <style>
-  :global(body.page-koncerty) { background: var(--night); color: var(--ink-soft); }
+  /* Surface as an opaque image, colour slot left to the iOS edge band — see `--edge-band`.
+     A plain `background: var(--night)` here would put page content back into the band. */
+  :global(body.page-koncerty) { background-image: linear-gradient(var(--night), var(--night)); background-color: var(--edge-band); color: var(--ink-soft); }
 
   /* Intro hero */
   .intro { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(64px, 9vw, 112px); color: var(--paper); overflow: hidden; isolation: isolate; }

@@ -58,7 +58,6 @@
     scroll-padding-top: 0;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    background: var(--paper);
   }
 
   html.lenis,
@@ -85,6 +84,14 @@
     background:
       radial-gradient(circle at 50% -20%, rgba(198, 164, 91, 0.18), transparent 34rem),
       linear-gradient(180deg, var(--paper) 0%, #f8f6f0 48%, var(--paper-soft) 100%);
+    /* This page's footer ends on `--paper-soft`, not the site-wide night — see `--edge-foot`. */
+    --edge-foot: var(--paper-soft);
+    /* Invisible on the page — the gradients above are opaque and cover it everywhere. It feeds
+       the iOS edge band. The `background` shorthand above resets the colour slot to
+       `transparent`, so this line has to follow it. */
+    background-color: var(--edge-band);
+    /* Containing block for the grain overlay below. */
+    position: relative;
     color: var(--ink);
     font-family: var(--sans);
     font-size: var(--body);
@@ -99,7 +106,13 @@
 
   body.theme-marketing::before {
     content: "";
-    position: fixed;
+    /* ABSOLUTE, never fixed. Measured on device: a permanent full-viewport `fixed` layer stops
+       iOS Safari sampling the body's background-color for the band above the header, and the
+       page bleeds live content into it instead — this grain was the sole reason the landing did
+       that while every subpage did not. Absolute keeps it painting over content (the point of
+       an overlay grain) while staying on the document's paint path. It now scrolls with the
+       page rather than sitting still; at 5% on a 180px tile that is not perceptible. */
+    position: absolute;
     inset: 0;
     z-index: 80;
     pointer-events: none;
@@ -979,6 +992,10 @@
   .chrome::after {
     content: "";
     position: absolute;
+    /* Do NOT bleed this pane above the bar to cover the band iOS Safari opens over a fixed
+       header — `fixed` layers are clipped to the layout viewport there and an overhang paints
+       nothing (measured; sticky and visualViewport offsets fail too). That band is filled by
+       the body's background-color instead — see `--edge-band` in tokens.css. */
     inset: 0;
     z-index: -1;
     pointer-events: none;

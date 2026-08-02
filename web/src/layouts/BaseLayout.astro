@@ -35,6 +35,13 @@ interface Props {
   /** Optional class on <body> for page-level theming hooks. */
   bodyClass?: string;
   /**
+   * Keep this equal to the page's `--edge-band` (tokens.css). It is the fallback iOS Safari
+   * drops to for the bands above and below a fixed header once something invalidates the
+   * background-color it sampled at load — opening the nave does. Two different values means
+   * the band changes colour behind the reader's back.
+   */
+  themeColor?: string;
+  /**
    * THIS LAYOUT drives the page's reveal controller (adds `reveal-ready`; the controller in
    * scripts/reveal.ts then toggles `.is-in`), with the `authored` cadence — per-element `data-d`
    * delays and no onset queue.
@@ -70,6 +77,7 @@ const {
   image,
   imageAlt = title,
   bodyClass = "",
+  themeColor = "#000000",
   reveal = true,
   rite = false,
   lang = "pl",
@@ -95,16 +103,17 @@ const ogLocaleAlternates =
 >
   <head>
     <meta charset="utf-8" />
-    {/* viewport-fit=cover is load-bearing, not cosmetic: without it iOS Safari resolves every
-        `env(safe-area-inset-*)` to 0 AND insets the layout viewport to the safe rectangle. The
-        fixed bar then hangs at the top of that inset box — below the notch — with the strip
-        above it painted in the canvas colour propagated from `html` (#080807), which reads as
-        the bar floating over a dark band. Every safe-area calc in this codebase (.chrome,
-        .nave-inner, .skip-link, .scroll-top) assumes cover; this is where they are switched on. */}
+    {/* Keep `viewport-fit=cover` — every safe-area calc in this codebase (.chrome, .nave-inner,
+        .skip-link, .scroll-top) is written against it. Be aware, though, that on iOS 26 it does
+        NOT buy what it used to: measured on device with cover present, `env(safe-area-inset-top)`
+        still resolves to 0 while the layout viewport sits ~45px below the physical top. Safari
+        applies an obscured-content inset of its own and the safe-area calcs quietly add nothing.
+        The band that opens above the bar as a result is handled via the canvas — see
+        `--edge-band` in tokens.css. */}
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/png" href="/logo_icon.png" />
     <link rel="apple-touch-icon" href="/logo_icon.png" />
-    <meta name="theme-color" content="#100f0d" />
+    <meta name="theme-color" content={themeColor} />
 
     <title>{title}</title>
     <meta name="description" content={description} />
@@ -219,6 +228,46 @@ const ogLocaleAlternates =
     <slot />
     <SiteCursor client:load transition:persist="site-cursor" />
     <ScrollTopButton client:idle transition:persist="scroll-top" />
+
+    <script>
+      // The canvas colour drives the bands iOS Safari opens above and below a fixed header —
+      // see `--edge-band` / `--edge-foot` in tokens.css. Nothing else reaches them: fixed,
+      // sticky, sticky with a negative top, theme-color and the body colour slot were each
+      // measured on device and each failed.
+      //
+      // It is TIED TO THE FOOTER'S VISIBILITY rather than applied once at load. Timing was the
+      // trap: the top band samples the canvas around first paint, and a deferred script still
+      // beats that sample, so simply setting the footer colour early tinted the top band too.
+      // Keying on the footer sidesteps the race entirely — at load and over the hero the canvas
+      // is the CSS black, and by the time it turns, the footer is what fills the screen anyway,
+      // so both bands agreeing with it is correct rather than merely harmless.
+      //
+      // Both the canvas and the body colour slot are written: which of the two iOS reads is not
+      // settled, and body's slot carries no visible surface (that is an opaque background-image
+      // on every page), so writing it costs nothing.
+      let edgeWatch: IntersectionObserver | undefined;
+      const armEdgeBands = (): void => {
+        edgeWatch?.disconnect();
+        const cs = getComputedStyle(document.body);
+        const band = cs.getPropertyValue("--edge-band").trim();
+        const foot = cs.getPropertyValue("--edge-foot").trim();
+        // `.site-footer` is the landing's, `.site-foot` every other page's.
+        const footer = document.querySelector(".site-footer, .site-foot");
+        if (!band || !foot || !footer) return;
+        const paint = (v: string): void => {
+          document.documentElement.style.setProperty("background-color", v);
+          document.body.style.setProperty("background-color", v);
+        };
+        edgeWatch = new IntersectionObserver((entries) => {
+          entries.forEach((e) => paint(e.isIntersecting ? foot : band));
+        });
+        edgeWatch.observe(footer);
+      };
+      armEdgeBands();
+      // ClientRouter swaps <body>, taking the inline style, the observer's target and the page's
+      // own --edge-foot with it.
+      document.addEventListener("astro:page-load", armEdgeBands);
+    </script>
 
     <script>
       // Lenis smooth scroll — only on fine pointers with motion allowed.

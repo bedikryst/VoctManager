@@ -36,8 +36,11 @@
 ::view-transition {
   background-color: #080807;
 }
+/* Also the canvas iOS Safari samples for the band above a fixed header — see `--edge-band`
+   (tokens.css). Black rather than the old #080807: same job here (no light flash), and the
+   band wants a value that reads as the screen's own dead zone. */
 html {
-  background-color: #080807;
+  background-color: var(--edge-band);
 }
 
 @keyframes voct-dissolve-out {

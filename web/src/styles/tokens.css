@@ -19,8 +19,38 @@
   --line: rgba(22, 21, 20, 0.16);
   --line-strong: rgba(22, 21, 20, 0.34);
   --candle: #c6a45b;
+  /* The candle as INK, for gold that has to be READ rather than seen. --candle is 8.46:1 on
+     the dark grounds it was drawn for and only 2.10:1 on parchment — so every small gold label
+     on paper (rubric marks, dates, collaborator labels, the colophon's author role, a link's
+     gold hover) fails WCAG AA outright. This is the same hue scaled to 64%, which clears AA for
+     small text at 4.67:1 and is the LIGHTEST value that does. Use it for gold text under ~18px
+     on any paper ground; keep --candle for dark grounds, for large display gold, and for rules,
+     borders and marks, where the contrast minimum does not apply. */
+  --candle-ink: #7f693a;
   --candle-blue: #1b2d60;
   --night: #100f0d;
+  /* The bands iOS Safari opens above and below a fixed header. It fills both from the CANVAS —
+     `html`'s background-color, set in transitions.css — and nothing the page draws can reach
+     them: `fixed`, plain `sticky`, `sticky` with a negative top, the body's own colour slot and
+     theme-color were each measured on device and each failed. So it is one value per page per
+     band, it cannot track the header's tone, and it cannot be blurred. The full record, with the
+     probes and the dead ends, is in docs/web-landing-guardrails.md §3a — read it before
+     spending another evening here.
+     The two bands have DIFFERENT lifetimes, which is what makes them separable: the top one
+     freezes the canvas colour at first paint, the bottom one follows it live. Both measured on
+     device with a pre-paint green canvas repainted magenta after load — top stayed green,
+     bottom went magenta.
+
+     `--edge-band` is the TOP one: black, one value site-wide. The sample is taken at load, at
+     load every page stands on a dark hero, and black reads as the screen's own dead zone rather
+     than as a frame. Matching it to the footer instead was tried and looked wrong the instant
+     the hero appeared.
+
+     `--edge-foot` is the BOTTOM one, applied after first paint by BaseLayout so the top has
+     already been sampled. Each page sets it to its own footer colour, so the end of the page
+     meets an edge of the same tone. Neither is ever seen on the page itself. */
+  --edge-band: #000;
+  --edge-foot: var(--night);
   --sage: #5d6b54;
   --crimson: #8c3b3b;
 

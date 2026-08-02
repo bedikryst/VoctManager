@@ -651,7 +651,9 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  :global(body.page-press) { background: var(--paper); color: var(--ink); }
+  /* Surface as an opaque image, colour slot left to the iOS edge band — see `--edge-band`.
+     A plain `background: var(--paper)` here would put page content back into the band. */
+  :global(body.page-press) { background-image: linear-gradient(var(--paper), var(--paper)); background-color: var(--edge-band); color: var(--ink); }
 
   /* ── Shared section primitives ───────────────────────────────────── */
   .press-eyebrow { font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-muted); display: inline-flex; align-items: center; gap: 10px; margin: 0; }

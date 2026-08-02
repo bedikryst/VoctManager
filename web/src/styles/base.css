@@ -162,7 +162,13 @@ html {
 html::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 body {
-  background: var(--paper);
+  /* Surface and colour slot are split — the paper is an opaque one-stop gradient, leaving the
+     colour free for `--edge-band`. Belt and braces, honestly: the iOS edge band is filled from
+     the CANVAS, and this slot was never proven to co-decide, only never ruled out (§3a of
+     docs/web-landing-guardrails.md). Collapsing it back to `background: var(--paper)` is
+     probably safe and looks identical on screen — verify on a phone before doing it. */
+  background-image: linear-gradient(var(--paper), var(--paper));
+  background-color: var(--edge-band);
   color: var(--ink-soft);
   font-family: var(--sans);
   font-size: 16px;
@@ -271,6 +277,23 @@ button { font: inherit; }
 /* Clears the notch: under `viewport-fit=cover` (BaseLayout) `top` is measured from the physical
    edge, and a bare 16px would land the link behind the camera on the devices that have one. */
 .skip-link:focus { top: calc(env(safe-area-inset-top, 0px) + 16px); }
+
+/* Text for assistive technology only — for the part of a link's meaning that the design carries
+   in a glyph. The site marks "this leaves the page" with a decorative `↗`, and a decorative
+   glyph is `aria-hidden`, so without this the signal reaches sighted readers alone.
+   NOT `display: none` or `visibility: hidden`, either of which removes it from the
+   accessibility tree as well and leaves nothing anywhere. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* The no-JS / reduced-motion fallback for every register-bearing node, and ONLY that — hence
    the `:not(.voct-motion)` gate rather than a bare `.reveal`. It is the exact counterpart of
@@ -390,4 +413,49 @@ html:not(.voct-motion) .reveal { opacity: 1; }
   background: currentColor;
   -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
   mask: url(/logo-mark.png) center / contain no-repeat;
+}
+
+/* ── Overlay ground — the strips iOS Safari keeps above/below `position: fixed` ───────────
+   iOS Safari renders the page edge-to-edge under its own translucent bars but CLIPS every
+   `position: fixed` layer to the layout viewport (measured on device: documentElement
+   .clientHeight 645 vs window.innerHeight 753; a glass pane extended above the header
+   painted nothing there). The full-screen surfaces — the "Vitta" nave card and the donation
+   vault, both fixed — therefore leave those strips showing raw page content behind Safari's
+   wash. The document itself DOES paint there, and that is the loophole this ground uses:
+   a position:absolute body veil is document painting, not a fixed layer, so the strips take
+   its colour and the fixed surface above it reads as truly full-screen.
+
+   z-index 49: over all in-flow content and the koncerty via-rail (45), under the header
+   (50) that hosts the nave card and under the vault (110). Visibility keys on the same
+   chrome classes the card itself keys on — via :has(), so no script changes; a pre-:has
+   Safari (≤15.3) simply keeps today's strips. The menu-closing rule must FOLLOW the
+   menu-open rule: both classes are present during the close fade and source order decides,
+   exactly as in nave-menu.css. Touch-only: desktop browser bars never obscure the page, and
+   the vault's glass backdrop should keep sampling the live page there. */
+@media (max-width: 759.98px) {
+  /* Containing block for the veil. The body box matches the ICB horizontally (margins are
+     reset to 0), so promoting it to `relative` moves nothing. */
+  body { position: relative; }
+  body::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 49;
+    background: var(--paper);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.32s var(--ease);
+  }
+  body:has(.chrome.menu-open)::after { opacity: 1; }
+  body:has(.chrome.menu-closing)::after { opacity: 0; transition: opacity 0.24s var(--ease); }
+  /* Night under the vault — `vault-open` is the body flag both vault stylesheets already
+     maintain (08-vault.css on the landing, vault.css on subpages). */
+  body.vault-open::after { opacity: 1; background: #080807; }
+  /* The votive scroll-top mark (z:90) otherwise floats over both surfaces (their host layers
+     sit at 50); while either owns the screen, it yields. */
+  body:has(.chrome.menu-open) .scroll-top,
+  body.vault-open .scroll-top { opacity: 0; pointer-events: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::after { transition: none; }
 }

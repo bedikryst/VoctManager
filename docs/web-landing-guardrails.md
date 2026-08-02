@@ -277,6 +277,62 @@ fine print, where orphan control matters least.
 
 ---
 
+## 3a. The iOS edge bands — six dead ends, one lever
+
+*Investigated end-to-end on device, 2026-08-01/02. Read this before touching `--edge-band`,
+`--edge-foot`, `transitions.css`'s `html` background, or the observer in `BaseLayout.astro`.*
+
+**The phenomenon.** iOS 26 Safari opens a band above (and below) a `position: fixed` header that
+the page cannot paint into. Measured with a field probe: `documentElement.clientHeight` sits
+~45px below the physical top while the document paints edge to edge, and `env(safe-area-inset-top)`
+resolves to **0 even with `viewport-fit=cover` present** — Safari applies an obscured-content
+inset of its own and every safe-area calc in the codebase quietly adds nothing. It is not a
+landing-vs-subpage difference; the original diagnosis that it was one is wrong.
+
+**What does not reach the band.** Each of these was built, deployed and looked at on a phone:
+
+| Attempt | Result |
+|---|---|
+| `position: fixed` overhang on the bar | Paints nothing |
+| A full-viewport `fixed` layer (the grain, forced opaque) | Stops at the band's lower edge |
+| `position: sticky`, child overflowing upward | Clipped |
+| `position: sticky` with a **negative `top`** (the box itself in the band) | Visible only before it sticks; clipped once in the band |
+| `visualViewport.offsetTop` in JS | Always 0 — there is no offset to compensate with |
+| `overflow-x: hidden` propagated to the viewport | No effect |
+| `<meta name="theme-color">` | No effect while a sample is live; it is only the fallback |
+
+**The one lever is the canvas** — `html`'s `background-color`, which Safari samples. `body`'s
+colour slot appeared to work for a while and does not: both candidates were dark and the runs
+could not tell them apart. The decisive test set the canvas green *before first paint* and
+magenta *after*, which also exposed the useful asymmetry:
+
+- **top band — frozen** at the canvas colour as of first paint;
+- **bottom band — live**, follows the canvas afterwards.
+
+So `--edge-band` (black, `transitions.css` puts it on `html`) is what the top band samples, and
+`BaseLayout.astro` switches the canvas to `--edge-foot` (the page's own footer colour) **keyed on
+the footer entering the viewport**. That trigger is not decoration: applying it at load loses a
+race — even a deferred module script beats the top band's sample and tints it too. Keying on the
+footer sidesteps the race, and by the time it fires the footer fills the screen anyway.
+
+**Consequences to design around.** One colour per page per band. It cannot track the header's
+tone, and it cannot be blurred. Black for the top, site-wide, because the sample is taken at load
+and at load every page stands on a dark hero; matching it to the footer was tried and read as
+wrong the instant the hero appeared.
+
+**Still open.** Opening the nave makes Safari re-sample, and what it picks up is the body's
+*rendered* surface — so the top band turns paper after a menu cycle and keeps it for the rest of
+the page's life. Swapping the body's surface to black for the duration of `menu-open` was tried
+and did **not** fix it. The body veil is not the source either (recolouring it showed through for
+one frame, then Safari painted over it). Unsolved.
+
+**And the shape question this started from:** the header is a full-bleed rectangle. The floating
+pill was a response to live page content showing above the bar; with a solid band that reason is
+gone. Do not re-propose the pill without re-reading this section, and do not fork the header by
+platform.
+
+---
+
 ## 4. Open — worth doing next
 
 - **Coda caption.** A fermata over a whole rest already instructs "hold the silence"; the caption
