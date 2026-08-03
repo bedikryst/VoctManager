@@ -20,6 +20,13 @@ const REVEAL_SELECTOR = ".reveal, .reveal-rule, .reveal-rule-v, .reveal-light, .
 
 const ONSET_GAP_MS = 220;
 const MAX_BACKLOG_MS = 450;
+/**
+ * The step the queue falls back to once it is running behind. It is a PERCEPTUAL floor, not a
+ * comfort value: against the ink's 390 ms of perceived travel (--ease-ink reaches 82 % at 43 %
+ * of --ink-in) two onsets 70 ms apart still read as two voices, and anything below that reads
+ * as one event with a soft edge. See `claim()` for why the queue needs a floor at all.
+ */
+const MIN_GAP_MS = 70;
 
 /**
  * The trigger line, as a whole-number percentage of the viewport inset from its bottom edge: a
@@ -158,10 +165,22 @@ export function setupReveal(root: ParentNode, { reduce, cadence }: RevealOptions
     // the visitor, who is already at the bottom. THE CAP IS A SCROLL DISTANCE, not a comfort
     // margin: at an unhurried desktop reading pace (~400px/s through Lenis) every 100ms of
     // latency carries a node ~40px further up, and backlog only ever builds during a fast
-    // scroll — exactly when the node is already moving fastest. Two onsets deep is enough to
-    // break unison, which is all the queue is for.
+    // scroll — exactly when the node is already moving fastest.
+    //
+    // Behind the cap the step SHRINKS to MIN_GAP_MS; it never collapses, and the difference is
+    // the whole reason this is three lines instead of one. Clamping the onset itself to
+    // `now + MAX_BACKLOG_MS` reads as the same idea and is its opposite: once the queue is
+    // that deep EVERY node returns the ceiling, and nodes that crossed the trigger in one
+    // frame share a `now` — so they share an onset and enter in exact unison, which is the one
+    // thing the queue exists to prevent. It bites where the page is most likely to be flung
+    // rather than read: `.final-support` carries six register nodes at the foot of a 15,600px
+    // document, so the queue is saturated every time they are reached, and measured that way
+    // six of them entered within 0–52ms of each other. The floor keeps the tail bounded too —
+    // it grows 70ms per node instead of 220, so the cap's own promise survives it.
     const now = performance.now();
-    const onset = Math.min(Math.max(now, lastOnset + ONSET_GAP_MS), now + MAX_BACKLOG_MS);
+    const slot = Math.max(now, lastOnset + ONSET_GAP_MS);
+    const ceiling = now + MAX_BACKLOG_MS;
+    const onset = slot <= ceiling ? slot : Math.max(ceiling, lastOnset + MIN_GAP_MS);
     lastOnset = onset;
     if (onset <= now) enter(el);
     else timers.push(window.setTimeout(() => enter(el), onset - now));

@@ -26,6 +26,21 @@
       grid-template-columns: 1fr;
     }
 
+    /* One column — the desktop placement is handed back and the markup's own order takes over,
+       which is already the reading order: lede, what a gift does, who to write to, the two
+       invitations. The ledger needs the gap the column gap used to give it. */
+    .final-lede,
+    .donation-list,
+    .final-contact,
+    .final-actions {
+      grid-column: auto;
+      grid-row: auto;
+    }
+
+    .donation-list {
+      margin-top: clamp(40px, 7vw, 56px);
+    }
+
     .hero-inner {
       padding-top: 132px;
     }
@@ -227,6 +242,13 @@
     .donation-row {
       grid-template-columns: 1fr;
       gap: 8px;
+    }
+
+    /* Stacked, there is no unit column to align on — the ledger's right edge becomes the
+       screen's, and an amount pushed there reads as a price tag. */
+    .donation-row strong,
+    .bank-row .currency {
+      text-align: left;
     }
 
     .copy-account {

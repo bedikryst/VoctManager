@@ -7,12 +7,14 @@ Companion to `docs/web-landing-guardrails.md` §5, which states the *doctrine* (
 three rules). This file is the *work*: what the doctrine does not yet describe, in what order to
 fix it, and what was measured to decide that.
 
-**How to read this file.** Etapy 0–4 are done — each keeps its section, because the measurements
-and the corrections inside them are the reasoning the later stages stand on. **`Etap 5`, the
-page-by-page sweep, is the last whole thing**; its census (5a) and its overrides (5c) are done, and
-what remains is **5b geometry** and **5d judgement**, both carrying measured lists rather than
-impressions. The stages are ordered by dependency, not by value. `Rejected` is load-bearing: it
-records ideas that look right and are not, so they are not re-proposed.
+**How to read this file. Every stage in it is finished — this is a record, not a queue of work.**
+Etapy 0–5 each keep their section because the measurements and the corrections inside them are the
+reasoning the later ones stand on; `Etap 5` was the page-by-page sweep and closed all four of its
+parts. **`Etap 6` is not part of that plan**: it is a defect found in the shipped controller after
+the sweep was over, filed here because this file is where the timing budget lives and the next
+person to touch `claim()` needs to know why its cap is written the way it is. The stages are
+ordered by dependency, not by value. `Rejected` is load-bearing: it records ideas that look right
+and are not, so they are not re-proposed.
 
 **Where the machinery lives, now that it has stopped moving.** `styles/registers.css` — all four
 register classes, the ink press, the ink+lead pairing. `scripts/reveal.ts` — the one controller,
@@ -932,6 +934,54 @@ hairlines are `border-top` on `.rep-col li` and on `.kd-clasp`, which are row se
 list rather than the rules that *open* a block, and the lead register is a claim about a rule being
 drawn before what it carries.
 
+
+---
+
+## Etap 6 — the queue's cap was producing the unison it exists to prevent — done 2026-08-03
+
+Reported from the browser as "everything in the coda appears at once", and it was not the coda's
+markup. `claim()` read
+
+```js
+const onset = Math.min(Math.max(now, lastOnset + ONSET_GAP_MS), now + MAX_BACKLOG_MS);
+```
+
+which looks like "queue, but never more than 450 ms late" and behaves as its opposite. Once
+`lastOnset` runs further than `MAX_BACKLOG_MS` ahead of `now`, **every** node returns the ceiling —
+and nodes that crossed the trigger in one frame share a `now`, so they share an onset exactly. The
+cap did not hold the queue two onsets deep as its comment claimed; past the third node it flattened
+the whole burst into one instant.
+
+Measured on the landing (1920×950, jump from the top of the page to `#wesprzyj`, timestamps taken
+at the `classList.add` call rather than at MutationObserver delivery, which batches):
+
+| | before | after |
+|---|---|---|
+| coda onsets, gaps | 0 · 0 · 0 · 0 · 52 ms | 68 · 110 · 79 · 43 · 72 · 86 ms |
+| `.path-entry` ×3 | three triples at gap 0 | 31–126 ms |
+
+The fix is a floor rather than a ceiling: behind the cap the step shrinks to `MIN_GAP_MS` (70 ms)
+instead of collapsing. 70 is perceptual — against the ink's 390 ms of perceived travel two onsets
+that far apart still read as two voices. The tail the cap was written to bound now grows 70 ms per
+node instead of 220, so its promise survives. Residual sub-70 gaps do appear (16 ms was the worst
+seen) and they are `setTimeout` delivery jitter under a scroll burst, not the schedule: the
+schedule is provably monotone with a ≥70 ms step, since every branch returns at least
+`lastOnset + MIN_GAP_MS`.
+
+**Why it read as a coda defect.** `.final-support` carries six register nodes at the foot of a
+15,600 px document, so the queue is saturated every time they are reached — there is no way to
+arrive there without a burst in front of you. Anything below the fold on a long page has the same
+exposure; the coda is just where it was seen.
+
+**A second lesson, and it is about how this site is audited rather than about the site.** The
+deployed build was briefly written off as predating the merged controller, on the strength of a
+grep for `reveal-cue` over every `<script src>` in the live HTML coming back empty. The string test
+was sound — a literal like that survives minification — but the asset list was not: `reveal.<hash>.js`
+is a shared chunk that appears ONLY as an `import` inside the landing's own chunk, never as a `src`
+in the document, and Astro emits no `modulepreload` for it. Enumerate from the module graph (follow
+the `from"./…"` specifiers) or from `dist/`, never from the HTML. Production runs exactly the
+controller in this repo, `Math.min(Math.max(e,m+220),e+450)` included, so the collapse measured
+above was live on the site the whole time.
 
 ---
 

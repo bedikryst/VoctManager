@@ -1,10 +1,10 @@
 ---
 /**
  * @file FinalSupportSection.astro
- * @description Closing patronage section over the krzyż-światło backdrop: direct-contact card
- *  (Florent's email), donation tier rows, and a bank-card with copyable IBANs (PLN + EUR) and
- *  foundation address. The "Wesprzyj" trigger dispatches `voct:open-vault` (handled by the
- *  vault island in Faza 3c); IBAN copy is delegated in scripts/landing.ts (`data-copy`).
+ * @description Closing patronage section over the krzyż-światło backdrop: the lede, three
+ *  donation tiers that ARE the vault triggers, a bank-card with copyable IBANs (PLN + EUR), and
+ *  the direct-contact card. Every `[data-vault-open]` here dispatches `voct:open-vault` through
+ *  the delegated handler in scripts/landing.ts; IBAN copy is delegated the same way (`data-copy`).
  * @architecture Astro islands 2026
  * @module components/landing/FinalSupportSection
  */
@@ -13,10 +13,13 @@ import { bleedPair } from "../../lib/photos";
 
 const bg = bleedPair("swiatlo-krzyz");
 
+/* `value` is what the vault opens at. The vault's own picker offers 50/100/200 PLN, so 500 and
+   2 500 land in its custom-amount field (GiveForm's `preselect`) — deliberate: this ladder is
+   the section's argument about what a gift DOES, and it is not the gateway's preset list. */
 const ROWS = [
-  { amount: "100 zł", text: "dokłada się do najbliższego wieczoru cyklu" },
-  { amount: "500 zł", text: "wspiera próby i partytury między koncertami" },
-  { amount: "2 500 zł", text: "współtworzy następny wieczór cyklu" },
+  { value: 100, amount: "100 zł", text: "dokłada się do najbliższego wieczoru cyklu" },
+  { value: 500, amount: "500 zł", text: "wspiera próby i partytury między koncertami" },
+  { value: 2500, amount: "2 500 zł", text: "współtworzy następny wieczór cyklu" },
 ] as const;
 ---
 
@@ -34,78 +37,68 @@ const ROWS = [
     <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" position="center" />
   </div>
   <div class="section">
+    {/* SOURCE ORDER IS THE PHONE'S READING ORDER — lede, what a gift does, who to write to,
+        the two invitations. The desktop diptych is placed explicitly in 04-rooms-interludes.css
+        rather than falling out of this order, because the alternative (copy column first, ledger
+        second) puts the CTA in front of the argument on every narrow screen, and `order` would
+        fix only the picture while leaving the tab and screen-reader sequence wrong.
+
+        THE INK IS AUTHORED PER READABLE LINE, not per block, and that is the section's whole
+        entrance: lights going up one after another down a nave. A block-sized register node lit
+        its contents in unison — three tiers, two transfer rows and the legal line all arriving as
+        one event — which is the reading the hero's own staircase (`intro-stage` s2…s6) exists to
+        avoid. The cadence is NOT authored here: the landing runs the shared onset queue, so the
+        step comes from `scripts/reveal.ts` and adapts on its own — at reading pace each line
+        crosses the trigger in its own time, and on a fling the queue spaces them.
+
+        Where a block keeps a hairline that OPENS it, that hairline stays on the block as the lead
+        register (`.donation-rows`, `.bank-card`, `.final-contact`) while the ink moved to the
+        children. It is the shape `.path-entry` already uses, and it keeps the rule leading its
+        own contents by one onset. */}
     <div class="final-grid">
-      {/* Each block is its own .reveal (not one column-sized block) so the entrance reads
-          element-by-element as you scroll — the granular feel of the "Z drogi" register —
-          instead of a whole tall column popping in at once on the phone. */}
-      <div class="final-copy">
-        {/* Eyebrow and heading are one utterance and share a node; the paragraph is read after
-            them and takes its own, so the queue gives it the beat it needs. As one 424px node the
-            copy under the display heading was already written when the eye arrived. */}
-        <div class="final-lede">
-          <div class="final-lede-head reveal">
-            <div class="micro">Patronat · darowizna · partnerstwo</div>
-            <h2 class="ink-press">Niech muzyka ma swoje miejsce.</h2>
-          </div>
-          {/* Names the real cost structure instead of a metaphor: the singers are the
-              largest item, and saying so is the honest case for a donation. Deliberately
-              no amounts per item — the tiers below stay qualitative, because published
-              rates for musicians would be both volatile and indiscreet. */}
-          <p class="reveal">
-            Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
-            światło i dojazdy. Na to idą darowizny. Można też zaprosić nas do
-            siebie: śpiewamy koncerty i liturgie, msze ślubne, jubileusze.
-          </p>
+      <div class="final-lede">
+        {/* Eyebrow and heading share one onset, and the reason is mechanical before it is
+            editorial: the trigger reads an element's TOP, and these two tops are 31px apart —
+            at any pace a reader actually scrolls, that is a tenth of a second. Two lights this
+            close cannot be separated by a scroll-driven register, only by an authored delay, and
+            the landing runs the queue rather than `data-d`. The hero can stage its own kicker
+            and title 140ms apart because its trigger is the clock, not the scroll position. */}
+        <div class="final-lede-head reveal">
+          <div class="micro">Patronat · darowizna · partnerstwo</div>
+          <h2 class="ink-press">Niech muzyka ma swoje miejsce.</h2>
         </div>
-        <div class="final-contact reveal">
-          <span class="micro">Kontakt do kierownictwa artystycznego</span>
-          <a
-            class="final-contact-name plausible-event-name=florent+mail"
-            href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble"
-          >
-            Florent de Bazelaire
-          </a>
-          <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
-        </div>
-        {/* Unlike the hero's two parallel invitations, these are NOT equal: this section
-            exists to open the vault, and writing an email is the fallback. The donation
-            trigger leads and carries the candle-gold emphasis (.final-actions rule in
-            04-rooms-interludes.css); plausible event names stay as they were so the
-            existing funnel keeps comparing like with like. */}
-        <div class="final-actions reveal">
-          <a
-            class="primary-link plausible-event-name=wesprzyj+dol"
-            href="#wesprzyj"
-            data-no-lenis
-            data-vault-open="100"
-          >
-            Wesprzyj
-          </a>
-          <a
-            class="secondary-link plausible-event-name=napisz+do+nas+dol"
-            href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
-          >
-            Napisz do nas
-          </a>
-        </div>
+        {/* Names the real cost structure instead of a metaphor: the singers are the
+            largest item, and saying so is the honest case for a donation. Deliberately
+            no amounts per item — the tiers stay qualitative, because published
+            rates for musicians would be both volatile and indiscreet. */}
+        <p class="reveal">
+          Największy koszt koncertu to honoraria śpiewaków; potem partytury, dźwięk,
+          światło i dojazdy. Na to idą darowizny. Można też zaprosić nas do
+          siebie: śpiewamy koncerty i liturgie, msze ślubne, jubileusze.
+        </p>
       </div>
 
-      {/* The ledger's rule is drawn on the wrapper, the tiers are inked inside it — two nodes,
-          because a node may hold ink and lead together only when the rule is its own. */}
-      <div class="donation-list reveal-rule">
-        <div class="donation-rows reveal">
+      <div class="donation-list">
+        {/* The ledger's opening hairline is this element's own border, so the lead register sits
+            here and the ink sits on the tiers — the rule is drawn, then each offer is written
+            under it in turn. */}
+        <div class="donation-rows reveal-rule">
           {
             ROWS.map((row) => (
-              <div class="donation-row">
+              <button
+                type="button"
+                class={`donation-row reveal plausible-event-name=transza+${row.value}`}
+                data-vault-open={row.value}
+              >
                 <strong>{row.amount}</strong>
                 <span>{row.text}</span>
-              </div>
+              </button>
             ))
           }
         </div>
 
-        <div class="bank-card reveal reveal-rule" id="przelew" aria-label="Dane do przelewu">
-          <div class="bank-row">
+        <div class="bank-card reveal-rule" id="przelew" aria-label="Dane do przelewu">
+          <div class="bank-row reveal">
             <span class="currency">PLN</span>
             <span class="iban">PL26 1600 1013 1724 4184 1000 0001</span>
             <button
@@ -116,7 +109,7 @@ const ROWS = [
               Kopiuj
             </button>
           </div>
-          <div class="bank-row">
+          <div class="bank-row reveal">
             <span class="currency">EUR</span>
             <span class="iban">PL96 1600 1013 1724 4184 1000 0002</span>
             <button
@@ -127,14 +120,55 @@ const ROWS = [
               Kopiuj
             </button>
           </div>
-          <div class="foundation-data">
-            Fundacja VoctFoundation · KRS 0001237252 · NIP 6762718992 · REGON 544621525
+          {/* Transfer data only. The registry numbers and the seat belong to the foundation's
+              identity, which the footer states in full one screen below; repeating them here
+              closes the page's last movement on a REGON number. */}
+          <div class="foundation-data reveal">
+            Odbiorca: Fundacja VoctFoundation
             <br />
             Tytuł przelewu: Darowizna na cele statutowe VoctFoundation
-            <br />
-            Św. Filipa 23 / 3, 31-150 Kraków, Polska
           </div>
         </div>
+      </div>
+
+      {/* Rule, then the card as one light. Its three lines stand 26, 29 and 50px apart — inside
+          the same tenth of a second the lede's two are, so splitting them buys a stagger nobody
+          can see and spends three onsets of the queue's budget doing it. The ledger's rows earn
+          theirs: 61–73px each, which is a fifth of a second at reading pace. */}
+      <div class="final-contact reveal reveal-rule">
+        <span class="micro">Kontakt do kierownictwa artystycznego</span>
+        <a
+          class="final-contact-name plausible-event-name=florent+mail"
+          href="mailto:florent.de.bazelaire@voctensemble.com?subject=Patronat%20VoctEnsemble"
+        >
+          Florent de Bazelaire
+        </a>
+        <span class="final-contact-mail">florent.de.bazelaire@voctensemble.com</span>
+      </div>
+
+      {/* The tiers above are the section's committed offers; this pair is the open door — any
+          other amount, or a conversation instead of a payment. Plausible event names stay as
+          they were so the existing funnel keeps comparing like with like.
+
+          ONE node, deliberately, and the only block here that keeps its ink whole: these two sit
+          side by side on a single line, so there is no downward axis for a cascade to run along
+          — staggering them would read as a stutter, not as a light going up after the one above
+          it. The hero groups its own action pair on one stage for the same reason. */}
+      <div class="final-actions reveal">
+        <a
+          class="primary-link plausible-event-name=wesprzyj+dol"
+          href="#wesprzyj"
+          data-no-lenis
+          data-vault-open="100"
+        >
+          Wesprzyj
+        </a>
+        <a
+          class="secondary-link plausible-event-name=napisz+do+nas+dol"
+          href="mailto:patronat@voctensemble.com?subject=Patronat%20VoctEnsemble"
+        >
+          Napisz do nas
+        </a>
       </div>
     </div>
   </div>

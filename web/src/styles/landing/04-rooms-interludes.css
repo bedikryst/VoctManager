@@ -757,6 +757,21 @@
     position: relative;
     overflow: hidden;
     color: var(--paper);
+    /* TWO rules and no more. A hairline in this section is either the line that OPENS a block
+       — and then it is also the one the lead register draws — or a separator between rows
+       inside one. Every border below reads from these; a third value means a third role, and
+       there is no third role here. */
+    --coda-rule: rgba(244, 241, 233, 0.28);
+    --coda-hair: rgba(244, 241, 233, 0.18);
+    /* The ledger's one spine, shared by the tiers and the transfer rows so the IBAN starts where
+       a tier's sentence starts. Both ends are measured, not chosen: the floor clears what
+       "2 500 zł" needs at its own size (79px in Cormorant, with the rest as slack for a fallback
+       face that sets wider), and the ceiling is the width at which the widest IBAN — 278px at
+       12px/0.08em, plus the 47px copy control — still fits on one line beside it. Fixed at 105px
+       the spine ate that line between roughly 980 and 1220px, where the right column is narrowest
+       while still being a column. */
+    --coda-spine: clamp(88px, 5.5vw, 105px);
+    --coda-spine-gap: clamp(16px, 1.25vw, 24px);
   }
 
   /* Full-bleed backdrop (<BleedImage>, parallax) + dark scrim — replaces the old CSS
@@ -780,15 +795,25 @@
     padding-bottom: var(--space-xxl);
   }
 
+  /* The diptych is PLACED, not inherited from source order — the markup runs in the phone's
+     reading order (see FinalSupportSection.astro), so on the wide canvas the left column is
+     three separate rows and the ledger spans all of them. Column gap only: the left column's
+     vertical rhythm is its blocks' own margins, and a row gap would add a second, invisible
+     one on top of them. */
   .final-grid {
     display: grid;
     grid-template-columns: minmax(0, 0.82fr) minmax(380px, 0.72fr);
-    gap: clamp(48px, 8vw, 130px);
+    column-gap: clamp(48px, 8vw, 130px);
     align-items: end;
   }
 
+  .final-lede {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   /* `.ink-press` heading — weight must equal --wght-rest, as for `.ensemble-copy h2` above. */
-  .final-copy h2 {
+  .final-lede h2 {
     margin: 0;
     font-family: var(--serif);
     font-size: clamp(48px, 6.5vw, 108px);
@@ -796,7 +821,7 @@
     line-height: 0.95;
   }
 
-  .final-copy p {
+  .final-lede p {
     max-width: 44rem;
     margin: 40px 0 0;
     color: rgba(244, 241, 233, 0.74);
@@ -807,49 +832,122 @@
   .donation-list {
     display: grid;
     gap: 0;
-    border-top: 1px solid rgba(244, 241, 233, 0.28);
+    grid-column: 2;
+    grid-row: 1 / 4;
   }
 
-  html.voct-motion .donation-list.reveal-rule {
+  /* Lead only. The ink lives on the tiers themselves, so the rule is drawn and each offer is
+     written under it in turn — the rule leads its own contents by one onset of the queue, which
+     is the pairing a shared ink+lead node used to hard-code for the block as a whole. */
+  .donation-rows {
+    border-top: 1px solid var(--coda-rule);
+  }
+
+  html.voct-motion .donation-rows.reveal-rule {
     border-top-color: transparent;
-    --rule-ink: rgba(244, 241, 233, 0.28);
+    --rule-ink: var(--coda-rule);
   }
 
+  /* A tier is the only concrete offer on this page, so it IS the trigger: the row opens the
+     vault at its own amount through the delegated `[data-vault-open]` handler. Button reset
+     first — the row's geometry is the grid below, never the UA's. */
   .donation-row {
     display: grid;
-    grid-template-columns: 105px minmax(0, 1fr);
-    gap: 24px;
-    border-bottom: 1px solid rgba(244, 241, 233, 0.22);
+    grid-template-columns: var(--coda-spine) minmax(0, 1fr);
+    gap: var(--coda-spine-gap);
+    align-items: baseline;
+    appearance: none;
+    width: 100%;
+    border: 0;
+    border-bottom: 1px solid var(--coda-hair);
     padding: 22px 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    /* The `font` shorthand resets font-feature-settings to `normal`, which would take the page's
+       kerning and ligatures off this row's Polish sentence; restate it. */
+    font: inherit;
+    font-feature-settings: inherit;
+    text-align: left;
+    /* Named rather than inlined because this row is ALSO an ink node, and there is exactly one
+       `transition-property` slot per element — the rule below restates this list, and one list
+       in one place is the only way that stays true. Un-gated here, which is already what a
+       no-motion visitor needs: without `voct-motion` there is no register to merge with. */
+    --tier-hover-transition: background-color 0.45s var(--ease);
+    transition: var(--tier-hover-transition);
   }
 
+  /* Ink + the hover, merged. Specificity clears both the register (0,2,1) and `.is-settled`
+     (0,2,0) — the latter deliberately: a row whose hover has to work for the rest of the session
+     cannot have its transitions stripped when its entrance is spent. */
+  html.voct-motion .donation-row.reveal {
+    transition: opacity var(--ink-in) var(--ease-ink), var(--tier-hover-transition);
+  }
+
+  /* The last tier's separator would sit 34px above the bank card's opening rule — two hairlines
+     with an empty band between them, which reads as a slip rather than a break. The bank card's
+     own rule is the break. */
+  .donation-row:last-child {
+    border-bottom: 0;
+  }
+
+  .donation-row:hover,
+  .donation-row:focus-visible {
+    background-color: rgba(198, 164, 91, 0.055);
+  }
+
+  .donation-row:focus-visible {
+    outline: 1px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  /* Right-aligned so the three "zł" stand in one column — the amounts are a ledger, and a
+     ledger aligns on its unit. `lnum` because the numeral is a figure to be read, not text:
+     Cormorant's default set would drop the 5 below the baseline next to a lining 1. Never
+     `tnum` — these are three different widths on purpose. */
   .donation-row strong {
     font-family: var(--serif);
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 300;
     line-height: 1;
+    text-align: right;
+    font-feature-settings: "kern" 1, "liga" 1, "lnum" 1;
+    transition: color 0.45s var(--ease);
   }
 
+  .donation-row:hover strong,
+  .donation-row:focus-visible strong {
+    color: var(--candle);
+  }
+
+  /* What the money DOES is the argument; the amount is only its label. Set close enough to the
+     lede's own measure that the sentence carries, and one step under it in colour so the two
+     paragraphs of this section stay in order. */
   .donation-row span {
-    color: rgba(244, 241, 233, 0.74);
+    color: rgba(244, 241, 233, 0.82);
+    font-size: clamp(16px, 1.15vw, 18px);
+    line-height: 1.5;
   }
 
   .bank-card {
     margin-top: 34px;
-    border-top: 1px solid rgba(244, 241, 233, 0.28);
+    border-top: 1px solid var(--coda-rule);
   }
 
   html.voct-motion .bank-card.reveal-rule {
     border-top-color: transparent;
-    --rule-ink: rgba(244, 241, 233, 0.28);
+    --rule-ink: var(--coda-rule);
   }
 
+  /* One spine for the whole column: the currency takes the tiers' own `--coda-spine` slot, so the
+     IBAN starts exactly where a tier's sentence starts. Two stacked tables with two different
+     left edges read as two components that happened to land under each other. */
   .bank-row {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr) auto;
-    gap: 18px;
+    grid-template-columns: var(--coda-spine) minmax(0, 1fr) auto;
+    gap: var(--coda-spine-gap);
     align-items: center;
-    border-bottom: 1px solid rgba(244, 241, 233, 0.18);
+    border-bottom: 1px solid var(--coda-hair);
     padding: 18px 0;
   }
 
@@ -858,6 +956,7 @@
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.16em;
+    text-align: right;
     text-transform: uppercase;
   }
 
@@ -892,13 +991,22 @@
     text-transform: uppercase;
   }
 
+  /* Its top border opens a block exactly as the ledger's two do, so it is drawn like them — and
+     it runs the column's full width, because a rule that stops short of the copy above it reads
+     as a measure constraint this block does not have (nothing in it wraps). */
   .final-contact {
     display: grid;
     gap: 6px;
+    grid-column: 1;
+    grid-row: 2;
     margin-top: 42px;
-    border-top: 1px solid rgba(244, 241, 233, 0.22);
+    border-top: 1px solid var(--coda-rule);
     padding-top: 26px;
-    max-width: 32rem;
+  }
+
+  html.voct-motion .final-contact.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: var(--coda-rule);
   }
 
   .final-contact .micro {
@@ -914,6 +1022,9 @@
     border-bottom: 1px solid rgba(244, 241, 233, 0.36);
     padding-bottom: 6px;
     width: max-content;
+    /* Safe as a plain declaration: the ink for this card sits on `.final-contact`, not here, so
+       nothing merges into this slot. Were the register ever moved onto the name itself, this
+       list would have to be restated the way `.donation-row` does it. */
     transition: border-color 0.45s var(--ease);
   }
 
@@ -932,6 +1043,8 @@
     display: flex;
     flex-wrap: wrap;
     gap: 22px;
+    grid-column: 1;
+    grid-row: 3;
     margin-top: 32px;
   }
 
