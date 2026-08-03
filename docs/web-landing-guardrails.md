@@ -433,6 +433,95 @@ break. And **hiding is what you do when you cannot cut**: a swipe rail or a disc
 footer was considered and dropped, because the site's own Regula says it moves none of its text, and
 because the content did not need to be hidden — it needed to not be there.
 
+*One thing that pass shipped broken, and the class of failure is worth more than the fix:* the
+`ACT I` comment above `.site-footer-head` was never closed, so the rule under it — the one that
+centres the running head on the plate and drops the wide measure's 38px of air — was inside the
+comment. **A CSS comment that swallows a rule is silent all the way down**: it parses, it builds,
+`astro check` is clean, and the only symptom is a left-hung inscription on a centred plate with a
+gap nobody ordered. Every other rule in the block worked, which is what made it read as a tuning
+problem. Nothing in the toolchain looks for this; the cheap check is a scan for `{` occurring
+inside a comment, which takes ten lines of node and finds it instantly.
+
+**The footer's TONE, unlike its figure, is legitimate — and the reason is the difference between
+a thing that is read and a thing you read through.** 2026-08-04 the plate took two full palettes:
+parchment through the day, a night ground at Completorium and Matutinum. It looks like the fourth
+pass the section above forbids and it is not, on three counts, each of which is also the entry
+price for anything similar. *It asks nothing of the sun.* The assignment is a field on the hours
+themselves (`lumen` in `horaeCanonicae.ts`) and it reads the glosses that were already there —
+six of the eight claim the light, two claim the night — so it never leaves the frame the footer
+is entitled to print. *It draws no second object.* The restatement verdict ("the punctum's
+position IS the clock printed below it") is a rule about ATTENTION, not about information: two
+things that both ask to be read spend the reader twice, and a ground asks for nothing. The
+dateline saying `Completorium · noc się zamyka` over a night plate is a caption agreeing with its
+page, not a second caption. *And it is the palette in which this footer's gold finally works* —
+`--candle` measures 2.10:1 on parchment and 8.08:1 on the night ground, so the accent the plate is
+built around stops being a whisper the moment the plate turns. The window is 21:00–03:00 Warsaw,
+which is also when a post-concert phone actually opens this page.
+
+Four things it had to carry, and each of them would have been silent:
+
+- **The bottom iOS band.** `BaseLayout` read `--edge-foot` once at arm time, so a footer whose
+  colour is no longer a constant for the life of the page ended in a parchment strip under a night
+  plate. It reads both edge tokens inside the observer callback now. §3a still holds otherwise —
+  one colour per page per band, and the TOP band is still frozen and still black.
+- **The sticky chrome.** `DARK_SELECTORS` (`StickyHeader.tsx`) decides the brand's tint from
+  `elementFromPoint` under the bar. The footer fills the screen when it is read, so the bar stands
+  on it; without a conditional entry the wordmark was dark ink on a night ground. The entry is
+  conditional (`body[data-lumen='nox'] .site-footer`) and the probe runs per frame, so a plate that
+  turns at 21:00 takes the chrome with it.
+- **Where the tone is applied from.** NOT the footer island: it hydrates `client:visible`, so a
+  palette set on mount lands in front of the reader every time — the plate arrives parchment and
+  turns under their eyes. A page's ground is not island state. `scripts/landing.ts` writes
+  `<body data-lumen>` at module time and in `astro:after-swap`, the same contract the parallax
+  controller keeps and for the same reason. Body rather than `<html>`, because `--edge-foot` is
+  read off the body and because the swap replaces the body wholesale — the attribute leaves with
+  the page instead of needing a gate.
+- **One registered NUMBER, not eight registered colours.** An unregistered custom property does
+  not interpolate, so a smooth turn needs `@property`. Registering all eight tokens means eight
+  blocks and an eight-term `transition`; registering `--nox` as a single `<number>` and deriving
+  every token through `color-mix` means one of each, and it puts the two palettes side by side in
+  the source where they can be compared. It **must** inherit: the tokens themselves are
+  unregistered, so descendants inherit a raw token stream with `var(--nox)` still inside it and
+  resolve it in their own context — under `inherits: false` every descendant would read the
+  initial value and the whole footer would stay in daylight.
+
+Two measurements worth keeping. The night values were chosen to REPEAT the parchment's contrast
+relations rather than to out-shout them: `--ink-soft` lands on 11.60:1 against 11.60:1, and the
+hairlines on 1.43 and 2.16 against 1.40 and 2.15. And the day palette was quietly failing its own
+rule — `--candle` carried the stanza heads (11.5px), the hora, every gold hover and the colophon's
+focus ring at 2.10:1, while `--candle-ink` had existed for exactly that since the token was added.
+Gold TEXT in the footer goes through `--candle-text` now (candle-ink on parchment, full candle at
+night); marks, mid-dots, fleurons and rules keep `--candle`, where the minimum does not apply. The
+dateline clock goes through it too, and the "large display gold" exemption in `tokens.css` does not
+rescue it: 22–28px IS large text under WCAG, so the bar is 3:1 and full candle measures 2.10 on
+parchment. That exemption was written about gold on a DARK ground, where the same paint is 8.08 —
+which the night plate hands back, clock included.
+
+**The landing's footer must not be given to the subpages, and the two are not "the same footer,
+diverged".** Asked and answered 2026-08-04. Every page except `/` ends on `components/SiteFooter.astro`
+— permanently on `--night`, three columns, zero JS — and swapping the landing's plate in fails on
+three counts, each sufficient. *The numbering is a claim about a composition*: `IV · INSCRIPTIO
+FINALIS` closes I · Lumen Christi, II · Vox memoriae, III · Sustinete nos, and on `/kontakt` there
+is no I, II or III — a fourth movement without them falsifies the sequence exactly the way putting
+the Bobola Mass in the register would falsify the roman numbering. *The subpages would lose their
+site map*: that middle column is the only wayfinding at the foot of a subpage, and the landing
+needs none because the page IS the navigation. *And the shared footer is the TRANSLATED one* —
+`lang` selects twelve strings and localizes every route, `/en/o-nas` and `/fr/o-nas` are built
+pages, while the landing's island is Polish in the markup; the swap would be a regression no
+design win pays for. One more, for the palette specifically: **the night plate is information only
+because the landing's default is parchment.** On a footer that is always dark, `--nox` has nothing
+to say.
+
+What WAS a real gap, and is closed instead: the statute PDF and the data-protection address stood
+on the landing alone (the statute is the one file a grantor looks for, and the duty is the whole
+site's); the three column heads were plain labels while the landing speaks the two-voice `· LATIN
+gloss` rubric and this footer's own incipit line already speaks Latin — they are `· Fundatio` ·
+`· Index` · `· Vox` now, with the existing glosses, and Latin needs no locale; and the footer had
+no entrance at all on pages where every band above it inks or is ruled — it takes the ink register
+per column (`data-d` 1·2·3 left to right, the incipit at 4) and the lead on `.foot-base`'s border,
+which is **the only hairline this footer carries**. No cap rules were invented for the three
+columns to have something to draw.
+
 **A printer's device at the foot of that plate: built once, cut. Do not build a second.** The house
 glyph was set under the imprint as a closing mark — first at the chrome's 17×40 footprint, which was
 a speck under a subject set at 50px, then at 112px on the vector master, which is the smallest width
@@ -665,9 +754,20 @@ make unnecessary.
 
 **Unison is the tell, not the effect.** N siblings flipped in one IntersectionObserver callback
 enter as one block, and that is what makes a page look generated more than any choice of easing.
-`setupReveal` therefore paces every entrance through one shared onset queue (220ms start-to-start,
-document order), the same "points of imitation" mechanism `setupManifestLight` uses for the
-stanzas. Anything new that reveals in bulk goes through that queue.
+`setupReveal` therefore paces every entrance through one shared onset queue (220ms start-to-start),
+the same "points of imitation" mechanism `setupManifestLight` uses for the stanzas. Anything new
+that reveals in bulk goes through that queue.
+
+**And the queue orders by GEOMETRY, because document order was only ever a proxy.** The promise is
+"a fast scroll still enters top-down", and the implementation read DOM index — which is the same
+thing right up until something re-sequences the layout. The landing's phone footer does exactly
+that: its bands are re-ordered with flex `order` (`11-mobile.css`) so the record that prints last
+stands third in the markup, and a fling to the bottom inked it two bands ahead of its turn. `hits()`
+sorts on `entry.boundingClientRect.top` now — rounded into 4px buckets so siblings hanging from one
+grid line tie, with document order as the stable tie-break, which is what still enters the desktop
+register's four columns left to right. **Before reaching for `order` or `grid-row` on register nodes,
+remember that every "document order" guarantee in this codebase silently became a claim about
+layout.**
 
 Coherence is the filter against showreel, not restraint — which is why a strong page-turn is fine
 and a tasteful generic fade-up was not.

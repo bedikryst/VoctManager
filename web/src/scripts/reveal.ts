@@ -186,14 +186,29 @@ export function setupReveal(root: ParentNode, { reduce, cadence }: RevealOptions
     else timers.push(window.setTimeout(() => enter(el), onset - now));
   };
 
-  /** Document order, not callback order, so a fast scroll still enters top-down. */
+  /**
+   * Top-down by GEOMETRY, not by callback order — a fling that crosses several nodes in one
+   * frame must still enter them the way they are read.
+   *
+   * Document order is only a PROXY for reading order, and it holds exactly as long as nothing
+   * re-sequences the layout. The landing's phone footer breaks it: its bands are re-ordered
+   * with flex `order` (11-mobile.css), so the record that prints last stands third in the
+   * markup and used to ink two bands ahead of its turn. The rect the observer already hands us
+   * is the real answer, and it costs nothing to read.
+   *
+   * Rounded into 4px buckets so siblings hanging from one grid line TIE rather than sorting on
+   * sub-pixel noise, and a tie falls back to document order — `Array#sort` is stable, which is
+   * what still enters the desktop footer's four columns left to right.
+   */
   const hits = (entries: IntersectionObserverEntry[]): IntersectionObserverEntry[] =>
     entries
       .filter((entry) => entry.isIntersecting)
-      .sort(
-        (a, b) =>
-          (order.get(a.target as HTMLElement) ?? 0) - (order.get(b.target as HTMLElement) ?? 0),
-      );
+      .sort((a, b) => {
+        const band =
+          Math.round(a.boundingClientRect.top / 4) - Math.round(b.boundingClientRect.top / 4);
+        if (band !== 0) return band;
+        return (order.get(a.target as HTMLElement) ?? 0) - (order.get(b.target as HTMLElement) ?? 0);
+      });
 
   const io = new IntersectionObserver(
     (entries) => {

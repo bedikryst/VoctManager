@@ -19,13 +19,109 @@
      a zegar zszedł na linię, gdzie pustka nie ma się gdzie zawiązać.
      ─────────────────────────────────────────────────────────────── */
 
+  /* ═══════════════════════════════════════════════════════════════
+     DWIE PALETY, JEDNA OŚ — `--nox`
+     ───────────────────────────────────────────────────────────────
+     Stopka drukuje horę, w której jest czytana, więc od tego przebiegu drukuje się
+     TEŻ NA JEJ GRUNCIE: pergamin przez dzień, płyta nocna w Completorium i Matutinum
+     (21:00–03:00 czasu warszawskiego). Przydział niesie sama tablica godzin
+     (`horaeCanonicae.ts`, pole `lumen`) — sześć hor mówi o świetle własną glosą, dwie
+     mówią o nocy. To nie jest figura doby słonecznej w innym przebraniu: nic tu nie
+     pyta, gdzie jest słońce, i nic nie rysuje drugiego obiektu do przeczytania. Ton
+     nie jest czytany — jest warunkiem czytania (docs/web-landing-guardrails.md).
+
+     TO SĄ DWIE PEŁNE PALETY, nie jedna z filtrem. Każdy token, którym ta stopka jest
+     napisana, ma dwa końce podane obok siebie i zmierzone: kontrast musi trzymać na
+     obu gruntach, bo to ta sama treść. Pary są dobrane tak, żeby POWTARZAŁY relację
+     pergaminu, a nie żeby ją przekrzyczeć — `--ink-soft` daje 11,60:1 na obu, a włosy
+     1,43 i 2,16 wobec pergaminowych 1,40 i 2,15.
+
+     JEDNA OŚ, NIE OSIEM KANAŁÓW. Przejście musi być płynne (o 21:00 hora może się
+     przełamać czytelnikowi przed oczami), a niestandaryzowana własność custom nie
+     animuje się. Osiem zarejestrowanych kolorów to osiem @property i ośmioczłonowy
+     `transition`; jedna zarejestrowana LICZBA to jeden i jeden, a color-mix przelicza
+     całą paletę co klatkę. Przy okazji obie palety stoją wtedy w kodzie obok siebie
+     i czyta się je jako dwie palety.
+
+     `--nox` MUSI dziedziczyć. Tokeny (`--paper`, `--ink`…) są niezarejestrowane, więc
+     potomkowie dziedziczą nie policzony kolor, tylko surowy strumień z `var(--nox)`
+     w środku i rozwiązują go U SIEBIE. Przy `inherits: false` każdy potomek widziałby
+     wartość początkową — czyli całą stopkę w dzień, niezależnie od godziny.
+
+     REJESTRACJA JEST TU, BO CZYTELNIK JEST TU — i musi zostać jedyna. `--wght` był
+     kiedyś zarejestrowany dwa razy, z różnymi deskryptorami, i o tym, które obowiązują,
+     decydowała kolejność bundlowania zamiast źródła (docs/web-landing-guardrails.md).
+     Jeśli tej osi zechce kiedyś inna powierzchnia — PRZENIEŚ ten blok do tokens.css,
+     nie powtarzaj go. */
+  @property --nox {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+  }
+
   .site-footer {
     position: relative;
+    /* Stan SSR i stan bez JS-u: pergamin. Statyczna strona nie zna godziny czytelnika,
+       a domyślnie oddawać trzeba to, co jest prawdą przez trzy czwarte doby. */
+    --nox: 0;
+
+    --paper: color-mix(in oklab, #f4f1e9, #100f0d calc(var(--nox) * 100%));
+    --paper-soft: color-mix(in oklab, #ebe6da, #080807 calc(var(--nox) * 100%));
+    --ink: color-mix(in oklab, #161514, #f4f1e9 calc(var(--nox) * 100%));
+    --ink-soft: color-mix(in oklab, #34302b, #cfc9ba calc(var(--nox) * 100%));
+    --ink-muted: color-mix(in oklab, #746d62, #847d70 calc(var(--nox) * 100%));
+    --line: color-mix(in oklab, rgb(22 21 20 / 0.16), rgb(244 241 233 / 0.14) calc(var(--nox) * 100%));
+    --line-strong: color-mix(in oklab, rgb(22 21 20 / 0.34), rgb(244 241 233 / 0.26) calc(var(--nox) * 100%));
+
+    /* ZŁOTO JEST JEDYNYM TOKENEM, KTÓRY SIĘ NIE ZMIENIA — i dlatego ta paleta nie jest
+       kostiumem. `--candle` daje 2,10:1 na pergaminie i 8,08:1 na nocy: ten sam heks,
+       który na papierze nie ma prawa nieść tekstu, w nocy niesie go z zapasem. Dlatego
+       złoto TEKSTU chodzi tu przez `--candle-text` — na pergaminie schodzi do
+       `--candle-ink` (4,67:1, najjaśniejsza wartość, która przechodzi AA), w nocy wraca
+       do pełnego candle. Znaki i włosy (mid-doty, romby, kreski) zostają na `--candle`
+       w obu paletach: dla nich minimum kontrastu nie obowiązuje.
+       ZEGAR TEŻ IDZIE PRZEZ `--candle-text`, choć tokens.css zostawia pełny candle
+       „dużemu złotu display". Ten wyjątek go nie obejmuje: 22–28 px to tekst duży
+       w rozumieniu WCAG, więc obowiązuje próg 3:1 — a pełny candle daje na pergaminie
+       2,10 i nie przechodzi nawet tego. Wyjątek dla display był pisany o złocie na
+       ciemnym gruncie, gdzie ta sama farba ma 8,08; płyta nocna dostaje ją z powrotem
+       i zegar świeci tam pełnią. */
+    --candle-text: color-mix(in oklab, #7f693a, #c6a45b calc(var(--nox) * 100%));
+
+    /* Poświata świecy u szczytu płyty. Ta sama farba na ciemnym gruncie DODAJE światła
+       zamiast je odejmować, więc na nocy schodzi z 8,5% na 5% — inaczej z dyskretnego
+       ciepła robi się reflektor. */
+    --foot-bloom: color-mix(
+      in oklab,
+      rgb(198 164 91 / 0.085),
+      rgb(198 164 91 / 0.05) calc(var(--nox) * 100%)
+    );
+
     background:
-      radial-gradient(120% 62% at 50% 0%, rgb(var(--candle-rgb) / 0.085), transparent 64%),
+      radial-gradient(120% 62% at 50% 0%, var(--foot-bloom), transparent 64%),
       linear-gradient(180deg, var(--paper) 0%, var(--paper) 36%, var(--paper-soft) 100%);
     border-top: 1px solid var(--line);
     color: var(--ink-soft);
+    /* Jedyny `transition` na tym elemencie i jedyny, jakiego ta zmiana potrzebuje: żaden
+       potomek nie dostaje własnej deklaracji, więc nic nie wchodzi w kolizję ze szczeliną
+       `transition-property` rejestrów wpisu. Krzywa jest świetlna — trzyma, zalewa,
+       wygasza do zera — bo to jest zmiana światła, a nie przerzucenie przełącznika.
+       Blok `prefers-reduced-motion` na końcu tego pliku ścina ją do zera. */
+    transition: --nox 1.6s var(--ease-light);
+  }
+
+  /* Płyta nocna. Specyficzność jest z zapasem (0,3,0) wobec `body.theme-marketing`, bo
+     `--edge-foot` musi wygrać niezależnie od kolejności bundlowania tokens.css i tego pliku. */
+  body.theme-marketing[data-lumen="nox"] .site-footer {
+    --nox: 1;
+  }
+
+  /* Pasek, który iOS Safari otwiera pod dolną krawędzią, próbkuje kanwę NA ŻYWO (w
+     przeciwieństwie do górnego, zamrożonego na pierwszym malowaniu) — a BaseLayout
+     przełącza kanwę na `--edge-foot`, kiedy stopka wchodzi w kadr. Bez tej linii płyta
+     nocna kończyłaby się pergaminowym pasem pod palcem. */
+  body.theme-marketing[data-lumen="nox"] {
+    --edge-foot: var(--dark);
   }
 
   .site-footer-inner {
@@ -73,17 +169,29 @@
   }
 
   /* Wygaszona na obu końcach: linia, która łączy dwie rzeczy, nie ma prawa
-     dobijać do liter — na styku czytałaby się jak podkreślenie inskrypcji. */
+     dobijać do liter — na styku czytałaby się jak podkreślenie inskrypcji.
+
+     REJESTR LEAD. Włos jest zadeklarowany RAZ, w `--rule-ink`, i czytają go dwie ścieżki:
+     tło samego elementu (bez JS-u i przy wyłączonym ruchu) oraz pseudo-linia rejestru pod
+     `voct-motion`, którą można wyrysować od lewej. Gdyby wartość stała w dwóch miejscach,
+     warstwa ≤640 (inny włos: pełny, nie wygaszony) musiałaby pamiętać o obu. */
   .footer-head-rule {
-    height: 1px;
-    background: linear-gradient(
+    --rule-ink: linear-gradient(
       90deg,
       transparent,
       var(--line-strong) 14%,
       var(--line-strong) 86%,
       transparent
     );
+    height: 1px;
+    background: var(--rule-ink);
     opacity: 0.6;
+  }
+
+  /* Pod ruchem włos oddaje swój obraz pseudo-linii — element zostaje pustym pudełkiem
+     o wysokości 1 px, żeby układ się nie ruszył. */
+  html.voct-motion .footer-head-rule {
+    background: none;
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -150,7 +258,7 @@
      i 1,971em przy 700), Cinzel rośnie 2,139em → 2,310em, czyli zegar wędrowałby
      w prawo przy każdej zmianie wagi. */
   .dateline-clock {
-    color: var(--candle);
+    color: var(--candle-text);
     font-family: var(--serif);
     font-size: clamp(22px, 1.9vw, 28px);
     font-weight: 300;
@@ -190,7 +298,7 @@
   /* Hora jest inskrypcją pod cyfrą — tu OBOK cyfry, ale ta sama rola:
      zegar to kotwica, hora to jego imię. Jedyna kursywa serif w pasie. */
   .dateline-hora {
-    color: var(--candle);
+    color: var(--candle-text);
     font-family: var(--serif);
     font-style: italic;
     font-size: clamp(15px, 1.3vw, 18px);
@@ -252,10 +360,18 @@
     min-width: 0;
     padding-top: 12px;
     border-top: 1px solid var(--line-strong);
+    --rule-ink: var(--line-strong);
     color: var(--ink-soft);
     font-family: var(--sans);
     font-size: 13px;
     line-height: 1.6;
+  }
+
+  /* Nakrywka oddaje się rejestrowi LEAD: szerokość zostaje (1 px trzyma układ), kolor
+     schodzi do zera, a rysuje pseudo-linia od lewej — po niej, o takt później, wchodzi
+     tusz stanzy. Bez ruchu i bez JS-u obramowanie zostaje prawdziwe. */
+  html.voct-motion .footer-stanza {
+    border-top-color: transparent;
   }
 
   /* ─── Foundation mark — nazwa + siedziba + identyfikatory ─── */
@@ -370,7 +486,7 @@
   .foundation-stanza-label .latin {
     font-family: var(--capitalis);
     font-weight: 500;
-    color: var(--candle);
+    color: var(--candle-text);
     font-size: 11.5px;
     letter-spacing: 0.18em;
   }
@@ -448,7 +564,7 @@
 
   .foundation-corpus-list a:hover,
   .foundation-vox-list a:hover {
-    color: var(--candle);
+    color: var(--candle-text);
   }
 
   .foundation-corpus-list a:hover::after,
@@ -468,7 +584,7 @@
   }
 
   .foundation-corpus-list a:hover .doc-tag {
-    color: var(--candle);
+    color: var(--candle-text);
   }
 
   /* Vox — kontakt. STOS, nie lista inline rozdzielona mid-dotami: ta forma
@@ -512,7 +628,7 @@
   }
 
   .foundation-vox-rodo a:hover {
-    color: var(--candle);
+    color: var(--candle-text);
     border-color: var(--candle);
   }
 
@@ -586,7 +702,7 @@
   }
 
   .footer-ribbon-list a:hover {
-    color: var(--candle);
+    color: var(--candle-text);
   }
 
   .footer-ribbon-list a:hover::after {
@@ -647,8 +763,10 @@
   .footer-colophon-faces .ff:focus-visible {
     color: var(--ink);
   }
+  /* Obrys fokusu bierze złoto TEKSTU, nie znaku: to element interfejsu, więc obowiązuje
+     go minimum 3:1, a pełny candle daje na pergaminie 2,10. */
   .footer-colophon-faces .ff:focus-visible {
-    outline: 1px solid var(--candle);
+    outline: 1px solid var(--candle-text);
     outline-offset: 4px;
   }
 
@@ -727,7 +845,7 @@
   }
 
   .footer-colophon-author a:hover {
-    color: var(--candle);
+    color: var(--candle-text);
   }
 
   /* SYGNETU DRUKARZA TU NIE MA i nie wracaj z nim — ani na desktopie, ani na płycie

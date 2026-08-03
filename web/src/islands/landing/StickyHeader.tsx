@@ -27,8 +27,13 @@ import { horaForWarsaw } from "./lib/horaeCanonicae";
 import { Typo } from "./lib/Typo";
 
 // Sections whose surface is dark enough that the glass chrome must invert to its light brand.
+// The footer is CONDITIONALLY one of them: it is printed on the ground of the canonical hour it
+// is read in (`body[data-lumen]`, set by scripts/landing.ts), so at Completorium the bar stands
+// over a night plate and a dark brand on it would be unreadable. The probe below runs
+// `closest()` on every scroll frame, so the condition is live — a plate that turns at 21:00
+// takes the chrome with it.
 const DARK_SELECTORS =
-  ".image-rite, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure";
+  ".image-rite, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure, body[data-lumen='nox'] .site-footer";
 
 // How long a chosen silk is held before the page swap fires — one beat, so the gesture reads
 // before the crossfade (transitions.css) dissolves it. Shared by the desktop registrum's

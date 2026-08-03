@@ -37,8 +37,16 @@ export interface UIStrings {
     /** aria-label around the language switcher. */
     readonly langAria: string;
   };
+  /**
+   * The three column heads are the POLISH HALF of a two-voice rubric — the Latin
+   * (`Fundatio` · `Index` · `Vox`) is set in the component and never translated, because
+   * Latin is the same in every locale and that is half the point of the form. So these
+   * strings are glosses, not labels: keep them one or two words and keep them true to the
+   * Latin above them.
+   */
   readonly footer: {
     readonly foundation: string;
+    /** Glosses `Index` — the site's own table of contents, not the word "page". */
     readonly site: string;
     readonly contactMedia: string;
     readonly home: string;
@@ -48,6 +56,12 @@ export interface UIStrings {
     readonly support: string;
     readonly colophon: string;
     readonly privacy: string;
+    /** The foundation's founding document, linked as a PDF beside the registry numbers. */
+    readonly statute: string;
+    /** Accessible name for the statute link — states the format and the new tab. */
+    readonly statuteAria: string;
+    /** The data-protection acronym, which is genuinely different per locale. */
+    readonly dataProtection: string;
     /** Quiet note under the legal identifiers. */
     readonly donationNote: string;
     /** "Built by" credit label in the footer base row. */
@@ -74,7 +88,7 @@ export const UI: Record<Locale, UIStrings> = {
     },
     footer: {
       foundation: "Fundacja",
-      site: "Strona",
+      site: "Spis",
       contactMedia: "Kontakt i media",
       home: "Strona główna",
       about: "O nas",
@@ -83,6 +97,9 @@ export const UI: Record<Locale, UIStrings> = {
       support: "Wesprzyj",
       colophon: "Kolofon",
       privacy: "Polityka prywatności",
+      statute: "Statut fundacji",
+      statuteAria: "Statut Fundacji VoctFoundation — dokument PDF, otwiera się w nowej karcie",
+      dataProtection: "RODO",
       donationNote: "Darowizna na cele statutowe.",
       realizedBy: "Realizacja",
     },
@@ -105,7 +122,7 @@ export const UI: Record<Locale, UIStrings> = {
     },
     footer: {
       foundation: "Foundation",
-      site: "Site",
+      site: "Contents",
       contactMedia: "Contact & media",
       home: "Home",
       about: "About",
@@ -114,6 +131,9 @@ export const UI: Record<Locale, UIStrings> = {
       support: "Support us",
       colophon: "Colophon",
       privacy: "Privacy policy",
+      statute: "Foundation statute",
+      statuteAria: "Statute of the VoctFoundation — PDF document, opens in a new tab",
+      dataProtection: "GDPR",
       donationNote: "Donations serve the foundation's charitable purposes.",
       realizedBy: "Built by",
     },
@@ -136,7 +156,7 @@ export const UI: Record<Locale, UIStrings> = {
     },
     footer: {
       foundation: "Fondation",
-      site: "Site",
+      site: "Sommaire",
       contactMedia: "Contact & médias",
       home: "Accueil",
       about: "À propos",
@@ -145,6 +165,9 @@ export const UI: Record<Locale, UIStrings> = {
       support: "Nous soutenir",
       colophon: "Colophon",
       privacy: "Politique de confidentialité",
+      statute: "Statuts de la fondation",
+      statuteAria: "Statuts de la Fondation VoctFoundation — document PDF, s'ouvre dans un nouvel onglet",
+      dataProtection: "RGPD",
       donationNote: "Les dons servent les buts statutaires de la fondation.",
       realizedBy: "Réalisation",
     },

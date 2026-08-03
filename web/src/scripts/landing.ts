@@ -30,6 +30,7 @@
  * @module scripts/landing
  */
 
+import { horaForWarsaw, msToNextHora } from "../islands/landing/lib/horaeCanonicae";
 import { setupReveal } from "./reveal";
 
 interface LenisLike {
@@ -521,6 +522,39 @@ function setupInteractions(root: HTMLElement): void {
   cleanups.push(() => root.removeEventListener("click", onClick));
 }
 
+// ── Lumen: which of the footer's two grounds the page ends on ───────────────────────────────
+//
+// The footer prints the hora canonica it is being read in, and since this pass it is PRINTED ON
+// THAT HOUR'S GROUND too — parchment through the day, a night plate at Completorium and
+// Matutinum. Two full palettes on one axis (`--nox`, styles/landing/06-footer.css); this writes
+// the single attribute that picks between them, and nothing else.
+//
+// IT IS NOT IN THE FOOTER ISLAND, and that is the whole reason it is here. `<SiteFooter
+// client:visible />` hydrates when the footer ENTERS THE VIEWPORT, so a tone applied on mount
+// would land in front of the reader every time — the plate would arrive parchment and turn under
+// their eyes. The page's palette is not island state; it belongs to the document, and it has to
+// be settled long before anyone reaches the foot of a 15,000px page.
+//
+// It writes `<body>` rather than `<html>`: `--edge-foot` (the colour iOS Safari samples for the
+// band under the home indicator) is read off the body by BaseLayout, and Astro's swap replaces
+// the body wholesale — so the attribute leaves with the page instead of having to be stripped,
+// which is exactly the trap `<html>` gates fall into (docs/web-landing-guardrails.md).
+//
+// The clock's own SSOT is `horaeCanonicae.ts`; this is a reader of that table, never a second
+// copy of the hours.
+let lumenTimer: number | undefined;
+
+function applyLumen(): void {
+  window.clearTimeout(lumenTimer);
+  // Followed a navigation off the landing: the module stays loaded in an SPA, and a timer that
+  // kept stamping a subpage's body would be writing an attribute nothing reads. Coming back
+  // re-arms from astro:after-swap.
+  if (!document.querySelector(".voct-landing")) return;
+  const now = new Date();
+  document.body.dataset.lumen = horaForWarsaw(now).lumen;
+  lumenTimer = window.setTimeout(applyLumen, msToNextHora(now));
+}
+
 function bind(): void {
   const root = document.querySelector<HTMLElement>(".voct-landing");
   if (!root) return;
@@ -534,6 +568,14 @@ function bind(): void {
   setupInterludeBreath(root, reduce);
   setupInteractions(root);
 }
+
+// The palette is part of the page's first painted state, not a correction to it — the same
+// contract the parallax controller keeps, and for the same reason: `astro:page-load` is the
+// window `load` event on a cold start and fires POST-SNAPSHOT on a navigation, so a page arriving
+// through the turned leaf would be captured on the wrong ground and settle onto the right one
+// mid-dissolve. Module time covers the cold start, `astro:after-swap` covers every navigation.
+applyLumen();
+document.addEventListener("astro:after-swap", applyLumen);
 
 document.addEventListener("astro:page-load", () => {
   teardown();

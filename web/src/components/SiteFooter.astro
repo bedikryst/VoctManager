@@ -1,8 +1,22 @@
 ---
 /**
  * @file SiteFooter.astro
- * @description Shared marketing footer (Fundacja identity · site map · contact/socials).
- *  Lifted from MarketingFooter.tsx + the footer CSS the SPA duplicated per page.
+ * @description Shared marketing footer for every page EXCEPT the landing (Fundatio identity ·
+ *  index · contact/socials), on the site-wide night ground.
+ *
+ *  IT IS NOT THE LANDING'S FOOTER AND MUST NOT BE REPLACED BY IT, which has been asked twice.
+ *  Three reasons, each sufficient. The landing's plate numbers itself `IV · INSCRIPTIO FINALIS`
+ *  and closes the sequence I · Lumen Christi, II · Vox memoriae, III · Sustinete nos — on
+ *  `/kontakt` there is no I, II or III, and a fourth movement without them is a false claim of
+ *  the same class the concert register's roman numbering is protected from. This footer carries
+ *  the SITE MAP, which is the only wayfinding at the foot of a subpage (the landing needs none:
+ *  the page is the navigation). And this one is translated — `lang` selects the strings and
+ *  localizes every route, and `/en/o-nas` and `/fr/o-nas` are real built pages — while the
+ *  landing's island is Polish in the markup.
+ *
+ *  What the two DO share is a house: the two-voice rubric (`· LATIN gloss`), the statute, the
+ *  data-protection route, and an entrance in the site's own registers. Those were the four real
+ *  gaps and they are closed here rather than by making one footer of two.
  * @architecture Astro islands 2026
  * @module components/SiteFooter
  */
@@ -22,9 +36,22 @@ const tempus = tempusForDate(new Date());
 ---
 
 <footer class="site-foot">
+  {/* Three columns, three bands, written left to right: `data-d` sets the offset for a whole
+      SUBTREE, so the column carries the cadence and its head, mark and list all take it. The
+      ink is on the columns rather than on the grid because one onset cannot cover a 220px
+      block and still be one utterance. */}
   <div class="foot-grid">
-    <div class="foot-col">
-      <h3>{t.foundation}</h3>
+    <div class="foot-col reveal" data-d="1">
+      {/* The two-voice rubric this site's registers speak: Latin in the inscriptional capital,
+          the gloss in mono minuscule. The split is not decorative — Cinzel has no lowercase, so
+          a gloss set in it would return small caps and start competing with the Latin it is
+          supposed to footnote. Still an `h3` because every page opens its sections at `h2`; the
+          tag carries the outline, the spans carry the voice. */}
+      <h3>
+        <span class="dot" aria-hidden="true">·</span>
+        <span class="lat" lang="la">Fundatio</span>
+        <span class="gloss">{t.foundation}</span>
+      </h3>
       <p class="foot-mark">VoctFoundation</p>
       <p class="foot-legal">
         ul. Św. Filipa 23/3 · 31-150 Kraków<br />
@@ -32,10 +59,30 @@ const tempus = tempusForDate(new Date());
         REGON 544621525<br />
         {t.donationNote}
       </p>
+      {/* The founding document, beside the numbers that register it and directly under the note
+          that names its purposes ("cele statutowe"). It was reachable from the landing alone,
+          which for a foundation is the one file a grantor goes looking for. It is deliberately
+          NOT in the index column: that column is the site's own contents, and a PDF is not a
+          page of this site. */}
+      <p class="foot-doc">
+        <a
+          href="/docs/Statut-VoctFoundation.pdf"
+          class="plausible-event-name=statut+fundacji"
+          target="_blank"
+          rel="noopener"
+          aria-label={t.statuteAria}
+        >
+          {t.statute} <span class="doc-tag" aria-hidden="true">PDF</span>
+        </a>
+      </p>
     </div>
 
-    <div class="foot-col">
-      <h3>{t.site}</h3>
+    <div class="foot-col reveal" data-d="2">
+      <h3>
+        <span class="dot" aria-hidden="true">·</span>
+        <span class="lat" lang="la">Index</span>
+        <span class="gloss">{t.site}</span>
+      </h3>
       <ul>
         <li><a href={localizePath("/", lang)}>{t.home}</a></li>
         <li><a href={localizePath("/o-nas", lang)}>{t.about}</a></li>
@@ -47,11 +94,22 @@ const tempus = tempusForDate(new Date());
       </ul>
     </div>
 
-    <div class="foot-col">
-      <h3>{t.contactMedia}</h3>
+    <div class="foot-col reveal" data-d="3">
+      <h3>
+        <span class="dot" aria-hidden="true">·</span>
+        <span class="lat" lang="la">Vox</span>
+        <span class="gloss">{t.contactMedia}</span>
+      </h3>
       <ul>
         <li><a href="mailto:kontakt@voctensemble.com">kontakt@voctensemble.com</a></li>
         <li><a href="mailto:patronat@voctensemble.com">patronat@voctensemble.com</a></li>
+        {/* An obligation, not an invitation — hence the key in front of it and the quieter
+            grade. It stays with the other two addresses because it IS a way of writing to us,
+            and it stood on the landing alone while the duty is the whole site's. */}
+        <li class="foot-rodo">
+          <span class="key">{t.dataProtection}</span>
+          <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>
+        </li>
         <li>
           <a href="https://www.instagram.com/voctensemble/" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
         </li>
@@ -65,13 +123,16 @@ const tempus = tempusForDate(new Date());
     </div>
   </div>
 
-  <p class="foot-incipit" aria-label={`${tempus.incipit} — ${tempus.pl}`}>
+  <p class="foot-incipit reveal" data-d="4" aria-label={`${tempus.incipit} — ${tempus.pl}`}>
     <em>{tempus.incipit}</em>
     <span class="foot-incipit-dot" aria-hidden="true">·</span>
     <span class="foot-incipit-pl">{tempus.pl}</span>
   </p>
 
-  <div class="foot-base">
+  {/* INK + LEAD, the one pair the register language allows: this band's top border is the only
+      hairline this footer carries, so it is the only thing here that can be ruled — and nothing
+      was invented to have something to draw. Rule first, imprint a beat behind. */}
+  <div class="foot-base reveal reveal-rule">
     <span>© {year} Fundacja VoctFoundation</span>
     <span>
       {t.realizedBy} · <a href="mailto:krystian.bugalski@voctensemble.com" rel="author">Krystian Bugalski ↗</a>
@@ -87,13 +148,37 @@ const tempus = tempusForDate(new Date());
   .site-foot { background: var(--night); color: rgba(244, 241, 233, .72); padding: clamp(56px, 7vw, 88px) max(28px, 5vw, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 40px) max(28px, 5vw, env(safe-area-inset-left, 0px)); }
   .foot-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(32px, 5vw, 64px); }
   /* Selector follows the tag: these are `h3` because every page opens its sections at `h2` and
-     an `h4` here skipped a level in the outline. Styled by tag, so the two must move together. */
-  .foot-col h3 { font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: rgba(244, 241, 233, .46); margin: 0 0 18px; font-weight: 400; }
+     an `h4` here skipped a level in the outline. Styled by tag, so the two must move together.
+     Two voices on one baseline — stone and speech, the same rubric the landing's register
+     carries. Latin takes the full candle because this ground is night: 8.46:1, where the same
+     paint on parchment is 2.10 (see --candle-ink in tokens.css). */
+  .foot-col h3 { display: flex; align-items: baseline; gap: 9px; margin: 0 0 18px; font-family: var(--mono); font-size: 10px; letter-spacing: .18em; line-height: 1.45; font-weight: 400; color: rgba(244, 241, 233, .46); text-transform: none; }
+  .foot-col h3 .dot { color: var(--candle); opacity: .6; letter-spacing: 0; transform: translateY(-.05em); }
+  .foot-col h3 .lat { font-family: var(--capitalis); font-size: 11.5px; font-weight: 500; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); }
+  /* The gloss stays 1.5px smaller than the Latin and in the other face: the contrast is carried
+     by three things at once — face, letter case and colour — and if both halves grow together
+     the two-voice reading collapses into one tracked label. */
+  .foot-col h3 .gloss { text-transform: lowercase; letter-spacing: .1em; }
   .foot-mark { font-family: var(--serif); font-style: italic; font-size: 26px; color: var(--paper); margin: 0 0 12px; }
   .foot-legal { font-family: var(--mono); font-size: 11.5px; line-height: 1.9; letter-spacing: .03em; color: rgba(244, 241, 233, .6); }
+  /* The statute sits under the note that names its purposes, and it is marked as a DOCUMENT
+     rather than as a route: PDF tag and a permanent hairline, no arrow. The arrow belongs to
+     the links that open another site; a hairline is what this footer's only file gets, the
+     same way the landing's Corpus column underlines its two documents and its addresses. */
+  .foot-doc { margin: 16px 0 0; }
+  .foot-doc a { display: inline-flex; align-items: baseline; gap: 10px; font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: rgba(244, 241, 233, .78); border-bottom: 1px solid rgba(244, 241, 233, .22); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .foot-doc a:hover { color: var(--candle); border-color: var(--candle); }
+  .foot-doc .doc-tag { font-size: 9px; letter-spacing: .22em; color: rgba(244, 241, 233, .46); transform: translateY(-.22em); }
+
   .foot-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   .foot-col ul a { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; color: rgba(244, 241, 233, .78); transition: color .3s var(--ease); }
   .foot-col ul a:hover { color: var(--candle); }
+
+  /* The duty route reads a grade quieter than the two invitations above it, and its key is what
+     says which duty. Baseline row so the 9px key hangs off the address rather than above it. */
+  .foot-rodo { display: flex; align-items: baseline; gap: 10px; }
+  .foot-rodo .key { font-size: 9px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
+  .foot-rodo a { font-size: 11px; color: rgba(244, 241, 233, .6); }
   .foot-incipit { max-width: 1180px; margin: clamp(40px, 5vw, 60px) auto 0; padding: 0; text-align: center; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: rgba(244, 241, 233, .42); }
   .foot-incipit em { font-family: var(--serif); font-style: italic; font-size: 15px; letter-spacing: .02em; color: rgba(244, 241, 233, .68); margin-right: 10px; }
   .foot-incipit-dot { margin: 0 8px; color: rgba(244, 241, 233, .28); }
@@ -101,5 +186,13 @@ const tempus = tempusForDate(new Date());
   .foot-base { max-width: 1180px; margin: clamp(22px, 3vw, 36px) auto 0; padding-top: 22px; border-top: 1px solid rgba(244, 241, 233, .12); display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, .46); }
   .foot-base a { color: inherit; transition: color .3s var(--ease); }
   .foot-base a:hover { color: var(--candle); }
+
+  /* LEAD register. The real border stays for a no-JS or reduced-motion visitor; only under the
+     motion gate is it handed to the pseudo-rule that can be drawn (styles/registers.css). The
+     hairline is top-anchored, which is where the trigger fires — a rule drawn on a bottom
+     border is drawn off-screen. `html` takes no `data-astro-cid`, so this scoped selector still
+     matches the document element. */
+  html.voct-motion .foot-base.reveal-rule { border-top-color: transparent; --rule-ink: rgba(244, 241, 233, .12); }
+
   @media (max-width: 760px) { .foot-grid { grid-template-columns: 1fr; gap: 36px; } }
 </style>

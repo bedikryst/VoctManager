@@ -244,8 +244,8 @@
        between the inscription and the dateline, here it runs under both. It is the
        page's ordinary hairline — `--line-strong`, full measure. Do not spend gold on
        it: candle at any opacity a hairline can carry composites to ~1.3:1 against the
-       parchment, and an ornament nobody can find is not an ornament. Gold needs area
-       down here, which is what the device at the foot has and a single pixel has not.
+       parchment, and an ornament nobody can find is not an ornament. Gold on this
+       plate needs area, and a single pixel has none. */
     .site-footer-head {
       justify-items: center;
       gap: 18px;
@@ -259,10 +259,14 @@
       opacity: 0.92;
     }
 
+    /* Full measure and full strength here, not faded at the ends: on the wide measure this
+       hairline stands BETWEEN two voices and must not touch either, under them it is the
+       plate's own ruling. One declaration — `--rule-ink` is read both by the element's own
+       background and by the lead register's pseudo-rule (06-footer.css). */
     .footer-head-rule {
       display: block;
       justify-self: stretch;
-      background: var(--line-strong);
+      --rule-ink: var(--line-strong);
       opacity: 1;
     }
 
@@ -330,6 +334,11 @@
       gap: 14px;
       padding-top: 0;
       border-top: 0;
+      /* Same four nodes, three acts: the two caps this plate does not print hand their
+         pseudo-rule a transparent ink rather than being hidden. The register still fires on
+         them — there is simply nothing to draw — which keeps ONE set of classes on the island
+         and no viewport-dependent markup. */
+      --rule-ink: transparent;
     }
 
     .foundation-stanza-label {
@@ -347,6 +356,7 @@
       margin-top: 34px;
       padding-top: 26px;
       border-top: 1px solid var(--line-strong);
+      --rule-ink: var(--line-strong);
     }
 
     .foundation-mark {
@@ -449,6 +459,7 @@
       margin-top: 36px;
       padding-top: 22px;
       border-top: 1px solid var(--line-strong);
+      --rule-ink: var(--line-strong);
     }
 
     /* The two documents sit side by side: at 14px the pair measures ~230px inside a

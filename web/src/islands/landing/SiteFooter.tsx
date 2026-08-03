@@ -32,6 +32,18 @@
  *  each time (docs/web-landing-guardrails.md). Moved onto the rule the void has no place to form,
  *  the register takes the whole measure, and the 80px clock stops out-shouting `VoctFoundation`,
  *  which is the actual subject of this footer.
+ *  THE PLATE IS PRINTED ON THE HOUR'S OWN GROUND. This footer already prints the hora
+ *  canonica it is being read in; since 2026-08 it is SET on that hour's light too —
+ *  parchment through the day, a night plate at Completorium and Matutinum. Two full
+ *  palettes on one axis (`--nox`, styles/landing/06-footer.css), and the assignment is a
+ *  field on the hours themselves (`lib/horaeCanonicae.ts`), so nothing here decides it.
+ *
+ *  THE TONE IS NOT SET BY THIS ISLAND, deliberately. It hydrates `client:visible`, i.e.
+ *  when the footer enters the viewport — a palette applied on mount would land in front
+ *  of the reader every single time, the plate arriving parchment and turning under their
+ *  eyes. The page's ground is not island state; `scripts/landing.ts` settles it at module
+ *  time and in `astro:after-swap`, long before anyone reaches the foot of the page. What
+ *  this island still owns is the clock, which is the one thing that must be live.
  * @architecture Enterprise SaaS 2026
  * @module widgets/landing/SiteFooter
  */
@@ -84,7 +96,14 @@ export function SiteFooter(): React.JSX.Element {
               <span className="latin">Inscriptio finalis</span>
             </span>
 
-            <span className="footer-head-rule" aria-hidden="true" />
+            {/* LEAD, alone: this hairline is the only object in the band that is a line, and
+                the band's ink lives on its parent. It is the one rule in this footer that
+                follows its text instead of leading it, and that is what it IS rather than an
+                exception — it CLOSES the running head (under both voices on the phone,
+                between them on the wide measure), and a scribe rules a line before writing on
+                it but draws a closing rule after. Which is also the order the shared onset
+                queue gives it for free, the parent standing ahead of it in the markup. */}
+            <span className="footer-head-rule reveal-rule" aria-hidden="true" />
 
             {/* THE DATELINE — instant, canonical hour, liturgical season: three depths of time
                 descending, and the type descends with them (clock → hora → gloss → tempus), so
@@ -141,7 +160,17 @@ export function SiteFooter(): React.JSX.Element {
               Polish `Sygnał`/`Fundacja` labels sat in a different vocabulary from the Latin
               sub-heads they governed. */}
           <div className="site-footer-grid">
-            <div className="footer-stanza footer-stanza-mark reveal">
+            {/* Each stanza is INK + LEAD on one node — the one pair the register language
+                allows, because it is a single causal gesture: the cap is ruled left to right
+                and the stanza is written onto it a beat later (0.18s, registers.css). Nothing
+                was added to have something to rule; the cap is the border these columns have
+                carried since they became four stanzas of one rank. The rule is top-anchored,
+                which is where the trigger fires, so it is drawn where it was armed.
+
+                On the phone the same four nodes are three acts and a hidden column, so the
+                caps that are not printed there hand their pseudo-rule `--rule-ink: transparent`
+                (11-mobile.css) rather than growing a second set of classes. */}
+            <div className="footer-stanza footer-stanza-mark reveal reveal-rule">
               <span className="foundation-stanza-label">
                 <span className="dot" aria-hidden="true">
                   ·
@@ -175,7 +204,7 @@ export function SiteFooter(): React.JSX.Element {
               </div>
             </div>
 
-            <div className="footer-stanza footer-stanza-consilium reveal">
+            <div className="footer-stanza footer-stanza-consilium reveal reveal-rule">
               <span className="foundation-stanza-label">
                 <span className="dot" aria-hidden="true">
                   ·
@@ -190,7 +219,7 @@ export function SiteFooter(): React.JSX.Element {
               </ul>
             </div>
 
-            <div className="footer-stanza footer-stanza-corpus reveal">
+            <div className="footer-stanza footer-stanza-corpus reveal reveal-rule">
               <span className="foundation-stanza-label">
                 <span className="dot" aria-hidden="true">
                   ·
@@ -221,7 +250,7 @@ export function SiteFooter(): React.JSX.Element {
               </ul>
             </div>
 
-            <div className="footer-stanza footer-stanza-vox reveal">
+            <div className="footer-stanza footer-stanza-vox reveal reveal-rule">
               <span className="foundation-stanza-label">
                 <span className="dot" aria-hidden="true">
                   ·

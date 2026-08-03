@@ -248,17 +248,23 @@ const ogLocaleAlternates =
       let edgeWatch: IntersectionObserver | undefined;
       const armEdgeBands = (): void => {
         edgeWatch?.disconnect();
-        const cs = getComputedStyle(document.body);
-        const band = cs.getPropertyValue("--edge-band").trim();
-        const foot = cs.getPropertyValue("--edge-foot").trim();
         // `.site-footer` is the landing's, `.site-foot` every other page's.
         const footer = document.querySelector(".site-footer, .site-foot");
-        if (!band || !foot || !footer) return;
+        if (!footer) return;
+        // READ AT PAINT TIME, not at arm time. A page's footer colour is not necessarily a
+        // constant for the life of the page: the landing's ends on the ground of the canonical
+        // hour it is read in (`--nox`, styles/landing/06-footer.css), so a value cached here
+        // would leave a parchment strip under a night plate. Reading two custom properties when
+        // the footer crosses the viewport edge costs nothing at that rate.
         const paint = (v: string): void => {
+          if (!v) return;
           document.documentElement.style.setProperty("background-color", v);
           document.body.style.setProperty("background-color", v);
         };
         edgeWatch = new IntersectionObserver((entries) => {
+          const cs = getComputedStyle(document.body);
+          const band = cs.getPropertyValue("--edge-band").trim();
+          const foot = cs.getPropertyValue("--edge-foot").trim();
           entries.forEach((e) => paint(e.isIntersecting ? foot : band));
         });
         edgeWatch.observe(footer);
