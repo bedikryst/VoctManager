@@ -3063,7 +3063,9 @@
         "numbers": "Numéros de page",
         "bookmarks": "Signets PDF",
         "a4": "Normaliser en A4",
-        "duplex": "Impression recto-verso"
+        "duplex": "Impression recto-verso",
+        "hide_source_numbers": "Masquer les numéros des éditions",
+        "hide_source_numbers_hint": "Recouvre la numérotation que les éditions impriment elles-mêmes, pour que le livret ne porte que la sienne. Un scan sans couche de texte reste intact."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3110,6 +3112,7 @@
         "thumb_alt": "Page {{n}}",
         "thumb_suggested": "IA : la musique commence ici",
         "show_edition": "Voir l'édition",
+        "hide_source_numbers": "Masquer les numéros de l'édition",
         "card": "Fiche avant l'œuvre",
         "card_hint": "Une page d'introduction imprimée avant la partition — choisissez son contenu.",
         "card_elements_label": "Éléments de la fiche",

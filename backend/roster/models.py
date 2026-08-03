@@ -269,6 +269,11 @@ class ProgramItem(models.Model):
                     "e.g. 'Sopran solo: J. Kowalska · organy: A. Nowak'."),
         verbose_name=_("Performers"),
     )
+    hide_source_page_numbers = models.BooleanField(
+        null=True, blank=True,
+        help_text=_("Per-item override of the package's source-numbering setting. Null = inherit."),
+        verbose_name=_("Hide Edition's Page Numbers"),
+    )
 
     class Meta:
         ordering = ['order']
@@ -345,6 +350,14 @@ class ScorePackage(EnterpriseBaseModel):
                     "knockout for legibility, and — in Concert density — every piece opens "
                     "on a right-hand page (a blank verso is inserted where needed)."),
         verbose_name=_("Double-sided print"),
+    )
+    hide_source_page_numbers = models.BooleanField(
+        default=True,
+        help_text=_("Cover the page numbers the editions print themselves, so the book "
+                    "carries only its own continuous folio. Detected from the PDF's text "
+                    "layer by proving a value that steps by one from page to page; a "
+                    "scanned edition without a text layer is left untouched."),
+        verbose_name=_("Hide Editions' Own Page Numbers"),
     )
 
     # --- Per-piece text content (Phase 2). `include_cards` is the master switch;

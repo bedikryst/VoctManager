@@ -3071,7 +3071,9 @@
         "numbers": "Numeracja stron",
         "bookmarks": "Zakładki PDF",
         "a4": "Normalizuj do A4",
-        "duplex": "Druk dwustronny"
+        "duplex": "Druk dwustronny",
+        "hide_source_numbers": "Ukryj numery wydań",
+        "hide_source_numbers_hint": "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian."
       },
       "pages": "{{n}} stron",
       "readiness_state": {
@@ -3118,6 +3120,7 @@
         "thumb_alt": "Strona {{n}}",
         "thumb_suggested": "AI: tu zaczynają się nuty",
         "show_edition": "Pokaż wydanie",
+        "hide_source_numbers": "Ukryj numery wydania",
         "card": "Karta przed utworem",
         "card_hint": "Strona wprowadzająca drukowana przed nutami — wybierz, co się na niej znajdzie.",
         "card_elements_label": "Elementy karty",

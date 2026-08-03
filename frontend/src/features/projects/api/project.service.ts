@@ -198,6 +198,10 @@ export interface ScorePackageConfig {
   include_bookmarks: boolean;
   normalize_to_a4: boolean;
   duplex_mode: boolean;
+  /** Cover the page numbers the editions print themselves, so the book carries
+   *  only its own continuous folio. Detected from the PDF's text layer; a
+   *  scanned edition without one keeps its numbering. */
+  hide_source_page_numbers: boolean;
   include_cards: boolean;
   /** Book-wide default set of card elements. Per-item cards inherit this list
    *  unless they pin their own — global default, per-item override, same
@@ -287,6 +291,9 @@ export interface ScorePackageItem {
   card_elements_effective: CardElement[];
   text_override: string;
   note_override: string;
+  /** Per-item pin; null inherits the package setting. */
+  hide_source_page_numbers: boolean | null;
+  hide_source_page_numbers_effective: boolean;
   readiness: ScorePackageItemReadiness;
 }
 
@@ -303,6 +310,7 @@ export interface ScorePackageItemPatch {
   card_elements: CardElement[] | null;
   text_override: string;
   note_override: string;
+  hide_source_page_numbers: boolean | null;
 }
 
 /** Build state + readiness of a project's auto-assembled concert score book. */

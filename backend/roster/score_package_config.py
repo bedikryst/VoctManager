@@ -64,6 +64,15 @@ def resolve_card_config(item: ProgramItem, package: ScorePackage) -> ResolvedCar
     return ResolvedCardConfig(enabled=enabled, elements=elements)
 
 
+def resolve_source_numbering(item: ProgramItem, package: ScorePackage) -> bool:
+    """Whether this item's bound edition has its own printed page numbers covered,
+    so the book carries only its continuous folio. Per-item pin wins; null inherits
+    the package setting — same override shape as ``card_enabled``."""
+    if item.hide_source_page_numbers is None:
+        return package.hide_source_page_numbers
+    return bool(item.hide_source_page_numbers)
+
+
 def sanitize_card_elements(value: object) -> list[str] | None:
     """Coerce a client-supplied card-element list to the canonical subset,
     preserving the canonical order. ``None``/invalid input yields ``None``
@@ -233,6 +242,7 @@ __all__ = [
     "resolve_card_config",
     "resolve_item_edition",
     "resolve_item_translation",
+    "resolve_source_numbering",
     "sanitize_card_elements",
     "select_edition",
     "select_program_note",

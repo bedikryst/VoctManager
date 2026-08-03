@@ -577,7 +577,22 @@ export function ScorePackagePanel({
                         active={config.duplex_mode}
                         onChange={(v) => setField("duplex_mode", v)}
                       />
+                      <TogglePill
+                        subtle
+                        label={t(
+                          "projects.score_package.structure.hide_source_numbers",
+                          "Ukryj numery wydań",
+                        )}
+                        active={config.hide_source_page_numbers}
+                        onChange={(v) => setField("hide_source_page_numbers", v)}
+                      />
                     </div>
+                    <Caption color="muted">
+                      {t(
+                        "projects.score_package.structure.hide_source_numbers_hint",
+                        "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
+                      )}
+                    </Caption>
                   </div>
                 </div>
               )}

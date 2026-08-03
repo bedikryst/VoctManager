@@ -3062,7 +3062,9 @@
         "numbers": "Page numbers",
         "bookmarks": "PDF bookmarks",
         "a4": "Normalise to A4",
-        "duplex": "Double-sided print"
+        "duplex": "Double-sided print",
+        "hide_source_numbers": "Hide editions' numbers",
+        "hide_source_numbers_hint": "Covers the page numbers the editions print themselves, so the book carries only its own. A scan without a text layer is left untouched."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3109,6 +3111,7 @@
         "thumb_alt": "Page {{n}}",
         "thumb_suggested": "AI: the music begins here",
         "show_edition": "Show edition",
+        "hide_source_numbers": "Hide the edition's numbers",
         "card": "Card before the piece",
         "card_hint": "An introductory page printed before the score — choose what it carries.",
         "card_elements_label": "Card elements",

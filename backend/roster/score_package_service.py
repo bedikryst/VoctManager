@@ -45,6 +45,7 @@ from roster.score_package_config import (
     resolve_card_config,
     resolve_item_edition,
     resolve_item_translation,
+    resolve_source_numbering,
     sanitize_card_elements,
     suggested_page_start,
 )
@@ -61,6 +62,7 @@ CONFIGURABLE_FIELDS: frozenset[str] = frozenset({
     "include_bookmarks",
     "normalize_to_a4",
     "duplex_mode",
+    "hide_source_page_numbers",
     "include_cards",
     "card_default_elements",
     "translation_language",
@@ -142,6 +144,7 @@ class ScorePackageService:
             "note_override": item.note_override,
             "translation_pin": str(item.translation_id) if item.translation_id else None,
             "performers": item.performers,
+            "hide_source_numbers": item.hide_source_page_numbers,
             "content_ts": max(timestamps).isoformat(),
         }
 
@@ -176,6 +179,7 @@ class ScorePackageService:
                 "bookmarks": package.include_bookmarks,
                 "a4": package.normalize_to_a4,
                 "duplex": package.duplex_mode,
+                "hide_src_numbers": package.hide_source_page_numbers,
                 "cards": package.include_cards,
                 "card_els": sorted(package.card_default_elements or []),
                 "lang": package.translation_language,
@@ -273,6 +277,8 @@ class ScorePackageService:
             "card_elements_effective": [e for e in CARD_ELEMENTS if e in config.elements],
             "text_override": item.text_override,
             "note_override": item.note_override,
+            "hide_source_page_numbers": item.hide_source_page_numbers,
+            "hide_source_page_numbers_effective": resolve_source_numbering(item, package),
             "readiness": readiness,
         }
 
@@ -331,6 +337,7 @@ class ScorePackageService:
                 "include_bookmarks": package.include_bookmarks,
                 "normalize_to_a4": package.normalize_to_a4,
                 "duplex_mode": package.duplex_mode,
+                "hide_source_page_numbers": package.hide_source_page_numbers,
                 "include_cards": package.include_cards,
                 "card_default_elements": list(package.card_default_elements or []),
                 "translation_language": package.translation_language,
@@ -484,6 +491,9 @@ class ScorePackageService:
         if "card_enabled" in patch:
             raw = patch["card_enabled"]
             _set("card_enabled", None if raw is None else bool(raw))
+        if "hide_source_page_numbers" in patch:
+            raw = patch["hide_source_page_numbers"]
+            _set("hide_source_page_numbers", None if raw is None else bool(raw))
         if "card_elements" in patch:
             _set("card_elements", sanitize_card_elements(patch["card_elements"]))
 

@@ -57,10 +57,10 @@ interface ScorePackageItemRowProps {
   onPreviewEdition: (item: ScorePackageItem) => void;
 }
 
-// Three-state per-item card switch mapped to card_enabled (null = inherit the
-// package default). Rendered as SegmentedTabs so it shares the package-level
-// control language instead of reading as a stray form <select>.
-type CardEnableId = "inherit" | "on" | "off";
+// Three-state per-item override of a package-level boolean (null = inherit).
+// Rendered as SegmentedTabs so it shares the package-level control language
+// instead of reading as a stray form <select>.
+type InheritTriState = "inherit" | "on" | "off";
 
 /** Free-text / pinned-selection overrides — the exceptions, counted for the
  *  disclosure that holds them so a set override is never hidden silently. */
@@ -175,9 +175,15 @@ export function ScorePackageItemRow({
     return t("projects.score_package.item.range", "s. {{from}}–{{to}}", { from, to });
   })();
 
-  const cardEnableValue: CardEnableId =
+  const cardEnableValue: InheritTriState =
     item.card_enabled === null ? "inherit" : item.card_enabled ? "on" : "off";
-  const cardEnableItems: ReadonlyArray<SegmentedTabItem<CardEnableId>> = [
+  const sourceNumbersValue: InheritTriState =
+    item.hide_source_page_numbers === null
+      ? "inherit"
+      : item.hide_source_page_numbers
+        ? "on"
+        : "off";
+  const triStateItems: ReadonlyArray<SegmentedTabItem<InheritTriState>> = [
     { id: "inherit", label: t("projects.score_package.item.inherit", "Dziedzicz") },
     { id: "on", label: t("common.yes", "Tak") },
     { id: "off", label: t("common.no", "Nie") },
@@ -461,6 +467,32 @@ export function ScorePackageItemRow({
                 onPatch={onPatch}
               />
             )}
+
+            {/* Whose numbering wins on this piece's pages. Sits with the binding
+                controls, not the card ones — it is a property of the bound PDF. */}
+            {item.has_pdf && (
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+                <Eyebrow size="overline-sm" color="muted">
+                  {t(
+                    "projects.score_package.item.hide_source_numbers",
+                    "Ukryj numery wydania",
+                  )}
+                </Eyebrow>
+                <SegmentedTabs<InheritTriState>
+                  items={triStateItems}
+                  value={sourceNumbersValue}
+                  onChange={(id) =>
+                    onPatch({
+                      hide_source_page_numbers: id === "inherit" ? null : id === "on",
+                    })
+                  }
+                  ariaLabel={t(
+                    "projects.score_package.item.hide_source_numbers",
+                    "Ukryj numery wydania",
+                  )}
+                />
+              </div>
+            )}
           </div>
 
           {/* ── The card that prints before this piece ─────────────────────── */}
@@ -474,8 +506,8 @@ export function ScorePackageItemRow({
                   {t("projects.score_package.item.card", "Karta przed utworem")}
                 </Eyebrow>
               </div>
-              <SegmentedTabs<CardEnableId>
-                items={cardEnableItems}
+              <SegmentedTabs<InheritTriState>
+                items={triStateItems}
                 value={cardEnableValue}
                 onChange={(id) =>
                   onPatch({ card_enabled: id === "inherit" ? null : id === "on" })

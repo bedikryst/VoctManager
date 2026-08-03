@@ -6,8 +6,12 @@
     each piece (CONCERT density) or one consolidated "Teksty i tłumaczenia" section
     (MASS density). Phase 3 (build cockpit): per-item edition selection, source
     page-range trimming, per-item card element/override resolution, and a
-    placeholder divider for repertoire that still lacks engraved music. All
-    deterministic WeasyPrint + pypdf — no AI, and never drawing on the music.
+    placeholder divider for repertoire that still lacks engraved music. Phase 4
+    (one numbering): the strip the book's folio occupies is kept free of source
+    content, and each edition's own printed page numbers are covered where they
+    can be proven (see score_source_numbering) — so a page never shows the book's
+    folio and the publisher's stacked together. All deterministic WeasyPrint +
+    pypdf — no AI, and nothing drawn over the engraving but a publisher's folio.
 @architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_package_builder
 """
@@ -29,6 +33,7 @@ from roster.infrastructure.document_generator import (
     _render_pdf,
 )
 from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
+from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     ResolvedCardConfig,
@@ -37,6 +42,7 @@ from roster.score_package_config import (
     resolve_card_config,
     resolve_item_edition,
     resolve_item_translation,
+    resolve_source_numbering,
     select_program_note,
 )
 from roster.score_package_layout import BodyPage, plan_body_layout
@@ -49,6 +55,12 @@ A4_HEIGHT_PT: float = 841.8898
 # Safe inner margin when fitting a source page onto the A4 sheet, so nothing is
 # clipped at the print edge. The engraving keeps its own musical margins inside this.
 BODY_MARGIN_PT: float = 14.0
+# Bottom strip kept clear of source content while the book stamps its own folio.
+# Without it the source is fitted right down into the strip the folio overlay
+# writes into, so an edition's own numbering lands a millimetre above the book's
+# — or, at native scale, straight underneath the duplex knockout. 15mm clears the
+# tallest folio box (duplex, see _build_duplex_number_overlay) with room to spare.
+FOLIO_RESERVE_PT: float = 42.5
 
 TEXTS_SECTION_HEADER: str = "Teksty i tłumaczenia"
 EN_DASH: str = "–"  # noqa: RUF001
@@ -85,6 +97,9 @@ class PlannedItem:
     bound_page_count: int     # number of source pages bound (0 for a placeholder)
     is_placeholder: bool
     # Resolved during planning:
+    # The edition's own printed page numbers to knock out, keyed by 0-based source
+    # page index. Empty when the item keeps them, or when nothing could be proven.
+    source_masks: dict[int, list[FolioBox]] = field(default_factory=dict)
     card_bytes: bytes | None = None
     card_count: int = 0
     start_page: int = 1       # 1-based printed folio the item opens on (drives the TOC)
@@ -448,6 +463,10 @@ def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
     falls on the open edge of a bound, double-sided book. The number sits behind a
     small white knockout so it stays legible over dense engraving. Blank recto-start
     spacers get an empty page, keeping the overlay aligned one-to-one with the body.
+
+    The folio box sits low enough to stay inside FOLIO_RESERVE_PT (its top edge
+    lands at ~12.3mm) while keeping clear of the print edge, so nothing the body
+    carries can ever be printed over — or clipped by — the knockout.
     """
     rows: list[str] = []
     for page in pages:
@@ -462,7 +481,7 @@ def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
         + "@page { size: A4; margin: 0; }"
         ".pg { position: relative; width: 210mm; height: 297mm; }"
         ".pg:not(:first-child) { break-before: page; }"
-        ".num { position: absolute; bottom: 12mm;"
+        ".num { position: absolute; bottom: 7mm;"
         f" font: 10pt {BOOK_FONT_STACK}; color: #3a3a3a;"
         " background: #ffffff; padding: 1.5pt 5pt; border-radius: 2pt; }"
         ".recto .num { right: 14mm; }"
@@ -477,7 +496,34 @@ def _build_duplex_number_overlay(pages: list[BodyPage]) -> list:
 # pypdf assembly
 # ---------------------------------------------------------------------------
 
-def _place_on_a4(writer: PdfWriter, source_page, fit: bool) -> None:
+def _paint_knockouts(page, rects: list[tuple[float, float, float, float]]) -> None:
+    """Paint opaque white rectangles (in destination points) over an already-merged
+    page — used to cover an edition's own printed folio. Appended to the page's
+    content stream so it lands on top of the music, inside its own q/Q so the
+    graphics state the merge left behind is not disturbed."""
+    if not rects:
+        return
+    contents = page.get_contents()
+    if contents is None:
+        return
+    ops = ["q", "1 1 1 rg"]
+    ops += [
+        f"{left:.3f} {bottom:.3f} {right - left:.3f} {top - bottom:.3f} re"
+        for left, bottom, right, top in rects
+    ]
+    ops += ["f", "Q"]
+    contents.set_data(contents.get_data() + ("\n" + "\n".join(ops) + "\n").encode("latin-1"))
+    page.replace_contents(contents)
+
+
+def _place_on_a4(
+    writer: PdfWriter,
+    source_page,
+    fit: bool,
+    *,
+    bottom_reserve_pt: float = 0.0,
+    masks: list[FolioBox] | None = None,
+) -> None:
     """
     Add one body page as a fresh A4 sheet with the source centred on it.
 
@@ -485,6 +531,14 @@ def _place_on_a4(writer: PdfWriter, source_page, fit: bool) -> None:
     `fit=False` → native 1:1 scale, centred (may clip a source larger than A4).
     Either way the body is uniformly A4, which keeps numbering, printing and
     binding consistent across editions of different sizes.
+
+    ``bottom_reserve_pt`` widens the bottom margin of the box the source is fitted
+    into, keeping the strip the folio overlay writes into free of music. It can
+    only lift what fits: at native scale a source as tall as the sheet has nowhere
+    to go, so it is centred in the reserved box and may still reach low — clipping
+    music off the top to buy that millimetre would be the worse trade.
+    ``masks`` are boxes in the SOURCE page's coordinates (the edition's own page
+    numbers) to knock out once the page is placed.
     """
     # Bake any /Rotate into the content so the visual orientation is preserved
     # before we read the box and transform it.
@@ -497,23 +551,32 @@ def _place_on_a4(writer: PdfWriter, source_page, fit: bool) -> None:
         writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
         return
 
-    scale = (
-        min(
-            (A4_WIDTH_PT - 2 * BODY_MARGIN_PT) / src_w,
-            (A4_HEIGHT_PT - 2 * BODY_MARGIN_PT) / src_h,
-        )
-        if fit
-        else 1.0
-    )
+    # The box the source is fitted into: the safe margin on three sides, plus any
+    # reserved folio strip at the bottom.
+    inner_bottom = max(BODY_MARGIN_PT, bottom_reserve_pt)
+    inner_w = A4_WIDTH_PT - 2 * BODY_MARGIN_PT
+    inner_h = A4_HEIGHT_PT - BODY_MARGIN_PT - inner_bottom
 
-    # Centre the (scaled) content on the sheet, accounting for a mediabox whose
+    scale = min(inner_w / src_w, inner_h / src_h) if fit else 1.0
+
+    # Centre the (scaled) content in that box, accounting for a mediabox whose
     # origin is not at (0,0).
-    tx = (A4_WIDTH_PT - src_w * scale) / 2.0 - float(box.left) * scale
-    ty = (A4_HEIGHT_PT - src_h * scale) / 2.0 - float(box.bottom) * scale
+    tx = BODY_MARGIN_PT + (inner_w - src_w * scale) / 2.0 - float(box.left) * scale
+    ty = inner_bottom + (inner_h - src_h * scale) / 2.0 - float(box.bottom) * scale
     ctm = Transformation(ctm=(scale, 0.0, 0.0, scale, tx, ty))
 
     dest = writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
     dest.merge_transformed_page(source_page, ctm)
+    if masks:
+        _paint_knockouts(dest, [
+            (
+                mask.left * scale + tx,
+                mask.bottom * scale + ty,
+                mask.right * scale + tx,
+                mask.top * scale + ty,
+            )
+            for mask in masks
+        ])
 
 
 def _append_pages(writer: PdfWriter, blob: bytes) -> int:
@@ -569,7 +632,26 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
     # flourish; Mass density stays compact, so the body flows without blank versos.
     recto_start = duplex and package.density_mode == ScorePackage.Density.CONCERT
 
-    # 1) Render the per-piece cards and count their pages. `cursor` is the printed
+    # 1) Locate each edition's own printed page numbers, so the book ends up
+    #    carrying one numbering instead of two. Text-layer evidence only — an
+    #    undetectable (scanned) edition simply keeps its numbering, and the
+    #    reserved folio strip in step 4 still keeps it clear of the book's own.
+    for planned in plan:
+        if planned.reader is None or not resolve_source_numbering(planned.item, package):
+            continue
+        pages = list(range(planned.start_index, planned.start_index + planned.bound_page_count))
+        try:
+            planned.source_masks = detect_source_folios(planned.reader, pages)
+        except Exception:
+            # Numbering is cosmetic; a reader that trips over one edition must not
+            # cost the conductor the whole book.
+            logger.exception(
+                "score_package.source_numbering_failed project=%s piece=%s",
+                project.pk, planned.title,
+            )
+            planned.source_masks = {}
+
+    # 2) Render the per-piece cards and count their pages. `cursor` is the printed
     #    folio a card shows ("s. N") — it counts content pages only, so it is the
     #    same whether or not duplex later inserts (unnumbered) recto-start spacers.
     #    A placeholder always gets a divider page; a bound piece gets a frontispiece
@@ -605,7 +687,7 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
         for planned in plan
     ]
 
-    # 2) Front matter: title + TOC, then (MASS only) the consolidated texts section.
+    # 3) Front matter: title + TOC, then (MASS only) the consolidated texts section.
     front_bytes = _render_front_matter(project, package, toc_entries)
     texts_bytes: bytes | None = None
     if mass_texts:
@@ -633,9 +715,12 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
         writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
     body_start = front_count + front_pad
 
-    # 3) Music body — optional recto-start blank, then card/placeholder (verbatim
+    # 4) Music body — optional recto-start blank, then card/placeholder (verbatim
     #    A4) and music (normalized A4). `body_count` tracks physical pages (spacers
     #    included), so it stays aligned with the planned layout and the overlay.
+    #    Numbered books keep a bottom strip free of music, so the folio can never
+    #    be overprinted by (or clipped through) an edition's own furniture.
+    bottom_reserve = FOLIO_RESERVE_PT if package.include_page_numbers else 0.0
     body_count = 0
     for planned in plan:
         if planned.leading_blank:
@@ -645,11 +730,15 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
             body_count += _append_pages(writer, planned.card_bytes)
         if planned.reader is not None:
             end = planned.start_index + planned.bound_page_count
-            for source_page in planned.reader.pages[planned.start_index:end]:
-                _place_on_a4(writer, source_page, fit=package.normalize_to_a4)
+            for offset, source_page in enumerate(planned.reader.pages[planned.start_index:end]):
+                _place_on_a4(
+                    writer, source_page, fit=package.normalize_to_a4,
+                    bottom_reserve_pt=bottom_reserve,
+                    masks=planned.source_masks.get(planned.start_index + offset),
+                )
                 body_count += 1
 
-    # 4) Page numbers on the body only (front matter stays unnumbered). Duplex puts
+    # 5) Page numbers on the body only (front matter stays unnumbered). Duplex puts
     #    the folio in the outer corner (recto-right / verso-left) behind a white
     #    knockout; simplex keeps the single bottom-right column.
     if package.include_page_numbers and body_count > 0:
@@ -661,7 +750,7 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
         for offset, overlay_page in enumerate(overlay_pages[:body_count]):
             writer.pages[body_start + offset].merge_page(overlay_page)
 
-    # 5) Navigable outline (anchors at physical offsets, past any front pad).
+    # 6) Navigable outline (anchors at physical offsets, past any front pad).
     if package.include_bookmarks:
         _add_outline(writer, package, body_start, plan)
 
