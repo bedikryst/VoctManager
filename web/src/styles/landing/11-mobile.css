@@ -137,16 +137,18 @@
       gap: clamp(38px, 10vw, 52px);
     }
 
-    /* Statements step up so they read as declarations, not captions. */
-    .manifest-statement {
+    /* Lines step up so they read as declarations, not captions. */
+    .manifest-line {
       font-size: clamp(42px, 11vw, 56px);
       line-height: 1.06;
     }
 
-    /* The answer rides closer to stanza III on phones — same negative-pull device
-       as desktop, scaled to the tighter mobile stanza gap. */
-    .manifest-line-group.manifest-answer {
-      margin-top: calc(-1 * clamp(14px, 4vw, 24px));
+    /* The answer rides closer to the statement it replies to than the gap between theses —
+       same proportion as desktop, scaled to the tighter mobile rhythm. It is a plain margin
+       on both: the pair is one block (.manifest-response), so there is no flex gap here to
+       pull back against. */
+    .manifest-answer {
+      margin-top: clamp(16px, 5vw, 24px);
     }
 
     /* The silence beat keeps its breath but stops being a 280px void. */

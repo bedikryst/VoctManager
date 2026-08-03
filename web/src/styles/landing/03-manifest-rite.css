@@ -6,6 +6,10 @@
     /* The sweep's clock, in one place because it is also a scroll distance — see "The light
        passes once" below, and keep scripts/landing.ts's spend fallback clear of it. */
     --sweep-in: 2s;
+    /* The half-light a line waits in, as a mask alpha — site-wide `--half-ink` (tokens.css),
+       named here because it is a MATERIAL constant, not a page one: the answer is gold and has
+       to override it. See `.manifest-answer`. */
+    --line-rest: 0.44;
   }
 
   .manifest-container {
@@ -18,26 +22,17 @@
   }
 
   .manifest-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
     border-bottom: 1px solid var(--line);
     padding-bottom: 32px;
   }
 
   /* Lead register: the header's own border-bottom is handed to the drawn rule while motion is
-     live, and the two labels are inked a beat behind it. The rule sits at the bottom edge, so
-     the default top inset has to be flipped. */
+     live, and the label is inked a beat behind it. The rule sits at the bottom edge, so the
+     default top inset has to be flipped. */
   html.voct-motion .manifest-top.reveal-rule {
     border-bottom-color: transparent;
     --rule-ink: var(--line);
     --rule-inset: auto 0 0 0;
-  }
-
-  .manifest-meta-col {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
   }
 
   .manifest-label {
@@ -54,95 +49,113 @@
     gap: clamp(64px, 10vw, 130px);
   }
 
-  .manifest-line-group {
-    display: grid;
-    grid-template-columns: clamp(40px, 8vw, 120px) 1fr;
-    gap: clamp(20px, 4vw, 64px);
-    align-items: flex-start;
-    /* The mask's coordinate space IS this box, so the box has to be the text. Stretched to the
-       column, a one-line stanza spends roughly a quarter of the sweep crossing its own empty
-       right margin — travel nobody can see, on the clock that decides whether the gesture is
-       watched at all. Shrink-to-fit moves no glyph: the type is left-aligned, the statement's
-       own max-width still sets the wrap, and a stanza whose text overflows the column (II) is
-       unchanged because its fit-content size is the available width anyway. */
-    width: fit-content;
-  }
+  /* One line of the manifest. The typographic statement and the beat the light takes are the
+     same object, so they are one node — `setupManifestLight` (landing.ts) drives `.manifest-line`
+     and the mask below paints it.
 
-  .manifest-roman {
-    font-family: var(--capitalis);
-    font-size: clamp(11px, 1.2vw, 14px);
-    color: var(--ink-muted);
-    padding-top: clamp(14px, 2vw, 24px);
-    letter-spacing: 0.1em;
-  }
+     THE MEASURE IS AUTHORED. At this size a line break is composition, not reflow, and the only
+     limit here used to be "whatever the container had left after the indent" — so the wrap of the
+     second thesis moved with the window and its rag was set by an accident of arithmetic. 11em is
+     now the widest any line is set, and it is the value that BINDS at every width: indent, gutter
+     and font size all scale together, so the residual after the step below is ~11.2em of the
+     section's own measure from 768px up. A wider figure would hand the wrap back to the viewport.
 
-  .manifest-statement {
+     `width: fit-content` because the mask's coordinate space IS this box, and a box wider than
+     its text spends that much of the sweep crossing nothing — on the clock that decides whether
+     the gesture is watched at all. A single-line statement therefore measures its own line
+     exactly; a wrapped one measures the full 11em, because no box can shrink to its longest
+     RENDERED line, and that residue sits at the end of the travel where the reader has already
+     stopped following the edge. */
+  .manifest-line {
     margin: 0;
+    width: fit-content;
+    max-width: 11em;
     font-family: var(--serif);
     font-size: clamp(38px, 6vw, 100px);
     line-height: 1.08;
     font-weight: 300;
     letter-spacing: -0.01em;
     color: var(--ink);
-    max-width: 14em;
+    /* Display type wants an even rag. This overrides the `text-wrap: pretty` every <p> inherits
+       from base.css, which is a body-copy heuristic (it protects the last line and leaves the
+       ones above it alone). */
+    text-wrap: balance;
     /* Descender clearance, and it is load-bearing for the sweep rather than cosmetic: the
-       mask's paint area is the line-group's border box, so a tail reaching below it is masked
-       by the gradient's own repeated tile instead of by the sweep. */
+       mask's paint area is the line's border box, so a tail reaching below it is masked by
+       the gradient's own repeated tile instead of by the sweep. */
     padding-bottom: 5px;
   }
 
-  /* ── The answer ───────────────────────────────────────────────────────────
-     "Odsłania." is its own line-group (no numeral) — the manifest's reply, not a
-     fourth thesis. It rides the same grid so its statement column aligns under
-     stanza III; the negative top margin pulls it closer than the stanza gap, so
-     answer follows statement instead of opening a new chapter.
+  /* ── The response ─────────────────────────────────────────────────────────
+     "Sacrum nie zdobi." and "Odsłania." are ONE utterance — the site's single permitted
+     negation and its reply — so they are set as one block rather than as a third thesis
+     trailed by a stray word. Inside it both lines start on the same left datum, which is
+     what makes the answer read as an answer; it was flush RIGHT before, aligned to the end
+     of the line it replies to and to nothing else, on a page where every other line is set
+     from the left.
 
-     IT TAKES THE SAME LIGHT AS THE THESES, and that is the point rather than a
-     simplification: the word means un-veiling and the sweep is the page's un-veiling
-     gesture, so letting the light take this one word is the most literal thing the page
-     can do with it. Everything that sets the answer apart is carried without a second
-     motion — gold, italic, no numeral, the tighter margin, and its own beat behind stanza
-     III (ANSWER_GAP_MS, scripts/landing.ts).
-
-     WHAT IT MUST NOT DO IS ENTER FROM NOTHING. Every line on this site waits at
-     var(--half-ink) — .silence-line and .coda-caption spell the same thing out — and a
-     blur-up from opacity 0 breaks that twice: it opens a hole under stanza III for as long
-     as the queue takes to reach the answer, so the page's one negation stands unanswered
-     while the reader is looking straight at it; and a blur is an optical effect inside a
-     vocabulary made of ink, lead and light, which styles/registers.css names outright as
-     the signature the register language exists to avoid. */
+     The block's own anchor is the right terminal of the opening rule (`margin-left: auto`
+     below). That pairing is the composition: the first thesis hangs on the rule's left end,
+     the response lands on its right, so the hairline is a measure the type reaches at both
+     ends. Nothing touched either end before — the type floated inside a frame — and that is
+     what made a rigid grid read as adrift. */
   .manifest-answer {
-    margin-top: calc(-1 * clamp(32px, 5vw, 80px));
+    margin-top: clamp(28px, 3.6vw, 56px);
+    /* THE HALF-LIGHT FLOOR IS NOT THE INK'S, and this is the one place on the page where the
+       difference is load-bearing. `--candle` is 2.10:1 on parchment where ink is 16:1
+       (tokens.css spells the ratio out), so at the 0.44 the theses wait in, this word rested
+       at 1.29:1 — the paper, for all a reader can see. The law it was quietly breaking is the
+       one its own placement depends on: nothing on this site enters from nothing, and an answer
+       that is absent until the light reaches it leaves the page's single negation standing
+       unanswered while the reader looks straight at it.
+
+       At 0.78 the word waits as a pale gold presence and the sweep WARMS it (≈1.60 → 1.85:1)
+       instead of revealing it. That the gesture is small here is the material's doing and not a
+       miscalibration to tune out: gold on parchment carries about an eighth of ink's range. What
+       actually sets the answer apart is carried without a second motion — the gold, the italic,
+       and its own beat behind the statement (ANSWER_GAP_MS, scripts/landing.ts). */
+    --line-rest: 0.78;
   }
 
   .manifest-emphasis {
     font-style: italic;
-    /* Slightly subdued gold: the coda's finalis (the "Ostatni takt" close) owns the
-       page's gold climax, so this manifest answer steps back from full saturation.
-       Still gold italic — still a moment — just no longer competing with the closure. */
-    color: rgba(198, 164, 91, 0.84);
+    /* Slightly subdued gold: the coda's finalis (the "Ostatni takt" close) owns the page's
+       gold climax, so this answer steps back from full saturation. Still gold italic — still
+       a moment — but not a second climax competing with the closure. */
+    color: rgb(var(--candle-rgb) / 0.84);
   }
 
-  /* The header row rides the site-wide ink+lead registers (styles/registers.css); the
-     line-groups deliberately carry NO register — their arrival is the light sweep below, and
-     stacking a second entrance on top of it is compounded motion, not choreography. */
+  /* The header row rides the site-wide ink+lead registers (styles/registers.css); the lines
+     deliberately carry NO register — their arrival is the light sweep below, and stacking a
+     second entrance on top of it is compounded motion, not choreography. */
 
-  /* Desktop Staggering Layout — the answer mirrors stanza III's offset so "Odsłania."
-     sits directly beneath "Sacrum nie zdobi." */
+  /* Desktop composition — a descent measured in the section's OWN measure, never in vw. Above
+     1600px the container stops growing while the viewport does not, so a vw indent kept opening
+     while the measure stood still; a percentage margin resolves against the flex container's
+     inline size, which IS the measure, so the composition is identical at 1760px and at 2560px.
+
+     The first thesis takes no indent at all — it hangs on the rule's left terminal. 22% is the
+     step, and it is also the deepest indent that still leaves `.manifest-line`'s 11em measure
+     binding (the residual is ~11.2em); past that the viewport takes the wrap back. The response
+     needs no number: `fit-content` + `auto` puts its right edge on the rule's right terminal and
+     sizes it to its longest line, which both of its lines then start from.
+
+     Below 768px all of this is handed back. There is no room to anchor anything to a right edge
+     on a phone, and an indent worth seeing would cost more measure than the type can spare. */
   @media (min-width: 768px) {
-    .manifest-line-group:nth-child(2) {
-      margin-left: 15vw;
+    .manifest-line-step {
+      margin-left: 22%;
     }
-    .manifest-line-group:nth-child(3),
-    .manifest-line-group.manifest-answer {
+
+    .manifest-response {
+      width: fit-content;
       margin-left: auto;
-      margin-right: 5vw;
     }
   }
 
   /* ── The light passes once ────────────────────────────────────────────────
      ONE motion system for the whole canon, the answer included. setupManifestLight
-     (landing.ts) adds `.is-lit` — one-shot — when a line-group reaches the reading zone;
+     (landing.ts) adds `.is-lit` — one-shot — when a line reaches the reading zone;
      transitioning --ink-reveal (registered in 09-kinetic.css) then sweeps a soft light
      edge left→right across it: half-light before, full ink after, FOREVER. No settled
      floor — what the light has revealed must never re-veil ("odsłania"). Nothing
@@ -166,35 +179,35 @@
 
      Gated on html.voct-motion, so no-JS and reduced-motion visitors get plain full ink;
      browsers without @property drop the whole mask (IACVT → none) — full ink, no sweep, a
-     graceful nothing. The stanzas carry NO gold: the page's gold belongs to "Odsłania."
+     graceful nothing. The theses carry NO gold: the page's gold belongs to "Odsłania."
      and to the coda's finalis. */
-  html.voct-motion .manifest-line-group {
+  html.voct-motion .manifest-line {
     -webkit-mask-image: linear-gradient(
       100deg,
       rgb(0 0 0) calc(var(--ink-reveal) - 12%),
-      rgb(0 0 0 / 0.44) calc(var(--ink-reveal) + 16%)
+      rgb(0 0 0 / var(--line-rest)) calc(var(--ink-reveal) + 16%)
     );
     mask-image: linear-gradient(
       100deg,
       rgb(0 0 0) calc(var(--ink-reveal) - 12%),
-      rgb(0 0 0 / 0.44) calc(var(--ink-reveal) + 16%)
+      rgb(0 0 0 / var(--line-rest)) calc(var(--ink-reveal) + 16%)
     );
     transition: --ink-reveal var(--sweep-in) var(--ease-light);
   }
 
-  html.voct-motion .manifest-line-group.is-lit {
+  html.voct-motion .manifest-line.is-lit {
     --ink-reveal: 114%;
   }
 
   /* Spent, mirroring what `.is-settled` does for every other register: the gesture is over,
      so release the layer. At the end of the travel the mask is uniformly opaque over the
      box, so dropping it changes nothing on screen — but a masked element has NO compositor
-     path, every frame of the sweep re-rasterises the whole line-group, and without this the
-     page keeps four masked text layers alive for the rest of the session. It also un-clips
-     glyph overhang: anything painted outside the border box falls on the gradient's repeated
-     tile rather than on the sweep, so once the sweep is over the mask can only do harm.
+     path, every frame of the sweep re-rasterises the whole line, and without this the page
+     keeps four masked text layers alive for the rest of the session. It also un-clips glyph
+     overhang: anything painted outside the border box falls on the gradient's repeated tile
+     rather than on the sweep, so once the sweep is over the mask can only do harm.
      scripts/landing.ts flips it on the sweep's own transitionend, with a timer behind it. */
-  html.voct-motion .manifest-line-group.is-spent {
+  html.voct-motion .manifest-line.is-spent {
     -webkit-mask-image: none;
     mask-image: none;
     transition: none;

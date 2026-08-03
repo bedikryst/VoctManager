@@ -1,51 +1,54 @@
 ---
 /**
  * @file ManifestSection.astro
- * @description Three-stanza ensemble manifest + the answer line. Rigid editorial grid;
- *  ONE motion system (setupManifestLight in landing.ts + 03-manifest-rite.css): a soft
- *  light edge sweeps each line-group once, left to right, from half-light to full ink —
- *  time-based and one-shot, never scroll-scrubbed. The line-groups deliberately carry NO
- *  entrance register: the sweep is their arrival, and the page's moving light belongs here.
- *  "Odsłania." is its own group with no numeral — the manifest's reply — and it takes that
- *  same light a beat behind stanza III; gold, italic and the beat set it apart, never a
- *  second effect.
+ * @description The ensemble manifest: two quoted theses, then the page's own statement and its
+ *  answer, on a rigid editorial grid. The composition spans the opening rule at BOTH terminals —
+ *  the first thesis hangs on its left end, the response block is flush to its right — so that
+ *  hairline is a measure the type uses rather than a frame nothing touches.
+ *
+ *  ONE motion system (setupManifestLight in landing.ts + 03-manifest-rite.css): a soft light edge
+ *  sweeps each line once, left to right, from half-light to full ink — time-based and one-shot,
+ *  never scroll-scrubbed. The lines deliberately carry NO entrance register: the sweep is their
+ *  arrival, and the page's moving light belongs here.
+ *
+ *  NO STANZA NUMERALS, and that is a constraint rather than a simplification. They were roman,
+ *  capitalis and hairline-small in the left margin — the same object MovementSpine draws at the
+ *  right edge for the page's three actual movements, at nearly the same baseline, so a reader saw
+ *  two I/II/III indices facing each other with no way to tell they count different things. The
+ *  page numbers its movements; the manifest numbers nothing.
  * @architecture Astro islands 2026
  * @module components/landing/ManifestSection
  */
-import { MANIFEST_ANSWER, MANIFEST_LINES } from "../../data/landing/manifestLines";
+import { MANIFEST_LINES, MANIFEST_RESPONSE } from "../../data/landing/manifestLines";
 ---
 
 <section class="section manifest" id="manifest" aria-label="Manifest chóru VoctEnsemble">
   <div class="manifest-container">
-    {/* Ink + lead on one node: the header's existing border-bottom is ruled, and the two
-        labels are inked a beat behind it — ruling precedes writing. */}
+    {/* Ink + lead on one node: the header's existing border-bottom is ruled, and the label is
+        inked a beat behind it — ruling precedes writing. The rule carries ONE label; the right
+        end is left open on purpose, because the only thing that stood there was the wordmark the
+        fixed chrome already prints a hundred pixels higher. */}
     <div class="manifest-top reveal reveal-rule">
-      <div class="manifest-meta-col">
-        <span class="manifest-label">Manifest</span>
-      </div>
-      <div class="manifest-meta-col" style="text-align: right;">
-        <span class="manifest-label">VoctEnsemble</span>
-      </div>
+      <span class="manifest-label">Manifest</span>
     </div>
 
     <div class="manifest-content">
+      {/* Set plain: the build pass (lib/typo.ts) pins the orphans. At this display size a
+          one-letter Polish preposition left at a line end ("…duszy w / czasie.") is the most
+          visible typographic fault on the page — check it here first. */}
       {
-        MANIFEST_LINES.map((line) => (
-          <div class="manifest-line-group">
-            <div class="manifest-roman">{line.index}</div>
-            {/* Set plain: the build pass (lib/typo.ts) pins the orphans. At this display size a
-                one-letter Polish preposition left at a line end ("…duszy w / czasie.") is the
-                most visible typographic fault on the page — check it here first. */}
-            <p class="manifest-statement">{line.text}</p>
-          </div>
+        MANIFEST_LINES.map((text, index) => (
+          <p class:list={["manifest-line", index > 0 && "manifest-line-step"]}>{text}</p>
         ))
       }
 
-      {/* The answer — no numeral (it is not a fourth thesis), its own beat on the same light. */}
-      <div class="manifest-line-group manifest-answer">
-        <div class="manifest-roman" aria-hidden="true"></div>
-        <p class="manifest-statement">
-          <em class="manifest-emphasis">{MANIFEST_ANSWER}</em>
+      {/* One utterance, one block: statement and answer are right-anchored together and share a
+          left datum, so the reply reads as a reply. The answer takes the same light a beat
+          behind — gold, italic and that beat set it apart, never a second effect. */}
+      <div class="manifest-response">
+        <p class="manifest-line">{MANIFEST_RESPONSE.statement}</p>
+        <p class="manifest-line manifest-answer">
+          <em class="manifest-emphasis">{MANIFEST_RESPONSE.answer}</em>
         </p>
       </div>
     </div>

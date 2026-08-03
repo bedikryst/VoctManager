@@ -309,7 +309,7 @@ function setupManifestLight(root: HTMLElement, reduce: boolean): void {
   if (reduce) return;
   const manifest = root.querySelector<HTMLElement>(".manifest");
   if (!manifest) return;
-  const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line-group"));
+  const lines = Array.from(manifest.querySelectorAll<HTMLElement>(".manifest-line"));
   if (!lines.length) return;
 
   const GAP_MS = 480;

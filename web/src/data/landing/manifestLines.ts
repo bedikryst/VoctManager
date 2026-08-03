@@ -1,27 +1,24 @@
 /**
  * @file manifestLines.ts
- * @description Three-stanza ensemble manifest + the answer line — typed content for
- *  ManifestSection. PROVENANCE (do not "improve" the wording): stanzas I and II are
- *  VERBATIM lines from the ensemble's founding text ("Skąd się wzięliśmy?", Florent's
- *  vision document) — the manifest quotes the founders, it does not paraphrase them.
- *  Stanza III + the answer are the page's own single not-X-but-Y figure (the copy
- *  system allows exactly one negation, and this is it). "Odsłania." is deliberately
- *  NOT part of stanza III: it is the manifest's answer, rendered as its own
- *  line-group with its own reveal beat.
+ * @description The ensemble manifest — typed content for ManifestSection. PROVENANCE (do not
+ *  "improve" the wording): MANIFEST_LINES are VERBATIM lines from the ensemble's founding text
+ *  ("Skąd się wzięliśmy?", Florent's vision document) — the manifest quotes the founders, it
+ *  does not paraphrase them. MANIFEST_RESPONSE is the page's own single not-X-but-Y figure (the
+ *  copy system allows exactly one negation on the whole site, and this is it). It is ONE value
+ *  rather than a third quoted line because statement and answer are one utterance: the layout
+ *  sets them as a single block and the reply is not a fourth thesis.
  * @architecture Astro islands 2026
  * @module features/landing/constants/manifestLines
  */
 
-export interface ManifestLine {
-  readonly index: string;
-  readonly text: string;
-}
-
-export const MANIFEST_LINES: readonly ManifestLine[] = [
-  { index: "I", text: "W ciszy rodzi się muzyka." },
-  { index: "II", text: "Muzyka jest kontemplacją duszy w czasie." },
-  { index: "III", text: "Sacrum nie zdobi." },
+/** The quoted theses, in the order the founding text states them. */
+export const MANIFEST_LINES: readonly string[] = [
+  "W ciszy rodzi się muzyka.",
+  "Muzyka jest kontemplacją duszy w czasie.",
 ];
 
-/** The single-word answer to stanza III — its own group, its own moment. */
-export const MANIFEST_ANSWER = "Odsłania.";
+/** The page's own figure. `answer` replies to `statement`; neither stands alone. */
+export const MANIFEST_RESPONSE = {
+  statement: "Sacrum nie zdobi.",
+  answer: "Odsłania.",
+} as const;

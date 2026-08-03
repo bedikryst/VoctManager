@@ -207,6 +207,31 @@ the label effectively never shows. This is why `Lumen quaerit` → `Lumen Christ
 vocabulary (`SiteChrome.astro`, `StickyHeader.tsx`), and `Vox` anchors `data-movement="vox"` plus
 the VoxMoment eyebrow. Only movement I was actually broken Latin (a verb with no subject).
 
+**The manifest carries NO stanza numerals, and that is the spine's doing.** I/II/III in the
+manifest's left margin were capitalis, hairline-small and ink-muted — the same object
+`MovementSpine` fixes at the right edge for the page's three actual movements, in the same face at
+11–14px, and the two sat within ~25 pixels of one baseline. Two roman indices facing each other
+across one screen, counting different things, with nothing telling them apart. Removing the
+decorative one was also what freed the type to hang on the opening rule's left terminal. If a
+future pass wants the theses enumerated, the question to answer first is what the spine is then
+counting.
+
+**The manifest's rule is a MEASURE, not a frame.** `.manifest-top` spans the full container and
+for a long time nothing below it touched either end — every line was placed by a `margin-left`
+against nothing, which is what made a deliberately rigid grid read as adrift. The composition now
+lands on both terminals: the first thesis at the left one, the `.manifest-response` block flush to
+the right one. Indents are PERCENTAGES of the container, never `vw`: above 1600px the container
+stops growing while the viewport does not, so a vw indent keeps opening while the measure stands
+still. Verified 0 → 1420 at both 1920px and 2560px.
+
+**Gold cannot take the ink's half-light floor, anywhere on the site.** `--candle` is 2.10:1 on
+parchment where ink is 16:1, so at `--half-ink` (0.44) a gold word rests at 1.29:1 — invisible.
+"Odsłania." sat there for months while a fifteen-line comment above it defended the very law it
+was breaking (nothing enters from nothing). Its mask floor is its own now (`--line-rest: 0.78`).
+The general rule: any element given a half-light rest state in gold needs its floor recomputed for
+the material, and the sweep across it will be a warming (≈1.60 → 1.85:1), never a reveal — that
+smallness is the material's range, not a mistuning to chase.
+
 **`.primary-link` / `.secondary-link` are identical *by design* in the hero** — two parallel
 invitations, not a hierarchy. The one place they are a real hierarchy is `.final-actions`, which
 has its own candle-gold rule. Do not "fix" the hero to match.
