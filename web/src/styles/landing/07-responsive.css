@@ -66,11 +66,42 @@
       padding-bottom: 112px;
     }
 
-    /* Diptych zwija się do pojedynczej kolumny — Sygnał na górze
-       (anchor czasu), Fundatio pod nim (stela inskrypcyjna). */
+    /* Rejestr składa się z czterech szpalt do 2×2. Znak fundacji i Vox biorą
+       pełną szerokość, Consilium i Corpus stają obok siebie — to jest dokładnie
+       ten sam podział, który Fundatio niosło wewnętrznie, gdy stopka była
+       dyptykiem, i on się tam sprawdzał. Poniżej ~980 px czwarta szpalta zjadłaby
+       „dyrekcja artystyczna" i „rodo@voctensemble.com" do dwóch linii każde. */
     .site-footer-grid {
-      grid-template-columns: 1fr;
-      gap: clamp(48px, 7vw, 72px);
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(28px, 4vw, 44px) clamp(28px, 4vw, 48px);
+    }
+
+    .footer-stanza-mark,
+    .footer-stanza-vox {
+      grid-column: 1 / -1;
+    }
+
+    /* Vox znów pełnej szerokości, więc wraca do listy inline z mid-dotami —
+       cztery adresy w jednym wierszu zamiast stosu na całą miarę. Krój zostaje
+       kursywą serif: pełna szerokość zmieniła układ, nie rangę szpalty. */
+    .foundation-vox-list {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px clamp(14px, 2vw, 22px);
+    }
+
+    .foundation-vox-list li {
+      display: inline-flex;
+      align-items: baseline;
+      gap: clamp(14px, 2vw, 22px);
+    }
+
+    .foundation-vox-list li:not(:last-child)::after {
+      content: "·";
+      color: var(--candle);
+      opacity: 0.55;
+      font-style: normal;
     }
 
     .foundation-title {
@@ -360,50 +391,15 @@
       padding-right: 22px;
     }
 
-    .site-footer-grid {
-      grid-template-columns: 1fr;
-      gap: 44px;
-    }
-
-    /* Na telefonie Fundatio wraca do 1-col stacka — wąska kolumna nie
-       udźwignie Consilium obok Corpus. */
-    .footer-col-foundation .footer-col-body {
-      grid-template-columns: 1fr;
-    }
-
-    .foundation-title {
-      font-size: clamp(32px, 9vw, 44px);
-    }
-
-    .foundation-legal {
-      font-size: 10.5px;
-      gap: 8px 16px;
-    }
-
-    .footer-ribbon {
-      grid-template-columns: 1fr;
-      gap: 16px;
-      justify-items: center;
-    }
-
-    .footer-ribbon-rule {
-      display: none;
-    }
-
-    .footer-ribbon-list {
-      gap: 18px;
-    }
-
+    /* Wszystkie pasy stopki składają się do jednej szpalty — tu tylko samo
+       złożenie. Czym stopka NA TELEFONIE jest (impressio, nie rejestr), co drukuje
+       i czego nie, komponuje 11-mobile.css; ten blok ma nie mieć na ten temat
+       zdania, żeby dwie warstwy nie kłóciły się o te same reguły. */
+    .site-footer-grid,
+    .site-footer-head,
+    .footer-ribbon,
     .site-footer-colophon {
       grid-template-columns: 1fr;
-      gap: 14px;
-    }
-
-    .footer-colophon-signature {
-      justify-content: flex-start;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
     }
 
     .coda {

@@ -1,10 +1,22 @@
   /* ───────────────────────────────────────────────────────────────
-     SITE FOOTER · "Inscriptio finalis" 
-     Diptych: lewa (Sygnał — anchor czasu) ‖ prawa (Fundatio —
-     stela inskrypcyjna). Bez generic kolumny "Relacje" — kontakt
-     spada do Fundatio jako stanza "Vox". Pod gridem: hairline
-     ribbon społecznościowy → wielki znak słowny → colophon.
+     SITE FOOTER · „Inscriptio finalis"
+     Cztery pasy poziome, nie dyptyk:
+       1. inskrypcja IV + datownik (miejsce · chwila · hora · tempus)
+       2. rejestr — Fundatio ‖ Consilium ‖ Corpus ‖ Vox
+       3. hairline ribbon społecznościowy
+       4. kolofon
      Każda warstwa jest osobnym oddechem.
+
+     DLACZEGO NIE DYPTYK, skoro nim był. Lewa szpalta („Sygnał" —
+     zegar, hora, tempus) miała pięć krótkich linii naprzeciw
+     dwudziestu linii Fundatio, więc ~160 px pod nią zostawało puste
+     i nie dało się tego wypełnić TREŚCIĄ, bo czasu nie ma więcej do
+     wydrukowania. Pustka zapraszała dekorację: figurę doby słonecznej
+     budowano tam trzy razy i trzy razy wycinano
+     (docs/web-landing-guardrails.md). Diagnoza była w samym podziale —
+     Fundatio niosło własny wewnętrzny grid 2×2, czyli w dwuszpaltowej
+     ramie siedziały trzy szpalty treści. Rejestr mówi teraz, czym jest,
+     a zegar zszedł na linię, gdzie pustka nie ma się gdzie zawiązać.
      ─────────────────────────────────────────────────────────────── */
 
   .site-footer {
@@ -32,100 +44,234 @@
       max(28px, 5vw, env(safe-area-inset-left, 0px));
   }
 
-  /* Inskrypcja IV — kanton finalny, dopina sekwencję I/II/III
-     z aether-interlude (Lumen Christi · Vox memoriae · Sustinete nos).
-     Cała stopka czyta się jako closing chapter, nie aneks adresowy.
-     Tight margin — po sekcji CODA mamy już ogromny oddech, więc
-     incipit siedzi blisko gridu. */
-  .site-footer-incipit {
+  /* ═══════════════════════════════════════════════════════════════
+     GŁOWICA — inskrypcja IV z lewej, linia, datownik z prawej
+     ───────────────────────────────────────────────────────────────
+     Tytuł z lewej, data z prawej, linia między nimi: forma głowicy
+     datowanego dokumentu. Inskrypcja dopina sekwencję I/II/III
+     z aether-interlude (Lumen Christi · Vox memoriae · Sustinete nos),
+     więc cała stopka czyta się jako closing chapter, nie aneks adresowy.
+
+     DLACZEGO NIE DWA PASY. Wcześniej inskrypcja stała pośrodku między
+     dwiema liniami, a datownik był WYŚRODKOWANY pod nią — i był wtedy
+     jedynym wyśrodkowanym obiektem nad rejestrem, który wisi od lewej
+     krawędzi miary. Nie należał do niczego. Na prawej krawędzi dzieli oś
+     ze szpaltą Vox i pas czyta się jako głowica, a nie jako podpis.
+
+     Asymetria jest tu do zapłacenia, bo rym z interludiami niesie SAM
+     element .aether-inscription (kapitała, rzymska w kursywie serif, dwa
+     romby-fleurony) — dwie długie linie po bokach były dodatkiem wyłącznie
+     tej stopki. Nie przywracaj ich „dla symetrii": to one kazały datownikowi
+     szukać własnego wiersza. */
+  .site-footer-head {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(40px, 1fr) auto;
     align-items: center;
-    gap: clamp(20px, 4vw, 44px);
-    margin-bottom: clamp(40px, 4.5vw, 64px);
+    gap: clamp(18px, 2.6vw, 36px);
+    margin-bottom: clamp(38px, 4.5vw, 64px);
     color: var(--ink-muted);
   }
 
-  .footer-incipit-rule {
+  /* Wygaszona na obu końcach: linia, która łączy dwie rzeczy, nie ma prawa
+     dobijać do liter — na styku czytałaby się jak podkreślenie inskrypcji. */
+  .footer-head-rule {
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--line-strong));
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--line-strong) 14%,
+      var(--line-strong) 86%,
+      transparent
+    );
     opacity: 0.6;
   }
 
-  .footer-incipit-rule:last-child {
-    background: linear-gradient(270deg, transparent, var(--line-strong));
+  /* ═══════════════════════════════════════════════════════════════
+     DATOWNIK — chwila · hora · tempus
+     ───────────────────────────────────────────────────────────────
+     Trzy głębokości czasu malejąco: sekunda, trzy godziny oficjum,
+     miesiąc roku kościelnego — i STOPIEŃ MALEJE RAZEM Z NIMI
+     (28 → 18 → 15 → 11). To jest cała naprawa tej linii. Pierwsza
+     wersja miała siedem rejestrów typograficznych na jednym wierszu
+     i każdy mówił własnym głosem; datownik jest stemplem, a stempel
+     ma jeden głos i najwyżej jeden akcent. Teraz linia robi
+     decrescendo w prawo i można ją przeczytać jednym rzutem oka.
+
+     ZEGAR ZSZEDŁ Z 80 PX NA ~28. To nie jest oszczędność miejsca,
+     tylko korekta hierarchii: przy 80 px był największym typem w całej
+     stopce i przekrzykiwał `VoctFoundation`, czyli faktyczny podmiot
+     tej sekcji.
+
+     MIEJSCA TU NIE MA i nie wracaj z nim. „Kraków" stało tu jako klucz
+     zegara, a sto pikseli niżej stoi `Św. Filipa 23/3 · 31-150 Kraków`
+     — pełny adres siedziby w stanzy Fundatio. Datownik powtarzał rejestr.
+     Nie ma tu też polskiej glosy tempusu: łacina hory niesie już własną
+     („noc się zamyka"), więc wiersz nie jest wyłącznie łaciński, a
+     `okres zwykły` było ostatnim, najcichszym stopniem, którego usunięcie
+     domyka decrescendo zamiast je urywać.
+
+     Mid-doty w candle rozdzielają grupy, nie wyrazy — rytm wzięty
+     z reszty stopki (siedziba, stanza-label, lista Vox). */
+  .site-footer-dateline {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 4px clamp(10px, 1.2vw, 16px);
+    margin: 0;
   }
 
+  /* Grupa łamie się w CAŁOŚCI. Datownik przełamany między
+     `Completorium` a `noc się zamyka` czytałby się jak dwa wpisy,
+     a nie jak jeden z glosą — dlatego `nowrap` wewnątrz, `wrap` na pasie. */
+  .dateline-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 0.5em;
+  }
+
+  .dateline-sep {
+    color: var(--candle);
+    opacity: 0.5;
+    font-size: clamp(12px, 1vw, 14px);
+  }
+
+  /* lining-nums BEZ tabular-nums, i to jest twarde ograniczenie kroju, nie gust.
+     lining-nums podstawia figury .lf — bez niego domyślne cyfry Cormoranta są
+     tekstowe (3/5/7/9 schodzą pod linię, jedynka ma wysokość x) i „12:36"
+     czytało się jak „I 2:36".
+     tabular-nums NIE MOŻE tu wejść: Cormorant ma tabelaryczne figury wyłącznie
+     w wariancie tekstowym (.tosf), wszystkie dopchane do jednej szerokości 491
+     przy naturalnych 391–501. Wersaliki + tabelaryczne to w tym kroju sprzeczne
+     żądanie — dostajesz albo cyfry tekstowe, albo rozstrzelone dziury wokół
+     wąskich glifów. Nie zmieniaj tu rodziny na --capitalis: figury .lf Cormoranta
+     mają szerokość praktycznie niezależną od osi wagi (1,959em przy wght 300
+     i 1,971em przy 700), Cinzel rośnie 2,139em → 2,310em, czyli zegar wędrowałby
+     w prawo przy każdej zmianie wagi. */
+  .dateline-clock {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-size: clamp(22px, 1.9vw, 28px);
+    font-weight: 300;
+    font-variation-settings: "wght" 380;
+    font-variant-numeric: lining-nums;
+    line-height: 1;
+    letter-spacing: 0;
+  }
+
+  /* Sekundy — chronograph sub-dial, podniesiony mniej-więcej do wysokości
+     wersalika minut. Tu tabular-nums ZOSTAJE, odwrotnie niż w zegarze wyżej:
+     ten element tyka 60 razy na minutę, więc stała szerokość jest warta swojej
+     ceny, a przy ~0,34em dopchanie do 491 czyta się jak światło między cyframi.
+     Rodzina musi być --serif: Cinzel nie ma pliku italic, więc dostawałby
+     pochyłość syntetyczną — ścinaną kapitałę inskrypcyjną.
+
+     To jest JEDYNY żywy sygnał w tym pasie i dlatego zegar nie ma już oddechu
+     wagi, który miał przy 80 px. Pulsowanie osi wght przy tym stopniu nie czyta
+     się jako oddech, tylko jako drganie linii, która i tak co sekundę tyka —
+     a kosztowało warstwę `will-change` na dole strony. */
+  .dateline-seconds {
+    display: inline-block;
+    margin-left: 0.16em;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 0.34em;
+    font-weight: 300;
+    font-variation-settings: "wght" 340;
+    color: var(--candle);
+    opacity: 0.58;
+    letter-spacing: 0.02em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    transform: translateY(-1.15em);
+  }
+
+  /* Hora jest inskrypcją pod cyfrą — tu OBOK cyfry, ale ta sama rola:
+     zegar to kotwica, hora to jego imię. Jedyna kursywa serif w pasie. */
+  .dateline-hora {
+    color: var(--candle);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(15px, 1.3vw, 18px);
+    font-weight: 400;
+    letter-spacing: 0.005em;
+  }
+
+  .dateline-gloss {
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(13px, 1.05vw, 15px);
+    font-weight: 460;
+  }
+
+  /* Tempus mono, nie kursywą: hora musi zostać jedyną inskrypcją w pasie,
+     a najgłębsza warstwa czasu (miesiąc albo dwa) ma być najcichsza. Bez złota —
+     w jednej linii świeciłyby wtedy trzy candle naraz i najwęższy znak przegrałby
+     z najszerszym; złoto zostaje zegarowi, horze i mid-dotom. */
+  .dateline-tempus {
+    color: var(--ink-muted);
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: clamp(10px, 0.9vw, 11px);
+    letter-spacing: 0.04em;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     REJESTR — cztery stanze jednej rangi
+     ───────────────────────────────────────────────────────────────
+       Fundatio  — VoctFoundation + siedziba + KRS/NIP/REGON
+       Consilium — zarząd jako italic inscription (świadomie bez linków)
+       Corpus    — dokumenty (Statut, Polityka)
+       Vox       — kontakt (booking/patronat/dyrekcja + RODO)
+
+     Wszystkie wiszą od JEDNEJ linii przez całą miarę, każda pod własną
+     nakrywką. Proporcje nie są równe, bo treść nie jest równa: znak
+     fundacji niesie 44-pikselową kursywę, reszta krótkie stosy.
+     ═══════════════════════════════════════════════════════════════ */
   .site-footer-grid {
     display: grid;
-    /* Asymmetric diptych — Sygnał ściśnięty do wąskiej szpalty (zegar
-       ~230px), Fundatio bierze resztę. */
-    grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.32fr);
-    gap: clamp(40px, 5.5vw, 96px);
+    grid-template-columns:
+      minmax(0, 1.5fr) minmax(0, 1fr)
+      minmax(0, 1fr) minmax(0, 0.9fr);
+    gap: clamp(28px, 3vw, 56px);
     margin-bottom: clamp(40px, 5vw, 72px);
     align-items: start;
   }
 
-  .footer-col {
+  /* Nakrywka mocniejszym włosem niż wewnętrzne podziały: te cztery linie
+     czytają się jako JEDNA linia przez całą szerokość i to ona zastępuje
+     zniesiony podział dyptyku. */
+  .footer-stanza {
     display: grid;
     align-content: start;
-    gap: 18px;
+    /* 20, nie 14: przy ciaśniejszym odstępie nakrywka czytała się jak pierwszy
+       wiersz listy pod nią, a nie jak jej głowa. */
+    gap: 20px;
     min-width: 0;
-  }
-
-  .footer-col-label {
-    color: var(--ink-muted);
-    border-top: 1px solid var(--line-strong);
     padding-top: 12px;
-    width: max-content;
-  }
-
-  .footer-col-body {
-    display: grid;
-    gap: 14px;
+    border-top: 1px solid var(--line-strong);
     color: var(--ink-soft);
     font-family: var(--sans);
     font-size: 13px;
     line-height: 1.6;
   }
 
-  /* ═══════════════════════════════════════════════════════════════
-     FUNDATIO — single inscription column (right side of diptych).
-     Cztery stanze rozdzielone hairline rules:
-       1. Mark — VoctFoundation + siedziba + KRS/NIP/REGON
-       2. Consilium — zarząd jako italic inscription (nie mailto)
-       3. Corpus — dokumenty (Statut, Polityka)
-       4. Vox — kontakt (booking/patronat/dyrekcja + RODO)
-     ═══════════════════════════════════════════════════════════════ */
-
-  /* Wewnętrzny grid Fundatio — Mark i Vox full-width, Consilium + Corpus
-     w jednym rzędzie obok siebie. Wyrównuje pionowo wysokość prawej
-     kolumny do lewej (Sygnał), zamiast czterech stanz stackowanych
-     pionowo (puchnięcie po prawej). */
-  .footer-col-foundation .footer-col-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: clamp(28px, 3vw, 56px);
-    row-gap: 0;
-    align-items: start;
-  }
-
-  .footer-col-foundation .foundation-mark,
-  .footer-col-foundation .foundation-stanza-vox {
-    grid-column: 1 / -1;
-  }
-
   /* ─── Foundation mark — nazwa + siedziba + identyfikatory ─── */
   .foundation-mark {
     display: grid;
     gap: 12px;
-    padding-bottom: clamp(20px, 2.2vw, 28px);
   }
 
   .foundation-title {
     font-family: var(--serif);
     font-style: italic;
-    font-size: clamp(34px, 3.4vw, 48px);
+    /* Zeszło z 48 px: znak stoi teraz w szpalcie o szerokości ~1,5/4,4 miary,
+       a nie w połowie strony. Górna granica jest dobrana tak, żeby
+       „VoctFoundation" mieściło się w jednej linii przy 1580 px — złamane
+       na dwie przestaje być znakiem, a staje się nagłówkiem. */
+    font-size: clamp(30px, 2.6vw, 44px);
     font-weight: 300;
     line-height: 1;
     letter-spacing: -0.005em;
@@ -186,20 +332,11 @@
     font-variant-numeric: tabular-nums;
   }
 
-  /* ─── Stanza — wspólny rytm sub-sekcji ─── */
-  .foundation-stanza {
-    display: grid;
-    gap: 10px;
-    padding: clamp(18px, 2vw, 24px) 0;
-    border-top: 1px solid var(--line);
-  }
-
-  .foundation-stanza:last-child {
-    padding-bottom: 0;
-  }
-
-  /* Label sub-stanzy: [·] LATIN · polski hint — wzór wzięty
-     z .footer-signal-tempus (Tempus Paschae · okres wielkanocny). */
+  /* Nakrywka stanzy: [·] LATIN · polski hint. Nosi ją teraz KAŻDA z czterech
+     szpalt rejestru, także znak fundacji — wcześniej dwie zewnętrzne kolumny
+     miały polskie etykiety („Sygnał", „Fundacja"), a łacińskie nakrywki
+     rządziły tylko wewnątrz jednej z nich. Rodzeństwo jednej rangi mówi jednym
+     słownikiem. */
   .foundation-stanza-label {
     display: inline-flex;
     align-items: baseline;
@@ -223,12 +360,19 @@
      Rozdział NIE jest dekoracyjny — Cinzel nie ma minuskuły (małe litery mapują się na
      kapitaliki), więc gdyby gloss też był Cinzelem, `text-transform: lowercase` dałby
      „ZARZĄD" kapitalikami i cichy przypis zacząłby konkurować z łaciną. Kontrast niosą
-     trzy rzeczy naraz: krój, wielkość liter i kolor. Kamień i głos. */
+     trzy rzeczy naraz: krój, wielkość liter i kolor. Kamień i głos.
+
+     Stopień 11,5 px to tyle, co inskrypcja IV w głowicy — a nie 10, które ta
+     nakrywka nosiła, gdy rządziła pod-sekcją wewnątrz cudzej kolumny. Etykieta
+     rządząca całą szpaltą nie może być MNIEJSZA od inskrypcji nad nią; nowa
+     ranga wymaga nowego stopnia. Polska glosa zostaje na 10 px — dwugłos żyje
+     z różnicy, więc obie połowy nie mogą rosnąć razem. */
   .foundation-stanza-label .latin {
     font-family: var(--capitalis);
     font-weight: 500;
     color: var(--candle);
-    letter-spacing: 0.12em;
+    font-size: 11.5px;
+    letter-spacing: 0.18em;
   }
 
   .foundation-stanza-label .pl {
@@ -264,7 +408,14 @@
     gap: 8px;
   }
 
-  .foundation-corpus-list a {
+  /* Corpus i Vox mówią JEDNYM głosem, i dlatego stoją w jednej regule.
+     Vox był bezszeryfowy — forma z czasów, gdy był paskiem przypisu pod blokiem
+     Fundatio; jako szpalta równej rangi obok trzech kursyw serif czytał się jak
+     wklejka z innego dokumentu. Stały włos pod spodem (a nie dopiero na hover)
+     jest tu drugą połową tej samej naprawy: bez niego cztery adresy obok
+     podkreślonych dokumentów wyglądały na listę rzeczowników, nie na odnośniki. */
+  .foundation-corpus-list a,
+  .foundation-vox-list a {
     position: relative;
     display: inline-flex;
     align-items: baseline;
@@ -280,7 +431,8 @@
     transition: color 0.45s var(--ease);
   }
 
-  .foundation-corpus-list a::after {
+  .foundation-corpus-list a::after,
+  .foundation-vox-list a::after {
     content: "";
     position: absolute;
     left: 0;
@@ -294,11 +446,13 @@
     transition: transform 0.55s var(--ease-slow), opacity 0.45s var(--ease);
   }
 
-  .foundation-corpus-list a:hover {
+  .foundation-corpus-list a:hover,
+  .foundation-vox-list a:hover {
     color: var(--candle);
   }
 
-  .foundation-corpus-list a:hover::after {
+  .foundation-corpus-list a:hover::after,
+  .foundation-vox-list a:hover::after {
     opacity: 0.7;
     transform-origin: left;
   }
@@ -317,65 +471,25 @@
     color: var(--candle);
   }
 
-  /* Vox — kontakt. Inline-list rozdzielona złotymi mid-dotami;
-     pod nią mono linijka z RODO (dane osobowe — wymóg prawny). */
+  /* Vox — kontakt. STOS, nie lista inline rozdzielona mid-dotami: ta forma
+     miała sens, gdy Vox było pełnej szerokości wierszem pod blokiem Fundatio.
+     W szpalcie ~0,9/4,4 miary „napisz do nas · booking · patronat · dyrekcja
+     artystyczna" łamie się na trzy linie i zostawia mid-doty na ich końcach,
+     czyli separatory wiszące w powietrzu. Pionowo wszystkie cztery stanze
+     czytają się tak samo: nakrywka i krótki stos pod nią. Krój i włos przychodzą
+     z reguły Corpusu wyżej — szpalta równej rangi ma mówić tym samym głosem.
+     Pod listą mono linijka z RODO (dane osobowe — wymóg prawny). */
   .foundation-vox-list {
     margin: 0;
     padding: 0;
     list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 4px 14px;
-    font-family: var(--sans);
-    font-size: 13px;
-    line-height: 1.5;
-  }
-
-  .foundation-vox-list li {
-    display: inline-flex;
-    align-items: baseline;
-    gap: 14px;
-  }
-
-  .foundation-vox-list li:not(:last-child)::after {
-    content: "·";
-    color: var(--candle);
-    opacity: 0.55;
-  }
-
-  .foundation-vox-list a {
-    position: relative;
-    color: var(--ink);
-    padding-bottom: 2px;
-    transition: color 0.35s var(--ease);
-  }
-
-  .foundation-vox-list a::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 1px;
-    background: currentColor;
-    opacity: 0.32;
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.5s var(--ease-slow);
-  }
-
-  .foundation-vox-list a:hover {
-    color: var(--candle);
-  }
-
-  .foundation-vox-list a:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
+    display: grid;
+    justify-items: start;
+    gap: 8px;
   }
 
   .foundation-vox-rodo {
-    margin: 4px 0 0;
+    margin: 0;
     font-family: var(--mono);
     font-size: 10.5px;
     letter-spacing: 0.04em;
@@ -403,27 +517,36 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     SOCIAL RIBBON — hairline strip pomiędzy gridem a wordmarkiem.
-     Trzy platformy wycentrowane między dwiema liniami; italic
-     Cormorant zamiast "follow us" buttons. Ribbon to dechtnięcie
-     przed cichym "amen" wordmarka.
+     WSTĘGA OBECNOŚCI — pas między rejestrem a kolofonem.
+     Trzy platformy kursywą Cormoranta zamiast przycisków „follow us";
+     odetchnięcie przed cichym „amen" kolofonu.
+
+     WISI OD LEWEJ, LINIA IDZIE W PRAWO — to głowica odbita. Tam:
+     inskrypcja od lewej, linia, datownik dobity do prawej krawędzi miary.
+     Tutaj: nazwy od lewej i linia, która sama tę krawędź dobija. Oba pasy
+     biorą więc całą miarę i oba zaczynają się na tej samej osi, co rejestr
+     i kolofon.
+
+     WYCENTROWANE MIĘDZY DWIEMA LINIAMI BYŁO TRZECIĄ OSIĄ w stopce, która
+     poza tym cała wisi od lewej — i jedyną, której nic nie trzymało:
+     symetryczny pas nad kolofonem rozpiętym na `1fr auto` czytał się jak
+     wtręt z innego układu.
      ═══════════════════════════════════════════════════════════════ */
   .footer-ribbon {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: auto minmax(40px, 1fr);
     align-items: center;
     gap: clamp(20px, 3vw, 48px);
     margin-top: clamp(20px, 3vw, 36px);
   }
 
+  /* Wygaszona od strony nazw, pełnym włosem przy marginesie: do liter dobijać
+     nie może (czytałaby się jak podkreślenie „youtube"), ale na prawej krawędzi
+     kończy się tak, jak kończą się tam nakrywki rejestru. */
   .footer-ribbon-rule {
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--line-strong) 50%, var(--line-strong));
+    background: linear-gradient(90deg, transparent, var(--line-strong) 22%, var(--line-strong));
     opacity: 0.6;
-  }
-
-  .footer-ribbon-rule + .footer-ribbon-list + .footer-ribbon-rule {
-    background: linear-gradient(90deg, var(--line-strong), var(--line-strong) 50%, transparent);
   }
 
   .footer-ribbon-list {
@@ -469,210 +592,6 @@
   .footer-ribbon-list a:hover::after {
     transform: scaleX(1);
     transform-origin: left;
-  }
-
-  /* ─── Sygnał — lewa kolumna · dwa bloki:
-     1) Najbliższe wybrzmienie (statyczna data + countdown)
-     2) Kraków · teraz (live clock + hora canonica + GPS + tempus)
-     Bez horizontal rules — odstęp pionowy jako jedyny separator.
-     Hora canonica jest teraz SATELITĄ zegara (nie osobnym blokiem),
-     bo średniowieczny mnich nie patrzył osobno na zegar i osobno na
-     "która hora" — to była JEDNA rzecz. */
-  .footer-col-signal {
-    align-self: stretch;
-    grid-template-rows: auto 1fr;
-  }
-
-  .footer-col-signal-body {
-    align-self: center;
-    display: grid;
-    gap: clamp(28px, 3.2vw, 32px);
-  }
-
-  .footer-signal-block {
-    display: grid;
-    gap: 4px;
-  }
-
-  .footer-signal-now {
-    gap: 2px;
-  }
-
-  .footer-signal-key {
-    color: var(--ink-muted);
-  }
-
-  .footer-signal-coord,
-  .footer-signal-time {
-    color: var(--ink);
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.04em;
-    line-height: 1.5;
-  }
-
-  /* ─── Hora canonica — satellite zegara ───
-     Sit RIGHT under the clock — zegar to anchor, hora to jego nazwa.
-     Italic Cormorant ~26px sentence-case, łaciński akcent candle gold,
-     polski w ink-soft. Wygląda jak inskrypcja pod cyfrą. */
-  .footer-signal-hora-row {
-    margin: 0 0 2px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.45em;
-    line-height: 1.3;
-  }
-
-  .footer-signal-hora-name {
-    color: var(--candle);
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: clamp(22px, 2vw, 30px);
-    font-weight: 400;
-    letter-spacing: 0.005em;
-  }
-
-  .footer-signal-hora-sep {
-    color: var(--candle);
-    opacity: 0.55;
-    font-size: clamp(16px, 1.4vw, 20px);
-    transform: translateY(-0.08em);
-  }
-
-  /* Tempus row separator — italic łaciński + mono polski mają różne baseline.
-     Dot lekko niżej żeby optycznie usiadł między nimi zamiast wisieć nad. */
-  .footer-signal-tempus-sep {
-    color: var(--candle);
-    opacity: 0.55;
-    font-size: clamp(12px, 1vw, 14px);
-    transform: translateY(0.06em);
-  }
-
-  .footer-signal-hora-poem {
-    color: var(--ink-soft);
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: clamp(16px, 1.3vw, 19px);
-    font-weight: 460;
-    letter-spacing: 0;
-  }
-
-  /* ─── Tempus — okres roku liturgicznego ───
-     Najgłębsza warstwa czasu w kolumnie: zegar (instant) → hora (3h) →
-     miejsce → tempus (1-2 miesiące). Progresywne oddalanie. Zmienia się
-     ~6 razy w roku. Bezpośrednio powiązane z brand'em Concerts Spirituels =
-     muzyka roku liturgicznego. */
-  .footer-signal-tempus-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0 0.45em;
-    line-height: 1;
-    margin: 0;
-  }
-
-  .footer-signal-tempus {
-    color: var(--candle);
-    font-family: var(--mono);
-    font-size: clamp(11px, 1vw, 13px);
-    letter-spacing: 0;
-    opacity: 0.78;
-    font-style: normal;
-  }
-
-  .footer-signal-tempus-pl {
-    color: var(--ink-muted);
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: lowercase;
-  }
-
-  /* ─── Live clock — Anchor lewej kolumny, ale
-     nie kompozycyjny rywal pieczęci. */
-  .footer-signal-clock {
-    color: var(--candle);
-    font-family: var(--serif);
-    font-size: clamp(48px, 5.5vw, 80px);
-    line-height: 0.95;
-    font-weight: 300;
-    letter-spacing: 0;
-    /* lining-nums BEZ tabular-nums, i to jest twarde ograniczenie kroju, nie gust.
-       lining-nums podstawia figury .lf — bez niego domyślne cyfry Cormoranta są
-       tekstowe (3/5/7/9 schodzą pod linię, jedynka ma wysokość x) i "12:36"
-       czytało się jak "I 2:36".
-       tabular-nums NIE MOŻE tu wejść: Cormorant ma tabelaryczne figury wyłącznie
-       w wariancie tekstowym (.tosf), wszystkie dopchane do jednej szerokości 491
-       przy naturalnych 391–501. Wersaliki + tabelaryczne to w tym kroju sprzeczne
-       żądanie — dostajesz albo cyfry tekstowe, albo rozstrzelone dziury wokół
-       wąskich glifów. To była przyczyna "rozciągniętych" cyfr.
-       Stabilność bez tabular-nums bierze się stąd, że figury .lf Cormoranta mają
-       szerokość PRAKTYCZNIE niezależną od osi wagi: "12:36" to 1,959em przy wght
-       300 i 1,971em przy 700 — 0,8 px różnicy na 80px. Dlatego oddech (niżej)
-       może pompować wght i zegar się nie przesuwa. Cinzel tego nie ma:
-       ta sama para cyfr rośnie 2,139em → 2,310em na 400→580, czyli ~12 px
-       wędrówki w prawo w każdym cyklu. Nie zmieniaj tu rodziny na --capitalis. */
-    font-variant-numeric: lining-nums;
-    margin: 10px 0 10px;
-    font-variation-settings: "wght" 380;
-  }
-
-  /* Sekundy — chronograph sub-dial. Italic Cormorant tabular-nums,
-     ~0.34em głównego zegara, raised żeby siedział mniej-więcej na
-     wysokości cap line minut. Lekka opacity + osobny wght (340) żeby
-     NIE oddychał razem z głównym zegarem (mniej jitter, stabilna obecność).
-     Tu tabular-nums ZOSTAJE, odwrotnie niż w zegarze wyżej: ten element tyka
-     60 razy na minutę, więc stała szerokość jest warta swojej ceny, a przy
-     ~0,34em dopchanie do 491 czyta się jak światło między cyframi, nie jak
-     rozciągnięcie. Rodzina musi być --serif: Cinzel nie ma pliku italic,
-     więc dostawałby pochyłość syntetyczną — ścinaną kapitałę inskrypcyjną. */
-  .footer-signal-seconds {
-    display: inline-block;
-    margin-left: 0.16em;
-    font-family: var(--serif);
-    font-style: italic;
-    font-size: 0.34em;
-    font-weight: 300;
-    font-variation-settings: "wght" 340;
-    color: var(--candle);
-    opacity: 0.58;
-    letter-spacing: 0.02em;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    transform: translateY(-1.2em);
-  }
-
-  .footer-signal-countdown {
-    color: var(--ink-muted);
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-top: 2px;
-  }
-
-  /* Breath dla clock — TIME-BASED pulse, nie scroll-driven.
-     Powód: poprzednia wersja (entry 0% cover 60%, 460→320 monotonic)
-     kończyła animację zanim user się zatrzymał w środku ekranu — wght
-     siedział na 320 = static. Time-based 8s pulse zapewnia ciągły puls
-     "obecności" gdy user czyta footer. Browser auto-throttluje gdy
-     element off-screen — koszt minimalny. Will-change promuje do warstwy,
-     ogranicza reflow scope przy rerasteryzacji variable font. */
-  @media (prefers-reduced-motion: no-preference) {
-    .footer-signal-clock {
-      font-variation-settings: "wght" var(--wght-mark);
-      animation: footer-signal-pulse 9s ease-in-out infinite;
-      will-change: font-variation-settings;
-    }
-
-    /* 300 to dno osi wagi Cormoranta, nie wartość dobrana na oko. Niżej
-       przeglądarka i tak przycina, więc każde 260 czy 200 to martwy odcinek
-       cyklu, w którym zegar stoi zamiast oddychać. */
-    @keyframes footer-signal-pulse {
-      0%, 100% { --wght-mark: 300; }
-      50%      { --wght-mark: 580; }
-    }
   }
 
   /* colophon */
@@ -810,6 +729,15 @@
   .footer-colophon-author a:hover {
     color: var(--candle);
   }
+
+  /* SYGNETU DRUKARZA TU NIE MA i nie wracaj z nim — ani na desktopie, ani na płycie
+     telefonu. Znak domu zamyka kolofon w KSIĄŻCE, bo tam nie występuje nigdzie indziej
+     w zasięgu wzroku; tutaj chrome jest sticky, więc ten sam glif stoi na górze kadru
+     w tej samej chwili, w której czyta się stopkę — a sto pikseli wyżej stoi jeszcze
+     `VoctFoundation`. Ten sam werdykt, co przy figurze doby słonecznej: pozycja znaku
+     JEST znakiem wydrukowanym obok. Ostatnim wierszem zostaje imprint i to wystarcza
+     za zamknięcie — strona redakcyjna książki też kończy się ostatnim wierszem składu,
+     a nie ornamentem pod nim (docs/web-landing-guardrails.md). */
 
   /* ── The hero, in the ink register ──────────────────────────────────────────
      The threshold is WRITTEN, not materialised: the words already stand at

@@ -23,9 +23,12 @@ export const HORAE_CANONICAE: readonly CanonicalHour[] = [
   { from: 21, name: "Completorium", poem: "noc się zamyka" },
 ];
 
+/* `hourCycle: "h23"` rather than `hour12: false` alone: the latter has resolved to the h24
+   cycle on some ICU builds, which returns "24" just after midnight — and index 8 is off the
+   end of the table below. */
 const WARSAW_HOUR_FORMAT = new Intl.DateTimeFormat("en-GB", {
   hour: "2-digit",
-  hour12: false,
+  hourCycle: "h23",
   timeZone: "Europe/Warsaw",
 });
 

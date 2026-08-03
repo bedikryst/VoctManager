@@ -164,67 +164,355 @@
     }
   }
 
-  /* ── Footer · centred inscription (Faza 4) ────────────────────────────────
-     On the phone the diptych collapses to one narrow column and the mixed
-     left-aligned labels/lists/flex-rows read as ragged. As "Inscriptio finalis"
-     the whole closing chapter is centred — Sygnał (clock), Fundatio (mark,
-     Consilium, Corpus, Vox) and the colophon — so it settles as one plate. */
+  /* ── Footer · IMPRESSIO — the imprint at the foot of the leaf (Faza 4) ─────
+     THE FAULT WAS NEVER THE AXIS, IT WAS PRINTING THE ARCHIVE TWICE. Folded into
+     one narrow column the four-stanza register becomes ~1200px of board members,
+     tax numbers, statute, four contact routes and four typeface names — and every
+     one of those is already set, in a fuller form and under its own head, on
+     /kolofon and /kontakt, both of them linked from this very footer. No axis
+     settles a restatement that long: left-hung it read as a directory, centred as
+     a pile. So the phone prints what a last leaf prints, and the rest keeps living
+     one tap away on the page built for it.
+
+     WHAT IT IS INSTEAD is the imprint of an early printed book — the colophon that
+     states the house, the place and the MOMENT OF PRINTING, which is the one thing
+     down here that exists nowhere else on the site: a live liturgical clock. The
+     plate reads mark → moment → house → invitation → presence → record, and it ends
+     on the last line of the record. It ends on no ornament, and a printer's device
+     was built at that foot once and cut — see the note in 06-footer.css before
+     reaching for one again.
+
+     AND IT IS CENTRED, which the register could not be and this can. Centring
+     fails on blocks with internal structure — lists, key/value rows, wrapping
+     inline groups — because every one of them rags on both sides. Every line here
+     is a single composed line, the Coda directly above it is centred on the same
+     axis, and a colophon has been centred for five hundred years.
+
+     BUT AIR ALONE WAS NOT A COMPOSITION. A first pass cut the four stanza caps and
+     let air do all the dividing, which left this the one section of the site that
+     breaks the site's own second rule — "Kartę liniuje się przed pierwszą literą",
+     the leaf is ruled before the first letter (/kolofon · Regula). Unruled, eight
+     centred groups at similar intervals read as one undifferentiated ribbon: the
+     invitation sat closer to the two documents under it (50px) than to anything
+     else and so read as their heading, while the social names floated exactly
+     halfway between the documents above and the colophon below (65px / 62px),
+     belonging to neither. The plate is now RULED INTO THREE ACTS — moment, house,
+     record — and the middle is regrouped so that grouping states rank: the
+     invitation keeps the presence, and every document drops to the record where
+     its register already lives. Intervals belong to the bands (`margin-top`), not
+     to a container gap, so they can be deliberately unequal.
+
+     NO CAROUSEL, NO ACCORDION, NO FOLD. The fourth rule of the same Regula is
+     "Litera zostaje tam, gdzie ją położono" — a swipe rail or a disclosure widget
+     would be the one place on the page where the reader has to operate something
+     to read it. Hiding is what you do when you cannot cut. Here we can cut. */
   @media (max-width: 640px) {
+    /* The plate is ONE flow, not four containers. The register div takes
+       `display: contents` so its stanzas become bands of the footer itself and can
+       be ordered against the ribbon and the colophon — which is what lets the
+       documents leave the middle and join the record without the markup growing a
+       second copy of them. It is a bare div: the one node here that can safely lose
+       its box, since the lists keep theirs and with them their semantics. */
     .site-footer-inner {
+      display: flex;
+      flex-direction: column;
       text-align: center;
+      padding-top: clamp(36px, 10vw, 52px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
     }
 
-    .footer-col {
+    .site-footer-grid {
+      display: contents;
+    }
+
+    .site-footer-head { order: 1; }
+    .footer-stanza-mark { order: 2; }
+    .footer-stanza-vox { order: 3; }
+    .footer-ribbon { order: 4; }
+    .footer-stanza-corpus { order: 5; }
+    .site-footer-colophon { order: 6; }
+
+    .footer-stanza-consilium {
+      display: none;
+    }
+
+    /* ── ACT I · the moment ──
+       The inscription is the running head of the leaf and the rule under it closes
+       that head, exactly as it does on the wide measure — there the rule runs
+       between the inscription and the dateline, here it runs under both. It is the
+       page's ordinary hairline — `--line-strong`, full measure. Do not spend gold on
+       it: candle at any opacity a hairline can carry composites to ~1.3:1 against the
+       parchment, and an ornament nobody can find is not an ornament. Gold needs area
+       down here, which is what the device at the foot has and a single pixel has not.
+    .site-footer-head {
       justify-items: center;
+      gap: 18px;
+      margin-bottom: 0;
     }
 
-    /* The hairline-topped label keeps its max-content rule but centres over the column. */
-    .footer-col-label {
-      width: max-content;
-      margin-inline: auto;
+    /* The movement mark carries the number of the page's last part and stood at the
+       interludes' 0.78 with nothing beside it to lend it weight — the faintest text
+       on a plate it is supposed to open. */
+    .site-footer-head .aether-inscription {
+      opacity: 0.92;
     }
 
-    .footer-signal-block {
+    .footer-head-rule {
+      display: block;
+      justify-self: stretch;
+      background: var(--line-strong);
+      opacity: 1;
+    }
+
+    /* IMPRESSIO — four depths of time stacked, the type descending with them:
+       moment, office, gloss, season. Stacked rather than strung on one line because
+       the phone would break that line at an unpredictable place and leave a mid-dot
+       hanging at the end of a row; vertically the air separates them, which is why
+       both marks go.
+
+       ONE GOLD, NOT TWO. On the wide measure the clock and the hora are both candle
+       and the strict left-to-right decrescendo carries it. Stacked, two gold lines
+       one under the other read as two titles rather than as a stamp — so the ink
+       takes over below the numerals and the descent runs gold → ink → soft → muted. */
+    .site-footer-dateline {
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      margin-top: 8px;
+    }
+
+    .dateline-sep {
+      display: none;
+    }
+
+    .dateline-group {
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* The seconds are a sub-dial hung off the right of the numerals, so the clock's
+       box is wider than the time it prints and centring the BOX would set the time
+       itself off-axis — visibly, against a wordmark centred on the true axis a
+       breath below. The padding restores the symmetry: the sub-dial's advance is
+       constant (tabular figures), so the same measure added on the left leaves the
+       numerals centred at any hour. */
+    .dateline-clock {
+      font-size: clamp(27px, 8vw, 34px);
+      padding-left: 0.5em;
+    }
+
+    .dateline-hora {
+      font-size: 19px;
+      color: var(--ink);
+    }
+
+    .dateline-gloss {
+      font-size: 14px;
+    }
+
+    /* Lower case, and that is the whole point: set in tracked capitals it stopped
+       being the quietest layer of the stamp and started rhyming with the capitalis
+       rights line at the foot of the plate — the same small, tracked, grey voice.
+       The season is the deepest layer of time here, not a label for anything. */
+    .dateline-tempus {
+      font-size: 10.5px;
+    }
+
+    /* ── The stanzas lose their caps and their heads ──
+       Four capitalis heads govern nothing once the stanzas under them are down to a
+       line or two each, and four hairlines would chop a plate this short into cards.
+       Two of the four caps come back below, as the rules between the three acts. */
+    .footer-stanza {
       justify-items: center;
+      gap: 14px;
+      padding-top: 0;
+      border-top: 0;
     }
 
-    .footer-signal-hora-row,
-    .footer-signal-tempus-row {
-      justify-content: center;
+    .foundation-stanza-label {
+      display: none;
     }
 
-    .footer-col-foundation .footer-col-body,
-    .foundation-mark,
-    .foundation-stanza {
+    /* ── ACT II · the house, its door, its presence ──
+       One act, because they answer one question — who this is and how to reach it —
+       and the intervals inside state the rank: the air before the invitation is
+       markedly wider than the air the invitation leaves above the social names, so
+       the door reads as the subject of the act and the names as its tail. Keep that
+       inequality if the numbers are ever retuned; equal gaps here are what made the
+       invitation read as a heading over whatever followed it. */
+    .footer-stanza-mark {
+      margin-top: 34px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line-strong);
+    }
+
+    .foundation-mark {
       justify-items: center;
+      gap: 12px;
     }
 
+    /* The one scale event on the plate. At ~13.5vw the wordmark runs to within a
+       thumb's width of both margins, which is the only moment in this footer where
+       type reaches for the measure instead of sitting inside it — and it keeps the
+       subject unmistakably the largest thing here, the clock held near 0.6 of it. */
+    .foundation-title {
+      font-size: clamp(38px, 13.5vw, 56px);
+    }
+
+    .foundation-seat {
+      font-size: 16px;
+    }
+
+    /* KRS alone, and it stays with the seat: name · address · registry number is a
+       letterhead, which is a single object and not a stray line of small type. NIP
+       and REGON are invoicing data and belong to /kolofon, which prints all three. */
     .foundation-legal {
       justify-content: center;
+      font-size: 10px;
     }
 
-    .foundation-consilium-list,
-    .foundation-corpus-list {
-      justify-items: center;
+    .foundation-legal li:not(:first-child) {
+      display: none;
+    }
+
+    /* ── The invitation — one door, at the size of a door ──
+       The other three routes (booking, patronat, dyrekcja artystyczna) are the four
+       real places /kontakt is built to offer, and this link opens it. Printed here
+       they were four near-identical italic lines competing for one tap. */
+    .footer-stanza-vox {
+      margin-top: 40px;
     }
 
     .foundation-vox-list {
+      display: grid;
+      justify-items: center;
+      gap: 0;
+    }
+
+    .foundation-vox-list li:not(:first-child),
+    .foundation-vox-rodo {
+      display: none;
+    }
+
+    /* The ≤980 layer hangs a mid-dot on every item but the last, and `:last-child`
+       is structural — with the other three hidden the mark would print after the
+       one line that stays. Selector matched exactly, not shortened: `:not()` carries
+       the specificity of its argument, so a plainer `li::after` loses to it and the
+       dot survives. */
+    .foundation-vox-list li:not(:last-child)::after {
+      content: none;
+    }
+
+    .foundation-vox-list a {
+      font-size: clamp(21px, 6.4vw, 26px);
+    }
+
+    .footer-ribbon {
+      justify-items: center;
+      margin-top: 30px;
+    }
+
+    .footer-ribbon-rule {
+      display: none;
+    }
+
+    .footer-ribbon-list {
+      gap: 20px;
+    }
+
+    .footer-ribbon-list a {
+      font-size: 16px;
+    }
+
+    /* The hairline is PRINTED here, not held for a hover a touch screen never sends.
+       Otherwise these three are the only unmarked links on the plate — three italic
+       words a breath under two permanently underlined documents, which is the exact
+       failure the Vox column was fixed for on the wide measure: without the rule
+       they read as a list of nouns rather than as links. Strength matched to those
+       documents (0.22), not to the ribbon's own hover value. */
+    .footer-ribbon-list a::after {
+      transform: scaleX(1);
+      transform-origin: left;
+      opacity: 0.22;
+    }
+
+    /* ── ACT III · the record ──
+       Everything the footer owes rather than offers, in one voice under one rule:
+       the two documents, the colophon door, the rights. They were scattered — two
+       serif-italic links pinned under the invitation as if they were its sub-menu,
+       a capitalis label two groups further down, the rights below that — three
+       registers for one register's worth of content. */
+    .footer-stanza-corpus {
+      margin-top: 36px;
+      padding-top: 22px;
+      border-top: 1px solid var(--line-strong);
+    }
+
+    /* The two documents sit side by side: at 14px the pair measures ~230px inside a
+       ~276px measure at the narrowest phone we support, so the row holds without a
+       separator to hang at a break. */
+    .foundation-corpus-list {
+      display: flex;
+      flex-wrap: wrap;
       justify-content: center;
+      align-items: baseline;
+      gap: 10px 20px;
+    }
+
+    .foundation-corpus-list a {
+      font-size: 14px;
     }
 
     .site-footer-colophon {
       justify-items: center;
+      gap: 16px;
+      padding-top: 14px;
     }
 
     .footer-colophon-fonts,
     .footer-colophon-signature {
       justify-content: center;
+      padding-bottom: 0;
     }
 
-    /* Override the earlier ≤640 patch that left-stacked the signature column. */
+    /* The door to the colophon page joins the two documents beside it instead of
+       standing apart in capitalis: same face, same size, same printed hairline —
+       three links of one rank, set as three links of one rank. The four typeface
+       names go: they are the whole subject of the page this line opens, and set in
+       their own faces they were four more voices at the foot of a quiet plate. */
+    .footer-colophon-faces {
+      display: none;
+    }
+
+    .footer-colophon-fonts .footer-colophon-label {
+      position: relative;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 14px;
+      font-weight: 300;
+      letter-spacing: 0.005em;
+      text-transform: none;
+      color: var(--ink);
+      padding-bottom: 3px;
+    }
+
+    /* The documents' own hairline, drawn the same way rather than approximated with
+       a border: `currentColor` at 0.22 is a different value from every line token,
+       and three links of one rank cannot be underlined at two strengths. */
+    .footer-colophon-fonts .footer-colophon-label::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.22;
+    }
+
     .footer-colophon-signature {
-      flex-direction: row;
-      align-items: baseline;
+      gap: 4px 16px;
     }
   }
 

@@ -306,6 +306,126 @@ do hang under KONCERTY; on the card the Via is a closing section. `Via` is also 
 vocabulary (`i18n/ui.ts`: Introitus, De nobis, Via, Scribe nobis, Sustinete nos) — don't spend one to
 fix a stutter that is not happening.
 
+**The footer's solar day: built three times, cut. Do not build a fourth.** 2026-08-03, in one week:
+a sun-altitude arc, then the same arc re-inked, then a 24-hour hairline (`.dies`) with the daylight
+stretch written in gold and a punctum at now, on a real NOAA solar module. Each pass fixed the
+previous pass's stated fault and each was still wrong, so the faults are worth keeping — but the
+verdict is that **the footer is the wrong organ for any of them**, and the reasons are ordered
+outermost-first because that is the order the next pass should test in.
+
+*Wrong information class, which no drawing can fix.* Everything in this footer is either the
+foundation's identity (KRS, board, statute, addresses) or its liturgical frame (hora canonica,
+tempus) — and the frame is a brand claim: we live in the church year, that is what Concerts
+Spirituels means. Sunrise and sunset over Kraków are neither. They are geodesy at a point: the
+payload class of a weather widget, and rubrication does not change a fact's class. **The one bridge
+that would have made the sun legitimate here is the one none of the three passes built**: the
+canonical hours were originally *horae temporales*, the daylight divided into twelve stretching
+divisions. If the sun rules the office, the crossings are the ruling of the page. All three passes
+instead pricked the fixed clock hours from `horaeCanonicae.ts` (0/3/6/…/21) — modern equal hours —
+so a solar span and a clock grid shared one axis with no relation between them. **If a fourth pass
+is ever pitched, this is its entry price, not an enhancement.** Also checked and dead: moving the
+figure to the concert pages so a sunset would mean "we begin after dark." Every concert in
+`concerts.yaml` starts at 20:00; the datum is a constant, not a variable.
+
+*Restatement, which survived every redraw.* The punctum's position IS the clock printed below it;
+the nearest prick IS the hora printed below it. Only the two crossings were new — two numbers for
+~470 lines. Pass one also printed the noon altitude, which was a third restatement and arithmetically
+guaranteed: at a FIXED latitude noon altitude is `90 − LAT + declination` and day length is
+`acos(f(declination))`, both strictly monotone in the same variable, so each determines the other
+exactly (Kraków: 16.5°/7h40m in December, 63.4°/16h20m in June — there is no day that is high and
+short). Removing the arc removed restatement three and left one and two standing, because they are
+structural: a figure of the day drawn beside a clock and an hour name will always redraw them.
+
+*And the defence that could not reach the reader.* The final pass argued in comments that a line
+with a filled stretch and a dot is not a progress bar, because the ink does not start at the left
+edge and the punctum is often outside it. Both true — and both legible **only to someone who returns
+at another hour**. A visitor sees one instant; at 22:02 the gold dot stands past the right end of
+the fill, which reads as a scrubber dragged past its buffer. **An argument that needs two visits is
+not a defence of a first impression.**
+
+Two findings from those passes that outlive the figure and belong in the general rules: **density
+needs area** — separating two states on a 1px hairline by `--line` → `--line-strong` (~208 vs ~168
+grey composited on `--paper`, forty levels apart) is *not findable on screen*; the "material is
+density, never light" rule comes from the Vitta, which is 11px wide, and at 1px only length, hue and
+position read. And **a caption under someone else's mark is a lie about position** — parking two
+readings at the ends of the measure to make collision impossible put `5:12` under the prick meaning
+midnight, which outranks tidiness.
+
+**And the structural fix the three passes were really asking for: the footer is FOUR BANDS, not a
+diptych.** The clock is not a heading a column can be named after — it is the moment the page is
+being read, which is a *dateline*, and datelines sit on the rule at the head of a document. The
+band is `IV · INSCRIPTIO FINALIS` left — rule — dateline right (instant · hora · tempus), which is
+the head of a dated document; the register below takes the whole measure as four stanzas of one
+rank — Fundatio ‖ Consilium ‖ Corpus ‖ Vox — each under its own ruled head in the shared
+`· LATIN polski` form. **The asymmetry is deliberate and the two flanking rules must not come
+back.** A first attempt kept the rule-flanked centred inscription and hung the dateline centred
+underneath, and that made it the only centred object above a left-hanging register — it belonged to
+nothing and floated. The rhyme with the interludes' I/II/III lives in `.aether-inscription` itself
+(capitalis, the roman in italic serif, the two diamond fleurons), not in the rules, which were this
+footer's own addition — that is what makes the asymmetry affordable. That is what the content had been all along: the old right-hand column
+carried its own internal 2×2, so a two-column shell was holding three columns of content. **Do not
+restore the diptych.** The void that kept inviting decoration was structural, and it cannot form
+against a full-measure register. Four consequences worth keeping. The clock drops from 80px to
+~28px — at 80 it out-shouted `VoctFoundation`, the actual subject of the footer — and its `wght`
+breath goes with it, because at a third of the size a weight pulse reads as a wobble on a line that
+already ticks seconds, and the seconds are the live signal. **A dateline is a stamp, so it gets one
+voice and at most one accent**: the first version put seven type registers on one line (mono caps /
+34px serif numerals / italic superscript / three italic sizes / two mono sizes) and was unreadable
+as a unit; it now decrescendos strictly left to right, 28 → 18 → 15 → 11, and the place (`Kraków`)
+is gone because the seat is set in full a hundred pixels below. **A column head may not be smaller
+than the inscription that governs its band** — the stanza labels stayed at the 10px they wore as
+sub-heads inside someone else's column and read as timid at top rank; they are 11.5px capitalis
+now, matching `INSCRIPTIO FINALIS`, with the Polish gloss held at 10px so the two-voice contrast
+survives. And **columns of one rank speak one voice**: Vox kept the sans it wore as a footnote strip
+under the old Fundatio block, which beside three serif-italic columns read as a paste-in; it now
+shares Corpus's exact rule, permanent hairline included, because without it four addresses beside
+two underlined documents read as a list of nouns rather than links.
+
+**The desktop ribbon hangs from the same margin as everything else.** It spent a while centred
+between two rules, which made it a third axis in a footer whose head, register and colophon all
+start at the left margin; it now mirrors the head band exactly — names left, one rule running out to
+the right edge of the measure.
+
+**And on the phone the footer is not a register at all. The fault was never the axis — it was
+printing the archive twice.** Two passes argued about alignment: the ≤640 layer centred every block
+(seven unequal blocks, each ragged on both sides — noise, not a plate), then hung them all from the
+left (tidy, and still 1200px of directory). Both were answers to the wrong question. Folded into one
+narrow column the register prints the board, NIP, REGON, the statute, four contact routes and four
+typeface names — **and every one of those is already set, in a fuller form and under its own head,
+on /kolofon and /kontakt, both of them linked from the footer itself.** No alignment settles a
+restatement that long. So the phone prints what a last leaf prints: an IMPRESSIO — movement mark,
+the moment of printing (clock · hora · gloss · tempus, stacked and decrescendo), the house with its
+seat and KRS, one invitation, its documents, its presence, the fine print, and the house glyph the
+page opened with at the threshold. One DOM, two compositions: the ≤640 layer decides which subset
+prints, so there is no second tree and no duplicated link. Four things to keep. **A subset of the
+markup, never a second tree** — a media query cannot desync, an island rendering a different tree
+per viewport can. **Centring fails on blocks with internal structure, not on centring** — lists,
+key/value rows and wrapping inline groups rag on both sides, single composed lines do not, and once
+the plate is single lines the centred axis is correct (the Coda directly above it is centred, and a
+colophon has been centred for five hundred years). **A separator must never be the last thing on a
+row** — which is why the stacked impressio drops both its mid-dots rather than keeping one at a
+break. And **hiding is what you do when you cannot cut**: a swipe rail or a disclosure widget in the
+footer was considered and dropped, because the site's own Regula says it moves none of its text, and
+because the content did not need to be hidden — it needed to not be there.
+
+**A printer's device at the foot of that plate: built once, cut. Do not build a second.** The house
+glyph was set under the imprint as a closing mark — first at the chrome's 17×40 footprint, which was
+a speck under a subject set at 50px, then at 112px on the vector master, which is the smallest width
+`base.css` allows the SVG (below it the V's thin arm falls under a pixel and blinks on scroll). The
+size was never the fault. **A device closes a colophon in a BOOK because the house mark appears
+nowhere else within sight; this page's chrome is sticky, so the same glyph stands at the top of the
+very frame in which the footer is read** — and `VoctFoundation` is set 300px above it. That is the
+solar figure's verdict again, in another organ: the mark IS the mark printed beside it. It was also
+the only object on the page added purely to close something, against a register language whose own
+rule is that no hairline was ever added to have something to animate. Tuning it was a dead end in
+both directions: in ink it outweighs the wordmark and becomes a second monument, in stronger gold it
+breaks the one-accent discipline the stamp above it had just been fixed to keep — the only value at
+which it sat comfortably was the one at which it was barely there, which is the page telling you it
+does not want the object. **The plate ends on the last line of the imprint, the way a book's
+copyright page does.** If a foot mark is ever pitched again, the entry price is a reason it is not
+the chrome glyph restated — a typographic fleuron rhyming with the two the plate's own inscription
+already carries is the only candidate that has ever survived the question.
+
 **WebGL hero: abandoned.** Do not re-pitch.
 
 ---
