@@ -28,6 +28,13 @@
      borders and marks, where the contrast minimum does not apply. */
   --candle-ink: #7f693a;
   --candle-blue: #1b2d60;
+  /* The night ground every dark band sits on (hero plates, concert stations, the colophon).
+     It belongs here — BaseLayout loads this file on every page — but for a long time it was
+     declared ONLY in the landing foundation layer and in vault.css's shim, so a page's dark
+     surface silently depended on having imported the donation vault's stylesheet. Both of those
+     re-declarations still stand and are byte-identical, so nothing about the existing cascade
+     changes; this is the copy a page can rely on without loading either. */
+  --dark: #080807;
   --night: #100f0d;
   /* The bands iOS Safari opens above and below a fixed header. It fills both from the CANVAS —
      `html`'s background-color, set in transitions.css — and nothing the page draws can reach

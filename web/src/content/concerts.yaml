@@ -14,6 +14,7 @@
   date: "2024-01-20"
   time: "20:00"
   address: "ul. Kopernika 26, Kraków"
+  admission: free
   viaDate: sty 2024
   about:
     place: "Bazylika NSPJ · Kraków"
@@ -463,6 +464,7 @@
   meta: "Dworek Gościnny, Szczawnica · 1 czerwca 2024"
   venue: "Dworek Gościnny, Szczawnica"
   date: "2024-06-01"
+  admission: paid
   viaDate: cze 2024
   about:
     place: "Dworek Gościnny · Szczawnica"
@@ -1026,9 +1028,17 @@
   # Booklet documents cities + hours for all three evenings and a venue only for Kraków;
   # Rybnik + Łódź confirmed by the owner (2026-07-17).
   dates:
+    # `admission` is per evening and set only where the answer is on record — Kraków was free
+    # entry; nobody kept the Rybnik/Łódź door, so those two stay unset rather than guess.
     - { date: "2024-09-08", venue: "Bazylika św. Antoniego, Rybnik", time: "16:30" }
     - { date: "2024-09-17", venue: "Archikatedra, Łódź", time: "19:00" }
-    - { date: "2024-11-16", venue: "Bazylika NSPJ, ul. Kopernika 26, Kraków", time: "20:00" }
+    - {
+        date: "2024-11-16",
+        venue: "Bazylika NSPJ, ul. Kopernika 26, Kraków",
+        time: "20:00",
+        address: "ul. Kopernika 26, Kraków",
+        admission: free,
+      }
   prologue: >-
     Szesnasty listopada 2024, Bazylika NSPJ w Krakowie — trzeci wieczór tego programu, po Rybniku
     i Łodzi. Zanim zabrzmi pierwszy dźwięk, o. Przemysław Wysogląd SJ nakreśla kontekst psalmów,
@@ -1487,6 +1497,7 @@
   date: "2025-02-22"
   time: "20:00"
   address: "plac Mariacki 5, Kraków"
+  admission: free
   viaDate: lut 2025
   about:
     place: "Bazylika Mariacka · Kraków"
@@ -2373,6 +2384,9 @@
   meta: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa · 16 maja 2026"
   venue: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa"
   date: "2026-05-16"
+  address: "ul. Rakowiecka 61, Warszawa"
+  # A sung liturgy, not a ticketed concert — the Mass was open to whoever came.
+  admission: free
   viaDate: maj 2026
   about:
     place: "Sanktuarium Narodowe św. Andrzeja Boboli · Warszawa"

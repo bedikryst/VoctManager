@@ -1,0 +1,154 @@
+---
+/**
+ * @file 404.astro
+ * @description The site's not-found page. Emitted as `404.html` (build.format "file") and
+ *  served by nginx's `error_page 404` — WITH a 404 status. Before it existed, the marketing
+ *  fallback answered every unmatched path with the landing at 200, so a typo, a stale inbound
+ *  link or a trailing slash all became soft 404s that Google indexed as duplicates of "/".
+ *
+ *  `noindex` is the point of the head fragment: the body is a real page on a real URL, and the
+ *  only thing worse than a soft 404 is a hard one that ranks. It stays `follow` so the way
+ *  out is still crawlable.
+ *
+ *  Register: a `vacat` — the bibliographic term for a leaf a book leaves blank. The page does
+ *  not apologise or explain the error; it names the blank and points back into the volume.
+ * @architecture Astro islands 2026
+ * @module pages/404
+ */
+import { getImage } from "astro:assets";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteChrome from "../components/SiteChrome.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { bleedPair } from "../lib/photos";
+
+const title = "Ta karta jest pusta — VoctEnsemble";
+const description = "Nie ma tu strony pod tym adresem. Wróć do nawy — koncerty, zespół, kontakt.";
+
+const ogImage = (
+  await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
+).src;
+
+const ways = [
+  { href: "/", lat: "Limen", pl: "Strona główna" },
+  { href: "/koncerty", lat: "Concentus", pl: "Koncerty Duchowe" },
+  { href: "/o-nas", lat: "Vocatio", pl: "O nas" },
+  { href: "/kontakt", lat: "Epistula", pl: "Kontakt" },
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  path="/404"
+  image={ogImage}
+  bodyClass="page-404"
+>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex,follow" />
+  </Fragment>
+
+  <a class="skip-link" href="#tresc">Przejdź do treści</a>
+  <SiteChrome current="/404" tone="dark" />
+
+  <main id="tresc">
+    <section class="nf-hero" aria-labelledby="nf-title">
+      <div class="nf-inner">
+        <p class="nf-eyebrow micro reveal">
+          <span class="lat" lang="la">Vacat</span>
+          <span class="nf-dot" aria-hidden="true">·</span>
+          <span>404</span>
+        </p>
+        <h1 id="nf-title" class="nf-title reveal ink-press" data-d="1">Ta karta jest pusta.</h1>
+        <p class="nf-lede reveal" data-d="2">
+          Pod tym adresem nic nie stoi — strona została przeniesiona albo nigdy jej tu
+          nie było. Nawa jest kilka kroków stąd.
+        </p>
+
+        <nav class="nf-ways reveal" data-d="3" aria-label="Powrót">
+          <ul>
+            {
+              ways.map((w) => (
+                <li>
+                  <a href={w.href}>
+                    <span class="lat" lang="la">{w.lat}</span>
+                    <span class="nf-way-pl">{w.pl}</span>
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+      </div>
+    </section>
+  </main>
+
+  <SiteFooter />
+</BaseLayout>
+
+<style>
+  /* One dark band that fills the viewport minus the chrome — the page has no second section,
+     so a short body must not leave the footer floating halfway up the screen. */
+  .nf-hero {
+    background: var(--dark);
+    color: var(--paper);
+    min-height: 78svh;
+    display: flex;
+    align-items: center;
+    padding: clamp(140px, 18vw, 220px) var(--gutter) clamp(80px, 11vw, 140px);
+  }
+  .nf-inner { max-width: 760px; margin: 0 auto; width: 100%; }
+
+  .nf-dot { opacity: 0.45; margin: 0 0.5em; }
+
+  .nf-title {
+    font-family: var(--serif);
+    font-weight: 300;
+    line-height: 0.95;
+    font-size: clamp(46px, 7vw, 104px);
+    letter-spacing: -0.01em;
+    margin: 0;
+    color: var(--paper);
+  }
+  .nf-lede {
+    margin: clamp(28px, 4vw, 44px) 0 0;
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(18px, 1.8vw, 24px);
+    line-height: 1.5;
+    color: rgba(244, 241, 233, 0.82);
+    max-width: 46ch;
+  }
+
+  .nf-ways { margin-top: clamp(44px, 6vw, 72px); }
+  .nf-ways ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid rgba(244, 241, 233, 0.14);
+  }
+  .nf-ways li { border-bottom: 1px solid rgba(244, 241, 233, 0.14); }
+  .nf-ways a {
+    display: flex;
+    align-items: baseline;
+    gap: clamp(16px, 3vw, 32px);
+    padding: clamp(14px, 2vw, 20px) 0;
+    text-decoration: none;
+    color: inherit;
+    /* Colour only — the rows are a list, and a row that also slides turns four quiet ways
+       out into four competing animations. */
+    transition: color var(--ink-in, 0.9s) ease;
+  }
+  .nf-ways a:hover,
+  .nf-ways a:focus-visible { color: var(--candle); }
+  /* The Latin rubric's family/caps come from base.css's two-voice `.lat` rule — setting them
+     here would tie specificity and win on bundle order. Only the measure is ours, so the
+     Polish glosses line up in a column. */
+  .nf-ways .lat { flex: 0 0 auto; min-width: 8.5em; }
+  .nf-way-pl { font-family: var(--serif); font-size: clamp(19px, 2vw, 26px); font-weight: 300; }
+
+  @media (max-width: 560px) {
+    .nf-ways a { flex-direction: column; gap: 4px; }
+    .nf-ways .lat { min-width: 0; }
+  }
+</style>

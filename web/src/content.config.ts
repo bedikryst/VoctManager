@@ -41,6 +41,12 @@ const concerts = defineCollection({
     /** Street address of the venue (e.g. "ul. Kopernika 26, Kraków") — JSON-LD Place.address
         only; the visible page keeps the quieter `meta`/`venue` register. */
     address: z.string().optional(),
+    /** What the door cost — JSON-LD `offers`/`isAccessibleForFree` only, never rendered.
+        Set it ONLY where the ensemble actually recorded the answer: "free" emits a price-0
+        Offer, "paid" emits the honest negative without inventing a ticket price, and leaving
+        it unset emits neither. A touring concert states this per date instead (see `dates`),
+        since one programme can be free in one city and ticketed in the next. */
+    admission: z.enum(["free", "paid"]).optional(),
     /** Short via-rail date label (e.g. "sty 2024"). The via-rail fill % is computed
         from order in the page, not stored here. */
     viaDate: z.string(),
@@ -171,6 +177,11 @@ const concerts = defineCollection({
           date: z.string(), // ISO YYYY-MM-DD
           venue: z.string(), // full venue + city
           time: z.string().optional(), // e.g. "20:00"
+          /** Street address of THIS evening's venue — JSON-LD Place.address, same contract
+              as the concert-level `address`. */
+          address: z.string().optional(),
+          /** Admission for THIS evening (see the concert-level `admission`). */
+          admission: z.enum(["free", "paid"]).optional(),
         }),
       )
       .default([]),

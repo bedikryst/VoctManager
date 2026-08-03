@@ -17,6 +17,8 @@ import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import BleedImage from "../components/BleedImage.astro";
 import { photo, bleedPair } from "../lib/photos";
+import { absolute, musicEvent } from "../lib/eventSchema";
+import { SITE } from "../i18n/config";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import "../styles/vault.css";
 
@@ -73,26 +75,57 @@ const toRoman = (n: number): string => {
   return out;
 };
 
+// The list describes one event per CONCERT, not per tour date — a touring programme's
+// itinerary belongs to its own page, which emits a node per evening. Node shape (calendar-
+// derived status, shared performer/organizer ids, offers only where admission is recorded)
+// comes from lib/eventSchema, so this list and the detail pages cannot drift apart.
+// The same `bleedPair(heroImg ?? bg)` + 1200/webp call the detail page makes, so getImage
+// serves both from one rendition instead of emitting a second copy per station.
+const listItems = await Promise.all(
+  stations.map(async (s, i) => {
+    // A touring programme carries no concert-level day — its `meta` reads "2024" or "jesień
+    // 2025" — so the list would describe it with no `startDate` at all, and startDate is one of
+    // the three properties schema.org Event actually REQUIRES. The opening evening stands in:
+    // it is a real date at a real venue (not an averaged fiction), and `url` carries the reader
+    // to the page that lists the whole itinerary. Concerts with a single date are unaffected.
+    const opening = s.date ? undefined : s.dates[0];
+    return {
+      "@type": "ListItem",
+      position: i + 1,
+      item: musicEvent({
+        name: s.title,
+        description: s.essence,
+        image: absolute(
+          (
+            await getImage({
+              src: bleedPair(s.heroImg ?? s.bg).desktop,
+              width: 1200,
+              format: "webp",
+            })
+          ).src,
+        ),
+        // A station without its own page has no URL to point at; the Offer drops its `url` too.
+        ...(s.hasPage ? { url: `${SITE}/koncerty/${s.id}` } : {}),
+        // Still absent when a concert has neither a day nor an itinerary — the node then emits
+        // no startDate and no status claim rather than fabricate a date.
+        date: s.date ?? opening?.date,
+        time: s.time ?? opening?.time,
+        // The venue has to travel WITH the date it belongs to: pairing the opening evening's day
+        // with the concert-level venue string (which lists all three cities) would describe an
+        // evening that never happened.
+        venue: opening?.venue ?? s.venue ?? s.meta,
+        address: opening ? opening.address : s.address,
+        admission: opening ? opening.admission : s.admission,
+      }),
+    };
+  }),
+);
+
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "Koncerty Duchowe — VoctEnsemble",
-  itemListElement: stations.map((s, i) => ({
-    "@type": "ListItem",
-    position: i + 1,
-    item: {
-      "@type": "MusicEvent",
-      name: s.title,
-      // startDate only when a real day is known — vague YAML dates ("2024", "jesień
-      // 2025") stay out rather than emit an invalid schema.org date.
-      ...(s.date ? { startDate: s.date } : {}),
-      eventStatus: "https://schema.org/EventCompleted",
-      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-      location: { "@type": "Place", name: s.venue ?? s.meta },
-      performer: { "@type": "MusicGroup", name: "VoctEnsemble" },
-      ...(s.hasPage ? { url: `https://voctensemble.com/koncerty/${s.id}` } : {}),
-    },
-  })),
+  itemListElement: listItems,
 };
 
 const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;

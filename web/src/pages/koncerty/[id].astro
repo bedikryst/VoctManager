@@ -25,6 +25,7 @@ import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { candleFrom } from "../../lib/candle";
+import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
@@ -155,32 +156,38 @@ for (const p of c.program) {
 const title = `${c.title} — Koncerty Duchowe · VoctEnsemble`;
 const description = c.essence;
 
-// ── JSON-LD: a tour emits one MusicEvent per date; a single-date concert keeps one event.
-const performer = { "@type": "MusicGroup", name: "VoctEnsemble" };
-const baseEvent = {
-  "@type": "MusicEvent",
-  name: c.title,
-  performer,
-  eventStatus: "https://schema.org/EventCompleted",
-  eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-};
-const startDate = c.date ? (c.time ? `${c.date}T${c.time}:00` : c.date) : undefined;
+// ── JSON-LD: a tour emits one MusicEvent per date (each evening carries its own venue,
+// address and admission); a single-date concert keeps one event. The node's shape — status
+// from the calendar, shared performer/organizer ids, offers only where recorded — belongs to
+// lib/eventSchema, which /koncerty emits from too.
+const eventUrl = absolute(`/koncerty/${entry.id}`);
+const eventImage = absolute(ogImage);
 const events = hasTour
-  ? c.dates.map((d) => ({
-      ...baseEvent,
-      startDate: d.time ? `${d.date}T${d.time}:00` : d.date,
-      location: { "@type": "Place", name: d.venue },
-    }))
+  ? c.dates.map((d) =>
+      musicEvent({
+        name: c.title,
+        description: c.essence,
+        image: eventImage,
+        url: eventUrl,
+        date: d.date,
+        time: d.time,
+        venue: d.venue,
+        address: d.address,
+        admission: d.admission,
+      }),
+    )
   : [
-      {
-        ...baseEvent,
-        ...(startDate ? { startDate } : {}),
-        location: {
-          "@type": "Place",
-          name: c.venue ?? c.meta,
-          ...(c.address ? { address: c.address } : {}),
-        },
-      },
+      musicEvent({
+        name: c.title,
+        description: c.essence,
+        image: eventImage,
+        url: eventUrl,
+        date: c.date,
+        time: c.time,
+        venue: c.venue ?? c.meta,
+        address: c.address,
+        admission: c.admission,
+      }),
     ];
 const jsonLd =
   events.length === 1
