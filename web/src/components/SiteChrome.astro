@@ -16,8 +16,8 @@ import { localizePath, LOCALE_META, DEFAULT_LOCALE, LANG_SWITCHER_ENABLED, type 
 interface Props {
   /** Base path of the current page (locale-neutral, e.g. "/o-nas") so the matching nav link gets
       aria-current — concert pages pass their FULL path ("/koncerty/wcielenie") so the matching
-      ribbon can carry the crimson stitch; the bare KONCERTY link treats any of them as its own.
-      Also the anchor the language switcher localizes into each locale. */
+      ribbon can carry the crimson stitch, and the bare KONCERTY link takes the SECTION state
+      (see onKoncerty). Also the anchor the language switcher localizes into each locale. */
   current?: string;
   /** "dark" pages (koncerty) get a night solid header + an is-light state over paper sections. */
   tone?: "light" | "dark";
@@ -40,13 +40,36 @@ const t = UI[lang];
    derived from the concerts collection (page-bearing entries only, Via order). Ribbon hrefs point
    at concert pages, which stay Polish-only for now, so they are NOT localized. */
 const ribbons = toRibbons(await getCollection("concerts"));
+/* SECTION state, not page state — `data-section` is the visual "you are somewhere in here"
+   and it is a separate attribute from `aria-current` on purpose. `aria-current="page"` is a
+   claim that THIS LINK POINTS AT THE PAGE YOU ARE ON, so on /koncerty/wcielenie it belongs to
+   the ribbon alone; the bare KONCERTY link points at /koncerty, which is not that page. Left
+   on both, a screen reader announced "current page" twice in one nav, at two different URLs.
+   The mobile card resolves the same question the same way — its Koncerty voice takes no
+   aria-current on a concert page, because the Via row underneath is where the reader is. */
 const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
 
-/* The mobile "Vitta" ribbon's resting row (nave-menu.css `--vi`): which of the four voices
-   this page belongs to — null on pages outside them (press/kolofon), where the ribbon ships
-   shut (no `is-set`, height 0). Matched on the locale-neutral base path. */
-const naveIndex =
-  current === "/" ? 0 : current === "/o-nas" ? 1 : onKoncerty ? 2 : current === "/kontakt" ? 3 : null;
+/* The mobile "Vitta" ribbon's resting line, in the card's two units (nave-menu.css GEOMETRY):
+   --vb whole bands, --vr Via rows. The four voices sit at band i + 1.5; a concert page sits in
+   the Via register, five bands down and (k + 1.5) rows into it — so the ribbon points at the
+   exact concert being read rather than parking on KONCERTY. Null on pages the card does not
+   index (press/kolofon), where the ribbon ships shut (no `is-set`, height 0).
+   NOTE: the bare /koncerty page is voice 2; its own concert pages are NOT (see naveConcert),
+   which is also what keeps tapping KONCERTY from a concert page a real navigation instead of
+   a dismissal. */
+const naveConcert = ribbons.findIndex((r) => r.href === current);
+const naveRest =
+  naveConcert >= 0
+    ? { vb: 5, vr: naveConcert + 1.5 }
+    : current === "/"
+      ? { vb: 1.5, vr: 0 }
+      : current === "/o-nas"
+        ? { vb: 2.5, vr: 0 }
+        : current === "/koncerty"
+          ? { vb: 3.5, vr: 0 }
+          : current === "/kontakt"
+            ? { vb: 4.5, vr: 0 }
+            : null;
 
 /* Localized destinations — Polish returns the bare path (identical output), other locales get a
    prefix ONLY for pages that are translated (localizePath falls back to the Polish URL otherwise). */
@@ -88,7 +111,10 @@ const langOptions = showLang
         tip (registrum.css). Pure CSS state — the link itself stays a plain navigation to
         /koncerty (the drop is enhancement only). */}
     <div class="registrum">
-      <a href={hrefConcerts} aria-current={onKoncerty ? "page" : undefined}>{t.nav.concerts}</a>
+      <a
+        href={hrefConcerts}
+        aria-current={current === "/koncerty" ? "page" : undefined}
+        data-section={onKoncerty ? "" : undefined}>{t.nav.concerts}</a>
       {/* The hush: full-viewport fixed layer quieting the whole page while the register
           hangs open — a SIBLING of the drop (the drop's transform would hijack its fixed
           containing block, see registrum.css traps). */}
@@ -155,14 +181,17 @@ const langOptions = showLang
     aria-controls="navMenu"
     aria-label={t.nav.menu}></button>
 
-  {/* "Vitta" — the shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
-      ribbon hanging down the left margin to the current voice — the book is open where you
-      are. The card carries NO brand of its own: the bar's .chrome-brand persists ABOVE the
-      overlay (z-index 61, tinted to ink — see the style block), so the mark never blinks.
-      There is exactly ONE ribbon element; `--vi` sets its resting row and the script below
-      RETARGETS it on commit so it runs through the slot (never two ribbons swapping — see
-      nave-menu.css). Any /koncerty/* page is the Koncerty voice's own, matching the desktop
-      trigger. */}
+  {/* "Vitta" — the shared mobile overlay (nave-menu.css): a ruled parchment page whose every
+      line sits on one band — the hour's antiphon, the four index entries, the Wesprzyj line —
+      with ONE crimson ribbon falling down the left margin from the head rule to the current
+      voice: the book is open where you are. Concert accents stay OUT of this card (see the DYE note
+      in nave-menu.css). The card carries NO brand of its own: the bar's .chrome-brand persists
+      ABOVE the overlay (z-index 61, tinted to ink — see the style block), so the mark never
+      blinks. There is exactly ONE ribbon element; `--vb`/`--vr` set its resting row and the
+      script below RETARGETS it on commit so it runs through the slot (never two ribbons swapping
+      — see nave-menu.css). On a /koncerty/* page the ribbon stands at that concert's VIA ROW,
+      not at the Koncerty voice: crimson marks the page you are on, in exactly one place, and
+      the voice above it stays plain ink so tapping it is a real navigation (see naveRest). */}
   <nav class="nave" id="navMenu" aria-label={t.nav.ariaPrimary}>
     <div class="nave-veil"></div>
 
@@ -173,38 +202,113 @@ const langOptions = showLang
 
       <div class="nave-list">
         <span
-          class={`vitta${naveIndex !== null ? " is-set" : ""}`}
-          style={naveIndex !== null ? `--vi: ${naveIndex};` : undefined}
+          class={`vitta${naveRest ? " is-set" : ""}`}
+          style={naveRest ? `--vb: ${naveRest.vb}; --vr: ${naveRest.vr};` : undefined}
           aria-hidden="true"
         >
           <span class="vitta-cord"></span>
           <span class="vitta-strip"></span>
         </span>
-        <a class="voice" href={hrefHome} style="--i: 0" aria-current={current === "/" ? "page" : undefined}>
-          <span class="voice-lat">Introitus</span>
+        {/* The antiphon names its hour — the page's first ruled line, name left and poem right
+            across the measure, the card's one living element; filled with the live canonical
+            hour on open (script below). */}
+        <span class="nave-antiphon">
+          <span id="naveHoraName">Hora</span>
+          <em id="naveHoraPoem">canonica</em>
+        </span>
+        {/* Each voice is one index entry — word · leader · incipit (nave-menu.css). The leader
+            is drawn furniture, hence aria-hidden; the vernacular word leads in the DOM so the
+            reading order is the same as the reading order on the page. */}
+        <a
+          class="voice"
+          href={hrefHome}
+          style="--i: 0; --vb: 1.5; --vr: 0"
+          aria-current={current === "/" ? "page" : undefined}
+        >
           <span class="voice-pl">{t.nav.home}</span>
+          <span class="voice-lead" aria-hidden="true"></span>
+          <span class="voice-lat">Introitus</span>
         </a>
-        <a class="voice" href={hrefAbout} style="--i: 1" aria-current={current === "/o-nas" ? "page" : undefined}>
-          <span class="voice-lat">De nobis</span>
+        <a
+          class="voice"
+          href={hrefAbout}
+          style="--i: 1; --vb: 2.5; --vr: 0"
+          aria-current={current === "/o-nas" ? "page" : undefined}
+        >
           <span class="voice-pl">{t.nav.about}</span>
+          <span class="voice-lead" aria-hidden="true"></span>
+          <span class="voice-lat">De nobis</span>
         </a>
-        <a class="voice" href={hrefConcerts} style="--i: 2" aria-current={onKoncerty ? "page" : undefined}>
-          <span class="voice-lat">Via</span>
+        <a
+          class="voice"
+          href={hrefConcerts}
+          style="--i: 2; --vb: 3.5; --vr: 0"
+          aria-current={current === "/koncerty" ? "page" : undefined}
+        >
           <span class="voice-pl">{t.nav.concerts}</span>
+          <span class="voice-lead" aria-hidden="true"></span>
+          <span class="voice-lat">Via</span>
         </a>
-        <a class="voice" href={hrefContact} style="--i: 3" aria-current={current === "/kontakt" ? "page" : undefined}>
-          <span class="voice-lat">Scribe nobis</span>
+        <a
+          class="voice"
+          href={hrefContact}
+          style="--i: 3; --vb: 4.5; --vr: 0"
+          aria-current={current === "/kontakt" ? "page" : undefined}
+        >
           <span class="voice-pl">{t.nav.contact}</span>
+          <span class="voice-lead" aria-hidden="true"></span>
+          <span class="voice-lat">Scribe nobis</span>
         </a>
+
+        {/* THE VIA — the concert register (nave-menu.css): the site's own depth printed in the
+            card, and the phone's only road to the pages the desktop hangs under KONCERTY.
+            Rows are the desktop register's grammar one step down (roman · title · leader ·
+            date), all of it derived from concerts.yaml. Concert pages stay Polish-only, so the
+            hrefs are NOT localized — same rule as the desktop ribbons. The label counts as the
+            register's first --vrow (see GEOMETRY), which is why row k sits at --vr: k + 1.5.
+            That one number is load-bearing twice over: it places the ribbon's tip on the row AND
+            paces the register's entrance, since (--vr − 0.5) is the row's ordinal in the run
+            (nave-menu.css). No separate `--i` in here for that reason — a second index could
+            drift out of step with the first. */}
+        <div class="via">
+          <span class="via-label">Via</span>
+          {
+            ribbons.map((r, i) => (
+              <a
+                class="via-row"
+                href={r.href}
+                style={`--vb: 5; --vr: ${i + 1.5}`}
+                aria-current={current === r.href ? "page" : undefined}
+              >
+                <span class="via-roman">{r.roman}</span>
+                <span class="via-title">{r.title}</span>
+                <span class="via-lead" aria-hidden="true" />
+                <span class="via-date">{r.viaDate}</span>
+              </a>
+            ))
+          }
+        </div>
       </div>
 
-      {/* has-lang stacks the foot into a column so the language line reads as an imprint above the
-          colophon (nave-menu.css); untranslated pages keep the plain pill/colophon row. */}
+      {/* Translated pages close with the language imprint under the Wesprzyj line (has-lang
+          widens the foot's breathing room); untranslated feet end at the closing line. */}
       <div class:list={["nave-foot", { "has-lang": showLang }]}>
-        <a class="nave-cta" href="/?donate" data-vault-open="100">{t.nav.support} <em>· Sustinete nos</em></a>
-        <div class="nave-imprint">
-          {
-            showLang && (
+        {/* The closing line of the page — the same entry grammar as the voices above, one step
+            smaller, under the foot's gold rule. Not a button: see nave-menu.css. */}
+        <a class="nave-cta" href="/?donate" data-vault-open="100">
+          <span class="nave-cta-word">{t.nav.support}</span>
+          <span class="voice-lead" aria-hidden="true"></span>
+          <em class="voice-lat">Sustinete nos</em>
+        </a>
+        {/* The page's fine print — Kolofon is a real page with no other road from the phone
+            (nave-menu.css). /press stays out on purpose: a noindex press kit is addressed to
+            journalists, not to a reader opening the menu. */}
+        <span class="nave-fine">
+          <a href="/kolofon" aria-current={current === "/kolofon" ? "page" : undefined}>Kolofon</a>
+        </span>
+        {
+          showLang && (
+            <div class="nave-imprint">
               <span class="nave-lang" role="group" aria-label={t.nav.langAria}>
                 {langOptions.map((o, i) => (
                   <Fragment>
@@ -225,15 +329,9 @@ const langOptions = showLang
                   </Fragment>
                 ))}
               </span>
-            )
-          }
-          {/* The antiphon names its hour — filled with the live canonical hour on open (script
-              below), so the menu carries the time of day, not a static motto. */}
-          <span class="nave-colophon">
-            <span class="nave-colophon-mark" aria-hidden="true"></span>
-            <span class="nave-hora"><span id="naveHoraName">Hora</span> · <em id="naveHoraPoem">canonica</em></span>
-          </span>
-        </div>
+            </div>
+          )
+        }
       </div>
     </div>
   </nav>
@@ -279,9 +377,13 @@ const langOptions = showLang
   .chrome-nav > a, .chrome-nav .registrum > a { font-family: var(--capitalis); font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: inherit; opacity: .82; position: relative; padding-bottom: 3px; transition: opacity .35s var(--ease); }
   .chrome-nav > a::after, .chrome-nav .registrum > a::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
   .chrome-nav > a:hover, .chrome-nav .registrum > a:hover { opacity: 1; }
+  /* The marked state is keyed to `[data-section]` for KONCERTY and to `[aria-current]` for
+     everything else: the concert pages hang under KONCERTY, so the bar has to show the section
+     while the exact-page claim stays on the ribbon inside the drop (see onKoncerty). Both
+     attributes are present on /koncerty itself; the two rules land the same look either way. */
   .chrome-nav > a:hover::after, .chrome-nav .registrum > a:hover::after,
-  .chrome-nav > a[aria-current="page"]::after, .chrome-nav .registrum > a[aria-current="page"]::after { transform: scaleX(1); }
-  .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[aria-current="page"] { opacity: 1; color: var(--candle); }
+  .chrome-nav > a[aria-current="page"]::after, .chrome-nav .registrum > a[data-section]::after { transform: scaleX(1); }
+  .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[data-section] { opacity: 1; color: var(--candle); }
   .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
 
   /* Language switcher — the choice of vernacular, each tongue named in its own word and set in the
@@ -414,7 +516,7 @@ const langOptions = showLang
 
     const clearChosen = () => {
       const c = chrome();
-      c?.querySelectorAll(".voice.is-chosen").forEach((v) => v.classList.remove("is-chosen"));
+      c?.querySelectorAll(".is-chosen").forEach((v) => v.classList.remove("is-chosen"));
       c?.querySelector(".nave-list.is-committing")?.classList.remove("is-committing");
     };
     const finalizeClose = () => {
@@ -439,7 +541,7 @@ const langOptions = showLang
       toggle()?.setAttribute("aria-expanded", "true");
       document.body.classList.add("nav-open");
       setPageInert(true);
-      // The antiphon names its hour: fill the foot line with the live canonical hour.
+      // The antiphon names its hour: fill the page's opening line with the live canonical hour.
       const hora = horaForWarsaw(new Date());
       const name = document.getElementById("naveHoraName");
       const poem = document.getElementById("naveHoraPoem");
@@ -547,7 +649,10 @@ const langOptions = showLang
         }, PULL_MS + 900);
         return;
       }
-      const voice = t.closest(".nave .voice");
+      // A voice or a Via row — both are lines of the same page and commit identically; each
+      // carries its own `--vb`/`--vr` (nave-menu.css GEOMETRY), so nothing here needs to know
+      // which kind it caught.
+      const voice = t.closest(".nave .voice, .nave .via-row");
       if (voice) {
         // Tapping the page you're already on is a dismissal, not a journey — so it must be
         // stopped here. Left to the router, a link to the current URL is still a navigation:
@@ -563,24 +668,29 @@ const langOptions = showLang
         // Modified / middle clicks navigate normally (new tab) — no pull, no classes.
         if (e.defaultPrevented) return;
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        // A voice is a page — choosing one RUNS THE RIBBON (nave-menu.css): retargeting the
-        // vitta's `--vi` makes the ONE ribbon run through the slot to the chosen row (one
-        // height transition — never two ribbons swapping), and the swap is held one PULL_MS
-        // beat so the run reads. The card stays OPEN into the swap: the OUTGOING snapshot
-        // captures it mid-run and the page transition dissolves it into the destination as one
-        // motion (`before-swap` tears it down AFTER the snapshot). The chosen rubric is
-        // instant (no transition) so an early snapshot can't catch it mid-tween. Reduced
-        // motion skips the hold — the swap is the transition.
+        // A line is a page — choosing one RUNS THE RIBBON (nave-menu.css): copying the row's
+        // `--vb`/`--vr` onto the vitta makes the ONE ribbon run through the slot to the chosen
+        // line (one height transition — never two ribbons swapping), and the swap is held one
+        // PULL_MS beat so the run reads. The card stays OPEN into the swap: the OUTGOING
+        // snapshot captures it mid-run and the page transition dissolves it into the
+        // destination as one motion (`before-swap` tears it down AFTER the snapshot). The
+        // chosen rubric is instant (no transition) so an early snapshot can't catch it
+        // mid-tween. Reduced motion skips the hold — the swap is the transition.
         const list = voice.closest(".nave-list");
         voice.classList.add("is-chosen");
         list?.classList.add("is-committing");
         const vitta = list?.querySelector<HTMLElement>(".vitta");
-        const prevVi = vitta?.style.getPropertyValue("--vi") ?? "";
-        const prevSet = vitta?.classList.contains("is-set") ?? false;
-        const vi = voice instanceof HTMLElement ? voice.style.getPropertyValue("--i").trim() : "";
-        if (vitta && vi) {
+        const prev = {
+          vb: vitta?.style.getPropertyValue("--vb") ?? "",
+          vr: vitta?.style.getPropertyValue("--vr") ?? "",
+          set: vitta?.classList.contains("is-set") ?? false,
+        };
+        const vb = voice instanceof HTMLElement ? voice.style.getPropertyValue("--vb").trim() : "";
+        const vr = voice instanceof HTMLElement ? voice.style.getPropertyValue("--vr").trim() : "";
+        if (vitta && vb) {
           vitta.classList.add("is-set");
-          vitta.style.setProperty("--vi", vi);
+          vitta.style.setProperty("--vb", vb);
+          vitta.style.setProperty("--vr", vr || "0");
         }
         const href = voice.getAttribute("href");
         if (!href) return;
@@ -599,9 +709,11 @@ const langOptions = showLang
           voice.classList.remove("is-chosen");
           list?.classList.remove("is-committing");
           if (vitta) {
-            if (prevVi) vitta.style.setProperty("--vi", prevVi);
-            else vitta.style.removeProperty("--vi");
-            if (!prevSet) vitta.classList.remove("is-set");
+            if (prev.vb) vitta.style.setProperty("--vb", prev.vb);
+            else vitta.style.removeProperty("--vb");
+            if (prev.vr) vitta.style.setProperty("--vr", prev.vr);
+            else vitta.style.removeProperty("--vr");
+            if (!prev.set) vitta.classList.remove("is-set");
           }
         }, PULL_MS + 900);
         return;

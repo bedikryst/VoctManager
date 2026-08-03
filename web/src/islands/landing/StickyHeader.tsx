@@ -107,14 +107,14 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
     return () => window.removeEventListener("popstate", onPop);
   }, [menuOpen, closeMenu]);
 
-  // Cross-page voice tap — RUNNING THE RIBBON (nave-menu.css): retargeting the vitta's `--vi`
-  // makes the ONE ribbon run through the slot to the chosen row (one height transition — never
-  // two ribbons swapping), and the swap is held one PULL_MS beat so the run reads. The card
-  // stays OPEN into the swap: the outgoing snapshot captures it mid-run and the page
-  // transition (transitions.css) dissolves it into the destination as one motion — the DOM
-  // swap tears it down after the snapshot. Classes/vars are set imperatively (no setState) so
-  // nothing re-renders them away before the swap; reduced motion skips the hold and lets the
-  // swap itself be the transition.
+  // Cross-page tap on any line of the card — RUNNING THE RIBBON (nave-menu.css): copying the
+  // row's `--vb`/`--vr` onto the vitta makes the ONE ribbon run through the slot to the chosen
+  // line (one height transition — never two ribbons swapping), and the swap is held one
+  // PULL_MS beat so the run reads. The card stays OPEN into the swap: the outgoing snapshot
+  // captures it mid-run and the page transition (transitions.css) dissolves it into the
+  // destination as one motion — the DOM swap tears it down after the snapshot. Classes/vars
+  // are set imperatively (no setState) so nothing re-renders them away before the swap;
+  // reduced motion skips the hold and lets the swap itself be the transition.
   const commitVoice = useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const voice = e.currentTarget;
@@ -122,8 +122,11 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
     voice.classList.add("is-chosen");
     list?.classList.add("is-committing");
     const vitta = list?.querySelector<HTMLElement>(".vitta");
-    const vi = voice.style.getPropertyValue("--i").trim();
-    if (vitta && vi) vitta.style.setProperty("--vi", vi);
+    const vb = voice.style.getPropertyValue("--vb").trim();
+    if (vitta && vb) {
+      vitta.style.setProperty("--vb", vb);
+      vitta.style.setProperty("--vr", voice.style.getPropertyValue("--vr").trim() || "0");
+    }
     const href = voice.getAttribute("href");
     if (!href) return;
     e.preventDefault();
@@ -370,14 +373,14 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
           />
         </div>
 
-        {/* "Vitta" — shared mobile overlay (nave-menu.css): a parchment page with ONE crimson
-            ribbon hanging down the left margin to the current voice (here always Główna — the
-            landing is the current page); same markup + choreography as the Astro SiteChrome on
-            subpages. The card carries NO brand of its own — the bar's .brand persists above it —
-            so its top row is just "Zamknij" (also the focus trap's initial target). Every row
-            carries a hidden margin ribbon (--i drives its length); choosing a voice lays its
-            ribbon through the head rule while the current one withdraws (pull beat in
-            commitVoice). */}
+        {/* "Vitta" — shared mobile overlay (nave-menu.css): a ruled parchment page whose every
+            line sits on one band — the hour's antiphon, the four voices, the Wesprzyj line —
+            with ONE crimson ribbon falling from the head rule to the current voice (here always
+            Główna: the landing is the current page). Same markup + choreography as the Astro
+            SiteChrome on subpages. The card carries NO brand of its own — the bar's .brand
+            persists above it — so its top row is just "Zamknij" (also the focus trap's initial
+            target). commitVoice retargets the one ribbon's `--vi` and holds the swap a beat so
+            the run reads. */}
         <nav className="nave" id="navMenu" aria-label="Nawigacja główna" ref={navRef}>
           <div className="nave-veil" />
 
@@ -395,58 +398,102 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
             </div>
 
             <div className="nave-list">
-              {/* The ONE ribbon — resting at Główna (the landing is always the current page);
-                  commitVoice retargets `--vi` so it RUNS to the chosen row (nave-menu.css). */}
+              {/* The ONE ribbon — resting at Główna, the first voice under the antiphon's band
+                  (the landing is always the current page); commitVoice copies the chosen line's
+                  `--vb`/`--vr` onto it so it RUNS there (nave-menu.css GEOMETRY). */}
               <span
                 className="vitta is-set"
-                style={{ "--vi": 0 } as React.CSSProperties}
+                style={{ "--vb": 1.5, "--vr": 0 } as React.CSSProperties}
                 aria-hidden="true"
               >
                 <span className="vitta-cord" />
                 <span className="vitta-strip" />
               </span>
-              {/* "Główna" is an in-page jump (#top) — no page swap, so it closes the card. The
-                  three cross-page voices leave it open and let the fade-through-dark carry it. */}
+              {/* The antiphon names its hour — the page's first ruled line, name left and poem
+                  right across the measure, the card's one living element (see `hora`: computed
+                  only while open, so the SSG snapshot ships the neutral placeholder). */}
+              <span className="nave-antiphon">
+                <span>{hora?.name ?? "Hora"}</span>
+                <em>{hora?.poem ?? "canonica"}</em>
+              </span>
+              {/* Each voice is one index entry — word · leader · incipit (nave-menu.css); the
+                  leader is drawn furniture, hence aria-hidden. "Główna" is an in-page jump
+                  (#top) — no page swap, so it closes the card. The three cross-page voices
+                  leave it open and let the fade-through-dark carry it. */}
               <a
                 className="voice"
                 href="#top"
                 aria-current="page"
-                style={{ "--i": 0 } as React.CSSProperties}
+                style={{ "--i": 0, "--vb": 1.5, "--vr": 0 } as React.CSSProperties}
                 onClick={() => closeMenu(false)}
               >
-                <span className="voice-lat">Introitus</span>
                 <span className="voice-pl">Główna</span>
+                <span className="voice-lead" aria-hidden="true" />
+                <span className="voice-lat">Introitus</span>
               </a>
               <a
                 className="voice"
                 href="/o-nas"
-                style={{ "--i": 1 } as React.CSSProperties}
+                style={{ "--i": 1, "--vb": 2.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-lat">De nobis</span>
                 <span className="voice-pl">O nas</span>
+                <span className="voice-lead" aria-hidden="true" />
+                <span className="voice-lat">De nobis</span>
               </a>
               <a
                 className="voice"
                 href="/koncerty"
-                style={{ "--i": 2 } as React.CSSProperties}
+                style={{ "--i": 2, "--vb": 3.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-lat">Via</span>
                 <span className="voice-pl">Koncerty</span>
+                <span className="voice-lead" aria-hidden="true" />
+                <span className="voice-lat">Via</span>
               </a>
               <a
                 className="voice"
                 href="/kontakt"
-                style={{ "--i": 3 } as React.CSSProperties}
+                style={{ "--i": 3, "--vb": 4.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-lat">Scribe nobis</span>
                 <span className="voice-pl">Kontakt</span>
+                <span className="voice-lead" aria-hidden="true" />
+                <span className="voice-lat">Scribe nobis</span>
               </a>
+
+              {/* THE VIA — the concert register (nave-menu.css), the same rows the desktop hangs
+                  under KONCERTY and the phone's only road to them. Fed by the `ribbons` prop
+                  (islands can't read the collection themselves); the label counts as the
+                  register's first --vrow, hence `--vr: i + 1.5` on each row. That number is
+                  load-bearing twice: it places the ribbon's tip on the row AND paces the
+                  register's entrance, since (--vr − 0.5) is the row's ordinal in the run
+                  (nave-menu.css). No separate `--i` for that reason — a second index could
+                  drift out of step with the first. */}
+              {ribbons.length > 0 && (
+                <div className="via">
+                  <span className="via-label">Via</span>
+                  {ribbons.map((r, i) => (
+                    <a
+                      key={r.id}
+                      className="via-row"
+                      href={r.href}
+                      style={{ "--vb": 5, "--vr": i + 1.5 } as React.CSSProperties}
+                      onClick={commitVoice}
+                    >
+                      <span className="via-roman">{r.roman}</span>
+                      <span className="via-title">{r.title}</span>
+                      <span className="via-lead" aria-hidden="true" />
+                      <span className="via-date">{r.viaDate}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="nave-foot">
+              {/* The closing line of the page — the same entry grammar as the voices above, one
+                  step smaller, under the foot's gold rule. Not a button: see nave-menu.css. */}
               <a
                 className="nave-cta plausible-event-name=skarbiec+menu"
                 href="#wesprzyj"
@@ -457,14 +504,17 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                   openVault(100);
                 }}
               >
-                Wesprzyj <em>· Sustinete nos</em>
+                <span className="nave-cta-word">Wesprzyj</span>
+                <span className="voice-lead" aria-hidden="true" />
+                <em className="voice-lat">Sustinete nos</em>
               </a>
-              {/* The antiphon names its hour — live canonical hour while open (see `hora` above). */}
-              <span className="nave-colophon">
-                <span className="nave-colophon-mark" aria-hidden="true" />
-                <span className="nave-hora">
-                  {hora?.name ?? "Hora"} · <em>{hora?.poem ?? "canonica"}</em>
-                </span>
+              {/* The page's fine print — Kolofon is a real page with no other road from the
+                  phone (nave-menu.css). A cross-page link, but not an index entry: it closes
+                  the card rather than running the ribbon. */}
+              <span className="nave-fine">
+                <a href="/kolofon" onClick={() => closeMenu(false)}>
+                  Kolofon
+                </a>
               </span>
             </div>
           </div>

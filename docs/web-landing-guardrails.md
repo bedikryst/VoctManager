@@ -38,6 +38,10 @@ the beam, the nave and the listeners.
   real preconditions (a host, and fees for the singers) rather than implying a date exists.
 - **The Bobola Mass** — real and already sung, but a liturgy, not a Koncert Duchowy. Putting it in
   the register would falsify the roman numbering. It belongs on `/koncerty`.
+- **A month for 9 Kart.** Its `viaDate: "2024"` sits in a column of "sty 2024" / "jesień 2025" and
+  looks like a proofreading slip. It is not: that concert has no `date:` because it was a three-city
+  tour across the year, so it honestly has no month. The raggedness is typographic, not editorial —
+  every surface derives from `concerts.yaml` and none of them invents. Leave the YAML alone.
 
 ---
 
@@ -73,7 +77,7 @@ fill, revealed by the rising light.
 **The mark ships as two masters split by optical size, and the vector is NOT the one to reach
 for at icon sizes.** `public/logo-mark.png` (186×456) masks everything below ~110px tall —
 chrome brand-mark, `.brand-glyph`, `.brand-glyph-shape` (threshold / vault / gratitude /
-failure / QR), nave colophon, station glyphs, concert prologue. `public/voct-mark.svg` masks
+failure / QR), station glyphs, concert prologue. `public/voct-mark.svg` masks
 only what is bigger: the two 80×220 gold glyphs (`.coda-glyph`, `.cta-glyph`) and the
 preloader rite. The reason is arithmetic, not taste: the V is calligraphic, and its thin right
 arm measures ~11 of the 1000 viewBox units across, so at the 17×40 chrome footprint (scale
@@ -255,6 +259,53 @@ its start value for a no-JS visitor. Separately, `--wght` was registered twice w
 effective descriptors a function of bundle order; one registration, in the shared sheet, and
 `inherits: false` is only safe while every reader sets the property on the element that reads it.
 
+**The mobile card's ribbon is DYE, and its material is DENSITY — never light.** The "Vitta"
+(`styles/nave-menu.css`) is the one object on a flat parchment page that could be modelled, and three
+field passes proved it must not be: registrum's cloth recipe at full strength read as brushed brass
+(dark weft ribs are invisible over the desktop's night heroes and obvious on paper), the corrected
+light-only weft read as a vinyl strap, and each fix only moved the wrongness. No highlight, no sheen,
+no lit selvage — and nothing periodic across an 11px width, because at that scale a weave is stripes.
+"It needs more material" will come back; the answer is dye density, in two layers and two units on
+purpose. The weight ramp is px measured FROM THE TIP (it carries the object's meaning, so it must not
+stretch — and on a strip shorter than its zones the negative stops clamp, which is what makes a short
+ribbon read full-strength and an emerging one thin as it extends); the pools are percent (they carry
+nothing, so stretching scatters them across the five ribbon lengths for free). Subtractive only:
+anything that lifts toward paper is a highlight under another name. **And a stop anchored to the
+HEAD may not share a gradient with stops anchored to the TIP** — the slot's shadow was a stop inside
+the ramp, and on the landing's own row (a ~100px strip, shorter than both tip zones) the two
+`calc(100% − …)` stops resolved negative, clamped up onto the cap's own position, and crushed the
+whole modulation into a 14px band with a hard step under it. Head-anchored shading is its own layer.
+
+**And the ribbon may not take a concert's accent, in any shape.** Re-dyeing it inside a concert's
+station was rejected on contrast (2026-08-03); a *branch* — crimson stopping at KONCERTY, a second
+ribbon in the concert's accent descending from there — was rejected the same day for a stronger
+reason: crimson means WHERE YOU ARE in exactly one place, and a branch lands its point on a word you
+are **not** on, which degrades the mark into a breadcrumb. Two strips in one 13px gutter is also more
+weight, not less. The measurement under both: **the accent palette is a NIGHT palette.** Raw from
+`concerts.yaml` onto `--paper` it runs 6.6:1 (crimson) · 4.6:1 (Hymn, 9 Kart) · 4.0:1 (Aeternam — and
+a grey-brown that reads as a smudge, not a dye) · 2.8:1 (Wołanie) · 2.1:1 (Wcielenie's gold). Three
+legible marks and two smudges is worse than one crimson. The accents belong where the ground is dark
+enough to hold them, which is why the desktop register carries `--silk-quiet` as a counterweight and
+the card carries none. What IS right in the instinct: colour belongs to the ROW, not to the ribbon —
+five threads (what the book contains) against one ribbon (where the reader is).
+
+**`aria-current="page"` is a claim about a URL, not a way to light a link up.** On
+`/koncerty/wcielenie` the bar's KONCERTY link and the register's own ribbon both carried it, so a
+screen reader announced "current page" twice at two different destinations. A section ancestor gets
+its own hook (`data-section` in `SiteChrome.astro`, styled identically) and `aria-current` stays on
+the exact match. The mobile card was already right and is the reference: its Koncerty voice takes
+nothing on a concert page, because the Via row underneath is where the reader is.
+
+**Two identical words are not a stutter until you have measured the gap.** An audit called the card's
+two "Via"s (Koncerty's Latin incipit, and the Via register's label) a stutter "~40px apart" and wanted
+one of them spent. They are ~130px apart at a 76px band, with the whole Kontakt entry between them and
+in two different registers — right-aligned serif italic against left-aligned tracked capitalis. Nor
+are they two roles: the incipit names the road and the register prints it three lines down, which is
+how a missal introduces a section. The premise came from the DESKTOP, where the concert ribbons really
+do hang under KONCERTY; on the card the Via is a closing section. `Via` is also declared nav
+vocabulary (`i18n/ui.ts`: Introitus, De nobis, Via, Scribe nobis, Sustinete nos) — don't spend one to
+fix a stutter that is not happening.
+
 **WebGL hero: abandoned.** Do not re-pitch.
 
 ---
@@ -410,6 +461,15 @@ Three rules that generate the rest:
    inked to full when reached. A page that opens holes and fills them in is what a fast scroll
    exposes, and *that emptiness* is what reads as machine-made — not the movement. The veil obeys
    the same law: 0.58, never opaque, so the photograph is always legible underneath.
+   **Its scope is a PAGE**, and that justification is the test: the node has to hold layout on a
+   surface the reader is already looking at, so that the hole would be seen. A HOVER APPARITION is
+   not one — the desktop registrum's drop is `visibility: hidden` at rest and the set does not exist
+   until the pointer asks for it, so half-ink there opens no hole; it strands a half-lit index in
+   mid-air, arriving before the silks it names and outliving them through the close grace. That was
+   built, shipped and reported from the field (2026-08-03) and the index went back to entering from
+   zero. The mobile nave card is the opposite case and keeps the law, because its veil shuts FIRST:
+   every line stands in layout under an opaque parchment before a single one darkens. Ask whether a
+   surface is a page or an apparition before granting it a register.
 2. **Nothing travels.** Entering from an offset is slide-deck physics. Blur-up is worse: it is
    the 2026 signature of a generated page, which is why the hero lost it too.
 3. **One node, one register — except ink+lead**, which is a single causal gesture (rule first,
@@ -442,6 +502,16 @@ fix needs no wrapper: `data-d` sets `--reveal-delay` for a whole **subtree**, so
 becomes the cadence carrier and its children take the registers — **the same `data-d` reads as one
 utterance, a step reads as a sequence** — and the actions row simply takes none.
 
+**A LEADER is not a rule, and "rule leads, ink follows" does not reach it.** The lead register was
+granted to hairlines that are the *border of a block* — every one of them spans its measure and is
+top-anchored, and the pairing law is about those. A leader runs from a word out to its incipit or its
+tip, so it has **no length until both ends are set** (and under `.ink-press` the word's advance width
+is still moving while it inks). It binds an entry; it does not rule one, so it follows its own entry's
+ink. Both index surfaces are authored that way on purpose — `nave-menu.css`'s `.voice-lead` after
+`.voice`, `registrum.css`'s `.ribbon-thread` after `.ribbon-line` — and an audit has already tried
+once to "correct" both into an inversion they were not. Ask what an element *is* before applying a
+rule about its category.
+
 **Do not add a hairline in order to have something to rule.** Every ruled line on the page is a
 border the layout already carried (`.manifest-top`, `.ensemble-facts`, `.ensemble-origin`'s gold
 margin, `.path-register`, `.path-entry`, `.donation-list`, `.bank-card`, the director section's
@@ -464,8 +534,13 @@ budget is ~1.0s to finish in the reading zone and ~2.0s before it leaves the top
 lead (0.85s) fit; the interlude knot ran **3.20s** and its gilding sweep **4.10s** — one and a half
 to two screens — so the page's own structural punctuation had never been watched finishing. Fixed
 2026-08-01 by a single tempo factor per choreography (never per-stroke hand-tuning: the internal
-rhythm is the composition, the total is only its tempo marking). The coda is the one exemption —
-the scroll ends under it.
+rhythm is the composition, the total is only its tempo marking). Two exemptions, both because the
+budget is a scroll DISTANCE and neither surface scrolls: the coda (the scroll ends under it), and the
+mobile nave card, whose ~2.04s tail is deliberate — nothing on that card enters from zero, so it is
+legible and tappable at 0.22s and the choreography is ornament over an already-usable page rather
+than a gate in front of one. Its step between voices is set by the RATIO to its ink duration, not by
+either number alone: onsets closer than ~0.12s fuse into one event, and a step much shorter than the
+ink it fires keeps N lines burning at once, which is a wash and not a sequence.
 
 **A register's node is judged by its HEIGHT before anything else.** The trigger reads a node's
 top, so a tall node inks its lower half off-screen — and the question "is this one utterance?" is

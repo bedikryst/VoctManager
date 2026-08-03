@@ -41,6 +41,9 @@ export interface RibbonEntry {
   readonly title: string;
   /** Index second line: short place — via date ("Bazylika NSPJ · Kraków — sty 2024"). */
   readonly meta: string;
+  /** The via date alone ("sty 2024"). The mobile card's Via register sets it as the row's
+      right-hand column, where the desktop index has room for the place and the card has not. */
+  readonly viaDate: string;
   /** The concert's dye — the accent hex straight from concerts.yaml; tints the row's
       silk. */
   readonly accent: string;
@@ -58,5 +61,6 @@ export const toRibbons = (concerts: readonly ConcertStation[]): RibbonEntry[] =>
       latin: e.data.latin,
       title: e.data.title,
       meta: `${e.data.about?.place ?? e.data.venue ?? ""} — ${e.data.viaDate}`,
+      viaDate: e.data.viaDate,
       accent: e.data.accent,
     }));

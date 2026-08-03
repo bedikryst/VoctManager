@@ -17,13 +17,37 @@
  *  parchment page, the big ink words, the head rule, the slot physics, the pull beat, the
  *  rubric law.
  *
- *  Under the brand row a HEAD RULE is drawn — the running-head line of a missal page, and
- *  the SLOT of the book block. Each voice is set large from the top (Latin incipit over a
- *  44px ink word), indented off a narrow left margin. Down that margin hangs ONE crimson
- *  silk — `.vitta`: cord, cloth, notched tip — from the rule to the CURRENT page's row:
- *  the book is open where you are. The old card's 3px crimson margin segment,
- *  materialized into a real object. Crimson appears nowhere else (transient press aside);
- *  gold stays on the Wesprzyj pill's border alone.
+ *  THE PAGE IS RULED — ONE BAND, EVERY LINE (`--band` on .nave-inner). A HEAD RULE opens the
+ *  block; under it the lines follow at one unvarying pitch: the ANTIPHON (the canonical
+ *  hour's name at the left of the measure, its poem line at the right — filled live by the
+ *  header scripts, the card's one living element and a greeting before the index), then the
+ *  four VOICES. Across a light rule comes THE VIA, the register of concert pages at its own
+ *  sub-pitch; across a second rule, in gold, the Wesprzyj line closes the page with the
+ *  colophon under it. Nothing on the card is set to any other interval.
+ *
+ *  This composition was arrived at by exhausting the alternatives on real phones, and the
+ *  thing it finally got right was not an arrangement. Three builds tried to place the surplus
+ *  height of a modern handset as a ZONE — a deep lower margin under a block set high (which
+ *  also put every voice in the far reach zone and left the card's namesake ribbon an ~85px
+ *  stub on the landing's own row), then an antiphon FIELD above a bottom-anchored index (the
+ *  hole simply moved up; no size of type or centring within it ever stopped reading as
+ *  stranded), then a ruling with the band stretched to fill (uniform, and too loose to read
+ *  as anything but padded). Each failed the same way, because the defect was never the
+ *  layout: FIVE DESTINATIONS CANNOT COMPOSE A 900px PAGE. The page is full now because it
+ *  carries what the site actually has — the Via — and the ruling is cut to the screen rather
+ *  than stretched across it (see SCALE). Do not answer a future complaint of emptiness with
+ *  another arrangement; answer it with content or with the band.
+ *
+ *  Each voice is ONE INDEX ENTRY set across the full measure: the big ink word at the left,
+ *  its Latin incipit at the right, a hairline LEADER drawn between them — the
+ *  table-of-contents gesture of an old missal, and the same grammar the desktop register
+ *  uses (roman · title · leader · meta). The entry needs both ends: a column of
+ *  ragged-right words alone leaves the card with no right edge and reads as four links, not
+ *  as a page. Down the narrow left margin ONE crimson silk — `.vitta`: cord, cloth, notched
+ *  tip — falls from the rule to the CURRENT page's line: the book is open where you are.
+ *  Because the antiphon's band lies between the rule and the first voice, the fall is long
+ *  on every page, the landing's row 0 included. Crimson appears nowhere else (transient
+ *  press aside); gold is that one rule and nothing else on the card.
  *
  *  THE RIBBON MOVES BY LENGTH, NEVER BY TRANSFORM — field-hit. A first build gave every
  *  row its own hidden ribbon and swapped them on commit (chosen slid down from above the
@@ -39,36 +63,188 @@
  *  silk heights.) Since nothing ever exists above the rule now, the list needs NO
  *  clip-path.
  *
- *  GEOMETRY — fixed px ON PURPOSE: the one contract is that the ribbon's tip lands ON its
- *  row's word (height = --pt + --vi·--row + --ly), and fluid type moves that target.
- *  Pages outside the four voices ship the vitta WITHOUT `is-set` (height 0 — the book is
- *  shut on them); choosing a voice there unrolls it from nothing.
+ *  SCALE — the card is cut to the screen. It is a fixed surface holding a known, finite set
+ *  of lines, which is the one case where sizing to the viewport is right rather than
+ *  reckless: `--band` is solved from the height (see .nave-inner) and EVERYTHING else is a
+ *  fraction of it — the Via's pitch, every type size, the ribbon's reach. A smaller phone
+ *  gets a smaller page, the way a smaller book takes a smaller type, instead of the same page
+ *  overflowing. Two rules keep it honest: every size carries a FLOOR (under it the card
+ *  scrolls, which is the honest failure and happens a little under 585px of height), and anything
+ *  that must also fit the MEASURE takes `min()` of its width driver and its band driver —
+ *  a narrow, tall phone has a deep band and would otherwise set a word too wide for the line
+ *  it lives on.
  *
- *  DYE — the vitta wears the site's crimson, LIFTED for thin-width optics: at 9px the two
- *  selvage shadows own almost half the cloth, so the head/tail darkening and the shaded
- *  selvage are kept light (a first cut at desktop-strength shading read as oxblood next
- *  to the rubric word — the ribbon and the word must be ONE crimson family, cloth merely
- *  a breath deeper than ink).
+ *  GEOMETRY — the one contract is that the ribbon's tip lands ON its own line, and it is one
+ *  sum in the page's two units: height = --band·--vb + --vrow·--vr, counted from the rule.
+ *  Each target ships the pair inline (voices: --vb = i + 1.5, --vr = 0; Via rows: --vb = 5,
+ *  --vr = k + 1.5 — the label counts as the register's first row), and the scripts copy the
+ *  pair onto the ribbon on commit. The trailing half-unit is what centres the tip on the
+ *  line, because every band and every Via row centres what it holds. The corollary is a law:
+ *  a line of this page is exactly one band (or one --vrow) tall, NEVER content-sized, and a
+ *  line added or removed re-numbers every --vb/--vr below it AND the divisor the band is
+ *  solved from. Pages the card doesn't index ship the vitta WITHOUT `is-set` (height 0 — the
+ *  book is shut on them); choosing a line there unrolls it from nothing, the full fall.
+ *
+ *  THE RIBBON IS DRAWN, NOT RENDERED — the law this card kept failing until it was named.
+ *  Every mark here is flat: the ✕ is two 1px strokes, the head rule is a hairline, the brand
+ *  is a mask, the leaders and the type are ink. Nothing on this surface is LIT. Registrum's
+ *  silk is modelled cloth — satin pools, grosgrain weft, selvage curls — and it earns that
+ *  over the photographic night heroes it hangs on; transplanted onto flat parchment it is
+ *  the ONE illusionistic object on the page and reads as a foreign body no matter how it is
+ *  tuned. Three passes proved it by exhaustion: registrum's recipe at full strength read as
+ *  brushed brass (dark weft ribs are invisible on night, obvious on paper), the corrected
+ *  light-only weft read as a vinyl strap, and each fix only moved the wrongness. So the
+ *  strip carries NO specular treatment at all: no highlight, no sheen, no lit selvage — and
+ *  nothing PERIODIC across an 11px width, which at that scale is stripes, not weave.
+ *
+ *  ITS MATERIAL IS DENSITY, NOT LIGHT. That is the one channel the ban leaves open, and it
+ *  is also the only one that carries cloth on flat parchment: dye pools and thins along a
+ *  hanging strip, which is pigment behaving, not a light source implied. So a request for
+ *  "more material" is answered in the DYE — never with a surface. Two layers do it, and
+ *  which unit each is written in is load-bearing (see .vitta-strip): the WEIGHT RAMP is
+ *  measured in px FROM THE TIP, because it carries the object's meaning and must not
+ *  stretch; the POOLS are in percent, because they carry nothing and so may scatter to
+ *  different heights on every ribbon length for free. The pools may only ADD dye, never
+ *  lift toward light — a lightening pass is a highlight under another name.
+ *
+ *  DYE — crimson, always. Giving the ribbon each concert's own accent inside its station was
+ *  tried and REJECTED (2026-08-03): quieted onto parchment the flagship gold lands at 2.7:1
+ *  against the paper where crimson sits at 6.7:1 — the current word stopped reading as
+ *  "here" and started reading as disabled, under the 3:1 floor for large text — and on that
+ *  same page the card suddenly carried four golds (bar glyph, ribbon, word, Wesprzyj
+ *  rule), which cost the gold its standing as one mark with one meaning. The accents belong
+ *  to Via and the desktop register, on grounds dark enough to hold them.
+ *
+ *  LEGIBILITY — the small type on this card carries a floor, and the floor is 4.5:1 against the
+ *  parchment (~0.62 of ink; full ink is 15.8:1). It applies to every word here: the antiphon,
+ *  the Via's romans, titles and dates, the colophon, and the close control. Subordination on
+ *  this page is carried by REGISTER — capitalis against serif, italic against roman, one step of
+ *  size — never by fading the ink, which is a second way of saying the same thing and the only
+ *  one that costs a reader. The 1px LEADERS are the exception and are not text: they are ruled
+ *  furniture and stay where they are set. The card cannot argue a contrast floor against a dye
+ *  (see DYE) while whispering its own index.
+ *
+ *  THE ENTRANCE — the card is INKED, not assembled. The site's entrance law (registers.css,
+ *  docs/web-landing-guardrails.md §5) is three rules, and this card broke two of them in five
+ *  places: nothing enters from `opacity: 0` — copy waits at --half-ink and is inked to full —
+ *  and nothing travels, because entering from an offset is slide-deck physics. It does NOT take
+ *  the `.reveal` class to obey them. That register is fired by scripts/reveal.ts through an
+ *  IntersectionObserver and keys off `.is-in`, which nothing ever sets on this card; a `.reveal`
+ *  or an `.ink-press` here would be stranded at its start value for the life of the page. The
+ *  card is OPENED, not scrolled into view. It borrows the law and the tokens (--half-ink,
+ *  --ease-ink, --ease-rule, --wght-press/--wght-rest) and fires them off `.chrome.menu-open`.
+ *
+ *  THE LADDER is written once, as custom properties on .nave, and it is a grammar rather than a
+ *  list of numbers: one veil beat, one STEP between voices, one PAIR interval saying "these two
+ *  are one gesture". Retune the tempo there, not rule by rule. Three things it encodes:
+ *
+ *  1. THE VEIL CLOSES FIRST. The card's own 0 → 1 and the rows' ink used to overlap by 180ms, so
+ *     for that whole time the two opacity ramps MULTIPLIED and no line had a clean start state —
+ *     which is most of what "wyłanianie się znikąd" was. The parchment now shuts over the page
+ *     first, and the writing begins under a card that is already opaque, every line standing at
+ *     half-ink before a single one darkens.
+ *  2. RULE LEADS, INK FOLLOWS — for the page's RULES, which are the three hairlines that open a
+ *     block (the head rule, the Via's, the foot's gold). A scribe rules a line before writing on
+ *     it. THE LEADERS ARE THE OTHER WAY ROUND, and deliberately: a leader runs FROM the word TO
+ *     the incipit, so its length is not known until both ends are set — and while the press is
+ *     live the word's advance width is still moving. A leader BINDS an entry, it does not rule
+ *     one, so it follows its own entry's ink by the same interval. (Same order the desktop
+ *     register has always been authored in: silk, then row, then the thread out to the tip.)
+ *  3. TWO SEQUENCES AT TWO TEMPOS, not one long wipe and not twelve equal onsets. The antiphon
+ *     opens; the four voices are lit one after another on --nave-step; THE VIA RUNS beneath them
+ *     on its own faster --nave-via-step, label first, then one concert after another; the foot
+ *     closes. The register gets a run of its own because its rows ARE five destinations — each
+ *     has a line the ribbon can stand on — so flashing them in unison under four words arriving
+ *     singly was the one gesture on the card that contradicted the rest. What keeps that from
+ *     becoming a nine-item wipe is that the two tempos differ in KIND: the Via is already
+ *     subordinate in pitch and size, and it is subordinate in time by the same logic.
+ *     Durations are local throughout — 0.36s of ink where the site's --ink-in is 0.9s, because
+ *     0.9s is a scroll budget and this is a navigation one — and a short ink is what lets a step
+ *     be long enough to count: articulation is heard in the RATIO of the two, never in either
+ *     alone. Both pairs sit at ~2.4 (see the two step tokens), which is why the register reads
+ *     as clearly as the index while running faster.
+ *
+ *  The four big words also carry the INK PRESS (--wght-press → --wght-rest on the ink's own
+ *  clock): they are Cormorant at font-weight 300 = --wght-rest, the press's one hard constraint,
+ *  and a nib settling as the ink darkens is what "kindling" is on a written page. The axis is
+ *  authored here rather than by taking the shared class (see above) and is gated on
+ *  `html.voct-motion`, so a reduced-motion visitor renders the declared font-weight and nothing
+ *  else. THE CLOSE CONTROL takes no entrance and must not be given one: a half-inked control is
+ *  a control you are not sure you may press (guardrails §5). The Wesprzyj line is not one — it
+ *  is the page's closing ENTRY, set in the index's own grammar, and it enters with the foot.
  *
  *  The commit beat: the header scripts mark the tapped row `is-chosen` (its list
- *  `is-committing`), retarget `--vi`, and hold the swap one PULL_MS beat so the run
- *  reads; the chosen word's rubric is INSTANT (no transition) because with prefetch the
- *  View Transition snapshot lands early and a tweened colour would be captured
- *  mid-release. The card stays open into the swap and dissolves with the page
- *  (transitions.css).
+ *  `is-committing`), copy the row's `--vb`/`--vr` onto the vitta, and hold the swap one PULL_MS
+ *  beat so the run reads; the chosen word's rubric is INSTANT (no transition) because with
+ *  prefetch the View Transition snapshot lands early and a tweened colour would be captured
+ *  mid-release. Everything else falls to 0.2 — it has to sit clearly UNDER the page's own
+ *  half-ink, or "falling quiet" reads as the entrance running backwards. The card stays open
+ *  into the swap and dissolves with the page (transitions.css).
  *
  *  TRAPS, field-derived — don't regress:
  *  (a) the card fades as ONE group opacity — safe here ONLY because nothing inside carries
  *      backdrop-filter (the veil is opaque); don't add one (registrum.css trap (b)).
  *  (b) `.nave-inner` must stay transform-free while open — it is the scroll container and
  *      an ancestor of the absolutely-hung vitta.
- *  (c) entrance opacity/translate live on the ROW (`.voice`), not the word — on the word
- *      the press give would inherit the stagger delays.
+ *  (c) the ROW (`.voice`) carries the ink, the WORD carries the press, and they stay on
+ *      separate elements: `transition` is a shorthand, so an entrance declared on the word
+ *      would replace the give it already runs under a finger rather than add to it.
  * @architecture Astro islands 2026
  * @module styles/nave-menu
  */
 
 .nave {
+  /* ── THE ENTRANCE CLOCK — the whole choreography's tempo, in one place (see THE LADDER in the
+     header). Every `--on-*` is an onset measured from the moment `.chrome` takes `menu-open`,
+     and each is DERIVED, so the relations survive a retune: --nave-pair is "these two are one
+     gesture" (a rule and the ink it opens; an entry's ink and the leader that binds it) and
+     --nave-step is the beat between the four voices. Move a number here, never a delay below.
+
+     Durations are the card's own and shorter than the site's registers: --ink-in (0.9s) and
+     --rule-in (0.85s) are budgets for a line arriving under a scroll, while this page is opened
+     by a thumb and has to be legible at once. The curves are still the registers' — --ease-ink
+     for anything that darkens, --ease-rule (symmetric: a hand along a straightedge) for anything
+     drawn. Never var(--ease-slow) for either: an alias is a synonym, not a seam. ── */
+  --nave-veil: 0.22s;
+  --nave-ink: 0.36s;
+  --nave-rule: 0.48s;
+  --nave-lead: 0.38s;
+  --nave-pair: 0.18s;
+  /* THE STEP IS SET SO THE EYE CAN COUNT IT, and the ratio to --nave-ink is what does that,
+     not the step alone: two onsets closer than ~0.12s fuse into one event, and a step much
+     shorter than the ink it fires keeps N words in flight at once, which is a wash rather
+     than a sequence. At 0.08s against 0.45s of ink there were five and a half voices burning
+     together and the four words read as one. Here the ratio is ~2.4 — a word is well past its
+     turn before the next is struck. The page can afford the longer tail because NOTHING ON IT
+     ENTERS FROM ZERO: every line stands at --half-ink the moment the veil shuts, so the card
+     is legible and tappable at 0.22s no matter how long the inking runs. The choreography is
+     ornament over an already-usable page, never a gate in front of one — which is why the
+     scroll-derived 2.0s ceiling in the guardrails is not this surface's ceiling. Last hairline
+     lands at ~2.44s. */
+  --nave-step: 0.15s;
+  /* THE VIA'S OWN TEMPO — the card carries two sequences and they must differ in KIND, not just
+     repeat. The register is already subordinate in pitch (--vrow is 0.42 of a band) and in size;
+     this is the same subordination in time. Both numbers move together, because articulation
+     lives in their RATIO (see --nave-step): at ~2.4 the concert rows resolve exactly as clearly
+     as the four voices do, while the whole figure runs faster — a hand going down a list against
+     four candles being lit. Flatten the two tempos into one and the index and its register stop
+     being two things: nine identical events in a column is the wipe this ladder exists to
+     avoid. */
+  --nave-via-step: 0.11s;
+  --nave-via-ink: 0.26s;
+  --on-head: var(--nave-veil);
+  --on-antiphon: calc(var(--on-head) + var(--nave-pair));
+  --on-voice: calc(var(--on-antiphon) + var(--nave-step));
+  --on-lead: calc(var(--on-voice) + var(--nave-pair));
+  /* The Via opens a beat after the LAST voice's onset (four steps on from the first). */
+  --on-via-rule: calc(var(--on-voice) + 4 * var(--nave-step));
+  --on-via: calc(var(--on-via-rule) + var(--nave-pair));
+  --on-via-lead: calc(var(--on-via) + var(--nave-pair));
+  --on-foot-rule: calc(var(--on-via-rule) + var(--nave-step));
+  --on-foot: calc(var(--on-foot-rule) + var(--nave-pair));
+  --on-foot-lead: calc(var(--on-foot) + var(--nave-pair));
+  /* The ribbon hangs FROM the head rule, so it cannot unroll before its own slot is drawn. */
+  --on-vitta: calc(var(--on-head) + 0.12s);
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -77,11 +253,13 @@
   pointer-events: none;
   opacity: 0;
 }
+/* The veil closes BEFORE anything inside starts inking — two nested opacity ramps multiply, and
+   an overlap is a window in which no line on the page has a clean start state (header, 1). */
 .chrome.menu-open .nave {
   visibility: visible;
   pointer-events: auto;
   opacity: 1;
-  transition: opacity 0.32s var(--ease);
+  transition: opacity var(--nave-veil) var(--ease);
 }
 /* Held visible (but inert) by JS through the close fade, then the class is dropped → hidden.
    Kept AFTER the menu-open rule: both selectors tie on specificity and during the close both
@@ -128,6 +306,40 @@
 }
 
 .nave-inner {
+  /* The left margin the ribbon hangs in — and the indent of every word on the page, index
+     entries and closing line alike, so the word column runs unbroken from the first entry to
+     the last. Narrow on purpose: the ribbon occupies its first 13px, and what is left is the
+     gap between the tip and the word it stands at. Widen it and the ribbon stops pointing at
+     anything; there is no connector drawn between them and there must not be one (a hairline
+     on the left as well as the right brackets the word instead of binding it). */
+  --gut: clamp(21px, 5.6vw, 26px);
+  /* THE RULING — one band, every line on the page, and the unit the whole card is drawn from
+     (type sizes included; see the SCALE note in the header). Lives here rather than on
+     .nave-list because the foot's closing line and the Via register are ruled by it too.
+
+     The band is cut to the SCREEN, not to a fixed table: the page holds a known, finite set
+     of lines, so it can be set to fit the surface exactly the way a smaller book takes a
+     smaller type. The page currently measures 9.07 bands — 1 antiphon + 4 voices + the Via's
+     6 rows at 0.42 + 0.2 of clearance above the foot's rule + the foot's 1.35 — against an
+     overhead of the brand row and both page paddings, which is what the slope and the offset
+     below solve for (with ~18px of slack, so a rounding difference can't cost a scrollbar).
+     RECOUNT BOTH when a line is added or removed, or the card starts to scroll on the phones
+     it used to fit.
+
+     `svh`, not `vh`: the card is a fixed layer, so on iOS it fills the SMALL viewport while
+     the URL bar is up — cut to `vh` (the large one) the page would overflow the visible card
+     on exactly the phones this is meant to fit. Nothing reflows mid-open either way, the
+     overlay holds the scroll lock.
+
+     The ceiling stops the page growing into a stretched thing on a very tall device (that
+     surplus goes to the head margin instead — see .nave-list); the floor is where legibility
+     stops yielding, and under it the card scrolls, which is the honest failure. The floor is
+     reached just above 600px of usable height and the scroll begins a little under 585 — a
+     small phone, or any phone in landscape. */
+  --band: clamp(54px, calc(10.4svh - 9px), 96px);
+  /* The Via register's own pitch — a sub-ruling at a fixed fraction of the band, so the
+     concert rows scale with the page but stay clearly subordinate to the four voices. */
+  --vrow: calc(var(--band) * 0.42);
   position: relative;
   z-index: 2;
   height: 100%;
@@ -165,6 +377,11 @@
   position: relative;
   display: inline-flex;
   align-items: center;
+  /* Fills the top row rather than sitting inside it: at the type's own height this control was a
+     ~22px target on a surface that is only ever touched. 40px is the row the persistent brand
+     holds — taking the whole of it costs no layout and clears the 24px target-size floor with
+     room, where the reflexive 44 would push the ruled page below down. */
+  min-height: 40px;
   border: 0;
   background: transparent;
   cursor: pointer;
@@ -172,7 +389,7 @@
   font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(22, 21, 20, 0.55);
+  color: rgba(22, 21, 20, 0.62);
   padding: 6px 32px 6px 0;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.3s var(--ease);
@@ -208,21 +425,26 @@
   background: var(--crimson);
 }
 
-/* ── The page block. GEOMETRY CONSTANTS (fixed px — see header): --pt air from rule to first
-   row, --row row pitch, --ly ribbon-tip y within a row (lands on the word), --silk ribbon
-   width, --gut the left margin the ribbon hangs in. `--i` arrives inline on each row (entrance
-   stagger + the scripts read it to retarget the vitta). The ::before pseudo IS the head rule —
-   the slot of the book block — drawn out on open. ── */
+/* ── The book block — five bands of the page's one ruling: the antiphon, then the four
+   voices. --silk is the ribbon's width; the ruling (--band) and the indent (--gut) both live
+   one level up on .nave-inner, because the foot's closing line is ruled and indented by the
+   same measure. `--i` arrives inline on each voice (entrance stagger + the scripts read it to
+   retarget the vitta). The ::before pseudo IS the head rule — the block's ruling line and the
+   slot the ribbon hangs from — drawn out on open.
+
+   `margin-top: auto` is the whole composition: the block is CONTENT-SIZED and gathers the
+   page's surplus height ABOVE the rule, as the head margin. That is the one place surplus can
+   go without becoming a hole — the ribbon hangs from the rule, so nothing dangles in it, and
+   the block below stays exactly as composed on every phone rather than stretching to fill.
+   Past the point where the card can't afford the block, the auto margin collapses and
+   .nave-inner scrolls the page as one object. ── */
 .nave-list {
-  --pt: 32px;
-  --row: 92px;
-  --ly: 54px;
-  --silk: 9px;
-  --gut: 30px;
+  --silk: 11px;
   position: relative;
+  display: flex;
+  flex-direction: column;
   flex: 0 0 auto;
-  margin-top: clamp(20px, 4vh, 44px);
-  padding-top: var(--pt);
+  margin-top: auto;
 }
 .nave-list::before {
   content: "";
@@ -231,63 +453,188 @@
   right: 0;
   top: 0;
   height: 1px;
+  /* Above the ribbon (see .vitta) — this rule is the SLOT the vitta hangs out of, so the cord
+     passes under it. The Via's rule further down is the opposite case and stays below. */
+  z-index: 2;
   background: var(--line-strong);
   pointer-events: none;
   transform: scaleX(0);
   transform-origin: 0 50%;
 }
+/* The page's first rule, and the one the whole ladder is measured from: it is drawn the instant
+   the veil is shut, and the antiphon under it inks one pair-interval behind. */
 .chrome.menu-open .nave-list::before {
   transform: scaleX(1);
-  transition: transform 0.55s var(--ease) 0.05s;
+  transition: transform var(--nave-rule) var(--ease-rule) var(--on-head);
 }
 
-/* ── One voice = one <a> = one full-width 92px row, set large from the top like the site's
-   own headings: incipit over the ink word, indented off the ribbon's margin. No leaders, no
-   per-row furniture — the words ARE the page; the one ribbon marks it. ── */
+/* ── The antiphon — the page's FIRST BAND, directly under the rule: the hour's name at the
+   left of the measure, its poem line at the right. It is set at the opening and not as a foot
+   colophon because it is the card's one living element (it changes with the real hour) — in a
+   10px corner it read as legal print and nobody ever met it.
+
+   It is a LINE OF THE RULING, not a floating epigraph, and that is what settles it. Given a
+   field of its own it could only be pinned to the field's head (surplus pooling below it as a
+   hole) or centred in it (the same air split in two, and the field's size then varying by
+   phone) — both were built, both read as a stranded caption, because the card had no measure
+   telling the eye how much air was intended. On the ruling there is no question: it sits on
+   its band exactly as the four voices sit on theirs.
+
+   Set across the full measure like every other line — name left on the word column, poem
+   flush right where the incipits end. NO leader between them: the leader is the mark of an
+   entry you can go to, and the hour is not a destination; its absence is what keeps the line
+   from reading as a fifth tappable voice. Imprint voice throughout (capitalis + serif italic,
+   at the card's own legibility floor) so the greeting can never outweigh the index —
+   subordination carried by REGISTER, not by fading, which is why the poem can be set near the
+   incipits' scale and up. Left on the word column, never centred across the measure: that column
+   is the card's spine (every voice, the closing line, the ribbon's margin all key off it) and an
+   element centred against it reads as imported from another page. ── */
+.nave-antiphon {
+  /* A GRID, like the voices, and for one reason: `align-content` is what seats the line in the
+     middle of its band — the ruling's law that every band centres what it holds — and it is
+     inert on a single-line flex container. Two content-sized tracks pushed apart carry the same
+     name-left / poem-right measure a flex row would. */
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: space-between;
+  align-items: baseline;
+  align-content: center;
+  gap: 16px;
+  height: var(--band);
+  flex-shrink: 0;
+  padding-left: var(--gut);
+  pointer-events: none;
+  font-family: var(--capitalis);
+  font-size: clamp(9px, calc(var(--band) * 0.115), 11px);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(22, 21, 20, 0.62);
+  /* Waits at half-ink under the head rule and is inked when the rule has been drawn — the
+     greeting is the first thing written on the ruled page. */
+  opacity: var(--half-ink);
+}
+.chrome.menu-open .nave-antiphon {
+  opacity: 1;
+  transition: opacity var(--nave-ink) var(--ease-ink) var(--on-antiphon);
+}
+.nave-antiphon em {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(15px, min(5.2vw, calc(var(--band) * 0.23)), 22px);
+  line-height: 1.1;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  color: rgba(22, 21, 20, 0.66);
+}
+
+/* ── One voice = one <a> = one full-measure index entry, indented off the ribbon's margin:
+   ink word · leader · incipit. A three-column grid whose single row is CENTRED in its band —
+   that is what pins the ribbon's tip on the word's own line (header) while leaving the word
+   free to be fluid. `align-items: baseline` sets word and incipit on one line; the empty
+   leader has no text, so its baseline is its bottom margin edge — `margin-bottom` is
+   therefore how far ABOVE the baseline the hairline rides. ── */
 .voice {
   position: relative;
-  display: block;
-  height: var(--row);
-  padding: 6px 0 0 var(--gut);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  align-content: center;
+  /* Tight on purpose: a leader has to run FROM the word TO the incipit. Give it wide gaps and
+     the hairline detaches from both ends and reads as a stray dash between them. */
+  column-gap: clamp(8px, 2.4vw, 11px);
+  /* One band of the ruling — never give, the tip formula counts in whole bands. */
+  height: var(--band);
+  flex-shrink: 0;
+  padding-left: var(--gut);
   text-decoration: none;
   color: var(--ink);
   -webkit-tap-highlight-color: transparent;
-  /* Entrance lives on the ROW (settles in with the card) — trap (c). */
-  opacity: 0;
-  transform: translateY(-6px);
+  /* The entry's ink lives on the ROW, never on the word — trap (c). */
+  opacity: var(--half-ink);
 }
+/* The one SEQUENCE on the card: four words, one after another, on the page's own step. `--i`
+   (0–3) arrives inline; nothing else on the card reads it, because everything else enters as a
+   group (header, 3). */
 .chrome.menu-open .voice {
   opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 0.4s var(--ease) calc(0.14s + var(--i) * 0.05s),
-    transform 0.4s var(--ease-slow) calc(0.14s + var(--i) * 0.05s);
+  transition: opacity var(--nave-ink) var(--ease-ink) calc(var(--on-voice) + var(--i) * var(--nave-step));
 }
 .voice:focus-visible {
   outline: 1px solid var(--candle);
   outline-offset: 4px;
 }
 
-.voice-lat {
-  display: block;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 14px;
-  line-height: 1;
-  color: var(--ink-muted);
-  margin-bottom: 6px;
-}
+/* The word answers to BOTH constraints, and takes whichever is tighter (`min`): the measure
+   must seat word + leader + incipit down to a 320px phone (the longest word, Koncerty, happens
+   to take the shortest incipit, Via — which is what makes that fit at all), and the band must
+   seat the word with its own air. Width alone was the old rule and it broke the moment the
+   card was cut to the screen: a narrow, tall phone gets a deep band and the word would have
+   grown past the measure it has to fit in. */
 .voice-pl {
-  display: block;
   font-family: var(--serif);
-  font-size: 44px;
+  font-size: clamp(26px, min(10.5vw, calc(var(--band) * 0.46)), 44px);
+  /* MUST equal --wght-rest (tokens.css) — the press below drives the axis through
+     `font-variation-settings`, which overrides `font-weight` outright, but only while motion is
+     live. A gap between the two is invisible until someone turns motion off. */
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.01em;
   white-space: nowrap;
+  /* One declaration for all three channels: `transition` is a shorthand, and a second one here
+     would silently replace the give the word runs under a finger (guardrails §2). The weight
+     rides the row's own onset — the nib settles as the ink darkens, one gesture. */
   transition:
     color 0.3s var(--ease),
-    transform 0.25s var(--ease);
+    transform 0.25s var(--ease),
+    --wght var(--nave-ink) var(--ease-ink) calc(var(--on-voice) + var(--i) * var(--nave-step));
+}
+/* THE INK PRESS, authored rather than taken from `.ink-press`: that class releases on `.is-in`,
+   a trigger scripts/reveal.ts only ever puts on register nodes, so wearing it here would pin the
+   four words at --wght-press for the life of the page. Same tokens, same clock, this card's own
+   trigger. Gated on the motion class exactly as registers.css gates its own: without it the
+   declared font-weight renders and there is no axis to strand. */
+html.voct-motion .voice-pl {
+  --wght: var(--wght-press);
+  font-variation-settings: "wght" var(--wght);
+}
+html.voct-motion .chrome.menu-open .voice-pl {
+  --wght: var(--wght-rest);
+}
+/* The leader — the missal table's dotted rule, drawn solid as everywhere on this site. It
+   binds the two ends of the entry; it is furniture, so it stays INK at every state (rubric is
+   reserved for where you are, and a red leader would double the signal the word already
+   carries). It is NOT one of the page's rules and does not lead its entry the way they lead
+   their blocks: it runs from the word to the incipit, so it has no length until both are set,
+   and under the press the word's advance width is still moving as it inks (header, 2). */
+.voice-lead {
+  min-width: 10px;
+  height: 1px;
+  /* Baseline alignment puts an empty box's bottom MARGIN edge on the baseline, so this is how
+     far above it the hairline rides. The entry binds two very different sizes (a ~40px word to
+     a 15px incipit); on the shared baseline the line hangs at the foot of the word and reads
+     as propping the small text up, so it is lifted to split the two optical centres. Tuning
+     dial: raise toward the word, lower toward the incipit. */
+  margin-bottom: 8px;
+  /* Between --line and --line-strong on purpose: the leader must read across the measure but
+     must never compete with the head rule, which is the page's structure. */
+  background: rgba(22, 21, 20, 0.28);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+/* Scoped to the index rows: the closing line wears the same furniture but keeps the foot's own
+   onset (see .nave-cta), and it carries no `--i` for this calc to read. */
+.chrome.menu-open .voice .voice-lead {
+  transform: scaleX(1);
+  transition: transform var(--nave-lead) var(--ease-rule) calc(var(--on-lead) + var(--i) * var(--nave-step));
+}
+.voice-lat {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(12px, calc(var(--band) * 0.165), 16px);
+  line-height: 1;
+  color: var(--ink-muted);
+  white-space: nowrap;
 }
 /* The book is open at your page: the current voice's word is set rubric — with the vitta's
    tip at its line, the only red at rest. */
@@ -295,36 +642,222 @@
   color: var(--crimson);
 }
 
+/* ── THE VIA — the register of concerts, the page's second section: the site's own depth,
+   printed where until now the card offered only the door to it. It is the answer to a
+   problem no layout could solve — five destinations cannot compose a 900px page, and every
+   arrangement of them only moved the emptiness — and it closes a real gap besides: the
+   desktop hangs all five concert pages under KONCERTY (registrum.css) and the phone had no
+   road to them at all.
+
+   Set as a SUB-REGISTER, never as more voices: a lighter hairline opens it, a capitalis
+   label names it, and its rows run at --vrow (0.42 band) in the desktop register's own
+   grammar — roman · title · leader · date. That grammar is what makes the block read as the
+   ensemble's PATH rather than a folder of links: the dates give it a spine, and they are
+   `viaDate` from concerts.yaml verbatim (SSoT — this card derives, it never invents).
+
+   The two-column grid of the reference this was drawn from was deliberately NOT taken: its
+   own longest names wrap to four lines and the columns rag against each other, and our
+   titles are longer still ("Aeternam — Epitafium dla Gazy"). One column, one row per
+   concert. ── */
+.via {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.via::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  /* --line, not --line-strong: this divides a section, the head rule opens the page. */
+  background: var(--line);
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+/* A page rule, so it LEADS the block it opens by one pair-interval — unlike the leaders inside
+   the rows, which bind and therefore follow (header, 2). */
+.chrome.menu-open .via::before {
+  transform: scaleX(1);
+  transition: transform var(--nave-rule) var(--ease-rule) var(--on-via-rule);
+}
+/* The label stands one --vrow tall like the rows below it — the tip formula counts the whole
+   block in --vrow units, so this line is not free to be content-sized (header, GEOMETRY). */
+.via-label {
+  display: flex;
+  align-items: center;
+  height: var(--vrow);
+  padding-left: var(--gut);
+  font-family: var(--capitalis);
+  font-size: clamp(9px, calc(var(--band) * 0.105), 10.5px);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(22, 21, 20, 0.6);
+  opacity: var(--half-ink);
+}
+.via-row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  /* The row's content sits in the MIDDLE of its --vrow, as every line of this page does — and
+     here it is load-bearing rather than tidy: the tip formula's trailing half-unit means "the
+     centre of the row", so a track left to stretch would put the ribbon's point beside the line
+     it exists to name. */
+  align-content: center;
+  column-gap: clamp(7px, 2vw, 10px);
+  height: var(--vrow);
+  flex-shrink: 0;
+  padding-left: var(--gut);
+  text-decoration: none;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  opacity: var(--half-ink);
+}
+/* THE VIA RUNS — the label opens it, then one concert after another at the register's own faster
+   step (--nave-via-step). Each row is a real destination with its own line for the ribbon to
+   stand on, so lighting five of them in unison under four words that arrive one at a time was
+   the odd gesture on the page.
+
+   THE BEAT IS DERIVED FROM --vr, not from a second index attribute: --vr is already "how far
+   down the register this row sits", counted in rows with the label as row 0, which is exactly
+   what the delay wants — (--vr − 0.5) is the row's ordinal. One inline number therefore drives
+   the ribbon's tip AND the entrance, and they cannot drift apart. The label carries no --vr
+   because it IS row 0; it takes the bare onset. */
+.chrome.menu-open .via-label {
+  opacity: 1;
+  transition: opacity var(--nave-via-ink) var(--ease-ink) var(--on-via);
+}
+.chrome.menu-open .via-row {
+  opacity: 1;
+  transition: opacity var(--nave-via-ink) var(--ease-ink)
+    calc(var(--on-via) + (var(--vr) - 0.5) * var(--nave-via-step));
+}
+.via-row:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 3px;
+}
+.via-roman {
+  font-family: var(--capitalis);
+  font-size: clamp(8.5px, calc(var(--vrow) * 0.26), 11px);
+  letter-spacing: 0.12em;
+  color: rgba(22, 21, 20, 0.62);
+}
+/* Both drivers again (see .voice-pl): the title is the longest string on the card and the
+   measure is the binding constraint on a narrow phone. */
+.via-title {
+  font-family: var(--serif);
+  font-size: clamp(13px, min(4.4vw, calc(var(--vrow) * 0.46)), 18px);
+  font-weight: 300;
+  /* NOT `line-height: 1` like the rest of the card's type — this is the one line here that also
+     carries `overflow: hidden` (for the ellipsis below), and an em-tall box CLIPS what a serif
+     hangs under the baseline: "Poległym", "Gazy", "Kontemplacja" all lost their descenders. The
+     clip is only wanted on the horizontal axis, but CSS has no such thing (a non-visible overflow
+     on one axis forces the other to `auto`), so the line box has to be the one that grows.
+     Half-leading is added symmetrically, so the baseline does not move inside the
+     baseline-aligned row and the leader beside it stays exactly where it is set. */
+  line-height: 1.35;
+  white-space: nowrap;
+  /* The one line on the card allowed to yield rather than break the ruling: a long title on a
+     320px phone loses its tail instead of wrapping into a second row the tip formula cannot
+     see. `min-width: 0` is what makes that possible at all — a grid item's automatic minimum
+     is its content, so without it the longest title ("Aeternam — Epitafium dla Gazy") pushes
+     the row past the measure instead of ellipsizing inside it. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    color 0.3s var(--ease),
+    transform 0.25s var(--ease);
+}
+.via-lead {
+  min-width: 8px;
+  height: 1px;
+  margin-bottom: 4px;
+  background: rgba(22, 21, 20, 0.2);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+/* Each leader binds its own row, so it rides that row's beat — `--vr` inherits from the row it
+   sits in, and the same ordinal that placed the ink places the hairline a pair-interval later. */
+.chrome.menu-open .via-lead {
+  transform: scaleX(1);
+  transition: transform var(--nave-lead) var(--ease-rule)
+    calc(var(--on-via-lead) + (var(--vr) - 0.5) * var(--nave-via-step));
+}
+.via-date {
+  font-family: var(--capitalis);
+  font-size: clamp(8.5px, calc(var(--vrow) * 0.25), 10.5px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(22, 21, 20, 0.62);
+  white-space: nowrap;
+}
+/* Same rubric law as the voices: the concert you are reading is where the book is open, and
+   the vitta's tip stands at its line. */
+.via-row[aria-current="page"] .via-title,
+.via-row[aria-current="page"] .via-roman {
+  color: var(--crimson);
+}
+.via-row:active .via-title,
+.via-row:focus-visible .via-title {
+  color: var(--crimson);
+}
+.via-row:active .via-title {
+  transform: translateX(3px);
+}
+
 /* ── The vitta: THE one ribbon — cord + cloth strip + notched tip — hanging down the left
-   margin from the rule. `--vi` (target row index, inline; retargeted by the header scripts on
-   commit) sets its length; `is-set` says a page of the four is open at all. All movement is
+   margin from the rule. `--vb` (bands) and `--vr` (Via rows) arrive inline on the target row
+   and are copied onto the ribbon by the header scripts on commit; together they are its
+   length. `is-set` says a page the card indexes is open at all. All movement is
    HEIGHT — see the header block for why transform-swapped ribbons are banned. overflow:hidden
-   lets the fixed-height cord emerge tip-first during the unroll. Material recipe follows
-   registrum.css (satin pools, grosgrain ribs, warp grain, soft selvage curls), with the
-   shading LIGHTENED for 9px-width optics (see DYE note in the header). ── */
+   lets the fixed-height cord emerge tip-first during the unroll. The strip carries NONE of
+   registrum's modelled cloth (satin, weft, selvages): on parchment its material is dye
+   density alone — see the two notes in the header before touching --silk or the dyes. ── */
 .vitta {
   --dye: var(--crimson);
+  /* A ribbon LIES ON the page it marks, so it covers the ruling it crosses. Without this it
+     paints in tree order — first child of .nave-list, therefore under every positioned line
+     after it — and the Via's dividing rule was drawn straight across the cloth. The one rule
+     that stays above is the head rule, the slot it hangs from (z-index there). */
+  z-index: 1;
+  /* The thin end of the ramp — the shaft, where the ribbon is a thread rather than a mark.
+     38% toward the paper: below ~30% the modulation is invisible (the old 12% stop spread
+     about 8% of lightness over the whole fall and did nothing), past ~40% the shaft breaks
+     up on a bright phone. The tip keeps the full dye and its 6.6:1 on parchment, which is
+     where the object's one meaning lives. */
+  --dye-thin: color-mix(in srgb, var(--dye), var(--paper) 38%);
   position: absolute;
   top: 0;
   left: 2px;
   width: var(--silk);
   height: 0;
   overflow: hidden;
-  filter: drop-shadow(0 6px 10px rgba(8, 8, 7, 0.18));
+  filter: drop-shadow(0 5px 8px rgba(8, 8, 7, 0.14));
 }
 .chrome.menu-open .vitta.is-set {
-  height: calc(var(--pt) + var(--vi, 0) * var(--row) + var(--ly));
-  /* The opening unroll: tip-first out of the slot, trailing the rule's draw by a beat. */
-  transition: height 0.6s var(--ease-slow) 0.12s;
+  /* Counted from the rule in the page's own two units: --vb whole bands (the antiphon's, then
+     one per voice above the target) plus --vr Via rows. Each target ships its own pair, the
+     last half-unit landing the tip in the middle of its line — which is that line's type,
+     because every band and every Via row centres what it holds. */
+  height: calc(var(--band) * var(--vb, 1.5) + var(--vrow) * var(--vr, 0));
+  /* The opening unroll: tip-first out of the slot, starting once the head rule it hangs from is
+     under way — given a touch more time than the old build because the fall now crosses the
+     antiphon's band before it reaches any voice. --ease-slow, not a register curve: this is a
+     physical object under gravity, not ink arriving. */
+  transition: height 0.7s var(--ease-slow) var(--on-vitta);
 }
 .vitta-cord {
   position: absolute;
   top: 0;
   left: 50%;
-  width: 1.5px;
+  width: 2.5px;
   height: 16px;
   transform: translateX(-50%);
-  background: color-mix(in srgb, var(--dye), #100f0d 18%);
+  background: color-mix(in srgb, var(--dye), #100f0d 22%);
   opacity: 0.9;
 }
 .vitta-strip {
@@ -333,34 +866,64 @@
   left: 0;
   right: 0;
   bottom: 0;
+  /* FLAT — no satin, no weft, no selvages, nothing specular. Three layers, no light.
+
+     THE WEIGHT RAMP (bottom layer) is what keeps the object stable across its own range. The
+     strip's height is a variable — 1.5 bands on the landing's own row against five bands and
+     most of the Via to reach the last concert, ~100px against ~690px, a 7× spread on ONE
+     element — and at even saturation the deep fall is two thirds of a phone screen of red
+     while the shallow one is a stub: the same object reading as two different compositions.
+     So the ink is spent where it means something. The last 120px stand at full dye (the point,
+     on your row); above that a 200px ramp thins to --dye-thin, and the shaft runs thin for as
+     long as it has to. A long ribbon then reads as a thread that gains body at the point; a
+     short one lies entirely inside the full-strength zone and loses nothing at all.
+
+     MEASURED FROM THE TIP, in px, never in percent — the stops must not stretch, or the whole
+     modulation becomes one ramp the length of the ribbon, i.e. gone. The consequence is the
+     behaviour that makes the unroll read right: on a strip shorter than the zones, the earlier
+     stops resolve negative and CSS corrects them up to the preceding stop, so the emerging
+     thread is full dye and thins as it extends. NOTHING ELSE MAY RIDE THIS LAYER. The slot's
+     shadow was a stop inside it and that was a defect: on the landing's own row (a ~100px strip,
+     shorter than both zones) the two tip stops collapsed to the cap's own position, so the ramp
+     ran head-to-thin across 14px and then stepped to full dye — the whole modulation crushed
+     into a band, and a hard edge under it. A stop that is anchored to the HEAD cannot share a
+     gradient whose other stops are anchored to the TIP; it is its own layer.
+
+     THE SLOT SHADOW (middle layer) is that layer — px from the head, over whatever the ramp
+     leaves there, so it reads the same on a stub and on a full fall: the strip is in shadow for
+     18px where it comes out from under the rule. It is the one place the strip is darker than
+     its own dye.
+
+     THE POOLS (top layer) are the material — dye gathering and thinning down a hanging strip,
+     never a light catching on it (header). Ink-toned and subtractive only: a stop that lifted
+     toward paper would be a sheen, which is the treatment three field passes killed. In
+     PERCENT on purpose, the opposite of the ramp below them: they carry no meaning, so
+     stretching costs nothing and every ribbon length lands them at different absolute
+     heights for free. Nothing at the head (the cap is already there) and nothing at the
+     point (it must stay the cleanest thing on the strip). Delete this layer whole if it ever
+     reads as banding rather than dye — it is one gradient and the ramp stands without it. */
   background:
     linear-gradient(
       180deg,
-      rgba(255, 253, 246, 0) 0%,
-      rgba(255, 253, 246, 0.16) 14%,
-      rgba(255, 253, 246, 0) 34%,
-      rgba(8, 8, 7, 0.04) 52%,
-      rgba(255, 253, 246, 0.09) 72%,
-      rgba(255, 253, 246, 0) 88%
+      rgba(16, 15, 13, 0) 4%,
+      rgba(16, 15, 13, 0.05) 19%,
+      rgba(16, 15, 13, 0) 37%,
+      rgba(16, 15, 13, 0.045) 61%,
+      rgba(16, 15, 13, 0) 82%
     ),
-    repeating-linear-gradient(
-      180deg,
-      rgba(255, 253, 246, 0.05) 0 1px,
-      transparent 1px 2px,
-      rgba(8, 8, 7, 0.04) 2px 3px
-    ),
-    repeating-linear-gradient(90deg, transparent 0 2px, rgba(255, 253, 246, 0.05) 2px 3px),
+    linear-gradient(180deg, rgba(16, 15, 13, 0.22) 0, rgba(16, 15, 13, 0) 18px),
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--dye), #100f0d 12%) 0%,
-      var(--dye) 18%,
-      var(--dye) 76%,
-      color-mix(in srgb, var(--dye), #100f0d 6%) 100%
+      var(--dye-thin) 0,
+      var(--dye-thin) calc(100% - 320px),
+      var(--dye) calc(100% - 120px),
+      var(--dye) 100%
     );
-  box-shadow:
-    inset 2px 0 2px -1px rgba(255, 253, 246, 0.3),
-    inset -2px 0 2px -1px rgba(8, 8, 7, 0.12);
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 5px), 50% 100%, 0 calc(100% - 5px));
+  /* A long swallowtail, not a clipped corner: the tip is the only thing that says WHICH row is
+     yours, and nothing is drawn between it and the word — so the pointing has to come from the
+     shape itself. The cloth stands full-width beside the word's cap line and comes to its point
+     on the word's own centre. */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), 50% 100%, 0 calc(100% - 15px));
 }
 
 /* ── Press (touch-only surface → :active, never :hover): the word turns rubric under the
@@ -375,48 +938,101 @@
 }
 
 /* ── The choice: RUNNING THE RIBBON. The header scripts mark the tapped row `is-chosen` (its
-   list `is-committing`) and retarget `--vi`; the vitta runs through the slot to the chosen
-   row — one height transition, decisive and front-loaded, no delay (the opening unroll's
-   beat has no place under a finger). The other voices fall quiet; the swap is held one
-   PULL_MS beat so the run reads, then the page dissolves (transitions.css) with the ribbon
-   standing at the chosen page. Rubric on the chosen word is INSTANT (no transition): the
-   View Transition snapshot lands early under prefetch and must capture it fully drawn. ── */
+   list `is-committing`) and copy its `--vb`/`--vr` onto the ribbon; the vitta runs through the
+   slot to the chosen line — one height transition, decisive and front-loaded, no delay (the
+   opening unroll's beat has no place under a finger). Everything else on the page falls quiet;
+   the swap is held one PULL_MS beat so the run reads, then the page dissolves
+   (transitions.css) with the ribbon standing at the chosen page. Rubric on the chosen word is
+   INSTANT (no transition): the View Transition snapshot lands early under prefetch and must
+   capture it fully drawn. ── */
 .nave-list.is-committing .vitta.is-set {
   transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .nave-list.is-committing .voice.is-chosen .voice-lat,
-.nave-list.is-committing .voice.is-chosen .voice-pl {
+.nave-list.is-committing .voice.is-chosen .voice-pl,
+.nave-list.is-committing .via-row.is-chosen .via-title,
+.nave-list.is-committing .via-row.is-chosen .via-roman {
   color: var(--crimson);
   transition: none;
 }
-/* Hold exactly what the finger showed (the 4px give) so the snapshot never catches the word
+/* Hold exactly what the finger showed (the give) so the snapshot never catches the word
    mid-release on touch-up. */
 .nave-list.is-committing .voice.is-chosen .voice-pl {
   transform: translateX(4px);
 }
-.nave-list.is-committing .voice:not(.is-chosen) {
-  opacity: 0.35;
+.nave-list.is-committing .via-row.is-chosen .via-title {
+  transform: translateX(3px);
+}
+/* 0.2, not the old 0.35: the page's resting half-ink is 0.44, so a quiet at 0.35 no longer
+   reads as receding — it reads as the entrance running backwards. The quiet has to sit clearly
+   under the light the card opens at. The foot goes with them (it is a following sibling of the
+   list, which is why the committing class on the list can reach it) — otherwise the closing
+   line stands at full ink competing with the one word that is supposed to be left. */
+.nave-list.is-committing .voice:not(.is-chosen),
+.nave-list.is-committing .via-row:not(.is-chosen),
+.nave-list.is-committing .via-label,
+.nave-list.is-committing .nave-antiphon,
+.nave-list.is-committing ~ .nave-foot {
+  opacity: 0.2;
   transition: opacity 0.22s var(--ease);
 }
 
-/* ── Foot: the Wesprzyj CTA (the card's ONE gilded element — the border) + the live canonical
-   hour printed like a colophon line. `margin-top: auto` pins it down and gathers the page's
-   free space above it. ── */
+/* ── Foot: the gold rule, the Wesprzyj line, and the colophon line under it — the page's
+   closing matter (the hour lives at the OPENING now, as the antiphon; see the list block).
+   The auto margin on the list above is what pins this block to the page's foot.
+
+   The CTA was a gold-bordered PILL and it was the second foreign object on this card (the
+   first being the rendered ribbon — same diagnosis, different property): the only enclosed
+   shape, the only rounded corner, the only border, on a surface built entirely from hairlines
+   and type. It also never fit beside the colophon at 360px — the width a large share of
+   Android reports, since it follows the display-DENSITY setting rather than the panel, so
+   current flagships land there too — and the two of them wrapped into a ragged stack.
+
+   Now the foot is the page's closing matter, set in the same grammar as the index above it:
+   a rule, then `Wesprzyj ···· Sustinete nos` at a smaller stepping, then the hour. The gold
+   survives as the RULE rather than a border — role unchanged (it has always been the
+   Wesprzyj marker), nose changed. Gold cannot carry the WORD: `--candle` on parchment is
+   ~2.2:1, under the floor for large text, the same trap that killed the per-concert dye. As a
+   hairline it is not text and the floor does not apply. ── */
 .nave-foot {
+  position: relative;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 22px;
-  margin-top: auto;
-  padding-top: 28px;
-}
-/* Translated pages carry a language line too. Stack the foot into a column so the tongues read as
-   an imprint printed ABOVE the colophon (both left-aligned in `.nave-imprint`) rather than a trio
-   floated into the opposite corner. Untranslated pages keep the plain pill ↔ colophon row above. */
-.nave-foot.has-lang {
   flex-direction: column;
-  align-items: flex-start;
+  justify-content: center;
+  /* The gold rule closes the INDEX — all of it, voices and Via alike — so it is a page rule of
+     the same order as the head rule and takes the page's own half-band of clearance above it.
+     Sitting flush on the register it took the Via's half-ROW instead (~16px), which read as the
+     closing matter glued to the last concert. Counted into the band divisor above: this is
+     height the page spends, not air it happens to have. */
+  margin-top: calc(var(--band) * 0.2);
+  gap: calc(var(--band) * 0.16);
+  /* The page's last band, ruled in gold instead of ink — min-height, not height, so the
+     colophon (and a translated page's imprint line) can deepen it. It sits BELOW the vitta's
+     reach, so unlike the lines above it this one may grow without disturbing the tip. */
+  min-height: calc(var(--band) * 1.35);
+}
+.nave-foot::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1px;
+  background: var(--candle);
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+/* The foot's own page rule — the last of the three, and it opens the closing matter the same way
+   the head rule opens the index: drawn first, written on a pair-interval later. */
+.chrome.menu-open .nave-foot::before {
+  transform: scaleX(1);
+  transition: transform var(--nave-rule) var(--ease-rule) var(--on-foot-rule);
+}
+/* Translated pages close with the language imprint printed left under the Wesprzyj line —
+   the imprint exists ONLY there (untranslated feet end at the closing line), so it always
+   sets on the word column's side. */
+.nave-foot.has-lang {
   gap: clamp(24px, 5vh, 36px);
 }
 .nave-imprint {
@@ -424,85 +1040,125 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 13px;
+  opacity: var(--half-ink);
 }
+
+/* The closing line — one index entry at a smaller stepping, indented onto the same word column
+   as the entries above (`--gut` lives on .nave-inner for exactly this). It enters like every
+   other line of the page: it is the closing ENTRY, not a control, which is the distinction that
+   keeps .nave-close out of the choreography and puts this in it (header). */
 .nave-cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 28px;
-  border: 1px solid var(--candle);
-  border-radius: 999px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  column-gap: clamp(8px, 2.4vw, 11px);
+  padding: 4px 0 4px var(--gut);
   color: var(--ink);
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    background-color 0.4s var(--ease),
-    color 0.4s var(--ease);
+  opacity: var(--half-ink);
 }
-.nave-cta:active,
-.nave-cta:focus-visible {
+/* The foot inks as one: the closing line, the colophon under it and — on a translated page — the
+   language imprint beside them. */
+.chrome.menu-open .nave-cta,
+.chrome.menu-open .nave-fine,
+.chrome.menu-open .nave-imprint {
+  opacity: 1;
+  transition: opacity var(--nave-ink) var(--ease-ink) var(--on-foot);
+}
+.chrome.menu-open .nave-cta .voice-lead {
+  transform: scaleX(1);
+  transition: transform var(--nave-lead) var(--ease-rule) var(--on-foot-lead);
+}
+.nave-cta-word {
+  font-family: var(--serif);
+  font-size: clamp(19px, min(7vw, calc(var(--band) * 0.31)), 30px);
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: transform 0.25s var(--ease);
+}
+/* The leader rides lower here than in the index: it splits two optical centres, and this word
+   is a third shorter than the entries above. */
+.nave-cta .voice-lead {
+  margin-bottom: 5px;
+}
+/* Press: the give of the index rows, and the leader takes the gold. Rubric red stays out of
+   it — crimson on this card means WHERE YOU ARE, and Wesprzyj is an act, not a page. */
+.nave-cta:active .nave-cta-word {
+  transform: translateX(4px);
+}
+.nave-cta:active .voice-lead {
   background: var(--candle);
-  color: var(--night);
-  outline: none;
 }
-.nave-cta em {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 16px;
-  letter-spacing: 0;
-  text-transform: none;
-}
-.nave-colophon {
-  display: inline-flex;
-  align-items: center;
-  gap: 11px;
-  font-family: var(--capitalis);
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(22, 21, 20, 0.5);
-}
-/* The small device is the printer's mark of the colophon — ink like the rest of the set matter
-   (rubric red is reserved for "where you are"). The smallest mark on the site, so the raster
-   master is mandatory here — see `.brand-glyph-shape` in styles/base.css. */
-.nave-colophon-mark {
-  width: 10px;
-  height: 26px;
-  flex-shrink: 0;
-  background: var(--ink-soft);
-  -webkit-mask: url(/logo-mark.png) center / contain no-repeat;
-  mask: url(/logo-mark.png) center / contain no-repeat;
-}
-.nave-colophon em {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 15px;
-  letter-spacing: 0;
-  text-transform: none;
-  color: rgba(22, 21, 20, 0.66);
+.nave-cta:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
 }
 
+/* ── The colophon line: the page's fine print, where a book puts who set it. Kolofon is a real
+   page the card had no road to; it belongs HERE and not in the index, because it is matter
+   about the book rather than a voice of it — the same reason /press stays out entirely (a
+   noindex press kit is addressed to journalists, not to a reader opening the menu). Set at
+   the smallest step on the card and never given a leader: leaders belong to the entries. ── */
+.nave-fine {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-left: var(--gut);
+  font-family: var(--capitalis);
+  font-size: clamp(8.5px, calc(var(--band) * 0.1), 10px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(22, 21, 20, 0.62);
+  opacity: var(--half-ink);
+}
+.nave-fine a {
+  color: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.3s var(--ease);
+}
+.nave-fine a:active,
+.nave-fine a:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
 /* Scroll lock while open — the overlay owns the viewport (touch only; Lenis is off here). */
 body.nav-open {
   overflow: hidden;
 }
 
+/* Everything the choreography drives, neutralised in one place: the page arrives written. The
+   ink press needs no entry here — it is gated on `html.voct-motion`, which DocumentGates never
+   adds under `reduce`, so the four words simply render their declared font-weight. */
 @media (prefers-reduced-motion: reduce) {
   .nave,
-  .nave-inner,
   .nave-list::before,
+  .nave-foot,
+  .nave-foot::before,
+  .nave-antiphon,
   .voice,
+  .voice-lead,
   .voice-pl,
+  .via::before,
+  .via-label,
+  .via-row,
+  .via-lead,
+  .via-title,
+  .nave-fine,
+  .nave-cta,
+  .nave-cta-word,
+  .nave-imprint,
   .vitta {
     transition: none !important;
   }
-  /* States snap (rule drawn, ribbon at its page, retargets land instantly); the scripts also
-     skip the pull hold and navigate immediately. */
-  .voice:active .voice-pl {
+  /* States snap (rules drawn, leaders and ribbon at their page, retargets land instantly); the
+     scripts also skip the pull hold and navigate immediately. */
+  .voice:active .voice-pl,
+  .via-row:active .via-title,
+  .nave-cta:active .nave-cta-word {
     transform: none;
   }
 }

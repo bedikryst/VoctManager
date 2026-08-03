@@ -31,13 +31,31 @@
  *  to longest, and the newest concert hangs deepest in the book. Don't "randomize" the
  *  lengths: any non-monotone order makes a leader cut across a silk.
  *
- *  The entrance is PHYSICAL, not a fade: each silk (cord + strip) slides down THROUGH
- *  the bar's line, notched tip first; its index row settles in as it lands, then the
- *  leader draws out from the title to meet the tip. The sleeve clips everything above
- *  the line (a wide polygon, top edge at y=0 of the sleeve = the bar's bottom line), so
- *  nothing ever exists over the bar — the line is the slot of the book block. The clip
- *  lives on the SLEEVE, not the drop, because clip-path also clips hit-testing and the
- *  drop's padding-top is the hover bridge between link and line.
+ *  THE ENTRANCE IS PHYSICAL, and the silks are the only thing in it that travels: each
+ *  silk (cord + strip) slides down THROUGH the bar's line, notched tip first; its index row
+ *  fades up as its silk lands, and the LEADER comes last, drawn from the title out to the
+ *  tip. That leader order is the composition's, not an oversight to be "corrected" into the
+ *  rule-leads-ink pairing: a leader has no length until the title and the tip it runs
+ *  between are both set. It binds an entry; it does not rule one. (Same argument, same
+ *  order, on the mobile card's leaders — nave-menu.css.)
+ *
+ *  THE INDEX ENTERS FROM ZERO HERE, and that is not a lapse from the site's entrance law —
+ *  the law does not reach this surface. "Nothing enters from `opacity: 0`" is a rule about a
+ *  PAGE you scroll through, where the node holds layout and a fast scroll catches the hole
+ *  being filled; its whole justification is that emptiness. This register holds no layout at
+ *  rest: the drop is `visibility: hidden` and the set does not exist until the pointer asks
+ *  for it. Resting the index at --half-ink there opens no hole — it strands a half-lit index
+ *  in mid-air over the page, arriving before the silks it names and outliving them through
+ *  the close grace, which is exactly what the founder saw and reported. The mobile card is
+ *  the opposite case and keeps the law: its veil shuts FIRST, so every line on it is standing
+ *  in layout under an opaque parchment before a single one darkens. Ask whether a surface is
+ *  a page or an apparition before granting it a register.
+ *
+ *  The sleeve clips everything above the line (a wide polygon, top edge at y=0 of the
+ *  sleeve = the bar's bottom line), so nothing ever exists over the bar — the line is the
+ *  slot of the book block. The clip lives on the SLEEVE, not the drop, because clip-path
+ *  also clips hit-testing and the drop's padding-top is the hover bridge between link and
+ *  line.
  *
  *  Hovering a row (anywhere — the whole row is one anchor, silk included) warms the
  *  title to candle, floats a candle SHEEN up the silk (a satin catch on `.ribbon-strip::after`,
@@ -247,11 +265,12 @@
   align-items: baseline;
   gap: 10px;
   height: 22px;
+  /* From ZERO — the set does not exist at rest, so there is no hole for a resting ink to hold
+     open (see the entrance note in the header). Never an offset, though: the silks' descent is
+     the only travel in this composition. The withdraw keeps its own short clock — a hover-out
+     is not an entrance, and the index must be gone before the close grace expires. */
   opacity: 0;
-  transform: translateY(-5px);
-  transition:
-    opacity 0.2s var(--ease),
-    transform 0.2s var(--ease);
+  transition: opacity 0.2s var(--ease);
 }
 .ribbon-roman {
   flex: none;
@@ -289,7 +308,11 @@
     transform 0.18s var(--ease),
     opacity 0.3s var(--ease);
 }
+/* The meta is a RESTING DIM — a colophon under its own title, quieter than the line above it by
+   design, so where it settles is a token of its own rather than "full ink". It enters from zero
+   with the line above it (header). */
 .ribbon-meta {
+  --meta-ink: 0.62;
   display: block;
   margin: 1px 0 0 32px; /* 32 = roman column + gap: flush under the title */
   font-family: var(--serif);
@@ -303,14 +326,11 @@
 .registrum:hover .ribbon-line,
 .registrum:focus-within .ribbon-line {
   opacity: 1;
-  transform: translateY(0);
-  transition:
-    opacity 0.4s var(--ease) calc(0.2s + var(--i) * 0.05s),
-    transform 0.4s var(--ease-slow) calc(0.2s + var(--i) * 0.05s);
+  transition: opacity 0.4s var(--ease) calc(0.2s + var(--i) * 0.05s);
 }
 .registrum:hover .ribbon-meta,
 .registrum:focus-within .ribbon-meta {
-  opacity: 0.62;
+  opacity: var(--meta-ink);
   transition: opacity 0.4s var(--ease) calc(0.26s + var(--i) * 0.05s);
 }
 /* The .06s/.12s delays here and on the silk's height below SEQUENCE the row hover into
@@ -579,9 +599,6 @@
   }
   .ribbon-silk {
     transform: none; /* composition intact, motion gone */
-  }
-  .ribbon-line {
-    transform: none;
   }
   .ribbon:hover .ribbon-silk,
   .ribbon:focus-visible .ribbon-silk {
