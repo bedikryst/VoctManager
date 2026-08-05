@@ -10,11 +10,11 @@
 
 An ERP for a professional vocal ensemble, and the AI pipeline that catalogues its sheet music.
 
-A conductor was spending hours per concert on work no software was doing for her: tracking who sings what, generating contracts, assembling singers' score books, and typing metadata off PDF scores by hand. VoctManager replaced that. It runs in production for **VoctEnsemble** and the foundation behind it.
+I co-founded a foundation around **VoctEnsemble**. Its artistic director was doing a lot of work by hand that software should have been doing for him: who sings which part, contracts, assembling a singers' score book before every concert, and typing metadata off PDF scores one field at a time. So I built this.
 
-Built and maintained by one person. 711 commits since February 2026.
+One person, 711 commits, first one 26 February 2026.
 
-**Public site:** [voctensemble.com](https://voctensemble.com)
+**Public site:** [voctensemble.com](https://voctensemble.com) · **Status:** deployed and running, adoption still in progress ([details](#where-this-actually-stands))
 
 | Conductor dashboard | AI score review cockpit |
 |:---:|:---:|
@@ -22,9 +22,9 @@ Built and maintained by one person. 711 commits since February 2026.
 
 ---
 
-## The interesting part: the score pipeline
+## The score pipeline
 
-A conductor uploads a PDF score. Minutes later the archive holds a catalogued work — composer resolved to a canonical ID, movements split out, sung text transcribed, IPA aligned line by line, singing translations, and a programme note in the ensemble's language. She reviews it and approves. What used to take an afternoon takes a few minutes of checking.
+Upload a PDF score. A few minutes later the archive holds a catalogued work: composer resolved to a canonical ID, movements split out, the sung text transcribed, IPA aligned line by line, singing translations, and a programme note in the ensemble's language. The conductor reads it over, fixes what's wrong, approves. An afternoon of typing becomes a few minutes of checking.
 
 ```
 upload PDF
@@ -40,69 +40,77 @@ upload PDF
 
 ### Three things I'd point at
 
-**The model extracts, it never asserts.** Every AI- or API-sourced field carries `(model, prompt_version, source_reference, confidence, retrieved_at)` in a `ProvenanceRecord`, and the review UI renders it *per field* — an `AI · 95%` chip, a `MusicBrainz` chip, or a `Verified` chip once a human has touched the value. Canonical identifiers come from MusicBrainz and Wikidata, never from the model. A conductor should not have to guess which fields to double-check.
+**Provenance on every field.** Anything the model or an external API produced carries `(model, prompt_version, source_reference, confidence, retrieved_at)` in a `ProvenanceRecord`, and the review screen shows it per field: an `AI · 95%` chip, a `MusicBrainz` chip, or a `Verified` chip once a human has edited the value. Canonical identifiers always come from MusicBrainz or Wikidata, never from the model. The point is that a conductor shouldn't have to guess which fields deserve a second look. Whether the chips are legible enough to actually do that, I don't know yet. Nobody has used them under time pressure.
 
-**Retry policy follows the billing, not the status code.** The exception taxonomy in [`archive/infrastructure/ai_client.py`](backend/archive/infrastructure/ai_client.py) splits failures by whether retrying can possibly help *and* whether the failed attempt was billed:
+**Retry policy follows the billing, not the status code.** The exception taxonomy in [`archive/infrastructure/ai_client.py`](backend/archive/infrastructure/ai_client.py) splits failures two ways at once: can retrying possibly help, and was the failed attempt billed?
 
 | Failure | Billed? | Policy |
 |---|---|---|
-| 529 overloaded / 5xx / 429 / connection timeout | no | **Retryable.** Wait patiently — tens of seconds to minutes — and surface a "service busy, retrying" state to the conductor. |
-| `stop_reason='max_tokens'` truncation | yes | Double the budget, retry up to 2 escalations, then **terminal**. A fixed budget truncates deterministically; re-issuing the identical call burns the same money for the same failure. |
-| 400 / auth / permission | no | **Terminal.** Abort the chain immediately instead of burning autoretry cycles on a request Anthropic already rejected as invalid. |
+| 529 overloaded / 5xx / 429 / connection timeout | no | Retryable. Wait tens of seconds to minutes and show a "service busy, retrying" state while waiting. |
+| `stop_reason='max_tokens'` truncation | yes | Double the budget, retry up to 2 escalations, then give up. A fixed budget truncates deterministically, so re-issuing the identical call buys the same failure twice. |
+| 400 / auth / permission | no | Terminal. Abort the chain instead of burning autoretry cycles on a request Anthropic already rejected. |
 
-The naive version of this is `retry(3)` on everything, which turns a capacity blip into a retry storm and a truncation into three identical bills.
+`retry(3)` on everything would have been half a day's less work. It also turns a capacity blip into a retry storm and a truncation into three identical bills.
 
-**Spend is a system invariant, not a hope.** Three independent ceilings enforced at the Celery task boundary — per-run, a never-reset lifetime cap per edition, and an org-wide daily budget circuit breaker. Defaults: $1.00 / $5.00 / $20.00. A re-uploaded identical PDF is deduplicated by SHA-256 and skips the model entirely. End-to-end an ingest averages **$0.11–0.22**; the PDF goes up as a native `document` block with `cache_control: ephemeral`, so an escalation reads it back at cache rates.
+**Three spend ceilings, enforced at the task boundary.** Per-run, a lifetime cap per edition that never resets, and an org-wide daily budget that trips a circuit breaker. Defaults are $1.00, $5.00 and $20.00. Re-uploading a PDF that's already been processed hits a SHA-256 check and skips the model entirely. An ingest ends up costing **$0.11–0.22**. The PDF goes up as a native `document` block with `cache_control: ephemeral`, so if a truncation forces an escalation, the second attempt reads it back at cache rates instead of paying full input again.
 
 <img src="docs/assets/score-compiler-upload.png" width="620" alt="Upload screen streaming live pipeline progress over Server-Sent Events"/>
 
 ---
 
-## Decisions, including the ones to not build something
+## Decisions
 
-The full list lives in [Deliberately out of scope](#deliberately-out-of-scope). Three that shaped the system:
+Including the ones where the decision was not to build something. The rest are listed under [Out of scope](#out-of-scope).
 
-**Two frontends instead of one.** The panel is a React SPA; the public site is a separate Astro app. The SPA shell was a measurable SEO and performance regression for a charity applying for Google Ad Grants — crawlers got an empty div. Astro emits static HTML and hydrates React only where state actually lives (donation flow, audio gate, sticky chrome). Two builds, one backend, one deploy.
+**Two frontends.** The panel is a React SPA. The public site is a separate Astro app. That split came out of applying for Google Ad Grants: the audit wanted crawlable content and the SPA shell served crawlers an empty div. Astro emits static HTML and hydrates React only where there's real state: the donation flow, the audio gate, the sticky header. Two builds, one backend, one deploy. It's more moving parts than I wanted, and I'd make the same call again.
 
-**Liveness and readiness answer different questions.** `/api/health/` is dependency-free and backs the Docker healthcheck. `/api/health/ready/` touches Postgres and Redis and returns 503 when it can't serve. They are deliberately not the same endpoint: restarting a container because Postgres is slow gives you a container that comes back equally degraded, and `depends_on` cascades it into Celery. The Redis check is a write-then-read rather than a `PING`, because a Redis at `maxmemory` under `noeviction` answers `PING` perfectly while refusing every write.
+**Liveness and readiness are different questions.** `/api/health/` touches nothing and backs the Docker healthcheck. `/api/health/ready/` hits Postgres and Redis and returns 503 if it can't serve. Keeping them separate matters more than it looks: restart a container because Postgres is slow and you get a container that comes back equally degraded, then `depends_on` cascades the restart into Celery. The Redis half is a write-then-read rather than a `PING`. A Redis sitting at `maxmemory` under `noeviction` will answer `PING` perfectly while refusing every write, and I'd rather find that out from a probe than from a lost task.
 
-**Alert on silence, not on errors.** A dead Celery beat scheduler doesn't raise — it stops. So a periodic task pings an external heartbeat monitor, and the alert fires on the *absence* of that ping. It's an end-to-end proof: the ping only happens if beat scheduled the task, the broker delivered it, and a worker consumed it. The ping task itself never retries and never raises, so a flaky monitor can't become a source of alerts about itself.
+**Alert on silence.** A dead Celery beat scheduler doesn't throw an exception. It just stops, quietly, and everything downstream looks fine until someone notices the digests stopped arriving. So a periodic task pings an external heartbeat monitor and the alert fires when the ping *doesn't* arrive. It's an end-to-end proof: beat has to have scheduled it, the broker has to have delivered it, a worker has to have run it. The ping task swallows its own errors on purpose. A flaky monitor shouldn't be able to page me about itself.
 
 ---
+
+## Where this actually stands
+
+The system is deployed and running. Whether it's *used* is a separate question and the honest answer is: barely, so far.
+
+One concert has gone through it — St. Andrew Bobola, May 2026 — and I entered most of that data myself to see whether the workflow held up end to end. It did. But the artistic director hasn't adopted it yet. He does his own job extremely well and has close to zero patience for learning a new tool between rehearsals, which is completely reasonable and which I did not plan for at all. Getting him from "this is impressive" to "I opened it on Tuesday" has been harder than any part of the engineering.
+
+He's committed to running the end-of-August date through it himself. That'll be the first honest test.
+
+I'm leaving this section in because it's the most useful thing the project has taught me. I can build the thing. Getting it into somebody else's working habits is a different discipline, and I badly underestimated it. The features I'm proudest of here, the provenance chips and the score-book builder and the annotation layers, are all worth nothing until someone opens the app on a Tuesday because it's easier than not opening it. I don't think I've built that yet.
 
 ## What I got wrong
 
-**I built the ingestion as a chain of small model calls first.** One call for identity, one for movements, one for lyrics, one for translations. It cost several times more and produced worse output, because each call lost the context of the pages around it — the model would fall back on a hymn's canonical text from memory instead of reading the printed text on the page. Consolidating to a single call that sees the whole PDF fixed both problems at once. I found this by reading the bill, not by reasoning about it.
+**The first ingestion pipeline was a chain of small model calls.** Identity in one call, movements in another, then lyrics, then translations. Each call only saw its own slice, so the model kept falling back on what it knew instead of what was printed — for a well-known hymn it would produce the canonical text rather than the words actually on the page, which is exactly wrong for an archive. Consolidating into one call that reads the whole document fixed the accuracy problem and cut the bill at the same time. I should have seen it coming from first principles. I didn't.
 
-**I shipped features the conductor didn't want.** Several interactions I was pleased with had to be removed or redesigned. The pattern was always the same: I had built for my model of her workflow rather than hers. Watching her work for twenty minutes taught me more than any conversation where I asked what she wanted. She valued predictability and fewer clicks over anything I'd added.
-
-**I under-tested the boring parts for too long.** Coverage grew around the AI pipeline first, because that's where the interesting failures were. The dull paths — contract generation, attendance, settlements — got covered late, and that's where the production bugs actually came from.
+**I under-tested the dull paths.** Test coverage grew around the AI pipeline first, because that's where the interesting failures lived. Contracts, attendance, settlements got covered late. Those are where the actual bugs came from.
 
 ---
 
-## How this was built, and where AI stops
+## How this was built, and where the AI stops
 
-I use Claude Code daily, and this project would not exist at this size in five months without it. The git history says so plainly — some commits are co-authored.
+I use Claude Code every day. A project this size doesn't get built by one person in five months without it, and the git history says so plainly: some commits are co-authored.
 
-What AI did not do: decide to split the frontend after the Ad Grants audit; decide that retry policy should follow billing rather than status codes; decide that Prometheus, a Postgres replica and a Redis cluster stay out of scope on a single-droplet single-maintainer deployment; decide that the score watermark carries a singer's name and never their email, because the file gets printed and left on a music stand.
+What it didn't do: split the frontend after the Ad Grants audit came back. Decide that retry policy should key off billing rather than status codes. Decide that Prometheus, a Postgres replica and a Redis cluster all stay out on a single-droplet, single-maintainer deployment. Decide that the watermark carries a singer's name and never their email, because these pages get printed and left on a music stand where anyone can read them.
 
-Architecture, cost, priorities, and what stays out — mine. Those are the parts I can be held to.
+Architecture, cost, priorities, and what stays out are mine. Those are the parts worth holding me to.
 
 ---
 
 ## The rest of the platform
 
-**Roster and production.** Four-role RBAC (admin, manager, artist, crew) enforced at endpoint, payload and UI level. Casting via drag-and-drop, rehearsals, attendance, per-project budgets and settlements, iCal feeds for Google and Apple Calendar.
+**Roster and production.** Four roles (admin, manager, artist, crew) with access enforced at the endpoint, in the payload and in the UI. Drag-and-drop casting, rehearsals, attendance, per-project budgets and settlements. iCal feeds so singers get their dates in whatever calendar they already use.
 
-**Documents.** Contracts and run sheets generated asynchronously through Celery + WeasyPrint. Print-ready concert score books assembled from a project's repertoire: title page, dotted-leader table of contents, per-piece frontispiece cards drawn from the AI-resolved archive, continuous folios, PDF bookmarks, optional double-sided mode. Deterministic assembly — no model runs at build time.
+**Documents.** Contracts and run sheets generated in the background through Celery and WeasyPrint. The bigger job is the concert score book: a print-ready binder assembled from a project's repertoire with a title page, dotted-leader contents, a frontispiece card per piece pulled from the archive, continuous folios, PDF bookmarks and an optional double-sided mode that starts every opening on a recto. Assembly is deterministic. No model runs at build time.
 
-**Licensed-score protection.** Each edition carries a copyright status, with *unclassified* treated as protected by default. Public-domain scores export freely; protected editions are in-app-only for singers and served through a per-recipient server-side watermark stamping copy number, singer, concert and date — applied without shifting page count or breaking PDF outline anchors, at both delivery points (single edition and the score book that embeds it). Every serve goes to an append-only access log. The build cockpit warns when a licensed edition is bound for more singers than the ensemble owns copies of.
+**Licensed-score protection.** This one came from a real constraint rather than a design idea. Choirs buy a fixed number of physical copies of copyrighted music, and handing singers a PDF quietly breaks that. So every edition carries a copyright status, with *unclassified* treated as protected by default. Public-domain scores export freely. Protected ones stay in-app for singers and get a watermark rendered server-side per recipient — copy number, name, concert, date — applied without shifting the page count or breaking the PDF outline anchors, at both places a file can leave the system. Every serve lands in an append-only log, which is what a publisher would ask to see. The build cockpit warns when a licensed edition is about to be bound for more singers than the ensemble owns copies of.
 
-**Digital music stand.** A PDF reader built for a tablet on a music stand: prefetched page turns, Bluetooth pedal keys, screen wake lock, focal pinch zoom. On top, a role-aware annotation layer — the conductor writes a shared layer every cast singer sees, and each singer gets a personal layer that stays invisible even to managers, enforced server-side. Musical stamp palette (breath marks, dynamics, hairpins, fermata, caesura), stylus-first input routing, undo/redo, optimistic persistence.
+**Digital music stand.** A PDF reader for a tablet propped on a music stand: page turns prefetched so there's no loader mid-phrase, Bluetooth pedal support, a screen wake lock, pinch zoom around a focal point. On top of it sits a role-aware annotation layer. The conductor writes a shared layer that every cast singer sees, and each singer also gets a personal layer that nobody else can read, managers included, enforced on the server rather than hidden in the UI. Marking up is musician-native: breath marks, dynamics, hairpins, fermata, caesura, freehand ink with stylus-first routing so a pen draws and a finger pans.
 
-**Messaging and notifications.** Two-way threads and project broadcast channels, delivered in-app, by email (Resend) and web push (VAPID), with a manager triage workflow. Deliberately not a real-time chat — no presence, no typing indicators. The message store is decoupled from delivery, so every message reuses the existing notification pipeline.
+**Messaging and notifications.** Threads between singers and management, plus per-project broadcast channels, delivered in-app, by email through Resend and by web push over VAPID. Managers get a triage workflow. It is not a real-time chat and won't become one: no presence, no typing indicators. The message store is decoupled from delivery, so messages reuse the notification pipeline that already existed.
 
-**Payments.** Donation module integrating Axepta BNP Paribas with MAC signature validation and Celery-based asynchronous reconciliation.
+**Payments.** Donations through Axepta BNP Paribas, with MAC signature validation and asynchronous reconciliation in Celery.
 
 ---
 
@@ -122,21 +130,25 @@ Architecture, cost, priorities, and what stays out — mine. Those are the parts
 
 ## Quality and operations
 
-- **~676 tests** across roster, archive, payments, messaging, notifications, documents and core — including contract generation, the score-package cockpit, licensed-score protection and the AI provenance pipeline.
-- **CI** runs Ruff, mypy in strict mode, and the full suite against PostgreSQL 16 on every push and PR.
-- **Backups are restore-tested, not assumed.** [`infra/restore-drill.sh`](infra/restore-drill.sh) replays the off-site archive into a throwaway database and scratch directory, then checks archive integrity, row counts against live, media completeness, migration state and measured RTO — without touching production. Runbook: [`docs/backups.md`](docs/backups.md).
-- **Monitoring** — Sentry, the liveness/readiness split above, external uptime and TLS-expiry polling, and the beat heartbeat. Runbook: [`docs/monitoring.md`](docs/monitoring.md).
-- **Soft deletes** preserve production history without leaking removed records into active queries; foreign-key and check constraints guard multi-entity operations at the database layer.
+**Tests.** Around 676 of them, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. Frontend coverage is thin and that's next.
 
-### Deliberately out of scope
+**CI.** Ruff, mypy in strict mode, and the full suite against PostgreSQL 16 on every push and pull request.
 
-Scope decisions, recorded so they don't get re-proposed as gaps.
+**Backups.** Restore-tested rather than assumed. [`infra/restore-drill.sh`](infra/restore-drill.sh) replays the off-site archive into a throwaway database and a scratch directory, then checks archive integrity, row counts against live, media completeness, migration state, and how long the whole thing took. Production is never touched. Runbook in [`docs/backups.md`](docs/backups.md).
 
-**Prometheus / Grafana / OpenTelemetry.** Metrics answer *how much*. A single-tenant install on one droplet with one maintainer has no SLO, no on-call rotation, and no traffic volume to ask that of. The questions actually asked here — *is it down*, *what threw* — are answered by the health probes and the heartbeat at a fraction of the operating cost, on a host whose RAM is already the binding constraint during builds. Revisit if a second ensemble ever shares the deployment.
+**Monitoring.** Sentry, the two health probes above, external uptime and TLS-expiry polling, and the beat heartbeat. Runbook in [`docs/monitoring.md`](docs/monitoring.md).
 
-**PostgreSQL streaming replication.** A hot standby protects against instance loss, which daily off-site backups already cover with a verified restore measured in seconds. On a single droplet a replica is a second stateful service sharing the same disk and the same power failure: correlated failure dressed as redundancy.
+**Data integrity.** Soft deletes keep production history without letting removed rows leak into active queries. Foreign keys and check constraints do the guarding at the database layer rather than in application code that can be bypassed.
 
-**Redis cluster.** One instance backs the cache and the Celery broker. Clustering solves a coordination problem this deployment does not have.
+### Out of scope
+
+Written down so they don't come back as bug reports.
+
+**Prometheus / Grafana / OpenTelemetry.** Metrics answer *how much*. A single-tenant install on one droplet with one maintainer has no SLO, no on-call rotation and no traffic to ask that of. The questions that actually get asked here are "is it down" and "what threw", and the health probes and Sentry answer both for a fraction of the operating cost, on a host where RAM is already the binding constraint during a build. Worth revisiting if a second ensemble ever shares the deployment.
+
+**PostgreSQL streaming replication.** A hot standby protects against losing the instance. Daily off-site backups already cover that, and unlike the standby, the restore has been measured. On one droplet a replica is a second stateful service sharing the same disk and the same power supply, which is correlated failure dressed up as redundancy.
+
+**Redis cluster.** One instance backs the cache and the Celery broker. Clustering solves a coordination problem this deployment doesn't have.
 
 ### Open
 
@@ -201,7 +213,7 @@ make up
 make migrate && make seed && make superuser
 ```
 
-`make seed` builds a full realistic dataset — 28 singers across the vocal spectrum, 2 conductors, 5 crew, 6 projects in every lifecycle state, 10 composers with movements and translations, plus messaging, payments and notifications. It's idempotent. Logins: `admin / admin123`, `manager / manager123`.
+`make seed` builds a full realistic dataset — 28 singers across the vocal spectrum in every account state (active, invited-but-not-activated, archived), 2 conductors, 6 crew, 8 projects covering every lifecycle state with their score books, 14 composers with movements, translations and editions across the whole licence spectrum, conductor markup layers, plus the knowledge base, messaging, payments, the pending announcement queue and a notification inbox spanning every message type. It's idempotent. Logins: `admin / admin123`, `manager / manager123`, `crew / crew123`.
 
 ```bash
 python manage.py seed_db --artists 12 --no-media   # smaller and faster

@@ -1,21 +1,22 @@
-# ⚛️ VoctManager – Frontend Application
+# VoctManager — panel SPA
 
-🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
 
-![Vite 7](https://img.shields.io/badge/Vite_7-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)
-![React 19](https://img.shields.io/badge/React_19.2-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![TypeScript 5.9](https://img.shields.io/badge/TypeScript_5.9-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![Tailwind v4](https://img.shields.io/badge/Tailwind_v4.2-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
-![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?style=for-the-badge&logo=framer&logoColor=blue)
-![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
+![Vite 7](https://img.shields.io/badge/Vite_7-%23646CFF.svg?logo=vite&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19.2-%2320232a.svg?logo=react&logoColor=%2361DAFB)
+![TypeScript 5.9](https://img.shields.io/badge/TypeScript_5.9-%23007ACC.svg?logo=typescript&logoColor=white)
+![Tailwind v4](https://img.shields.io/badge/Tailwind_v4.2-%2338B2AC.svg?logo=tailwind-css&logoColor=white)
+![Framer Motion v12](https://img.shields.io/badge/Framer_Motion_v12-black?logo=framer&logoColor=blue)
+![TanStack Query v5](https://img.shields.io/badge/TanStack_Query_v5-FF4154?logo=react-query&logoColor=white)
 
-This directory contains the source code for the **authenticated Single Page Application** of the **VoctManager** platform — the operational ERP panel (`/panel/*`) plus the public auth flows (`/login`, `/activate`, `/documents/*`). The codebase is built around three goals: **strict Feature-Sliced Design**, **zero-layout-shift UX at 60 FPS**, and **server-state caching** via TanStack Query.
+The authenticated SPA: the ERP panel at `/panel/*`, plus the auth flows at `/login`, `/activate` and `/documents/*`. Three things govern how it's written — Feature-Sliced Design boundaries, no layout shift during async loads, and all server state owned by TanStack Query rather than scattered across components.
+
+Working notes for whoever edits this directory. The project overview is in the [root README](../README.md).
 
 > **Public marketing site has moved.** The voctensemble.com landing + subpages (`/`, `/koncerty`, `/o-nas`, `/kontakt`, `/polityka-prywatnosci`) are now a separate Astro app under [`../web/`](../web/) — see [web/README.md](../web/README.md). The SPA no longer ships the marketing surface, the Threshold gate, the donation Vault, or the audio engine; those live in Astro islands now. The two builds share the Django backend at `/api/*`.
 
 ---
 
-## 🏗️ Architecture — Feature-Sliced Design (FSD)
+## Architecture — Feature-Sliced Design (FSD)
 
 The frontend strictly follows the [Feature-Sliced Design](https://feature-sliced.design/) methodology. Imports flow **downward only** — a higher layer may import from layers below it, never sideways or upward. This guarantees domain isolation and prevents the classic "everything imports everything" decay of large React codebases.
 
@@ -72,7 +73,7 @@ src/
 
 ---
 
-## 🧠 State Management Strategy
+## State Management Strategy
 
 The application strictly separates state into **server state** and **client state** — they are never mixed.
 
@@ -92,7 +93,7 @@ Used **only** for global UI state that cannot reasonably live in URL or context:
 
 ---
 
-## 🎨 Styling, Kinematics & Design System
+## Styling, Kinematics & Design System
 
 1. **Tailwind CSS v4.2+** — utility-first; the entire Ethereal design system (color tokens, z-index scale, shadows, noise utility) is defined in [`app/styles/index.css`](src/app/styles/index.css). Raw HTML typography and ad-hoc glassmorphism (`bg-white/10`) are **prohibited** — see the project-root `CLAUDE.md` for the No-Raw-HTML mandate.
 2. **Framer Motion v12+** — all declarative entrance animations, gestures, and scroll-linked kinematics. Animations are restricted to `transform` and `opacity` only, ensuring hardware acceleration and a sustained 60 FPS.
@@ -100,13 +101,13 @@ Used **only** for global UI state that cannot reasonably live in URL or context:
 
 ---
 
-## 🛣️ Routing & Code-Splitting
+## Routing & Code-Splitting
 
 The route table lives in [`app/App.tsx`](src/app/App.tsx) using **React Router v7**; access guards (`ProtectedRoute`, `ManagerRoute`) and idle panel-chunk preloaders live in [`app/router/`](src/app/router/). Every panel route is lazy-loaded behind a `<Suspense>` boundary that renders `<EtherealLoader>` — never a generic spinner. The auth routes (`/login`, `/activate`) and the full-screen `/documents/:docType/:docId` route resolve against an outer `<Suspense fallback={null}>` so the SaaS loader never flashes on those surfaces. Hitting `/` on the SPA build redirects to `/panel` — production nginx serves the Astro public site at `/` instead. This keeps the initial JS bundle small and guarantees a stable, on-brand loading state.
 
 ---
 
-## 🌍 Internationalization
+## Internationalization
 
 The platform ships with **i18next v26** + `react-i18next` v17, supporting English, French, and Polish. Translations are centralized in [`shared/config/locales/{en,fr,pl}/translation.json`](src/shared/config/locales/) and loaded synchronously at boot (no Suspense flash). Language is resolved via `localStorage` → browser default, with `pl` as fallback. Keys are re-extracted via:
 
@@ -116,7 +117,7 @@ npm run extract-i18n
 
 ---
 
-## 🚦 Conventions & Code Guidelines
+## Conventions & Code Guidelines
 
 * **Named exports only.** Default exports are reserved for page components (the convention React Router expects).
 * **No `any`.** Strict TypeScript across the codebase; types either come from `shared/types/`, generated OpenAPI types in `shared/api/`, or feature-local `types/` folders.
@@ -128,7 +129,7 @@ npm run extract-i18n
 
 ---
 
-## 🛠️ Available Scripts
+## Available Scripts
 
 Run from the `frontend/` directory:
 
@@ -143,7 +144,7 @@ Run from the `frontend/` directory:
 
 ---
 
-## 📦 Key Dependencies (versions in `package.json`)
+## Key Dependencies (versions in `package.json`)
 
 * **Core:** `react@19.2`, `react-dom@19.2`, `react-router-dom@7`, `vite@7.3`, `typescript@5.9`
 * **State & data:** `@tanstack/react-query@5.91+`, `zustand@5+`, `axios@1.13+`
@@ -156,4 +157,4 @@ Run from the `frontend/` directory:
 
 ---
 
-*Designed and engineered for VoctEnsemble by Krystian Bugalski — VoctManager 2026 / Ethereal Design System.*
+Design tokens and component canon: [`.ai/04_design_system.md`](../.ai/04_design_system.md). Repo-wide conventions: [`CLAUDE.md`](../CLAUDE.md).

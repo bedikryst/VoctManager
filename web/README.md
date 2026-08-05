@@ -1,30 +1,31 @@
-﻿# 🌅 VoctEnsemble / VoctFoundation — Public Site (Astro)
+﻿# VoctEnsemble / VoctFoundation — public site (Astro)
 
-🌍 *Read this in other languages: [English](README.md), [Polski](README.pl.md).*
 
-![Astro 6](https://img.shields.io/badge/Astro_6.3-%23BC52EE.svg?style=for-the-badge&logo=astro&logoColor=white)
-![React 19](https://img.shields.io/badge/React_19-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB)
-![TypeScript 6](https://img.shields.io/badge/TypeScript_6-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
-![View Transitions](https://img.shields.io/badge/View_Transitions-API-c6a45b?style=for-the-badge)
+![Astro 6](https://img.shields.io/badge/Astro_6.3-%23BC52EE.svg?logo=astro&logoColor=white)
+![React 19](https://img.shields.io/badge/React_19-%2320232a.svg?logo=react&logoColor=%2361DAFB)
+![TypeScript 6](https://img.shields.io/badge/TypeScript_6-%23007ACC.svg?logo=typescript&logoColor=white)
+![View Transitions](https://img.shields.io/badge/View_Transitions-API-c6a45b)
 
-This directory contains the source code for the **public marketing site** of VoctEnsemble (voctensemble.com / .pl) and VoctFoundation (voctfoundation.pl / .com / .org) — all five domains resolve to the same Astro build. The site is an art-directed sacred-minimalism landing in the spirit of *"Nawa światła"*: hand-authored CSS, art-directed images, sparse React islands for the genuinely stateful pieces (donation Vault, audio Threshold gate, header chrome). Built as a separate app from the panel SPA at [`../frontend/`](../frontend/); both share the Django backend at `/api/*`.
+The public site for VoctEnsemble (voctensemble.com / .pl) and VoctFoundation (voctfoundation.pl / .com / .org). All five domains resolve to the same Astro build. Hand-authored CSS, art-directed images, and React islands only where there's real state: the donation Vault, the audio Threshold gate, the header chrome. A separate app from the panel SPA at [`../frontend/`](../frontend/); both talk to the same Django backend at `/api/*`.
 
-> **Why Astro and not the SPA?** The panel CSR shell was a SEO/perf regression for a charity site chasing Google Ad Grants. Astro gives crawlable static HTML + native View Transitions + selective hydration – transitions without the empty-`#root` shell. 
+> **Why Astro and not the SPA?** The CSR shell was an SEO and performance regression for a charity applying for Google Ad Grants — crawlers got an empty `#root`. Astro emits static HTML, hydrates selectively, and gets cross-page transitions from the native View Transitions API instead of a client router.
 
----
-
-## 🎨 Design Mandate — Art-Directed, *Not* Ethereal
-
-This site is **NOT subject to the project-root `CLAUDE.md` No-Raw-HTML / Tailwind / Ethereal-tokens mandate.** It is a hand-authored sacred-minimalism landing in the spirit of the original `LandingPage.html` (see `MEMORY.md` → `project_landing_page_html`). Raw `<h1>`, `<p>`, custom CSS, manual gradients — all welcome. The only rules are:
-
-* **Newest 2026 tech, zero tech-debt.**
-* **GDPR-strict:** no Google Fonts, no Maps, no Spotify embeds, no reCAPTCHA, no analytics that ship a cookie. Self-host everything (fonts under `public/fonts/`, ambient audio under `public/ambient.m4a`).
-* **Awwwards baseline:** every interactive surface must be hardware-accelerated (`transform` / `opacity`), respect `prefers-reduced-motion`, and degrade gracefully without JavaScript.
-* **Creative direction:** *Nawa światła* — sacred minimalism, A-B-C braid, LIGHT parchment palette. The spec lives in `.ai/07_marketing_public_site.md` ("Creative direction" section) and governs every subpage.
+Working notes for whoever edits this directory. The project overview is in the [root README](../README.md).
 
 ---
 
-## 🏗️ Architecture
+## Design rules here are different from the panel
+
+**The root `CLAUDE.md` mandate does not apply in this directory.** No Tailwind, no Ethereal tokens, no typography primitives. Raw `<h1>`, `<p>`, custom CSS and hand-written gradients are all fine and mostly what's here. Four rules do apply:
+
+* **No third parties that set a cookie or leak an IP.** No Google Fonts, no Maps, no Spotify embeds, no reCAPTCHA, no analytics. Fonts are self-hosted under `public/fonts/`, ambient audio under `public/ambient.m4a`. The privacy policy makes this claim, so the code has to keep it.
+* **Every animated surface stays on `transform` and `opacity`,** honours `prefers-reduced-motion`, and degrades to something readable with JavaScript off.
+* **Creative direction is *Nawa światła*** — sacred minimalism, A-B-C braid, light parchment palette. The spec in `.ai/07_marketing_public_site.md` governs every subpage.
+* **Keep the dependency list short.** Currently: Astro, React, Lenis. Adding a fifth needs a reason.
+
+---
+
+## Architecture
 
 ```text
 web/
@@ -97,7 +98,7 @@ web/
 
 ---
 
-## 🌬️ Kinematics & Motion System
+## Kinematics & Motion System
 
 * **Astro `<ClientRouter />`** — native View Transitions API powers cross-page swaps. Cinematic root fade (320ms out / 540ms in) + shared `view-transition-name: voct-brand` so the candle mark morphs continuously between pages. Sacred tone, hardware-accelerated, zero JS.
 * **Reveal pipeline** — `.reveal` (+ `data-d="1..4"` stagger) hidden via `html.reveal-ready` (inline head script with `data-astro-rerun` so it re-arms on every ClientRouter swap), IntersectionObserver toggles `.is-in`. Above-the-fold animates on load, persists once revealed.
@@ -107,7 +108,7 @@ web/
 
 ---
 
-## 🏝️ Cross-Island Communication
+## Cross-Island Communication
 
 Each Astro island is a **separate React root** — context providers from one don't reach the other. State that must cross island boundaries travels over `window` CustomEvents:
 
@@ -121,7 +122,7 @@ Each Astro island is a **separate React root** — context providers from one do
 
 ---
 
-## 🛣️ Routing, Cutover & nginx
+## Routing, Cutover & nginx
 
 * **Pages are static.** `build.format: "file"` emits `index.html`, `koncerty.html`, `kontakt.html`, `o-nas.html` to `dist/`. Production nginx (`../infra/nginx/prod.conf`) routes `try_files /<page>.html` for each clean URL.
 * **`/_astro/*`** is content-addressed and served with `Cache-Control: public, max-age=31536000, immutable`.
@@ -130,7 +131,7 @@ Each Astro island is a **separate React root** — context providers from one do
 
 ---
 
-## 🔌 Backend Surface
+## Backend Surface
 
 Two endpoints are consumed:
 
@@ -141,7 +142,7 @@ Two endpoints are consumed:
 
 ---
 
-## 🚦 Conventions & Code Guidelines
+## Conventions & Code Guidelines
 
 * **Large media lives outside the repo.** `src/assets/photos/` and `src/assets/videos/` are `.gitignore`d (`web/.gitignore`) — originals belong to the artists and are uploaded manually to the build host before `npm run build`. `lib/photos.ts` resolves photos by bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`); `lib/videos.ts` imports MP4s from `src/assets/videos/` so Astro emits content-hashed URLs instead of stable `/video/*.mp4` paths.
 * **Full-bleed images** go through `<BleedImage desktop mobile alt position … />` — it emits AVIF + WebP at responsive widths with a 1920px WebP fallback `<img src>`. In-flow images use Astro's `<Picture>`.
@@ -152,7 +153,7 @@ Two endpoints are consumed:
 
 ---
 
-## ✒️ Micro-typography (orphans, widows, the rag)
+## Micro-typography (orphans, widows, the rag)
 
 Polish forbids leaving a one-letter word (`w`, `i`, `z`, `o`, `a`, `u`) at the end of a line, and a title must not be stranded from its name (`św.` / `Filipa`). None of that is something a browser does, and hand-placing `&nbsp;` across a site of this size never stays complete. So it is applied automatically, in two layers.
 
@@ -179,7 +180,7 @@ The escape hatch is `data-typo="off"` on any element whose spacing is layout rat
 
 ---
 
-## 🛠️ Available Scripts
+## Available Scripts
 
 Run from the `web/` directory:
 
@@ -192,7 +193,7 @@ Run from the `web/` directory:
 
 ---
 
-## 📦 Key Dependencies
+## Key Dependencies
 
 * **Core:** `astro@6.3+`, `@astrojs/react@5+`, `react@19`, `react-dom@19`, `typescript@6`
 * **Motion:** `lenis@1.3+` (window smooth-scroll only)
@@ -200,7 +201,7 @@ Run from the `web/` directory:
 
 ---
 
-## 🔐 Privacy & Browser Storage
+## Privacy & Browser Storage
 
 The site does not set first-party cookies, ship analytics, or embed third-party trackers. Browser storage is limited to a few strictly-necessary functional entries (documented in `public/polityka-prywatnosci.html` §10):
 
@@ -214,4 +215,4 @@ Payment-gateway scripts (BNP Paribas Axepta / PayU) load only when the user ente
 
 ---
 
-*Designed and engineered for VoctEnsemble / VoctFoundation by Krystian Bugalski — Astro public site, sacred-minimalism build.*
+Creative direction and per-page spec: [`.ai/07_marketing_public_site.md`](../.ai/07_marketing_public_site.md).
