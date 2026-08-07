@@ -32,6 +32,10 @@ every claim in §5–§9 that the landing opens the frame. Where anything above 
 retires the measurement method §13 prescribed: the frame mean it asks for is the statistic that
 produced the one wrong lift in the set. Where §13 and §15 disagree, §15 is what shipped.
 
+**§16 supersedes §13 and §14 on the band's line, and on nothing else.** The slot those passes
+argued for stands; the sentence they put in it is rejected there, with the reasons, so it is not
+re-proposed.
+
 ---
 
 ## 1. The defect
@@ -767,9 +771,10 @@ the manifest, the film ("Z tej ciszy — głos."), the register ("Co już zabrzm
 component looks like, not a movement of the rite. §8 defended the *shape* of the head and that was
 read as defending its *contents*.
 
-It now sets **"Tak wyglądała ta cisza."** — a couplet with the film directly above it (the same
-silence, seen rather than heard), and deliberately not about sound, which the register owns. Set a
-grade under `.section-title`, because movement II would otherwise be three titled sections in a row.
+It gains a line, set a grade under `.section-title`, because movement II would otherwise be three
+titled sections in a row. The copy §13 chose — **"Tak wyglądała ta cisza."** — is superseded by
+**§16**, which keeps every structural claim in this paragraph and rejects that sentence; the slot
+itself is the part of §13 that stands.
 
 **The plate was wider than the page.** It hung from `--gutter` after §12, which fixed its three left
 edges and left it the only content block on the landing not keeping `min(1580px, 100%)`. At a 1920
@@ -874,12 +879,12 @@ The founder's reading, on a real screen: *"wygląda jak doklejone do już istnie
 jako jej integralna część"* — and *"trochę szablonowo/generatywnie"*. Both are structural, and none
 of the five defects behind them was a matter of taste.
 
-**The band was the one section on this landing with no voice — again.** §13 shipped
-"Tak wyglądała ta cisza." and it was commented out afterwards, so the audit that started this pass
-found the exact state §13 had diagnosed: a 10px rubric and a strip of pictures on a page where
-every other surface sets a line. It is back, and this entry exists so that the next reader knows
-the slot is load-bearing rather than decorative — if the copy is wrong the answer is different
-copy, never an empty head.
+**The band was the one section on this landing with no voice — again.** §13 shipped a line and it
+was commented out afterwards, so the audit that started this pass found the exact state §13 had
+diagnosed: a 10px rubric and a strip of pictures on a page where every other surface sets a line.
+It is back, and this entry exists so that the next reader knows the slot is load-bearing rather
+than decorative — if the copy is wrong the answer is different copy, never an empty head. (Which
+is what §16 then did: the sentence was wrong, the slot was not.)
 
 **A room change performed by an object, not by a threshold.** Movement II ran paper (silence) →
 paper (the film) → **night (the band)** → paper (the register). On this landing the ground turns
@@ -1097,3 +1102,54 @@ sitting slightly closer to the page — which is what a contact strip should do.
 this section was measured with `sharp` at the panel's own crop (316×316, `fit: cover`, centre) or
 sampled off the rendered page in Edge; the CSS filter chain was reproduced in sRGB and validated
 against §13's published figures before any of it was used to decide anything.
+
+---
+
+## 16. The band's line — SHIPPED
+
+One sentence, and everything structural about it — the slot, the grade under `.section-title`, the
+couplet with the film, the ban on being about sound — is §13's and stands. Only the sentence
+changed. The band now sets:
+
+> Z tego głosu — **pamięć.**
+
+**Why the old line failed, in the order a reader feels it.** "Tak wyglądała ta cisza." was written
+as a couplet with the film, and as a couplet it closed a circle instead of a distich. Movement II
+runs **silence → voice → memory**: `tacet.` is the silence, the film converts it ("Z tej ciszy —
+głos."), and the band stands at the turn to the third term. Naming the silence there walks the
+reader back two sections to a term the page has already spent — at the one point in the movement
+where its own name, *Vox memoriae*, says what comes next.
+
+Second, the line contradicted the object it was set over. These are photographs of evenings on
+which people were singing, and the register 200px below says so in as many words ("Co już
+zabrzmiało."). Everything else on this landing is literally true of what it stands on — "Światło
+prowadzi słuchacza." over a lit nave, "Z tej ciszy — głos." over the film — so the band was the
+one surface whose claim a reader could check against the picture and find false.
+
+Third, it was the third spend of the site's most expensive word inside ~600px (`tacet.` → "Z tej
+ciszy" → "ta cisza"). The hero owns "Z ciszy głos.", the film is a deliberate reprise; a third is
+an echo of an echo. And "**ta** cisza" needed an antecedent carried across a video player, while
+the past tense made the silence an episode where the rest of the site holds it to be the source
+("z ciszy i kontemplacji", `EnsembleSection`).
+
+**Why this one.** It is the film's own construction — same syntax, same dash, same gold `<em>` on
+the last word — so the two are visibly one distich rather than two headings, which is what §13
+asked for and did not get. Its terminus is the movement's third term, i.e. the vernacular of *Vox
+memoriae*, arriving exactly where the movement turns; and it announces both halves of that turn at
+once, the band being memory in images and the register memory in words. It touches sound only as
+the thing it is leaving — the subject of the sentence is `pamięć`, so §13's "not about sound" rule
+holds in substance, which is what that rule was protecting.
+
+At `max-width: 22ch` the line breaks before the last word, so the gold `pamięć.` hangs on its own
+row — the same figure the previous line had. Nothing in `14-imagines.css` changed.
+
+### Rejected — do not re-propose
+
+- **"Tak wyglądała ta cisza."** — the three defects above. If a line about silence is ever wanted
+  in this band, it is the wrong movement for it: the silence belongs to `SilenceMoment` and the
+  hero.
+- **"Z tego głosu — obraz."** — the same construction ending on what the band literally is, and it
+  pairs rubric to line the way the film does (*Vox* → głos, *Obrazy wieczorów* → obraz). It loses
+  on measure: 21 characters fits inside 22ch, so the gold word stops hanging and the couplet
+  flattens to one row. It also stops at this section, where `pamięć` carries into the register.
+- **An empty head**, for the reason §14 already gives.
