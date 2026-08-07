@@ -43,6 +43,12 @@ export interface Path {
    *  gallery's first entry — set it only where that first entry documents something other than
    *  the evening itself, e.g. a rehearsal. A name that is not in that gallery fails the build. */
   readonly frame?: string;
+  /** Which part of `frame` survives the band's 4:5 crop. The crop happens at BUILD (sharp, via
+   *  lib/croppedShot), so this is the whole lever — the band's sheet has no `object-position`
+   *  left to turn, because by the time the file reaches the browser it is already the panel's
+   *  shape. Sharp's vocabulary: `"top"`, `"left top"`, `"attention"`, `"entropy"`. Omit for
+   *  centre, which is where all five stand until a crop is seen to land badly. */
+  readonly framePosition?: string;
 }
 
 /** The register's numbering, by position. Shared with the Imagines band so the band's numerals
@@ -94,6 +100,10 @@ export const PATHS: readonly Path[] = [
     place: "Bazylika św. Antoniego w Rybniku · Archikatedra w Łodzi · Bazylika NSPJ w Krakowie",
     note: "Dziewięć psalmów: pokuta, lament, uwielbienie. Miserere Allegriego, podzielone na dziewięć części, oplata cały wieczór.",
     poster: "poster-9-kart",
+    // gallery[0] is a photograph of the printed programme — a good archive entry and the one
+    // thing in the band that was not an evening. It was also the brightest panel of five on a
+    // night ground, so the eye landed on the middle of the line before its beginning.
+    frame: "kd-9-kart-4",
   },
   {
     slug: "hymn-poleglym",
@@ -114,6 +124,10 @@ export const PATHS: readonly Path[] = [
     place: "Mistrzejowice · Niedzica",
     note: "Wieczór za mieszkańców Gazy. Aeternam Vivancosa, dwaj Tavenerowie, zawierzenie ofiar Matce Bożej.",
     poster: "poster-aeternam",
+    // gallery[0] is the widest frame of the set — an evenly lit hall seen from the back rows.
+    // Cropped to the band's 4:5 it keeps neither the architecture nor the singers, which is the
+    // one thing a panel this size cannot afford. This one carries both.
+    frame: "kd-aeternam-3",
     video: {
       src: videoAsset("landing-aeternam"),
       portrait: true,

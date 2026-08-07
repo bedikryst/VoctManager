@@ -13,9 +13,10 @@
  *  these are low-contrast chiaroscuro frames from a dark nave). The panels are therefore uniform
  *  and PORTRAIT on the wide plate, which is arithmetic and not taste: five frames across one
  *  measure are ~370px wide, and only height keeps them photographs rather than tiles. The crop is
- *  `object-fit: cover`, the same treatment every composed photograph on this site already takes;
- *  the whole frame is one press away in the lightbox. If a crop ever lands badly, the levers are
- *  `object-position` in the band's sheet and the evening's `frame` in data/landing/paths.
+ *  taken at BUILD (lib/croppedShot) rather than by `object-fit` in the browser — read that file
+ *  for why, because the reason is the one that made these five soft. The whole frame is still one
+ *  press away in the lightbox, which asks for its own uncropped renditions. If a crop ever lands
+ *  badly the levers are the evening's `framePosition` and its `frame`, both in data/landing/paths.
  *
  *  Registers: the frames are LIT (`.reveal-light`, the veil belongs to the image) and the
  *  numerals are INKED — never both on one node. The exit link takes none: a half-ink control is
@@ -23,23 +24,45 @@
  *
  *  The lightbox island and the `[data-image-open]` delegate are mounted by the PAGE (index.astro),
  *  as on the concert pages and /obrazy — the frame is a document-level overlay, not this band's.
+ *
+ *  The five panels are one SET (`data-image-group="imagines"`), so opening any of them opens the
+ *  line: ← and → walk the same five evenings the eye walks across the plate, in the same order.
+ *  And each carries `data-image-href` to its own evening, which is the point of the band said
+ *  once more from inside the frame — a photograph the reader stopped on is the strongest place
+ *  there is to offer the page it came from.
  * @architecture Astro islands 2026
  * @module components/landing/ImaginesBand
  */
-import type { ImageMetadata } from "astro";
-import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
+import { croppedShot, type CroppedShot } from "../../lib/croppedShot";
 import { framedShot, type FramedShot } from "../../lib/galleryFrame";
 import { photoOptional } from "../../lib/photos";
+
+/** The panel's shape, and it must agree with `aspect-ratio` in 14-imagines.css — the renditions
+ *  are cut to this, so a sheet that changed alone would letterbox every frame in the line. */
+const PANEL_ASPECT = 4 / 5;
+
+/** Panel widths in CSS pixels, covering every regime `sizes` below declares: 384 is `20vw` on a
+ *  1× 1920 desktop, 640 the 74vw rail on a 2× phone, 840 both the 420px tablet cap at 2× and the
+ *  1920 desktop at 2×, 1080 a 3× phone and a 2× 2560 desktop. Four rungs rather than the
+ *  galleries' three because each rung now has to land close: an honest `sizes` means the browser
+ *  takes the smallest candidate at or above the need, so a gap in the ladder is paid in full.
+ *  A cropped rung is heavier than the uncropped one it replaces at the same width (840×1050 is
+ *  63 kB against 840×559 at 38 kB) and that is the correct trade — the old file was 38 kB
+ *  stretched across 1440 device pixels. Against the honest uncropped alternative, which is a
+ *  ~1440 rendition of the whole frame, the crop is about half the bytes. */
+const PANEL_WIDTHS = [384, 640, 840, 1080];
 
 interface BandFrame {
   readonly roman: string;
   readonly title: string;
-  readonly img: ImageMetadata;
+  readonly concertId: string;
   readonly alt: string;
   readonly caption?: string;
   readonly credit?: string;
+  /** The panel itself: already 4:5, so `sizes` may state the panel's own width (lib/croppedShot). */
+  readonly panel: CroppedShot;
   readonly full: FramedShot;
 }
 
@@ -63,23 +86,33 @@ for (const [i, path] of PATHS.entries()) {
   // An evening with no photographs simply has no frame — the numbering then has an honest gap
   // rather than a placeholder.
   if (!entry || !img) continue;
+  const [panel, full] = await Promise.all([
+    croppedShot(img, {
+      aspect: PANEL_ASPECT,
+      widths: PANEL_WIDTHS,
+      position: path.framePosition,
+    }),
+    // Full-size renditions for the lightbox, shared with the galleries so one photograph costs
+    // one set of files however many surfaces open it (lib/galleryFrame). The panel's crop is the
+    // band's alone and is never handed to the frame — the frame shows the evening whole.
+    framedShot(img),
+  ]);
   frames.push({
     roman: ROMAN[i],
     title: path.title,
-    img,
+    concertId: path.concertId,
     alt: entry.alt ?? "",
     caption: entry.caption,
     credit: entry.credit,
-    // Full-size renditions for the lightbox, shared with the galleries so one photograph costs
-    // one set of files however many surfaces open it (lib/galleryFrame).
-    full: await framedShot(img),
+    panel,
+    full,
   });
 }
 ---
 
 {
   frames.length > 0 && (
-    <section class="imagines" aria-label="Obrazy wieczorów">
+    <section class="imagines" aria-label="Obrazy wieczorów" data-spine-clear>
       {/* The rubric's shape is VoxMoment's, directly above: the Latin tier and its gloss on one
           line, separated by a mid-dot in the text. base.css owns both voices — this band names
           no face of its own. */}
@@ -98,6 +131,7 @@ for (const [i, path] of PATHS.entries()) {
               type="button"
               class="imagines-media shot-open plausible-event-name=imagines+kadr"
               data-image-open
+              data-image-group="imagines"
               data-image-src={f.full.src}
               data-image-srcset={f.full.srcset}
               data-image-sizes={f.full.sizes}
@@ -106,13 +140,28 @@ for (const [i, path] of PATHS.entries()) {
               data-image-credit={f.credit}
               data-image-w={String(f.full.width)}
               data-image-h={String(f.full.height)}
+              data-image-href={`/koncerty/${f.concertId}`}
+              data-image-href-label={f.title}
             >
-              {/* The same widths the two galleries request, so the pipeline emits one set of
-                  renditions per photograph for all three surfaces. */}
-              <Image
-                src={f.img}
-                widths={[560, 840, 1200]}
-                sizes="(max-width: 980px) 92vw, 24vw"
+              {/* A plain `<img>`, not `<Image>`: the renditions are cut to 4:5 up in the
+                  frontmatter, and the component has no way to ask for a crop and a ladder at
+                  once — `widths` derives its own aspect from the source and would drop the one
+                  thing these files exist for.
+
+                  `sizes` states the panel exactly, in all three of its regimes: the rail's 74vw
+                  while that is under the cap, the 420px cap above it, and `100vw / 5` on the
+                  five-across line. And it may now be read literally, which is the whole point of
+                  the build-time crop — a browser-side `cover` would have drawn each of these
+                  1.875× wider than the panel and made every honest number here an understatement.
+                  76 rather than 74 is the one deliberate rounding: below a 321px viewport the
+                  panel stops shrinking at its 238px floor, which is 74.4vw. The two breakpoints
+                  are the sheet's own (14-imagines.css); they move together or not at all. */}
+              <img
+                src={f.panel.src}
+                srcset={f.panel.srcset}
+                sizes="(max-width: 567px) 76vw, (max-width: 999px) 420px, 20vw"
+                width={f.panel.width}
+                height={f.panel.height}
                 alt={f.alt}
                 loading="lazy"
                 decoding="async"

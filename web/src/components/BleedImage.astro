@@ -6,6 +6,12 @@
  *  optimized <picture>: AVIF + WebP at responsive widths, generated at build time by Astro's
  *  image pipeline (Sharp). Carries its own cover crop + native scroll-driven parallax (zero JS).
  *  Content (in-flow) images should use <Image> directly; this is only for edge-to-edge media.
+ *
+ *  The `mobile` source is ART DIRECTION and not a convenience: `bleedPair` (lib/photos) falls
+ *  back to the desktop file when no `-mobile` exists, and a landscape frame in a full-height
+ *  portrait box is drawn ~3.9 screen widths across — soft at any rendition, and holding a
+ *  quarter of the photograph besides. `coverVw` below states that magnification honestly, which
+ *  keeps a missing crop merely expensive rather than blurred; the crop is what makes it neither.
  * @architecture Astro islands 2026
  * @module components/BleedImage
  */
@@ -30,7 +36,36 @@ const { desktop, mobile, alt, position = "center", eager = false, breakpoint = 7
   Astro.props;
 
 const DESKTOP_WIDTHS = [1280, 1920, 2560];
-const MOBILE_WIDTHS = [640, 828, 1080, 1290];
+// Reaches 1600 because the phone regime genuinely needs it — see `coverVw` below for the
+// arithmetic. The ladder, not `sizes`, is where the byte budget is stated: `sizes` tells the
+// browser the truth about how wide the photograph is drawn, and if the truth is past the last
+// candidate the browser takes the last candidate. That is the trade being made deliberately at
+// 3× — 1600 against a ~1900px need is a rendition nobody can tell from exact, and 1920 for a
+// hero on a phone is not.
+const MOBILE_WIDTHS = [640, 900, 1200, 1600];
+
+/** The bleed box's height as a multiple of its section, which this site always gives a full
+ *  viewport: `.bleed` below is `height: 120%`, and the drift room is real pixels the photograph
+ *  has to fill. */
+const BOX_HEIGHT = 1.2;
+/** The narrowest viewport aspect (w ÷ h) a phone in portrait presents — 393 × 852. The
+ *  NARROWEST and not an average, because `cover` magnifies a photograph most where the box is
+ *  tallest against its width, and an average is exactly what leaves the tall phones this crop
+ *  exists for under-served. */
+const PHONE_ASPECT = 0.46;
+
+/**
+ * How wide the photograph is really DRAWN, in vw, once `cover` has scaled it to fill a box that
+ * is proportionally taller than the photograph is deep. This — not 100vw — is what `sizes` must
+ * say on the phone: the box is 100vw, but the browser then picks a rendition it has to scale UP
+ * by this factor, and it has no way to know the crop is happening. A 3:2 photograph with no
+ * portrait variant, in a 120%-tall box on a 393px phone, is drawn across 3.9 screen widths. That
+ * is why an uncropped hero looks the way it does there, and why a `-mobile` file has to be a
+ * genuine tall CROP rather than merely a smaller copy: the factor falls with the source's own
+ * aspect, and only a crop near the phone's own shape brings it to 1.
+ */
+const coverVw = (img: ImageMetadata): string =>
+  `${Math.max(100, Math.round((100 * BOX_HEIGHT * (img.width / img.height)) / PHONE_ASPECT))}vw`;
 
 async function srcset(
   img: ImageMetadata,
@@ -54,11 +89,17 @@ const [dAvif, dWebp, mAvif, mWebp, fallback] = await Promise.all([
 ]);
 
 const mq = `(max-width: ${breakpoint}px)`;
+const mSizes = coverVw(mobile);
 ---
 
 <picture class="bleed" style={`--bleed-pos:${position}`} data-parallax="0.16">
-  <source media={mq} type="image/avif" srcset={mAvif} sizes="100vw" />
-  <source media={mq} type="image/webp" srcset={mWebp} sizes="100vw" />
+  <source media={mq} type="image/avif" srcset={mAvif} sizes={mSizes} />
+  <source media={mq} type="image/webp" srcset={mWebp} sizes={mSizes} />
+  {/* The desktop pair keeps a flat 100vw, and that is the correct number rather than an
+      omission: with a landscape source the desktop box is WIDTH-driven, so `cover` does not
+      magnify at all. It would only begin to above a 1.5 source in a window narrower than 1.8
+      aspect — a short or squared window — and by ~10% even there. Computing it would push every
+      ordinary 1920 desktop off the 1920 candidate and onto 2560 to buy that 10% back. */}
   <source type="image/avif" srcset={dAvif} sizes="100vw" />
   <source type="image/webp" srcset={dWebp} sizes="100vw" />
   <img

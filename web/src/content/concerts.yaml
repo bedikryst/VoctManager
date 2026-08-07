@@ -175,7 +175,7 @@
     - { img: kd-wcielenie-3, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
     - { img: kd-wcielenie-4, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
     - { img: kd-wcielenie-5, alt: "Nawa główna podczas koncertu Voctensemble Kontemplacja Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
-    - { img: kd-wcielenie-6, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
+    - { img: kd-wcielenie-6, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
     - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
     - { img: kd-wcielenie-8, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", caption: "Bazylika NSPJ, Kraków · 20 stycznia 2024" }
   inscriptio: "Et egredietur virga de radice Iesse"
@@ -1070,7 +1070,7 @@
   # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
   # braided through the other eight, so the braid IS the structure — the clasps carry it.
   gallery:
-  - { img: kd-9-kart-0, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-0, alt: "Program Koncertu Duchowego 9 Kart z Księgi Psalmów", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-1, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-2, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-3, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
@@ -1082,9 +1082,9 @@
   - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
   - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
   - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
-  - { img: kd-9-kart-14, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
-  - { img: kd-9-kart-13, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
-  - { img: kd-9-kart-12, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Jakub Garbacz" }
+  - { img: kd-9-kart-14, alt: "VoctEnsemble po koncercie 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-13, alt: "VoctEnsemble po koncercie 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
+  - { img: kd-9-kart-12, alt: "VoctEnsemble po koncercie 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Jakub Garbacz" }
   program:
     - composer: "Gregorio Allegri"
       years: "1582–1652"
@@ -2103,8 +2103,8 @@
   - { img: kd-aeternam-0, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
   - { img: kd-aeternam-1, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
   - { img: kd-aeternam-2, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
-  - { img: kd-aeternam-3, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Mistrzejowicach", caption: "Epitafium dla Gazy w Mistrzejowicach" }
   - { img: kd-aeternam-5, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
+  - { img: kd-aeternam-3, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
   - { img: kd-aeternam-7, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
   - { img: kd-aeternam-6, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }
   - { img: kd-aeternam-4, alt: "VoctEnsemble podczas koncertu Epitafium dla Gazy w Niedzicy", caption: "Epitafium dla Gazy w Niedzicy" }

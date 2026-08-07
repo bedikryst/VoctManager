@@ -46,8 +46,13 @@ export async function framedShot(img: ImageMetadata): Promise<FramedShot> {
     src: wideImg.src,
     srcset:
       mid === wide ? `${wideImg.src} ${wide}w` : `${midImg.src} ${mid}w, ${wideImg.src} ${wide}w`,
-    // The frame is the viewport minus its padding, and the padding is a clamp — 100vw overstates
-    // it by a few percent, which costs a rendition step at worst and never the reverse.
+    // Deliberately an overstatement, and by more than the padding: the room caps the photograph
+    // at 80svh as well as at its width (image-lightbox.css), so a landscape frame on a 1080p
+    // screen is ~1300px wide where this claims 1920. It stays because `sizes` cannot express a
+    // height cap — the honest width depends on the viewport's ASPECT and on the photograph's,
+    // neither of which the attribute can see — and every alternative is a fixed pixel guess that
+    // under-serves the tall viewport it was not measured on. Overstating costs a rendition step;
+    // understating costs a soft photograph in a full-screen frame, which is the whole point of it.
     sizes: "100vw",
     width: wide,
     height: Math.round((wide * img.height) / img.width),

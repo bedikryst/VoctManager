@@ -36,12 +36,20 @@
   /* ── The plate ────────────────────────────────────────────────────────────────────────
      One row, five equal panels. `flex: 1 1 0` with `min-width: 0` so the line divides the
      viewport rather than the photographs' intrinsic widths — the frames are cropped to one
-     box, so their own aspects have no say here. The gutter between panels is narrow on
-     purpose: at this spacing the five read as one object, which is the difference between a
-     band and five pictures that happen to be adjacent. */
+     box, so their own aspects have no say here.
+
+     NO gutter between panels, and the panels' own hairlines carry the division instead. A
+     gutter is a poster's answer; this site is a codex, and a codex divides a plate by RULING
+     it. The five are one object scored into five, which is what the band claims to be — and
+     the claim has to survive four dark frames next to each other, so the ruling is not
+     decoration: without it the boundaries dissolve and five churches read as one panorama,
+     which would be a small lie about five different evenings.
+
+     If the gutter ever comes back, it goes here and nowhere else. What must NOT happen is
+     zero gutter AND no hairline — see above for what that costs. */
   .imagines-plate {
     display: flex;
-    gap: clamp(10px, 1vw, 18px);
+    gap: 0;
   }
 
   .imagines-frame {
@@ -59,16 +67,59 @@
     aspect-ratio: 4 / 5;
   }
 
+  /* THE CROP IS NOT HERE. Every rendition arrives already cut to 4:5 by sharp at build time
+     (lib/croppedShot, called from the component) — which is what lets `sizes` state the panel's
+     real width instead of the width `cover` would have magnified it to. `object-fit` therefore
+     has nothing left to do in the normal case and stays only as the fallback for one: a source
+     too small to fill the ladder's floor comes back at its own size rather than upscaled, and
+     cover keeps that panel filled rather than letterboxed. The lever for a crop that lands badly
+     is `framePosition` on the evening in data/landing/paths, and `object-position` here would
+     now do nothing — it has no overflow to shift. */
   .imagines-frame img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Centre is the only honest default for a set of frames nobody has picked a subject point
-       in. If one crop ever cuts badly, `object-position` per frame is the lever here, and the
-       evening's `frame` in data/landing/paths is the lever one level up. */
-    object-position: center;
     border: 1px solid rgba(244, 241, 233, 0.12);
+  }
+
+  /* One rule between two panels, not two. Every panel carries its own four sides so the plate
+     is framed at its outer edge; touching neighbours would otherwise stack their borders into a
+     2px division against 1px everywhere else, which at this alpha is the kind of difference a
+     reader feels before finding. The panels only ever sit side by side — on the phone the plate
+     becomes a rail, not a stack — so this needs no breakpoint of its own. */
+  .imagines-frame + .imagines-frame img {
+    border-left: 0;
+  }
+
+  /* ── The candle moves to the frame being looked at ────────────────────────────────────
+     The band's claim is that the five read as ONE object, and a line of five independent
+     pictures does not prove it — this does: approach any panel and the other four step back
+     into the dark while it takes the light. It is a change of LIGHT, which is this band's own
+     register, and deliberately not a lift, a zoom or a shadow: `.shot-open` already states why
+     (image-lightbox.css) and the whole site's hover idiom is a gold edge, never a rise.
+
+     Both rules are (0,3,1) — the hovered one wins on source order, so it stays second. The
+     brightness pair is asymmetric on purpose: these are chiaroscuro frames on a night ground,
+     so the hovered panel is lifted by a whisker and the neighbours carry the gesture. */
+  @media (hover: hover) {
+    .imagines-frame img {
+      transition: filter 0.55s var(--ease, ease);
+    }
+
+    .imagines-plate:hover .imagines-frame img {
+      filter: brightness(0.74);
+    }
+
+    .imagines-plate .imagines-frame:hover img {
+      filter: brightness(1.06);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .imagines-frame img {
+        transition: none;
+      }
+    }
   }
 
   /* The numeral belongs to its panel, so it is centred under it rather than hung from a
@@ -109,19 +160,83 @@
     overflow: hidden;
   }
 
-  /* ── Below the desktop measure ────────────────────────────────────────────────────────
-     Five across stops being photographs somewhere under 200px a panel, so the line stands up:
-     one frame per row, at the full measure, which is the largest a photograph is ever printed
-     on a phone. The crop relaxes with it — at this width a landscape box is the frame most of
-     these originals were actually shot in, so the stack shows them nearly whole. */
-  @media (max-width: 980px) {
+  /* ── Below the desktop measure: the line LIES DOWN, it does not stand up ──────────────
+     Five across stops being photographs under 200px a panel, and with no gutter the panel is
+     exactly `100vw / 5`, so the floor is exactly 1000px of viewport. `sizes` in
+     ImaginesBand.astro reads the same boundary; move both or neither.
+
+     What replaces the five-across is a RAIL, not a stack, and the reason is the band's own
+     form: it is a line, and a column of five is the one thing it says it never is. The stack
+     was also ~1500px of scroll on a phone — a second document standing between the film and the
+     register, in a movement whose whole shape is three short breaths. The rail is one screen,
+     and the reader carries it sideways, which is the same gesture the desktop eye makes.
+
+     Two things make it work rather than merely exist. The panel is capped at 420px so a tablet
+     does not print a 900px-tall photograph nothing can see whole, and the plate keeps its
+     GUTTER — which is what leaves the next panel visibly cut at the right edge. That cut is the
+     entire affordance: nobody scrolls sideways on a page that gives no sign it can be.
+
+     The crop does NOT relax here, and that reverses the earlier decision deliberately. A
+     stacked photograph at full measure could afford 3:2 because it was the largest a phone ever
+     printed one; a 74vw rail panel cannot, and portrait is the only thing that keeps these dark
+     frames legible at that width. It also keeps the band one shape on every screen.
+
+     No `data-lenis-prevent`: Lenis is gated behind `(pointer: fine) and (hover: hover)` in
+     BaseLayout, so on the touch devices this rail is built for it never runs at all. */
+  @media (max-width: 999.98px) {
     .imagines-plate {
-      flex-direction: column;
-      gap: clamp(30px, 5vw, 48px);
       padding-inline: var(--gutter);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      scroll-padding-inline: var(--gutter);
+      scrollbar-width: none;
+      overscroll-behavior-x: contain;
     }
 
-    .imagines-frame .imagines-media {
-      aspect-ratio: 3 / 2;
+    .imagines-plate::-webkit-scrollbar {
+      display: none;
+    }
+
+    .imagines-frame {
+      flex: 0 0 clamp(238px, 74vw, 420px);
+      scroll-snap-align: start;
+    }
+  }
+
+  /* ── Where there is no hover to light the edge ────────────────────────────────────────
+     The whole affordance on this band is `.shot-open:hover::after` — a gold edge on approach —
+     and a touch device never approaches. Five photographs standing under a rubric then read as
+     decoration above the register rather than as five doors, which is the one thing the band
+     must not be. So the sign is PRINTED here instead: four candle corner ticks, a crop mark, the
+     same figure the pointer will take over these frames on a desktop. One mark, two states of the
+     same instruction.
+
+     It is the button's `::before` because `::after` is the hover edge (image-lightbox.css) and
+     both have to be able to hold at once. Eight gradient layers, two strokes per corner — verbose
+     and completely static, which is the right trade against an extra element per panel. */
+  @media (hover: none) {
+    .imagines-frame .imagines-media::before {
+      content: "";
+      position: absolute;
+      inset: 12px;
+      z-index: 2;
+      pointer-events: none;
+      opacity: 0.66;
+      background-image:
+        linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle)),
+        linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle)),
+        linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle)),
+        linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle));
+      background-repeat: no-repeat;
+      background-size:
+        14px 1px, 1px 14px,
+        14px 1px, 1px 14px,
+        14px 1px, 1px 14px,
+        14px 1px, 1px 14px;
+      background-position:
+        left top, left top,
+        right top, right top,
+        left bottom, left bottom,
+        right bottom, right bottom;
     }
   }
