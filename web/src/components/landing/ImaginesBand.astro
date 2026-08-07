@@ -47,10 +47,12 @@
  *  panel and arrives with it. The foot takes none: a half-ink control is a control the reader is
  *  not sure they may press.
  *
- *  THE PHOTOGRAPH IS THE SUBJECT HERE, not a ground. It carries no scrim — every other full-bleed
- *  photograph on this landing wears one because words are set over it, and the only thing set over
- *  these is one numeral, which carries its own halo. And the exposure is corrected PER EVENING
- *  (`frameLift`, data/landing/paths): one filter cannot equalise five buildings.
+ *  THE PHOTOGRAPH IS THE SUBJECT HERE, not a ground, and that sentence decides the whole grade. It
+ *  carries no scrim — every other full-bleed photograph on this landing wears one because words are
+ *  set over it, and the only thing set over these is one numeral, which carries its own halo. It
+ *  keeps none of the family's `contrast` either, which exists to make a ground recede and here only
+ *  crushed a fifth of the plate to pure black (14-imagines.css). And the exposure is corrected PER
+ *  EVENING (`frameLift`, data/landing/paths): one filter cannot equalise five buildings.
  * @architecture Astro islands 2026
  * @module components/landing/ImaginesBand
  */
@@ -174,8 +176,10 @@ for (const [i, path] of PATHS.entries()) {
                     Both plate numbers are arithmetic, not guesses. Below the measure the plate is
                     `100vw - 2 × 5vw`, so five panels divide 90vw and each is 18vw; at and above it
                     the plate is pinned to 1580px and each panel is a flat 316px. (Both ignore the
-                    12px the scoring takes out of the row, which rounds the wrong way by less than a
-                    pixel.) The two meet at 1756px of viewport, which is where 90vw first exceeds
+                    12px the scoring takes out of the row, so the panel measures 313.6 and this
+                    overstates it by 0.8% — which changes no candidate on either rung of the ladder,
+                    and errs toward the sharper file.) The two meet at 1756px of viewport, which is
+                    where 90vw first exceeds
                     1580 — so the boundary is continuous rather than a step. 76 rather than 74 is the
                     one deliberate rounding: below a 321px viewport the panel stops shrinking at its
                     238px floor, which is 74.4vw. Every breakpoint here is the sheet's own
@@ -205,13 +209,19 @@ for (const [i, path] of PATHS.entries()) {
                 </span>
               </a>
               {/* The readout. Hidden from assistive tech because the link above already carries
-                  the same name — this element exists to print it for the eye. */}
+                  the same name — this element exists to print it for the eye.
+
+                  The date OWNS the mid-dot in front of it rather than standing beside a loose one:
+                  on the rail the date drops to a line of its own (14-imagines.css) and a separator
+                  that belonged to the row would be left hanging at the end of the name. */}
               <figcaption class="imagines-name" aria-hidden="true">
                 <span class="imagines-name-n">{f.roman}</span>
                 <span class="imagines-name-dot">·</span>
                 {f.title}
-                <span class="imagines-name-dot">·</span>
-                <span class="imagines-name-date">{f.date}</span>
+                <span class="imagines-name-date">
+                  <span class="imagines-name-dot">·</span>
+                  {f.date}
+                </span>
               </figcaption>
             </figure>
           ))}

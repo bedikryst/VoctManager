@@ -25,9 +25,10 @@
     /* The lead between the plate and its foot, shared by the foot row and the readout that hangs
        into it from inside the plate — two boxes on one baseline, so the value lives in one place. */
     --foot-lead: clamp(16px, 1.6vw, 22px);
-    /* The scoring: the width of page left between the cells and inside the ring. The readout is
-       positioned against the plate's PADDING box, so it has to spend this value back on both axes
-       or it hangs 2px high and 2px right of the head and the reference it lines up with. */
+    /* The scoring: the width of page left between the cells and inside the ring. It is the plate's
+       own padding and nothing outside the plate owes it anything — the readout that hangs into the
+       foot is positioned against the plate's padding EDGE, which is the plate's outer edge, so it
+       takes this value on neither axis. */
     --score: 2px;
     background: var(--paper);
     padding: clamp(48px, 6vw, 88px) var(--gutter) clamp(72px, 9vw, 120px);
@@ -81,9 +82,17 @@
      object scored into five.
 
      The ring and the lift are `.vplayer-stage`'s, verbatim (styles/vplayer.css) — the film 200px
-     above is a dark box on this same paper, and the two are the same kind of object. `position:
-     relative` is what the readouts hang from: each frame's name is positioned into the foot from
-     inside the plate. */
+     above is a dark box on this same paper, and the two are the same kind of object. Verbatim is
+     also the whole of it: a `box-shadow` with a negative spread is EDGE-LOCAL, so nothing about it
+     scales with the box it hangs under. Sampled on the page at 1920, the paper under both boxes
+     darkens 21% at the edge and is back within 1% of parchment 70px down — the same pool under a
+     plate 1580×318 as under a film 880×495, which is 1.8× the edge length and not the six times
+     the third pass assumed. What that leaves is a pool 22% of the plate's height against 14% of
+     the film's, and at this weight the difference reads as the plate sitting slightly closer to
+     the page, which is what a contact strip should do. Leave it.
+
+     `position: relative` is what the readouts hang from: each frame's name is positioned into the
+     foot from inside the plate. */
   .imagines-plate {
     position: relative;
     display: flex;
@@ -150,14 +159,25 @@
      that lands badly is `framePosition` on the evening in data/landing/paths, and
      `object-position` here would now do nothing — it has no overflow to shift.
 
-     THE GRADE IS SHARED, THE EXPOSURE IS NOT. `saturate`/`contrast` are the numbers the hero,
-     the rite and the ensemble already dim their photographs with (02, 03, 04) and they belong to
-     the whole line: they pull the terracotta Christmas nave and the blue-gold baroque altar back
-     into this site's parchment/night/candle. Brightness cannot be shared, and one value for five
-     buildings was the band's largest remaining defect: measured at this crop the line ran
-     0.19 · 0.13 · 0.13 · 0.04 · 0.22 mean luma. `--panel-lift` is the per-evening correction
-     (`frameLift`, data/landing/paths); the shared base is 1, because here the photograph is the
-     SUBJECT and the site's dimming is for a photograph that is a ground.
+     THE GRADE IS SHARED, THE EXPOSURE IS NOT. `saturate` is the number the hero, the rite and the
+     ensemble already dim their photographs with (02, 03, 04) and it belongs to the whole line: it
+     pulls the terracotta Christmas nave and the blue-gold baroque altar back into this site's
+     parchment/night/candle. Brightness cannot be shared — one value for five buildings was the
+     band's largest defect — so `--panel-lift` carries it per evening (`frameLift`,
+     data/landing/paths) over a shared base of 1, because here the photograph is the SUBJECT and
+     the site's dimming is for a photograph that is a ground.
+
+     THE ONE PART OF THE FAMILY GRADE THIS BAND MUST NOT KEEP IS `contrast`. Those three surfaces
+     pair it with brightness 0.62–0.92: it is there to make a ground recede, and crushing the
+     shadows of a ground is the point. `contrast(1.06)` is a linear transfer with a −0.03 intercept,
+     so it renders every pixel under 2.8% luma as literal #000 — and these frames are mostly
+     shadow. It was taking 13% · 42% · 1% · 23% · 11% of the five panels to pure black, against
+     source frames that are 4.5% · 0.5% · 0% · 2% · 0% black themselves. On the night ground that
+     was invisible arithmetic (#000 beside `--night` is a 1.5% step). On parchment each of those
+     regions is the deepest mark the display can make, next to the brightest — and #000 is not in
+     this site's palette at all, where the darkest token is `--night`. Removing it returns 13% of
+     mean luma across the line and costs no highlight anywhere; the punch it is imagined to add
+     measures 6% on a photograph nothing is set over.
 
      THERE IS NO SCRIM. Every other full-bleed photograph on this landing wears one because words
      are set over it. The only thing set over these is the plate number, which carries its own
@@ -168,7 +188,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: saturate(0.74) contrast(1.06) brightness(var(--panel-lift, 1));
+    filter: saturate(0.74) brightness(var(--panel-lift, 1));
   }
 
   /* The plate number, printed on the frame the way an engraving carries one — which is what lets
@@ -210,6 +230,16 @@
      visible on two of them. Multiplying means each panel recedes and returns by the same ratio
      from wherever its own exposure sits.
 
+     ×0.66 / ×1.16 SURVIVED THE MOVE TO PAPER, and the reason to expect otherwise had the sign
+     backwards. A receding panel used to darken toward a dark ground, which spent most of the
+     ratio on a difference the eye could not find; against parchment the same ratio widens the
+     gap to the surround instead, so the recession now reads as MORE recession than it did on
+     night, not less. Shallower endpoints were tried side by side (×0.76 / ×1.10) and the plate
+     stops reading as one object with one lamp on it — the approached panel and its neighbours
+     become merely slightly different. The `contrast` differential the three states used to carry
+     (1.06 / 1.06 / 1.04) is gone with the base grade's: two points of contrast are invisible, and
+     all it did was crush the shadows of the one panel the reader had asked to look at.
+
      Both rules are (0,3,1) — the hovered one wins on source order, so it stays second. */
   @media (hover: hover) {
     .imagines-media img {
@@ -217,7 +247,7 @@
     }
 
     .imagines-plate:hover .imagines-media img {
-      filter: saturate(0.62) contrast(1.06) brightness(calc(var(--panel-lift, 1) * 0.66));
+      filter: saturate(0.62) brightness(calc(var(--panel-lift, 1) * 0.66));
     }
 
     .imagines-plate:hover .imagines-roman {
@@ -225,7 +255,7 @@
     }
 
     .imagines-frame:hover .imagines-media img {
-      filter: saturate(0.92) contrast(1.04) brightness(calc(var(--panel-lift, 1) * 1.16));
+      filter: saturate(0.92) brightness(calc(var(--panel-lift, 1) * 1.16));
     }
 
     .imagines-frame:hover .imagines-roman,
@@ -246,16 +276,27 @@
      appears where the film's caption is printed 200px above. Five permanent captions under five
      cells is a card grid, and it prints the register's own index directly over the register.
 
+     NO `--score` COMPENSATION ON EITHER AXIS. An absolutely positioned child hangs from its
+     ancestor's PADDING EDGE, which is the outer edge of the padding and therefore the plate's own
+     border-box edge — the plate draws its ring as a shadow and carries no border, so `left: 0` and
+     `top: 100%` already resolve to the plate's left and bottom. Spending the scoring back moved
+     the readout 2px left of the head and the line it hangs under, and 2px below the reference it
+     shares a baseline with, which is the whole point of the foot undone in both directions at
+     once. Measured at 1280, 1440, 1920 and 2560: the offset was constant, so it was construction
+     and not a rounding.
+
      `max-width` in percent rather than pixels: the reference at the right of the foot is the only
-     thing it must not reach, and both boxes scale with the plate. It is an apparition, not a page
-     — nothing enters from zero on a surface the reader is already reading, and this surface does
-     not exist until the pointer asks for it (styles/registers.css, rule 1). */
+     thing it must not reach, and both boxes scale with the plate. The cap is a guard that has
+     never fired — the longest readout sets 391px against 714px of room at the narrowest desktop —
+     and it stays because a sixth evening with a long name would be the first to need it. It is an
+     apparition, not a page — nothing enters from zero on a surface the reader is already reading,
+     and this surface does not exist until the pointer asks for it (styles/registers.css, rule 1). */
   .imagines-name {
     position: absolute;
     top: 100%;
-    left: calc(-1 * var(--score));
+    left: 0;
     max-width: 62%;
-    margin-top: calc(var(--foot-lead) + var(--score));
+    margin-top: var(--foot-lead);
     font-family: var(--mono);
     font-size: 10px;
     letter-spacing: 0.14em;
@@ -393,5 +434,32 @@
       margin-top: clamp(12px, 2.4vw, 16px);
       white-space: normal;
       opacity: 1;
+    }
+  }
+
+  /* ── The rail's readout takes two lines on purpose ────────────────────────────────────
+     Below the 420px cap the panel is 74vw and the readout no longer fits one row — but only for
+     three of the five evenings, so what the reader carries sideways is a caption that is two rows
+     tall under I, one under II, two under III, one under IV, two under V. On a strip seen one
+     panel at a time that irregularity is the only rhythm there is, and the flex row hands the
+     tallest caption's height to all five, so the short ones sit over dead paper. The wraps also
+     fell where the line ran out rather than where the sense breaks: "…· STYCZEŃ / MMXXIV" leaves
+     the year alone on a row of its own.
+
+     So the date takes its own line and the separator before it goes: name above, dateline below,
+     which is the register's `.aether-inscription` figure and the shape this site already uses to
+     name a movement. Every panel is then two rows at every width down to 360, where the longest
+     name (Aeternam, 244px) still clears the 266px panel.
+
+     567.98px is the band's own boundary, not a new one: `clamp(238px, 74vw, 420px)` reaches the
+     cap at 567.6px of viewport, which is the same place `sizes` in ImaginesBand.astro stops
+     declaring 76vw. Above it all five names and dates share a row and there is nothing to fix. */
+  @media (max-width: 567.98px) {
+    .imagines-name-date {
+      display: block;
+    }
+
+    .imagines-name-date .imagines-name-dot {
+      display: none;
     }
   }

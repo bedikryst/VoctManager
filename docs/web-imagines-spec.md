@@ -28,6 +28,10 @@ caption all changed.** It supersedes §8's night band, §12's numeral link, §13
 every claim in §5–§9 that the landing opens the frame. Where anything above and §14 disagree,
 §14 is what shipped.
 
+**§15 closes §14's tonal pass and supersedes §13 on the grade and the exposures.** It also
+retires the measurement method §13 prescribed: the frame mean it asks for is the statistic that
+produced the one wrong lift in the set. Where §13 and §15 disagree, §15 is what shipped.
+
 ---
 
 ## 1. The defect
@@ -933,7 +937,7 @@ fixed measure stand `measure / Σ aspect` tall: Σ = 6.80 native against 5.00 sq
 variation of shape is paid for in the one dimension §2 is about. **Tile-ness was never the crop —
 it was the caption row, the CTA, the missing voice and the blackout.**
 
-### Still open — the tonal pass
+### Still open — the tonal pass — CLOSED IN §15
 
 Everything here is structure. The band has **not** been calibrated for its new ground, and none of
 it should be tuned from a stylesheet:
@@ -955,3 +959,141 @@ it should be tuned from a stylesheet:
 Build after the pass: 15 pages, `astro check` 0 errors, `prune-orphan-assets` **66/642** — the
 identical figure §12 and §13 both closed on, because the panel ladder is untouched. The landing
 sheds the lightbox island, its stylesheet and its delegate outright.
+
+---
+
+## 15. The tonal pass — SHIPPED
+
+§14 left five questions and called them a calibration. Four were calibration. The first was not: the
+band's largest tonal defect was not an exposure at all, and the statistic §13 prescribes for finding
+it could not have found it.
+
+### The shared grade was punching holes in the page
+
+`contrast(1.06)` is a linear transfer with slope 1.06 and intercept −0.03, so every pixel under
+**2.83% luma renders as literal #000**. These are chiaroscuro frames from dark naves. Measured at
+the band's crop, the share of each panel the grade alone took to pure black:
+
+| Panel | Evening | #000 in the source | #000 after the grade |
+|---|---|---|---|
+| I | Wcielenie | 4.5% | **14.2%** |
+| II | Wołanie Gór | 0.5% | **42.2%** |
+| III | 9 Kart | 0.0% | 0.8% |
+| IV | Hymn Poległym | 2.1% | **23.3%** |
+| V | Aeternam | 0.0% | **10.7%** |
+
+Two fifths of panel II was being rendered at a value that is **not in this site's palette** — the
+darkest token is `--night` (#100f0d). On the night ground of §8–§13 that was invisible arithmetic: a
+#000 region beside `--night` is a 1.5% step, which is why nobody measured it across three passes.
+On parchment each of those regions became the deepest mark the display can make sitting next to the
+brightest, and that — not the exposures — is what made the dark panels read as holes rather than as
+photographs.
+
+`contrast` is dropped from all three of the band's states. Every surface that shares it (02, 03, 04)
+pairs it with brightness 0.62–0.92, because it is there to make a **ground** recede and crushing a
+ground's shadows is the point; §13's own sentence, *here the photograph is the SUBJECT*, decides
+this the same way it decided the scrim. Removing it returns **13% of mean luma across the line and
+costs no highlight anywhere** — every panel's clipped share went down or held. The punch it is
+imagined to be adding is 6% of contrast on a photograph nothing is set over.
+
+### The frame mean cannot tell a dark room from a dark subject
+
+§13 prescribes "mean luma at the band's crop and grade", and that instrument reads panel II — a
+close-up of two singers against a **black studio backdrop** — as the second-darkest frame in the
+line and asks for a lift. Its subject was already the second *brightest*. What was dark was the
+room, and 42% of the frame is room.
+
+The statistic is now the mean of the panel's brightest 40% (`> p60`), which agrees with p90 to
+within 0.02 on every panel and disagrees with the frame mean on exactly one — II. The line:
+
+| Panel | frame mean | **lit-mean (>p60)** | shipped lift | derived lift |
+|---|---|---|---|---|
+| I | 0.188 | 0.376 | 0.90 | **0.97** |
+| II | 0.126 | 0.285 | 1.08 | **1.09** |
+| III | 0.132 | 0.243 | 1.06 | **1.16** |
+| IV | 0.093 | 0.186 | 1.22 | **1.16** |
+| V | 0.224 | 0.427 | — | **1.08** |
+
+Each panel takes **40% of the distance to the geometric mean in log space, times 1.08** for the
+parchment ground — partial, per §13, and it lands at a lit-line ratio of 1.92× against 2.08×
+before. Two panels are deliberately off the arithmetic:
+
+- **IV is capped at 1.16 where the derivation asks 1.29.** Past ~1.20 the blue wash filling the
+  middle of that nave clips and the window flattens into one saturated field; the clipped share runs
+  0.7% → 1.5% → 2.8% at 1.16 / 1.22 / 1.29 for 0.008 of mean each step. It stays the line's dark
+  end, which is honest — it was the darkest evening. Same trade §13 refused when it changed that
+  evening's photograph rather than lift it harder.
+- **V is not damped back toward the middle**, which §13 settled (0.86 "only cost the gilt"). It
+  takes the ground gain alone, so the equalisation runs upward from the dark end rather than
+  downward from the bright one.
+
+The ×1.08 is the whole of the parchment compensation, and deliberately small: removing the crush had
+already opened the line by 13% in the right way — by returning shadow detail rather than by
+multiplying what survived. ×1.15 was rendered and rejected; the naves go milky and the terracotta
+pushes orange.
+
+### The hover endpoints were right, and the reason to doubt them had the sign backwards
+
+§14 expected the recession to have "more to prove on paper". It has less. A receding panel used to
+darken toward a dark ground, spending most of the ratio on a difference the eye could not find;
+against parchment the same ratio widens the gap to the surround, so **×0.66 reads as more recession
+on paper than it did on night**. Shallower endpoints (×0.76 / ×1.10) were rendered side by side and
+the plate stops reading as one object with one lamp on it. Both endpoints stand. The `contrast`
+differential the three states carried (1.06 / 1.06 / 1.04) goes with the base grade's: two points of
+contrast are invisible, and all it did was crush the shadows of the one panel the reader had asked
+to look at.
+
+### The readout was 2px out on both axes, by construction
+
+`.imagines-name` compensated for `--score` on both axes, on the stated grounds that it "is
+positioned against the plate's PADDING box". An absolutely positioned child hangs from its
+ancestor's **padding edge** — the outer edge of the padding, which for a box with no border is the
+border-box edge. The plate draws its ring as a `box-shadow` and has no border, so `left: 0` and
+`top: 100%` already resolved to the plate's left and bottom. Spending the scoring back put the
+readout 2px left of the head it hangs under and 2px below the reference it shares a baseline with —
+the foot's one job undone in both directions. Measured constant at 1280 / 1440 / 1920 / 2560, so
+construction rather than rounding; **now 0.0px at all four.**
+
+The slot itself is fine and the `max-width: 62%` guard has never fired: the longest readout sets
+391px, against 714px of room at the narrowest desktop and 980px at the measure. It stays for the
+sixth evening that would be the first to need it.
+
+### The rail's readout had no rhythm
+
+Below the 420px cap the panel is 74vw and the readout no longer fits one row — but only for three of
+five evenings, so the strip a reader carries sideways was **2 · 1 · 2 · 1 · 2** rows tall, and the
+flex row hands the tallest caption's height to all five so the short ones sat over dead paper. The
+wraps fell where the line ran out rather than where the sense breaks: `…· STYCZEŃ / MMXXIV` left the
+year alone.
+
+The date takes its own line now and the separator before it goes with it — name above, dateline
+below, which is `.aether-inscription`'s figure. Every panel is **two rows at every width down to
+360**, where the longest name (Aeternam, 244px) still clears the 266px panel. The boundary is
+**567.98px**, which is the band's own: `clamp(238px, 74vw, 420px)` reaches the cap at 567.6px, the
+same place `sizes` stops declaring 76vw. Above it all five fit one row and there is nothing to fix.
+The date owns its mid-dot in the markup so the sheet has something to hide.
+
+### The shadow is not too much, and "six times as wide" was never true
+
+A `box-shadow` with a negative spread is **edge-local** — nothing about it scales with the box.
+Sampled on the page at 1920, the paper under the plate and under the film darkens **21% at the edge
+and is back within 1% of parchment 70px down**: the same pool under a plate 1580×318 as under a film
+880×495, which is **1.8× the edge length**, not six. What that leaves is a pool worth 22% of the
+plate's height against 14% of the film's, and at this weight the difference reads as the plate
+sitting slightly closer to the page — which is what a contact strip should do. Unchanged.
+
+### Still open
+
+- **Panel II may still be a rehearsal frame** (§11), unchanged and for the same reason: that gallery
+  needs another photograph from that night more than it needs a different choice. §15 adds one fact
+  to the file on it — II is also the only frame in the line whose blacks are a **backdrop** rather
+  than a building, which is what a rehearsal frame looks like when measured rather than looked at.
+- **The numeral link redundancy** (§13), still waiting on what a press on a photograph should do.
+
+### Weight
+
+`astro check` 0 errors / 0 warnings, 15 pages, `prune-orphan-assets` **66/642** — the same figure
+§12, §13 and §14 all closed on, because nothing here touches the crop or the ladder. Every number in
+this section was measured with `sharp` at the panel's own crop (316×316, `fit: cover`, centre) or
+sampled off the rendered page in Edge; the CSS filter chain was reproduced in sRGB and validated
+against §13's published figures before any of it was used to decide anything.

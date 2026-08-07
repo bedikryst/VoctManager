@@ -54,12 +54,24 @@ export interface Path {
    * (`--panel-lift`, 14-imagines.css). Above 1 lifts, below 1 damps; omit for none.
    *
    * It exists because five photographs shot in five buildings do not share an exposure and one
-   * filter cannot equalise them — measured at the band's own crop the line ran 0.19 · 0.13 ·
-   * 0.13 · 0.10 · 0.22 mean luma, so a single `brightness()` either left the dark ones dead or
-   * blew the lit ones out. The values are a PARTIAL correction toward the line's middle, not a
-   * normalisation: flattening five naves to one luminance would cost the chiaroscuro that is
-   * the reason these photographs are worth showing. Re-derive them with a contact sheet at the
-   * panel's crop and grade — a reading of `alt` strings answers nothing here.
+   * filter cannot equalise them. The values are a PARTIAL correction toward the line's middle,
+   * not a normalisation: flattening five naves to one luminance would cost the chiaroscuro that
+   * is the reason these photographs are worth showing.
+   *
+   * MEASURE THE LIT PART, NOT THE FRAME. The statistic is the mean of the panel's brightest 40%
+   * (`> p60`) at the band's crop and grade, and the flat mean it replaces is why the previous set
+   * was wrong about one panel: Wołanie Gór is a close-up against a black studio backdrop, so 42%
+   * of its area is background and the frame mean read it as underexposed while its subject was
+   * already the second brightest in the line. A statistic that cannot tell a dark room from a
+   * dark subject will keep asking for light the subject does not need.
+   *
+   * The line measures 0.376 · 0.285 · 0.243 · 0.186 · 0.427 lit-mean; each panel takes 40% of the
+   * distance to the geometric mean in log space, times 1.08 for the parchment ground. Hymn
+   * Poległym is the one panel capped below its derived value (1.29 → 1.16): past ~1.20 the blue
+   * wash across its nave clips and the window flattens into one saturated field, which is the
+   * same trade §13 refused when it changed that evening's photograph rather than lift it harder.
+   * Re-derive with a contact sheet at the panel's crop and grade — a reading of `alt` strings
+   * answers nothing here.
    */
   readonly frameLift?: number;
   /**
@@ -90,7 +102,7 @@ export const PATHS: readonly Path[] = [
     // the first one shot at the concert itself.
     frame: "kd-wcielenie-6",
     frameDate: "styczeń MMXXIV",
-    frameLift: 0.9,
+    frameLift: 0.97,
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
     video: { src: videoAsset("landing-modal") },
@@ -108,7 +120,11 @@ export const PATHS: readonly Path[] = [
     // Same as Wcielenie: entries 0–2 are the rehearsal in Szczawnica, not the evening.
     frame: "kd-wolanie-3",
     frameDate: "czerwiec MMXXIV",
-    frameLift: 1.08,
+    // Barely moved, and deliberately: this is the line's one close-up and its blacks are a studio
+    // backdrop rather than an unlit nave. Its singers already sit second brightest in the line, and
+    // the score in their hands is clipped in the source — lifting toward the frame mean would only
+    // spread that white.
+    frameLift: 1.09,
     video: {
       src: videoAsset("landing-wolanie"),
       portrait: true,
@@ -130,7 +146,9 @@ export const PATHS: readonly Path[] = [
     frame: "kd-9-kart-2",
     // The programme toured Rybnik → Łódź → Kraków; this frame is the Kraków evening (16 XI).
     frameDate: "listopad MMXXIV",
-    frameLift: 1.06,
+    // The line's one frame with a lifted black point of its own, so it takes light with almost no
+    // clipping — the cheapest lift of the five, and the panel the crushed grade cost the most.
+    frameLift: 1.16,
   },
   {
     slug: "hymn-poleglym",
@@ -150,7 +168,10 @@ export const PATHS: readonly Path[] = [
     // outside the consent scope, which covers singers.)
     frame: "kd-hymn-2",
     frameDate: "luty MMXXV",
-    frameLift: 1.22,
+    // The darkest of the five and still the one that may take the LEAST of what the arithmetic
+    // offers it: the blue wash filling the middle of this nave clips past ~1.20 and the window
+    // goes flat. It stays the line's dark end, which is honest — it was the darkest evening.
+    frameLift: 1.16,
   },
   {
     slug: "aeternam-epitafium-dla-gazy",
@@ -167,11 +188,13 @@ export const PATHS: readonly Path[] = [
     frame: "kd-aeternam-3",
     // Two evenings, Mistrzejowice and Niedzica; this frame is Niedzica (18 X).
     frameDate: "październik MMXXV",
-    // No lift. It carried 0.86 while panel IV was black and this one was the line's right lamp;
-    // with IV legible the damping only cost the gilt, and the frame is cooler than it looks —
-    // most of its area is blue-lit vault, not altar. Raising `saturate` instead was tried on a
-    // contact sheet and is the wrong instrument: it deepens the vault's blue before it warms the
-    // gold, i.e. it pushes this panel toward IV's register rather than away from it.
+    // The line's brightest, and it is NOT damped back toward the middle — that was tried at 0.86
+    // and only cost the gilt. It takes the parchment gain alone, so the equalisation runs upward
+    // from the dark end rather than downward from this one. Above ~1.16 the vault behind the altar
+    // brightens faster than the gold and the arch loses its depth. Raising `saturate` instead is
+    // the wrong instrument: it deepens the vault's blue before it warms the gold, i.e. it pushes
+    // this panel toward IV's register rather than away from it.
+    frameLift: 1.08,
     video: {
       src: videoAsset("landing-aeternam"),
       portrait: true,
