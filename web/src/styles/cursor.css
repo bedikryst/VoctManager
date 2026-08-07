@@ -256,9 +256,9 @@
 /* ── Frame state — the viewfinder over a photograph that opens ────────────
    Triggered over any `[data-image-open]`. It is deliberately NOT a fifth ring: the
    thing under the cursor is a picture, and a ring is the site's mark for a control.
-   A viewfinder says the same thing about a photograph that a ring says about a link —
-   and it is the exact figure the Imagines band PRINTS on these panels where there is
-   no hover to draw it (14-imagines.css, `@media (hover: none)`). One mark, two media.
+   A viewfinder says the same thing about a photograph that a ring says about a link.
+   It reaches the two archive surfaces (/obrazy, a concert page's gallery) and nothing
+   else — the landing's Imagines panels are doors to their evening, not triggers.
 
    THREE THINGS THIS FIGURE CANNOT DO WITHOUT, all found by looking at it on a photograph:
 
@@ -270,12 +270,13 @@
    THE TICKS DO NOT MEET AT THE CORNER. Brackets that close a corner are the universal
    "expand to fullscreen" glyph, and no amount of fine drawing stops four of them reading
    as a stock control. A printer's registration mark leaves the corner itself void and sets
-   its two strokes back from it, which is what this is and what the band prints.
+   its two strokes back from it, which is what this is.
 
    WHAT MAKES IT READ AS A CORNER IS THE VOID BETWEEN THE TWO TICKS ON A SIDE, and that is a
-   RATIO, not a length — which is the thing the first drawing got wrong by copying the printed
-   mark's absolute numbers into a box a tenth of its size. The panel prints 12px ticks on a
-   ~296px box, so each side is 12 · 254 · 12 and the middle is 21× the ink: unmistakably four
+   RATIO, not a length — which is the thing the first drawing got wrong by taking the absolute
+   numbers of the same figure drawn at plate scale into a box a tenth of its size. At plate
+   scale it is 12px ticks on a ~296px box, so each side is 12 · 254 · 12 and the middle is
+   21× the ink: unmistakably four
    corners. Scaled into 38px the same 9px ticks left a middle of 8px — SHORTER than the ink
    either side of it — so all four sides read as evenly broken lines and the figure was a
    marching-ants selection box, which is what a dashed rectangle over a photograph means

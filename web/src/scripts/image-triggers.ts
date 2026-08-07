@@ -3,9 +3,10 @@
  * @description Page glue for the photograph frame: a press on any `[data-image-open]` element
  *  dispatches `voct:open-image` with a SET of photographs and the index of the one pressed, which
  *  the page's ImageLightbox island consumes. The set is the trigger's `data-image-group` in DOM
- *  order — the band on the landing, the whole document on /obrazy, one evening's gallery on a
- *  concert page. A trigger with no group publishes itself as a one-item set, so nothing had to be
- *  migrated when the frame learned to walk (lib/imageFrame states the contract).
+ *  order — the whole document on /obrazy, one evening's gallery on a concert page. Those two are
+ *  the only surfaces: the landing mounts neither this module nor the island, because its Imagines
+ *  panels are doors to their evening rather than triggers. A trigger with no group publishes
+ *  itself as a one-item set (lib/imageFrame states the contract).
  *
  *  One delegated listener on the document in the CAPTURE phase, as vault-triggers.ts uses:
  *  ClientRouter's own click handler sits on the document too (bubbling, registered earlier in

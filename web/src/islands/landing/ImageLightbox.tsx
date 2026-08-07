@@ -60,7 +60,7 @@ const ROMAN_STEPS = [
 ] as const;
 
 /** Every number this site prints is a roman one — the register's entries, the series heads on
- *  /obrazy, the numerals under the band. The counter in the frame is the same numbering seen from
+ *  /obrazy, the plate numbers on the landing's band. The counter in the frame is the same seen from
  *  inside, so it is set the same way. Local because the counter is its only caller; the numerals
  *  elsewhere are authored, not computed. */
 function roman(n: number): string {

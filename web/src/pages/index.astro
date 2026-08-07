@@ -15,9 +15,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { bleedPair } from "../lib/photos";
 import { toRibbons } from "../lib/registrum";
 import "../styles/landing.css";
-// The photograph frame ships as its own sheet, imported per page beside its island — the way
-// the concert pages and /obrazy import it (styles/image-lightbox.css).
-import "../styles/image-lightbox.css";
 
 import HeroSection from "../components/landing/HeroSection.astro";
 import ManifestSection from "../components/landing/ManifestSection.astro";
@@ -39,7 +36,6 @@ import { SiteFooter } from "../islands/landing/SiteFooter";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import { VoxMoment } from "../islands/landing/VoxMoment";
 import { VideoLightbox } from "../islands/landing/VideoLightbox";
-import { ImageLightbox } from "../islands/landing/ImageLightbox";
 import { MovementSpine } from "../islands/landing/MovementSpine";
 
 const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
@@ -161,7 +157,6 @@ const jsonLd = {
 
     <VaultIsland client:idle />
     <VideoLightbox client:idle poster={voxPoster} />
-    <ImageLightbox client:idle />
   </div>
 
   <style is:global>
@@ -189,10 +184,5 @@ const jsonLd = {
 
   <script>
     import "../scripts/landing.ts";
-    // The Imagines band's frames are static markup, so they reach the lightbox the way the
-    // galleries' do: one delegated capture-phase listener on the document. It is a module of
-    // its own rather than a branch in landing.ts because the same contract has to hold on the
-    // pages that run no landing script.
-    import "../scripts/image-triggers.ts";
   </script>
 </BaseLayout>

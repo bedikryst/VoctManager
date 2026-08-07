@@ -62,8 +62,11 @@ is not "is there a photograph here" but **"does a row of the register now carry 
 
 Two constraints the band carries because of this, both load-bearing: it is a **line, never a grid**
 (a sixth evening gains a sixth frame, not a second row — the moment it wraps it is the thumbnail wall
-the spec's §2 rejects), and it prints **no titles**, only numerals, because the names are set in the
-register 200px below and a band that repeats them is a table of contents for the list it stands on.
+the spec's §2 rejects), and it prints **no permanent titles** — the plate numbers stand on the frames
+and the evening's name appears in a single readout only while that frame is approached. Five names
+set under five cells at once is a table of contents for the list standing 200px below it, which is
+the same defect in a second voice. The readout is the corrected reading, and it is what makes the
+panels legible as doors (spec §14); a caption row per cell is not.
 
 ---
 
@@ -225,10 +228,14 @@ below 1440px because the gutter is narrow; a longer inscription pushes that brea
 the label effectively never shows. This is why `Lumen quaerit` → `Lumen Christi` and not
 `Lumen ad revelationem`.
 
-**A full-bleed section must carry `data-spine-clear`.** The spine is `position: fixed` and stands
-in the page's 5vw gutter, which every section grants it — except one that runs its CONTENT to the
-viewport edge. The Imagines band shipped without the attribute and the spine printed `Vox memoriae`
-across its fifth photograph from 1440px up, and its numeral and tick from 1201px. The attribute is
+**A section whose content reaches into the gutter must carry `data-spine-clear`.** The spine is
+`position: fixed` and stands in the page's 5vw gutter, which every section grants it — except one
+that runs its CONTENT to the viewport edge, or one whose object is wide enough that the gutter is
+all that is left between them. The Imagines band shipped without the attribute and the spine
+printed `Vox memoriae` across its fifth photograph from 1440px up, and its numeral and tick from
+1201px. It still needs it at the measure: the plate's margin is 5vw until 1756px and only opens
+past the spine's ~68px inscription at about 1780, and below the 1280px breakpoint its rail runs to
+the window's edge outright. The attribute is
 read by `MovementSpine.tsx` on the same viewport centre band it already uses for the active
 movement, and the spine withdraws for as long as the section holds it. Withdrawing, not shifting:
 the spine is orientation, the bled object is the page.

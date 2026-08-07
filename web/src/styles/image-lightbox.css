@@ -88,7 +88,7 @@
 }
 
 /* The page behind is BLURRED away, not merely dimmed. At 0.94 flat it was still legible — the
-   chrome nav and the band's own rubric ghosted through the room and the frame read as a modal
+   chrome nav and the gallery's own heads ghosted through the room and the frame read as a modal
    panel over a document rather than as a room the document had been left for. Same treatment and
    same numbers as the vault's veil (08-vault.css), which is this site's one idiom for an overlay
    that has to erase what is under it while keeping depth. Where the filter is unavailable there
@@ -172,9 +172,10 @@
    the full rendition lands, and then the two cross. Without it the frame is a black room
    and a pop, which is what the press actually feels like on anything but a fast connection.
 
-   `cover` rather than `contain`: the thumbnail is frequently a CROP of this photograph (the
-   Imagines band hangs every frame at 4:5), so its own ratio is not the one being reserved
-   here. It is a ground, not a preview — nothing in it needs to be true except the light. */
+   `cover` rather than `contain`: both surfaces that open this frame hang their shots at the
+   photograph's own ratio today, but the thumbnail is whatever the host drew and a host that
+   ever crops one would letterbox its ground here. It is a ground, not a preview — nothing in
+   it needs to be true except the light. */
 .image-lightbox-thumb {
   position: absolute;
   inset: 0;
@@ -288,8 +289,8 @@
 }
 
 /* The numeral takes the candle, as every other numeral on this site does — the register's
-   entries, the series heads on /obrazy, the numerals under the band. It is the same numbering
-   read from inside one of its frames. */
+   entries, the series heads on /obrazy, the plate numbers on the landing's band. It is the same
+   numbering read from inside one of its frames. */
 .image-lightbox-count {
   color: color-mix(in srgb, var(--candle) 82%, transparent);
 }

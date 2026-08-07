@@ -63,10 +63,10 @@ export interface Path {
    */
   readonly frameLift?: number;
   /**
-   * The date printed under the band's numeral. It dates the PHOTOGRAPH's own night, which for a
-   * programme that toured is not the same as `year` — the register dates the programme, the band
-   * dates the evening it is showing. Written out because the register's bare year is what the
-   * band had and it is not a chronology: three of five panels read MMXXIV.
+   * The date printed in the band's readout, beside the evening's name. It dates the PHOTOGRAPH's
+   * own night, which for a programme that toured is not the same as `year` — the register dates
+   * the programme, the band dates the evening it is showing. Written out because the register's
+   * bare year is not a chronology here: three of five panels read MMXXIV.
    */
   readonly frameDate: string;
 }

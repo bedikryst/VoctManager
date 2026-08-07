@@ -1,66 +1,62 @@
 ---
 /**
  * @file ImaginesBand.astro
- * @description Movement II's visual memory: one full-bleed night band of five frames, one per
- *  evening of the cycle, standing between the film and the register. The movement runs silence
- *  → voice → memory, and images are the register memory otherwise lacks — the band announces
- *  the five evenings in photographs, the register unfolds them in words. That is also why the
- *  numerals here and the register's are ONE sequence (`ROMAN`, data/landing/paths): five frames
- *  answering five entries is what makes this composition rather than an attachment.
+ * @description Movement II's visual memory: one plate of five frames, one per evening of the
+ *  cycle, standing between the film and the register. The movement runs silence → voice →
+ *  memory, and images are the register memory otherwise lacks — the plate announces the five
+ *  evenings in photographs, the register unfolds them in words. That is also why the numerals
+ *  here and the register's are ONE sequence (`ROMAN`, data/landing/paths): five frames answering
+ *  five entries is what makes this composition rather than an attachment.
+ *
+ *  A PANEL IS A DOOR, and that is the whole protocol of this band. Pressing one goes to that
+ *  evening's page; nothing here opens an overlay. The landing's job is to send a reader onward,
+ *  and a surface that answers the strongest press with a bigger picture is the dead end the
+ *  image archive was built to fix. The frame (islands/landing/ImageLightbox) belongs where a
+ *  reader has already declared they want to look at photographs — /obrazy and the concert
+ *  galleries — so this page mounts neither the island nor its delegate.
  *
  *  IT IS A LINE, NEVER A GRID. A sixth evening gains a sixth frame, not a second row — a wall of
  *  thumbnails is the reflex answer and the one that damages the site (docs/web-imagines-spec §2:
  *  these are low-contrast chiaroscuro frames from a dark nave). The panels are uniform SQUARES,
- *  which is arithmetic and not taste: five frames across the measure are ~316px wide, and a 3:2
- *  nave keeps two thirds of its width at 1:1 against barely half at 4:5 — the horizontality IS
- *  the subject of three of these five, and the tall panel was throwing it away. The crop is taken
- *  at BUILD (lib/croppedShot) rather than by `object-fit` in the browser — read that file for why,
- *  because the reason is the one that made these five soft. The whole frame is still one press
- *  away in the lightbox, which asks for its own uncropped renditions. If a crop ever lands badly
- *  the levers are the evening's `framePosition` and its `frame`, both in data/landing/paths.
+ *  and that is arithmetic rather than taste twice over: a 3:2 nave keeps two thirds of its width
+ *  at 1:1 where 4:5 kept barely half, and five cells across a fixed measure stand `measure / Σ
+ *  aspect` tall — so hanging the five by their own ratios (1.50 · 1.50 · 1.50 · 0.80 · 1.50) is
+ *  a line 232px tall at the measure and 190px on a laptop, with the portrait 152px wide. Variety
+ *  of shape is paid for in the one dimension §2 is about. The crop is taken at BUILD
+ *  (lib/croppedShot) rather than by `object-fit` in the browser — read that file for why. If a
+ *  crop lands badly the levers are the evening's `framePosition` and its `frame`, both in
+ *  data/landing/paths.
  *
- *  THE PLATE IS RULED, NOT BLED, AND IT KEEPS THE PAGE'S MEASURE. Each panel carries its own box,
- *  siblings collapse their shared rule, and the caption band under the photographs is ruled off —
- *  so the five are one scored object with an outer edge a reader can actually see. That plate then
- *  hangs from `min(1580px, 100%)`, the measure every other section on this landing keeps
- *  (`.path .section-grid` is the precedent: ground bled, contents at the measure). Run to the
- *  gutter instead it outgrew the register standing directly under it — 1728px against 1580 at a
- *  1920 window, and half again as wide on a 2560 one — which put the widest and darkest object on
- *  the page under a row of photographs. A band cannot claim one measure with the page and then
- *  take a wider one than the page has.
+ *  THE PLATE IS A PRINTED PLATE ON A PAGE, not a room of its own. It stands on the same parchment
+ *  as the film above it and the register below, ringed by one hairline and lifted by the film's
+ *  own shadow (`.vplayer-stage`), with the page itself showing through the 2px between cells — a
+ *  codex divides a plate by scoring it, and on paper the score is the paper. The band used to cut
+ *  the ground to night for its own length, which is a room change performed mid-movement by an
+ *  object rather than by a threshold: on this landing the ground turns at the interludes and
+ *  nowhere else.
  *
- *  Registers: the frames are LIT (`.reveal-light`, the veil belongs to the image) and the type is
- *  INKED — never both on one node. The date rides INSIDE the numeral's node rather than taking one
- *  of its own, because the band's cadence is ten register nodes across ~930ms and a fifteenth
- *  would stretch it. The exit link takes none: a half-ink control is a control the reader is not
- *  sure they may press.
+ *  ONE READOUT, NOT FIVE LABELS. Each frame carries its evening's name, positioned into the
+ *  plate's foot and printed only while that frame is approached (`:hover` / `:focus-within`,
+ *  no script). Five permanent captions under five cells is a card grid, and it prints the
+ *  register's own index 200px above the register. On touch there is nothing to approach, so the
+ *  same element sits statically under its panel in the rail — where one panel fills the screen,
+ *  so it labels a photograph rather than indexing a list.
  *
- *  THE PHOTOGRAPH IS THE SUBJECT HERE, not a ground, and two things follow that the band shipped
- *  without. It carries no scrim of its own — every other full-bleed photograph on this landing
- *  wears one because words are set over it, and there is nothing set over these. And the exposure
- *  is corrected PER EVENING (`frameLift`, data/landing/paths): one filter cannot equalise five
- *  buildings, and the one that was there left the fourth panel at 85% black.
+ *  Registers: the frames are LIT (`.reveal-light`, the veil belongs to the image) and the head is
+ *  INKED — never both on one node. The numeral rides UNDER the veil, because it is printed on the
+ *  panel and arrives with it. The foot takes none: a half-ink control is a control the reader is
+ *  not sure they may press.
  *
- *  Two roads leave a panel and they are deliberately different. The photograph opens the frame
- *  (the whole evening's set, arrows and all); the NUMERAL under it goes to that evening's page.
- *  Without the second one the band reproduces the exact defect the archive was built to fix —
- *  a surface that announces five evenings and offers no route to any of them.
- *
- *  The lightbox island and the `[data-image-open]` delegate are mounted by the PAGE (index.astro),
- *  as on the concert pages and /obrazy — the frame is a document-level overlay, not this band's.
- *
- *  The five panels are one SET (`data-image-group="imagines"`), so opening any of them opens the
- *  line: ← and → walk the same five evenings the eye walks across the plate, in the same order.
- *  And each carries `data-image-href` to its own evening, which is the point of the band said
- *  once more from inside the frame — a photograph the reader stopped on is the strongest place
- *  there is to offer the page it came from.
+ *  THE PHOTOGRAPH IS THE SUBJECT HERE, not a ground. It carries no scrim — every other full-bleed
+ *  photograph on this landing wears one because words are set over it, and the only thing set over
+ *  these is one numeral, which carries its own halo. And the exposure is corrected PER EVENING
+ *  (`frameLift`, data/landing/paths): one filter cannot equalise five buildings.
  * @architecture Astro islands 2026
  * @module components/landing/ImaginesBand
  */
 import { getCollection } from "astro:content";
 import { PATHS, ROMAN } from "../../data/landing/paths";
 import { croppedShot, type CroppedShot } from "../../lib/croppedShot";
-import { framedShot, type FramedShot } from "../../lib/galleryFrame";
 import { photoOptional } from "../../lib/photos";
 
 /** The panel's shape, and it must agree with `aspect-ratio` in 14-imagines.css — the renditions
@@ -79,18 +75,15 @@ const PANEL_WIDTHS = [360, 480, 640, 960];
 
 interface BandFrame {
   readonly roman: string;
-  /** The night this photograph was taken, printed beside the numeral ("listopad MMXXIV"). */
+  /** The night this photograph was taken, printed in the readout ("listopad MMXXIV"). */
   readonly date: string;
   /** Exposure correction for this panel alone, or undefined for the band's grade unmodified. */
   readonly lift?: number;
   readonly title: string;
   readonly concertId: string;
   readonly alt: string;
-  readonly caption?: string;
-  readonly credit?: string;
   /** The panel itself: already square, so `sizes` may state the panel's own width (croppedShot). */
   readonly panel: CroppedShot;
-  readonly full: FramedShot;
 }
 
 // The register is the band's index, so the band walks PATHS rather than the concerts collection:
@@ -106,24 +99,13 @@ for (const [i, path] of PATHS.entries()) {
   if (path.frame && !entry) {
     throw new Error(
       `[imagines] "${path.frame}" is not in the "${path.concertId}" gallery. The band's frame must` +
-        ` be one of that evening's own photographs, so its alt, caption and credit come with it.`,
+        ` be one of that evening's own photographs, so its alt comes with it.`,
     );
   }
   const img = entry ? photoOptional(entry.img) : undefined;
   // An evening with no photographs simply has no frame — the numbering then has an honest gap
   // rather than a placeholder.
   if (!entry || !img) continue;
-  const [panel, full] = await Promise.all([
-    croppedShot(img, {
-      aspect: PANEL_ASPECT,
-      widths: PANEL_WIDTHS,
-      position: path.framePosition,
-    }),
-    // Full-size renditions for the lightbox, shared with the galleries so one photograph costs
-    // one set of files however many surfaces open it (lib/galleryFrame). The panel's crop is the
-    // band's alone and is never handed to the frame — the frame shows the evening whole.
-    framedShot(img),
-  ]);
   frames.push({
     roman: ROMAN[i],
     date: path.frameDate,
@@ -131,10 +113,11 @@ for (const [i, path] of PATHS.entries()) {
     title: path.title,
     concertId: path.concertId,
     alt: entry.alt ?? "",
-    caption: entry.caption,
-    credit: entry.credit,
-    panel,
-    full,
+    panel: await croppedShot(img, {
+      aspect: PANEL_ASPECT,
+      widths: PANEL_WIDTHS,
+      position: path.framePosition,
+    }),
   });
 }
 ---
@@ -142,8 +125,8 @@ for (const [i, path] of PATHS.entries()) {
 {
   frames.length > 0 && (
     <section class="imagines" aria-label="Obrazy wieczorów" data-spine-clear>
-      {/* The ground bleeds and the contents do not: this box carries the page's measure for
-          everything in the band, the way `.path` does one section below. */}
+      {/* One box carries the page's measure for everything in the band, the way `.path` does one
+          section below — head, plate and foot hang from a single left edge. */}
       <div class="imagines-inner">
         {/* The rubric's shape is VoxMoment's, directly above: the Latin tier and its gloss on one
             line, separated by a mid-dot in the text. base.css owns both voices — this band names
@@ -151,43 +134,30 @@ for (const [i, path] of PATHS.entries()) {
         <p class="imagines-label micro reveal">
           <span class="lat">Imagines</span> · Obrazy wieczorów
         </p>
-        {/* The band was the one section on this landing that said nothing — a rubric and a strip of
-            pictures, where even the wordless photograph section carries a line (ImageRiteSection:
-            "Światło prowadzi słuchacza."). A surface where every other surface speaks reads as a
-            component, not as part of the rite.
+        {/* The band's voice. Every other surface on this landing sets one line — even the wordless
+            photograph section ("Światło prowadzi słuchacza.") — and a surface that says nothing
+            where everything else speaks reads as a component standing on the rite.
 
-            It answers the film directly above it, which is the reason it is set as a couplet and
-            not as a title: VoxMoment says "Z tej ciszy — głos.", and this is the same silence seen
-            rather than heard. Deliberately NOT about sound — the register below owns that ("Co już
-            zabrzmiało."), and a third section in this movement saying the same thing in the same
-            voice would be the redundancy the band is already close to. Set a grade under
-            `.section-title` for the same reason: this is a voice, not a heading.
+            It answers the film directly above it, which is why it is a couplet and not a title:
+            VoxMoment says "Z tej ciszy — głos.", and this is the same silence seen rather than
+            heard. Deliberately NOT about sound — the register below owns that ("Co już
+            zabrzmiało.") — and set a grade under `.section-title`, or movement II is three titled
+            sections in a row. */}
         <p class="imagines-line reveal">
           Tak wyglądała ta <em>cisza.</em>
         </p>
-        */}
-        <div class="imagines-plate">
+
+        {/* `no-snap`: the magnetic pull toward a target's centre used to be off here by
+            construction, because the cursor's frame state sits above the branch that applies it.
+            These panels are ordinary links now, and a 316px square would pull the pointer 15%
+            toward its own middle — over a picture that reads as the cursor being taken away from
+            what it is pointing at (islands/landing/hooks/useSiteCursor). */}
+        <div class="imagines-plate" data-cursor="no-snap">
           {frames.map((f) => (
             <figure class="imagines-frame">
-              {/* The media wrapper IS the trigger, as in both galleries: a button rather than an
-                  overlaid control, so the whole panel is the target and nothing is drawn over the
-                  photograph. `.shot-open` (styles/image-lightbox.css) resets it to no box of its
-                  own, and carries the gold-edge affordance the other two surfaces use. */}
-              <button
-                type="button"
-                class="imagines-media shot-open plausible-event-name=imagines+kadr"
-                data-image-open
-                data-image-group="imagines"
-                data-image-src={f.full.src}
-                data-image-srcset={f.full.srcset}
-                data-image-sizes={f.full.sizes}
-                data-image-alt={f.alt}
-                data-image-caption={f.caption}
-                data-image-credit={f.credit}
-                data-image-w={String(f.full.width)}
-                data-image-h={String(f.full.height)}
-                data-image-href={`/koncerty/${f.concertId}`}
-                data-image-href-label={f.title}
+              <a
+                class="imagines-media plausible-event-name=imagines+wieczor"
+                href={`/koncerty/${f.concertId}`}
               >
                 {/* A plain `<img>`, not `<Image>`: the renditions are cut to the panel's square up
                     in the frontmatter, and the component has no way to ask for a crop and a ladder
@@ -203,12 +173,13 @@ for (const [i, path] of PATHS.entries()) {
 
                     Both plate numbers are arithmetic, not guesses. Below the measure the plate is
                     `100vw - 2 × 5vw`, so five panels divide 90vw and each is 18vw; at and above it
-                    the plate is pinned to 1580px and each panel is a flat 316px. The two meet at
-                    1756px of viewport, which is where 90vw first exceeds 1580 — so the boundary is
-                    continuous rather than a step. 76 rather than 74 is the one deliberate rounding:
-                    below a 321px viewport the panel stops shrinking at its 238px floor, which is
-                    74.4vw. Every breakpoint here is the sheet's own (14-imagines.css); they move
-                    together or not at all. */}
+                    the plate is pinned to 1580px and each panel is a flat 316px. (Both ignore the
+                    12px the scoring takes out of the row, which rounds the wrong way by less than a
+                    pixel.) The two meet at 1756px of viewport, which is where 90vw first exceeds
+                    1580 — so the boundary is continuous rather than a step. 76 rather than 74 is the
+                    one deliberate rounding: below a 321px viewport the panel stops shrinking at its
+                    238px floor, which is 74.4vw. Every breakpoint here is the sheet's own
+                    (14-imagines.css); they move together or not at all. */}
                 <img
                   src={f.panel.src}
                   srcset={f.panel.srcset}
@@ -220,45 +191,40 @@ for (const [i, path] of PATHS.entries()) {
                   decoding="async"
                   style={f.lift === undefined ? undefined : `--panel-lift:${f.lift}`}
                 />
+                {/* The plate number, printed on the frame the way an engraving carries one. It is
+                    what ties this line to the register's numbering without a caption row, and it
+                    rides under the veil because it belongs to the panel and arrives with it. */}
+                <span class="imagines-roman" aria-hidden="true">
+                  {f.roman}
+                </span>
                 <span class="reveal-light" aria-hidden="true" />
-              </button>
-              {/* The caption band: the numeral, the photograph's own date beside it, and the road to
-                  the evening. The TITLE stays out — it is set 200px below in the register, and
-                  printing it twice would make the band a table of contents for the list it is
-                  standing over. The DATE is what the title is not: it repeats nothing the eye is
-                  about to read and turns five pictures into a chronology, which is what a line of
-                  five evenings has to be legible as before the register explains it. The register's
-                  bare year could not do that job — three of five panels read MMXXIV, so the line
-                  carried two values for five evenings.
-
-                  Numeral · date on ONE row, which is `.aether-inscription`'s figure (I · Lumen
-                  Christi) a grade smaller — the same shape the movement thresholds already use, and
-                  a caption band that costs half the height the stacked pair did.
-
-                  The numeral carries the link because the panel is already spoken for by the frame,
-                  and because a third control would turn a plate into a toolbar — the same reasoning
-                  that made the register's own title, and not a new button, the way into a concert
-                  page. The name is spoken here for a reader who cannot see which evening this is. */}
-              <figcaption class="imagines-roman reveal">
-                <a
-                  class="imagines-roman-link plausible-event-name=imagines+wieczor"
-                  href={`/koncerty/${f.concertId}`}
-                >
-                  <span class="imagines-roman-n" aria-hidden="true">{f.roman}</span>
-                  <span class="imagines-roman-dot" aria-hidden="true">·</span>
-                  <span class="imagines-roman-date" aria-hidden="true">{f.date}</span>
-                  <span class="sr-only">
-                    {f.roman}. {f.title}
-                  </span>
-                </a>
+                {/* The door has to say where it leads for a reader who cannot see the photograph;
+                    the readout below is a pointer affordance and reaches nobody here. */}
+                <span class="sr-only">
+                  {f.title} · {f.date}
+                </span>
+              </a>
+              {/* The readout. Hidden from assistive tech because the link above already carries
+                  the same name — this element exists to print it for the eye. */}
+              <figcaption class="imagines-name" aria-hidden="true">
+                <span class="imagines-name-n">{f.roman}</span>
+                <span class="imagines-name-dot">·</span>
+                {f.title}
+                <span class="imagines-name-dot">·</span>
+                <span class="imagines-name-date">{f.date}</span>
               </figcaption>
             </figure>
           ))}
         </div>
 
+        {/* The plate's foot is the film's foot: the same mono voice, the readout hanging at the
+            left of it and the reference at the right, exactly where the player above prints its
+            caption and its clock. It is a printed reference, not a call to action — the arrow and
+            the rule of `.primary-link` are what made a row of photographs read as a card shelf
+            with a "see all" under it. */}
         <div class="imagines-foot">
           <a
-            class="primary-link imagines-all plausible-event-name=imagines+wszystkie"
+            class="imagines-all plausible-event-name=imagines+wszystkie"
             href="/obrazy"
           >
             Wszystkie obrazy

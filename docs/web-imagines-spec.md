@@ -23,6 +23,11 @@ shipped.
 measure, the panel exposure, the caption's content and the fourth evening's frame. Same rule:
 where §12 and §13 disagree, §13 is what shipped.
 
+**§14 is a third pass over the band, and it is the largest: the ground, the protocol and the
+caption all changed.** It supersedes §8's night band, §12's numeral link, §13's caption row and
+every claim in §5–§9 that the landing opens the frame. Where anything above and §14 disagree,
+§14 is what shipped.
+
 ---
 
 ## 1. The defect
@@ -856,3 +861,97 @@ Build after the pass: 15 pages, `astro check` 0 errors, `prune-orphan-assets` **
 identical figure §12 closed on, because the ladder kept its four rungs and one panel's four
 renditions were exchanged for another's. All **576** image URLs referenced across the built pages
 resolve on disk after the prune, which is the check that means something here.
+
+---
+
+## 14. Third pass — the band stops being a component — SHIPPED
+
+The founder's reading, on a real screen: *"wygląda jak doklejone do już istniejącej strony, a nie
+jako jej integralna część"* — and *"trochę szablonowo/generatywnie"*. Both are structural, and none
+of the five defects behind them was a matter of taste.
+
+**The band was the one section on this landing with no voice — again.** §13 shipped
+"Tak wyglądała ta cisza." and it was commented out afterwards, so the audit that started this pass
+found the exact state §13 had diagnosed: a 10px rubric and a strip of pictures on a page where
+every other surface sets a line. It is back, and this entry exists so that the next reader knows
+the slot is load-bearing rather than decorative — if the copy is wrong the answer is different
+copy, never an empty head.
+
+**A room change performed by an object, not by a threshold.** Movement II ran paper (silence) →
+paper (the film) → **night (the band)** → paper (the register). On this landing the ground turns
+at the interludes and nowhere else, so a section that blacks out for its own length reads as a
+widget dropped into a movement. The plate stands on **parchment** now, ringed by one hairline and
+lifted by `.vplayer-stage`'s own shadow, which is the second half of the fix: the film 200px above
+is a dark box on this same paper, so the two are now visibly the same kind of object — a window,
+and the contact strip under it.
+
+The scoring changed with the ground. Cell divisions were 1px rules of paper-at-15% on night; on
+paper they are **2px of the page itself**, with the same 2px inside the ring. A codex divides a
+plate by scoring it, and on paper the score is the paper. What must still not happen is the
+poster's answer — a real gutter, which turns one scored object into five floating cards.
+
+**Five permanent captions under five cells is a card grid, and it printed the register's own index
+directly over the register.** The caption band is gone. In its place:
+
+- the **plate number** is printed on the frame, gold with a halo, the way an engraving carries one
+  — so the tie to the register's numbering survives without a label row;
+- the **name is a readout**. Each frame owns its evening's name and positions it into the plate's
+  foot, printed only while that frame is approached (`:hover` / `:focus-within`). **No script** —
+  the figcaption hangs from `.imagines-plate` and every state is CSS. The plate reads as an
+  instrument with one reading slot rather than as five labelled tiles.
+
+The foot is now **the film's foot**: readout at the left, reference at the right, both in the mono
+voice at 10px — exactly where the player above prints its caption and its clock. `.primary-link`'s
+arrow and rule are what made a row of photographs read as a shelf of cards with a "see all" under
+it; the road to `/obrazy` is a printed reference now, not a call to action.
+
+**A PANEL IS A DOOR.** The photograph opened the frame, the numeral went to the evening, the foot
+went to the archive, and the register's own title went to the same evening 200px below — four
+roads to five pages, and the strongest press on the section answered with a bigger picture. The
+whole panel is a link to `/koncerty/[id]`. Three consequences, all shipped together because the
+protocol is not separable:
+
+- **The landing mounts no image lightbox at all** — not the island, not `styles/image-lightbox.css`,
+  not `scripts/image-triggers.ts`. The frame belongs where a reader has already declared they want
+  to look at photographs (`/obrazy`, the concert galleries). The group table in §9 loses its first
+  row.
+- **The printed registration mark is gone**, and so is the cursor's viewfinder over these panels
+  (no `[data-image-open]` left to trigger it). Both said *expand*; the panel means *enter*. The
+  touch affordance is the readout, which on the rail sits statically under its own panel and names
+  where the press leads.
+- **`data-cursor="no-snap"` on the plate is now load-bearing.** The magnetic snap used to be off
+  here by construction, because the cursor's frame state sits above the branch that applies it.
+  An ordinary link 316px square pulls the pointer 15% toward its own centre.
+
+**The square stays, and the arithmetic that says so is worth keeping.** The audit proposed hanging
+the five by their own aspects (the site's own gallery language, `layoutShots`) on the grounds that
+§8's rejection was measured on a set that no longer exists — true: the line ran 1.50 · 1.50 · 1.50
+· **0.56** · 1.00 then and measures **1.50 · 1.50 · 1.50 · 0.80 · 1.50** now, so the "lone 9:16
+becomes a 172px strip" objection is void. It is still the wrong move, because five cells across a
+fixed measure stand `measure / Σ aspect` tall: Σ = 6.80 native against 5.00 square, i.e. a line
+**232px** tall at the measure and **190px** on a laptop, with the portrait 152px wide. Every
+variation of shape is paid for in the one dimension §2 is about. **Tile-ness was never the crop —
+it was the caption row, the CTA, the missing voice and the blackout.**
+
+### Still open — the tonal pass
+
+Everything here is structure. The band has **not** been calibrated for its new ground, and none of
+it should be tuned from a stylesheet:
+
+- **`frameLift` was derived on night** (0.90 · 1.08 · 1.06 · 1.22 · —). Simultaneous contrast runs
+  the other way on paper: the same panel reads darker beside parchment than beside `--night`, so
+  the line probably wants more lift overall and a different spread. Re-derive from a contact sheet
+  at the panel's crop **and the new ground**, per §13.
+- **The hover endpoints (×0.66 / ×1.16) were chosen against a dark surround.** The recession has
+  more to prove on paper and the lift has less.
+- **The plate's ring and shadow** are `.vplayer-stage`'s values verbatim, on a box six times as
+  wide. That is the right starting point and not necessarily the right number.
+- **The readout's slot** is reserved by `--foot-lead` on both boxes. Worth one look at 1280 and at
+  2560, where the foot's two ends are furthest apart.
+- **Panel II may still be a rehearsal frame** (§11), unchanged and for the same reason.
+
+### Weight
+
+Build after the pass: 15 pages, `astro check` 0 errors, `prune-orphan-assets` **66/642** — the
+identical figure §12 and §13 both closed on, because the panel ladder is untouched. The landing
+sheds the lightbox island, its stylesheet and its delegate outright.

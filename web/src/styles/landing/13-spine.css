@@ -21,12 +21,14 @@
   }
 
   /* Withdrawn over content the page's gutter cannot hold. The spine floats at 2vw from the right
-     edge, i.e. INSIDE the 5vw gutter every section clears — but only just: the Imagines plate now
-     hangs from that gutter and its own inscription is ~68px wide, so the two still overlap on any
-     viewport under ~1960px, and under the 1280px breakpoint the band's rail runs to the edge
-     outright. Either way the gold prints itself on a photograph. The band marks this from
-     `data-spine-clear` on the centre band — see MovementSpine.tsx. Written to out-specify
-     `.is-visible`, which is the only thing raising the spine in the first place. */
+     edge, i.e. INSIDE the 5vw gutter every section clears — but only just, and the Imagines plate
+     is the one object that reaches into what is left. The plate keeps the page's measure, so its
+     right margin is 5vw until 1756px and only opens past the spine's ~68px inscription at about
+     1780; below the 1280px breakpoint the band's rail runs to the viewport edge outright. Between
+     those two the gold prints itself on the fifth photograph, so the band marks the collision with
+     `data-spine-clear` and the spine withdraws while the section holds the viewport centre — see
+     MovementSpine.tsx. Withdrawing, not shifting: the spine is orientation, the plate is the page.
+     Written to out-specify `.is-visible`, which is the only thing raising the spine at all. */
   .movement-spine.is-visible.is-veiled {
     opacity: 0;
     pointer-events: none;

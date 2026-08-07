@@ -235,9 +235,10 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       // photograph, so the generic branch below would give it the link ring AND the magnetic
       // snap — and a panel 370 × 462 pulls the cursor a long way toward its own centre, which
       // over a picture reads as the pointer being taken away from what it is pointing at. Its
-      // own state removes both: the glyph is a viewfinder (the same four corner ticks the band
-      // PRINTS where there is no hover — 14-imagines.css), and being here rather than in the
-      // interactive branch is what leaves `snapEl` null.
+      // own state removes both: the glyph is a viewfinder (a printer's registration mark, four
+      // corner ticks — styles/cursor.css), and being here rather than in the interactive branch
+      // is what leaves `snapEl` null. A surface that wraps a photograph in an ordinary LINK gets
+      // neither for free and has to opt out of the snap by hand (the landing's Imagines plate).
       //
       // Inside an open frame the two halves declare which way they turn it, and the cursor
       // becomes that arrow — the affordance those halves deliberately do not draw.
