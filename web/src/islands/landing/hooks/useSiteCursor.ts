@@ -7,7 +7,9 @@
  *     element's centre, so the cursor settles ON the link/button instead of next to it.
  *     Subtle enough not to feel "draggy" — just polished. Precision surfaces whose centre
  *     is far from the pointer (full-width scrubbers, full-viewport backdrops) opt out via
- *     `data-cursor="no-snap"` on the element or an ancestor.
+ *     `data-cursor="no-snap"` on the element or an ancestor; the states that own their own
+ *     glyph (seek, video, frame) opt out by construction, since the snap is applied only in
+ *     the branches beneath them.
  *   • Click feedback (`.is-down`) — `mousedown` adds the class, `mouseup` clears it; CSS
  *     contracts the ring + expands the inner dot for tactile pressure.
  *   • Reduced-motion + coarse-pointer + no-hover → opt out entirely (no body class, no DOM).
@@ -145,7 +147,16 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       currentX = autoscrollAnchorX;
       currentY = autoscrollAnchorY;
       el.classList.add("is-autoscroll");
-      el.classList.remove("is-pointer", "is-video", "is-download", "is-playing", "is-seek");
+      el.classList.remove(
+        "is-pointer",
+        "is-video",
+        "is-download",
+        "is-playing",
+        "is-seek",
+        "is-frame",
+        "is-frame-prev",
+        "is-frame-next",
+      );
       // Pause Lenis so its lerp loop doesn't fight our discrete scrollBy ticks.
       getLenis()?.stop?.();
       if (autoscrollRaf === null) autoscrollRaf = window.requestAnimationFrame(autoscrollTick);
@@ -185,10 +196,12 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       }
 
       const target = event.target;
-      // Detection priority: seek → video → download → standard interactive. The first
-      // four are mutually exclusive states with distinct cursor visuals:
+      // Detection priority: seek → video → frame → download → standard interactive. These are
+      // mutually exclusive states with distinct cursor visuals:
       //   .is-seek    — caret + timestamp (the cursor IS the scrub tooltip)
       //   .is-video   — ring + ▶/⏸ glyph (paused/playing reflects video.paused)
+      //   .is-frame   — viewfinder over a photograph that opens (`[data-image-open]`)
+      //   .is-frame-prev / .is-frame-next — the arrow the half of an open frame will perform
       //   .is-download — ring + ↓ arrow (line + triangle stacked vertically)
       //   .is-pointer — ring + small dot (standard link/button)
 
@@ -218,24 +231,43 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
         !onSeek && target instanceof Element ? target.closest<HTMLVideoElement>("video") : null;
       const onVideo = Boolean(videoEl);
 
+      // Photograph surfaces. A `[data-image-open]` trigger is a <button> wrapped around a whole
+      // photograph, so the generic branch below would give it the link ring AND the magnetic
+      // snap — and a panel 370 × 462 pulls the cursor a long way toward its own centre, which
+      // over a picture reads as the pointer being taken away from what it is pointing at. Its
+      // own state removes both: the glyph is a viewfinder (the same four corner ticks the band
+      // PRINTS where there is no hover — 14-imagines.css), and being here rather than in the
+      // interactive branch is what leaves `snapEl` null.
+      //
+      // Inside an open frame the two halves declare which way they turn it, and the cursor
+      // becomes that arrow — the affordance those halves deliberately do not draw.
+      const frameEl =
+        !onSeek && !onVideo && target instanceof Element
+          ? target.closest<HTMLElement>(
+              '[data-image-open], [data-cursor="frame-prev"], [data-cursor="frame-next"]',
+            )
+          : null;
+      const onFrame = Boolean(frameEl);
+      const frameStep = frameEl?.dataset.cursor;
+
       // Download surface: `<a download>` (semantic) OR any element with `data-cursor="download"`
       // (opt-in for non-anchor download tiles or unconventional triggers).
       const downloadEl =
-        !onSeek && !onVideo && target instanceof Element
+        !onSeek && !onVideo && !onFrame && target instanceof Element
           ? target.closest<HTMLElement>('a[download], [data-cursor="download"]')
           : null;
       const onDownload = Boolean(downloadEl);
 
       const interactiveEl =
-        !onSeek && !onVideo && !onDownload && target instanceof Element
+        !onSeek && !onVideo && !onFrame && !onDownload && target instanceof Element
           ? target.closest<HTMLElement>(INTERACTIVE_SELECTOR)
           : null;
       const interactive = Boolean(interactiveEl);
 
       // Magnetic snap — applied to .is-pointer AND .is-download (both are intentional
-      // landings); skipped on seek/video (mouse needs precision over the scrubber/controls)
-      // and on no-snap surfaces, where a pull toward a distant centre becomes a yank
-      // (over a scrubber the visible cursor must equal the click point).
+      // landings); skipped on seek/video/frame (mouse needs precision over the scrubber, the
+      // controls, and the picture) and on no-snap surfaces, where a pull toward a distant
+      // centre becomes a yank (over a scrubber the visible cursor must equal the click point).
       const snapEl = interactive ? interactiveEl : onDownload ? downloadEl : null;
       if (snapEl && !snapEl.closest('[data-cursor="no-snap"]')) {
         const rect = snapEl.getBoundingClientRect();
@@ -259,6 +291,9 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       el.classList.toggle("is-seek", onSeek);
       el.classList.toggle("is-pointer", interactive);
       el.classList.toggle("is-video", onVideo);
+      el.classList.toggle("is-frame", onFrame && !frameStep);
+      el.classList.toggle("is-frame-prev", frameStep === "frame-prev");
+      el.classList.toggle("is-frame-next", frameStep === "frame-next");
       el.classList.toggle("is-download", onDownload);
       syncPlayingClass();
       if (raf === null) render();

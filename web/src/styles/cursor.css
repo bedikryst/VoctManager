@@ -7,6 +7,10 @@
  *  - Native pointer hidden only under `.has-custom-cursor` body class (set by useSiteCursor).
  *  - Cursor displayed only on `(pointer: fine) and (hover: hover)` — touch users untouched.
  *  - `.is-pointer` (over interactive element), `.is-down` (mousedown) reflect interaction state.
+ *  - Surface states, in the priority useSiteCursor resolves them: `.is-seek`, `.is-video`,
+ *    `.is-frame` / `.is-frame-prev` / `.is-frame-next` (photographs), `.is-download`. Each one
+ *    owns its whole glyph, and each one that sits above `.is-pointer` also drops the magnetic
+ *    snap — precision over a scrubber, a control strip or a picture beats settling on a centre.
  * @architecture Astro islands 2026
  * @module styles/cursor
  */
@@ -50,6 +54,10 @@
 }
 
 .site-cursor {
+  /* The lit gold the glyphs are drawn in — brighter than --candle, which is a token for ink
+     and rules on paper. The states that predate this declaration spell it out; it is local
+     to the element rather than a site token because nothing outside this cursor draws in it. */
+  --glyph: rgba(232, 207, 144, 0.98);
   position: fixed;
   left: 0;
   top: 0;
@@ -243,6 +251,144 @@
 .site-cursor.is-download.is-down::before,
 .site-cursor.is-download.is-down::after {
   transform: translateY(2px);
+}
+
+/* ── Frame state — the viewfinder over a photograph that opens ────────────
+   Triggered over any `[data-image-open]`. It is deliberately NOT a fifth ring: the
+   thing under the cursor is a picture, and a ring is the site's mark for a control.
+   A viewfinder says the same thing about a photograph that a ring says about a link —
+   and it is the exact figure the Imagines band PRINTS on these panels where there is
+   no hover to draw it (14-imagines.css, `@media (hover: none)`). One mark, two media.
+
+   Eight gradient layers, two strokes per corner, drawn on the element's own background
+   because the two pseudo slots are the glyph slots and this glyph is the frame itself.
+
+   TWO THINGS THIS FIGURE CANNOT DO WITHOUT, both found by looking at it on a photograph:
+
+   `border-radius: 0` is load-bearing. The base cursor is a pill (999px), backgrounds are
+   clipped to the border box, and a rounded box cuts a corner tick down to the fragment
+   that survives inside the curve — eight ticks become eight dots on a circle, which is
+   precisely what a clipped viewfinder looks like and nothing like a viewfinder.
+
+   The stroke is heavier and brighter than the printed mark on the band: 2px of --glyph
+   against that mark's 1px of --candle. They are the same figure, but the printed one is
+   STILL and the eye finds it at leisure, while this one is moving over changing luminance —
+   a hairline in mid gold disappears into a lit nave and is not much better on a dark one.
+
+   Legibility over a highlight is the DROP-SHADOW's job and not a ground's, and the
+   difference matters here: a shadow follows the alpha of what is drawn, so each of the
+   eight ticks carries its own dark halo, where a radial plate would have been darkest at
+   the centre — the one place this figure has no ink and the reader is looking THROUGH it.
+   `mix-blend-mode: normal` for the reason .is-video has it: difference-blended gold over a
+   chiaroscuro photograph inverts unpredictably from frame to frame. */
+.site-cursor.is-frame {
+  width: 46px;
+  height: 46px;
+  border-color: transparent;
+  border-radius: 0;
+  background-color: transparent;
+  opacity: 1;
+  mix-blend-mode: normal;
+  background-image:
+    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
+    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
+    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
+    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph));
+  background-repeat: no-repeat;
+  background-size:
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px,
+    14px 2px, 2px 14px;
+  background-position:
+    left top, left top,
+    right top, right top,
+    left bottom, left bottom,
+    right bottom, right bottom;
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 9px rgba(0, 0, 0, 0.6));
+}
+
+/* The centre dot is not part of this figure — a viewfinder frames, it does not aim. */
+.site-cursor.is-frame::after {
+  opacity: 0;
+}
+
+/* Press: the viewfinder closes on the frame, which is what pressing it does. */
+.site-cursor.is-frame.is-down {
+  width: 34px;
+  height: 34px;
+  border-color: transparent;
+}
+
+/* ── Frame halves — the arrow the press will perform ──────────────────────
+   Inside an open frame the left and right halves of the photograph turn the set
+   (image-lightbox.css). Those halves draw almost nothing themselves, on purpose: the
+   cursor IS the affordance, and it states the direction across the whole half rather
+   than at a 40px target on an edge. Which puts the entire weight of the signal on this
+   glyph, over a surface whose luminance is a different photograph every press.
+
+   So it is a SOLID arrow — shaft and filled head cut from one box by `clip-path` — and not
+   the outlined chevron this shipped as first, which vanished into half the archive. The
+   site's cursor already speaks in filled shapes (▶ on video, ↓ on download) rather than in
+   outlines, and a filled figure with a dark halo behind it holds on any photograph.
+
+   One arrow is drawn, pointing right, and the other direction is the SAME arrow mirrored —
+   which is what keeps the thing worth watching. Crossing the middle of the frame turns
+   `scaleX(1)` into `scaleX(-1)`, and a browser interpolates that through zero: the arrow
+   folds shut and opens again facing the other way, exactly as the reader's intent does.
+   Two separate glyphs swapped instantly would lose that, which is why the head is not two
+   mirrored border-triangles — those cannot be interpolated between. */
+.site-cursor.is-frame-prev,
+.site-cursor.is-frame-next {
+  width: 50px;
+  height: 50px;
+  gap: 0;
+  border-color: transparent;
+  background-color: transparent;
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(8, 8, 7, 0.55) 0%,
+    rgba(8, 8, 7, 0.26) 48%,
+    rgba(8, 8, 7, 0) 72%
+  );
+  opacity: 1;
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.92)) drop-shadow(0 0 14px rgba(0, 0, 0, 0.5));
+}
+
+/* Shaft and head in ONE box, so the whole arrow is a single interpolable transform. The
+   polygon reads: along the shaft's top edge, out to the head's shoulder, up to the barb,
+   to the point, and back — 14% of the height is the shaft, the head takes the last 38%
+   of the width. */
+.site-cursor.is-frame-prev::after,
+.site-cursor.is-frame-next::after {
+  width: 26px;
+  height: 14px;
+  border-radius: 0;
+  background: var(--glyph);
+  clip-path: polygon(0 43%, 62% 43%, 62% 14%, 100% 50%, 62% 86%, 62% 57%, 0 57%);
+  margin: 0;
+  opacity: 1;
+  transition: transform 0.34s var(--ease, ease);
+}
+
+.site-cursor.is-frame-next::after {
+  transform: scaleX(1);
+}
+
+.site-cursor.is-frame-prev::after {
+  transform: scaleX(-1);
+}
+
+/* Press: the arrow lurches the way it is about to go — `.is-download`'s tactile cue, turned
+   sideways. The translate is composed AFTER the mirror, so one declaration sends each arrow
+   forward along its own direction. */
+.site-cursor.is-frame-next.is-down::after {
+  transform: scaleX(1) translateX(3px);
+}
+
+.site-cursor.is-frame-prev.is-down::after {
+  transform: scaleX(-1) translateX(3px);
 }
 
 /* ── Seek state — the cursor becomes the scrub tooltip ────────────────────

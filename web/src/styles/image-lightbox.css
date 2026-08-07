@@ -8,6 +8,12 @@
  *  The scroll-lock is deliberately NOT declared here: `overflow: hidden` on `body.image-open`
  *  has to name the page's own body class (each page carries its own), and a blanket `body` rule
  *  would reach documents that never mount the island.
+ *
+ *  The frame is a SET of photographs now, and three of the blocks below exist for that: the stage
+ *  (the photograph's own box, with the trigger's decoded rendition blurred underneath it until the
+ *  full one lands), the two halves that turn the set, and the counter in the caption row. The
+ *  arrow the pointer takes over those halves is not here — a cursor state belongs to cursor.css,
+ *  where the viewfinder over a `[data-image-open]` trigger lives too.
  * @architecture Astro islands 2026
  * @module styles/image-lightbox
  */
@@ -89,23 +95,142 @@
 
 /* The photograph is capped by the SHORTER dimension of the viewport as well as by its width,
    so a portrait cannot run off the bottom of a laptop screen. The caption is outside the cap
-   and gets its own room below. */
+   and gets its own room below. It is the only thing in the stage that holds layout, and it does
+   so from its `width`/`height` attributes before a single byte arrives — which is what lets the
+   blurred backdrop underneath it be absolute and still land on the right box. */
 .image-lightbox-img {
   display: block;
+  position: relative;
+  z-index: 1;
   max-width: 100%;
   max-height: min(80svh, 1200px);
   width: auto;
   height: auto;
   margin: 0 auto;
   box-shadow: 0 60px 140px -50px rgba(0, 0, 0, 0.95);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease, ease);
 }
 
 .image-lightbox-figure {
   margin: 0;
 }
 
-/* Two voices on one line, the rubric this site sets facts in: the place in the inscriptional
-   capital, the photographer in mono minuscule a grade quieter. */
+/* ── The stage ──────────────────────────────────────────────────────────────────
+   The photograph's own box and nothing more. `fit-content` tracks the RENDERED width —
+   an image's max-content contribution carries its height cap through its aspect ratio —
+   which is the same behaviour the panel around it already depends on to hang the ✕ at the
+   frame's corner rather than at the far edge of a measure. The image is therefore the only
+   thing in flow here; the backdrop and the two halves are absolute, so neither can size it. */
+.image-lightbox-stage {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
+}
+
+/* ── The backdrop the press already has ─────────────────────────────────────────
+   The trigger's own rendition, decoded and in cache before the room existed (`currentSrc`,
+   scripts/image-triggers). It stands here blurred and a whisker over-scaled — over-scaled
+   because a blur samples past its own edge and would otherwise print a soft border — until
+   the full rendition lands, and then the two cross. Without it the frame is a black room
+   and a pop, which is what the press actually feels like on anything but a fast connection.
+
+   `cover` rather than `contain`: the thumbnail is frequently a CROP of this photograph (the
+   Imagines band hangs every frame at 4:5), so its own ratio is not the one being reserved
+   here. It is a ground, not a preview — nothing in it needs to be true except the light. */
+.image-lightbox-thumb {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(20px);
+  transform: scale(1.06);
+  opacity: 1;
+  transition: opacity 0.5s var(--ease, ease);
+}
+
+.image-lightbox-stage[data-loaded="true"] .image-lightbox-img {
+  opacity: 1;
+}
+
+.image-lightbox-stage[data-loaded="true"] .image-lightbox-thumb {
+  opacity: 0;
+}
+
+/* ── The two halves ─────────────────────────────────────────────────────────────
+   Each half of the photograph turns the set one frame. They are transparent: the affordance
+   is the cursor, which becomes the arrow it will perform (cursor.css `.is-frame-prev` /
+   `.is-frame-next`), and on touch the gesture is a swipe, which needs no target at all. What
+   is drawn is one chevron per edge, quiet at rest and lit on approach — enough that a reader
+   who has neither the cursor nor the habit can see the frame is one of several.
+
+   The chevron carries its own shadow instead of a scrim: a gradient darkening both edges of
+   every photograph in the archive would be a permanent cost paid for a control most visitors
+   never look at. */
+.image-lightbox-nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 50%;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(10px, 2vw, 22px);
+  margin: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.image-lightbox-nav.is-prev {
+  left: 0;
+  justify-content: flex-start;
+}
+
+.image-lightbox-nav.is-next {
+  right: 0;
+  justify-content: flex-end;
+}
+
+.image-lightbox-chevron {
+  width: 15px;
+  height: 15px;
+  border-left: 1.5px solid rgba(244, 241, 233, 0.9);
+  border-bottom: 1.5px solid rgba(244, 241, 233, 0.9);
+  opacity: 0.5;
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, 0.8));
+  transition:
+    opacity 0.35s var(--ease, ease),
+    border-color 0.35s var(--ease, ease);
+}
+
+.image-lightbox-nav.is-prev .image-lightbox-chevron {
+  transform: rotate(45deg);
+}
+
+.image-lightbox-nav.is-next .image-lightbox-chevron {
+  transform: rotate(-135deg);
+}
+
+.image-lightbox-nav:hover .image-lightbox-chevron,
+.image-lightbox-nav:focus-visible .image-lightbox-chevron {
+  opacity: 1;
+  border-color: var(--candle);
+}
+
+.image-lightbox-nav:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: -8px;
+}
+
+/* Three voices on one line, the rubric this site sets facts in: the count and the place in the
+   inscriptional capital, the photographer in mono minuscule a grade quieter. The row is a live
+   region and is always in the document, so its top margin has to survive being the margin of an
+   EMPTY row — `.sr-only` children are out of flow, so a row with nothing visible in it is 0 tall
+   and the 18px simply falls where the photograph's edge already is. */
 .image-lightbox-caption {
   display: flex;
   flex-wrap: wrap;
@@ -116,7 +241,8 @@
   text-align: center;
 }
 
-.image-lightbox-place {
+.image-lightbox-place,
+.image-lightbox-count {
   font-family: var(--capitalis);
   font-size: 10.5px;
   letter-spacing: 0.14em;
@@ -124,11 +250,51 @@
   color: rgba(244, 241, 233, 0.62);
 }
 
+/* The numeral takes the candle, as every other numeral on this site does — the register's
+   entries, the series heads on /obrazy, the numerals under the band. It is the same numbering
+   read from inside one of its frames. */
+.image-lightbox-count {
+  color: color-mix(in srgb, var(--candle) 82%, transparent);
+}
+
 .image-lightbox-credit {
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.1em;
   color: rgba(244, 241, 233, 0.42);
+}
+
+/* ── The way out ────────────────────────────────────────────────────────────────
+   The frame's exit to the evening the photograph belongs to. Same idiom as the exits already
+   standing at the foot of both galleries (`.kd-gallery-all`, `.im-colophon-back`), because it
+   is the same road — reached from inside the frame instead of from under it. */
+.image-lightbox-foot {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.image-lightbox-exit {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.72);
+  border-bottom: 1px solid rgba(244, 241, 233, 0.28);
+  padding-bottom: 4px;
+  transition:
+    color 0.35s var(--ease, ease),
+    border-color 0.35s var(--ease, ease);
+}
+
+.image-lightbox-exit:hover {
+  color: var(--candle);
+  border-bottom-color: var(--candle);
+}
+
+.image-lightbox-exit:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
 }
 
 .image-lightbox-close {
@@ -171,13 +337,18 @@
 }
 
 /* On a phone the ✕ has no room above the frame — the photograph already starts near the top
-   edge — so it moves under it, where the thumb is. */
+   edge — so it moves under it, where the thumb is.
+
+   The cap came down from 74svh to pay for the exit row: the ✕ hangs BELOW everything the panel
+   holds, so each line added under the photograph pushes it toward the bottom edge, and on a
+   landscape phone the old cap plus caption plus exit plus button ran past the viewport. The room
+   scrolls nothing — `body.image-open` is locked — so anything past the edge is simply gone. */
 @media (max-width: 640px) {
   .image-lightbox {
     padding: 12px;
   }
   .image-lightbox-img {
-    max-height: 74svh;
+    max-height: 68svh;
   }
   .image-lightbox-close {
     top: auto;
@@ -191,5 +362,11 @@
   .image-lightbox,
   .image-lightbox-panel {
     animation: none;
+  }
+  /* The crossfade off the blurred ground goes too — but the two states must still SWAP, or the
+     photograph never becomes visible. Zero-duration, not "no transition to opacity". */
+  .image-lightbox-img,
+  .image-lightbox-thumb {
+    transition-duration: 0.01ms;
   }
 }

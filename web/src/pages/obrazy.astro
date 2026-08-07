@@ -13,6 +13,11 @@
  *  Every shot opens the shared lightbox (islands/landing/ImageLightbox), and the photographers
  *  are gathered into one colophon at the foot instead of being repeated under each frame.
  *
+ *  All forty-three frames are ONE set in the lightbox (`data-image-group="obrazy"`), because the
+ *  page is one sequence and stopping the arrows at each evening's last frame would contradict the
+ *  document the reader is holding. Each frame carries its own evening's URL, so the name of the
+ *  evening is never lost even though the head that states it has scrolled away.
+ *
  *  Not in the main nav and not in TRANSLATED_ROUTES — see docs/web-imagines-spec.md §7 for both
  *  decisions and for the entrances it does get.
  * @architecture Astro islands 2026
@@ -179,10 +184,15 @@ const jsonLd = {
                   data-d={String((i % 3) + 1)}
                   style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
                 >
+                  {/* One group for the WHOLE document, not one per evening: the archive is a
+                      single sequence in Via order, and the reader who opens the first frame of
+                      Wcielenie and keeps pressing → should arrive at Aeternam the way they would
+                      by scrolling. The exit under the frame is what keeps the evenings named. */}
                   <button
                     type="button"
                     class="im-shot-media shot-open"
                     data-image-open
+                    data-image-group="obrazy"
                     data-image-src={g.frame.src}
                     data-image-srcset={g.frame.srcset}
                     data-image-sizes={g.frame.sizes}
@@ -191,6 +201,8 @@ const jsonLd = {
                     data-image-credit={g.credit}
                     data-image-w={String(g.frame.width)}
                     data-image-h={String(g.frame.height)}
+                    data-image-href={s.hasPage ? `/koncerty/${s.id}` : undefined}
+                    data-image-href-label={s.hasPage ? s.title : undefined}
                   >
                     <Image
                       src={g.img}

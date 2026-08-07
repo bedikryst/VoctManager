@@ -1,16 +1,18 @@
 # Imagines — the image archive
 
-Spec for making the ensemble's documentary photographs reachable. Four stages, ordered by
+Spec for making the ensemble's documentary photographs reachable. Six stages (0–5), ordered by
 dependency, not by value: stage 0 is a refactor nothing visible depends on and everything after
 it does.
 
 Companion to `web-landing-guardrails.md` (the negative space) and `concert-detail-pages-spec.md`
 (where the gallery currently lives).
 
-Written 2026-08-07; all four stages shipped the same day. §3 was corrected against the YAML on
-that day (the counts it opened with were wrong — see the note there before trusting any number in
-an earlier reading of this file), and §4's claim about which stages need the packing module was
-corrected when stage 4 turned out not to.
+Written 2026-08-07; stages 0–4 shipped the same day, stage 5 (§9) directly after them. §3 was
+corrected against the YAML on that day (the counts it opened with were wrong — see the note there
+before trusting any number in an earlier reading of this file), and §4's claim about which stages
+need the packing module was corrected when stage 4 turned out not to. **§9 was inserted after the
+fact, so the two sections that closed the file moved down a number** — cross-cutting constraints
+are §10 and the open list is §11.
 
 ---
 
@@ -257,7 +259,7 @@ numerals are ink. Do not put both registers on one node. No `data-d` anywhere: t
 cadence is the shared onset queue, and the ten register nodes (five veils, then five numerals)
 light across ~930ms of it, left to right.
 
-Five things the build settled that the plan above did not anticipate:
+What the build and the first audit of it settled, none of it anticipated by the plan above:
 
 - **The panels are a CROP, and portrait, and that is arithmetic rather than taste.** Five frames
   across one measure are ~370px wide at 1920 and ~300 at the site's own 1580 — and 240×160 is
@@ -271,18 +273,82 @@ Five things the build settled that the plan above did not anticipate:
   ("Próba do…"), which is a fine archive entry and a poor announcement. `Path.frame`
   (`data/landing/paths.ts`) names the photograph that stands for an evening, by its `img` in that
   concert's own gallery so alt, caption and credit come with it; unset means `gallery[0]`, and a
-  name that is not in that gallery fails the build rather than falling back silently. Set for
-  `wcielenie` and `wolanie-gor` only.
+  name that is not in that gallery fails the build rather than falling back silently.
+
+  It is now set for **four** of the five, and the two that joined were found by looking at the
+  built band rather than at the YAML — which is the only way this class of defect is ever found.
+  `9-kart`'s `gallery[0]` is a photograph of the printed programme: a fine archive entry, not an
+  evening, and the brightest panel of five on a night ground, so the eye reached the middle of the
+  line before its beginning. `aeternam`'s is the widest frame of its set, an evenly lit hall from
+  the back rows, which at 4:5 keeps neither the architecture nor the singers. The remaining
+  `gallery[0]` is `hymn-poleglym`'s, and it is an evening. **The check is one contact sheet of
+  4:5 centre-crops, not a reading of `alt` strings** — `sharp(...).resize(W, H, {fit:"cover"})`
+  over the five names, which is ten lines and answers the only question the band asks.
 - **The numbering is now one object.** `ROMAN` moved out of `PathSection.astro` into
   `data/landing/paths.ts` and both read it. "Five frames = the numbering of the register directly
   below" was two literals that happened to agree; it is a shared list now, which is what makes the
   claim structural.
-- **On the phone the line stands up, and the crop relaxes with it.** Below 980px five across stops
-  being photographs, so the plate stacks at full measure — the largest a photograph is ever printed
-  there — in a 3:2 box, which is the frame three of these five were actually shot in.
+- **Below the desktop measure the line LIES DOWN — it does not stand up.** This shipped as a
+  vertical stack at full measure, in a 3:2 box, and it was wrong twice over. A column of five is
+  the one shape the band says it never is; and it ran ~1500px on a phone, a second document
+  standing between the film and the register in a movement whose whole form is three short
+  breaths. It is a **rail** now: one screen, snapped, carried sideways — the same gesture the
+  desktop eye makes across the same object.
+
+  Two things make it work rather than merely exist. The panel is capped at 420px, or a tablet
+  prints a 900px-tall photograph nothing can see whole. And the plate keeps its **gutter**, which
+  is what leaves the next panel visibly cut at the right edge — that cut is the entire affordance,
+  because nobody scrolls sideways on a page that gives no sign it can be.
+
+  The crop does **not** relax on the rail, reversing this stage's original reasoning on purpose: a
+  stacked photograph at full measure could afford 3:2 because it was the largest a phone ever
+  printed one, and a 74vw rail panel cannot. Portrait is the only thing keeping these dark frames
+  legible at that width, and it keeps the band one shape on every screen.
+
+  The breakpoint is the 200px floor solved, and the arithmetic moved when the gutter went: with no
+  gap the panel is exactly `100vw / 5`, so the floor is exactly **1000px**. It shipped at 980,
+  which printed 192 × 240 panels — to the pixel the thumbnail §2 rejects the whole grid for being.
+  `sizes` carries the same two boundaries; move them together or not at all.
+
+  No `data-lenis-prevent` on the rail: Lenis is gated behind `(pointer: fine) and (hover: hover)`
+  in BaseLayout, so on the touch devices the rail is built for it never runs. Reaching for the
+  attribute anyway would be worse than dead config — the plain form suppresses the WHEEL too, and
+  would break vertical scrolling over the band on every desktop.
+
+- **No gutter between the panels; their own hairlines carry the division.** A gutter is a poster's
+  answer and this site is a codex, which divides a plate by RULING it — the five become one object
+  scored into five, which is what the band claims to be. The ruling is load-bearing, not
+  decoration: four dark frames butted with no division at all dissolve into one panorama, and five
+  churches read as one room, which is a small lie about five different evenings. So the state to
+  avoid is zero gutter **and** no hairline. The panels touch, so `.imagines-frame + .imagines-frame
+  img` drops its left border and the division stays 1px against 1px at the plate's outer edge.
 - **`.path` drops its own top rule under the band** (`.imagines + .path`). The cut from night to
   parchment is the boundary; a `--line` hairline 1px below it is the restatement the interludes
   already refuse with `.aether-interlude + section`.
+
+- **A full-bleed section takes the movement spine's floor out from under it.** `.movement-spine`
+  is `position: fixed` in the page's 5vw gutter and clears every section that keeps one; this band
+  has no gutter by design, so from 1201px the spine's gold printed itself on the fifth photograph,
+  and from 1440px the whole `Vox memoriae` inscription did. The band marks itself
+  **`data-spine-clear`** and the spine withdraws while it holds the viewport centre — the same
+  centre band the active movement is already read from, one more observer in `MovementSpine.tsx`.
+  Withdrawing is the right way round: the spine is orientation, the bled object is the page. **Any
+  future full-bleed section on the landing carries this attribute or repeats the collision.**
+
+- **`sizes` was overstated by a fifth.** It said `24vw` against a panel of 19.3vw, which on a 2×
+  desktop put all five over the 840 candidate and pulled the 1200. No new files either way (the
+  set is deduped), purely bytes on the wire.
+
+- **The band's only affordance was a hover, and a phone never hovers.** `.shot-open:hover::after`
+  is the whole signal that these are doors; without it five photographs under a rubric read as
+  decoration standing on the register. Under `(hover: none)` the band prints the sign instead —
+  four candle corner ticks, a crop mark, on the button's `::before` because `::after` is the hover
+  edge. It is deliberately the same figure the pointer will take over these frames on a desktop.
+
+- **The claim that the five read as one object needed proving, and light proves it.** Under
+  `(hover: hover)` approaching any panel steps the other four back (`brightness(.74)`) and lifts
+  the approached one a whisker (`1.06`). It is a change of LIGHT — this band's own register — and
+  not a lift, a zoom or a shadow, all three of which `.shot-open` already rules out.
 
 **Weight, measured** (build of 2026-08-07, same probe as §7): `/` gains 5 lazy images —
 0.50 → 0.83 MB at 1200w, 0.44 → 0.56 MB at 560w, HTML 24.9 → 26.8 KB gzip. **No new files are
@@ -290,9 +356,132 @@ emitted at all**: the band requests the galleries' own `widths` (560/840/1200) a
 renditions come from `lib/galleryFrame`, so the pipeline dedupes every one of them —
 `prune-orphan-assets` reported the identical **62/611** before and after, off an identical total.
 
+## 9. Stage 5 — the frame's protocol — SHIPPED
+
+Four things one audit found, done as one change because they all extend the same
+`[data-image-open]` detail and all land on the same three surfaces (the band, `/obrazy`,
+`/koncerty/[id]`): arrow navigation through a set, a way out of the frame to its evening, an
+opening that is instant rather than a dark room and a pop, and a cursor state for photographs.
+
+The detail went from five fields to eleven, so it now lives in **`lib/imageFrame.ts`** — types and
+the two event names, imported by both `scripts/image-triggers.ts` and `ImageLightbox.tsx`. Two
+hand-kept copies of an eleven-field interface drift; two of five did not.
+
+**A SET is always dispatched, never a lone frame.** One photograph is a one-item set, so the island
+has exactly one shape to render and NO surface needed migrating: a trigger without
+`data-image-group` publishes itself. Membership is that attribute, order is the document's own —
+so ← and → move the way the page reads.
+
+**The group's boundary is a different answer on each surface, and each one is the reading unit:**
+
+| Surface | Group | Exit (`data-image-href`) |
+|---|---|---|
+| Imagines band | the band (5) | that evening's `/koncerty/[id]` |
+| `/obrazy` | the whole document (43) | that frame's own evening |
+| `/koncerty/[id]` | that evening's gallery | `/obrazy` |
+
+`/obrazy` is one sequence in Via order and stopping the arrows at each evening's last frame would
+contradict the document the reader is holding — the exit is what keeps the evening named once its
+head has scrolled away. A concert page stops at its own gallery, because an arrow that walked on
+into another concert would take the reader out of the page they are reading without saying so. And
+the exit always leads OUT of where the reader already is, which is why the concert page's frames
+point at the archive rather than at the page around them.
+
+What the build settled, none of it anticipated by the plan:
+
+- **The two halves of the photograph ARE the arrows.** The plan said chevrons at the panel's
+  edges. The panel is `width: fit-content` and the room's padding is `max(16px, 4vw)` — 48px at a
+  1200px viewport — so a control hung outside it like the ✕ is one narrow window away from being
+  off-screen. And the cursor state below already promises an arrow across the whole half; a 40px
+  target on an edge would make that promise a lie everywhere except at the edge. So the half is
+  the button: transparent, full height, with one chevron drawn at its outer edge. Buttons rather
+  than a click handler on the image, so the keyboard reaches them and a screen reader is told what
+  they do.
+- **A swipe fires the half's click as well.** Nothing scrolled, so the browser synthesises a click
+  on lift-off and one gesture turned the frame twice. The gesture claims the press and the next
+  `touchstart` hands it back. The touch handlers also moved from the panel to the STAGE, because a
+  horizontal drag that lifted off over the exit link would otherwise both turn the frame *and*
+  follow the link.
+- **The caption row is now always in the DOM, empty or not.** A live region created by the change
+  it is meant to announce announces nothing, so a conditional `<figcaption>` would have been silent
+  on exactly the move it exists for. The `alt` is repeated into it as `sr-only` for the neighbouring
+  reason: a screen reader does not re-read an `alt` that changed under it, so "IV / IX" alone would
+  be the whole of what a reader who cannot see the photograph is told about the new one.
+- **Walking the set pushes no history.** Forty-three entries for one visit to `/obrazy` would make
+  the back button useless. The frame is one surface however many photographs pass through it, and
+  back still closes it, once.
+- **The phone cap came down from 74svh to 68svh.** The ✕ hangs BELOW everything the panel holds, so
+  the exit row pushed it past the bottom edge on a landscape phone — and the room scrolls nothing,
+  because `body.image-open` is locked, so anything past the edge is simply gone.
+- **The blurred ground is `cover`, not `contain`.** The band hangs every frame at 4:5, so the
+  thumbnail standing under the full rendition is frequently a CROP of it and its own ratio is not
+  the one being reserved. It is a ground, not a preview — nothing in it needs to be true except the
+  light. It is also over-scaled by 6%, because a blur samples past its own edge and would otherwise
+  print a soft border inside the frame.
+- **`currentSrc` is empty for a frame the visitor never scrolled to**, so a neighbour far down
+  `/obrazy` opens without a ground and falls back to the room's own fade. That is the honest limit
+  of the technique: it makes a dark room rare, not impossible. The hover preload of the 1920
+  rendition covers the pointer case; on touch the press *is* the moment, and a second copy of bytes
+  already in flight would be worse than nothing.
+- **The counter is roman**, because every numeral on this site is — the register's entries, the
+  series heads, the numerals under the band. It is the same numbering read from inside one of its
+  frames. Worth knowing: on `/obrazy` it runs to **XLIII**, which is at the outer edge of what a
+  counter is read at a glance. Left roman, because one arabic numeral on a surface that has none
+  would cost more than the beat it saves.
+- **The magnetic snap over these panels is gone by construction, not by a rule.** `.is-frame` sits
+  above the interactive branch in the cursor's priority ladder, and the snap is applied only in the
+  branches beneath it — so `snapEl` is null without a single `data-cursor="no-snap"` anywhere on
+  the three surfaces. A `<button>` 370 × 462 was pulling the pointer 15% toward its own centre,
+  which over a picture reads as the cursor being taken away from what it is pointing at.
+- **`image-triggers.ts` no longer needs its `export {}`** — the contract import is what marks it a
+  module now. If that import ever goes, the `export {}` has to come back, or `onClick` is a global
+  again and collides with `vault-triggers.ts`'s (§6).
+
+**Two cursor defects the build could not have found, and a browser did.** Both were reported off a
+real screen, which remains the only way this class of thing surfaces:
+
+- **The viewfinder was drawn inside a pill.** `.site-cursor` carries `border-radius: 999px`,
+  backgrounds are clipped to the border box, and a circle cuts each corner tick down to the
+  fragment that survives inside the curve — eight strokes became eight dots arranged on a ring.
+  `border-radius: 0` on `.is-frame` is therefore load-bearing, and the same trap waits for any
+  future state that draws in the element's corners.
+- **A hairline glyph disappears into a photograph.** The first pass used the band's PRINTED mark
+  verbatim — 1px of `--candle`. That mark is still, and the eye finds it at leisure; the cursor is
+  moving over changing luminance, and mid gold at 1px is invisible on a lit nave and not much
+  better on a dark one. Both states now draw at 2px in the lit gold the other glyphs use
+  (`--glyph`, local to `.site-cursor`) under a double drop-shadow. Same figure as the printed mark,
+  heavier weight; the difference is the medium, and it is deliberate.
+- **Legibility over a highlight is the shadow's job, not a ground's** — and the viewfinder proved
+  it by being given the wrong one first. A radial plate behind it is darkest at the CENTRE, which
+  is the one place that figure has no ink and the reader is looking through it; the eight corner
+  ticks sat outside the plate entirely. A drop-shadow follows the alpha of what is actually drawn,
+  so each tick carries its own halo. The arrow keeps a radial ground precisely because its ink IS
+  at the centre — the same test, opposite answer.
+- **The halves' arrow is one mirrored shape, not two.** It reads as a solid arrow — shaft and head
+  cut from one box by `clip-path` — because the site's cursor already speaks in filled shapes (▶,
+  ↓) and an outlined chevron vanished into half the archive. Crossing the middle of the frame turns
+  `scaleX(1)` into `scaleX(-1)`, which a browser interpolates through zero: the arrow folds shut
+  and opens again facing the other way. Two mirrored border-triangles would have been simpler and
+  cannot be interpolated between, which would have thrown away the one thing about the first
+  version that was working.
+
+**Weight, measured** (build of 2026-08-07, same probe as §7/§8). HTML gzip is unmoved — `/` 26.8 KB,
+`/obrazy` 19.2 KB, `/koncerty/9-kart` 27.1 KB — because the new attributes are the same eight
+strings repeated per frame and gzip eats them. The island is **4.7 KB raw / 1.9 KB gzip** in total.
+**This stage emits no files at all:** the frame asks for renditions `lib/galleryFrame` already makes
+and the hover preload asks the browser for one of them, so the build taken with every part of stage
+5 in place reported the identical **62/611** — the same number §7 and §8 both closed on. The 43 and
+15 emitted `--ar`/`--w`/`--w-max` triples are untouched; nothing here reaches the packing.
+
+*A later build in the same working tree reads 62/624, and it is worth knowing why before that
+number is read as a regression here: the total moved when `lib/croppedShot` landed alongside this
+stage and gave the band's five panels renditions already cut to 4:5. That is a different piece of
+work with its own reasoning in its own file header. **Pruned stayed at 62 across both**, which is
+the figure that actually says nothing was orphaned.*
+
 ---
 
-## 9. Cross-cutting constraints
+## 10. Cross-cutting constraints
 
 - Photographs are **documentary**. Captions state place and date; they never editorialise. The
   existing `alt` texts are descriptive and correct — keep them.
@@ -301,8 +490,18 @@ renditions come from `lib/galleryFrame`, so the pipeline dedupes every one of th
 - The landing's motion registers are `ink` / `lead` / `light` — every new entrance belongs to
   exactly one. Nothing here introduces a fourth.
 - Any new user-facing string is Polish-primary and must read natively.
+- **A cropped thumbnail is cropped at BUILD, never by `object-fit` alone** (`lib/croppedShot`).
+  `cover` draws a photograph wider than its box whenever the box is proportionally taller — a 3:2
+  frame in the band's 4:5 panel is drawn 1.875× the panel's width — and the browser cannot see
+  that: it chooses a rendition from `sizes`, `sizes` states the panel, so the file it picks is the
+  one it then has to scale up by that same factor. The band shipped that way and was soft on every
+  screen (840 candidate drawn across 1440 device pixels at 2×). Overstating `sizes` fixes the
+  sharpness and pays for it in bytes nobody sees; cropping at build fixes both, because the clipped
+  47% is never transferred. This is *not* an argument for hand-cut thumbnail files — those would
+  break the one-photograph-one-set rule these three surfaces are built on, and the lightbox would
+  still need the whole frame beside them.
 
-## 10. Open
+## 11. Open
 
 - ~~`kd-aeternam-8`~~ — void. It was never missing; see §3.
 - ~~Whether the concert page's `.kd-gallery` CSS becomes shared with `/obrazy`~~ — **stays
@@ -315,11 +514,35 @@ renditions come from `lib/galleryFrame`, so the pipeline dedupes every one of th
   the gap in Polish rather than passing over it, and `/obrazy` invites a correction. Filling it is
   an editorial task, not a code one: add `credit:` beside the entry in `concerts.yaml` and both
   surfaces pick it up.
-- **The band's five crops, on a screen.** Every panel is centre-cropped to 4:5 from an original
-  nobody has picked a subject point in, and three of the five are 3:2 landscapes losing half their
-  width. The levers, in order: the evening's `frame` in `data/landing/paths.ts` (a different
-  photograph), then `object-position` in `14-imagines.css` (a different part of the same one).
-  Neither is a design question — it is one look at the band and at most two strings.
+- ~~**The band's five crops, on a screen.**~~ — **looked at, and closed.** Two of the five were
+  answered at the first lever (`frame`, §8); the second lever was not needed on any panel — centre
+  holds for all five. The crop's *framing* was never the problem: the choice of photograph was.
+  Its *resolution* was, separately and on every screen, and that is the §10 rule — the second lever
+  is consequently no longer `object-position` but `framePosition` on the evening in
+  `data/landing/paths`, because by the time a panel reaches the browser it is already 4:5 and has
+  no overflow left to shift.
+
+- ~~**`kd-aeternam-3`'s caption may name the wrong church.**~~ — **corrected.** It read
+  *"w Mistrzejowicach"* over a baroque gilt altar; Mistrzejowice is the modernist church its
+  neighbours 0–2 plainly show, and 4–8 are plainly the same baroque interior as this one. Moved
+  into the Niedzica run as well, so the archive still reads as two venues in order rather than
+  one frame sitting in the wrong city. The band closes on it.
+
+- **`kd-wolanie-3` may be a rehearsal, and it is the band's second panel.** Everyone in the two
+  frames that are certainly the concert (`-4`, `-5`) is in black; in `-3` they are not, there is
+  no `VE` projection behind them, and four voices are visible rather than twelve. Left alone,
+  because "rehearsal or concert" is a claim about a day the founder was present for and the
+  photograph does not settle it. If it IS a rehearsal the band is announcing that evening with
+  exactly what `Path.frame` exists to prevent — **and there is no clean replacement**: `-4` is a
+  wide shot whose subject at panel size is the projected logo, `-5` is a posed group portrait, and
+  a team photograph among four documentary frames breaks the line more visibly than either. That
+  gallery needs another photograph from that night more than it needs a different choice.
+- ~~**Stage 5 — the frame's protocol.**~~ — **shipped, §9.** All four parts landed on all three
+  surfaces in one change, as the entry argued they had to. What it did NOT settle, and what the
+  next reading of the frame should look at: whether the counter should stay roman where a set runs
+  to forty-three, and whether the two full-height halves are the right target on a phone now that
+  the swipe carries the same gesture — the halves exist for the cursor, and a phone has none.
+
 - Whether the `/obrazy` graph should carry per-frame `ImageObject` + `creditText`. **Not shipped**
   — 43 nodes to restate what the visible colophon says, against the GSC pass's standing rule that
   extra schema is proposed before it is added. Revisit with Search Console numbers if image search

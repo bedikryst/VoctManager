@@ -597,11 +597,18 @@ const plDate = (iso: string): string =>
                 {/* The media wrapper IS the trigger — a button rather than an overlaid control,
                     so the whole frame is the target and nothing is drawn on top of the
                     photograph. It contributes no box of its own (`.shot-open`,
-                    styles/image-lightbox.css), so the row's geometry is untouched. */}
+                    styles/image-lightbox.css), so the row's geometry is untouched.
+
+                    The set is this evening's gallery and stops there — an arrow that walked on
+                    into another concert would take the reader out of the page they are reading
+                    without saying so. The exit under the frame goes to /obrazy instead, which is
+                    where the other evenings are, and is the same road the gallery's own foot
+                    offers one scroll below. */}
                 <button
                   type="button"
                   class="kd-shot-media shot-open"
                   data-image-open
+                  data-image-group="kd-gallery"
                   data-image-src={g.frame.src}
                   data-image-srcset={g.frame.srcset}
                   data-image-sizes={g.frame.sizes}
@@ -610,6 +617,8 @@ const plDate = (iso: string): string =>
                   data-image-credit={g.credit}
                   data-image-w={String(g.frame.width)}
                   data-image-h={String(g.frame.height)}
+                  data-image-href="/obrazy"
+                  data-image-href-label="Obrazy wszystkich wieczorów"
                 >
                   <Image
                     src={g.img}
