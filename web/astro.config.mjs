@@ -24,6 +24,7 @@ import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 
+import { registerAudit } from "./audit/index.mjs";
 import { pruneOrphanAssets } from "./prune-orphan-assets.mjs";
 import { staticTypography } from "./typography-static.mjs";
 
@@ -82,5 +83,10 @@ export default defineConfig({
     // next to the optimized renditions, unreferenced. Runs last so it sees the finished
     // output of every integration above it. See prune-orphan-assets.mjs.
     pruneOrphanAssets(),
+    // Conformance gate for the entrance-register language. It reads the FINISHED artifact,
+    // because Astro's `[data-astro-cid-…]` scoping is what decides most of the cascade contests
+    // it checks and that attribute exists nowhere in the source. Last, so it sees what shipped.
+    // See audit/index.mjs; `VOCT_AUDIT_SOFT=1` downgrades its errors to a report.
+    registerAudit(),
   ],
 });

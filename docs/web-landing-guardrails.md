@@ -867,3 +867,14 @@ draw *after* the rows it opens). One trigger line for every register is a correc
 Remediation is sequenced in `docs/web-reveal-remediation.md` — read that before retuning any
 timing here, and note its `Rejected` section (left→right on body copy, and line-by-line reveals)
 before proposing either.
+
+**Ten of the rules in this section are now enforced at build time** (`web/audit/`, documented in
+`docs/web-register-audit.md`): the transition collision in both directions, a page rule pinning the
+value a register animates, a cue wearing a register, a press off `--wght-rest`, a choreography past
+`SETTLE_FALLBACK_MS`, a hidden dimension outside the motion gate, a bare shorthand on a
+two-dimension node, `@property` registered twice, a comment that swallowed a rule, and the veil
+delta per photograph. `npm run build` fails on an error; `npm run audit:registers` prints the whole
+picture including the advisory notes. It reads `dist/`, not `src/`, for everything about the
+cascade — which is this section's own instruction. **What it cannot check is the editorial half:
+the height question, the role question for the light register, whether a node should carry a
+register at all.** A clean audit is not a reviewed page.
