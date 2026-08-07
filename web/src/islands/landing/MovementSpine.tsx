@@ -7,6 +7,12 @@
  *  nav sheet covers small screens). An IntersectionObserver on a viewport centre-band tracks the
  *  active movement. Candle-gold (reads on both parchment and the dark full-bleed sections),
  *  faint at rest, full only on the active movement.
+ *
+ *  It floats in the page's 5vw gutter, so it clears every section that keeps one — but a section
+ *  that bleeds its CONTENT to the viewport edge has no gutter to float in, and the spine then
+ *  prints itself on that content. Such a section marks itself `data-spine-clear` and the spine
+ *  withdraws for as long as it holds the viewport centre. Withdrawing is the right way round:
+ *  the spine is orientation, the bled object is the page.
  * @architecture Astro islands 2026
  * @module islands/landing/MovementSpine
  */
@@ -32,6 +38,7 @@ const MOVEMENTS: readonly Movement[] = [
 export function MovementSpine(): React.JSX.Element {
   const [active, setActive] = useState(-1);
   const [visible, setVisible] = useState(false);
+  const [veiled, setVeiled] = useState(false);
 
   // Track the active movement via a zero-height band at viewport centre: exactly one movement
   // spans it at a time (none in the hero/manifest gap before I — active stays -1 there).
@@ -52,6 +59,27 @@ export function MovementSpine(): React.JSX.Element {
     sections.forEach((s) => {
       if (s) io.observe(s);
     });
+    return () => io.disconnect();
+  }, []);
+
+  // Withdraw over full-bleed content (`data-spine-clear`), on the SAME centre band the active
+  // movement is read from — the spine sits at `top: 50%`, so the centre is exactly where it
+  // would collide. A Set rather than a boolean because two marked sections can be on screen at
+  // once during the crossing; a boolean would un-veil on the first `isIntersecting: false` and
+  // flash the spine back onto the second one's photographs.
+  useEffect(() => {
+    const held = new Set<Element>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) held.add(entry.target);
+          else held.delete(entry.target);
+        }
+        setVeiled(held.size > 0);
+      },
+      { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
+    );
+    document.querySelectorAll("[data-spine-clear]").forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
 
@@ -83,7 +111,10 @@ export function MovementSpine(): React.JSX.Element {
   }, []);
 
   return (
-    <nav className={`movement-spine${visible ? " is-visible" : ""}`} aria-label="Części">
+    <nav
+      className={`movement-spine${visible ? " is-visible" : ""}${veiled ? " is-veiled" : ""}`}
+      aria-label="Części"
+    >
       <ul>
         {MOVEMENTS.map((m, i) => (
           <li key={m.key} className={i === active ? "is-active" : ""}>

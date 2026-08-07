@@ -225,6 +225,14 @@ below 1440px because the gutter is narrow; a longer inscription pushes that brea
 the label effectively never shows. This is why `Lumen quaerit` → `Lumen Christi` and not
 `Lumen ad revelationem`.
 
+**A full-bleed section must carry `data-spine-clear`.** The spine is `position: fixed` and stands
+in the page's 5vw gutter, which every section grants it — except one that runs its CONTENT to the
+viewport edge. The Imagines band shipped without the attribute and the spine printed `Vox memoriae`
+across its fifth photograph from 1440px up, and its numeral and tick from 1201px. The attribute is
+read by `MovementSpine.tsx` on the same viewport centre band it already uses for the active
+movement, and the spine withdraws for as long as the section holds it. Withdrawing, not shifting:
+the spine is orientation, the bled object is the page.
+
 **`Vox memoriae` and `Sustinete nos` stay.** Both are grammatical. `Sustinete nos` is site-wide nav
 vocabulary (`SiteChrome.astro`, `StickyHeader.tsx`), and `Vox` anchors `data-movement="vox"` plus
 the VoxMoment eyebrow. Only movement I was actually broken Latin (a verb with no subject).
