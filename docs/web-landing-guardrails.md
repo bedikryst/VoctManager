@@ -43,6 +43,28 @@ the beam, the nave and the listeners.
   tour across the year, so it honestly has no month. The raggedness is typographic, not editorial —
   every surface derives from `concerts.yaml` and none of them invents. Leave the YAML alone.
 
+### "No poster images" — what the rule covers, and what it does not
+
+`PathSection.astro`'s header says *"No poster images — the rite doesn't market itself by face"*, and
+the Imagines band (2026-08-07, movement II, between the film and the register) looks like a breach of
+it. It is not, and the reading matters more than the instance because the sentence will be read again.
+
+The rule is about **register entries**. A memorium row that carries a thumbnail beside its numeral
+becomes a catalogue listing, and the register's whole claim is that it is typographic — five evenings
+set as type, in order, with nothing sold. That is intact: the band is a **separate object standing
+before** the register, so the register itself is still purely typographic, entry by entry.
+
+What the rule was never about is photography on the landing, which the page is full of — the hero
+bleed, ImageRite, the Director portrait, the Vox poster, the FinalSupport backdrop. A site that
+declines to show its own documentary photographs is not restrained, it is hiding, and the founder's
+complaint that started `docs/web-imagines-spec.md` was exactly that. So the test for anything similar
+is not "is there a photograph here" but **"does a row of the register now carry a face?"**
+
+Two constraints the band carries because of this, both load-bearing: it is a **line, never a grid**
+(a sixth evening gains a sixth frame, not a second row — the moment it wraps it is the thumbnail wall
+the spec's §2 rejects), and it prints **no titles**, only numerals, because the names are set in the
+register 200px below and a band that repeats them is a table of contents for the list it stands on.
+
 ---
 
 ## 2. Landmines — verified, do not re-propose

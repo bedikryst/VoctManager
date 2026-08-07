@@ -525,6 +525,27 @@
     font-variation-settings: "wght" 384;
   }
 
+  /* The title is the entry's route to its concert page. The card's illumination above says
+     "this entry is live"; this hairline says "and THIS is the door" — so it answers the link's
+     own hover, not the card's, and rests fully transparent: a permanent rule under every title
+     would turn a memorium into a list of links.
+     `text-decoration` rather than the `::before` hairline the buttons use (02-hero-sections):
+     these titles wrap ("Aeternam — / Epitafium dla Gazy"), and an absolutely-positioned rule
+     draws one box across both lines instead of following the words. */
+  .path-entry-link {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.14em;
+    transition: text-decoration-color 0.5s var(--ease);
+  }
+
+  .path-entry-link:hover,
+  .path-entry-link:focus-visible {
+    text-decoration-color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+
   .path-entry-place {
     margin: 0;
     color: var(--ink-muted);

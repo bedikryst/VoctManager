@@ -1,0 +1,127 @@
+/**
+ * @file 14-imagines.css
+ * @description The Imagines band (components/landing/ImaginesBand) — movement II's night plate
+ *  of five frames, one per evening, between the film and the register. Surfaces only; the
+ *  composition's reasoning lives in the component's header.
+ *
+ *  Two things this sheet must not be tempted into. It is a LINE, so the plate is a single flex
+ *  row with no wrap — a sixth evening narrows the panels, it never opens a second row. And the
+ *  band draws NO hairline of its own beyond each panel's edge: the tonal cut from parchment to
+ *  night is the boundary, which is also why `.path` below drops its own top rule here.
+ * @architecture Astro islands 2026
+ * @module app/styles/marketing-landing/imagines
+ */
+
+  /* ── The band ─────────────────────────────────────────────────────────────────────────
+     Night, full width, between two parchment sections — the same cut the page already
+     performs at the first interlude. The head and the exit hang from the page gutter; the
+     plate itself spans the viewport, because five frames across one measure are only
+     photographs at all if they are given every pixel there is. */
+  .imagines {
+    background: var(--night);
+    color: var(--paper);
+    padding: clamp(64px, 8vw, 112px) 0 clamp(56px, 7vw, 96px);
+  }
+
+  .imagines-label,
+  .imagines-foot {
+    padding-inline: var(--gutter);
+  }
+
+  .imagines-label {
+    margin: 0 0 clamp(30px, 4vw, 48px);
+    color: rgba(244, 241, 233, 0.52);
+  }
+
+  /* ── The plate ────────────────────────────────────────────────────────────────────────
+     One row, five equal panels. `flex: 1 1 0` with `min-width: 0` so the line divides the
+     viewport rather than the photographs' intrinsic widths — the frames are cropped to one
+     box, so their own aspects have no say here. The gutter between panels is narrow on
+     purpose: at this spacing the five read as one object, which is the difference between a
+     band and five pictures that happen to be adjacent. */
+  .imagines-plate {
+    display: flex;
+    gap: clamp(10px, 1vw, 18px);
+  }
+
+  .imagines-frame {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+  }
+
+  /* The panel box. PORTRAIT is arithmetic: five frames across a 1920 viewport are ~370px wide,
+     and only height keeps them from being the thumbnails docs/web-imagines-spec.md §2 rejects.
+     The two-class selector is deliberate — `.shot-open` (styles/image-lightbox.css) is a
+     single-class reset loaded from a different sheet, so anything that must beat it has to say
+     so rather than depend on bundle order. */
+  .imagines-frame .imagines-media {
+    aspect-ratio: 4 / 5;
+  }
+
+  .imagines-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    /* Centre is the only honest default for a set of frames nobody has picked a subject point
+       in. If one crop ever cuts badly, `object-position` per frame is the lever here, and the
+       evening's `frame` in data/landing/paths is the lever one level up. */
+    object-position: center;
+    border: 1px solid rgba(244, 241, 233, 0.12);
+  }
+
+  /* The numeral belongs to its panel, so it is centred under it rather than hung from a
+     column — the register below owns the left-hand rail. Same face and same light as
+     `.path-entry-roman`, a grade smaller: one numbering, printed twice. */
+  .imagines-roman {
+    margin-top: clamp(12px, 1.2vw, 18px);
+    font-family: var(--serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(17px, 1.5vw, 24px);
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: center;
+    color: var(--candle);
+  }
+
+  .imagines-foot {
+    margin-top: clamp(30px, 4vw, 52px);
+  }
+
+  /* The band's exit takes the landing's own link idiom and NO register: a half-ink control is
+     a control the reader is not sure they are allowed to press. */
+  .imagines-all {
+    color: rgba(244, 241, 233, 0.86);
+  }
+
+  /* The cut from night to parchment is the boundary line, so the register below does not draw
+     a second one 1px under it — the same rule the interludes keep with the sections they open. */
+  .imagines + .path {
+    border-top: none;
+  }
+
+  /* The frame's scroll-lock, named for the landing's own body class. Twin of the video
+     overlay's rule in 12-vox.css; a blanket `body.image-open` would reach documents that never
+     mount the island. */
+  body.theme-marketing.image-open {
+    overflow: hidden;
+  }
+
+  /* ── Below the desktop measure ────────────────────────────────────────────────────────
+     Five across stops being photographs somewhere under 200px a panel, so the line stands up:
+     one frame per row, at the full measure, which is the largest a photograph is ever printed
+     on a phone. The crop relaxes with it — at this width a landscape box is the frame most of
+     these originals were actually shot in, so the stack shows them nearly whole. */
+  @media (max-width: 980px) {
+    .imagines-plate {
+      flex-direction: column;
+      gap: clamp(30px, 5vw, 48px);
+      padding-inline: var(--gutter);
+    }
+
+    .imagines-frame .imagines-media {
+      aspect-ratio: 3 / 2;
+    }
+  }

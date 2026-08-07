@@ -38,7 +38,17 @@ export interface Path {
   readonly video?: PathVideo;
   /** Optional provenance footnote (recording credit / partners) shown under the program. */
   readonly credit?: string;
+  /** The one photograph that stands for this evening in the Imagines band, named by its `img`
+   *  in the concert's own `gallery` (so alt, caption and credit come with it). Omit to take the
+   *  gallery's first entry — set it only where that first entry documents something other than
+   *  the evening itself, e.g. a rehearsal. A name that is not in that gallery fails the build. */
+  readonly frame?: string;
 }
+
+/** The register's numbering, by position. Shared with the Imagines band so the band's numerals
+ *  and the register's are one sequence rather than two lists that happen to agree — the band
+ *  states the same five evenings the register states directly below it. */
+export const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
 
 export const PATHS: readonly Path[] = [
   {
@@ -50,6 +60,9 @@ export const PATHS: readonly Path[] = [
     place: "Bazylika NSPJ w Krakowie",
     note: "Wejście w tajemnicę Wcielenia, od zapowiedzi Izajasza po kantyk Symeona. Renesansowa polifonia, Pärt, Vivancos.",
     poster: "poster-wcielenie",
+    // The gallery opens on three rehearsal frames; the band announces the evening, so it takes
+    // the first one shot at the concert itself.
+    frame: "kd-wcielenie-3",
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
     video: { src: videoAsset("landing-modal") },
@@ -64,6 +77,8 @@ export const PATHS: readonly Path[] = [
     place: "Dworek Gościnny · Szczawnica",
     note: "Program, dla którego góry były oddechem. Sakralna polifonia i pieśni ludowe Polski, Korsyki, Francji i Wysp Brytyjskich, ze skrzypcami Radu Ropotana.",
     poster: "poster-wolanie",
+    // Same as Wcielenie: entries 0–2 are the rehearsal in Szczawnica, not the evening.
+    frame: "kd-wolanie-3",
     video: {
       src: videoAsset("landing-wolanie"),
       portrait: true,

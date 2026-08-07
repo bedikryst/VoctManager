@@ -15,6 +15,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { bleedPair } from "../lib/photos";
 import { toRibbons } from "../lib/registrum";
 import "../styles/landing.css";
+// The photograph frame ships as its own sheet, imported per page beside its island — the way
+// the concert pages and /obrazy import it (styles/image-lightbox.css).
+import "../styles/image-lightbox.css";
 
 import HeroSection from "../components/landing/HeroSection.astro";
 import ManifestSection from "../components/landing/ManifestSection.astro";
@@ -22,6 +25,7 @@ import AetherInterlude from "../components/landing/AetherInterlude.astro";
 import ImageRiteSection from "../components/landing/ImageRiteSection.astro";
 import EnsembleSection from "../components/landing/EnsembleSection.astro";
 import DirectorSection from "../components/landing/DirectorSection.astro";
+import ImaginesBand from "../components/landing/ImaginesBand.astro";
 import PathSection from "../components/landing/PathSection.astro";
 import SilenceMoment from "../components/landing/SilenceMoment.astro";
 import FinalSupportSection from "../components/landing/FinalSupportSection.astro";
@@ -35,6 +39,7 @@ import { SiteFooter } from "../islands/landing/SiteFooter";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import { VoxMoment } from "../islands/landing/VoxMoment";
 import { VideoLightbox } from "../islands/landing/VideoLightbox";
+import { ImageLightbox } from "../islands/landing/ImageLightbox";
 import { MovementSpine } from "../islands/landing/MovementSpine";
 
 const title = "VoctEnsemble — Z ciszy głos. Koncerty Duchowe";
@@ -136,6 +141,11 @@ const jsonLd = {
         <AetherInterlude variant="memory" roman="II" latin="Vox memoriae" />
         <SilenceMoment />
         <VoxMoment client:visible poster={voxPoster} />
+        {/* Movement II is named memoriae and visual memory is the one register it lacked: the
+            band announces the five evenings in photographs, the register unfolds them in words
+            directly below. The "no poster images" rule this appears to bend is about REGISTER
+            ENTRIES — see docs/web-landing-guardrails.md §1, where the reading is recorded. */}
+        <ImaginesBand />
         <PathSection />
       </section>
 
@@ -151,6 +161,7 @@ const jsonLd = {
 
     <VaultIsland client:idle />
     <VideoLightbox client:idle poster={voxPoster} />
+    <ImageLightbox client:idle />
   </div>
 
   <style is:global>
@@ -178,5 +189,10 @@ const jsonLd = {
 
   <script>
     import "../scripts/landing.ts";
+    // The Imagines band's frames are static markup, so they reach the lightbox the way the
+    // galleries' do: one delegated capture-phase listener on the document. It is a module of
+    // its own rather than a branch in landing.ts because the same contract has to hold on the
+    // pages that run no landing script.
+    import "../scripts/image-triggers.ts";
   </script>
 </BaseLayout>

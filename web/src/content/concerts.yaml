@@ -1,3 +1,4 @@
+# file: concerts.yaml
 # Concert "stations" — the Concerts Spirituels cycle. Add a new concert by appending an
 # entry; order drives the sequence (Via rail) and the page layout. Images are bare photo()
 # names under src/assets/photos (bg expects -desktop / -mobile crops).
@@ -1069,21 +1070,21 @@
   # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
   # braided through the other eight, so the braid IS the structure — the clasps carry it.
   gallery:
-  - { img: kd-9-kart-0, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
-  - { img: kd-9-kart-1, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
-  - { img: kd-9-kart-2, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
-  - { img: kd-9-kart-3, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
-  - { img: kd-9-kart-4, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
-  - { img: kd-9-kart-5, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-0, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-1, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-2, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-3, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-4, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-5, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-6, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
   - { img: kd-9-kart-7, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
   - { img: kd-9-kart-8, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
-  - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
-  - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
-  - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Wojciech Przybył)" }
-  - { img: kd-9-kart-14, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie (fot. Kamila Grudzińska)" }
+  - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-14, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", caption: "Koncert 9 Kart w Bazylice NSPJ w Krakowie", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-13, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", caption: "Koncert 9 Kart w Bazylice w Rybniku" }
-  - { img: kd-9-kart-12, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej (fot. Jakub Garbacz)" }
+  - { img: kd-9-kart-12, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", caption: "Koncert 9 Kart w Archikatedrze Łódzkiej", credit: "Jakub Garbacz" }
   program:
     - composer: "Gregorio Allegri"
       years: "1582–1652"

@@ -52,6 +52,9 @@ export interface UIStrings {
     readonly home: string;
     readonly about: string;
     readonly concerts: string;
+    /** The photograph archive (/obrazy). Polish-only as a page, so the label is translated while
+        `localizePath` keeps returning the Polish URL — see i18n/config TRANSLATED_ROUTES. */
+    readonly images: string;
     readonly contact: string;
     readonly support: string;
     readonly colophon: string;
@@ -93,6 +96,7 @@ export const UI: Record<Locale, UIStrings> = {
       home: "Strona główna",
       about: "O nas",
       concerts: "Koncerty",
+      images: "Obrazy",
       contact: "Kontakt",
       support: "Wesprzyj",
       colophon: "Kolofon",
@@ -127,6 +131,7 @@ export const UI: Record<Locale, UIStrings> = {
       home: "Home",
       about: "About",
       concerts: "Concerts",
+      images: "Images",
       contact: "Contact",
       support: "Support us",
       colophon: "Colophon",
@@ -161,6 +166,7 @@ export const UI: Record<Locale, UIStrings> = {
       home: "Accueil",
       about: "À propos",
       concerts: "Concerts",
+      images: "Images",
       contact: "Contact",
       support: "Nous soutenir",
       colophon: "Colophon",

@@ -1,0 +1,146 @@
+---
+/**
+ * @file ImaginesBand.astro
+ * @description Movement II's visual memory: one full-bleed night band of five frames, one per
+ *  evening of the cycle, standing between the film and the register. The movement runs silence
+ *  → voice → memory, and images are the register memory otherwise lacks — the band announces
+ *  the five evenings in photographs, the register unfolds them in words. That is also why the
+ *  numerals here and the register's are ONE sequence (`ROMAN`, data/landing/paths): five frames
+ *  answering five entries is what makes this composition rather than an attachment.
+ *
+ *  IT IS A LINE, NEVER A GRID. A sixth evening gains a sixth frame, not a second row — a wall of
+ *  thumbnails is the reflex answer and the one that damages the site (docs/web-imagines-spec §2:
+ *  these are low-contrast chiaroscuro frames from a dark nave). The panels are therefore uniform
+ *  and PORTRAIT on the wide plate, which is arithmetic and not taste: five frames across one
+ *  measure are ~370px wide, and only height keeps them photographs rather than tiles. The crop is
+ *  `object-fit: cover`, the same treatment every composed photograph on this site already takes;
+ *  the whole frame is one press away in the lightbox. If a crop ever lands badly, the levers are
+ *  `object-position` in the band's sheet and the evening's `frame` in data/landing/paths.
+ *
+ *  Registers: the frames are LIT (`.reveal-light`, the veil belongs to the image) and the
+ *  numerals are INKED — never both on one node. The exit link takes none: a half-ink control is
+ *  a control the reader is not sure they may press.
+ *
+ *  The lightbox island and the `[data-image-open]` delegate are mounted by the PAGE (index.astro),
+ *  as on the concert pages and /obrazy — the frame is a document-level overlay, not this band's.
+ * @architecture Astro islands 2026
+ * @module components/landing/ImaginesBand
+ */
+import type { ImageMetadata } from "astro";
+import { Image } from "astro:assets";
+import { getCollection } from "astro:content";
+import { PATHS, ROMAN } from "../../data/landing/paths";
+import { framedShot, type FramedShot } from "../../lib/galleryFrame";
+import { photoOptional } from "../../lib/photos";
+
+interface BandFrame {
+  readonly roman: string;
+  readonly title: string;
+  readonly img: ImageMetadata;
+  readonly alt: string;
+  readonly caption?: string;
+  readonly credit?: string;
+  readonly full: FramedShot;
+}
+
+// The register is the band's index, so the band walks PATHS rather than the concerts collection:
+// an evening the register does not print (the Bobola liturgy) has no frame here either, and the
+// numerals cannot drift from the ones printed below. The photographs themselves still come from
+// the collection — that is where they live.
+const byId = new Map((await getCollection("concerts")).map((c) => [c.id, c.data] as const));
+
+const frames: BandFrame[] = [];
+for (const [i, path] of PATHS.entries()) {
+  const gallery = byId.get(path.concertId)?.gallery ?? [];
+  const entry = path.frame ? gallery.find((g) => g.img === path.frame) : gallery[0];
+  if (path.frame && !entry) {
+    throw new Error(
+      `[imagines] "${path.frame}" is not in the "${path.concertId}" gallery. The band's frame must` +
+        ` be one of that evening's own photographs, so its alt, caption and credit come with it.`,
+    );
+  }
+  const img = entry ? photoOptional(entry.img) : undefined;
+  // An evening with no photographs simply has no frame — the numbering then has an honest gap
+  // rather than a placeholder.
+  if (!entry || !img) continue;
+  frames.push({
+    roman: ROMAN[i],
+    title: path.title,
+    img,
+    alt: entry.alt ?? "",
+    caption: entry.caption,
+    credit: entry.credit,
+    // Full-size renditions for the lightbox, shared with the galleries so one photograph costs
+    // one set of files however many surfaces open it (lib/galleryFrame).
+    full: await framedShot(img),
+  });
+}
+---
+
+{
+  frames.length > 0 && (
+    <section class="imagines" aria-label="Obrazy wieczorów">
+      {/* The rubric's shape is VoxMoment's, directly above: the Latin tier and its gloss on one
+          line, separated by a mid-dot in the text. base.css owns both voices — this band names
+          no face of its own. */}
+      <p class="imagines-label micro reveal">
+        <span class="lat">Imagines</span> · Obrazy wieczorów
+      </p>
+
+      <div class="imagines-plate">
+        {frames.map((f) => (
+          <figure class="imagines-frame">
+            {/* The media wrapper IS the trigger, as in both galleries: a button rather than an
+                overlaid control, so the whole panel is the target and nothing is drawn over the
+                photograph. `.shot-open` (styles/image-lightbox.css) resets it to no box of its
+                own, and carries the gold-edge affordance the other two surfaces use. */}
+            <button
+              type="button"
+              class="imagines-media shot-open plausible-event-name=imagines+kadr"
+              data-image-open
+              data-image-src={f.full.src}
+              data-image-srcset={f.full.srcset}
+              data-image-sizes={f.full.sizes}
+              data-image-alt={f.alt}
+              data-image-caption={f.caption}
+              data-image-credit={f.credit}
+              data-image-w={String(f.full.width)}
+              data-image-h={String(f.full.height)}
+            >
+              {/* The same widths the two galleries request, so the pipeline emits one set of
+                  renditions per photograph for all three surfaces. */}
+              <Image
+                src={f.img}
+                widths={[560, 840, 1200]}
+                sizes="(max-width: 980px) 92vw, 24vw"
+                alt={f.alt}
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="reveal-light" aria-hidden="true" />
+            </button>
+            {/* The numeral is the whole caption: the evening's name is set 200px below in the
+                register, and printing it twice would make the band a table of contents for the
+                list it is standing over. The name is still spoken, for a reader who cannot see
+                which evening the numeral belongs to. */}
+            <figcaption class="imagines-roman reveal">
+              <span aria-hidden="true">{f.roman}</span>
+              <span class="sr-only">
+                {f.roman}. {f.title}
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+
+      <div class="imagines-foot">
+        <a
+          class="primary-link imagines-all plausible-event-name=imagines+wszystkie"
+          href="/obrazy"
+        >
+          Wszystkie obrazy
+        </a>
+      </div>
+    </section>
+  )
+}

@@ -24,13 +24,17 @@ import SiteChrome from "../../components/SiteChrome.astro";
 import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
+import { layoutShots } from "../../lib/galleryLayout";
+import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom } from "../../lib/candle";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
+import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
 import "../../styles/vault.css";
 import "../../styles/vplayer.css";
+import "../../styles/image-lightbox.css";
 
 export async function getStaticPaths() {
   const concerts = await getCollection("concerts", ({ data }) => data.hasPage);
@@ -65,7 +69,13 @@ const next = here >= 0 && here < walk.length - 1 ? walk[here + 1] : null;
 // ── Poster + documentary gallery. photoOptional so a slot can be declared in YAML before its
 // image lands on disk — a missing file is silently skipped rather than breaking the build.
 const posterImg = c.poster ? photoOptional(c.poster) : undefined;
-const gallery: { img: ImageMetadata; alt: string; caption?: string; ar: number }[] = [];
+const gallery: {
+  img: ImageMetadata;
+  alt: string;
+  caption?: string;
+  credit?: string;
+  ar: number;
+}[] = [];
 for (const g of c.gallery) {
   const img = photoOptional(g.img);
   if (img)
@@ -73,40 +83,24 @@ for (const g of c.gallery) {
       img,
       alt: g.alt ?? "",
       caption: g.caption,
+      credit: g.credit,
       ar: Number((img.width / img.height).toFixed(4)),
     });
 }
 
-// ── The gallery hangs by row HEIGHT, not by a column count. Every shot brings its true aspect
-// (ImageMetadata reads the real pixels), so a row of portraits fits four where the same row takes
-// only three landscapes, and a short last row centers instead of leaving a hole at the right. The
-// height is chosen so the evening's dominant orientation fills the measure exactly; H_MAX then
-// refuses to let a small set balloon — which is also what lands a lone landscape on a 960px plate.
-const GALLERY_W = 1180; // .kd-wrap
-const GALLERY_GAP = 40; // the gap's clamp ceiling
-const GALLERY_H_MAX = 640;
-const meanAr = gallery.length
-  ? gallery.reduce((sum, g) => sum + g.ar, 0) / gallery.length
-  : 1.5;
-// Landscapes read best three-up — except at 2 or 4, where a two-up row beats stranding a shot.
-const perRow =
-  meanAr < 1
-    ? Math.min(gallery.length, 4)
-    : gallery.length === 2 || gallery.length === 4
-      ? 2
-      : Math.min(gallery.length, 3);
-// ×0.99 leaves the flex line a few px of slack so sub-pixel rounding can't drop the last shot of
-// a full row onto a row of its own. flex-grow takes the slack straight back.
-const shotH = Math.min(
-  Math.round(((GALLERY_W - (perRow - 1) * GALLERY_GAP) / perRow / meanAr) * 0.99),
-  GALLERY_H_MAX,
+// The gallery hangs by row HEIGHT, not by a column count — the packing lives in lib/galleryLayout
+// so the collective archive and this page stay one geometry. Defaults there are this page's
+// measure (.kd-wrap 1180, the gap's clamp ceiling, the 640 height cap).
+const shots = await Promise.all(
+  layoutShots(gallery).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
 );
-// `wMax` caps how far a short row may inflate its shots: 40% over the ideal, but never past the
-// height cap — otherwise a lone portrait would grow into a tower to fill the line it sits on.
-const shots = gallery.map((g) => {
-  const w = Math.round(shotH * g.ar);
-  return { ...g, w, wMax: Math.round(Math.min(w * 1.4, GALLERY_H_MAX * g.ar)) };
-});
+
+// The evening's photographers, gathered once for the gallery's foot. Order of first appearance,
+// deduplicated: a colophon names each hand once, however many frames it took. Silent when the
+// YAML records nobody, and explicit when it records only some — a list of three names with no
+// qualification is a claim that those three took every frame here.
+const photographers = [...new Set(gallery.map((g) => g.credit).filter(Boolean))] as string[];
+const hasUncredited = gallery.some((g) => !g.credit);
 
 const hasTour = c.dates.length > 0;
 
@@ -600,7 +594,23 @@ const plDate = (iso: string): string =>
                 data-d={String((i % 3) + 1)}
                 style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
               >
-                <div class="kd-shot-media">
+                {/* The media wrapper IS the trigger — a button rather than an overlaid control,
+                    so the whole frame is the target and nothing is drawn on top of the
+                    photograph. It contributes no box of its own (`.shot-open`,
+                    styles/image-lightbox.css), so the row's geometry is untouched. */}
+                <button
+                  type="button"
+                  class="kd-shot-media shot-open"
+                  data-image-open
+                  data-image-src={g.frame.src}
+                  data-image-srcset={g.frame.srcset}
+                  data-image-sizes={g.frame.sizes}
+                  data-image-alt={g.alt}
+                  data-image-caption={g.caption}
+                  data-image-credit={g.credit}
+                  data-image-w={String(g.frame.width)}
+                  data-image-h={String(g.frame.height)}
+                >
                   <Image
                     src={g.img}
                     widths={[560, 840, 1200]}
@@ -610,10 +620,22 @@ const plDate = (iso: string): string =>
                     decoding="async"
                   />
                   <span class="reveal-light" aria-hidden="true"></span>
-                </div>
+                </button>
                 {g.caption && <figcaption class="micro reveal">{g.caption}</figcaption>}
               </figure>
             ))}
+          </div>
+
+          {/* The gallery's foot: who held the camera, and the road out to the other evenings.
+              The colophon is the only place a photographer is named — captions state place and
+              date and nothing else. */}
+          <div class="kd-gallery-foot reveal">
+            {photographers.length > 0 && (
+              <p class="kd-gallery-credit micro">
+                {`Fot. ${photographers.join(" · ")}${hasUncredited ? " · autorzy pozostałych zdjęć nieodnotowani" : ""}`}
+              </p>
+            )}
+            <a class="kd-gallery-all" href="/obrazy">Obrazy wszystkich wieczorów</a>
           </div>
         </div>
       </section>
@@ -677,8 +699,10 @@ const plDate = (iso: string): string =>
   <SiteFooter />
 
   <VaultIsland client:idle />
+  <ImageLightbox client:idle />
   <script>
     import "../../scripts/vault-triggers.ts";
+    import "../../scripts/image-triggers.ts";
   </script>
 
   {/* Chrome tone: flip to the paper treatment while a parchment section sits under the bar
@@ -711,9 +735,12 @@ const plDate = (iso: string): string =>
   /* ── Reset on this page only ────────────────────────────────────────────── */
   .page-koncert-detail { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
   main { display: block; }
-  /* Projection lightbox scroll-lock — the landing's rule is scoped to body.theme-marketing,
-     which this page's body class doesn't carry; re-declare for our body. */
+  /* Overlay scroll-locks. Each overlay names its own class: the landing's video rule is scoped
+     to body.theme-marketing, which this page's body doesn't carry, and the photograph frame is a
+     separate overlay rather than a wider reading of the same one — widening a lock is how a page
+     ends up unable to scroll after the overlay it belongs to is gone. */
   :global(body.page-koncert-detail.video-open) { overflow: hidden; }
+  :global(body.page-koncert-detail.image-open) { overflow: hidden; }
 
   /* ── Hero ──────────────────────────────────────────────────────────────── */
   .kd-hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: 0 max(28px, 5vw) clamp(72px, 10vw, 128px); color: var(--paper); overflow: hidden; isolation: isolate; }
@@ -950,6 +977,14 @@ const plDate = (iso: string): string =>
   }
   .kd-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244,241,233,.12); box-shadow: 0 40px 90px -46px rgba(0,0,0,.9); }
   .kd-shot figcaption { margin-top: 14px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244,241,233,.56); }
+
+  /* The gallery's foot: attribution left, the road out right, on the band's only hairline.
+     The link takes no register — a control that is half-ink is a control you are not sure you
+     may press — and the row's `.reveal` sits on the wrapper, which is copy-height. */
+  .kd-gallery-foot { margin: clamp(40px, 5vw, 64px) 0 0; padding-top: 20px; border-top: 1px solid rgba(244,241,233,.14); display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline; justify-content: space-between; }
+  .kd-gallery-credit { margin: 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244,241,233,.46); text-transform: none; }
+  .kd-gallery-all { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
+  .kd-gallery-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
 
   /* ── Film: in-flow custom player ───────────────────────────────────────── */
   .kd-film { background: var(--dark, #080807); color: var(--paper); }

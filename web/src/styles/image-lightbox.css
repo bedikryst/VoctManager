@@ -1,0 +1,195 @@
+/**
+ * @file image-lightbox.css
+ * @description The full-screen photograph frame (islands/landing/ImageLightbox) and the
+ *  `[data-image-open]` trigger's own affordance. Standalone by design — imported per page
+ *  alongside the island, the way vault.css and vplayer.css are, because the frame is opened
+ *  from the concert pages and from the archive rather than from the landing's cascade.
+ *
+ *  The scroll-lock is deliberately NOT declared here: `overflow: hidden` on `body.image-open`
+ *  has to name the page's own body class (each page carries its own), and a blanket `body` rule
+ *  would reach documents that never mount the island.
+ * @architecture Astro islands 2026
+ * @module styles/image-lightbox
+ */
+
+/* ── The trigger: a whole shot becomes pressable ────────────────────────────────
+   A reset, not a style. The figure's flex sizing lives on `.kd-shot` / `.im-shot` and is
+   computed in the page (lib/galleryLayout), so this element must contribute NO box of its
+   own — a button's default padding and border would put the photograph inside a frame the
+   layout never budgeted for. */
+.shot-open {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  position: relative;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* The affordance is the site's own: a gold edge on approach, never a lift or a zoom. It is
+   drawn as the button's OWN pseudo-rule rather than by re-colouring the photograph's border,
+   because that border belongs to the host page's scoped stylesheet — recolouring it from here
+   would be a specificity tie decided by bundle order, and it has to hold on both galleries. */
+.shot-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 1px solid transparent;
+  pointer-events: none;
+  transition: border-color 0.45s var(--ease, ease);
+}
+
+.shot-open:hover::after {
+  border-color: color-mix(in srgb, var(--candle) 62%, transparent);
+}
+
+.shot-open:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 6px;
+}
+
+/* ── The frame ──────────────────────────────────────────────────────────────────
+   Same room as the projection lightbox (12-vox.css), one z-index above nothing: the two
+   overlays never open together and both must clear the chrome header. */
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+  padding: max(20px, 4vh) max(16px, 4vw);
+  animation: imageRoomIn 0.5s var(--ease, ease) both;
+}
+
+.image-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(8, 8, 7, 0.94);
+  cursor: default;
+}
+
+/* `fit-content` in both axes: the panel is the photograph's own box, so the ✕ hangs at the
+   frame's corner instead of drifting to the far edge of a fixed measure — a portrait and a
+   landscape are the same object here. */
+.image-lightbox-panel {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  animation: imageRoomRise 0.5s var(--ease, ease) both;
+}
+
+/* The photograph is capped by the SHORTER dimension of the viewport as well as by its width,
+   so a portrait cannot run off the bottom of a laptop screen. The caption is outside the cap
+   and gets its own room below. */
+.image-lightbox-img {
+  display: block;
+  max-width: 100%;
+  max-height: min(80svh, 1200px);
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  box-shadow: 0 60px 140px -50px rgba(0, 0, 0, 0.95);
+}
+
+.image-lightbox-figure {
+  margin: 0;
+}
+
+/* Two voices on one line, the rubric this site sets facts in: the place in the inscriptional
+   capital, the photographer in mono minuscule a grade quieter. */
+.image-lightbox-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 18px;
+  margin-top: 18px;
+  text-align: center;
+}
+
+.image-lightbox-place {
+  font-family: var(--capitalis);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(244, 241, 233, 0.62);
+}
+
+.image-lightbox-credit {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: rgba(244, 241, 233, 0.42);
+}
+
+.image-lightbox-close {
+  position: absolute;
+  right: 0;
+  top: -52px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(244, 241, 233, 0.28);
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(244, 241, 233, 0.85);
+  font-size: 16px;
+  cursor: pointer;
+  transition:
+    color 0.35s var(--ease, ease),
+    border-color 0.35s var(--ease, ease);
+}
+
+.image-lightbox-close:hover {
+  color: var(--candle);
+  border-color: var(--candle);
+}
+
+.image-lightbox-close:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
+}
+
+@keyframes imageRoomIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes imageRoomRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* On a phone the ✕ has no room above the frame — the photograph already starts near the top
+   edge — so it moves under it, where the thumb is. */
+@media (max-width: 640px) {
+  .image-lightbox {
+    padding: 12px;
+  }
+  .image-lightbox-img {
+    max-height: 74svh;
+  }
+  .image-lightbox-close {
+    top: auto;
+    bottom: -56px;
+    right: 50%;
+    transform: translateX(50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-lightbox,
+  .image-lightbox-panel {
+    animation: none;
+  }
+}

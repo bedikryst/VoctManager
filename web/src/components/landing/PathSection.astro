@@ -12,9 +12,7 @@
  * @module components/landing/PathSection
  */
 import { getCollection } from "astro:content";
-import { PATHS } from "../../data/landing/paths";
-
-const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"] as const;
+import { PATHS, ROMAN } from "../../data/landing/paths";
 
 // SSoT: program lists live in the `concerts` collection (src/content/concerts.yaml) —
 // the same source the /koncerty stations and concert pages read. The register derives
@@ -59,7 +57,17 @@ const programFor = (id: string) => programById.get(id) ?? [];
                 <span class="path-entry-tag">{path.tag}</span>
               </div>
               <div class="path-entry-body" data-cursor="no-snap">
-                <h3 class="path-entry-title reveal">{path.title}</h3>
+                {/* The anchor sits INSIDE the heading rather than replacing it: `.path-entry-title`
+                    owns the ink register and a hand-merged hover transition (04-rooms-interludes),
+                    and moving that contract onto an <a> would rebuild it for no gain. The card's
+                    existing gold illumination already reads as "this entry is live" — the link
+                    only has to name where it goes, which the hairline does on its own hover. */}
+                <h3 class="path-entry-title reveal">
+                  <a
+                    class="path-entry-link plausible-event-name=path+concert"
+                    href={`/koncerty/${path.concertId}`}
+                  >{path.title}</a>
+                </h3>
                 <p class="path-entry-place reveal">{path.place}</p>
                 <p class="path-entry-summary reveal">{path.note}</p>
                 {path.video && (

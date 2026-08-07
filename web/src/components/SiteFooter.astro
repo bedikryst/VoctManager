@@ -87,6 +87,11 @@ const tempus = tempusForDate(new Date());
         <li><a href={localizePath("/", lang)}>{t.home}</a></li>
         <li><a href={localizePath("/o-nas", lang)}>{t.about}</a></li>
         <li><a href={localizePath("/koncerty", lang)}>{t.concerts}</a></li>
+        {/* The archive sits under the concerts because it is their photographs, and it sits in
+            THIS column rather than beside the statute: the index is the site's own contents, and
+            /obrazy is a page of this site where a PDF is not. It has no nav slot by decision
+            (docs/web-imagines-spec.md §2), so the footer is its standing entrance. */}
+        <li><a href={localizePath("/obrazy", lang)}>{t.images}</a></li>
         <li><a href={localizePath("/kontakt", lang)}>{t.contact}</a></li>
         <li><a href="/?donate" data-vault-open="100">{t.support}</a></li>
         <li><a href={localizePath("/kolofon", lang)}>{t.colophon}</a></li>

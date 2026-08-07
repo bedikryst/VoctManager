@@ -18,8 +18,10 @@
 
 import { navigate } from "astro:transitions/client";
 
-/** One flag per overlay, so stacked overlays (vault opened from the nav card) each own an entry. */
-export type OverlayFlag = "navOpen" | "vaultOpen" | "videoOpen";
+/** One flag per overlay, so stacked overlays (vault opened from the nav card) each own an entry.
+ *  A CLOSED union: an overlay missing from it cannot push an entry, so the back button leaves the
+ *  page instead of closing it. Adding an overlay means adding its flag here first. */
+export type OverlayFlag = "navOpen" | "vaultOpen" | "videoOpen" | "imageOpen";
 
 /** True when the CURRENT history entry is the overlay's own pushed entry. */
 export const isOverlayEntry = (flag: OverlayFlag): boolean =>

@@ -1,3 +1,4 @@
+# file: repertiore.yaml
 # Five-century repertoire catalog. Eras render in `order`; within an era, entries render in
 # the order listed. `works` is a list of { title, year? } so the year keeps its own styling.
 # Note: titles/years are quoted because many contain commas (YAML flow-map separators).

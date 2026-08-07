@@ -185,11 +185,24 @@ const concerts = defineCollection({
         }),
       )
       .default([]),
-    /** Documentary photographs from the evening (detail page gallery). Each `img` is a bare
-        photo() base name; missing files are skipped at build (photoOptional), so a slot can be
-        declared before the image is uploaded. */
+    /** Documentary photographs from the evening (detail page gallery + the /obrazy archive).
+        Each `img` is a bare photo() base name; missing files are skipped at build
+        (photoOptional), so a slot can be declared before the image is uploaded.
+
+        `credit` is the photographer, and it is a FIELD rather than a substring of `caption`
+        because two surfaces need it apart from the place: the gallery foot gathers the evening's
+        photographers into one colophon, and the lightbox sets the name in its own voice. A
+        caption states where and when; it never carries an attribution. Leave it unset when the
+        author was not recorded — the colophon then says so rather than crediting silently. */
     gallery: z
-      .array(z.object({ img: z.string(), alt: z.string().optional(), caption: z.string().optional() }))
+      .array(
+        z.object({
+          img: z.string(),
+          alt: z.string().optional(),
+          caption: z.string().optional(),
+          credit: z.string().optional(),
+        }),
+      )
       .default([]),
     /** Verbum — the spoken threshold word: the live introduction given before the music
         begins (rite 01 on /koncerty). Distinct from `reflection` (the conductor's own
