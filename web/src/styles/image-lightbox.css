@@ -65,22 +65,49 @@
 /* ── The frame ──────────────────────────────────────────────────────────────────
    Same room as the projection lightbox (12-vox.css), one z-index above nothing: the two
    overlays never open together and both must clear the chrome header. */
+/* The top padding is asymmetric and load-bearing: the ✕ hangs 52px ABOVE the panel, and with an
+   even inset the centred panel put it at ~16px on a 1080p screen — physically on top of the site
+   nav, which the old backdrop was letting through. It reserves the button's own room instead, so
+   the frame's one control can never be pushed against the window's edge.
+
+   THE ROOM ITSELF IS NOT ANIMATED, and that is a constraint rather than a preference. It used to
+   carry the entrance fade (`imageRoomIn`), and an opacity animation makes an element a BACKDROP
+   ROOT — so the backdrop-filter one level down sampled an empty backdrop and blurred nothing at
+   all. `fill: both` means this outlives the animation: the computed opacity reads 1 and the
+   element stays a backdrop root anyway, which is why no inspection of computed style finds it and
+   an A/B in a real browser does. The fade moved onto the backdrop itself, where it is harmless —
+   an element's OWN opacity does not cut it off from its backdrop, only an ancestor's does. Whatever
+   is added here later, it must not animate opacity, filter or mix-blend-mode. */
 .image-lightbox {
   position: fixed;
   inset: 0;
   z-index: 110;
   display: grid;
   place-items: center;
-  padding: max(20px, 4vh) max(16px, 4vw);
-  animation: imageRoomIn 0.5s var(--ease, ease) both;
+  padding: max(72px, 8vh) max(16px, 4vw) max(20px, 4vh);
 }
 
+/* The page behind is BLURRED away, not merely dimmed. At 0.94 flat it was still legible — the
+   chrome nav and the band's own rubric ghosted through the room and the frame read as a modal
+   panel over a document rather than as a room the document had been left for. Same treatment and
+   same numbers as the vault's veil (08-vault.css), which is this site's one idiom for an overlay
+   that has to erase what is under it while keeping depth. Where the filter is unavailable there
+   is nothing to keep depth WITH, so the ground simply closes. */
 .image-lightbox-backdrop {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(8, 8, 7, 0.94);
+  background: rgba(8, 8, 7, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(0.9);
+  backdrop-filter: blur(20px) saturate(0.9);
   cursor: default;
+  animation: imageRoomIn 0.5s var(--ease, ease) both;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .image-lightbox-backdrop {
+    background: rgba(8, 8, 7, 0.985);
+  }
 }
 
 /* `fit-content` in both axes: the panel is the photograph's own box, so the ✕ hangs at the
@@ -97,17 +124,27 @@
    so a portrait cannot run off the bottom of a laptop screen. The caption is outside the cap
    and gets its own room below. It is the only thing in the stage that holds layout, and it does
    so from its `width`/`height` attributes before a single byte arrives — which is what lets the
-   blurred backdrop underneath it be absolute and still land on the right box. */
+   blurred backdrop underneath it be absolute and still land on the right box. 76 rather than 80
+   is what pays for the ✕'s reserved room above (see the room's padding).
+
+   THE RIM IS THE EDGE, and the dark shadow alone never was one: this archive is chiaroscuro
+   frames from dark naves and the room is near-black, so a black glow around a black photograph
+   states nothing — half these frames simply dissolved into the room at their own borders. One
+   hairline of paper says where the photograph ends. It is drawn as a spread `box-shadow` rather
+   than a border because a border would enter the box the height cap and the absolute thumb are
+   both measured against. */
 .image-lightbox-img {
   display: block;
   position: relative;
   z-index: 1;
   max-width: 100%;
-  max-height: min(80svh, 1200px);
+  max-height: min(76svh, 1200px);
   width: auto;
   height: auto;
   margin: 0 auto;
-  box-shadow: 0 60px 140px -50px rgba(0, 0, 0, 0.95);
+  box-shadow:
+    0 0 0 1px rgba(244, 241, 233, 0.1),
+    0 40px 120px -40px rgba(0, 0, 0, 0.9);
   opacity: 0;
   transition: opacity 0.5s var(--ease, ease);
 }
@@ -359,7 +396,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .image-lightbox,
+  .image-lightbox-backdrop,
   .image-lightbox-panel {
     animation: none;
   }

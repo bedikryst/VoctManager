@@ -260,35 +260,89 @@
    and it is the exact figure the Imagines band PRINTS on these panels where there is
    no hover to draw it (14-imagines.css, `@media (hover: none)`). One mark, two media.
 
-   Eight gradient layers, two strokes per corner, drawn on the element's own background
-   because the two pseudo slots are the glyph slots and this glyph is the frame itself.
-
-   TWO THINGS THIS FIGURE CANNOT DO WITHOUT, both found by looking at it on a photograph:
+   THREE THINGS THIS FIGURE CANNOT DO WITHOUT, all found by looking at it on a photograph:
 
    `border-radius: 0` is load-bearing. The base cursor is a pill (999px), backgrounds are
    clipped to the border box, and a rounded box cuts a corner tick down to the fragment
    that survives inside the curve — eight ticks become eight dots on a circle, which is
    precisely what a clipped viewfinder looks like and nothing like a viewfinder.
 
-   The stroke is heavier and brighter than the printed mark on the band: 2px of --glyph
-   against that mark's 1px of --candle. They are the same figure, but the printed one is
-   STILL and the eye finds it at leisure, while this one is moving over changing luminance —
-   a hairline in mid gold disappears into a lit nave and is not much better on a dark one.
+   THE TICKS DO NOT MEET AT THE CORNER. Brackets that close a corner are the universal
+   "expand to fullscreen" glyph, and no amount of fine drawing stops four of them reading
+   as a stock control. A printer's registration mark leaves the corner itself void and sets
+   its two strokes back from it, which is what this is and what the band prints.
+
+   WHAT MAKES IT READ AS A CORNER IS THE VOID BETWEEN THE TWO TICKS ON A SIDE, and that is a
+   RATIO, not a length — which is the thing the first drawing got wrong by copying the printed
+   mark's absolute numbers into a box a tenth of its size. The panel prints 12px ticks on a
+   ~296px box, so each side is 12 · 254 · 12 and the middle is 21× the ink: unmistakably four
+   corners. Scaled into 38px the same 9px ticks left a middle of 8px — SHORTER than the ink
+   either side of it — so all four sides read as evenly broken lines and the figure was a
+   marching-ants selection box, which is what a dashed rectangle over a photograph means
+   everywhere else. 6px ticks set back 4px leave 18px, three times the ink, and the corner
+   returns. The two copies stay one FIGURE (ticks, set back, corner void); they cannot be one
+   proportion, because at 38px a 21:1 middle would mean a tick under half a pixel.
+
+   The stroke is heavier and brighter than that printed mark: 2px of --glyph against its
+   1px of --candle. They are the same figure, but the printed one is STILL and the eye finds
+   it at leisure, while this one is moving over changing luminance — a hairline in mid gold
+   disappears into a lit nave and is not much better on a dark one.
 
    Legibility over a highlight is the DROP-SHADOW's job and not a ground's, and the
    difference matters here: a shadow follows the alpha of what is drawn, so each of the
    eight ticks carries its own dark halo, where a radial plate would have been darkest at
    the centre — the one place this figure has no ink and the reader is looking THROUGH it.
    `mix-blend-mode: normal` for the reason .is-video has it: difference-blended gold over a
-   chiaroscuro photograph inverts unpredictably from frame to frame. */
+   chiaroscuro photograph inverts unpredictably from frame to frame.
+
+   THE FIGURE IS SPLIT ACROSS BOTH PSEUDO SLOTS AND THE ELEMENT CARRIES NO `filter`, which
+   looks like an odd way to draw eight rectangles and is the only way to draw them over a
+   lens. An element with a `filter` becomes a backdrop root: any `backdrop-filter` inside it
+   then samples an empty backdrop and blurs nothing at all. So the ticks and their halo live
+   on ::after with the halo as ::after's OWN filter, and ::before is left free to be glass. */
+/* 38px, and the size is a correction: at 46 this was a large object standing on a photograph the
+   reader is examining rather than a mark held over it. The other states can afford their diameter
+   because what is under them is chrome or footage; here the surface IS the content. */
 .site-cursor.is-frame {
-  width: 46px;
-  height: 46px;
+  width: 38px;
+  height: 38px;
   border-color: transparent;
   border-radius: 0;
   background-color: transparent;
+  background-image: none;
   opacity: 1;
   mix-blend-mode: normal;
+}
+
+/* The lens. A viewfinder that only outlines is a shape on top of a photograph; one that holds
+   ground glass is an instrument being held over it — and the press then means what it looks
+   like, because releasing the blur is exactly what opening the frame does. Deliberately
+   shallow: this rides over the photograph the reader is deciding about, and a heavy blur would
+   hide the thing being decided. Same instinct as .is-video's ring, one state further on. */
+.site-cursor.is-frame::before {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 3px;
+  background: rgba(8, 8, 7, 0.12);
+  -webkit-backdrop-filter: blur(2.5px);
+  backdrop-filter: blur(2.5px);
+  transition:
+    -webkit-backdrop-filter 0.26s var(--ease, ease),
+    backdrop-filter 0.26s var(--ease, ease);
+}
+
+/* The centre dot is not part of this figure — a viewfinder frames, it does not aim — so the
+   slot is repurposed for the mark itself. */
+.site-cursor.is-frame::after {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background-color: transparent;
+  opacity: 1;
+  transform: none;
   background-image:
     linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
     linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
@@ -296,28 +350,32 @@
     linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph));
   background-repeat: no-repeat;
   background-size:
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px;
+    6px 2px, 2px 6px,
+    6px 2px, 2px 6px,
+    6px 2px, 2px 6px,
+    6px 2px, 2px 6px;
   background-position:
-    left top, left top,
-    right top, right top,
-    left bottom, left bottom,
-    right bottom, right bottom;
+    left 4px top, left top 4px,
+    right 4px top, right top 4px,
+    left 4px bottom, left bottom 4px,
+    right 4px bottom, right bottom 4px;
   filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 9px rgba(0, 0, 0, 0.6));
 }
 
-/* The centre dot is not part of this figure — a viewfinder frames, it does not aim. */
-.site-cursor.is-frame::after {
-  opacity: 0;
+/* Press: the viewfinder closes on the frame and the glass clears — which is what pressing it
+   is about to do to the whole photograph. The ticks keep their own size while the box shrinks,
+   so the middle void closes from 18px to 10px — the corners visibly converging, which is the
+   gesture. It is also the floor: any smaller box here and the ink meets the void and the mark
+   goes back to reading as a dashed rectangle. */
+.site-cursor.is-frame.is-down {
+  width: 30px;
+  height: 30px;
+  border-color: transparent;
 }
 
-/* Press: the viewfinder closes on the frame, which is what pressing it does. */
-.site-cursor.is-frame.is-down {
-  width: 34px;
-  height: 34px;
-  border-color: transparent;
+.site-cursor.is-frame.is-down::before {
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
 }
 
 /* ── Frame halves — the arrow the press will perform ──────────────────────
@@ -337,23 +395,31 @@
    `scaleX(1)` into `scaleX(-1)`, and a browser interpolates that through zero: the arrow
    folds shut and opens again facing the other way, exactly as the reader's intent does.
    Two separate glyphs swapped instantly would lose that, which is why the head is not two
-   mirrored border-triangles — those cannot be interpolated between. */
+   mirrored border-triangles — those cannot be interpolated between.
+
+   IT IS THE VIDEO RING, and taking that idiom rather than inventing a third is the point. A
+   free-floating shape under a soft radial smudge is what this shipped as, and against .is-video
+   sitting one press away in the same archive it read as an effect rather than as this cursor's
+   own vocabulary. The ring plus a shallow glass plate is what the site already says over a
+   media surface the pointer can act on; the arrow inside it is the only thing that differs,
+   because the action does. The drop-shadow goes with the smudge — a ring on 42% night carries
+   the glyph the way it carries ▶, and a shadow around a filled ring only dirties its edge.
+   (The `filter` would also have made this element a backdrop root and left the blur blurring
+   nothing — the same trap .is-frame above is drawn around.) */
 .site-cursor.is-frame-prev,
 .site-cursor.is-frame-next {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   gap: 0;
-  border-color: transparent;
-  background-color: transparent;
-  background-image: radial-gradient(
-    circle at 50% 50%,
-    rgba(8, 8, 7, 0.55) 0%,
-    rgba(8, 8, 7, 0.26) 48%,
-    rgba(8, 8, 7, 0) 72%
-  );
+  /* A grade under .is-video's ring for the reason .is-frame is smaller than it was: the video
+     ring floats over footage, this one over a still photograph being read. */
+  border-color: rgba(226, 205, 149, 0.72);
+  background-color: rgba(8, 8, 7, 0.42);
+  background-image: none;
   opacity: 1;
   mix-blend-mode: normal;
-  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.92)) drop-shadow(0 0 14px rgba(0, 0, 0, 0.5));
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
 }
 
 /* Shaft and head in ONE box, so the whole arrow is a single interpolable transform. The
@@ -362,8 +428,8 @@
    of the width. */
 .site-cursor.is-frame-prev::after,
 .site-cursor.is-frame-next::after {
-  width: 26px;
-  height: 14px;
+  width: 21px;
+  height: 11px;
   border-radius: 0;
   background: var(--glyph);
   clip-path: polygon(0 43%, 62% 43%, 62% 14%, 100% 50%, 62% 86%, 62% 57%, 0 57%);

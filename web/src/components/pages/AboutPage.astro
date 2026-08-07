@@ -227,7 +227,19 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     {/* ── Pull-quote plate — thesis of "Co śpiewamy?". ─────── */}
     <section class="plate" aria-label={c.plate.aria}>
       <div class="plate-media" aria-hidden="true">
-        <BleedImage desktop={plate.desktop} mobile={plate.mobile} alt="" position="center" />
+        {/* A band, not a hero, so it cannot afford the default drift speed: the room is ±10% of
+            the plate and the plate is well under a viewport tall, so 0.16 spends it in the first
+            moments of the pass and the photograph then sits still for the rest of it. 0.06 fits
+            both regimes with margin — the ceiling is 0.068 at the 52svh phone band and 0.082 at
+            70svh on the desktop (BleedImage's `parallax`, and the arithmetic in BaseLayout's
+            parallax header). Raise the plate's min-height and this may rise with it. */}
+        <BleedImage
+          desktop={plate.desktop}
+          mobile={plate.mobile}
+          alt=""
+          position="center"
+          parallax={0.06}
+        />
       </div>
       <blockquote class="reveal">
         {c.plate.quote}
@@ -555,7 +567,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .plate blockquote { margin: 0; max-width: 24ch; font-family: var(--serif); font-style: italic; font-weight: 300; line-height: 1.18; font-size: clamp(30px, 5vw, 64px); }
   .plate cite { display: block; margin-top: 22px; font-style: normal; font-family: var(--capitalis); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.7); }
   /* Smaller quote on phones → shorter band. */
-  @media (max-width: 760px) { .plate { min-height: 28svh; } }
+  /* 28svh here was under the plate's own content (quote + cite + padding ≈ 35svh on a phone), so
+     it never bound — the band was as short as the words allowed and the photograph showed as a
+     slot. 52svh gives the picture a register of its own without turning a pull-quote into a
+     second hero, and it is also what buys the parallax its room: the drift ceiling scales with
+     the band's height, so a shorter band would have to be stiller as well as thinner. */
+  @media (max-width: 760px) { .plate { min-height: 52svh; } }
 
   /* CTA — the votive glyph closes the page (same mark kontakt's coda carries) */
   .cta-band { text-align: center; overflow: hidden; isolation: isolate; }

@@ -43,12 +43,32 @@ export interface Path {
    *  gallery's first entry — set it only where that first entry documents something other than
    *  the evening itself, e.g. a rehearsal. A name that is not in that gallery fails the build. */
   readonly frame?: string;
-  /** Which part of `frame` survives the band's 4:5 crop. The crop happens at BUILD (sharp, via
+  /** Which part of `frame` survives the band's square crop. The crop happens at BUILD (sharp, via
    *  lib/croppedShot), so this is the whole lever — the band's sheet has no `object-position`
    *  left to turn, because by the time the file reaches the browser it is already the panel's
    *  shape. Sharp's vocabulary: `"top"`, `"left top"`, `"attention"`, `"entropy"`. Omit for
    *  centre, which is where all five stand until a crop is seen to land badly. */
   readonly framePosition?: string;
+  /**
+   * Exposure correction for this evening's panel, multiplied into the band's shared grade
+   * (`--panel-lift`, 14-imagines.css). Above 1 lifts, below 1 damps; omit for none.
+   *
+   * It exists because five photographs shot in five buildings do not share an exposure and one
+   * filter cannot equalise them — measured at the band's own crop the line ran 0.19 · 0.13 ·
+   * 0.13 · 0.10 · 0.22 mean luma, so a single `brightness()` either left the dark ones dead or
+   * blew the lit ones out. The values are a PARTIAL correction toward the line's middle, not a
+   * normalisation: flattening five naves to one luminance would cost the chiaroscuro that is
+   * the reason these photographs are worth showing. Re-derive them with a contact sheet at the
+   * panel's crop and grade — a reading of `alt` strings answers nothing here.
+   */
+  readonly frameLift?: number;
+  /**
+   * The date printed under the band's numeral. It dates the PHOTOGRAPH's own night, which for a
+   * programme that toured is not the same as `year` — the register dates the programme, the band
+   * dates the evening it is showing. Written out because the register's bare year is what the
+   * band had and it is not a chronology: three of five panels read MMXXIV.
+   */
+  readonly frameDate: string;
 }
 
 /** The register's numbering, by position. Shared with the Imagines band so the band's numerals
@@ -68,7 +88,9 @@ export const PATHS: readonly Path[] = [
     poster: "poster-wcielenie",
     // The gallery opens on three rehearsal frames; the band announces the evening, so it takes
     // the first one shot at the concert itself.
-    frame: "kd-wcielenie-3",
+    frame: "kd-wcielenie-6",
+    frameDate: "styczeń MMXXIV",
+    frameLift: 0.9,
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
     video: { src: videoAsset("landing-modal") },
@@ -85,6 +107,8 @@ export const PATHS: readonly Path[] = [
     poster: "poster-wolanie",
     // Same as Wcielenie: entries 0–2 are the rehearsal in Szczawnica, not the evening.
     frame: "kd-wolanie-3",
+    frameDate: "czerwiec MMXXIV",
+    frameLift: 1.08,
     video: {
       src: videoAsset("landing-wolanie"),
       portrait: true,
@@ -103,7 +127,10 @@ export const PATHS: readonly Path[] = [
     // gallery[0] is a photograph of the printed programme — a good archive entry and the one
     // thing in the band that was not an evening. It was also the brightest panel of five on a
     // night ground, so the eye landed on the middle of the line before its beginning.
-    frame: "kd-9-kart-4",
+    frame: "kd-9-kart-2",
+    // The programme toured Rybnik → Łódź → Kraków; this frame is the Kraków evening (16 XI).
+    frameDate: "listopad MMXXIV",
+    frameLift: 1.06,
   },
   {
     slug: "hymn-poleglym",
@@ -114,6 +141,16 @@ export const PATHS: readonly Path[] = [
     place: "Bazylika Mariacka w Krakowie",
     note: "Hołd tym, którzy oddali życie w obronie Ukrainy. W kulminacji, przy otwarciu ołtarza Mariackiego, zabrzmiał hymn Ukrainy.",
     poster: "poster-hymn",
+    // gallery[0] is a photograph of the evening and unusable as a panel: measured at the band's
+    // crop, 85% of it sits under 6% luma — a black rectangle at any size the line can give it,
+    // which is precisely what web-imagines-spec §2 rejects the thumbnail grid for. Of this
+    // gallery's four, `-2` is the only one that reads at the panel's width, and it is also the
+    // line's one cool frame, so it separates two warm naves rather than repeating them. (`-3`
+    // measures brightest and is the audience seen from the back, with a face in the foreground —
+    // outside the consent scope, which covers singers.)
+    frame: "kd-hymn-2",
+    frameDate: "luty MMXXV",
+    frameLift: 1.22,
   },
   {
     slug: "aeternam-epitafium-dla-gazy",
@@ -125,9 +162,16 @@ export const PATHS: readonly Path[] = [
     note: "Wieczór za mieszkańców Gazy. Aeternam Vivancosa, dwaj Tavenerowie, zawierzenie ofiar Matce Bożej.",
     poster: "poster-aeternam",
     // gallery[0] is the widest frame of the set — an evenly lit hall seen from the back rows.
-    // Cropped to the band's 4:5 it keeps neither the architecture nor the singers, which is the
-    // one thing a panel this size cannot afford. This one carries both.
+    // Cropped to the band's square it keeps neither the architecture nor the singers, which is
+    // the one thing a panel this size cannot afford. This one carries both.
     frame: "kd-aeternam-3",
+    // Two evenings, Mistrzejowice and Niedzica; this frame is Niedzica (18 X).
+    frameDate: "październik MMXXV",
+    // No lift. It carried 0.86 while panel IV was black and this one was the line's right lamp;
+    // with IV legible the damping only cost the gilt, and the frame is cooler than it looks —
+    // most of its area is blue-lit vault, not altar. Raising `saturate` instead was tried on a
+    // contact sheet and is the wrong instrument: it deepens the vault's blue before it warms the
+    // gold, i.e. it pushes this panel toward IV's register rather than away from it.
     video: {
       src: videoAsset("landing-aeternam"),
       portrait: true,

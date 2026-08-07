@@ -454,7 +454,17 @@ const ogLocaleAlternates =
 
       // Parallax — JS-driven (cross-browser; scroll-timeline CSS is still partial in FF/Safari).
       // One rAF-throttled scroll loop; layers refreshed per navigation. The image is taller than
-      // its frame and centered, so the clamped drift never exposes an edge.
+      // its frame and centred, so the clamped drift never exposes an edge — provided the layer
+      // actually rests at that centre, which is what `base` below is for.
+      //
+      // `data-parallax` is a SPEED against scroll distance, and the room is a fraction of the
+      // FRAME, so the two only agree while the frame is roughly the height of the viewport. A
+      // frame travels `vh + frameH` from entering to leaving, so anything above
+      // `2·cap / (vh + frameH)` pins the layer against the clamp for the rest of the pass and the
+      // drift visibly stops — the shorter the band, the longer it is stopped, and at the site's
+      // default 0.16 anything under a full viewport is stopped for most of it. Short bands
+      // therefore state their own speed (BleedImage's `parallax` prop). The default is left alone
+      // because retuning it would re-time every hero on the site to fix bands that can say so.
       let layers: HTMLElement[] = [];
       let pTicking = false;
       const applyParallax = () => {
@@ -475,11 +485,25 @@ const ogLocaleAlternates =
           const scale = parseFloat(el.dataset.parallaxScale || "1") || 1;
           // Room to drift without exposing an edge: either the image is taller than its
           // frame, or an inset:0 layer is scaled up (e.g. blurred station backdrops).
+          // ×0.98 for the same reason the scale branch takes ×0.85: `offsetHeight`/`offsetTop`
+          // are integers over percentage lengths that are not, so a drift taken to the exact
+          // arithmetic limit can land the edge a fraction of a pixel inside the frame and rule a
+          // hairline along it. Two percent of the drift buys that away.
           const cap =
             scale > 1
               ? ((frame.offsetHeight * (scale - 1)) / 2) * 0.85
-              : Math.max(0, el.offsetHeight - frame.offsetHeight) / 2;
-          const base = scale > 1 ? 0 : -cap; // scaled layers are centered; tall imgs top-aligned
+              : (Math.max(0, el.offsetHeight - frame.offsetHeight) / 2) * 0.98;
+          // Where the layer must rest for its room to be symmetric — MEASURED, not assumed.
+          // A tall layer is not necessarily flush with the top of its frame: the sheets centre
+          // theirs (`.bleed` is `top: -10%` under a 120% height, `.station-bg` is `inset: -30%`),
+          // and subtracting `cap` from an already-centred layer spends the whole upward half of
+          // the room before the first pixel of scroll. Every negative drift then lifts its bottom
+          // edge clear of the frame — invisible on a section as tall as the viewport, because the
+          // exposed strip is still below the fold while the drift is negative, and plainly visible
+          // on a short band, which is where it was finally seen (the /o-nas plate, entering from
+          // the bottom with a strip of ground under the photograph). `offsetTop` reads 0 for a
+          // flush layer and -cap for a centred one, so both land correctly.
+          const base = scale > 1 ? 0 : -Math.max(0, cap + el.offsetTop);
           let drift = (r.top + r.height / 2 - vh / 2) * -speed;
           if (drift > cap) drift = cap;
           else if (drift < -cap) drift = -cap;

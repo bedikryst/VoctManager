@@ -4,39 +4,88 @@
  *  of five frames, one per evening, between the film and the register. Surfaces only; the
  *  composition's reasoning lives in the component's header.
  *
- *  Two things this sheet must not be tempted into. It is a LINE, so the plate is a single flex
- *  row with no wrap — a sixth evening narrows the panels, it never opens a second row. And the
- *  band draws NO hairline of its own beyond each panel's edge: the tonal cut from parchment to
- *  night is the boundary, which is also why `.path` below drops its own top rule here.
+ *  Three things this sheet must not be tempted into. It is a LINE, so the plate is a single flex
+ *  row with no wrap — a sixth evening narrows the panels, it never opens a second row. The plate
+ *  keeps the page's MEASURE, not the viewport: it is a ruled object, an object needs an outer edge
+ *  a bled plate does not have, and a band wider than the register under it inverts the page's
+ *  hierarchy (see the plate's own block). And the band draws no hairline of its own around the
+ *  section — the tonal cut from parchment to night is that boundary, which is also why `.path`
+ *  below drops its own top rule here.
  * @architecture Astro islands 2026
  * @module app/styles/marketing-landing/imagines
  */
 
   /* ── The band ─────────────────────────────────────────────────────────────────────────
      Night, full width, between two parchment sections — the same cut the page already
-     performs at the first interlude. The head and the exit hang from the page gutter; the
-     plate itself spans the viewport, because five frames across one measure are only
-     photographs at all if they are given every pixel there is. */
+     performs at the first interlude. The section's GROUND is bled; its contents are not.
+
+     Head, line, plate and exit all take `min(1580px, 100%)` inside the gutter, which is the
+     measure every other section on this landing keeps and the shape `.path` states one section
+     below (04-rooms-interludes: full-width ground, `.section-grid` at the measure). Hanging them
+     from the gutter alone was a third measure on one page: at 1920 the plate ran 1728px against
+     the register's 1580 and started 74px to its left, and at 2560 it was half again as wide as
+     anything else on the site — the widest and darkest object on the landing being a row of
+     photographs, directly above the register they index. */
   .imagines {
+    /* The plate's ruling, in one place: it is drawn on the panels, on their divisions and
+       under the photographs, and a value that lives in three selectors drifts in two. */
+    --rule: rgba(244, 241, 233, 0.15);
     background: var(--night);
     color: var(--paper);
-    padding: clamp(64px, 8vw, 112px) 0 clamp(56px, 7vw, 96px);
+    padding: clamp(64px, 8vw, 112px) var(--gutter) clamp(56px, 7vw, 96px);
   }
 
-  .imagines-label,
-  .imagines-foot {
-    padding-inline: var(--gutter);
+  /* One box holds the measure and everything in the band is laid out inside it, rather than four
+     siblings each centring themselves: a child that needs a narrower measure of its own (the
+     line, at 22ch) can then simply say so, where under per-sibling centring its `max-width` would
+     have fought the `auto` margins and centred it against the plate's left edge. */
+  .imagines-inner {
+    width: min(1580px, 100%);
+    margin-inline: auto;
   }
 
   .imagines-label {
-    margin: 0 0 clamp(30px, 4vw, 48px);
+    margin-block: 0 clamp(14px, 1.6vw, 20px);
     color: rgba(244, 241, 233, 0.52);
+  }
+
+  /* The band's voice. Every other section on this landing sets one line — even the wordless
+     photograph section (`.rite-quote h2`) — and without one this band read as a component
+     standing on the rite rather than as part of it.
+
+     A GRADE UNDER `.section-title`, deliberately: the register's own heading stands ~200px below
+     and the film's line ~200px above, so a third at full size would make movement II three titled
+     sections in a row. This is the `.vox-line` register, left-hung to the plate rather than
+     centred, because everything else in this band hangs from the same left edge. */
+  .imagines-line {
+    margin: 0 0 clamp(30px, 4vw, 48px);
+    max-width: 22ch;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(23px, 2.3vw, 34px);
+    line-height: 1.16;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+  }
+
+  .imagines-line em {
+    font-style: italic;
+    color: var(--candle);
   }
 
   /* ── The plate ────────────────────────────────────────────────────────────────────────
      One row, five equal panels. `flex: 1 1 0` with `min-width: 0` so the line divides the
-     viewport rather than the photographs' intrinsic widths — the frames are cropped to one
+     measure rather than the photographs' intrinsic widths — the frames are cropped to one
      box, so their own aspects have no say here.
+
+     IT KEEPS THE PAGE'S MEASURE, and the width it gives up is the point. Bled to the viewport it
+     had three different left edges (rubric at the gutter, plate at 0, exit at the gutter) and —
+     worse — no outer rule anybody could see: the panels' own edge hairlines were clipped by the
+     window, so only the internal divisions read, and five divided pictures with no frame around
+     them are a filmstrip rather than a plate. Hung from the gutter it gained the edge and still
+     outgrew every other section on the page (see the band's own block). At the measure the panel
+     is 316px where the gutter gave it 346 — 9% of width for an outer rule, one left edge shared
+     with the register below, and a band that no longer shouts over the page it belongs to.
 
      NO gutter between panels, and the panels' own hairlines carry the division instead. A
      gutter is a poster's answer; this site is a codex, and a codex divides a plate by RULING
@@ -52,44 +101,81 @@
     gap: 0;
   }
 
+  /* Every panel carries its own four sides and neighbours COLLAPSE theirs by overlapping 1px, so
+     the plate is framed at its outer edge with 1px against 1px everywhere inside it. Stacked
+     borders would put 2px on every division against 1px at the edge, which at this alpha is the
+     kind of difference a reader feels before finding.
+
+     The negative margin is why, and dropping the sibling's left border instead is the version
+     that looks simpler and is wrong: the panels would then hold different amounts of border, so
+     with `flex-basis: 0` the first one comes out 1px narrower in content than the other four —
+     and since the media box is `aspect-ratio: 1`, 1px of width is 1px of HEIGHT. The ruled
+     caption under it would sit one pixel low and the plate's horizontal rule would step at the
+     first division. Identical boxes, overlapped, keep every panel the same square.
+
+     Stating it per panel rather than as one border on the plate is what lets the rail below
+     reuse it unchanged: there the same two rules box whichever panels are on screen. */
   .imagines-frame {
     flex: 1 1 0;
     min-width: 0;
     margin: 0;
+    border: 1px solid var(--rule);
   }
 
-  /* The panel box. PORTRAIT is arithmetic: five frames across a 1920 viewport are ~370px wide,
-     and only height keeps them from being the thumbnails docs/web-imagines-spec.md §2 rejects.
-     The two-class selector is deliberate — `.shot-open` (styles/image-lightbox.css) is a
-     single-class reset loaded from a different sheet, so anything that must beat it has to say
-     so rather than depend on bundle order. */
+  .imagines-frame + .imagines-frame {
+    margin-left: -1px;
+  }
+
+  /* The panel box. SQUARE, and that is arithmetic rather than taste: three of these five
+     photographs are 3:2 and their horizontality IS their subject — a nave is wide — and a 1:1
+     panel keeps two thirds of that width where the 4:5 this shipped with kept barely half.
+     Five across the ruled plate are 316px at and above the measure and ~230px at the breakpoint
+     below, which stays clear of the 240×160 at which docs/web-imagines-spec.md §2 says these
+     frames become black rectangles. The two-class selector is deliberate — `.shot-open`
+     (styles/image-lightbox.css) is a single-class reset loaded from a different sheet, so
+     anything that must beat it has to say so rather than depend on bundle order. */
   .imagines-frame .imagines-media {
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 1 / 1;
   }
 
-  /* THE CROP IS NOT HERE. Every rendition arrives already cut to 4:5 by sharp at build time
-     (lib/croppedShot, called from the component) — which is what lets `sizes` state the panel's
-     real width instead of the width `cover` would have magnified it to. `object-fit` therefore
-     has nothing left to do in the normal case and stays only as the fallback for one: a source
-     too small to fill the ladder's floor comes back at its own size rather than upscaled, and
-     cover keeps that panel filled rather than letterboxed. The lever for a crop that lands badly
-     is `framePosition` on the evening in data/landing/paths, and `object-position` here would
-     now do nothing — it has no overflow to shift. */
+  /* The veil rides above the hover edge and the touch mark — it is the unlit state of the whole
+     panel, so nothing the panel carries may show through it while it lifts. */
+  .imagines-frame .reveal-light {
+    --veil-z: 3;
+  }
+
+  /* THE CROP IS NOT HERE. Every rendition arrives already cut to the panel's square by sharp at
+     build time (lib/croppedShot, called from the component) — which is what lets `sizes` state
+     the panel's real width instead of the width `cover` would have magnified it to. `object-fit`
+     therefore has nothing left to do in the normal case and stays only as the fallback for one:
+     a source too small to fill the ladder's floor comes back at its own size rather than
+     upscaled, and cover keeps that panel filled rather than letterboxed. The lever for a crop
+     that lands badly is `framePosition` on the evening in data/landing/paths, and
+     `object-position` here would now do nothing — it has no overflow to shift.
+
+     THE GRADE IS SHARED, THE EXPOSURE IS NOT. `saturate`/`contrast` are the numbers the hero,
+     the rite and the ensemble already dim their photographs with (02, 03, 04) and they belong to
+     the whole line: they pull the terracotta Christmas nave and the blue-gold baroque altar back
+     into this site's parchment/night/candle. Brightness cannot be shared, and one value for five
+     buildings was the band's largest remaining defect. Measured at this crop the line ran
+     0.19 · 0.13 · 0.13 · 0.04 · 0.22 mean luma, with the fourth panel 85% under 6% — a black
+     rectangle, i.e. exactly what §2 rejects the thumbnail grid for, standing in the middle of the
+     line. `--panel-lift` is the per-evening correction (`frameLift`, data/landing/paths); the
+     shared base is 1, because here the photograph is the SUBJECT and the site's dimming is for a
+     photograph that is a ground.
+
+     THERE IS NO SCRIM. A gradient to 50% black over the lower half of every panel shipped here to
+     give the caption something to hang from; the caption has been ruled off since, so it hung
+     from a hairline instead and the gradient stayed on as a habit — darkening the two lit naves
+     by half at the exact place their altars are, on frames the reader is meant to look AT. Every
+     other full-bleed photograph on this landing wears one because words are set over it. Nothing
+     is set over these. */
   .imagines-frame img {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border: 1px solid rgba(244, 241, 233, 0.12);
-  }
-
-  /* One rule between two panels, not two. Every panel carries its own four sides so the plate
-     is framed at its outer edge; touching neighbours would otherwise stack their borders into a
-     2px division against 1px everywhere else, which at this alpha is the kind of difference a
-     reader feels before finding. The panels only ever sit side by side — on the phone the plate
-     becomes a rail, not a stack — so this needs no breakpoint of its own. */
-  .imagines-frame + .imagines-frame img {
-    border-left: 0;
+    filter: saturate(0.74) contrast(1.06) brightness(var(--panel-lift, 1));
   }
 
   /* ── The candle moves to the frame being looked at ────────────────────────────────────
@@ -99,20 +185,30 @@
      register, and deliberately not a lift, a zoom or a shadow: `.shot-open` already states why
      (image-lightbox.css) and the whole site's hover idiom is a gold edge, never a rise.
 
-     Both rules are (0,3,1) — the hovered one wins on source order, so it stays second. The
-     brightness pair is asymmetric on purpose: these are chiaroscuro frames on a night ground,
-     so the hovered panel is lifted by a whisker and the neighbours carry the gesture. */
+     The two endpoints are the site's own two treatments of a photograph, which is what makes
+     the gesture legible rather than merely present: a receding panel lands on the sacred dimming
+     every full-bleed photograph on this landing wears, and the approached one comes up past the
+     photograph itself. Ground and picture, and the reader moves the boundary.
+
+     BOTH ENDPOINTS RIDE `--panel-lift`, which is what keeps the gesture equal on five different
+     exposures. Stated as flat values they were a fraction of a stop on the darkest panel and
+     violent on the brightest, so the gesture that exists to prove the five are one object was
+     visible on two of them. Multiplying means each panel recedes and returns by the same ratio
+     from wherever its own exposure sits — 0.66 and 1.16 of rest, which are the numbers the flat
+     pair worked out to on the line's middle.
+
+     Both rules are (0,3,1) — the hovered one wins on source order, so it stays second. */
   @media (hover: hover) {
     .imagines-frame img {
       transition: filter 0.55s var(--ease, ease);
     }
 
     .imagines-plate:hover .imagines-frame img {
-      filter: brightness(0.74);
+      filter: saturate(0.62) contrast(1.06) brightness(calc(var(--panel-lift, 1) * 0.66));
     }
 
     .imagines-plate .imagines-frame:hover img {
-      filter: brightness(1.06);
+      filter: saturate(0.92) contrast(1.04) brightness(calc(var(--panel-lift, 1) * 1.16));
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -122,19 +218,101 @@
     }
   }
 
-  /* The numeral belongs to its panel, so it is centred under it rather than hung from a
-     column — the register below owns the left-hand rail. Same face and same light as
-     `.path-entry-roman`, a grade smaller: one numbering, printed twice. */
+  /* ── The caption band ─────────────────────────────────────────────────────────────────
+     Ruled off from the photographs, so the plate reads as one scored object with an image row
+     and a foot rather than as five pictures with five labels floating under them. The rule is
+     each cell's own top border and they join across the plate.
+
+     The numeral is centred under its panel rather than hung from a column — the register below
+     owns the left-hand rail. Same face and same light as `.path-entry-roman`, a grade smaller.
+
+     NUMERAL · DATE ON ONE LINE, which is `.aether-inscription`'s figure (I · Lumen Christi) at a
+     smaller grade — the shape this site already uses to name a movement, borrowed to name an
+     evening. Stacked, the pair spent ~82px of the plate's height on one 10px line of type, in a
+     band whose whole subject is the photographs above it. */
   .imagines-roman {
-    margin-top: clamp(12px, 1.2vw, 18px);
+    border-top: 1px solid var(--rule);
+    padding: clamp(11px, 1.05vw, 15px) 6px clamp(12px, 1.15vw, 16px);
+    text-align: center;
+  }
+
+  /* The band's second road, and the one it had no version of: the photograph opens the frame,
+     the numeral goes to the evening. Landing link idiom — a gold hairline on approach, never a
+     button — and the rule sits under the pair so the whole caption is the target.
+
+     `align-items: baseline` rather than centre: the serif numeral and the tracked capital sit on
+     one line here, and two faces at different sizes only look set on the same line if they share
+     a baseline. */
+  .imagines-roman-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid transparent;
+    color: inherit;
+    transition: border-color 0.45s var(--ease, ease);
+  }
+
+  .imagines-roman-link:hover {
+    border-bottom-color: color-mix(in srgb, var(--candle) 58%, transparent);
+  }
+
+  .imagines-roman-link:focus-visible {
+    outline: 1px solid var(--candle);
+    outline-offset: 5px;
+  }
+
+  /* ONE LINE MEANS ONE VOICE, and the grade is what carries that. The register below sets its
+     numeral at 30px over an 11px year, and gets away with it because those two are STACKED in a
+     rail — a size jump down a column reads as hierarchy. Side by side it reads as a mismatch, and
+     at 24px against 10.5px this pair was 2.3:1 on cap height where `.aether-inscription`, the
+     figure it borrows, is 1.45:1. 18px brings it to ~1.7 and the two halves become one
+     inscription instead of a gold numeral with a label parked beside it. */
+  .imagines-roman-n {
     font-family: var(--serif);
     font-style: italic;
     font-weight: 300;
-    font-size: clamp(17px, 1.5vw, 24px);
+    font-size: clamp(15px, 1.15vw, 18px);
     line-height: 1;
     letter-spacing: 0;
-    text-align: center;
     color: var(--candle);
+  }
+
+  /* The separator is the interlude's, and it is the reason the pair reads as one inscription
+     rather than as a numeral with a date parked beside it. */
+  .imagines-roman-dot {
+    color: rgba(244, 241, 233, 0.4);
+    font-size: clamp(9px, 0.62vw, 10.5px);
+    line-height: 1;
+  }
+
+  /* The date is `.path-entry-year`'s face — one numbering and one chronology, printed twice, and
+     the band prints the finer of the two.
+
+     IT IS THE SECOND HALF OF AN INSCRIPTION, NOT A FOOTNOTE, and 0.38 made it the quietest type
+     in the whole band — under the rubric's own 0.52, beside a numeral at full candle. The
+     register sets its year at `var(--ink)`, i.e. the same strength as body copy; the equivalent
+     on night is nearer 0.6 than a third. `margin-right` pays back the trailing letter-space:
+     tracked type inside a centred row otherwise sits half a space left, which on five panels in
+     a row is visible as a wobble rather than as a mistake. */
+  .imagines-roman-date {
+    font-family: var(--capitalis);
+    font-size: clamp(9px, 0.62vw, 10.5px);
+    letter-spacing: 0.22em;
+    margin-right: -0.22em;
+    line-height: 1;
+    text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.58);
+    transition: color 0.45s var(--ease, ease);
+  }
+
+  /* The cell answers as ONE object, whichever half is approached. Hovering the caption already
+     lights the photograph — `.imagines-frame:hover` covers the whole figure — and this is the
+     missing half of that: approaching the photograph warms its date. Without it the panel and its
+     caption are two things that happen to be stacked. */
+  .imagines-roman-link:hover .imagines-roman-date,
+  .imagines-frame:hover .imagines-roman-date {
+    color: rgba(244, 241, 233, 0.88);
   }
 
   .imagines-foot {
@@ -161,9 +339,10 @@
   }
 
   /* ── Below the desktop measure: the line LIES DOWN, it does not stand up ──────────────
-     Five across stops being photographs under 200px a panel, and with no gutter the panel is
-     exactly `100vw / 5`, so the floor is exactly 1000px of viewport. `sizes` in
-     ImaginesBand.astro reads the same boundary; move both or neither.
+     Five across stops being photographs under ~230px a panel, and on the ruled plate the panel
+     is `(100vw - 2 × 5vw) / 5`, i.e. 18vw — so the floor lands at 1280px of viewport. `sizes` in
+     ImaginesBand.astro reads the same boundary; move both or neither. (It was 1000px while the
+     plate was bled and the panel was `100vw / 5`; the gutter is what moved it.)
 
      What replaces the five-across is a RAIL, not a stack, and the reason is the band's own
      form: it is a line, and a column of five is the one thing it says it never is. The stack
@@ -172,19 +351,24 @@
      and the reader carries it sideways, which is the same gesture the desktop eye makes.
 
      Two things make it work rather than merely exist. The panel is capped at 420px so a tablet
-     does not print a 900px-tall photograph nothing can see whole, and the plate keeps its
-     GUTTER — which is what leaves the next panel visibly cut at the right edge. That cut is the
-     entire affordance: nobody scrolls sideways on a page that gives no sign it can be.
+     does not print a photograph nothing can see whole, and the plate BREAKS OUT of the section's
+     gutter and takes it back as padding — so the head keeps its measure while the next panel is
+     visibly cut at the window's own edge. That cut is the entire affordance: nobody scrolls
+     sideways on a page that gives no sign it can be. `width: auto` is load-bearing in that
+     breakout and not tidying: with the measure still declared, the negative margins would shift
+     a box of fixed width left and leave a gutter of dead space on the right, which is the same
+     trap 11-mobile.css records for the director's portrait. Auto resolves to the containing
+     block plus both margins, i.e. the viewport.
 
-     The crop does NOT relax here, and that reverses the earlier decision deliberately. A
-     stacked photograph at full measure could afford 3:2 because it was the largest a phone ever
-     printed one; a 74vw rail panel cannot, and portrait is the only thing that keeps these dark
-     frames legible at that width. It also keeps the band one shape on every screen.
+     The crop does NOT relax here. It keeps the band one shape on every screen, and a square is
+     the shape that holds most of a wide nave at any width.
 
      No `data-lenis-prevent`: Lenis is gated behind `(pointer: fine) and (hover: hover)` in
      BaseLayout, so on the touch devices this rail is built for it never runs at all. */
-  @media (max-width: 999.98px) {
+  @media (max-width: 1279.98px) {
     .imagines-plate {
+      width: auto;
+      margin-inline: calc(-1 * var(--gutter));
       padding-inline: var(--gutter);
       overflow-x: auto;
       scroll-snap-type: x mandatory;
@@ -207,21 +391,39 @@
      The whole affordance on this band is `.shot-open:hover::after` — a gold edge on approach —
      and a touch device never approaches. Five photographs standing under a rubric then read as
      decoration above the register rather than as five doors, which is the one thing the band
-     must not be. So the sign is PRINTED here instead: four candle corner ticks, a crop mark, the
-     same figure the pointer will take over these frames on a desktop. One mark, two states of the
-     same instruction.
+     must not be. So the sign is PRINTED here instead: a registration mark, the same figure the
+     pointer will take over these frames on a desktop. One mark, two states of the same
+     instruction.
+
+     THE TICKS DO NOT MEET AT THE CORNER, and that is the whole difference between the mark this
+     is and the icon it was. Brackets that close a corner are the universal "expand to
+     fullscreen" glyph, and four of them on a photograph read as a stock control however finely
+     they are drawn — which is exactly what shipped. A printer's registration mark leaves the
+     corner itself void and sets its two strokes back from it, so it reads as what it is: the
+     trim of a plate, marked. Same offset on the cursor's viewfinder (cursor.css) — they have to
+     stay one figure.
+
+     The drop-shadow is not decoration either: two of these five panels are lit interiors, and
+     a hairline in mid gold has nothing to hold against a bright nave. It is the same reasoning
+     that gave the cursor's copy of this mark its halo, arrived at on the same photographs.
 
      It is the button's `::before` because `::after` is the hover edge (image-lightbox.css) and
-     both have to be able to hold at once. Eight gradient layers, two strokes per corner — verbose
-     and completely static, which is the right trade against an extra element per panel. */
+     both have to be able to hold at once. Eight gradient layers, two strokes per corner —
+     verbose and completely static, which is the right trade against an extra element per panel.
+
+     A blur inside this mark was considered and is wrong here, though it is right on the cursor:
+     the cursor's lens is 46px of a photograph the reader is not looking at yet, while this mark
+     spans the panel, and a `backdrop-filter` across it would permanently blur the photograph the
+     mark exists to announce. */
   @media (hover: none) {
     .imagines-frame .imagines-media::before {
       content: "";
       position: absolute;
-      inset: 12px;
+      inset: 10px;
       z-index: 2;
       pointer-events: none;
-      opacity: 0.66;
+      opacity: 0.62;
+      filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9));
       background-image:
         linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle)),
         linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle)),
@@ -229,14 +431,14 @@
         linear-gradient(var(--candle), var(--candle)), linear-gradient(var(--candle), var(--candle));
       background-repeat: no-repeat;
       background-size:
-        14px 1px, 1px 14px,
-        14px 1px, 1px 14px,
-        14px 1px, 1px 14px,
-        14px 1px, 1px 14px;
+        12px 1px, 1px 12px,
+        12px 1px, 1px 12px,
+        12px 1px, 1px 12px,
+        12px 1px, 1px 12px;
       background-position:
-        left top, left top,
-        right top, right top,
-        left bottom, left bottom,
-        right bottom, right bottom;
+        left 9px top, left top 9px,
+        right 9px top, right top 9px,
+        left 9px bottom, left bottom 9px,
+        right 9px bottom, right bottom 9px;
     }
   }

@@ -14,6 +14,15 @@ need the packing module was corrected when stage 4 turned out not to. **§9 was 
 fact, so the two sections that closed the file moved down a number** — cross-cutting constraints
 are §10 and the open list is §11.
 
+**§12 is a remediation pass over stages 4 and 5, and it supersedes specific claims in §8 and §9.**
+Those claims are left standing with a pointer rather than deleted, because the reasoning that
+produced them is what makes the correction legible. Where §8 or §9 and §12 disagree, §12 is what
+shipped.
+
+**§13 is a second pass over the band alone, and it supersedes §12 on four points** — the plate's
+measure, the panel exposure, the caption's content and the fourth evening's frame. Same rule:
+where §12 and §13 disagree, §13 is what shipped.
+
 ---
 
 ## 1. The defect
@@ -259,7 +268,10 @@ numerals are ink. Do not put both registers on one node. No `data-d` anywhere: t
 cadence is the shared onset queue, and the ten register nodes (five veils, then five numerals)
 light across ~930ms of it, left to right.
 
-What the build and the first audit of it settled, none of it anticipated by the plan above:
+What the build and the first audit of it settled, none of it anticipated by the plan above.
+**Four of these were corrected in §12 — the panel's aspect, the plate's bleed, the breakpoint
+that follows from it, and the printed touch mark. Read them for the reasoning, not for the
+current shape.**
 
 - **The panels are a CROP, and portrait, and that is arithmetic rather than taste.** Five frames
   across one measure are ~370px wide at 1920 and ~300 at the site's own 1580 — and 240×160 is
@@ -438,7 +450,9 @@ What the build settled, none of it anticipated by the plan:
   again and collides with `vault-triggers.ts`'s (§6).
 
 **Two cursor defects the build could not have found, and a browser did.** Both were reported off a
-real screen, which remains the only way this class of thing surfaces:
+real screen, which remains the only way this class of thing surfaces. (A third and a fourth came
+the same way and are in §12: the viewfinder read as a fullscreen icon, and the halves' arrow was
+speaking a vocabulary the cursor uses nowhere else.)
 
 - **The viewfinder was drawn inside a pill.** `.site-cursor` carries `border-radius: 999px`,
   backgrounds are clipped to the border box, and a circle cuts each corner tick down to the
@@ -528,6 +542,23 @@ the figure that actually says nothing was orphaned.*
   into the Niedzica run as well, so the archive still reads as two venues in order rather than
   one frame sitting in the wrong city. The band closes on it.
 
+- **The band's first panel announces the evening with a photograph taken after it ended.**
+  `kd-wcielenie-8`'s own `alt` says so — *"VoctEnsemble **po** Kontemplacji Wcielenia"* — and it is
+  a posed group portrait: twelve singers facing the camera with roses. That is the same class of
+  error `Path.frame` was built to prevent (§8: `gallery[0]` is a rehearsal frame for two evenings —
+  "a fine archive entry and a poor announcement"), one door further along, and it is standing first
+  in the line among four documentary frames. That gallery holds four frames captioned *podczas*:
+  `-3`, `-4`, `-5`, `-6`. On a contact sheet at the band's own crop and grade, **`-6` is the pick** —
+  it is the only frame in the whole line with a conductor's gesture in it, and it keeps the tree and
+  the architecture. `-4` is the safe second. `-5` is the strongest photograph of the six and the
+  wrong one here: it is a nave seen from the back rows, which is exactly panel III's shot, and two
+  of five in the same register flattens the line.
+- ~~**`hymn-poleglym` (panel IV) is the quietest panel and that is probably correct.**~~ —
+  **measured, and it was not correct: `-2` shipped (§13).** The entry read "left as it is, on rhythm
+  rather than on legibility", and the rhythm argument (III, IV and V would be three consecutive
+  architectural wides) turned out to be answered by the photograph itself — `-2` is the line's only
+  cool frame, so it separates two warm naves rather than repeating them. The legibility half was
+  simply true and was decidable: 85% of `-0` sits under 6% luma at the band's own crop.
 - **`kd-wolanie-3` may be a rehearsal, and it is the band's second panel.** Everyone in the two
   frames that are certainly the concert (`-4`, `-5`) is in black; in `-3` they are not, there is
   no `VE` projection behind them, and four voices are visible rather than twelve. Left alone,
@@ -547,3 +578,281 @@ the figure that actually says nothing was orphaned.*
   — 43 nodes to restate what the visible colophon says, against the GSC pass's standing rule that
   extra schema is proposed before it is added. Revisit with Search Console numbers if image search
   ever becomes a real channel.
+
+---
+
+## 12. Remediation of stages 4 and 5 — SHIPPED
+
+The band as it shipped read cheap on a real screen, and none of the reasons were the number of
+effects. Six defects, in the order of how much each one cost.
+
+**The five photographs had no shared tonality, and that was the largest of them by a distance.**
+Read as a strip of luminance the line went bright-warm · dark · dark · dark · bright-cool: a
+terracotta Christmas nave at one end and a blue-gold baroque altar at the other, both outside this
+site's parchment/night/candle entirely, with three near-black frames between them. That is not a
+line, it is two lamps with a hole in the middle, and the eye read the ends and skipped the centre.
+
+The fix is the site's own grade, not a new one: `saturate(.74) contrast(1.06)` are the numbers the
+hero, the rite and the ensemble already dim their photographs with, and applying them to the panels
+pulls the pink and the blue back into the palette. Brightness is where the band differs, because
+there the photograph is a ground and here it is the subject.
+
+It also repaired the hover, which had been proving the opposite of its claim. `brightness(.74)` on
+a frame already at 8% luminance does nothing, while the same value on the terracotta panel is
+violent — so the gesture that exists to show the five are one object was visible on two of them.
+Both endpoints are now the site's own two treatments of a photograph: a receding panel lands
+exactly on the sacred dimming, the approached one comes up to the photograph itself. Ground and
+picture, and the reader moves the boundary.
+
+**The plate was bled and its head was not, so the band had three left edges** — rubric at the
+gutter, plate at 0, exit at the gutter. Worse, the outer rule §8 claims frames the plate was
+*never visible*: it was clipped by the window, so only the internal divisions read, and five
+divided pictures with no frame around them are a filmstrip. The plate hangs from `--gutter` now.
+It costs ~10% of panel width and buys the outer edge plus one shared measure.
+
+Two consequences worth knowing. The breakpoint moved from 1000px to **1280px**, because the panel
+is now `(100vw − 2 × 5vw) / 5` = 18vw rather than `100vw / 5`, and `sizes` states 18vw for the same
+reason — the two still move together or not at all. And `data-spine-clear` **stays**: at 2vw from
+the right edge the spine's ~68px inscription still overlaps the plate on any viewport under
+~1960px, and under the breakpoint the rail runs to the edge outright.
+
+**The panel is a SQUARE, not 4:5.** §8's arithmetic was right and its conclusion was one of two
+available. Three of these five photographs are 3:2 and their horizontality *is* their subject — a
+nave is wide — and 4:5 threw away 47% of it, so the band was showing the worst version of its best
+frame. 1:1 keeps two thirds, drops ~134px of band height, and costs only the one 9:16 source. Five
+across the ruled plate are ~346px at 1920 and ~230px at the breakpoint, both clear of the 240×160
+at which §2 says these frames go black.
+
+**Nothing under the panels said what they were.** §8's argument — the register names the evenings
+200px below, printing the title twice makes a table of contents — is structurally right and was
+experientially wrong: at the moment of looking the reader had five anonymous pictures. The **year**
+is what the title is not. One short line, repeats nothing the eye is about to read, and turns five
+pictures into a chronology, which is what a line of five evenings has to be legible as before the
+register explains it. It rides inside the numeral's own register node, so the band's cadence stays
+ten nodes rather than fifteen.
+
+The caption band is also **ruled off** now, and each panel carries its own box, so the plate reads
+as one scored object with an image row and a foot. Stating the border per panel rather than once on
+the plate is what lets the rail reuse it unchanged.
+
+**The band reproduced the exact defect §1 was written about.** The panel opened the frame; the only
+road to the evening was inside that frame. So the strongest press on the section led to a bigger
+photograph, and the concert page was two presses away. The **numeral is now the link** — it was
+already there, already the register's own numbering, and a third control would have turned a plate
+into a toolbar, which is the same reasoning that made the register's title and not a new button the
+way into a concert page.
+
+**The printed touch mark was a fullscreen icon, and so was the cursor's viewfinder.** §8 and §9
+both call it a crop mark and the intent was right; the drawing was not. Brackets that *close* a
+corner are the universal expand-to-fullscreen glyph and read as a stock control however finely they
+are drawn. A printer's registration mark leaves the corner itself void and sets its two strokes back
+from it. Both copies moved together — they have to stay one figure — and the printed one gained the
+drop-shadow its cursor twin already had, for the reason §9 records: two of these five panels are lit
+interiors and a hairline in mid gold has nothing to hold against them.
+
+**A blur inside the printed mark was proposed and refused.** It is right on the cursor and wrong on
+the panel, and the difference is size: the cursor's lens is 46px of a photograph the reader has not
+committed to, while the printed mark spans the panel, and a `backdrop-filter` across it would
+permanently blur the photograph the mark exists to announce.
+
+**The cursor's viewfinder now holds ground glass.** A figure that only outlines is a shape on top of
+a photograph; one that holds glass is an instrument held over it — and the press then means what it
+looks like, because `blur(0)` on `.is-down` is exactly what opening the frame does.
+
+**It cost a restructure, and the reason is a trap worth naming.** An element with a `filter` becomes
+a **backdrop root**: any `backdrop-filter` inside it samples an empty backdrop and blurs nothing at
+all. `.is-frame` carried its halo as an element-level `filter`, so the lens had to go on `::before`
+with the ticks and their halo moving to `::after` and its own filter. `opacity: 1` on the state is
+load-bearing for the same reason — the base cursor sits at 0.78, and that alone would have made a
+backdrop root of it.
+
+**The halves' arrow takes the video ring.** It shipped as a filled arrow floating under a soft
+radial smudge, and against `.is-video` sitting one press away in the same archive it read as an
+effect rather than as this cursor's vocabulary. It is the ring plus a shallow glass plate now — what
+the site already says over a media surface the pointer can act on — with the arrow as the only thing
+that differs, because the action does. The mirrored `scaleX` interpolation §9 argues for is
+untouched; that part was working. The drop-shadow went with the smudge: a ring on 42% night carries
+the glyph the way it carries ▶, and a shadow around a filled ring only dirties its edge.
+
+### The backdrop root — the same trap twice, and the rule it generates
+
+**An element that animates `opacity` is a BACKDROP ROOT, and `fill: both` makes that outlive the
+animation.** The frame's room carried the entrance fade (`imageRoomIn` on `.image-lightbox`), so the
+`backdrop-filter` one level down on `.image-lightbox-backdrop` sampled an empty backdrop and blurred
+nothing at all. The dim worked, the blur did not, and the page stayed crisp behind a 0.9 ground.
+
+**No inspection of computed style finds this.** After the animation settles, `getComputedStyle`
+reports `opacity: 1` and the element carries no filter, no mask, no blend mode — the chain looks
+clean. The only trace is `getAnimations()` returning `imageRoomIn:finished`. It was found by an A/B
+in a real browser: open the frame, set `.image-lightbox { animation: none }` from the console, and
+the page behind goes to haze in the same frame.
+
+The fade moved onto the backdrop itself, and the other half of the rule is why that is safe: **an
+element's OWN opacity does not cut it off from its backdrop — only an ancestor's does.** Verified
+the same way (the animation re-applied to the backdrop element, blur intact).
+
+This is the second instance of one trap in one pass: `.is-frame`'s viewfinder needed the same
+restructure because its `filter: drop-shadow` was a backdrop root for the lens inside it. **The rule
+for this codebase: nothing between a `backdrop-filter` and the page may animate or declare `opacity`,
+`filter`, `mask` or `mix-blend-mode`** — and the check for it is a browser, never a stylesheet.
+
+### The frame's room
+
+Three defects, one of them a real bug.
+
+- **The ✕ was drawn on the site nav.** It hangs 52px above a panel that the room centres, and on a
+  1080p screen that put it at ~16px — physically over KONCERTY, which the 0.94 backdrop was letting
+  through. The room reserves the button's own headroom now (`max(72px, 8vh)` on top alone), paid for
+  by the image cap coming 80svh → 76svh.
+- **The page was ghosting through the backdrop.** At 0.94 flat the chrome nav and the band's own
+  rubric were legible under it, and the frame read as a modal panel over a document rather than as a
+  room the document had been left for. It takes the vault's veil verbatim — `blur(20px)
+  saturate(.9)` over `rgba(8,8,7,.9)`, with the `@supports` fallback closing the ground to 0.985
+  where the filter is unavailable, since there is nothing left to keep depth with. **This shipped
+  once without working at all** — see the backdrop-root section above for why, and do not touch the
+  room's animation without re-reading it.
+- **The photograph had no edge.** `0 60px 140px -50px rgba(0,0,0,.95)` is a black glow on a
+  near-black room: dead code in practice, and half this archive dissolved into the room at its own
+  border. One hairline of paper at 10% says where the photograph ends, drawn as a spread
+  `box-shadow` rather than a border so it stays out of the box the height cap and the absolute
+  thumbnail are both measured against.
+
+### Weight
+
+Build of 2026-08-07 after the pass: 15 pages, `astro check` 0 errors, and every image URL referenced
+across the built pages resolves on disk after pruning. The band's ladder went
+`[384, 640, 840, 1080]` → `[360, 600, 760, 960]` — the same four rungs, re-aimed at the new panel
+regimes — so it emits the same **20 files** it did before, at square rather than portrait, and the
+square is the cheaper shape at every rung:
+
+| Rung | Serves | All five panels |
+|---|---|---|
+| 360w | the whole 1× line (1280 → 1920) | **72 kB** |
+| 600w | 2× laptop line, 2× phone rail | 145 kB |
+| 760w | 2× 1920 line | 198 kB |
+| 960w | 3× phone, 2× tablet at the cap | 282 kB |
+
+Against the 4:5 band's 840 rung at ~63 kB a panel (§8), the common 2× desktop case is 198 kB where
+it was ~315. **The one device the ladder deliberately does not reach is a 3× tablet holding the
+420px cap** (1260px needed, 960 served, stretched 31%): cheaper than a fifth rung emitted for all
+five evenings to serve it.
+
+*Do not read `prune-orphan-assets`' totals as a regression signal across a change like this one.*
+The emitted count moved 611 → 624 → 642 over stages 5 and 12 and the pruned count 62 → 66, and the
+figure is stable for a given source state (two consecutive builds of this one report the identical
+66/642) but not comparable across them. The check that means something is the one above: no
+referenced URL missing after the prune.
+
+---
+
+## 13. Second remediation of the band — SHIPPED
+
+§12 closed on "the band as it shipped read cheap on a real screen, and none of the reasons were the
+number of effects". That was right and it was not finished. Five more defects, and the first two are
+the ones a reader actually feels.
+
+**The band was the one section on this landing that said nothing.** Every other surface sets a line —
+the manifest, the film ("Z tej ciszy — głos."), the register ("Co już zabrzmiało."), and even
+`ImageRiteSection`, which is a full-bleed photograph with nothing else in it and still carries
+"Światło prowadzi słuchacza." The band had a 10px rubric and a strip of pictures, which is what a
+component looks like, not a movement of the rite. §8 defended the *shape* of the head and that was
+read as defending its *contents*.
+
+It now sets **"Tak wyglądała ta cisza."** — a couplet with the film directly above it (the same
+silence, seen rather than heard), and deliberately not about sound, which the register owns. Set a
+grade under `.section-title`, because movement II would otherwise be three titled sections in a row.
+
+**The plate was wider than the page.** It hung from `--gutter` after §12, which fixed its three left
+edges and left it the only content block on the landing not keeping `min(1580px, 100%)`. At a 1920
+window that is 1728px against the register's 1580, starting 74px further left; at 2560 the band is
+half again as wide as anything else on the site. So the widest and darkest object on the landing was
+a row of photographs standing on the register it indexes — a hierarchy inversion, and visible as a
+rubric that does not line up with the "Z drogi" label 200px below it.
+
+The precedent was one section away: `.path` bleeds its ground and hangs `.section-grid` at the
+measure. The band does the same now, through one `.imagines-inner` box. Four consequences worth
+knowing:
+
+- The panel is **316px** where the gutter gave it 346 — 9% of width for one shared left edge.
+- `sizes` gains a fourth regime, because the plate stops growing at the measure:
+  `(max-width: 567px) 76vw, (max-width: 1279px) 420px, (max-width: 1755px) 18vw, 316px`. 1756px is
+  where 90vw first exceeds 1580, so the boundary is continuous rather than a step. The 1280px rail
+  breakpoint is untouched — below the measure the plate is still 90vw and the panel still 18vw.
+- The ladder is re-aimed to **[360, 480, 640, 960]** for the new regimes (480 now serves both the 1×
+  tablet cap and a 2× line at 1280; 640 the 2× line at the measure and the 2× phone rail). Four rungs
+  in and four out, so the band emits the same 20 files.
+- The rail's breakout needs `width: auto` beside the negative margins. With the measure still
+  declared, a fixed-width box shifted left by one gutter leaves dead space on the right and the plate
+  hugs the left edge — the trap `11-mobile.css` already records for the director's portrait.
+
+**The panels wore a scrim and nothing was set over them.** A gradient to 50% black across the lower
+half of every frame shipped in stage 4 to give the caption something to hang from; §12 ruled the
+caption off, so it had been hanging from a hairline ever since and the gradient stayed on as a habit
+— darkening the two lit naves by half at exactly the place their altars are. Every other full-bleed
+photograph on this landing wears one **because words are set over it**. Nothing is set over these:
+here the photograph is the subject, which is the sentence §12 wrote and then did not follow.
+
+**One brightness cannot govern five buildings, and §12's claim to have fixed the tonal line was half
+true.** `saturate`/`contrast` did pull the terracotta and the blue-gold back into the palette.
+Exposure they could not touch. Measured at the band's own crop the line ran:
+
+| Panel | Evening | mean luma | share under 6% |
+|---|---|---|---|
+| I | Wcielenie | 0.19 | 34% |
+| II | Wołanie Gór | 0.13 | 61% |
+| III | 9 Kart | 0.13 | 36% |
+| IV | Hymn Poległym | **0.035** | **85%** |
+| V | Aeternam | 0.22 | 28% |
+
+So the fourth panel was a black rectangle — precisely what §2 rejects the whole thumbnail grid for —
+standing in the middle of the line, and `brightness(.88)` was making every one of them darker still.
+Exposure is **per evening** now (`frameLift` in `data/landing/paths`, applied as `--panel-lift`), the
+shared base is **1**, and both hover endpoints **multiply** by the panel's own lift instead of
+stating flat values — otherwise the gesture that exists to prove the five are one object is a
+fraction of a stop on the darkest panel and violent on the brightest, which is the defect §12 fixed
+once and this would have reintroduced.
+
+The values are a **partial** correction toward the line's middle, not a normalisation: flattening
+five naves to one luminance costs the chiaroscuro that is the reason to show these photographs at
+all. Re-derive them from a contact sheet at the panel's crop and grade — ten lines of `sharp`,
+`.resize(316, 316, { fit: "cover" })` then luma percentiles. It is the same check §8 prescribes for
+choosing a frame, and the only one that answers this question either.
+
+**Panel IV needed a different photograph, not a correction.** No lift saves a frame at 0.035 mean —
+reaching the line's middle is ×3.7, which blows the few lit pixels and amplifies the noise. Of the
+evening's four, **`kd-hymn-2` shipped**: the nave in blue light, the only one that reads at the
+panel's width, and the line's only cool frame, so it separates two warm naves instead of repeating
+them — which retires §11's rhythm objection. `kd-hymn-3` measures brightest of the four and 0% black
+and is **rejected**: it is the audience seen from the back with a face in the foreground, outside the
+consent scope, which covers singers.
+
+**The caption printed a year that was not a chronology.** §12 introduced it to turn five anonymous
+pictures into a sequence, and the register's year cannot do that job — three of five panels read
+MMXXIV, so the line carried two values for five evenings. It prints the **photograph's own night**
+now (`frameDate`): styczeń · czerwiec · listopad MMXXIV, luty · październik MMXXV. For a programme
+that toured this is deliberately not the date the register gives — the register dates the programme,
+the band dates the evening it is showing, and each of these five frames is identifiable to one night
+from its own caption.
+
+Numeral and date sit on **one row**, which is `.aether-inscription`'s figure (I · Lumen Christi) at a
+smaller grade — the shape this site already uses to name a movement, borrowed to name an evening.
+Stacked, the pair spent ~82px of the plate's height, a fifth of it, on one 10px line of type.
+
+### Still open after this pass
+
+- **The numeral link is now the band's third road to the same page.** §12 added it because "the band
+  reproduces the exact defect §1 was written about" — but stage 1 had already made the register's
+  title a link, so the concert page is reachable from the register directly below, from this numeral,
+  and from the frame's own exit. That redundancy is what makes the caption band exist at all. Left
+  standing because it belongs to a larger open question — what a press on a photograph should do —
+  and the answer to that decides this one.
+- **Panel II may still be a rehearsal frame** (§11) and is now the line's only close-up among four
+  architectural frames. Unchanged, and for the same reason: that gallery needs another photograph
+  from that night more than it needs a different choice.
+
+### Weight
+
+Build after the pass: 15 pages, `astro check` 0 errors, `prune-orphan-assets` **66/642** — the
+identical figure §12 closed on, because the ladder kept its four rungs and one panel's four
+renditions were exchanged for another's. All **576** image URLs referenced across the built pages
+resolve on disk after the prune, which is the check that means something here.

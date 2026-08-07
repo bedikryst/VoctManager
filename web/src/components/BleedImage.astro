@@ -30,10 +30,26 @@ interface Props {
   breakpoint?: number;
   /** Add slow Ken Burns animation. */
   animate?: boolean;
+  /**
+   * Drift speed against scroll distance, for the `[data-parallax]` controller in BaseLayout.
+   * The default suits a section about as tall as the viewport. A SHORT band must lower it or
+   * the drift runs out of room partway through and visibly stops: the room is `±10%` of the
+   * frame, the pass is `vh + frameH` long, so the ceiling is `0.2 · frameH / (vh + frameH)`.
+   * The controller's header states the same arithmetic from its side.
+   */
+  parallax?: number;
 }
 
-const { desktop, mobile, alt, position = "center", eager = false, breakpoint = 760, animate = false } =
-  Astro.props;
+const {
+  desktop,
+  mobile,
+  alt,
+  position = "center",
+  eager = false,
+  breakpoint = 760,
+  animate = false,
+  parallax = 0.16,
+} = Astro.props;
 
 const DESKTOP_WIDTHS = [1280, 1920, 2560];
 // Reaches 1600 because the phone regime genuinely needs it — see `coverVw` below for the
@@ -92,7 +108,7 @@ const mq = `(max-width: ${breakpoint}px)`;
 const mSizes = coverVw(mobile);
 ---
 
-<picture class="bleed" style={`--bleed-pos:${position}`} data-parallax="0.16">
+<picture class="bleed" style={`--bleed-pos:${position}`} data-parallax={String(parallax)}>
   <source media={mq} type="image/avif" srcset={mAvif} sizes={mSizes} />
   <source media={mq} type="image/webp" srcset={mWebp} sizes={mSizes} />
   {/* The desktop pair keeps a flat 100vw, and that is the correct number rather than an
