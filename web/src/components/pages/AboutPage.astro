@@ -135,6 +135,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   bodyClass="page-o-nas"
   lang={lang}
   alternates={alternates}
+  breadcrumb={[{ name: UI[lang].footer.about, path }]}
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

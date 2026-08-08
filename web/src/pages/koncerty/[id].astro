@@ -226,6 +226,10 @@ const plDate = (iso: string): string =>
   path={`/koncerty/${entry.id}`}
   image={ogImage}
   bodyClass="page-koncert-detail"
+  breadcrumb={[
+    { name: "Koncerty Duchowe", path: "/koncerty" },
+    { name: c.title, path: `/koncerty/${entry.id}` },
+  ]}
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -313,9 +317,12 @@ const plDate = (iso: string): string =>
               <span class="kd-text-cue">Całe słowo wprowadzenia</span>
               <span class="kd-text-icon" aria-hidden="true"></span>
             </summary>
+            {/* `--i` is the paragraph's place in the transcript, read by the unfold cascade in
+                the CSS below. It is set here rather than counted in CSS because `nth-child`
+                would have to be written out per paragraph for a text of unknown length. */}
             <div class="kd-verbum-body">
-              {c.verbum.text.split("\n\n").map((para) => (
-                <p>{para}</p>
+              {c.verbum.text.split("\n\n").map((para, i) => (
+                <p style={`--i: ${i}`}>{para}</p>
               ))}
             </div>
           </details>
@@ -378,7 +385,8 @@ const plDate = (iso: string): string =>
 
     {/* ── Program: the programme book. Founder's name for the evening, obsada,
           then each work with scoring, source verse and — where kept — the sung
-          word with its Polish translation (native <details>, zero JS). ───────── */}
+          word with its Polish translation (a <details>, unfolded by the shared
+          disclosure controller — see the script at the foot of this file). ───── */}
     {c.program.length > 0 && (
       <section class="kd-band kd-band-soft kd-program-band tone-light" id="program" aria-label="Program koncertu">
         <div class="kd-wrap">
@@ -785,10 +793,15 @@ const plDate = (iso: string): string =>
     import "../../scripts/image-triggers.ts";
   </script>
 
-  {/* Chrome tone: flip to the paper treatment while a parchment section sits under the bar
-      (same contract as /koncerty). Page-scoped, ClientRouter-safe. */}
+  {/* Page-scoped behaviour, ClientRouter-safe: re-bound on every page-load, previous bindings
+      dropped first. Chrome tone (flip to the paper treatment while a parchment section sits
+      under the bar — same contract as /koncerty) and the two disclosures. */}
   <script>
+    import { setupDisclosure } from "../../scripts/disclosure";
+
     let toneIO: IntersectionObserver | undefined;
+    let dropDisclosures: (() => void) | undefined;
+
     const setupKdTone = () => {
       toneIO?.disconnect();
       const chrome = document.getElementById("chrome");
@@ -807,7 +820,25 @@ const plDate = (iso: string): string =>
       );
       light.forEach((el) => toneIO!.observe(el));
     };
-    document.addEventListener("astro:page-load", setupKdTone);
+
+    // Both disclosures on the page take one call: a sung text under a work and the transcribed
+    // word under the Verbum are the same gesture at two sizes. Neither `.kd-text-cols` nor
+    // `.kd-verbum-body` can be the animated box itself — both carry a top margin, which sits
+    // OUTSIDE the height and would stand under a closed summary as a gap — so the controller
+    // wraps them. That wrapper is created at runtime and therefore carries no scope attribute:
+    // nothing in this file's <style> can reach it, and nothing needs to.
+    const setupKdDisclosures = () => {
+      dropDisclosures?.();
+      dropDisclosures = setupDisclosure(document, {
+        selector: ".kd-text, .kd-verbum-full",
+        bodyClass: "kd-disclosure-body",
+      });
+    };
+
+    document.addEventListener("astro:page-load", () => {
+      setupKdTone();
+      setupKdDisclosures();
+    });
   </script>
 </BaseLayout>
 
@@ -888,7 +919,7 @@ const plDate = (iso: string): string =>
   .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; text-wrap: balance; }
 
   /* ── Verbum: the spoken threshold word — dark register, guillemet quote up top +
-     a zero-JS reveal for the full transcript (reuses .kd-text-cue/.kd-text-icon). ──────── */
+     the full transcript under a disclosure (reuses .kd-text-cue/.kd-text-icon). ─────────── */
   .kd-verbum { background: var(--dark, #080807); color: var(--paper, #f4f1e9); }
   .kd-verbum .kd-section-label { color: var(--candle); }
   .kd-verbum-quote { margin: 0; }
@@ -1012,7 +1043,10 @@ const plDate = (iso: string): string =>
   .kd-text-icon::after { content: ""; position: absolute; background: currentColor; transition: transform .35s var(--ease, ease), opacity .35s var(--ease, ease); }
   .kd-text-icon::before { left: 0; top: 4.5px; width: 10px; height: 1px; }
   .kd-text-icon::after { left: 4.5px; top: 0; width: 1px; height: 10px; }
-  .kd-text[open] .kd-text-icon::after { transform: scaleY(0); opacity: 0; }
+  /* Both disclosures wear this icon, so both close its vertical stroke. The Verbum used to keep
+     a plus sign over an open transcript — the one state the mark exists to distinguish. */
+  .kd-text[open] .kd-text-icon::after,
+  .kd-verbum-full[open] .kd-text-icon::after { transform: scaleY(0); opacity: 0; }
   .kd-text-cols { margin: 16px 0 2px; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 3vw, 48px); max-width: 720px; padding-left: clamp(14px, 2vw, 22px); border-left: 1px solid var(--line, rgba(22,21,20,.16)); }
   .kd-text-cols.is-single { grid-template-columns: 1fr; }
   /* Sung texts are the longest run of small serif on the site, on parchment, and one of
@@ -1022,6 +1056,31 @@ const plDate = (iso: string): string =>
      size too. The Cyrillic subset (base.css) only exists for these two rules. */
   .kd-text-orig { margin: 0; font-family: var(--serif); font-style: italic; font-weight: 460; font-size: clamp(16px, 1.45vw, 18px); line-height: 1.62; color: var(--ink-soft, #34302b); white-space: pre-line; }
   .kd-text-pl { margin: 0; font-family: var(--serif); font-weight: 460; font-size: clamp(16px, 1.45vw, 18px); line-height: 1.62; color: var(--ink-muted, #746d62); white-space: pre-line; }
+
+  /* ── The unfold: what happens inside a disclosure while its box grows ─────────────────────
+     The height belongs to scripts/disclosure.ts; this is the word arriving behind the growing
+     edge instead of standing complete inside a frame that is still opening. The order is the
+     reading order — the Latin is the verse and the Polish is what it says, the same call the
+     interlude makes a few rules up — and it is expressed as onsets, never as a mask travelling
+     through a line (docs/web-reveal-remediation.md, Rejected).
+
+     Gated twice, like every other motion on this page: `voct-motion` says JS is live and motion
+     is allowed (DocumentGates), the media query reads the preference directly. Without JS there
+     is no growing box for any of this to sit inside — the <details> is native and snaps. */
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes kdUnfold { from { opacity: 0; transform: translateY(6px); } }
+    html.voct-motion .kd-text[open] :is(.kd-text-orig, .kd-text-pl),
+    html.voct-motion .kd-verbum-full[open] .kd-verbum-body p {
+      animation: kdUnfold .46s var(--ease, ease) both;
+    }
+    html.voct-motion .kd-text[open] .kd-text-pl { animation-delay: .12s; }
+    /* Every onset has to fall inside the box's own 480ms (DISCLOSURE_OPEN_MS), or the reader is
+       watching a queue rather than a page opening. Nine paragraphs is the longest transcript the
+       site holds and 50ms clears it with room; the cap is what keeps that true of the tenth. */
+    html.voct-motion .kd-verbum-full[open] .kd-verbum-body p {
+      animation-delay: min(calc(var(--i, 0) * 50ms), 400ms);
+    }
+  }
 
   /* Clasp row — the seam between works. Two registers: a bare label on a rule (Wołanie Gór's
      "Przerwa"), or a sung return that brings its words with it (9 Kart — Psalm 51 coming back

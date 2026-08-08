@@ -131,7 +131,14 @@ const jsonLd = {
 const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp" })).src;
 ---
 
-<BaseLayout title={title} description={description} path="/koncerty" image={ogImage} bodyClass="page-koncerty">
+<BaseLayout
+  title={title}
+  description={description}
+  path="/koncerty"
+  image={ogImage}
+  bodyClass="page-koncerty"
+  breadcrumb={[{ name: "Koncerty Duchowe", path: "/koncerty" }]}
+>
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </Fragment>
@@ -716,82 +723,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 </style>
 
 <script>
+  import { setupDisclosure } from "../scripts/disclosure";
+
   // Page-scoped behavior, ClientRouter-safe: re-bind on every page-load, drop stale observers.
   let toneIO: IntersectionObserver | undefined;
   let viaIO: IntersectionObserver | undefined;
-  // Guard so the program disclosures are wired exactly once per element across page-loads.
-  const smoothBound = new WeakSet<HTMLDetailsElement>();
+  let dropDetails: (() => void) | undefined;
 
-  // Smooth-expand the station program lists — the native <details> snaps open; we animate
-  // the `.station-program` wrapper's height/opacity so the list unfolds instead of jumping.
+  // The station programme lists unfold rather than snap. `.station-program` is authored here as
+  // the box the controller animates — it carries no margin of its own precisely so it can be
+  // (the padding that spaces the list lives on `.prog-list` inside it).
   const setupProgramDetails = () => {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    document.querySelectorAll<HTMLDetailsElement>(".prog-d").forEach((details) => {
-      if (smoothBound.has(details)) return;
-      const summary = details.querySelector("summary");
-      const body = details.querySelector<HTMLElement>(".station-program");
-      if (!summary || !body) return;
-      smoothBound.add(details);
-
-      body.style.overflow = "hidden";
-      body.style.height = details.open ? "auto" : "0px";
-      body.style.opacity = details.open ? "1" : "0";
-
-      let animating = false;
-      const finish = (toOpen: boolean) => {
-        body.style.height = toOpen ? "auto" : "0px";
-        body.style.opacity = toOpen ? "1" : "0";
-        if (!toOpen) details.removeAttribute("open");
-        animating = false;
-      };
-      const animate = (toOpen: boolean) => {
-        if (reduce) {
-          if (toOpen) details.setAttribute("open", "");
-          finish(toOpen);
-          return;
-        }
-        animating = true;
-        if (toOpen) details.setAttribute("open", "");
-        const start = body.getBoundingClientRect().height;
-        body.style.height = `${start}px`;
-        body.style.opacity = toOpen ? "0" : "1";
-        void body.getBoundingClientRect();
-        const target = toOpen ? body.scrollHeight : 0;
-        const duration = toOpen ? 480 : 340;
-        body.style.transition = `height ${duration}ms cubic-bezier(0.22, 0.61, 0.16, 1), opacity ${duration}ms ease`;
-        requestAnimationFrame(() => {
-          body.style.height = `${target}px`;
-          body.style.opacity = toOpen ? "1" : "0";
-        });
-        const done = (event: TransitionEvent) => {
-          if (event.target !== body || event.propertyName !== "height") return;
-          body.removeEventListener("transitionend", done);
-          body.style.transition = "";
-          finish(toOpen);
-        };
-        body.addEventListener("transitionend", done);
-      };
-
-      summary.addEventListener("click", (event) => {
-        event.preventDefault();
-        if (animating) return;
-        animate(!details.open);
-      });
-
-      // A <details> can be opened WITHOUT a click, and this wrapper's collapsed state is inline
-      // style that only the click path clears: the browser sets `open` directly for find-in-page
-      // and for a `#:~:text=` scroll-to-text fragment (which is how a search result lands on a
-      // composer's name here). Both then scroll to a match inside a node still pinned at
-      // height 0 / opacity 0 — the text is found and invisible. Reconciling on `toggle` covers
-      // every such path at once instead of enumerating them.
-      // Our own `animate()` also fires this, so it is gated twice: `animating` is still set when
-      // the event lands (it is cleared on transitionend, ~480ms later), and the height check
-      // means an already-open wrapper is never re-finished.
-      details.addEventListener("toggle", () => {
-        if (animating || !details.open) return;
-        if (body.style.height !== "0px") return;
-        finish(true);
-      });
+    dropDetails?.();
+    dropDetails = setupDisclosure(document, {
+      selector: ".prog-d",
+      bodyClass: "station-program",
     });
   };
 

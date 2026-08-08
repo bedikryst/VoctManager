@@ -10,6 +10,7 @@
 import { ClientRouter } from "astro:transitions";
 import DocumentGates from "../components/DocumentGates.astro";
 import { LOCALE_META, LOCALES, SITE, type Locale } from "../i18n/config";
+import { breadcrumbList, type Crumb } from "../lib/breadcrumb";
 import "../styles/tokens.css";
 import "../styles/base.css";
 import "../styles/registers.css";
@@ -68,6 +69,18 @@ interface Props {
   /** hreflang alternates for a translated page (absolute URLs incl. x-default). Empty on
       Polish-only pages, where no alternate graph is emitted. See i18n/config.hreflangAlternates. */
   alternates?: { hreflang: string; href: string }[];
+  /**
+   * This page's position in the site hierarchy, as a `BreadcrumbList` for the search result —
+   * there is no visible breadcrumb bar and none is planned (see lib/breadcrumb). Pass the FULL
+   * trail BELOW home, ending with this page itself; the home node is prepended here so no page
+   * repeats it. Omit on a page that is its own top level (the landing) or that ships noindex
+   * (/press, /404), where the trail would never be read.
+   *
+   * The last entry's `path` must be this page's own `path` — the build fails loudly if it is
+   * not, because the two would otherwise disagree in silence and hand Google a trail whose leaf
+   * points at a different URL than the canonical it sits beside.
+   */
+  breadcrumb?: Crumb[];
 }
 
 const {
@@ -82,6 +95,7 @@ const {
   rite = false,
   lang = "pl",
   alternates = [],
+  breadcrumb,
 } = Astro.props;
 
 const canonical = new URL(path, SITE).href;
@@ -93,6 +107,15 @@ const ogLocaleAlternates =
   alternates.length > 0
     ? LOCALES.filter((l) => l !== lang).map((l) => LOCALE_META[l].ogLocale)
     : [];
+
+const breadcrumbTail = breadcrumb?.at(-1);
+if (breadcrumbTail && breadcrumbTail.path !== path) {
+  throw new Error(
+    `BaseLayout: breadcrumb ends at "${breadcrumbTail.path}" but this page is "${path}". ` +
+      "The trail's last entry is the page itself — pass the same path.",
+  );
+}
+const breadcrumbLd = breadcrumb ? breadcrumbList(breadcrumb, lang) : undefined;
 ---
 
 <!doctype html>
@@ -221,6 +244,16 @@ const ogLocaleAlternates =
         does not ask for a gate simply arrives without it (this is how the landing arrives
         without `reveal-ready`, so this layout leaves its reveals alone). See DocumentGates. */}
     <DocumentGates />
+
+    {/* Where this page sits in the site, for the search result only — nothing renders. Emitted
+        as its own JSON-LD block rather than folded into the page's graph: every page below the
+        landing owns a different node type (MusicEvent, AboutPage, ImageGallery…), and Google
+        reads multiple ld+json blocks per document. See lib/breadcrumb. */}
+    {
+      breadcrumbLd && (
+        <script is:inline type="application/ld+json" set:html={JSON.stringify(breadcrumbLd)} />
+      )
+    }
 
     <slot name="head" />
   </head>

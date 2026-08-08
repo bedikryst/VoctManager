@@ -116,6 +116,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   path="/kontakt"
   image={ogImage}
   bodyClass="page-kontakt"
+  breadcrumb={[{ name: "Kontakt", path: "/kontakt" }]}
 >
   <Fragment slot="head">
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

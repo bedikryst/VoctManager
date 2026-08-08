@@ -5,7 +5,7 @@
  *  CSS expressed via `animation-timeline` / `view-timeline` — neither of which runs in the
  *  target browser (native scroll-driven CSS is unsupported here; that was the parallax bug).
  *
- *  Owns: rite-glow (cursor spotlight), smooth-details (animated accordion),
+ *  Owns: rite-glow (cursor spotlight), the path cards' exclusivity and phone follow-scroll,
  *  Lenis anchor smooth-scroll, the hero's variable-font breath on a single rAF scroll loop,
  *  the manifest light (one-shot `.is-lit` per line-group, `.is-spent` when its sweep is over —
  *  the sweep itself is a CSS transition),
@@ -22,7 +22,9 @@
  *  NOT owned here (deliberately): the reveal registers — this page runs the SHARED controller
  *  (`scripts/reveal.ts`) like every other, and passes the one parameter that is genuinely the
  *  landing's: `cadence: "queue"`, because its siblings are generated in bulk and would otherwise
- *  enter in unison. Parallax (the global BaseLayout `[data-parallax]` controller,
+ *  enter in unison. The path cards' unfold, likewise — `scripts/disclosure.ts` measures the box,
+ *  this file supplies only what is the landing's about it. Parallax (the global BaseLayout
+ *  `[data-parallax]` controller,
  *  the fixed cross-browser one), chrome tint (the StickyHeader island owns it via React state),
  *  and the footer wordmark cursor reactivity (the SiteFooter island). All re-bind on
  *  `astro:page-load` so ClientRouter navigations stay live; bindings target only `.voct-landing`.
@@ -31,6 +33,7 @@
  */
 
 import { horaForWarsaw, msToNextHora } from "../islands/landing/lib/horaeCanonicae";
+import { DISCLOSURE_CLOSE_MS, setupDisclosure } from "./disclosure";
 import { setupReveal } from "./reveal";
 
 interface LenisLike {
@@ -103,99 +106,30 @@ function setupRiteGlow(root: HTMLElement, reduce: boolean): void {
   });
 }
 
-// ── Smooth details: animated, exclusive accordion for the path cards ────────────────────────
+// ── Path cards: the shared disclosure, exclusive, and the phone's follow-scroll ──────────────
+// The unfold itself is the site's (scripts/disclosure.ts). What is the landing's is that these
+// entries read as ALTERNATIVES — opening one closes the rest — and that on a phone the summary
+// has to be brought back under the thumb afterwards, since a card that opens below the fold opens
+// out of sight.
 function setupSmoothDetails(root: HTMLElement): void {
-  const SELECTOR = ".path-card-detail";
-  const OPEN = 520;
-  const CLOSE = 380;
-  const EASING = "cubic-bezier(0.22, 0.61, 0.16, 1)";
-  const items = Array.from(root.querySelectorAll<HTMLDetailsElement>(SELECTOR));
-  if (!items.length) return;
-
-  const reduced = reduceMotion();
-  const registry = new Map<HTMLDetailsElement, { close: () => void }>();
-
-  items.forEach((details) => {
-    const summary = details.querySelector("summary");
-    if (!summary) return;
-    // Wrap the post-summary content once so its height can be transitioned.
-    let wrap = details.querySelector<HTMLElement>(".path-card-detail-body");
-    if (!wrap) {
-      wrap = document.createElement("div");
-      wrap.className = "path-card-detail-body";
-      while (summary.nextSibling) wrap.appendChild(summary.nextSibling);
-      details.appendChild(wrap);
-    }
-    const body = wrap;
-
-    body.style.overflow = "hidden";
-    body.style.willChange = "height, opacity";
-    body.style.height = details.open ? "auto" : "0px";
-    body.style.opacity = details.open ? "1" : "0";
-
-    let animating = false;
-    const finish = (toOpen: boolean): void => {
-      body.style.height = toOpen ? "auto" : "0px";
-      body.style.opacity = toOpen ? "1" : "0";
-      if (!toOpen) details.removeAttribute("open");
-      animating = false;
-    };
-    const animate = (toOpen: boolean): void => {
-      if (reduced) {
-        if (toOpen) details.setAttribute("open", "");
-        finish(toOpen);
-        return;
-      }
-      animating = true;
-      if (toOpen) details.setAttribute("open", "");
-      const start = body.getBoundingClientRect().height;
-      body.style.height = `${start}px`;
-      body.style.opacity = toOpen ? "0" : "1";
-      void body.getBoundingClientRect();
-      const target = toOpen ? body.scrollHeight : 0;
-      const duration = toOpen ? OPEN : CLOSE;
-      body.style.transition = `height ${duration}ms ${EASING}, opacity ${duration}ms ${EASING}`;
-      window.requestAnimationFrame(() => {
-        body.style.height = `${target}px`;
-        body.style.opacity = toOpen ? "1" : "0";
-      });
-      const done = (event: TransitionEvent): void => {
-        if (event.target !== body || event.propertyName !== "height") return;
-        body.removeEventListener("transitionend", done);
-        body.style.transition = "";
-        finish(toOpen);
-      };
-      body.addEventListener("transitionend", done);
-    };
-
-    registry.set(details, {
-      close: () => {
-        if (details.open && !animating) animate(false);
-      },
-    });
-
-    const onClick = (event: Event): void => {
-      event.preventDefault();
-      if (animating) return;
-      const toOpen = !details.open;
-      const others = toOpen
-        ? Array.from(registry.entries()).filter(([el]) => el !== details && el.open)
-        : [];
-      if (toOpen) others.forEach(([, api]) => api.close());
-      animate(toOpen);
-      if (toOpen && window.matchMedia("(max-width: 980px)").matches) {
-        const delay = others.length > 0 ? 420 : 0;
+  cleanups.push(
+    setupDisclosure(root, {
+      selector: ".path-card-detail",
+      bodyClass: "path-card-detail-body",
+      exclusive: true,
+      onOpen: (summary, displaced) => {
+        if (!window.matchMedia("(max-width: 980px)").matches) return;
+        // Wait out the card that was displaced: scrolling to a summary whose neighbour is still
+        // collapsing aims at a position the page is about to leave.
+        const delay = displaced > 0 ? DISCLOSURE_CLOSE_MS + 60 : 0;
         window.setTimeout(() => {
           const rect = summary.getBoundingClientRect();
           const targetY = window.scrollY + rect.top - window.innerHeight * 0.22;
-          window.scrollTo({ top: targetY, behavior: reduced ? "auto" : "smooth" });
+          window.scrollTo({ top: targetY, behavior: reduceMotion() ? "auto" : "smooth" });
         }, delay);
-      }
-    };
-
-    summary.addEventListener("click", onClick);
-    cleanups.push(() => summary.removeEventListener("click", onClick));
-  });
+      },
+    }),
+  );
 }
 
 // ── Lenis anchors: route in-document anchor clicks through the shared Lenis instance ─────────
