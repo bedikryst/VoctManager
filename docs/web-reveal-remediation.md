@@ -985,6 +985,54 @@ above was live on the site the whole time.
 
 ---
 
+## Etap 7 — the lead register cannot stagger, and that decides who may wear it — done 2026-08-08
+
+Opened by re-reading 5d's `/koncerty` line. That line is correct about what it names and it names
+only two hairlines (`.rep-col li`, `.kd-clasp`); the page carries three more that pass 5d's own
+"opens a block" test — `.rite-card`'s `border-top`, `.rep-era-head`'s `border-bottom`,
+`.station-next::after`. `.rite-card` has existed since `f8efd60` (2026-05-28), so it was in the
+build 5a censused and simply was not enumerated.
+
+**The constraint nobody had stated, and it disqualifies most of them.** Under the `authored`
+cadence the lead register has **no stagger mechanism at all**:
+
+- On an ink+lead node, `.reveal:is(.reveal-rule, .reveal-rule-v).is-in` pins `transition-delay:
+  0.18s` at (0,3,0) and beats `html.voct-motion .reveal`'s `var(--reveal-delay)` at (0,2,1) — so
+  the pair's `data-d` is discarded. That override is deliberate and documented ("the rule→ink
+  order is the gesture"); what nobody had followed through is what it costs a *group*.
+- On a bare `.reveal-rule`, the `::before` rule declares `transition` as a **shorthand**, which
+  sets `transition-delay: 0s`. `--reveal-delay` is never read, so `data-d` does nothing there
+  either.
+
+The landing does not feel this because its cadence is the onset queue, which staggers by *when*
+`is-in` lands rather than by CSS delay. Every subpage runs `authored`. **So on a subpage, N
+sibling `.reveal-rule` nodes crossing the trigger in one callback draw N hairlines in exact
+unison** — the tell the whole register language exists to avoid, produced by the register itself.
+
+Consequences, and they are the rule for any future adoption:
+
+- **`.rite-card` ×4 stays ink-only.** Four cards stand in one grid row; they cross the trigger in
+  one frame. Granting them lead would trade a correct 1→4 ink cascade for four simultaneous
+  hairlines. Same disqualification for `.rep-col li` (5d was right for a second reason) and for
+  any row, grid or list.
+- **`.station-inscriptio` takes ink+lead**, and it is the shape that survives the constraint:
+  **one node per station**, never a sibling group, so there is no stagger to lose. Its `data-d="2"`
+  is 0.18s, i.e. *identical* to the delay the pair pins — the override is a no-op here by
+  coincidence, and the page comment says so, because moving either number breaks that.
+- **`.station-next::after` skipped on mechanics, not taste.** `.reveal-rule` draws through
+  `::before`, and that section already spends `::before` on its gold aura. Adoption would mean
+  restructuring the section's layers for one hairline.
+
+**Grant lead to a lone hairline that opens a block. Never to a set of them.**
+
+Same pass, unrelated to the register but found by measuring it: `.rite-card` ran
+`data-d={(i % 3) + 1}`, copied from `.rep-row` where modulo 3 is a rolling cascade down a long
+column. With exactly four cards it emitted `1, 2, 3, 1` and the fourth entered ahead of the second
+and third — on every breakpoint, since the 2-up and 1-up folds keep document order. `data-d="4"`
+existed and was unused on the page.
+
+---
+
 ## Rejected — do not re-propose
 
 **Left→right reveals on body copy.** The site already spends this gesture twice, on the two

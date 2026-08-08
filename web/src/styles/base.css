@@ -201,6 +201,25 @@ a { color: inherit; text-decoration: none; }
 em { font-family: var(--serif); font-style: italic; color: inherit; }
 button { font: inherit; }
 
+/* Keyboard focus, for every page this file reaches — which until now meant every page EXCEPT
+   the one that had it. The identical pair lives in landing/01-foundation.css, inside a bundle
+   `index.astro` alone imports, so the subpages fell through to the UA ring: on /koncerty that
+   is six programme disclosures, three CTA buttons and a dozen links with no authored focus
+   state at all. Declarations are kept byte-identical to the landing's rather than improved
+   here; two different focus rings on one site is the worse defect.
+
+   `:where()` holds it at ZERO specificity, so it is a floor and never a ceiling — the lightbox,
+   the vault and the threshold each state their own treatment and win without an override. That
+   is also why `summary` may be added here and not there: the landing has none, and a component
+   that wants something else simply says so.
+
+   `--candle` is a mark rather than text (tokens.css draws that line explicitly), so its 2.10:1
+   on parchment is not the AA text failure it would be on a label. */
+:where(a, button, input, textarea, select, summary):focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 6px;
+}
+
 /* ── Shared atoms ───────────────────────────────────────────────────────── */
 /* The rubric atom. `text-transform: uppercase` is load-bearing now, not cosmetic: Cinzel
    has no lowercase, so anything reaching this class must already be caps-safe.

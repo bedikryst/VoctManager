@@ -152,7 +152,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <BleedImage desktop={hero.desktop} mobile={hero.mobile} alt="" position="center 38%" eager animate />
       </div>
       <div class="intro-inner">
-        <p class="eyebrow reveal"><span class="lat">Via</span>  ·  Droga koncertów</p>
+        <p class="eyebrow reveal"><span class="lat" lang="la">Via</span>  ·  Droga koncertów</p>
         <h1>
           <span class="line"><span class="reveal ink-press">Koncerty</span></span>
           <span class="line"><span class="reveal ink-press" data-d="1"><em>Duchowe.</em></span></span>
@@ -163,7 +163,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         </p>
         <p class="intro-note reveal" data-d="3">
           Każdy wieczór ma osobną intencję. To współczesna forma dawnych
-          <em>Concerts Spirituels</em> — przejdź je po kolei, w stronę tego,
+          <em lang="fr">Concerts Spirituels</em> — przejdź je po kolei, w stronę tego,
           który jeszcze się nie wydarzył.
         </p>
         <span class="scroll-cue reveal" data-d="4">Wejdź na drogę</span>
@@ -190,10 +190,16 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
             style={`--bg:url('${s.bgSrc}')`}
             data-parallax="0.4"
           />
-          {/* The accent light is its OWN plane — it drifts about half as fast as the stone
-              behind it (0.10 vs 0.22), so light and masonry separate on scroll instead of
-              moving as one photograph. Reuses the global [data-parallax] controller; the
-              scale path keeps its resting position identical to the old static glow. */}
+          {/* The accent light is its OWN plane — it drifts at half the stone's speed (0.2 vs
+              0.4), so light and masonry separate on scroll instead of moving as one
+              photograph. Reuses the global [data-parallax] controller; the scale path keeps
+              its resting position identical to the old static glow.
+              Both speeds sit above the drift budget BaseLayout documents (2·cap / (vh +
+              frameH) — 0.29 for the backdrop, 0.13 for the light), so each pins against its
+              clamp near the ends of a station's pass: ~27% of it for the stone, ~36% for the
+              light. Left as authored — the light is a diffuse radial at opacity .5 under
+              `screen`, where a 121px pin is not perceptible, and lowering the stone to budget
+              would flatten the separation this plane exists to create. */}
           <div
             class="station-light"
             aria-hidden="true"
@@ -209,14 +215,14 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                   sequence. */}
               <div class="station-text station-plate">
                 <span class="station-glyph reveal" aria-hidden="true" />
-                <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
+                <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; <span lang="la">{s.latin}</span></p>
                 <h2 class="station-title reveal ink-press" data-d="1">{s.title}</h2>
                 <p class="station-meta reveal" data-d="1">{s.meta}</p>
                 <p class="station-essence reveal" data-d="2">{s.essence}</p>
                 {s.facts.length > 0 && (
-                  <div class="station-facts reveal" data-d="2" aria-label="Cechy liturgii">
+                  <div class="station-facts reveal" data-d="2" role="list" aria-label="Cechy liturgii">
                     {s.facts.map((f) => (
-                      <span>{f}</span>
+                      <span role="listitem">{f}</span>
                     ))}
                   </div>
                 )}
@@ -251,21 +257,34 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 </figure>
               )}
               <div class="station-text">
-                <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; {s.latin}</p>
+                <p class="station-num reveal">Obraz {s.roman} &nbsp;·&nbsp; <span lang="la">{s.latin}</span></p>
                 <h2 class="station-title reveal ink-press" data-d="1">{s.title}</h2>
                 <p class="station-meta reveal" data-d="1">{s.meta}</p>
                 <p class="station-essence reveal" data-d="2">{s.essence}</p>
+                {/* Ink + lead, the one register pair a single node may wear: the hairline that
+                    opens the incipit is drawn, and the words it carries follow it in. The pair
+                    pins `transition-delay` at 0.18s over `data-d` (registers.css) — here that
+                    is a no-op, because `data-d="2"` IS 0.18s; keep the two in step if either
+                    moves. Memoriam centres this block and drops the rule entirely, so it takes
+                    ink alone rather than a lead with nothing to draw. */}
                 {s.inscriptio && (
-                  <p class="station-inscriptio reveal" data-d="2" aria-label="Incipit programu">
+                  <p
+                    class:list={[
+                      "station-inscriptio",
+                      "reveal",
+                      { "reveal-rule-v": s.variant !== "memoriam" },
+                    ]}
+                    data-d="2"
+                  >
                     <em class="station-inscriptio-src">{s.inscriptio}</em>
                     {s.inscriptioPl && <span class="station-inscriptio-pl">{s.inscriptioPl}</span>}
                     {s.inscriptioRef && <span class="station-inscriptio-ref">{s.inscriptioRef}</span>}
                   </p>
                 )}
                 {s.facts.length > 0 && (
-                  <div class="station-facts reveal" data-d="2" aria-label="Cechy programu">
+                  <div class="station-facts reveal" data-d="2" role="list" aria-label="Cechy programu">
                     {s.facts.map((f) => (
-                      <span>{f}</span>
+                      <span role="listitem">{f}</span>
                     ))}
                   </div>
                 )}
@@ -322,7 +341,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="station-next" aria-label="Następny Koncert Duchowy">
       <div class="station-next-inner">
         <span class="station-next-glyph reveal" aria-hidden="true"></span>
-        <p class="station-num reveal">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat">Nondum</span></p>
+        <p class="station-num reveal">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat" lang="la">Nondum</span></p>
         <h2 class="station-title reveal ink-press" data-d="1">Następne wybrzmienie.</h2>
         <p class="station-meta reveal" data-d="1">Termin i przestrzeń wyznaczą darczyńcy</p>
         <p class="station-essence reveal" data-d="2">
@@ -342,19 +361,25 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="rite-map tone-light" aria-label="Reguły wieczoru">
       <div class="rite-wrap">
         <div class="rite-head reveal">
-          <span class="eyebrow"><span class="lat">Concert spirituel</span>  ·  Reguły wieczoru</span>
+          <span class="eyebrow"><span class="lat" lang="fr">Concert spirituel</span>  ·  Reguły wieczoru</span>
           <h2 class="ink-press">Każdy wieczór prowadzą te same cztery reguły.</h2>
           <p>
             Gdy w XVIII-wiecznym Paryżu na czas świąt milkła opera, w sali pałacu Tuileries
-            grano <em>Concerts Spirituels</em> — muzykę sakralną poza ramą nabożeństwa.
+            grano <em lang="fr">Concerts Spirituels</em> — muzykę sakralną poza ramą nabożeństwa.
             Wracamy do tej tradycji, a każdy nasz program trzyma się czterech powtarzalnych
             reguł.
           </p>
         </div>
         <div class="rite-grid">
+          {/* A straight 1→4 step, NOT the `(i % 3) + 1` the repertoire rows use: those are a
+              long column where the modulo is a rolling cascade, these are four cards standing
+              in one row, where wrapping at three put the fourth card back at 0.09s and it
+              entered ahead of its two neighbours — on every breakpoint, since the 2-up and
+              1-up folds keep the same order. Four is also the last step registers.css
+              defines, hence the clamp: a fifth rule would hold at 0.36s rather than reset. */}
           {
             rites.map((r, i) => (
-              <article class="rite-card reveal" data-d={String((i % 3) + 1)}>
+              <article class="rite-card reveal" data-d={String(Math.min(i + 1, 4))}>
                 <span class="r-num">{r.n}</span>
                 <h3>{r.h}</h3>
                 <p>{r.p}</p>
@@ -369,7 +394,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
     <section class="repertoire tone-light" id="repertuar" aria-label="Repertuar VoctEnsemble">
       <div class="rep-wrap">
         <div class="rep-head reveal">
-          <span class="eyebrow"><span class="lat">Repertorium</span>  ·  Siedem wieków</span>
+          <span class="eyebrow"><span class="lat" lang="la">Repertorium</span>  ·  Siedem wieków</span>
           <h2 class="ink-press">Repertuar, z którego budujemy programy.</h2>
           <p>
             Renesansowa polifonia, barok, romantyczna modlitwa i współczesny minimalizm
@@ -464,6 +489,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   /* Photo keeps full brightness; text pocket (bottom-left) deepened via the diagonal (see o-nas). */
   .intro::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(8,8,7,.5) 0%, rgba(8,8,7,.12) 38%, rgba(16,15,13,.84) 100%), linear-gradient(72deg, rgba(8,8,7,.76) 0%, rgba(8,8,7,.24) 46%, transparent 72%); }
   .intro-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
+  /* The rubric's gloss tier ships parchment-coloured — `--ink-muted` (base.css), correct on
+     every other host it has, and ~3.5:1 at 11px over this hero's text pocket. Every other dark
+     ground on the site states its own value (/press .58, /koncerty/[id] .72, /kolofon .68);
+     this one is the hero's other micro-label, `.scroll-cue`. The `.lat` tier keeps its gold —
+     base.css names it directly, so this rule on the parent never reaches it. */
+  .intro .eyebrow { color: rgba(244,241,233,.62); }
   .intro h1 { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(50px, 9vw, 130px); letter-spacing: -.01em; margin: 18px 0 0; }
   .intro h1 em { color: var(--candle); }
   .intro-lede { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(19px, 2.2vw, 28px); line-height: 1.42; max-width: 34ch; margin: 24px 0 0; color: rgba(244,241,233,.9); }
@@ -495,6 +526,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .station-poster :global(img) { width: 100%; height: auto; display: block; }
   .station-poster .frame { position: absolute; left: -10px; top: -10px; width: 40px; height: 40px; border-top: 1px solid var(--accent, var(--candle)); border-left: 1px solid var(--accent, var(--candle)); opacity: .8; z-index: 1; }
   .station-num { font-family: var(--serif); font-size: clamp(20px, 2vw, 28px); letter-spacing: .3em; color: var(--accent, var(--candle)); font-style: italic; }
+  /* Tracking adds its space AFTER the last letter, and a centred line centres the box that
+     space is inside — so the glyphs land half a letter-space (~4px at 28px) left of the glyph
+     and heading they are stacked with. An indent equal to the tracking cancels it exactly: the
+     line box grows by the same amount it already carried on the right. Only the two centred
+     variants need it; the left-aligned stations hang the space off the rag, where it belongs. */
+  .station--memoriam .station-num,
+  .station-next .station-num { text-indent: .3em; }
   .station-title { font-family: var(--serif); font-weight: 300; line-height: 1.02; font-size: clamp(36px, 5.4vw, 76px); letter-spacing: -.01em; margin: 10px 0 0; color: var(--paper); }
   .station-meta { margin: 18px 0 0; font-family: var(--capitalis); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.66); }
   .station-essence { font-family: var(--serif); font-style: italic; font-size: clamp(19px, 2vw, 26px); line-height: 1.45; color: rgba(244,241,233,.92); margin: 22px 0 0; max-width: 42ch; }
@@ -504,6 +542,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .station-inscriptio-src { display: block; font-family: var(--serif); font-style: italic; font-size: clamp(16px, 1.6vw, 21px); line-height: 1.4; color: var(--accent, var(--candle)); }
   .station-inscriptio-pl { display: block; margin-top: 6px; font-family: var(--serif); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.45; color: rgba(244,241,233,.64); }
   .station-inscriptio-ref { display: block; margin-top: 8px; font-family: var(--capitalis); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.44); }
+  /* LEAD — hand the incipit's own border to a pseudo-rule that can be drawn. `html.voct-motion`
+     is :global() on purpose: Astro scopes every compound, and a scope attribute appended to
+     `html` matches nothing, so the gate would silently never apply. The element keeps its real
+     border for no-JS and reduced motion. */
+  :global(html.voct-motion) .station-inscriptio.reveal-rule-v { border-left-color: transparent; --rule-ink: color-mix(in srgb, var(--accent, var(--candle)) 45%, transparent); }
   .station-actions { margin: 30px 0 0; display: flex; flex-wrap: wrap; gap: 14px 26px; align-items: center; }
   .station-facts { margin: 24px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
   .station-facts span { display: inline-flex; align-items: center; min-height: 32px; padding: 8px 12px; border: 1px solid rgba(244,241,233,.18); color: rgba(244,241,233,.68); font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; line-height: 1.35; text-transform: uppercase; }
@@ -525,7 +568,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .prog-d .chev { transition: transform .4s var(--ease); }
   .prog-d[open] .chev { transform: rotate(180deg); }
   .prog-list { list-style: none; margin: 0; padding: 22px 0 0; columns: 2; column-gap: 44px; }
-  .prog-list li { break-inside: avoid; padding: 8px 0; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,233,.78); border-top: 1px solid var(--paper-line, rgba(244,241,233,.16)); }
+  .prog-list li { break-inside: avoid; padding: 8px 0; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,233,.78); border-top: 1px solid rgba(244,241,233,.16); }
   .prog-list li .pc { font-family: var(--serif); font-style: italic; font-size: 1.15em; color: var(--paper); }
   /* Ordinal — the order is part of the work ("kolejność jest bardzo ważna"), so it shows. */
   .prog-list li .prog-n { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--accent, var(--candle)); margin-right: 10px; }
@@ -539,9 +582,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Liturgy station (no poster) */
   .station--liturgy .station-inner { grid-template-columns: 1fr; max-width: 880px; }
-  .station-plate { border: 1px solid var(--paper-line, rgba(244,241,233,.16)); padding: clamp(28px,4vw,52px); background: rgba(244,241,233,.03); }
+  .station-plate { border: 1px solid rgba(244,241,233,.16); padding: clamp(28px,4vw,52px); background: rgba(244,241,233,.03); }
   /* Raster master under ~110px — see the dual-master note on `.brand-glyph-shape` (styles/base.css). */
-  .station-glyph { width: 26px; height: 60px; flex-shrink: 0; margin-bottom: 20px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .8; }
+  .station-glyph { width: 26px; height: 60px; margin-bottom: 20px; background: linear-gradient(165deg, #e6d3a0 0%, #c6a45b 52%, #ad8a44 100%); -webkit-mask: url(/logo-mark.png) center / contain no-repeat; mask: url(/logo-mark.png) center / contain no-repeat; opacity: .8; }
 
   /* In memoriam (quieter, centered) */
   .station--memoriam .station-inner { grid-template-columns: 1fr; max-width: 720px; justify-items: center; text-align: center; gap: clamp(26px, 4vw, 40px); }
@@ -619,7 +662,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .rep-col li:first-child { border-top: 0; padding-top: 0; }
   .rep-col .composer { font-family: var(--serif); font-size: clamp(19px,1.8vw,23px); color: var(--ink); font-weight: 400; }
   .rep-col .composer .years { font-size: .62em; color: var(--ink-muted); font-family: var(--mono); letter-spacing: .04em; margin-left: 8px; }
-  .rep-col .works { display: block; margin-top: 4px; font-size: 14.5px; color: var(--ink-soft); }
+  /* Tracks the composer's own clamp rather than sitting fixed under it — at a flat 14.5px the
+     pair drifted from 1.31 on a phone to 1.59 at 1440, so the entry read tighter the wider the
+     screen got. Same slope, one step down. */
+  .rep-col .works { display: block; margin-top: 4px; font-size: clamp(14.5px, 1.15vw, 16px); color: var(--ink-soft); }
   .rep-col .works .yr { color: var(--candle); font-family: var(--mono); font-size: .82em; }
   @media (max-width: 720px) {
     .rep-cols { grid-template-columns: 1fr; }
@@ -710,6 +756,21 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         event.preventDefault();
         if (animating) return;
         animate(!details.open);
+      });
+
+      // A <details> can be opened WITHOUT a click, and this wrapper's collapsed state is inline
+      // style that only the click path clears: the browser sets `open` directly for find-in-page
+      // and for a `#:~:text=` scroll-to-text fragment (which is how a search result lands on a
+      // composer's name here). Both then scroll to a match inside a node still pinned at
+      // height 0 / opacity 0 — the text is found and invisible. Reconciling on `toggle` covers
+      // every such path at once instead of enumerating them.
+      // Our own `animate()` also fires this, so it is gated twice: `animating` is still set when
+      // the event lands (it is cleared on transitionend, ~480ms later), and the height check
+      // means an already-open wrapper is never re-finished.
+      details.addEventListener("toggle", () => {
+        if (animating || !details.open) return;
+        if (body.style.height !== "0px") return;
+        finish(true);
       });
     });
   };

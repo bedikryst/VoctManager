@@ -13,6 +13,10 @@
 /** The site-wide candle gold from landing/01-foundation.css (`--candle`). */
 const BASE_CANDLE = "#c6a45b";
 
+/** The candle as INK (`--candle-ink`, tokens.css) — the lightest value of this hue that clears
+ *  WCAG AA for small text on parchment. Gold that has to be READ rather than seen. */
+const BASE_CANDLE_INK = "#7f693a";
+
 /** Max OKLab chroma for the derived candle — keeps a saturated future accent from
  *  reading neon next to the parchment/night palette. Base gold sits near 0.10. */
 const MAX_CHROMA = 0.12;
@@ -69,3 +73,22 @@ export const candleFrom = (accentHex: string, baseHex: string = BASE_CANDLE): st
   const k = chroma > MAX_CHROMA ? MAX_CHROMA / chroma : 1;
   return oklabToHex({ L: base.L, a: acc.a * k, b: acc.b * k });
 };
+
+/**
+ * The station's light as INK — the same hue, dropped to the luminance small gold text needs on
+ * parchment. A page that re-tones `--candle` per concert cannot fall back to the static
+ * `--candle-ink`: the two would then be different hues on the same band, which is exactly the
+ * seam the whole per-station tint exists to avoid. So the ink is derived from the same accent,
+ * and it is a SECOND custom property rather than a replacement — `--candle` still carries the
+ * rules, marks and display gold, where the contrast minimum does not apply.
+ *
+ * The gold stations return the hand-tuned `--candle-ink` verbatim (as `candleFrom` returns the
+ * base gold verbatim), so a page burning plain gold stays byte-identical with /o-nas and
+ * /kolofon. Measured across the five station accents the derived inks land at 4.55–4.80 : 1 on
+ * `--paper`, i.e. AA for small text with room to spare; on `--paper-soft` they fall to ~4.2, so
+ * do not reach for this on that ground without re-measuring.
+ */
+export const candleInkFrom = (accentHex: string): string =>
+  accentHex.toLowerCase() === BASE_CANDLE.toLowerCase()
+    ? BASE_CANDLE_INK
+    : candleFrom(accentHex, BASE_CANDLE_INK);

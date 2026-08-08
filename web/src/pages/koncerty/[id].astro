@@ -25,8 +25,9 @@ import SiteFooter from "../../components/SiteFooter.astro";
 import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { layoutShots } from "../../lib/galleryLayout";
+import { galleryRuns } from "../../lib/galleryRuns";
 import { framedShot } from "../../lib/galleryFrame";
-import { candleFrom } from "../../lib/candle";
+import { candleFrom, candleInkFrom } from "../../lib/candle";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
@@ -55,7 +56,14 @@ const ogImage = (await getImage({ src: bg.desktop, width: 1200, format: "webp" }
 // ── The station's own light: `--candle` inside <main> takes the concert accent's hue at
 // the base gold's OKLCH lightness (build-time hex — no runtime CSS feature risk). Gold
 // accents pass through unchanged; the chrome and vault outside <main> keep brand gold.
+//
+// `--candle-ink` is the same hue at a luminance small text can be read at, and it is needed
+// here for a reason particular to this page: two of its bands are parchment, and full candle
+// is 2.10 : 1 on parchment however the hue is tinted. Which of the two a rule takes is decided
+// by ROLE, not by band — `--candle` keeps the hairlines, marks and display gold, `--candle-ink`
+// carries every gold string small enough to have to be read.
 const candle = candleFrom(c.accent);
+const candleInk = candleInkFrom(c.accent);
 
 // ── Via neighbours: only page-bearing concerts (a non-page neighbour would 404). The road
 // runs THROUGH the detail pages — a walk, not a set of dead-ends. Skips a slot when there
@@ -72,28 +80,43 @@ const posterImg = c.poster ? photoOptional(c.poster) : undefined;
 const gallery: {
   img: ImageMetadata;
   alt: string;
-  caption?: string;
-  credit?: string;
+  caption?: string | undefined;
+  credit?: string | undefined;
+  moment: "rehearsal" | "concert";
+  venue?: string | undefined;
+  date?: string | undefined;
   ar: number;
 }[] = [];
 for (const g of c.gallery) {
   const img = photoOptional(g.img);
   if (img)
     gallery.push({
+      ...g,
       img,
       alt: g.alt ?? "",
-      caption: g.caption,
-      credit: g.credit,
       ar: Number((img.width / img.height).toFixed(4)),
     });
 }
 
-// The gallery hangs by row HEIGHT, not by a column count — the packing lives in lib/galleryLayout
-// so the collective archive and this page stay one geometry. Defaults there are this page's
-// measure (.kd-wrap 1180, the gap's clamp ceiling, the 640 height cap).
-const shots = await Promise.all(
-  layoutShots(gallery).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
+// The gallery is cut into RUNS — the rehearsal, the night, and one per city on the tour — and the
+// run's place and date are printed at its head instead of under every frame. Fifteen frames from
+// three churches used to carry fifteen captions naming three churches; see lib/galleryRuns.
+//
+// The head appears only where there is more than one run: a single-run gallery would be printing
+// the page's own `meta` back at a reader who read it in the hero two screens up.
+//
+// Each run hangs by row HEIGHT, not by a column count — the packing lives in lib/galleryLayout so
+// the collective archive and this page stay one geometry. Defaults there are this page's measure
+// (.kd-wrap 1180, the gap's clamp ceiling, the 640 height cap).
+const runs = await Promise.all(
+  galleryRuns(gallery, { venue: c.venue, date: c.date }).map(async (run) => ({
+    ...run,
+    shots: await Promise.all(
+      layoutShots(run.shots).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
+    ),
+  })),
 );
+const showRunHeads = runs.length > 1;
 
 // The evening's photographers, gathered once for the gallery's foot. Order of first appearance,
 // deduplicated: a colophon names each hand once, however many frames it took. Silent when the
@@ -213,7 +236,7 @@ const plDate = (iso: string): string =>
       stitch; SiteChrome still lights the bare KONCERTY link for any /koncerty/* path. */}
   <SiteChrome current={`/koncerty/${entry.id}`} tone="dark" />
 
-  <main id="tresc" style={`--candle: ${candle}`}>
+  <main id="tresc" style={`--candle: ${candle}; --candle-ink: ${candleInk}`}>
     {/* ── Hero: full-bleed church, latin inscriptio, title, meta ───────────── */}
     <section class="kd-hero" aria-label={c.title}>
       <div class="kd-hero-media" aria-hidden="true">
@@ -252,13 +275,17 @@ const plDate = (iso: string): string =>
     {c.prologue && (
       <section class="kd-band kd-prologue" aria-label="Próg wieczoru">
         <div class="kd-wrap kd-narrow">
-          <span class="kd-prologue-mark" aria-hidden="true"></span>
-          <span class="kd-section-label micro reveal">
+          {/* The mark takes the ink and it leads the band. It is decorative to a screen reader and
+              a register node all the same: it is the tallest thing here and the eye's first stop,
+              so leaving it at full opacity had it standing complete above two lines still arriving
+              — the band assembling backwards. Everything below it steps once. */}
+          <span class="kd-prologue-mark reveal" aria-hidden="true"></span>
+          <span class="kd-section-label micro reveal" data-d="1">
             <span class="lat">Ante concentum</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Próg wieczoru</span>
           </span>
-          <p class="kd-prologue-text reveal" data-d="1">{c.prologue}</p>
+          <p class="kd-prologue-text reveal" data-d="2">{c.prologue}</p>
         </div>
       </section>
     )}
@@ -293,8 +320,13 @@ const plDate = (iso: string): string =>
             </div>
           </details>
 
-          {c.verbum.bridge && <p class="kd-verbum-bridge reveal">{c.verbum.bridge}</p>}
-          <p class="kd-verbum-note micro">Zapis słowa wprowadzającego, nieznacznie zredagowany dla czytelności.</p>
+          {/* Both steps continue the section's count rather than restarting it. The bridge closes
+              the word and the note owns up to the editing, so they are the last two things read
+              here — and a node left without `data-d` carries delay 0, which would have entered
+              them ahead of the citation and the transcript above whenever the band crosses the
+              trigger in one callback. */}
+          {c.verbum.bridge && <p class="kd-verbum-bridge reveal" data-d="3">{c.verbum.bridge}</p>}
+          <p class="kd-verbum-note micro reveal" data-d="4">Zapis słowa wprowadzającego, nieznacznie zredagowany dla czytelności.</p>
         </div>
       </section>
     )}
@@ -308,7 +340,10 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Wykonania</span>
           </span>
-          <ol class="kd-tour-list">
+          {/* Lead without ink: the list has no copy of its own, only the rule the rows hang from.
+              It is drawn while the first row is still arriving, which is the order a scribe works
+              in and the reason this register exists. */}
+          <ol class="kd-tour-list reveal-rule">
             {c.dates.map((d, i) => (
               <li class="kd-tour-row reveal" data-d={String((i % 3) + 1)}>
                 <span class="kd-tour-date">{plDate(d.date)}</span>
@@ -395,7 +430,7 @@ const plDate = (iso: string): string =>
                   </li>
                 )}
                 {grp.movement && (
-                  <li class="kd-movement reveal">
+                  <li class="kd-movement reveal reveal-rule">
                     <h3 class="kd-movement-head">
                       <span class="kd-movement-lat">{grp.movement.lat}</span>
                       <span class="kd-movement-pl">{grp.movement.pl}</span>
@@ -405,7 +440,12 @@ const plDate = (iso: string): string =>
                 )}
                 {grp.items.map(({ p, num }) => (
                   <>
-                    <li class:list={["kd-program-item", "reveal", { "is-bis": p.bis }]}>
+                    {/* Ink AND lead — the one pair the register language allows on a node, and
+                        this is the page's archetype for it: a programme is ruled before it is
+                        set. The rule leads, the ink follows 0.18s behind (registers.css); the
+                        rows whose hairline the layout deliberately drops suppress the pseudo-rule
+                        with it, in the CSS below. */}
+                    <li class:list={["kd-program-item", "reveal", "reveal-rule", { "is-bis": p.bis }]}>
                       <span class="kd-program-num micro">{num}</span>
                       <div class="kd-program-body">
                     <p class="kd-program-composer">
@@ -501,7 +541,7 @@ const plDate = (iso: string): string =>
           {/* You read the words, then you look for who said them. */}
           <blockquote class="kd-quote">
             <p class="reveal">{c.pullQuote.text}</p>
-            <cite class="kd-cite reveal" data-d="1">
+            <cite class="kd-cite reveal reveal-rule" data-d="1">
               <span class="kd-cite-name">{c.pullQuote.attribution}</span>
               {c.pullQuote.about && <span class="kd-cite-about micro">{c.pullQuote.about}</span>}
             </cite>
@@ -523,9 +563,18 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Głosy wieczoru</span>
           </span>
+          {/* The cadence steps over FOUR, not three, and the difference is the whole point of it
+              being here. This grid is `auto-fit minmax(180px, 1fr)`, which lays five columns
+              across `.kd-wrap` — and cells in one grid row share a top edge exactly, so they
+              cross the trigger line in a single observer callback every time, at any scroll
+              speed. Modulo 3 in a row of five hands out 1 2 3 1 2, i.e. two pairs entering in
+              unison, which is the one thing the register language exists to avoid. Modulo 4 uses
+              the fourth step registers.css already declares and leaves a single collision at the
+              two ENDS of the row, where unison is least legible as unison. If the grid's measure
+              or its 180px track ever changes, this number is what has to follow it. */}
           <dl class="kd-voces-grid">
             {c.roster.groups.map((g, i) => (
-              <div class="kd-voces-group reveal" data-d={String((i % 3) + 1)}>
+              <div class="kd-voces-group reveal" data-d={String((i % 4) + 1)}>
                 <dt class="kd-voces-voice micro">{g.voice}</dt>
                 {g.names.map((n) => (
                   <dd class="kd-voces-name">{n}</dd>
@@ -533,14 +582,17 @@ const plDate = (iso: string): string =>
                 {g.detail && <dd class="kd-voces-detail">{g.detail}</dd>}
               </div>
             ))}
+            {/* The conductor stands at index `groups.length`, so his step continues the sequence
+                rather than restarting it — otherwise he lights with whichever voice happens to
+                share his remainder. */}
             {conductorCredit && (
-              <div class="kd-voces-group reveal" data-d={String((c.roster.groups.length % 3) + 1)}>
+              <div class="kd-voces-group reveal" data-d={String((c.roster.groups.length % 4) + 1)}>
                 <dt class="kd-voces-voice micro">{conductorCredit.role}</dt>
                 <dd class="kd-voces-name">{conductorCredit.name}</dd>
               </div>
             )}
           </dl>
-          {c.roster.note && <p class="kd-voces-note reveal">{c.roster.note}</p>}
+          {c.roster.note && <p class="kd-voces-note reveal reveal-rule">{c.roster.note}</p>}
         </div>
       </section>
     )}
@@ -583,12 +635,24 @@ const plDate = (iso: string): string =>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Obrazy wieczoru</span>
           </span>
-          {/* Photographs are LIT, not written: the veil belongs to the image and the caption keeps
-              the ink. `data-d` therefore sits on the figure, not on either register — it is the
-              row's cadence, both children inherit it, and that is what keeps a grid row from
-              lighting in unison. */}
+          {/* Photographs are LIT, not written: the veil belongs to the image and the run's head
+              keeps the ink. `data-d` therefore sits on the figure, not on either register — it is
+              the row's cadence, and that is what keeps a grid row from lighting in unison. */}
+          {runs.map((run) => (
+          <div class="kd-gallery-run">
+          {showRunHeads && (
+            <p class="kd-run-head micro reveal reveal-rule">
+              <span>{run.title}</span>
+              {run.date && (
+                <>
+                  <span class="kd-dot" aria-hidden="true">·</span>
+                  <span>{run.date}</span>
+                </>
+              )}
+            </p>
+          )}
           <div class="kd-gallery-grid">
-            {shots.map((g, i) => (
+            {run.shots.map((g, i) => (
               <figure
                 class="kd-shot"
                 data-d={String((i % 3) + 1)}
@@ -613,7 +677,7 @@ const plDate = (iso: string): string =>
                   data-image-srcset={g.frame.srcset}
                   data-image-sizes={g.frame.sizes}
                   data-image-alt={g.alt}
-                  data-image-caption={g.caption}
+                  data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
                   data-image-credit={g.credit}
                   data-image-w={String(g.frame.width)}
                   data-image-h={String(g.frame.height)}
@@ -634,11 +698,13 @@ const plDate = (iso: string): string =>
               </figure>
             ))}
           </div>
+          </div>
+          ))}
 
           {/* The gallery's foot: who held the camera, and the road out to the other evenings.
-              The colophon is the only place a photographer is named — captions state place and
-              date and nothing else. */}
-          <div class="kd-gallery-foot reveal">
+              The colophon is the only place a photographer is named — a run's head states place
+              and date and nothing else. */}
+          <div class="kd-gallery-foot reveal reveal-rule">
             {photographers.length > 0 && (
               <p class="kd-gallery-credit micro">
                 {`Fot. ${photographers.join(" · ")}${hasUncredited ? " · autorzy pozostałych zdjęć nieodnotowani" : ""}`}
@@ -742,7 +808,12 @@ const plDate = (iso: string): string =>
 
 <style>
   /* ── Reset on this page only ────────────────────────────────────────────── */
-  .page-koncert-detail { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
+  /* `:global` is required, not stylistic: <body> is BaseLayout's element and never carries this
+     file's `data-astro-cid`, so a bare `.page-koncert-detail` compiles to a selector that matches
+     nothing. It was bare until 2026-08-08 and the defect stayed invisible here only because every
+     `.kd-band` paints its own ground — /obrazy was built from this page, had no such bands, and
+     spent its whole life on parchment with `--paper` text as a result. */
+  :global(body.page-koncert-detail) { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
   main { display: block; }
   /* Overlay scroll-locks. Each overlay names its own class: the landing's video rule is scoped
      to body.theme-marketing, which this page's body doesn't carry, and the photograph frame is a
@@ -784,6 +855,14 @@ const plDate = (iso: string): string =>
 
   .kd-section-head { margin: 0 0 clamp(44px, 6vw, 80px); }
   .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
+  /* Gold that has to be READ, on the two parchment bands. Full candle is 2.10 : 1 there — it
+     fails AA outright at every size these labels are set in — and the tint the station carries
+     does not change that: the accent is normalized to the candle's own luminance, so all five
+     stations land within 2.06–2.13. `--candle-ink` is the same hue at a luminance that clears
+     it (4.55–4.80 measured across the five). The split is by ROLE and not by band, so what
+     stays on `--candle` below stays there on purpose: hairlines, the rubric lozenge and its
+     wash, and display gold, none of which the contrast minimum applies to. */
+  .kd-band-soft .kd-section-label { color: var(--candle-ink); }
   .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; }
 
   /* ── Verbum: the spoken threshold word — dark register, guillemet quote up top +
@@ -865,7 +944,7 @@ const plDate = (iso: string): string =>
   .kd-program { list-style: none; margin: 0; padding: 0; border-bottom: 1px solid var(--line, rgba(22,21,20,.16)); }
   .kd-program-item { display: grid; grid-template-columns: max-content 1fr; gap: clamp(20px, 3vw, 44px); padding: clamp(28px, 4vw, 44px) 0; border-top: 1px solid var(--line, rgba(22,21,20,.16)); align-items: start; }
   .kd-program-item.is-bis { border-top-style: dashed; }
-  .kd-program-num { font-family: var(--capitalis); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle); padding-top: 8px; min-width: 30px; text-align: right; }
+  .kd-program-num { font-family: var(--capitalis); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--candle-ink); padding-top: 8px; min-width: 30px; text-align: right; }
   .kd-program-item.is-bis .kd-program-num { color: var(--ink-muted, #746d62); }
   .kd-program-body { display: grid; gap: 8px; min-width: 0; }
   .kd-program-composer { margin: 0; font-family: var(--capitalis); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink, #161514); }
@@ -899,7 +978,7 @@ const plDate = (iso: string): string =>
 
   /* Sung text + translation (native <details>) */
   .kd-text { margin: 14px 0 0; }
-  .kd-text summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle); padding: 4px 0; transition: color .3s var(--ease, ease); }
+  .kd-text summary { list-style: none; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); padding: 4px 0; transition: color .3s var(--ease, ease); }
   .kd-text summary::-webkit-details-marker { display: none; }
   .kd-text summary:hover { color: var(--ink); }
   .kd-text-icon { position: relative; width: 10px; height: 10px; flex-shrink: 0; }
@@ -928,7 +1007,10 @@ const plDate = (iso: string): string =>
      one is centred on top of that. The measure holds a whole psalm verse — in centred pre-line
      text a wrap is indistinguishable from an authored verse break. */
   .kd-clasp { padding: clamp(14px, 2vw, 20px) 0; }
-  .kd-clasp-rule { display: flex; align-items: center; gap: 16px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--candle); }
+  /* The label is read and the two hairlines are seen, so they part company here: the word takes
+     the ink, the seam keeps the candle. The pseudo-rules state their colour outright rather than
+     inheriting `currentColor` precisely so this split costs one declaration. */
+  .kd-clasp-rule { display: flex; align-items: center; gap: 16px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--candle-ink); }
   .kd-clasp-rule::before,
   .kd-clasp-rule::after { content: ""; height: 1px; background: color-mix(in srgb, var(--candle) 40%, transparent); flex: 1; }
   .kd-clasp.is-sung { padding-bottom: clamp(32px, 4vw, 48px); }
@@ -943,8 +1025,8 @@ const plDate = (iso: string): string =>
   /* A per-concert factual footnote is a sentence, not a timecode — give it the wall-label
      register (as per-work notes) and its own row above the standing micro notes. */
   .kd-program-note-lead { flex-basis: 100%; max-width: 62ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; letter-spacing: 0; padding-bottom: 4px; }
-  .kd-spotify-link { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
-  .kd-spotify-link:hover { border-bottom-color: var(--candle); }
+  .kd-spotify-link { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
+  .kd-spotify-link:hover { border-bottom-color: var(--candle-ink); }
 
   /* ── Pull quote ────────────────────────────────────────────────────────── */
   .kd-pullquote { background: var(--paper-soft, #ebe6da); color: var(--ink, #161514); }
@@ -961,7 +1043,7 @@ const plDate = (iso: string): string =>
   .kd-voces .kd-section-label { margin-bottom: clamp(36px, 5vw, 56px); }
   .kd-voces-grid { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: clamp(28px, 4vw, 44px) clamp(24px, 3vw, 40px); }
   .kd-voces-group { min-width: 0; }
-  .kd-voces-voice { margin: 0 0 12px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .kd-voces-voice { margin: 0 0 12px; font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .kd-voces-name { margin: 0 0 6px; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.7vw, 22px); line-height: 1.25; color: var(--ink); }
   .kd-voces-detail { margin: 12px 0 0; max-width: 32ch; font-family: var(--sans); font-weight: 300; font-size: clamp(13px, 1vw, 14px); line-height: 1.65; color: var(--ink-muted, #746d62); }
   .kd-voces-note { margin: clamp(40px, 5vw, 60px) 0 0; padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(15px, 1.3vw, 17px); line-height: 1.6; color: var(--ink-muted, #746d62); }
@@ -977,6 +1059,11 @@ const plDate = (iso: string): string =>
      photographs, and `center` hangs whatever is left over in the middle. */
   .kd-gallery-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
   .kd-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
+  /* A run's head, and only on an evening that had more than one — the rehearsal, or a city of the
+     tour. It is a hairline row rather than a heading: the section already has a label, and what
+     this says is which night the frames under it come from, not that a new section began. */
+  .kd-gallery-run + .kd-gallery-run { margin-top: clamp(44px, 6vw, 76px); }
+  .kd-run-head { margin: 0 0 clamp(20px, 3vw, 30px); padding-top: 16px; border-top: 1px solid rgba(244,241,233,.14); display: flex; flex-wrap: wrap; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.62); }
   /* Bounds the veil to the image: `inset: 0` on the figure would also darken the caption, which
      is copy and belongs to the ink. */
   .kd-shot-media { position: relative; display: block; }
@@ -1025,6 +1112,66 @@ const plDate = (iso: string): string =>
   .kd-vianav-side:hover .kd-vianav-name { color: var(--candle); }
   .kd-vianav-all { justify-self: center; text-align: center; font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244,241,233,.72); border-bottom: 1px solid rgba(244,241,233,.28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .kd-vianav-all:hover { color: var(--candle); border-bottom-color: var(--candle); }
+
+  /* ── LEAD register ─────────────────────────────────────────────────────────
+     Every hairline below is a border this layout already carried; not one was added to have
+     something to draw. The real border stays for no-JS and reduced-motion visitors, and only
+     under the motion gate is it handed to the pseudo-rule registers.css draws — which is why
+     the colour has to be restated as `--rule-ink` here: that file cannot know which side or
+     which ink any given hairline uses, and guessing would repaint the page's borders.
+
+     All of these are TOP-anchored, `--rule-inset`'s default, and that is the whole reason this
+     set and not a longer one. The trigger fires on an element's top edge while the rule is drawn
+     where its border is, so a rule on a tall block's bottom edge draws a third of a screen below
+     the line that fired it — off-screen every time. `.kd-tour-row`'s `border-bottom` is exactly
+     that case and is deliberately left alone.
+
+     Ink and lead share a node here (the one pair the language allows): the rule leads, the ink
+     follows 0.18s behind, one causal gesture. `.kd-tour-list` is the exception and takes lead
+     alone — it holds no copy, only the rule its rows hang from. */
+  /* `:not(.is-bis)` is load-bearing. The encore's hairline is DASHED — a notation saying this
+     work stands outside the programme — and the pseudo-rule is a solid 1px background, so
+     handing that border over would quietly promote the bis row to an ordinary one for every
+     visitor with motion on. It keeps its real dashed border and takes ink alone; the pseudo is
+     suppressed with the others below. A dashed rule is not a ruled line anyway, and building a
+     `repeating-linear-gradient` rule so one row can animate would be inventing machinery to
+     animate something the design never draws as a line. */
+  html.voct-motion .kd-program-item.reveal-rule:not(.is-bis),
+  html.voct-motion .kd-cite.reveal-rule,
+  html.voct-motion .kd-voces-note.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: var(--line, rgba(22,21,20,.16));
+  }
+  /* The act divider is the programme's strong rule; it keeps its own weight. */
+  html.voct-motion .kd-movement.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: var(--line-strong, rgba(22,21,20,.34));
+  }
+  /* Night bands — the hairline is paper on dark, not ink on parchment. */
+  html.voct-motion .kd-tour-list.reveal-rule,
+  html.voct-motion .kd-run-head.reveal-rule,
+  html.voct-motion .kd-gallery-foot.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: rgba(244,241,233,.14);
+  }
+
+  /* Where the layout DROPS a hairline, the pseudo-rule has to go with it, or the register draws
+     a line the design decided not to print — the showreel move this whole register exists to make
+     unnecessary. Four cases, all of them stated a few rules above as `border-top: 0`: an act
+     opening the programme or following the dark interlude (the beat already gave the break), and
+     a work following an act header or a bare clasp label (whose own rule IS the seam).
+     `content: none` suppresses the pseudo-element outright rather than hiding it.
+
+     NOTE for whoever edits those four rules: the register audit does not verify sibling
+     combinators — `collect.mjs` keeps no sibling order — so nothing in the toolchain will notice
+     if this list and the `border-top: 0` list above stop agreeing. They have to be changed
+     together, by hand. */
+  html.voct-motion :is(.kd-movement, .kd-clasp:not(.is-sung)) + .kd-program-item.reveal-rule::before,
+  html.voct-motion .kd-movement.reveal-rule:first-child::before,
+  html.voct-motion .kd-interlude + .kd-movement.reveal-rule::before,
+  html.voct-motion .kd-program-item.is-bis.reveal-rule::before {
+    content: none;
+  }
 
   @keyframes kdCue { 0%, 100% { transform: scaleX(.4); opacity: .3; } 50% { transform: scaleX(1); opacity: .7; } }
   @media (prefers-reduced-motion: reduce) { .kd-hero-cue::after { animation: none; } }
