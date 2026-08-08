@@ -139,6 +139,7 @@ export function setupDisclosure(root: ParentNode, options: DisclosureOptions): (
 
       const guard = window.setTimeout(() => {
         body.removeEventListener("transitionend", done);
+        timers.delete(guard);
         finish(toOpen);
       }, ms + FINISH_GRACE_MS);
       timers.add(guard);
