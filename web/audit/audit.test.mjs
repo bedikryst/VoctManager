@@ -5,7 +5,8 @@
  *  exactly as much as its evidence that it would have said otherwise, so every check here is
  *  aimed at the defect it was written for, reconstructed in the shape it actually shipped in:
  *  `.path-entry-title`'s lost hover, `/koncerty`'s inert register, `/press`'s 380 against a
- *  declared 300, the ACT I comment that swallowed a rule, `--wght` registered twice.
+ *  declared 300, the ACT I comment that swallowed a rule, `--wght` registered twice, `/obrazy`
+ *  standing on the wrong ground with its copy set in the colour of its own background.
  *
  *  Fixtures compose the REAL `styles/registers.css` with a synthetic page sheet, so a test also
  *  fails when the register language is edited into a shape the audit no longer reads correctly —
@@ -29,6 +30,7 @@ import {
   checkPressRestWeight,
   checkPropertyRegistrations,
   checkRegisterShorthands,
+  checkScopedRootRules,
   checkSettleCeiling,
   checkSwallowedRules,
   checkTransitionCollisions,
@@ -207,6 +209,71 @@ test("R9 catches a shorthand replacing one of two register dimensions", () => {
   const findings = checkRegisterShorthands(pages, index);
   assert.deepEqual(ids(findings), ["R9"]);
   assert.match(findings[0].detail.join(" "), /--wght/);
+});
+
+/* ── R11 · a scoped rule reaching the document root ──────────────────────────── */
+
+/**
+ * A whole document, because this check's subject IS `<html>`/`<body>` — the one element the other
+ * fixtures only need as a container.
+ * @param {string} document  Full markup, `<html>` outward.
+ * @param {string} pageCss
+ */
+const rootFixture = (document, pageCss) => ({
+  pages: [{ page: "fixture.html", elements: scanHtml(document) }],
+  rules: rulesFromCss(pageCss, "page.css"),
+});
+
+test("R11 catches a page's ground scoped away from the body it was written for", () => {
+  // `/obrazy`, `/kolofon` and `/koncerty/[id]` all shipped this. BaseLayout renders `<body>`, so
+  // the page's own cid is never on it and the rule is inert from the day it is written.
+  const { pages, rules } = rootFixture(
+    `<html lang="pl"><body class="page-obrazy"><main data-astro-cid-zuxexoyc></main></body></html>`,
+    `.page-obrazy[data-astro-cid-zuxexoyc] { background: var(--night); color: var(--paper) }`,
+  );
+  const findings = checkScopedRootRules(pages, rules);
+  assert.deepEqual(ids(findings), ["R11"]);
+  assert.equal(findings[0].level, "error");
+  assert.ok(findings[0].detail.some((line) => /<body\.page-obrazy>/.test(line)));
+  assert.match(findings[0].hint ?? "", /:global\(/);
+});
+
+test("R11 accepts the documented fix — the `:global()` wrapper emits no cid", () => {
+  const { pages, rules } = rootFixture(
+    `<html lang="pl"><body class="page-obrazy"><main data-astro-cid-zuxexoyc></main></body></html>`,
+    `body.page-obrazy { background: var(--night); color: var(--paper) }
+     body.page-obrazy.image-open { overflow: hidden }`,
+  );
+  assert.deepEqual(ids(checkScopedRootRules(pages, rules)), []);
+});
+
+test("R11 catches the root named by tag, and an ancestor demand as well as a key one", () => {
+  const { pages, rules } = rootFixture(
+    `<html lang="pl"><body class="page-kolofon"><p class="kol-line" data-astro-cid-abc></p></body></html>`,
+    `html[data-astro-cid-abc] { scroll-behavior: smooth }
+     body[data-astro-cid-abc] .kol-line[data-astro-cid-abc] { color: red }`,
+  );
+  const findings = checkScopedRootRules(pages, rules);
+  assert.deepEqual(ids(findings), ["R11", "R11"]);
+});
+
+test("R11 leaves a scoped rule on a page object alone", () => {
+  const { pages, rules } = rootFixture(
+    `<html lang="pl"><body class="page-koncert-detail"><section class="kd-band" data-astro-cid-abc></section></body></html>`,
+    `.kd-band[data-astro-cid-abc] { background: var(--night) }
+     * { box-sizing: border-box }`,
+  );
+  assert.deepEqual(ids(checkScopedRootRules(pages, rules)), []);
+});
+
+test("R11 clears a scoped root rule that does reach its element", () => {
+  // The cid on `<body>` is absent from today's build, not impossible. A rule that reaches the
+  // element is no defect, and a check that decided by pattern would call this one anyway.
+  const { pages, rules } = rootFixture(
+    `<html lang="pl"><body class="page-obrazy" data-astro-cid-zuxexoyc></body></html>`,
+    `.page-obrazy[data-astro-cid-zuxexoyc] { background: var(--night) }`,
+  );
+  assert.deepEqual(ids(checkScopedRootRules(pages, rules)), []);
 });
 
 /* ── R1 · R2 · R7 · R8 · R10, the checks that read something other than a page ── */

@@ -707,3 +707,115 @@ export function checkRegisterShorthands(pages, index) {
 
   return groupFindings(raw);
 }
+
+/* ── R11 · a scoped rule reaching <html> or <body> ───────────────────────────── */
+
+/** Astro's scoping attribute, appended to EVERY compound of a non-`is:global` `<style>`. */
+const SCOPE_ATTR = /^data-astro-cid-/;
+
+/** @param {import("./collect.mjs").Compound} compound */
+const isScoped = (compound) => compound.attrs.some((attr) => SCOPE_ATTR.test(attr.name));
+
+/**
+ * The compound as its author wrote it: the scoping attribute removed, nothing else touched.
+ * @param {import("./collect.mjs").Compound} compound
+ */
+const asAuthored = (compound) => ({
+  ...compound,
+  attrs: compound.attrs.filter((attr) => !SCOPE_ATTR.test(attr.name)),
+});
+
+/** One compound wrapped as a whole selector, so `selectorMatches` can test it against one element.
+ *  @param {import("./collect.mjs").Compound} compound
+ *  @param {string} text */
+const asStep = (compound, text) => [{ combinator: "", compound, text }];
+
+/**
+ * Could this compound be addressing the document root? A tag of `html`/`body` or a `:root` says so
+ * outright; a bare class or id might, and only the emitted page decides. Universal and pseudo-only
+ * compounds are excluded: `*` covers the root the way it covers everything, which is not the same
+ * as being aimed at it.
+ * @param {import("./collect.mjs").Compound} compound
+ */
+function couldNameRoot(compound) {
+  if (compound.universal) return false;
+  if (compound.tag) return compound.tag === "html" || compound.tag === "body";
+  if (compound.pseudoClasses.some((pseudo) => pseudo.name === "root")) return true;
+  return compound.classes.length > 0 || compound.ids.length > 0;
+}
+
+/**
+ * `<html>` and `<body>` are rendered by BaseLayout, so they carry no other file's cid — and a
+ * page's scoped rule for its own ground therefore compiles to a selector that cannot match
+ * anything, ever. `.page-obrazy { background: …; color: var(--paper) }` was emitted as
+ * `.page-obrazy[data-astro-cid-zuxexoyc]`, and `/obrazy` stood on parchment with every line of its
+ * copy set in the colour of its own background for the whole life of the page. Three pages had it,
+ * and the `:global()` sibling two lines below the broken rule was right all along.
+ *
+ * It is this audit's own failure class from every side: `astro check` sees valid CSS, the build is
+ * green, the source reads as correct, and the register checks above examine the cascade they own
+ * rather than the ground under it. It was found by eye, months late.
+ *
+ * Decided against the emitted HTML rather than by pattern, because a cid on the root is not
+ * impossible — merely absent — and a rule that does reach its element is no defect.
+ * @param {{ page: string, elements: ElementRecord[] }[]} pages
+ * @param {CssRule[]} rules
+ * @returns {Finding[]}
+ */
+export function checkScopedRootRules(pages, rules) {
+  const rooted = pages.map(({ page, elements }) => ({
+    page,
+    elements,
+    roots: elements.flatMap((element, index) => (element.tag === "html" || element.tag === "body" ? [index] : [])),
+  }));
+
+  /** @type {{ key: string, page: string, finding: Finding }[]} */
+  const raw = [];
+
+  for (const rule of rules) {
+    for (const step of rule.compounds) {
+      if (!isScoped(step.compound) || !couldNameRoot(step.compound)) continue;
+
+      const emitted = asStep(step.compound, step.text);
+      const authored = asStep(asAuthored(step.compound), step.text);
+
+      /** @type {{ page: string, element: ElementRecord } | null} */
+      let intended = null;
+      let reachable = false;
+      for (const { page, elements, roots } of rooted) {
+        for (const index of roots) {
+          if (selectorMatches(elements, index, emitted)) {
+            reachable = true;
+            break;
+          }
+          if (!intended && selectorMatches(elements, index, authored)) intended = { page, element: elements[index] };
+        }
+        if (reachable) break;
+      }
+      // A compound that reaches no root even unscoped was naming a page object all along.
+      if (reachable || !intended) continue;
+
+      const cid = step.compound.attrs.find((attr) => SCOPE_ATTR.test(attr.name))?.name ?? "data-astro-cid-…";
+      const properties = [...rule.declarations.keys()];
+      raw.push({
+        key: `R11|${rule.selector}`,
+        page: intended.page,
+        finding: {
+          id: "R11",
+          level: "error",
+          title: "A scoped rule reaches the document root, where its scope attribute never exists — the rule is dead",
+          where: ruleLocation(rule),
+          detail: [
+            `emitted:  ${rule.selector}`,
+            `element:  ${describeElement(intended.element)} — rendered by BaseLayout, so it carries no [${cid}]`,
+            `${properties.length} declaration${properties.length === 1 ? "" : "s"} never applied: ${properties.slice(0, 4).join(", ")}${properties.length > 4 ? ", …" : ""}`,
+          ],
+          hint: "Wrap it — `:global(body.page-…) { … }`. Any rule reaching <body> or <html> from a scoped <style> needs it.",
+        },
+      });
+      break;
+    }
+  }
+
+  return groupFindings(raw);
+}

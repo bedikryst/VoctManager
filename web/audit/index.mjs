@@ -34,6 +34,7 @@ import {
   checkPressRestWeight,
   checkPropertyRegistrations,
   checkRegisterShorthands,
+  checkScopedRootRules,
   checkSettleCeiling,
   checkSwallowedRules,
   checkTransitionCollisions,
@@ -182,6 +183,7 @@ export async function runRegisterAudit(distDir) {
     ...checkSettleCeiling(tokens.durations, veilDelays, ceiling),
     ...checkUngatedHiddenState(rules),
     ...checkRegisterShorthands(pages, index),
+    ...checkScopedRootRules(pages, rules),
     ...checkVeilDelta(measurements),
   ];
 

@@ -280,11 +280,11 @@ const plDate = (iso: string): string =>
               so leaving it at full opacity had it standing complete above two lines still arriving
               — the band assembling backwards. Everything below it steps once. */}
           <span class="kd-prologue-mark reveal" aria-hidden="true"></span>
-          <span class="kd-section-label micro reveal" data-d="1">
+          <h2 class="kd-section-label micro reveal" data-d="1">
             <span class="lat">Ante concentum</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Próg wieczoru</span>
-          </span>
+          </h2>
           <p class="kd-prologue-text reveal" data-d="2">{c.prologue}</p>
         </div>
       </section>
@@ -298,11 +298,11 @@ const plDate = (iso: string): string =>
     {c.verbum && (
       <section class="kd-band kd-verbum" aria-label="Słowo wprowadzające">
         <div class="kd-wrap kd-narrow">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Verbum</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Słowo wprowadzające</span>
-          </span>
+          </h2>
           <blockquote class="kd-verbum-quote reveal" data-d="1">
             <p>{c.verbum.quote}</p>
           </blockquote>
@@ -335,11 +335,11 @@ const plDate = (iso: string): string =>
     {hasTour && (
       <section class="kd-band kd-tour" aria-label="Wykonania">
         <div class="kd-wrap">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Itinerarium</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Wykonania</span>
-          </span>
+          </h2>
           {/* Lead without ink: the list has no copy of its own, only the rule the rows hang from.
               It is drawn while the first row is still arriving, which is the order a scribe works
               in and the reason this register exists. */}
@@ -360,11 +360,11 @@ const plDate = (iso: string): string =>
     {(c.reflection || c.reflectionNote) && (
       <section class="kd-band kd-reflection" aria-label="Refleksja">
         <div class="kd-wrap kd-narrow">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Reflectio</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Refleksja</span>
-          </span>
+          </h2>
           {c.reflection && <p class="kd-reflection-text reveal" data-d="1">{c.reflection}</p>}
           {c.reflectionAttribution && (
             <p class="kd-reflection-attrib micro reveal" data-d="2">{c.reflectionAttribution}</p>
@@ -383,13 +383,18 @@ const plDate = (iso: string): string =>
       <section class="kd-band kd-band-soft kd-program-band tone-light" id="program" aria-label="Program koncertu">
         <div class="kd-wrap">
           <header class="kd-section-head">
-            <span class="kd-section-label micro reveal">
+            {/* The section's heading is this label, on every section and unconditionally. The
+                page used to emit exactly ONE <h2> — the programme lede — which is optional in
+                the schema, so the first concert shipped without one would have gone h1 → h3 on
+                8000px of programme book. Heading navigation is how a screen-reader reader skims
+                a page this long; it must not hang off a YAML field. */}
+            <h2 class="kd-section-label micro reveal">
               <span class="lat">Programma</span>
               <span class="kd-dot" aria-hidden="true">·</span>
               <span>Program koncertu</span>
-            </span>
+            </h2>
             {c.programLede && (
-              <h2 class="kd-section-title reveal ink-press" data-d="1">{c.programLede}</h2>
+              <p class="kd-section-title reveal ink-press" data-d="1">{c.programLede}</p>
             )}
 
             {(c.credits.length > 0 || realizacjaCredit) && (
@@ -558,11 +563,11 @@ const plDate = (iso: string): string =>
     {c.roster && c.roster.groups.length > 0 && (
       <section class="kd-band kd-band-soft kd-voces tone-light" aria-label="Głosy wieczoru">
         <div class="kd-wrap">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Voces</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Głosy wieczoru</span>
-          </span>
+          </h2>
           {/* The cadence steps over FOUR, not three, and the difference is the whole point of it
               being here. This grid is `auto-fit minmax(180px, 1fr)`, which lays five columns
               across `.kd-wrap` — and cells in one grid row share a top edge exactly, so they
@@ -602,11 +607,11 @@ const plDate = (iso: string): string =>
     {c.video && filmVideoSrc && (
       <section class="kd-band kd-film" aria-label="Zapis wieczoru">
         <div class="kd-wrap">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Imago viva</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Zapis wieczoru</span>
-          </span>
+          </h2>
           {/* No register: the player already carries a veil of its own over the poster frame, and
               a light register on top of it would be two veils on one node — the same call the
               landing makes for VoxMoment. The section label above it is what inks. */}
@@ -630,11 +635,11 @@ const plDate = (iso: string): string =>
     {gallery.length > 0 && (
       <section class="kd-band kd-gallery" aria-label="Obrazy wieczoru">
         <div class="kd-wrap">
-          <span class="kd-section-label micro reveal">
+          <h2 class="kd-section-label micro reveal">
             <span class="lat">Imagines</span>
             <span class="kd-dot" aria-hidden="true">·</span>
             <span>Obrazy wieczoru</span>
-          </span>
+          </h2>
           {/* Photographs are LIT, not written: the veil belongs to the image and the run's head
               keeps the ink. `data-d` therefore sits on the figure, not on either register — it is
               the row's cadence, and that is what keeps a grid row from lighting in unison. */}
@@ -854,16 +859,33 @@ const plDate = (iso: string): string =>
   .kd-narrow { max-width: 760px; }
 
   .kd-section-head { margin: 0 0 clamp(44px, 6vw, 80px); }
-  .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
+  /* `font-weight` is stated because this label is an <h2>: the heading's UA weight is `bold`,
+     and Cinzel is a 400–900 variable face, so leaving it unset renders the section labels at
+     700 while every other capitalis micro on the page sits at 400. 400 is what a <span> here
+     used to resolve to (body's 300, clamped up by the face) — the value is the old rendering
+     written down, not a new one. Same trap, same fix, on `.kd-movement-pl` inside its <h3>. */
+  .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
   /* Gold that has to be READ, on the two parchment bands. Full candle is 2.10 : 1 there — it
      fails AA outright at every size these labels are set in — and the tint the station carries
      does not change that: the accent is normalized to the candle's own luminance, so all five
      stations land within 2.06–2.13. `--candle-ink` is the same hue at a luminance that clears
      it (4.55–4.80 measured across the five). The split is by ROLE and not by band, so what
      stays on `--candle` below stays there on purpose: hairlines, the rubric lozenge and its
-     wash, and display gold, none of which the contrast minimum applies to. */
-  .kd-band-soft .kd-section-label { color: var(--candle-ink); }
-  .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; }
+     wash, and display gold, none of which the contrast minimum applies to.
+
+     `--lat-ink` is the second half of that same declaration and must not be separated from it.
+     The label's Latin tier (`.lat`, "Programma" / "Voces") is painted by base.css's two-tier
+     rubric rule, which matches the CHILD — so setting a colour here reaches the gloss and
+     leaves the Latin word behind at full candle, 2.1 : 1, the one string on this band nobody
+     could read. On the dark bands both tiers have always been candle together; this is what
+     makes parchment behave the same way. */
+  .kd-band-soft .kd-section-label { color: var(--candle-ink); --lat-ink: var(--candle-ink); }
+  /* The programme's lede, not its heading — it is `programLede` in the schema and reads as one
+     ("Dziesięć spojrzeń — i bis"). It scopes nothing the section's own <h2> does not already
+     scope, so a heading level here would buy an outline step and hold no content. `text-wrap`
+     is restated because a <p> would otherwise take `pretty` from base.css where this display
+     line wants a heading's even rag. */
+  .kd-section-title { font-family: var(--serif); font-weight: 300; line-height: 1.04; font-size: clamp(34px, 5.2vw, 68px); letter-spacing: -.01em; color: var(--ink); margin: 0; max-width: 20ch; text-wrap: balance; }
 
   /* ── Verbum: the spoken threshold word — dark register, guillemet quote up top +
      a zero-JS reveal for the full transcript (reuses .kd-text-cue/.kd-text-icon). ──────── */
@@ -926,7 +948,11 @@ const plDate = (iso: string): string =>
   .kd-movement + .kd-program-item { border-top: 0; padding-top: 0; }
   .kd-movement-head { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
   .kd-movement-lat { font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(27px, 3.1vw, 42px); line-height: 1; letter-spacing: -.01em; color: var(--candle); }
-  .kd-movement-pl { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+  /* Weight stated for the same reason `.kd-section-label` states it: this span lives inside the
+     act's <h3>, so with nothing declared it inherits the heading's UA `bold` and renders at
+     Cinzel 700 — the only bold micro label on the page, and an accident rather than a decision.
+     Its Latin sibling escaped it only by setting a weight of its own. */
+  .kd-movement-pl { font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
   .kd-movement-line { margin: 14px 0 0; max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.5; color: var(--ink-soft, #34302b); }
 
   /* Interlude — a full-bleed dark scripture beat at a dramatic hinge. Breaks out of the
@@ -1036,7 +1062,12 @@ const plDate = (iso: string): string =>
   .kd-quote p::after { content: " »"; color: var(--candle); }
   .kd-cite { display: flex; flex-direction: column; gap: 6px; margin-top: clamp(28px, 4vw, 44px); padding-top: 18px; border-top: 1px solid var(--line, rgba(22,21,20,.16)); font-style: normal; }
   .kd-cite-name { font-family: var(--serif); font-style: italic; font-size: clamp(16px, 1.5vw, 20px); color: var(--ink); }
-  .kd-cite-about { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+  /* `--ink-soft`, not the `--ink-muted` every other caption on this page takes: this band is the
+     page's only `--paper-soft` ground, and muted measures 4.53 : 1 on `--paper` but 4.11 on
+     paper-soft — under AA at 10.5px. The step down to the citation's name (`--ink`) survives:
+     10.5 : 1 against 15 : 1. Any other small `--ink-muted` string moved onto this band needs
+     the same treatment. */
+  .kd-cite-about { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink-soft, #34302b); }
 
   /* ── Voces: the evening's cast, grouped by voice part ──────────────────── */
   .kd-voces { padding-top: clamp(72px, 9vw, 120px); padding-bottom: clamp(72px, 9vw, 120px); }

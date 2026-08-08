@@ -17,18 +17,23 @@
 @import "./landing/08-vault.css";
 
 /* Landing-only tokens the vault partial references, re-declared for pages that don't load the
-   landing foundation layer. Only --dark is strictly required; the rest are kept verbatim so this
-   shim stays a faithful superset of the landing environment. */
+   landing foundation layer. Only --dark is strictly required; --micro is read by `.micro` below.
+   The rest are carried so this shim stays a faithful superset of the landing environment.
+
+   --h1/--h2/--h3/--body used to be carried here too and are NOT, deliberately: nothing outside
+   `styles/landing/` reads them, so on all seven subpages that import this file they were dead —
+   and they were not the landing's values either (--h1 was clamp(64px, 12vw, 178px) against the
+   landing's clamp(56px, 10vw, 138px), which 07-responsive.css narrows again to
+   clamp(58px, 19vw, 92px) at ≤640). A dead token that disagrees with the one it claims to mirror
+   is worse than no token: it reads as a scale the subpages are already on. THEY ARE NOT. Subpage
+   type is authored per page, and the landing's display scale is sized for a one-screen hero, not
+   for an 8000px programme book — see docs/web-concert-detail-remediation.md §1. */
 :root {
   --candle-rgb: 198 164 91;
   --candle-blue-rgb: 27 45 96;
   --dark: #080807;
   --veil: rgba(244, 241, 233, 0.74);
   --micro: 11px;
-  --h1: clamp(64px, 12vw, 178px);
-  --h2: clamp(42px, 6.6vw, 104px);
-  --h3: clamp(28px, 3vw, 48px);
-  --body: 16px;
 }
 
 .micro {

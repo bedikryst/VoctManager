@@ -249,7 +249,16 @@ button { font: inherit; }
    The `:has()` scoping is the load-bearing part: a rubric WITHOUT a Latin tier keeps its
    own capitals. Dropping every eyebrow to lowercase would erase the rubric layer instead
    of structuring it. Page rules may no longer set `.lat` — an equal-specificity rule in a
-   page's <style> lands after this file and would silently win. */
+   page's <style> lands after this file and would silently win.
+
+   `--lat-ink` is the one exception, and it exists because `.lat` is a CHILD: a rubric whose
+   own colour a page changes for its ground does NOT carry that colour into the Latin tier,
+   which keeps matching this rule and stays full candle. On the two grounds that meet — night
+   and parchment — that is the difference between the tiers agreeing (8 : 1, dark) and the
+   Latin word alone sitting at 2.1 : 1, illegible, while its gloss reads fine. So a rubric on
+   a light ground states the ink ONCE, beside the colour it already sets for the gloss, and
+   both tiers move together; the two-tier shape survives on face and case, exactly as it does
+   on dark, where both tiers have always been the same colour. Default unset ⇒ candle. */
 :is(
   .eyebrow, .micro, .press-eyebrow, .letter-mark, .vox-eyebrow,
   .kd-hero-eyebrow, .kd-section-label, .kd-vianav-label,
@@ -269,7 +278,7 @@ button { font: inherit; }
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--candle);
+  color: var(--lat-ink, var(--candle));
 }
 
 .line {
