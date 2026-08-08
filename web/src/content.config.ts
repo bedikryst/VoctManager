@@ -189,18 +189,50 @@ const concerts = defineCollection({
         Each `img` is a bare photo() base name; missing files are skipped at build
         (photoOptional), so a slot can be declared before the image is uploaded.
 
+        THE UNIT IS THE RUN, NOT THE FRAME. Consecutive entries sharing (moment, venue, date)
+        form one run — the rehearsal, or a single city of a tour — and it is the RUN that carries
+        an inscription on both surfaces (lib/galleryRuns). Everything a whole run shares is
+        therefore stated per frame and read once: the place is not a sentence repeated under
+        fifteen photographs, which is what these captions were before 2026-08-08. Frames are
+        stored in the order they were taken, because the run boundary is derived from adjacency.
+
         `credit` is the photographer, and it is a FIELD rather than a substring of `caption`
-        because two surfaces need it apart from the place: the gallery foot gathers the evening's
-        photographers into one colophon, and the lightbox sets the name in its own voice. A
-        caption states where and when; it never carries an attribution. Leave it unset when the
-        author was not recorded — the colophon then says so rather than crediting silently. */
+        for the same reason: the gallery foot gathers the evening's photographers into one
+        colophon and the lightbox sets the name in its own voice. Leave it unset when the author
+        was not recorded — the colophon then says so rather than crediting silently. */
     gallery: z
       .array(
         z.object({
           img: z.string(),
           alt: z.string().optional(),
+          /** A note about THIS photograph and no other — the rare frame whose own subject needs
+              stating. It is NOT the place: a caption that repeats across a run belongs in
+              `venue`/`date`, where it is read once. Empty across the archive today, and that is
+              the correct resting state rather than a gap to fill. */
           caption: z.string().optional(),
           credit: z.string().optional(),
+          /** Which run this frame belongs to. `rehearsal` is set only where true — a rehearsal
+              held in the concert's own church would otherwise merge into the evening itself,
+              which venue alone cannot prevent. */
+          moment: z.enum(["rehearsal", "concert"]).default("concert"),
+          /** Display venue for this frame, set only where the evening had more than one — on a
+              tour, which city a photograph comes from is a fact about the PHOTOGRAPH and cannot
+              be derived from `dates`. Falls back to the concert's own `venue`. Deliberately
+              shorter than `dates[].venue`, which carries the legal name for JSON-LD; this one is
+              read in a run's inscription at 26px. */
+          venue: z.string().optional(),
+          /** ISO date (YYYY-MM-DD) of the evening this frame documents — again only where the
+              concert has several. Falls back to the concert's `date`; a run whose date resolves
+              to nothing prints its place alone rather than inventing one. */
+          date: z.string().optional(),
+          /** Opens its run as the PLATE on /obrazy — one photograph at up to 904px against the
+              rest of the run at a third of that. The default is the run's first frame, which is
+              right for nine of the ten runs because a run opens where the evening did. Set this
+              only where the default is measurably wrong, and measure before setting it: the one
+              case is `kd-hymn-0`, which led its run at mean luma 9 and p90 24 — a black
+              rectangle standing 698px tall. Same lever, for the same reason, as `Path.frame` on
+              the landing band (docs/web-imagines-spec.md §8). */
+          plate: z.boolean().default(false),
         }),
       )
       .default([]),

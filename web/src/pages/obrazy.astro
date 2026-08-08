@@ -2,16 +2,24 @@
 /**
  * @file obrazy.astro
  * @description The collective image archive (/obrazy) — every documentary photograph the cycle
- *  has, held in one document. It is a SEQUENCE OF EVENINGS, never a mosaic: each evening keeps
- *  its roman numeral, its title and its date, and its own frames are packed by the same
- *  `layoutShots` the concert pages use, so the archive reads as five galleries bound together in
- *  Via order rather than as a thumbnail wall. That distinction is the page's whole design brief —
- *  these are low-contrast chiaroscuro frames from a dark nave, and a grid of small tiles renders
- *  them as black rectangles before it fails them stylistically.
+ *  has, held in one document. It is a SEQUENCE OF EVENINGS, never a mosaic, and inside an evening
+ *  it is a sequence of RUNS: the rehearsal, then the night, and for the one touring programme one
+ *  run per city (lib/galleryRuns). The run is the unit of both the layout and the text.
  *
- *  Dark throughout, on `--night`, as the concert galleries are: parchment kills these frames.
- *  Every shot opens the shared lightbox (islands/landing/ImageLightbox), and the photographers
- *  are gathered into one colophon at the foot instead of being repeated under each frame.
+ *  EVERY RUN IS A PLATE AND A SHEET. The run opens with one photograph large — up to 904px, its
+ *  own aspect, with the place and date printed once in the margin beside it — and the rest of the
+ *  run hangs under it at the packing the concert pages use. That alternation is the whole design
+ *  brief. The page shipped in 2026-08 as five identical sections of uniformly packed frames, and
+ *  because forty of the forty-three photographs are 3:2, `layoutShots` resolved every one of them
+ *  to three-up: Wcielenie rendered 3+3+3 at 364px and 9 Kart rendered 3+3+3+3+3 at 363px. That is
+ *  the thumbnail grid docs/web-imagines-spec.md §2 rejects, arrived at from the other direction —
+ *  these are low-contrast chiaroscuro frames from a dark nave, and a grid of small tiles renders
+ *  them as black rectangles before it fails them stylistically. The plate is what gives the eye
+ *  something to stand on; the sheet is what keeps the page from being forty-three heroes.
+ *
+ *  Dark throughout, on `--night`, as the concert galleries are: parchment kills these frames. The
+ *  ground therefore never turns, and the thresholds are ruled instead — each evening opens on a
+ *  full-bleed hairline in its own candle, drawn left→right by the LEAD register.
  *
  *  All forty-three frames are ONE set in the lightbox (`data-image-group="obrazy"`), because the
  *  page is one sequence and stopping the arrows at each evening's last frame would contradict the
@@ -19,7 +27,7 @@
  *  evening is never lost even though the head that states it has scrolled away.
  *
  *  Not in the main nav and not in TRANSLATED_ROUTES — see docs/web-imagines-spec.md §7 for both
- *  decisions and for the entrances it does get.
+ *  decisions and for the entrances it does get; §16 is the rebuild this file now describes.
  * @architecture Astro islands 2026
  * @module pages/obrazy
  */
@@ -31,6 +39,7 @@ import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { photoOptional } from "../lib/photos";
 import { layoutShots } from "../lib/galleryLayout";
+import { galleryRuns } from "../lib/galleryRuns";
 import { framedShot } from "../lib/galleryFrame";
 import { candleFrom } from "../lib/candle";
 import { SITE } from "../i18n/config";
@@ -39,61 +48,131 @@ import { ImageLightbox } from "../islands/landing/ImageLightbox";
 import "../styles/vault.css";
 import "../styles/image-lightbox.css";
 
+/** The plate's measure: `.im-wrap` (1180) less the inscription column and its gutter, so a plate
+ *  and its margin together rule to the same edges as the sheet below them. */
+const PLATE_W = 904;
+/** Ceiling on a plate's height. A 3:2 frame reaches the full measure well under it; a 9:16
+ *  portrait is stopped here at ~392px wide, which is what keeps Hymn's plate from becoming a
+ *  tower — the same argument `layoutShots` makes with `maxHeight`. */
+const PLATE_H = 700;
+
 // Via order — the same order the register and /koncerty walk, so an evening sits in the same
 // place on every surface. An entry with no photographs simply has no series here; the roman
 // numerals stay the concert's own, so a gap in the numbering would be honest rather than a slip.
 const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
 
-const series = await Promise.all(
-  concerts
-    .filter((entry) => entry.data.gallery.length > 0)
-    .map(async (entry) => {
-      const c = entry.data;
-      const gallery: {
-        img: ImageMetadata;
-        alt: string;
-        caption?: string;
-        credit?: string;
-        ar: number;
-      }[] = [];
-      for (const g of c.gallery) {
-        const img = photoOptional(g.img);
-        if (img)
-          gallery.push({
-            img,
-            alt: g.alt ?? "",
-            caption: g.caption,
-            credit: g.credit,
-            ar: Number((img.width / img.height).toFixed(4)),
-          });
-      }
-      // Same packing and the same measure as the concert page: `.im-wrap` is 1180 wide and the
-      // gutter clamp tops out at 40, which are `layoutShots`'s own defaults. Passing nothing is
-      // therefore the statement that this gallery is hung exactly like that one.
-      const shots = await Promise.all(
-        layoutShots(gallery).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
-      );
-      return {
-        id: entry.id,
-        roman: c.roman,
-        latin: c.latin,
-        title: c.title,
-        viaDate: c.viaDate,
-        hasPage: c.hasPage,
-        candle: candleFrom(c.accent),
-        shots,
-        credits: gallery.map((g) => g.credit),
-      };
-    }),
+const withGallery = concerts.filter((entry) => entry.data.gallery.length > 0);
+
+const evenings = await Promise.all(
+  withGallery.map(async (entry, index) => {
+    const c = entry.data;
+    const resolved: {
+      img: ImageMetadata;
+      alt: string;
+      caption?: string | undefined;
+      credit?: string | undefined;
+      moment: "rehearsal" | "concert";
+      venue?: string | undefined;
+      date?: string | undefined;
+      plate: boolean;
+      ar: number;
+    }[] = [];
+    for (const g of c.gallery) {
+      const img = photoOptional(g.img);
+      if (img)
+        resolved.push({
+          ...g,
+          img,
+          alt: g.alt ?? "",
+          ar: Number((img.width / img.height).toFixed(4)),
+        });
+    }
+
+    const runs = await Promise.all(
+      // The concert's own venue and date are the fallback, so a single-venue evening states
+      // neither per frame. `galleryRuns` refuses a slash-joined venue list for the two touring
+      // entries — every frame of those carries its own.
+      galleryRuns(resolved, { venue: c.venue, date: c.date }).map(async (run) => {
+        // The plate is the run's FIRST frame — the frames are stored in the order they were
+        // taken, so a run opens where the evening did — unless one of them claims the slot with
+        // `plate: true`. Exactly one gallery does, and it earned it by measurement rather than
+        // by taste: see the note above Hymn's entries in concerts.yaml.
+        const at = Math.max(
+          0,
+          run.shots.findIndex((s) => s.plate),
+        );
+        const lead = run.shots[at]!;
+        const rest = run.shots.filter((_, i) => i !== at);
+        const plate = { ...lead, frame: await framedShot(lead.img) };
+        // Same packing and the same measure as the concert page: `.im-wrap` is 1180 wide and the
+        // gutter clamp tops out at 40, which are `layoutShots`'s own defaults.
+        const sheet = await Promise.all(
+          layoutShots(rest).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
+        );
+        return {
+          ...run,
+          plate,
+          plateW: Math.round(Math.min(PLATE_W, PLATE_H * plate.ar)),
+          sheet,
+        };
+      }),
+    );
+
+    return {
+      id: entry.id,
+      roman: c.roman,
+      latin: c.latin,
+      title: c.title,
+      viaDate: c.viaDate,
+      hasPage: c.hasPage,
+      candle: candleFrom(c.accent),
+      // The rail's fill, as on /koncerty: how far down the Via this evening stands.
+      viaStep: `${Math.round(((index + 1) / withGallery.length) * 100)}%`,
+      count: resolved.length,
+      runs,
+      shots: resolved,
+    };
+  }),
 );
+
+const allShots = evenings.flatMap((e) => e.shots);
 
 // One colophon for the whole archive: each hand named once, in the order the evenings run.
 // Incomplete attribution is STATED rather than passed over. A list of three photographers with
 // no qualification is a claim that the three of them took all of it, and most of this archive's
 // frames have no recorded author.
-const allCredits = series.flatMap((s) => s.credits);
-const photographers = [...new Set(allCredits.filter(Boolean))] as string[];
-const hasUncredited = allCredits.some((c) => !c);
+const photographers = [...new Set(allShots.map((s) => s.credit).filter(Boolean))] as string[];
+const hasUncredited = allShots.some((s) => !s.credit);
+
+// The scale of the thing, counted rather than typed — the fact that makes an archive an archive,
+// and the one the page never used to state. Places are the resolved run titles, so a rehearsal
+// (whose room was never recorded) is correctly not one of them.
+const places = new Set(
+  evenings.flatMap((e) => e.runs.filter((r) => r.moment === "concert").map((r) => r.title)),
+);
+const years = allShots
+  .map((s) => s.date)
+  .filter((d): d is string => Boolean(d))
+  .concat(withGallery.map((e) => e.data.date).filter((d): d is string => Boolean(d)))
+  .map((d) => d.slice(0, 4))
+  .sort();
+const span = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : "";
+
+/** Polish counts one, a few, and many differently, and these three numbers are computed — so a
+ *  photograph added to the YAML must not be able to leave "43 fotografia" on the page. */
+const plural = (n: number, one: string, few: string, many: string): string => {
+  const t = n % 10;
+  const h = n % 100;
+  if (n === 1) return one;
+  if (t >= 2 && t <= 4 && (h < 12 || h > 14)) return few;
+  return many;
+};
+const scale = [
+  `${allShots.length} ${plural(allShots.length, "fotografia", "fotografie", "fotografii")}`,
+  `${evenings.length} ${plural(evenings.length, "wieczór", "wieczory", "wieczorów")}`,
+  `${places.size} ${plural(places.size, "miejsce", "miejsca", "miejsc")}`,
+  span,
+].filter(Boolean);
 
 const title = "Obrazy — fotografie Koncertów Duchowych · VoctEnsemble";
 const description =
@@ -101,7 +180,7 @@ const description =
 
 // The share image is a frame from the archive itself, not a hero from elsewhere: the page is the
 // photographs, so anything else would misrepresent it in a preview card.
-const ogSource = series[0]?.shots[0]?.img;
+const ogSource = evenings[0]?.runs[0]?.plate.img;
 const ogImage = ogSource
   ? (await getImage({ src: ogSource, width: 1200, format: "webp" })).src
   : "/logo_gold.png";
@@ -140,6 +219,16 @@ const jsonLd = {
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   <SiteChrome current="/obrazy" tone="dark" />
 
+  {/* Where the reader stands, in the Via's own terms. This is the longest page on the site by a
+      distance — 43 photographs is over 13 000px of phone scroll — and it was the only long one
+      with no position at all. Same three parts and the same driver contract as /koncerty's
+      via-rail; it hides below 980 where there is no margin to hang it in. */}
+  <aside class="im-rail" aria-hidden="true">
+    <span class="im-rail-num">I</span>
+    <span class="im-rail-line"><span class="im-rail-fill"></span></span>
+    <span class="im-rail-date"></span>
+  </aside>
+
   <main id="tresc">
     <header class="im-head">
       <div class="im-wrap">
@@ -150,74 +239,165 @@ const jsonLd = {
         </span>
         <h1 class="im-title reveal ink-press" data-d="1">Obrazy</h1>
         <p class="im-lede reveal" data-d="2">
-          Fotografie z pięciu wieczorów cyklu, w kolejności, w jakiej zostały wykonane.
+          To jest wszystko, co zostało z tych wieczorów poza dźwiękiem. Fotografie idą
+          w kolejności, w jakiej powstały — od pierwszej próby do ostatniego koncertu.
+        </p>
+        {/* Counted at build, never typed: the numbers are the archive's only self-description
+            and a page that states them wrongly is worse than one that states nothing. */}
+        <p class="im-scale reveal reveal-rule">
+          {
+            scale.map((part, i) => (
+              <>
+                {i > 0 && <span class="im-dot" aria-hidden="true">·</span>}
+                <span>{part}</span>
+              </>
+            ))
+          }
         </p>
       </div>
     </header>
 
     {
-      series.map((s) => (
-        <section class="im-series" aria-label={s.title} style={`--candle: ${s.candle}`}>
+      evenings.map((e) => (
+        <section
+          class="im-evening"
+          aria-label={e.title}
+          style={`--candle: ${e.candle}`}
+          data-via-num={e.roman}
+          data-via-date={e.viaDate}
+          data-via-step={e.viaStep}
+        >
+          {/* The threshold. The ground cannot turn here — a parchment band would put a lit page
+              between two dark ones and break the reading of the archive as one room — so the
+              evening is announced by a full-bleed hairline in its OWN candle, ruled left→right
+              as the section arrives. The border is real for a no-JS or reduced-motion reader and
+              is handed to the pseudo-rule only under the motion gate, per the LEAD contract. */}
           <div class="im-wrap">
-            {/* The series head carries the station's own candle, so an evening is recognisable
-                here by the same light it burns on its page. Numeral, name, date — the register's
-                three facts and nothing added. */}
-            <header class="im-series-head">
-              <span class="im-series-roman reveal">{s.roman}</span>
-              <h2 class="im-series-title reveal ink-press" data-d="1">
-                {s.hasPage ? <a href={`/koncerty/${s.id}`}>{s.title}</a> : s.title}
+            <header class="im-evening-head">
+              <span class="im-evening-roman reveal">{e.roman}</span>
+              <h2 class="im-evening-title reveal ink-press" data-d="1">
+                {e.hasPage ? <a href={`/koncerty/${e.id}`}>{e.title}</a> : e.title}
               </h2>
-              <span class="im-series-meta micro reveal" data-d="2">
-                <span class="lat">{s.latin}</span>
+              <span class="im-evening-meta micro reveal" data-d="2">
+                <span class="lat">{e.latin}</span>
                 <span class="im-dot" aria-hidden="true">·</span>
-                <span>{s.viaDate}</span>
+                <span>{e.viaDate}</span>
+                <span class="im-dot" aria-hidden="true">·</span>
+                <span>{e.count} {e.count === 1 ? "fotografia" : "fot."}</span>
               </span>
             </header>
 
-            {/* Photographs are LIT, not written: the veil belongs to the image and the caption
-                keeps the ink. `data-d` sits on the figure so both children inherit one cadence —
-                a row that crosses the trigger together would otherwise light in unison. */}
-            <div class="im-line">
-              {s.shots.map((g, i) => (
-                <figure
-                  class="im-shot"
-                  data-d={String((i % 3) + 1)}
-                  style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
-                >
-                  {/* One group for the WHOLE document, not one per evening: the archive is a
-                      single sequence in Via order, and the reader who opens the first frame of
-                      Wcielenie and keeps pressing → should arrive at Aeternam the way they would
-                      by scrolling. The exit under the frame is what keeps the evenings named. */}
-                  <button
-                    type="button"
-                    class="im-shot-media shot-open"
-                    data-image-open
-                    data-image-group="obrazy"
-                    data-image-src={g.frame.src}
-                    data-image-srcset={g.frame.srcset}
-                    data-image-sizes={g.frame.sizes}
-                    data-image-alt={g.alt}
-                    data-image-caption={g.caption}
-                    data-image-credit={g.credit}
-                    data-image-w={String(g.frame.width)}
-                    data-image-h={String(g.frame.height)}
-                    data-image-href={s.hasPage ? `/koncerty/${s.id}` : undefined}
-                    data-image-href-label={s.hasPage ? s.title : undefined}
-                  >
-                    <Image
-                      src={g.img}
-                      widths={[560, 840, 1200]}
-                      sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
-                      alt={g.alt}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    <span class="reveal-light" aria-hidden="true"></span>
-                  </button>
-                  {g.caption && <figcaption class="micro reveal">{g.caption}</figcaption>}
-                </figure>
-              ))}
-            </div>
+            {/* A div, deliberately: a labelled <section> is a landmark, ten of them would bury
+                the page's real ones, and two evenings both open on a run called "Próba". The
+                inscription names the run in the document where a reader of any kind meets it. */}
+            {e.runs.map((run) => (
+              <div class="im-run">
+                {/* THE PLATE. One photograph at the run's own scale, and beside it the only place
+                    this run's place and date are printed. `--plate-w` is computed rather than
+                    left to `object-fit`, so a portrait plate ends where the photograph ends and
+                    the inscription stays against it instead of drifting into empty measure. */}
+                <div class="im-plate" style={`--plate-w: ${run.plateW}px`}>
+                  <figure class="im-shot im-shot--plate">
+                    <button
+                      type="button"
+                      class="im-shot-media shot-open"
+                      data-image-open
+                      data-image-group="obrazy"
+                      data-image-src={run.plate.frame.src}
+                      data-image-srcset={run.plate.frame.srcset}
+                      data-image-sizes={run.plate.frame.sizes}
+                      data-image-alt={run.plate.alt}
+                      data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
+                      data-image-credit={run.plate.credit}
+                      data-image-w={String(run.plate.frame.width)}
+                      data-image-h={String(run.plate.frame.height)}
+                      data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
+                      data-image-href-label={e.hasPage ? e.title : undefined}
+                    >
+                      {/* The top candidate is 1920 rather than a step fitted to the plate,
+                          because 1920 is the exact transform `framedShot` already asks for — so
+                          the plate's 2× rendition and the lightbox's largest are ONE emitted
+                          file. Same dedupe argument galleryFrame.ts makes about its 1200. */}
+                      <Image
+                        src={run.plate.img}
+                        widths={[560, 904, 1920]}
+                        sizes={`(max-width: 860px) 92vw, ${run.plateW}px`}
+                        alt={run.plate.alt}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <span class="reveal-light" aria-hidden="true" />
+                    </button>
+                  </figure>
+
+                  {/* Read once for the whole run. The place is set in the serif because it is a
+                      place — the same argument the colophon makes for setting names in it — and
+                      everything that is metadata about the place keeps the mono voice under it. */}
+                  <div class="im-inscription reveal-rule">
+                    <span class="im-inscription-place reveal">{run.title}</span>
+                    {run.date && (
+                      <span class="im-inscription-date micro reveal" data-d="1">
+                        {run.date}
+                      </span>
+                    )}
+                    {run.credits.length > 0 && (
+                      <span class="im-inscription-credit micro reveal" data-d="2">
+                        {`fot. ${run.credits.join(" · ")}`}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* THE SHEET. What the plate opened, at the packing both galleries share.
+                    Photographs are LIT, not written: the veil belongs to the image. `data-d` sits
+                    on the figure so the veil inherits the row's cadence — a row that crosses the
+                    trigger together would otherwise light in unison. No captions: everything they
+                    used to carry is in the inscription above, said once. */}
+                {run.sheet.length > 0 && (
+                  <div class="im-sheet">
+                    {run.sheet.map((g, i) => (
+                      <figure
+                        class="im-shot"
+                        data-d={String((i % 3) + 1)}
+                        style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
+                      >
+                        {/* One group for the WHOLE document, not one per run or per evening: the
+                            archive is a single sequence in Via order, and the reader who opens
+                            the first frame of Wcielenie and keeps pressing → should arrive at
+                            Aeternam the way they would by scrolling. The exit under the frame is
+                            what keeps the evenings named. */}
+                        <button
+                          type="button"
+                          class="im-shot-media shot-open"
+                          data-image-open
+                          data-image-group="obrazy"
+                          data-image-src={g.frame.src}
+                          data-image-srcset={g.frame.srcset}
+                          data-image-sizes={g.frame.sizes}
+                          data-image-alt={g.alt}
+                          data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
+                          data-image-credit={g.credit}
+                          data-image-w={String(g.frame.width)}
+                          data-image-h={String(g.frame.height)}
+                          data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
+                          data-image-href-label={e.hasPage ? e.title : undefined}
+                        >
+                          <Image
+                            src={g.img}
+                            widths={[560, 840, 1200]}
+                            sizes={`(max-width: 720px) 92vw, ${g.wMax}px`}
+                            alt={g.alt}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          <span class="reveal-light" aria-hidden="true" />
+                        </button>
+                      </figure>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </section>
       ))
@@ -260,12 +440,62 @@ const jsonLd = {
     import "../scripts/vault-triggers.ts";
     import "../scripts/image-triggers.ts";
   </script>
+
+  <script>
+    // The rail, on the same contract as /koncerty's: the section publishes its numeral, its short
+    // date and its fill as data attributes, and the rail only reads them. Re-armed on every
+    // ClientRouter navigation, and the observer is disconnected first so a return to this page
+    // never leaves two watching the same sections.
+    let railIO: IntersectionObserver | undefined;
+
+    const setupObrazy = () => {
+      railIO?.disconnect();
+      const rail = document.querySelector<HTMLElement>(".im-rail");
+      if (!rail) return; // not this page
+
+      const num = rail.querySelector<HTMLElement>(".im-rail-num");
+      const date = rail.querySelector<HTMLElement>(".im-rail-date");
+      const fill = rail.querySelector<HTMLElement>(".im-rail-fill");
+      const active = new Set<Element>();
+
+      railIO = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              active.add(entry.target);
+              const el = entry.target as HTMLElement;
+              if (num) num.textContent = el.dataset.viaNum ?? "";
+              if (date) date.textContent = el.dataset.viaDate ?? "";
+              if (fill) fill.style.height = el.dataset.viaStep ?? "0%";
+            } else {
+              active.delete(entry.target);
+            }
+          }
+          rail.classList.toggle("is-active", active.size > 0);
+        },
+        { threshold: 0.02 },
+      );
+      document.querySelectorAll(".im-evening").forEach((s) => railIO!.observe(s));
+    };
+
+    document.addEventListener("astro:page-load", setupObrazy);
+  </script>
 </BaseLayout>
 
 <style>
   /* The whole document is night — a parchment band anywhere here would put a lit page between two
-     dark ones and break the reading of the archive as one room. */
-  .page-obrazy { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
+     dark ones and break the reading of the archive as one room. The rhythm is therefore carried
+     by scale (plate against sheet) and by the ruled thresholds, never by the ground.
+     ─────────────────────────────────────────────────────────────────────────────────────────
+     `:global` IS LOAD-BEARING AND THIS RULE IS THE ONLY GROUND THE PAGE HAS. A page's scoped
+     <style> appends `[data-astro-cid-…]` to every selector, and `<body>` is rendered by
+     BaseLayout, not by this file — so it never carries this page's cid and a bare `.page-obrazy`
+     compiles to a rule that cannot match anything. It shipped that way: the archive stood on
+     parchment with every line of its copy set in `--paper`, i.e. text in the colour of its own
+     background, from the day it launched until 2026-08-08. Nothing catches it — `astro check`
+     sees valid CSS and the register audit reads the cascade it owns, not the ground.
+     ANY rule here that targets <body> or <html> needs this wrapper. */
+  :global(body.page-obrazy) { background: var(--night, #100f0d); color: var(--paper, #f4f1e9); }
   main { display: block; }
   /* The frame's own scroll-lock, named for THIS body class: a blanket `body.image-open` rule
      would reach documents that never mount the island. */
@@ -278,29 +508,57 @@ const jsonLd = {
   /* ── Head ──────────────────────────────────────────────────────────────────
      No hero photograph. The page is 43 photographs long; opening it with a
      forty-fourth, larger and decorative, would be the one frame here that documents
-     nothing. */
-  .im-head { padding: clamp(120px, 16vw, 200px) max(28px, 5vw) clamp(56px, 7vw, 88px); }
+     nothing — and the first plate arrives one screen down at 904px, which is the
+     opening a hero would have been asked to fake. */
+  .im-head { padding: clamp(120px, 16vw, 200px) max(28px, 5vw) clamp(64px, 8vw, 104px); }
   .im-title { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(52px, 10vw, 132px); letter-spacing: -.01em; margin: 0; color: var(--paper); }
   .im-lede { margin: clamp(26px, 3.5vw, 40px) 0 0; max-width: 46ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.8vw, 24px); line-height: 1.56; color: rgba(244, 241, 233, .74); }
+  /* Ruled, because this line is the archive's own colophon of itself and a rule that precedes
+     its text is the one entrance this site can make that is literally true of the object it
+     imitates. Border blanked only under the motion gate, per the LEAD contract. */
+  .im-scale { --rule-ink: rgba(244, 241, 233, .2); margin: clamp(30px, 4vw, 44px) 0 0; padding-top: 18px; border-top: 1px solid rgba(244, 241, 233, .2); display: flex; flex-wrap: wrap; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .58); }
+  :global(html.voct-motion) .im-scale { border-top-color: transparent; }
 
-  /* ── One evening ───────────────────────────────────────────────────────────
-     The head is a three-part rule: numeral in the station's candle, name in the serif,
-     the Latin and the date in the mono voice. Top-anchored hairline, which is where the
-     trigger fires. */
-  .im-series { padding: clamp(56px, 8vw, 104px) max(28px, 5vw); }
-  .im-series-head { display: grid; grid-template-columns: max-content 1fr; gap: 4px clamp(20px, 3vw, 36px); align-items: baseline; margin: 0 0 clamp(36px, 5vw, 56px); padding-top: clamp(22px, 3vw, 32px); border-top: 1px solid rgba(244, 241, 233, .16); }
-  .im-series-roman { grid-row: span 2; font-family: var(--capitalis); font-size: clamp(20px, 2.4vw, 30px); letter-spacing: .1em; color: var(--candle); line-height: 1; }
-  .im-series-title { margin: 0; font-family: var(--serif); font-weight: 300; line-height: 1.06; font-size: clamp(28px, 4vw, 52px); letter-spacing: -.01em; color: var(--paper); }
+  /* ── The threshold ─────────────────────────────────────────────────────────
+     Full-bleed and in the evening's own candle, so a station is recognisable here by the same
+     light it burns on its page. The rule is drawn on the SECTION, whose top is exactly where the
+     register's trigger fires — a rule anchored to a tall block's foot would draw off-screen. */
+  .im-evening { --rule-ink: color-mix(in srgb, var(--candle) 52%, transparent); padding: clamp(60px, 8vw, 104px) max(28px, 5vw) 0; border-top: 1px solid color-mix(in srgb, var(--candle) 52%, transparent); }
+  :global(html.voct-motion) .im-evening { border-top-color: transparent; }
+
+  .im-evening-head { display: grid; grid-template-columns: max-content 1fr; gap: 4px clamp(20px, 3vw, 36px); align-items: baseline; margin: 0 0 clamp(40px, 5vw, 64px); }
+  .im-evening-roman { grid-row: span 2; font-family: var(--capitalis); font-size: clamp(22px, 2.6vw, 34px); letter-spacing: .1em; color: var(--candle); line-height: 1; }
+  .im-evening-title { margin: 0; font-family: var(--serif); font-weight: 300; line-height: 1.06; font-size: clamp(30px, 4.4vw, 58px); letter-spacing: -.01em; color: var(--paper); }
   /* The link is the title, as in the landing's register: the reader already wants to press the
      name of the evening, and a second control beside it would make a toolbar of a series head.
      Gold hairline on approach, the site's own link idiom — never a button. */
-  .im-series-title a { color: inherit; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
-  .im-series-title a:hover { color: var(--candle); border-bottom-color: color-mix(in srgb, var(--candle) 62%, transparent); }
-  .im-series-meta { grid-column: 2; display: inline-flex; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .52); }
-  .im-series-meta .lat { color: rgba(244, 241, 233, .72); }
+  .im-evening-title a { color: inherit; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
+  .im-evening-title a:hover { color: var(--candle); border-bottom-color: color-mix(in srgb, var(--candle) 62%, transparent); }
+  .im-evening-meta { grid-column: 2; display: inline-flex; flex-wrap: wrap; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .52); }
+  .im-evening-meta .lat { color: rgba(244, 241, 233, .72); }
 
-  /* ── The line ──────────────────────────────────────────────────────────────
-     Rows hung by HEIGHT, not cut into columns: each shot asks for the width its own aspect needs
+  /* ── The run: a plate and a sheet ──────────────────────────────────────────
+     The plate column is `--plate-w` and the inscription column is fixed, so the two together
+     rule to the sheet's own edges when the plate is a landscape at full measure — and when it
+     is a portrait, the whole pair shrinks to the photograph rather than stranding its label
+     across empty measure. `minmax(0, …)` on both is what lets them shrink below their ideal
+     before the media query takes over. */
+  .im-run { margin: 0 0 clamp(64px, 8vw, 112px); }
+  .im-plate { display: grid; grid-template-columns: minmax(0, var(--plate-w)) minmax(0, clamp(168px, 17vw, 232px)); gap: clamp(22px, 3vw, 44px); align-items: end; margin: 0 0 clamp(22px, 3vw, 40px); }
+  /* The plate is a grid child, so it must NOT inherit the sheet's flex contract — `--ar` / `--w`
+     are unset here and the shorthand would only be invalid rather than absent. Stated instead of
+     left to that, because the sheet's phone rule below reaches this element too. */
+  .im-shot--plate { flex: initial; min-width: 0; max-width: 100%; }
+
+  .im-inscription { --rule-ink: rgba(244, 241, 233, .22); display: flex; flex-direction: column; gap: 9px; padding-top: 16px; border-top: 1px solid rgba(244, 241, 233, .22); }
+  :global(html.voct-motion) .im-inscription { border-top-color: transparent; }
+  /* A place is set in the serif for the same reason the colophon sets a photographer in it:
+     it is somewhere someone stood, not a field of metadata. */
+  .im-inscription-place { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 1.6vw, 26px); line-height: 1.24; color: rgba(244, 241, 233, .92); }
+  .im-inscription-date { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .56); }
+  .im-inscription-credit { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244, 241, 233, .42); }
+
+  /* Rows hung by HEIGHT, not cut into columns: each shot asks for the width its own aspect needs
      at the row height (`--w`, from lib/galleryLayout), so portraits pack four to a row where
      landscapes take three. Grow and shrink both run ∝ aspect, which is what keeps a line at one
      height; `--w-max` stops a short row inflating its photographs, `center` hangs the remainder.
@@ -308,31 +566,52 @@ const jsonLd = {
      lib/galleryLayout's header and is what the concert page's `.kd-gallery-grid` declares too.
      The two are deliberately not one stylesheet: what genuinely drifts is the packing, and that
      already lives in one module; the rest of each gallery is its page's own tone. */
-  .im-line { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
+  .im-sheet { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
   .im-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
-  /* Bounds the veil to the image: `inset: 0` on the figure would darken the caption too, and a
-     caption is copy — it keeps the ink. */
+  /* Bounds the veil to the image rather than to the figure, which is also what keeps the plate's
+     inscription out of it — a place and a date are copy, and copy keeps the ink. */
   .im-shot-media { position: relative; display: block; }
   .im-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244, 241, 233, .12); box-shadow: 0 40px 90px -46px rgba(0, 0, 0, .9); }
-  .im-shot figcaption { margin-top: 14px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, .56); }
-  /* On a phone the aspect has no room to argue: one shot per row, full measure. */
-  @media (max-width: 640px) {
-    .im-shot { flex-basis: 100%; max-width: 100%; }
-  }
 
   /* ── Colophon ──────────────────────────────────────────────────────────────
      Who held the camera, on its own plate at the foot. Names are set in the serif because they
      are people, not metadata. */
-  .im-colophon { padding: clamp(72px, 10vw, 128px) max(28px, 5vw) clamp(84px, 12vw, 148px); background: var(--dark, #080807); }
+  .im-colophon { margin-top: clamp(24px, 4vw, 48px); padding: clamp(72px, 10vw, 128px) max(28px, 5vw) clamp(84px, 12vw, 148px); background: var(--dark, #080807); }
   .im-colophon-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px clamp(24px, 4vw, 48px); }
   .im-colophon-list li { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 2vw, 26px); color: rgba(244, 241, 233, .9); }
   .im-colophon-note { margin: clamp(28px, 4vw, 40px) 0 0; max-width: 52ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; color: rgba(244, 241, 233, .56); }
   .im-colophon-back { display: inline-block; margin-top: clamp(36px, 5vw, 56px); font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .72); border-bottom: 1px solid rgba(244, 241, 233, .28); padding-bottom: 4px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
   .im-colophon-back:hover { color: var(--candle); border-bottom-color: var(--candle); }
 
+  /* ── The rail ──────────────────────────────────────────────────────────────
+     /koncerty's own, in this page's terms. Hidden where the margin it hangs in does not exist. */
+  .im-rail { position: fixed; left: max(16px, 2vw); top: 50%; transform: translateY(-50%); z-index: 45; width: 84px; display: flex; flex-direction: column; align-items: center; gap: 14px; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .7s var(--ease), visibility .7s var(--ease); }
+  .im-rail.is-active { opacity: 1; visibility: visible; }
+  .im-rail-num { font-family: var(--serif); font-style: italic; font-size: 19px; line-height: 1; color: var(--candle); }
+  .im-rail-line { position: relative; width: 1px; height: 96px; background: rgba(244, 241, 233, .16); }
+  .im-rail-fill { position: absolute; left: 0; top: 0; width: 100%; height: 0%; background: linear-gradient(180deg, var(--candle), rgba(198, 164, 91, .35)); transition: height .55s var(--ease-slow); }
+  .im-rail-date { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .46); white-space: nowrap; }
+  @media (max-width: 1180px) { .im-rail { display: none; } }
+  @media (prefers-reduced-motion: reduce) { .im-rail-fill { transition: none; } }
+
+  @media (max-width: 860px) {
+    /* The inscription drops under its plate: below this width the margin column costs the
+       photograph more than the label is worth beside it. */
+    .im-plate { grid-template-columns: minmax(0, 1fr); gap: clamp(16px, 3vw, 22px); }
+  }
+
   @media (max-width: 720px) {
-    .im-series-head { grid-template-columns: 1fr; gap: 8px; }
-    .im-series-roman { grid-row: auto; }
-    .im-series-meta { grid-column: 1; }
+    .im-evening-head { grid-template-columns: 1fr; gap: 8px; }
+    .im-evening-roman { grid-row: auto; }
+    .im-evening-meta { grid-column: 1; }
+    /* On a phone the aspect has no room to argue: one shot per row, full measure. */
+    .im-shot { flex-basis: 100%; max-width: 100%; }
+    /* Which would leave the plate and the sheet exactly the same width, i.e. no rhythm at all on
+       the case that matters most — 43 frames and 16 000px of scroll. The plate keeps its rank by
+       taking the whole screen instead: it breaks the page's own gutter, and drops the border and
+       the shadow, because a frame drawn to the edges is not sitting on the page, it IS the page.
+       The sheet stays inside the measure, so the two are still two things. */
+    .im-shot--plate { margin-inline: calc(-1 * max(28px, 5vw)); }
+    .im-shot--plate :global(img) { border: 0; box-shadow: none; }
   }
 </style>

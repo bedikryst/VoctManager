@@ -426,8 +426,10 @@ const jsonLd = {
 </BaseLayout>
 
 <style>
-  /* Colophon runs darker ink than the body default (--ink-soft); background comes from base.css. */
-  .page-kolofon { color: var(--ink); }
+  /* Colophon runs darker ink than the body default (--ink-soft); background comes from base.css.
+     `:global` because <body> belongs to BaseLayout and never carries this file's `data-astro-cid`
+     — bare, this selector matches nothing and the page silently keeps the default ink. */
+  :global(body.page-kolofon) { color: var(--ink); }
 
   /* Hero */
   .kol-hero { background: var(--dark); color: var(--paper); padding: clamp(120px, 16vw, 200px) var(--gutter) clamp(64px, 9vw, 100px); }
