@@ -32,6 +32,12 @@ every claim in §5–§9 that the landing opens the frame. Where anything above 
 retires the measurement method §13 prescribed: the frame mean it asks for is the statistic that
 produced the one wrong lift in the set. Where §13 and §15 disagree, §15 is what shipped.
 
+**§17 rebuilds `/obrazy` and supersedes §7 on everything except the route, the entrances and the
+JSON-LD.** Stage 3 shipped a page that arrived at the thumbnail grid §2 rejects, from the other
+direction, and stood on the wrong ground for its whole life. §7 is left standing because the
+reasoning that produced it is what makes the correction legible; where §7 and §17 disagree, §17 is
+what shipped. §17 also changes the `gallery` schema, so it reaches the concert pages.
+
 **§16 supersedes §13 and §14 on the band's line, and on nothing else.** The slot those passes
 argued for stands; the sentence they put in it is rejected there, with the reasons, so it is not
 re-proposed.
@@ -1153,3 +1159,170 @@ row — the same figure the previous line had. Nothing in `14-imagines.css` chan
   on measure: 21 characters fits inside 22ch, so the gold word stops hanging and the couplet
   flattens to one row. It also stops at this section, where `pamięć` carries into the register.
 - **An empty head**, for the reason §14 already gives.
+
+---
+
+## 17. `/obrazy` rebuilt — the run becomes the unit — SHIPPED
+
+The founder's reading: *"była robiona super na szybko i teraz to jest bardziej zepsuty szablon niż
+strona"*. Measured against the emitted build that is exactly what it was, and one of the defects
+behind it was not a design defect at all.
+
+### The page rejected the grid in §2 and then produced one
+
+**Forty of the forty-three photographs are 3:2.** `layoutShots` chooses `perRow` from the set's
+mean aspect, so for this archive it resolved to three-up every time:
+
+| Evening | n | rows | shot width |
+|---|---|---|---|
+| Wcielenie | 9 | **3+3+3** | 364px |
+| 9 Kart | 15 | **3+3+3+3+3** | 363px |
+| Aeternam | 9 | 3+2+2+2 | 272 / 408px |
+| Wołanie Gór | 6 | 3+2+**1** | 352px |
+| Hymn Poległym | 4 | 4 | **217 / 308px** |
+
+Twenty-four of the forty-three sat in a literal uniform three-column grid, fifteen tiles deep. The
+packing was not at fault: it was written for a set with variety, hung inside a longer document, and
+here it was the whole page and the set had nothing for it to answer. Hymn's four portraits packed
+4-up at 217px, which is §2's black rectangle to the pixel.
+
+The short rows made it worse rather than better. `justify-content: center` plus `--w-max` floats
+every remainder, so Wołanie ended on one 352px frame centred under three and Aeternam ran 3+2+2+2.
+A grid with holes reads as breakage where either a grid or a free hang would not.
+
+### Forty-three captions carried nine facts
+
+Under 9 Kart the page printed *"Koncert 9 Kart w Bazylice NSPJ w Krakowie"* **six times
+consecutively**. Hymn Poległym printed its own `<h2>` back at the reader four times. All of it in
+10.5px letterspaced uppercase — the site's loudest small voice — under every single frame. This is
+the caption row §14 removed from the band and called a card grid, at ten times the density.
+
+**The repetition was a symptom: the data already had a structure the page did not print.** Each
+evening divides into RUNS — the rehearsal, the night, and for 9 Kart one per city — and the YAML
+encoded it all along, in `alt` strings and in adjacency. Ten runs across forty-three frames.
+
+### The run is now the unit of the layout and of the text
+
+`lib/galleryRuns.ts`, shared by `/obrazy` and the concert pages. `gallery[]` gains `moment`
+(`rehearsal` | `concert`), `venue` and `date`; the forty-three prose captions are gone and
+`caption` survives in the schema for the per-frame note none of them was. A run is drawn from
+**adjacency, never by collecting matches** — two visits to one church a year apart are two runs and
+must stay two — which is why the gallery's stored order is now a stated contract.
+
+A rehearsal inherits **nothing**. Its room was never recorded, and handing it the concert's venue
+would assert a place on no evidence; its inscription is the word `Próba` alone.
+
+**Every run is a PLATE and a SHEET.** The run opens on one photograph at up to 904px with its place
+and date printed once in the margin beside it, and the remainder hangs under it at the shared
+packing. `--plate-w` is computed (`min(904, 700 × ar)`), so a portrait plate ends where the
+photograph ends and its inscription stays against it instead of drifting across empty measure. The
+emitted line: eight plates at 904, one at 700 (Mistrzejowice, square), one at 560 (Hymn, 4:5) —
+against sheet rows at 245–570. That alternation is the whole rhythm; the ground never turns,
+because §7's argument for one room still holds.
+
+The thresholds are **ruled** instead. Each evening opens on a full-bleed hairline in its own
+candle, drawn left→right by the LEAD register — the border is real for a no-JS or reduced-motion
+reader and handed to the pseudo-rule only under the motion gate, and it is anchored to the
+section's top, which is where the trigger fires. Five hairlines the design already had, none
+invented to have something to animate.
+
+A **rail** was added on `/koncerty`'s own contract (`data-via-num` / `-date` / `-step`, one
+IntersectionObserver). This is the site's second-longest page and it was the only long one with no
+position at all. And the head now states the archive's scale — `43 fotografie · 5 wieczorów ·
+7 miejsc · 2024–2025` — **counted at build**, with Polish plurals computed, because a page that
+states its own numbers wrongly is worse than one that states nothing.
+
+### The ground was never applied, and the rule that generates
+
+**`/obrazy` stood on parchment with every line of its copy set in `--paper` — text in the colour of
+its own background — from the day it launched.**
+
+```
+<body class="page-obrazy">                            ← no cid
+.page-obrazy[data-astro-cid-zuxexoyc]{background:…}   ← rule demands one
+```
+
+A page's scoped `<style>` appends `[data-astro-cid-…]` to every selector, and `<body>` is rendered
+by **BaseLayout**, not by the page — so a bare `.page-obrazy` compiles to a rule that cannot match
+anything. Nothing catches it: `astro check` sees valid CSS, the register audit reads the cascade it
+owns rather than the ground, and the build is green. It survived several passes over this file.
+
+Three pages had it — `obrazy`, `kolofon`, `koncerty/[id]` — and `/obrazy` inherited it from the
+concert page it was built from, where the defect is invisible because every `.kd-band` paints its
+own ground. `koncerty.astro` and `press.astro` had it right all along. The sibling rule two lines
+below it in the same file was also right (`:global(body.page-obrazy.image-open)`), which is the
+part worth remembering: the author wrapped the scroll-lock and not the ground.
+
+**THE RULE: any rule reaching `<body>` or `<html>` from a page's scoped `<style>` needs
+`:global()`.** The one-pass check after a build is to search `dist/_astro/*.css` for selectors
+containing both `.page-` and `data-astro-cid` — every hit is a dead rule. That check is cheap
+enough to belong in the register audit; it is not there yet (see *Still open*).
+
+### `plate:` — the one flag, and it was earned by measurement
+
+The plate defaults to the run's first frame, which is right for nine of the ten because a run opens
+where the evening did. Hymn's does not. Measured over all forty-three originals (sharp, resized to
+300px, Rec.709 luma):
+
+| Frame | mean | p90 |
+|---|---|---|
+| `kd-hymn-0` | **9** | **24** |
+| `kd-hymn-1` | 13 | 35 |
+| `kd-hymn-2` | 20 | 48 |
+| `kd-hymn-3` | 42 | 64 |
+
+`-0` led its run and stood 698px tall as a black rectangle — 94% of it under luma 40. `-3` is the
+only frame of the four with tonal range left, so it carries `plate: true`. The lever is the same
+one, for the same reason, as `Path.frame` on the band (§8), which is why it is a flag here and not
+a reordering: the gallery's order is a claim about when the frames were taken and must stay true.
+
+### 9 Kart was reordered into the order the tour ran
+
+Rybnik 8 IX → Łódź 17 IX → Kraków 16 XI, which is the order `dates` already states and the order
+`prologue` relies on when it calls Kraków *"trzeci wieczór tego programu, po Rybniku i Łodzi"*. It
+previously opened in Kraków and closed with three "po koncercie" frames filed together, one per
+city — so each city's own coda sat six lines from the evening it closed. Runs are drawn from
+adjacency, so a frame out of order is a run out of place. This is an editorial change and the
+easiest thing in the file to revert.
+
+### Rejected — do not re-propose
+
+- **Mirroring the plate's margin left/right per run or per evening.** The asymmetry it buys is
+  real, and on ten runs it reads as a zigzag rather than as a page. Marginalia sit on one side of a
+  codex. The rhythm is plate-against-sheet, which is a change of scale and not of side.
+- **Fixing the tail rows by rewriting `layoutShots` into a per-row justified packer.** It is the
+  right algorithm and the wrong moment: §11 kept the packing shared precisely so a correction lands
+  on both surfaces at once, which means this one wants both pages open and the founder's eye on it,
+  not a drive-by while the page above it is being rebuilt.
+- **A hero photograph.** §7's argument is unchanged and now has a second half: the first plate
+  arrives one screen down at 904px, which is the opening a hero would have been asked to fake.
+- **Per-frame `ImageObject` in the graph.** Still §11's answer, still waiting on GSC numbers.
+
+### Still open
+
+- **The tail rows inflate.** Wcielenie's concert run and Niedzica both end 3+2, and the two-frame
+  row grows to **508×339 against 367×245** above it — 38% taller, at 89% of the measure. That is
+  `wMax = min(w × 1.4, maxHeight × ar)` doing what it was written to do on a set that no longer
+  needs it. Pre-existing, shared with the concert pages, and the fix is the rejected item above.
+- **Two frames in Aeternam's sheet are black rectangles** — `kd-aeternam-1` at mean 10 / p90 19,
+  `kd-aeternam-4` at 20 / 39. Nothing in code answers this; an archive shows what exists, and
+  `plate:` already keeps them out of the one slot where it would matter.
+- **9 Kart's Kraków run opens on a photograph of the printed programme** (`kd-9-kart-0`, mean 145 —
+  the brightest frame in the archive). At plate scale it reads as a document opening a documentary
+  run, which is why it was left; if it reads as a leaflet instead, `plate:` is the lever.
+- **The `.page-…` / `data-astro-cid` check is not in the register audit.** Everything that audit
+  exists for applies: it fails silently, it survives review, and it was found by eye.
+- **On a phone the plate keeps its rank by full bleed** — it breaks the page's gutter and drops its
+  border and shadow, because otherwise plate and sheet are the same width and the rhythm is gone on
+  the case that matters most. Built and measured (no horizontal overflow) but **not yet looked at**.
+
+### Weight
+
+`astro check` 0 errors / 0 warnings across 110 files; 15 pages; register audit **956 nodes,
+clean**; `prune-orphan-assets` **66/652** — ten more emitted images than before, which is exactly
+one new rendition per plate, because the plate's top candidate is deliberately 1920, the same
+transform `framedShot` already requests, and the two dedupe to one file.
+
+Length at 1440×900: `/obrazy` **15 427px**, against `/koncerty/9-kart` 16 605, `/press` 18 358 and
+`/o-nas` 14 192. The archive is mid-pack, not the outlier the plate scale suggested it would be.
+Phone (390×844): 16 367px, no horizontal overflow, rail correctly absent.
