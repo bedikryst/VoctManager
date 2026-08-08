@@ -1029,7 +1029,36 @@ Same pass, unrelated to the register but found by measuring it: `.rite-card` ran
 `data-d={(i % 3) + 1}`, copied from `.rep-row` where modulo 3 is a rolling cascade down a long
 column. With exactly four cards it emitted `1, 2, 3, 1` and the fourth entered ahead of the second
 and third — on every breakpoint, since the 2-up and 1-up folds keep document order. `data-d="4"`
-existed and was unused on the page.
+existed and was unused on the page. Swept the other two sites of that idiom while there:
+`/kontakt` `.channel` is three items stacked vertically (no wrap, and they cross the trigger at
+different scroll positions anyway), `koncerty/[id]` `.kd-voces-group` uses `% 4`. Both clean.
+
+The station cadence was flattened at 0.18s — `.station-essence`, `.station-inscriptio` and
+`.station-facts` all sat on `data-d="2"`. The chips moved to 3. **The incipit cannot move**, and
+that is now a constraint rather than a preference: the ink+lead pair pins `transition-delay` at
+0.18s, which is exactly what `data-d="2"` resolves to, so the attribute and the register agree by
+coincidence and both have to be changed together or neither.
+
+### Considered in the same pass and declined — reasons, so they are not re-raised
+
+- **A left→right offset between the two repertoire columns.** Direction is the sanctioned shape
+  (see Rejected, below) and the two columns *do* enter in lockstep pairs — same `y`, same
+  callback, same `data-d`. But the ladder has four steps and the list runs 6–20 rows per column,
+  so a rotated modulo (`1,2,3` against `2,3,1`) inverts the pair every third row: the exact
+  stumble just removed from `.rite-card`. A stable form exists — `(ei % 2) + 1` against
+  `(ei % 2) + 3`, left leading right by a constant 0.18s — but it trades the authored 3-step
+  column cascade for a 2-step one, which is replacing a composition rather than fixing a defect.
+  Left alone; if direction is ever wanted here, that is the one-line form to use.
+- **Taking `.prog-d` out of the register** as a control, the way 5b took `.station-actions` out.
+  A disclosure is not a destination, and `koncerty/[id]`'s `.kd-verbum-full` is the same shape —
+  so this is the site's disclosure pattern, and pulling it on one page alone is divergence. It
+  also keeps BaseLayout's `astro:after-swap` note true, which names exactly this node as the
+  reason zero-box reveals must not be settled.
+- **Deriving `roman` from position**, as `viaStep` already is. It is not a display detail of this
+  page: `lib/registrum.ts` feeds it to the desktop nav ribbons, and `/press`, `/obrazy` and the
+  detail pages' prev/next all read it. Deriving it locally would make a second source that
+  disagrees with five surfaces. If it is ever worth doing it belongs in `content.config.ts`, as
+  its own pass over six consumers.
 
 ---
 

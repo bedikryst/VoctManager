@@ -139,10 +139,14 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   <SiteChrome current="/koncerty" tone="dark" />
 
+  {/* Rests hidden until the first station is reached, then the observer writes both slots. The
+      SSR'd values still come from the data rather than from a literal: they are what a reader
+      with no JS would see if the rail were ever shown, and a hand-typed "I / sty 2024" quietly
+      becomes a lie the moment a concert is inserted ahead of Wcielenie. */}
   <aside class="via-rail" aria-hidden="true">
-    <span class="via-num">I</span>
+    <span class="via-num">{stations[0]?.roman ?? ""}</span>
     <span class="via-line"><span class="via-fill"></span></span>
-    <span class="via-date">sty 2024</span>
+    <span class="via-date">{stations[0]?.viaDate ?? ""}</span>
   </aside>
 
   <main id="tresc">
@@ -220,7 +224,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 <p class="station-meta reveal" data-d="1">{s.meta}</p>
                 <p class="station-essence reveal" data-d="2">{s.essence}</p>
                 {s.facts.length > 0 && (
-                  <div class="station-facts reveal" data-d="2" role="list" aria-label="Cechy liturgii">
+                  <div class="station-facts reveal" data-d="3" role="list" aria-label="Cechy liturgii">
                     {s.facts.map((f) => (
                       <span role="listitem">{f}</span>
                     ))}
@@ -281,8 +285,14 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     {s.inscriptioRef && <span class="station-inscriptio-ref">{s.inscriptioRef}</span>}
                   </p>
                 )}
+                {/* One step behind the essence, not level with it. The station speaks in four
+                    beats — numeral, then name and date, then what the evening is (its prose and
+                    the words it opens with, one utterance), then its apparatus: these chips and
+                    the programme disclosure. The essence and the incipit share 0.18s and must:
+                    the incipit's ink+lead pair pins that delay regardless of `data-d`, so it is
+                    the one node in the stack that cannot be moved. */}
                 {s.facts.length > 0 && (
-                  <div class="station-facts reveal" data-d="2" role="list" aria-label="Cechy programu">
+                  <div class="station-facts reveal" data-d="3" role="list" aria-label="Cechy programu">
                     {s.facts.map((f) => (
                       <span role="listitem">{f}</span>
                     ))}
@@ -312,8 +322,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 )}
                 {s.program.length > 0 && (
                   <details class="prog-d reveal" data-d="3">
+                    {/* Six of these stand on one page, so the visible label alone gives a screen
+                        reader six identical controls. The concert's name goes in visually hidden
+                        rather than into an `aria-label`: a label would REPLACE the visible text,
+                        and voice control matches on what is on screen. */}
                     <summary>
-                      Program koncertu <span class="chev" aria-hidden="true">↓</span>
+                      Program koncertu<span class="sr-only"> — {s.title}</span> <span class="chev" aria-hidden="true">↓</span>
                     </summary>
                     <div class="station-program">
                       <ul class="prog-list">
@@ -569,7 +583,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .prog-d[open] .chev { transform: rotate(180deg); }
   .prog-list { list-style: none; margin: 0; padding: 22px 0 0; columns: 2; column-gap: 44px; }
   .prog-list li { break-inside: avoid; padding: 8px 0; font-size: 13.5px; line-height: 1.5; color: rgba(244,241,233,.78); border-top: 1px solid rgba(244,241,233,.16); }
-  .prog-list li .pc { font-family: var(--serif); font-style: italic; font-size: 1.15em; color: var(--paper); }
+  /* 400, not the body's inherited 300 — this is the site's smallest serif and every factor it
+     carries pushes the same way: 15.5px, italic, and light-on-dark, where the stroke thins
+     further. Cormorant has no `opsz` axis, so weight is the only compensation there is
+     (tokens.css); `.rep-col .composer` is the same call on parchment at a larger size. If it
+     still reads brittle the next step is weight again, not size — the size is set by `1.15em`
+     against the row and changing it re-flows both columns. */
+  .prog-list li .pc { font-family: var(--serif); font-style: italic; font-weight: 400; font-size: 1.15em; color: var(--paper); }
   /* Ordinal — the order is part of the work ("kolejność jest bardzo ważna"), so it shows. */
   .prog-list li .prog-n { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; color: var(--accent, var(--candle)); margin-right: 10px; }
   .prog-list li.bis { color: var(--accent, var(--candle)); }
