@@ -318,10 +318,18 @@ const jsonLd = {
                       {/* The top candidate is 1920 rather than a step fitted to the plate,
                           because 1920 is the exact transform `framedShot` already asks for — so
                           the plate's 2× rendition and the lightbox's largest are ONE emitted
-                          file. Same dedupe argument galleryFrame.ts makes about its 1200. */}
+                          file. Same dedupe argument galleryFrame.ts makes about its 1200.
+                          `width` names that same transform a third time, which is what keeps the
+                          fallback inside the dedupe instead of at source resolution — a 6000px
+                          archive frame. It reads `frame.width` rather than a literal 1920 because
+                          the archive holds squares and small scans too: sharp would clamp a 1920
+                          request down to the source, but the TRANSFORM would still be recorded as
+                          1920 and emit a twin of the 1485 the ladder already carries. Asking for
+                          the number `framedShot` settled on is asking for the same file. */}
                       <Image
                         src={run.plate.img}
                         widths={[560, 904, 1920]}
+                        width={run.plate.frame.width}
                         sizes={`(max-width: 860px) 92vw, ${run.plateW}px`}
                         alt={run.plate.alt}
                         loading="lazy"
@@ -383,9 +391,15 @@ const jsonLd = {
                           data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
                           data-image-href-label={e.hasPage ? e.title : undefined}
                         >
+                          {/* `width` = top of the ladder, which is also `framedShot`'s 1200
+                              candidate; it keeps the fallback inside that dedupe rather than at
+                              source resolution. Clamped to the source for the same reason the
+                              plate above clamps: a 1200 request against a narrower scan is
+                              recorded as 1200 and emits a twin of what the ladder already has. */}
                           <Image
                             src={g.img}
                             widths={[560, 840, 1200]}
+                            width={Math.min(g.img.width, 1200)}
                             sizes={`(max-width: 720px) 92vw, ${g.wMax}px`}
                             alt={g.alt}
                             loading="lazy"

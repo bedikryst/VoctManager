@@ -23,10 +23,13 @@ const florent = photo("florent");
 <section id="dyrygent" class="section director-dark reveal-cue" aria-label="Kierownictwo artystyczne">
   <div class="director-grid">
     <div class="portrait">
+      {/* `width` is the top of the `widths` ladder: it makes the fallback image the widest
+          candidate instead of a full-resolution rendition. See lib/photos.ts. */}
       <Picture
         src={florent}
         formats={["avif", "webp"]}
         widths={[480, 760, 1040]}
+        width={1040}
         sizes="(max-width: 980px) 100vw, 46vw"
         alt="Florent de Bazelaire prowadzący VoctEnsemble"
         loading="lazy"

@@ -697,9 +697,15 @@ const plDate = (iso: string): string =>
                   data-image-href="/obrazy"
                   data-image-href-label="Obrazy wszystkich wieczorów"
                 >
+                  {/* `width` = top of the ladder, which is also `framedShot`'s 1200 candidate:
+                      one emitted file serves the grid, its fallback and the lightbox. Without it
+                      the fallback comes back at source resolution — see lib/photos.ts. Clamped to
+                      the source, because a 1200 request against a narrower scan is still recorded
+                      as 1200 and emits a twin of what the ladder already carries. */}
                   <Image
                     src={g.img}
                     widths={[560, 840, 1200]}
+                    width={Math.min(g.img.width, 1200)}
                     sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
                     alt={g.alt}
                     loading="lazy"
@@ -738,9 +744,11 @@ const plDate = (iso: string): string =>
           <figure class="kd-poster">
             <span class="kd-poster-frame" aria-hidden="true"></span>
             <div class="kd-poster-media">
+              {/* `width` caps the fallback rendition — see lib/photos.ts. */}
               <Image
                 src={posterImg}
                 widths={[280, 420, 560]}
+                width={560}
                 sizes="(max-width: 720px) 62vw, 300px"
                 alt={c.posterAlt ?? `Plakat koncertu ${c.title}`}
                 loading="lazy"

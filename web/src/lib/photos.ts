@@ -12,6 +12,19 @@
  *  (~490 MB) next to the variants. `prune-orphan-assets.mjs` deletes the unreferenced ones at
  *  the end of the build; anything reached through `.src` stays, because the URL lands in the
  *  page output. Keep it that way — reading `.src` is what marks an original as really needed.
+ *
+ *  CONSTRAINT: <Image>/<Picture> given `widths` must ALSO be given `width`, set to the top of
+ *  that ladder. `widths` builds the srcset only; the base transform behind the `<img src>`
+ *  fallback takes its size from `width`, and with none passed Astro falls back to the source's
+ *  intrinsic dimensions (astro/dist/assets/services/service.js, `getTargetDimensions`). An
+ *  8256px camera frame then ships a full-resolution rendition nobody with `srcset` support ever
+ *  fetches — invisible on screen, and 98 of the 133 MB this build once emitted. Naming the top
+ *  candidate makes the fallback the SAME file as the widest srcset entry, so it costs nothing.
+ *  Clamp it to `img.width` wherever the source is not curated — the archive holds squares and
+ *  small scans. Sharp runs `withoutEnlargement`, so an over-large `width` never upscales, but
+ *  the transform is still RECORDED at the number asked for: the ladder gets clamped to the
+ *  source and the fallback does not, and the two then hash apart into twin files of identical
+ *  pixels. Asking for `Math.min(img.width, top)` is asking for the file that already exists.
  * @architecture Astro islands 2026
  * @module lib/photos
  */

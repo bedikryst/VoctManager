@@ -190,10 +190,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <figure class="letter-portrait" data-d="2">
           <span class="frame-rule" aria-hidden="true"></span>
           <div class="letter-portrait-media">
+            {/* `width` = top of the `widths` ladder; it caps the fallback rendition, which
+                otherwise comes back at source resolution. See lib/photos.ts. */}
             <Picture
               src={florent}
               formats={["avif", "webp"]}
               widths={[420, 640, 840]}
+              width={840}
               sizes="(max-width: 880px) min(70vw, 340px), clamp(240px, 26vw, 320px)"
               alt={c.letter.portraitAlt}
               loading="lazy"
@@ -308,10 +311,13 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 <span class="milestone-date">{m.year}</span>
                 {m.img && (
                   <figure class="milestone-media">
+                    {/* `width` caps the fallback rendition — see lib/photos.ts. Milestones read
+                        the camera originals, so without it each one shipped a 4000px copy. */}
                     <Picture
                       src={m.img}
                       formats={["avif", "webp"]}
                       widths={[320, 480, 640, 840]}
+                      width={840}
                       sizes="(max-width: 700px) min(92vw, 420px), clamp(200px, 24vw, 320px)"
                       alt=""
                       loading="lazy"
@@ -386,10 +392,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
               <article class="board-card" data-d={String(i + 1)}>
                 {boardPortraitsComplete && b.img && (
                   <figure class="board-portrait">
+                    {/* `width` caps the fallback rendition — see lib/photos.ts. */}
                     <Picture
                       src={b.img}
                       formats={["avif", "webp"]}
                       widths={[240, 360, 480]}
+                      width={480}
                       sizes="(max-width: 860px) 90vw, 30vw"
                       alt={`${b.name} — ${b.role}`}
                       loading="lazy"

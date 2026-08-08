@@ -254,10 +254,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                 <figure class="station-poster">
                   <span class="frame" aria-hidden="true" />
                   <div class="station-poster-media">
+                    {/* `width` caps the fallback rendition — see lib/photos.ts. */}
                     <Picture
                       src={s.posterImg}
                       formats={["avif", "webp"]}
                       widths={[280, 420, 560]}
+                      width={560}
                       sizes="(max-width: 820px) 72vw, 348px"
                       alt={s.posterAlt ?? ""}
                       loading="lazy"
