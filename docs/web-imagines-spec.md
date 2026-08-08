@@ -42,6 +42,9 @@ what shipped. §17 also changes the `gallery` schema, so it reaches the concert 
 argued for stands; the sentence they put in it is rejected there, with the reasons, so it is not
 re-proposed.
 
+**§18 supersedes nothing. It closes one entry on §17's open list** — the ground defect is now a
+build gate rather than a rule to remember. Read it only if you are editing the audit.
+
 ---
 
 ## 1. The defect
@@ -1254,9 +1257,8 @@ below it in the same file was also right (`:global(body.page-obrazy.image-open)`
 part worth remembering: the author wrapped the scroll-lock and not the ground.
 
 **THE RULE: any rule reaching `<body>` or `<html>` from a page's scoped `<style>` needs
-`:global()`.** The one-pass check after a build is to search `dist/_astro/*.css` for selectors
-containing both `.page-` and `data-astro-cid` — every hit is a dead rule. That check is cheap
-enough to belong in the register audit; it is not there yet (see *Still open*).
+`:global()`.** It is now **R11 in the register audit** (§18), so the rule is enforced rather than
+remembered.
 
 ### `plate:` — the one flag, and it was earned by measurement
 
@@ -1310,8 +1312,7 @@ easiest thing in the file to revert.
 - **9 Kart's Kraków run opens on a photograph of the printed programme** (`kd-9-kart-0`, mean 145 —
   the brightest frame in the archive). At plate scale it reads as a document opening a documentary
   run, which is why it was left; if it reads as a leaflet instead, `plate:` is the lever.
-- **The `.page-…` / `data-astro-cid` check is not in the register audit.** Everything that audit
-  exists for applies: it fails silently, it survives review, and it was found by eye.
+- ~~**The `.page-…` / `data-astro-cid` check is not in the register audit.**~~ — **shipped, §18.**
 - **On a phone the plate keeps its rank by full bleed** — it breaks the page's gutter and drops its
   border and shadow, because otherwise plate and sheet are the same width and the rhythm is gone on
   the case that matters most. Built and measured (no horizontal overflow) but **not yet looked at**.
@@ -1326,3 +1327,50 @@ transform `framedShot` already requests, and the two dedupe to one file.
 Length at 1440×900: `/obrazy` **15 427px**, against `/koncerty/9-kart` 16 605, `/press` 18 358 and
 `/o-nas` 14 192. The archive is mid-pack, not the outlier the plate scale suggested it would be.
 Phone (390×844): 16 367px, no horizontal overflow, rail correctly absent.
+
+---
+
+## 18. The ground defect becomes a build gate — SHIPPED
+
+§17 found `/obrazy`, `/kolofon` and `/koncerty/[id]` standing on a ground that had never been
+applied, stated the rule, and left the enforcement open. It is **R11** now:
+`checkScopedRootRules` in `audit/checks.mjs`, wired into the run in `audit/index.mjs`, five tests
+in `audit.test.mjs`. An error, so the build stops.
+
+**It decides by matching the emitted HTML, not by the grep §17 proposed.** The grep — selectors
+carrying both `.page-` and `data-astro-cid` — finds the three pages that had the defect and
+nothing else. R11 asks the question underneath it: *does this scoped compound address the document
+root, and can it reach it?* A compound is taken as addressing the root when it names `html`/`body`
+by tag, carries `:root`, or matches an emitted `<html>`/`<body>` once the scope attribute is
+stripped off — that last case being the shape the defect actually shipped in, since the source
+wrote only `.page-obrazy` and BaseLayout is what put the class on the body. If the compound as
+emitted then matches no root on any page, the rule is dead and R11 says so.
+
+Three things the wider question buys. It catches the defect written as `body { … }` or
+`html.voct-motion .x { … }` inside a scoped block, which the grep does not see and which is the
+same error one keystroke away. It catches an ancestor demand (`body[cid] .kol-line[cid]`), not
+just a key compound. And it does **not** fire on a rule that reaches its element — a cid on the
+root is absent from this build, not impossible, and a pattern check would have called that one
+too. The exclusions are as deliberate: `*[cid]` covers the root the way it covers everything,
+which is not the same as being aimed at it.
+
+**Proof it fires.** Not the unit tests — those are in the file and are the usual kind. The
+end-to-end one: `:global()` was taken back off `obrazy.astro`'s ground rule and the site rebuilt.
+R11 reported `.page-obrazy[data-astro-cid-zuxexoyc]` against `<body.page-obrazy>`, named the two
+declarations that never applied, and failed the build. That is the defect verbatim as §17 records
+it, down to the cid.
+
+**Weight.** 956 register nodes across 16 pages, clean; R11 adds no finding to the site as it
+stands and cost nothing measurable (it tests scoped compounds against ~30 root elements, not
+against every node). `dist-verify/` is now in `web/.gitignore`: it is the standing way to read a
+finished build without disturbing the `dist/` the developer keeps serving, and it was one
+`git add -A` away from putting a 500 MB build into the repo.
+
+### Rejected — do not re-propose
+
+- **The grep, as a script.** It is the right instinct and the wrong home: a second tool that reads
+  the build would need its own root-finding, its own report and its own proof that it ran — all of
+  which the audit already has, and R0 already fails the build when any of it reads nothing.
+- **Warning instead of erroring.** Every rule this catches is invisible in review, green in
+  `astro check`, and wrong for as long as nobody looks. That is the definition this audit uses for
+  an error.

@@ -1,5 +1,8 @@
 # build output
 dist/
+# throwaway verification build — `astro build --outDir dist-verify`, so a check can read a
+# finished build without disturbing the `dist/` the developer keeps serving
+dist-verify/
 # generated types
 .astro/
 # deps

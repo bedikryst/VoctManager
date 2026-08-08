@@ -1186,18 +1186,31 @@
     background: transparent;
     color: inherit;
     cursor: pointer;
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.2em;
     text-transform: uppercase;
   }
 
+  /* Capitalis, matching SiteChrome's .chrome-nav on every subpage — the bar is the most-repeated
+     rubric on the site and it sits inches from the wordmark, so the typewriter voice read as a
+     different system from the eyebrows directly beneath it. The metrics are re-tuned, not copied
+     from the mono they replace: tracking .14em because Cinzel's capitals are already wide (at
+     .2em the four links plus the audio pill stop fitting at the 760px floor), weight 500 for the
+     same reason .eyebrow uses it — at this size 400 loses its stroke on the dark hero. */
   .support-link {
     position: relative;
+    /* The bottom 3px is the gutter the hover underline (::after) is drawn in; the top 3px is its
+       counterweight, and it is load-bearing. `.chrome-actions` centres its items by BOX, so an
+       asymmetric box centres the gutter and leaves the letters riding half of it high — against
+       the audio pill, whose padding is symmetric, that put the links ~1.9px off its baseline.
+       Keep the two paddings equal, or the row loses its common line of writing again. */
+    padding-top: 3px;
     padding-bottom: 3px;
     opacity: 0.82;
     transition: opacity 0.35s var(--ease);
     text-decoration: none;
+    font-family: var(--capitalis);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
   }
 
   .support-link::after {
@@ -1221,11 +1234,18 @@
     transform: scaleX(1);
   }
 
+  /* The one voice in the bar that stays on the mono: a stateful switch is a mechanism, not an
+     inscription (see the Cinzel policy in styles/base.css), it already wears its own shell —
+     pill plus status dot — and it is the sole action surviving below 760px, where it drops to
+     8.5px (07-responsive.css). Cinzel does not hold at that size. */
   .audio-toggle {
     display: inline-flex;
     align-items: center;
     gap: 8px;
     padding: 7px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
     border: 1px solid currentColor;
     border-radius: 999px;
     opacity: 0.82;
