@@ -18,7 +18,6 @@ Windows dev host and the Linux runtime image.
 
 from __future__ import annotations
 
-import zoneinfo
 from collections import defaultdict
 from collections.abc import Iterator
 from enum import StrEnum
@@ -32,6 +31,12 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from core.constants import VoiceLine
+from roster.domain.call_window import (
+    CallWindow,
+    CallWindowProblem,
+    localize,
+    resolve_call_window,
+)
 from roster.infrastructure.print_fonts import (
     BOOK_FONT_STACK,
     BRAND_SANS_STACK,
@@ -40,6 +45,7 @@ from roster.infrastructure.print_fonts import (
     font_face_css,
 )
 from roster.models import (
+    DEFAULT_EVENT_TIMEZONE,
     Artist,
     CrewAssignment,
     Participation,
@@ -51,6 +57,31 @@ from roster.models import (
 )
 
 _VOICE_LINE_ORDER = {value: idx for idx, value in enumerate(VoiceLine.values)}
+# Language codes carried by `Piece.language` are free text ('la', 'la-pl'), so
+# this only softens what it recognises — an unknown token passes through
+# untouched rather than being guessed at.
+_LANGUAGE_NAMES: dict[str, str] = {
+    'la': 'łacina',
+    'pl': 'polski',
+    'en': 'angielski',
+    'fr': 'francuski',
+    'de': 'niemiecki',
+    'it': 'włoski',
+    'es': 'hiszpański',
+    'ru': 'rosyjski',
+    'uk': 'ukraiński',
+    'cs': 'czeski',
+    'sk': 'słowacki',
+    'lt': 'litewski',
+    'he': 'hebrajski',
+    'el': 'grecki',
+    'hu': 'węgierski',
+}
+# Reference links are a hyperlink strip on a printed page, not a discography.
+_MAX_REFERENCE_LINKS = 2
+# Printed on a Polish sheet for a Polish ensemble, the country is the one part
+# of an address that never tells the reader anything.
+_IMPLIED_COUNTRIES = frozenset({'poland', 'polska'})
 # Keyed by VoiceType (a str-valued TextChoices), so the keys double as plain strings
 # for ordering lookups by the serialized voice-type value.
 _VOICE_TYPE_ORDER: dict[str, int] = {
@@ -75,12 +106,24 @@ class Audience(StrEnum):
 
 
 # Ordered section pipeline per audience. The template renders exactly these
-# sections, in this order (the hero is always rendered first, outside the loop).
-# Keep the keys in sync with the ``{% if section == %}`` chain in
-# ``projects/call_sheet_pdf.html``.
+# sections, in this order (the hero and the production metrics band are rendered
+# first, outside the loop — a band with no heading must not consume a section
+# number). Keep the keys in sync with the ``{% if section == %}`` chain in
+# ``projects/call_sheet_pdf.html``, and note that ``_visible_sections`` drops any
+# entry whose data is absent so the printed numbering never skips.
 _SECTIONS: dict[Audience, tuple[str, ...]] = {
-    # Singer first: what concerns *them* today, then the day, then the music.
-    Audience.CHORISTER: ("personal", "event", "runsheet", "rehearsals", "program"),
+    # Singer first: what concerns *them* today, then the day, then the music,
+    # and last the two things a lost or late singer needs — who else is there
+    # and whom to reach.
+    Audience.CHORISTER: (
+        "personal",
+        "event",
+        "runsheet",
+        "rehearsals",
+        "program",
+        "ensemble",
+        "contacts",
+    ),
     # Maestro first: the musical arc and who sings/gives pitch, then the day.
     Audience.CONDUCTOR: (
         "program",
@@ -91,18 +134,31 @@ _SECTIONS: dict[Audience, tuple[str, ...]] = {
         "event",
         "contacts",
     ),
-    # Management: full coverage picture, logistics, everything, everyone.
+    # Management: full coverage picture, logistics, everything, everyone. The
+    # roster outranks the directory — on the day it is consulted far more often.
     Audience.PRODUCTION: (
-        "metrics",
         "event",
         "runsheet",
         "rehearsals",
         "program",
         "casting",
-        "contacts",
         "ensemble",
+        "contacts",
     ),
 }
+
+
+def _count_label(count: int, one: str, few: str, many: str) -> str:
+    """Polish noun after a numeral: 1 takes the singular, 2-4 the "few" form,
+    everything else the genitive plural — with the 12-14 exception, which looks
+    like a "few" ending but is not."""
+    tens = count % 100
+    units = count % 10
+    if count == 1:
+        return one
+    if 2 <= units <= 4 and not 12 <= tens <= 14:
+        return few
+    return many
 
 
 def _ensemble_name() -> str:
@@ -300,23 +356,34 @@ class DocumentGenerator:
         project_timezone = project.timezone or (
             project.location.timezone if project.location else 'UTC'
         )
-        event_datetime_local = DocumentGenerator._localize(project.date_time, project_timezone)
-        call_time_local = DocumentGenerator._localize(project.call_time, project_timezone)
+        call_window = resolve_call_window(
+            project.call_time, project.date_time, project_timezone
+        )
+        event_datetime_local = call_window.event_local
+        call_time_local = call_window.call_local
         piece_castings_map = DocumentGenerator._map_castings_by_piece(casting_list)
 
-        confirmed_participations = [
+        # The podium is `Project.conductor`, never a member of the cast: a
+        # conductor who also holds a Participation must not be counted as a
+        # singer awaiting confirmation, nor listed among the voice sections.
+        cast_participations = [
             participation
             for participation in participation_list
+            if participation.artist.voice_type != VoiceType.CONDUCTOR
+        ]
+        confirmed_participations = [
+            participation
+            for participation in cast_participations
             if participation.status == Participation.Status.CONFIRMED
         ]
         pending_participations = [
             participation
-            for participation in participation_list
+            for participation in cast_participations
             if participation.status == Participation.Status.INVITED
         ]
         declined_count = sum(
             1
-            for participation in participation_list
+            for participation in cast_participations
             if participation.status == Participation.Status.DECLINED
         )
         confirmed_crew_count = sum(
@@ -351,21 +418,32 @@ class DocumentGenerator:
 
         venue = project.location
         venue_map_url = DocumentGenerator._build_map_url(venue)
-        event_facts = [
-            {'label': 'Data wydarzenia', 'text': DocumentGenerator._format_date(event_datetime_local)},
-            {'label': 'Zbiórka (call)', 'text': DocumentGenerator._format_time(call_time_local)},
-            {'label': 'Start koncertu', 'text': DocumentGenerator._format_time(event_datetime_local)},
-            {'label': 'Strefa czasowa', 'text': project_timezone},
-            {'label': 'Miejsce', 'text': venue.name if venue else 'Do ustalenia'},
+        # Date, call, downbeat and venue name are already the masthead's four
+        # facts; restating them here filled half this card with an echo. It now
+        # carries only what the masthead cannot fit.
+        event_facts = []
+        if venue and venue.category:
+            event_facts.append(
+                {'label': 'Typ lokalizacji', 'text': venue.get_category_display()}
+            )
+        event_facts.append(
             {
                 'label': 'Adres',
-                'text': venue.formatted_address if venue and venue.formatted_address else 'Do ustalenia',
-            },
-        ]
-        if venue and venue.category:
-            event_facts.insert(
-                4,
-                {'label': 'Typ lokalizacji', 'text': venue.get_category_display()},
+                'text': DocumentGenerator._format_address(
+                    venue.formatted_address if venue else ''
+                ),
+            }
+        )
+        # A timezone is worth a line only when it is not the one the reader
+        # assumes; the IANA identifier itself is machine vocabulary either way.
+        if project_timezone != DEFAULT_EVENT_TIMEZONE:
+            event_facts.append(
+                {
+                    'label': 'Strefa czasowa',
+                    'text': DocumentGenerator._format_timezone(
+                        project_timezone, event_datetime_local
+                    ),
+                }
             )
         if project.conductor:
             event_facts.append({'label': 'Prowadzenie', 'text': str(project.conductor)})
@@ -391,14 +469,24 @@ class DocumentGenerator:
             project, crew_list, audience
         )
 
+        now = timezone.now()
         rehearsal_items = [
-            DocumentGenerator._build_rehearsal_item(rehearsal, project, recipient)
+            DocumentGenerator._build_rehearsal_item(rehearsal, project, recipient, now)
             for rehearsal in rehearsal_list
         ]
         # A singer only sees rehearsals that concern them (whole-ensemble calls
         # plus any they were personally invited to).
         if is_chorister:
             rehearsal_items = [item for item in rehearsal_items if item['is_for_me']]
+        # The people performing the concert are handed a document about the day
+        # ahead; a rehearsal that already happened is a record, and belongs to
+        # the management sheet. The count survives so nothing reads as missing.
+        rehearsals_done = sum(1 for item in rehearsal_items if item['is_past'])
+        if audience != Audience.PRODUCTION:
+            rehearsal_items = [item for item in rehearsal_items if not item['is_past']]
+        all_rehearsals_mandatory = bool(rehearsal_items) and all(
+            item['is_mandatory'] for item in rehearsal_items
+        )
 
         greeting = None
         if recipient is not None:
@@ -413,7 +501,7 @@ class DocumentGenerator:
         return {
             'project': project,
             'audience': audience.value,
-            'sections': list(_SECTIONS[audience]),
+            'sections': DocumentGenerator._visible_sections(audience, personal),
             'is_chorister': is_chorister,
             'is_conductor': audience == Audience.CONDUCTOR,
             'is_production': audience == Audience.PRODUCTION,
@@ -423,22 +511,31 @@ class DocumentGenerator:
             'font_stack': BOOK_FONT_STACK,
             'greeting': greeting,
             'personal': personal,
-            'generation_date': timezone.now(),
+            'generation_date': now,
             # A concert-day sheet gets reprinted as the plan changes; an "as of"
             # stamp on the page (not just the file metadata) is what stops people
             # working off a stale copy. Localised to the project timezone so it
             # reads in the same clock as the rest of the sheet.
             'generation_label': DocumentGenerator._format_datetime(
-                DocumentGenerator._localize(timezone.now(), project_timezone)
+                localize(now, project_timezone)
             ),
             'event_datetime_local': event_datetime_local,
             'call_time_local': call_time_local,
             'event_date_label': DocumentGenerator._format_date(event_datetime_local),
             'event_time_label': DocumentGenerator._format_time(event_datetime_local),
-            'call_time_label': DocumentGenerator._format_time(call_time_local),
-            'call_buffer_label': DocumentGenerator._format_call_buffer(
-                call_time_local,
-                event_datetime_local,
+            # A call time on another calendar day prints WITH that day: an hour
+            # on its own reads as concert-day, and a singer acting on it arrives
+            # on the wrong date.
+            'call_time_label': DocumentGenerator._format_call_time(call_window),
+            'call_crosses_day': call_window.crosses_day,
+            'call_buffer_label': DocumentGenerator._format_call_buffer(call_window),
+            # Stated only where someone can act on it: management and the
+            # maestro get told the window is broken, the singer is simply not
+            # shown a derived figure that would be wrong.
+            'call_window_warning': (
+                DocumentGenerator._call_window_warning(call_window)
+                if audience != Audience.CHORISTER
+                else ''
             ),
             'event_facts': event_facts,
             'venue_map_url': venue_map_url,
@@ -451,6 +548,8 @@ class DocumentGenerator:
             'preparation_assets': preparation_assets,
             'run_sheet_items': DocumentGenerator._normalize_run_sheet(project.run_sheet),
             'rehearsal_items': rehearsal_items,
+            'rehearsals_done': rehearsals_done,
+            'all_rehearsals_mandatory': all_rehearsals_mandatory,
             'program_cards': program_cards,
             'casting_sections': [
                 DocumentGenerator._build_casting_section(item, piece_castings_map.get(item.piece_id, []))
@@ -460,8 +559,12 @@ class DocumentGenerator:
             'ensemble_sections': DocumentGenerator._group_participations_by_voice(
                 confirmed_participations
             ),
-            'pending_sections': DocumentGenerator._group_participations_by_voice(
-                pending_participations
+            # Who has not answered yet is a production fact, not something the
+            # rest of the choir needs on its own sheet.
+            'pending_sections': (
+                DocumentGenerator._group_participations_by_voice(pending_participations)
+                if not is_chorister
+                else []
             ),
             'metrics': {
                 'cast_confirmed': len(confirmed_participations),
@@ -510,6 +613,7 @@ class DocumentGenerator:
             and p.status == Participation.Status.CONFIRMED
             and p.artist.voice_type == artist.voice_type
         )
+        section_size = len(section_mates) + 1
 
         return {
             'full_name': f'{artist.first_name} {artist.last_name}',
@@ -519,7 +623,8 @@ class DocumentGenerator:
             'assignments': assignments,
             'gives_pitch_anywhere': any(entry['gives_pitch'] for entry in assignments),
             'section_mates': section_mates,
-            'section_size': len(section_mates) + 1,
+            'section_size': section_size,
+            'section_size_label': _count_label(section_size, 'osoba', 'osoby', 'osób'),
         }
 
     @staticmethod
@@ -536,7 +641,36 @@ class DocumentGenerator:
         total = len(program_cards)
         # Singers get the two things they actually open before a concert; the
         # coverage counters ("12/14 pieces have tracks") are a manager's metric.
-        singer_assets = [
+        #
+        # A resource that does not exist is not listed on a performer's sheet:
+        # printing "Playlista referencyjna — Brak" tells the one reader who can
+        # do nothing about it that something is missing. Absent materials are a
+        # management fact, and they stay in the coverage rows below.
+        singer_assets = []
+        if project.score_pdf:
+            singer_assets.append(
+                {
+                    'label': 'Pełny score projektu',
+                    'status': 'Gotowe',
+                    'url': DocumentGenerator._absolute_url(
+                        base_url, f'/api/projects/{project.pk}/score_pdf/'
+                    ),
+                    'note': 'Kompletny pakiet nut na dziś. Otwórz w aplikacji lub wydrukuj.',
+                }
+            )
+        if project.spotify_playlist_url:
+            singer_assets.append(
+                {
+                    'label': 'Playlista referencyjna',
+                    'status': 'Gotowe',
+                    'url': project.spotify_playlist_url,
+                    'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
+                }
+            )
+        if audience != Audience.PRODUCTION:
+            return singer_assets
+
+        return [
             {
                 'label': 'Pełny score projektu',
                 'status': 'Gotowe' if project.score_pdf else 'Brak',
@@ -553,12 +687,6 @@ class DocumentGenerator:
                 'url': project.spotify_playlist_url,
                 'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
             },
-        ]
-        if audience != Audience.PRODUCTION:
-            return singer_assets
-
-        return [
-            *singer_assets,
             {
                 'label': 'Nuty per utwór',
                 'status': f'{pieces_with_sheet_music}/{total}' if total else '0/0',
@@ -640,10 +768,28 @@ class DocumentGenerator:
         base_url: str | None,
     ) -> dict[str, Any]:
         piece = item.piece
-        tracks = list(getattr(piece, 'prefetched_tracks', []))
-        voice_requirements = list(getattr(piece, 'prefetched_voice_requirements', []))
-        editions = list(getattr(piece, 'prefetched_editions', None) or piece.editions.all())
-        recordings = list(getattr(piece, 'prefetched_recordings', None) or piece.recordings.all())
+        # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
+        # answer — testing it for truthiness sends every materialless piece back
+        # to the database for a result already known to be nothing.
+        prefetched_editions = getattr(piece, 'prefetched_editions', None)
+        prefetched_recordings = getattr(piece, 'prefetched_recordings', None)
+        editions = list(
+            piece.editions.all() if prefetched_editions is None else prefetched_editions
+        )
+        recordings = list(
+            piece.recordings.all() if prefetched_recordings is None else prefetched_recordings
+        )
+        # Voice lines are stored as codes ('S1', 'A1', 'T1', 'B1'), so ordering
+        # them in the database sorts alphabetically — Alt before Bas before
+        # Sopran. Musical order is the only order a musician reads.
+        tracks = sorted(
+            getattr(piece, 'prefetched_tracks', []),
+            key=lambda track: _VOICE_LINE_ORDER.get(track.voice_part, 999),
+        )
+        voice_requirements = sorted(
+            getattr(piece, 'prefetched_voice_requirements', []),
+            key=lambda requirement: _VOICE_LINE_ORDER.get(requirement.voice_line, 999),
+        )
 
         # Default edition first; otherwise the most-recent edition with a PDF.
         editions_sorted = sorted(
@@ -662,21 +808,32 @@ class DocumentGenerator:
         )
 
         # Reference links — featured recordings first, then platform-grouped.
+        # The label names the PERFORMER, because the platform does not
+        # distinguish anything: five Spotify recordings of one piece used to
+        # print as five identical "Spotify" buttons. A printed page carries a
+        # couple of links, not a discography.
         reference_links: list[dict[str, str]] = []
+        seen_labels: set[str] = set()
         for rec in sorted(recordings, key=lambda r: (0 if r.is_featured else 1, r.get_source_display())):
             if not rec.url:
                 continue
-            reference_links.append({'label': rec.get_source_display(), 'url': rec.url})
+            label = rec.performer.strip() or rec.get_source_display()
+            if rec.year:
+                label = f'{label} ({rec.year})'
+            if label in seen_labels:
+                continue
+            seen_labels.add(label)
+            reference_links.append({'label': label, 'url': rec.url})
+            if len(reference_links) >= _MAX_REFERENCE_LINKS:
+                break
 
+        # Coverage flags only for what has no affordance of its own. "BIS" is
+        # already a pill beside the title, and sheet music and recordings are
+        # links right below — a badge repeating either is the same fact printed
+        # twice, five points apart.
         material_badges = []
-        if item.is_encore:
-            material_badges.append('BIS')
-        if sheet_music_url:
-            material_badges.append('Nuty PDF')
         if tracks:
             material_badges.append('Tracki')
-        if reference_links:
-            material_badges.append('Nagranie referencyjne')
         if piece_castings:
             material_badges.append('Casting')
 
@@ -685,6 +842,18 @@ class DocumentGenerator:
             for requirement in voice_requirements
         )
         track_labels = [track.get_voice_part_display() for track in tracks]
+        # Assembled here, not chained in the template: each `{% if %}` carried
+        # its own " · " prefix, so a piece with no duration opened on a bullet.
+        meta_line = ' · '.join(
+            part
+            for part in (
+                DocumentGenerator._format_duration(piece.estimated_duration),
+                DocumentGenerator._format_language(piece.language),
+                piece.voicing,
+                voice_requirements_summary,
+            )
+            if part
+        )
 
         # "You sing this" annotation for the personalized singer sheet.
         you = None
@@ -703,9 +872,10 @@ class DocumentGenerator:
             'composer': str(piece.composer) if piece.composer else '',
             'arranger': piece.arranger,
             'duration_label': DocumentGenerator._format_duration(piece.estimated_duration),
-            'language': piece.language,
+            'language': DocumentGenerator._format_language(piece.language),
             'voicing': piece.voicing,
             'voice_requirements_summary': voice_requirements_summary,
+            'meta_line': meta_line,
             'description': piece.description,
             'sheet_music_url': sheet_music_url,
             'reference_links': reference_links,
@@ -751,16 +921,20 @@ class DocumentGenerator:
             rows.append(
                 {
                     'voice_line': voice_line,
-                    'singers': ', '.join(singers) if singers else 'Unassigned',
+                    'singers': ', '.join(singers) if singers else 'Bez obsady',
                     'pitch_team': ', '.join(pitch_team),
                     'notes': '; '.join(dict.fromkeys(notes)),
                 }
             )
 
+        # A column every row answers with an em-dash is 120pt of width spent on
+        # nothing; it appears only when the table has something to put in it.
         return {
             'order': item.order,
             'title': item.piece.title,
             'rows': rows,
+            'has_pitch': any(row['pitch_team'] for row in rows),
+            'has_notes': any(row['notes'] for row in rows),
         }
 
     @staticmethod
@@ -768,11 +942,12 @@ class DocumentGenerator:
         rehearsal: Rehearsal,
         project: Project,
         recipient: Participation | None,
+        now: Any,
     ) -> dict[str, Any]:
         rehearsal_timezone = rehearsal.timezone or (
             rehearsal.location.timezone if rehearsal.location else project.timezone
         )
-        local_datetime = DocumentGenerator._localize(rehearsal.date_time, rehearsal_timezone)
+        local_datetime = localize(rehearsal.date_time, rehearsal_timezone)
         invited_participations = list(rehearsal.invited_participations.all())
         invited_ids = {participation.id for participation in invited_participations}
         is_whole_ensemble = not invited_participations
@@ -797,13 +972,12 @@ class DocumentGenerator:
             'timezone': rehearsal_timezone,
             'focus': rehearsal.focus,
             'is_mandatory': rehearsal.is_mandatory,
+            'is_past': rehearsal.date_time < now,
             'scope_label': scope_label,
             'is_for_me': is_for_me,
             'location_name': location.name if location else 'Do ustalenia',
-            'location_address': (
-                location.formatted_address
-                if location and location.formatted_address
-                else 'Do ustalenia'
+            'location_address': DocumentGenerator._format_address(
+                location.formatted_address if location else ''
             ),
             'map_url': DocumentGenerator._build_map_url(location),
         }
@@ -838,10 +1012,26 @@ class DocumentGenerator:
                 {
                     'label': labels.get(voice_type, voice_type),
                     'count': len(members),
-                    'members': members,
+                    'members': DocumentGenerator._collapse_repeated_names(members),
                 }
             )
         return ordered_sections
+
+    @staticmethod
+    def _collapse_repeated_names(members: list[str]) -> list[str]:
+        """One name printed twice in a row reads as a rendering fault and is
+        quietly ignored; printed once with a multiplier it reads as what it is —
+        two roster entries for one name, which someone has to go and merge. The
+        count is left alone: it counts participations, and that is the truth."""
+        counts: dict[str, int] = {}
+        for name in members:
+            counts[name] = counts.get(name, 0) + 1
+        return [
+            name
+            if repeats == 1
+            else f'{name} ({repeats} {_count_label(repeats, "wpis", "wpisy", "wpisów")})'
+            for name, repeats in counts.items()
+        ]
 
     @staticmethod
     def _map_castings_by_piece(
@@ -864,10 +1054,14 @@ class DocumentGenerator:
                     'title': (
                         str(
                             item.get('title')
+                            # `label` is the key the run sheet shipped with and
+                            # rows written then still carry it; without it they
+                            # print as the fallback rather than as themselves.
+                            or item.get('label')
                             or item.get('task')
                             or item.get('activity')
                             or item.get('name')
-                            or 'Timeline entry'
+                            or 'Punkt dnia'
                         )
                     ).strip(),
                     'description': str(item.get('description') or item.get('notes') or '').strip(),
@@ -876,8 +1070,35 @@ class DocumentGenerator:
             )
         # The editor and overview widget sort chronologically; the PDF must match,
         # so a manager entering points out of order still prints a clean timeline.
-        normalized.sort(key=lambda entry: (entry['time'] == '', entry['time']))
+        # Sorted on parsed minutes, not on the string: `run_sheet` is an
+        # unvalidated JSON field, and lexically "9:00" follows "12:00".
+        normalized.sort(key=lambda entry: DocumentGenerator._clock_sort_key(entry['time']))
         return normalized
+
+    @staticmethod
+    def _clock_sort_key(value: str) -> tuple[int, int]:
+        """Minutes since midnight for an `H:MM`/`HH:MM` string. Anything
+        unparsable sorts last rather than being dropped or guessed at."""
+        hours, _, minutes = value.partition(':')
+        try:
+            return (0, int(hours) * 60 + int(minutes))
+        except ValueError:
+            return (1, 0)
+
+    @staticmethod
+    def _visible_sections(audience: Audience, personal: dict[str, Any] | None) -> list[str]:
+        """The sections the template will actually emit, in order.
+
+        The printed section numbers come from the loop counter, so a section
+        listed here but skipped at render time leaves a gap — the production
+        sheet used to open at "2" because a headingless metrics band held the
+        first number.
+        """
+        return [
+            section
+            for section in _SECTIONS[audience]
+            if section != 'personal' or personal is not None
+        ]
 
     @staticmethod
     def _absolute_url(base_url: str | None, path: str) -> str:
@@ -910,14 +1131,63 @@ class DocumentGenerator:
         return ''
 
     @staticmethod
-    def _localize(value, timezone_name: str | None):
-        if not value:
-            return None
-        try:
-            target_timezone = zoneinfo.ZoneInfo(timezone_name or 'UTC')
-        except zoneinfo.ZoneInfoNotFoundError:
-            target_timezone = zoneinfo.ZoneInfo('UTC')
-        return timezone.localtime(value, target_timezone)
+    def _format_address(formatted_address: str | None) -> str:
+        """Places addresses arrive as free text and occasionally repeat a
+        fragment ("02-532, Rakowiecka 61, 02-532 Warszawa"). Only exact repeats
+        of a comma-separated part are dropped, and the ensemble's own country is
+        left off — a Polish sheet does not need to say the concert is in Poland.
+        Anything else passes through untouched: this is a print-time tidy, not
+        an address parser. Normalisation belongs to the logistics import.
+        """
+        if not formatted_address:
+            return 'Do ustalenia'
+        parts = [part.strip() for part in formatted_address.split(',') if part.strip()]
+        kept: list[str] = []
+        for part in parts:
+            if part in kept:
+                continue
+            if part.casefold() in _IMPLIED_COUNTRIES:
+                continue
+            kept.append(part)
+        # A postal code repeated inside a longer part ("02-532 Warszawa" after a
+        # bare "02-532") is the common Places shape; drop the bare one.
+        deduped = [
+            part
+            for index, part in enumerate(kept)
+            if not any(
+                other != part and other.startswith(f'{part} ')
+                for other in kept[index + 1:]
+            )
+        ]
+        return ', '.join(deduped) or 'Do ustalenia'
+
+    @staticmethod
+    def _format_timezone(timezone_name: str, event_local: Any) -> str:
+        """The IANA identifier with its actual offset for the event, so a reader
+        can act on it without knowing what 'Europe/Warsaw' means in August."""
+        if event_local is None:
+            return timezone_name
+        offset = event_local.utcoffset()
+        if offset is None:
+            return timezone_name
+        total_minutes = int(offset.total_seconds() // 60)
+        sign = '+' if total_minutes >= 0 else '-'
+        hours, minutes = divmod(abs(total_minutes), 60)
+        suffix = f'{sign}{hours}' if minutes == 0 else f'{sign}{hours}:{minutes:02d}'
+        return f'{timezone_name} (UTC{suffix})'
+
+    @staticmethod
+    def _format_language(language: str | None) -> str:
+        """'la-pl' is a machine token; the sheet says which languages are sung.
+        Unrecognised tokens pass through rather than being guessed at."""
+        if not language:
+            return ''
+        raw = language.strip()
+        if not raw:
+            return ''
+        codes = [code.strip() for code in raw.replace('/', '-').split('-') if code.strip()]
+        named = [_LANGUAGE_NAMES.get(code.casefold(), code) for code in codes]
+        return ' / '.join(dict.fromkeys(named))
 
     @staticmethod
     def _format_duration(seconds: int | None) -> str:
@@ -933,16 +1203,39 @@ class DocumentGenerator:
         return f'{secs} s'
 
     @staticmethod
-    def _format_call_buffer(call_time, event_time) -> str:
-        if not call_time or not event_time:
+    def _format_call_buffer(window: CallWindow) -> str:
+        """The arrival window, stated only when it is one. A call entered on the
+        wrong date used to print here as "481 h 00 min między zbiórką a startem"
+        — arithmetic presented as a plan."""
+        if not window.is_stated or window.buffer_minutes is None:
             return ''
-        buffer_minutes = int((event_time - call_time).total_seconds() // 60)
-        if buffer_minutes <= 0:
-            return ''
-        hours, minutes = divmod(buffer_minutes, 60)
+        hours, minutes = divmod(window.buffer_minutes, 60)
         if hours:
             return f'{hours} h {minutes:02d} min'
         return f'{minutes} min'
+
+    @staticmethod
+    def _format_call_time(window: CallWindow) -> str:
+        """The call as an hour — carrying its date whenever that date is not the
+        concert's, because a bare hour is read as concert-day."""
+        if window.call_local is None:
+            return 'Do ustalenia'
+        if window.crosses_day:
+            return window.call_local.strftime('%d.%m, %H:%M')
+        return window.call_local.strftime('%H:%M')
+
+    @staticmethod
+    def _call_window_warning(window: CallWindow) -> str:
+        """What is wrong with the arrival window, for the sheets whose reader can
+        go and fix it."""
+        if window.problem is CallWindowProblem.NOT_BEFORE:
+            return 'Zbiórka nie wypada przed koncertem — sprawdź datę i godzinę w projekcie.'
+        if window.problem is CallWindowProblem.IMPLAUSIBLE:
+            return (
+                'Zbiórka jest ustawiona ponad 12 h przed koncertem — '
+                'najprawdopodobniej wpisano ją na złą datę.'
+            )
+        return ''
 
     @staticmethod
     def _format_date(value) -> str:

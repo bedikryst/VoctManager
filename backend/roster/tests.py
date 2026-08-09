@@ -4352,9 +4352,11 @@ class ConcertDaySheetTests(APITestCase):
         self.assertEqual(
             self._build_context(Audience.CONDUCTOR, None)["sections"][0], "program"
         )
-        self.assertEqual(
-            self._build_context(Audience.PRODUCTION, None)["sections"][0], "metrics"
-        )
+        # The coverage band has no heading, so it is not a section: it used to
+        # sit first here and silently consume section number 1.
+        production_sections = self._build_context(Audience.PRODUCTION, None)["sections"]
+        self.assertEqual(production_sections[0], "event")
+        self.assertNotIn("metrics", production_sections)
 
     def test_template_renders_for_every_audience(self) -> None:
         # Exercises the real Django template (WeasyPrint is mocked elsewhere, so
@@ -4380,6 +4382,221 @@ class ConcertDaySheetTests(APITestCase):
         self.assertNotIn("555999555", singer_html)
         self.assertNotIn("crew-secret@test.pl", singer_html)
         self.assertIn("podajesz", singer_html)
+
+    # --- the sheet may not state things that are not true ---------------- #
+
+    def _render(self, audience: Audience, recipient: Participation | None) -> str:
+        from django.template.loader import render_to_string
+
+        return render_to_string(
+            "projects/call_sheet_pdf.html", self._build_context(audience, recipient)
+        )
+
+    def _move_call_off_the_concert_day(self) -> None:
+        self.project.call_time = self.project.date_time - timedelta(days=20)
+        self.project.save(update_fields=["call_time"])
+
+    def test_section_numbering_starts_at_one_for_every_audience(self) -> None:
+        """The printed numbers come from the loop counter, so a listed-but-unrendered
+        section leaves a gap. The production sheet used to open at '2'."""
+        import re
+
+        for audience, recipient in [
+            (Audience.PRODUCTION, None),
+            (Audience.CONDUCTOR, None),
+            (Audience.CHORISTER, self.singer_part),
+        ]:
+            numbers = re.findall(
+                r'<span class="num">(\d+)</span>', self._render(audience, recipient)
+            )
+            self.assertEqual(
+                numbers,
+                [str(n) for n in range(1, len(numbers) + 1)],
+                f"{audience} numbering is not 1..n",
+            )
+
+    def test_call_time_on_another_day_carries_its_date(self) -> None:
+        """A bare hour reads as concert-day; acting on it means arriving on the
+        wrong date."""
+        import zoneinfo
+
+        self._move_call_off_the_concert_day()
+        ctx = self._build_context(Audience.PRODUCTION, None)
+
+        call_time = self.project.call_time
+        assert call_time is not None
+        self.assertTrue(ctx["call_crosses_day"])
+        self.assertIn(
+            call_time.astimezone(zoneinfo.ZoneInfo("Europe/Warsaw")).strftime("%d.%m"),
+            ctx["call_time_label"],
+        )
+
+    def test_implausible_call_window_is_reported_not_stated(self) -> None:
+        """A call entered on the wrong date used to print as '481 h 00 min
+        między zbiórką a startem' — arithmetic presented as a plan."""
+        self._move_call_off_the_concert_day()
+
+        production = self._build_context(Audience.PRODUCTION, None)
+        self.assertEqual(production["call_buffer_label"], "")
+        self.assertIn("12 h", production["call_window_warning"])
+        self.assertNotIn("480 h", self._render(Audience.PRODUCTION, None))
+
+        # The singer can do nothing about a data-entry fault and is not alarmed
+        # by one; they simply never see a derived figure that would be wrong.
+        singer = self._build_context(Audience.CHORISTER, self.singer_part)
+        self.assertEqual(singer["call_buffer_label"], "")
+        self.assertEqual(singer["call_window_warning"], "")
+
+    def test_plausible_call_window_is_still_stated(self) -> None:
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        self.assertEqual(ctx["call_buffer_label"], "1 h 00 min")
+        self.assertEqual(ctx["call_window_warning"], "")
+
+    def test_conductor_is_never_counted_as_cast(self) -> None:
+        """The podium is `Project.conductor`; a maestro who also holds a
+        Participation used to appear on his own sheet under 'oczekujące
+        potwierdzenia' and to inflate the cast census."""
+        Participation.objects.create(
+            artist=self.maestro,
+            project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        ctx = self._build_context(Audience.CONDUCTOR, None)
+
+        self.assertEqual(ctx["metrics"]["cast_pending"], 0)
+        self.assertEqual(ctx["metrics"]["cast_confirmed"], 2)
+        labels = [
+            section["label"]
+            for section in ctx["ensemble_sections"] + ctx["pending_sections"]
+        ]
+        self.assertNotIn("Dyrygent", labels)
+
+    def test_reference_links_name_the_performer_and_are_capped(self) -> None:
+        """Five recordings from one platform used to print as five identical
+        'Spotify' buttons."""
+        from archive.models import Recording, RecordingSource
+
+        for index in range(5):
+            Recording.objects.create(
+                piece=self.piece1,
+                source=RecordingSource.SPOTIFY,
+                external_id=f"ext-{index}",
+                url=f"https://open.spotify.com/track/{index}",
+                performer=f"Ensemble {index}",
+                year=2000 + index,
+            )
+
+        card = next(
+            c
+            for c in self._build_context(Audience.PRODUCTION, None)["program_cards"]
+            if c["piece_id"] == self.piece1.id
+        )
+        labels = [link["label"] for link in card["reference_links"]]
+
+        self.assertLessEqual(len(labels), 2)
+        self.assertEqual(len(labels), len(set(labels)))
+        self.assertNotIn("Spotify", labels)
+        # The badge row no longer repeats what the links below it already say.
+        self.assertNotIn("Nagranie referencyjne", card["material_badges"])
+        self.assertNotIn("Nuty PDF", card["material_badges"])
+
+    def test_voice_requirements_read_in_satb_order(self) -> None:
+        """Voice lines are stored as codes, so ordering them in the database
+        sorts Alt before Bas before Sopran."""
+        from archive.models import PieceVoiceRequirement
+        from core.constants import VoiceLine
+
+        for line in (
+            VoiceLine.BASS_1,
+            VoiceLine.SOPRANO_1,
+            VoiceLine.TENOR_1,
+            VoiceLine.ALTO_1,
+        ):
+            PieceVoiceRequirement.objects.create(
+                piece=self.piece1, voice_line=line, quantity=2
+            )
+
+        card = next(
+            c
+            for c in self._build_context(Audience.PRODUCTION, None)["program_cards"]
+            if c["piece_id"] == self.piece1.id
+        )
+        self.assertEqual(
+            card["voice_requirements_summary"],
+            "2x Sopran 1, 2x Alt 1, 2x Tenor 1, 2x Bas 1",
+        )
+
+    def test_program_metaline_never_opens_on_a_separator(self) -> None:
+        self.piece1.language = "la-pl"
+        self.piece1.save(update_fields=["language"])
+
+        card = next(
+            c
+            for c in self._build_context(Audience.PRODUCTION, None)["program_cards"]
+            if c["piece_id"] == self.piece1.id
+        )
+        self.assertFalse(card["meta_line"].startswith("·"))
+        self.assertEqual(card["meta_line"], "łacina / polski")
+
+    def test_run_sheet_sorts_on_the_clock_and_reads_legacy_rows(self) -> None:
+        """`run_sheet` is an unvalidated JSON field: lexically '9:00' follows
+        '12:00', and rows written with the original `label` key printed as the
+        fallback placeholder."""
+        self.project.run_sheet = [
+            {"time": "12:00", "title": "Próba akustyczna"},
+            {"time": "9:00", "label": "Otwarcie kościoła"},
+        ]
+        self.project.save(update_fields=["run_sheet"])
+
+        items = self._build_context(Audience.PRODUCTION, None)["run_sheet_items"]
+        self.assertEqual([item["time"] for item in items], ["9:00", "12:00"])
+        self.assertEqual(items[0]["title"], "Otwarcie kościoła")
+
+    def test_singer_sheet_carries_someone_to_call(self) -> None:
+        """The chorister branch of the contact directory was built and never
+        rendered — the sheet had nobody to call on it."""
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+        self.assertIn("contacts", ctx["sections"])
+
+        html = self._render(Audience.CHORISTER, self.singer_part)
+        self.assertIn("Wanda Baton", html)
+        # ...without reopening the privacy hole the directory exists to avoid.
+        self.assertNotIn("555999555", html)
+        self.assertNotIn("crew-secret@test.pl", html)
+        self.assertNotIn("600100100", html)
+
+    def test_performer_sheets_list_no_absent_resources(self) -> None:
+        """"Playlista referencyjna — Brak" tells the one reader who can do
+        nothing about it that something is missing."""
+        self.assertEqual(
+            self._build_context(Audience.CHORISTER, self.singer_part)["preparation_assets"],
+            [],
+        )
+        # Management still gets the full coverage picture.
+        self.assertTrue(
+            self._build_context(Audience.PRODUCTION, None)["preparation_assets"]
+        )
+
+    def test_performer_sheets_drop_rehearsals_that_already_happened(self) -> None:
+        self.reh_open.date_time = timezone.now() - timedelta(days=3)
+        self.reh_open.save(update_fields=["date_time"])
+
+        singer = self._build_context(Audience.CHORISTER, self.singer_part)
+        self.assertEqual(len(singer["rehearsal_items"]), 1)
+        self.assertEqual(singer["rehearsals_done"], 1)
+
+        # The management sheet is a record and keeps them.
+        self.assertEqual(
+            len(self._build_context(Audience.PRODUCTION, None)["rehearsal_items"]), 2
+        )
+
+    def test_zero_crew_is_not_reported_as_confirmed_support(self) -> None:
+        from .models import CrewAssignment
+
+        CrewAssignment.objects.filter(project=self.project).delete()
+        html = self._render(Audience.PRODUCTION, None)
+        self.assertIn("Brak obsady technicznej", html)
+        self.assertNotIn("Wsparcie potwierdzone", html)
 
     def test_resolve_audience_maps_users(self) -> None:
         from .views import ProjectViewSet
