@@ -4,15 +4,20 @@
 # --------------------------------------------------------------------------
 # Reclaims the disk a production build leaves behind on the droplet.
 #
-# A single `make deploy` adds roughly 4–5 GB, and almost none of it is the
-# running stack:
-#   • ~960 MB  BuildKit layer for `COPY web/ ./` (photo + video originals)
-#   • ~1.1 GB  BuildKit layer holding the Astro `dist/` the build produced
-#   • ~1.1 GB  the same dist baked into the new nginx image — which orphans
+# A single `make deploy` adds a few GB, and almost none of it is the running
+# stack:
+#   • ~525 MB  BuildKit layer for `COPY web/ ./` (photo proxies + video originals)
+#   • ~465 MB  BuildKit layer holding the Astro `dist/` the build produced
+#   • ~465 MB  the same dist baked into the new nginx image — which orphans
 #              the previous image (dangling, but still on disk)
 #   • the rest: panel SPA layers, backend layers, growing cache mounts
 # Every one of those is a NEW record per build; nothing evicts the old ones.
 # Left alone the droplet fills in a couple of weeks of ordinary deploys.
+#
+# Those three used to be ~960 MB / ~1.1 GB / ~1.1 GB, before 2560px proxies
+# replaced the camera originals (web/downscale-photos.mjs). What remains is
+# now almost entirely VIDEO — 427 of the 465 MB of dist is three MP4s — so the
+# next real cut is the AV1 work, not anything on the photograph side.
 #
 # Run by `make deploy` (before and after) and daily from cron — see
 # docs/backups.md. Both entry points must stay wired: cron alone let a week of
@@ -74,6 +79,12 @@ else
   # rename, and reclaims exactly 0 B — which is how ~14 GB of build cache
   # accumulated unnoticed. `--max-used-space` is the flag with the intended
   # "trim to a budget" meaning, so prefer it and detect rather than assume.
+  #
+  # CAUTION: a BUDGET is not the same as the flagless prune where cache mounts
+  # are concerned. Reaching a budget means evicting by LRU across every record,
+  # so the Astro image-encode mount (frontend/Dockerfile, web-builder) is fair
+  # game here even without --deep. Raise GC_KEEP rather than let a deploy that
+  # touched photographs land on a build that re-encodes every variant.
   if docker builder prune --help 2>/dev/null | grep -q -- '--max-used-space'; then
     budget_flag="--max-used-space"
   else

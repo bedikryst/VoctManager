@@ -95,12 +95,24 @@ COPY web/ ./
 # plus content-addressed assets under `dist/_astro/`.
 #
 # BuildKit cache mount for Astro's asset cache (`cacheDir` default = node_modules/.astro).
-# Without it every prod build re-encodes ~380 image variants from ~1150 megapixels of
-# camera originals — the dominant cost, since a single 2560w AVIF takes ~4s and the
-# root .dockerignore's `**/node_modules` guarantees the host's warm cache never lands here.
+# Without it every prod build re-encodes ~530 image variants, and the root .dockerignore's
+# `**/node_modules` guarantees the host's warm cache never lands here to help.
 # The cache is content-addressed (`<name>.<srcContentHash>_<transformHash>.<ext>`), so the
-# fresh mtimes from `COPY web/ ./` above do NOT invalidate it — only changed image BYTES do.
-# Cold builds (new host, empty cache) pay full price exactly once.
+# fresh mtimes from `COPY web/ ./` above do NOT invalidate it — only changed image BYTES do,
+# and only for the photograph that changed (verified: adding one file to src/assets/photos
+# rebuilt 531/531 from cache).
+#
+# TWO THINGS MAKE THIS MOUNT LOOK BROKEN, and both have bitten:
+#  • It is only ever EXERCISED on a build where a photo changed. When none did, `COPY web/ ./`
+#    hits the layer cache and this whole RUN is skipped — no image lines at all. So "the cache
+#    works when I change nothing" is the layer cache, not this one, and says nothing about it.
+#  • infra/docker-gc.sh trims BuildKit to GC_KEEP with `docker builder prune --max-used-space`.
+#    That budget evicts by LRU across ALL records, cache mounts included — the flagless prune
+#    is what spares them, not a budgeted one. A photo-changing build writes ~2 GB of fresh
+#    records, so a tight budget can drop this mount and make the NEXT such build fully cold.
+#    Symptom: image lines reading `(before: … after: …)` instead of `(reused cache entry)`.
+# Sources are 2560px proxies (web/downscale-photos.mjs), so even a genuinely cold pass is
+# minutes rather than the half-hour the 8256px camera originals cost.
 RUN --mount=type=cache,target=/app/node_modules/.astro,sharing=locked \
     npm run build
 

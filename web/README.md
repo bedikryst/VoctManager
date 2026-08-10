@@ -90,7 +90,8 @@ web/
     ├── lib/photos.ts  # Extension-agnostic image lookup; `photo("name")` + `bleedPair("base")`
     ├── lib/videos.ts  # Bundled MP4 registry; emits hashed asset URLs, not /video/*.mp4
     └── assets/
-        ├── photos/ ← Hero/portrait originals (gitignored — uploaded to build host manually)
+        ├── photos/ ← 2560px build proxies (gitignored — uploaded to build host manually)
+        │   └── .original-photos/ ← full-size camera archive; `npm run photos:proxy` reads it
         └── videos/ ← MP4 originals (gitignored — uploaded to build host manually)
 ```
 
@@ -145,6 +146,7 @@ Two endpoints are consumed:
 ## Conventions & Code Guidelines
 
 * **Large media lives outside the repo.** `src/assets/photos/` and `src/assets/videos/` are `.gitignore`d (`web/.gitignore`) — originals belong to the artists and are uploaded manually to the build host before `npm run build`. `lib/photos.ts` resolves photos by bare name (`photo("hero-landing")`, `bleedPair("koncerty-hero")`); `lib/videos.ts` imports MP4s from `src/assets/videos/` so Astro emits content-hashed URLs instead of stable `/video/*.mp4` paths.
+* **Adding a photograph is two steps.** Put the full-size frame in `src/assets/photos/.original-photos/`, then run `npm run photos:proxy` — it regenerates the flat 2560px proxies that `lib/photos.ts` actually globs, and leaves already-current ones untouched. Skipping the script and dropping a camera original straight into `src/assets/photos/` still builds, but sharp re-decodes that file once per rendition, which is what turned a full build into half an hour. **Only the proxies go to the build host**: the archive is excluded from the Docker context by the root `.dockerignore`, so uploading it would be dead weight. Caps and their sources are documented in `downscale-photos.mjs` — raise a `widths` ladder past 2560 and that constant has to move with it.
 * **Full-bleed images** go through `<BleedImage desktop mobile alt position … />` — it emits AVIF + WebP at responsive widths with a 1920px WebP fallback `<img src>`. In-flow images use Astro's `<Picture>`.
 * **No external CSS frameworks.** Tokens in `tokens.css`, primitives in `base.css`, art-directed CSS per page or section. Tailwind is *not* installed here.
 * **No `any`.** Strict TypeScript. The `astro check` gate must stay at `0 errors / 0 warnings`.

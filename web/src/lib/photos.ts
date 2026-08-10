@@ -1,25 +1,35 @@
 /**
  * @file photos.ts
  * @description Extension-agnostic lookup for build-optimized images under src/assets/photos.
- *  Drop an original as `<name>.jpg|.jpeg|.png|.webp|.avif` and reference it by bare `<name>` —
- *  swapping the source extension never touches page code. Returns Astro `ImageMetadata` for
- *  use with <Image>, <Picture>, <BleedImage>, or getImage(). Eager glob = metadata only
- *  (dimensions/format), resolved at build time; the actual bytes are still optimized per use.
+ *  Reference a photograph by bare `<name>` — swapping the source extension never touches page
+ *  code. Returns Astro `ImageMetadata` for use with <Image>, <Picture>, <BleedImage>, or
+ *  getImage(). Eager glob = metadata only (dimensions/format), resolved at build time; the
+ *  actual bytes are still optimized per use.
  *
- *  CONSTRAINT: eager also means every original joins the module graph, so Vite emits each one
- *  as a build asset — it cannot know the file will only ever reach <Picture>, which writes its
- *  own renditions under different names. Left alone that ships the untouched camera JPEGs
- *  (~490 MB) next to the variants. `prune-orphan-assets.mjs` deletes the unreferenced ones at
- *  the end of the build; anything reached through `.src` stays, because the URL lands in the
- *  page output. Keep it that way — reading `.src` is what marks an original as really needed.
+ *  WHAT THESE FILES ARE. Not the camera originals — build PROXIES, capped at 2560px, generated
+ *  from `src/assets/photos/.original-photos/` by `npm run photos:proxy` (web/downscale-photos.mjs,
+ *  which documents the caps and where each comes from). A new photograph goes into the ARCHIVE
+ *  and the script regenerates this directory; dropping a 44 MB frame straight in here still
+ *  builds, but re-pays its full decode on every one of its ~6 variants. The glob below is flat
+ *  (`*`, not `**`), which is what keeps the archive sitting inside this directory yet invisible
+ *  to the build — the root .dockerignore keeps it out of the image context for the same reason.
+ *
+ *  CONSTRAINT: eager also means every proxy joins the module graph, so Vite emits each one as a
+ *  build asset — it cannot know the file will only ever reach <Picture>, which writes its own
+ *  renditions under different names. Left alone that ships the untouched proxies (~92 MB) next
+ *  to the variants. `prune-orphan-assets.mjs` deletes the unreferenced ones at the end of the
+ *  build; anything reached through `.src` stays, because the URL lands in the page output.
+ *  Keep it that way — reading `.src` is what marks an original as really needed.
  *
  *  CONSTRAINT: <Image>/<Picture> given `widths` must ALSO be given `width`, set to the top of
  *  that ladder. `widths` builds the srcset only; the base transform behind the `<img src>`
  *  fallback takes its size from `width`, and with none passed Astro falls back to the source's
- *  intrinsic dimensions (astro/dist/assets/services/service.js, `getTargetDimensions`). An
- *  8256px camera frame then ships a full-resolution rendition nobody with `srcset` support ever
- *  fetches — invisible on screen, and 98 of the 133 MB this build once emitted. Naming the top
- *  candidate makes the fallback the SAME file as the widest srcset entry, so it costs nothing.
+ *  intrinsic dimensions (astro/dist/assets/services/service.js, `getTargetDimensions`). The
+ *  source then ships a full-resolution rendition nobody with `srcset` support ever fetches —
+ *  invisible on screen, and 98 of the 133 MB this build once emitted off 8256px frames. The
+ *  2560 proxy cap shrinks that waste without removing it: a 2560 fallback under a ladder that
+ *  tops out at 840 is still a file nobody fetches. Naming the top candidate makes the fallback
+ *  the SAME file as the widest srcset entry, so it costs nothing.
  *  Clamp it to `img.width` wherever the source is not curated — the archive holds squares and
  *  small scans. Sharp runs `withoutEnlargement`, so an over-large `width` never upscales, but
  *  the transform is still RECORDED at the number asked for: the ladder gets clamped to the

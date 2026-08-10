@@ -8,9 +8,10 @@
  *  `import.meta.glob` over `src/assets/photos/*`. That puts every original in the module
  *  graph, so Vite emits each one as a build asset — it cannot know the file will only ever
  *  be handed to `<Picture>`, which generates its own optimized variants under different
- *  names. The originals therefore ship alongside the variants, unreferenced: ~513 MB of
- *  4000px JPEGs (one of them 46 MB) baked into the nginx image and publicly fetchable,
- *  while the pages themselves correctly serve the WebP renditions.
+ *  names. The sources therefore ship alongside the variants, unreferenced: ~92 MB of 2560px
+ *  proxies baked into the nginx image and publicly fetchable, while the pages themselves
+ *  correctly serve the WebP renditions. It was ~513 MB before those proxies replaced the
+ *  camera originals (web/downscale-photos.mjs) — smaller now, still nothing anyone requests.
  *
  *  Deleting them here rather than in a separate step matters for the droplet: the whole
  *  build runs inside ONE Docker `RUN`, so files created and removed within it never reach

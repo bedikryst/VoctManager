@@ -45,6 +45,15 @@ frontend/coverage
 web/dist
 web/.astro
 
+# The full-size camera archive, and a retired backdrop set kept for reference. Neither is read
+# by the build: Astro globs `src/assets/photos/*` FLAT (lib/photos.ts), and the proxies it does
+# glob are generated from the archive by `npm run photos:proxy` on the host, before the image is
+# built. Letting these into the context would put ~530 MB straight back into the `COPY web/ ./`
+# layer — the weight the proxies exist to remove, and what pushes BuildKit past the GC_KEEP
+# budget in infra/docker-gc.sh and evicts the Astro image cache the next build needs.
+web/src/assets/photos/.original-photos
+web/src/assets/photos/.old-bg-desktop
+
 # ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
 # but anything that would slip into this root context should still be excluded
 # in case the root image ever needs to reach in.) ----

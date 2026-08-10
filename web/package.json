@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "check": "astro check",
     "audit:registers": "node audit/index.mjs",
-    "test:audit": "node --test audit/audit.test.mjs"
+    "test:audit": "node --test audit/audit.test.mjs",
+    "photos:proxy": "node downscale-photos.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.5",
