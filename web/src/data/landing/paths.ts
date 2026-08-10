@@ -94,26 +94,30 @@ export interface Path {
    * `frame`. Omit wherever the photograph as delivered belongs in the line, which is four
    * evenings out of five.
    *
-   * It exists because a MATTE grade is not a luminance problem and cannot be fixed downstream of
-   * one. The Łódź frames of 9 Kart carry a split-toned shadow lift — per-channel black points of
-   * 4 / 20 / 31 against 0 / 0 / 0 for every other photograph in this archive — so the panel's
-   * shadows came out TEAL in a line whose other four are warm, on a page whose whole palette is
-   * parchment, night and candle. A `contrast()` was tried here first and could never have worked:
-   * it scales all three channels about the same midpoint, so it moved the luminance black point
-   * and left the 27-level channel spread exactly where it was. CSS has no per-channel transfer
-   * short of an SVG `feComponentTransfer`, and a `url()` in the filter chain would have made the
-   * hover grade non-interpolable, which costs the band its one gesture.
+   * IT IS FOR WHAT THE PANEL'S TWO LEVERS CANNOT REACH, which in practice means anything that is
+   * not a global brightness or saturation of the pixels as shot. `frameLift` and `frameSaturation`
+   * are CSS filter functions over the whole frame; anything living in one channel, or in one
+   * region, or printed on top of the photograph, is outside them by construction. Hymn Poległym is
+   * the standing case: its frame arrives matted, with a light border on all four sides and a
+   * burnt-in credit, and cropping does not remove either — the panel's square is cut from a 3:2
+   * landscape, so it keeps the full height and the border survives top and bottom.
    *
-   * So the correction is baked into a separate file: per-channel linear mapping each channel's
-   * own black point to 0 and holding white, which is the exact inverse of the lift and invents
-   * nothing. `frame` still names the GALLERY entry, so alt, credit and run all still come from
-   * the photograph itself, and the archive keeps the file as its photographer delivered it —
-   * this variant is referenced nowhere else and appears on no other surface.
+   * WHAT IT MAY NOT DO is change what the photograph says about the evening. Removing a mat the
+   * photographer wrapped around the image is fair; recolouring the light that was in the room is
+   * not, which is why Wołanie Gór's cool panel is damped with `frameSaturation` and never
+   * white-balanced here. A correction that cannot be stated as one sentence about the FILE rather
+   * than about the SUBJECT belongs in a different frame, not in a variant.
    *
-   * Regenerate it, do not retouch it: measure p1 per channel on the whole frame, then
-   * `sharp(src).linear(255/(255−p), −p·255/(255−p))` with the triple. Verify by re-measuring —
-   * the channel spread must come back under 2, and the shadow B−R must land in the line's warm
-   * range rather than merely near zero.
+   * `frame` still names the GALLERY entry, so alt, credit and run all come from the photograph
+   * itself, and the archive keeps the file exactly as its photographer delivered it — the variant
+   * is referenced nowhere else and appears on no other surface.
+   *
+   * Regenerate it, do not retouch it. The recipe belongs beside the evening that uses it, stated
+   * in terms a second person can re-run and re-measure; a variant nobody can reproduce is a file
+   * nobody can verify. A per-channel black-point correction was once tried here for a split-toned
+   * frame in 9 Kart and is worth knowing about as a dead end: it neutralised the cast and halved
+   * the frame's hue range with it, because the cast WAS the only second hue that photograph had.
+   * Grading cannot add colour a room did not contain.
    */
   readonly frameAsset?: string;
   /**
@@ -268,24 +272,34 @@ export const PATHS: readonly Path[] = [
     place: "Bazylika Mariacka w Krakowie",
     note: "Hołd tym, którzy oddali życie w obronie Ukrainy. W kulminacji, przy otwarciu ołtarza Mariackiego, zabrzmiał hymn Ukrainy.",
     poster: "poster-hymn",
-    // `-2` stood here — the nave washed blue, seen the length of the church, the singers a speck
-    // at the far end. It was rejected on two counts at once: it showed nothing at 316px, and it
-    // was the only cool frame on a page whose whole palette is parchment, night and candle, so
-    // the eye entered a line of five in the middle, at its emptiest panel.
+    // THE DARKEST EVENING IN THE ARCHIVE, and for four frames that was a wall rather than a mood:
+    // `kd-hymn-0` stood here at the grade's ceiling and still measured a MEDIAN of 0.004 with 81.8%
+    // of the panel under 6% luma — a black rectangle with a band of faces, where the rest of the
+    // line runs a median of 0.115–0.132. Lift could not reach it (see `frameLift`), and the other
+    // three offered nothing: `-1` is the altar with the ensemble invisible, `-2` washes the nave
+    // blue and puts the singers a speck at the far end, `-3` is the audience with a face in the
+    // foreground — outside the consent scope, which covers singers.
     //
-    // `-0` was ruled out by §13 as "a black rectangle at any size" ON A GRADE THAT NO LONGER
-    // EXISTS: that reading was taken while the band still carried `contrast(1.06)`, which rendered
-    // everything under 2.8% luma as literal #000, and §15 removed it. Rendered at the panel's real
-    // size under today's grade the singers read plainly. It is the evening's one frame at human
-    // scale — `-1` is the altar with the ensemble invisible, `-3` is the audience with a face in
-    // the foreground, outside the consent scope, which covers singers.
-    frame: "kd-hymn-0",
+    // This frame is the evening's culmination, which is also what `note` above describes: the
+    // Mariacki altarpiece open and lit while the anthem sounds. Graded it measures a median of
+    // 0.115 and 0.8% under 6% luma, with the widest hue range in the line at 38.0°. It stays the
+    // darkest panel of the five and that is honest; it is no longer an empty one.
+    frame: "kd-hymn-4",
+    // The photographer delivered this frame matted — a 10px light border on all four sides and a
+    // burnt-in credit in the bottom-left — and NEITHER survives the panel by being cropped away.
+    // The square is cut from a 3:2 landscape, so it takes the full HEIGHT and trims the width: the
+    // border stays top and bottom, and the credit's tail sits inside the left edge of the crop.
+    // The variant is the same photograph with the mat removed (`sharp.extract` 10,10,2000×1213,
+    // which clears the credit by 30px) and nothing else touched. The gallery still shows the file
+    // as delivered, mat and mark intact; the text credit beside it in concerts.yaml is the
+    // attribution that travels with the photograph everywhere else on the site.
+    frameAsset: "kd-hymn-4-imagines",
     frameDate: "luty MMXXV",
-    // Capped at 1.35 against a derived 1.74, and read off the panel rather than argued: the lit
-    // group holds up through 1.55, but the carpet and the floor behind it come up with it, and
-    // past ~1.4 the nave is a grey room rather than a dark one. It stays the line's dark end,
-    // which is honest — it was the darkest evening.
-    frameLift: 1.35,
+    // 1.25, and the limit is the CHROMA rather than the luminance this time: the altarpiece is lit
+    // red, so the red channel is the first thing to clip. At 1.25 it clips over 1.1% of the panel
+    // and the retable keeps its drawing; at 1.35 that is 2.38% and the pentaptych flattens into one
+    // red field, which is the same trade refused for the blue wash in `-2`.
+    frameLift: 1.25,
   },
   {
     slug: "aeternam-epitafium-dla-gazy",

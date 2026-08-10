@@ -1593,17 +1593,24 @@
   gallery:
   # One evening, one run — every frame inherits the concert's own venue and date.
   #
-  # The darkest gallery on the site, and the only one that needs `plate` set. Measured over the
-  # four originals: -0 is mean luma 9 / p90 24, -1 is 13 / 35, -2 is 20 / 48 and -3 is 42 / 64 —
-  # so the run's own first frame is a black rectangle at any size and -3 is the only one of them
-  # with tonal range left to read. The archive still SHOWS all four; it just does not open on
-  # the one that has nothing to open with.
+  # The darkest gallery on the site, and the only one that needs `plate` set — the run's own first
+  # frame is a black rectangle at any size (-0 measures mean luma 9 / p90 24, against -1 at 13 / 35
+  # and -2 at 20 / 48), and a gallery must not open on the one photograph that has nothing to open
+  # with. The archive still SHOWS every frame; `plate` only chooses which one stands for the set.
+  #
+  # It sits on -4 because that frame is the evening's culmination — the Mariacki altarpiece open
+  # under the anthem — and because it is the only one here with both the room and the ensemble
+  # readable at thumbnail size. It carries a photographer's mat and burnt-in mark, which is how it
+  # was delivered and how the archive keeps it; the landing's plate crops those off in a variant of
+  # its own (frameAsset, data/landing/paths). Before -4 and -5 arrived this fell to -3, on tonal
+  # range alone out of four candidates — that frame reads the AUDIENCE from behind, which is a poor
+  # thing for a concert gallery to open on and was only ever the least bad of what there was.
   - { img: kd-hymn-0, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   - { img: kd-hymn-1, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   - { img: kd-hymn-2, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
-  - { img: kd-hymn-3, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", plate: true }
-  - { img: kd-hymn-4, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetka" }
-  - { img: kd-hymn-5, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetka" }
+  - { img: kd-hymn-3, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
+  - { img: kd-hymn-4, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko", plate: true }
+  - { img: kd-hymn-5, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetko" }
   movements:
     - id: introitus
       lat: Introitus
