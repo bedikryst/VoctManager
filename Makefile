@@ -7,13 +7,24 @@
 COMPOSE_DEV  = docker compose -f docker-compose.yml -f docker-compose.dev.yml
 COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 
+# The production droplet has ONE vCPU. Compose builds its services concurrently by
+# default, which on a single core buys nothing and costs real memory: a deploy was
+# observed running the backend's `pip install` and the Astro sharp pass at the same
+# time, each slowing the other. Serialising them does not lengthen the build — there
+# is one core either way — it only stops them fighting over it.
+# NOTE: this bounds concurrency BETWEEN services. Independent stages inside a single
+# Dockerfile (frontend's panel-builder and web-builder) still overlap; serialising
+# those needs a dependency edge that would also make a panel change invalidate the
+# Astro image pass, so it is deliberately left alone.
+BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1
+
 .PHONY: up prod deploy gc down logs shell migrate seed superuser
 
 up:
-	$(COMPOSE_DEV) up --build -d
+	$(BUILD_ENV) $(COMPOSE_DEV) up --build -d
 
 prod:
-	$(COMPOSE_PROD) up --build -d
+	$(BUILD_ENV) $(COMPOSE_PROD) up --build -d
 
 # Full production deploy. Nothing here is optional and the order matters:
 # migrations are applied by NO other path (entrypoint.sh only collects static,
@@ -22,22 +33,30 @@ prod:
 # loudly if anything is still outstanding. Make aborts on the first non-zero
 # step, so a failed build never reaches the database.
 #
-# The two `gc` calls bracket the build because a build adds ~4–5 GB of image
+# The two `gc` calls bracket the build because a build adds a few GB of image
 # layers and BuildKit cache: the first clears headroom so a nearly-full droplet
 # doesn't fail mid-build, the second drops the image this build just orphaned.
 # Both are `-` prefixed — disk hygiene must never abort or fail a deploy that
 # otherwise succeeded (make prints "Error N (ignored)" if the script trips).
+#
+# The FIRST call must not touch the build cache, hence --keep-build-cache. It used
+# to run the same budgeted prune as the second, which deleted the records the build
+# on the very next line was about to reuse: the backend re-downloaded every pip
+# package on every deploy, and on this one-vCPU droplet the Astro image cache is
+# worth far more than the disk it occupies (a single 2560px AVIF costs ~30s there,
+# and a full pass is 522 variants). Dangling images are what free the headroom.
 deploy:
-	-@bash infra/docker-gc.sh
-	$(COMPOSE_PROD) build
+	-@bash infra/docker-gc.sh --keep-build-cache
+	$(BUILD_ENV) $(COMPOSE_PROD) build
 	$(COMPOSE_PROD) up -d
 	$(COMPOSE_PROD) exec -T web python manage.py migrate
 	$(COMPOSE_PROD) exec -T web python manage.py migrate --check
 	-@bash infra/docker-gc.sh
 
 # Manual disk reclaim, same script cron runs. `make gc DEEP=--deep` also drops
-# the BuildKit cache mounts (npm + Astro encode cache) — bigger reclaim, much
-# slower next build.
+# the BuildKit cache mounts (npm + Astro encode cache) — bigger reclaim, and on
+# this one-vCPU droplet a much slower next build: every image variant re-encodes,
+# at ~30s apiece for a 2560px AVIF. Reach for it only when disk is the emergency.
 gc:
 	bash infra/docker-gc.sh $(DEEP)
 

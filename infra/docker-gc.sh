@@ -47,12 +47,35 @@ GC_KEEP="${GC_KEEP:-6GB}"
 # minutes ago is evidence, not garbage.
 GC_CONTAINER_AGE="${GC_CONTAINER_AGE:-24h}"
 
+# Modes, and they are mutually exclusive in effect:
+#   (default)            trim BuildKit to GC_KEEP
+#   --deep               drop ALL build cache including cache mounts
+#   --keep-build-cache   reclaim images/containers only, never touch build cache
+#
+# --keep-build-cache exists for the run that BRACKETS a build from the front
+# (Makefile `deploy`). Pruning there deleted the very records the build was
+# about to ask for: the backend's `pip wheel` layer re-downloaded every package
+# on every deploy, and a budgeted prune evicts by LRU, so the layers that never
+# change — exactly the ones worth keeping — were the first to go. Reclaiming
+# dangling IMAGES is what buys the headroom that call is there for, and this
+# script already calls that the single biggest one-shot win.
 DEEP=0
-[ "${1:-}" = "--deep" ] && DEEP=1
+KEEP_BUILD_CACHE=0
+for arg in "$@"; do
+  case "$arg" in
+    --deep) DEEP=1 ;;
+    --keep-build-cache) KEEP_BUILD_CACHE=1 ;;
+    "") ;;
+    *)
+      printf '[docker-gc] unknown argument: %s\n' "$arg" >&2
+      exit 2
+      ;;
+  esac
+done
 
 log() { printf '[docker-gc] %s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*"; }
 
-log "start (keep=$GC_KEEP, deep=$DEEP)"
+log "start (keep=$GC_KEEP, deep=$DEEP, keep_build_cache=$KEEP_BUILD_CACHE)"
 log "disk before:"
 docker system df
 df -h / | tail -n 1
@@ -65,11 +88,14 @@ docker image prune -f
 log "pruning containers stopped for more than $GC_CONTAINER_AGE…"
 docker container prune -f --filter "until=$GC_CONTAINER_AGE"
 
-if [ "$DEEP" -eq 1 ]; then
-  # `--all` is the only thing that also drops BuildKit CACHE MOUNTS — the npm
-  # download cache and Astro's image-encode cache (node_modules/.astro), which
-  # the budgeted prune below keeps warm on purpose. The next build re-encodes
-  # every image variant from the originals and is correspondingly slow.
+if [ "$KEEP_BUILD_CACHE" -eq 1 ]; then
+  log "build cache left untouched (--keep-build-cache)"
+elif [ "$DEEP" -eq 1 ]; then
+  # `--all` drops BuildKit CACHE MOUNTS unconditionally — the npm download
+  # cache and Astro's image-encode cache (node_modules/.astro). The budgeted
+  # prune below only reaches them once the budget forces it (see the CAUTION
+  # there); this reaches them always. The next build then re-encodes every
+  # image variant: 522 of them, ~30s apiece for a 2560px AVIF on one vCPU.
   log "deep prune: dropping ALL build cache including cache mounts…"
   docker builder prune -af
 else
