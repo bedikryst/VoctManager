@@ -28,6 +28,7 @@ export interface RunnableShot {
   /** This frame's own ISO date, on the same terms. */
   readonly date?: string | undefined;
   readonly credit?: string | undefined;
+  readonly source?: string | undefined;
 }
 
 /** The concert's own place and date, which a frame that states neither inherits. */
@@ -44,7 +45,10 @@ export interface GalleryRun<T> {
   readonly date?: string;
   /** The run's photographers, first appearance first — a run can span two hands (Łódź). */
   readonly credits: readonly string[];
-  /** True of every frame in the run, which is what lets a colophon state the gap. */
+  /** The outlets its frames come from, on the same terms and kept apart from the hands. */
+  readonly sources: readonly string[];
+  /** True when ANY frame here names neither, i.e. the ensemble shot it — which is what lets a
+   *  head naming one hand say what the frames beside it are (lib/photoCredit). */
   readonly anyUncredited: boolean;
   readonly shots: readonly T[];
 }
@@ -96,6 +100,7 @@ export function galleryRuns<T extends RunnableShot>(
         title: rehearsal ? REHEARSAL_TITLE : (venue ?? ""),
         ...(iso ? { date: plDate(iso) } : {}),
         credits: [],
+        sources: [],
         anyUncredited: false,
         shots: [],
       });
@@ -105,6 +110,8 @@ export function galleryRuns<T extends RunnableShot>(
     (run.shots as T[]).push(shot);
     if (shot.credit) {
       if (!run.credits.includes(shot.credit)) (run.credits as string[]).push(shot.credit);
+    } else if (shot.source) {
+      if (!run.sources.includes(shot.source)) (run.sources as string[]).push(shot.source);
     } else {
       (run as { anyUncredited: boolean }).anyUncredited = true;
     }

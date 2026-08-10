@@ -22,11 +22,13 @@
  * @module pages/kolofon
  */
 import { getImage } from "astro:assets";
+import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import { bleedPair } from "../lib/photos";
+import { galleryRuns } from "../lib/galleryRuns";
 import "../styles/vault.css";
 
 const title = "Kolofon — VoctEnsemble · VoctFoundation";
@@ -71,6 +73,48 @@ const jsonLd = {
     name: "VoctFoundation",
   },
 };
+
+// ── Imagines: where the photographs came from, read off the `credit` and `source` fields in
+// src/content/concerts.yaml and walked in Via order, so each hand appears where its evening stands
+// and a name added to the YAML needs no second edit here. This list was hand-kept while a credit
+// was free text inside a caption — a typed field is safe to read, and the hand-kept copy had
+// already drifted, filing Wojciech Przybył under the city he did not shoot. Places come through
+// `galleryRuns`, which is what makes a tour report the church a frame was actually taken in rather
+// than the evening's whole itinerary.
+//
+// Hands and outlets are gathered apart and printed apart: an outlet's row says "źródło" in the
+// role column, because a masthead set in the same voice as a photographer's name is a claim that
+// the masthead took the picture.
+type Provenance = Map<string, Map<string, Set<string>>>;
+const note = (into: Provenance, name: string, evening: string, place: string): void => {
+  const evenings = into.get(name) ?? new Map<string, Set<string>>();
+  into.set(name, evenings);
+  const places = evenings.get(evening) ?? new Set<string>();
+  evenings.set(evening, places);
+  if (place) places.add(place);
+};
+
+const hands: Provenance = new Map();
+const outlets: Provenance = new Map();
+for (const { data: c } of (await getCollection("concerts")).sort(
+  (a, b) => a.data.order - b.data.order,
+)) {
+  for (const run of galleryRuns(c.gallery, { venue: c.venue, date: c.date })) {
+    for (const name of run.credits) note(hands, name, c.title, run.title);
+    for (const name of run.sources) note(outlets, name, c.title, run.title);
+  }
+}
+
+const rows = (from: Provenance, lead: string): { name: string; role: string }[] =>
+  [...from].map(([name, evenings]) => ({
+    name,
+    // "Evening · place", and a hand that stood at two of them carries both.
+    role: [
+      ...(lead ? [lead] : []),
+      ...[...evenings].map(([evening, places]) => [evening, ...places].join(" · ")),
+    ].join(" · "),
+  }));
+const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
 ---
 
 <BaseLayout
@@ -247,11 +291,9 @@ const jsonLd = {
       </div>
     </section>
 
-    {/* ── Imagines — photographers. Source of truth is the `(fot. …)` convention in
-        src/content/concerts.yaml gallery captions; a caption without one is the foundation's own
-        frame. Authored rather than derived: the convention is free text that nothing validates,
-        and a silent parse failure would drop a human credit. Adding a photographer to the YAML
-        therefore means updating this list by hand. ─────────────────────────── */}
+    {/* ── Imagines — photographers, derived above from the gallery `credit` fields. Only hands
+        from outside the ensemble are named: a frame with no credit is the ensemble's own, which
+        the lede states once for the whole site rather than filing the archive as a person. ── */}
     <section class="kol-band kol-band-soft kol-band-rule-top" aria-labelledby="kol-h-imagines">
       <div class="kol-wrap">
         <h2 id="kol-h-imagines" class="kol-section-label micro reveal">
@@ -260,21 +302,18 @@ const jsonLd = {
           <span>Fotografie</span>
         </h2>
         <p class="kol-lead kol-lead-tight reveal" data-d="1">
-          Zdjęcia z&nbsp;Koncertów Duchowych. Pozostałe fotografie w&nbsp;serwisie są własnością fundacji.
+          Zdjęcia z&nbsp;Koncertów Duchowych. Fotografie bez podpisu — tu i&nbsp;w&nbsp;całym
+          serwisie — pochodzą z&nbsp;archiwum zespołu i&nbsp;są własnością fundacji.
         </p>
         <ul class="kol-collab">
-          <li class="reveal reveal-rule">
-            <span class="kol-collab-name">Kamila Grudzińska</span>
-            <span class="kol-collab-role kol-gloss">9 Kart · Bazylika NSPJ w&nbsp;Krakowie</span>
-          </li>
-          <li class="reveal reveal-rule">
-            <span class="kol-collab-name">Wojciech Przybył</span>
-            <span class="kol-collab-role kol-gloss">9 Kart · Archikatedra Łódzka</span>
-          </li>
-          <li class="reveal reveal-rule">
-            <span class="kol-collab-name">Jakub Garbacz</span>
-            <span class="kol-collab-role kol-gloss">9 Kart · Archikatedra Łódzka</span>
-          </li>
+          {
+            imagines.map((p) => (
+              <li class="reveal reveal-rule">
+                <span class="kol-collab-name">{p.name}</span>
+                <span class="kol-collab-role kol-gloss">{p.role}</span>
+              </li>
+            ))
+          }
         </ul>
       </div>
     </section>

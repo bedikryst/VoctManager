@@ -35,12 +35,30 @@
  *  object rather than by a threshold: on this landing the ground turns at the interludes and
  *  nowhere else.
  *
+ *  THE HEAD KEEPS THE REGISTER'S SPINE; ONLY THE PLATE IS FULL-MEASURE. The band and the register
+ *  are one movement, so they share one skeleton: `.section-grid`, rubric in the left rail under a
+ *  hairline, voice in the body column. Earlier passes read `.path` as hanging everything from a
+ *  single left edge and copied that — it does not. `.path` puts a 10px rubric at the measure's
+ *  left and its title, its lede and every hairline in the register 500px further in, so a band
+ *  that set its own voice at the rubric's edge was the only heading on the landing standing in a
+ *  column of labels, and the reader met three consecutive objects on three left edges: the film
+ *  centred at 880, the plate at the measure, the register's rules 495px right of it. The plate
+ *  itself stays at the measure, because a full-measure illustration under a head set in the text
+ *  column is a plate on a page — which is the one thing this object has always claimed to be.
+ *
  *  ONE READOUT, NOT FIVE LABELS. Each frame carries its evening's name, positioned into the
  *  plate's foot and printed only while that frame is approached (`:hover` / `:focus-within`,
  *  no script). Five permanent captions under five cells is a card grid, and it prints the
  *  register's own index 200px above the register. On touch there is nothing to approach, so the
  *  same element sits statically under its panel in the rail — where one panel fills the screen,
  *  so it labels a photograph rather than indexing a list.
+ *
+ *  THE FOOT IS A ROW AT REST, NOT HALF OF ONE. The readout only exists while a panel is
+ *  approached, so a foot holding nothing else printed one 10px reference alone against 1400px of
+ *  empty paper — which is a "see all" under a shelf of cards, the exact reading the printed
+ *  reference was introduced to kill. The left end now carries the plate's own caption, in the
+ *  film's voice and slot, and the per-panel readout cross-fades with it: the plate always has a
+ *  caption, and approaching a frame swaps the whole plate's for that evening's.
  *
  *  Registers: the frames are LIT (`.reveal-light`, the veil belongs to the image) and the head is
  *  INKED — never both on one node. The numeral rides UNDER the veil, because it is printed on the
@@ -50,9 +68,20 @@
  *  THE PHOTOGRAPH IS THE SUBJECT HERE, not a ground, and that sentence decides the whole grade. It
  *  carries no scrim — every other full-bleed photograph on this landing wears one because words are
  *  set over it, and the only thing set over these is one numeral, which carries its own halo. It
- *  keeps none of the family's `contrast` either, which exists to make a ground recede and here only
- *  crushed a fifth of the plate to pure black (14-imagines.css). And the exposure is corrected PER
- *  EVENING (`frameLift`, data/landing/paths): one filter cannot equalise five buildings.
+ *  keeps no `contrast` at all, shared or per panel, and 14-imagines.css records both attempts and
+ *  why each failed. Exposure and chroma are corrected PER EVENING (`frameLift` /
+ *  `frameSaturation`, data/landing/paths), because no single number equalises five buildings shot
+ *  by four photographers. What a filter cannot reach at all is a grade the photographer baked in
+ *  unequally across the channels: that one is corrected in the asset (`frameAsset`).
+ *
+ *  THE FRAMES ARE CHOSEN ON SUBJECT SCALE, and that is the statistic three earlier passes never
+ *  took. They picked frame by frame on luminance, which is why the line ran close · close · wide ·
+ *  very wide · mid — its two emptiest panels back to back in the middle, where the eye lands
+ *  first, and the ensemble unrecognisable in both. The rule now is that every panel carries the
+ *  architecture AND the singers at a size a reader can read: five frames that look made by one eye
+ *  at one remove. Consistency, never a pattern — an arrangement in five items (two close wings
+ *  around three wide, say) reads as a device, and devices are what makes a plate look generated.
+ *  Verify a candidate by rendering the line at 316px under the real grade, never by reading `alt`.
  * @architecture Astro islands 2026
  * @module components/landing/ImaginesBand
  */
@@ -77,10 +106,12 @@ const PANEL_WIDTHS = [360, 480, 640, 960];
 
 interface BandFrame {
   readonly roman: string;
-  /** The night this photograph was taken, printed in the readout ("listopad MMXXIV"). */
+  /** The night this photograph was taken, printed in the readout ("wrzesień MMXXIV"). */
   readonly date: string;
-  /** Exposure correction for this panel alone, or undefined for the band's grade unmodified. */
-  readonly lift?: number;
+  /** This panel's corrections to the shared grade as inline custom properties, or "" for a panel
+   *  the line's own grade already fits. Assembled here rather than in the markup because both
+   *  levers are optional and independent, and an empty `style` attribute is not. */
+  readonly grade: string;
   readonly title: string;
   readonly concertId: string;
   readonly alt: string;
@@ -104,14 +135,24 @@ for (const [i, path] of PATHS.entries()) {
         ` be one of that evening's own photographs, so its alt comes with it.`,
     );
   }
-  const img = entry ? photoOptional(entry.img) : undefined;
+  // `frame` names the gallery entry — that is where alt, credit and run come from, and the check
+  // above holds it to the evening's own photographs. `frameAsset` swaps only the FILE that gets
+  // cropped, for the one evening whose photograph needs a correction the browser cannot apply
+  // (data/landing/paths). The two are deliberately separate: a band that took its provenance from
+  // whatever file it happened to render could caption a corrected copy as if nothing had changed.
+  const img = entry ? photoOptional(path.frameAsset ?? entry.img) : undefined;
   // An evening with no photographs simply has no frame — the numbering then has an honest gap
   // rather than a placeholder.
   if (!entry || !img) continue;
   frames.push({
     roman: ROMAN[i],
     date: path.frameDate,
-    lift: path.frameLift,
+    grade: [
+      path.frameSaturation === undefined ? null : `--panel-sat:${path.frameSaturation}`,
+      path.frameLift === undefined ? null : `--panel-lift:${path.frameLift}`,
+    ]
+      .filter(Boolean)
+      .join(";"),
     title: path.title,
     concertId: path.concertId,
     alt: entry.alt ?? "",
@@ -122,39 +163,57 @@ for (const [i, path] of PATHS.entries()) {
     }),
   });
 }
+
+// The plate's caption, printed at the left of the foot whenever no single panel is being read.
+// DERIVED, so it cannot drift from the line it describes: the span is the first and last frame's
+// own year, which is a fact about the PHOTOGRAPHS — the register dates the programmes, and three
+// of these five evenings share a year there. A set collapses the range when one year holds all of
+// them. It states the genre rather than the count: "five" over five visible panels is the reader's
+// own arithmetic read back to them, and it would need re-declining the moment a sixth arrives.
+const years = frames.map((f) => f.date.split(" ").at(-1) ?? "");
+const plateSpan = [...new Set([years[0], years.at(-1)])].filter(Boolean).join("–");
 ---
 
 {
   frames.length > 0 && (
     <section class="imagines" aria-label="Obrazy wieczorów" data-spine-clear>
       {/* One box carries the page's measure for everything in the band, the way `.path` does one
-          section below — head, plate and foot hang from a single left edge. */}
+          section below. The plate and the foot take that measure whole; the head divides it on
+          `.section-grid`, which is the register's own skeleton and the reason the two sections
+          read as one movement. */}
       <div class="imagines-inner">
-        {/* The rubric's shape is VoxMoment's, directly above: the Latin tier and its gloss on one
-            line, separated by a mid-dot in the text. base.css owns both voices — this band names
-            no face of its own. */}
-        <p class="imagines-label micro reveal">
-          <span class="lat">Imagines</span> · Obrazy wieczorów
-        </p>
-        {/* The band's voice. Every other surface on this landing sets one line — even the wordless
-            photograph section ("Światło prowadzi słuchacza.") — and a surface that says nothing
-            where everything else speaks reads as a component standing on the rite.
+        <div class="section-grid imagines-head">
+          {/* The rubric's shape is VoxMoment's, directly above: the Latin tier and its gloss on
+              one line, separated by a mid-dot in the text. base.css owns both voices — this band
+              names no face of its own. It takes `.section-label` for its SLOT, which is where the
+              register prints "Z drogi" 400px below, under the same hairline; two rubrics in one
+              rail is a register's rhythm, and it carries no `.reveal` for the same reason that
+              one does not — the rail is the page's furniture, the voice beside it is the arrival. */}
+          <div class="section-label micro">
+            <span><span class="lat">Imagines</span> · Obrazy wieczorów</span>
+          </div>
+          {/* The band's voice. Every other surface on this landing sets one line — even the
+              wordless photograph section ("Światło prowadzi słuchacza.") — and a surface that says
+              nothing where everything else speaks reads as a component standing on the rite.
 
-            It answers the film directly above it, which is why it is a couplet and not a title:
-            VoxMoment sets "Z tej ciszy — głos." and this line takes that voice one step on, in the
-            film's own syntax, so the two read as one distich rather than as two headings.
+              THE STEP IS ALWAYS FORWARD. Movement II runs silence → voice → memory — that is what
+              `Vox memoriae` names — and the band stands exactly where the movement turns to the
+              third term. Naming the silence again here (the line this slot used to hold) sends the
+              reader back two sections to a term the page has already spent, and claims of
+              photographs of a sung evening the one thing they visibly are not. The subject is what
+              the voice leaves behind, never the sound itself: the register below owns that ("Co już
+              zabrzmiało."). Set a grade under `.section-title`, or movement II is three titled
+              sections in a row.
 
-            THE STEP IS ALWAYS FORWARD. Movement II runs silence → voice → memory — that is what
-            `Vox memoriae` names — and the band stands exactly where the movement turns to the
-            third term. Naming the silence again here (the line this slot used to hold) sends the
-            reader back two sections to a term the page has already spent, and claims of
-            photographs of a sung evening the one thing they visibly are not. The subject is what
-            the voice leaves behind, never the sound itself: the register below owns that ("Co już
-            zabrzmiało."). Set a grade under `.section-title`, or movement II is three titled
-            sections in a row. */}
-        <p class="imagines-line reveal">
-          Z tego głosu — <em>pamięć.</em>
-        </p>
+              It echoes the film's "Z tej ciszy — głos." in syntax, and that is a family resemblance
+              rather than a couplet: earlier passes called the two a distich and set them on
+              different axes at different sizes with a 495px film between them, which is not a
+              distich to any reader. The line's job is to carry this section, not to complete the
+              one before it. */}
+          <p class="imagines-line reveal">
+            Z tego głosu — <em>pamięć.</em>
+          </p>
+        </div>
 
         {/* `no-snap`: the magnetic pull toward a target's centre used to be off here by
             construction, because the cursor's frame state sits above the branch that applies it.
@@ -200,7 +259,7 @@ for (const [i, path] of PATHS.entries()) {
                   alt={f.alt}
                   loading="lazy"
                   decoding="async"
-                  style={f.lift === undefined ? undefined : `--panel-lift:${f.lift}`}
+                  style={f.grade || undefined}
                 />
                 {/* The plate number, printed on the frame the way an engraving carries one. It is
                     what ties this line to the register's numbering without a caption row, and it
@@ -234,12 +293,16 @@ for (const [i, path] of PATHS.entries()) {
           ))}
         </div>
 
-        {/* The plate's foot is the film's foot: the same mono voice, the readout hanging at the
-            left of it and the reference at the right, exactly where the player above prints its
-            caption and its clock. It is a printed reference, not a call to action — the arrow and
-            the rule of `.primary-link` are what made a row of photographs read as a card shelf
-            with a "see all" under it. */}
+        {/* The plate's foot is the film's foot: the same mono voice, a caption at the left and the
+            reference at the right, exactly where the player above prints its caption and its clock.
+            The reference is PRINTED, not called for — the arrow and the rule of `.primary-link` are
+            what made a row of photographs read as a card shelf with a "see all" under it.
+
+            The caption and the per-panel readout share this slot and cross-fade (14-imagines.css);
+            the readout is positioned into it from inside the plate, so the two are siblings on one
+            baseline rather than one box that swaps its text. */}
         <div class="imagines-foot">
+          <p class="imagines-caption">Fotografie wieczorów cyklu · {plateSpan}</p>
           <a
             class="imagines-all plausible-event-name=imagines+wszystkie"
             href="/obrazy"

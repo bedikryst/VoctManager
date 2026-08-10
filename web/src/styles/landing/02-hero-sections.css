@@ -327,7 +327,10 @@
     color: var(--ink-muted);
   }
 
-  .section-label span {
+  /* CHILD, not descendant. The rubric that opens a section may be two-tier (`.lat` + gloss, as the
+     Imagines band's is), and a descendant selector rules a hairline over the Latin word inside the
+     rubric as well as over the rubric itself. */
+  .section-label > span {
     display: block;
     width: max-content;
     border-top: 1px solid var(--line-strong);

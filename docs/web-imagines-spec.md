@@ -102,9 +102,21 @@ that should have preceded the claim.
 Every entry carries `alt` and most carry `caption`. **Photographer credits are now a field**
 (`gallery[].credit`, `content.config.ts`), not a substring: the eleven `9-kart` captions that
 read `"… (fot. Kamila Grudzińska)"` were migrated in stage 3, so one convention exists rather
-than two. Named so far: Kamila Grudzińska, Wojciech Przybył, Jakub Garbacz — eleven frames of
-forty-three. Where a credit is absent both colophons say so; a list of three names with nothing
-beside it is a claim those three took everything.
+than two. Where a credit is absent both colophons say so; a list of names with nothing beside it
+is a claim those names took everything.
+
+**Corrected 2026-08-10 — absence is a fact, not a gap, and a masthead is not a hand.** The founder
+confirmed that a gallery entry naming nobody was shot by the ensemble itself, so `credit` names a
+hand from OUTSIDE it and the surfaces print the rest as `archiwum zespołu` (`lib/photoCredit`)
+rather than reporting an unrecorded author. Six hands now, in Via order: Tomasz Czajkowski,
+Wojciech Przybył, Edyta Gonet, Jakub Garbacz, Kamila Grudzińska, Andrzej Płachetka.
+
+A **third case** was found in the same pass and given its own field: `gallery[].source`, the outlet
+a frame comes from where no individual photographer is on record. One entry uses it (PieninyInfo,
+Wołanie Gór). It exists because "fot. PieninyInfo" hands a masthead an authorship nobody claimed —
+sources are labelled `źródło:` and trail the hands, so a foot reads `Fot. archiwum zespołu ·
+źródło: PieninyInfo`. Twenty of forty-seven frames now name somebody. The kolofon's `Imagines`
+rubric is derived from both fields as of that date, hands and outlets in separate blocks.
 
 All five concerts have `hasPage: true`, so stage 1 has no ragged case. The sixth station (the
 Bobola liturgy, `order: 6`) has no gallery, so it is absent from `/obrazy` without a special
@@ -546,10 +558,11 @@ the figure that actually says nothing was orphaned.*
   header and re-stated in both pages' comments). What is *not* shared is four declarations. The
   rest of each gallery — ground, borders, caption grade, the band it sits in — is its page's own
   tone, and sharing would have meant renaming classes on a working page to save nothing.
-- **Photographer credits for the thirty-two frames that name nobody.** Both colophons now state
-  the gap in Polish rather than passing over it, and `/obrazy` invites a correction. Filling it is
-  an editorial task, not a code one: add `credit:` beside the entry in `concerts.yaml` and both
-  surfaces pick it up.
+- ~~**Photographer credits for the thirty-two frames that name nobody.**~~ — **closed 2026-08-10**,
+  and not by filling them in. The founder settled the provenance: an entry with no `credit` is the
+  ensemble's own frame, so there was never a gap to close — only a wrong word for it. Four more
+  hands were credited in the same pass and the surfaces now print `archiwum zespołu` for the rest
+  (`lib/photoCredit`); `/obrazy`'s invitation to claim an uncredited photograph is gone with it.
 - ~~**The band's five crops, on a screen.**~~ — **looked at, and closed.** Two of the five were
   answered at the first lever (`frame`, §8); the second lever was not needed on any panel — centre
   holds for all five. The crop's *framing* was never the problem: the choice of photograph was.

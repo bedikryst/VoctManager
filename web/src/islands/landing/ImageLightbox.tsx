@@ -338,7 +338,10 @@ export function ImageLightbox(): React.JSX.Element | null {
               </span>
             )}
             {current.caption && <span className="image-lightbox-place">{current.caption}</span>}
-            {current.credit && <span className="image-lightbox-credit">fot. {current.credit}</span>}
+            {/* Printed verbatim: the label belongs to the trigger, which is the only side that
+                knows whether this frame has a photographer, an outlet, or the ensemble itself
+                behind it (lib/photoCredit). */}
+            {current.credit && <span className="image-lightbox-credit">{current.credit}</span>}
             {current.alt && <span className="sr-only">{current.alt}</span>}
           </figcaption>
         </figure>

@@ -198,8 +198,11 @@ const concerts = defineCollection({
 
         `credit` is the photographer, and it is a FIELD rather than a substring of `caption`
         for the same reason: the gallery foot gathers the evening's photographers into one
-        colophon and the lightbox sets the name in its own voice. Leave it unset when the author
-        was not recorded — the colophon then says so rather than crediting silently. */
+        colophon and the lightbox sets the name in its own voice. It names a hand from OUTSIDE
+        the ensemble, and an entry with neither `credit` nor `source` was taken by the ensemble
+        itself — every surface prints that as "archiwum zespołu" (lib/photoCredit) instead of
+        leaving the frame unattributed. Absence is therefore a claim rather than a gap, so a
+        third-party frame always carries one of the two. */
     gallery: z
       .array(
         z.object({
@@ -211,6 +214,11 @@ const concerts = defineCollection({
               the correct resting state rather than a gap to fill. */
           caption: z.string().optional(),
           credit: z.string().optional(),
+          /** The outlet a frame comes from, where no individual photographer is on record —
+              a title's own coverage of the evening. Held apart from `credit` because "fot."
+              over a masthead credits it with an authorship nobody claimed; the surfaces label
+              it "źródło:" and print it after the hands. Set one or the other, never both. */
+          source: z.string().optional(),
           /** Which run this frame belongs to. `rehearsal` is set only where true — a rehearsal
               held in the concert's own church would otherwise merge into the evening itself,
               which venue alone cannot prevent. */

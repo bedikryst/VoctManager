@@ -26,6 +26,7 @@ import BleedImage from "../../components/BleedImage.astro";
 import { bleedPair, photoOptional } from "../../lib/photos";
 import { layoutShots } from "../../lib/galleryLayout";
 import { galleryRuns } from "../../lib/galleryRuns";
+import { creditSentence, frameCredit } from "../../lib/photoCredit";
 import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom, candleInkFrom } from "../../lib/candle";
 import { absolute, musicEvent } from "../../lib/eventSchema";
@@ -82,6 +83,7 @@ const gallery: {
   alt: string;
   caption?: string | undefined;
   credit?: string | undefined;
+  source?: string | undefined;
   moment: "rehearsal" | "concert";
   venue?: string | undefined;
   date?: string | undefined;
@@ -118,12 +120,16 @@ const runs = await Promise.all(
 );
 const showRunHeads = runs.length > 1;
 
-// The evening's photographers, gathered once for the gallery's foot. Order of first appearance,
-// deduplicated: a colophon names each hand once, however many frames it took. Silent when the
-// YAML records nobody, and explicit when it records only some — a list of three names with no
-// qualification is a claim that those three took every frame here.
-const photographers = [...new Set(gallery.map((g) => g.credit).filter(Boolean))] as string[];
-const hasUncredited = gallery.some((g) => !g.credit);
+// Where the evening's photographs came from, gathered once for the gallery's foot. Order of first
+// appearance, deduplicated: a colophon names each hand once, however many frames it took. The
+// ensemble's own archive stands in the list wherever a frame names nobody, so a page whose gallery
+// is entirely its own still says where the photographs come from.
+const galleryCredits = creditSentence(
+  [...new Set(gallery.map((g) => g.credit).filter(Boolean))] as string[],
+  [...new Set(gallery.map((g) => g.source).filter(Boolean))] as string[],
+  gallery.some((g) => !g.credit && !g.source),
+  "Fot.",
+);
 
 const hasTour = c.dates.length > 0;
 
@@ -691,7 +697,7 @@ const plDate = (iso: string): string =>
                   data-image-sizes={g.frame.sizes}
                   data-image-alt={g.alt}
                   data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
-                  data-image-credit={g.credit}
+                  data-image-credit={frameCredit(g)}
                   data-image-w={String(g.frame.width)}
                   data-image-h={String(g.frame.height)}
                   data-image-href="/obrazy"
@@ -724,11 +730,7 @@ const plDate = (iso: string): string =>
               The colophon is the only place a photographer is named — a run's head states place
               and date and nothing else. */}
           <div class="kd-gallery-foot reveal reveal-rule">
-            {photographers.length > 0 && (
-              <p class="kd-gallery-credit micro">
-                {`Fot. ${photographers.join(" · ")}${hasUncredited ? " · autorzy pozostałych zdjęć nieodnotowani" : ""}`}
-              </p>
-            )}
+            {galleryCredits && <p class="kd-gallery-credit micro">{galleryCredits}</p>}
             <a class="kd-gallery-all" href="/obrazy">Obrazy wszystkich wieczorów</a>
           </div>
         </div>

@@ -40,6 +40,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import { photoOptional } from "../lib/photos";
 import { layoutShots } from "../lib/galleryLayout";
 import { galleryRuns } from "../lib/galleryRuns";
+import { creditList, creditSentence, frameCredit } from "../lib/photoCredit";
 import { framedShot } from "../lib/galleryFrame";
 import { candleFrom } from "../lib/candle";
 import { SITE } from "../i18n/config";
@@ -71,6 +72,7 @@ const evenings = await Promise.all(
       alt: string;
       caption?: string | undefined;
       credit?: string | undefined;
+      source?: string | undefined;
       moment: "rehearsal" | "concert";
       venue?: string | undefined;
       date?: string | undefined;
@@ -137,12 +139,18 @@ const evenings = await Promise.all(
 
 const allShots = evenings.flatMap((e) => e.shots);
 
-// One colophon for the whole archive: each hand named once, in the order the evenings run.
-// Incomplete attribution is STATED rather than passed over. A list of three photographers with
-// no qualification is a claim that the three of them took all of it, and most of this archive's
-// frames have no recorded author.
-const photographers = [...new Set(allShots.map((s) => s.credit).filter(Boolean))] as string[];
-const hasUncredited = allShots.some((s) => !s.credit);
+// One colophon for the whole archive: each hand named once, in the order the evenings run, and the
+// outlets after them under their own label. The rest is STATED rather than passed over — a list of
+// names with no qualification is a claim that those names took all forty-seven frames, and most of
+// this archive is the ensemble photographing itself.
+const photographers = creditList(
+  [...new Set(allShots.map((s) => s.credit).filter(Boolean))] as string[],
+  [...new Set(allShots.map((s) => s.source).filter(Boolean))] as string[],
+  false,
+);
+// The archive's own frames are the colophon's closing sentence rather than a list item: they are
+// the majority here, and a majority reads as a statement, not as one entry among seven.
+const hasOwnFrames = allShots.some((s) => !s.credit && !s.source);
 
 // The scale of the thing, counted rather than typed — the fact that makes an archive an archive,
 // and the one the page never used to state. Places are the resolved run titles, so a rehearsal
@@ -309,7 +317,7 @@ const jsonLd = {
                       data-image-sizes={run.plate.frame.sizes}
                       data-image-alt={run.plate.alt}
                       data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
-                      data-image-credit={run.plate.credit}
+                      data-image-credit={frameCredit(run.plate)}
                       data-image-w={String(run.plate.frame.width)}
                       data-image-h={String(run.plate.frame.height)}
                       data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
@@ -349,9 +357,14 @@ const jsonLd = {
                         {run.date}
                       </span>
                     )}
-                    {run.credits.length > 0 && (
+                    {/* Only a run naming SOMEBODY prints a credit here. Where the whole run is the
+                        ensemble's own the colophon says so once for the archive, and ten run heads
+                        repeating "fot. archiwum zespołu" down a page this long would be the
+                        template showing through (lib/galleryRuns). A mixed run is the case that
+                        must speak: the name alone would take the frames beside it with it. */}
+                    {(run.credits.length > 0 || run.sources.length > 0) && (
                       <span class="im-inscription-credit micro reveal" data-d="2">
-                        {`fot. ${run.credits.join(" · ")}`}
+                        {creditSentence(run.credits, run.sources, run.anyUncredited, "fot.")}
                       </span>
                     )}
                   </div>
@@ -385,7 +398,7 @@ const jsonLd = {
                           data-image-sizes={g.frame.sizes}
                           data-image-alt={g.alt}
                           data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
-                          data-image-credit={g.credit}
+                          data-image-credit={frameCredit(g)}
                           data-image-w={String(g.frame.width)}
                           data-image-h={String(g.frame.height)}
                           data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
@@ -420,6 +433,8 @@ const jsonLd = {
 
     <footer class="im-colophon">
       <div class="im-wrap">
+        {/* `Photographi` names what the list mostly is; the one outlet in it carries its own
+            label in the row, which is what keeps the rubric from crediting a masthead. */}
         <span class="im-label micro reveal">
           <span class="lat">Photographi</span>
           <span class="im-dot" aria-hidden="true">·</span>
@@ -435,10 +450,9 @@ const jsonLd = {
           )
         }
         {
-          hasUncredited && (
+          hasOwnFrames && (
             <p class="im-colophon-note reveal" data-d="2">
-              Autorzy pozostałych zdjęć nie zostali odnotowani. Jeśli któreś z nich jest Twoje,
-              napisz do nas: dopiszemy nazwisko.
+              Pozostałe fotografie pochodzą z archiwum zespołu.
             </p>
           )
         }

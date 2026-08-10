@@ -43,17 +43,22 @@
     margin-inline: auto;
   }
 
-  .imagines-label {
-    margin-block: 0 clamp(14px, 1.6vw, 20px);
-    color: var(--ink-muted);
+  /* The head takes the REGISTER'S skeleton — `.section-grid`, rubric in the left rail, voice in
+     the body column — so the band's line and "Co już zabrzmiało." 400px below stand on one axis
+     and the two rubrics stand on another. Only the head is divided: the plate and the foot keep
+     the measure whole, which is a full-measure illustration under a head set in the text column,
+     i.e. a plate on a page. Nothing here restates the grid; the one thing this rule owns is the
+     lead down to the plate, which used to hang off the line and therefore moved with the copy. */
+  .imagines-head {
+    margin-bottom: clamp(30px, 4vw, 48px);
   }
 
   /* The band's voice, a GRADE UNDER `.section-title`: the register's own heading stands ~200px
      below and the film's line ~200px above, so a third at full size would make movement II three
-     titled sections in a row. This is the `.vox-line` register, left-hung to the plate rather than
-     centred, because everything else in this band hangs from the same left edge. */
+     titled sections in a row. This is the `.vox-line` register, hung to the body column's left
+     edge rather than centred — the register sets every one of its own lines against that edge. */
   .imagines-line {
-    margin: 0 0 clamp(30px, 4vw, 48px);
+    margin: 0;
     max-width: 22ch;
     font-family: var(--serif);
     font-weight: 300;
@@ -159,25 +164,34 @@
      that lands badly is `framePosition` on the evening in data/landing/paths, and
      `object-position` here would now do nothing — it has no overflow to shift.
 
-     THE GRADE IS SHARED, THE EXPOSURE IS NOT. `saturate` is the number the hero, the rite and the
-     ensemble already dim their photographs with (02, 03, 04) and it belongs to the whole line: it
-     pulls the terracotta Christmas nave and the blue-gold baroque altar back into this site's
-     parchment/night/candle. Brightness cannot be shared — one value for five buildings was the
-     band's largest defect — so `--panel-lift` carries it per evening (`frameLift`,
-     data/landing/paths) over a shared base of 1, because here the photograph is the SUBJECT and
-     the site's dimming is for a photograph that is a ground.
+     BOTH AXES OF THE GRADE ARE SHARED IN THEIR BASE AND CORRECTED PER EVENING. `saturate(0.74)` is
+     the number the hero, the rite and the ensemble already dim their photographs with (02, 03, 04)
+     and it is aimed at the line's middle: it pulls five buildings back toward this site's
+     parchment/night/candle. Neither number can govern all five alone — one exposure for five
+     buildings was the band's largest defect, and a nave whose own walls are terracotta arrives at
+     nearly twice the chroma of the rest — so `--panel-lift` and `--panel-sat` carry the per-evening
+     corrections (`frameLift` / `frameSaturation`, data/landing/paths) over a shared base of 1. Here
+     the photograph is the SUBJECT; the site's dimming is for a photograph that is a ground.
 
-     THE ONE PART OF THE FAMILY GRADE THIS BAND MUST NOT KEEP IS `contrast`. Those three surfaces
-     pair it with brightness 0.62–0.92: it is there to make a ground recede, and crushing the
-     shadows of a ground is the point. `contrast(1.06)` is a linear transfer with a −0.03 intercept,
-     so it renders every pixel under 2.8% luma as literal #000 — and these frames are mostly
-     shadow. It was taking 13% · 42% · 1% · 23% · 11% of the five panels to pure black, against
-     source frames that are 4.5% · 0.5% · 0% · 2% · 0% black themselves. On the night ground that
-     was invisible arithmetic (#000 beside `--night` is a 1.5% step). On parchment each of those
-     regions is the deepest mark the display can make, next to the brightest — and #000 is not in
-     this site's palette at all, where the darkest token is `--night`. Removing it returns 13% of
-     mean luma across the line and costs no highlight anywhere; the punch it is imagined to add
-     measures 6% on a photograph nothing is set over.
+     `contrast` STAYS OUT OF THIS SHEET ENTIRELY, and the second attempt to bring it back is worth
+     recording because it looked reasonable. The family's shared version pairs contrast with
+     brightness 0.62–0.92 to make a ground recede, and crushing the shadows of a ground is the
+     point. `contrast(1.06)` is a linear transfer with a −0.03 intercept, so it renders every pixel
+     under 2.8% luma as literal #000 — and these frames are mostly shadow. Shared, it was taking
+     13% · 42% · 1% · 23% · 11% of the five panels to pure black, against source frames that are
+     4.5% · 0.5% · 0% · 2% · 0% black themselves. On the night ground that was invisible arithmetic
+     (#000 beside `--night` is a 1.5% step); on parchment each of those regions is the deepest mark
+     the display can make, next to the brightest, and #000 is not in this site's palette at all.
+
+     A PER-PANEL contrast then shipped briefly, to restore the black point of the one frame that
+     arrives matte, and it was the wrong instrument for a reason worth keeping: `contrast()` is
+     SCALAR. It scales R, G and B about one midpoint, and what a matte grade actually does is lift
+     the channels UNEQUALLY — that frame measures per-channel black points of 4 / 20 / 31. So the
+     luminance moved, the 27-level channel spread did not, and the panel stayed teal in a warm
+     line. Nothing in the CSS filter shorthand can do a per-channel transfer; an SVG
+     `feComponentTransfer` can, but a `url()` in this chain makes the hover grade non-interpolable
+     and costs the band its one gesture. The correction therefore lives in the ASSET
+     (`frameAsset`, data/landing/paths). Measure per channel before reaching for anything here.
 
      THERE IS NO SCRIM. Every other full-bleed photograph on this landing wears one because words
      are set over it. The only thing set over these is the plate number, which carries its own
@@ -188,7 +202,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    filter: saturate(0.74) brightness(var(--panel-lift, 1));
+    filter: saturate(calc(0.74 * var(--panel-sat, 1))) brightness(var(--panel-lift, 1));
   }
 
   /* The plate number, printed on the frame the way an engraving carries one — which is what lets
@@ -224,11 +238,13 @@
      every full-bleed photograph on this landing wears, and the approached one comes up past the
      photograph itself. Ground and picture, and the reader moves the boundary.
 
-     BOTH ENDPOINTS RIDE `--panel-lift`, which is what keeps the gesture equal on five different
-     exposures. Stated as flat values they were a fraction of a stop on the darkest panel and
-     violent on the brightest, so the gesture that exists to prove the five are one object was
-     visible on two of them. Multiplying means each panel recedes and returns by the same ratio
-     from wherever its own exposure sits.
+     BOTH ENDPOINTS RIDE `--panel-lift` AND `--panel-sat`, which is what keeps the gesture equal
+     across five different exposures and five different chromas. Stated as flat values the lift was
+     a fraction of a stop on the darkest panel and violent on the brightest, so the gesture that
+     exists to prove the five are one object was visible on two of them; a flat `saturate` would
+     reintroduce exactly that defect one axis over, by handing a damped panel a bigger colour swing
+     than its neighbours. Multiplying means each panel recedes and returns by the same ratio from
+     wherever its own grade sits.
 
      ×0.66 / ×1.16 SURVIVED THE MOVE TO PAPER, and the reason to expect otherwise had the sign
      backwards. A receding panel used to darken toward a dark ground, which spent most of the
@@ -247,7 +263,7 @@
     }
 
     .imagines-plate:hover .imagines-media img {
-      filter: saturate(0.62) brightness(calc(var(--panel-lift, 1) * 0.66));
+      filter: saturate(calc(0.62 * var(--panel-sat, 1))) brightness(calc(var(--panel-lift, 1) * 0.66));
     }
 
     .imagines-plate:hover .imagines-roman {
@@ -255,7 +271,7 @@
     }
 
     .imagines-frame:hover .imagines-media img {
-      filter: saturate(0.92) brightness(calc(var(--panel-lift, 1) * 1.16));
+      filter: saturate(calc(0.92 * var(--panel-sat, 1))) brightness(calc(var(--panel-lift, 1) * 1.16));
     }
 
     .imagines-frame:hover .imagines-roman,
@@ -337,11 +353,54 @@
   /* ── The foot ─────────────────────────────────────────────────────────────────────────
      The film's own foot row: caption left, reference right, both in the mono voice at 10px. The
      reference is PRINTED, not called for — `.primary-link`'s arrow and rule are what made a row
-     of photographs read as a shelf of cards with a "see all" under it. */
+     of photographs read as a shelf of cards with a "see all" under it.
+
+     IT MUST BE A ROW AT REST. With only the reference in it the foot was one 10px label alone in
+     the far corner of a 1580px measure, which is the shelf reading arriving by the other door —
+     the readout that was meant to fill the left end only exists while a panel is approached. The
+     caption fills it, and the two cross-fade below.
+
+     `wrap` rather than a `max-width` on either end: at the narrow end of the rail the caption and
+     the reference no longer share a line, and what should happen then is the reference dropping
+     under it and staying right — not the caption being truncated or hidden, which would leave the
+     orphan this rule exists to remove. The row gap is the pair's own, not `--foot-lead`, which
+     measures the plate to its foot. */
   .imagines-foot {
     display: flex;
-    justify-content: flex-end;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px clamp(24px, 3vw, 48px);
     margin-top: var(--foot-lead);
+  }
+
+  /* Unlike the readout, this one is NOT hidden from assistive tech: the readout duplicates the
+     link name beside it word for word, where this states the plate's span, which nothing else in
+     the band says. */
+  .imagines-caption {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    line-height: 1.6;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    transition: opacity 0.35s var(--ease, ease);
+  }
+
+  /* The cross-fade, and it needs BOTH conditions in its own query rather than joining the hover
+     block below. Hover, because a plate that cannot be approached must keep its caption; and the
+     line rather than the rail, because on the rail each name is already printed statically under
+     its own panel — there the caption would drop out while nothing arrived in its place. 1280px is
+     the band's own line/rail boundary and it is stated in three places (here, `sizes`, and the
+     rail block at the foot of this sheet); they move together or not at all.
+
+     `~` and not a class on the foot: the readout is positioned into this slot from inside the
+     plate, so the plate is the only element that knows a panel is being read. */
+  @media (hover: hover) and (min-width: 1280px) {
+    .imagines-plate:hover ~ .imagines-foot .imagines-caption,
+    .imagines-plate:focus-within ~ .imagines-foot .imagines-caption {
+      opacity: 0;
+    }
   }
 
   .imagines-all {

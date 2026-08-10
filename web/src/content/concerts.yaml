@@ -179,8 +179,8 @@
     - { img: kd-wcielenie-3, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
     - { img: kd-wcielenie-4, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
     - { img: kd-wcielenie-5, alt: "Nawa główna podczas koncertu Voctensemble Kontemplacja Wcielenia w Bazylice NSPJ" }
-    - { img: kd-wcielenie-6, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ" }
-    - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ" }
+    - { img: kd-wcielenie-6, alt: "VoctEnsemble podczas Kontemplacji Wcielenia w Bazylice NSPJ", credit: "Tomasz Czajkowski" }
+    - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", credit: "Tomasz Czajkowski" }
     - { img: kd-wcielenie-8, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ" }
   inscriptio: "Et egredietur virga de radice Iesse"
   inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
@@ -552,16 +552,14 @@
     Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie hymnów
     i antyfon za tradycją kościelną, pozostałe własne.
   gallery:
-    # Rehearsal, then the evening — as Wcielenie. `kd-wolanie-3` may itself be a rehearsal frame
-    # (spec §11): everyone is out of black and no projection stands behind them. It is left in the
-    # concert run because that is a claim about a day the founder was there for and the photograph
-    # does not settle it; if it is one, move it up three lines and nothing else changes.
     - { img: kd-wolanie-0, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", moment: rehearsal }
     - { img: kd-wolanie-1, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", moment: rehearsal }
     - { img: kd-wolanie-2, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", moment: rehearsal }
-    - { img: kd-wolanie-3, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
-    - { img: kd-wolanie-4, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
-    - { img: kd-wolanie-5, alt: "VoctEnsemble po Koncercie Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
+    - { img: kd-wolanie-3, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", moment: rehearsal }
+    - { img: kd-wolanie-4, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy", source: "PieninyInfo" }
+    - { img: kd-wolanie-5, alt: "VoctEnsemble podczas Koncertu Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
+    - { img: kd-wolanie-6, alt: "VoctEnsemble podczas ukłonów po Koncercie Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
+    - { img: kd-wolanie-7, alt: "VoctEnsemble po Koncercie Wołanie Gór w Dworku Gościnnym w Szczawnicy" }
   movements:
     - id: clamor
       lat: Clamor
@@ -1087,13 +1085,13 @@
   # opened in Kraków and closed with three "po koncercie" frames filed together, one per city —
   # so each city's own coda sat six lines from the evening it closes. Adjacency is what draws a
   # run (lib/galleryRuns), so a frame out of order is a run out of place.
-  - { img: kd-9-kart-6, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08" }
-  - { img: kd-9-kart-7, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08" }
-  - { img: kd-9-kart-8, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08" }
-  - { img: kd-9-kart-13, alt: "VoctEnsemble po koncercie 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08" }
-  - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Wojciech Przybył" }
-  - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Wojciech Przybył" }
-  - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-6, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-7, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-8, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-13, alt: "VoctEnsemble po koncercie 9 Kart w Bazylice w Rybniku", venue: "Bazylika św. Antoniego, Rybnik", date: "2024-09-08", credit: "Wojciech Przybył" }
+  - { img: kd-9-kart-9, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Edyta Gonet" }
+  - { img: kd-9-kart-10, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Edyta Gonet" }
+  - { img: kd-9-kart-11, alt: "VoctEnsemble podczas koncertu 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Edyta Gonet" }
   - { img: kd-9-kart-12, alt: "VoctEnsemble po koncercie 9 Kart w Archikatedrze Łódzkiej", venue: "Archikatedra, Łódź", date: "2024-09-17", credit: "Jakub Garbacz" }
   - { img: kd-9-kart-0, alt: "Program Koncertu Duchowego 9 Kart z Księgi Psalmów", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-1, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
@@ -1101,6 +1099,7 @@
   - { img: kd-9-kart-3, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-4, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-5, alt: "VoctEnsemble podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
+  - { img: kd-9-kart-15, alt: "VoctEnsemble z dyrygentem podczas koncertu 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
   - { img: kd-9-kart-14, alt: "VoctEnsemble po koncercie 9 Kart w Bazylice NSPJ w Krakowie", venue: "Bazylika NSPJ, Kraków", date: "2024-11-16", credit: "Kamila Grudzińska" }
   program:
     - composer: "Gregorio Allegri"
@@ -1603,6 +1602,8 @@
   - { img: kd-hymn-1, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   - { img: kd-hymn-2, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie" }
   - { img: kd-hymn-3, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", plate: true }
+  - { img: kd-hymn-4, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetka" }
+  - { img: kd-hymn-5, alt: "VoctEnsemble podczas koncertu Hymn Poległym w Bazylice Mariackiej w Krakowie", credit: "Andrzej Płachetka" }
   movements:
     - id: introitus
       lat: Introitus

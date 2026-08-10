@@ -24,7 +24,11 @@ export interface ImageFrameItem {
   readonly sizes?: string;
   readonly alt: string;
   readonly caption?: string;
-  /** Photographer, held apart from the caption so the two can be set in different voices. */
+  /** Provenance, held apart from the caption so the two can be set in different voices. A
+   *  FINISHED line, label included ("fot. …", "źródło: …"): the TRIGGER resolves it, because only
+   *  a surface reading the concert gallery knows whether a frame has a photographer, an outlet or
+   *  the ensemble itself behind it (lib/photoCredit). The room prints what it is handed and
+   *  claims nothing on a caller's behalf. */
   readonly credit?: string;
   /** Intrinsic pixels of the rendition — reserves the frame's ratio before the bytes land. */
   readonly width?: number;

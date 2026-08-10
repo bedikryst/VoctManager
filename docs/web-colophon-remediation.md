@@ -522,6 +522,26 @@ would drop a human credit. Recorded so it is not re-proposed as an obvious win �
 convention is now load-bearing**, so if a fourth photographer is ever added to `concerts.yaml`
 the rubric has to be updated by hand. See "Open" below.
 
+**Superseded 2026-08-10 — the rubric is derived, and the uncredited frames are the ensemble's.**
+Both halves of this section are now wrong, and one of them had already cost something:
+
+- The parser argument expired when stage 3 of `web-imagines-spec.md` moved credits out of caption
+  text into a typed `gallery[].credit` field. There is nothing left to parse, so the rubric is
+  read off the collection in `kolofon.astro` and walks the Via in order. The hand-kept list had in
+  fact drifted before anyone added a name to it: it filed Wojciech Przybył under Archikatedra
+  Łódzka, and his frames are Rybnik's.
+- "A caption without one is the foundation's own" was recorded as a provenance guess. The founder
+  confirmed it on 2026-08-10: an entry with no `credit` was shot by the ensemble itself. Every
+  surface now prints that as `archiwum zespołu` (`lib/photoCredit`) instead of stating a gap —
+  the `/obrazy` note asking readers to claim their photographs is gone, because there is nothing
+  unattributed left to claim.
+
+Three hands joined the three already there: Tomasz Czajkowski (Wcielenie), Edyta Gonet (9 Kart ·
+Łódź) and Andrzej Płachetka (Hymn Poległym) — none of them needed an edit here. A fourth entry,
+PieninyInfo (Wołanie Gór), is an outlet rather than a photographer and carries the new
+`gallery[].source` field: the rubric prints it under its own `źródło` role, because a masthead set
+in a photographer's voice credits it with an authorship nobody claimed.
+
 ---
 
 ## Rejected
@@ -561,8 +581,10 @@ another page.
   records (see Rejected) and the colophon is missing people the concert pages credit — Joanna
   Indyk, the string quartet, the two priests, the basilica cantor. Whether they belong on a
   colophon or only on their concert page is an editorial call for the developer; it is not a
-  merge that can be done mechanically. If a fourth photographer joins the YAML, `Imagines` needs
-  the same hand-update.
+  merge that can be done mechanically. ~~If a fourth photographer joins the YAML, `Imagines` needs
+  the same hand-update.~~ — void 2026-08-10: `Imagines` is derived from `gallery[].credit`, so a
+  name added to `concerts.yaml` reaches the colophon on its own. Only `Gratiarum actio` is still
+  hand-kept, and deliberately (see Rejected).
 - **`Iura` — what may the press reuse.** `/press` is `noindex`, so a journalist arriving at the
   colophon learns nothing about rights. One rubric, one line, pointing at `/press`.
 - ~~**The author's address is a personal Gmail.**~~ **DONE 2026-08-01** — the developer moved it
