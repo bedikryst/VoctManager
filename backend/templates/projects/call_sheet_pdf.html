@@ -98,9 +98,17 @@
             padding-bottom: 4pt; border-bottom: 0.75pt solid #e6e3da;
         }
 
+        /* Deliberately NOT `page-break-inside: avoid`. A `.card` is a section's
+           whole body — every program item, the entire roster, the full contact
+           directory — so it routinely outgrows a page. WeasyPrint answers an
+           unfittable `avoid` by pushing the box to a fresh page and only then
+           breaking it, which left the section heading stranded on a page of its
+           own: measured at 11 pages for an 8-piece project, of which one was a
+           heading above 996pt of nothing. Cards flow; the atoms inside them
+           (`.prog`, `.roster`, `.contact`, table rows) carry the avoid. */
         .card {
             border: 1pt solid #e9e5db; border-radius: 5pt; background: #ffffff;
-            padding: 11pt 13pt; page-break-inside: avoid;
+            padding: 11pt 13pt;
         }
         .card + .card { margin-top: 8pt; }
         .card.warm { background: #faf8f3; }
@@ -142,6 +150,10 @@
         .btn.solid { background: #161412; border-color: #161412; color: #f7f4ee; }
 
         /* ── Data table (run sheet, rehearsals, casting) ────────────────── */
+        /* Tables now cross pages (their card no longer moves whole), so the row
+           is the atom that must not tear and the header repeats on each page. */
+        thead { display: table-header-group; }
+        tr { page-break-inside: avoid; }
         .grid { width: 100%; }
         .grid th {
             text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.2pt;
@@ -198,6 +210,15 @@
         .contact .cr { color: #7c6a4a; font-size: 9pt; margin: 1pt 0 3pt; }
         .contact .cl { color: #4a4744; font-size: 9pt; }
 
+        /* ── Blockers (report) ──────────────────────────────────────────── */
+        .blockers { margin-bottom: 14pt; border: 1pt solid #e0d5bb; border-radius: 5pt; background: #fdfbf6; padding: 10pt 13pt; }
+        .blockers .eyebrow { color: #8f3f3a; }
+        .blockers ul { margin: 6pt 0 0; padding-left: 12pt; }
+        .blockers li { margin-bottom: 4pt; page-break-inside: avoid; }
+        .blockers .bt { font-weight: 700; }
+        .blockers .bd { color: #6b6660; font-size: 9pt; }
+        .blockers .clear { margin-top: 5pt; color: #55604f; font-weight: 700; }
+
         /* ── Metrics (production) ───────────────────────────────────────── */
         .metrics { display: table; width: 100%; table-layout: fixed; margin-bottom: 14pt; page-break-inside: avoid; }
         .metric { display: table-cell; width: 25%; padding-right: 7pt; }
@@ -218,7 +239,7 @@
             <span class="eyebrow">{{ ensemble_name }}</span>
             <span class="brandmeta">
                 <span class="eyebrow">
-                    {% if is_chorister %}Karta śpiewaka{% elif is_conductor %}Karta dyrygenta{% else %}Call sheet · Produkcja{% endif %}
+                    {% if is_report %}Raport produkcji{% elif is_chorister %}Karta śpiewaka{% elif is_conductor %}Karta dyrygenta{% else %}Karta dnia · Produkcja{% endif %}
                 </span>
                 {% if generation_label %}<span class="stamp">Stan na {{ generation_label }}</span>{% endif %}
             </span>
@@ -267,11 +288,31 @@
     </div>
 
     {% comment %}
+        The report opens on what is not closed. Coverage tiles say how much is
+        done; a reader whose job is to find the holes would otherwise have to
+        subtract them in their head.
+    {% endcomment %}
+    {% if is_report %}
+    <div class="blockers">
+        <div class="eyebrow">Do zamknięcia</div>
+        {% if blockers %}
+        <ul>
+            {% for blocker in blockers %}
+            <li><span class="bt">{{ blocker.text }}</span>{% if blocker.detail %}<div class="bd">{{ blocker.detail }}</div>{% endif %}</li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="clear">Wszystko domknięte — nic nie czeka na decyzję.</div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% comment %}
         The coverage band carries no heading, so it is rendered here rather than
         as a numbered section — it used to hold section number 1 invisibly and
         the sheet opened at "2".
     {% endcomment %}
-    {% if is_production %}
+    {% if is_report %}
     <div class="metrics">
         <div class="metric"><div class="box"><div class="k">Potwierdzona obsada</div><div class="v">{{ metrics.cast_confirmed }}</div><div class="n">{% if metrics.cast_pending %}{{ metrics.cast_pending }} bez odpowiedzi.{% else %}Komplet odpowiedzi.{% endif %}</div></div></div>
         <div class="metric"><div class="box"><div class="k">Program</div><div class="v">{{ metrics.pieces_total }}</div><div class="n">{% if metrics.program_total_duration %}{{ metrics.program_total_duration }}{% else %}Czas do uzupełnienia.{% endif %}</div></div></div>
@@ -350,7 +391,7 @@
                 </div>
                 {% if preparation_assets %}
                 <div class="card">
-                    <div class="eyebrow" style="margin-bottom:6pt;">{% if is_production %}Gotowość materiałów{% else %}Zabierz na dziś{% endif %}</div>
+                    <div class="eyebrow" style="margin-bottom:6pt;">{% if is_report %}Gotowość materiałów{% else %}Zabierz na dziś{% endif %}</div>
                     {% for asset in preparation_assets %}
                     <div style="padding:5pt 0; border-bottom:0.5pt solid #f0ece3;">
                         <div style="display:flex; justify-content:space-between; gap:8pt;">
@@ -402,7 +443,7 @@
                 the page; only the exception is marked, and the default is
                 stated once, here.
             {% endcomment %}
-            <div class="tiny muted" style="margin-bottom:5pt;">{% if all_rehearsals_mandatory %}Wszystkie próby obowiązkowe.{% else %}Bez oznaczenia = próba obowiązkowa.{% endif %}{% if rehearsals_done and not is_production %} Wcześniej odbyło się {{ rehearsals_done }}.{% endif %}</div>
+            <div class="tiny muted" style="margin-bottom:5pt;">{% if all_rehearsals_mandatory %}Wszystkie próby obowiązkowe.{% else %}Bez oznaczenia = próba obowiązkowa.{% endif %}{% if rehearsals_done and not is_report %} Wcześniej odbyło się {{ rehearsals_done }}.{% endif %}</div>
             <table class="grid">
                 <thead><tr><th style="width:56pt;">Data</th><th style="width:40pt;">Czas</th>{% if not all_rehearsals_mandatory %}<th style="width:66pt;">Typ</th>{% endif %}{% if not is_chorister %}<th style="width:80pt;">Zakres</th>{% endif %}<th>Fokus</th><th>Miejsce</th></tr></thead>
                 <tbody>
@@ -441,7 +482,7 @@
                             {% if piece.you %}
                             <div class="you">Śpiewasz: <strong>{{ piece.you.voice_line }}</strong>{% if piece.you.gives_pitch %} · <span class="pitch-flag">♪ podajesz dźwięk</span>{% endif %}{% if piece.you.notes %} · {{ piece.you.notes }}{% endif %}</div>
                             {% endif %}
-                            {% if not is_chorister and piece.material_badges %}<div class="badge-row" style="margin-top:5pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
+                            {% if piece.material_badges %}<div class="badge-row" style="margin-top:5pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
                             <div style="margin-top:5pt;">
                                 {% if piece.sheet_music_url %}<a class="btn" href="{{ piece.sheet_music_url }}">Nuty PDF</a>{% endif %}
                                 {% for link in piece.reference_links %}<a class="btn" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
@@ -518,7 +559,7 @@
                 {% for sec in pending_sections %}<div class="metaline"><strong>{{ sec.label }}:</strong> {{ sec.members|join:", " }}</div>{% endfor %}
             </div>
             {% endif %}
-            {% if metrics.cast_declined %}<div class="metaline" style="margin-top:6pt;">Odrzucone: {{ metrics.cast_declined }} — poza aktywną obsadą.</div>{% endif %}
+            {% if is_report and metrics.cast_declined %}<div class="metaline" style="margin-top:6pt;">Odrzucone: {{ metrics.cast_declined }} — poza aktywną obsadą.</div>{% endif %}
         </div>
     </div>
     {% endif %}

@@ -3413,7 +3413,8 @@
       "workspace_description": "Zarządzaj szczegółami projektu, próbami, obsadą i logistyką w jednym kontekście roboczym."
     },
     "exports": {
-      "call_sheet": "Pobierz Call Sheet",
+      "call_sheet": "Pobierz raport produkcji",
+      "day_card": "Pobierz kartę dnia",
       "download_group": "Pobierz",
       "dtp": "Pobierz notkę do DTP",
       "menu": "Eksport",

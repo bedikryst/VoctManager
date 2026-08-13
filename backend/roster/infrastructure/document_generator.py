@@ -105,47 +105,102 @@ class Audience(StrEnum):
     PRODUCTION = "production"
 
 
-# Ordered section pipeline per audience. The template renders exactly these
-# sections, in this order (the hero and the production metrics band are rendered
-# first, outside the loop — a band with no heading must not consume a section
-# number). Keep the keys in sync with the ``{% if section == %}`` chain in
-# ``projects/call_sheet_pdf.html``, and note that ``_visible_sections`` drops any
-# entry whose data is absent so the printed numbering never skips.
-_SECTIONS: dict[Audience, tuple[str, ...]] = {
-    # Singer first: what concerns *them* today, then the day, then the music,
-    # and last the two things a lost or late singer needs — who else is there
-    # and whom to reach.
-    Audience.CHORISTER: (
-        "personal",
-        "event",
-        "runsheet",
-        "rehearsals",
-        "program",
-        "ensemble",
-        "contacts",
-    ),
-    # Maestro first: the musical arc and who sings/gives pitch, then the day.
-    Audience.CONDUCTOR: (
-        "program",
-        "casting",
-        "ensemble",
-        "runsheet",
-        "rehearsals",
-        "event",
-        "contacts",
-    ),
-    # Management: full coverage picture, logistics, everything, everyone. The
-    # roster outranks the directory — on the day it is consulted far more often.
-    Audience.PRODUCTION: (
-        "event",
-        "runsheet",
-        "rehearsals",
-        "program",
-        "casting",
-        "ensemble",
-        "contacts",
-    ),
+class DocumentKind(StrEnum):
+    """What the sheet is *for*, which is independent of who reads it.
+
+    The day card is executed: read standing up, minutes before the downbeat, by
+    someone who needs the next few hours and can act on nothing else. The report
+    is inspected: read at a desk, weeks out, by someone whose whole job is to
+    find what is not ready. Fusing them produced a document that made the singer
+    wade through coverage counters to find an arrival time and gave the manager
+    no blocker list — so the two are one axis, and the endpoint picks it.
+    """
+
+    DAY_CARD = "day_card"
+    PRODUCTION_REPORT = "report"
+
+
+# Ordered section pipeline per document kind and audience. The template renders
+# exactly these sections, in this order (the hero, the blocker list and the
+# coverage band are rendered first, outside the loop — a band with no heading
+# must not consume a section number). Keep the keys in sync with the
+# ``{% if section == %}`` chain in ``projects/call_sheet_pdf.html``, and note
+# that ``_visible_sections`` drops any entry whose data is absent so the printed
+# numbering never skips.
+_SECTIONS: dict[DocumentKind, dict[Audience, tuple[str, ...]]] = {
+    DocumentKind.DAY_CARD: {
+        # Singer first: what concerns *them* today, then the day, then the music,
+        # and last the two things a lost or late singer needs — who else is there
+        # and whom to reach.
+        Audience.CHORISTER: (
+            "personal",
+            "event",
+            "runsheet",
+            "rehearsals",
+            "program",
+            "ensemble",
+            "contacts",
+        ),
+        # Maestro first: the musical arc and who gives pitch, then the day.
+        Audience.CONDUCTOR: (
+            "program",
+            "casting",
+            "ensemble",
+            "runsheet",
+            "rehearsals",
+            "event",
+            "contacts",
+        ),
+        # Stage manager: the day as it will be run, and everyone who runs it.
+        # No casting — micro-casting is the maestro's instrument, not the desk's.
+        Audience.PRODUCTION: (
+            "event",
+            "runsheet",
+            "rehearsals",
+            "program",
+            "ensemble",
+            "contacts",
+        ),
+    },
+    DocumentKind.PRODUCTION_REPORT: {
+        # Management: the full preparation picture. The blocker list and the
+        # coverage band open the document ahead of every numbered section.
+        Audience.PRODUCTION: (
+            "event",
+            "runsheet",
+            "rehearsals",
+            "program",
+            "casting",
+            "ensemble",
+            "contacts",
+        ),
+        # The maestro may want the state of preparation before a rehearsal
+        # block; same document, music first.
+        Audience.CONDUCTOR: (
+            "program",
+            "casting",
+            "ensemble",
+            "rehearsals",
+            "runsheet",
+            "event",
+            "contacts",
+        ),
+    },
 }
+
+
+def resolve_document_kind(kind: DocumentKind, audience: Audience) -> DocumentKind:
+    """The kind actually compiled for this audience.
+
+    A singer is never handed a production report — it carries the invitation
+    queue, declined counts and the crew's private numbers — so that pair
+    degrades to the day card. Normalised here, once, rather than per section:
+    the kind gates content in a dozen places, and a fallback that fixed only the
+    section list would leave every one of them still in report mode.
+    """
+    if audience not in _SECTIONS[kind]:
+        return DocumentKind.DAY_CARD
+    return kind
 
 
 def _count_label(count: int, one: str, few: str, many: str) -> str:
@@ -218,8 +273,9 @@ class DocumentGenerator:
         audience: Audience = Audience.PRODUCTION,
         recipient: Participation | None = None,
         base_url: str | None = None,
+        kind: DocumentKind = DocumentKind.PRODUCTION_REPORT,
     ) -> bytes:
-        """Compiles the concert-day sheet PDF for the given audience.
+        """Compiles the concert-day sheet PDF for the given kind and audience.
 
         ``recipient`` personalizes the ``CHORISTER`` sheet (their voice, their
         casting, their pitch duties). It is ignored for the other audiences.
@@ -234,6 +290,7 @@ class DocumentGenerator:
             audience=audience,
             recipient=recipient,
             base_url=base_url,
+            kind=kind,
         )
         html_string = render_to_string('projects/call_sheet_pdf.html', context)
         return _render_pdf(html_string, base_url=base_url)
@@ -335,6 +392,7 @@ class DocumentGenerator:
         audience: Audience,
         recipient: Participation | None,
         base_url: str | None,
+        kind: DocumentKind = DocumentKind.PRODUCTION_REPORT,
     ) -> dict[str, Any]:
         participation_list = list(participations)
         crew_list = list(crew)
@@ -342,6 +400,12 @@ class DocumentGenerator:
         rehearsal_list = list(rehearsals)
         casting_list = list(castings)
 
+        kind = resolve_document_kind(kind, audience)
+        # Everything a day card must never carry — coverage counters, the
+        # invitation queue, past rehearsals, "to be filled in" copy — hangs off
+        # this one flag rather than off the audience, which answers a different
+        # question (whose privacy, whose priorities).
+        is_report = kind == DocumentKind.PRODUCTION_REPORT
         is_chorister = audience == Audience.CHORISTER
         # The chorister sheet is personalized only when we actually know who the
         # recipient is; without it we degrade gracefully to a non-personal sheet.
@@ -405,6 +469,7 @@ class DocumentGenerator:
                 piece_castings_map.get(item.piece_id, []),
                 recipient_line_by_piece.get(item.piece_id),
                 base_url,
+                is_report,
             )
             for item in program_items
         ]
@@ -448,10 +513,10 @@ class DocumentGenerator:
         if project.conductor:
             event_facts.append({'label': 'Prowadzenie', 'text': str(project.conductor)})
 
-        # Preparation-readiness meters are a management concern; singers get a
-        # short "what to open" list, managers get the full coverage picture.
+        # Preparation-readiness meters are a management concern; the day card
+        # gets a short "what to open" list, the report the coverage picture.
         preparation_assets = DocumentGenerator._build_preparation_assets(
-            project, program_cards, base_url, audience,
+            project, program_cards, base_url, is_report,
             pieces_with_sheet_music, pieces_with_tracks,
             pieces_with_reference, pieces_with_casting,
         )
@@ -480,13 +545,15 @@ class DocumentGenerator:
             rehearsal_items = [item for item in rehearsal_items if item['is_for_me']]
         # The people performing the concert are handed a document about the day
         # ahead; a rehearsal that already happened is a record, and belongs to
-        # the management sheet. The count survives so nothing reads as missing.
+        # the report. The count survives so nothing reads as missing.
         rehearsals_done = sum(1 for item in rehearsal_items if item['is_past'])
-        if audience != Audience.PRODUCTION:
+        if not is_report:
             rehearsal_items = [item for item in rehearsal_items if not item['is_past']]
         all_rehearsals_mandatory = bool(rehearsal_items) and all(
             item['is_mandatory'] for item in rehearsal_items
         )
+
+        run_sheet_items = DocumentGenerator._normalize_run_sheet(project.run_sheet)
 
         greeting = None
         if recipient is not None:
@@ -501,10 +568,12 @@ class DocumentGenerator:
         return {
             'project': project,
             'audience': audience.value,
-            'sections': DocumentGenerator._visible_sections(audience, personal),
+            'kind': kind.value,
+            'sections': DocumentGenerator._visible_sections(kind, audience, personal),
             'is_chorister': is_chorister,
             'is_conductor': audience == Audience.CONDUCTOR,
             'is_production': audience == Audience.PRODUCTION,
+            'is_report': is_report,
             'ensemble_name': _ensemble_name(),
             'doc_lang': _doc_lang(),
             'font_css': font_face_css(),
@@ -546,7 +615,7 @@ class DocumentGenerator:
             ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
-            'run_sheet_items': DocumentGenerator._normalize_run_sheet(project.run_sheet),
+            'run_sheet_items': run_sheet_items,
             'rehearsal_items': rehearsal_items,
             'rehearsals_done': rehearsals_done,
             'all_rehearsals_mandatory': all_rehearsals_mandatory,
@@ -556,14 +625,33 @@ class DocumentGenerator:
                 for item in program_items
             ],
             'contact_directory': contact_directory,
+            # Two roster rows carrying one name are annotated only where someone
+            # can go and merge them. On a day card the marker is noise about the
+            # database, printed to a reader who cannot act on it — and if the two
+            # really are different people, the plain repetition is the truth.
             'ensemble_sections': DocumentGenerator._group_participations_by_voice(
-                confirmed_participations
+                confirmed_participations, annotate_repeats=is_report
             ),
-            # Who has not answered yet is a production fact, not something the
-            # rest of the choir needs on its own sheet.
+            # Who has not answered yet is the invitation queue: a report fact.
             'pending_sections': (
-                DocumentGenerator._group_participations_by_voice(pending_participations)
-                if not is_chorister
+                DocumentGenerator._group_participations_by_voice(
+                    pending_participations, annotate_repeats=True
+                )
+                if is_report
+                else []
+            ),
+            'blockers': (
+                DocumentGenerator._build_blockers(
+                    project=project,
+                    call_window=call_window,
+                    program_cards=program_cards,
+                    pending_participations=pending_participations,
+                    confirmed_participations=confirmed_participations,
+                    crew_list=crew_list,
+                    venue=venue,
+                    run_sheet_items=run_sheet_items,
+                )
+                if is_report
                 else []
             ),
             'metrics': {
@@ -632,15 +720,16 @@ class DocumentGenerator:
         project: Project,
         program_cards: list[dict[str, Any]],
         base_url: str | None,
-        audience: Audience,
+        is_report: bool,
         pieces_with_sheet_music: int,
         pieces_with_tracks: int,
         pieces_with_reference: int,
         pieces_with_casting: int,
     ) -> list[dict[str, Any]]:
         total = len(program_cards)
-        # Singers get the two things they actually open before a concert; the
-        # coverage counters ("12/14 pieces have tracks") are a manager's metric.
+        # The day card gets the two things people actually open before a
+        # concert; the coverage counters ("12/14 pieces have tracks") are a
+        # manager's metric.
         #
         # A resource that does not exist is not listed on a performer's sheet:
         # printing "Playlista referencyjna — Brak" tells the one reader who can
@@ -667,7 +756,7 @@ class DocumentGenerator:
                     'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
                 }
             )
-        if audience != Audience.PRODUCTION:
+        if not is_report:
             return singer_assets
 
         return [
@@ -766,6 +855,7 @@ class DocumentGenerator:
         piece_castings: list[ProjectPieceCasting],
         recipient_casting: ProjectPieceCasting | None,
         base_url: str | None,
+        is_report: bool = True,
     ) -> dict[str, Any]:
         piece = item.piece
         # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
@@ -830,12 +920,15 @@ class DocumentGenerator:
         # Coverage flags only for what has no affordance of its own. "BIS" is
         # already a pill beside the title, and sheet music and recordings are
         # links right below — a badge repeating either is the same fact printed
-        # twice, five points apart.
+        # twice, five points apart. On a day card they are absent entirely:
+        # a flag saying tracks exist is a coverage counter, and nothing on paper
+        # can be done with it.
         material_badges = []
-        if tracks:
-            material_badges.append('Tracki')
-        if piece_castings:
-            material_badges.append('Casting')
+        if is_report:
+            if tracks:
+                material_badges.append('Tracki')
+            if piece_castings:
+                material_badges.append('Casting')
 
         voice_requirements_summary = ', '.join(
             f'{requirement.quantity}x {requirement.get_voice_line_display()}'
@@ -844,13 +937,18 @@ class DocumentGenerator:
         track_labels = [track.get_voice_part_display() for track in tracks]
         # Assembled here, not chained in the template: each `{% if %}` carried
         # its own " · " prefix, so a piece with no duration opened on a bullet.
+        #
+        # The requirement matrix ("4x Sopran 1, 4x Alt 1, …") answers how many
+        # singers the piece needs per line — a planning question. On the day the
+        # answer is the casting section (who is actually on it), and the singer's
+        # own line is called out beneath the title, so the matrix is report-only.
         meta_line = ' · '.join(
             part
             for part in (
                 DocumentGenerator._format_duration(piece.estimated_duration),
                 DocumentGenerator._format_language(piece.language),
                 piece.voicing,
-                voice_requirements_summary,
+                voice_requirements_summary if is_report else '',
             )
             if part
         )
@@ -985,6 +1083,7 @@ class DocumentGenerator:
     @staticmethod
     def _group_participations_by_voice(
         participations: list[Participation],
+        annotate_repeats: bool = True,
     ) -> list[dict[str, Any]]:
         grouped: dict[str, list[str]] = defaultdict(list)
         labels: dict[str, str] = {}
@@ -1012,10 +1111,136 @@ class DocumentGenerator:
                 {
                     'label': labels.get(voice_type, voice_type),
                     'count': len(members),
-                    'members': DocumentGenerator._collapse_repeated_names(members),
+                    'members': (
+                        DocumentGenerator._collapse_repeated_names(members)
+                        if annotate_repeats
+                        else members
+                    ),
                 }
             )
         return ordered_sections
+
+    @staticmethod
+    def _build_blockers(
+        project: Project,
+        call_window: CallWindow,
+        program_cards: list[dict[str, Any]],
+        pending_participations: list[Participation],
+        confirmed_participations: list[Participation],
+        crew_list: list[CrewAssignment],
+        venue: Any,
+        run_sheet_items: list[dict[str, str]],
+    ) -> list[dict[str, str]]:
+        """What is not closed yet, worst first.
+
+        The measure of a status report is that every hole is visible without
+        reading the rest of it, so this opens the document: coverage tiles say
+        how much is done, and a reader looking for what is *missing* has to
+        subtract them in their head. Each entry names the gap and then the
+        specific rows behind it, because "3 invitations unanswered" is only
+        actionable once it says whose.
+        """
+        blockers: list[dict[str, str]] = []
+
+        def add(text: str, detail: str = '') -> None:
+            blockers.append({'text': text, 'detail': detail})
+
+        if call_window.problem is CallWindowProblem.MISSING:
+            add(
+                'Zbiórka nie jest ustawiona',
+                'Bez niej arkusz podaje samą godzinę koncertu.',
+            )
+        elif call_window.problem is CallWindowProblem.NOT_BEFORE:
+            add(
+                'Zbiórka nie wypada przed koncertem',
+                'Sprawdź datę i godzinę zbiórki w projekcie.',
+            )
+        elif call_window.problem is CallWindowProblem.IMPLAUSIBLE:
+            days = (call_window.buffer_minutes or 0) // (24 * 60)
+            add(
+                f'Zbiórka ustawiona {days} {_count_label(days, "dzień", "dni", "dni")} '
+                'przed koncertem',
+                'Najprawdopodobniej wpisano ją na złą datę.',
+            )
+
+        if venue is None:
+            add('Brak miejsca wydarzenia', 'Adres i mapa nie trafią na żaden arkusz.')
+
+        if pending_participations:
+            count = len(pending_participations)
+            by_voice: dict[str, list[str]] = defaultdict(list)
+            for participation in sorted(
+                pending_participations,
+                key=lambda entry: (
+                    _VOICE_TYPE_ORDER.get(entry.artist.voice_type, 999),
+                    entry.artist.last_name,
+                ),
+            ):
+                by_voice[participation.artist.get_voice_type_display()].append(
+                    f'{participation.artist.first_name} {participation.artist.last_name}'
+                )
+            add(
+                f'{count} {_count_label(count, "zaproszenie", "zaproszenia", "zaproszeń")} '
+                'bez odpowiedzi',
+                ' · '.join(
+                    f'{voice}: {", ".join(names)}' for voice, names in by_voice.items()
+                ),
+            )
+
+        if not confirmed_participations:
+            add('Brak potwierdzonej obsady', 'Nikt jeszcze nie potwierdził udziału.')
+
+        # Two roster rows under one name are two Artist records for (almost
+        # always) one human — artist uniqueness is on e-mail alone, so it only
+        # bites when both rows carry one. The sheet cannot resolve it; it can
+        # refuse to let it pass unnoticed, which is what the roster's
+        # "(2 wpisy)" marker and this line do together.
+        repeated: dict[str, int] = {}
+        for participation in confirmed_participations + pending_participations:
+            name = f'{participation.artist.first_name} {participation.artist.last_name}'
+            repeated[name] = repeated.get(name, 0) + 1
+        collisions = sorted(name for name, count in repeated.items() if count > 1)
+        if collisions:
+            add(
+                f'{len(collisions)} '
+                f'{_count_label(len(collisions), "nazwisko występuje", "nazwiska występują", "nazwisk występuje")} '
+                'w obsadzie więcej niż raz',
+                ' · '.join(collisions) + ' — sprawdź, czy to nie zdublowana kartoteka.',
+            )
+
+        if not program_cards:
+            add('Program nie został ustalony', 'Arkusz nie ma czego wypisać.')
+        else:
+            for key, singular, few, many in (
+                ('sheet_music_url', 'utwór bez nut', 'utwory bez nut', 'utworów bez nut'),
+                ('track_count', 'utwór bez tracków sekcyjnych',
+                 'utwory bez tracków sekcyjnych', 'utworów bez tracków sekcyjnych'),
+                ('casting_count', 'utwór bez rozpisanego castingu',
+                 'utwory bez rozpisanego castingu', 'utworów bez rozpisanego castingu'),
+            ):
+                missing = [card for card in program_cards if not card[key]]
+                if not missing:
+                    continue
+                count = len(missing)
+                add(
+                    f'{count} {_count_label(count, singular, few, many)}',
+                    ' · '.join(card['title'] for card in missing[:6])
+                    + (' …' if count > 6 else ''),
+                )
+
+        if not crew_list:
+            add('Brak obsady technicznej', 'Żaden współpracownik nie jest przypisany.')
+
+        if not run_sheet_items:
+            add(
+                'Przebieg dnia nie został uzupełniony',
+                'Wykonawcy dostaną same godziny z nagłówka.',
+            )
+
+        if not project.dress_code_female and not project.dress_code_male:
+            add('Dress code nie został ustalony', 'Karta dnia poprosi o potwierdzenie.')
+
+        return blockers
 
     @staticmethod
     def _collapse_repeated_names(members: list[str]) -> list[str]:
@@ -1086,7 +1311,11 @@ class DocumentGenerator:
             return (1, 0)
 
     @staticmethod
-    def _visible_sections(audience: Audience, personal: dict[str, Any] | None) -> list[str]:
+    def _visible_sections(
+        kind: DocumentKind,
+        audience: Audience,
+        personal: dict[str, Any] | None,
+    ) -> list[str]:
         """The sections the template will actually emit, in order.
 
         The printed section numbers come from the loop counter, so a section
@@ -1096,7 +1325,7 @@ class DocumentGenerator:
         """
         return [
             section
-            for section in _SECTIONS[audience]
+            for section in _SECTIONS[kind][audience]
             if section != 'personal' or personal is not None
         ]
 
@@ -1232,7 +1461,7 @@ class DocumentGenerator:
             return 'Zbiórka nie wypada przed koncertem — sprawdź datę i godzinę w projekcie.'
         if window.problem is CallWindowProblem.IMPLAUSIBLE:
             return (
-                'Zbiórka jest ustawiona ponad 12 h przed koncertem — '
+                'Zbiórka jest ustawiona ponad dobę przed koncertem — '
                 'najprawdopodobniej wpisano ją na złą datę.'
             )
         return ''

@@ -3404,7 +3404,8 @@
       "workspace_description": "Manage project details, rehearsals, casting, and logistics in one operational workspace."
     },
     "exports": {
-      "call_sheet": "Download Call Sheet",
+      "call_sheet": "Download production report",
+      "day_card": "Download day card",
       "download_group": "Download",
       "dtp": "Download DTP Note",
       "menu": "Export",

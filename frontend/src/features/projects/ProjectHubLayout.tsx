@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ChevronDown,
+  ClipboardList,
   Download,
   Eye,
   FileText,
@@ -427,16 +428,29 @@ export default function ProjectHubLayout(): React.JSX.Element {
                     {t("projects.exports.download_group", "Pobierz")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem
+                    icon={<ClipboardList size={15} aria-hidden="true" />}
+                    onSelect={() =>
+                      downloadReport(
+                        "export_day_sheet",
+                        `KartaDnia_${project.title}.pdf`,
+                        "DAY_CARD",
+                        { audience: "production" },
+                      )
+                    }
+                  >
+                    {t("projects.exports.day_card", "Karta dnia")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     icon={<FileText size={15} aria-hidden="true" />}
                     onSelect={() =>
                       downloadReport(
                         "export_call_sheet",
-                        `CallSheet_${project.title}.pdf`,
+                        `RaportProdukcji_${project.title}.pdf`,
                         "CALL_SHEET",
                       )
                     }
                   >
-                    {t("projects.exports.call_sheet", "Call Sheet")}
+                    {t("projects.exports.call_sheet", "Raport produkcji")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     icon={<Download size={15} aria-hidden="true" />}

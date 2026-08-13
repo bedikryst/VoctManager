@@ -62,6 +62,7 @@ from .exceptions import ArtistProvisioningException, AttendanceValidationExcepti
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
+    DocumentKind,
     DocumentRenderDependencyError,
 )
 from .infrastructure.score_watermark import stamp_pdf
@@ -851,9 +852,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         audience: Audience,
         recipient: Participation | None,
         filename_stub: str,
+        kind: DocumentKind,
     ) -> FileResponse | Response:
-        """Renders the day sheet for a resolved audience, degrading gracefully
-        if the PDF engine's native libraries are unavailable (rather than 500)."""
+        """Renders the sheet for a resolved kind and audience, degrading
+        gracefully if the PDF engine's native libraries are unavailable
+        (rather than 500)."""
         participations, crew, program, rehearsals, castings = self._call_sheet_querysets(project)
         try:
             pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(
@@ -866,6 +869,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 audience=audience,
                 recipient=recipient,
                 base_url=request.build_absolute_uri('/'),
+                kind=kind,
             )
         except DocumentRenderDependencyError:
             logger.exception("Call sheet render failed: WeasyPrint native dependencies missing")
@@ -888,11 +892,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_call_sheet(self, request, pk=None) -> FileResponse | Response:
-        """Full production call sheet — managers only. Complete logistics,
-        casting, coverage metrics and the operational contact directory."""
+        """Production report — managers only. Opens on the blocker list, then
+        coverage, the full rehearsal plan including what has passed, casting,
+        the roster with statuses and the operational contact directory.
+
+        The URL keeps its historic name so existing links and the frontend menu
+        entry do not break; what it produces is the report half of the split.
+        """
         project = self.get_object()
         return self._render_call_sheet(
-            request, project, Audience.PRODUCTION, recipient=None, filename_stub="CallSheet",
+            request, project, Audience.PRODUCTION, recipient=None,
+            filename_stub="Raport", kind=DocumentKind.PRODUCTION_REPORT,
         )
 
     @staticmethod
@@ -938,13 +948,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
             pk=pk,
         )
         user = request_user(request)
+        # A manager may ask for the day card in its production shape — the same
+        # document the stage manager runs the day from, rather than the report.
+        # Anyone else asking for it falls through to their own entitlement.
+        if request.query_params.get('audience') == Audience.PRODUCTION.value and IsManager().has_permission(request, self):
+            return self._render_call_sheet(
+                request, project, Audience.PRODUCTION, recipient=None,
+                filename_stub="Karta", kind=DocumentKind.DAY_CARD,
+            )
         audience, recipient = self._resolve_day_sheet_audience(project, user)
         if audience is None:
             raise PermissionDenied(
                 _("Nie masz dostępu do karty tego wydarzenia.")
             )
         return self._render_call_sheet(
-            request, project, audience, recipient, filename_stub="Karta",
+            request, project, audience, recipient,
+            filename_stub="Karta", kind=DocumentKind.DAY_CARD,
         )
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])

@@ -375,12 +375,28 @@ too. A day card should never ask its reader to fix data.
 
 Six stages. Etapy 0–1 are self-contained and worth shipping even if the split is rejected.
 
-**Status: Etapy 0 and 1 are DONE (2026-08-09).** Etapy 2–6 are open. One caveat carries forward:
-WeasyPrint cannot render on the Windows dev host (`libgobject-2.0-0` missing) and Docker was down
-when the work landed, so **the pagination outcomes of Etap 1 (D14/D15) are reasoned from the CSS,
-not measured against a rendered PDF.** Everything else was verified against rendered HTML and is
-locked by tests. Render the audited project in the container and confirm the page count before
-treating Etap 1 as closed.
+**Status: Etapy 0, 1 and 2 are DONE.** Etapy 3–6 are open.
+
+**Etap 1's pagination claim was wrong, and was corrected in Etap 2 (2026-08-14).** The
+"five pages become three" outcome was reasoned from the CSS because WeasyPrint cannot render on the
+Windows dev host (`libgobject-2.0-0`) and Docker was down. Measured in the container against the dev
+database, the production sheet after Etapy 0–1 was **11 pages for an 8-piece project, of which
+roughly four pages' worth was blank** — one of them a section heading above 996pt of nothing.
+
+The cause was never `.split`, which Etap 1 rewrote; it was `.card { page-break-inside: avoid }`,
+pre-existing and untouched. A `.card` is a *section's whole body* (every program item, the whole
+roster, the entire contact directory), so it routinely outgrows a page, and WeasyPrint answers an
+unfittable `avoid` by pushing the box to a fresh page before breaking it anyway — stranding the
+heading behind it. Measured cost of that one declaration: **3 of 11 pages.**
+
+Two further measurements worth keeping (they contradict what the CSS suggests):
+- **`columns: 2` for the roster works.** Etap 1's one genuine layout win — it balances on height and
+  flows across pages, confirmed visually.
+- **`break-after: avoid` on `.section-head` is a no-op in WeasyPrint.** Rendered page-for-page
+  identical with and without it; do not reach for it to keep a heading with its content.
+- **Single-column throughout costs pages, it does not save them.** The `.split` event pair packs two
+  short cards into the height of one (11→9 pages when stacked instead of 8 when kept side by side),
+  so §4's "single column throughout" for the day card is rejected on measurement.
 
 ### Etap 0 — Correctness (no redesign) — DONE
 
@@ -430,7 +446,59 @@ column are emitted only when the table has something to put in them: on the audi
 now renders **zero** filler em-dash cells, and the rehearsal table lost a whole column to the
 caption "Wszystkie próby obowiązkowe."
 
-### Etap 2 — The split (architectural)
+### Etap 2 — The split (architectural) — DONE (2026-08-14)
+
+**As built, and where it departs from the spec below.** The `DocumentKind` axis landed as specified.
+The *two-template, two-context-builder* implementation did not, and was rejected on three grounds:
+
+1. **The measured problem was orthogonal to the split.** ~35% of the document was blank because of
+   one break rule (above). Splitting first would have shipped that defect into two documents.
+2. **A fourth print template makes A6 worse.** Three PDF templates already carry three invented
+   design systems; Etap 4 exists to write one canon and apply it, and Etap 5 to gettext the
+   literals. Both would have to land twice, forever.
+3. **The rejection in §5 does not apply to this axis.** "One document with a compact flag" was
+   rejected because *the flag becomes the thing nobody sets*. `DocumentKind` is set by the endpoint,
+   not by a person — `export_call_sheet` → report, `export_day_sheet` → day card. Nobody chooses.
+
+So: **one template, keyed `_SECTIONS[kind][audience]`.** Kind decides what a section *contains*
+(coverage counters, the invitation queue, past rehearsals, the requirement matrix and the
+"(2 wpisy)" duplicate marker are report-only); audience decides section order and privacy, as before.
+`resolve_document_kind` normalises the kind *before* anything reads it, so a report requested for a
+singer degrades to a day card whole — a fallback that fixed only the section list would have left a
+dozen content gates still in report mode, leaking crew PII and the invitation queue.
+
+Measured on the dev database (8-piece project, 19 participations):
+
+| sheet | before Etap 2 | after |
+|---|---|---|
+| report · production | 11 p | 8 p |
+| day card · production (stage manager) | — | 4 p |
+| day card · conductor | 10 p | 7 p |
+| day card · chorister | 6 p | 5 p |
+
+The remaining chorister length is **content-bound, not layout-bound**: eight program cards and a
+15-voice roster are honest pages. §4's "one page" target assumed a smaller programme; the levers
+left are Etap 4 (density, typography) and Etap 6 (structured logistics replacing prose).
+
+Two decisions taken while building:
+- **The 12 h plausibility ceiling was raised to 24 h.** It contradicted its own module: `crosses_day`
+  exists to bless an evening call for a morning concert on tour, and a 15 h tour call was then
+  flagged as a probable data-entry error. One day is the widest gap that can still belong to this
+  concert, and the errors this guards against (a day, a month, the observed twenty days) all clear
+  it comfortably.
+- **D19's "(2 wpisy)" marker is report-only.** Etap 1 gave the chorister the `ensemble` section
+  (N6), which put a database-hygiene annotation on the sheet of the reader who cannot act on it —
+  and if the two rows really are two people, the plain repetition is the truth. The report annotates
+  the roster *and* names the collision in the blocker list, which is where the merge gets decided.
+
+**Still not done from this stage:** the day card's own masthead — §4's anchor strip
+(`ZBIÓRKA · PRÓBA AKUSTYCZNA · DOWNBEAT · KONIEC`) needs the merged timeline from Etap 3 to derive
+its anchors, and the QR replacing the button row belongs to Etap 4. The day card currently keeps the
+existing four-fact masthead.
+
+---
+
+Original spec for this stage follows.
 
 New axis in `document_generator.py`:
 

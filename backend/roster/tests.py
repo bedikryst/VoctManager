@@ -19,6 +19,7 @@ from .exceptions import ActivationResendException, CastingValidationException
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
+    DocumentKind,
     DocumentRenderDependencyError,
 )
 from .models import (
@@ -4209,14 +4210,27 @@ class ConcertDaySheetTests(APITestCase):
         )
         self.reh_singer_only.invited_participations.add(self.singer_part)
 
-    def _build_context(self, audience: Audience, recipient: Participation | None) -> dict:
+    def _build_context(
+        self,
+        audience: Audience,
+        recipient: Participation | None,
+        kind: DocumentKind | None = None,
+    ) -> dict:
+        """Context for one sheet. ``kind`` defaults to what the endpoints ship:
+        management asks for the report, performers for the day card."""
         from .views import ProjectViewSet
 
+        if kind is None:
+            kind = (
+                DocumentKind.PRODUCTION_REPORT
+                if audience == Audience.PRODUCTION
+                else DocumentKind.DAY_CARD
+            )
         parts, crew, program, reh, cast = ProjectViewSet._call_sheet_querysets(self.project)
         return DocumentGenerator._build_call_sheet_context(
             project=self.project, participations=parts, crew=crew, program=program,
             rehearsals=reh, castings=cast, audience=audience, recipient=recipient,
-            base_url="http://testserver/",
+            base_url="http://testserver/", kind=kind,
         )
 
     # --- access model -------------------------------------------------- #
@@ -4366,7 +4380,7 @@ class ConcertDaySheetTests(APITestCase):
         cases = [
             (Audience.CHORISTER, self.singer_part, "Twoja rola dzisiaj"),
             (Audience.CONDUCTOR, None, "Karta dyrygenta"),
-            (Audience.PRODUCTION, None, "Call sheet"),
+            (Audience.PRODUCTION, None, "Raport produkcji"),
         ]
         for audience, recipient, marker in cases:
             ctx = self._build_context(audience, recipient)
@@ -4385,11 +4399,17 @@ class ConcertDaySheetTests(APITestCase):
 
     # --- the sheet may not state things that are not true ---------------- #
 
-    def _render(self, audience: Audience, recipient: Participation | None) -> str:
+    def _render(
+        self,
+        audience: Audience,
+        recipient: Participation | None,
+        kind: DocumentKind | None = None,
+    ) -> str:
         from django.template.loader import render_to_string
 
         return render_to_string(
-            "projects/call_sheet_pdf.html", self._build_context(audience, recipient)
+            "projects/call_sheet_pdf.html",
+            self._build_context(audience, recipient, kind),
         )
 
     def _move_call_off_the_concert_day(self) -> None:
@@ -4438,7 +4458,7 @@ class ConcertDaySheetTests(APITestCase):
 
         production = self._build_context(Audience.PRODUCTION, None)
         self.assertEqual(production["call_buffer_label"], "")
-        self.assertIn("12 h", production["call_window_warning"])
+        self.assertIn("dobę", production["call_window_warning"])
         self.assertNotIn("480 h", self._render(Audience.PRODUCTION, None))
 
         # The singer can do nothing about a data-entry fault and is not alarmed
@@ -4597,6 +4617,151 @@ class ConcertDaySheetTests(APITestCase):
         html = self._render(Audience.PRODUCTION, None)
         self.assertIn("Brak obsady technicznej", html)
         self.assertNotIn("Wsparcie potwierdzone", html)
+
+    def test_overnight_tour_call_is_not_flagged_as_a_data_error(self) -> None:
+        """An evening call for a late-morning concert is ordinary on tour, and
+        `crosses_day` exists to print it correctly. A ceiling tight enough to
+        flag it would contradict that; the ceiling is a full day."""
+        self.project.date_time = self.project.date_time.replace(hour=9, minute=0)
+        self.project.call_time = self.project.date_time - timedelta(hours=15)
+        self.project.save(update_fields=["date_time", "call_time"])
+
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        self.assertTrue(ctx["call_crosses_day"])
+        self.assertEqual(ctx["call_window_warning"], "")
+        self.assertEqual(ctx["call_buffer_label"], "15 h 00 min")
+
+    # --- the split: one day, one report ---------------------------------- #
+
+    def test_day_card_carries_no_report_content(self) -> None:
+        """Coverage counters, the invitation queue and past rehearsals are the
+        report's job. A day card that carries them makes its reader wade through
+        a status report to find an arrival time."""
+        Participation.objects.create(
+            artist=Artist.objects.create(
+                first_name="Cee", last_name="Pending", email="ds-pend@test.pl",
+                voice_type=VoiceType.SOPRANO,
+            ),
+            project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        self.reh_open.date_time = timezone.now() - timedelta(days=3)
+        self.reh_open.save(update_fields=["date_time"])
+
+        for audience, recipient in (
+            (Audience.CHORISTER, self.singer_part),
+            (Audience.CONDUCTOR, None),
+            (Audience.PRODUCTION, None),
+        ):
+            ctx = self._build_context(audience, recipient, DocumentKind.DAY_CARD)
+            html = self._render(audience, recipient, DocumentKind.DAY_CARD)
+            self.assertEqual(ctx["pending_sections"], [], audience)
+            self.assertEqual(ctx["blockers"], [], audience)
+            self.assertNotIn("Oczekujące potwierdzenia", html, audience)
+            self.assertNotIn("Gotowość materiałów", html, audience)
+            self.assertNotIn("Do zamknięcia", html, audience)
+            # Only what is still ahead.
+            self.assertTrue(all(not item["is_past"] for item in ctx["rehearsal_items"]))
+
+    def test_report_opens_on_what_is_not_closed(self) -> None:
+        """A status report exists to produce a blocker list; the audited sheet
+        opened on four counters and never said what was missing."""
+        Participation.objects.create(
+            artist=Artist.objects.create(
+                first_name="Cee", last_name="Pending", email="ds-pend@test.pl",
+                voice_type=VoiceType.SOPRANO,
+            ),
+            project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        ctx = self._build_context(Audience.PRODUCTION, None)
+        html = self._render(Audience.PRODUCTION, None)
+
+        self.assertIn("Do zamknięcia", html)
+        texts = " · ".join(b["text"] for b in ctx["blockers"])
+        details = " · ".join(b["detail"] for b in ctx["blockers"])
+        # The gap, and then whose it is — a count alone is not actionable.
+        self.assertIn("1 zaproszenie bez odpowiedzi", texts)
+        self.assertIn("Cee Pending", details)
+        self.assertIn("utwory bez nut", texts)
+        # The blocker list precedes the coverage band it replaces as an opener.
+        self.assertLess(html.index("Do zamknięcia"), html.index("Potwierdzona obsada"))
+
+    def test_report_blocker_list_reports_a_broken_call_window(self) -> None:
+        self._move_call_off_the_concert_day()
+        texts = " · ".join(
+            b["text"] for b in self._build_context(Audience.PRODUCTION, None)["blockers"]
+        )
+        self.assertIn("20 dni przed koncertem", texts)
+
+    def test_a_singer_never_receives_a_report(self) -> None:
+        """The report carries the invitation queue and the crew's private
+        numbers. Asking for one on a singer's behalf must degrade to the day
+        card — not just trim its section list."""
+        ctx = self._build_context(
+            Audience.CHORISTER, self.singer_part, DocumentKind.PRODUCTION_REPORT
+        )
+        self.assertEqual(ctx["kind"], DocumentKind.DAY_CARD.value)
+        self.assertFalse(ctx["is_report"])
+        self.assertEqual(ctx["blockers"], [])
+
+        html = self._render(
+            Audience.CHORISTER, self.singer_part, DocumentKind.PRODUCTION_REPORT
+        )
+        self.assertNotIn("555999555", html)
+        self.assertNotIn("crew-secret@test.pl", html)
+
+    def test_duplicate_roster_name_is_flagged_only_where_it_can_be_merged(self) -> None:
+        """Two roster rows under one name are two Artist records for one human.
+        The report says so; the day card prints the name plainly, because its
+        reader cannot merge a kartoteka and — if they really are two people —
+        the repetition is the truth."""
+        twin = Artist.objects.create(
+            first_name="Ada", last_name="Lovelace", email="ds-twin@test.pl",
+            voice_type=VoiceType.ALTO,
+        )
+        Participation.objects.create(
+            artist=twin, project=self.project,
+            status=Participation.Status.CONFIRMED,
+        )
+
+        report = self._build_context(Audience.PRODUCTION, None)
+        alto = next(s for s in report["ensemble_sections"] if s["label"] == "Alt")
+        self.assertIn("Ada Lovelace (2 wpisy)", alto["members"])
+        self.assertIn(
+            "nazwisko występuje", " · ".join(b["text"] for b in report["blockers"])
+        )
+
+        day = self._build_context(Audience.CHORISTER, self.singer_part)
+        day_alto = next(s for s in day["ensemble_sections"] if s["label"] == "Alt")
+        self.assertEqual(day_alto["members"].count("Ada Lovelace"), 2)
+        self.assertNotIn("Ada Lovelace (2 wpisy)", day_alto["members"])
+
+    def test_day_sheet_endpoint_serves_the_production_day_card_to_managers(self) -> None:
+        """The stage manager runs the day from the day card, not the report."""
+        self.client.force_authenticate(user=self.manager)
+        with patch(
+            "roster.views.DocumentGenerator.generate_call_sheet_pdf", return_value=b"%PDF-"
+        ) as render_mock:
+            resp = self.client.get(
+                f"/api/projects/{self.project.id}/export_day_sheet/?audience=production"
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(render_mock.call_args.kwargs["kind"], DocumentKind.DAY_CARD)
+        self.assertEqual(render_mock.call_args.kwargs["audience"], Audience.PRODUCTION)
+
+    def test_day_sheet_production_shape_is_refused_to_a_singer(self) -> None:
+        """The query parameter is a manager's shortcut, not a way around the
+        audience resolver: a singer asking for it still gets their own sheet."""
+        self.client.force_authenticate(user=self.singer_user)
+        with patch(
+            "roster.views.DocumentGenerator.generate_call_sheet_pdf", return_value=b"%PDF-"
+        ) as render_mock:
+            resp = self.client.get(
+                f"/api/projects/{self.project.id}/export_day_sheet/?audience=production"
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(render_mock.call_args.kwargs["audience"], Audience.CHORISTER)
 
     def test_resolve_audience_maps_users(self) -> None:
         from .views import ProjectViewSet

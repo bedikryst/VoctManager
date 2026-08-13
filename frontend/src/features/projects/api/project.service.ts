@@ -66,6 +66,7 @@ const buildListUrl = (
 
 export type ProjectReportEndpoint =
   | "export_call_sheet"
+  | "export_day_sheet"
   | "export_zaiks"
   | "export_dtp";
 
@@ -457,12 +458,20 @@ export const ProjectService = {
     await api.delete(`${PROJECTS_BASE_URL}${id}/`);
   },
 
+  /**
+   * `params` carries the document's shape, not a filter: `export_day_sheet`
+   * resolves the audience from the caller, and a manager passes
+   * `{ audience: "production" }` to get the stage manager's day card instead of
+   * the personal one they are not entitled to.
+   */
   downloadReport: async (
     projectId: string,
     endpoint: ProjectReportEndpoint,
+    params?: Record<string, string>,
   ): Promise<AxiosResponse<Blob>> =>
     api.get(`${PROJECTS_BASE_URL}${projectId}/${endpoint}/`, {
       responseType: "blob",
+      params,
     }),
 
   uploadScorePdf: async (projectId: string, file: File): Promise<Project> => {

@@ -3405,7 +3405,8 @@
       "workspace_description": "Gérez les détails du projet, les répétitions, la distribution et la logistique dans un seul espace opérationnel."
     },
     "exports": {
-      "call_sheet": "Télécharger le Call Sheet",
+      "call_sheet": "Télécharger le rapport de production",
+      "day_card": "Télécharger la feuille de jour",
       "download_group": "Télécharger",
       "dtp": "Télécharger la note DTP",
       "menu": "Exporter",

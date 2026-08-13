@@ -21,12 +21,18 @@ export function useProjectCard(projectId: string) {
     mutationFn: async ({
       endpoint,
       defaultFilename,
+      params,
     }: {
       endpoint: ProjectReportEndpoint;
       defaultFilename: string;
       loaderKey: string;
+      params?: Record<string, string>;
     }) => {
-      const response = await ProjectService.downloadReport(projectId, endpoint);
+      const response = await ProjectService.downloadReport(
+        projectId,
+        endpoint,
+        params,
+      );
       const disposition = response.headers["content-disposition"];
       let filename = defaultFilename;
 
@@ -76,13 +82,14 @@ export function useProjectCard(projectId: string) {
     endpoint: ProjectReportEndpoint,
     defaultFilename: string,
     loaderKey: string,
+    params?: Record<string, string>,
   ) => {
     toast.loading(
       t("projects.card.generating_doc", "Generowanie dokumentu..."),
       { id: loaderKey },
     );
     downloadMutation.mutate(
-      { endpoint, defaultFilename, loaderKey },
+      { endpoint, defaultFilename, loaderKey, params },
       { onSettled: () => toast.dismiss(loaderKey) },
     );
   };

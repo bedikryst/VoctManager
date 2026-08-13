@@ -20,10 +20,17 @@ from enum import StrEnum
 
 from django.utils import timezone
 
-# Beyond this, the gap is not a call window. A choir arrives hours before a
-# concert, never half a day; anything larger is a date entered on the wrong day
+# Beyond this, the gap is not a call window but a date entered on the wrong day,
 # and must be reported as such instead of stated as an arrival window.
-MAX_PLAUSIBLE_BUFFER_MINUTES = 12 * 60
+#
+# The ceiling is a full day because the legitimate long call is real: an evening
+# call for a late-morning concert on tour runs 14-16 h, and the bus for an
+# out-of-town date leaves in the morning for an evening downbeat. A tighter
+# ceiling flags those as faults — and would contradict ``crosses_day`` below,
+# which exists precisely to bless them. One day is the widest gap that can still
+# belong to this concert; the errors this guards against (a call entered a day,
+# a month or, as observed, twenty days early) all clear it comfortably.
+MAX_PLAUSIBLE_BUFFER_MINUTES = 24 * 60
 
 
 class CallWindowProblem(StrEnum):
