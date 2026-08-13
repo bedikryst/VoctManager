@@ -56,6 +56,11 @@ const milestones = concerts.map((entry, i) => {
     img: a?.img ? photoOptional(a.img) : undefined,
     d: String((i % 3) + 1),
     body: loc?.blurb ?? a?.blurb ?? entry.data.essence,
+    // Only concerts that actually own a detail page get a control — `hasPage` is the same flag
+    // /koncerty gates its station link on, so a row here can never point at a 404. The path stays
+    // Polish in every locale on purpose: /koncerty/[id] exists only in Polish, and localizePath
+    // returns the Polish URL for any route outside TRANSLATED_ROUTES (see i18n/config).
+    href: entry.data.hasPage ? `${hrefConcerts}/${entry.id}` : undefined,
   };
 });
 
@@ -329,6 +334,15 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                   <span class="milestone-place">{m.place}</span>
                   <h3>{m.title}</h3>
                   <p>{m.body}</p>
+                  {/* Five of these stand in one list, so the visible label alone would give a
+                      screen reader five identical controls. The concert's name goes in visually
+                      hidden rather than into an `aria-label`: a label would REPLACE the visible
+                      text, and voice control matches on what is on screen. */}
+                  {m.href && (
+                    <a class="milestone-link" href={m.href}>
+                      {c.milestones.cardLink}<span class="sr-only"> — {m.title}</span>
+                    </a>
+                  )}
                 </div>
               </li>
             ))
@@ -406,13 +420,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     <span class="reveal-light" aria-hidden="true"></span>
                   </figure>
                 )}
-                {/* One person is one utterance, so the three text nodes share the card's inherited
-                    delay and read as a single arrival. The card itself is only the cadence now: as
-                    one 673px register node it fired on the portrait and the vision paragraph was
-                    a screen further down, finished before it was reached. */}
+                {/* One person is one utterance, so the name and the role share the card's
+                    inherited delay and arrive together. The card carries the cadence only: as a
+                    single register node it would fire on the portrait, with the words a screen
+                    below it and already written by the time they were reached. */}
                 <h3 class="reveal">{b.name}</h3>
                 <p class="role reveal">{b.role}</p>
-                <p class="vision reveal">{b.vision}</p>
               </article>
             ))
           }
@@ -529,6 +542,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .milestone-body h3 { margin: 0; font-family: var(--serif); font-size: clamp(26px, 3vw, 42px); font-weight: 300; line-height: 1.08; color: var(--ink); }
   .milestone-body p { margin: 0; max-width: 68ch; color: var(--ink-soft); font-size: clamp(15px, 1.18vw, 17px); line-height: 1.75; }
   .milestone-place { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted); }
+  /* Muted rather than the `.doing a` gold: that one is a single mark per card, this repeats down
+     a five-row list, where five golds would read as the section's loudest element. */
+  .milestone-link { justify-self: start; margin-top: 5px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-muted); border-bottom: 1px solid var(--line-strong); padding-bottom: 3px; transition: color .3s var(--ease), border-color .3s var(--ease); }
+  .milestone-link:hover { color: var(--candle-blue); border-bottom-color: var(--candle-blue); }
   /* Frame owns the ratio (3:2) and clips — so any source crop renders identically,
      regardless of the uploaded photo's intrinsic dimensions. */
   .milestone-media { margin-inline: 40px; aspect-ratio: 3 / 2; overflow: hidden; }
@@ -560,8 +577,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 4vw, 56px); }
   .board-card { display: grid; gap: 18px; padding-top: 26px; border-top: 1px solid var(--line-strong); }
   .board-card h3 { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; color: var(--ink); margin: 0; }
-  .board-card .role { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle); }
-  .board-card .vision { font-size: 15px; line-height: 1.8; color: var(--ink-muted); margin: 0; }
+  /* Gold that is READ, so it takes the ink tier — `--candle` is 1.74:1 on this band's
+     parchment (tokens.css). `--candle-ink` is 3.86:1 here: the token is calibrated against
+     `--paper` (4.67:1) and loses ~0.8 on `--paper-deep`, so this label sits under AA until
+     either the band lightens or the tier gains a darker step. */
+  .board-card .role { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
   /* Portraits render only when ALL of src/assets/photos/o-nas-{florent,ania,krystian}.*
      exist (boardPortraitsComplete) — a partial set would leave the grid ragged. */
   .board-portrait { position: relative; margin: 0 0 4px; aspect-ratio: 4 / 5; overflow: hidden; background: rgba(22, 21, 20, 0.05); }

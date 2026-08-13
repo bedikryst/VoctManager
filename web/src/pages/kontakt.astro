@@ -39,19 +39,19 @@ const channels = [
     role: "Koncerty i liturgie",
     email: "booking@voctensemble.com",
     subject: "Zaproszenie VoctEnsemble",
-    hint: "Napisz, gdzie i kiedy — miejsce, przybliżony termin, okazję i charakter przestrzeni. Odpiszemy z propozycją programu ułożonego pod konkretną akustykę.",
+    hint: "Napisz, gdzie i kiedy: nazwa miejsca, przybliżony termin, okazja. Odpiszemy propozycją programu ułożonego pod tę akustykę.",
   },
   {
     role: "Mecenat i patronat",
     email: "patronat@voctensemble.com",
     subject: "Mecenat i patronat VoctEnsemble",
-    hint: "Darowizna, patronat honorowy albo współpraca instytucjonalna. Powiedz, co jest dla Was ważne — dobierzemy formę i pokażemy, na co idzie wsparcie.",
+    hint: "Darowizna, patronat honorowy albo współpraca instytucjonalna. Napiszcie, co Was interesuje — odpowiemy, na co pójdzie wsparcie i co z niego powstanie.",
   },
   {
     role: "Sprawy ogólne",
     email: "kontakt@voctensemble.com",
     subject: "Sprawy ogólne VoctEnsemble",
-    hint: "Wszystko pozostałe: pytania, współpraca artystyczna, sprawy fundacji. Jeśli nie wiesz, do kogo pisać — pisz tu; i tak trafi do nas trojga.",
+    hint: "Wszystko pozostałe: pytania, współpraca artystyczna, sprawy fundacji. Jeśli nie wiesz, który adres wybrać, wybierz ten.",
   },
 ] as const;
 
@@ -156,9 +156,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <h2 class="ink-press">Powiedz nam, z czym przychodzisz.</h2>
         </div>
         <p class="contact-intro reveal" data-d="1">
-          Każda sprawa ma swój adres, żeby od razu trafiła we właściwe ręce. Po drugiej
-          stronie czekają te same <em>trzy osoby</em>, które prowadzą fundację —
-          i same czytają każdą wiadomość.
+          Rozpisaliśmy pocztę na trzy adresy, żeby wiadomość od razu trafiała
+          do właściwej sprawy. Pod wszystkimi trzema są <em>te same trzy osoby</em> —
+          zarząd fundacji.
         </p>
 
         <dl class="channels">

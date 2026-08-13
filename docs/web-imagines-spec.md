@@ -45,6 +45,11 @@ re-proposed.
 **§18 supersedes nothing. It closes one entry on §17's open list** — the ground defect is now a
 build gate rather than a rule to remember. Read it only if you are editing the audit.
 
+**§19 finishes §17 and supersedes it on the packing contract and the phone plate.** §17 shipped
+the shape and left the two hardest measurements to a later pass; one of them turned out not to
+work at all. It also retires `wMax` and the pixel basis from `lib/galleryLayout`, so it reaches
+the concert pages. Where §17 and §19 disagree, §19 is what shipped.
+
 ---
 
 ## 1. The defect
@@ -1387,3 +1392,173 @@ finished build without disturbing the `dist/` the developer keeps serving, and i
 - **Warning instead of erroring.** Every rule this catches is invisible in review, green in
   `astro check`, and wrong for as long as nobody looks. That is the definition this audit uses for
   an error.
+
+---
+
+## 19. Finishing the rebuild — the packing stops growing — SHIPPED
+
+An audit of the page as it stood, measured rather than read: the build in `dist-verify`, geometry
+read out of Edge at 1440×900 and 390×844, and Rec.709 luma over all forty-eight originals through
+sharp. §17's shape held up. Two of the things it left for later did not, and one of them had never
+worked at all.
+
+The archive is **48 photographs in 10 runs across 5 evenings** as of this pass, not the 43 §17
+counted — the page has always counted them at build, but every comment in the file had the old
+number typed into it, and one had 47. Those are gone; where a count is load-bearing in prose it
+now says what the thing is instead of how many of it there are.
+
+### The phone plate was never full-bleed. It was the sheet's width, off-axis.
+
+§17 gave the plate a full-bleed on phones because otherwise plate and sheet come out the same
+width and the rhythm is gone on the case that matters most. It recorded the result as "built and
+measured (no horizontal overflow) but not yet looked at". Both halves of that are true and the
+measurement was of the wrong thing.
+
+```
+viewport 390 · page gutter 28 · scrollWidth 390 (no overflow, correctly)
+plate figure   0 → 334   (334 wide)
+sheet figure  28 → 362   (334 wide)
+```
+
+The negative margins were doing nothing. `.im-shot--plate` carries `max-width: 100%` — from the
+desktop rule and again from the sheet's own phone rule — so the box is over-constrained: the
+browser keeps the width, drops the trailing margin, and the plate lands at **exactly the sheet's
+width, shifted one gutter off the page's axis**. There is no overflow because there is nothing
+overflowing. `max-width: none` in the ≤720 block is the whole fix; the plate now measures 0 → 390
+at 390, 0 → 414 at 414, 0 → 720 at 720, with no overflow at any width tested (360 … 1920).
+
+**The rule this generates: a negative margin under an inherited `max-width` is a no-op that looks
+like a fix.** It is invisible in review, green in every gate, and the natural test for it — a
+horizontal-overflow check — returns the answer that says it works.
+
+### Nothing grows any more, and the basis is a share rather than a pixel
+
+§17's open list had the tail rows inflating and rejected the fix as "the right algorithm and the
+wrong moment". This is the moment: the page above it is no longer being rebuilt, and the change
+turns out to be smaller than a justified packer.
+
+`wMax` is gone. It let a short row inflate 40% to fill its line, which is right for a gallery with
+variety hung inside a longer document and wrong for an archive that is 40 landscapes in 48 frames.
+Measured at 1440, before → after:
+
+| Run | rows before | rows after |
+|---|---|---|
+| Wcielenie · NSPJ | 3 @ 367×244, **2 @ 508×339** | 3 @ 364×242, 2 @ 363×242 |
+| 9 Kart · Kraków | 3, 3, **1 @ 508×339** | 3, 3, **1 @ 363×242** |
+| Hymn · Mariacka | 4 @ 387, **1 @ 650×436** | 4 @ 302, 1 @ 452×303 |
+| Aeternam · Niedzica | 3 @ 367×245, **2 @ 508×339** | 3, 2 — all @ 242 |
+
+A lone frame 38% taller than the two rows over it is not a remainder hung centred, it is the shape
+a reader takes for a mistake.
+
+**And the basis is now `--share`, a fraction of the measure, not `--w` in px.** This is the second
+half of the same defect and it was not on anyone's list. A px basis freezes the geometry at 1180:
+below that width a full row shrinks to fit while a short row, already fitting, stands at its full
+size — so every laptop narrower than the measure got the tail-row defect back, at a smaller
+amplitude, no matter what `wMax` said. The share scales with whatever container it lands in, and
+the gap it was sized against scales with it (`3vw` against a measure that is itself ≈90vw), so the
+row keeps its ~1% of slack at any width. The contract is now
+`flex: 0 1 calc(var(--share) * 100%)` with the same `max-width`, stated in `lib/galleryLayout`'s
+header, and `--ar` / `--w` / `--w-max` are off both pages' markup. `w` survives in the API for
+`sizes`, which is a statement about the widest case and belongs in px.
+
+**This lands on the concert pages too**, which is why §11 kept the packing shared.
+`/koncerty/9-kart`'s Kraków run ended 3+3+**2 @ 508×339** by the old arithmetic and now ends
+3+3+2, all at 363×242.
+
+### The sheet's height now comes from the plate standing over it
+
+The alternation §17 called "the whole design brief" was accidental. `layoutShots` sizes a row to
+fill the measure, so the sheet's scale came from how many frames a run happened to have left over:
+
+| Run | plate | sheet, before | ratio |
+|---|---|---|---|
+| Aeternam · Mistrzejowice | 700×700 | **570×570** | **81%** |
+| Wcielenie · Próba | 904×602 | 570×380 | 63% |
+| Hymn · Mariacka | 904×606 | 650×436 | 72% |
+| 9 Kart · Kraków | 904×604 | 367×245 | 41% |
+
+The same page ran a rhythm of 1:2.5 in one run and 1:1.2 in the next. `SHEET_SCALE = 0.5` in
+`obrazy.astro` states it once: the sheet's `maxHeight` is half the plate's height, passed per run.
+A **ceiling, not a target** — a long run still fills its measure and comes out well under it, so
+Kraków's 242 is untouched while Mistrzejowice goes 570 → 350 under a 700px plate and Hymn's tail
+goes 436 → 303. Every run now reads as one thing over another thing half its size.
+
+### The plate's measure is clamped to the source
+
+`min(904, 700 × ar)` never looked at `img.width`. `kd-wolanie-4` is a 900×615 scan and led a run:
+it was handed a 904px slot and decoded at 903 — upscaled, with no rendition above it to reach for
+on any 2× screen, so the one frame that run opens on was its softest. Clamped now (`slot 900 ·
+decoded 900`). The sheet had always done this; the plate had not.
+
+### Every evening is an anchor
+
+`/obrazy` is 15 000px long and had no `id` on anything. Both roads into it from a concert page —
+the gallery's foot and the exit under every lightbox frame — landed at the head, so a reader
+coming from *Aeternam* had to find their own place before they could reach the evenings on either
+side of the one they had just read. `id={e.id}` on `.im-evening` with `scroll-margin-top: 96px`
+(measured: section top lands at 96 against a fixed chrome ≈84 tall, so the threshold hairline —
+the thing that says which evening this is — clears the bar). `/koncerty/[id]` now links
+`/obrazy#<id>` from both. The label stays "Obrazy wszystkich wieczorów": the destination is the
+whole archive, the anchor is only where you enter it.
+
+### The rail's breakpoint was a number nobody had done the arithmetic for
+
+The markup said it hides below 980, the stylesheet said 1180, and neither is the width at which
+the rail stops lying on the photographs. The rail's right edge stands at `max(16, 2vw) + 84`; the
+column's left edge at `max(28, 5vw)` plus whatever centring survives once `.im-wrap` caps at 1180.
+At 1280 that is **110 against 64 — 46px of numeral on the frame**. They clear at 1440 and not
+before (measured: rail right 113, column 130). `@media (max-width: 1439px)`.
+
+The cost is real: the rail is now absent on a 1366 laptop, which is a common width. The
+alternative is a narrower rail that drops its date below 1440, and that is a design change rather
+than a correction, so it is not in this pass.
+
+### Weight
+
+`astro check` 0 errors across 114 files. Register audit **964 nodes across 16 pages, clean**
+(1 note, the standing R10 dark-frame list). `prune-orphan-assets` 72/609, unchanged. Full-scroll
+transfer over 48 photographs: **1.55 MB at 1440, 2.27 MB at 390** — the page is not heavy and does
+not need paging.
+
+Length at 1440×900: `/obrazy` **15 792 → 14 960px**, the sheet cap paying for itself. Phone
+(390×844) 17 743 → **18 136px**, which is the plate becoming full-bleed and is the point.
+
+### Rejected — do not re-propose
+
+- **A per-row justified packer.** Still the textbook answer and still not needed: removing the
+  inflation and moving to a share does what it would do, in two declarations, without teaching
+  `layoutShots` to compute rows the flex line is going to compute anyway.
+- **Automated exposure lift for the dark frames.** §15 built the frame-mean method and retired it
+  in the same pass, because the statistic cannot tell a dark room from a dark subject. Nothing
+  here changes that.
+
+### Still open
+
+- **9 Kart's Kraków run is one lit document over seven dark frames.** Measured (mean / p90 at
+  300px): the plate `kd-9-kart-0` is 145 — a photograph of the printed programme, the brightest
+  frame in the archive — and the seven under it run 36, 27, 29, 36, 26, 47, 50. It is also the
+  longest run on the page. The levers are the founder's, not the code's: re-export two or three
+  with more lift from the originals, or give the run fewer frames at a larger scale. `plate:` on
+  `kd-9-kart-8` (mean 104, the only other frame with range left) is the cheap half-measure.
+- **Eight more frames sit under p90 60**, i.e. at the edge of legibility in the sheet:
+  `kd-aeternam-1` (10/19), `kd-hymn-0` (9/25), `kd-hymn-5` (25/33), `kd-hymn-1` (13/35),
+  `kd-aeternam-4` (20/38), `kd-hymn-2` (20/47), `kd-9-kart-5` (26/52), `kd-9-kart-3` (29/58).
+  R10 already names two of them on the asset side. An archive shows what exists; this is the note,
+  not a defect.
+- **`/koncerty`'s own via-rail hides at 980 against a 1120 measure**, which is the same sum this
+  section did for `/obrazy` and probably the same answer. Not touched here — that page was not
+  what this pass was auditing, and its stations are a different geometry.
+- **The concert gallery goes one-per-row at 640, and the band above it is small.** Measured at a
+  700px viewport its Kraków run packs three-up at **194×130** — §2's black rectangle, on a tablet.
+  Pre-existing and unchanged by this pass (the old px basis shrank to the same 196), and `/obrazy`
+  already breaks at 720 rather than 640. Same one-line decision, different page.
+- **The head still has no index.** The page states its scale (`48 fotografii · 5 wieczorów ·
+  7 miejsc · 2024–2025`) and now has anchors to link into, but nothing at the top that uses them.
+  Five evenings, numeral, count, link — in the `registrum` idiom the desktop nav already owns.
+  This is the one item on the list that is a design decision rather than a correction.
+- **The trigger markup is copied between the two galleries** — `<figure>` + `<button>` + twelve
+  `data-image-*` attributes + `<Image>`, with the `widths` ladder and one `sizes` breakpoint
+  differing. So is the resolve → runs → framed pipeline above it. A `PhotoFrame.astro` and a
+  `lib/galleryModel.ts` would make the trigger contract one thing. Purely housekeeping, which is
+  why it keeps losing to everything above it.

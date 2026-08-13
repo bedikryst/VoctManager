@@ -36,11 +36,12 @@ export interface DoingCard {
   readonly cta?: string;
 }
 
-/** A board member's translatable fields — the name and portrait are structural (kept in the
-    component), only the role line and the one-sentence remit are translated. In board order. */
+/** A board member's translatable field — the name and portrait are structural (kept in the
+    component); only the role line is translated. In board order.
+    Deliberately a domain, not a job description: a three-person board reads as an improvised
+    org chart the moment its cards start listing duties. */
 export interface BoardRole {
   readonly role: string;
-  readonly vision: string;
 }
 
 export interface AboutCopy {
@@ -94,6 +95,8 @@ export interface AboutCopy {
     readonly aria: string;
     readonly eyebrow: Eyebrow;
     readonly h2: string;
+    /** Per-row control; rendered only for concerts that actually have a detail page. */
+    readonly cardLink: string;
     readonly moreLink: string;
   };
   readonly foundation: {
@@ -181,11 +184,11 @@ const pl: AboutCopy = {
     eyebrow: { lat: "Voces", label: "Zespół" },
     h2: "Krakowski zespół wokalny prowadzony jak kameralna wspólnota.",
     leadText:
-      "Na scenie spotyka się zwykle dwanaście głosów — profesjonalnych i pre-profesjonalnych muzyków, dla których precyzja jest punktem wyjścia.",
+      "Na scenie spotyka się zwykle dwanaście głosów — profesjonalnych i pre-profesjonalnych muzyków. W zależności od utworu śpiewamy w czwórkę, w ósemkę albo pełnym składem.",
     p2Text:
-      "Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy dobieramy do programu, przestrzeni i intencji, tak jak dobiera się repertuar.",
+      "Skład jest żywy: wokół stałego rdzenia obsada zmienia się z projektu na projekt — głosy dobieramy do programu i do przestrzeni, w której ma zabrzmieć.",
     p3Html:
-      "Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w którym dyscyplina i czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i <em>ensemble</em> — obietnicę głosów, które słuchają siebie nawzajem, związanych więzią zarówno muzyczną, jak i międzyludzką.",
+      "Pod kierownictwem Florenta de Bazelaire budujemy brzmienie, w którym dyscyplina i czułość trzymają się razem. Nazwa łączy <em>voces</em> (głosy), <em>octo</em> (osiem) i <em>ensemble</em> — obietnicę głosów, które słuchają siebie nawzajem.",
     collabLabel: "Współpraca",
     collabText:
       "Na scenie i przy realizacjach spotykamy się m.in. z reżyserką świateł Adą Bystrzycką, realizatorem dźwięku Jakubem Garbaczem (Ars Sonora Studio), Sebastianem Kuźmą (animacja wizualna) i skrzypkiem Radu Ropotanem; instytucjonalnie — z Fundacją Carpe Diem i Ośrodkiem Kultury Norwida w krakowskich Mistrzejowicach.",
@@ -196,11 +199,11 @@ const pl: AboutCopy = {
     eyebrow: { lat: "Operatio", label: "Co robimy?" },
     h2: "Koncerty duchowe, liturgia, ważne uroczystości.",
     leadText:
-      "Głównym nurtem są autorskie Koncerty Duchowe — współczesna forma dawnych Concerts Spirituels. Poza nimi śpiewamy tam, gdzie liturgia i uroczystość proszą o głos.",
+      "Głównym nurtem są autorskie Koncerty Duchowe — współczesna forma dawnych Concerts Spirituels. Poza nimi śpiewamy w liturgii: mszach, świętach i uroczystościach, na które nas zapraszają.",
     cards: [
       {
         k: "Koncerty Duchowe",
-        p: "Autorski cykl — współczesna forma dawnych Concerts Spirituels. Każdy wieczór ma osobną intencję.",
+        p: "Autorski cykl — współczesna forma dawnych Concerts Spirituels. Wieczór po wieczorze, wokół osobnych intencji.",
         cta: "Zobacz drogę koncertów →",
       },
       {
@@ -233,6 +236,7 @@ const pl: AboutCopy = {
     aria: "Droga koncertów",
     eyebrow: { lat: "Via", label: "Co już wybrzmiało" },
     h2: "Krótka droga, ale już zapisana miejscami i intencjami.",
+    cardLink: "Karta koncertu →",
     moreLink: "Zobacz repertuar i szczegóły koncertów →",
   },
   foundation: {
@@ -259,23 +263,11 @@ const pl: AboutCopy = {
     eyebrow: { lat: "Consilium", label: "Zarząd" },
     h2: "Odpowiedzialność rozpisana na trzy głosy.",
     intro:
-      "Fundacja ma jedno zadanie: utrzymać jakość — artystyczną, organizacyjną i cyfrową — tak, aby projekty mogły dojrzewać, wracać i zostawiać po sobie ślad.",
+      "Kierunek artystyczny wyznacza jedna osoba, decyzje fundacji zapadają większością głosów — tak stanowi statut. Ci sami ludzie stoją potem za kulisami w dniu koncertu.",
     roles: [
-      {
-        role: "Kierownictwo artystyczne · dyrygent",
-        vision:
-          "Odpowiada za profil artystyczny, repertuar, pracę nad brzmieniem i długą linię rozwoju zespołu.",
-      },
-      {
-        role: "Produkcja · relacje · komunikacja",
-        vision:
-          "Prowadzi organizację projektów, kontakt z partnerami, wizerunek zespołu i rytm pracy poza sceną.",
-      },
-      {
-        role: "Digital · technologia · stabilność",
-        vision:
-          "Odpowiada za obecność cyfrową, narzędzia, publikację, bezpieczeństwo i stabilność infrastruktury fundacji.",
-      },
+      { role: "Kierownictwo artystyczne · dyrygent" },
+      { role: "Organizacja · komunikacja" },
+      { role: "Technologia · narzędzia" },
     ],
   },
   cta: {
@@ -343,11 +335,11 @@ const en: AboutCopy = {
     eyebrow: { lat: "Voces", label: "The ensemble" },
     h2: "A Kraków vocal ensemble led as a chamber community.",
     leadText:
-      "On stage there are usually twelve voices — professional and pre-professional musicians for whom precision is the starting point.",
+      "On stage there are usually twelve voices — professional and pre-professional musicians. Depending on the piece, we sing as a quartet, as an octet, or at full strength.",
     p2Text:
-      "The line-up is alive: around a stable core, the roster changes from project to project — we choose voices to fit the programme, the space and the intention, just as one chooses repertoire.",
+      "The line-up is alive: around a stable core, the roster changes from project to project — we choose the voices to fit the programme and the space it has to sound in.",
     p3Html:
-      "Under the direction of Florent de Bazelaire we build a sound in which discipline and tenderness hold together. The name joins <em>voces</em> (voices), <em>octo</em> (eight) and <em>ensemble</em> — a promise of voices that listen to one another, bound as much by music as by human ties.",
+      "Under the direction of Florent de Bazelaire we build a sound in which discipline and tenderness hold together. The name joins <em>voces</em> (voices), <em>octo</em> (eight) and <em>ensemble</em> — a promise of voices that listen to one another.",
     collabLabel: "Collaboration",
     collabText:
       "On stage and in production we work with, among others, lighting director Ada Bystrzycka, sound engineer Jakub Garbacz (Ars Sonora Studio), Sebastian Kuźma (visual animation) and violinist Radu Ropotan; and, institutionally, with the Carpe Diem Foundation and the Norwid Cultural Centre in Kraków's Mistrzejowice district.",
@@ -358,11 +350,11 @@ const en: AboutCopy = {
     eyebrow: { lat: "Operatio", label: "What we do" },
     h2: "Spiritual concerts, liturgy, occasions that matter.",
     leadText:
-      "Our main current is the Spiritual Concerts — a contemporary form of the old Concerts Spirituels. Beyond them, we sing wherever liturgy and celebration ask for a voice.",
+      "Our main current is the Spiritual Concerts — a contemporary form of the old Concerts Spirituels. Beyond them we sing in the liturgy: Masses, feasts and celebrations we are invited to.",
     cards: [
       {
         k: "Spiritual Concerts",
-        p: "Our own cycle — a contemporary form of the old Concerts Spirituels. Each evening carries its own intention.",
+        p: "Our own cycle — a contemporary form of the old Concerts Spirituels. Evening after evening, built around separate intentions.",
         cta: "See the path of the concerts →",
       },
       {
@@ -395,6 +387,7 @@ const en: AboutCopy = {
     aria: "The path of the concerts",
     eyebrow: { lat: "Via", label: "What has sounded" },
     h2: "A short road, but already marked by places and intentions.",
+    cardLink: "Concert page →",
     moreLink: "See the repertoire and concert details →",
   },
   foundation: {
@@ -421,23 +414,11 @@ const en: AboutCopy = {
     eyebrow: { lat: "Consilium", label: "The board" },
     h2: "Responsibility scored for three voices.",
     intro:
-      "The Foundation has one task: to hold quality — artistic, organisational and digital — so that projects can mature, return, and leave something behind.",
+      "Artistic direction is set by one person; the foundation's decisions are taken by majority vote — that is what the statute provides. The same people then stand backstage on the night of the concert.",
     roles: [
-      {
-        role: "Artistic direction · conductor",
-        vision:
-          "Responsible for the artistic profile, the repertoire, the work on sound and the ensemble's long line of development.",
-      },
-      {
-        role: "Production · relations · communication",
-        vision:
-          "Leads the organisation of projects, contact with partners, the ensemble's image and the rhythm of work off stage.",
-      },
-      {
-        role: "Digital · technology · stability",
-        vision:
-          "Responsible for the digital presence, the tools, publication, security and the stability of the foundation's infrastructure.",
-      },
+      { role: "Artistic direction · conductor" },
+      { role: "Organisation · communication" },
+      { role: "Technology · tools" },
     ],
   },
   cta: {
@@ -505,11 +486,11 @@ const fr: AboutCopy = {
     eyebrow: { lat: "Voces", label: "L'ensemble" },
     h2: "Un ensemble vocal cracovien mené comme une communauté de chambre.",
     leadText:
-      "Sur scène se rencontrent d'ordinaire douze voix — des musiciens professionnels et pré-professionnels pour qui la précision est le point de départ.",
+      "Sur scène se rencontrent d'ordinaire douze voix — des musiciens professionnels et pré-professionnels. Selon l'œuvre, nous chantons à quatre, à huit ou au grand complet.",
     p2Text:
-      "L'effectif est vivant : autour d'un noyau stable, la distribution change de projet en projet — nous choisissons les voix selon le programme, l'espace et l'intention, comme on choisit un répertoire.",
+      "L'effectif est vivant : autour d'un noyau stable, la distribution change de projet en projet — nous choisissons les voix selon le programme et selon le lieu où il doit sonner.",
     p3Html:
-      "Sous la direction de Florent de Bazelaire, nous bâtissons une sonorité où la discipline et la tendresse tiennent ensemble. Le nom réunit <em>voces</em> (les voix), <em>octo</em> (huit) et <em>ensemble</em> — la promesse de voix qui s'écoutent les unes les autres, liées autant par la musique que par l'humain.",
+      "Sous la direction de Florent de Bazelaire, nous bâtissons une sonorité où la discipline et la tendresse tiennent ensemble. Le nom réunit <em>voces</em> (les voix), <em>octo</em> (huit) et <em>ensemble</em> — la promesse de voix qui s'écoutent les unes les autres.",
     collabLabel: "Collaboration",
     collabText:
       "Sur scène et en production, nous collaborons notamment avec la conceptrice lumière Ada Bystrzycka, l'ingénieur du son Jakub Garbacz (Ars Sonora Studio), Sebastian Kuźma (animation visuelle) et le violoniste Radu Ropotan ; et, sur le plan institutionnel, avec la Fondation Carpe Diem et le Centre culturel Norwid, dans le quartier de Mistrzejowice à Cracovie.",
@@ -520,11 +501,11 @@ const fr: AboutCopy = {
     eyebrow: { lat: "Operatio", label: "Ce que nous faisons" },
     h2: "Concerts spirituels, liturgie, grandes célébrations.",
     leadText:
-      "Notre courant principal, ce sont les Concerts Spirituels — une forme contemporaine des concerts spirituels d'autrefois. Au-delà, nous chantons là où la liturgie et la fête réclament une voix.",
+      "Notre courant principal, ce sont les Concerts Spirituels — une forme contemporaine des concerts spirituels d'autrefois. Au-delà, nous chantons dans la liturgie : messes, fêtes et célébrations auxquelles on nous invite.",
     cards: [
       {
         k: "Concerts Spirituels",
-        p: "Notre propre cycle — une forme contemporaine des concerts spirituels d'autrefois. Chaque soir porte une intention distincte.",
+        p: "Notre propre cycle — une forme contemporaine des concerts spirituels d'autrefois. Soir après soir, autour d'intentions distinctes.",
         cta: "Voir le chemin des concerts →",
       },
       {
@@ -557,6 +538,7 @@ const fr: AboutCopy = {
     aria: "Le chemin des concerts",
     eyebrow: { lat: "Via", label: "Ce qui a déjà résonné" },
     h2: "Un chemin court, mais déjà inscrit dans des lieux et des intentions.",
+    cardLink: "Page du concert →",
     moreLink: "Voir le répertoire et le détail des concerts →",
   },
   foundation: {
@@ -583,23 +565,11 @@ const fr: AboutCopy = {
     eyebrow: { lat: "Consilium", label: "Le conseil" },
     h2: "La responsabilité répartie sur trois voix.",
     intro:
-      "La Fondation a une seule tâche : tenir la qualité — artistique, organisationnelle et numérique — pour que les projets puissent mûrir, revenir et laisser une trace.",
+      "La direction artistique revient à une personne ; les décisions de la fondation se prennent à la majorité — ainsi le veulent les statuts. Ce sont les mêmes personnes qui se tiennent ensuite en coulisses le soir du concert.",
     roles: [
-      {
-        role: "Direction artistique · chef de chœur",
-        vision:
-          "Responsable du profil artistique, du répertoire, du travail sur la sonorité et de la ligne de développement de l'ensemble.",
-      },
-      {
-        role: "Production · relations · communication",
-        vision:
-          "Dirige l'organisation des projets, le contact avec les partenaires, l'image de l'ensemble et le rythme du travail hors scène.",
-      },
-      {
-        role: "Numérique · technologie · stabilité",
-        vision:
-          "Responsable de la présence numérique, des outils, de la publication, de la sécurité et de la stabilité de l'infrastructure de la fondation.",
-      },
+      { role: "Direction artistique · chef de chœur" },
+      { role: "Organisation · communication" },
+      { role: "Technologie · outils" },
     ],
   },
   cta: {

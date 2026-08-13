@@ -675,7 +675,7 @@ const plDate = (iso: string): string =>
               <figure
                 class="kd-shot"
                 data-d={String((i % 3) + 1)}
-                style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
+                style={`--share: ${g.share}`}
               >
                 {/* The media wrapper IS the trigger — a button rather than an overlaid control,
                     so the whole frame is the target and nothing is drawn on top of the
@@ -700,7 +700,7 @@ const plDate = (iso: string): string =>
                   data-image-credit={frameCredit(g)}
                   data-image-w={String(g.frame.width)}
                   data-image-h={String(g.frame.height)}
-                  data-image-href="/obrazy"
+                  data-image-href={`/obrazy#${entry.id}`}
                   data-image-href-label="Obrazy wszystkich wieczorów"
                 >
                   {/* `width` = top of the ladder, which is also `framedShot`'s 1200 candidate:
@@ -712,7 +712,7 @@ const plDate = (iso: string): string =>
                     src={g.img}
                     widths={[560, 840, 1200]}
                     width={Math.min(g.img.width, 1200)}
-                    sizes={`(max-width: 640px) 92vw, ${g.wMax}px`}
+                    sizes={`(max-width: 640px) 92vw, ${g.w}px`}
                     alt={g.alt}
                     loading="lazy"
                     decoding="async"
@@ -728,10 +728,15 @@ const plDate = (iso: string): string =>
 
           {/* The gallery's foot: who held the camera, and the road out to the other evenings.
               The colophon is the only place a photographer is named — a run's head states place
-              and date and nothing else. */}
+              and date and nothing else.
+
+              The road out carries THIS evening's anchor. The label is still true — the
+              destination is the whole archive — but /obrazy is 15 000px long, and a link that
+              lands at its head makes the reader find their own place again before they can reach
+              the evenings on either side of the one they just read. */}
           <div class="kd-gallery-foot reveal reveal-rule">
             {galleryCredits && <p class="kd-gallery-credit micro">{galleryCredits}</p>}
-            <a class="kd-gallery-all" href="/obrazy">Obrazy wszystkich wieczorów</a>
+            <a class="kd-gallery-all" href={`/obrazy#${entry.id}`}>Obrazy wszystkich wieczorów</a>
           </div>
         </div>
       </section>
@@ -1189,14 +1194,13 @@ const plDate = (iso: string): string =>
   /* ── Documentary gallery ───────────────────────────────────────────────── */
   .kd-gallery { background: var(--night, #100f0d); color: var(--paper); }
   .kd-gallery .kd-section-label { margin-bottom: clamp(36px, 5vw, 56px); }
-  /* Rows are hung by height, not cut into columns: each shot asks for the width its own aspect
-     needs at the row height (`--w`, computed above), so portraits pack four to a row where
-     landscapes take three, and the line wraps as soon as the next one stops fitting — no
-     breakpoints, because the photographs decide. Grow and shrink both run ∝ aspect, which is what
-     keeps every shot in a line at one height; `--w-max` stops a short row from inflating its
-     photographs, and `center` hangs whatever is left over in the middle. */
+  /* Rows are hung by height, not cut into columns: each shot holds the fraction of the measure
+     its own aspect needs at the row height (`--share`, from lib/galleryLayout), so portraits pack
+     four to a row where landscapes take three, and the line wraps as soon as the next one stops
+     fitting — no breakpoints, because the photographs decide. Nothing grows: a short last row
+     hangs centred at the height of the rows above it rather than inflating to fill its line. */
   .kd-gallery-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
-  .kd-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
+  .kd-shot { margin: 0; min-width: 0; flex: 0 1 calc(var(--share) * 100%); max-width: calc(var(--share) * 100%); }
   /* A run's head, and only on an evening that had more than one — the rehearsal, or a city of the
      tour. It is a hairline row rather than a heading: the section already has a label, and what
      this says is which night the frames under it come from, not that a new section began. */

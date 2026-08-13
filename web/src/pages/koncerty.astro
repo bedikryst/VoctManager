@@ -54,8 +54,8 @@ const eras = (await getCollection("repertoire")).sort((a, b) => a.data.order - b
 const rites = [
   { n: "01", h: "Słowo", p: "Zanim wejdzie muzyka, ktoś nazywa intencję wieczoru. Każdy koncert poprzedza krótkie wprowadzenie — najczęściej jezuity, jak o. Jarek Naliwajko czy o. Przemysław Wysogląd." },
   { n: "02", h: "Porządek", p: "Kolejność utworów jest częścią kompozycji. Przy każdym programie w notatkach zespołu wraca ten sam dopisek: «kolejność jest bardzo ważna»." },
-  { n: "03", h: "Cisza", p: "Między utworami zostaje cisza — prosimy o nią wprost. Cisza po ostatnim akordzie też należy do muzyki." },
-  { n: "04", h: "Światło", p: "Światło jest częścią wykonania. Subtelna reżyseria — nad wieloma wieczorami czuwała Ada Bystrzycka — prowadzi wzrok tak, jak akustyka nawy prowadzi dźwięk." },
+  { n: "03", h: "Cisza", p: "Między utworami zostaje cisza. Prosimy o nią wprost, drukiem w programie — również o tę po ostatnim akordzie." },
+  { n: "04", h: "Światło", p: "Światło ma własną partyturę: ściemnienia i wejścia ustalamy razem z programem. Nad reżyserią wielu wieczorów czuwała Ada Bystrzycka." },
 ];
 
 // Roman numeral for the still-unwritten station (Nondum) — computed, not a fixed lookup
@@ -169,13 +169,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="line"><span class="reveal ink-press" data-d="1"><em>Duchowe.</em></span></span>
         </h1>
         <p class="intro-lede reveal" data-d="2">
-          Zapis kolejnych intencji cyklu — od Wcielenia, przez góry, psalmy, pamięć
-          i lament, po liturgię.
+          Każdy wieczór tego cyklu ma osobną intencję — i osobny program, który
+          z niej wyrasta.
         </p>
         <p class="intro-note reveal" data-d="3">
-          Każdy wieczór ma osobną intencję. To współczesna forma dawnych
-          <em lang="fr">Concerts Spirituels</em> — przejdź je po kolei, w stronę tego,
-          który jeszcze się nie wydarzył.
+          To współczesna forma dawnych <em lang="fr">Concerts Spirituels</em> —
+          przejdź je po kolei, w stronę tego, który jeszcze się nie wydarzył.
         </p>
         <span class="scroll-cue reveal" data-d="4">Wejdź na drogę</span>
       </div>
@@ -365,11 +364,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="station-next-inner">
         <span class="station-next-glyph reveal" aria-hidden="true"></span>
         <p class="station-num reveal">{toRoman(stationCount + 1)} &nbsp;·&nbsp; <span class="lat" lang="la">Nondum</span></p>
-        <h2 class="station-title reveal ink-press" data-d="1">Następne wybrzmienie.</h2>
+        <h2 class="station-title reveal ink-press" data-d="1">Koncert bez daty.</h2>
         <p class="station-meta reveal" data-d="1">Termin i przestrzeń wyznaczą darczyńcy</p>
         <p class="station-essence reveal" data-d="2">
           Ten koncert istnieje już w partyturach i próbach — brakuje mu tylko przestrzeni,
-          w której wybrzmi. Każda darowizna przybliża jego datę.
+          w której wybrzmi. Darowizny przybliżają jego datę.
         </p>
         <div class="station-actions">
           <a class="pill pill-gold" href="/?donate" data-vault-open="100">Pomóż mu wybrzmieć →</a>
@@ -385,12 +384,11 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
       <div class="rite-wrap">
         <div class="rite-head reveal">
           <span class="eyebrow"><span class="lat" lang="fr">Concert spirituel</span>  ·  Reguły wieczoru</span>
-          <h2 class="ink-press">Każdy wieczór prowadzą te same cztery reguły.</h2>
+          <h2 class="ink-press">Wieczory prowadzą te same cztery reguły.</h2>
           <p>
             Gdy w XVIII-wiecznym Paryżu na czas świąt milkła opera, w sali pałacu Tuileries
             grano <em lang="fr">Concerts Spirituels</em> — muzykę sakralną poza ramą nabożeństwa.
-            Wracamy do tej tradycji, a każdy nasz program trzyma się czterech powtarzalnych
-            reguł.
+            Wracamy do tej tradycji.
           </p>
         </div>
         <div class="rite-grid">
@@ -420,9 +418,8 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
           <span class="eyebrow"><span class="lat" lang="la">Repertorium</span>  ·  Siedem wieków</span>
           <h2 class="ink-press">Repertuar, z którego budujemy programy.</h2>
           <p>
-            Renesansowa polifonia, barok, romantyczna modlitwa i współczesny minimalizm
-            spotykają się w jednym wieczorze. Liczy się napięcie między epokami — to z niego
-            rodzi się program.
+            Renesansowa polifonia, barok i współczesny minimalizm stają obok siebie
+            w jednym wieczorze. Program układamy z napięcia między nimi.
           </p>
         </div>
 
@@ -480,9 +477,9 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
         <h2 class="reveal">Śpiewaliśmy w bazylikach, katedrze i wiejskim kościele.</h2>
         <p class="reveal" data-d="1">
           Bazyliki NSPJ i Mariacka w Krakowie, św. Antoniego w Rybniku, archikatedra w Łodzi,
-          sanktuarium w Warszawie, dworek zdrojowy w Szczawnicy, kościół w Niedzicy — każda
-          z tych przestrzeni układała program na nowo. Przygotujemy koncert duchowy, oprawę liturgii
-          albo uroczystość na konkretne miejsce i okazję.
+          sanktuarium w Warszawie, dworek zdrojowy w Szczawnicy, kościół w Niedzicy. Za każdym
+          razem program układaliśmy od nowa — pod to miejsce i tę okazję. Przygotujemy koncert
+          duchowy, oprawę liturgii albo uroczystość.
         </p>
         <div class="btn-row">
           <a class="btn btn-gold" href="/kontakt">Napisz do nas</a>
