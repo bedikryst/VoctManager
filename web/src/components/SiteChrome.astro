@@ -383,8 +383,13 @@ const langOptions = showLang
      attributes are present on /koncerty itself; the two rules land the same look either way. */
   .chrome-nav > a:hover::after, .chrome-nav .registrum > a:hover::after,
   .chrome-nav > a[aria-current="page"]::after, .chrome-nav .registrum > a[data-section]::after { transform: scaleX(1); }
-  .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[data-section] { opacity: 1; color: var(--candle); }
-  .chrome-nav .nav-support { color: var(--candle); opacity: 1; }
+  /* GOLD THAT IS READ FOLLOWS THE BAR'S OWN GROUND, and `--chrome-candle` (foot of this sheet) is
+     where that is decided once. Full candle is 8.08 : 1 over night and 2.10 : 1 over parchment, so
+     a single value cannot serve a bar that changes ground under the scroll — and WESPRZYJ is set
+     at 10.5px in tracked capitals, i.e. the least forgiving text on the site. Marks are exempt and
+     stay on `--candle`: the brand mark carries no contrast minimum and flips to ink on its own. */
+  .chrome-nav > a[aria-current="page"], .chrome-nav .registrum > a[data-section] { opacity: 1; color: var(--chrome-candle); }
+  .chrome-nav .nav-support { color: var(--chrome-candle); opacity: 1; }
 
   /* Language switcher — the choice of vernacular, each tongue named in its own word and set in the
      site's serif-italic "voice" register (not the mono rubric of the links beside it), a hairline
@@ -396,7 +401,7 @@ const langOptions = showLang
   .chrome-lang-opt::after { content: ""; position: absolute; left: 0; bottom: 1px; width: 100%; height: 1px; background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .4s var(--ease); }
   .chrome-lang-opt:hover { color: inherit; }
   .chrome-lang-opt:hover::after, .chrome-lang-opt[aria-current="true"]::after { transform: scaleX(1); }
-  .chrome-lang-opt[aria-current="true"] { color: var(--candle); }
+  .chrome-lang-opt[aria-current="true"] { color: var(--chrome-candle); }
   .chrome-lang-sep { font-family: var(--serif); font-style: italic; font-size: 14px; line-height: 1; color: color-mix(in srgb, currentColor 30%, transparent); }
 
   /* Mobile switcher — the same vernacular voice, printed a touch larger as an imprint line in the
@@ -455,6 +460,19 @@ const langOptions = showLang
   .chrome[data-tone="dark"].is-light { color: var(--ink); }
   .chrome[data-tone="dark"].is-light::before { opacity: 0; }
   .chrome[data-tone="dark"].is-light .chrome-brand .brand-mark { background: var(--ink); }
+
+  /* ── The bar's readable gold ────────────────────────────────────────────
+     ONE PLACE DECIDES IT, and the condition is not the tone but the GROUND the bar is standing on
+     at this scroll position — which is exactly the condition that already decides `color` above.
+     Light tone unscrolled is paper text over a dark scrim on the hero photograph, dark tone solid
+     is night glass: both are dark grounds and keep full candle. The two parchment states are the
+     light bar once it goes solid and the dark bar over a `.tone-light` section, and those are the
+     two rules below. Read them as "wherever this bar sets `color: var(--ink)`", because that is
+     what they track; if a third parchment state is ever added, it belongs here in the same breath
+     as its `color`, or the gold silently stays at 2.10 : 1 on it. */
+  .chrome { --chrome-candle: var(--candle); }
+  .chrome.is-solid:not([data-tone="dark"]),
+  .chrome[data-tone="dark"].is-light { --chrome-candle: var(--candle-ink); }
 
   /* ── "Antyfona" open: the persistent brand goes ink over the parchment card ────────────────
      LAST in this block on purpose — these tie with the tone/scroll mark rules above on

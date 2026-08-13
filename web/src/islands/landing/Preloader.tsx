@@ -1,13 +1,27 @@
 /**
  * @file Preloader.tsx
  * @description The single opening rite: a dark threshold whose FINAL BEAT is the audio
- *  question ("Czy wejdziesz w ciszę?"). One overlay, one decision.
+ *  choice ("Ta strona może śpiewać."). One overlay, one decision.
+ *
+ *  WHAT THIS SCREEN ACTUALLY ASKS is whether to play the ensemble quietly in the
+ *  background, and every word on it has to earn its size against that. The rite used to
+ *  spend its two display words and its 86px title on "cisza" and "głos" while the only
+ *  line saying what the sound IS sat in an 11px hint under a button — so the largest type
+ *  carried metaphysics and the smallest carried the function, and a first-time reader was
+ *  asked a rhetorical question by someone who had not yet said who they were. The hold now
+ *  names the ensemble, the kicker gives it a category and a city, and the title states the
+ *  fact the two buttons answer. "Cisza" survives where it is functional — the button, and
+ *  the nav's own state pill, which is unreadable as anything but decoration unless this
+ *  screen teaches that the word means "no sound".
  *
  *  Dramaturgy in two parts, because a curtain covers a wait of UNKNOWN length and a
  *  fixed-length film cannot do that:
  *   - the HOLD is a loop — the candle-spark breathes at the centre, rings radiate like
- *     sound in a dark nave, the words "cisza / głos" surface and sink. It lasts as long
- *     as the page needs and never looks stuck, pre-hydration included (pure CSS).
+ *     sound in a dark nave, and two display words surface and sink on the diagonal. Those
+ *     two positions are the best type on the site and they carry the ensemble itself, so
+ *     the answer to "who is this" arrives half a second in rather than after the cadence.
+ *     It lasts as long as the page needs and never looks stuck, pre-hydration included
+ *     (pure CSS).
  *   - the CADENCE is "scriptura + illuminatio", the site's two motion idioms in their
  *     manuscript order: the pen WRITES the one true line of the mark — the long stem
  *     descending into the note, its punctum — then light RISES from that note and OPENS
@@ -371,8 +385,8 @@ export function Preloader(): React.JSX.Element | null {
 
         <div className="preloader-hold" aria-hidden="true">
           <span className="preloader-spark" />
-          <span className="preloader-word w1">cisza</span>
-          <span className="preloader-word w2">głos</span>
+          <span className="preloader-word w1">dwanaście głosów</span>
+          <span className="preloader-word w2">kamienna nawa</span>
         </div>
 
         <div className="rite" ref={riteRef} aria-hidden="true">
@@ -409,15 +423,23 @@ export function Preloader(): React.JSX.Element | null {
               <span className="threshold-mark-halo" />
               <BrandGlyph />
             </div>
-            <div className="threshold-kicker micro">VoctEnsemble</div>
-            {/* Intentionally NOT an <h1>: the page's h1 is the hero title. A question,
-                not a declarative — the site's human register (the o-nas catechism); the
-                subtitle reframes it so "Wejdź z głosem" is a real answer to it. */}
+            {/* The category and the city, not the name alone. This is the first calmly
+                readable line of the whole site and the only place before the hero where a
+                reader can learn what they have walked into; a bare wordmark at 11px and
+                half opacity names something without saying what it is. */}
+            <div className="threshold-kicker micro">
+              VoctEnsemble · zespół wokalny · Kraków
+            </div>
+            {/* Intentionally NOT an <h1>: the page's h1 is the hero title. DECLARATIVE, and
+                that is the whole point of it — this gate asks for consent to play audio, so
+                the largest type on the screen has to state the fact the two buttons answer.
+                Put as a question it read as a rhetorical opening from a stranger, and left
+                the functional content ("cicho, głosem zespołu") to a hint under a button. */}
             <p className="threshold-title" id="threshold-title">
-              Czy wejdziesz<br />w ciszę?
+              Ta strona<br />może śpiewać.
             </p>
             <p className="threshold-subtitle">
-              Ten próg można przekroczyć na dwa sposoby. Wybór zmienisz w każdej chwili.
+              Cicho, w tle — głosem zespołu. Wybór zmienisz w każdej chwili.
             </p>
             <div className="threshold-actions">
               <button

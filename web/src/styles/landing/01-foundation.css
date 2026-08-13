@@ -309,6 +309,10 @@
     border-color: rgba(244, 241, 233, 0.14);
   }
 
+  /* `nowrap` because these two are display phrases hung off opposite corners, not copy in a
+     column: broken across two lines they stop reading as one surfacing thought, and w2 is
+     anchored right so a wrap would also walk it away from its corner. The longest phrase sets
+     ~330px at the 42px ceiling and ~157px at the 20px floor, which clears both insets. */
   .preloader-word {
     position: absolute;
     font-family: var(--serif);
@@ -316,6 +320,7 @@
     font-weight: 300;
     color: rgba(244, 241, 233, 0.72);
     letter-spacing: 0;
+    white-space: nowrap;
     opacity: 0;
     filter: blur(8px);
     animation: preloaderWord 3.4s var(--ease-slow) forwards;

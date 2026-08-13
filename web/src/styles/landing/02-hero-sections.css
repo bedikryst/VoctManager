@@ -291,6 +291,45 @@
     transform: translateX(6px);
   }
 
+  /* THE CONTROL THAT OPENS THE FILM IS NOT A DOOR, and the arrow says door. The rule above
+     deliberately treats the pair as parallel invitations, which was true while both led to
+     subpages; one of them now opens the player in place, and two identical arrows are what makes
+     four minutes of singing invisible at the top of the page.
+
+     Keyed to `data-video-open`, i.e. to the BEHAVIOUR rather than to a hand-applied class: the
+     mark cannot drift onto a control that opens no player, or fall off the one that does. The
+     landing's other player control (`.path-entry-video`) carries its own register and is out of
+     this rule's reach by class.
+
+     The triangle is DRAWN, not set. The glyphs for it (U+25B6 and its neighbours) take emoji
+     presentation on several platforms and this site sets no emoji anywhere; borders on a
+     zero-size box also take `currentColor`, so the mark warms to candle on approach with its own
+     label and needs no second rule for it.
+
+     IT DOES NOT TRAVEL. The arrow slides because what it points to is somewhere else; the film is
+     here, and a play mark that moves away from the pointer is the one gesture this control must
+     not make. */
+  .primary-link[data-video-open]::after {
+    content: "";
+    flex: none;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0.38em 0 0.38em 0.6em;
+    border-color: transparent transparent transparent currentColor;
+  }
+
+  .primary-link[data-video-open]:hover::after {
+    transform: none;
+  }
+
+  /* The runtime beside the label. Opacity rather than a colour, so it recedes by the same amount
+     over the hero photograph, over parchment, and while the label is warmed to candle on hover —
+     a token would have had to be restated for each of those grounds. */
+  .primary-link-meta {
+    opacity: 0.62;
+  }
+
   .text-link {
     min-height: auto;
     border-bottom: 1px solid currentColor;

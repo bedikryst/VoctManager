@@ -73,7 +73,14 @@ const upcoming = (await getCollection("concerts"))
           data-video-src={MODAL_VIDEO.src}
           data-video-caption={MODAL_VIDEO.caption}
         >
-          Zobacz i usłysz
+          {/* The runtime is part of the invitation, not a footnote to it: "I do not know what is
+              behind this" is answered by saying what it costs, and a number in the label does that
+              where the play mark alone only says "a film". One flex item, so the mid-dot keeps its
+              own spacing instead of taking the label-to-mark gap. */}
+          <span>
+            Zobacz i usłysz
+            <span class="primary-link-meta">· 4 min</span>
+          </span>
         </button>
         <a class="secondary-link plausible-event-name=hero+koncerty" href="/koncerty">
           Koncerty Duchowe

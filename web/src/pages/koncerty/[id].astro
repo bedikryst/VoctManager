@@ -891,7 +891,19 @@ const plDate = (iso: string): string =>
   .kd-hero-cue { margin-top: clamp(38px, 5vw, 58px); font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .6); display: inline-flex; align-items: center; gap: 12px; }
   .kd-hero-cue::after { content: ""; width: 40px; height: 1px; background: currentColor; opacity: .6; animation: kdCue 3.4s var(--ease-slow) infinite; }
 
-  .kd-dot { margin: 0 8px; color: rgba(244, 241, 233, .42); }
+  /* The separator follows the band it lands in. This mark is used on both grounds — the night
+     sections and the light ones — so a literal paper value renders it paper-on-paper in the light
+     bands and the pair it divides reads as one run-on with a dropped tab. On night `currentColor`
+     is `--paper` and 42% reproduces the original appearance exactly.
+
+     ON PARCHMENT IT CANNOT INHERIT, and that is why the second rule is not simply a bigger
+     percentage. Every light-band dot sits inside a line that has ALREADY stepped its colour down
+     — `--ink-muted` in the inscriptio, `--candle-ink` in the section labels — so `currentColor`
+     there compounds two discounts and lands within a few percent of the paper. Taking full `--ink`
+     as the base spends the discount once, which puts the mark just under the lighter of the two
+     texts it divides: present as structure, never competing as ink. */
+  .kd-dot { margin: 0 8px; color: color-mix(in srgb, currentColor 42%, transparent); }
+  .tone-light .kd-dot { color: color-mix(in srgb, var(--ink) 42%, transparent); }
 
   /* ── Bands (body) ──────────────────────────────────────────────────────── */
   .kd-band { padding: clamp(84px, 13vw, 184px) max(28px, 5vw); position: relative; }
@@ -993,7 +1005,11 @@ const plDate = (iso: string): string =>
      act's <h3>, so with nothing declared it inherits the heading's UA `bold` and renders at
      Cinzel 700 — the only bold micro label on the page, and an accident rather than a decision.
      Its Latin sibling escaped it only by setting a weight of its own. */
-  .kd-movement-pl { font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
+  /* `--ink-soft`, not `--ink-muted`: muted clears AA on parchment by 0.03, and this is the least
+     forgiving setting on the page for it — 10.5px of Cinzel capitals at .24em, where the tracking
+     breaks the word shape and the capitals remove the ascender cues that carry it. The hierarchy
+     against the Latin above is held by size and tracking, so nothing needs lightness to say it. */
+  .kd-movement-pl { font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink-soft, #34302b); }
   .kd-movement-line { margin: 14px 0 0; max-width: 56ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.5; color: var(--ink-soft, #34302b); }
 
   /* Interlude — a full-bleed dark scripture beat at a dramatic hinge. Breaks out of the
@@ -1020,13 +1036,26 @@ const plDate = (iso: string): string =>
   .kd-program-work { margin: 0; font-family: var(--serif); font-size: clamp(23px, 2.5vw, 34px); font-weight: 300; line-height: 1.16; color: var(--ink); letter-spacing: -.005em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; }
   .kd-program-work em { font-style: italic; }
   /* Mono micro chips (year · scoring · duration) — the honesty of the craft. Each carries a
-     thin left divider so they read as a metadata rail after the title. */
+     thin left divider so they read as a metadata rail after the title. ONE INK ACROSS THE THREE:
+     they are a single rail read in one glance, so a chip that is lighter than its neighbours
+     reads as a different kind of fact rather than as a lesser one. `--ink-soft` for the reason
+     `.kd-movement-pl` takes it — tracked capitals at 11px are where muted's 0.03 of headroom
+     stops being enough to read comfortably, whatever the ratio says. */
   .kd-program-year,
   .kd-program-voicing,
-  .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-muted, #746d62); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); align-self: center; }
-  .kd-program-voicing { color: var(--ink-soft, #34302b); }
+  .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft, #34302b); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); align-self: center; }
 
-  .kd-program-inscriptio { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.55; color: var(--ink-muted, #746d62); }
+  /* The floor tracks `.kd-program-note-work`'s and must keep tracking it: this motto stands ABOVE
+     the wall-label note in the entry's order, so a narrow window that left it the smaller of the
+     two inverted the hierarchy at exactly the widths where the column is hardest to read.
+
+     THE CEILING IS ITS OWN RUNG, above the note's 16px rather than level with it. This line is the
+     entry's epigraph — the scripture the work is written on — and the note beneath it is apparatus
+     explaining it; set at one size the sans note carries more ink per glyph and simply outweighs
+     it, which is the apparatus talking over its text. Size does the separating and not colour:
+     `--ink-muted` stays, because serif at this size is what that token was drawn for and darkening
+     it would close the gap to the work title over it instead. */
+  .kd-program-inscriptio { margin: 6px 0 0; font-family: var(--serif); font-size: clamp(15.5px, 1.2vw, 17px); line-height: 1.55; color: var(--ink-muted, #746d62); }
   .kd-program-inscriptio-lat { font-style: italic; color: var(--ink-soft, #34302b); }
   .kd-program-inscriptio-pl { color: var(--ink-muted, #746d62); }
   .kd-program-inscriptio-ref { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-muted, #746d62); }
@@ -1040,8 +1069,15 @@ const plDate = (iso: string): string =>
   .kd-rubric { margin: 14px 0 2px; justify-self: start; display: flex; align-items: center; gap: 12px; padding: 9px 18px 9px 14px; border-left: 2px solid var(--candle); background: color-mix(in srgb, var(--candle) 9%, transparent); font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; line-height: 1.5; color: var(--ink-soft, #34302b); }
   .kd-rubric-mark { width: 6px; height: 6px; flex: none; transform: rotate(45deg); background: var(--candle); }
 
-  /* Per-work note — the "why this work" gloss, a museum wall-label register. */
-  .kd-program-note-work { margin: 10px 0 0; max-width: 60ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; color: var(--ink-muted, #746d62); }
+  /* Per-work note — the "why this work" gloss, a museum wall-label register.
+     THE ONLY SANS COPY ON THIS PAGE THAT IS READ IN QUANTITY, and it is set heavier and larger
+     than the site's resting 300 for that reason alone. `--ink-muted` measures 4.53 : 1 on
+     parchment, which clears AA — but a reader sitting with a whole programme reported eye strain
+     at 14px / 300 / 60ch, and the fatigue lives in the stroke and the size, not in the ratio. AA
+     is a threshold of perceivability, never one of reading comfort. Raise the colour to
+     `--ink-soft` only if weight and size prove not to be enough; dimming this note further to
+     match the micro notes beside it is what created the defect. */
+  .kd-program-note-work { margin: 10px 0 0; max-width: 60ch; font-family: var(--sans); font-weight: 400; font-size: clamp(15.5px, 1.4vw, 16px); line-height: 1.7; color: var(--ink-muted, #746d62); }
 
   /* Sung text + translation (native <details>) */
   .kd-text { margin: 14px 0 0; }
@@ -1118,8 +1154,10 @@ const plDate = (iso: string): string =>
   .kd-program-foot { display: flex; flex-wrap: wrap; gap: 12px 32px; align-items: baseline; margin: clamp(40px, 5vw, 64px) 0 0; }
   .kd-program-note { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-muted, #746d62); margin: 0; text-transform: none; }
   /* A per-concert factual footnote is a sentence, not a timecode — give it the wall-label
-     register (as per-work notes) and its own row above the standing micro notes. */
-  .kd-program-note-lead { flex-basis: 100%; max-width: 62ch; font-family: var(--sans); font-weight: 300; font-size: clamp(14px, 1.05vw, 15.5px); line-height: 1.7; letter-spacing: 0; padding-bottom: 4px; }
+     register (as per-work notes) and its own row above the standing micro notes. Weight and size
+     track `.kd-program-note-work` exactly, and for its reasons: the two are one register, so a
+     divergence here would read as a hierarchy that is not intended. */
+  .kd-program-note-lead { flex-basis: 100%; max-width: 62ch; font-family: var(--sans); font-weight: 400; font-size: clamp(15.5px, 1.4vw, 16px); line-height: 1.7; letter-spacing: 0; padding-bottom: 4px; }
   .kd-spotify-link { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); border-bottom: 1px solid transparent; padding-bottom: 2px; transition: border-color .3s var(--ease, ease); }
   .kd-spotify-link:hover { border-bottom-color: var(--candle-ink); }
 
