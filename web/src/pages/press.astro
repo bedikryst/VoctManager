@@ -657,13 +657,18 @@ const jsonLd = {
 
   /* ── Shared section primitives ───────────────────────────────────── */
   .press-eyebrow { font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: var(--ink-muted); display: inline-flex; align-items: center; gap: 10px; margin: 0; }
+  /* Parchment sections, keyed on the class the chrome-tone observer already tracks. The rubric's
+     Latin tier is a CHILD (base.css) and defaults to the full candle its dark hosts need, which is
+     2.10:1 once it stands on paper. The hero and the booking plate are outside `.tone-light` and
+     keep it. */
+  .tone-light { --lat-ink: var(--candle-ink); }
 
   .press-section-head { max-width: 760px; margin: 0 0 clamp(36px, 5vw, 64px); }
   .press-section-head h2 { margin: 18px 0 0; font-family: var(--serif); font-weight: 300; font-size: clamp(36px, 5.4vw, 76px); line-height: 1.02; letter-spacing: -.01em; color: var(--ink); }
   .press-section-head h2 + .press-section-lede { margin-top: 22px; }
   .press-section-lede { color: var(--ink-soft); font-size: clamp(16px, 1.2vw, 18px); line-height: 1.65; max-width: 56ch; }
   .press-section-lede a { color: var(--ink); border-bottom: 1px solid var(--candle); padding-bottom: 1px; transition: color .35s var(--ease); }
-  .press-section-lede a:hover { color: var(--candle); }
+  .press-section-lede a:hover { color: var(--candle-ink); }
 
   /* ── HERO ────────────────────────────────────────────────────────── */
   .press-hero { position: relative; min-height: 100svh; padding: clamp(120px, 16vh, 180px) max(28px, 5vw) clamp(72px, 10vh, 110px); background: var(--night); color: var(--paper); display: flex; align-items: center; overflow: hidden; }
@@ -710,11 +715,11 @@ const jsonLd = {
   .press-vignettes .press-section-head { margin-left: auto; margin-right: auto; max-width: 1180px; }
   .press-vignettes-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(28px, 4vw, 64px); }
   .press-vignette { display: grid; gap: 16px; align-content: start; padding-top: 28px; border-top: 1px solid var(--candle); }
-  .press-vignette-num { margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(22px, 2vw, 30px); line-height: 1; color: var(--candle); }
+  .press-vignette-num { margin: 0; font-family: var(--serif); font-style: italic; font-size: clamp(22px, 2vw, 30px); line-height: 1; color: var(--candle-ink); }
   .press-vignette-title { margin: 4px 0 0; font-family: var(--serif); font-weight: 300; font-size: clamp(26px, 2.6vw, 36px); line-height: 1.1; color: var(--ink); letter-spacing: -.005em; }
   .press-vignette p { margin: 0; color: var(--ink-soft); font-size: clamp(15px, 1.1vw, 17px); line-height: 1.65; }
   .press-vignette-mantra { font-family: var(--serif); font-size: clamp(17px, 1.2vw, 20px) !important; line-height: 1.55; color: var(--ink); border-left: 1px solid var(--candle); padding-left: 18px; }
-  .press-vignette-mantra em { font-style: italic; color: var(--candle); }
+  .press-vignette-mantra em { font-style: italic; color: var(--candle-ink); }
   @media (max-width: 980px) { .press-vignettes-grid { grid-template-columns: 1fr; gap: 48px; } }
 
   /* ── BIO ─────────────────────────────────────────────────────────── */
@@ -732,7 +737,9 @@ const jsonLd = {
   .press-concerts-list { list-style: none; margin: 0; padding: 0; max-width: 1180px; margin-left: auto; margin-right: auto; border-top: 1px solid var(--line-strong); }
   .press-concert { display: grid; grid-template-columns: minmax(140px, 0.28fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 64px); padding: clamp(36px, 5vw, 64px) 0; border-bottom: 1px solid var(--line); }
   .press-concert-rail { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding-top: 12px; }
-  .press-concert-roman { font-family: var(--serif); font-style: italic; font-size: clamp(28px, 2.6vw, 42px); line-height: 1; color: var(--candle); }
+  /* Display-sized, but the size exemption in tokens.css is about gold on NIGHT: at 2.10:1 the
+     full candle misses even the 3:1 large-text bar on this parchment. */
+  .press-concert-roman { font-family: var(--serif); font-style: italic; font-size: clamp(28px, 2.6vw, 42px); line-height: 1; color: var(--candle-ink); }
   .press-concert-year { font-family: var(--capitalis); font-size: 11px; letter-spacing: .22em; color: var(--ink); font-variant-numeric: lining-nums; }
   .press-concert-tag { font-family: var(--capitalis); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-muted); line-height: 1.5; }
   .press-concert-body { display: grid; gap: clamp(12px, 1.2vw, 18px); }
@@ -770,7 +777,7 @@ const jsonLd = {
   .press-liturgies .press-section-head { max-width: 1180px; margin-left: auto; margin-right: auto; }
   .press-liturgies-list { list-style: none; max-width: 1180px; margin: 0 auto; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
   .press-liturgy { display: grid; gap: 14px; padding: clamp(28px, 3vw, 40px); background: var(--paper); align-content: start; }
-  .press-liturgy-date { margin: 0; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .press-liturgy-date { margin: 0; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .press-liturgy-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(22px, 2vw, 28px); line-height: 1.15; color: var(--ink); }
   .press-liturgy-context { margin: 0; color: var(--ink-soft); font-size: 14.5px; line-height: 1.65; }
   @media (max-width: 980px) { .press-liturgies-list { grid-template-columns: repeat(2, 1fr); } }
@@ -801,7 +808,7 @@ const jsonLd = {
   .press-mention a { position: relative; display: grid; gap: 10px; padding: clamp(24px, 3vw, 36px); color: var(--ink); transition: background-color .4s var(--ease); }
   .press-mention a:hover { background: rgba(198, 164, 91, 0.06); }
   .press-mention-head { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-  .press-mention-outlet { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle); }
+  .press-mention-outlet { font-family: var(--capitalis); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--candle-ink); }
   .press-mention-kind { font-family: var(--capitalis); font-size: 9.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-muted); }
   .press-mention-title { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(21px, 1.9vw, 27px); line-height: 1.16; color: var(--ink); padding-right: 24px; }
   .press-mention-context { margin: 0; color: var(--ink-soft); font-size: 16px; line-height: 1.6; }

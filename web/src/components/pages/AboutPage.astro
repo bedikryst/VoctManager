@@ -473,7 +473,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
 
   /* Sections / layout */
   section { position: relative; }
-  .band { padding: clamp(84px, 13vw, 184px) var(--gutter); }
+  /* Every `.band` is parchment, so the rubric's Latin tier takes the ink gold here — `.lat` is a
+     CHILD and keeps matching base.css, which defaults it to full candle (1.74–2.10:1 on paper).
+     Declared on the band rather than per rubric because the property inherits: a section added
+     later is covered without remembering this. The hero and the plate sit outside `.band` and
+     keep the bright candle their photographs are lit for. */
+  .band { padding: clamp(84px, 13vw, 184px) var(--gutter); --lat-ink: var(--candle-ink); }
   .band-soft { background: var(--paper-soft); }
   .band-deep { background: var(--paper-deep); }
   .wrap { max-width: 1180px; margin: 0 auto; }
@@ -577,10 +582,10 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(24px, 4vw, 56px); }
   .board-card { display: grid; gap: 18px; padding-top: 26px; border-top: 1px solid var(--line-strong); }
   .board-card h3 { font-family: var(--serif); font-weight: 300; font-size: clamp(28px, 3vw, 42px); line-height: 1.05; color: var(--ink); margin: 0; }
-  /* Gold that is READ, so it takes the ink tier — `--candle` is 1.74:1 on this band's
-     parchment (tokens.css). `--candle-ink` is 3.86:1 here: the token is calibrated against
-     `--paper` (4.67:1) and loses ~0.8 on `--paper-deep`, so this label sits under AA until
-     either the band lightens or the tier gains a darker step. */
+  /* Gold that is READ, so it takes the ink tier: `--candle` is 1.74:1 on this band's parchment,
+     `--candle-ink` is 4.50:1 (tokens.css). `--paper-deep` is the darkest ground the site sets gold
+     text on, and it is what the token is calibrated to clear — a lighter band has margin, this one
+     has none, so a further step down in the paper scale would need the token revisited. */
   .board-card .role { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; line-height: 1.7; text-transform: uppercase; color: var(--candle-ink); margin: 0; }
   /* Portraits render only when ALL of src/assets/photos/o-nas-{florent,ania,krystian}.*
      exist (boardPortraitsComplete) — a partial set would leave the grid ragged. */

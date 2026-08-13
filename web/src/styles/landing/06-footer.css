@@ -77,8 +77,10 @@
        kostiumem. `--candle` daje 2,10:1 na pergaminie i 8,08:1 na nocy: ten sam heks,
        który na papierze nie ma prawa nieść tekstu, w nocy niesie go z zapasem. Dlatego
        złoto TEKSTU chodzi tu przez `--candle-text` — na pergaminie schodzi do
-       `--candle-ink` (4,67:1, najjaśniejsza wartość, która przechodzi AA), w nocy wraca
-       do pełnego candle. Znaki i włosy (mid-doty, romby, kreski) zostają na `--candle`
+       `--candle-ink` (5,44:1), w nocy wraca do pełnego candle. Obie strony mieszanki
+       biorą tokeny, a nie heksy: literał `#7f693a` przestał być tym samym kolorem, co
+       token, w chwili gdy tokens.css przyciemnił go do 58%, i nikt by tego nie zauważył.
+       Znaki i włosy (mid-doty, romby, kreski) zostają na `--candle`
        w obu paletach: dla nich minimum kontrastu nie obowiązuje.
        ZEGAR TEŻ IDZIE PRZEZ `--candle-text`, choć tokens.css zostawia pełny candle
        „dużemu złotu display". Ten wyjątek go nie obejmuje: 22–28 px to tekst duży
@@ -86,7 +88,11 @@
        2,10 i nie przechodzi nawet tego. Wyjątek dla display był pisany o złocie na
        ciemnym gruncie, gdzie ta sama farba ma 8,08; płyta nocna dostaje ją z powrotem
        i zegar świeci tam pełnią. */
-    --candle-text: color-mix(in oklab, #7f693a, #c6a45b calc(var(--nox) * 100%));
+    --candle-text: color-mix(in oklab, var(--candle-ink), var(--candle) calc(var(--nox) * 100%));
+    /* The rubric's Latin tier is a CHILD (base.css) and never saw `--candle-text`: it kept the
+       bare default, so the one word set in capitals sat at 2,10:1 on the parchment plate while
+       its own gloss read fine. Handing it the same mixed value moves both tiers with the plate. */
+    --lat-ink: var(--candle-text);
 
     /* Poświata świecy u szczytu płyty. Ta sama farba na ciemnym gruncie DODAJE światła
        zamiast je odejmować, więc na nocy schodzi z 8,5% na 5% — inaczej z dyskretnego

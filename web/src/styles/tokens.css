@@ -19,14 +19,23 @@
   --line: rgba(22, 21, 20, 0.16);
   --line-strong: rgba(22, 21, 20, 0.34);
   --candle: #c6a45b;
-  /* The candle as INK, for gold that has to be READ rather than seen. --candle is 8.46:1 on
-     the dark grounds it was drawn for and only 2.10:1 on parchment — so every small gold label
-     on paper (rubric marks, dates, collaborator labels, the colophon's author role, a link's
-     gold hover) fails WCAG AA outright. This is the same hue scaled to 64%, which clears AA for
-     small text at 4.67:1 and is the LIGHTEST value that does. Use it for gold text under ~18px
-     on any paper ground; keep --candle for dark grounds, for large display gold, and for rules,
-     borders and marks, where the contrast minimum does not apply. */
-  --candle-ink: #7f693a;
+  /* The candle as INK, for gold that has to be READ rather than seen. --candle is 8.46:1 on the
+     dark grounds it was drawn for and 2.10 / 1.90 / 1.74:1 on paper / paper-soft / paper-deep —
+     so every gold label on parchment (rubric Latin, dates, collaborator labels, the colophon's
+     author role, a link's gold hover) fails WCAG AA outright, at any size.
+
+     This is the same hue scaled to 58%. It is stated per ground because ONE number is what let a
+     failing label ship: at 64% (#7f693a) this token measured 4.67:1 on `--paper` and was
+     documented as "clears AA", but the site also sets gold text on `--paper-soft` (4.23) and
+     `--paper-deep` (3.86), where it did not. At 58% every paper clears the small-text bar —
+     5.44 / 4.93 / 4.50:1 — so the token holds on any ground the site actually has, and a new
+     band cannot quietly fall out of contract.
+
+     Use it for gold TEXT on any paper ground, whatever the size. Keep --candle for dark grounds,
+     and for rules, borders, backgrounds and decorative marks, where no minimum applies. On a
+     ground that changes at runtime (the footer's day/night plate) mix the two on the same
+     variable the ground itself is mixed on. */
+  --candle-ink: #735f35;
   --candle-blue: #1b2d60;
   /* The night ground every dark band sits on (hero plates, concert stations, the colophon).
      It belongs here — BaseLayout loads this file on every page — but for a long time it was

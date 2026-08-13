@@ -654,6 +654,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   @media (max-width: 980px) { .via-rail { display: none; } }
   @media (prefers-reduced-motion: reduce) { .via-fill { transition: none; } }
 
+  /* The page's parchment sections, keyed on the class the chrome-tone observer already tracks, so
+     one rule covers every light band this page has and any it grows. The rubric's Latin tier is a
+     CHILD (base.css) and defaults to the full candle drawn for the night stations — 2.10:1 once it
+     stands on paper. The dark stations and the intro keep the default. */
+  .tone-light { --lat-ink: var(--candle-ink); }
+
   /* Rite map (light) */
   .rite-map { background: var(--paper); color: var(--ink-soft); padding: clamp(84px, 12vw, 168px) max(28px,5vw); }
   .rite-wrap { max-width: 1120px; margin: 0 auto; }
@@ -663,7 +669,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
   .rite-head p { margin: 24px 0 0; max-width: 58ch; color: var(--ink-soft); font-size: clamp(16px, 1.25vw, 18px); }
   .rite-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(20px, 3vw, 42px); }
   .rite-card { display: grid; gap: 16px; padding-top: 24px; border-top: 1px solid var(--line-strong); }
-  .rite-card .r-num { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle); }
+  .rite-card .r-num { font-family: var(--capitalis); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--candle-ink); }
   .rite-card h3 { margin: 0; font-family: var(--serif); font-weight: 300; font-size: clamp(24px, 2.5vw, 34px); line-height: 1.08; color: var(--ink); }
   .rite-card p { margin: 0; color: var(--ink-muted); font-size: clamp(14.5px, 1.1vw, 16px); line-height: 1.75; }
   @media (max-width: 980px) { .rite-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -692,7 +698,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      pair drifted from 1.31 on a phone to 1.59 at 1440, so the entry read tighter the wider the
      screen got. Same slope, one step down. */
   .rep-col .works { display: block; margin-top: 4px; font-size: clamp(14.5px, 1.15vw, 16px); color: var(--ink-soft); }
-  .rep-col .works .yr { color: var(--candle); font-family: var(--mono); font-size: .82em; }
+  .rep-col .works .yr { color: var(--candle-ink); font-family: var(--mono); font-size: .82em; }
   @media (max-width: 720px) {
     .rep-cols { grid-template-columns: 1fr; }
     /* Stacked into one column, so column 2 now follows column 1 — its top item needs its rule back. */

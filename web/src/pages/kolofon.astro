@@ -479,7 +479,10 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
 
   /* Bands */
   .kol-band { padding: clamp(72px, 11vw, 140px) var(--gutter); position: relative; }
-  .kol-band-soft { background: var(--paper); color: var(--ink); }
+  /* The rubric's Latin tier is a CHILD (base.css) and defaults to the full candle the dark hero
+     and the seal band are lit for — 2.10:1 on this parchment. Stated on the band so every section
+     label inside inherits it; `.kol-band-deep` keeps the default. */
+  .kol-band-soft { background: var(--paper); color: var(--ink); --lat-ink: var(--candle-ink); }
   .kol-band-deep { background: var(--dark); color: var(--paper); }
   .kol-band-rule-top { padding-top: clamp(48px, 7vw, 84px); }
   .kol-band-rule-top::before { content: ""; display: block; width: 60px; height: 1px; background: var(--line); margin-bottom: clamp(48px, 7vw, 84px); }
