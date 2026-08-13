@@ -8,26 +8,33 @@
  *
  *  EVERY RUN IS A PLATE AND A SHEET. The run opens with one photograph large — up to 904px, its
  *  own aspect, with the place and date printed once in the margin beside it — and the rest of the
- *  run hangs under it at the packing the concert pages use. That alternation is the whole design
- *  brief. The page shipped in 2026-08 as five identical sections of uniformly packed frames, and
- *  because forty of the forty-three photographs are 3:2, `layoutShots` resolved every one of them
- *  to three-up: Wcielenie rendered 3+3+3 at 364px and 9 Kart rendered 3+3+3+3+3 at 363px. That is
- *  the thumbnail grid docs/web-imagines-spec.md §2 rejects, arrived at from the other direction —
- *  these are low-contrast chiaroscuro frames from a dark nave, and a grid of small tiles renders
+ *  run hangs under it at the packing the concert pages use, capped at half the plate's height.
+ *  That alternation is the whole design brief, and the cap is what makes it a rule rather than an
+ *  accident: `layoutShots` sizes a row to fill the measure, so a run with three frames left over
+ *  would hang them nearly as large as the plate that opened it and a run with seven would not.
+ *
+ *  The alternation is load-bearing because this archive has no variety for the packing to answer:
+ *  all but a handful of the frames are 3:2, so uniform packing resolves every run to three-up and
+ *  arrives at the thumbnail grid docs/web-imagines-spec.md §2 rejects, from the other direction.
+ *  These are low-contrast chiaroscuro frames from a dark nave, and a grid of small tiles renders
  *  them as black rectangles before it fails them stylistically. The plate is what gives the eye
- *  something to stand on; the sheet is what keeps the page from being forty-three heroes.
+ *  something to stand on; the sheet is what keeps the page from being all heroes.
  *
  *  Dark throughout, on `--night`, as the concert galleries are: parchment kills these frames. The
  *  ground therefore never turns, and the thresholds are ruled instead — each evening opens on a
  *  full-bleed hairline in its own candle, drawn left→right by the LEAD register.
  *
- *  All forty-three frames are ONE set in the lightbox (`data-image-group="obrazy"`), because the
- *  page is one sequence and stopping the arrows at each evening's last frame would contradict the
- *  document the reader is holding. Each frame carries its own evening's URL, so the name of the
- *  evening is never lost even though the head that states it has scrolled away.
+ *  Every frame in the document is ONE set in the lightbox (`data-image-group="obrazy"`), because
+ *  the page is one sequence and stopping the arrows at each evening's last frame would contradict
+ *  the document the reader is holding. Each frame carries its own evening's URL, so the name of
+ *  the evening is never lost even though the head that states it has scrolled away.
+ *
+ *  Each evening is an ANCHOR (`id` = the concert's own id), which is how the concert pages and
+ *  the lightbox's exit reach the one they came from instead of the head of a 15 000px document.
  *
  *  Not in the main nav and not in TRANSLATED_ROUTES — see docs/web-imagines-spec.md §7 for both
- *  decisions and for the entrances it does get; §16 is the rebuild this file now describes.
+ *  decisions and for the entrances it does get; §17 is the rebuild this file describes and §19
+ *  the pass that finished it.
  * @architecture Astro islands 2026
  * @module pages/obrazy
  */
@@ -56,6 +63,12 @@ const PLATE_W = 904;
  *  portrait is stopped here at ~392px wide, which is what keeps Hymn's plate from becoming a
  *  tower — the same argument `layoutShots` makes with `maxHeight`. */
 const PLATE_H = 700;
+/** How tall the sheet may stand against the plate that opened its run. This is the rhythm, stated
+ *  as one number: without it the sheet's height comes from how many frames the run happens to
+ *  have left over, so a two-frame sheet hangs at 570 under a 700px plate (81% — no rhythm at all)
+ *  while a seven-frame sheet hangs at 245 under 904 (27%). A ceiling, not a target: a long run
+ *  still fills its measure and comes out well under this. */
+const SHEET_SCALE = 0.5;
 
 // Via order — the same order the register and /koncerty walk, so an evening sits in the same
 // place on every surface. An entry with no photographs simply has no series here; the roman
@@ -67,10 +80,12 @@ const withGallery = concerts.filter((entry) => entry.data.gallery.length > 0);
 const evenings = await Promise.all(
   withGallery.map(async (entry, index) => {
     const c = entry.data;
+    // No `caption`: the field survives in the schema for the per-frame note (the concert page
+    // prints one where a frame carries it), but on this page everything a caption used to say is
+    // in the run's inscription, said once.
     const resolved: {
       img: ImageMetadata;
       alt: string;
-      caption?: string | undefined;
       credit?: string | undefined;
       source?: string | undefined;
       moment: "rehearsal" | "concert";
@@ -106,17 +121,19 @@ const evenings = await Promise.all(
         const lead = run.shots[at]!;
         const rest = run.shots.filter((_, i) => i !== at);
         const plate = { ...lead, frame: await framedShot(lead.img) };
-        // Same packing and the same measure as the concert page: `.im-wrap` is 1180 wide and the
-        // gutter clamp tops out at 40, which are `layoutShots`'s own defaults.
+        // Clamped to the SOURCE as well as to the measure, because the archive holds a few small
+        // scans: a 900px original handed a 904px slot is served at 1× on a 2× screen and has no
+        // larger rendition to reach for, so the one frame the run opens on would be its softest.
+        const plateW = Math.round(Math.min(PLATE_W, PLATE_H * plate.ar, plate.img.width));
+        // Same packing and the same measure as the concert page — `.im-wrap` is 1180 wide and the
+        // gutter clamp tops out at 40, which are `layoutShots`'s own defaults — under a height cap
+        // this page sets from the plate standing over it.
         const sheet = await Promise.all(
-          layoutShots(rest).map(async (g) => ({ ...g, frame: await framedShot(g.img) })),
+          layoutShots(rest, { maxHeight: Math.round((plateW / plate.ar) * SHEET_SCALE) }).map(
+            async (g) => ({ ...g, frame: await framedShot(g.img) }),
+          ),
         );
-        return {
-          ...run,
-          plate,
-          plateW: Math.round(Math.min(PLATE_W, PLATE_H * plate.ar)),
-          sheet,
-        };
+        return { ...run, plate, plateW, sheet };
       }),
     );
 
@@ -141,8 +158,8 @@ const allShots = evenings.flatMap((e) => e.shots);
 
 // One colophon for the whole archive: each hand named once, in the order the evenings run, and the
 // outlets after them under their own label. The rest is STATED rather than passed over — a list of
-// names with no qualification is a claim that those names took all forty-seven frames, and most of
-// this archive is the ensemble photographing itself.
+// names with no qualification is a claim that those names took every frame here, and most of this
+// archive is the ensemble photographing itself.
 const photographers = creditList(
   [...new Set(allShots.map((s) => s.credit).filter(Boolean))] as string[],
   [...new Set(allShots.map((s) => s.source).filter(Boolean))] as string[],
@@ -167,7 +184,7 @@ const years = allShots
 const span = years.length > 0 ? `${years[0]}–${years[years.length - 1]}` : "";
 
 /** Polish counts one, a few, and many differently, and these three numbers are computed — so a
- *  photograph added to the YAML must not be able to leave "43 fotografia" on the page. */
+ *  photograph added to the YAML must not be able to leave "48 fotografia" on the page. */
 const plural = (n: number, one: string, few: string, many: string): string => {
   const t = n % 10;
   const h = n % 100;
@@ -194,8 +211,8 @@ const ogImage = ogSource
   : "/logo_gold.png";
 
 // JSON-LD: one ImageGallery for the page. Deliberately WITHOUT a per-frame ImageObject list —
-// 43 nodes with `creditText` would quadruple the graph to restate what the visible colophon
-// already says, and the GSC pass settled that extra schema is proposed before it is added, not
+// one node per photograph with `creditText` would quadruple the graph to restate what the visible
+// colophon already says, and the GSC pass settled that extra schema is proposed before it is added, not
 // assumed. If image search ever becomes a real channel for this site, that is the moment to
 // revisit it, with the Search Console numbers in hand.
 const jsonLd = {
@@ -228,10 +245,10 @@ const jsonLd = {
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   <SiteChrome current="/obrazy" tone="dark" />
 
-  {/* Where the reader stands, in the Via's own terms. This is the longest page on the site by a
-      distance — 43 photographs is over 13 000px of phone scroll — and it was the only long one
-      with no position at all. Same three parts and the same driver contract as /koncerty's
-      via-rail; it hides below 980 where there is no margin to hang it in. */}
+  {/* Where the reader stands, in the Via's own terms. This is one of the two longest pages on the
+      site — the archive runs to some 17 000px of phone scroll — and it was the only long one with
+      no position at all. Same three parts and the same driver contract as /koncerty's via-rail;
+      it hides wherever the margin it hangs in does not exist (see the breakpoint's own note). */}
   <aside class="im-rail" aria-hidden="true">
     <span class="im-rail-num">I</span>
     <span class="im-rail-line"><span class="im-rail-fill"></span></span>
@@ -270,6 +287,7 @@ const jsonLd = {
       evenings.map((e) => (
         <section
           class="im-evening"
+          id={e.id}
           aria-label={e.title}
           style={`--candle: ${e.candle}`}
           data-via-num={e.roman}
@@ -338,7 +356,7 @@ const jsonLd = {
                         src={run.plate.img}
                         widths={[560, 904, 1920]}
                         width={run.plate.frame.width}
-                        sizes={`(max-width: 860px) 92vw, ${run.plateW}px`}
+                        sizes={`(max-width: 720px) 100vw, (max-width: 860px) 92vw, ${run.plateW}px`}
                         alt={run.plate.alt}
                         loading="lazy"
                         decoding="async"
@@ -381,7 +399,7 @@ const jsonLd = {
                       <figure
                         class="im-shot"
                         data-d={String((i % 3) + 1)}
-                        style={`--ar: ${g.ar}; --w: ${g.w}px; --w-max: ${g.wMax}px`}
+                        style={`--share: ${g.share}`}
                       >
                         {/* One group for the WHOLE document, not one per run or per evening: the
                             archive is a single sequence in Via order, and the reader who opens
@@ -413,7 +431,7 @@ const jsonLd = {
                             src={g.img}
                             widths={[560, 840, 1200]}
                             width={Math.min(g.img.width, 1200)}
-                            sizes={`(max-width: 720px) 92vw, ${g.wMax}px`}
+                            sizes={`(max-width: 720px) 92vw, ${g.w}px`}
                             alt={g.alt}
                             loading="lazy"
                             decoding="async"
@@ -535,10 +553,10 @@ const jsonLd = {
   .im-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
 
   /* ── Head ──────────────────────────────────────────────────────────────────
-     No hero photograph. The page is 43 photographs long; opening it with a
-     forty-fourth, larger and decorative, would be the one frame here that documents
-     nothing — and the first plate arrives one screen down at 904px, which is the
-     opening a hero would have been asked to fake. */
+     No hero photograph. The page is dozens of photographs long; opening it with one
+     more, larger and decorative, would be the one frame here that documents nothing —
+     and the first plate arrives one screen down at 904px, which is the opening a hero
+     would have been asked to fake. */
   .im-head { padding: clamp(120px, 16vw, 200px) max(28px, 5vw) clamp(64px, 8vw, 104px); }
   .im-title { font-family: var(--serif); font-weight: 300; line-height: .98; font-size: clamp(52px, 10vw, 132px); letter-spacing: -.01em; margin: 0; color: var(--paper); }
   .im-lede { margin: clamp(26px, 3.5vw, 40px) 0 0; max-width: 46ch; font-family: var(--serif); font-weight: 300; font-size: clamp(18px, 1.8vw, 24px); line-height: 1.56; color: rgba(244, 241, 233, .74); }
@@ -552,7 +570,10 @@ const jsonLd = {
      Full-bleed and in the evening's own candle, so a station is recognisable here by the same
      light it burns on its page. The rule is drawn on the SECTION, whose top is exactly where the
      register's trigger fires — a rule anchored to a tall block's foot would draw off-screen. */
-  .im-evening { --rule-ink: color-mix(in srgb, var(--candle) 52%, transparent); padding: clamp(60px, 8vw, 104px) max(28px, 5vw) 0; border-top: 1px solid color-mix(in srgb, var(--candle) 52%, transparent); }
+  /* `scroll-margin-top` clears the fixed chrome (≈84px) with enough left over that the threshold
+     hairline — the thing that says which evening this is — lands below the bar rather than under
+     it. Every evening is a link target, so an anchor that hides its own rule states nothing. */
+  .im-evening { --rule-ink: color-mix(in srgb, var(--candle) 52%, transparent); padding: clamp(60px, 8vw, 104px) max(28px, 5vw) 0; border-top: 1px solid color-mix(in srgb, var(--candle) 52%, transparent); scroll-margin-top: 96px; }
   :global(html.voct-motion) .im-evening { border-top-color: transparent; }
 
   .im-evening-head { display: grid; grid-template-columns: max-content 1fr; gap: 4px clamp(20px, 3vw, 36px); align-items: baseline; margin: 0 0 clamp(40px, 5vw, 64px); }
@@ -574,9 +595,10 @@ const jsonLd = {
      before the media query takes over. */
   .im-run { margin: 0 0 clamp(64px, 8vw, 112px); }
   .im-plate { display: grid; grid-template-columns: minmax(0, var(--plate-w)) minmax(0, clamp(168px, 17vw, 232px)); gap: clamp(22px, 3vw, 44px); align-items: end; margin: 0 0 clamp(22px, 3vw, 40px); }
-  /* The plate is a grid child, so it must NOT inherit the sheet's flex contract — `--ar` / `--w`
-     are unset here and the shorthand would only be invalid rather than absent. Stated instead of
-     left to that, because the sheet's phone rule below reaches this element too. */
+  /* The plate is a grid child, so it must NOT inherit the sheet's flex contract — `--share` is
+     unset here and `calc()` on an unset custom property is invalid rather than absent, which
+     would leave the box at `auto`. Stated instead of left to that, because the sheet's phone rule
+     below reaches this element too. */
   .im-shot--plate { flex: initial; min-width: 0; max-width: 100%; }
 
   .im-inscription { --rule-ink: rgba(244, 241, 233, .22); display: flex; flex-direction: column; gap: 9px; padding-top: 16px; border-top: 1px solid rgba(244, 241, 233, .22); }
@@ -587,16 +609,17 @@ const jsonLd = {
   .im-inscription-date { font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .56); }
   .im-inscription-credit { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244, 241, 233, .42); }
 
-  /* Rows hung by HEIGHT, not cut into columns: each shot asks for the width its own aspect needs
-     at the row height (`--w`, from lib/galleryLayout), so portraits pack four to a row where
-     landscapes take three. Grow and shrink both run ∝ aspect, which is what keeps a line at one
-     height; `--w-max` stops a short row inflating its photographs, `center` hangs the remainder.
-     THE CONTRACT — `flex: var(--ar) 1 var(--w)` + `max-width: var(--w-max)` — is stated in
-     lib/galleryLayout's header and is what the concert page's `.kd-gallery-grid` declares too.
-     The two are deliberately not one stylesheet: what genuinely drifts is the packing, and that
-     already lives in one module; the rest of each gallery is its page's own tone. */
+  /* Rows hung by HEIGHT, not cut into columns: each shot holds the fraction of the measure its
+     own aspect needs at the row height (`--share`, from lib/galleryLayout), so portraits pack
+     four to a row where landscapes take three, and a row keeps its proportions at any width.
+     Nothing grows — a short last row hangs centred at the height of the rows above it, which is
+     what `center` is for. THE CONTRACT — `flex: 0 1 calc(var(--share) * 100%)` + the same
+     `max-width` — is stated in lib/galleryLayout's header and is what the concert page's
+     `.kd-gallery-grid` declares too. The two are deliberately not one stylesheet: what genuinely
+     drifts is the packing, and that already lives in one module; the rest of each gallery is its
+     page's own tone. */
   .im-sheet { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(20px, 3vw, 40px); }
-  .im-shot { margin: 0; flex: var(--ar) 1 var(--w); max-width: var(--w-max); }
+  .im-shot { margin: 0; min-width: 0; flex: 0 1 calc(var(--share) * 100%); max-width: calc(var(--share) * 100%); }
   /* Bounds the veil to the image rather than to the figure, which is also what keeps the plate's
      inscription out of it — a place and a date are copy, and copy keeps the ink. */
   .im-shot-media { position: relative; display: block; }
@@ -620,7 +643,14 @@ const jsonLd = {
   .im-rail-line { position: relative; width: 1px; height: 96px; background: rgba(244, 241, 233, .16); }
   .im-rail-fill { position: absolute; left: 0; top: 0; width: 100%; height: 0%; background: linear-gradient(180deg, var(--candle), rgba(198, 164, 91, .35)); transition: height .55s var(--ease-slow); }
   .im-rail-date { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .46); white-space: nowrap; }
-  @media (max-width: 1180px) { .im-rail { display: none; } }
+  /* Hidden until there is margin to hang it in, and the number is arithmetic rather than taste:
+     the rail's right edge stands at max(16, 2vw) + 84, the column's left edge at max(28, 5vw)
+     plus whatever centring is left once `.im-wrap` caps at 1180. They clear each other at 1440
+     and not before — at 1280 the rail reaches 110 against a column starting at 64, i.e. 46px of
+     numeral lying on the photograph. /koncerty's own rail hides at 980 and clears a narrower
+     measure (1120), so it is a smaller version of the same sum rather than a precedent for this
+     number — see docs/web-imagines-spec.md §19. What is shared is the rule: clearance decides. */
+  @media (max-width: 1439px) { .im-rail { display: none; } }
   @media (prefers-reduced-motion: reduce) { .im-rail-fill { transition: none; } }
 
   @media (max-width: 860px) {
@@ -636,11 +666,17 @@ const jsonLd = {
     /* On a phone the aspect has no room to argue: one shot per row, full measure. */
     .im-shot { flex-basis: 100%; max-width: 100%; }
     /* Which would leave the plate and the sheet exactly the same width, i.e. no rhythm at all on
-       the case that matters most — 43 frames and 16 000px of scroll. The plate keeps its rank by
+       the case that matters most — this is 17 700px of phone scroll. The plate keeps its rank by
        taking the whole screen instead: it breaks the page's own gutter, and drops the border and
        the shadow, because a frame drawn to the edges is not sitting on the page, it IS the page.
-       The sheet stays inside the measure, so the two are still two things. */
-    .im-shot--plate { margin-inline: calc(-1 * max(28px, 5vw)); }
+       The sheet stays inside the measure, so the two are still two things.
+
+       `max-width: none` IS THE RULE, not a tidy-up. The negative margins alone do nothing: the
+       rule above caps this element at 100% of its grid area, the box is then over-constrained,
+       and the browser resolves it by keeping the width and dropping the trailing margin — so the
+       plate comes out at exactly the sheet's width, shifted a gutter off the page's own axis.
+       That is what shipped, and it measured as "no horizontal overflow" because there is none. */
+    .im-shot--plate { margin-inline: calc(-1 * max(28px, 5vw)); max-width: none; }
     .im-shot--plate :global(img) { border: 0; box-shadow: none; }
   }
 </style>

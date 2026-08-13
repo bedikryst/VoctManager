@@ -3,10 +3,24 @@
  * @description Geometry for a documentary photo gallery hung by row HEIGHT rather than cut into
  *  columns. Every shot brings its true aspect (ImageMetadata reads the real pixels), so a row of
  *  portraits fits four where the same row takes only three landscapes, and a short last row
- *  centers instead of leaving a hole at the right. Returns the per-shot `w` / `wMax` that the
- *  flex line reads as `--w` / `--w-max`; the CSS contract is `flex: var(--ar) 1 var(--w)` with
- *  `max-width: var(--w-max)`, so grow and shrink both run ∝ aspect and every shot in a line
- *  settles at one height.
+ *  centers instead of leaving a hole at the right.
+ *
+ *  THE CONTRACT — `flex: 0 1 calc(var(--share) * 100%)` with `max-width: calc(var(--share) *
+ *  100%)`, from `--share` — so every shot holds the same fraction of the measure it was sized
+ *  for and a line settles at one height whatever the measure turns out to be.
+ *
+ *  A SHARE RATHER THAN A PIXEL WIDTH, because the two are only the same at 1180. A px basis
+ *  freezes the geometry at the design measure: below it a full row shrinks to fit while a short
+ *  row, already fitting, stands at its full size — so the tail of a run comes out taller than the
+ *  rows above it on every laptop narrower than the measure. The share scales with whatever
+ *  container it lands in, and the gap it was sized against scales with it (`3vw` against a
+ *  measure that is itself ~90vw), so the row keeps its 1% of slack at any width.
+ *
+ *  NOTHING GROWS. A short row is short — it hangs centred at the height of the rows above it,
+ *  which is what a justified page does. The earlier contract let a tail inflate 40% to fill its
+ *  line, and on a set with no variety left to answer (the archive is 40 landscapes in 48 frames)
+ *  that reads as breakage rather than as rhythm: a lone frame 38% taller than the two rows over
+ *  it is the shape a reader takes for a mistake.
  *
  *  Shared by the concert detail page and the collective archive: one set of numbers, so a
  *  correction to the packing lands on both surfaces at once.
@@ -31,15 +45,18 @@ export interface Shot {
   readonly ar: number;
 }
 
-/** The layout answer for one shot: its ideal width, and how far a short row may inflate it. */
+/** The layout answer for one shot. */
 export interface ShotBox {
+  /** Width in px at the design measure. Not what the page lays out on — it is what `sizes` asks
+   *  the browser for, which is a statement about the widest case and belongs in px. */
   readonly w: number;
-  readonly wMax: number;
+  /** The same width as a fraction of the measure, which IS what the page lays out on. */
+  readonly share: number;
 }
 
 /**
  * Size a set of shots into height-hung rows. Input order is preserved; each result is the input
- * object plus `w` / `wMax`, so callers keep their own fields (alt, caption, ImageMetadata).
+ * object plus `w` / `share`, so callers keep their own fields (alt, caption, ImageMetadata).
  */
 export function layoutShots<T extends Shot>(
   shots: readonly T[],
@@ -71,10 +88,8 @@ export function layoutShots<T extends Shot>(
     maxHeight,
   );
 
-  // `wMax` caps how far a short row may inflate its shots: 40% over the ideal, but never past
-  // the height cap — otherwise a lone portrait would grow into a tower to fill the line it sits on.
   return shots.map((s) => {
     const w = Math.round(rowH * s.ar);
-    return { ...s, w, wMax: Math.round(Math.min(w * 1.4, maxHeight * s.ar)) };
+    return { ...s, w, share: Number((w / width).toFixed(5)) };
   });
 }
