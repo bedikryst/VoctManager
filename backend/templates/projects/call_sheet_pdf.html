@@ -1,4 +1,11 @@
-{% load static %}<!DOCTYPE html>
+{% load i18n %}<!DOCTYPE html>
+{% comment %}
+    Every literal here is gettext'd; `doc_lang` and the active language are both
+    resolved from the READER (see `resolve_document_language`), never from the
+    request's `Accept-Language`. Anything a numeral governs is composed in the
+    generator instead — Polish needs three forms of most nouns after a number,
+    and a template can only concatenate a count to a fixed word.
+{% endcomment %}
 <html lang="{{ doc_lang|default:'pl' }}">
 <head>
     <meta charset="UTF-8">
@@ -274,13 +281,22 @@
            composer, metadata), not the whole entry. Guarding the entry measured
            at a full page on the maestro's card, and the break it was buying off
            only ever separated the resources line — so the identity is what
-           carries the rule, and the lines that may follow it flow. */
+           carries the rule, and the lines that may follow it flow.
+           The ordinal is PART of that identity, so it lives inside the guarded
+           box: while it sat in a sibling table-cell the row could split between
+           the two and strand a lone gold "1" at the foot of a page — which is
+           what the longer French strings pushed it into doing. */
         .prog { padding: 8pt 0; border-bottom: 0.5pt solid var(--rule); }
-        .prog-id { page-break-inside: avoid; }
         .prog:last-child { border-bottom: 0; }
-        .prog-head { display: table; width: 100%; table-layout: fixed; }
+        .prog-id {
+            display: table; width: 100%; table-layout: fixed;
+            page-break-inside: avoid;
+        }
         .prog-no, .prog-body { display: table-cell; vertical-align: top; }
         .prog-no { width: 24pt; }
+        /* Whatever may follow the identity keeps its indent without re-entering
+           the table, so it is free to break. */
+        .prog-more { padding-left: 24pt; }
         /* The ordinal used to be a solid black disc — the darkest mark in the
            document, spent on a number. Gold is the structural voice; a serif
            numeral in it is structure without being the loudest thing here. */
@@ -326,7 +342,11 @@
         /* ── Coverage (report) ──────────────────────────────────────────── */
         .coverage { margin-bottom: 13pt; }
         .census { color: var(--ink-2); font-size: 8.5pt; margin: 3pt 0 7pt; }
-        .cov-grid th.m, .cov-grid td.m { width: 44pt; text-align: center; padding-right: 0; }
+        /* 56pt, not 44: the head is uppercase at 1.2pt tracking, so a nine-letter
+           label is already ~47pt and two French heads ran into each other with
+           no gap at all. The column is sized to the widest head it must hold,
+           and the title column has the room to give. */
+        .cov-grid th.m, .cov-grid td.m { width: 56pt; text-align: center; padding-right: 0; }
         .cov-grid th.m { text-align: center; }
         .cov-grid .lp { width: 18pt; color: var(--ink-4); }
         /* Presence is a mark, absence is space — so a hole reads as a hole on a
@@ -346,20 +366,25 @@
             <span class="eyebrow">{{ ensemble_name }}</span>
             <span class="brandmeta">
                 <span class="eyebrow">
-                    {% if is_report %}Raport produkcji{% elif is_chorister %}Karta śpiewaka{% elif is_conductor %}Karta dyrygenta{% else %}Karta dnia · Produkcja{% endif %}
+                    {% if is_report %}{% translate "Production report" context "call sheet" %}{% elif is_chorister %}{% translate "Singer's card" context "call sheet" %}{% elif is_conductor %}{% translate "Conductor's card" context "call sheet" %}{% else %}{% translate "Day card · Production" context "call sheet" %}{% endif %}
                 </span>
-                {% if generation_label %}<span class="stamp">Stan na {{ generation_label }}</span>{% endif %}
+                {% if generation_label %}<span class="stamp">{% blocktranslate with stamp=generation_label %}As of {{ stamp }}{% endblocktranslate %}</span>{% endif %}
             </span>
         </div>
 
         <h1>{{ project.title }}</h1>
 
+        {% comment %}
+            The name sits in its own slot and the sentence is built around it,
+            never the other way round: a Polish greeting inflects, and a name
+            dropped into a case slot comes out wrong for half the roster.
+        {% endcomment %}
         {% if is_chorister and greeting %}
-            <p class="greeting">Przygotowane dla Ciebie, <strong>{{ greeting }}</strong>{% if personal %} · {{ personal.voice_label }}{% endif %}.</p>
+            <p class="greeting">{% if personal %}{% blocktranslate with name=greeting voice=personal.voice_label %}Prepared for you, <strong>{{ name }}</strong> · {{ voice }}.{% endblocktranslate %}{% else %}{% blocktranslate with name=greeting %}Prepared for you, <strong>{{ name }}</strong>.{% endblocktranslate %}{% endif %}</p>
         {% elif is_conductor and greeting %}
-            <p class="greeting">Za pulpitem: <strong>{{ greeting }}</strong>. Poniżej dzień i muzyka w jednym miejscu.</p>
+            <p class="greeting">{% blocktranslate with name=greeting %}On the podium: <strong>{{ name }}</strong>. The day and the music in one place, below.{% endblocktranslate %}</p>
         {% elif is_conductor %}
-            <p class="greeting">Dzień i muzyka w jednym miejscu.</p>
+            <p class="greeting">{% translate "The day and the music in one place." %}</p>
         {% endif %}
 
         {% comment %}
@@ -385,18 +410,18 @@
         {% if venue_line %}
         <div class="venueline">
             <div class="vl-text">{{ venue_line }}</div>
-            {% if venue_qr %}<div class="vl-qr"><img class="qr" src="{{ venue_qr }}" alt=""><span class="qr-cap">Mapa</span></div>{% endif %}
+            {% if venue_qr %}<div class="vl-qr"><img class="qr" src="{{ venue_qr }}" alt=""><span class="qr-cap">{% translate "Map" context "call sheet" %}</span></div>{% endif %}
         </div>
         {% endif %}
 
         {% if call_buffer_label %}
         <div class="callout">
-            <div class="k">Okno przyjazdu</div>
-            <div class="v">{{ call_buffer_label }} między zbiórką a startem{% if project.conductor %} · prowadzi {{ project.conductor.first_name }} {{ project.conductor.last_name }}{% endif %}.</div>
+            <div class="k">{% translate "Arrival window" context "call sheet" %}</div>
+            <div class="v">{% blocktranslate with buffer=call_buffer_label %}{{ buffer }} between the call and the downbeat{% endblocktranslate %}{% if project.conductor %} · {% blocktranslate with first=project.conductor.first_name last=project.conductor.last_name %}led by {{ first }} {{ last }}{% endblocktranslate %}{% endif %}.</div>
         </div>
         {% elif call_window_warning %}
         <div class="callout alert">
-            <div class="k">Sprawdź zbiórkę</div>
+            <div class="k">{% translate "Check the call time" context "call sheet" %}</div>
             <div class="v">{{ call_window_warning }}</div>
         </div>
         {% endif %}
@@ -409,7 +434,7 @@
     {% endcomment %}
     {% if is_report %}
     <div class="blockers">
-        <div class="eyebrow">Do zamknięcia</div>
+        <div class="eyebrow">{% translate "To close" context "call sheet" %}</div>
         {% if blockers %}
         <ul>
             {% for blocker in blockers %}
@@ -417,7 +442,7 @@
             {% endfor %}
         </ul>
         {% else %}
-        <div class="clear">Wszystko domknięte — nic nie czeka na decyzję.</div>
+        <div class="clear">{% translate "Everything is closed — nothing is waiting on a decision." %}</div>
         {% endif %}
     </div>
     {% endif %}
@@ -434,14 +459,14 @@
     {% endcomment %}
     {% if is_report %}
     <div class="coverage">
-        <div class="eyebrow">Pokrycie materiałów</div>
+        <div class="eyebrow">{% translate "Material coverage" context "call sheet" %}</div>
         {% if coverage_census %}<div class="census">{{ coverage_census }}</div>{% endif %}
         {% if coverage.rows %}
         <table class="grid cov-grid">
             <thead>
                 <tr>
-                    <th class="lp">Lp.</th>
-                    <th>Utwór</th>
+                    <th class="lp">{% translate "No." context "call sheet" %}</th>
+                    <th>{% translate "Piece" context "call sheet" %}</th>
                     {% for label in coverage.labels %}<th class="m">{{ label }}</th>{% endfor %}
                 </tr>
             </thead>
@@ -455,13 +480,13 @@
                 {% endfor %}
                 <tr class="sum">
                     <td class="lp"></td>
-                    <td>Na {{ coverage.total }} {% if coverage.total == 1 %}utwór{% else %}pozycji programu{% endif %}</td>
+                    <td>{{ coverage.total_label }}</td>
                     {% for total in coverage.totals %}<td class="m">{{ total }}</td>{% endfor %}
                 </tr>
             </tbody>
         </table>
         {% else %}
-        <p class="empty">Program nie został ustalony — nie ma czego pokrywać.</p>
+        <p class="empty">{% translate "The programme has not been settled — there is nothing to cover." %}</p>
         {% endif %}
     </div>
     {% endif %}
@@ -471,12 +496,12 @@
 
     {% if section == "personal" and personal %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Twoja rola dzisiaj</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "Your part today" context "call sheet" %}</h2></div>
         <div class="hero-personal">
             <div class="split">
                 <div class="col left">
                     <div class="name">{{ personal.full_name }}</div>
-                    <div class="voice">{{ personal.voice_label }} · sekcja {{ personal.section_size }} {{ personal.section_size_label }}</div>
+                    <div class="voice">{{ personal.voice_label }} · {{ personal.section_label }}</div>
                 </div>
                 {% comment %}
                     A confirmed participation is the expected state and says so
@@ -485,8 +510,8 @@
                     and the alarm colour belongs to what is actually wrong.
                 {% endcomment %}
                 <div class="col right" style="text-align:right;">
-                    {% if personal.is_confirmed %}<span class="muted">Udział potwierdzony</span>{% else %}<span class="pill gold">{{ personal.status_label }}</span>{% endif %}
-                    {% if personal.gives_pitch_anywhere %}<span class="pill gold">Podajesz dźwięk</span>{% endif %}
+                    {% if personal.is_confirmed %}<span class="muted">{% translate "Participation confirmed" context "call sheet" %}</span>{% else %}<span class="pill gold">{{ personal.status_label }}</span>{% endif %}
+                    {% if personal.gives_pitch_anywhere %}<span class="pill gold">{% translate "You give the pitch" context "call sheet" %}</span>{% endif %}
                 </div>
             </div>
 
@@ -498,17 +523,17 @@
                         <td class="no">{% if a.order %}{{ a.order }}{% else %}·{% endif %}</td>
                         <td><span style="font-weight:700;">{{ a.title }}</span>{% if a.notes %}<div class="muted">{{ a.notes }}</div>{% endif %}</td>
                         <td class="ln">{{ a.voice_line }}</td>
-                        <td style="text-align:right; white-space:nowrap;">{% if a.gives_pitch %}<span class="pitch-flag">♪ podajesz</span>{% endif %}</td>
+                        <td style="text-align:right; white-space:nowrap;">{% if a.gives_pitch %}<span class="pitch-flag">♪ {% translate "you give it" context "call sheet" %}</span>{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="empty" style="margin-top:8pt;">Twój casting nie został jeszcze rozpisany — kolejność śpiewania znajdziesz w programie poniżej.</p>
+            <p class="empty" style="margin-top:8pt;">{% translate "Your casting has not been written out yet — the running order is in the programme below." %}</p>
             {% endif %}
 
             {% if personal.section_mates %}
-            <div class="metaline" style="margin-top:8pt;"><strong>Twoja sekcja ({{ personal.voice_label }}):</strong> {{ personal.section_mates|join:", " }}.</div>
+            <div class="metaline" style="margin-top:8pt;"><strong>{% blocktranslate with voice=personal.voice_label %}Your section ({{ voice }}):{% endblocktranslate %}</strong> {{ personal.section_mates|join:", " }}.</div>
             {% endif %}
         </div>
     </div>
@@ -516,7 +541,7 @@
 
     {% if section == "event" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Wydarzenie i przygotowanie</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "The event and the preparation" context "call sheet" %}</h2></div>
         {% comment %}
             Balanced columns rather than two table-cells. The pair tears either
             way (a guard against tearing is measured at a full page), but a
@@ -528,21 +553,21 @@
             <div class="card">
                 <table class="facts">
                     {% for fact in event_facts %}
-                    <tr><td class="label">{{ fact.label }}</td><td class="value">{{ fact.text|default:"Do ustalenia" }}</td></tr>
+                    <tr><td class="label">{{ fact.label }}</td><td class="value">{{ fact.text }}</td></tr>
                     {% endfor %}
                 </table>
-                {% if venue_map_url %}<div class="metaline" style="margin-top:7pt;">Mapa miejsca: <a href="{{ venue_map_url }}">Google Maps</a>{% if not is_report %} — kod obok adresu w nagłówku{% endif %}.</div>{% endif %}
+                {% if venue_map_url %}<div class="metaline" style="margin-top:7pt;">{% translate "Venue map" context "call sheet" %}: <a href="{{ venue_map_url }}">Google Maps</a>{% if not is_report %} — {% translate "the code sits beside the address in the masthead" %}{% endif %}.</div>{% endif %}
             </div>
             <div class="card warm">
-                <div class="eyebrow" style="margin-bottom:6pt;">Dress code</div>
+                <div class="eyebrow" style="margin-bottom:6pt;">{% translate "Dress code" context "call sheet" %}</div>
                 {% for entry in dress_code_entries %}
                 <div style="margin-bottom:5pt;"><span style="font-weight:600;">{{ entry.label }}:</span> {{ entry.value }}</div>
                 {% endfor %}
-                {% if project.description %}<div style="margin-top:8pt; padding-top:8pt; border-top:0.5pt solid var(--rule);"><span class="eyebrow">Brief</span><div style="margin-top:3pt;">{{ project.description|linebreaksbr }}</div></div>{% endif %}
+                {% if project.description %}<div style="margin-top:8pt; padding-top:8pt; border-top:0.5pt solid var(--rule);"><span class="eyebrow">{% translate "Brief" context "call sheet" %}</span><div style="margin-top:3pt;">{{ project.description|linebreaksbr }}</div></div>{% endif %}
             </div>
             {% if preparation_assets %}
                 <div class="card">
-                    <div class="eyebrow" style="margin-bottom:5pt;">{% if is_report %}Gotowość materiałów{% else %}Zabierz na dziś{% endif %}</div>
+                    <div class="eyebrow" style="margin-bottom:5pt;">{% if is_report %}{% translate "Material readiness" context "call sheet" %}{% else %}{% translate "Take with you today" context "call sheet" %}{% endif %}</div>
                     {% comment %}
                         Each resource is named, and `access` says how it is
                         actually reached — a QR only where scanning works
@@ -558,7 +583,7 @@
                         </div>
                         <div class="res-body">
                             <div class="res-how">{{ asset.note }}{% if asset.url %} {{ asset.access }}{% endif %}</div>
-                            {% if asset.qr %}<div class="res-qr"><img class="qr" src="{{ asset.qr }}" alt=""><span class="qr-cap">Skanuj</span></div>{% endif %}
+                            {% if asset.qr %}<div class="res-qr"><img class="qr" src="{{ asset.qr }}" alt=""><span class="qr-cap">{% translate "Scan" context "call sheet" %}</span></div>{% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -570,7 +595,7 @@
 
     {% if section == "runsheet" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Przebieg dnia</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "The day, hour by hour" context "call sheet" %}</h2></div>
         <div class="card">
             {% if has_run_sheet %}
             {% comment %}
@@ -580,7 +605,7 @@
                 contradicting it.
             {% endcomment %}
             <table class="grid">
-                <thead><tr><th style="width:52pt;">Czas</th><th style="width:150pt;">Moment</th><th>Szczegóły</th></tr></thead>
+                <thead><tr><th style="width:52pt;">{% translate "Time" context "call sheet" %}</th><th style="width:150pt;">{% translate "Moment" context "call sheet" %}</th><th>{% translate "Details" context "call sheet" %}</th></tr></thead>
                 <tbody>
                     {% for item in day_timeline %}
                     <tr{% if item.is_anchor %} class="anchor"{% endif %}>
@@ -592,7 +617,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="empty">Szczegółowy przebieg dnia nie został jeszcze uzupełniony — trzymaj się godzin z nagłówka.</p>
+            <p class="empty">{% translate "The detailed run sheet has not been filled in yet — go by the hours in the masthead." %}</p>
             {% endif %}
         </div>
     </div>
@@ -600,7 +625,7 @@
 
     {% if section == "rehearsals" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% if is_chorister %}Twoje próby{% else %}Plan prób{% endif %}</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% if is_chorister %}{% translate "Your rehearsals" context "call sheet" %}{% else %}{% translate "Rehearsal plan" context "call sheet" %}{% endif %}</h2></div>
         <div class="card">
             {% if rehearsal_items %}
             {% comment %}
@@ -608,24 +633,24 @@
                 the page; only the exception is marked, and the default is
                 stated once, here.
             {% endcomment %}
-            <div class="tiny muted" style="margin-bottom:5pt;">{% if all_rehearsals_mandatory %}Wszystkie próby obowiązkowe.{% else %}Bez oznaczenia = próba obowiązkowa.{% endif %}{% if rehearsals_done and not is_report %} Wcześniej odbyło się {{ rehearsals_done }}.{% endif %}</div>
+            <div class="tiny muted" style="margin-bottom:5pt;">{% if all_rehearsals_mandatory %}{% translate "All rehearsals are mandatory." %}{% else %}{% translate "No mark = a mandatory rehearsal." %}{% endif %}{% if rehearsals_done_note %} {{ rehearsals_done_note }}{% endif %}</div>
             <table class="grid">
-                <thead><tr><th style="width:56pt;">Data</th><th style="width:40pt;">Czas</th>{% if not all_rehearsals_mandatory %}<th style="width:66pt;">Typ</th>{% endif %}{% if not is_chorister %}<th style="width:80pt;">Zakres</th>{% endif %}<th>Fokus</th><th>Miejsce</th></tr></thead>
+                <thead><tr><th style="width:56pt;">{% translate "Date" context "call sheet" %}</th><th style="width:40pt;">{% translate "Time" context "call sheet" %}</th>{% if not all_rehearsals_mandatory %}<th style="width:66pt;">{% translate "Type" context "call sheet" %}</th>{% endif %}{% if not is_chorister %}<th style="width:80pt;">{% translate "Who" context "call sheet" %}</th>{% endif %}<th>{% translate "Focus" context "call sheet" %}</th><th>{% translate "Venue" context "call sheet" %}</th></tr></thead>
                 <tbody>
                     {% for r in rehearsal_items %}
                     <tr>
                         <td class="t-time">{{ r.date_label }}</td>
                         <td class="t-time">{{ r.time_label }}</td>
-                        {% if not all_rehearsals_mandatory %}<td>{% if not r.is_mandatory %}<span class="pill ghost">Opcjonalna</span>{% endif %}</td>{% endif %}
+                        {% if not all_rehearsals_mandatory %}<td>{% if not r.is_mandatory %}<span class="pill ghost">{% translate "Optional" context "call sheet" %}</span>{% endif %}</td>{% endif %}
                         {% if not is_chorister %}<td>{{ r.scope_label }}</td>{% endif %}
-                        <td>{{ r.focus|default:"Do potwierdzenia" }}</td>
-                        <td><span style="font-weight:700;">{{ r.location_name }}</span><br><span class="muted">{{ r.location_address }}</span>{% if r.map_url %} · <a href="{{ r.map_url }}">mapa</a>{% endif %}</td>
+                        <td>{% if r.focus %}{{ r.focus }}{% else %}{% translate "To be confirmed" context "call sheet" %}{% endif %}</td>
+                        <td><span style="font-weight:700;">{{ r.location_name }}</span><br><span class="muted">{{ r.location_address }}</span>{% if r.map_url %} · <a href="{{ r.map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-            <p class="empty">{% if rehearsals_done %}Wszystkie próby ({{ rehearsals_done }}) już się odbyły — przed Tobą sam koncert.{% elif is_chorister %}Nie masz przypisanych prób do tego koncertu.{% else %}Brak zdefiniowanych prób dla tego projektu.{% endif %}</p>
+            <p class="empty">{% if rehearsals_all_done_note %}{{ rehearsals_all_done_note }}{% elif is_chorister %}{% translate "You have no rehearsals assigned for this concert." %}{% else %}{% translate "No rehearsals are defined for this project." %}{% endif %}</p>
             {% endif %}
         </div>
     </div>
@@ -633,42 +658,42 @@
 
     {% if section == "program" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Program{% if metrics.program_total_duration %} · {{ metrics.program_total_duration }}{% endif %}</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "Programme" context "call sheet" %}{% if metrics.program_total_duration %} · {{ metrics.program_total_duration }}{% endif %}</h2></div>
         <div class="card">
             {% if program_cards %}
                 {% for piece in program_cards %}
                 <div class="prog">
-                    <div class="prog-head">
+                    <div class="prog-id">
                         <div class="prog-no"><div class="no">{{ piece.order }}</div></div>
                         <div class="prog-body">
-                            <div class="prog-id">
-                                <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">BIS</span>{% endif %}</h3>
-                                <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}Kompozytor nieuzupełniony{% endif %}{% if piece.arranger %} · arr. {{ piece.arranger }}{% endif %}</div>
-                                {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}
-                            </div>
-                            {% if piece.you %}
-                            <div class="you">Śpiewasz: <strong>{{ piece.you.voice_line }}</strong>{% if piece.you.gives_pitch %} · <span class="pitch-flag">♪ podajesz dźwięk</span>{% endif %}{% if piece.you.notes %} · {{ piece.you.notes }}{% endif %}</div>
-                            {% endif %}
-                            {% if piece.material_badges %}<div class="badge-row" style="margin-top:4pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
-                            {% comment %}
-                                Named, not drawn as buttons, and with no code of
-                                its own: the score is gated, and one QR per
-                                recording turns the page into a QR wall nobody
-                                scans. The performer and the platform are what a
-                                reader needs to find the recording themselves.
-                            {% endcomment %}
-                            {% if piece.sheet_music_url or piece.reference_links %}
-                            <div class="metaline" style="margin-top:4pt;">
-                                {% if piece.sheet_music_url %}<span><strong>Nuty:</strong> <a href="{{ piece.sheet_music_url }}">partytura w aplikacji</a>{% if piece.reference_links %} · {% endif %}</span>{% endif %}
-                                {% if piece.reference_links %}<span><strong>Nagrania:</strong> {% for link in piece.reference_links %}{% if not forloop.first %} · {% endif %}<a href="{{ link.url }}">{{ link.label }}</a> — {{ link.source }}{% endfor %}</span>{% endif %}
-                            </div>
-                            {% endif %}
+                            <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">{% translate "Encore" context "call sheet" %}</span>{% endif %}</h3>
+                            <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}{% translate "Composer not filled in" context "call sheet" %}{% endif %}{% if piece.arranger %} · {% blocktranslate with arranger=piece.arranger %}arr. {{ arranger }}{% endblocktranslate %}{% endif %}</div>
+                            {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}
                         </div>
+                    </div>
+                    <div class="prog-more">
+                        {% if piece.you %}
+                        <div class="you">{% translate "You sing" context "call sheet" %}: <strong>{{ piece.you.voice_line }}</strong>{% if piece.you.gives_pitch %} · <span class="pitch-flag">♪ {% translate "you give the pitch" context "call sheet" %}</span>{% endif %}{% if piece.you.notes %} · {{ piece.you.notes }}{% endif %}</div>
+                        {% endif %}
+                        {% if piece.material_badges %}<div class="badge-row" style="margin-top:4pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
+                        {% comment %}
+                            Named, not drawn as buttons, and with no code of its
+                            own: the score is gated, and one QR per recording
+                            turns the page into a QR wall nobody scans. The
+                            performer and the platform are what a reader needs to
+                            find the recording themselves.
+                        {% endcomment %}
+                        {% if piece.sheet_music_url or piece.reference_links %}
+                        <div class="metaline" style="margin-top:4pt;">
+                            {% if piece.sheet_music_url %}<span><strong>{% translate "Score" context "call sheet" %}:</strong> <a href="{{ piece.sheet_music_url }}">{% translate "the part, in the app" context "call sheet" %}</a>{% if piece.reference_links %} · {% endif %}</span>{% endif %}
+                            {% if piece.reference_links %}<span><strong>{% translate "Recordings" context "call sheet" %}:</strong> {% for link in piece.reference_links %}{% if not forloop.first %} · {% endif %}<a href="{{ link.url }}">{{ link.label }}</a> — {{ link.source }}{% endfor %}</span>{% endif %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-            <p class="empty">{% if is_report %}Program nie został ustalony — arkusz nie ma czego wypisać.{% else %}Program tego koncertu nie jest jeszcze rozpisany.{% endif %}</p>
+            <p class="empty">{% if is_report %}{% translate "The programme has not been settled — the sheet has nothing to list." %}{% else %}{% translate "The programme for this concert has not been written out yet." %}{% endif %}</p>
             {% endif %}
         </div>
     </div>
@@ -676,7 +701,7 @@
 
     {% if section == "casting" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Obsada i podawanie dźwięku</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "Casting and who gives the pitch" context "call sheet" %}</h2></div>
         {% if casting_sections %}
             <div class="card">
             {% for cs in casting_sections %}
@@ -690,7 +715,7 @@
                     the absence of data.
                 {% endcomment %}
                 <table class="grid" style="margin-top:6pt;">
-                    <thead><tr><th style="width:70pt;">Linia</th><th>Wykonawcy</th>{% if cs.has_pitch %}<th style="width:120pt;">Podaje dźwięk</th>{% endif %}{% if cs.has_notes %}<th style="width:110pt;">Uwagi</th>{% endif %}</tr></thead>
+                    <thead><tr><th style="width:70pt;">{% translate "Line" context "call sheet" %}</th><th>{% translate "Singers" context "call sheet" %}</th>{% if cs.has_pitch %}<th style="width:120pt;">{% translate "Gives the pitch" context "call sheet" %}</th>{% endif %}{% if cs.has_notes %}<th style="width:110pt;">{% translate "Notes" context "call sheet" %}</th>{% endif %}</tr></thead>
                     <tbody>
                         {% for row in cs.rows %}
                         <tr>
@@ -703,20 +728,20 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="empty" style="margin-top:5pt;">Dla tej pozycji nie rozpisano micro-castingu.</p>
+                <p class="empty" style="margin-top:5pt;">{% translate "No micro-casting was written out for this item." %}</p>
                 {% endif %}
             </div>
             {% endfor %}
             </div>
         {% else %}
-        <div class="card"><p class="empty">{% if is_report %}Micro-casting nie został rozpisany dla żadnej pozycji.{% else %}Micro-casting nie został rozpisany — linie prowadzisz z partytury.{% endif %}</p></div>
+        <div class="card"><p class="empty">{% if is_report %}{% translate "No micro-casting was written out for any item." %}{% else %}{% translate "No micro-casting was written out — take the lines from the score." %}{% endif %}</p></div>
         {% endif %}
     </div>
     {% endif %}
 
     {% if section == "ensemble" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Zespół{% if metrics.cast_confirmed %} · {{ metrics.cast_confirmed }} potwierdzonych{% endif %}</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "Ensemble" context "call sheet" %}{% if ensemble_confirmed_label %} · {{ ensemble_confirmed_label }}{% endif %}</h2></div>
         <div class="card">
             {% if ensemble_sections %}
             {% comment %}
@@ -730,22 +755,22 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="empty">Brak potwierdzonej obsady artystycznej.</p>
+            <p class="empty">{% translate "No confirmed artistic cast." %}</p>
             {% endif %}
             {% if pending_sections %}
             <div style="margin-top:9pt; padding-top:8pt; border-top:0.5pt solid #ece6da;">
-                <div class="eyebrow" style="margin-bottom:4pt;">Oczekujące potwierdzenia ({{ metrics.cast_pending }})</div>
+                <div class="eyebrow" style="margin-bottom:4pt;">{{ pending_heading }}</div>
                 {% for sec in pending_sections %}<div class="metaline"><strong>{{ sec.label }}:</strong> {{ sec.members|join:", " }}</div>{% endfor %}
             </div>
             {% endif %}
-            {% if is_report and metrics.cast_declined %}<div class="metaline" style="margin-top:6pt;">Odrzucone: {{ metrics.cast_declined }} — poza aktywną obsadą.</div>{% endif %}
+            {% if declined_note %}<div class="metaline" style="margin-top:6pt;">{{ declined_note }}</div>{% endif %}
         </div>
     </div>
     {% endif %}
 
     {% if section == "contacts" %}
     <div class="section">
-        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Kontakty</h2></div>
+        <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>{% translate "Contacts" context "call sheet" %}</h2></div>
         <div class="card">
             {% if contact_directory %}
                 {% comment %}
@@ -760,14 +785,14 @@
                 <div class="contact">
                     <div class="cn">{{ contact.name }}</div>
                     <div class="cr">{{ contact.role }}{% if contact.organization %} · {{ contact.organization }}{% endif %}</div>
-                    {% if contact.phone %}<div class="cl">Tel.: {{ contact.phone }}</div>{% endif %}
-                    {% if contact.email %}<div class="cl">E-mail: {{ contact.email }}</div>{% endif %}
+                    {% if contact.phone %}<div class="cl">{% translate "Tel." context "call sheet" %}: {{ contact.phone }}</div>{% endif %}
+                    {% if contact.email %}<div class="cl">{% translate "E-mail" context "call sheet" %}: {{ contact.email }}</div>{% endif %}
                     {% if contact.status %}<div class="muted">{{ contact.status }}</div>{% endif %}
                 </div>
                 {% endfor %}
                 </div>
             {% else %}
-            <p class="empty">Brak zdefiniowanych kontaktów operacyjnych.</p>
+            <p class="empty">{% translate "No operational contacts are defined." %}</p>
             {% endif %}
         </div>
     </div>

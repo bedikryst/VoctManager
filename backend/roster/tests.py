@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
-from django.utils import timezone
+from django.utils import timezone, translation
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
@@ -645,6 +645,12 @@ class ContractsSettlementTests(APITestCase):
         # LocaleMiddleware IS active, so it activates the request's Accept-Language
         # mid-request — a bare translation.override() gets overridden. Send the
         # header to render the choice display under English.
+        #
+        # And put it back: the middleware activates for the whole thread and
+        # never deactivates, so without this every later test in the process
+        # runs under English — which is invisible until some other suite asserts
+        # on translated copy, as the call sheet's now does.
+        self.addCleanup(translation.deactivate)
         resp = self.client.get(
             f"/api/crew-assignments/{self.crew.id}/",
             HTTP_ACCEPT_LANGUAGE="en",
@@ -762,7 +768,9 @@ class CollaboratorPiiExposureTests(APITestCase):
     def test_non_manager_list_hides_contact_pii(self) -> None:
         self.client.force_authenticate(user=self.artist_user)
         # Pin language so the translated specialty display is deterministic.
-        # LocaleMiddleware renders the response under the request's Accept-Language.
+        # LocaleMiddleware renders the response under the request's Accept-Language
+        # — and leaves it active for the thread, so it has to be put back.
+        self.addCleanup(translation.deactivate)
         resp = self.client.get("/api/collaborators/", HTTP_ACCEPT_LANGUAGE="en")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data), 1)
@@ -4945,6 +4953,231 @@ class ConcertDaySheetTests(APITestCase):
         aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.outsider_user)
         self.assertIsNone(aud)
         self.assertIsNone(rec)
+
+    # --- i18n (Etap 5) --------------------------------------------------- #
+
+    def _render_through_generator(
+        self,
+        audience: Audience,
+        recipient: Participation | None,
+        kind: DocumentKind,
+        requester_language: str | None = None,
+    ) -> str:
+        """The HTML the generator actually hands WeasyPrint.
+
+        Rendering through ``_build_call_sheet_context`` (as every test above
+        does) skips the language override, which is the thing under test here —
+        so this goes through the public entry point and intercepts the bytes.
+        """
+        from .views import ProjectViewSet
+
+        parts, crew, program, reh, cast = ProjectViewSet._call_sheet_querysets(self.project)
+        captured: dict[str, str] = {}
+
+        def capture(html_string: str, base_url: str | None = None) -> bytes:
+            captured["html"] = html_string
+            return b"%PDF-"
+
+        with patch(
+            "roster.infrastructure.document_generator._render_pdf", side_effect=capture
+        ):
+            DocumentGenerator.generate_call_sheet_pdf(
+                self.project, parts, crew, program, reh, cast,
+                audience=audience, recipient=recipient,
+                base_url="http://testserver/", kind=kind,
+                requester_language=requester_language,
+            )
+        return captured["html"]
+
+    def test_document_language_is_the_readers_not_the_servers(self) -> None:
+        """The ensemble's own conductor is francophone. Before Etap 5 the sheet
+        read `SCORE_BOOK_LANG`, so his card could only be French by making every
+        singer's card French too."""
+        from .infrastructure.document_generator import resolve_document_language
+
+        self.maestro_user.profile.language = "fr"
+        self.maestro_user.profile.save(update_fields=["language"])
+        self.singer_user.profile.language = "en"
+        self.singer_user.profile.save(update_fields=["language"])
+
+        self.assertEqual(
+            resolve_document_language(self.project, Audience.CONDUCTOR, None), "fr"
+        )
+        self.assertEqual(
+            resolve_document_language(self.project, Audience.CHORISTER, self.singer_part),
+            "en",
+        )
+        # No named reader: the sheet follows whoever asked for the export.
+        self.assertEqual(
+            resolve_document_language(
+                self.project, Audience.PRODUCTION, None, requester_language="fr"
+            ),
+            "fr",
+        )
+        # And falls back to the site language rather than to nothing.
+        self.assertEqual(
+            resolve_document_language(self.project, Audience.PRODUCTION, None),
+            settings.LANGUAGE_CODE,
+        )
+        # A regional tag is still its base language, not a reason to give up.
+        self.assertEqual(
+            resolve_document_language(
+                self.project, Audience.PRODUCTION, None, requester_language="fr-CA"
+            ),
+            "fr",
+        )
+
+    def test_the_maestros_card_is_rendered_in_his_language(self) -> None:
+        """End to end through the generator: the override has to wrap the
+        context build too, since most of the wording is composed in Python."""
+        self.maestro_user.profile.language = "fr"
+        self.maestro_user.profile.save(update_fields=["language"])
+
+        html = self._render_through_generator(
+            Audience.CONDUCTOR, None, DocumentKind.DAY_CARD
+        )
+        self.assertIn('lang="fr"', html)
+        self.assertIn("Feuille du chef", html)
+        self.assertIn("Convocation", html)
+        self.assertIn("Déroulé de la journée", html)
+        # Composed in Python, so it only lands in French if the override wraps
+        # the context build and not merely the template render.
+        self.assertIn("Début du concert", html)
+        self.assertNotIn("Przebieg dnia", html)
+        self.assertNotIn("Zbiórka", html)
+
+    def test_the_singers_card_is_rendered_in_her_language(self) -> None:
+        self.singer_user.profile.language = "fr"
+        self.singer_user.profile.save(update_fields=["language"])
+
+        html = self._render_through_generator(
+            Audience.CHORISTER, self.singer_part, DocumentKind.DAY_CARD
+        )
+        self.assertIn('lang="fr"', html)
+        self.assertIn("Feuille du choriste", html)
+        self.assertIn("Votre rôle", html)
+        self.assertNotIn("Twoja rola dzisiaj", html)
+        # The vocative is a Polish case, not a name: a French sentence takes the
+        # nominative, and the one rule that knows lives in `core.greetings`.
+        self.assertIn("Préparé pour vous", html)
+
+    def test_a_polish_reader_still_gets_the_polish_sheet(self) -> None:
+        """The catalogs carry the wording the sheet printed before Etap 5, so
+        the default render is unchanged rather than newly English."""
+        html = self._render_through_generator(
+            Audience.PRODUCTION, None, DocumentKind.PRODUCTION_REPORT
+        )
+        self.assertIn('lang="pl"', html)
+        for polish in (
+            "Raport produkcji",
+            "Do zamknięcia",
+            "Pokrycie materiałów",
+            "Przebieg dnia",
+            "Obsada i podawanie dźwięku",
+            "Kontakty",
+        ):
+            self.assertIn(polish, html)
+        # A missing catalog entry surfaces as the English msgid on the page.
+        for english in ("Production report", "To close", "Material coverage"):
+            self.assertNotIn(english, html)
+
+    def test_polish_numerals_take_all_three_forms(self) -> None:
+        """Polish inflects a noun after a numeral three ways, and gettext only
+        knows that from the pl catalog: an ngettext whose pl entry is missing
+        falls back to the msgid's own two-form English rule and silently prints
+        "5 utwory". This walks every plural the generator actually calls, so a
+        new one cannot be added without its three forms."""
+        import ast
+        import inspect
+
+        from django.utils.translation import ngettext
+
+        from .infrastructure import document_generator
+
+        source = inspect.getsource(document_generator)
+        pairs: list[tuple[str, str]] = []
+        for node in ast.walk(ast.parse(source)):
+            if not isinstance(node, ast.Call):
+                continue
+            name = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if name != "ngettext" or len(node.args) < 2:
+                continue
+            singular_arg, plural_arg = node.args[0], node.args[1]
+            if not (
+                isinstance(singular_arg, ast.Constant)
+                and isinstance(plural_arg, ast.Constant)
+            ):
+                continue
+            singular, plural = singular_arg.value, plural_arg.value
+            if isinstance(singular, str) and isinstance(plural, str):
+                pairs.append((singular, plural))
+
+        self.assertGreater(len(pairs), 10, "the ngettext scan found almost nothing")
+        with translation.override("pl"):
+            for one, many in pairs:
+                forms = {n: ngettext(one, many, n) for n in (1, 2, 5, 12, 22)}
+                self.assertNotEqual(
+                    forms[1], one,
+                    f"{one!r} falls back to the English msgid at n=1 — no pl entry",
+                )
+                self.assertNotEqual(
+                    forms[5], many,
+                    f"{one!r} falls back to the English msgid at n=5 — no pl entry",
+                )
+                # And the three buckets are the Polish ones, not the English
+                # two: 22 ends in 2 and takes the "few" form, while 12 looks
+                # like it should and does not.
+                self.assertEqual(forms[22], forms[2], f"{one!r}: n=22 is not 'few'")
+                self.assertEqual(forms[12], forms[5], f"{one!r}: n=12 is not 'many'")
+
+    def test_msgids_built_from_a_dict_are_in_the_catalog(self) -> None:
+        """`_LANGUAGE_NAMES` and `_COVERAGE_COLUMNS` reach gettext through a
+        variable, so no source scanner (`makemessages` included) can see them.
+        Nothing but this test stands between them and an English word printed
+        mid-sentence on a Polish sheet."""
+        from django.utils.translation import pgettext
+
+        from .infrastructure.document_generator import (
+            _COVERAGE_COLUMNS,
+            _LANGUAGE_NAMES,
+        )
+
+        # Spelled out rather than derived: "Casting" is a loanword and its
+        # Polish is itself, so "translated differs from the msgid" cannot be the
+        # test. A new column added without its catalog entry fails on the
+        # lookup below, which is the same failure with a clearer message.
+        expected_columns = {
+            "Score": "Nuty",
+            "Tracks": "Tracki",
+            "Recording": "Nagranie",
+            "Casting": "Casting",
+        }
+        with translation.override("pl"):
+            for msgid in _LANGUAGE_NAMES.values():
+                self.assertNotEqual(
+                    pgettext("sung language", msgid), msgid,
+                    f"sung language {msgid!r} has no pl entry",
+                )
+            for _key, msgid in _COVERAGE_COLUMNS:
+                self.assertEqual(
+                    pgettext("coverage column", msgid), expected_columns[msgid],
+                    f"coverage column {msgid!r} has no pl entry",
+                )
+
+    def test_the_sung_language_context_keeps_the_metaline_lower_case(self) -> None:
+        """The panel already translates "Polish" — as a capitalised label. In a
+        piece's metaline that reads as a heading, which is why these msgids
+        carry their own context rather than reusing that entry."""
+        from .infrastructure.document_generator import DocumentGenerator
+
+        with translation.override("pl"):
+            self.assertEqual(
+                DocumentGenerator._format_language("la-pl"), "łacina / polski"
+            )
+        with translation.override("fr"):
+            self.assertEqual(
+                DocumentGenerator._format_language("la-pl"), "latin / polonais"
+            )
 
 
 class DayTimelineContractTests(SimpleTestCase):

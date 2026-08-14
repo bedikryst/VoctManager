@@ -3307,3 +3307,845 @@ msgid "waiting %(count)d day"
 msgid_plural "waiting %(count)d days"
 msgstr[0] "depuis %(count)d jour"
 msgstr[1] "depuis %(count)d jours"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Production report"
+msgstr "Rapport de production"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Singer's card"
+msgstr "Feuille du choriste"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Conductor's card"
+msgstr "Feuille du chef"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Day card · Production"
+msgstr "Feuille du jour · Production"
+
+#: roster/infrastructure/document_generator.py
+msgid "As of %(stamp)s"
+msgstr "État au %(stamp)s"
+
+#: roster/infrastructure/document_generator.py
+msgid "Prepared for you, <strong>%(name)s</strong> · %(voice)s."
+msgstr "Préparé pour vous, <strong>%(name)s</strong> · %(voice)s."
+
+#: roster/infrastructure/document_generator.py
+msgid "Prepared for you, <strong>%(name)s</strong>."
+msgstr "Préparé pour vous, <strong>%(name)s</strong>."
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"On the podium: <strong>%(name)s</strong>. The day and the music in one "
+"place, below."
+msgstr ""
+"Au pupitre : <strong>%(name)s</strong>. Ci-dessous, la journée et la musique"
+" en un seul endroit."
+
+#: roster/infrastructure/document_generator.py
+msgid "The day and the music in one place."
+msgstr "La journée et la musique en un seul endroit."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Date"
+msgstr "Date"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Call time"
+msgstr "Convocation"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Concert start"
+msgstr "Début du concert"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Venue"
+msgstr "Lieu"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Plan ends"
+msgstr "Fin du plan"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "another day"
+msgstr "autre jour"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "To be arranged"
+msgstr "À définir"
+
+#: roster/infrastructure/document_generator.py
+msgid "Venue to be arranged"
+msgstr "Lieu à définir"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Map"
+msgstr "Plan"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Arrival window"
+msgstr "Fenêtre d’arrivée"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(buffer)s between the call and the downbeat"
+msgstr "%(buffer)s entre la convocation et le lever de baguette"
+
+#: roster/infrastructure/document_generator.py
+msgid "led by %(first)s %(last)s"
+msgstr "sous la direction de %(first)s %(last)s"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Check the call time"
+msgstr "Vérifiez la convocation"
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"The call time does not fall before the concert — check the date and hour on "
+"the project."
+msgstr ""
+"La convocation ne précède pas le concert — vérifiez la date et l’heure dans "
+"le projet."
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"The call time is set more than a day before the concert — it was most likely"
+" entered on the wrong date."
+msgstr ""
+"La convocation est fixée plus d’un jour avant le concert — elle a très "
+"probablement été saisie à la mauvaise date."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "To close"
+msgstr "À clôturer"
+
+#: roster/infrastructure/document_generator.py
+msgid "Everything is closed — nothing is waiting on a decision."
+msgstr "Tout est bouclé — rien n’attend de décision."
+
+#: roster/infrastructure/document_generator.py
+msgid "The call time is not set"
+msgstr "La convocation n’est pas fixée"
+
+#: roster/infrastructure/document_generator.py
+msgid "Without it the sheet states the concert hour alone."
+msgstr "Sans elle, la feuille n’indique que l’heure du concert."
+
+#: roster/infrastructure/document_generator.py
+msgid "The call time does not fall before the concert"
+msgstr "La convocation ne précède pas le concert"
+
+#: roster/infrastructure/document_generator.py
+msgid "Check the call date and hour on the project."
+msgstr "Vérifiez la date et l’heure de convocation dans le projet."
+
+#: roster/infrastructure/document_generator.py
+msgid "It was most likely entered on the wrong date."
+msgstr "Elle a très probablement été saisie à la mauvaise date."
+
+#: roster/infrastructure/document_generator.py
+msgid "The call time falls on a different day than the concert"
+msgstr "La convocation tombe un autre jour que le concert"
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"Usually a tour or a night on site — confirm it is not a mistake in the date."
+msgstr ""
+"Il s’agit généralement d’une tournée ou d’une nuit sur place — confirmez que"
+" ce n’est pas une erreur de date."
+
+#: roster/infrastructure/document_generator.py
+msgid "No venue for the event"
+msgstr "Aucun lieu pour l’événement"
+
+#: roster/infrastructure/document_generator.py
+msgid "Neither the address nor the map will reach any sheet."
+msgstr "Ni l’adresse ni le plan n’arriveront sur une feuille."
+
+#: roster/infrastructure/document_generator.py
+msgid "No confirmed cast"
+msgstr "Aucune distribution confirmée"
+
+#: roster/infrastructure/document_generator.py
+msgid "Nobody has confirmed their participation yet."
+msgstr "Personne n’a encore confirmé sa participation."
+
+#: roster/infrastructure/document_generator.py
+msgid "%(names)s — check for a duplicated roster entry."
+msgstr "%(names)s — vérifiez s’il s’agit d’une fiche en double."
+
+#: roster/infrastructure/document_generator.py
+msgid "The programme has not been settled"
+msgstr "Le programme n’a pas été arrêté"
+
+#: roster/infrastructure/document_generator.py
+msgid "The sheet has nothing to list."
+msgstr "La feuille n’a rien à énumérer."
+
+#: roster/infrastructure/document_generator.py
+msgid "No technical crew"
+msgstr "Aucune équipe technique"
+
+#: roster/infrastructure/document_generator.py
+msgid "No collaborator is assigned."
+msgstr "Aucun collaborateur n’est assigné."
+
+#: roster/infrastructure/document_generator.py
+msgid "The run sheet has not been filled in"
+msgstr "Le déroulé de la journée n’a pas été renseigné"
+
+#: roster/infrastructure/document_generator.py
+msgid "Performers will get only the hours from the masthead."
+msgstr "Les interprètes n’auront que les heures de l’en-tête."
+
+#: roster/infrastructure/document_generator.py
+msgid "The dress code has not been settled"
+msgstr "La tenue n’a pas été arrêtée"
+
+#: roster/infrastructure/document_generator.py
+msgid "The day card will ask for confirmation."
+msgstr "La feuille du jour demandera une confirmation."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Material coverage"
+msgstr "Couverture du matériel"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "No."
+msgstr "N°"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Piece"
+msgstr "Pièce"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Score"
+msgstr "Partition"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Tracks"
+msgstr "Pistes"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Casting"
+msgstr "Distribution"
+
+#: roster/infrastructure/document_generator.py
+msgid "The programme has not been settled — there is nothing to cover."
+msgstr "Le programme n’a pas été arrêté — il n’y a rien à couvrir."
+
+#: roster/infrastructure/document_generator.py
+msgid "%(duration)s of programme"
+msgstr "%(duration)s de programme"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(cast)s, %(count)d unanswered"
+msgstr "%(cast)s, %(count)d sans réponse"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(crew)s, %(count)d tentative"
+msgstr "%(crew)s, %(count)d à titre provisoire"
+
+#: roster/infrastructure/document_generator.py
+msgid "no crew"
+msgstr "pas d’équipe technique"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Your part today"
+msgstr "Votre rôle aujourd’hui"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Participation confirmed"
+msgstr "Participation confirmée"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "You give the pitch"
+msgstr "Vous donnez la note"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "you give it"
+msgstr "vous la donnez"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "you give the pitch"
+msgstr "vous donnez la note"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "You sing"
+msgstr "Vous chantez"
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"Your casting has not been written out yet — the running order is in the "
+"programme below."
+msgstr ""
+"Votre distribution n’a pas encore été établie — l’ordre de passage figure "
+"dans le programme ci-dessous."
+
+#: roster/infrastructure/document_generator.py
+msgid "Your section (%(voice)s):"
+msgstr "Votre pupitre (%(voice)s) :"
+
+#: roster/infrastructure/document_generator.py
+msgid "Programme item"
+msgstr "Élément du programme"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "The event and the preparation"
+msgstr "L’événement et la préparation"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Venue type"
+msgstr "Type de lieu"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Address"
+msgstr "Adresse"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Time zone"
+msgstr "Fuseau horaire"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Conducted by"
+msgstr "Direction"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Venue map"
+msgstr "Plan du lieu"
+
+#: roster/infrastructure/document_generator.py
+msgid "the code sits beside the address in the masthead"
+msgstr "le code se trouve à côté de l’adresse dans l’en-tête"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Dress code"
+msgstr "Tenue"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Women"
+msgstr "Femmes"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Men"
+msgstr "Hommes"
+
+#: roster/infrastructure/document_generator.py
+msgid "To be confirmed by management."
+msgstr "À confirmer par la production."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Brief"
+msgstr "Brief"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Material readiness"
+msgstr "État du matériel"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Take with you today"
+msgstr "À emporter aujourd’hui"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Full project score"
+msgstr "Partition complète du projet"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Reference playlist"
+msgstr "Playlist de référence"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Ready"
+msgstr "Prêt"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Missing"
+msgstr "Absent"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Scan"
+msgstr "Scannez"
+
+#: roster/infrastructure/document_generator.py
+msgid "In the app, after signing in — the Materials tab."
+msgstr "Dans l’application, après connexion — onglet Matériel."
+
+#: roster/infrastructure/document_generator.py
+msgid "The complete set of scores for today. Open it in the app or print it."
+msgstr ""
+"Le jeu complet de partitions pour aujourd’hui. Ouvrez-le dans l’application "
+"ou imprimez-le."
+
+#: roster/infrastructure/document_generator.py
+msgid "Spotify — open, no panel sign-in required."
+msgstr "Spotify — ouvert, sans connexion au panneau."
+
+#: roster/infrastructure/document_generator.py
+msgid "The sound and the running order, for one last listen."
+msgstr "Le son et l’ordre du programme, pour une dernière écoute."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "The day, hour by hour"
+msgstr "Déroulé de la journée"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Time"
+msgstr "Heure"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Moment"
+msgstr "Moment"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Details"
+msgstr "Détails"
+
+#: roster/infrastructure/document_generator.py
+msgid ""
+"The detailed run sheet has not been filled in yet — go by the hours in the "
+"masthead."
+msgstr ""
+"Le déroulé détaillé n’a pas encore été renseigné — tenez-vous aux heures de "
+"l’en-tête."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Your rehearsals"
+msgstr "Vos répétitions"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Rehearsal plan"
+msgstr "Plan des répétitions"
+
+#: roster/infrastructure/document_generator.py
+msgid "All rehearsals are mandatory."
+msgstr "Toutes les répétitions sont obligatoires."
+
+#: roster/infrastructure/document_generator.py
+msgid "No mark = a mandatory rehearsal."
+msgstr "Sans marque = répétition obligatoire."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Type"
+msgstr "Type"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Who"
+msgstr "Concerne"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Focus"
+msgstr "Objectif"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Optional"
+msgstr "Facultative"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "To be confirmed"
+msgstr "À confirmer"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "map"
+msgstr "plan"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Whole ensemble"
+msgstr "Tout l’ensemble"
+
+#: roster/infrastructure/document_generator.py
+msgid "Selected artists (%(count)d)"
+msgstr "Artistes sélectionnés (%(count)d)"
+
+#: roster/infrastructure/document_generator.py
+msgid "You have no rehearsals assigned for this concert."
+msgstr "Aucune répétition ne vous est assignée pour ce concert."
+
+#: roster/infrastructure/document_generator.py
+msgid "No rehearsals are defined for this project."
+msgstr "Aucune répétition n’est définie pour ce projet."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Programme"
+msgstr "Programme"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Encore"
+msgstr "Bis"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Composer not filled in"
+msgstr "Compositeur non renseigné"
+
+#: roster/infrastructure/document_generator.py
+msgid "arr. %(arranger)s"
+msgstr "arr. %(arranger)s"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Recordings"
+msgstr "Enregistrements"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "the part, in the app"
+msgstr "la partition, dans l’application"
+
+#: roster/infrastructure/document_generator.py
+msgid "The programme has not been settled — the sheet has nothing to list."
+msgstr "Le programme n’a pas été arrêté — la feuille n’a rien à énumérer."
+
+#: roster/infrastructure/document_generator.py
+msgid "The programme for this concert has not been written out yet."
+msgstr "Le programme de ce concert n’a pas encore été établi."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Casting and who gives the pitch"
+msgstr "Distribution et qui donne la note"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Line"
+msgstr "Pupitre"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Singers"
+msgstr "Interprètes"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Gives the pitch"
+msgstr "Donne la note"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Notes"
+msgstr "Remarques"
+
+#: roster/infrastructure/document_generator.py
+msgid "No cast assigned"
+msgstr "Sans distribution"
+
+#: roster/infrastructure/document_generator.py
+msgid "No micro-casting was written out for this item."
+msgstr "Aucun micro-casting n’a été établi pour cet élément."
+
+#: roster/infrastructure/document_generator.py
+msgid "No micro-casting was written out for any item."
+msgstr "Aucun micro-casting n’a été établi pour aucun élément."
+
+#: roster/infrastructure/document_generator.py
+msgid "No micro-casting was written out — take the lines from the score."
+msgstr ""
+"Aucun micro-casting n’a été établi — menez les pupitres depuis la partition."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Ensemble"
+msgstr "Ensemble"
+
+#: roster/infrastructure/document_generator.py
+msgid "No confirmed artistic cast."
+msgstr "Aucune distribution artistique confirmée."
+
+#: roster/infrastructure/document_generator.py
+msgid "Awaiting confirmation (%(count)d)"
+msgstr "En attente de confirmation (%(count)d)"
+
+#: roster/infrastructure/document_generator.py
+msgid "Declined: %(count)d — outside the active cast."
+msgstr "Refus : %(count)d — hors de la distribution active."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Contacts"
+msgstr "Contacts"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Conductor"
+msgstr "Chef de chœur"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Main contact"
+msgstr "Contact principal"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Tel."
+msgstr "Tél."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "E-mail"
+msgstr "E-mail"
+
+#: roster/infrastructure/document_generator.py
+msgid "For questions and delays, write in the app."
+msgstr "Pour toute question ou tout retard, écrivez dans l’application."
+
+#: roster/infrastructure/document_generator.py
+msgid "No operational contacts are defined."
+msgstr "Aucun contact opérationnel n’est défini."
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Latin"
+msgstr "latin"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Polish"
+msgstr "polonais"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "English"
+msgstr "anglais"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "French"
+msgstr "français"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "German"
+msgstr "allemand"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Italian"
+msgstr "italien"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Spanish"
+msgstr "espagnol"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Russian"
+msgstr "russe"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Ukrainian"
+msgstr "ukrainien"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Czech"
+msgstr "tchèque"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Slovak"
+msgstr "slovaque"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Lithuanian"
+msgstr "lituanien"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Hebrew"
+msgstr "hébreu"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Greek"
+msgstr "grec"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "sung language"
+msgid "Hungarian"
+msgstr "hongrois"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d piece"
+msgid_plural "%(count)d pieces"
+msgstr[0] "%(count)d pièce"
+msgstr[1] "%(count)d pièces"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d confirmed"
+msgid_plural "%(count)d confirmed"
+msgstr[0] "%(count)d confirmé"
+msgstr[1] "%(count)d confirmés"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d confirmed in the cast"
+msgid_plural "%(count)d confirmed in the cast"
+msgstr[0] "%(count)d confirmé dans la distribution"
+msgstr[1] "%(count)d confirmés dans la distribution"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d crew member"
+msgid_plural "%(count)d crew members"
+msgstr[0] "%(count)d technicien"
+msgstr[1] "%(count)d techniciens"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d day earlier"
+msgid_plural "%(count)d days earlier"
+msgstr[0] "%(count)d jour plus tôt"
+msgstr[1] "%(count)d jours plus tôt"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d day later"
+msgid_plural "%(count)d days later"
+msgstr[0] "%(count)d jour plus tard"
+msgstr[1] "%(count)d jours plus tard"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d invitation with no answer"
+msgid_plural "%(count)d invitations with no answer"
+msgstr[0] "%(count)d invitation sans réponse"
+msgstr[1] "%(count)d invitations sans réponse"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d name appears in the cast more than once"
+msgid_plural "%(count)d names appear in the cast more than once"
+msgstr[0] "%(count)d nom apparaît plus d’une fois dans la distribution"
+msgstr[1] "%(count)d noms apparaissent plus d’une fois dans la distribution"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d piece without a score"
+msgid_plural "%(count)d pieces without a score"
+msgstr[0] "%(count)d pièce sans partition"
+msgstr[1] "%(count)d pièces sans partition"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d piece without section tracks"
+msgid_plural "%(count)d pieces without section tracks"
+msgstr[0] "%(count)d pièce sans pistes de pupitre"
+msgstr[1] "%(count)d pièces sans pistes de pupitre"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d piece without casting"
+msgid_plural "%(count)d pieces without casting"
+msgstr[0] "%(count)d pièce sans distribution"
+msgstr[1] "%(count)d pièces sans distribution"
+
+#: roster/infrastructure/document_generator.py
+msgid "%(count)d rehearsal has already taken place."
+msgid_plural "%(count)d rehearsals have already taken place."
+msgstr[0] "%(count)d répétition a déjà eu lieu."
+msgstr[1] "%(count)d répétitions ont déjà eu lieu."
+
+#: roster/infrastructure/document_generator.py
+msgid "The %(count)d rehearsal is behind you — only the concert is left."
+msgid_plural ""
+"All %(count)d rehearsals are behind you — only the concert is left."
+msgstr[0] "La répétition a déjà eu lieu — il ne reste que le concert."
+msgstr[1] ""
+"Les %(count)d répétitions ont déjà eu lieu — il ne reste que le concert."
+
+#: roster/infrastructure/document_generator.py
+msgid "%(name)s (%(count)d entry)"
+msgid_plural "%(name)s (%(count)d entries)"
+msgstr[0] "%(name)s (%(count)d entrée)"
+msgstr[1] "%(name)s (%(count)d entrées)"
+
+#: roster/infrastructure/document_generator.py
+msgid "Call time set %(count)d day before the concert"
+msgid_plural "Call time set %(count)d days before the concert"
+msgstr[0] "Convocation fixée %(count)d jour avant le concert"
+msgstr[1] "Convocation fixée %(count)d jours avant le concert"
+
+#: roster/infrastructure/document_generator.py
+msgid "Out of %(count)d programme item"
+msgid_plural "Out of %(count)d programme items"
+msgstr[0] "Sur %(count)d élément du programme"
+msgstr[1] "Sur %(count)d éléments du programme"
+
+#: roster/infrastructure/document_generator.py
+msgid "section of %(count)d singer"
+msgid_plural "section of %(count)d singers"
+msgstr[0] "pupitre de %(count)d chanteur"
+msgstr[1] "pupitre de %(count)d chanteurs"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "coverage column"
+msgid "Score"
+msgstr "Partition"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "coverage column"
+msgid "Tracks"
+msgstr "Pistes"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "coverage column"
+msgid "Recording"
+msgstr "Écoute"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "coverage column"
+msgid "Casting"
+msgstr "Distrib."

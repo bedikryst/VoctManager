@@ -17,6 +17,11 @@ identically on the Windows dev host and the Linux runtime image — and so a
 document made of labels, times and tables is set in the face that draws them.
 The rules it follows are the ``Print artifacts`` canon in
 ``.ai/04_design_system.md``, shared with the contract template.
+
+Its wording is gettext'd and resolved from the *reader*, not from the server or
+from the request: see ``resolve_document_language``. Most of it is composed here
+rather than in the template, because a numeral governs the noun beside it and a
+template can only concatenate the two.
 """
 
 from __future__ import annotations
@@ -30,10 +35,13 @@ from urllib.parse import quote_plus, urljoin
 from django.conf import settings
 from django.db.models import QuerySet
 from django.template.loader import render_to_string
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext as _
+from django.utils.translation import ngettext, pgettext
 
 from core.constants import VoiceLine
+from core.greetings import apply_vocative_rule
 from roster.domain.day_timeline import (
     CallWindow,
     CallWindowProblem,
@@ -67,22 +75,27 @@ _VOICE_LINE_ORDER = {value: idx for idx, value in enumerate(VoiceLine.values)}
 # Language codes carried by `Piece.language` are free text ('la', 'la-pl'), so
 # this only softens what it recognises — an unknown token passes through
 # untouched rather than being guessed at.
+#
+# The values are msgids translated under the ``sung language`` context, not
+# display strings: they print inside a piece's metaline, where Polish and French
+# both want lower case, while the panel's own language names are capitalised
+# labels. The context is what keeps the two apart in one catalog.
 _LANGUAGE_NAMES: dict[str, str] = {
-    'la': 'łacina',
-    'pl': 'polski',
-    'en': 'angielski',
-    'fr': 'francuski',
-    'de': 'niemiecki',
-    'it': 'włoski',
-    'es': 'hiszpański',
-    'ru': 'rosyjski',
-    'uk': 'ukraiński',
-    'cs': 'czeski',
-    'sk': 'słowacki',
-    'lt': 'litewski',
-    'he': 'hebrajski',
-    'el': 'grecki',
-    'hu': 'węgierski',
+    'la': 'Latin',
+    'pl': 'Polish',
+    'en': 'English',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'es': 'Spanish',
+    'ru': 'Russian',
+    'uk': 'Ukrainian',
+    'cs': 'Czech',
+    'sk': 'Slovak',
+    'lt': 'Lithuanian',
+    'he': 'Hebrew',
+    'el': 'Greek',
+    'hu': 'Hungarian',
 }
 # Reference links are a hyperlink strip on a printed page, not a discography.
 _MAX_REFERENCE_LINKS = 2
@@ -95,10 +108,16 @@ _QR_ERROR_LEVEL = 'm'
 # The materials a report tracks per piece, in the order the grid prints them.
 # Each column is a yes/no over the SAME denominator (the programme), which is
 # what makes the grid a grid rather than four counters standing in a row.
+#
+# The labels are msgids under their own ``coverage column`` context, and that is
+# not decoration: these four heads share one 56pt cell each, so a translator has
+# to be free to abbreviate here without abbreviating the same word where it has
+# room. French proved the point — "Enregistrement" and "Distribution" ran into
+# each other under the marks they label.
 _COVERAGE_COLUMNS: tuple[tuple[str, str], ...] = (
-    ('sheet_music_url', 'Nuty'),
-    ('track_count', 'Tracki'),
-    ('reference_links', 'Nagranie'),
+    ('sheet_music_url', 'Score'),
+    ('track_count', 'Tracks'),
+    ('reference_links', 'Recording'),
     ('casting_count', 'Casting'),
 )
 # Printed on a Polish sheet for a Polish ensemble, the country is the one part
@@ -118,9 +137,11 @@ _VOICE_TYPE_ORDER: dict[str, int] = {
 }
 # The day's two fixed points, named for the printed sheet. Placing them is the
 # domain's job (``day_timeline``); only the wording belongs to the document.
+# Msgids under the ``call sheet`` context — the same two the masthead band uses,
+# so the timeline below it can never call them something else.
 _ANCHOR_LABELS: dict[TimelineEntryKind, str] = {
-    TimelineEntryKind.CALL: 'Zbiórka',
-    TimelineEntryKind.CONCERT: 'Początek koncertu',
+    TimelineEntryKind.CALL: 'Call time',
+    TimelineEntryKind.CONCERT: 'Concert start',
 }
 
 
@@ -233,27 +254,65 @@ def resolve_document_kind(kind: DocumentKind, audience: Audience) -> DocumentKin
     return kind
 
 
-def _count_label(count: int, one: str, few: str, many: str) -> str:
-    """Polish noun after a numeral: 1 takes the singular, 2-4 the "few" form,
-    everything else the genitive plural — with the 12-14 exception, which looks
-    like a "few" ending but is not."""
-    tens = count % 100
-    units = count % 10
-    if count == 1:
-        return one
-    if 2 <= units <= 4 and not 12 <= tens <= 14:
-        return few
-    return many
-
-
 def _ensemble_name() -> str:
     """Resident-ensemble name for the document chrome, from settings (rebrandable)."""
     return getattr(settings, "SCORE_BOOK_ENSEMBLE_NAME", "VoctEnsemble")
 
 
-def _doc_lang() -> str:
-    """Document language for print hyphenation, from settings."""
-    return getattr(settings, "SCORE_BOOK_LANG", "pl")
+def _supported_language(code: str | None) -> str | None:
+    """``code`` reduced to a language this backend actually has a catalog for,
+    or ``None``. A regional tag falls back to its base language rather than to
+    the server default: ``fr-CA`` is still French."""
+    if not code:
+        return None
+    available = {language.lower() for language, _label in settings.LANGUAGES}
+    normalized = code.replace('_', '-').lower()
+    if normalized in available:
+        return normalized
+    base = normalized.split('-')[0]
+    return base if base in available else None
+
+
+def _reader_language(user: Any) -> str | None:
+    """The stored preference of one person, when there is one. ``profile`` is a
+    reverse one-to-one, so ``getattr`` with a default is the access that does
+    not raise on an account without one."""
+    if user is None:
+        return None
+    profile = getattr(user, 'profile', None)
+    return _supported_language(getattr(profile, 'language', None))
+
+
+def resolve_document_language(
+    project: Project,
+    audience: Audience,
+    recipient: Participation | None,
+    requester_language: str | None = None,
+) -> str:
+    """The language the sheet is set in — its reader's, never the server's.
+
+    A printed document has exactly one reader, and for the two personal
+    audiences we know who: the singer holding their day card, and the maestro
+    holding his. Both carry a stored language preference, and the ensemble's own
+    conductor is francophone — resolved from a global setting (this used to read
+    ``SCORE_BOOK_LANG``) he is handed a Polish sheet whatever he asked for, and
+    the setting cannot be changed for him without changing it for the choir.
+
+    Only the production sheets have no named recipient. There the reader is
+    whoever asked for the export, which the caller passes in: the request's own
+    language is the wrong answer, since it comes from an ``Accept-Language``
+    header the panel sets from the UI, not from who the document is for.
+    """
+    reader: Any = None
+    if recipient is not None:
+        reader = getattr(recipient.artist, 'user', None)
+    elif audience == Audience.CONDUCTOR and project.conductor is not None:
+        reader = getattr(project.conductor, 'user', None)
+    return (
+        _reader_language(reader)
+        or _supported_language(requester_language)
+        or settings.LANGUAGE_CODE
+    )
 
 
 def _brand_font_context() -> dict[str, str]:
@@ -322,30 +381,55 @@ class DocumentGenerator:
         recipient: Participation | None = None,
         base_url: str | None = None,
         kind: DocumentKind = DocumentKind.PRODUCTION_REPORT,
+        requester_language: str | None = None,
     ) -> bytes:
         """Compiles the concert-day sheet PDF for the given kind and audience.
 
         ``recipient`` personalizes the ``CHORISTER`` sheet (their voice, their
         casting, their pitch duties). It is ignored for the other audiences.
+
+        ``requester_language`` is the language of whoever asked for the export,
+        used only where the document has no identifiable reader of its own — the
+        report and the stage manager's card. Everything else resolves from the
+        recipient (see :func:`resolve_document_language`).
+
+        The override wraps the context build as well as the render: most of this
+        document's wording is composed in Python (a numeral governs the noun
+        beside it, so the two cannot be assembled in the template), and an eager
+        ``gettext`` outside the override would resolve against the request's
+        language instead of the reader's.
         """
-        context = DocumentGenerator._build_call_sheet_context(
-            project=project,
-            participations=participations,
-            crew=crew,
-            program=program,
-            rehearsals=rehearsals,
-            castings=castings,
-            audience=audience,
-            recipient=recipient,
-            base_url=base_url,
-            kind=kind,
+        language = resolve_document_language(
+            project, audience, recipient, requester_language
         )
-        html_string = render_to_string('projects/call_sheet_pdf.html', context)
+        with translation.override(language):
+            context = DocumentGenerator._build_call_sheet_context(
+                project=project,
+                participations=participations,
+                crew=crew,
+                program=program,
+                rehearsals=rehearsals,
+                castings=castings,
+                audience=audience,
+                recipient=recipient,
+                base_url=base_url,
+                kind=kind,
+                language=language,
+            )
+            html_string = render_to_string('projects/call_sheet_pdf.html', context)
         return _render_pdf(html_string, base_url=base_url)
 
     @staticmethod
     def generate_participation_contract_pdf(participation: Participation) -> bytes:
-        """Compiles a dynamic legal PDF artifact for artist participation."""
+        """Compiles a dynamic legal PDF artifact for artist participation.
+
+        Deliberately NOT gettext'd, unlike the call sheet. `contract_pdf.html`
+        is Polish legal text under Polish law, and its wording is settled with
+        the foundation, not with a translator; a placeholder resolved through
+        the active language would also follow the request's `Accept-Language`
+        and drop one French word into an otherwise Polish contract. Translating
+        this document is a legal decision, and it starts with the clauses.
+        """
         artist = participation.artist
         project = participation.project
 
@@ -385,7 +469,12 @@ class DocumentGenerator:
 
     @staticmethod
     def generate_zaiks_csv_iterator(program_items: QuerySet[ProgramItem]) -> Iterator[str]:
-        """Generates a streaming CSV payload for ZAiKS copyright reporting."""
+        """Generates a streaming CSV payload for ZAiKS copyright reporting.
+
+        The Polish here is a filing format, not copy: ZAiKS is the Polish
+        collecting society and reads these column heads. Translating them would
+        produce a report it rejects, so this file is Polish whoever exports it.
+        """
         yield 'Lp.;Tytuł Utworu;Kompozytor;Aranżer;Czas trwania;Uwagi (BIS)\n'
 
         for idx, item in enumerate(program_items, 1):
@@ -405,7 +494,12 @@ class DocumentGenerator:
 
     @staticmethod
     def generate_dtp_export_text(project: Project, participations: QuerySet[Participation]) -> str:
-        """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP)."""
+        """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP).
+
+        The section names are the copy that will be typeset into a Polish
+        concert programme, so they are the programme's language rather than the
+        exporting manager's — the same reason the ZAiKS export stays Polish.
+        """
         groups: dict[str, list[Artist]] = {'Soprany': [], 'Alty': [], 'Tenory': [], 'Basy': [], 'Inne': []}
 
         for p in participations:
@@ -441,7 +535,11 @@ class DocumentGenerator:
         recipient: Participation | None,
         base_url: str | None,
         kind: DocumentKind = DocumentKind.PRODUCTION_REPORT,
+        language: str | None = None,
     ) -> dict[str, Any]:
+        # The caller passes the language it resolved and overrode with; calling
+        # this builder directly (the tests do) simply follows what is active.
+        doc_language = language or translation.get_language() or settings.LANGUAGE_CODE
         participation_list = list(participations)
         crew_list = list(crew)
         program_items = list(program)
@@ -535,26 +633,39 @@ class DocumentGenerator:
         event_facts = []
         if venue and venue.category:
             event_facts.append(
-                {'label': 'Typ lokalizacji', 'text': venue.get_category_display()}
+                {
+                    'label': pgettext('call sheet', 'Venue type'),
+                    'text': venue.get_category_display(),
+                }
             )
         # The day card prints the address in the masthead, directly under the
         # anchors — the one line a lost singer needs is not worth a second row
         # inside a card further down the page.
         if is_report:
-            event_facts.append({'label': 'Adres', 'text': venue_address})
+            event_facts.append(
+                {
+                    'label': pgettext('call sheet', 'Address'),
+                    'text': venue_address or pgettext('call sheet', 'To be arranged'),
+                }
+            )
         # A timezone is worth a line only when it is not the one the reader
         # assumes; the IANA identifier itself is machine vocabulary either way.
         if project_timezone != DEFAULT_EVENT_TIMEZONE:
             event_facts.append(
                 {
-                    'label': 'Strefa czasowa',
+                    'label': pgettext('call sheet', 'Time zone'),
                     'text': DocumentGenerator._format_timezone(
                         project_timezone, event_datetime_local
                     ),
                 }
             )
         if project.conductor:
-            event_facts.append({'label': 'Prowadzenie', 'text': str(project.conductor)})
+            event_facts.append(
+                {
+                    'label': pgettext('call sheet', 'Conducted by'),
+                    'text': str(project.conductor),
+                }
+            )
 
         # The day card lists what exists; the report lists both rows, because
         # there an absence is a finding. Per-piece readiness is the coverage
@@ -565,11 +676,26 @@ class DocumentGenerator:
 
         dress_code_entries = []
         if project.dress_code_female:
-            dress_code_entries.append({'label': 'Kobiety', 'value': project.dress_code_female})
+            dress_code_entries.append(
+                {
+                    'label': pgettext('call sheet', 'Women'),
+                    'value': project.dress_code_female,
+                }
+            )
         if project.dress_code_male:
-            dress_code_entries.append({'label': 'Mężczyźni', 'value': project.dress_code_male})
+            dress_code_entries.append(
+                {
+                    'label': pgettext('call sheet', 'Men'),
+                    'value': project.dress_code_male,
+                }
+            )
         if not dress_code_entries:
-            dress_code_entries.append({'label': 'Dress code', 'value': 'Do potwierdzenia przez management.'})
+            dress_code_entries.append(
+                {
+                    'label': pgettext('call sheet', 'Dress code'),
+                    'value': _('To be confirmed by management.'),
+                }
+            )
 
         # Contacts carry personal phone/email — never handed to the whole choir.
         contact_directory = DocumentGenerator._build_contact_directory(
@@ -602,15 +728,24 @@ class DocumentGenerator:
         run_sheet_points = normalize_run_sheet(project.run_sheet)
         timeline = build_day_timeline(run_sheet_points, call_window)
 
-        greeting = None
+        # Polish is the only supported language with a distinct vocative, and
+        # the rule that knows it lives in one place. Printing the stored form
+        # unconditionally put "Préparé pour vous, Janie" on a French sheet — a
+        # Polish case ending inside a French sentence.
+        addressee = None
         if recipient is not None:
-            artist = recipient.artist
-            greeting = artist.first_name_vocative.strip() or artist.first_name
+            addressee = recipient.artist
         elif audience == Audience.CONDUCTOR and project.conductor:
-            greeting = (
-                project.conductor.first_name_vocative.strip()
-                or project.conductor.first_name
+            addressee = project.conductor
+        greeting = (
+            apply_vocative_rule(
+                vocative=addressee.first_name_vocative.strip(),
+                first_name=addressee.first_name,
+                language=doc_language,
             )
+            if addressee is not None
+            else None
+        )
 
         return {
             'project': project,
@@ -622,7 +757,10 @@ class DocumentGenerator:
             'is_production': audience == Audience.PRODUCTION,
             'is_report': is_report,
             'ensemble_name': _ensemble_name(),
-            'doc_lang': _doc_lang(),
+            # Drives `<html lang>`, which is what WeasyPrint hyphenates by. It
+            # is the resolved reader's language, so the hyphenation dictionary
+            # can never disagree with the words on the page.
+            'doc_lang': doc_language,
             # The brand pair, not the score book's face: this document is
             # labels, times, tables and counters, and one serif at one width
             # made its eyebrow rows read as texture rather than as structure.
@@ -677,6 +815,27 @@ class DocumentGenerator:
             'has_run_sheet': bool(run_sheet_points),
             'rehearsal_items': rehearsal_items,
             'rehearsals_done': rehearsals_done,
+            # Composed here rather than in the template because a numeral
+            # governs the noun beside it: Polish needs three forms of "próba"
+            # and the template can only concatenate a number to a fixed word.
+            'rehearsals_done_note': (
+                ngettext(
+                    '%(count)d rehearsal has already taken place.',
+                    '%(count)d rehearsals have already taken place.',
+                    rehearsals_done,
+                ) % {'count': rehearsals_done}
+                if rehearsals_done and not is_report
+                else ''
+            ),
+            'rehearsals_all_done_note': (
+                ngettext(
+                    'The %(count)d rehearsal is behind you — only the concert is left.',
+                    'All %(count)d rehearsals are behind you — only the concert is left.',
+                    rehearsals_done,
+                ) % {'count': rehearsals_done}
+                if rehearsals_done
+                else ''
+            ),
             'all_rehearsals_mandatory': all_rehearsals_mandatory,
             'program_cards': program_cards,
             'casting_sections': [
@@ -690,6 +849,20 @@ class DocumentGenerator:
             # really are different people, the plain repetition is the truth.
             'ensemble_sections': DocumentGenerator._group_participations_by_voice(
                 confirmed_participations, annotate_repeats=is_report
+            ),
+            'ensemble_confirmed_label': (
+                ngettext('%(count)d confirmed', '%(count)d confirmed', len(confirmed_participations))
+                % {'count': len(confirmed_participations)}
+                if confirmed_participations
+                else ''
+            ),
+            'pending_heading': _('Awaiting confirmation (%(count)d)')
+            % {'count': len(pending_participations)},
+            'declined_note': (
+                _('Declined: %(count)d — outside the active cast.')
+                % {'count': declined_count}
+                if is_report and declined_count
+                else ''
             ),
             # Who has not answered yet is the invitation queue: a report fact.
             'pending_sections': (
@@ -765,7 +938,7 @@ class DocumentGenerator:
         assignments = [
             {
                 'order': order_by_piece.get(casting.piece_id),
-                'title': title_by_piece.get(casting.piece_id, 'Pozycja programu'),
+                'title': title_by_piece.get(casting.piece_id, _('Programme item')),
                 'voice_line': casting.get_voice_line_display(),
                 'gives_pitch': casting.gives_pitch,
                 'notes': casting.notes.strip() if casting.notes else '',
@@ -793,7 +966,11 @@ class DocumentGenerator:
             'gives_pitch_anywhere': any(entry['gives_pitch'] for entry in assignments),
             'section_mates': section_mates,
             'section_size': section_size,
-            'section_size_label': _count_label(section_size, 'osoba', 'osoby', 'osób'),
+            'section_label': ngettext(
+                'section of %(count)d singer',
+                'section of %(count)d singers',
+                section_size,
+            ) % {'count': section_size},
         }
 
     @staticmethod
@@ -824,22 +1001,26 @@ class DocumentGenerator:
             if project.score_pdf
             else ''
         )
+        ready = pgettext('call sheet', 'Ready')
+        missing = pgettext('call sheet', 'Missing')
         assets = [
             {
-                'label': 'Pełny score projektu',
-                'status': 'Gotowe' if project.score_pdf else 'Brak',
+                'label': pgettext('call sheet', 'Full project score'),
+                'status': ready if project.score_pdf else missing,
                 'url': score_url,
-                'access': 'W aplikacji, po zalogowaniu — zakładka Materiały.',
+                'access': _('In the app, after signing in — the Materials tab.'),
                 'qr': '',
-                'note': 'Kompletny pakiet nut na dziś. Otwórz w aplikacji lub wydrukuj.',
+                'note': _(
+                    'The complete set of scores for today. Open it in the app or print it.'
+                ),
             },
             {
-                'label': 'Playlista referencyjna',
-                'status': 'Gotowe' if project.spotify_playlist_url else 'Brak',
+                'label': pgettext('call sheet', 'Reference playlist'),
+                'status': ready if project.spotify_playlist_url else missing,
                 'url': project.spotify_playlist_url,
-                'access': 'Spotify — otwarte, bez logowania do panelu.',
+                'access': _('Spotify — open, no panel sign-in required.'),
                 'qr': _qr_data_uri(project.spotify_playlist_url),
-                'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
+                'note': _('The sound and the running order, for one last listen.'),
             },
         ]
         if is_report:
@@ -861,18 +1042,27 @@ class DocumentGenerator:
             {
                 'order': card['order'],
                 'title': card['title'],
-                'cells': [bool(card[key]) for key, _ in _COVERAGE_COLUMNS],
+                'cells': [bool(card[key]) for key, _label in _COVERAGE_COLUMNS],
             }
             for card in program_cards
         ]
         return {
-            'labels': [label for _, label in _COVERAGE_COLUMNS],
+            'labels': [
+                pgettext('coverage column', label) for _key, label in _COVERAGE_COLUMNS
+            ],
             'rows': rows,
             'totals': [
                 sum(1 for row in rows if row['cells'][index])
                 for index in range(len(_COVERAGE_COLUMNS))
             ],
             'total': len(rows),
+            # The summary row names its own denominator, so no column can be
+            # read as a share of a total it never had.
+            'total_label': ngettext(
+                'Out of %(count)d programme item',
+                'Out of %(count)d programme items',
+                len(rows),
+            ) % {'count': len(rows)},
         }
 
     @staticmethod
@@ -894,25 +1084,42 @@ class DocumentGenerator:
         """
         pieces = len(program_cards)
         parts = [
-            f'{pieces} {_count_label(pieces, "utwór", "utwory", "utworów")}',
+            ngettext('%(count)d piece', '%(count)d pieces', pieces) % {'count': pieces},
         ]
         duration = DocumentGenerator._format_duration(total_program_duration_seconds)
         if duration:
-            parts.append(f'{duration} programu')
-        cast = f'{confirmed} {_count_label(confirmed, "potwierdzony", "potwierdzonych", "potwierdzonych")} w obsadzie'
+            parts.append(_('%(duration)s of programme') % {'duration': duration})
+        cast = ngettext(
+            '%(count)d confirmed in the cast',
+            '%(count)d confirmed in the cast',
+            confirmed,
+        ) % {'count': confirmed}
         if pending:
-            parts.append(f'{cast}, {pending} bez odpowiedzi')
-        else:
-            parts.append(cast)
-        parts.append(f'{rehearsals} {_count_label(rehearsals, "próba", "próby", "prób")}')
-        crew_total = crew_confirmed + crew_tentative
-        if crew_total:
-            crew = f'{crew_confirmed} {_count_label(crew_confirmed, "osoba", "osoby", "osób")} ekipy'
             parts.append(
-                f'{crew}, {crew_tentative} wstępnie' if crew_tentative else crew
+                _('%(cast)s, %(count)d unanswered')
+                % {'cast': cast, 'count': pending}
             )
         else:
-            parts.append('brak ekipy')
+            parts.append(cast)
+        parts.append(
+            ngettext('%(count)d rehearsal', '%(count)d rehearsals', rehearsals)
+            % {'count': rehearsals}
+        )
+        crew_total = crew_confirmed + crew_tentative
+        if crew_total:
+            crew = ngettext(
+                '%(count)d crew member',
+                '%(count)d crew members',
+                crew_confirmed,
+            ) % {'count': crew_confirmed}
+            parts.append(
+                _('%(crew)s, %(count)d tentative')
+                % {'crew': crew, 'count': crew_tentative}
+                if crew_tentative
+                else crew
+            )
+        else:
+            parts.append(_('no crew'))
         return ' · '.join(parts)
 
     @staticmethod
@@ -930,9 +1137,9 @@ class DocumentGenerator:
             return [
                 {
                     'name': f'{project.conductor.first_name} {project.conductor.last_name}',
-                    'role': 'Prowadzenie',
+                    'role': pgettext('call sheet', 'Conducted by'),
                     'organization': '',
-                    'status': 'Za pytania i spóźnienia pisz w aplikacji.',
+                    'status': _('For questions and delays, write in the app.'),
                     'phone': '',
                     'email': '',
                 }
@@ -943,9 +1150,9 @@ class DocumentGenerator:
             directory.append(
                 {
                     'name': f'{project.conductor.first_name} {project.conductor.last_name}',
-                    'role': 'Dyrygent',
+                    'role': pgettext('call sheet', 'Conductor'),
                     'organization': '',
-                    'status': 'Kontakt główny',
+                    'status': pgettext('call sheet', 'Main contact'),
                     'phone': project.conductor.phone_number,
                     'email': project.conductor.email,
                 }
@@ -1048,9 +1255,9 @@ class DocumentGenerator:
         material_badges = []
         if is_report:
             if tracks:
-                material_badges.append('Tracki')
+                material_badges.append(pgettext('call sheet', 'Tracks'))
             if piece_castings:
-                material_badges.append('Casting')
+                material_badges.append(pgettext('call sheet', 'Casting'))
 
         voice_requirements_summary = ', '.join(
             f'{requirement.quantity}x {requirement.get_voice_line_display()}'
@@ -1141,7 +1348,7 @@ class DocumentGenerator:
             rows.append(
                 {
                     'voice_line': voice_line,
-                    'singers': ', '.join(singers) if singers else 'Bez obsady',
+                    'singers': ', '.join(singers) if singers else _('No cast assigned'),
                     'pitch_team': ', '.join(pitch_team),
                     'notes': '; '.join(dict.fromkeys(notes)),
                 }
@@ -1172,9 +1379,9 @@ class DocumentGenerator:
         invited_ids = {participation.id for participation in invited_participations}
         is_whole_ensemble = not invited_participations
         scope_label = (
-            f'Wybrani artyści ({len(invited_participations)})'
+            _('Selected artists (%(count)d)') % {'count': len(invited_participations)}
             if invited_participations
-            else 'Cały zespół'
+            else pgettext('call sheet', 'Whole ensemble')
         )
         # A whole-ensemble call is for everyone; a targeted one only for those on
         # the list. Absent a recipient (conductor / production sheets) we don't filter.
@@ -1195,10 +1402,12 @@ class DocumentGenerator:
             'is_past': rehearsal.date_time < now,
             'scope_label': scope_label,
             'is_for_me': is_for_me,
-            'location_name': location.name if location else 'Do ustalenia',
+            'location_name': (
+                location.name if location else pgettext('call sheet', 'To be arranged')
+            ),
             'location_address': DocumentGenerator._format_address(
                 location.formatted_address if location else ''
-            ),
+            ) or pgettext('call sheet', 'To be arranged'),
             'map_url': DocumentGenerator._build_map_url(location),
         }
 
@@ -1269,20 +1478,23 @@ class DocumentGenerator:
 
         if call_window.problem is CallWindowProblem.MISSING:
             add(
-                'Zbiórka nie jest ustawiona',
-                'Bez niej arkusz podaje samą godzinę koncertu.',
+                _('The call time is not set'),
+                _('Without it the sheet states the concert hour alone.'),
             )
         elif call_window.problem is CallWindowProblem.NOT_BEFORE:
             add(
-                'Zbiórka nie wypada przed koncertem',
-                'Sprawdź datę i godzinę zbiórki w projekcie.',
+                _('The call time does not fall before the concert'),
+                _('Check the call date and hour on the project.'),
             )
         elif call_window.problem is CallWindowProblem.IMPLAUSIBLE:
             days = (call_window.buffer_minutes or 0) // (24 * 60)
             add(
-                f'Zbiórka ustawiona {days} {_count_label(days, "dzień", "dni", "dni")} '
-                'przed koncertem',
-                'Najprawdopodobniej wpisano ją na złą datę.',
+                ngettext(
+                    'Call time set %(count)d day before the concert',
+                    'Call time set %(count)d days before the concert',
+                    days,
+                ) % {'count': days},
+                _('It was most likely entered on the wrong date.'),
             )
         elif call_window.crosses_day:
             # Inside the plausible window a different calendar day is legitimate
@@ -1290,13 +1502,18 @@ class DocumentGenerator:
             # an off-by-one date looks like from below the threshold. The day
             # card simply prints the date; the report asks someone to confirm it.
             add(
-                'Zbiórka wypada w innym dniu niż koncert',
-                'Zwykle to trasa lub nocleg na miejscu — potwierdź, że nie jest '
-                'to pomyłka w dacie.',
+                _('The call time falls on a different day than the concert'),
+                _(
+                    'Usually a tour or a night on site — confirm it is not a '
+                    'mistake in the date.'
+                ),
             )
 
         if venue is None:
-            add('Brak miejsca wydarzenia', 'Adres i mapa nie trafią na żaden arkusz.')
+            add(
+                _('No venue for the event'),
+                _('Neither the address nor the map will reach any sheet.'),
+            )
 
         if pending_participations:
             count = len(pending_participations)
@@ -1312,15 +1529,21 @@ class DocumentGenerator:
                     f'{participation.artist.first_name} {participation.artist.last_name}'
                 )
             add(
-                f'{count} {_count_label(count, "zaproszenie", "zaproszenia", "zaproszeń")} '
-                'bez odpowiedzi',
+                ngettext(
+                    '%(count)d invitation with no answer',
+                    '%(count)d invitations with no answer',
+                    count,
+                ) % {'count': count},
                 ' · '.join(
                     f'{voice}: {", ".join(names)}' for voice, names in by_voice.items()
                 ),
             )
 
         if not confirmed_participations:
-            add('Brak potwierdzonej obsady', 'Nikt jeszcze nie potwierdził udziału.')
+            add(
+                _('No confirmed cast'),
+                _('Nobody has confirmed their participation yet.'),
+            )
 
         # Two roster rows under one name are two Artist records for (almost
         # always) one human — artist uniqueness is on e-mail alone, so it only
@@ -1334,43 +1557,79 @@ class DocumentGenerator:
         collisions = sorted(name for name, count in repeated.items() if count > 1)
         if collisions:
             add(
-                f'{len(collisions)} '
-                f'{_count_label(len(collisions), "nazwisko występuje", "nazwiska występują", "nazwisk występuje")} '
-                'w obsadzie więcej niż raz',
-                ' · '.join(collisions) + ' — sprawdź, czy to nie zdublowana kartoteka.',
+                ngettext(
+                    '%(count)d name appears in the cast more than once',
+                    '%(count)d names appear in the cast more than once',
+                    len(collisions),
+                ) % {'count': len(collisions)},
+                _('%(names)s — check for a duplicated roster entry.')
+                % {'names': ' · '.join(collisions)},
             )
 
         if not program_cards:
-            add('Program nie został ustalony', 'Arkusz nie ma czego wypisać.')
+            add(
+                _('The programme has not been settled'),
+                _('The sheet has nothing to list.'),
+            )
         else:
-            for key, singular, few, many in (
-                ('sheet_music_url', 'utwór bez nut', 'utwory bez nut', 'utworów bez nut'),
-                ('track_count', 'utwór bez tracków sekcyjnych',
-                 'utwory bez tracków sekcyjnych', 'utworów bez tracków sekcyjnych'),
-                ('casting_count', 'utwór bez rozpisanego castingu',
-                 'utwory bez rozpisanego castingu', 'utworów bez rozpisanego castingu'),
+            # One ngettext per gap, each spelled out at its own call site rather
+            # than parameterised over a table of endings: the numeral governs
+            # the noun (Polish needs three forms of "utwór"), and a catalog can
+            # only carry forms for msgids that are written down where a scanner
+            # — or the next reader — can see them.
+            for key, phrase in (
+                (
+                    'sheet_music_url',
+                    lambda count: ngettext(
+                        '%(count)d piece without a score',
+                        '%(count)d pieces without a score',
+                        count,
+                    ),
+                ),
+                (
+                    'track_count',
+                    lambda count: ngettext(
+                        '%(count)d piece without section tracks',
+                        '%(count)d pieces without section tracks',
+                        count,
+                    ),
+                ),
+                (
+                    'casting_count',
+                    lambda count: ngettext(
+                        '%(count)d piece without casting',
+                        '%(count)d pieces without casting',
+                        count,
+                    ),
+                ),
             ):
                 missing = [card for card in program_cards if not card[key]]
                 if not missing:
                     continue
                 count = len(missing)
                 add(
-                    f'{count} {_count_label(count, singular, few, many)}',
+                    phrase(count) % {'count': count},
                     ' · '.join(card['title'] for card in missing[:6])
                     + (' …' if count > 6 else ''),
                 )
 
         if not crew_list:
-            add('Brak obsady technicznej', 'Żaden współpracownik nie jest przypisany.')
+            add(
+                _('No technical crew'),
+                _('No collaborator is assigned.'),
+            )
 
         if not run_sheet_points:
             add(
-                'Przebieg dnia nie został uzupełniony',
-                'Wykonawcy dostaną same godziny z nagłówka.',
+                _('The run sheet has not been filled in'),
+                _('Performers will get only the hours from the masthead.'),
             )
 
         if not project.dress_code_female and not project.dress_code_male:
-            add('Dress code nie został ustalony', 'Karta dnia poprosi o potwierdzenie.')
+            add(
+                _('The dress code has not been settled'),
+                _('The day card will ask for confirmation.'),
+            )
 
         return blockers
 
@@ -1386,7 +1645,11 @@ class DocumentGenerator:
         return [
             name
             if repeats == 1
-            else f'{name} ({repeats} {_count_label(repeats, "wpis", "wpisy", "wpisów")})'
+            else ngettext(
+                '%(name)s (%(count)d entry)',
+                '%(name)s (%(count)d entries)',
+                repeats,
+            ) % {'name': name, 'count': repeats}
             for name, repeats in counts.items()
         ]
 
@@ -1416,7 +1679,7 @@ class DocumentGenerator:
                     'title': (
                         point.title
                         if point is not None
-                        else _ANCHOR_LABELS.get(entry.kind, '')
+                        else DocumentGenerator._anchor_label(entry.kind)
                     ),
                     'description': point.description if point is not None else '',
                     'location': point.location if point is not None else '',
@@ -1431,14 +1694,25 @@ class DocumentGenerator:
         return rows
 
     @staticmethod
+    def _anchor_label(kind: TimelineEntryKind) -> str:
+        """The printed name of one of the day's two fixed points."""
+        msgid = _ANCHOR_LABELS.get(kind)
+        return pgettext('call sheet', msgid) if msgid else ''
+
+    @staticmethod
     def _day_offset_note(day_offset: int) -> str:
         """How far from concert day an anchor sits, in words. Only the sign and
         the magnitude matter here; the exact date is already in the masthead."""
         if day_offset == 0:
             return ''
         days = abs(day_offset)
-        noun = _count_label(days, 'dzień', 'dni', 'dni')
-        return f'{days} {noun} wcześniej' if day_offset < 0 else f'{days} {noun} później'
+        if day_offset < 0:
+            return ngettext(
+                '%(count)d day earlier', '%(count)d days earlier', days
+            ) % {'count': days}
+        return ngettext(
+            '%(count)d day later', '%(count)d days later', days
+        ) % {'count': days}
 
     @staticmethod
     def _build_masthead_facts(
@@ -1457,19 +1731,23 @@ class DocumentGenerator:
         """
         facts: list[dict[str, Any]] = [
             {
-                'label': 'Data',
+                'label': pgettext('call sheet', 'Date'),
                 'value': DocumentGenerator._format_date(call_window.event_local),
                 'note': '',
                 'accent': False,
             },
             {
-                'label': 'Zbiórka',
+                'label': pgettext('call sheet', 'Call time'),
                 'value': DocumentGenerator._format_call_time(call_window),
-                'note': 'inny dzień' if call_window.crosses_day else '',
+                'note': (
+                    pgettext('call sheet', 'another day')
+                    if call_window.crosses_day
+                    else ''
+                ),
                 'accent': True,
             },
             {
-                'label': 'Początek koncertu',
+                'label': pgettext('call sheet', 'Concert start'),
                 'value': DocumentGenerator._format_time(call_window.event_local),
                 'note': '',
                 'accent': False,
@@ -1478,8 +1756,12 @@ class DocumentGenerator:
         if is_report:
             facts.append(
                 {
-                    'label': 'Miejsce',
-                    'value': project.location.name if project.location else 'Do ustalenia',
+                    'label': pgettext('call sheet', 'Venue'),
+                    'value': (
+                        project.location.name
+                        if project.location
+                        else pgettext('call sheet', 'To be arranged')
+                    ),
                     'note': '',
                     'accent': False,
                 }
@@ -1490,7 +1772,7 @@ class DocumentGenerator:
         if end is not None and end.point is not None:
             facts.append(
                 {
-                    'label': 'Koniec planu',
+                    'label': pgettext('call sheet', 'Plan ends'),
                     'value': end.time,
                     'note': end.point.title,
                     'accent': False,
@@ -1503,8 +1785,8 @@ class DocumentGenerator:
         """Venue and street in one line, for the day card's masthead. The reader
         who needs it is standing outside with a phone, not reading a facts
         table."""
-        name = venue.name if venue else 'Miejsce do ustalenia'
-        if venue_address and venue_address != 'Do ustalenia':
+        name = venue.name if venue else _('Venue to be arranged')
+        if venue_address:
             return f'{name} · {venue_address}'
         return name
 
@@ -1564,10 +1846,12 @@ class DocumentGenerator:
         of a comma-separated part are dropped, and the ensemble's own country is
         left off — a Polish sheet does not need to say the concert is in Poland.
         Anything else passes through untouched: this is a print-time tidy, not
-        an address parser. Normalisation belongs to the logistics import.
+        an address parser. Nothing to tidy returns nothing: the placeholder is
+        the caller's, because "to be arranged" belongs in a facts table and is
+        noise inside a venue line. Normalisation belongs to the logistics import.
         """
         if not formatted_address:
-            return 'Do ustalenia'
+            return ''
         parts = [part.strip() for part in formatted_address.split(',') if part.strip()]
         kept: list[str] = []
         for part in parts:
@@ -1586,7 +1870,7 @@ class DocumentGenerator:
                 for other in kept[index + 1:]
             )
         ]
-        return ', '.join(deduped) or 'Do ustalenia'
+        return ', '.join(deduped)
 
     @staticmethod
     def _format_timezone(timezone_name: str, event_local: Any) -> str:
@@ -1613,11 +1897,19 @@ class DocumentGenerator:
         if not raw:
             return ''
         codes = [code.strip() for code in raw.replace('/', '-').split('-') if code.strip()]
-        named = [_LANGUAGE_NAMES.get(code.casefold(), code) for code in codes]
+        named = [
+            pgettext('sung language', _LANGUAGE_NAMES[folded])
+            if (folded := code.casefold()) in _LANGUAGE_NAMES
+            else code
+            for code in codes
+        ]
         return ' / '.join(dict.fromkeys(named))
 
     @staticmethod
     def _format_duration(seconds: int | None) -> str:
+        # `h`, `min` and `s` are SI symbols, identical in all three locales, so
+        # they stay literals: a catalog entry here would only invite someone to
+        # translate a unit into something that is no longer one.
         if not seconds:
             return ''
         total_seconds = int(seconds)
@@ -1646,7 +1938,7 @@ class DocumentGenerator:
         """The call as an hour — carrying its date whenever that date is not the
         concert's, because a bare hour is read as concert-day."""
         if window.call_local is None:
-            return 'Do ustalenia'
+            return pgettext('call sheet', 'To be arranged')
         if window.crosses_day:
             return window.call_local.strftime('%d.%m, %H:%M')
         return window.call_local.strftime('%H:%M')
@@ -1656,24 +1948,32 @@ class DocumentGenerator:
         """What is wrong with the arrival window, for the sheets whose reader can
         go and fix it."""
         if window.problem is CallWindowProblem.NOT_BEFORE:
-            return 'Zbiórka nie wypada przed koncertem — sprawdź datę i godzinę w projekcie.'
+            return _(
+                'The call time does not fall before the concert — check the date '
+                'and hour on the project.'
+            )
         if window.problem is CallWindowProblem.IMPLAUSIBLE:
-            return (
-                'Zbiórka jest ustawiona ponad dobę przed koncertem — '
-                'najprawdopodobniej wpisano ją na złą datę.'
+            return _(
+                'The call time is set more than a day before the concert — it was '
+                'most likely entered on the wrong date.'
             )
         return ''
 
     @staticmethod
     def _format_date(value) -> str:
+        # Numeric and language-neutral on purpose: a written-out weekday or
+        # month would have to come from Django's bundled catalogs, which
+        # capitalise the Polish weekday and the French month where neither
+        # language wants it. The document states one date, in the one order all
+        # three locales read the same way.
         if not value:
-            return 'Do ustalenia'
+            return pgettext('call sheet', 'To be arranged')
         return value.strftime('%d.%m.%Y')
 
     @staticmethod
     def _format_time(value) -> str:
         if not value:
-            return 'Do ustalenia'
+            return pgettext('call sheet', 'To be arranged')
         return value.strftime('%H:%M')
 
     @staticmethod

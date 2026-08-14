@@ -856,8 +856,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
     ) -> FileResponse | Response:
         """Renders the sheet for a resolved kind and audience, degrading
         gracefully if the PDF engine's native libraries are unavailable
-        (rather than 500)."""
+        (rather than 500).
+
+        The sheet is set in its *reader's* language, which the generator
+        resolves from the recipient. What only this layer knows is who asked, so
+        that is what it passes: it decides the language of the two sheets with
+        no named reader (the report and the stage manager's day card). The
+        request's own active language is deliberately not used — `Accept-Language`
+        follows the panel's UI, not the person the document is for.
+        """
         participations, crew, program, rehearsals, castings = self._call_sheet_querysets(project)
+        requester_profile = getattr(request_user(request), 'profile', None)
         try:
             pdf_bytes = DocumentGenerator.generate_call_sheet_pdf(
                 project,
@@ -870,6 +879,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 recipient=recipient,
                 base_url=request.build_absolute_uri('/'),
                 kind=kind,
+                requester_language=getattr(requester_profile, 'language', None),
             )
         except DocumentRenderDependencyError:
             logger.exception("Call sheet render failed: WeasyPrint native dependencies missing")
@@ -920,7 +930,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             Participation.objects
             .filter(project=project, artist__user=user, is_deleted=False)
             .exclude(status=Participation.Status.DECLINED)
-            .select_related('artist')
+            # The profile comes along because the sheet is set in the singer's
+            # own language, which is stored on it.
+            .select_related('artist', 'artist__user__profile')
             .first()
         )
         if recipient is not None:
@@ -944,7 +956,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         otherwise be invisible to the project scope.
         """
         project = get_object_or_404(
-            Project.objects.select_related('conductor', 'location'),
+            # The maestro's sheet is set in the maestro's language, which lives
+            # on his profile — two levels past the conductor row.
+            Project.objects.select_related(
+                'conductor', 'conductor__user__profile', 'location'
+            ),
             pk=pk,
         )
         user = request_user(request)

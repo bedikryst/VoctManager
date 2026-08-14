@@ -375,7 +375,7 @@ too. A day card should never ask its reader to fix data.
 
 Six stages. Etapy 0–1 are self-contained and worth shipping even if the split is rejected.
 
-**Status: Etapy 0, 1, 2, 3 and 4 are DONE.** Etapy 5–6 are open.
+**Status: Etapy 0, 1, 2, 3, 4 and 5 are DONE.** Etap 6 is open.
 
 **Etap 1's pagination claim was wrong, and was corrected in Etap 2 (2026-08-14).** The
 "five pages become three" outcome was reasoned from the CSS because WeasyPrint cannot render on the
@@ -784,10 +784,99 @@ Original spec for this stage follows.
 - **Break rules**: every card `break-inside: avoid`; no page-level table layout (D14).
 - Verify against a mono laser print: nothing may depend on colour alone.
 
-### Etap 5 — i18n
+### Etap 5 — i18n — DONE (2026-08-14)
 
 gettext the templates and the generator's literals; resolve `doc_lang` from the recipient's locale
 rather than a global setting; `pl/en/fr` `.po` + committed `.mo` via polib. Fold in D23.
+
+**As built.** ~170 msgids across `document_generator.py` and `call_sheet_pdf.html`, English msgids
+in the catalog's existing convention. `resolve_document_language(project, audience, recipient,
+requester_language)` is the new seam and `generate_call_sheet_pdf` wraps **both** the context build
+and the render in `translation.override` — most of this document's wording is composed in Python
+(a numeral governs the noun beside it), so an override around the template alone would have
+resolved half the sheet against the request's language. D23 is folded in: `'Unassigned'` was already
+gone by Etap 0 and `'Timeline entry'` became `'Punkt dnia'` in Etap 3; both now come from the catalog.
+
+**The reader, not the server.** `SCORE_BOOK_LANG` is no longer read here (the score book keeps it).
+The singer's card resolves from `recipient.artist.user.profile.language`, the maestro's from
+`project.conductor.user.profile.language`, and only the two production sheets — which have no named
+reader — fall back to the language of whoever asked, passed in by the view. The request's own active
+language is deliberately unused: `LocaleMiddleware` sets it from `Accept-Language`, which follows the
+panel's UI, not the person the document is for.
+
+**Measured on the dev database** (`Koncert Wiosenny „Lux Aeterna”`, 8 pieces / 19 participations),
+rendered in the container and read as contact sheets:
+
+| sheet | after Etap 4 (pl) | Etap 5 · pl | Etap 5 · fr |
+|---|---|---|---|
+| report · production | 6 p | 6 p | **7 p** |
+| day card · production | 3 p | 3 p | 3 p |
+| day card · conductor | 5 p | 5 p | 5 p |
+| day card · chorister | 4 p | 4 p | 4 p |
+
+**Polish is unchanged, and that was the acceptance test**: every msgstr is the exact string the sheet
+printed before this stage, so the pl render is the Etap 4 render. The French report's extra page is
+content arithmetic, not a layout fault — Etap 4 left it with 13/19/24/40/23 pt of slack, and the
+longer French runs push the contact directory off the roster's page. Nothing was squeezed to hide it.
+
+**Three defects the French render exposed, all fixed here.**
+
+- **The coverage column heads collided.** `ENREGISTREMENTDISTRIBUTION`, with no gap, under the marks
+  they label. The heads are uppercase at 1.2pt tracking, so a nine-letter label is already ~47pt in a
+  44pt cell — Polish only fit by luck. The cell is now 56pt and those four heads carry their own
+  `coverage column` msgctxt, because this is the one place in the document where a translator must be
+  free to abbreviate (`Écoute`, `Distrib.`) without abbreviating the same word where it has room.
+- **The programme ordinal was not inside its own atom.** Etap 4 put `break-inside: avoid` on
+  `.prog-id`, but the gold numeral sat in a *sibling* table-cell, so the row could split between the
+  two and strand a lone "1" at the foot of a page — which French promptly did. The number is part of
+  the identity and now lives inside the guarded box; what may follow keeps its indent via `.prog-more`
+  and stays free to break. No page-count change in either language.
+- **A Polish vocative inside a French sentence.** The greeting printed `first_name_vocative`
+  unconditionally: *"Préparé pour vous, Janie"*. `core.greetings.apply_vocative_rule` has been the
+  one place that knows Polish is the only supported language with a distinct vocative since the
+  2026-07 pass; the call sheet was a seventh copy that ignored it. It now calls it.
+
+**A pre-existing test leak, surfaced not caused.** Two `roster` tests send `Accept-Language: en` to
+pin a translated choice display. `LocaleMiddleware` activates that language for the whole thread and
+never deactivates, so every later test in the process ran under English — invisible while nothing
+asserted on translated copy, and instantly fatal to five call-sheet tests once the sheet had any.
+Both now `addCleanup(translation.deactivate)`.
+
+**Decisions taken while building.**
+
+- **Short labels carry a `call sheet` msgctxt; sentences do not.** Twelve of the labels this document
+  needs already exist in the catalog from the panel and notifications, and half of them mean something
+  slightly different there (`Focus` → *Plan próby*, `Dress code` → *Strój*, `Casting` → *Obsada*,
+  `Polish` → capitalised *Polski*, which reads as a heading inside a piece's metaline). More to the
+  point, a printed head sits in a measured width: reusing a shared msgid would let a notification
+  rewrite break this layout. Sentences are unique by construction and reuse nothing by accident.
+- **`_count_label` is gone; `ngettext` replaces it.** The hand-rolled three-form selector was correct
+  Polish and wrong everywhere else (it gives French *"0 pièces"*). The trap it hid is that `ngettext`
+  is only correct **if the pl entry exists**: with a missing entry gettext falls back to the msgid
+  pair's own two-form English rule and silently prints *"5 utwory"*. A test walks every `ngettext`
+  call in the generator with an `ast` scan and asserts, at n = 1/2/5/12/22, that the catalog answers
+  and that the buckets are the Polish ones (22 takes *few*, 12 does not).
+- **Dates stay numeric (`%d.%m.%Y`).** Writing the day out would mean Django's bundled catalogs, which
+  capitalise the Polish weekday and the French month where neither language wants it. One date, in the
+  one order all three locales read the same way.
+- **The ZAiKS CSV, the DTP export and the contract PDF stay Polish, deliberately.** ZAiKS is a filing
+  format the Polish collecting society parses; the DTP export is copy for a Polish concert programme;
+  and the contract is Polish legal text whose language is a legal decision that starts with the
+  clauses, not with a placeholder. Translating one string in the contract would also make it follow
+  `Accept-Language` and drop a single French word into an otherwise Polish agreement.
+- **`h` / `min` / `s` are not translated.** They are SI symbols, identical in all three locales; a
+  catalog entry there only invites someone to translate a unit into something that is no longer one.
+- **`makemessages` was not used and could not be.** No GNU gettext on the Windows host, and running
+  it would rewrite every `#:` reference across three 770-entry catalogs and mark as obsolete anything
+  it cannot see at a call site — which includes the entries built from `_LANGUAGE_NAMES` and
+  `_COVERAGE_COLUMNS`. The catalogs were appended with polib from a msgid set extracted by Django's own
+  `templatize` (so template msgids are byte-exact) plus an `ast` pass over the generator, with the
+  merge refusing to write on any mismatch between the two. The `en` `.mo` is byte-identical after the
+  merge and that is correct: English msgstrs are empty, so English falls back to the msgid.
+- **Two dicts reach gettext through a variable** (`_LANGUAGE_NAMES`, `_COVERAGE_COLUMNS`), which no
+  scanner can see. That is a deliberate trade — the alternative is 19 module-level lazy proxies in
+  dicts that are otherwise plain `dict[str, str]` — and a test walks both dicts against the compiled
+  pl catalog, which is a stronger guarantee than extraction would have been.
 
 ### Etap 6 — Data hygiene (separate track, needs migrations)
 
