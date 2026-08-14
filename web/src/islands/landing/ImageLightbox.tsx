@@ -8,9 +8,12 @@
  *  press made before hydration.
  *
  *  It holds the INDEX, and everything the set makes possible follows from that: ← → Home End,
- *  a swipe where there is no keyboard, chevrons over the two halves of the frame, wrapping at
- *  both ends, and the neighbours warmed so the next press is a repaint. A one-item set simply
- *  renders none of it.
+ *  a swipe where there is no keyboard, two chevron buttons over the frame, wrapping at both ends,
+ *  and the neighbours warmed so the next press is a repaint. A one-item set simply renders none
+ *  of it. How much of the photograph those two buttons COVER is the stylesheet's answer and it is
+ *  not the same on both kinds of screen — a pointer gets the whole half it is promised, a finger
+ *  gets the band its chevron is drawn in, because a finger has no cursor to be promised anything
+ *  and cannot rest on a photograph that is a button edge to edge.
  *
  *  Two things that are corrections rather than features. The caption row is a LIVE REGION and is
  *  therefore always in the DOM, empty or not: a region created by the change it is meant to
@@ -54,27 +57,6 @@ const SWIPE_MIN_PX = 44;
 /** …and one this much steeper than it is wide is the visitor trying to scroll, not to turn. */
 const SWIPE_AXIS_BIAS = 1.4;
 
-const ROMAN_STEPS = [
-  [1000, "M"], [900, "CM"], [500, "D"], [400, "CD"], [100, "C"], [90, "XC"],
-  [50, "L"], [40, "XL"], [10, "X"], [9, "IX"], [5, "V"], [4, "IV"], [1, "I"],
-] as const;
-
-/** Every number this site prints is a roman one — the register's entries, the series heads on
- *  /obrazy, the plate numbers on the landing's band. The counter in the frame is the same seen from
- *  inside, so it is set the same way. Local because the counter is its only caller; the numerals
- *  elsewhere are authored, not computed. */
-function roman(n: number): string {
-  let rest = n;
-  let out = "";
-  for (const [value, sign] of ROMAN_STEPS) {
-    while (rest >= value) {
-      out += sign;
-      rest -= value;
-    }
-  }
-  return out;
-}
-
 /** Ask for a rendition without rendering it — the browser keeps it, the next press paints it. */
 function warm(item: ImageFrameItem | undefined): void {
   if (!item) return;
@@ -92,9 +74,12 @@ export function ImageLightbox(): React.JSX.Element | null {
   const panelRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const touchRef = useRef<{ x: number; y: number } | null>(null);
-  // A swipe that lifts off over a half also fires that half's click — no scroll happened, so the
-  // browser synthesises one — and the frame would turn twice for one gesture. The gesture claims
-  // the press; the next touchstart hands it back.
+  // A swipe that lifts off over one of the two nav buttons can also fire that button's click —
+  // nothing scrolled, so the browser synthesises one — and the frame would turn twice for one
+  // gesture. The gesture claims the press; the next touchstart hands it back. Measured in
+  // Chromium, the click is already suppressed once the touch travels past that engine's own tap
+  // slop, which is far under the 44px this file calls a swipe; the guard is what covers the
+  // engines where it is not, and it costs one boolean.
   const swipedRef = useRef(false);
 
   const close = useCallback((): void => setSet(null), []);
@@ -300,11 +285,15 @@ export function ImageLightbox(): React.JSX.Element | null {
             />
             {many && (
               <>
-                {/* The two halves of the frame ARE the controls — a chevron pinned to an edge
-                    would be a small target on the one surface where the whole photograph is
-                    already under the hand, and the cursor states the direction across the entire
-                    half (data-cursor, cursor.css). Buttons rather than a click handler on the
-                    image, so the keyboard reaches them and a screen reader is told what they do. */}
+                {/* The two halves of the frame ARE the controls where there is a POINTER — a
+                    chevron pinned to an edge would be a small target on the one surface where the
+                    whole photograph is already under the hand, and the cursor states the direction
+                    across the entire half (data-cursor, cursor.css). Under a finger the same two
+                    buttons narrow to the band their chevron is drawn in and the middle of the
+                    photograph takes no press at all; that is a width in image-lightbox.css, which
+                    is why nothing here is conditional on the kind of screen. Buttons rather than a
+                    click handler on the image, so the keyboard reaches them and a screen reader is
+                    told what they do. */}
                 <button
                   type="button"
                   className="image-lightbox-nav is-prev"
@@ -326,15 +315,41 @@ export function ImageLightbox(): React.JSX.Element | null {
               </>
             )}
           </div>
+          {/* The way out lives INSIDE the figure, after the photograph and before its caption, so
+              that a phone held sideways can stand the whole colophon — counter, place, credit,
+              exit — in a column BESIDE the frame (image-lightbox.css). A `<figcaption>` is only
+              valid as its figure's first or last child, which is what fixes the order here; the
+              reading order that falls out of it is the photograph, the road out, then the caption,
+              and the visual order is restored in the stylesheet.
+
+              Instrumented, because the question this exit was built to answer is whether it is
+              used at all — the frame's dead end was found by reading the markup, and only a number
+              says whether closing it changed anything. */}
+          {current.href && (
+            <div className="image-lightbox-foot">
+              <a
+                className="image-lightbox-exit plausible-event-name=obraz+wyjscie"
+                href={current.href}
+                onClick={leave}
+              >
+                {current.hrefLabel ?? "Zobacz wieczór"} <span aria-hidden="true">→</span>
+              </a>
+            </div>
+          )}
           {/* Always rendered, even with nothing in it: a live region has to be in the document
               BEFORE the change it announces, or the first move between frames is silent. The alt
               is repeated into it for the same reason — a screen reader does not re-read an `alt`
               that changed under it, so "IV / IX" alone would be the whole of what a reader who
               cannot see the photograph is told about the new one. */}
           <figcaption className="image-lightbox-caption" aria-live="polite">
+            {/* Arabic, and it is the site's rule rather than an exception to it: a roman numeral
+                here NAMES something (the evening, the plate, the register's entry) and an arabic
+                one COUNTS. /obrazy's own head authors both in one row — the evening's numeral in
+                roman beside "9 fot." in arabic — and this caption already prints a date in arabic
+                one line below. A position in a set of forty-eight is a count. */}
             {many && (
               <span className="image-lightbox-count">
-                {roman(index + 1)} / {roman(count)}
+                {index + 1} / {count}
               </span>
             )}
             {current.caption && <span className="image-lightbox-place">{current.caption}</span>}
@@ -345,20 +360,6 @@ export function ImageLightbox(): React.JSX.Element | null {
             {current.alt && <span className="sr-only">{current.alt}</span>}
           </figcaption>
         </figure>
-        {current.href && (
-          <div className="image-lightbox-foot">
-            {/* Instrumented, because the question this exit was built to answer is whether it is
-                used at all — the frame's dead end was found by reading the markup, and only a
-                number says whether closing it changed anything. */}
-            <a
-              className="image-lightbox-exit plausible-event-name=obraz+wyjscie"
-              href={current.href}
-              onClick={leave}
-            >
-              {current.hrefLabel ?? "Zobacz wieczór"} <span aria-hidden="true">→</span>
-            </a>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -149,7 +149,14 @@
   transition: opacity 0.5s var(--ease, ease);
 }
 
+/* The figure holds the photograph, its way out and its caption, in that DOM order — a
+   `<figcaption>` is only valid as its figure's first or last child, and the exit has to be inside
+   the figure so the landscape rules at the foot of this file can stand the whole colophon in a
+   column beside the frame. The reading order is the one the markup states; the ORDER below is the
+   one the eye gets, and it is the order the frame has always had. */
 .image-lightbox-figure {
+  display: flex;
+  flex-direction: column;
   margin: 0;
 }
 
@@ -160,6 +167,7 @@
    frame's corner rather than at the far edge of a measure. The image is therefore the only
    thing in flow here; the backdrop and the two halves are absolute, so neither can size it. */
 .image-lightbox-stage {
+  order: 1;
   position: relative;
   width: fit-content;
   margin: 0 auto;
@@ -197,11 +205,12 @@
 }
 
 /* ── The two halves ─────────────────────────────────────────────────────────────
-   Each half of the photograph turns the set one frame. They are transparent: the affordance
-   is the cursor, which becomes the arrow it will perform (cursor.css `.is-frame-prev` /
-   `.is-frame-next`), and on touch the gesture is a swipe, which needs no target at all. What
-   is drawn is one chevron per edge, quiet at rest and lit on approach — enough that a reader
-   who has neither the cursor nor the habit can see the frame is one of several.
+   Each half of the photograph turns the set one frame, WHERE THERE IS A POINTER (the touch
+   width is at the foot of this file). They are transparent: the affordance is the cursor,
+   which becomes the arrow it will perform (cursor.css `.is-frame-prev` / `.is-frame-next`),
+   and on touch the gesture is a swipe. What is drawn is one chevron per edge, quiet at rest
+   and lit on approach — enough that a reader who has neither the cursor nor the habit can see
+   the frame is one of several.
 
    The chevron carries its own shadow instead of a scrim: a gradient darkening both edges of
    every photograph in the archive would be a permanent cost paid for a control most visitors
@@ -270,6 +279,7 @@
    EMPTY row — `.sr-only` children are out of flow, so a row with nothing visible in it is 0 tall
    and the 18px simply falls where the photograph's edge already is. */
 .image-lightbox-caption {
+  order: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -288,9 +298,12 @@
   color: rgba(244, 241, 233, 0.62);
 }
 
-/* The numeral takes the candle, as every other numeral on this site does — the register's
-   entries, the series heads on /obrazy, the plate numbers on the landing's band. It is the same
-   numbering read from inside one of its frames. */
+/* The numeral takes the candle, as the site's numerals do — the register's entries, the series
+   heads on /obrazy, the plate numbers on the landing's band. It is ARABIC where those are roman,
+   and that is the same rule rather than an exception to it: this site's roman numerals NAME an
+   evening, a plate, a register entry, and its arabic ones COUNT. /obrazy's head sets both in one
+   row (the evening's numeral beside "9 fot."), and the place line directly under this one prints
+   its date in arabic on 41 of the 48 frames. A position in a set of forty-eight is a count. */
 .image-lightbox-count {
   color: color-mix(in srgb, var(--candle) 82%, transparent);
 }
@@ -307,6 +320,7 @@
    standing at the foot of both galleries (`.kd-gallery-all`, `.im-colophon-back`), because it
    is the same road — reached from inside the frame instead of from under it. */
 .image-lightbox-foot {
+  order: 3;
   margin-top: 16px;
   text-align: center;
 }
@@ -393,6 +407,88 @@
     bottom: -56px;
     right: 50%;
     transform: translateX(50%);
+  }
+}
+
+/* ── Under a finger ─────────────────────────────────────────────────────────────
+   The two halves stop being halves. §9 made each one the WHOLE half because the cursor
+   promises an arrow across it and a 40px chevron at the edge would make that promise a lie
+   everywhere except at the edge. A finger is handed the opposite deal: there is no cursor to
+   promise anything, the swipe already carries the same gesture, and a target covering the frame
+   edge to edge means the reader cannot touch the photograph at all without turning it —
+   measured at 390×844 and 414×896, nine hit-test points over the frame, nine of them a button.
+
+   So the target shrinks to the band the chevron is ALREADY drawn in and the middle of the
+   photograph goes back to being a photograph. The glyph does not move: the padding that places
+   it is untouched, so what changes here is the target and not the drawing. The percentage is the
+   floor that matters — 72px would be most of a narrow portrait frame, and the middle has to
+   survive on every shape in the archive. */
+@media (hover: none) {
+  .image-lightbox-nav {
+    width: min(72px, 22%);
+  }
+
+  /* Nothing completes a rest state on a touch screen, because no hover ever arrives. The chevron
+     is the whole affordance here, so it stands at the weight the pointer's approach would have
+     brought it to. */
+  .image-lightbox-chevron {
+    opacity: 0.9;
+  }
+}
+
+/* ── A phone held sideways ──────────────────────────────────────────────────────
+   Measured at 844×390: the caption's bottom landed at 405 and the exit's at 451, so the counter,
+   the place, the credit AND the way out were all below the window — on a room that scrolls
+   nothing. The 68svh cap that answers this in portrait is gated on `max-width: 640px`, which no
+   landscape phone matches, so nothing was catching it.
+
+   The frame keeps its height and the colophon moves BESIDE it, because the reader turned the
+   phone to make the photograph bigger and shrinking it to make room for its own caption answers
+   the wrong question. `auto` on the first column lets a wide frame give width back rather than
+   push the second column off the screen; the exit's bottom margin is what reserves the ✕'s room
+   in the one corner of this layout that is always free. */
+@media (min-width: 641px) and (max-height: 540px) {
+  .image-lightbox {
+    padding: 16px max(16px, 3vw);
+  }
+
+  .image-lightbox-figure {
+    display: grid;
+    grid-template-columns: minmax(0, auto) minmax(168px, 260px);
+    column-gap: clamp(20px, 3vw, 34px);
+    align-items: start;
+  }
+
+  .image-lightbox-img {
+    max-height: min(84svh, 1200px);
+  }
+
+  .image-lightbox-stage {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  /* Ranged left, as a colophon in a margin is: centred text in a 260px column beside a
+     photograph reads as a second picture rather than as the frame's note. */
+  .image-lightbox-caption {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-start;
+    margin-top: 0;
+    text-align: left;
+  }
+
+  .image-lightbox-foot {
+    grid-column: 2;
+    grid-row: 2;
+    margin-bottom: 56px;
+    text-align: left;
+  }
+
+  .image-lightbox-close {
+    top: auto;
+    bottom: 0;
+    right: 0;
   }
 }
 
