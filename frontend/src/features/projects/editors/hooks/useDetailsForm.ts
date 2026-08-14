@@ -30,7 +30,7 @@ import {
   useProjects,
   useUpdateProject,
 } from "../../api/project.queries";
-import { suggestRunSheetTime } from "../../lib/dayTimeline";
+import { compareRunSheetTimes, suggestRunSheetTime } from "../../lib/dayTimeline";
 import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
@@ -76,7 +76,7 @@ const normalizeRunSheetItem = (
 
 const sortRunSheetByTime = (items: readonly RunSheetItem[]): RunSheetItem[] =>
   [...items].sort((left, right) =>
-    (left.time || "").localeCompare(right.time || ""),
+    compareRunSheetTimes(left.time || "", right.time || ""),
   );
 
 const toComparableRunSheet = (

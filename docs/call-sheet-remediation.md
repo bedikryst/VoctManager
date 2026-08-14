@@ -375,7 +375,7 @@ too. A day card should never ask its reader to fix data.
 
 Six stages. Etapy 0–1 are self-contained and worth shipping even if the split is rejected.
 
-**Status: Etapy 0, 1 and 2 are DONE.** Etapy 3–6 are open.
+**Status: Etapy 0, 1, 2 and 3 are DONE.** Etapy 4–6 are open.
 
 **Etap 1's pagination claim was wrong, and was corrected in Etap 2 (2026-08-14).** The
 "five pages become three" outcome was reasoned from the CSS because WeasyPrint cannot render on the
@@ -397,6 +397,16 @@ Two further measurements worth keeping (they contradict what the CSS suggests):
 - **Single-column throughout costs pages, it does not save them.** The `.split` event pair packs two
   short cards into the height of one (11→9 pages when stacked instead of 8 when kept side by side),
   so §4's "single column throughout" for the day card is rejected on measurement.
+- **The same `avoid` on the small box costs a page too (measured in Etap 3, and it reverses one of
+  Etap 1's decisions).** Etap 1 kept `.split` for the event pair and added
+  `page-break-inside: avoid` so it would move whole rather than tear. Measured on "Lux Aeterna":
+  that one rule is worth **a full page on two of the four documents** — report 9→8, singer's day
+  card 5→4 — because a pair too tall for the rest of the page jumps to the next one entire.
+  Rebuilding the pair as `columns: 2` under the same guard measures identically, so the guard is the
+  cost, not the mechanism. The rule is gone: the pair tears, and the worst case is half a page
+  instead of all of it. **The general form, now measured on boxes of two different sizes: in
+  WeasyPrint `page-break-inside: avoid` on anything bigger than a card is a page-eater, not a
+  safeguard.**
 
 ### Etap 0 — Correctness (no redesign) — DONE
 
@@ -491,10 +501,40 @@ Two decisions taken while building:
   and if the two rows really are two people, the plain repetition is the truth. The report annotates
   the roster *and* names the collision in the blocker list, which is where the merge gets decided.
 
-**Still not done from this stage:** the day card's own masthead — §4's anchor strip
-(`ZBIÓRKA · PRÓBA AKUSTYCZNA · DOWNBEAT · KONIEC`) needs the merged timeline from Etap 3 to derive
-its anchors, and the QR replacing the button row belongs to Etap 4. The day card currently keeps the
-existing four-fact masthead.
+**Still not done from this stage:** the QR replacing the button row belongs to Etap 4. (The anchor
+strip this stage deferred landed with Etap 3, below.)
+
+**Audited again in Etap 3 (2026-08-14), by rendering rather than by reading.** All four
+kind × audience combinations the endpoints can actually produce were rendered against the dev
+database and read as contact sheets. **The page counts published above reproduce exactly: 8 / 4 / 7 /
+5.** Three claims were checked and hold:
+
+- **`resolve_document_kind` closes the leak whole.** A report requested for a singer renders
+  byte-identical to their day card (same section list, `is_report` false, no blockers, no crew PII).
+  There is exactly one caller of `generate_call_sheet_pdf`, and the normalisation happens before any
+  branch reads the kind, so there is no path around it: `export_call_sheet` is `IsManager`, and
+  `export_day_sheet?audience=production` re-checks `IsManager` before honouring the parameter.
+- **The day card is clean of report content on the render, not just in the context:** zero
+  `class="metrics"` bands, zero blocker bands, zero requirement matrices ("4x Sopran 1 …": 34
+  occurrences on the report, 0 on all three day cards), no "(2 wpisy)", no `Tel.`/`E-mail` on the
+  chorister sheet.
+- **`report × conductor` is configured but unreachable.** No endpoint produces it. Harmless, and the
+  section list is right if one is ever added — but nothing exercises it outside the test suite.
+
+Two smaller findings from that pass, both fixed here rather than filed:
+- **Raising the ceiling to 24 h left a hole the ceiling used to cover.** A call entered one day early
+  but later in the day (concert 11:00, call the previous evening at 19:00) is a 16 h window: it
+  clears the ceiling, so no warning fires, and the only signal is the date in the masthead. That is
+  right for the day card — the tour case is real and the date is printed — but the report has a
+  blocker list precisely for "confirm this was deliberate". `crosses_day` inside the plausible
+  window now adds one, worded as a confirmation rather than an error. The threshold itself stays at
+  24 h: 12 h contradicted `crosses_day`, which exists to bless exactly these calls.
+- **The one-template decision holds.** Nothing in the four renders wants a second template: the
+  kind-specific surface is the blocker band, the coverage band and a dozen content gates, against
+  ~590 lines of shared chrome and CSS that Etap 4 is about to rewrite once. What the renders *do*
+  show is that section **order** is the day card's remaining weakness (the maestro's casting matrix
+  runs four pages before his run sheet) — an ordering problem, not a template problem, and the Etap 3
+  masthead answers it by putting the day's anchors on page 1 for every audience.
 
 ---
 
@@ -561,13 +601,74 @@ Then: coverage as one pieces × materials grid (U2), full rehearsal plan includi
 casting, roster with statuses, contact directory, program list in ZAiKS order. Its measure of
 success is that every hole is visible on page 1.
 
-### Etap 3 — Day-timeline SSOT
+### Etap 3 — Day-timeline SSOT — DONE (2026-08-14)
 
 Port `frontend/src/features/projects/lib/dayTimeline.ts` to `backend/roster/domain/day_timeline.py`:
 `build_day_timeline(run_sheet, call_time, date_time, tz) -> list[TimelineEntry]`, preserving the
-anchor tie-break and the day-offset semantics the TS version already documents. Both the PDF and the
-schedule read-model consume it; the frontend keeps its copy for live editing only, and a test
-asserts the two agree on a shared fixture. Fold `resolve_call_window` from Etap 0 into this module.
+anchor tie-break and the day-offset semantics the TS version already documents. ~~Both the PDF and
+the schedule read-model consume it~~ — **wrong: no read-model touches `run_sheet`; the consumers are
+the PDF and the panel** — the frontend keeps its copy for live editing only, and a test asserts the
+two agree on a shared fixture. Fold `resolve_call_window` from Etap 0 into this module.
+
+**As built.** `roster/domain/call_window.py` **became** `roster/domain/day_timeline.py` (one module,
+as Etap 0 said it would) and grew `RunSheetPoint`, `TimelineEntry`, `normalize_run_sheet`,
+`build_day_timeline` and `plan_end`. The generator no longer parses run-sheet rows at all.
+
+Four decisions the port had to take, because the two sides did not agree on their own:
+
+1. **Sorting is normalisation, not merging.** The TS `buildDayTimeline` deliberately does *not*
+   reorder points (`useDetailsForm` sorts on commit, so a half-typed time cannot yank the row under
+   the cursor); the old backend normalizer *did* sort (fix D5). Both are right for their caller, so
+   they are now two functions: `normalize_run_sheet` reads the stored JSON **and sorts it**, and
+   `build_day_timeline` merges anchors into whatever order it is handed. The parity test therefore
+   asserts placement only, on a fixture whose points are already ordered — stated in the fixture and
+   in both suites, because it is the one thing "the two agree" does *not* cover.
+2. **The "third normalizer" was a name collision.** `roster/dtos.py:_normalize_run_sheet` only
+   coerced `None`→`()` and `list`→`tuple`; it never read a row. Renamed `_freeze_sequence`, with a
+   comment pointing at the real one. There is now exactly one function in the backend that
+   interprets a run-sheet row.
+3. **A point still cannot say "the day before", and that stays.** It mirrors what the field holds —
+   a bare `HH:mm` — so concert day is the run sheet's implicit frame while anchors carry a real date
+   and are placed by the offset between them. The call anchor prints its distance ("20 dni
+   wcześniej") wherever it lands.
+4. **Parity is mechanical, not aspirational.** `backend/roster/domain/day_timeline_cases.json` holds
+   nine cases (anchors bracketing the day, both tie-breaks, an overnight call, a call after the
+   downbeat, a carried empty time, a missing call, an empty run sheet). `roster.tests.
+   DayTimelineContractTests` and `frontend/src/features/projects/lib/dayTimeline.test.ts` both replay
+   it. The fixture lives on the backend side so the Python test can never silently skip.
+
+**Two defects found while porting, fixed here.** The panel's own load/commit sort was the D5 string
+compare (`localeCompare`), surviving by the same accident as the backend's did; it now uses the
+shared `compareRunSheetTimes`, and `parseClockTime` accepts the unpadded legacy hour the backend
+already accepted. Stored times are canonicalised to `HH:MM` on the way out so the printed gutter
+lines up with the anchors beside it.
+
+**The anchor strip landed too** (§4's day-card masthead, deferred by Etap 2). It is derived from the
+merged axis, and it is honest about what it cannot derive:
+`DATA · ZBIÓRKA · POCZĄTEK KONCERTU · KONIEC PLANU`, where the last cell is the final run-sheet point
+when the day runs past the downbeat and is **absent** otherwise. Under the band, the day card now
+prints venue + street + map link as one line, and drops the address row from the event card. The
+report keeps `MIEJSCE` in the fourth cell and its address in the event card, because its reader is at
+a desk.
+
+**Measured after the stage** (same project, 8 pieces / 19 participations):
+
+| sheet | after Etap 2 | after Etap 3 |
+|---|---|---|
+| report · production | 8 p | 8 p |
+| day card · production | 4 p | 4 p |
+| day card · conductor | 7 p | 7 p |
+| day card · chorister | 5 p | **4 p** |
+
+The merged axis adds two rows to every sheet (and was worth a ninth page on the report until the
+`.split` guard came off — see the Etap 1 note above, which this stage revises).
+
+**What the merged axis immediately exposed, and what it deliberately does not do:** on the dev data
+the run sheet carries its own "POCZĄTEK KONCERTU" point at 11:28 while the project's downbeat anchor
+reads 13:28 — the two now print one under the other instead of the header and the table quietly
+contradicting each other across half a page (D4, still live on that data). The timeline does **not**
+dedupe a point that restates an anchor: when they agree the repetition is harmless, and when they
+disagree the repetition *is* the finding.
 
 ### Etap 4 — Print design system
 
@@ -619,6 +720,19 @@ Recorded so they are not re-proposed.
   scanned.
 - **Colour-coding voice sections.** Prints as four indistinguishable greys on the mono printer a
   sacristy actually has.
+- **`PRÓBA AKUSTYCZNA` and `KONIEC (ok.)` as fixed cells of the anchor strip** (§4's four-cell
+  sketch). Neither is stored. The sound check could only be found by matching free-text titles
+  ("próba akustyczna" / "sound check" / "akustyka"), which is a guess printed as a fact in the
+  heaviest type on the page; the end could only be derived by summing piece durations, which ignores
+  applause, pauses and the interval and would print an hour nobody planned. The strip states the two
+  anchors it owns and closes with the last *planned* point when there is one — see Etap 3.
+- **Deduplicating a run-sheet point that restates an anchor.** When they agree the second line costs
+  nothing; when they disagree, hiding one of them re-creates D4 with better manners.
+- **A second consumer for the day timeline "because the spec said so".** §4 claimed "both the PDF and
+  the schedule read-model consume it" — no backend read-model touches `run_sheet` (checked:
+  `queries/`, `dashboard_serializers.py`, `serializers.py`), and none should be invented to justify
+  the module. The consumers are the PDF and the panel, which is exactly why the parity fixture
+  exists.
 
 ---
 

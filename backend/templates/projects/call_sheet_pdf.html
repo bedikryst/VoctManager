@@ -75,6 +75,8 @@
         .factbar .v { font-size: 12.5pt; font-weight: 700; color: #161412; margin-top: 2pt; }
         .factbar .v.gold { color: #9a7b3f; }
 
+        .venueline { margin-top: 7pt; font-size: 9.5pt; color: #4a4744; }
+
         .callout {
             margin-top: 12pt; padding: 9pt 12pt; border: 1pt solid #e6e3da;
             border-left: 3pt solid #c2a878; background: #faf8f3; border-radius: 3pt;
@@ -112,12 +114,17 @@
         }
         .card + .card { margin-top: 8pt; }
         .card.warm { background: #faf8f3; }
-        /* Two table-cells cannot be split across pages without leaving the
-           exhausted column behind as a hole — a third of a page went missing
-           that way. Kept only for pairs bounded enough to move whole, hence the
-           break rule; anything that can outgrow a page uses `.multicol`, which
-           flows and balances instead of tearing. */
-        .split { display: table; width: 100%; table-layout: fixed; page-break-inside: avoid; }
+        /* Two table-cells tear badly when one column is exhausted first: the
+           spent cell leaves a hole beside the one still running. Keeping the
+           pair whole (`page-break-inside: avoid`) trades that bounded hole for
+           an unbounded one — measured at a full page on both the report (9→8
+           without it) and the singer's day card (5→4), because a pair too tall
+           for what is left of the page jumps to the next one entire. Rebuilding
+           the pair as `columns: 2` under the same guard measures identically,
+           so the guard is the cost, not the mechanism. It therefore breaks: the
+           worst case is half a page, not all of it. Anything that can outgrow a
+           page uses `.multicol`, which flows and balances instead of tearing. */
+        .split { display: table; width: 100%; table-layout: fixed; }
         .split > .col { display: table-cell; width: 50%; vertical-align: top; }
         .split > .col.left { padding-right: 6pt; }
         .split > .col.right { padding-left: 6pt; }
@@ -163,6 +170,11 @@
         .grid tr:last-child td { border-bottom: 0; }
         .grid .t-time { font-weight: 700; white-space: nowrap; }
         .grid .t-title { font-weight: 700; }
+        /* The day's two anchors are facts of the project, not editable points;
+           they read as the frame the run sheet is planned inside. */
+        .grid tr.anchor td { background: #faf8f3; border-bottom-color: #e6ddc9; }
+        .grid tr.anchor .t-time { color: #9a7b3f; }
+        .grid tr.anchor .t-title { color: #9a7b3f; text-transform: uppercase; letter-spacing: 0.8pt; font-size: 9pt; }
 
         /* ── Personal (singer) panel ────────────────────────────────────── */
         .hero-personal {
@@ -255,24 +267,21 @@
             <p class="greeting">Dzień i muzyka w jednym miejscu.</p>
         {% endif %}
 
+        {% comment %}
+            The band is derived from the day timeline, not from four fields
+            formatted apart from each other: the closing cell is the last point
+            the run sheet actually plans, so the masthead cannot state a day the
+            timeline below it contradicts.
+        {% endcomment %}
         <div class="factbar">
+            {% for fact in masthead_facts %}
             <div class="cell">
-                <div class="k">Data</div>
-                <div class="v">{{ event_date_label }}</div>
+                <div class="k">{{ fact.label }}{% if fact.note %} · {{ fact.note }}{% endif %}</div>
+                <div class="v{% if fact.accent %} gold{% endif %}">{{ fact.value }}</div>
             </div>
-            <div class="cell">
-                <div class="k">Zbiórka{% if call_crosses_day %} · inny dzień{% endif %}</div>
-                <div class="v gold">{{ call_time_label }}</div>
-            </div>
-            <div class="cell">
-                <div class="k">Start koncertu</div>
-                <div class="v">{{ event_time_label }}</div>
-            </div>
-            <div class="cell">
-                <div class="k">Miejsce</div>
-                <div class="v">{% if project.location %}{{ project.location.name }}{% else %}Do ustalenia{% endif %}</div>
-            </div>
+            {% endfor %}
         </div>
+        {% if venue_line %}<div class="venueline">{{ venue_line }}{% if venue_map_url %} · <a href="{{ venue_map_url }}">mapa</a>{% endif %}</div>{% endif %}
 
         {% if call_buffer_label %}
         <div class="callout">
@@ -413,15 +422,21 @@
     <div class="section">
         <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Przebieg dnia</h2></div>
         <div class="card">
-            {% if run_sheet_items %}
+            {% if has_run_sheet %}
+            {% comment %}
+                One axis: the call and the downbeat are placed among the points
+                rather than printed only in the masthead, so a run sheet that
+                disagrees with the header says so on the page instead of quietly
+                contradicting it.
+            {% endcomment %}
             <table class="grid">
                 <thead><tr><th style="width:52pt;">Czas</th><th style="width:150pt;">Moment</th><th>Szczegóły</th></tr></thead>
                 <tbody>
-                    {% for item in run_sheet_items %}
-                    <tr>
+                    {% for item in day_timeline %}
+                    <tr{% if item.is_anchor %} class="anchor"{% endif %}>
                         <td class="t-time">{{ item.time|default:"—" }}</td>
                         <td class="t-title">{{ item.title }}</td>
-                        <td>{% if item.description %}{{ item.description }}{% endif %}{% if item.location %}{% if item.description %} · {% endif %}<span class="muted">{{ item.location }}</span>{% endif %}</td>
+                        <td>{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% endif %}{% if item.description %}{{ item.description }}{% endif %}{% if item.location %}{% if item.description %} · {% endif %}<span class="muted">{{ item.location }}</span>{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

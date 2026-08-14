@@ -80,15 +80,53 @@ const toClockTime = (minutes: number): string => {
   return `${String(hours).padStart(2, "0")}:${String(clamped % 60).padStart(2, "0")}`;
 };
 
+/**
+ * Minutes since midnight for `H:mm` / `HH:mm`. Deliberately tolerant of the
+ * unpadded hour: `run_sheet` is an unvalidated JSON field with rows older than
+ * the current time control, and the backend reader parses them the same way
+ * (`roster/domain/day_timeline.py`). Anything else is null — the caller decides
+ * what an unreadable time means, because the editor and the printed sheet
+ * answer that differently.
+ */
 const parseClockTime = (time: string): number | null => {
-  if (!time || time.length < 5) {
+  const [rawHours, rawMinutes, ...rest] = (time ?? "").trim().split(":");
+
+  if (rest.length > 0 || rawMinutes === undefined) {
     return null;
   }
 
-  const hours = Number(time.slice(0, 2));
-  const minutes = Number(time.slice(3, 5));
+  const hours = Number(rawHours);
+  const minutes = Number(rawMinutes);
 
-  return Number.isNaN(hours) || Number.isNaN(minutes) ? null : hours * 60 + minutes;
+  if (
+    !Number.isInteger(hours) ||
+    !Number.isInteger(minutes) ||
+    rawHours === "" ||
+    rawMinutes === ""
+  ) {
+    return null;
+  }
+
+  const total = hours * 60 + minutes;
+
+  return total < 0 || total >= MINUTES_PER_DAY ? null : total;
+};
+
+/**
+ * Chronological order for stored run-sheet rows, for the two places that settle
+ * the day rather than display it (load and commit). Compared on the parsed
+ * minute, never on the string: lexically `"9:00"` follows `"12:00"`. An
+ * unreadable time sorts last, keeping its input order behind a stable sort.
+ */
+export const compareRunSheetTimes = (left: string, right: string): number => {
+  const leftMinutes = parseClockTime(left);
+  const rightMinutes = parseClockTime(right);
+
+  if (leftMinutes === null || rightMinutes === null) {
+    return Number(leftMinutes === null) - Number(rightMinutes === null);
+  }
+
+  return leftMinutes - rightMinutes;
 };
 
 /** The `HH:mm` half of a `datetime-local` value, or null when it is incomplete. */

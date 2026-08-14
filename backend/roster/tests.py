@@ -4287,7 +4287,7 @@ class ConcertDaySheetTests(APITestCase):
 
     def test_run_sheet_is_chronological(self) -> None:
         ctx = self._build_context(Audience.PRODUCTION, None)
-        times = [item["time"] for item in ctx["run_sheet_items"]]
+        times = [row["time"] for row in ctx["day_timeline"] if not row["is_anchor"]]
         self.assertEqual(times, ["18:30", "19:15", "20:00"])
 
     def test_score_links_are_gated_never_raw_media(self) -> None:
@@ -4445,10 +4445,13 @@ class ConcertDaySheetTests(APITestCase):
 
         call_time = self.project.call_time
         assert call_time is not None
-        self.assertTrue(ctx["call_crosses_day"])
+        call_cell = next(
+            fact for fact in ctx["masthead_facts"] if fact["label"] == "Zbiórka"
+        )
+        self.assertEqual(call_cell["note"], "inny dzień")
         self.assertIn(
             call_time.astimezone(zoneinfo.ZoneInfo("Europe/Warsaw")).strftime("%d.%m"),
-            ctx["call_time_label"],
+            call_cell["value"],
         )
 
     def test_implausible_call_window_is_reported_not_stated(self) -> None:
@@ -4561,16 +4564,119 @@ class ConcertDaySheetTests(APITestCase):
     def test_run_sheet_sorts_on_the_clock_and_reads_legacy_rows(self) -> None:
         """`run_sheet` is an unvalidated JSON field: lexically '9:00' follows
         '12:00', and rows written with the original `label` key printed as the
-        fallback placeholder."""
+        fallback placeholder. The stored hour is canonicalised on the way out so
+        the printed time gutter lines up with the anchors beside it."""
         self.project.run_sheet = [
             {"time": "12:00", "title": "Próba akustyczna"},
             {"time": "9:00", "label": "Otwarcie kościoła"},
         ]
         self.project.save(update_fields=["run_sheet"])
 
-        items = self._build_context(Audience.PRODUCTION, None)["run_sheet_items"]
-        self.assertEqual([item["time"] for item in items], ["9:00", "12:00"])
-        self.assertEqual(items[0]["title"], "Otwarcie kościoła")
+        rows = [
+            row
+            for row in self._build_context(Audience.PRODUCTION, None)["day_timeline"]
+            if not row["is_anchor"]
+        ]
+        self.assertEqual([row["time"] for row in rows], ["09:00", "12:00"])
+        self.assertEqual(rows[0]["title"], "Otwarcie kościoła")
+
+    # --- the day as one axis (Etap 3) ---------------------------------- #
+
+    def _pin_concert_day(self, call_hour: int = 18, call_minute: int = 30) -> None:
+        """A fixed 13.07.2026 concert at 20:00 Warsaw, so the run sheet's own
+        hours (18:30 / 19:15 / 20:00) sit in a known relation to the anchors."""
+        import zoneinfo
+
+        warsaw = zoneinfo.ZoneInfo("Europe/Warsaw")
+        self.project.date_time = datetime(2026, 7, 13, 20, 0, tzinfo=warsaw)
+        self.project.call_time = datetime(
+            2026, 7, 13, call_hour, call_minute, tzinfo=warsaw
+        )
+        self.project.save(update_fields=["date_time", "call_time"])
+
+    def test_printed_day_merges_the_anchors_into_the_run_sheet(self) -> None:
+        """The sheet used to print the raw run sheet under a masthead built from
+        the project's datetimes, so the two could disagree — and did. One axis
+        cannot: the call and the downbeat are placed among the points."""
+        self._pin_concert_day()
+        rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
+
+        self.assertEqual(
+            [(row["time"], row["title"]) for row in rows],
+            [
+                ("18:30", "Zbiórka"),
+                ("18:30", "Call & warm-up"),
+                ("19:15", "Sound check"),
+                ("20:00", "Downbeat"),
+                ("20:00", "Początek koncertu"),
+            ],
+        )
+        # A point sharing an anchor's minute belongs inside the day the anchors
+        # bracket — after the call, before the downbeat.
+        self.assertEqual([row["is_anchor"] for row in rows], [True, False, False, False, True])
+        self.assertIn("Początek koncertu", self._render(Audience.PRODUCTION, None))
+
+    def test_day_card_masthead_closes_the_day_from_the_timeline(self) -> None:
+        """The fourth cell is the last planned moment, taken from the merged
+        axis; the report keeps the venue there, because its reader is at a desk
+        with the address in front of them."""
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "22:15", "title": "Wyjście z kościoła"},
+        ]
+        self.project.save(update_fields=["run_sheet"])
+
+        day = self._build_context(Audience.CHORISTER, self.singer_part)
+        labels = [fact["label"] for fact in day["masthead_facts"]]
+        self.assertEqual(labels, ["Data", "Zbiórka", "Początek koncertu", "Koniec planu"])
+        self.assertEqual(day["masthead_facts"][-1]["value"], "22:15")
+        # The venue leaves the band and becomes the line under it, in full.
+        self.assertTrue(day["venue_line"])
+
+        report = self._build_context(Audience.PRODUCTION, None)
+        self.assertEqual(report["masthead_facts"][-1]["label"], "Miejsce")
+        self.assertEqual(report["venue_line"], "")
+
+    def test_day_card_states_no_end_it_cannot_derive(self) -> None:
+        """Nothing is planned after the downbeat, and the end of a concert is
+        stored nowhere — a cell derived from summed piece durations would be a
+        fabricated hour printed as a fact."""
+        self._pin_concert_day()
+        day = self._build_context(Audience.CHORISTER, self.singer_part)
+        self.assertEqual(
+            [fact["label"] for fact in day["masthead_facts"]],
+            ["Data", "Zbiórka", "Początek koncertu"],
+        )
+
+    def test_call_on_another_day_is_marked_inside_the_printed_day(self) -> None:
+        """The anchor moves to where it actually falls and says how far — an
+        hour on its own reads as concert-day wherever it appears."""
+        self._pin_concert_day()
+        self._move_call_off_the_concert_day()
+        rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
+
+        self.assertEqual(rows[0]["title"], "Zbiórka")
+        self.assertEqual(rows[0]["day_note"], "20 dni wcześniej")
+
+    def test_report_asks_to_confirm_a_call_on_another_calendar_day(self) -> None:
+        """Inside the plausible window a different day is legitimate (the tour
+        case the ceiling exists to permit) and is also what an off-by-one date
+        looks like from below the threshold. The report asks; the day card just
+        prints the date."""
+        import zoneinfo
+
+        warsaw = zoneinfo.ZoneInfo("Europe/Warsaw")
+        self.project.date_time = datetime(2026, 7, 13, 11, 0, tzinfo=warsaw)
+        self.project.call_time = datetime(2026, 7, 12, 19, 0, tzinfo=warsaw)
+        self.project.save(update_fields=["date_time", "call_time"])
+
+        report = self._build_context(Audience.PRODUCTION, None)
+        self.assertEqual(report["call_window_warning"], "")
+        self.assertIn(
+            "Zbiórka wypada w innym dniu niż koncert",
+            [blocker["text"] for blocker in report["blockers"]],
+        )
 
     def test_singer_sheet_carries_someone_to_call(self) -> None:
         """The chorister branch of the contact directory was built and never
@@ -4627,7 +4733,10 @@ class ConcertDaySheetTests(APITestCase):
         self.project.save(update_fields=["date_time", "call_time"])
 
         ctx = self._build_context(Audience.PRODUCTION, None)
-        self.assertTrue(ctx["call_crosses_day"])
+        call_cell = next(
+            fact for fact in ctx["masthead_facts"] if fact["label"] == "Zbiórka"
+        )
+        self.assertEqual(call_cell["note"], "inny dzień")
         self.assertEqual(ctx["call_window_warning"], "")
         self.assertEqual(ctx["call_buffer_label"], "15 h 00 min")
 
@@ -4778,6 +4887,82 @@ class ConcertDaySheetTests(APITestCase):
         aud, rec = ProjectViewSet._resolve_day_sheet_audience(self.project, self.outsider_user)
         self.assertIsNone(aud)
         self.assertIsNone(rec)
+
+
+class DayTimelineContractTests(SimpleTestCase):
+    """The printed day and the edited day must be the same day.
+
+    The concert day is merged twice — here for the PDF, and in
+    ``frontend/src/features/projects/lib/dayTimeline.ts`` for the live editor,
+    which cannot call this one because it orders a list the user is still typing
+    into. Both suites replay ``day_timeline_cases.json``, so the two can only
+    drift apart through a red test on one side or the other.
+
+    The fixture is narrower than either implementation on purpose: its points
+    are ALREADY sorted and its times are zero-padded, because that is all the
+    merge itself promises. Ordering stored rows belongs to
+    :func:`normalize_run_sheet` (asserted separately, in the document suite);
+    the editor sorts on commit instead, so that a half-typed time cannot yank
+    the row under the cursor to the top of the day.
+    """
+
+    @staticmethod
+    def _load_cases() -> list[dict]:
+        import json
+        from pathlib import Path
+
+        fixture = (
+            Path(__file__).resolve().parent / "domain" / "day_timeline_cases.json"
+        )
+        return json.loads(fixture.read_text(encoding="utf-8"))["cases"]
+
+    @staticmethod
+    def _to_datetime(value: str | None):
+        import zoneinfo
+
+        if not value:
+            return None
+        return datetime.fromisoformat(value).replace(
+            tzinfo=zoneinfo.ZoneInfo("Europe/Warsaw")
+        )
+
+    def test_merge_matches_the_shared_fixture(self) -> None:
+        from .domain.day_timeline import (
+            RunSheetPoint,
+            TimelineEntryKind,
+            build_day_timeline,
+            resolve_call_window,
+        )
+
+        cases = self._load_cases()
+        self.assertGreater(len(cases), 0)
+
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                window = resolve_call_window(
+                    self._to_datetime(case["callTime"]),
+                    self._to_datetime(case["concertTime"]),
+                    "Europe/Warsaw",
+                )
+                points = [
+                    RunSheetPoint(
+                        time=point.get("time", ""),
+                        title=point["title"],
+                        description="",
+                        location="",
+                    )
+                    for point in case["points"]
+                ]
+                entries = build_day_timeline(points, window)
+                self.assertEqual(
+                    [
+                        entry.point.title
+                        if entry.kind is TimelineEntryKind.POINT and entry.point
+                        else entry.kind.value
+                        for entry in entries
+                    ],
+                    case["expected"],
+                )
 
 
 class ArtistLifecycleStateTests(APITestCase):

@@ -31,10 +31,16 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from core.constants import VoiceLine
-from roster.domain.call_window import (
+from roster.domain.day_timeline import (
     CallWindow,
     CallWindowProblem,
+    RunSheetPoint,
+    TimelineEntry,
+    TimelineEntryKind,
+    build_day_timeline,
     localize,
+    normalize_run_sheet,
+    plan_end,
     resolve_call_window,
 )
 from roster.infrastructure.print_fonts import (
@@ -93,6 +99,12 @@ _VOICE_TYPE_ORDER: dict[str, int] = {
     VoiceType.BARITONE: 5,
     VoiceType.BASS: 6,
     VoiceType.CONDUCTOR: 7,
+}
+# The day's two fixed points, named for the printed sheet. Placing them is the
+# domain's job (``day_timeline``); only the wording belongs to the document.
+_ANCHOR_LABELS: dict[TimelineEntryKind, str] = {
+    TimelineEntryKind.CALL: 'Zbiórka',
+    TimelineEntryKind.CONCERT: 'Początek koncertu',
 }
 
 
@@ -424,7 +436,6 @@ class DocumentGenerator:
             project.call_time, project.date_time, project_timezone
         )
         event_datetime_local = call_window.event_local
-        call_time_local = call_window.call_local
         piece_castings_map = DocumentGenerator._map_castings_by_piece(casting_list)
 
         # The podium is `Project.conductor`, never a member of the cast: a
@@ -483,6 +494,9 @@ class DocumentGenerator:
 
         venue = project.location
         venue_map_url = DocumentGenerator._build_map_url(venue)
+        venue_address = DocumentGenerator._format_address(
+            venue.formatted_address if venue else ''
+        )
         # Date, call, downbeat and venue name are already the masthead's four
         # facts; restating them here filled half this card with an echo. It now
         # carries only what the masthead cannot fit.
@@ -491,14 +505,11 @@ class DocumentGenerator:
             event_facts.append(
                 {'label': 'Typ lokalizacji', 'text': venue.get_category_display()}
             )
-        event_facts.append(
-            {
-                'label': 'Adres',
-                'text': DocumentGenerator._format_address(
-                    venue.formatted_address if venue else ''
-                ),
-            }
-        )
+        # The day card prints the address in the masthead, directly under the
+        # anchors — the one line a lost singer needs is not worth a second row
+        # inside a card further down the page.
+        if is_report:
+            event_facts.append({'label': 'Adres', 'text': venue_address})
         # A timezone is worth a line only when it is not the one the reader
         # assumes; the IANA identifier itself is machine vocabulary either way.
         if project_timezone != DEFAULT_EVENT_TIMEZONE:
@@ -553,7 +564,12 @@ class DocumentGenerator:
             item['is_mandatory'] for item in rehearsal_items
         )
 
-        run_sheet_items = DocumentGenerator._normalize_run_sheet(project.run_sheet)
+        # The day as one axis. The sheet used to print the raw run sheet beside
+        # a header built from the project's datetimes, so a stale "12:00 Start"
+        # could sit under a masthead announcing a 20:02 downbeat — two
+        # implementations of one concept, one of them wrong, in one document.
+        run_sheet_points = normalize_run_sheet(project.run_sheet)
+        timeline = build_day_timeline(run_sheet_points, call_window)
 
         greeting = None
         if recipient is not None:
@@ -588,15 +604,17 @@ class DocumentGenerator:
             'generation_label': DocumentGenerator._format_datetime(
                 localize(now, project_timezone)
             ),
-            'event_datetime_local': event_datetime_local,
-            'call_time_local': call_time_local,
-            'event_date_label': DocumentGenerator._format_date(event_datetime_local),
-            'event_time_label': DocumentGenerator._format_time(event_datetime_local),
-            # A call time on another calendar day prints WITH that day: an hour
-            # on its own reads as concert-day, and a singer acting on it arrives
-            # on the wrong date.
-            'call_time_label': DocumentGenerator._format_call_time(call_window),
-            'call_crosses_day': call_window.crosses_day,
+            # The masthead band, derived from the same axis as the timeline
+            # below it rather than from four independently formatted fields. A
+            # call on another calendar day carries that day inside its cell: an
+            # hour on its own reads as concert-day, and a singer acting on it
+            # arrives on the wrong date.
+            'masthead_facts': DocumentGenerator._build_masthead_facts(
+                call_window, timeline, project, is_report
+            ),
+            'venue_line': (
+                '' if is_report else DocumentGenerator._venue_line(venue, venue_address)
+            ),
             'call_buffer_label': DocumentGenerator._format_call_buffer(call_window),
             # Stated only where someone can act on it: management and the
             # maestro get told the window is broken, the singer is simply not
@@ -615,7 +633,11 @@ class DocumentGenerator:
             ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
-            'run_sheet_items': run_sheet_items,
+            'day_timeline': DocumentGenerator._build_timeline_rows(timeline),
+            # With no points of its own the merged axis is just the two anchors,
+            # which the masthead already states — the section says so in words
+            # instead of restating them as a two-row table.
+            'has_run_sheet': bool(run_sheet_points),
             'rehearsal_items': rehearsal_items,
             'rehearsals_done': rehearsals_done,
             'all_rehearsals_mandatory': all_rehearsals_mandatory,
@@ -649,7 +671,7 @@ class DocumentGenerator:
                     confirmed_participations=confirmed_participations,
                     crew_list=crew_list,
                     venue=venue,
-                    run_sheet_items=run_sheet_items,
+                    run_sheet_points=run_sheet_points,
                 )
                 if is_report
                 else []
@@ -1129,7 +1151,7 @@ class DocumentGenerator:
         confirmed_participations: list[Participation],
         crew_list: list[CrewAssignment],
         venue: Any,
-        run_sheet_items: list[dict[str, str]],
+        run_sheet_points: list[RunSheetPoint],
     ) -> list[dict[str, str]]:
         """What is not closed yet, worst first.
 
@@ -1161,6 +1183,16 @@ class DocumentGenerator:
                 f'Zbiórka ustawiona {days} {_count_label(days, "dzień", "dni", "dni")} '
                 'przed koncertem',
                 'Najprawdopodobniej wpisano ją na złą datę.',
+            )
+        elif call_window.crosses_day:
+            # Inside the plausible window a different calendar day is legitimate
+            # — the tour case the ceiling exists to permit — but it is also what
+            # an off-by-one date looks like from below the threshold. The day
+            # card simply prints the date; the report asks someone to confirm it.
+            add(
+                'Zbiórka wypada w innym dniu niż koncert',
+                'Zwykle to trasa lub nocleg na miejscu — potwierdź, że nie jest '
+                'to pomyłka w dacie.',
             )
 
         if venue is None:
@@ -1231,7 +1263,7 @@ class DocumentGenerator:
         if not crew_list:
             add('Brak obsady technicznej', 'Żaden współpracownik nie jest przypisany.')
 
-        if not run_sheet_items:
+        if not run_sheet_points:
             add(
                 'Przebieg dnia nie został uzupełniony',
                 'Wykonawcy dostaną same godziny z nagłówka.',
@@ -1268,47 +1300,113 @@ class DocumentGenerator:
         return mapping
 
     @staticmethod
-    def _normalize_run_sheet(run_sheet: list[Any]) -> list[dict[str, str]]:
-        normalized = []
-        for item in run_sheet or []:
-            if not isinstance(item, dict):
-                continue
-            normalized.append(
+    def _build_timeline_rows(timeline: list[TimelineEntry]) -> list[dict[str, Any]]:
+        """The merged day, flattened for the template.
+
+        Anchors print in the heavier voice and carry their date when they fall
+        on another calendar day — an anchor hour on its own reads as concert-day
+        wherever it appears, the run sheet included.
+        """
+        rows: list[dict[str, Any]] = []
+        for entry in timeline:
+            point = entry.point
+            rows.append(
                 {
-                    'time': str(item.get('time', '')).strip(),
+                    'time': entry.time,
                     'title': (
-                        str(
-                            item.get('title')
-                            # `label` is the key the run sheet shipped with and
-                            # rows written then still carry it; without it they
-                            # print as the fallback rather than as themselves.
-                            or item.get('label')
-                            or item.get('task')
-                            or item.get('activity')
-                            or item.get('name')
-                            or 'Punkt dnia'
-                        )
-                    ).strip(),
-                    'description': str(item.get('description') or item.get('notes') or '').strip(),
-                    'location': str(item.get('location') or '').strip(),
+                        point.title
+                        if point is not None
+                        else _ANCHOR_LABELS.get(entry.kind, '')
+                    ),
+                    'description': point.description if point is not None else '',
+                    'location': point.location if point is not None else '',
+                    'is_anchor': entry.is_anchor,
+                    'day_note': (
+                        DocumentGenerator._day_offset_note(entry.day_offset)
+                        if entry.is_anchor
+                        else ''
+                    ),
                 }
             )
-        # The editor and overview widget sort chronologically; the PDF must match,
-        # so a manager entering points out of order still prints a clean timeline.
-        # Sorted on parsed minutes, not on the string: `run_sheet` is an
-        # unvalidated JSON field, and lexically "9:00" follows "12:00".
-        normalized.sort(key=lambda entry: DocumentGenerator._clock_sort_key(entry['time']))
-        return normalized
+        return rows
 
     @staticmethod
-    def _clock_sort_key(value: str) -> tuple[int, int]:
-        """Minutes since midnight for an `H:MM`/`HH:MM` string. Anything
-        unparsable sorts last rather than being dropped or guessed at."""
-        hours, _, minutes = value.partition(':')
-        try:
-            return (0, int(hours) * 60 + int(minutes))
-        except ValueError:
-            return (1, 0)
+    def _day_offset_note(day_offset: int) -> str:
+        """How far from concert day an anchor sits, in words. Only the sign and
+        the magnitude matter here; the exact date is already in the masthead."""
+        if day_offset == 0:
+            return ''
+        days = abs(day_offset)
+        noun = _count_label(days, 'dzień', 'dni', 'dni')
+        return f'{days} {noun} wcześniej' if day_offset < 0 else f'{days} {noun} później'
+
+    @staticmethod
+    def _build_masthead_facts(
+        call_window: CallWindow,
+        timeline: list[TimelineEntry],
+        project: Project,
+        is_report: bool,
+    ) -> list[dict[str, Any]]:
+        """The band of facts under the title.
+
+        On the day card the fourth cell closes the day rather than repeating the
+        venue (which prints in full directly below): the last planned moment,
+        taken from the merged timeline so it cannot disagree with it. There is
+        no cell when nothing is planned after the downbeat — an end derived from
+        summed piece durations would be a fabricated hour stated as a fact.
+        """
+        facts: list[dict[str, Any]] = [
+            {
+                'label': 'Data',
+                'value': DocumentGenerator._format_date(call_window.event_local),
+                'note': '',
+                'accent': False,
+            },
+            {
+                'label': 'Zbiórka',
+                'value': DocumentGenerator._format_call_time(call_window),
+                'note': 'inny dzień' if call_window.crosses_day else '',
+                'accent': True,
+            },
+            {
+                'label': 'Początek koncertu',
+                'value': DocumentGenerator._format_time(call_window.event_local),
+                'note': '',
+                'accent': False,
+            },
+        ]
+        if is_report:
+            facts.append(
+                {
+                    'label': 'Miejsce',
+                    'value': project.location.name if project.location else 'Do ustalenia',
+                    'note': '',
+                    'accent': False,
+                }
+            )
+            return facts
+
+        end = plan_end(timeline)
+        if end is not None and end.point is not None:
+            facts.append(
+                {
+                    'label': 'Koniec planu',
+                    'value': end.time,
+                    'note': end.point.title,
+                    'accent': False,
+                }
+            )
+        return facts
+
+    @staticmethod
+    def _venue_line(venue: Any, venue_address: str) -> str:
+        """Venue and street in one line, for the day card's masthead. The reader
+        who needs it is standing outside with a phone, not reading a facts
+        table."""
+        name = venue.name if venue else 'Miejsce do ustalenia'
+        if venue_address and venue_address != 'Do ustalenia':
+            return f'{name} · {venue_address}'
+        return name
 
     @staticmethod
     def _visible_sections(

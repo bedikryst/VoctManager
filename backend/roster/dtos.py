@@ -66,7 +66,13 @@ def _blankable_optional_string(value: object) -> object:
     return stripped or None
 
 
-def _normalize_run_sheet(value: object) -> object:
+def _freeze_sequence(value: object) -> object:
+    """Container coercion only — a DTO field must not be a mutable list shared
+    with the caller. The *contents* of ``run_sheet`` are deliberately not read
+    here: the rows are unvalidated free JSON, and the one place that interprets
+    them is ``roster.domain.day_timeline.normalize_run_sheet``, which the
+    documents and the panel both read. Two normalizers over one field would be
+    two answers to "what is the day"."""
     if value is None:
         return ()
     if isinstance(value, list | tuple):
@@ -267,7 +273,7 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     @field_validator("run_sheet", mode="before")
     @classmethod
     def normalize_run_sheet(cls, value: object) -> object:
-        return _normalize_run_sheet(value)
+        return _freeze_sequence(value)
 
 
 class ProjectUpdateDTO(EnterpriseBaseDTO):
@@ -316,7 +322,7 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     @field_validator("run_sheet", mode="before")
     @classmethod
     def normalize_nullable_run_sheet(cls, value: object) -> object:
-        return _normalize_run_sheet(value)
+        return _freeze_sequence(value)
 
     @model_validator(mode="after")
     def reject_null_for_required_fields(self):

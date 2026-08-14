@@ -1,0 +1,97 @@
+{
+  "_doc": [
+    "Shared fixture for the two implementations of the day timeline:",
+    "backend/roster/domain/day_timeline.py (printed sheet) and",
+    "frontend/src/features/projects/lib/dayTimeline.ts (live editor).",
+    "Both read this file in their own test suite, so the day cannot drift apart",
+    "between the panel and the PDF without a red test.",
+    "",
+    "The contract asserted here is narrower than either implementation:",
+    "points are ALREADY IN ORDER and times are zero-padded HH:mm. The merge",
+    "never reorders points (the editor sorts on commit, not on keystroke), and",
+    "only the backend accepts an unpadded legacy '9:00' — it canonicalises",
+    "before merging, which is a normalisation concern, not a merge one.",
+    "",
+    "'expected' lists one token per merged entry, in order: 'call', 'concert',",
+    "or the point's title."
+  ],
+  "cases": [
+    {
+      "name": "anchors bracket the day",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [
+        { "time": "19:00", "title": "Rozśpiewanie" },
+        { "time": "19:30", "title": "Próba akustyczna" },
+        { "time": "22:00", "title": "Demontaż" }
+      ],
+      "expected": ["call", "Rozśpiewanie", "Próba akustyczna", "concert", "Demontaż"]
+    },
+    {
+      "name": "a point on the call minute happens inside the day",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [{ "time": "18:30", "title": "Wejście do zakrystii" }],
+      "expected": ["call", "Wejście do zakrystii", "concert"]
+    },
+    {
+      "name": "a point on the downbeat minute happens inside the day",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [{ "time": "20:00", "title": "Wejście chóru" }],
+      "expected": ["call", "Wejście chóru", "concert"]
+    },
+    {
+      "name": "an evening call for a morning concert opens the list",
+      "concertTime": "2026-07-13T11:00",
+      "callTime": "2026-07-12T19:00",
+      "points": [
+        { "time": "08:00", "title": "Śniadanie" },
+        { "time": "09:30", "title": "Próba generalna" }
+      ],
+      "expected": ["call", "Śniadanie", "Próba generalna", "concert"]
+    },
+    {
+      "name": "a call after the downbeat sorts after it",
+      "concertTime": "2026-07-13T19:00",
+      "callTime": "2026-07-13T21:00",
+      "points": [{ "time": "20:00", "title": "Antrakt" }],
+      "expected": ["concert", "Antrakt", "call"]
+    },
+    {
+      "name": "an empty time inherits its predecessor's position",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [
+        { "time": "19:00", "title": "Rozśpiewanie" },
+        { "time": "", "title": "Wpisywany wiersz" },
+        { "time": "21:00", "title": "Bis" }
+      ],
+      "expected": ["call", "Rozśpiewanie", "Wpisywany wiersz", "concert", "Bis"]
+    },
+    {
+      "name": "a leading empty time stays at the front of the day",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [
+        { "time": "", "title": "Bez godziny" },
+        { "time": "19:00", "title": "Rozśpiewanie" }
+      ],
+      "expected": ["Bez godziny", "call", "Rozśpiewanie", "concert"]
+    },
+    {
+      "name": "no call yet",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": null,
+      "points": [{ "time": "19:00", "title": "Rozśpiewanie" }],
+      "expected": ["Rozśpiewanie", "concert"]
+    },
+    {
+      "name": "nothing planned but both anchors",
+      "concertTime": "2026-07-13T20:00",
+      "callTime": "2026-07-13T18:30",
+      "points": [],
+      "expected": ["call", "concert"]
+    }
+  ]
+}
