@@ -78,7 +78,7 @@ deliberate: it needs no browser, no interactive token, and **never expires**
 ### 3. Secrets file
 
 ```bash
-cd ~/VoctManager
+cd ~/voctmanager
 cp infra/backup.env.example infra/backup.env
 nano infra/backup.env   # fill RCLONE_REMOTE, RCLONE_CONFIG, HEALTHCHECK_URL
 ```
@@ -89,7 +89,7 @@ Shared Drive.
 ### 4. First run + verify
 
 ```bash
-cd ~/VoctManager && bash infra/backup.sh
+cd ~/voctmanager && bash infra/backup.sh
 ```
 
 Confirm all three:
@@ -109,10 +109,10 @@ crontab -e
 
 ```cron
 # Daily DB + media backup at 03:30 (script handles off-site + healthcheck).
-30 3 * * * cd $HOME/VoctManager && /usr/bin/bash infra/backup.sh >> $HOME/voct-backups/backup.log 2>&1
+30 3 * * * cd $HOME/voctmanager && /usr/bin/bash infra/backup.sh >> $HOME/voct-backups/backup.log 2>&1
 
 # Reclaim Docker disk daily (rollback is git-based, so pruning old images is safe).
-0 4 * * *  cd $HOME/VoctManager && /usr/bin/bash infra/docker-gc.sh >> $HOME/voct-backups/prune.log 2>&1
+0 4 * * *  cd $HOME/voctmanager && /usr/bin/bash infra/docker-gc.sh >> $HOME/voct-backups/prune.log 2>&1
 ```
 
 **Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally
@@ -122,6 +122,20 @@ to sit here and bought nothing the daily run cannot: the daily run now trims by
 age and escalates to a budgeted prune on its own when `/` crosses `GC_DISK_PCT`.
 Run `make gc DEEP=--deep` by hand if disk is a genuine emergency, knowing what
 the next deploy will cost.
+
+**The crontab is server state, and it drifts from this file.** Nothing deploys
+it: `git pull` updates the scripts, never the schedule that calls them. A
+crontab written before [`infra/docker-gc.sh`](../infra/docker-gc.sh) existed
+keeps calling `docker` directly with hand-written flags, and the flag that ages
+worst is `--keep-storage` — Docker 28 accepts it, warns, and reclaims 0 B, so
+the disk grows while the log looks like a schedule that runs. **Read what is
+actually installed before trusting this section:**
+
+```bash
+crontab -l                                              # does it call docker-gc.sh at all?
+grep -ci 'reclaimed space: 0B' ~/voct-backups/prune.log # a run of these means it reclaims nothing
+docker buildx du | tail -4                              # what the schedule has failed to hold back
+```
 
 ### Why daily, and why also inside `make deploy`
 
@@ -153,6 +167,18 @@ that list. Running one at the end of `make deploy` therefore destroyed the Astro
 image-encode cache that the *next* deploy needed, and the cost lands as a full
 re-encode of ~530 image variants — half an hour of one vCPU, every deploy.
 
+**A budget below the un-reclaimable floor is worse than no budget.** Most of this
+cache is pinned by running images: `docker buildx du` reported 16.35 GB total
+against 4.73 GB reclaimable, so a 6 GB budget could never be met. An unmeetable
+budget does not stop at its number — it evicts every reclaimable record trying to
+reach it, and the encode cache (`Reclaimable: true`) is always among them. Read
+the floor with `docker buildx du | tail -4` and keep `GC_KEEP` well above
+*total − reclaimable*; the default is 14 GB for exactly that reason.
+
+Note that `make prod` never calls this script, while `make deploy` calls it
+twice. If the encode cache is warm after a `make prod` and cold after every
+`make deploy`, that asymmetry is the symptom, not a coincidence.
+
 So the ordinary mode trims with `--filter until=$GC_MAX_AGE` (default 168h),
 which filters on last use: nothing the most recent build touched is eligible.
 The budget survives only as an escape hatch, entered when `/` is at or above
@@ -177,7 +203,7 @@ media tar into a scratch directory; the live database and `voct_data/media` are
 never touched.
 
 ```bash
-cd ~/VoctManager
+cd ~/voctmanager
 bash infra/restore-drill.sh                 # newest OFF-SITE archive (default)
 bash infra/restore-drill.sh --from local    # newest local archive
 bash infra/restore-drill.sh --timestamp 20260724-033001
@@ -214,7 +240,7 @@ This is not the drill. It overwrites live data, so verify the archive first and
 stop every writer before touching either store.
 
 ```bash
-cd ~/VoctManager
+cd ~/voctmanager
 
 # If the local copy is gone (e.g. droplet was rebuilt), pull it off-site first:
 #   rclone copy voct-drive:backups/voct-db-<TS>.sql.gz  ~/voct-backups/

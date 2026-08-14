@@ -48,10 +48,21 @@ GC_MAX_AGE="${GC_MAX_AGE:-168h}"
 # and a warm image-encode cache is worth more than the gigabytes it occupies.
 GC_DISK_PCT="${GC_DISK_PCT:-80}"
 
-# Budget for the pressure path only — NOT the ordinary trim. One build's layers
-# are ~2.5 GB, so this keeps roughly the last two. Raise it if the droplet has
-# the disk: the higher it is, the less a pressure trim costs the next build.
-GC_KEEP="${GC_KEEP:-6GB}"
+# Budget for the pressure path only — NOT the ordinary trim.
+#
+# It MUST sit above the UN-RECLAIMABLE FLOOR, and on this droplet that floor is
+# most of the cache: `docker buildx du` reports 16.35 GB total against just
+# 4.73 GB reclaimable, because every record backing a running image is pinned.
+#
+# A budget below the floor is unreachable, and an unreachable budget does not
+# stop at the number — it evicts EVERY reclaimable record trying to get there.
+# The Astro image-encode mount is one of them (`Type: exec.cachemount`,
+# `Reclaimable: true`), so a 6 GB budget quietly turned every single deploy into
+# a full re-encode: prune at the end of `make deploy`, cold cache on the next.
+#
+# Read the floor before lowering this — `docker buildx du | tail -4`, then take
+# total minus reclaimable and leave real headroom above the result.
+GC_KEEP="${GC_KEEP:-14GB}"
 
 # Stopped containers younger than this are left alone — a container that died
 # minutes ago is evidence, not garbage.
@@ -115,12 +126,14 @@ else
   #
   # A budgeted prune has no concept of "a build". It holds a flat list of records
   # and deletes from the least-recently-used end until the total is under the
-  # number — so it can cut through the build that just finished, and BuildKit
-  # cache MOUNTS are ordinary removable records in that list. Losing the Astro
-  # image-encode mount (frontend/Dockerfile, web-builder) costs the next build a
-  # full re-encode of ~530 variants: half an hour on this one vCPU, every deploy,
-  # because the prune that runs at the end of `make deploy` destroys the cache the
-  # next `make deploy` needs. That self-defeating loop is why age comes first.
+  # number — and BuildKit cache MOUNTS are ordinary removable records in that
+  # list. Worse, most of this cache is pinned by running images and cannot be
+  # reclaimed at all (see GC_KEEP), so a budget set below that floor never
+  # succeeds and degenerates into "delete everything reclaimable" on every run.
+  # Either way the Astro image-encode mount (frontend/Dockerfile, web-builder)
+  # goes, and the next build re-encodes ~530 variants: half an hour on this one
+  # vCPU. The prune at the end of `make deploy` was destroying the cache the next
+  # `make deploy` needed — that self-defeating loop is why age comes first.
   #
   # `until` filters on last use, so a record the latest build touched is never
   # eligible. Growth stays bounded because records from builds older than
