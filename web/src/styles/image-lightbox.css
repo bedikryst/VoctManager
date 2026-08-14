@@ -452,9 +452,14 @@
     padding: 16px max(16px, 3vw);
   }
 
+  /* `auto 1fr` and not two implicit rows: the photograph spans both, and a spanning item hands
+     its leftover height to the rows it crosses in equal shares — which pushed the exit a third of
+     the way down the column, away from the caption it belongs to. The second row takes the
+     remainder instead, so the colophon stands as one block at the top. */
   .image-lightbox-figure {
     display: grid;
     grid-template-columns: minmax(0, auto) minmax(168px, 260px);
+    grid-template-rows: auto 1fr;
     column-gap: clamp(20px, 3vw, 34px);
     align-items: start;
   }
