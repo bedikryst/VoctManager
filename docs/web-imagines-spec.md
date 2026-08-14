@@ -50,6 +50,12 @@ the shape and left the two hardest measurements to a later pass; one of them tur
 work at all. It also retires `wMax` and the pixel basis from `lib/galleryLayout`, so it reaches
 the concert pages. Where §17 and §19 disagree, §19 is what shipped.
 
+**§20 closes two entries on §19's open list and corrects the second of them.** The head has an
+index; the concert gallery's one-per-row breakpoint moved off 640, but to **960** rather than the
+720 §19 proposed — that note did the arithmetic for the wrong page, and 720 would have left a
+tablet at 213px. Where §19's open list and §20 disagree, §20 is what shipped. §20 also carries the
+standing dark-frame items forward unchanged, so its `Still open` is the current one.
+
 ---
 
 ## 1. The defect
@@ -1562,3 +1568,158 @@ Length at 1440×900: `/obrazy` **15 792 → 14 960px**, the sheet cap paying for
   differing. So is the resolve → runs → framed pipeline above it. A `PhotoFrame.astro` and a
   `lib/galleryModel.ts` would make the trigger contract one thing. Purely housekeeping, which is
   why it keeps losing to everything above it.
+
+## 20. The head gets an index, and the gallery's floor turns out not to be a phone number — SHIPPED
+
+Two items off §19's list. One was a design decision and went the way it was briefed; the other was
+filed as a one-line change, and the measurement says the line §19 proposed would have fixed a third
+of it.
+
+### The index — a table of contents, not a toolbar
+
+`/obrazy` states its scale and has an anchor on every evening, and until now nothing at the top
+used either. It has five entries now, under the scale line, in the grammar the desktop registrum
+already owns: a fixed numeral column so five titles align on one left edge, the Polish name, a
+hairline LEADER ruled out to the count of frames, and the evening's Latin hanging indented under
+the title as that entry's own colophon.
+
+Two compositions were drawn before anything was written. The one not taken quoted the page's own
+**threshold** five times — a full-measure hairline per evening in that evening's candle, with the
+name standing on it — which is the more site-native reading and is width-agnostic, so it would not
+have degraded on a phone. It lost on the brief: the leader is what makes a codex's index an index,
+and five dyed full-measure rules stacked 48px apart in a head risk reading as a chart's legend,
+which is the trap `registrum.css` names in its own history ("five flat colour fields in a chrome
+whose site shows flat colour nowhere else"). The silks did not travel with the grammar and must
+not be re-proposed here: a silk is an object slipping through the slot of a book block, and a page
+has no slot. **What the register's dyes do on the chrome, the numeral does here** — the same place
+every evening head on this page already puts its candle.
+
+The Latin tier costs nothing to author: `base.css`'s two-tier rubric already turns a `.micro`
+carrying a `.lat` into capitalis caps over a mono gloss, so `INCARNATIO · sty 2024` is one span and
+a class. Its ink is quieted rather than left at candle, for the same reason the evening heads quiet
+theirs — the numeral is already carrying this evening's light.
+
+### The index does not fit above the fold, at any desktop size, and cannot be made to
+
+Measured, because it looked close enough to try: the scale line ends at **617** and stays there
+(the head's clamps are saturated from ~1250 up), and the index runs **669 → 1146**. That is 66px
+short at 1920×1080, 246px at 1440×900, 378px at 1366×768. Fitting 1440×900 means cutting 246px;
+collapsing every row to one line saves 170 and costs the Latin the brief asked for. **The phone is
+the case that nearly fits** — 482 → 855 against 844 — because the desktop head is the taller one.
+
+So the index is not a first-screen object. It sits in the gap between the head and the first plate,
+which is the gap the reader crosses on their first scroll gesture. That is a fact about the page,
+not a defect to keep re-attacking: the head's opening is the argument §17 made against a hero, and
+trading it for five rows of navigation would be trading the page for its own signpost.
+
+### An authored stagger is a claim about what enters together, and here it was false
+
+The rows were first given `calc(0.27s + var(--i) * 0.09s)` — the natural reading of "five rows in
+sequence". Measurement killed it: only the first two are inside the trigger line at load, and rows
+III–V each cross it **alone**, later, on the reader's own scroll. A stagger authored for five
+arrivals then spends its whole range on rows that have no one to be staggered against — it stops
+being a cadence and becomes latency on a row you just reached. The base is the lede's own
+`data-d="2"` now, so the worst lone arrival is 0.54s, inside the ~2.0s a choreography has before it
+leaves the top of the screen.
+
+**The rule this generates: before authoring a stagger, measure which of the nodes actually cross
+the trigger in one callback.** `--i` is a claim about simultaneity, and nothing checks it.
+
+Same class of defect, same block: the leader was drawing on `--rule-in` (0.85s), which is the clock
+of a hairline spanning its block's whole measure. A leader is bound to a title at one end, and both
+of the site's other index surfaces draw theirs in ~0.38s; on `--rule-in` the last row was still
+drawing 1.57s after it was reached. 0.42s now.
+
+### The anchor does not fight Lenis — and the probe that said it did was the thing that was wrong
+
+`setupLenisAnchors()` lives in `scripts/landing.ts` and runs on the landing only, so the index is
+the first thing on this site to click a `#hash` while Lenis owns the scroll; the entrances §19 built
+from `/koncerty` are page LOADS and never exercised that path. It was expected to need the handler
+extracted. It does not: cold click, click from mid-page, click upward, and the same anchor twice, in
+both the Lenis and the reduced-motion path, all land at exactly `section top 96` — the
+`scroll-margin-top` the anchors already carry.
+
+**The intermittent failure that suggested otherwise was the probe.** Lenis keeps a virtual scroll
+position and restores it on the next frame, so a bare `window.scrollTo(0, 0)` between test cases is
+silently undone and the click that follows is measured from the wrong place — which reads as an
+anchor that failed to travel, on some runs and not others. Reset through `window.__lenis` in any
+probe on this site. `vm-shot/obrazy-anchor.cjs` carries the note.
+
+### The concert gallery's breakpoint was 640, and the answer is 960, not the 720 §19 guessed
+
+§19 filed this as "same one-line decision, different page" — `/obrazy` breaks at 720, so break here
+at 720. Measured on 9 Kart's Kraków run, the site's densest, the defect does not end at 720:
+
+| viewport | before | after |
+|---|---|---|
+| 640 | 576×385 | 576×385 |
+| 660 | **183×122** | 594×397 |
+| 720 | 199×133 | 648×433 |
+| 768 | 213×142 | 691×461 |
+| 860 | 238×159 | 774×517 |
+| 959 | 262 | 863×576 |
+| 961 | — | **266×178** |
+| 1440 | 363×242 | 363×242 |
+
+A 3.1× collapse across a 20px boundary, and the whole tablet band at or under the **240×160** at
+which §2 says these frames stop being photographs. `720` would have recovered 660–720 and left an
+iPad at 213.
+
+**There is no two-up to fall back to, and that is why this is a breakpoint rather than a packing
+change.** `--share` is computed once against the 1120 measure (§19), so how many frames stand in a
+row is fixed at build and only their size tracks the viewport; the `flex-basis: 100%` override is
+the only lever the layout has. Three-up first clears §2 with margin at **960** — 266 at 961, against
+863 one-per-row at 959. `sizes` carries the same number, or a frame displayed at ~900 is handed the
+file cut for the packed width.
+
+And the reason it is not 720: **`/obrazy`'s rows are a SHEET standing under a plate**, already the
+small half of a pair and never the only thing on the page. This gallery is the whole gallery. Two
+pages, one packing module, two different floors — the same distinction §19 drew when it kept the
+packing shared and let each page set its own `maxHeight`.
+
+### Weight
+
+`astro check` 0 errors across 114 files. Register audit **969 nodes across 16 pages, clean**
+(964 plus the five index rows; 1 note, the standing R10 dark-frame list). Every §19 measurement
+re-run and unchanged: zero horizontal overflow at 14 widths, the rail clearing at 1440, all three
+anchors at 96, and every run's packing identical to §19's table. Length at 1440×900: `/obrazy`
+14 960 → **15 489px**, phone 18 136 → **18 542px** — the index accounts for the whole difference on
+both.
+
+The index was checked in all three register states, because a leader that exists only under the
+motion gate is a hairline nothing draws: gated it waits at `--half-ink` with the leader at zero, and
+under reduced motion and with JS off all five stand drawn at full length.
+
+### Rejected — do not re-propose
+
+- **Silks, ribbons or any hanging assembly in the index.** The registrum's silks are objects
+  passing through the slot of a book block; `/obrazy`'s head is a page and has no slot. The
+  grammar travelled, the furniture did not.
+- **Cutting the head so the index clears the fold.** Measured above: it cannot be made to clear
+  1366×768 at all, and clearing 1440×900 costs the Latin. The head's opening is §17's argument
+  against a hero.
+- **Extracting `setupLenisAnchors` for this page.** Measured, four cases, both motion paths — the
+  in-document anchor already lands correctly.
+
+### Still open
+
+- **9 Kart's Kraków run is one lit document over seven dark frames**, and **eight more frames sit
+  under p90 60** — both carried unchanged from §19. The levers are the founder's: re-export with
+  more lift, or `plate:` on `kd-9-kart-8`.
+- **Hymn Poległym packs four-up, and its two portraits land at 155×274 on a 1440 desktop** (114×200
+  at 961, the narrowest width where the packing is live). Not strictly §2's case — that number is a
+  landscape 240×160 and these are taller with more area — but `kd-hymn-0` is on §19's dark list at
+  9/25, so **the two darkest frames in the archive are also the two smallest on the page**. Found
+  while sweeping every run for the breakpoint above; pre-existing, and unchanged by it (the same
+  row was ~91×160 at 768 before). The levers are photographic, since §19 rejected both the per-row
+  packer and the automated exposure lift.
+- **The index's leaders are long** — 766px for "Kontemplacja Wcielenia", 891px for "Wołanie Gór" at
+  1440. That is the missal idiom (the registrum's own are shorter only because its sleeve is 420px
+  wide), and it was looked at and accepted. The lever, if it ever stops reading: one `max-width` on
+  `.im-index` — 860 would give 446/571.
+- **`/koncerty`'s own via-rail hides at 980 against a 1120 measure**, unchanged from §19 and still
+  the same sum this section has now done twice.
+- **The trigger markup is copied between the two galleries** — `PhotoFrame.astro` +
+  `lib/galleryModel.ts`. Still housekeeping, still losing to everything above it. Note that the
+  `sizes` breakpoint is now 960 here and 720 on `/obrazy`, so the extraction has one more per-page
+  parameter than §19 recorded, not one fewer.

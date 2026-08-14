@@ -30,7 +30,10 @@
  *  the evening is never lost even though the head that states it has scrolled away.
  *
  *  Each evening is an ANCHOR (`id` = the concert's own id), which is how the concert pages and
- *  the lightbox's exit reach the one they came from instead of the head of a 15 000px document.
+ *  the lightbox's exit reach the one they came from instead of the head of a 15 000px document —
+ *  and how the head's INDEX steers inside it: five entries in the registrum's grammar (numeral,
+ *  name, a leader ruled out to the count of frames, the Latin under it), which is the one thing
+ *  on this page a reader can use before they have scrolled.
  *
  *  Not in the main nav and not in TRANSLATED_ROUTES — see docs/web-imagines-spec.md §7 for both
  *  decisions and for the entrances it does get; §17 is the rebuild this file describes and §19
@@ -280,6 +283,45 @@ const jsonLd = {
             ))
           }
         </p>
+
+        {/* THE INDEX. A 15 000px document that states its scale and then hands the reader
+            nothing to steer by; the anchors exist (every evening is one), so this is the head
+            that uses them. It is a codex's table of contents, not a filter bar: numeral, name,
+            a leader ruled out to the count of frames, and the evening's own Latin under it.
+            One <nav> landmark, which is what a table of contents is for — the page's caution
+            about landmarks is about the ten runs, not about this.
+
+            A LEADER IS NOT A RULE (guardrails §5): it has no length until the title and the
+            figure it runs between are both set, so it follows its entry's ink rather than
+            leading it — the same order registrum.css and nave-menu.css author, and the same one
+            an audit has already tried to "correct" into an inversion once. Hence a plain span
+            drawn by this file's own rules and NOT `.reveal-rule`. */}
+        <nav class="im-index" aria-label="Spis wieczorów">
+          {
+            evenings.map((e, i) => (
+              <a class="im-entry reveal" href={`#${e.id}`} style={`--candle: ${e.candle}; --i: ${i}`}>
+                <span class="im-entry-roman">{e.roman}</span>
+                <span class="im-entry-title">{e.title}</span>
+                <span class="im-entry-lead" aria-hidden="true" />
+                {/* Abbreviated as the evening heads abbreviate, not spelled out: the two are the
+                    same fact and a reader meeting "9 fotografii" here and "9 fot." three screens
+                    down would be reading two different labels for one number. */}
+                <span class="im-entry-count micro">
+                  {e.count} {e.count === 1 ? "fotografia" : "fot."}
+                </span>
+                {/* The two-tier rubric from base.css does the work: `.lat` sets the Latin in
+                    capitalis caps and drops the rest of the line to the mono gloss. The tier is
+                    quieted here rather than left at candle — the numeral is already carrying this
+                    evening's light, and two dyed words in one index row is a colour field. */}
+                <span class="im-entry-meta micro">
+                  <span class="lat">{e.latin}</span>
+                  <span class="im-dot" aria-hidden="true">·</span>
+                  <span>{e.viaDate}</span>
+                </span>
+              </a>
+            ))
+          }
+        </nav>
       </div>
     </header>
 
@@ -566,6 +608,69 @@ const jsonLd = {
   .im-scale { --rule-ink: rgba(244, 241, 233, .2); margin: clamp(30px, 4vw, 44px) 0 0; padding-top: 18px; border-top: 1px solid rgba(244, 241, 233, .2); display: flex; flex-wrap: wrap; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .58); }
   :global(html.voct-motion) .im-scale { border-top-color: transparent; }
 
+  /* ── The index ─────────────────────────────────────────────────────────────
+     The registrum's grammar one step down and standing on a page instead of hanging from a bar:
+     a fixed numeral column so five titles align on one left edge, the title, a hairline LEADER
+     ruled out to the count, and the Latin hanging indented under the title as that entry's own
+     colophon. No silks — a silk is an object slipping through the slot of a book block, and
+     there is no slot here; what the register's dyes do on the chrome, the numeral does here, in
+     the same place every evening head on this page already puts its candle.
+     The block adds NO hairline of its own: `.im-scale` is ruled directly above it and that rule
+     opens the index. Inventing a second one to have something to draw is the move the lead
+     register exists to make unnecessary (guardrails §5). */
+  .im-index { margin: clamp(34px, 4.5vw, 52px) 0 0; }
+  /* The cadence is inline `--i` rather than `data-d`, which only reaches 4 — five rows would need
+     a fifth step in a vocabulary shared by every page on the site, to serve one. Step 0.09s, the
+     interval `data-d` itself counts in and exactly over reveal.ts's 70ms floor, under which two
+     onsets fuse into one event. Same construction registrum.css and the nave card use.
+
+     THE BASE IS THE LEDE'S OWN `data-d="2"`, NOT A THIRD BEAT AFTER IT, and that is a measured
+     decision rather than a tidy one. The index is ~477px tall and opens ~50px under the fold, so
+     only the first two rows are inside the trigger line at load (1440×900) and the last three each
+     cross it ALONE, later, on the reader's own scroll. A stagger authored for five rows arriving
+     together therefore spends its whole range on rows that have no one to be staggered against —
+     it stops being a cadence and becomes latency on a row you just scrolled to. Starting where the
+     lede starts keeps the worst lone arrival at 0.54s, inside the ~2.0s a choreography has before
+     it leaves the top of the screen (guardrails §5). */
+  .im-entry { --reveal-delay: calc(0.18s + var(--i) * 0.09s); display: grid; grid-template-columns: clamp(28px, 2.6vw, 36px) minmax(0, max-content) minmax(18px, 1fr) max-content; align-items: baseline; column-gap: clamp(14px, 1.7vw, 24px); row-gap: 5px; padding: clamp(10px, 1.1vw, 14px) 0; }
+  .im-entry:focus-visible { outline: 1px solid var(--candle); outline-offset: 5px; }
+  /* Row 1 only, NOT spanning both: a grid item spanning two rows drops out of its row's baseline
+     group and is aligned to the row's top instead, which floats a 15px numeral above the shoulder
+     of a 28px title. The evening heads can span because their numeral is half the size of their
+     title; at index scale it cannot. The empty cell under it is the hanging indent the meta wants
+     anyway — the same shape as `.ribbon-meta`'s 32px offset. */
+  .im-entry-roman { grid-column: 1; grid-row: 1; font-family: var(--capitalis); font-size: clamp(12.5px, 1.05vw, 15px); letter-spacing: .12em; color: var(--candle); }
+  /* `nowrap` is safe at this measure and load-bearing: the leader beside it is baseline-aligned,
+     so a title that wrapped would strand the hairline on its first line. The longest string here
+     ("Aeternam — Epitafium dla Gazy") measures ~382px at the 28px cap against a 1180px measure —
+     the phone rule below is where the constraint actually bites, and it drops the leader instead. */
+  .im-entry-title { grid-column: 2; grid-row: 1; font-family: var(--serif); font-weight: 300; font-size: clamp(20px, 2.1vw, 28px); line-height: 1.16; color: rgba(244, 241, 233, .92); white-space: nowrap; transition: color .35s var(--ease, ease); }
+  /* An empty box's synthesized baseline is its bottom margin edge, so `margin-bottom` alone sets
+     the hairline's height above the title's baseline — no vertical alignment to author. The draw
+     is a plain transform on this file's clock rather than the lead register, because a leader is
+     not a rule (see the markup). It is dyed by `background-color`, never by `opacity`: this span
+     sits inside a `.reveal` node whose opacity the ink register owns.
+
+     0.42s, NOT `--rule-in` (0.85s): that token is the clock of a hairline spanning its block's
+     whole measure, and this one is bound to a title on one side. Both of the site's other index
+     surfaces draw theirs in about this — `.ribbon-thread` 0.38s, `.via-lead` on `--nave-lead`.
+     It matters here beyond taste: the pair interval stacks on a row's own delay, so the last row
+     would otherwise still be drawing 1.57s after it was reached. */
+  .im-entry-lead { grid-column: 3; grid-row: 1; height: 1px; margin-bottom: 6px; background-color: rgba(244, 241, 233, .26); transform-origin: 0 50%; transition: transform .42s var(--ease-rule) calc(var(--reveal-delay, 0s) + .18s), background-color .35s var(--ease, ease); }
+  /* Hidden state inside the motion gate, as the registers are: with JS off or motion reduced the
+     hairline is simply there, at full length, and nothing waits to draw it. */
+  :global(html.voct-motion) .im-entry:not(.is-in) .im-entry-lead { transform: scaleX(0); }
+  .im-entry-count { grid-column: 4; grid-row: 1; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .5); white-space: nowrap; }
+  .im-entry-meta { grid-column: 2 / -1; grid-row: 2; font-size: 10.5px; letter-spacing: .14em; color: rgba(244, 241, 233, .4); }
+  .im-entry-meta .lat { color: rgba(244, 241, 233, .6); }
+  /* One gesture, the register's own: the name warms to its evening's light and the leader carries
+     that light out to the figure. No lift, no frame — this page's link idiom is colour and a
+     hairline (`.im-evening-title a`), and an index row is not a control. */
+  .im-entry:hover .im-entry-title,
+  .im-entry:focus-visible .im-entry-title { color: var(--candle); }
+  .im-entry:hover .im-entry-lead,
+  .im-entry:focus-visible .im-entry-lead { background-color: color-mix(in srgb, var(--candle) 62%, transparent); }
+
   /* ── The threshold ─────────────────────────────────────────────────────────
      Full-bleed and in the evening's own candle, so a station is recognisable here by the same
      light it burns on its page. The rule is drawn on the SECTION, whose top is exactly where the
@@ -660,6 +765,19 @@ const jsonLd = {
   }
 
   @media (max-width: 720px) {
+    /* The index gives up its leader here, and that is the honest reading rather than a squeeze:
+       the longest title runs ~273px at the 20px floor against a 334px measure on a 390 phone, so
+       a leader between it and the figure would be drawn at a few pixels at 390 and at nothing by
+       360. What survives is the shape — numeral, name, and the entry's colophon under it — with
+       the count moving to the foot of the row as the figure at its right hand, which is the same
+       place the nave card's register puts its date. The title may wrap now that nothing is
+       baseline-bound to it. */
+    .im-entry { grid-template-columns: clamp(24px, 6.5vw, 30px) minmax(0, 1fr) max-content; column-gap: clamp(11px, 3vw, 15px); row-gap: 6px; }
+    .im-entry-title { grid-column: 2 / -1; white-space: normal; }
+    .im-entry-lead { display: none; }
+    .im-entry-count { grid-column: 3; grid-row: 2; justify-self: end; }
+    .im-entry-meta { grid-column: 2; }
+
     .im-evening-head { grid-template-columns: 1fr; gap: 8px; }
     .im-evening-roman { grid-row: auto; }
     .im-evening-meta { grid-column: 1; }

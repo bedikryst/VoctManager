@@ -712,7 +712,7 @@ const plDate = (iso: string): string =>
                     src={g.img}
                     widths={[560, 840, 1200]}
                     width={Math.min(g.img.width, 1200)}
-                    sizes={`(max-width: 640px) 92vw, ${g.w}px`}
+                    sizes={`(max-width: 960px) 92vw, ${g.w}px`}
                     alt={g.alt}
                     loading="lazy"
                     decoding="async"
@@ -1209,8 +1209,19 @@ const plDate = (iso: string): string =>
   /* Bounds the veil to the image: `inset: 0` on the figure would also darken the caption, which
      is copy and belongs to the ink. */
   .kd-shot-media { position: relative; display: block; }
-  /* On a phone the aspect has no room to argue: one shot per row, full measure. */
-  @media (max-width: 640px) {
+  /* One shot per row, full measure, wherever the packing cannot pay for itself. THE NUMBER IS
+     §2's, not a phone's: `--share` is computed once against the 1120 measure, so how many frames
+     stand in a row is fixed at build and only their SIZE tracks the viewport — there is no
+     two-up to fall back to, and this breakpoint is the only lever the layout has. Measured on
+     9 Kart's Kraków run (three-up, the page's densest): 660 → 183×122, 768 → 213×142,
+     860 → 238×159, i.e. the whole tablet band sat at or under the 240×160 at which §2 says these
+     chiaroscuro frames stop being photographs and become black rectangles. Three-up first clears
+     that with margin at 960 (266 wide), which is why the break is here and not at the 640 it
+     shipped with or the 720 /obrazy uses — that page's rows are a SHEET standing under a plate,
+     already the small half of a pair, and this one is the whole gallery.
+     `sizes` carries the same number: below it the frame is served at 92vw, and a ladder still
+     picking a rendition for the packed width would hand a ~900px frame a 363px file. */
+  @media (max-width: 960px) {
     .kd-shot { flex-basis: 100%; max-width: 100%; }
   }
   .kd-shot :global(img) { width: 100%; height: auto; display: block; border: 1px solid rgba(244,241,233,.12); box-shadow: 0 40px 90px -46px rgba(0,0,0,.9); }
