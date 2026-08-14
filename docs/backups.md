@@ -113,12 +113,15 @@ crontab -e
 
 # Reclaim Docker disk daily (rollback is git-based, so pruning old images is safe).
 0 4 * * *  cd $HOME/VoctManager && /usr/bin/bash infra/docker-gc.sh >> $HOME/voct-backups/prune.log 2>&1
-
-# Monthly deep clean — also drops the BuildKit cache MOUNTS (npm downloads,
-# Astro's image-encode cache) that the daily budget deliberately keeps warm.
-# The first build after this re-encodes every image variant and is slow.
-0 5 1 * *  cd $HOME/VoctManager && /usr/bin/bash infra/docker-gc.sh --deep >> $HOME/voct-backups/prune.log 2>&1
 ```
+
+**Do NOT schedule `--deep`.** It drops the BuildKit cache MOUNTS unconditionally
+— including Astro's image-encode cache — so the next build that touches `web/`
+re-encodes every variant, ~30 minutes on one vCPU. A monthly `--deep` line used
+to sit here and bought nothing the daily run cannot: the daily run now trims by
+age and escalates to a budgeted prune on its own when `/` crosses `GC_DISK_PCT`.
+Run `make gc DEEP=--deep` by hand if disk is a genuine emergency, knowing what
+the next deploy will cost.
 
 ### Why daily, and why also inside `make deploy`
 
@@ -140,6 +143,31 @@ the outside: Docker 28 deprecated `--keep-storage` in favour of
 have errored into that log every week while reclaiming nothing. The script
 detects the flag, and prints `docker system df` plus `df -h /` before and after
 every run — so the log shows exactly what was reclaimed, or that nothing was.
+
+### Why the ordinary trim is by age, not by a budget
+
+A budgeted prune (`--max-used-space`) has no concept of "a build": it holds a
+flat list of records and deletes from the least-recently-used end until it is
+under the number, and BuildKit **cache mounts** are ordinary removable records in
+that list. Running one at the end of `make deploy` therefore destroyed the Astro
+image-encode cache that the *next* deploy needed, and the cost lands as a full
+re-encode of ~530 image variants — half an hour of one vCPU, every deploy.
+
+So the ordinary mode trims with `--filter until=$GC_MAX_AGE` (default 168h),
+which filters on last use: nothing the most recent build touched is eligible.
+The budget survives only as an escape hatch, entered when `/` is at or above
+`GC_DISK_PCT` (default 80%), and `prune.log` says loudly when that happens.
+**Raising `GC_KEEP` is the right response to repeated pressure warnings**, not
+lowering it — on this droplet the cache is cheaper than the rebuild.
+
+Confirm the cache is actually surviving:
+
+```bash
+docker buildx du --verbose | grep -B6 -A3 'node_modules/\.astro'
+```
+
+During a build the same fact reads off the log directly: `(reused cache entry)`
+means the cache held, `(before: … after: …)` means that variant re-encoded.
 
 ## Restore drill (routine — non-destructive)
 

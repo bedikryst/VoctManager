@@ -39,12 +39,15 @@ prod:
 # Both are `-` prefixed — disk hygiene must never abort or fail a deploy that
 # otherwise succeeded (make prints "Error N (ignored)" if the script trips).
 #
-# The FIRST call must not touch the build cache, hence --keep-build-cache. It used
-# to run the same budgeted prune as the second, which deleted the records the build
-# on the very next line was about to reuse: the backend re-downloaded every pip
-# package on every deploy, and on this one-vCPU droplet the Astro image cache is
-# worth far more than the disk it occupies (a single 2560px AVIF costs ~30s there,
-# and a full pass is 522 variants). Dangling images are what free the headroom.
+# NEITHER call may delete records the next build wants, and they avoid it in
+# different ways. The FIRST is explicit: --keep-build-cache, because pruning
+# immediately before a build deleted the records the line below was about to
+# reuse (the backend re-downloaded every pip package on every deploy). The SECOND
+# relies on the script's ordinary mode trimming by AGE — nothing the build that
+# just finished touched is eligible, so the Astro image cache survives its own
+# deploy. On this one-vCPU droplet that cache is worth far more than the disk it
+# occupies: a single 2560px AVIF costs ~30s, and a full pass is 522 variants.
+# Dangling images are what actually free the headroom, in both calls.
 deploy:
 	-@bash infra/docker-gc.sh --keep-build-cache
 	$(BUILD_ENV) $(COMPOSE_PROD) build
