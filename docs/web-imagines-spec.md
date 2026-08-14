@@ -1703,9 +1703,17 @@ under reduced motion and with JS off all five stand drawn at full length.
 
 ### Still open
 
+**This list was swept against §11 as well as §19, and that is why it is longer than the pass that
+produced it.** §11 is the stage-5 open list; §17, §19 and §20 each carried forward only the list
+immediately above them, so four live items sat in §11 unread through three renumberings — two of
+them decided and simply never shipped. **A "Still open" that only inherits from the previous pass
+loses everything the pass before it did not touch.** Sweep every open list that has not been struck
+through, not just the last one.
+
+*Carried from §19 — photographic, the founder's call:*
+
 - **9 Kart's Kraków run is one lit document over seven dark frames**, and **eight more frames sit
-  under p90 60** — both carried unchanged from §19. The levers are the founder's: re-export with
-  more lift, or `plate:` on `kd-9-kart-8`.
+  under p90 60**. The levers: re-export with more lift, or `plate:` on `kd-9-kart-8`.
 - **Hymn Poległym packs four-up, and its two portraits land at 155×274 on a 1440 desktop** (114×200
   at 961, the narrowest width where the packing is live). Not strictly §2's case — that number is a
   landscape 240×160 and these are taller with more area — but `kd-hymn-0` is on §19's dark list at
@@ -1723,3 +1731,37 @@ under reduced motion and with JS off all five stand drawn at full length.
   `lib/galleryModel.ts`. Still housekeeping, still losing to everything above it. Note that the
   `sizes` breakpoint is now 960 here and 720 on `/obrazy`, so the extraction has one more per-page
   parameter than §19 recorded, not one fewer.
+
+*`/obrazy` has no position indicator below 1440, and the head's index did not close that:*
+
+- **The rail hides at 1439 and the index is a head element**, so between 1024 and 1439 — a 1366
+  laptop is the common case — a reader four evenings deep into 15 500px has nothing telling them
+  where they are. §19 measured the breakpoint correctly (the rail lies on the photographs below
+  1440) and named the alternative in prose — a narrower rail that drops its date — then filed it as
+  "a design change rather than a correction, so it is not in this pass". Neither §19's open list nor
+  §20's first draft carried it, which is how it went missing.
+  **This is now one question with three existing answers that do not know about each other**: the
+  index (head, static, five entries), the rail (fixed, ≥1440, `aria-hidden` furniture) and the
+  site-wide `ScrollTopButton` (past 1.5 viewports, "wróć w ciszę"). Anything summoned by scroll
+  belongs in the same design conversation as those three — do not add a fourth in isolation.
+
+*Carried from §11, never swept into §17/§19 — two of these are decided, not open:*
+
+- **The landing band's first panel announces the evening with a photograph taken after it ended.**
+  `kd-wcielenie-8` is a posed group portrait with roses and its own `alt` says *po* Kontemplacji;
+  §11 already did the contact-sheet work and picked **`-6`**, the only frame in the line with a
+  conductor's gesture (`-4` is the safe second, `-5` is the strongest photograph and the wrong one
+  here — it repeats panel III's register). This is a decided one-line change in
+  `data/landing/paths` that has simply never been made.
+- **`kd-wolanie-3` may be a rehearsal standing as the band's second panel** — the same class of
+  error, and this one is NOT decidable from the photograph. §11 left it alone because it is a claim
+  about a day the founder was present for, and recorded that there is no clean replacement in that
+  gallery. It needs another photograph from that night, not another choice.
+- **The frame's protocol has two questions §9 explicitly did not settle**, and neither has been
+  looked at since: whether the counter should stay **roman** now that a set runs to 48, and whether
+  the two full-height click halves are the right target **on a phone**, given the swipe carries the
+  same gesture and the halves were built for a cursor a phone does not have. This is the one open
+  item that touches every frame on the page.
+- **Per-frame `ImageObject` + `creditText` in the `/obrazy` graph** — decided *not* shipped (43
+  nodes restating the visible colophon, against the GSC pass's rule that extra schema is proposed
+  before it is added). Revisit only with Search Console numbers in hand.
