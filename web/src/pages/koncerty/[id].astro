@@ -29,6 +29,7 @@ import { galleryRuns } from "../../lib/galleryRuns";
 import { creditSentence, frameCredit } from "../../lib/photoCredit";
 import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom, candleInkFrom } from "../../lib/candle";
+import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
@@ -160,6 +161,44 @@ const filmPosterSrc = filmPoster
   : undefined;
 const filmVideoSrc = c.video ? videoAsset(c.video.asset) : undefined;
 
+// ── The tabula: this page's own table of contents, hung from the chrome's line and summoned by a
+// run back UP the document (lib/tabula, styles/tabula.css). These are the longest documents on the
+// site — 16 400px at 1440×900 on Wołanie Gór, 17 300 on a phone — and until now the only one with
+// no position and no index of any kind, while `/` has its movement spine and both `/koncerty` and
+// `/obrazy` have a rail.
+//
+// EVERY ROW'S TWO NAMES ARE THE BAND'S OWN, copied from the `kd-section-label` it already prints
+// at its head, because an index that renames what it points at is a second vocabulary for one
+// page. The numerals are the INDEX'S: the bands carry no number anywhere on the page, and
+// numbering its own entries is what a table of contents has always done.
+//
+// The `when` flags are the SAME expressions the bands are guarded by below, hoisted so the two
+// cannot drift — an index row pointing at a band that a concert without a `verbum` never rendered
+// is a dead anchor, and it would only ever be found on the one concert missing that field.
+//
+// Two bands are deliberately absent. The PULL QUOTE is punctuation, not a place — it prints no
+// label of its own, so a row for it would have to invent one. The CODA is the road out (prev /
+// next concert); reaching it by index would be skipping the page rather than steering it.
+const TABULA_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] as const;
+const tabula: TabulaEntry[] = [
+  { when: !!c.prologue, id: "prolog", title: "Próg wieczoru", figure: "Ante concentum" },
+  { when: !!c.verbum, id: "slowo", title: "Słowo wprowadzające", figure: "Verbum" },
+  { when: hasTour, id: "wykonania", title: "Wykonania", figure: "Itinerarium" },
+  { when: !!(c.reflection || c.reflectionNote), id: "refleksja", title: "Refleksja", figure: "Reflectio" },
+  { when: c.program.length > 0, id: "program", title: "Program koncertu", figure: "Programma" },
+  { when: !!(c.roster && c.roster.groups.length > 0), id: "glosy", title: "Głosy wieczoru", figure: "Voces" },
+  { when: !!(c.video && filmVideoSrc), id: "zapis", title: "Zapis wieczoru", figure: "Imago viva" },
+  { when: gallery.length > 0, id: "obrazy", title: "Obrazy wieczoru", figure: "Imagines" },
+]
+  .filter((b) => b.when)
+  .map((b, i) => ({
+    id: b.id,
+    roman: TABULA_ROMAN[i] ?? String(i + 1),
+    title: b.title,
+    figure: b.figure,
+    figureLang: "la",
+  }));
+
 // ── Programme grouped into movements (the salvation-history acts). Numbering runs continuously
 // across acts (the bis carries "bis"); consecutive works sharing a movement id sit under one act
 // header. A concert with no `movements` collapses to a single unlabelled group → the flat list.
@@ -244,7 +283,7 @@ const plDate = (iso: string): string =>
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
   {/* Full path so the chrome's registrum marks THIS concert's ribbon with the crimson
       stitch; SiteChrome still lights the bare KONCERTY link for any /koncerty/* path. */}
-  <SiteChrome current={`/koncerty/${entry.id}`} tone="dark" />
+  <SiteChrome current={`/koncerty/${entry.id}`} tone="dark" index={tabula} />
 
   <main id="tresc" style={`--candle: ${candle}; --candle-ink: ${candleInk}`}>
     {/* ── Hero: full-bleed church, latin inscriptio, title, meta ───────────── */}
@@ -285,7 +324,7 @@ const plDate = (iso: string): string =>
     {/* ── Prologue: the threshold of the evening — draws the reader across the doorway
           into the experience before the reflection. ─────────────────────────────── */}
     {c.prologue && (
-      <section class="kd-band kd-prologue" aria-label="Próg wieczoru">
+      <section class="kd-band kd-prologue" id="prolog" aria-label="Próg wieczoru">
         <div class="kd-wrap kd-narrow">
           {/* The mark takes the ink and it leads the band. It is decorative to a screen reader and
               a register node all the same: it is the tallest thing here and the eye's first stop,
@@ -308,7 +347,7 @@ const plDate = (iso: string): string =>
           the reader onward — the hush before the first work — so the narrative baton the
           prologue used to carry now falls AFTER the word was actually spoken. ─────────── */}
     {c.verbum && (
-      <section class="kd-band kd-verbum" aria-label="Słowo wprowadzające">
+      <section class="kd-band kd-verbum" id="slowo" aria-label="Słowo wprowadzające">
         <div class="kd-wrap kd-narrow">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Verbum</span>
@@ -348,7 +387,7 @@ const plDate = (iso: string): string =>
 
     {/* ── Tour dates (multi-city). Single-date concerts keep the date in `meta`. ─ */}
     {hasTour && (
-      <section class="kd-band kd-tour" aria-label="Wykonania">
+      <section class="kd-band kd-tour" id="wykonania" aria-label="Wykonania">
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Itinerarium</span>
@@ -373,7 +412,7 @@ const plDate = (iso: string): string =>
 
     {/* ── Reflection: Florent's authored paragraph + our unsigned bridge note ─── */}
     {(c.reflection || c.reflectionNote) && (
-      <section class="kd-band kd-reflection" aria-label="Refleksja">
+      <section class="kd-band kd-reflection" id="refleksja" aria-label="Refleksja">
         <div class="kd-wrap kd-narrow">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Reflectio</span>
@@ -595,7 +634,7 @@ const plDate = (iso: string): string =>
           there too). The quiet factual footnote (`roster.note`) belongs to the whole block.
           Placed before the film/gallery so the names lead into the images. ── */}
     {c.roster && c.roster.groups.length > 0 && (
-      <section class="kd-band kd-band-soft kd-voces tone-light" aria-label="Głosy wieczoru">
+      <section class="kd-band kd-band-soft kd-voces tone-light" id="glosy" aria-label="Głosy wieczoru">
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Voces</span>
@@ -639,7 +678,7 @@ const plDate = (iso: string): string =>
     {/* ── Film: selected fragments of the evening. The player hydrates eagerly after
           ClientRouter swaps and starts independently from the landing resume state. ── */}
     {c.video && filmVideoSrc && (
-      <section class="kd-band kd-film" aria-label="Zapis wieczoru">
+      <section class="kd-band kd-film" id="zapis" aria-label="Zapis wieczoru">
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Imago viva</span>
@@ -667,7 +706,7 @@ const plDate = (iso: string): string =>
 
     {/* ── Documentary gallery — the evening's own images ────────────────────── */}
     {gallery.length > 0 && (
-      <section class="kd-band kd-gallery" aria-label="Obrazy wieczoru">
+      <section class="kd-band kd-gallery" id="obrazy" aria-label="Obrazy wieczoru">
         <div class="kd-wrap">
           <h2 class="kd-section-label micro reveal">
             <span class="lat">Imagines</span>
@@ -938,6 +977,12 @@ const plDate = (iso: string): string =>
 
   /* ── Bands (body) ──────────────────────────────────────────────────────── */
   .kd-band { padding: clamp(84px, 13vw, 184px) max(28px, 5vw); position: relative; }
+  /* Every indexed band is a link target (the chrome's tabula, and `#program`, which has been
+     linkable all along and until now landed under the fixed bar). 96 clears the resting chrome
+     (~85px) with enough left over that the band's LABEL — the thing that says which section this
+     is — arrives below the bar rather than beneath it. Same number as `/obrazy`'s evenings, for
+     the same reason; an anchor that hides its own head states nothing. */
+  .kd-band[id] { scroll-margin-top: 96px; }
   .kd-band-soft { background: var(--paper, #f4f1e9); color: var(--ink, #161514); }
   .kd-wrap { max-width: 1180px; margin: 0 auto; }
   .kd-narrow { max-width: 760px; }

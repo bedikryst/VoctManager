@@ -1765,3 +1765,171 @@ through, not just the last one.
 - **Per-frame `ImageObject` + `creditText` in the `/obrazy` graph** — decided *not* shipped (43
   nodes restating the visible colophon, against the GSC pass's rule that extra schema is proposed
   before it is added). Revisit only with Search Console numbers in hand.
+
+---
+
+## 21. The bar grows a second register — SHIPPED
+
+§20's own open list ends with an instruction: the question "where am I in this document, and where
+else may I go" already has **three answers that do not know about each other** — the head's index
+(static, five entries, measured as unable to clear the fold), the rail (fixed, ≥1440,
+`aria-hidden` furniture with `pointer-events: none`) and the site-wide `ScrollTopButton` — and
+*"anything summoned by scroll belongs in the same design conversation as those three — do not add a
+fourth in isolation."* This is that conversation, and the answer is not a fourth object: it is the
+head's index, given back on the gesture that asks for it.
+
+### Which pages, measured rather than assumed
+
+The brief named the landing as the longest page. It is not, and the census changed the scope:
+
+| | desktop 1440×900 | phone 390×844 | orientation device |
+|---|---|---|---|
+| `/press` | 18 210 | 21 710 | — |
+| `/koncerty/wolanie-gor` | **16 373** | 17 181 | — |
+| `/koncerty/aeternam` | 15 625 | **17 329** | — |
+| `/obrazy` | 15 492 | **18 539** | `im-rail` ≥1440 |
+| `/` | 15 274 | 12 502 | MovementSpine, fine pointer |
+| `/o-nas` | 14 215 | 16 042 | — |
+| `/koncerty` | 13 415 | 16 145 | `via-rail` ≥980 |
+
+Three facts fall out. **The longest documents on the site are the concert pages**, and they were
+the only long ones with no position of any kind and one `id` in the whole file. **The landing is
+the shortest of the long pages on a phone** (art-direction cuts it), and it has a spine on desktop
+— so it is the worst candidate, not the first. And **every orientation device on this site is
+hidden below its own width**, while every phone document is 15–20% longer than its desktop twin, so
+the phone had no position and no index anywhere. Shipped on `/obrazy` and the three concert pages;
+`/o-nas` and `/press` are on the open list below.
+
+### The first build was hung in open air, and the screenshots settled it in one look
+
+It was drawn as a 420px column off the bar's left, on `--halo` alone, with the argument that a
+ground blurring the document under a MOVING reader is a hijack rather than an invitation. Every
+measurement passed — the gesture, the threshold, the rubric, the anchors, the boundary — and the
+result was unusable: eight index rows printed straight over running programme text (*"Program
+koncertu"* lying across *"Beati quorum via integra est"*) and over a lit nave photograph with half
+the numerals gone.
+
+`--halo` is a breath of shadow that holds thin text over a picture **when the hush is behind it**.
+On bare content it holds nothing. And the premise was wrong anyway: at the moment this surface is
+out the reader has stopped going forward and asked where to go, so they are not reading the text
+under it. **A composition that needs a ground does not get to keep the composition and drop the
+ground** — and no probe in the suite could have caught it, because every one of them was asking
+whether the thing worked rather than whether it could be read.
+
+### The bar deepens by a register
+
+So the tabula is a BAND in the bar's own material, edge to edge, unrolling from the bar's line. Its
+rows sit in the PAGE's measure — 1180, which is `.im-wrap` and `.kd-wrap` alike — so the index
+rules to the same edges as the document it indexes, not to the bar's gutter.
+
+**Opaque, and the bar goes opaque with it.** At 0.94 with a 20px blur the page still ghosted
+through under the rows, which reads as dirt rather than as material, and the seam between the bar's
+0.72 glass and the band's 0.94 drew a line across the middle of an object that is meant to be one.
+Glass is right for a bar carrying five words over a photograph and wrong for a sheet carrying an
+index that has to be read. While the band is out the bar takes the sheet's ground, drops its
+backdrop blur and hands its hairline down, so the pair closes with exactly one rule.
+
+Two mechanics are load-bearing and must not be "simplified":
+
+- **It unrolls by LENGTH, never by transform** (`grid-template-rows: 0fr → 1fr` over an
+  `overflow: hidden` sheet). `.chrome` is a fixed-position ancestor of `.nave`, and registrum.css
+  states as trap (c) that the chrome root must stay transform/filter-free — a transform here makes
+  the bar the containing block for the mobile overlay. Same physics as the nave card's vitta, for
+  the reason that file already gives.
+- **The bar's own `::after` overrides live in SiteChrome's scoped block, not in tabula.css.** Astro
+  appends `[data-astro-cid-…]` to every compound, so `.chrome[data-tone="dark"].is-solid::after`
+  lands at (0,4,0) and a global two-class override could never win. Each tone restates the whole
+  set for the same reason.
+
+### Giving it a ground changed which entrance rule it falls under
+
+The first build entered from ZERO and cited the registrum's apparition exemption (guardrails §5
+rule 1). With a sheet under them the rows are the **nave card's** case instead, by the card's own
+stated test — *"its veil shuts FIRST, so every line stands in layout under an opaque parchment
+before a single one darkens"* — so they enter from `--half-ink`, ground first, writing second. The
+same object, the same law, a different answer, because the object changed. Ask which case a surface
+is **after** you have decided what it stands on.
+
+The gesture is measured as TRAVEL, not as the sign of a delta: an accumulator grows while the
+reader keeps going one way and resets when they turn. Position comes from `lenis.scroll` (the float
+— `window.scrollY` is rounded and stutters between integers on the tail of an ease, which is
+exactly where a naive direction test flips sign) and direction from `lenis.direction`, both falling
+back to the document where Lenis is not mounted. **Two thresholds, because intent does not convert
+alike between input devices**: 180px on a wheel, 340 on a coarse pointer, where one lazy thumb
+flick carries most of a screen on momentum alone. Verified: a 160px nudge summons nothing, a 450px
+run does.
+
+And the band **cannot appear unless a section holds the viewport**, which is what keeps it from
+answering "where am I" over a head that is already answering it in print.
+
+### §20's anchor finding held, and did not cover this
+
+§20 measured four cases in both motion paths and concluded the plain in-document anchor lands on
+its `scroll-margin-top` under Lenis. That stands — for rows reachable only from a page **at rest**.
+This surface is the first on the site whose anchors are clicked MID-GESTURE by construction: the
+reader has just run back up the page, Lenis is still animating, and it reasserts its virtual
+position over the router's jump on the next frame. Measured on all four pages: the click read as
+dead. Where Lenis owns the scroll the row now drives it directly, with `immediate` — the printed
+index on the same page lands its five destinations as a cut, and two index surfaces pointing at the
+same sections must not travel differently. The offset is read from the target's own
+`scroll-margin-top` rather than restated in JS.
+
+### Two smaller things that came with it
+
+`--rubric`, `--silk-quiet` and `--halo` moved from `.registrum-drop` up onto `.chrome`. They were
+always a map of the BAR'S FACE, not of the register, and a second surface hanging from the same
+line needed the same three answers; a state map copied per surface is a map that drifts. Read it
+the way `--chrome-candle` is read.
+
+The concert page's indexed bands took ids and `.kd-band[id] { scroll-margin-top: 96px }`. That also
+fixes `#program`, which has been linkable all along and until now landed under the fixed bar.
+
+### Weight
+
+`astro check` 0 errors across 159 files. Register audit **969 nodes, clean — the baseline exactly**,
+which is the check that matters here: the tabula runs on its own clock like the register, so it
+must add no register nodes. Gesture, rubric, ground, measure, overflow and anchor verified on all
+four pages at 1440 and at 360/390/430/759/760 (`vm-shot/tabula-verify.cjs`,
+`tabula-touch-reg.cjs`). Every §19/§20 measurement re-run and unchanged: the fold arithmetic
+(617 / 669→1146 / 246 / 378 / 66), all three `/obrazy` anchors at 96 in both motion paths, the
+rail clearing at 1440, the gallery breakpoint table at 961, and every run's packing. Band height
+233–365px on desktop, 184–247 on a phone.
+
+### Rejected — do not re-propose
+
+- **A running head (żywa pagina) naming the current section in the bar.** It was the first
+  recommendation and it was wrong: both pages already print that name at the head of every section
+  — `/obrazy` rules a threshold in the evening's candle, a concert page prints `kd-section-label`
+  on every band — so it restates what the document says and answers the question nobody is asking.
+  The gap is "where else", not "where am I".
+- **Summoning the concert REGISTER on the same gesture.** Cheapest by far (one class aliased to the
+  `:hover` selectors) and wrong three ways: on `/obrazy` its five ribbons point OFF-page at the same
+  five entities the page is made of, its hush blurs the whole nave because the reader nudged the
+  wheel back, and two gates on one apparition puts the pointer and the gesture into a fight over
+  one state machine with a 0.6s close grace in the middle.
+- **A hanging column with no ground of its own.** Built, measured, unreadable — see above.
+- **Silks, or a dye per row.** `/obrazy`'s printed index gives each numeral its evening's candle
+  because a page can; five dyed numerals IN THE CHROME are five flat colour fields in a bar whose
+  site shows flat colour nowhere else, which is the trap registrum.css names in its own history.
+  One colour on this surface: the crimson on the row you are standing in.
+- **The landing.** Longest-looking, weakest case: shortest of the long pages on a phone, and its
+  MovementSpine already owns the desktop question. It would also cost a second implementation —
+  the landing's bar is `StickyHeader.tsx`, which shares the stylesheets and not the script.
+
+### Still open
+
+- **`/o-nas` is 19 phone screens with ten sections and no device**, and qualifies on the numbers
+  more strongly than the landing did. It is the obvious next page. The one cost the shipped pages
+  do not have: it is translated, so its section names become copy in three locales.
+- **`/press` is the longest document on the site** (21 710 on a phone) and has ten anchors already.
+  It is a noindex EPK addressed to journalists, which is why it is below `/o-nas` and not above it.
+- **The phone's card still indexes only the SITE.** The band answers the page, the "Antyfona"
+  answers the site, and both are now reachable on a phone — but a reader who opens the card looking
+  for the page they are on finds the Via instead. If that ever reads as a gap, the answer is a third
+  register inside the card beside the Via, not a second overlay.
+- **`/koncerty`'s own via-rail hides at 980 against a 1120 measure** — carried from §19 and §20,
+  the same sum this file has now done three times.
+- **The trigger markup is still copied between the two galleries** (`PhotoFrame.astro` +
+  `lib/galleryModel.ts`), with `sizes` at 960 on the concert page and 720 on `/obrazy`.
+- Everything photographic in §20's list is unchanged: 9 Kart's Kraków run, Hymn Poległym's two
+  portraits, the two decided-but-unshipped landing panel swaps from §11.

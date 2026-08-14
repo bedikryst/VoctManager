@@ -246,7 +246,28 @@ const jsonLd = {
   </Fragment>
 
   <a class="skip-link" href="#tresc">Przejdź do treści</a>
-  <SiteChrome current="/obrazy" tone="dark" />
+  {/* The head's index, given back to the reader who has scrolled past it. §20 measured that
+      `.im-index` cannot clear the fold at any desktop size — 669→1146 against 900 — so the one
+      steering device this page has is legible for about a single scroll gesture of a 15 500px
+      document, and the rail that replaces it below the fold is a readout with `pointer-events:
+      none`. The tabula is the same five entries in the same order, summoned by a run back up the
+      page (styles/tabula.css). Deliberately NOT a second authoring of them: same ids, same
+      numerals, same counts, one line each — if `.im-index` ever states a different fact from
+      this, the two have been given different sources and that is the bug. */}
+  <SiteChrome
+    current="/obrazy"
+    tone="dark"
+    index={evenings.map((e) => ({
+      id: e.id,
+      roman: e.roman,
+      title: e.title,
+      // Abbreviated as the printed index and the evening heads abbreviate — the same fact must
+      // not meet the reader under two different labels on one page.
+      figure: `${e.count} ${e.count === 1 ? "fotografia" : "fot."}`,
+      latin: e.latin,
+      meta: e.viaDate,
+    }))}
+  />
 
   {/* Where the reader stands, in the Via's own terms. This is one of the two longest pages on the
       site — the archive runs to some 17 000px of phone scroll — and it was the only long one with

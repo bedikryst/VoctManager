@@ -1,0 +1,320 @@
+/**
+ * @file tabula.css
+ * @description The "tabula" — a page's OWN table of contents, and the second register of the bar.
+ *  Named for the board a monastic house hung where the community could read it: the thing you
+ *  glance at to know where you are in the week, and what else the week holds. Rendered by
+ *  SiteChrome from a `TabulaEntry[]` the page passes (lib/tabula); a page that passes none has no
+ *  tabula and no listener.
+ *
+ *  WHY A GESTURE SUMMONS IT. Both pages that carry one already say WHERE YOU ARE — `/obrazy` rules
+ *  a full-bleed threshold in each evening's own candle and prints the evening's head under it, a
+ *  concert page prints `kd-section-label` at the head of every band — and both say it exactly once,
+ *  at a threshold the reader has already crossed. What neither says after the first screen is WHERE
+ *  ELSE YOU MAY GO. `/obrazy` authored that answer (docs/web-imagines-spec.md §20) and measured that
+ *  its head cannot clear the fold at any desktop size, so the index it built is legible for about
+ *  one scroll gesture of a 15 500px document. This is that index, given back on the gesture that
+ *  asks for it: turning back in a book is asking where you are, and the breviary's answer to that
+ *  has always been a register.
+ *
+ *  THE BAR DEEPENS — it does not sprout a floating panel, and this was learned the expensive way.
+ *  The first build hung the rows in open air off the bar's left, on `--halo` alone, with the
+ *  argument that a ground blurring the document under a MOVING reader is a hijack rather than an
+ *  invitation. The argument was too clever and the screenshots settled it in one look: eight index
+ *  rows printed straight over running programme text and over a lit nave photograph, with half the
+ *  numerals gone. `--halo` is a breath of shadow that holds thin text over a picture WHEN THE HUSH
+ *  IS BEHIND IT; on bare content it holds nothing. And the premise was wrong anyway — at the moment
+ *  this surface is out the reader has stopped going forward and asked where to go, so they are not
+ *  reading the text under it. **A composition that needs a ground does not get to keep the
+ *  composition and drop the ground.**
+ *
+ *  So the tabula is a BAND in the bar's own material, edge to edge, unrolling from the bar's line:
+ *  the same glass, the same three tones, one hairline at its foot while the bar's own goes quiet —
+ *  bar and band read as one object with the rule at the bottom of it. Its rows sit in the PAGE's
+ *  measure (1180, which is both `.im-wrap` and `.kd-wrap`), not the bar's gutter, so the index
+ *  rules to the same edges as the document it indexes.
+ *
+ *  IT UNROLLS BY LENGTH, NEVER BY TRANSFORM. Two reasons, and the second is not stylistic:
+ *  `.chrome` is a fixed-position ancestor of `.nave`, and registrum.css states as trap (c) that the
+ *  chrome root and everything a fixed child hangs off must stay transform/filter-free — a transform
+ *  here would make the bar the containing block for the mobile overlay. The one that animates is
+ *  the band's own height (`grid-template-rows: 0fr → 1fr` over an `overflow: hidden` sheet), which
+ *  is the same physics the nave card's vitta uses and for the same stated reason: one object
+ *  changing its own dimension is a motion, two objects trading places is a redraw.
+ *
+ *  ENTRANCE — GROUND FIRST, THEN THE WRITING, which is the nave card's law and NOT the registrum's.
+ *  Guardrails §5 rule 1 exempts an apparition because a surface that holds no layout opens no hole;
+ *  the card is the counter-case and keeps the law, "because its veil shuts FIRST: every line stands
+ *  in layout under an opaque parchment before a single one darkens". The band is the card's case,
+ *  not the register's — the sheet arrives, and only then do the rows ink from `--half-ink`. The
+ *  earlier build entered from zero because it had nothing to stand on; giving it a ground changes
+ *  which rule it falls under, and this is the rule.
+ *
+ *  The ONE place this is weaker than the register, stated so nobody has to rediscover it: the
+ *  register is summoned by a POINTER, an act that is unambiguously a request, and this by a scroll
+ *  gesture the reader may not have meant as one. The threshold is the whole mitigation — a
+ *  deliberate run back up the page (SiteChrome's TABULA_UP, doubled on touch where momentum
+ *  delivers far more travel per intent) — and the band cannot appear at all unless a section holds
+ *  the viewport, so it never answers "where am I" over a head that is already answering it.
+ *
+ *  NOTHING IS DYED BUT THE ROW YOU ARE ON. `/obrazy`'s printed index gives each numeral its
+ *  evening's candle; five dyed numerals ON A PAGE are what that page's evening heads already do,
+ *  five dyed numerals IN THE CHROME are five flat colour fields in a bar whose site shows flat
+ *  colour nowhere else — the trap registrum.css names in its own history. The single colour here is
+ *  the crimson on the row you are standing in, carried by a tick in the left margin as well as by
+ *  the name, because at a glance down eight rows a coloured word alone is not a mark. That is the
+ *  vitta's gesture reduced to its tip, and it is the site's one law about crimson.
+ * @architecture Astro islands 2026
+ * @module styles/tabula
+ */
+
+/* ── The band. Absolutely positioned so the bar's own flex row is untouched, edge to edge from
+   the bar's bottom line. `grid-template-rows` is the unrolling dimension; the sheet under it
+   carries the ground and clips its own content while the band is short. ── */
+.tabula {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    grid-template-rows 0.42s var(--ease),
+    visibility 0s linear 0.46s;
+}
+
+/* OPAQUE, and the bar goes opaque with it (SiteChrome's own style block, where the bar's face is
+   decided). Glass is right for a BAR — a few words riding over a photograph — and wrong for a
+   SHEET: at 0.94 with a 20px blur the page still ghosted through under the rows, which reads as
+   dirt rather than as material, and the seam between 0.72 glass and 0.94 glass drew a line across
+   the middle of an object that is supposed to be one. It is also the card's law again: a line
+   stands "in layout under an opaque parchment before a single one darkens". Three tones, the
+   bar's own: paper by default, night on a dark-tone page, back to paper wherever the bar itself
+   turns `is-light` over a parchment band. */
+.tabula-sheet {
+  overflow: hidden;
+  min-height: 0;
+  background-color: var(--paper);
+  border-bottom: 1px solid rgba(22, 21, 20, 0.1);
+  color: var(--ink);
+}
+.chrome[data-tone="dark"] .tabula-sheet {
+  background-color: var(--night);
+  border-bottom-color: rgba(244, 241, 233, 0.14);
+  color: var(--paper);
+}
+.chrome[data-tone="dark"].is-light .tabula-sheet {
+  background-color: var(--paper);
+  border-bottom-color: rgba(22, 21, 20, 0.1);
+  color: var(--ink);
+}
+
+/* The page's measure, not the bar's gutter — the index rules to the same edges as the document
+   under it (1180 is `.im-wrap` and `.kd-wrap` alike). The gutter floor matches the bar's. */
+.tabula-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(14px, 1.6vw, 22px) max(28px, 5vw);
+}
+
+/* Open. Guarded on the register, because two surfaces hanging from one line at one moment is
+   noise and the pointer's request outranks the gesture's: hovering KONCERTY while the band is out
+   rolls it back up and lets the silks have the line. */
+.chrome.tabula-open:not(:has(.registrum:hover)):not(:has(.registrum:focus-within)) .tabula {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    grid-template-rows 0.42s var(--ease),
+    visibility 0s linear 0s;
+}
+
+/* ── One section = one <a> = numeral · name · leader · figure, ruled across the measure. The whole
+   row is one hit target, as the register's and the card's are. ── */
+.tabula-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px minmax(0, max-content) minmax(24px, 1fr) max-content;
+  align-items: baseline;
+  column-gap: clamp(12px, 1.4vw, 18px);
+  padding: clamp(6px, 0.6vw, 8px) 0;
+  color: inherit;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+  /* Half-ink, not zero: the sheet is opaque and already standing when these darken, which is the
+     nave card's case exactly (see the entrance note in the header). 0.44 is the site's one
+     half-light strength. */
+  opacity: var(--half-ink, 0.44);
+  transition: opacity 0.16s var(--ease);
+}
+/* The bar's shared underline pseudo has no place on an index row. */
+.tabula-entry::after {
+  content: none;
+}
+.tabula-entry:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+}
+.chrome.tabula-open .tabula-entry {
+  opacity: 1;
+  transition: opacity 0.4s var(--ease) calc(0.16s + var(--i) * 0.045s);
+}
+
+.tabula-roman {
+  grid-column: 1;
+  grid-row: 1;
+  font-family: var(--capitalis);
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  opacity: 0.5;
+}
+.tabula-title {
+  grid-column: 2;
+  grid-row: 1;
+  font-family: var(--serif);
+  font-size: clamp(15px, 1.35vw, 18px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  /* Safe at this measure and load-bearing: the leader beside it is baseline-aligned, so a title
+     that wrapped would strand the hairline on its first line. Verified against the longest string
+     either page carries, down to 360. */
+  white-space: nowrap;
+  transition: color 0.3s var(--ease);
+}
+/* The leader: a hairline from the title out to the figure. An empty box's synthesized baseline is
+   its bottom margin edge, so `margin-bottom` alone sets its height above the title's baseline —
+   nothing to align. Dyed by `background-color`, never by opacity: it sits inside a row whose
+   opacity the entrance owns. It draws AFTER its row inks, because a leader has no length until
+   both ends are set (guardrails §5) — not an inversion of the rule-leads-ink pairing, which is
+   about hairlines that are the border of a block. */
+.tabula-lead {
+  grid-column: 3;
+  grid-row: 1;
+  height: 1px;
+  margin-bottom: 5px;
+  background-color: currentColor;
+  opacity: 0.22;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition:
+    transform 0.16s var(--ease-rule),
+    background-color 0.3s var(--ease);
+}
+.chrome.tabula-open .tabula-lead {
+  transform: scaleX(1);
+  transition:
+    transform 0.42s var(--ease-rule) calc(0.24s + var(--i) * 0.045s),
+    background-color 0.3s var(--ease);
+}
+/* The row's right hand — the frame count on `/obrazy`, the band's own Latin rubric on a concert
+   page. Capitalis either way, so the two pages read as one index. */
+.tabula-figure {
+  grid-column: 4;
+  grid-row: 1;
+  font-family: var(--capitalis);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.46;
+  white-space: nowrap;
+}
+/* Second tier — the entry's own colophon, flush under the title (the hanging indent
+   `.ribbon-meta` and `.im-entry-meta` both use). `--lat-ink` is stated in the SAME rule as the
+   colour, because `.lat` is a CHILD and does not inherit a rubric's colour (base.css). */
+.tabula-meta {
+  --lat-ink: color-mix(in srgb, currentColor 68%, transparent);
+  grid-column: 2 / -1;
+  grid-row: 2;
+  margin-top: 2px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, currentColor 46%, transparent);
+}
+.tabula-meta .tabula-dot {
+  opacity: 0.5;
+}
+
+/* ── Where you are: the site's one law about crimson, and the only colour on this surface. The
+   name is set rubric and a TICK stands in the left margin — the vitta's tip, reduced to the mark
+   it makes on the page. A coloured word alone is not a mark when the eye is running down eight
+   rows, which is what the first build got wrong here too. `--rubric` is state-mapped on `.chrome`
+   (registrum.css): the lifted crimson over night, the full voice over parchment. ── */
+.tabula-entry[aria-current="location"] .tabula-title {
+  color: var(--rubric);
+}
+.tabula-entry[aria-current="location"] .tabula-lead {
+  background-color: var(--rubric);
+  opacity: 0.34;
+}
+.tabula-entry[aria-current="location"]::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  width: 2px;
+  height: 15px;
+  margin-top: -8px;
+  background-color: var(--rubric);
+}
+
+/* Hover/focus warms the name to the bar's READABLE gold — `--chrome-candle`, not `--candle`,
+   because this band stands on whatever ground the bar stands on and full candle is 2.10 : 1 over
+   parchment (SiteChrome's own note). One gesture: touch the name, the warmth runs down the leader.
+   The current row keeps its rubric — you cannot invite someone to where they already are. */
+.tabula-entry:hover .tabula-title,
+.tabula-entry:focus-visible .tabula-title {
+  color: var(--chrome-candle, var(--candle));
+}
+.tabula-entry:hover .tabula-lead,
+.tabula-entry:focus-visible .tabula-lead {
+  background-color: var(--chrome-candle, var(--candle));
+  opacity: 0.44;
+}
+.tabula-entry[aria-current="location"]:hover .tabula-title,
+.tabula-entry[aria-current="location"]:focus-visible .tabula-title {
+  color: var(--rubric);
+}
+
+/* The mobile card owns the whole screen when it is open. */
+.chrome.menu-open .tabula,
+.chrome.menu-closing .tabula {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── The phone. The band is the reason this surface reaches it at all: these documents are
+   LONGEST here (18 500px on `/obrazy`, 17 300 on a concert page) and every orientation device on
+   this site — the movement spine, both via-rails — is hidden below its own width, so the phone
+   had no position and no index anywhere. A hanging column could not come down here; a band can,
+   because it is the bar doing what the bar already does, one register deeper. ── */
+@media (max-width: 759.98px) {
+  .tabula-wrap {
+    padding: 12px max(20px, 5vw) 14px;
+  }
+  .tabula-entry {
+    grid-template-columns: 20px minmax(0, max-content) minmax(16px, 1fr) max-content;
+    column-gap: 10px;
+    padding: 7px 0;
+  }
+  .tabula-title {
+    font-size: 14px;
+  }
+  .tabula-roman,
+  .tabula-figure {
+    font-size: 8.5px;
+  }
+  .tabula-entry[aria-current="location"]::before {
+    left: -9px;
+    height: 13px;
+    margin-top: -7px;
+  }
+  /* The second tier is the desktop's luxury: at this measure the Latin and the date under every
+     title turn a six-line index into a twelve-line one, and the band would take a third of the
+     screen. The figure at the row's right hand carries the same weight of fact. */
+  .tabula-meta {
+    display: none;
+  }
+}

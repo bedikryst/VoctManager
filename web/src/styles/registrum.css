@@ -100,7 +100,10 @@
  *  toward paper on night where pure crimson dies at ~2:1), the silk dye
  *  (`--silk-quiet`: quieted toward PAPER on night, toward INK on paper — a paper-mix
  *  washed the dyes to pastel on parchment) and the text halo (`--halo`: a breath of
- *  shadow under the index over dark photos, none on paper). The notched tail is a
+ *  shadow under the index over dark photos, none on paper). Those three are declared
+ *  ON `.chrome` (see the map below), not on this drop: the TABULA (tabula.css) hangs
+ *  from the same line and needs the same answers, and a state map copied per surface
+ *  is a map that drifts. The notched tail is a
  *  clip-path; its shadow therefore lives as drop-shadow ON `.ribbon-silk` (a box-shadow
  *  would be clipped) — cord and strip share that single light source. Hover intent
  *  rides the open transition-delay (a skim across the bar shows nothing); the close
@@ -130,15 +133,6 @@
   transform: translateX(56px);
   /* Resting bar: ~(40px brand − link height)/2 below the link box + 22px bar padding. */
   padding-top: 33px;
-  /* Register state map, keyed to the bar's face (defaults = transparent bar over a dark
-     hero): a rubric LIFTED 30% toward paper — pure crimson sits at ~2:1 on the hushed
-     night, unreadable — silks quieted toward paper, and a breath of text halo so the
-     index holds over bright patches of a dimmed photograph. The light states below give
-     crimson back its full voice, quiet the silks toward ink instead (toward-paper
-     pastels them out on parchment) and drop the halo (ink on paled paper needs none). */
-  --rubric: color-mix(in srgb, var(--crimson), var(--paper) 30%);
-  --silk-quiet: var(--paper);
-  --halo: 0 1px 2px rgba(8, 8, 7, 0.5), 0 2px 18px rgba(8, 8, 7, 0.45);
   visibility: hidden;
   pointer-events: none;
   /* Close grace: outlives the 0.45s withdraw so a slip off the bar doesn't snap the set. */
@@ -151,17 +145,37 @@
   padding-top: 25px;
 }
 
+/* ── The bar's register state map — DECLARED ON `.chrome`, read by every index surface that
+   hangs from its line (this register, and the tabula in tabula.css). It is keyed to the bar's
+   FACE, exactly as `--chrome-candle` in SiteChrome is: the defaults below are the transparent
+   bar over a dark hero — a rubric LIFTED 30% toward paper, because pure crimson sits at ~2:1
+   on the hushed night and is unreadable; silks quieted toward paper; and a breath of text halo
+   so an index holds over bright patches of a dimmed photograph. The light states give crimson
+   back its full voice, quiet the silks toward ink instead (toward-paper pastels them out on
+   parchment) and drop the halo (ink on paled paper needs none).
+
+   It sits on the ROOT rather than on `.registrum-drop` because a second surface now needs the
+   same three answers, and a state map copied per surface is a map that drifts. Read this the
+   way `--chrome-candle` is read: whenever a state is added to the bar's face, it belongs here
+   in the same breath, or every index hanging from the line silently keeps the wrong register.
+   `--silk-quiet` is the register's alone and stays in the set only because the three are ONE
+   decision about one ground — splitting them would be two maps again. ── */
+.chrome {
+  --rubric: color-mix(in srgb, var(--crimson), var(--paper) 30%);
+  --silk-quiet: var(--paper);
+  --halo: 0 1px 2px rgba(8, 8, 7, 0.5), 0 2px 18px rgba(8, 8, 7, 0.45);
+}
 /* Ink-register states wherever the chrome's text is INK: subpage solid / is-light, and
    the landing's glass over a light section. Dark-tone pages keep the night register
    through their night-solid state (paper text over a dark page). */
-.chrome.is-solid .registrum-drop,
-.chrome.is-light .registrum-drop,
-.chrome.is-active:not(.is-on-dark) .registrum-drop {
+.chrome.is-solid,
+.chrome.is-light,
+.chrome.is-active:not(.is-on-dark) {
   --rubric: var(--crimson);
   --silk-quiet: var(--ink);
   --halo: none;
 }
-.chrome[data-tone="dark"].is-solid:not(.is-light) .registrum-drop {
+.chrome[data-tone="dark"].is-solid:not(.is-light) {
   --rubric: color-mix(in srgb, var(--crimson), var(--paper) 30%);
   --silk-quiet: var(--paper);
   --halo: 0 1px 2px rgba(8, 8, 7, 0.5), 0 2px 18px rgba(8, 8, 7, 0.45);

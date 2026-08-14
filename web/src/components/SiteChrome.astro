@@ -10,8 +10,10 @@
  */
 import { getCollection } from "astro:content";
 import { toRibbons } from "../lib/registrum";
+import type { TabulaEntry } from "../lib/tabula";
 import { UI } from "../i18n/ui";
 import { localizePath, LOCALE_META, DEFAULT_LOCALE, LANG_SWITCHER_ENABLED, type Locale } from "../i18n/config";
+import "../styles/tabula.css";
 
 interface Props {
   /** Base path of the current page (locale-neutral, e.g. "/o-nas") so the matching nav link gets
@@ -27,12 +29,18 @@ interface Props {
   /** Locales this page actually exists in. The language switcher appears only when there is a real
       choice beyond Polish; a Polish-only page (the default) shows none. */
   availableLocales?: Locale[];
+  /** The page's OWN sections, in reading order — its table of contents (styles/tabula.css). Pass
+      them and the bar grows a "tabula" that a run back UP the document summons; pass none (the
+      default) and neither the markup nor the scroll listener exists. Only worth passing on a page
+      long enough that its head has scrolled out of reach — see the header of tabula.css. */
+  index?: readonly TabulaEntry[];
 }
 const {
   current,
   tone = "light",
   lang = DEFAULT_LOCALE,
   availableLocales = [DEFAULT_LOCALE],
+  index = [],
 } = Astro.props;
 const t = UI[lang];
 
@@ -172,6 +180,55 @@ const langOptions = showLang
       )
     }
   </nav>
+
+  {/* "Tabula" — the page's own table of contents, and the bar's second register: a band in the
+      bar's own material that unrolls from its line when the reader runs back UP the document
+      (styles/tabula.css; the gesture is at the foot of this file). It exists only where a page
+      passed one. The mobile card indexes the SITE and this indexes the PAGE — different
+      questions, and the reason both exist on a phone.
+
+      A real <nav> landmark, because a table of contents is exactly what that landmark is for, and
+      it costs nothing at rest: `visibility: hidden` takes the whole subtree out of the
+      accessibility tree until the gesture asks for it. The sheet is a wrapper the band's own
+      height animation clips against — see the unrolling note in the stylesheet; it is NOT
+      decoration and must not be flattened away. */}
+  {
+    index.length > 0 && (
+      <nav class="tabula" aria-label={t.nav.tabulaAria}>
+        <div class="tabula-sheet">
+          <div class="tabula-wrap">
+            {index.map((e, i) => (
+              <a class="tabula-entry" href={`#${e.id}`} style={`--i: ${i};`}>
+                <span class="tabula-roman">{e.roman}</span>
+                <span class="tabula-title">{e.title}</span>
+                <span class="tabula-lead" aria-hidden="true" />
+                {e.figure && (
+                  <span class="tabula-figure" lang={e.figureLang}>
+                    {e.figure}
+                  </span>
+                )}
+                {e.latin && (
+                  <span class="tabula-meta micro">
+                    <span class="lat" lang="la">
+                      {e.latin}
+                    </span>
+                    {e.meta && (
+                      <>
+                        <span class="tabula-dot" aria-hidden="true">
+                          {" · "}
+                        </span>
+                        <span>{e.meta}</span>
+                      </>
+                    )}
+                  </span>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      </nav>
+    )
+  }
 
   <button
     class="nav-toggle"
@@ -474,6 +531,56 @@ const langOptions = showLang
   .chrome.is-solid:not([data-tone="dark"]),
   .chrome[data-tone="dark"].is-light { --chrome-candle: var(--candle-ink); }
 
+  /* ── The tabula open: the BAR JOINS THE BAND ───────────────────────────────────────────────
+     The band (styles/tabula.css) is an opaque sheet, and a glass bar sitting on top of an opaque
+     sheet draws a seam straight across the middle of what is meant to read as ONE object deepening
+     by a register. So while the index is out the bar takes the sheet's own ground, drops its
+     backdrop blur (nothing shows through an opaque layer — the filter would only cost a raster)
+     and hands its hairline down to the band's foot, so the pair closes with exactly one rule.
+
+     These live HERE rather than in tabula.css because Astro appends `[data-astro-cid-…]` to every
+     compound in a scoped block: the `.chrome.is-solid::after` rules above are emitted at (0,3,0)
+     and a global two-class override could never win against them. Same trap the register audit
+     exists to catch. They must also follow those rules in source order — equal specificity now,
+     so order is what decides. */
+     Each tone states the WHOLE set rather than inheriting part of it, because `[data-tone]` is a
+     class-level selector: the dark rules above land at (0,4,0) and a shorthand override at (0,3,0)
+     would silently keep their glass. Every rule here therefore carries at least as many compounds
+     as the rule it has to beat. */
+  .chrome.tabula-open::after {
+    opacity: 1;
+    background-color: var(--paper);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
+  }
+  .chrome[data-tone="dark"].tabula-open:not(.is-light)::after {
+    opacity: 1;
+    background-color: var(--night);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
+  }
+  .chrome[data-tone="dark"].tabula-open.is-light::after {
+    opacity: 1;
+    background-color: var(--paper);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-bottom-color: transparent;
+  }
+  /* The bar's text follows its new ground, exactly as it does when it goes solid: a dark-tone
+     page whose bar is still transparent over the hero has paper text, and the paper sheet under
+     it would leave that unreadable for the length of the unroll. */
+  .chrome.tabula-open:not([data-tone="dark"]) {
+    color: var(--ink);
+  }
+  .chrome.tabula-open:not([data-tone="dark"]) .chrome-brand .brand-mark {
+    background: var(--ink);
+  }
+  .chrome.tabula-open::before {
+    opacity: 0;
+  }
+
   /* ── "Antyfona" open: the persistent brand goes ink over the parchment card ────────────────
      LAST in this block on purpose — these tie with the tone/scroll mark rules above on
      specificity, and source order is what makes the open state win in every combination. */
@@ -555,6 +662,9 @@ const langOptions = showLang
       // with NO document swap. No #menu element exists (nothing scrolls); the hash is transient.
       pushOverlayEntry("navOpen", "menu");
       c.classList.remove("menu-closing");
+      // The card indexes the site and the tabula indexes the page; the card is the one that was
+      // asked for out loud, so it takes the screen.
+      closeTabula(true);
       c.classList.add("menu-open");
       toggle()?.setAttribute("aria-expanded", "true");
       document.body.classList.add("nav-open");
@@ -597,11 +707,141 @@ const langOptions = showLang
       else closeMenu(true);
     };
 
+    // ── THE TABULA — the page's own index, summoned by turning BACK in the document ──────────
+    // Composition, and why a gesture rather than a control, in styles/tabula.css.
+    //
+    // The gesture is measured as TRAVEL, not as the sign of one delta, and that is the whole
+    // reason this reads as an intention rather than as a twitch: `travel` accumulates while the
+    // reader keeps going one way and resets the moment they turn, so the index answers a run back
+    // up the page and not a notch of the wheel. Px on both paths, so one pair of numbers governs
+    // Lenis and native scroll alike.
+    // Two numbers, because a gesture's INTENT is not its distance and the two input devices do not
+    // convert alike: a wheel notch is ~100px and a reader turning back gives two or three of them,
+    // while one lazy thumb flick carries most of a screen on momentum alone. One threshold would
+    // either need three deliberate wheel runs or fire on a phone every time the reader nudged.
+    const TABULA_UP = window.matchMedia("(pointer: coarse)").matches ? 340 : 180;
+    const TABULA_DOWN = 90;
+    // Anchor clicks travel far and fast; without a mute the jump's own upward distance would
+    // re-summon the surface the click just dismissed.
+    const TABULA_MUTE_MS = 900;
+    let tabTravel = 0;
+    let tabLastY = 0;
+    let tabRaf = 0;
+    let tabMuteUntil = 0;
+    let tabIO: IntersectionObserver | undefined;
+    // The gate: no current section, no tabula. In a page's head — where `/obrazy` prints this
+    // very index — nothing holds the viewport, so the gesture summons nothing, which is right:
+    // the surface exists to answer a question the head is already answering in place.
+    let tabCurrent = "";
+
+    interface LenisRead {
+      readonly scroll: number;
+      readonly direction: 1 | -1 | 0;
+      scrollTo(target: number, opts?: { immediate?: boolean; force?: boolean }): void;
+    }
+    const lenisRead = (): LenisRead | undefined =>
+      (window as unknown as { __lenis?: LenisRead }).__lenis;
+    // Position is read from Lenis's own float when it drives the scroll: `window.scrollY` is
+    // rounded, so on the tail of an ease it stalls and stutters between integers, which is
+    // exactly where a naive direction test flips sign. Direction comes from Lenis for the same
+    // reason. Both fall back to the document for touch and reduced motion, where Lenis is not
+    // mounted at all (BaseLayout gates it on `pointer: fine` + motion).
+    const tabY = (): number => lenisRead()?.scroll ?? window.scrollY;
+
+    const openTabula = () => {
+      const c = chrome();
+      if (!c || !tabCurrent || c.classList.contains("menu-open")) return;
+      c.classList.add("tabula-open");
+    };
+    // force=true for the cases that are not a change of mind — leaving the indexed body of the
+    // document, a navigation, the card opening. Everything else defers to a pointer or a keyboard
+    // that is currently using the surface: withdrawing under someone's hand is the one failure
+    // this gesture can produce that a hover-summoned surface cannot.
+    const closeTabula = (force = false) => {
+      const c = chrome();
+      if (!c || !c.classList.contains("tabula-open")) return;
+      if (!force) {
+        const tab = c.querySelector<HTMLElement>(".tabula");
+        if (tab && (tab.matches(":hover") || tab.contains(document.activeElement))) return;
+      }
+      c.classList.remove("tabula-open");
+    };
+
+    const tabulaScroll = () => {
+      if (tabRaf) return;
+      tabRaf = window.requestAnimationFrame(() => {
+        tabRaf = 0;
+        if (!tabIO) return;
+        const y = tabY();
+        const dy = y - tabLastY;
+        tabLastY = y;
+        if (window.performance.now() < tabMuteUntil) {
+          tabTravel = 0;
+          return;
+        }
+        if (dy === 0) return;
+        const lenis = lenisRead();
+        const dir = lenis && lenis.direction !== 0 ? lenis.direction : dy > 0 ? 1 : -1;
+        // Turning resets the run. The accumulator then grows on raw delta, so a stray frame of
+        // the wrong sign inside a run costs a pixel or two rather than the whole gesture.
+        if ((dir > 0 && tabTravel < 0) || (dir < 0 && tabTravel > 0)) tabTravel = 0;
+        tabTravel += dy;
+        if (tabTravel <= -TABULA_UP) openTabula();
+        else if (tabTravel >= TABULA_DOWN) closeTabula();
+      });
+    };
+
+    // Re-armed on every navigation: ClientRouter swaps the whole document, so the observer's
+    // targets, the rows and the page's very possession of a tabula all change under us.
+    const armTabula = () => {
+      tabIO?.disconnect();
+      tabIO = undefined;
+      tabCurrent = "";
+      tabTravel = 0;
+      tabLastY = tabY();
+      const c = chrome();
+      c?.classList.remove("tabula-open");
+      const rows = Array.from(c?.querySelectorAll<HTMLAnchorElement>(".tabula-entry") ?? []);
+      const pairs = rows
+        .map((a) => ({ a, el: document.getElementById(a.getAttribute("href")?.slice(1) ?? "") }))
+        .filter((p): p is { a: HTMLAnchorElement; el: HTMLElement } => p.el !== null);
+      if (!pairs.length) return; // this page passed no index — no listener work beyond the bail
+      // A centre band, as the two rails use: one section holds it at a time, and the SET is what
+      // makes leaving the body of the document legible — an entry that stops intersecting fires,
+      // an empty set means the reader is in the head or the foot and there is no row to mark.
+      const active = new Set<Element>();
+      tabIO = new IntersectionObserver(
+        (obs) => {
+          for (const e of obs) {
+            if (e.isIntersecting) active.add(e.target);
+            else active.delete(e.target);
+          }
+          const hit = pairs.find((p) => active.has(p.el)) ?? null;
+          tabCurrent = hit ? hit.el.id : "";
+          for (const p of pairs) {
+            if (hit && p.el === hit.el) p.a.setAttribute("aria-current", "location");
+            else p.a.removeAttribute("aria-current");
+          }
+          if (!tabCurrent) closeTabula(true);
+        },
+        { rootMargin: "-45% 0px -45% 0px", threshold: 0 },
+      );
+      pairs.forEach((p) => tabIO!.observe(p.el));
+    };
+
     window.addEventListener("scroll", syncSolid, { passive: true });
+    window.addEventListener("scroll", tabulaScroll, { passive: true });
     // Re-evaluate tone after each navigation (new page starts scrolled to top).
     document.addEventListener("astro:page-load", syncSolid);
+    document.addEventListener("astro:page-load", armTabula);
+    armTabula();
     // A navigation swap tears down the open overlay; drop the scroll lock with it (no wipe here).
-    document.addEventListener("astro:before-swap", () => closeMenu(false));
+    // The tabula goes with it: its rows belong to the outgoing document, and the incoming one is
+    // at the top of itself where nothing holds the viewport anyway.
+    document.addEventListener("astro:before-swap", () => {
+      closeMenu(false);
+      closeTabula(true);
+    });
     // Mobile back button / edge-swipe: the browser pops our pushed entry — fade the card shut.
     // closeMenu no-ops when the card isn't open, so ordinary page-to-page back is unaffected.
     // The isOverlayEntry gate skips the router's synthetic popstate right after the open-push
@@ -634,6 +874,43 @@ const langOptions = showLang
       }
       if (t.closest("#menuClose")) {
         dismissMenu();
+        return;
+      }
+      // A tabula row carries no pull beat — that beat is a page SWAP reading before a crossfade,
+      // and an in-document jump has no swap. What it does need is the scroll itself, because
+      // this surface is the first on the site whose anchors are clicked MID-GESTURE by
+      // construction: the reader has just run back up the page, so Lenis is still animating when
+      // the row is hit. Lenis keeps a virtual position and reasserts it on the next frame, so the
+      // jump the router performs is silently undone and the click reads as dead — measured, on
+      // every one of these pages. §20 found the plain anchor sufficient for `/obrazy`'s PRINTED
+      // index and that finding stands: those rows are only reachable from a page at rest.
+      //
+      // So where Lenis owns the scroll, drive it rather than race it, with `immediate` — the
+      // printed index on the same page lands its five destinations as a cut, and two index
+      // surfaces pointing at the same five sections must not travel differently. The offset is
+      // read from the target's own `scroll-margin-top` rather than restated here: one number,
+      // in the stylesheet, where the bar's height is already accounted for. Without Lenis (touch,
+      // reduced motion) nothing is taken over — there is nothing to fight, and the router's own
+      // handling is what every other anchor on the site uses.
+      const tabRow = t.closest(".tabula-entry");
+      if (tabRow) {
+        tabMuteUntil = window.performance.now() + TABULA_MUTE_MS;
+        tabTravel = 0;
+        closeTabula(true);
+        const id = tabRow.getAttribute("href")?.slice(1) ?? "";
+        const target = id ? document.getElementById(id) : null;
+        const lenis = lenisRead();
+        if (!target || !lenis || e.defaultPrevented) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        const margin = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+        lenis.scrollTo(window.scrollY + target.getBoundingClientRect().top - margin, {
+          immediate: true,
+          force: true,
+        });
+        // The hash is what keeps the row a LINK: it survives a copy, and back returns the reader
+        // where they were — the same entry the anchor would have pushed on its own.
+        window.history.pushState(null, "", `#${id}`);
         return;
       }
       // Registrum ribbon: pull the chosen bookmark long, then let the page dissolve onto its
@@ -748,6 +1025,16 @@ const langOptions = showLang
         const active = document.activeElement as HTMLElement | null;
         if (active?.closest(".registrum-drop")) {
           active.blur();
+          return;
+        }
+        // The tabula is dismissible the way every summoned surface here is. Blur out of it
+        // first, or the focus that is standing inside it refuses the close (see closeTabula)
+        // and the key reads as dead. The two surfaces cannot both be out, so this never
+        // shadows the card: closeTabula no-ops unless the index is actually open.
+        if (c.classList.contains("tabula-open")) {
+          if (active?.closest(".tabula")) active.blur();
+          tabTravel = 0;
+          closeTabula(true);
           return;
         }
         dismissMenu();

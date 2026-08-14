@@ -36,6 +36,20 @@ export interface UIStrings {
     readonly closeAria: string;
     /** aria-label around the language switcher. */
     readonly langAria: string;
+    /**
+     * aria-label on the "tabula" — the page's OWN table of contents, which the chrome grows on
+     * long documents (styles/tabula.css). It must not read as the site's index: the mobile card
+     * and the footer already carry that one, and a reader meeting two navigations both called
+     * "contents" cannot tell which is which. Hence "of this page" in every locale.
+     *
+     * Both pages that carry a tabula today are Polish-only (`/obrazy` by the decision in
+     * docs/web-imagines-spec.md §7, the concert pages because concert content is not translated),
+     * so only the Polish string is reachable right now. It is written in all three anyway, because
+     * this component renders on `/o-nas` and `/kontakt` too and the day one of them passes an
+     * index the string has to already be there — a missing locale would surface as a Polish
+     * landmark label in a French document, which is exactly the kind of gap that ships.
+     */
+    readonly tabulaAria: string;
   };
   /**
    * The three column heads are the POLISH HALF of a two-voice rubric — the Latin
@@ -88,6 +102,7 @@ export const UI: Record<Locale, UIStrings> = {
       close: "Zamknij",
       closeAria: "Zamknij menu",
       langAria: "Wybór języka",
+      tabulaAria: "Spis treści tej strony",
     },
     footer: {
       foundation: "Fundacja",
@@ -123,6 +138,7 @@ export const UI: Record<Locale, UIStrings> = {
       close: "Close",
       closeAria: "Close menu",
       langAria: "Language",
+      tabulaAria: "Contents of this page",
     },
     footer: {
       foundation: "Foundation",
@@ -158,6 +174,7 @@ export const UI: Record<Locale, UIStrings> = {
       close: "Fermer",
       closeAria: "Fermer le menu",
       langAria: "Langue",
+      tabulaAria: "Sommaire de cette page",
     },
     footer: {
       foundation: "Fondation",
