@@ -54,7 +54,18 @@ the concert pages. Where §17 and §19 disagree, §19 is what shipped.
 index; the concert gallery's one-per-row breakpoint moved off 640, but to **960** rather than the
 720 §19 proposed — that note did the arithmetic for the wrong page, and 720 would have left a
 tablet at 213px. Where §19's open list and §20 disagree, §20 is what shipped. §20 also carries the
-standing dark-frame items forward unchanged, so its `Still open` is the current one.
+standing dark-frame items forward unchanged.
+
+**§21 answers the position-indicator item §20 left open and supersedes nothing.** The orientation
+question had three answers that did not know about each other; the tabula is the head's index
+given back on the gesture that asks for it, on `/obrazy` and the three concert pages.
+
+**§22 answers the two questions §9 wrote down and left, and supersedes §9 on both** — the counter
+is arabic, and the two full-height halves are a POINTER's target that narrows to its own glyph
+under a finger. It also corrects a claim §20 carried out of §11 and §21 repeated: the two landing
+panel swaps were not unshipped, they were made on 2026-08-07 and 2026-08-10. Where §9 and §22
+disagree, §22 is what shipped, and **§22's `Still open` is the current one** — it is swept against
+§11, §19, §20 and §21 together.
 
 ---
 
@@ -1933,3 +1944,233 @@ rail clearing at 1440, the gallery breakpoint table at 961, and every run's pack
   `lib/galleryModel.ts`), with `sizes` at 960 on the concert page and 720 on `/obrazy`.
 - Everything photographic in §20's list is unchanged: 9 Kart's Kraków run, Hymn Poległym's two
   portraits, the two decided-but-unshipped landing panel swaps from §11.
+---
+
+## 22. The frame's protocol on a phone, and the counter stops being a name — SHIPPED
+
+§9 shipped the frame with two questions written down and unanswered, and §11, §19, §20 and §21
+each went past them. Both are answered here by measurement, and one turns out to have been
+standing on a premise that is false on the very surface it describes. A third thing was found
+while measuring the first, and it is the worst defect in this section: **a phone held sideways
+had lost the frame's entire colophon** — counter, place, credit and the way out, all below the
+window, in a room that scrolls nothing.
+
+### What a tap actually did: the whole photograph
+
+Measured through CDP touch events (`Input.dispatchTouchEvent`) at 390×844 and 414×896, because
+only the real pipeline runs the gesture recogniser a synthetic `TouchEvent` skips.
+
+| | before | after |
+|---|---|---|
+| photograph, 390 viewport | 366×243 | unchanged |
+| each nav button | 183×243 | 72×243 |
+| share of the frame's area | **100%** | 36.9% |
+| hit-test, nine points over the frame | nine buttons | 3 prev · 3 image · 3 next |
+
+Dead centre turned the frame forward; 2% in from the left edge turned it back. **No pixel of any
+photograph in this archive could be touched without turning it** — on the one screen where the
+picture is under the hand rather than under a pointer.
+
+### The halves shrink to their glyph, and it is §9's own argument run backwards
+
+§9 rejected a chevron at the edge because *the cursor promises an arrow across the whole half, and
+a 40px target would make that promise a lie everywhere except at the edge*. Under a finger every
+term of that argument is void: there is no cursor, so nothing is promised; the swipe already
+carries the gesture; and the price of the full half is a photograph that cannot be looked at. So
+the target shrinks to the band the chevron is ALREADY drawn in — `width: min(72px, 22%)` under
+`@media (hover: none)` — and the glyph does not move, because the padding that places it is
+untouched. **What changed is the target, not the drawing.**
+
+The percentage is the half of that rule that matters: 72px would be most of a narrow portrait
+frame. Worst case in the archive is frame 35, a 9:16 portrait rendered 323×574 on a 390 phone —
+bands 71px, and **181px, 56% of its width, takes no press at all**.
+
+The chevron's rest state goes 0.5 → 0.9. Nothing completes a rest state on a touch screen because
+no hover ever arrives; a quiet glyph waiting to be lit is a pointer's grammar, and here the glyph
+is the whole affordance.
+
+### The swipe no longer double-fires, and §9's note is stale for this engine
+
+§9 recorded that a swipe synthesises the half's click and turns the frame twice. Measured now: a
+170px swipe fires **no click at all** and takes exactly one step, in both directions — Chromium
+suppresses the click once the touch travels past its own tap slop, which is far under the 44px
+this island calls a swipe. The two neighbouring gestures were checked in the same run and both are
+honest: a 30px drag (over the slop, under the floor) does nothing whatever, and a 120px vertical
+drag does nothing.
+
+**The guard stays.** One engine is not the web, this harness holds no iOS Safari, and the whole
+cost of keeping it is one boolean.
+
+### The counter is arabic, and that is the site's rule rather than an exception to it
+
+§9 left the counter roman on one sentence: *"one arabic numeral on a surface that has none would
+cost more than the beat it saves."* **The premise is false, and this page is where it is falsest.**
+Walked across all 48 captions: **41 of them print a date in arabic**, in the same capitalis at the
+same 10.5px, one line under the counter — `KOŚCIÓŁ ŚW. BARTŁOMIEJA, NIEDZICA · 18 PAŹDZIERNIKA
+2025`. The seven that do not are the rehearsal runs, which have no date to print.
+
+And the rule this site actually keeps is not "every numeral is roman". `/obrazy`'s own index sets
+both in ONE row — the evening's numeral in roman beside `9 fot.` in arabic — and every evening
+head three screens down does it again. **Roman NAMES here (an evening, a plate, a register entry);
+arabic COUNTS.** A position in a set of forty-eight is a count, and it was the last count on this
+page still spelled as a name.
+
+What the name cost, in the row's own type at 390: `XXXVIII / XLVIII` **102px → 43px**,
+`XLVIII / XLVIII` 92 → 44. Fourteen of the forty-eight positions needed five glyphs or more, five
+of them six or more.
+
+### A phone held sideways had lost the whole colophon, and nothing was catching it
+
+At 844×390 the caption's bottom landed at **405** and the exit's at **451**, against a 390px
+window, in a room that scrolls nothing. The counter, the place, the credit and the way OUT were
+simply gone — in the orientation a reader turns to precisely because these are landscape
+photographs.
+
+Why nothing caught it: §9's cap came down from 74 to 68svh inside `@media (max-width: 640px)`, and
+a landscape phone is 844 or 896 wide. **A "phone" rule keyed on width does not describe a phone.**
+
+The colophon moves BESIDE the frame rather than the frame shrinking to make room for it: the
+reader turned the phone to make the photograph bigger, and answering that with a smaller
+photograph answers the wrong question. The gate is `(min-width: 641px) and (max-height: 540px)` —
+under 641 the portrait block already owns the layout, and no tablet in landscape is under 540
+tall. After: the image stands **328px** (84svh, up from 296), caption at 31–115, exit at 131, the
+✕ in the one corner of this layout that is always free, and nothing clipped at 844×390 or 896×414.
+
+Two things the build settled:
+
+- **The exit had to move INSIDE the `<figure>`.** A `<figcaption>` is only valid as its figure's
+  first or last child, so the DOM is stage → foot → caption now and the eye's order is restored
+  with `order` in the stylesheet. The reading order that falls out — photograph, road out, caption
+  — is the way out being offered to a reader who cannot see the photograph, which is a gain rather
+  than a cost.
+- **`grid-template-rows: auto 1fr` is load-bearing.** The photograph spans both rows, and a
+  spanning item hands its leftover height to the rows it crosses **in equal shares** — which
+  floated the exit a third of the way down the column, away from the caption it belongs to. The
+  symptom was a foot at y 196 under a caption that ended at 115.
+
+### The two galleries' markup: counted, and it stays duplicated
+
+There are **three** copies, not two: the plate is its own third copy inside `/obrazy`, which §19,
+§20 and §21 all wrote down as "the two galleries".
+
+A shared `PhotoFrame.astro` would take **12 props to emit 21 lines, of which 12 are one-to-one
+forwarding**: figure class, media class, group, href, hrefLabel, the `framedShot` bundle, caption,
+credit, the `widths` ladder (`[560, 904, 1920]` for the plate against `[560, 840, 1200]` for the
+other two), the `<Image>` `width` formula (two of them), and the `sizes` string — **three** of
+those, `720/860/plateW` on the plate, `720` on the sheet and `960` on the concert page — plus
+`data-d` and `--share` for the two that hang in a packed row, and a `<figcaption>` for the one
+that captions.
+
+The pipeline is not shared either, and `lib/galleryModel.ts` would be thinner than §19 imagined:
+the concert page is `galleryRuns → layoutShots() → framedShot` in four lines, while `/obrazy`
+splits plate from sheet and computes the sheet's cap off the plate's own rendered height (§17's
+entire brief) in eighteen. **One line is common.**
+
+So the component is mostly configuration, and the duplicate stays — the same call §11 made about
+the gallery CSS, for the same reason. The parameter count has GROWN since §19 filed the item, not
+shrunk.
+
+**What is genuinely at risk here is not the markup, and it is worth naming:** the eleven
+`data-image-*` attribute NAMES are the contract with `image-triggers.ts`, `data-*` is untyped in
+Astro, and a twelfth field on `ImageFrameItem` means three edits with nothing failing if one is
+missed. The lever, if that ever bites, is not a component: a typed helper returning the attribute
+OBJECT (`<button {...frameAttrs(…)}>`) fixes the contract without moving a single per-page
+parameter. Not shipped — both pages were open in another pass while this one ran.
+
+### Weight
+
+`astro check` 0 errors across 159 files. Register audit **969 nodes, clean — the baseline
+exactly**; this stage adds no register node, no rendition and no string.
+`prune-orphan-assets` reads **72/609 before and after**, which is the figure that says nothing was
+orphaned. The island loses its `roman()` (−20 lines). Every §19/§20 measurement re-run and
+unchanged: zero horizontal overflow at fourteen widths, the rail clearing at 1440, all three
+`/obrazy` anchors at 96, every run's packing identical. Desktop is untouched by construction and
+was checked anyway — at 1440 the halves are still 50% of a 1028×684 frame. The concert surface
+carries all of it: 390×844 and 844×390 on `/koncerty/9-kart`, bands at 72px, middle inert,
+`3 / 16`, nothing clipped in either orientation.
+
+Probes, all in `vm-shot/`: `obrazy-touch.cjs` (the hit-test and the gestures), `obrazy-counter.cjs`
+(all 48 captions), `touch-landscape.cjs`, `touch-bands.cjs` (the band against every frame in the
+set).
+
+### The composition not taken
+
+**The counter as the navigator** — the halves gone from the photograph entirely under a finger,
+and `‹ 41 / 48 ›` standing under it with the arrows in the thumb's reach. It is a real folio idiom
+and it collects the controls where the number they change already is. It lost on being a new
+composition where a correction was available: the halves are §9's design, and what was wrong with
+them on a phone was their WIDTH rather than their existence. Worth knowing if it is ever
+re-proposed: the two buttons must stand OUTSIDE the `aria-live` figcaption, or a screen reader
+announces "Poprzedni kadr, przycisk" on every frame the reader turns.
+
+### Rejected — do not re-propose
+
+- **A tap on the photograph closing the frame.** It is the idiom of several phone galleries, and
+  it turns the one gesture a reader makes in order to LOOK into a dismissal. The backdrop is
+  already ~70% of a portrait phone's screen and it closes.
+- **Pinch-zoom inside the frame.** A gesture layer over a locked body, fighting the swipe for the
+  same fingers, to magnify a rendition already chosen for that screen.
+- **Deep links, or a history entry per frame.** §9's reasoning stands and the number is 48 now.
+- **Deleting the swipe→click guard** on the strength of one engine measuring clean.
+
+### Still open
+
+**Swept against §11, §19, §20 and §21 — and against the FILES, which is where two of the four
+items §20 rescued from §11 turned out to have been answered already.** §20's rule ("sweep every
+open list that has not been struck through") is necessary and it is not sufficient: an item
+reading *"a decided one-line change that has simply never been made"* is a claim about the
+repository, and it survived two further passes because every reading checked the lists against
+each other rather than against `paths.ts`. **Re-read the file an open item names before carrying
+it forward.**
+
+*Closed by this pass:*
+
+- ~~**The two questions §9 did not settle.**~~ — both answered above: the counter is arabic on the
+  rule the site already keeps, and the halves keep the whole half for a pointer while shrinking to
+  their glyph for a finger.
+- ~~**The landing band's first panel announces the evening with a photograph taken after it
+  ended.**~~ — **already shipped, and had been for a week.** `paths.ts` has carried
+  `frame: "kd-wcielenie-6"` since 2026-08-07, the built band renders it, and its `alt` reads
+  *podczas*. §11's contact-sheet pick was made; only the open list did not know.
+- ~~**`kd-wolanie-3` may be a rehearsal standing as the band's second panel.**~~ — **it no longer
+  stands there:** `frame: "kd-wolanie-4"` since 2026-08-10, and all five panels now read *podczas*.
+  This does not close the photographic question §11 raised about that gallery — `-4` is the frame
+  §11 called "a wide shot whose subject at panel size is the projected logo", and it shipped anyway
+  — but the ERROR §11 named is gone, and what is left is a preference between two frames, for the
+  founder.
+
+*Photographic, the founder's call — unchanged from §19/§20:*
+
+- **9 Kart's Kraków run is one lit document over seven dark frames**, and eight more frames sit
+  under p90 60. The levers: re-export with more lift, or `plate:` on `kd-9-kart-8`.
+- **Hymn Poległym packs four-up and its two portraits land at 155×274 at 1440** (114×200 at 961),
+  so the two darkest frames in the archive are also the two smallest on the page.
+- **The band's second panel is now a judgement between two frames**, not the error §11 filed.
+
+*Housekeeping and measurement, carried:*
+
+- **The trigger markup is copied three ways** — counted in this section, left duplicated, with the
+  contract's own risk named and the `frameAttrs` lever written down.
+- **The index's leaders are long** (766px and 891px at 1440) — the missal idiom, looked at and
+  accepted; the lever is one `max-width: 860` on `.im-index` if it ever stops reading.
+- **`/koncerty`'s own via-rail hides at 980 against a 1120 measure** — carried from §19, §20 and
+  §21; the same sum this file has now done four times.
+- **Per-frame `ImageObject` + `creditText` in the `/obrazy` graph** — decided *not* shipped, 48
+  nodes restating the visible colophon. Revisit only with Search Console numbers in hand.
+- **The frame's own five strings are hardcoded Polish** — `Powiększone zdjęcie`, `Zamknij`,
+  `Poprzedni kadr` / `Następny kadr` and the `Zobacz wieczór` fallback, in `ImageLightbox.tsx`.
+  Nothing renders them in another language today (`TRANSLATED_ROUTES` is `{"/o-nas"}`, and
+  `/o-nas` does not mount the frame), which is why this is a note rather than a defect — but the
+  day `/koncerty` is translated they are five keys in `i18n/ui.ts` in three locales, and they will
+  be found by a reader rather than by the build.
+- **A landscape phone narrower than 641px still stacks** (568×320 and down): the portrait rules own
+  it and its caption can clip. Not measured against a real device — the two-column gate can come
+  down if one is ever in hand.
+
+*Carried from §21, the tabula's own:*
+
+- **`/o-nas` is 19 phone screens with ten sections and no device**, and it is translated, so its
+  section names are copy in three locales.
+- **`/press` is the longest document on the site** and already has ten anchors; a noindex EPK, so
+  it sits below `/o-nas` rather than above it.
+- **The phone's card still indexes only the SITE**, not the page the reader is standing on.
