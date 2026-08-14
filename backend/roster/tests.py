@@ -4363,8 +4363,11 @@ class ConcertDaySheetTests(APITestCase):
             self._build_context(Audience.CHORISTER, self.singer_part)["sections"][0],
             "personal",
         )
+        # A day card leads with the day: the masthead states the anchors, and
+        # the maestro's card used to answer them four pages later, behind the
+        # casting matrix.
         self.assertEqual(
-            self._build_context(Audience.CONDUCTOR, None)["sections"][0], "program"
+            self._build_context(Audience.CONDUCTOR, None)["sections"][0], "runsheet"
         )
         # The coverage band has no heading, so it is not a section: it used to
         # sit first here and silently consume section number 1.
@@ -4794,7 +4797,51 @@ class ConcertDaySheetTests(APITestCase):
         self.assertIn("Cee Pending", details)
         self.assertIn("utwory bez nut", texts)
         # The blocker list precedes the coverage band it replaces as an opener.
-        self.assertLess(html.index("Do zamknięcia"), html.index("Potwierdzona obsada"))
+        self.assertLess(html.index("Do zamknięcia"), html.index("Pokrycie materiałów"))
+
+    def test_coverage_is_one_grid_over_one_denominator(self) -> None:
+        """Four counters over four denominators, standing in a row of equal
+        boxes, were a matrix pretending to be tiles: the reader had to subtract
+        them to find what was missing. Every column is now the same question
+        over the programme, and an absent material is an empty cell."""
+        coverage = self._build_context(Audience.PRODUCTION, None)["coverage"]
+        assert coverage is not None
+
+        self.assertEqual(coverage["labels"], ["Nuty", "Tracki", "Nagranie", "Casting"])
+        self.assertEqual(coverage["total"], len(coverage["rows"]))
+        self.assertTrue(
+            all(len(row["cells"]) == len(coverage["labels"]) for row in coverage["rows"])
+        )
+        # A total is the column counted over the same rows the grid printed —
+        # not a second census with its own idea of the denominator.
+        self.assertEqual(
+            coverage["totals"],
+            [
+                sum(1 for row in coverage["rows"] if row["cells"][index])
+                for index in range(len(coverage["labels"]))
+            ],
+        )
+        # It is the report's instrument; a day card never carries coverage.
+        self.assertIsNone(
+            self._build_context(Audience.CHORISTER, self.singer_part)["coverage"]
+        )
+
+    def test_printed_resources_are_named_never_drawn_as_buttons(self) -> None:
+        """A rounded link-button is invisible on paper and an 8pt tap target on
+        a phone. The resource is named, and a QR appears only where the target
+        opens without a session — never on the login-gated score."""
+        self.project.spotify_playlist_url = "https://open.spotify.com/playlist/test"
+        self.project.save(update_fields=["spotify_playlist_url"])
+
+        assets = {
+            asset["label"]: asset
+            for asset in self._build_context(Audience.PRODUCTION, None)["preparation_assets"]
+        }
+        self.assertTrue(assets["Playlista referencyjna"]["qr"].startswith("data:image/svg+xml"))
+        self.assertEqual(assets["Pełny score projektu"]["qr"], "")
+
+        html = self._render(Audience.PRODUCTION, None)
+        self.assertNotIn('class="btn', html)
 
     def test_report_blocker_list_reports_a_broken_call_window(self) -> None:
         self._move_call_off_the_concert_day()
@@ -4819,6 +4866,17 @@ class ConcertDaySheetTests(APITestCase):
         )
         self.assertNotIn("555999555", html)
         self.assertNotIn("crew-secret@test.pl", html)
+
+    def test_the_report_has_exactly_one_audience(self) -> None:
+        """A conductor's report was configured for a stage that never gave it an
+        endpoint, and unexercised configuration outlives the reason it was
+        written. Asking for one degrades to the card he can actually request."""
+        ctx = self._build_context(
+            Audience.CONDUCTOR, None, DocumentKind.PRODUCTION_REPORT
+        )
+        self.assertEqual(ctx["kind"], DocumentKind.DAY_CARD.value)
+        self.assertFalse(ctx["is_report"])
+        self.assertEqual(ctx["blockers"], [])
 
     def test_duplicate_roster_name_is_flagged_only_where_it_can_be_merged(self) -> None:
         """Two roster rows under one name are two Artist records for one human.

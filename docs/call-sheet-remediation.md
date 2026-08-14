@@ -375,7 +375,7 @@ too. A day card should never ask its reader to fix data.
 
 Six stages. Etapy 0–1 are self-contained and worth shipping even if the split is rejected.
 
-**Status: Etapy 0, 1, 2 and 3 are DONE.** Etapy 4–6 are open.
+**Status: Etapy 0, 1, 2, 3 and 4 are DONE.** Etapy 5–6 are open.
 
 **Etap 1's pagination claim was wrong, and was corrected in Etap 2 (2026-08-14).** The
 "five pages become three" outcome was reasoned from the CSS because WeasyPrint cannot render on the
@@ -670,10 +670,107 @@ contradicting each other across half a page (D4, still live on that data). The t
 dedupe a point that restates an anchor: when they agree the repetition is harmless, and when they
 disagree the repetition *is* the finding.
 
-### Etap 4 — Print design system
+### Etap 4 — Print design system — DONE (2026-08-14)
 
-Write the canon first — a `Print artifacts` section in `.ai/04_design_system.md` (short, like the
-rest of it), then apply it to all three PDF templates.
+**The canon is written and lives in `.ai/04_design_system.md`, § `Print artifacts`.** That file is
+`.gitignore`d (agent context), so it is not in this repo's history — this section is the tracked
+record of *what* was decided; the canon itself is the normative copy, and there is deliberately only
+one. It governs the call sheet, the contract and the score book, and it is ~25 lines.
+
+**Applied to all three templates.** The call sheet and the contract were rewritten onto it. The
+score book was **read against it and deliberately left alone**: it already complies where the canon
+binds every artifact (atoms carry the `avoid`, nothing depends on colour), and it takes the canon's
+one named exception — a book keeps Gentium Plus and its oldstyle figures, because it sets verse a
+singer reads while singing, not a table of hours.
+
+**Measured on the dev database** (`Koncert Wiosenny „Lux Aeterna”`, 8 pieces / 19 participations),
+all four combinations the endpoints can produce, rendered in the container and read as contact
+sheets:
+
+| sheet | after Etap 3 | after Etap 4 |
+|---|---|---|
+| report · production | 8 p | **6 p** |
+| day card · production | 4 p | **3 p** |
+| day card · conductor | 7 p | **5 p** |
+| day card · chorister | 4 p | 4 p |
+
+The report now runs with essentially no internal slack (page tails 13 / 19 / 24 / 40 / 23 pt on
+pages 1–5). `report × chorister` still renders byte-identical to that singer's day card.
+
+**What produced the pages.** Most of it is the face: the sheet was set in Gentium Plus at 10.5pt and
+is now IBM Plex Sans at 9.5pt, which is the same optical size (Plex draws a 0.516em x-height against
+Gentium's ~0.45) at meaningfully less height. Three layout decisions did the rest:
+
+- **The casting section stopped being eight bordered cards** and became one card of hairline-
+  separated blocks, the same shape the programme list already had. Nine identical surfaces gave
+  every piece the same weight (U3) and cost a border, two paddings and a gap each.
+- **The event pair moved from `table-cell` to `columns: 2`.** Two table-cells tear at whatever
+  height the taller one reaches and leave the exhausted cell blank beside the one still running —
+  a third of a page on the report. Balanced columns end together. Re-confirmed on measurement:
+  collapsing the pair to one column *costs* a page on two documents, so the two-column pair stays.
+- **`.grid td` padding 5pt → 4pt.** The report is mostly tables; one point per row was worth a whole
+  page of it, and it is what closed the report's own orphan.
+
+**Decisions taken while building.**
+
+- **`break-inside: avoid` moved off the programme entry and onto the piece's *identity*
+  (`.prog-id`: number, title, composer, metadata).** Guarding the whole entry cost a full page on the
+  maestro's card, and rendering it without the guard showed the only break it was ever buying off was
+  the resources line dangling to the next page. So the identity is the atom, and what may follow it
+  flows. This refines the standing rule rather than contradicting it: **the atom is the smallest
+  thing that must not be torn, not the smallest box in the markup.**
+- **`report × conductor` is deleted, not given an entry point.** It was configured in Etap 2 and no
+  endpoint ever produced it. A query flag with no UI is precisely the "flag nobody sets" that §5
+  rejects, and `resolve_document_kind` already degrades the pair to the day card the maestro can
+  actually request — now covered by a test. If a conductor's report is ever wanted it arrives with
+  the entry point that motivates it.
+- **A day card leads with the day.** The run sheet is now the first numbered section on all three day
+  cards (after `personal` on the singer's, which is the one section nobody else's sheet carries). The
+  maestro's card opened on four pages of casting matrix before reaching the hours its own masthead
+  had just stated. The report still leads with the event: its reader is establishing facts, not
+  executing them.
+- **U2: the coverage tiles became a grid.** Four counters over four denominators in a row of equal
+  boxes were a matrix pretending to be tiles. There are now two things: a **census** — one line of
+  plain type where every figure carries its own noun, so no two of them read as shares of a
+  denominator they never had — and a **grid**, one row per piece and one column per material, where a
+  missing material is an empty cell. Presence is a mark and absence is space, so a hole is a hole on
+  a mono print. The four `Nuty per utwór 6/8`-style rows left the event card, which now carries only
+  the two project-level resources.
+- **QR policy (A3).** Two codes at most, and never three: the venue map on a day card (a public map,
+  and the address it decodes is printed beside it, so nothing is lost without a phone) and the Spotify
+  playlist. The score and the per-piece editions are **named in words with the sentence that says how
+  to reach them** — they sit behind the app's login, and a code that leads to a login wall is worse
+  than no code, because it is tried first. Reference recordings name performer + platform: one QR per
+  recording is how a page becomes a QR wall (§5). New dependency: `segno` (pure Python, SVG output; a
+  raster prints blocky at the 15mm a scannable code needs).
+- **The contract joined the canon.** Its palette was stock Tailwind slate plus a blue (`#002395`)
+  that appears nowhere else in the product — not an identity, a default. It now uses the same four
+  ink steps, the same gold rule and lining figures. **No wording changed**; it is the same legal
+  text.
+- **Crimson left the personal block.** A singer who has not answered yet wore the alarm colour. An
+  unanswered invitation is work in progress, so it is a gold chip, and the *confirmed* case — the
+  expected state — dropped its chip entirely and says so in plain type.
+
+**The orphan on the last page: measured, and only half of it was a break-rule problem.** The
+report's is gone (the density pass pulled the contact directory back onto page 6). The singer's card
+still ends on a page carrying only `Kontakty`, and that is **content arithmetic, not a break rule**:
+rendering it with `break-inside: avoid` removed from *every* atom leaves it at four pages, and so do
+all three plausible section orders (contacts before the roster, contacts straight after the personal
+block). Its pages 1–3 are full to within 27pt. The levers left are Etap 6 (structured logistics
+replacing prose) and content decisions this stage is not allowed to take.
+
+**Two things worth knowing before touching this template again.**
+
+- `columns: n` and `page-break-inside: avoid` interact: a card inside a `.multicol` needs
+  `break-inside: avoid-column`, and removing it measurably *worsens* the balance rather than freeing
+  it.
+- The ink scale is declared as custom properties on `:root` in each template. WeasyPrint resolves
+  `var()` fine in the document, but the `@page` margin boxes keep literal values — a running footer
+  is outside the element tree the properties are inherited through.
+
+---
+
+Original spec for this stage follows.
 
 - **Two voices.** Cormorant Garamond for titles, the anchor strip and display figures; IBM Plex Sans
   for every label, table, time and counter. Both already bundled
@@ -728,6 +825,15 @@ Recorded so they are not re-proposed.
   anchors it owns and closes with the last *planned* point when there is one — see Etap 3.
 - **Deduplicating a run-sheet point that restates an anchor.** When they agree the second line costs
   nothing; when they disagree, hiding one of them re-creates D4 with better manners.
+- **An entry point for `report × conductor`** (Etap 4). A query flag with no UI is the "flag nobody
+  sets" rejected two entries above; the branch is deleted instead, and the pair degrades to the day
+  card. Reinstate it *with* the endpoint that wants it, not before.
+- **A QR on the score or on a per-piece edition.** Those endpoints are access-gated; a code that
+  lands on a login wall is worse than no code, because a reader tries it first and concludes the
+  sheet is broken. Gated resources are named in words plus the sentence saying where to find them.
+- **A hard `break-inside: avoid` on a programme entry** (Etap 4). Worth a full page on the maestro's
+  card, and the tear it prevented was only ever the resources line leaving the piece behind. The
+  guard belongs on the piece's identity.
 - **A second consumer for the day timeline "because the spec said so".** §4 claimed "both the PDF and
   the schedule read-model consume it" — no backend read-model touches `run_sheet` (checked:
   `queries/`, `dashboard_serializers.py`, `serializers.py`), and none should be invented to justify

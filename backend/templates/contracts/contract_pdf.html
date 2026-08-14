@@ -11,6 +11,25 @@
            agreed to. */
         {{ font_css|safe }}
 
+        {% comment %}
+            Same print canon as the call sheet (`.ai/04_design_system.md`,
+            § Print artifacts): four ink steps, one hairline, gold as structure,
+            crimson reserved for a stated problem — which a contract never has,
+            so it appears nowhere here. The palette this replaced was stock
+            Tailwind slate plus a blue nothing else in the product uses, so a
+            signed contract did not look like the institution that issued it.
+        {% endcomment %}
+        :root {
+            --ink-1: #161412;
+            --ink-2: #45413b;
+            --ink-3: #746d63;
+            --ink-4: #a2917a;
+            --gold: #c2a878;
+            --gold-ink: #8d6f34;
+            --paper-warm: #faf8f3;
+            --rule: #e6e1d5;
+        }
+
         @page {
             size: A4;
             margin: 2.5cm 2cm 3cm 2cm;
@@ -18,23 +37,28 @@
                 content: "Strona " counter(page) " z " counter(pages);
                 font-family: {{ font_sans|safe }};
                 font-size: 8pt;
-                color: #9ca3af;
+                color: #a2917a;
+                font-variant-numeric: lining-nums;
             }
         }
 
+        /* Lining figures throughout: this document is dates, sums and section
+           numbers, and oldstyle figures dip below the baseline in every one. */
         body {
             font-family: {{ font_sans|safe }};
             font-size: 10pt;
             line-height: 1.6;
-            color: #1f2937;
-            text-align: left; 
+            color: var(--ink-2);
+            text-align: left;
+            font-feature-settings: "liga" 1, "kern" 1, "lnum" 1;
+            font-variant-numeric: lining-nums;
         }
 
-        /* Nowoczesny Letterhead Fundacji */
+        /* Letterhead. The gold rule is the document's one heavy line. */
         .brand-header {
-            border-bottom: 2px solid #002395;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            border-bottom: 1.2pt solid var(--gold);
+            padding-bottom: 12px;
+            margin-bottom: 28px;
             display: flex;
             justify-content: space-between;
             align-items: flex-end;
@@ -48,7 +72,7 @@
             font-family: {{ font_serif|safe }};
             font-weight: 600;
             font-size: 28pt;
-            color: #002395;
+            color: var(--ink-1);
             margin: 0;
             line-height: 1;
         }
@@ -56,12 +80,12 @@
         .brand-name span {
             font-style: italic;
             font-weight: normal;
-            color: #4b5563;
+            color: var(--gold-ink);
         }
 
         .header-meta {
             font-size: 9pt;
-            color: #6b7280;
+            color: var(--ink-3);
             text-align: right;
         }
 
@@ -69,31 +93,33 @@
             font-family: {{ font_serif|safe }};
             font-weight: 600;
             text-align: center;
-            font-size: 20pt;
-            color: #111827;
-            margin-bottom: 30px;
+            font-size: 22pt;
+            color: var(--ink-1);
+            margin-bottom: 28px;
         }
 
+        /* A paragraph marker is a label, so it takes the sans and the label ink
+           — the eyebrow recipe the whole product shares. */
         h2 {
             font-family: {{ font_sans|safe }};
-            font-size: 10pt;
-            font-weight: 700;
+            font-size: 8pt;
+            font-weight: 600;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #002395;
-            margin-top: 25px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #e5e7eb;
+            letter-spacing: 1.2pt;
+            color: var(--ink-4);
+            margin-top: 24px;
+            margin-bottom: 9px;
+            border-bottom: 0.5pt solid var(--rule);
             padding-bottom: 5px;
         }
 
         .parties-grid {
             display: table;
             width: 100%;
-            margin-bottom: 30px;
-            background-color: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
+            margin-bottom: 28px;
+            background-color: var(--paper-warm);
+            border: 0.5pt solid var(--rule);
+            border-radius: 3px;
         }
 
         .party-box {
@@ -103,24 +129,33 @@
             vertical-align: top;
         }
 
-        .party-box.left { border-right: 1px solid #e5e7eb; }
-        .party-label { font-size: 8pt; text-transform: uppercase; color: #6b7280; font-weight: 700; margin-bottom: 5px;}
-        .party-name { font-weight: 700; font-size: 11pt; color: #111827; margin-bottom: 5px;}
+        .party-box.left { border-right: 0.5pt solid var(--rule); }
+        .party-label { font-size: 7pt; text-transform: uppercase; color: var(--ink-4); letter-spacing: 1.2pt; font-weight: 600; margin-bottom: 5px;}
+        .party-name { font-weight: 600; font-size: 11pt; color: var(--ink-1); margin-bottom: 5px;}
 
         p { margin: 0 0 10px 0; }
         
         ul { margin: 5px 0 15px 0; padding-left: 20px; }
         li { margin-bottom: 3px; }
 
+        /* The two facts the signatory looks for — which project, and how much.
+           Serif, because the sum is a display figure and the title is a titled
+           work; gold, because gold is this document's structural voice. */
         .highlight-box {
             text-align: center;
             padding: 10px;
             margin: 15px 0;
-            background-color: #eff6ff;
-            border-left: 3px solid #002395;
+            background-color: var(--paper-warm);
+            border-left: 2pt solid var(--gold);
+            font-family: {{ font_serif|safe }};
+            font-size: 15pt;
             font-weight: 600;
+            color: var(--ink-1);
         }
 
+        /* A signature block torn across a page is a signature block nobody
+           signs; it is one card's worth of height, which is where the canon
+           allows an `avoid`. */
         .signature-table {
             width: 100%;
             margin-top: 50px;
@@ -133,20 +168,20 @@
         }
         .sign-line {
             width: 60%;
-            border-bottom: 1px solid #111827;
+            border-bottom: 0.5pt solid var(--ink-1);
             margin: 0 auto 5px auto;
             height: 40px;
         }
         .sign-label {
-            font-size: 8pt;
+            font-size: 7pt;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #6b7280;
+            letter-spacing: 1.2pt;
+            color: var(--ink-4);
         }
-        
+
         .legal-smallprint {
             font-size: 7.5pt;
-            color: #6b7280;
+            color: var(--ink-3);
             margin-top: 15px;
             text-align: justify;
         }
@@ -212,7 +247,7 @@
     <h2>§ 3. Wynagrodzenie (KUP 50%)</h2>
     <p>1. Z tytułu osobistego wykonania dzieła (§1) oraz przeniesienia praw majątkowych i pokrewnych (§2), Zamawiający zapłaci Wykonawcy łączne wynagrodzenie brutto w wysokości:</p>
     
-    <div class="highlight-box" style="font-size: 14pt;">
+    <div class="highlight-box" style="font-size: 20pt;">
         {{ fee }} PLN
     </div>
     

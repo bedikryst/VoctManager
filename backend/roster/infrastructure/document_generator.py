@@ -11,9 +11,12 @@ The concert-day sheet is audience-shaped: the same production data is rendered
 into three documents with different priorities and privacy rules — a personal
 sheet for a single singer (``Audience.CHORISTER``), a music-forward sheet for
 the maestro (``Audience.CONDUCTOR``), and the full production call sheet for
-management (``Audience.PRODUCTION``). Typography is pinned to the bundled
-Gentium Plus face (see ``print_fonts``) so the PDF renders identically on the
-Windows dev host and the Linux runtime image.
+management (``Audience.PRODUCTION``). Typography is the bundled brand pair
+(Cormorant Garamond + IBM Plex Sans, see ``print_fonts``), so the PDF renders
+identically on the Windows dev host and the Linux runtime image — and so a
+document made of labels, times and tables is set in the face that draws them.
+The rules it follows are the ``Print artifacts`` canon in
+``.ai/04_design_system.md``, shared with the contract template.
 """
 
 from __future__ import annotations
@@ -44,11 +47,9 @@ from roster.domain.day_timeline import (
     resolve_call_window,
 )
 from roster.infrastructure.print_fonts import (
-    BOOK_FONT_STACK,
     BRAND_SANS_STACK,
     BRAND_SERIF_STACK,
     brand_font_face_css,
-    font_face_css,
 )
 from roster.models import (
     DEFAULT_EVENT_TIMEZONE,
@@ -85,6 +86,21 @@ _LANGUAGE_NAMES: dict[str, str] = {
 }
 # Reference links are a hyperlink strip on a printed page, not a discography.
 _MAX_REFERENCE_LINKS = 2
+# A QR is spent only where scanning is the realistic way in: a public map or
+# playlist a phone opens with no session. The gated endpoints (project score,
+# score editions) are named in words instead — a code that leads to a login
+# wall is worse than no code, because it is tried first. See the print canon's
+# three-per-page ceiling; the sheet never emits more than two.
+_QR_ERROR_LEVEL = 'm'
+# The materials a report tracks per piece, in the order the grid prints them.
+# Each column is a yes/no over the SAME denominator (the programme), which is
+# what makes the grid a grid rather than four counters standing in a row.
+_COVERAGE_COLUMNS: tuple[tuple[str, str], ...] = (
+    ('sheet_music_url', 'Nuty'),
+    ('track_count', 'Tracki'),
+    ('reference_links', 'Nagranie'),
+    ('casting_count', 'Casting'),
+)
 # Printed on a Polish sheet for a Polish ensemble, the country is the one part
 # of an address that never tells the reader anything.
 _IMPLIED_COUNTRIES = frozenset({'poland', 'polska'})
@@ -139,26 +155,32 @@ class DocumentKind(StrEnum):
 # ``{% if section == %}`` chain in ``projects/call_sheet_pdf.html``, and note
 # that ``_visible_sections`` drops any entry whose data is absent so the printed
 # numbering never skips.
+#
+# **A day card leads with the day.** The masthead promises the day's anchors, so
+# the run sheet is the first numbered section on every day card — the maestro's
+# used to open on four pages of casting matrix before reaching the hours the
+# band above it had just stated. The report leads with the event, because its
+# reader is establishing facts, not executing them.
 _SECTIONS: dict[DocumentKind, dict[Audience, tuple[str, ...]]] = {
     DocumentKind.DAY_CARD: {
-        # Singer first: what concerns *them* today, then the day, then the music,
-        # and last the two things a lost or late singer needs — who else is there
-        # and whom to reach.
+        # Singer: their own part first (it is the one section nobody else's
+        # sheet carries), then the day, then the music, and last the two things
+        # a lost or late singer needs — who else is there and whom to reach.
         Audience.CHORISTER: (
             "personal",
-            "event",
             "runsheet",
+            "event",
             "rehearsals",
             "program",
             "ensemble",
             "contacts",
         ),
-        # Maestro first: the musical arc and who gives pitch, then the day.
+        # Maestro: the day, then the musical arc and who gives pitch.
         Audience.CONDUCTOR: (
+            "runsheet",
             "program",
             "casting",
             "ensemble",
-            "runsheet",
             "rehearsals",
             "event",
             "contacts",
@@ -166,8 +188,8 @@ _SECTIONS: dict[DocumentKind, dict[Audience, tuple[str, ...]]] = {
         # Stage manager: the day as it will be run, and everyone who runs it.
         # No casting — micro-casting is the maestro's instrument, not the desk's.
         Audience.PRODUCTION: (
-            "event",
             "runsheet",
+            "event",
             "rehearsals",
             "program",
             "ensemble",
@@ -177,6 +199,13 @@ _SECTIONS: dict[DocumentKind, dict[Audience, tuple[str, ...]]] = {
     DocumentKind.PRODUCTION_REPORT: {
         # Management: the full preparation picture. The blocker list and the
         # coverage band open the document ahead of every numbered section.
+        #
+        # PRODUCTION is the only audience here, and deliberately: a report for
+        # the maestro was configured for a stage that never gave it an endpoint,
+        # and `resolve_document_kind` already degrades that pair to the day card
+        # he can actually request. Dead configuration outlives the reason it was
+        # written; if a conductor's report is ever wanted, it arrives with the
+        # entry point that motivates it.
         Audience.PRODUCTION: (
             "event",
             "runsheet",
@@ -184,17 +213,6 @@ _SECTIONS: dict[DocumentKind, dict[Audience, tuple[str, ...]]] = {
             "program",
             "casting",
             "ensemble",
-            "contacts",
-        ),
-        # The maestro may want the state of preparation before a rehearsal
-        # block; same document, music first.
-        Audience.CONDUCTOR: (
-            "program",
-            "casting",
-            "ensemble",
-            "rehearsals",
-            "runsheet",
-            "event",
             "contacts",
         ),
     },
@@ -253,6 +271,24 @@ def _brand_font_context() -> dict[str, str]:
         "font_sans": mark_safe(BRAND_SANS_STACK),
         "font_serif": mark_safe(BRAND_SERIF_STACK),
     }
+
+
+def _qr_data_uri(url: str) -> str:
+    """An SVG QR for ``url``, inline as a data URI, or '' when there is nothing
+    scannable.
+
+    SVG rather than a raster: a QR is printed at ~15mm, where an upscaled PNG
+    loses the module edges a scanner reads. A missing ``segno`` degrades to no
+    code rather than failing the render — the resource is named in words beside
+    it either way, which is the part that has to survive.
+    """
+    if not url:
+        return ''
+    try:
+        import segno
+    except ImportError:  # pragma: no cover - the dependency ships in requirements
+        return ''
+    return segno.make(url, error=_QR_ERROR_LEVEL).svg_data_uri(scale=1, border=0)
 
 
 class DocumentRenderDependencyError(RuntimeError):
@@ -487,10 +523,6 @@ class DocumentGenerator:
         total_program_duration_seconds = sum(
             item.piece.estimated_duration or 0 for item in program_items
         )
-        pieces_with_sheet_music = sum(1 for card in program_cards if card['sheet_music_url'])
-        pieces_with_tracks = sum(1 for card in program_cards if card['track_count'] > 0)
-        pieces_with_reference = sum(1 for card in program_cards if card['reference_links'])
-        pieces_with_casting = sum(1 for card in program_cards if card['casting_count'] > 0)
 
         venue = project.location
         venue_map_url = DocumentGenerator._build_map_url(venue)
@@ -524,12 +556,11 @@ class DocumentGenerator:
         if project.conductor:
             event_facts.append({'label': 'Prowadzenie', 'text': str(project.conductor)})
 
-        # Preparation-readiness meters are a management concern; the day card
-        # gets a short "what to open" list, the report the coverage picture.
+        # The day card lists what exists; the report lists both rows, because
+        # there an absence is a finding. Per-piece readiness is the coverage
+        # grid's job and no longer duplicated here as four counters.
         preparation_assets = DocumentGenerator._build_preparation_assets(
-            project, program_cards, base_url, is_report,
-            pieces_with_sheet_music, pieces_with_tracks,
-            pieces_with_reference, pieces_with_casting,
+            project, base_url, is_report
         )
 
         dress_code_entries = []
@@ -592,8 +623,10 @@ class DocumentGenerator:
             'is_report': is_report,
             'ensemble_name': _ensemble_name(),
             'doc_lang': _doc_lang(),
-            'font_css': font_face_css(),
-            'font_stack': BOOK_FONT_STACK,
+            # The brand pair, not the score book's face: this document is
+            # labels, times, tables and counters, and one serif at one width
+            # made its eyebrow rows read as texture rather than as structure.
+            **_brand_font_context(),
             'greeting': greeting,
             'personal': personal,
             'generation_date': now,
@@ -615,6 +648,10 @@ class DocumentGenerator:
             'venue_line': (
                 '' if is_report else DocumentGenerator._venue_line(venue, venue_address)
             ),
+            # The one code a lost singer scans, beside the address it decodes.
+            # The report's reader is at a desk with the address in front of
+            # them, so it gets no code.
+            'venue_qr': '' if is_report else _qr_data_uri(venue_map_url),
             'call_buffer_label': DocumentGenerator._format_call_buffer(call_window),
             # Stated only where someone can act on it: management and the
             # maestro get told the window is broken, the singer is simply not
@@ -675,6 +712,28 @@ class DocumentGenerator:
                 )
                 if is_report
                 else []
+            ),
+            # Four unrelated denominators in one row of equal boxes were not
+            # siblings; the coverage question is one grid over one denominator
+            # (the programme), and the census beside it names its own nouns so
+            # nothing implies a shared one.
+            'coverage': (
+                DocumentGenerator._build_coverage_grid(program_cards)
+                if is_report
+                else None
+            ),
+            'coverage_census': (
+                DocumentGenerator._build_coverage_census(
+                    program_cards=program_cards,
+                    total_program_duration_seconds=total_program_duration_seconds,
+                    confirmed=len(confirmed_participations),
+                    pending=len(pending_participations),
+                    rehearsals=len(rehearsal_list),
+                    crew_confirmed=confirmed_crew_count,
+                    crew_tentative=tentative_crew_count,
+                )
+                if is_report
+                else ''
             ),
             'metrics': {
                 'cast_confirmed': len(confirmed_participations),
@@ -740,85 +799,121 @@ class DocumentGenerator:
     @staticmethod
     def _build_preparation_assets(
         project: Project,
-        program_cards: list[dict[str, Any]],
         base_url: str | None,
         is_report: bool,
-        pieces_with_sheet_music: int,
-        pieces_with_tracks: int,
-        pieces_with_reference: int,
-        pieces_with_casting: int,
     ) -> list[dict[str, Any]]:
-        total = len(program_cards)
-        # The day card gets the two things people actually open before a
-        # concert; the coverage counters ("12/14 pieces have tracks") are a
-        # manager's metric.
-        #
-        # A resource that does not exist is not listed on a performer's sheet:
-        # printing "Playlista referencyjna — Brak" tells the one reader who can
-        # do nothing about it that something is missing. Absent materials are a
-        # management fact, and they stay in the coverage rows below.
-        singer_assets = []
-        if project.score_pdf:
-            singer_assets.append(
-                {
-                    'label': 'Pełny score projektu',
-                    'status': 'Gotowe',
-                    'url': DocumentGenerator._absolute_url(
-                        base_url, f'/api/projects/{project.pk}/score_pdf/'
-                    ),
-                    'note': 'Kompletny pakiet nut na dziś. Otwórz w aplikacji lub wydrukuj.',
-                }
-            )
-        if project.spotify_playlist_url:
-            singer_assets.append(
-                {
-                    'label': 'Playlista referencyjna',
-                    'status': 'Gotowe',
-                    'url': project.spotify_playlist_url,
-                    'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
-                }
-            )
-        if not is_report:
-            return singer_assets
+        """The two project-level resources, named as resources rather than drawn
+        as buttons.
 
-        return [
+        A pill-shaped link is a decoration on paper (its target is invisible,
+        unreachable even by typing) and an 8pt tap target on a phone. What works
+        in both media is the resource named in words plus, where the target is
+        genuinely reachable, a QR. ``access`` is that sentence: the score sits
+        behind the app's login, so it says so instead of offering a code that
+        would lead to a wall.
+
+        A resource that does not exist is not listed on a performer's sheet —
+        printing "Playlista referencyjna — Brak" tells the one reader who can do
+        nothing about it that something is missing. On the report both rows are
+        stated either way, because there its absence is the point.
+        """
+        score_url = (
+            DocumentGenerator._absolute_url(
+                base_url, f'/api/projects/{project.pk}/score_pdf/'
+            )
+            if project.score_pdf
+            else ''
+        )
+        assets = [
             {
                 'label': 'Pełny score projektu',
                 'status': 'Gotowe' if project.score_pdf else 'Brak',
-                'url': (
-                    DocumentGenerator._absolute_url(base_url, f'/api/projects/{project.pk}/score_pdf/')
-                    if project.score_pdf
-                    else ''
-                ),
+                'url': score_url,
+                'access': 'W aplikacji, po zalogowaniu — zakładka Materiały.',
+                'qr': '',
                 'note': 'Kompletny pakiet nut na dziś. Otwórz w aplikacji lub wydrukuj.',
             },
             {
                 'label': 'Playlista referencyjna',
                 'status': 'Gotowe' if project.spotify_playlist_url else 'Brak',
                 'url': project.spotify_playlist_url,
+                'access': 'Spotify — otwarte, bez logowania do panelu.',
+                'qr': _qr_data_uri(project.spotify_playlist_url),
                 'note': 'Brzmienie i kolejność programu do ostatniego odsłuchu.',
             },
-            {
-                'label': 'Nuty per utwór',
-                'status': f'{pieces_with_sheet_music}/{total}' if total else '0/0',
-                'note': 'Liczba pozycji z dedykowanym PDF partytury lub materiału.',
-            },
-            {
-                'label': 'Tracki sekcyjne',
-                'status': f'{pieces_with_tracks}/{total}' if total else '0/0',
-                'note': 'Pozycje z przygotowanymi trackami do samodzielnego utrwalenia.',
-            },
-            {
-                'label': 'Nagrania referencyjne',
-                'status': f'{pieces_with_reference}/{total}' if total else '0/0',
-                'note': 'Utwory z linkiem do YouTube lub Spotify.',
-            },
-            {
-                'label': 'Casting rozpisany',
-                'status': f'{pieces_with_casting}/{total}' if total else '0/0',
-                'note': 'Pozycje z gotowym micro-castingiem i odpowiedzialnościami.',
-            },
         ]
+        if is_report:
+            return assets
+        return [asset for asset in assets if asset['url']]
+
+    @staticmethod
+    def _build_coverage_grid(program_cards: list[dict[str, Any]]) -> dict[str, Any]:
+        """Material readiness as a grid: one row per piece, one column per material.
+
+        The band this replaced was four counters over four different
+        denominators standing in one row of equal boxes — a matrix pretending to
+        be tiles, which the reader had to re-derive by subtraction. A grid
+        answers in one glance: every column is the same question over the same
+        programme, and a missing material is an empty cell, i.e. visibly a hole.
+        Nothing here depends on colour; presence is a mark and absence is space.
+        """
+        rows = [
+            {
+                'order': card['order'],
+                'title': card['title'],
+                'cells': [bool(card[key]) for key, _ in _COVERAGE_COLUMNS],
+            }
+            for card in program_cards
+        ]
+        return {
+            'labels': [label for _, label in _COVERAGE_COLUMNS],
+            'rows': rows,
+            'totals': [
+                sum(1 for row in rows if row['cells'][index])
+                for index in range(len(_COVERAGE_COLUMNS))
+            ],
+            'total': len(rows),
+        }
+
+    @staticmethod
+    def _build_coverage_census(
+        program_cards: list[dict[str, Any]],
+        total_program_duration_seconds: int,
+        confirmed: int,
+        pending: int,
+        rehearsals: int,
+        crew_confirmed: int,
+        crew_tentative: int,
+    ) -> str:
+        """The project's size in one line of plain type.
+
+        Each figure carries its own noun, so no two of them read as shares of a
+        denominator they never had. Deliberately not a row of tiles: a census is
+        a measurement, and the loud slot on this page belongs to what is *not*
+        closed.
+        """
+        pieces = len(program_cards)
+        parts = [
+            f'{pieces} {_count_label(pieces, "utwór", "utwory", "utworów")}',
+        ]
+        duration = DocumentGenerator._format_duration(total_program_duration_seconds)
+        if duration:
+            parts.append(f'{duration} programu')
+        cast = f'{confirmed} {_count_label(confirmed, "potwierdzony", "potwierdzonych", "potwierdzonych")} w obsadzie'
+        if pending:
+            parts.append(f'{cast}, {pending} bez odpowiedzi')
+        else:
+            parts.append(cast)
+        parts.append(f'{rehearsals} {_count_label(rehearsals, "próba", "próby", "prób")}')
+        crew_total = crew_confirmed + crew_tentative
+        if crew_total:
+            crew = f'{crew_confirmed} {_count_label(crew_confirmed, "osoba", "osoby", "osób")} ekipy'
+            parts.append(
+                f'{crew}, {crew_tentative} wstępnie' if crew_tentative else crew
+            )
+        else:
+            parts.append('brak ekipy')
+        return ' · '.join(parts)
 
     @staticmethod
     def _build_contact_directory(
@@ -935,7 +1030,12 @@ class DocumentGenerator:
             if label in seen_labels:
                 continue
             seen_labels.add(label)
-            reference_links.append({'label': label, 'url': rec.url})
+            # The platform is a qualifier, never the label: it names where to
+            # look for a recording nobody can reach by scanning a printed page
+            # (a QR per recording is how a page becomes a QR wall).
+            reference_links.append(
+                {'label': label, 'source': rec.get_source_display(), 'url': rec.url}
+            )
             if len(reference_links) >= _MAX_REFERENCE_LINKS:
                 break
 

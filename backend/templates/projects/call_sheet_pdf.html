@@ -6,98 +6,153 @@
     <style>
         {{ font_css|safe }}
 
+        {% comment %}
+            The print canon lives in `.ai/04_design_system.md` (§ Print artifacts)
+            and governs this file, `contracts/contract_pdf.html` and the score
+            book alike. The four ink steps, the single hairline, gold-as-
+            structure and crimson-as-a-stated-problem are declared once here as
+            custom properties so a fifth grey has to be written down to exist.
+        {% endcomment %}
+        :root {
+            --ink-1: #161412;   /* the statement: titles, times, names, values */
+            --ink-2: #45413b;   /* supporting prose */
+            --ink-3: #746d63;   /* secondary: notes, addresses, empty states */
+            --ink-4: #a2917a;   /* labels and chrome: eyebrows, table heads */
+            --gold: #c2a878;    /* structure: rules, marks, the masthead band */
+            --gold-ink: #8d6f34; /* gold used as type */
+            --alarm: #8f3f3a;   /* a named problem, and nothing else */
+            --paper-warm: #faf8f3;
+            --rule: #e6e1d5;
+            --rule-strong: #d9d2c4;
+        }
+
         @page {
             size: A4;
             margin: 16mm 15mm 17mm;
             @bottom-left {
                 content: "{{ ensemble_name }}";
-                font: 7.5pt {{ font_stack|safe }};
-                color: #a69279;
+                font: 7pt {{ font_sans|safe }};
+                color: #a2917a;
                 letter-spacing: 0.4pt;
             }
             @bottom-center {
                 content: "{{ project.title }}";
-                font: 7.5pt {{ font_stack|safe }};
-                color: #a69279;
+                font: 7pt {{ font_sans|safe }};
+                color: #a2917a;
             }
             @bottom-right {
                 content: "" counter(page) " / " counter(pages);
-                font: 7.5pt {{ font_stack|safe }};
-                color: #a69279;
+                font: 7pt {{ font_sans|safe }};
+                color: #a2917a;
+                font-variant-numeric: lining-nums;
             }
         }
 
         * { box-sizing: border-box; }
+        {% comment %}
+            Lining figures document-wide. The sheet used to run on `onum`, so
+            every hour, date, page number and counter dipped below the baseline
+            — correct for the score book's verse, wrong for a timetable read
+            standing up. Both bundled faces carry `lnum`.
+        {% endcomment %}
         body {
             margin: 0;
-            color: #161412;
-            font: 10.5pt/1.55 {{ font_stack|safe }};
-            font-feature-settings: "liga" 1, "onum" 1;
+            color: var(--ink-1);
+            font: 9.5pt/1.5 {{ font_sans|safe }};
+            font-feature-settings: "liga" 1, "kern" 1, "lnum" 1;
+            font-variant-numeric: lining-nums;
         }
         h1, h2, h3, p { margin: 0; }
-        a { color: #7c6a4a; text-decoration: none; }
+        a { color: inherit; text-decoration: none; }
+        /* Cormorant draws a 0.386em x-height against Plex Sans's 0.516, so every
+           serif size below is nominally larger to hold the same optical weight.
+           Judge them on the render, never on the numbers. */
+        .serif { font-family: {{ font_serif|safe }}; font-weight: 600; }
 
         /* ── Typographic atoms ──────────────────────────────────────────── */
         .eyebrow {
-            font-size: 7.5pt;
+            font-size: 6.5pt;
             text-transform: uppercase;
-            letter-spacing: 2.2pt;
-            color: #a69279;
-            font-weight: 700;
+            letter-spacing: 1.5pt;
+            color: var(--ink-4);
+            font-weight: 600;
         }
-        .rule-gold { height: 1.4pt; background: #c2a878; border: 0; }
-        .muted { color: #6b6660; font-size: 9pt; }
-        .tiny { font-size: 8pt; letter-spacing: 0.3pt; }
+        .muted { color: var(--ink-3); font-size: 8.5pt; }
+        .tiny { font-size: 7.5pt; letter-spacing: 0.2pt; }
 
         /* ── Masthead ───────────────────────────────────────────────────── */
-        .masthead { margin-bottom: 15pt; }
+        .masthead { margin-bottom: 14pt; }
+        /* The document's one heavy rule, once per document. Everything else is
+           the 0.5pt hairline. */
         .masthead .brandline {
             display: flex; justify-content: space-between; align-items: baseline;
-            padding-bottom: 6pt; margin-bottom: 12pt;
-            border-bottom: 1.4pt solid #c2a878;
+            padding-bottom: 5pt; margin-bottom: 11pt;
+            border-bottom: 1.2pt solid var(--gold);
         }
         .masthead .brandmeta { display: inline-block; text-align: right; }
         .masthead .brandmeta .stamp {
             display: block; margin-top: 2.5pt;
-            font-size: 7pt; letter-spacing: 0.3pt; color: #a69279; font-weight: 400;
+            font-size: 6.5pt; letter-spacing: 0.3pt; color: var(--ink-4); font-weight: 400;
         }
         .masthead h1 {
-            font-size: 30pt; line-height: 1.06; font-weight: 700;
-            letter-spacing: -0.2pt; color: #161412; margin-bottom: 6pt;
+            font-family: {{ font_serif|safe }};
+            font-size: 34pt; line-height: 1.02; font-weight: 600;
+            color: var(--ink-1); margin-bottom: 5pt;
         }
-        .greeting { font-size: 11pt; font-style: italic; color: #4a4744; margin-bottom: 12pt; }
-        .greeting strong { font-style: normal; font-weight: 700; color: #161412; }
+        .greeting { font-size: 10pt; font-style: italic; color: var(--ink-2); margin-bottom: 11pt; }
+        .greeting strong { font-style: normal; font-weight: 600; color: var(--ink-1); }
 
+        /* The anchor band is the only display typography on the page: the day's
+           fixed points, in the serif, at the one size nothing else uses. */
         .factbar { display: table; width: 100%; table-layout: fixed; margin-top: 4pt; }
-        .factbar .cell { display: table-cell; padding-right: 12pt; vertical-align: top; border-left: 1pt solid #e6e3da; padding-left: 10pt; }
+        .factbar .cell { display: table-cell; padding-right: 12pt; vertical-align: top; border-left: 0.5pt solid var(--rule); padding-left: 10pt; }
         .factbar .cell:first-child { border-left: 0; padding-left: 0; }
-        .factbar .k { font-size: 7pt; text-transform: uppercase; letter-spacing: 1.6pt; color: #a69279; }
-        .factbar .v { font-size: 12.5pt; font-weight: 700; color: #161412; margin-top: 2pt; }
-        .factbar .v.gold { color: #9a7b3f; }
+        .factbar .k { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1.2pt; color: var(--ink-4); }
+        .factbar .v {
+            font-family: {{ font_serif|safe }};
+            font-size: 19pt; line-height: 1.15; font-weight: 600;
+            color: var(--ink-1); margin-top: 1pt;
+        }
+        .factbar .v.gold { color: var(--gold-ink); }
 
-        .venueline { margin-top: 7pt; font-size: 9.5pt; color: #4a4744; }
+        .venueline {
+            display: table; width: 100%; margin-top: 8pt;
+            font-size: 9pt; color: var(--ink-2);
+        }
+        .venueline .vl-text { display: table-cell; vertical-align: middle; padding-right: 10pt; }
+        .venueline .vl-qr { display: table-cell; width: 46pt; vertical-align: middle; text-align: right; }
+
+        /* A code is only worth its ink where scanning is the realistic way in;
+           the label says what it opens, so a reader with no phone loses nothing. */
+        .qr { width: 42pt; height: 42pt; }
+        .qr-cap { display: block; margin-top: 2pt; font-size: 6pt; letter-spacing: 1pt; text-transform: uppercase; color: var(--ink-4); }
 
         .callout {
-            margin-top: 12pt; padding: 9pt 12pt; border: 1pt solid #e6e3da;
-            border-left: 3pt solid #c2a878; background: #faf8f3; border-radius: 3pt;
+            margin-top: 11pt; padding: 8pt 11pt; border: 0.5pt solid var(--rule);
+            border-left: 2pt solid var(--gold); background: var(--paper-warm);
+            break-inside: avoid;
         }
-        .callout .k { font-size: 7pt; text-transform: uppercase; letter-spacing: 1.6pt; color: #a69279; }
-        .callout .v { font-size: 11pt; font-weight: 700; }
-        /* A stated data fault, not decoration: the only crimson in the document. */
-        .callout.alert { border-left-color: #8f3f3a; background: #fbf4f3; }
-        .callout.alert .k { color: #8f3f3a; }
+        .callout .k { font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1.2pt; color: var(--ink-4); }
+        .callout .v { font-size: 10pt; font-weight: 600; }
+        /* A stated data fault, not decoration: the only crimson in the document,
+           and it carries a word as well as a colour so a mono print still shows it. */
+        .callout.alert { border-left-color: var(--alarm); background: #fbf4f3; }
+        .callout.alert .k { color: var(--alarm); }
+        .callout.alert .v { font-weight: 700; }
 
         /* ── Section frame ──────────────────────────────────────────────── */
-        .section { margin-bottom: 14pt; }
-        .section-head { display: flex; align-items: baseline; gap: 8pt; margin-bottom: 8pt; }
+        .section { margin-bottom: 13pt; }
+        .section-head { display: flex; align-items: baseline; gap: 7pt; margin-bottom: 7pt; }
         .section-head .num {
-            font-size: 9pt; font-weight: 700; color: #c2a878;
-            min-width: 16pt;
+            font-family: {{ font_serif|safe }};
+            font-size: 13pt; font-weight: 600; color: var(--gold-ink);
+            min-width: 15pt;
         }
         .section-head h2 {
-            font-size: 13.5pt; font-weight: 700; color: #161412;
-            letter-spacing: 0.2pt; flex: 1;
-            padding-bottom: 4pt; border-bottom: 0.75pt solid #e6e3da;
+            font-family: {{ font_serif|safe }};
+            font-size: 17pt; font-weight: 600; color: var(--ink-1);
+            flex: 1; line-height: 1.1;
+            padding-bottom: 3pt; border-bottom: 0.5pt solid var(--rule);
         }
 
         /* Deliberately NOT `page-break-inside: avoid`. A `.card` is a section's
@@ -109,138 +164,178 @@
            heading above 996pt of nothing. Cards flow; the atoms inside them
            (`.prog`, `.roster`, `.contact`, table rows) carry the avoid. */
         .card {
-            border: 1pt solid #e9e5db; border-radius: 5pt; background: #ffffff;
-            padding: 11pt 13pt;
+            border: 0.5pt solid var(--rule); border-radius: 3pt; background: #ffffff;
+            padding: 10pt 12pt;
         }
-        .card + .card { margin-top: 8pt; }
-        .card.warm { background: #faf8f3; }
-        /* Two table-cells tear badly when one column is exhausted first: the
-           spent cell leaves a hole beside the one still running. Keeping the
-           pair whole (`page-break-inside: avoid`) trades that bounded hole for
-           an unbounded one — measured at a full page on both the report (9→8
-           without it) and the singer's day card (5→4), because a pair too tall
-           for what is left of the page jumps to the next one entire. Rebuilding
-           the pair as `columns: 2` under the same guard measures identically,
-           so the guard is the cost, not the mechanism. It therefore breaks: the
-           worst case is half a page, not all of it. Anything that can outgrow a
-           page uses `.multicol`, which flows and balances instead of tearing. */
+        .card + .card { margin-top: 7pt; }
+        .card.warm { background: var(--paper-warm); }
+        /* `.split` is now only for a pair that provably fits inside one card
+           (the singer's name beside their status). Anything page-level uses
+           `.multicol`: two table-cells tear at whatever height the taller one
+           reaches and leave the exhausted cell blank beside the one still
+           running, where balanced columns end together. Guarding either with
+           `page-break-inside: avoid` costs a full page — measured on the report
+           and on the singer's card — so nothing bigger than a card carries it. */
         .split { display: table; width: 100%; table-layout: fixed; }
         .split > .col { display: table-cell; width: 50%; vertical-align: top; }
         .split > .col.left { padding-right: 6pt; }
         .split > .col.right { padding-left: 6pt; }
-        .multicol { columns: 2; column-gap: 16pt; }
+        .multicol { columns: 2; column-gap: 14pt; }
+        /* A card inside a balanced pair is an atom: it moves to the next column
+           whole rather than tearing in the middle of a facts table. */
+        .multicol > .card { break-inside: avoid-column; }
 
         /* ── Facts table ────────────────────────────────────────────────── */
         table { border-collapse: collapse; width: 100%; }
-        .facts td { padding: 5.5pt 4pt; vertical-align: top; border-bottom: 0.5pt solid #f0ece3; }
+        .facts td { padding: 5pt 4pt; vertical-align: top; border-bottom: 0.5pt solid var(--rule); }
         .facts tr:last-child td { border-bottom: 0; }
-        .facts .label { width: 36%; color: #a69279; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1.2pt; padding-top: 7pt; }
+        .facts .label { width: 36%; color: var(--ink-4); font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1.2pt; padding-top: 6.5pt; }
         .facts .value { font-weight: 600; }
 
-        /* ── Chips / pills / badges ─────────────────────────────────────── */
+        /* ── Chips ──────────────────────────────────────────────────────── */
+        /* One shape, one recipe, and only for an exception. A fact that is
+           always true (every rehearsal mandatory, every participation
+           confirmed) is stated once in words, above the rows — a pill on every
+           row is the loudest ink on the page carrying no information. */
         .pill {
-            display: inline-block; padding: 2.5pt 7pt; border-radius: 999pt;
-            font-size: 7.5pt; letter-spacing: 0.6pt; text-transform: uppercase;
-            background: #f1ece2; color: #7c6a4a;
+            display: inline-block; padding: 1pt 5pt; border-radius: 2pt;
+            font-size: 6.5pt; letter-spacing: 0.8pt; text-transform: uppercase;
+            font-weight: 600; border: 0.5pt solid var(--rule-strong); color: var(--ink-3);
         }
-        .pill.gold { background: #c2a878; color: #ffffff; font-weight: 700; }
-        .pill.sage { background: #e6ebe4; color: #55604f; }
-        .pill.crimson { background: #f3e2e1; color: #8f3f3a; }
-        .pill.ghost { background: transparent; border: 0.75pt solid #e0dbcf; color: #8a8178; }
-        .badge-row .pill { margin: 0 4pt 4pt 0; }
+        .pill.gold { border-color: var(--gold); color: var(--gold-ink); }
+        .badge-row .pill { margin: 0 4pt 3pt 0; }
 
-        .btn {
-            display: inline-block; margin: 0 6pt 5pt 0; padding: 5pt 10pt;
-            border-radius: 999pt; border: 1pt solid #d8cdb4; background: #faf7f0;
-            color: #7c6a4a; font-size: 8pt; letter-spacing: 0.5pt; text-transform: uppercase; font-weight: 700;
-        }
-        .btn.solid { background: #161412; border-color: #161412; color: #f7f4ee; }
+        /* ── Resources ──────────────────────────────────────────────────── */
+        /* No button shapes: a rounded pill on paper is a decoration whose target
+           is invisible, and on a phone an 8pt tap target inside a PDF. The
+           resource is named, and how to reach it is a sentence. */
+        .res { padding: 5pt 0; border-bottom: 0.5pt solid var(--rule); break-inside: avoid; }
+        .res:last-child { border-bottom: 0; }
+        .res-head { display: flex; justify-content: space-between; gap: 8pt; }
+        .res-name { font-weight: 600; }
+        .res-state { font-size: 6.5pt; letter-spacing: 1pt; text-transform: uppercase; color: var(--ink-4); white-space: nowrap; }
+        .res-body { display: table; width: 100%; margin-top: 1pt; }
+        .res-how { display: table-cell; vertical-align: top; padding-right: 8pt; color: var(--ink-3); font-size: 8.5pt; }
+        .res-qr { display: table-cell; width: 46pt; vertical-align: top; text-align: right; }
 
         /* ── Data table (run sheet, rehearsals, casting) ────────────────── */
-        /* Tables now cross pages (their card no longer moves whole), so the row
-           is the atom that must not tear and the header repeats on each page. */
+        /* Tables cross pages (their card no longer moves whole), so the row is
+           the atom that must not tear and the header repeats on each page. */
         thead { display: table-header-group; }
         tr { page-break-inside: avoid; }
         .grid { width: 100%; }
         .grid th {
-            text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: 1.2pt;
-            color: #a69279; padding: 0 6pt 5pt 0; border-bottom: 1pt solid #d9d2c4;
+            text-align: left; font-size: 6.5pt; text-transform: uppercase; letter-spacing: 1.2pt;
+            color: var(--ink-4); padding: 0 6pt 4pt 0; border-bottom: 0.5pt solid var(--rule-strong);
         }
-        .grid td { padding: 6pt 6pt 6pt 0; vertical-align: top; border-bottom: 0.5pt solid #f0ece3; }
+        /* 4pt, not 5: the report is mostly tables, and the extra point per row
+           was worth a whole page of it. Print density is a dial, and a console
+           document spends its height on data, not on padding. */
+        .grid td { padding: 4pt 6pt 4pt 0; vertical-align: top; border-bottom: 0.5pt solid var(--rule); }
         .grid tr:last-child td { border-bottom: 0; }
-        .grid .t-time { font-weight: 700; white-space: nowrap; }
-        .grid .t-title { font-weight: 700; }
+        /* A time column aligns down the page, so it is the one place figures are
+           tabular; display figures elsewhere stay proportional. */
+        .grid .t-time { font-weight: 600; white-space: nowrap; font-variant-numeric: lining-nums tabular-nums; }
+        .grid .t-title { font-weight: 600; }
         /* The day's two anchors are facts of the project, not editable points;
-           they read as the frame the run sheet is planned inside. */
-        .grid tr.anchor td { background: #faf8f3; border-bottom-color: #e6ddc9; }
-        .grid tr.anchor .t-time { color: #9a7b3f; }
-        .grid tr.anchor .t-title { color: #9a7b3f; text-transform: uppercase; letter-spacing: 0.8pt; font-size: 9pt; }
+           they read as the frame the run sheet is planned inside. The uppercase
+           title carries that difference on a mono print, where the tint does not. */
+        .grid tr.anchor td { background: var(--paper-warm); border-bottom-color: var(--rule-strong); }
+        .grid tr.anchor .t-time { color: var(--gold-ink); }
+        .grid tr.anchor .t-title { color: var(--gold-ink); text-transform: uppercase; letter-spacing: 0.8pt; font-size: 8pt; }
 
         /* ── Personal (singer) panel ────────────────────────────────────── */
         .hero-personal {
-            border: 1.2pt solid #d8cdb4; border-radius: 6pt; background: #faf8f3;
-            padding: 13pt 15pt; page-break-inside: avoid;
+            border: 0.5pt solid var(--rule-strong); border-radius: 3pt; background: var(--paper-warm);
+            padding: 12pt 14pt; page-break-inside: avoid;
         }
-        .hero-personal .name { font-size: 17pt; font-weight: 700; }
-        .hero-personal .voice { font-size: 10pt; color: #7c6a4a; margin-top: 1pt; }
-        .assign td { padding: 6pt 6pt 6pt 0; vertical-align: top; border-bottom: 0.5pt solid #ece6da; }
+        /* A person stays in the sans, here as everywhere: the serif marks a
+           titled work or the document itself, never a human being. */
+        .hero-personal .name { font-size: 15pt; font-weight: 600; line-height: 1.15; }
+        .hero-personal .voice { font-size: 9pt; color: var(--ink-3); margin-top: 2pt; }
+        .assign td { padding: 5pt 6pt 5pt 0; vertical-align: top; border-bottom: 0.5pt solid var(--rule); }
         .assign tr:last-child td { border-bottom: 0; }
-        .assign .no { color: #c2a878; font-weight: 700; width: 16pt; }
-        .assign .ln { font-weight: 700; white-space: nowrap; }
-        .pitch-flag { color: #9a7b3f; font-weight: 700; }
+        .assign .no { font-family: {{ font_serif|safe }}; color: var(--gold-ink); font-weight: 600; font-size: 11pt; width: 16pt; }
+        .assign .ln { font-weight: 600; white-space: nowrap; }
+        .pitch-flag { color: var(--gold-ink); font-weight: 600; }
+
+        /* ── Casting ────────────────────────────────────────────────────── */
+        /* One card holding eight hairline-separated blocks, not eight cards:
+           nine identical surfaces gave the same weight to every piece and cost
+           a border, two paddings and a gap each — measured at roughly a page
+           across the report and the maestro's card. Same atom rule as `.prog`. */
+        .cast { padding: 7pt 0; border-bottom: 0.5pt solid var(--rule); break-inside: avoid; }
+        .cast:first-child { padding-top: 0; }
+        .cast:last-child { border-bottom: 0; padding-bottom: 0; }
+        .cast h3 { font-family: {{ font_serif|safe }}; font-size: 13pt; font-weight: 600; }
 
         /* ── Program list ───────────────────────────────────────────────── */
-        .prog { page-break-inside: avoid; padding: 9pt 0; border-bottom: 0.75pt solid #efe9df; }
+        /* The unbreakable atom is the piece's IDENTITY (number, title,
+           composer, metadata), not the whole entry. Guarding the entry measured
+           at a full page on the maestro's card, and the break it was buying off
+           only ever separated the resources line — so the identity is what
+           carries the rule, and the lines that may follow it flow. */
+        .prog { padding: 8pt 0; border-bottom: 0.5pt solid var(--rule); }
+        .prog-id { page-break-inside: avoid; }
         .prog:last-child { border-bottom: 0; }
         .prog-head { display: table; width: 100%; table-layout: fixed; }
         .prog-no, .prog-body { display: table-cell; vertical-align: top; }
-        .prog-no { width: 26pt; }
-        .prog-no .disc {
-            width: 21pt; height: 21pt; border-radius: 50%; background: #161412; color: #f7f4ee;
-            text-align: center; font-size: 10pt; font-weight: 700; line-height: 21pt;
+        .prog-no { width: 24pt; }
+        /* The ordinal used to be a solid black disc — the darkest mark in the
+           document, spent on a number. Gold is the structural voice; a serif
+           numeral in it is structure without being the loudest thing here. */
+        .prog-no .no {
+            font-family: {{ font_serif|safe }};
+            font-size: 16pt; font-weight: 600; line-height: 1.05; color: var(--gold-ink);
         }
-        .prog h3 { font-size: 13pt; font-weight: 700; }
-        .prog .by { color: #6b6660; font-size: 9pt; margin: 1pt 0 4pt; }
+        .prog h3 { font-family: {{ font_serif|safe }}; font-size: 15pt; font-weight: 600; line-height: 1.12; }
+        .prog .by { color: var(--ink-3); font-size: 8.5pt; margin: 1pt 0 3pt; }
         .prog .you {
-            margin-top: 5pt; padding: 5pt 9pt; border-radius: 4pt;
-            background: #f1ece2; border-left: 2.5pt solid #c2a878; font-size: 9.5pt;
+            margin-top: 4pt; padding: 4pt 8pt;
+            background: var(--paper-warm); border-left: 2pt solid var(--gold); font-size: 9pt;
         }
-        .prog .you strong { color: #9a7b3f; }
-        .metaline { color: #6b6660; font-size: 8.5pt; margin-top: 3pt; }
+        .prog .you strong { color: var(--gold-ink); }
+        .metaline { color: var(--ink-3); font-size: 8pt; margin-top: 2pt; }
 
         /* ── Roster / ensemble ──────────────────────────────────────────── */
         .roster { page-break-inside: avoid; break-inside: avoid-column; }
-        .roster h3 { font-size: 9.5pt; font-weight: 700; margin-bottom: 3pt; }
-        .roster h3 .n { color: #a69279; font-weight: 400; }
-        .roster ul { margin: 0 0 8pt; padding-left: 13pt; color: #34302b; }
-        .roster li { margin-bottom: 1.5pt; }
+        .roster h3 { font-size: 9pt; font-weight: 600; margin-bottom: 2pt; }
+        .roster h3 .n { color: var(--ink-4); font-weight: 400; }
+        .roster ul { margin: 0 0 7pt; padding-left: 12pt; color: var(--ink-2); }
+        .roster li { margin-bottom: 1pt; }
 
         /* ── Contacts ───────────────────────────────────────────────────── */
-        .contact { page-break-inside: avoid; padding: 7pt 0; border-bottom: 0.5pt solid #f0ece3; }
-        .contact:last-child { border-bottom: 0; }
-        .contact .cn { font-weight: 700; font-size: 11pt; }
-        .contact .cr { color: #7c6a4a; font-size: 9pt; margin: 1pt 0 3pt; }
-        .contact .cl { color: #4a4744; font-size: 9pt; }
+        /* Two columns, and not for density alone: the directory is the last
+           section on every sheet, so a single tall column reliably tipped it
+           onto a page of its own with 600pt of nothing under it. Halving its
+           height is what lets it close the page it belongs to. */
+        .contact { page-break-inside: avoid; break-inside: avoid-column; padding: 5pt 0 6pt; }
+        .contact .cn { font-weight: 600; font-size: 10pt; }
+        .contact .cr { color: var(--ink-3); font-size: 8.5pt; margin: 0 0 2pt; }
+        .contact .cl { color: var(--ink-2); font-size: 8.5pt; }
 
         /* ── Blockers (report) ──────────────────────────────────────────── */
-        .blockers { margin-bottom: 14pt; border: 1pt solid #e0d5bb; border-radius: 5pt; background: #fdfbf6; padding: 10pt 13pt; }
-        .blockers .eyebrow { color: #8f3f3a; }
-        .blockers ul { margin: 6pt 0 0; padding-left: 12pt; }
-        .blockers li { margin-bottom: 4pt; page-break-inside: avoid; }
-        .blockers .bt { font-weight: 700; }
-        .blockers .bd { color: #6b6660; font-size: 9pt; }
-        .blockers .clear { margin-top: 5pt; color: #55604f; font-weight: 700; }
+        .blockers { margin-bottom: 12pt; border: 0.5pt solid var(--rule-strong); border-left: 2pt solid var(--alarm); background: #fdfbf6; padding: 9pt 12pt; }
+        .blockers .eyebrow { color: var(--alarm); }
+        .blockers ul { margin: 5pt 0 0; padding-left: 11pt; }
+        .blockers li { margin-bottom: 3.5pt; page-break-inside: avoid; }
+        .blockers .bt { font-weight: 600; }
+        .blockers .bd { color: var(--ink-3); font-size: 8.5pt; }
+        .blockers .clear { margin-top: 4pt; font-weight: 600; }
 
-        /* ── Metrics (production) ───────────────────────────────────────── */
-        .metrics { display: table; width: 100%; table-layout: fixed; margin-bottom: 14pt; page-break-inside: avoid; }
-        .metric { display: table-cell; width: 25%; padding-right: 7pt; }
-        .metric:last-child { padding-right: 0; }
-        .metric .box { border: 1pt solid #e9e5db; border-radius: 5pt; background: #faf8f3; padding: 9pt 10pt; min-height: 58pt; }
-        .metric .k { font-size: 7pt; text-transform: uppercase; letter-spacing: 1.3pt; color: #a69279; }
-        .metric .v { font-size: 21pt; font-weight: 700; margin: 3pt 0; }
-        .metric .n { color: #6b6660; font-size: 8pt; }
+        /* ── Coverage (report) ──────────────────────────────────────────── */
+        .coverage { margin-bottom: 13pt; }
+        .census { color: var(--ink-2); font-size: 8.5pt; margin: 3pt 0 7pt; }
+        .cov-grid th.m, .cov-grid td.m { width: 44pt; text-align: center; padding-right: 0; }
+        .cov-grid th.m { text-align: center; }
+        .cov-grid .lp { width: 18pt; color: var(--ink-4); }
+        /* Presence is a mark, absence is space — so a hole reads as a hole on a
+           mono laser print, where a tint would not survive. */
+        .cov-grid .mark { display: inline-block; width: 4.5pt; height: 4.5pt; border-radius: 50%; background: var(--ink-1); }
+        .cov-grid tr.sum td { border-bottom: 0; border-top: 0.5pt solid var(--rule-strong); font-weight: 600; padding-top: 5pt; color: var(--ink-3); }
+        .cov-grid tr.sum td.m { color: var(--ink-1); font-variant-numeric: lining-nums tabular-nums; }
 
-        .empty { color: #8a8178; font-size: 9.5pt; font-style: italic; }
+        .empty { color: var(--ink-3); font-size: 9pt; font-style: italic; }
     </style>
 </head>
 <body>
@@ -281,7 +376,18 @@
             </div>
             {% endfor %}
         </div>
-        {% if venue_line %}<div class="venueline">{{ venue_line }}{% if venue_map_url %} · <a href="{{ venue_map_url }}">mapa</a>{% endif %}</div>{% endif %}
+        {% comment %}
+            The one line a reader standing outside the venue needs, and the one
+            code worth its ink on the day: a public map a phone opens with no
+            session. The address beside it is what the code decodes, so nothing
+            is lost without a phone.
+        {% endcomment %}
+        {% if venue_line %}
+        <div class="venueline">
+            <div class="vl-text">{{ venue_line }}</div>
+            {% if venue_qr %}<div class="vl-qr"><img class="qr" src="{{ venue_qr }}" alt=""><span class="qr-cap">Mapa</span></div>{% endif %}
+        </div>
+        {% endif %}
 
         {% if call_buffer_label %}
         <div class="callout">
@@ -317,16 +423,46 @@
     {% endif %}
 
     {% comment %}
-        The coverage band carries no heading, so it is rendered here rather than
-        as a numbered section — it used to hold section number 1 invisibly and
-        the sheet opened at "2".
+        The coverage band carries no heading of its own, so it is rendered here
+        rather than as a numbered section — it used to hold section number 1
+        invisibly and the sheet opened at "2".
+
+        Four counters over four denominators standing in one row of equal boxes
+        were a matrix pretending to be tiles. The census is one line of plain
+        type, each figure carrying its own noun; the readiness question is one
+        grid over the programme, where an empty cell is visibly a hole.
     {% endcomment %}
     {% if is_report %}
-    <div class="metrics">
-        <div class="metric"><div class="box"><div class="k">Potwierdzona obsada</div><div class="v">{{ metrics.cast_confirmed }}</div><div class="n">{% if metrics.cast_pending %}{{ metrics.cast_pending }} bez odpowiedzi.{% else %}Komplet odpowiedzi.{% endif %}</div></div></div>
-        <div class="metric"><div class="box"><div class="k">Program</div><div class="v">{{ metrics.pieces_total }}</div><div class="n">{% if metrics.program_total_duration %}{{ metrics.program_total_duration }}{% else %}Czas do uzupełnienia.{% endif %}</div></div></div>
-        <div class="metric"><div class="box"><div class="k">Próby</div><div class="v">{{ metrics.rehearsals_total }}</div><div class="n">Zaplanowane punkty.</div></div></div>
-        <div class="metric"><div class="box"><div class="k">Pokrycie crew</div><div class="v">{{ metrics.crew_confirmed }}</div><div class="n">{% if metrics.crew_tentative %}{{ metrics.crew_tentative }} wstępnie.{% elif metrics.crew_confirmed %}Wsparcie potwierdzone.{% else %}Brak obsady technicznej.{% endif %}</div></div></div>
+    <div class="coverage">
+        <div class="eyebrow">Pokrycie materiałów</div>
+        {% if coverage_census %}<div class="census">{{ coverage_census }}</div>{% endif %}
+        {% if coverage.rows %}
+        <table class="grid cov-grid">
+            <thead>
+                <tr>
+                    <th class="lp">Lp.</th>
+                    <th>Utwór</th>
+                    {% for label in coverage.labels %}<th class="m">{{ label }}</th>{% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in coverage.rows %}
+                <tr>
+                    <td class="lp">{{ row.order }}</td>
+                    <td>{{ row.title }}</td>
+                    {% for present in row.cells %}<td class="m">{% if present %}<span class="mark"></span>{% endif %}</td>{% endfor %}
+                </tr>
+                {% endfor %}
+                <tr class="sum">
+                    <td class="lp"></td>
+                    <td>Na {{ coverage.total }} {% if coverage.total == 1 %}utwór{% else %}pozycji programu{% endif %}</td>
+                    {% for total in coverage.totals %}<td class="m">{{ total }}</td>{% endfor %}
+                </tr>
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty">Program nie został ustalony — nie ma czego pokrywać.</p>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -342,8 +478,14 @@
                     <div class="name">{{ personal.full_name }}</div>
                     <div class="voice">{{ personal.voice_label }} · sekcja {{ personal.section_size }} {{ personal.section_size_label }}</div>
                 </div>
+                {% comment %}
+                    A confirmed participation is the expected state and says so
+                    in plain type; the chip is spent on the exception. Neither
+                    is crimson — an unanswered invitation is work in progress,
+                    and the alarm colour belongs to what is actually wrong.
+                {% endcomment %}
                 <div class="col right" style="text-align:right;">
-                    {% if personal.is_confirmed %}<span class="pill sage">Udział potwierdzony</span>{% else %}<span class="pill crimson">{{ personal.status_label }}</span>{% endif %}
+                    {% if personal.is_confirmed %}<span class="muted">Udział potwierdzony</span>{% else %}<span class="pill gold">{{ personal.status_label }}</span>{% endif %}
                     {% if personal.gives_pitch_anywhere %}<span class="pill gold">Podajesz dźwięk</span>{% endif %}
                 </div>
             </div>
@@ -375,45 +517,53 @@
     {% if section == "event" %}
     <div class="section">
         <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Wydarzenie i przygotowanie</h2></div>
-        <div class="split">
-            <div class="col left">
-                <div class="card">
-                    <table class="facts">
-                        {% for fact in event_facts %}
-                        <tr><td class="label">{{ fact.label }}</td><td class="value">{{ fact.text|default:"Do ustalenia" }}</td></tr>
-                        {% endfor %}
-                    </table>
-                    <div style="margin-top:9pt;">
-                        {% if venue_map_url %}<a class="btn" href="{{ venue_map_url }}">Mapa miejsca</a>{% endif %}
-                        {% if project_score_url %}<a class="btn solid" href="{{ project_score_url }}">Pełny score</a>{% endif %}
-                        {% if project.spotify_playlist_url %}<a class="btn" href="{{ project.spotify_playlist_url }}">Playlista</a>{% endif %}
-                    </div>
-                </div>
-            </div>
-            <div class="col right">
-                <div class="card warm">
-                    <div class="eyebrow" style="margin-bottom:6pt;">Dress code</div>
-                    {% for entry in dress_code_entries %}
-                    <div style="margin-bottom:5pt;"><span style="font-weight:700;">{{ entry.label }}:</span> {{ entry.value }}</div>
+        {% comment %}
+            Balanced columns rather than two table-cells. The pair tears either
+            way (a guard against tearing is measured at a full page), but a
+            table row splits at whatever height the taller cell reaches and
+            leaves the exhausted one blank beside it — a third of a page on the
+            report. `columns` balances on height, so both sides end together.
+        {% endcomment %}
+        <div class="multicol">
+            <div class="card">
+                <table class="facts">
+                    {% for fact in event_facts %}
+                    <tr><td class="label">{{ fact.label }}</td><td class="value">{{ fact.text|default:"Do ustalenia" }}</td></tr>
                     {% endfor %}
-                    {% if project.description %}<div style="margin-top:8pt; padding-top:8pt; border-top:0.5pt solid #ece6da;"><span class="eyebrow">Brief</span><div style="margin-top:3pt;">{{ project.description|linebreaksbr }}</div></div>{% endif %}
-                </div>
-                {% if preparation_assets %}
+                </table>
+                {% if venue_map_url %}<div class="metaline" style="margin-top:7pt;">Mapa miejsca: <a href="{{ venue_map_url }}">Google Maps</a>{% if not is_report %} — kod obok adresu w nagłówku{% endif %}.</div>{% endif %}
+            </div>
+            <div class="card warm">
+                <div class="eyebrow" style="margin-bottom:6pt;">Dress code</div>
+                {% for entry in dress_code_entries %}
+                <div style="margin-bottom:5pt;"><span style="font-weight:600;">{{ entry.label }}:</span> {{ entry.value }}</div>
+                {% endfor %}
+                {% if project.description %}<div style="margin-top:8pt; padding-top:8pt; border-top:0.5pt solid var(--rule);"><span class="eyebrow">Brief</span><div style="margin-top:3pt;">{{ project.description|linebreaksbr }}</div></div>{% endif %}
+            </div>
+            {% if preparation_assets %}
                 <div class="card">
-                    <div class="eyebrow" style="margin-bottom:6pt;">{% if is_report %}Gotowość materiałów{% else %}Zabierz na dziś{% endif %}</div>
+                    <div class="eyebrow" style="margin-bottom:5pt;">{% if is_report %}Gotowość materiałów{% else %}Zabierz na dziś{% endif %}</div>
+                    {% comment %}
+                        Each resource is named, and `access` says how it is
+                        actually reached — a QR only where scanning works
+                        without a session. The score sits behind the app's
+                        login, so it says so rather than offering a code that
+                        would land on a wall.
+                    {% endcomment %}
                     {% for asset in preparation_assets %}
-                    <div style="padding:5pt 0; border-bottom:0.5pt solid #f0ece3;">
-                        <div style="display:flex; justify-content:space-between; gap:8pt;">
-                            <span style="font-weight:700;">{{ asset.label }}</span>
-                            <span class="tiny" style="color:#7c6a4a; text-transform:uppercase; letter-spacing:1pt;">{{ asset.status }}</span>
+                    <div class="res">
+                        <div class="res-head">
+                            <span class="res-name">{% if asset.url %}<a href="{{ asset.url }}">{{ asset.label }}</a>{% else %}{{ asset.label }}{% endif %}</span>
+                            <span class="res-state">{{ asset.status }}</span>
                         </div>
-                        <div class="muted">{{ asset.note }}</div>
-                        {% if asset.url %}<div class="muted"><a href="{{ asset.url }}">Otwórz zasób →</a></div>{% endif %}
+                        <div class="res-body">
+                            <div class="res-how">{{ asset.note }}{% if asset.url %} {{ asset.access }}{% endif %}</div>
+                            {% if asset.qr %}<div class="res-qr"><img class="qr" src="{{ asset.qr }}" alt=""><span class="qr-cap">Skanuj</span></div>{% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                {% endif %}
-            </div>
+            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -489,25 +639,36 @@
                 {% for piece in program_cards %}
                 <div class="prog">
                     <div class="prog-head">
-                        <div class="prog-no"><div class="disc">{{ piece.order }}</div></div>
+                        <div class="prog-no"><div class="no">{{ piece.order }}</div></div>
                         <div class="prog-body">
-                            <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill ghost">BIS</span>{% endif %}</h3>
-                            <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}Kompozytor nieuzupełniony{% endif %}{% if piece.arranger %} · arr. {{ piece.arranger }}{% endif %}</div>
-                            {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}
+                            <div class="prog-id">
+                                <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">BIS</span>{% endif %}</h3>
+                                <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}Kompozytor nieuzupełniony{% endif %}{% if piece.arranger %} · arr. {{ piece.arranger }}{% endif %}</div>
+                                {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}
+                            </div>
                             {% if piece.you %}
                             <div class="you">Śpiewasz: <strong>{{ piece.you.voice_line }}</strong>{% if piece.you.gives_pitch %} · <span class="pitch-flag">♪ podajesz dźwięk</span>{% endif %}{% if piece.you.notes %} · {{ piece.you.notes }}{% endif %}</div>
                             {% endif %}
-                            {% if piece.material_badges %}<div class="badge-row" style="margin-top:5pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
-                            <div style="margin-top:5pt;">
-                                {% if piece.sheet_music_url %}<a class="btn" href="{{ piece.sheet_music_url }}">Nuty PDF</a>{% endif %}
-                                {% for link in piece.reference_links %}<a class="btn" href="{{ link.url }}">{{ link.label }}</a>{% endfor %}
+                            {% if piece.material_badges %}<div class="badge-row" style="margin-top:4pt;">{% for badge in piece.material_badges %}<span class="pill">{{ badge }}</span>{% endfor %}</div>{% endif %}
+                            {% comment %}
+                                Named, not drawn as buttons, and with no code of
+                                its own: the score is gated, and one QR per
+                                recording turns the page into a QR wall nobody
+                                scans. The performer and the platform are what a
+                                reader needs to find the recording themselves.
+                            {% endcomment %}
+                            {% if piece.sheet_music_url or piece.reference_links %}
+                            <div class="metaline" style="margin-top:4pt;">
+                                {% if piece.sheet_music_url %}<span><strong>Nuty:</strong> <a href="{{ piece.sheet_music_url }}">partytura w aplikacji</a>{% if piece.reference_links %} · {% endif %}</span>{% endif %}
+                                {% if piece.reference_links %}<span><strong>Nagrania:</strong> {% for link in piece.reference_links %}{% if not forloop.first %} · {% endif %}<a href="{{ link.url }}">{{ link.label }}</a> — {{ link.source }}{% endfor %}</span>{% endif %}
                             </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% endfor %}
             {% else %}
-            <p class="empty">Program nie został jeszcze zatwierdzony.</p>
+            <p class="empty">{% if is_report %}Program nie został ustalony — arkusz nie ma czego wypisać.{% else %}Program tego koncertu nie jest jeszcze rozpisany.{% endif %}</p>
             {% endif %}
         </div>
     </div>
@@ -517,9 +678,11 @@
     <div class="section">
         <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Obsada i podawanie dźwięku</h2></div>
         {% if casting_sections %}
-            {% for cs in casting_sections %}
             <div class="card">
-                <h3 style="font-size:12pt; font-weight:700;">{{ cs.order }}. {{ cs.title }}</h3>
+            {% for cs in casting_sections %}
+            <div class="cast">
+                {# The `<h3>` is a piece title, so it takes the serif like every other one. #}
+                <h3>{{ cs.order }}. {{ cs.title }}</h3>
                 {% if cs.rows %}
                 {% comment %}
                     Columns appear only where the piece has something to put in
@@ -544,8 +707,9 @@
                 {% endif %}
             </div>
             {% endfor %}
+            </div>
         {% else %}
-        <div class="card"><p class="empty">Brak danych castingowych dla programu.</p></div>
+        <div class="card"><p class="empty">{% if is_report %}Micro-casting nie został rozpisany dla żadnej pozycji.{% else %}Micro-casting nie został rozpisany — linie prowadzisz z partytury.{% endif %}</p></div>
         {% endif %}
     </div>
     {% endif %}
@@ -584,6 +748,14 @@
         <div class="section-head"><span class="num">{{ forloop.counter }}</span><h2>Kontakty</h2></div>
         <div class="card">
             {% if contact_directory %}
+                {% comment %}
+                    The directory closes every sheet, so its height decides
+                    whether the document ends on a full page or on a page with
+                    one card and 600pt of nothing. Two balanced columns are half
+                    as tall and flow across a break; `break-inside: avoid` on the
+                    whole block would buy the orphan back at a page a time.
+                {% endcomment %}
+                <div class="multicol">
                 {% for contact in contact_directory %}
                 <div class="contact">
                     <div class="cn">{{ contact.name }}</div>
@@ -593,6 +765,7 @@
                     {% if contact.status %}<div class="muted">{{ contact.status }}</div>{% endif %}
                 </div>
                 {% endfor %}
+                </div>
             {% else %}
             <p class="empty">Brak zdefiniowanych kontaktów operacyjnych.</p>
             {% endif %}
