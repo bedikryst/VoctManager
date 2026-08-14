@@ -266,13 +266,15 @@ const plDate = (iso: string): string =>
         {c.inscriptio && (
           <p class="kd-inscriptio reveal" data-d="2">
             <em class="kd-inscriptio-lat">{c.inscriptio}</em>
-            {c.inscriptioPl && (
-              <>
-                <span class="kd-dot" aria-hidden="true">·</span>
-                <span class="kd-inscriptio-pl">{c.inscriptioPl}</span>
-              </>
+            {/* The vernacular and the citation are one line of their own under the verse — the
+                citation cites the verse, so it travels with the Polish rather than claiming a
+                third line for four characters. */}
+            {(c.inscriptioPl || c.inscriptioRef) && (
+              <span class="kd-inscriptio-gloss">
+                {c.inscriptioPl && <span class="kd-inscriptio-pl">{c.inscriptioPl}</span>}
+                {c.inscriptioRef && <span class="kd-inscriptio-ref">{c.inscriptioRef}</span>}
+              </span>
             )}
-            {c.inscriptioRef && <span class="kd-inscriptio-ref">{c.inscriptioRef}</span>}
           </p>
         )}
 
@@ -473,19 +475,37 @@ const plDate = (iso: string): string =>
                     </p>
                     <p class="kd-program-work">
                       <em>{p.work}</em>
-                      {p.year && <span class="kd-program-year">{p.year}</span>}
-                      {p.voicing && <span class="kd-program-voicing">{p.voicing}</span>}
-                      {p.duration && <span class="kd-program-duration">{p.duration}</span>}
+                      {/* The three facts travel as ONE rail: loose in the title's flex row they
+                          left the line one chip at a time, so a work could set its year beside
+                          the title and its scoring a line below. */}
+                      {(p.year || p.voicing || p.duration) && (
+                        <span class="kd-program-meta">
+                          {p.year && <span class="kd-program-year">{p.year}</span>}
+                          {p.voicing && <span class="kd-program-voicing">{p.voicing}</span>}
+                          {p.duration && <span class="kd-program-duration">{p.duration}</span>}
+                        </span>
+                      )}
                     </p>
-                    {(p.inscriptio || p.inscriptioPl) && (
+                    {(p.inscriptio || p.inscriptioPl || p.inscriptioRef) && (
                       <p class="kd-program-inscriptio">
                         {p.inscriptio && <em class="kd-program-inscriptio-lat">{p.inscriptio}</em>}
                         {p.inscriptio && p.inscriptioPl && (
                           <span class="kd-dot" aria-hidden="true">·</span>
                         )}
-                        {p.inscriptioPl && <span class="kd-program-inscriptio-pl">{p.inscriptioPl}</span>}
-                        {p.inscriptioRef && (
-                          <span class="kd-program-inscriptio-ref"> ({p.inscriptioRef})</span>
+                        {/* Same pairing as the hero's, but this one only breaks onto its own line
+                            on a narrow column — see the 720 query.
+
+                            The citation is parenthetical to a motto and a line of its own without
+                            one: two works in the yaml carry a chapter and verse and no incipit
+                            (Zieleński's "Vox in Rama", Shaw's "refugium"), and brackets around a
+                            standalone reference would be a parenthesis to nothing. */}
+                        {(p.inscriptioPl || p.inscriptioRef) && (
+                          <span class="kd-program-inscriptio-gloss">
+                            {p.inscriptioPl && <span class="kd-program-inscriptio-pl">{p.inscriptioPl}</span>}
+                            {p.inscriptioRef && (
+                              <span class="kd-program-inscriptio-ref">{p.inscriptio || p.inscriptioPl ? ` (${p.inscriptioRef})` : p.inscriptioRef}</span>
+                            )}
+                          </span>
                         )}
                       </p>
                     )}
@@ -889,8 +909,14 @@ const plDate = (iso: string): string =>
   .kd-hero-meta { font-family: var(--capitalis); font-size: clamp(11.5px, 1vw, 13px); letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .68); margin: 26px 0 0; }
 
   .kd-inscriptio { margin: clamp(32px, 4.5vw, 52px) 0 0; max-width: 720px; font-family: var(--serif); font-weight: 300; font-size: clamp(16px, 1.5vw, 20px); line-height: 1.55; color: rgba(244, 241, 233, .82); padding-left: 18px; border-left: 1px solid color-mix(in srgb, var(--candle) 46%, transparent); }
-  .kd-inscriptio-lat { font-style: italic; color: var(--candle); margin-right: 12px; }
-  .kd-inscriptio-pl { color: rgba(244, 241, 233, .72); margin-left: 4px; }
+  /* Verse on one line, its Polish on the next, at every width — the pair is one utterance in two
+     tongues and the break belongs to that, not to the measure. Run inline behind a separator it
+     survived only while the translation fit: the moment it was a word too long it began mid-line
+     under the Latin, and the reader lost which language they were in. The separator goes with the
+     inline setting, or it hangs at the end of the verse pointing at nothing. */
+  .kd-inscriptio-lat { display: block; font-style: italic; color: var(--candle); }
+  .kd-inscriptio-gloss { display: block; margin-top: .35em; }
+  .kd-inscriptio-pl { color: rgba(244, 241, 233, .72); }
   .kd-inscriptio-ref { display: inline-block; margin-left: 14px; font-family: var(--capitalis); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: rgba(244, 241, 233, .5); }
 
   .kd-hero-cue { margin-top: clamp(38px, 5vw, 58px); font-family: var(--capitalis); font-size: 10px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .6); display: inline-flex; align-items: center; gap: 12px; }
@@ -1038,8 +1064,15 @@ const plDate = (iso: string): string =>
   .kd-program-composer { margin: 0; font-family: var(--capitalis); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink, #161514); }
   .kd-program-composer-name { font-weight: 500; }
   .kd-program-years { color: var(--ink-muted, #746d62); font-weight: 300; }
-  .kd-program-work { margin: 0; font-family: var(--serif); font-size: clamp(23px, 2.5vw, 34px); font-weight: 300; line-height: 1.16; color: var(--ink); letter-spacing: -.005em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 12px; }
+  /* The row gap is not decoration: the title sets at line-height 1.16, which leaves nothing under
+     the baseline, so a rail that dropped to the next line landed in the descenders of the work it
+     belongs to. It costs nothing while the two share a line. */
+  .kd-program-work { margin: 0; font-family: var(--serif); font-size: clamp(23px, 2.5vw, 34px); font-weight: 300; line-height: 1.16; color: var(--ink); letter-spacing: -.005em; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
   .kd-program-work em { font-style: italic; }
+  /* One item in the title's row, so the rail breaks away whole. `center` against the title is the
+     chips' own alignment, moved up here now that they no longer face it individually; inside the
+     rail they sit on a shared baseline. */
+  .kd-program-meta { display: flex; flex-wrap: wrap; align-items: baseline; align-self: center; gap: 4px 12px; }
   /* Mono micro chips (year · scoring · duration) — the honesty of the craft. Each carries a
      thin left divider so they read as a metadata rail after the title. ONE INK ACROSS THE THREE:
      they are a single rail read in one glance, so a chip that is lighter than its neighbours
@@ -1048,7 +1081,7 @@ const plDate = (iso: string): string =>
      stops being enough to read comfortably, whatever the ratio says. */
   .kd-program-year,
   .kd-program-voicing,
-  .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft, #34302b); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); align-self: center; }
+  .kd-program-duration { font-family: var(--capitalis); font-style: normal; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft, #34302b); padding-left: 12px; border-left: 1px solid var(--line, rgba(22,21,20,.16)); }
 
   /* The floor tracks `.kd-program-note-work`'s and must keep tracking it: this motto stands ABOVE
      the wall-label note in the entry's order, so a narrow window that left it the smaller of the
@@ -1340,6 +1373,19 @@ const plDate = (iso: string): string =>
   @media (max-width: 720px) {
     .kd-program-item { grid-template-columns: 1fr; gap: 10px; }
     .kd-program-num { text-align: left; padding-top: 0; }
+    /* The entry's motto stacks the way the hero's does, but only here: on a full column the pair
+       fits on one line and the programme wants that tighter setting. Below this width the Polish
+       ran on behind the separator and read as more Latin. */
+    .kd-program-inscriptio-gloss { display: block; }
+    .kd-program-inscriptio .kd-dot { display: none; }
+    /* The rail leaves the title's line for good — a phone column never holds both, and a rail
+       that sometimes follows the title and sometimes drops below it gives twenty entries twenty
+       different shapes. Its dividers are `border-left`s, so the chip that opens a line arrives
+       carrying a rule that divides it from the left margin: the rail hangs 13px (rule + its
+       padding) into the gutter and clips that column back off, which takes the leading rule from
+       EVERY line it breaks onto — the one thing `:first-child` cannot reach — while the text of
+       each line still starts flush on the measure. */
+    .kd-program-meta { flex-basis: 100%; margin-left: -13px; clip-path: inset(0 0 0 13px); }
     .kd-text-cols, .kd-text-cols.is-single { grid-template-columns: 1fr; gap: 18px; }
     .kd-tour-row { grid-template-columns: 1fr; gap: 4px; padding: 20px 0; }
   }
