@@ -54,8 +54,12 @@ const ribbons = toRibbons(await getCollection("concerts"));
    the ribbon alone; the bare KONCERTY link points at /koncerty, which is not that page. Left
    on both, a screen reader announced "current page" twice in one nav, at two different URLs.
    The mobile card resolves the same question the same way — its Koncerty voice takes no
-   aria-current on a concert page, because the Via row underneath is where the reader is. */
-const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
+   aria-current on a concert page, because the Via row underneath is where the reader is.
+   /obrazy is in the section too: the archive is now filed under KONCERTY on both surfaces
+   (the register's closing line, the Via's closing entry), so a reader standing in it must be
+   able to see where they are without opening the drop. */
+const onKoncerty =
+  current === "/koncerty" || current === "/obrazy" || current?.startsWith("/koncerty/");
 
 /* The mobile "Vitta" ribbon's resting line, in the card's two units (nave-menu.css GEOMETRY):
    --vb whole bands, --vr Via rows. The four voices sit at band i + 1.5; a concert page sits in
@@ -64,7 +68,8 @@ const onKoncerty = current === "/koncerty" || current?.startsWith("/koncerty/");
    index (press/kolofon), where the ribbon ships shut (no `is-set`, height 0).
    NOTE: the bare /koncerty page is voice 2; its own concert pages are NOT (see naveConcert),
    which is also what keeps tapping KONCERTY from a concert page a real navigation instead of
-   a dismissal. */
+   a dismissal. /obrazy stands one row past the last concert — the Via's closing entry — so it
+   is the one page whose row index is not derived from the ribbon list. */
 const naveConcert = ribbons.findIndex((r) => r.href === current);
 const naveRest =
   naveConcert >= 0
@@ -77,7 +82,9 @@ const naveRest =
           ? { vb: 3.5, vr: 0 }
           : current === "/kontakt"
             ? { vb: 4.5, vr: 0 }
-            : null;
+            : current === "/obrazy"
+              ? { vb: 5, vr: ribbons.length + 1.5 }
+              : null;
 
 /* Localized destinations — Polish returns the bare path (identical output), other locales get a
    prefix ONLY for pages that are translated (localizePath falls back to the Polish URL otherwise). */
@@ -150,6 +157,17 @@ const langOptions = showLang
               </a>
             ))
           }
+          {/* The register's closing line — the archive of every evening's photographs, filed
+              under the section it belongs to. Deliberately NOT a sixth ribbon (registrum.css):
+              no numeral, no silk, no leader. The URL stays Polish, as it is untranslated. */}
+          <a
+            class="registrum-all"
+            href="/obrazy"
+            aria-current={current === "/obrazy" ? "page" : undefined}
+          >
+            <span class="registrum-all-word">Obrazy</span>
+            <span class="registrum-all-gloss">wszystkie fotografie</span>
+          </a>
         </div>
       </div>
     </div>
@@ -344,6 +362,19 @@ const langOptions = showLang
               </a>
             ))
           }
+          {/* The register's closing entry — the archive, one row past the last concert
+              (nave-menu.css). It commits like any Via row: the delegated handler catches
+              `.via-row`, so the ribbon runs to it and the swap is held the same beat. */}
+          <a
+            class="via-row via-all"
+            href="/obrazy"
+            style={`--vb: 5; --vr: ${ribbons.length + 1.5}`}
+            aria-current={current === "/obrazy" ? "page" : undefined}
+          >
+            <span class="via-title">Obrazy</span>
+            <span class="via-lead" aria-hidden="true"></span>
+            <span class="via-lat">Imagines</span>
+          </a>
         </div>
       </div>
 
@@ -542,7 +573,8 @@ const langOptions = showLang
      compound in a scoped block: the `.chrome.is-solid::after` rules above are emitted at (0,3,0)
      and a global two-class override could never win against them. Same trap the register audit
      exists to catch. They must also follow those rules in source order — equal specificity now,
-     so order is what decides. */
+     so order is what decides.
+
      Each tone states the WHOLE set rather than inheriting part of it, because `[data-tone]` is a
      class-level selector: the dark rules above land at (0,4,0) and a shorthand override at (0,3,0)
      would silently keep their glass. Every rule here therefore carries at least as many compounds

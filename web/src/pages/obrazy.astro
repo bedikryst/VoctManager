@@ -366,7 +366,18 @@ const jsonLd = {
             <header class="im-evening-head">
               <span class="im-evening-roman reveal">{e.roman}</span>
               <h2 class="im-evening-title reveal ink-press" data-d="1">
-                {e.hasPage ? <a href={`/koncerty/${e.id}`}>{e.title}</a> : e.title}
+                {/* The mark stands at REST, not only under the pointer: nothing else on this
+                    page says an evening's name is a door, and two of the five evenings are not
+                    (hasPage) — so a reader who never hovers has no way to tell the linked heads
+                    from the plain ones. It is aria-hidden furniture; the anchor is the link. */}
+                {e.hasPage ? (
+                  <a href={`/koncerty/${e.id}`}>
+                    {e.title}
+                    <span class="im-go" aria-hidden="true" />
+                  </a>
+                ) : (
+                  e.title
+                )}
               </h2>
               <span class="im-evening-meta micro reveal" data-d="2">
                 <span class="lat">{e.latin}</span>
@@ -707,9 +718,30 @@ const jsonLd = {
   .im-evening-title { margin: 0; font-family: var(--serif); font-weight: 300; line-height: 1.06; padding-bottom: 4px; font-size: clamp(30px, 4.4vw, 58px); letter-spacing: -.01em; color: var(--paper); }
   /* The link is the title, as in the landing's register: the reader already wants to press the
      name of the evening, and a second control beside it would make a toolbar of a series head.
-     Gold hairline on approach, the site's own link idiom — never a button. */
-  .im-evening-title a { color: inherit; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color .35s var(--ease, ease), border-color .35s var(--ease, ease); }
-  .im-evening-title a:hover { color: var(--candle); border-bottom-color: color-mix(in srgb, var(--candle) 62%, transparent); }
+     Never a button — but not an underline either. A rule under a 58px serif is the heaviest mark
+     on the page after the photographs, it sits where the meta line already runs, and at that
+     scale it reads as a correction rather than as an invitation. The mark is an ARROW instead:
+     the head keeps its own line and gains a small pointer out of the page.
+     It is DRAWN, in the site's one drawing language — a 1px shaft and two 1px strokes for the
+     head, the same hairlines the leaders, the ✕ and the frame's chevrons are made of — never a
+     glyph, which would arrive in a face this page sets nothing else in. Everything is in `em`,
+     so the mark is cut to whatever size the title's own clamp resolves to. */
+  .im-evening-title a { color: inherit; transition: color .35s var(--ease, ease); }
+  .im-evening-title a:hover { color: var(--candle); }
+  .im-evening-title a:focus-visible { outline: 1px solid var(--candle); outline-offset: 5px; }
+  /* The shaft. `vertical-align` sets its height above the baseline: between the middle of the
+     x-height (.235em) and of the cap height (.33em), because the mark follows names that end in
+     either. The box holds layout at rest as well as on hover, so nothing reflows under the
+     pointer — which is also why the rest state is a quieted mark and not `opacity: 0`. */
+  .im-go { display: inline-block; position: relative; width: .58em; height: 1px; margin-left: .32em; vertical-align: .28em; background: currentColor; opacity: .42; transition: opacity .35s var(--ease, ease), transform .35s var(--ease, ease); }
+  /* The head: a square wearing two of its borders, rotated 45° about its own centre — which
+     puts the corner where the two strokes meet exactly on the shaft's right end, level with it.
+     No arithmetic to keep in sync; the geometry does it. */
+  .im-go::after { content: ""; position: absolute; right: 0; top: 50%; width: .26em; height: .26em; border-top: 1px solid currentColor; border-right: 1px solid currentColor; transform: translateY(-50%) rotate(45deg); }
+  /* The mark advances rather than lengthening: a shaft that grew would move the head away from
+     the name it belongs to, and `transform` is the only thing here that costs nothing. */
+  .im-evening-title a:hover .im-go,
+  .im-evening-title a:focus-visible .im-go { opacity: 1; transform: translateX(.14em); }
   .im-evening-meta { grid-column: 2; display: inline-flex; flex-wrap: wrap; align-items: baseline; font-family: var(--capitalis); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: rgba(244, 241, 233, .52); }
   .im-evening-meta .lat { color: rgba(244, 241, 233, .72); }
 

@@ -348,6 +348,15 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                         </span>
                       </a>
                     ))}
+                    {/* The register's closing line — the archive of every evening's
+                        photographs, filed under the section it belongs to. Deliberately NOT a
+                        sixth ribbon (registrum.css): no numeral, no silk, no leader. It takes
+                        no pull beat either — the beat exists to let a bookmark be YANKED, and
+                        this line has no silk to yank. */}
+                    <a className="registrum-all" href="/obrazy">
+                      <span className="registrum-all-word">Obrazy</span>
+                      <span className="registrum-all-gloss">wszystkie fotografie</span>
+                    </a>
                   </div>
                 </div>
               </>
@@ -492,6 +501,19 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                       <span className="via-date">{r.viaDate}</span>
                     </a>
                   ))}
+                  {/* The register's closing entry — the archive, one row past the last concert
+                      (nave-menu.css). It commits exactly like a concert row: commitVoice reads
+                      the `--vb`/`--vr` off the element, so the ribbon runs to it too. */}
+                  <a
+                    className="via-row via-all"
+                    href="/obrazy"
+                    style={{ "--vb": 5, "--vr": ribbons.length + 1.5 } as React.CSSProperties}
+                    onClick={commitVoice}
+                  >
+                    <span className="via-title">Obrazy</span>
+                    <span className="via-lead" aria-hidden="true" />
+                    <span className="via-lat">Imagines</span>
+                  </a>
                 </div>
               )}
             </div>

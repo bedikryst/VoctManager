@@ -564,6 +564,88 @@
   transition: opacity 0.22s var(--ease);
 }
 
+/* ── The register's CLOSING LINE — the archive (/obrazy), filed under the section whose
+   photographs it holds. It is NOT a sixth ribbon and must never become one: the silks are the
+   five evenings, dyed with their own accents and numbered, and a sixth hanging beside them
+   would claim the archive is a concert. So the line carries no numeral, no silk, no leader —
+   a leader here would run out to a tip that does not exist, which is the one thing the
+   staircase's geometry forbids (header, GEOMETRY).
+
+   What separates it from the index above is AIR and VOICE, not a rule: the drop is an
+   apparition with no ground (see THE GROUND note), and a 420px hairline floating over a
+   photograph would be the only piece of furniture in it standing on nothing. The word takes
+   the bar's own capitalis rubric — the register's rows are serif, so one look tells the eye
+   this is a different order — and the gloss the meta's serif italic beside it.
+
+   Colours are drawn from `currentColor` throughout, never from `--candle`: this line sets a
+   10px tracked capital, and gold is 2.10 : 1 over the paper-hushed bar (the argument
+   `--chrome-candle` exists for in SiteChrome, which is a SCOPED token and does not reach the
+   landing's header at all). Its hover is therefore the bar's own — ink to full — rather than
+   the register's candle warmth, which is reserved for the rows that can afford it. ── */
+.registrum-all {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  /* Clear of the last row's meta, and indented onto the index's WORD column (22px roman +
+     10px gap) so the closing line hangs under the titles rather than under the numerals. */
+  margin: 26px 0 0;
+  padding-left: 32px;
+  color: inherit;
+  text-decoration: none;
+  text-transform: none;
+  letter-spacing: 0;
+  text-shadow: var(--halo);
+  /* From zero with everything else in the drop (header) — it arrives after the last row's
+     meta, which lands at 0.26s + (n−1)·0.05s. */
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+}
+.registrum-all::after {
+  content: none; /* the headers' shared underline pseudo has no place here either */
+}
+.registrum:hover .registrum-all,
+.registrum:focus-within .registrum-all {
+  opacity: 1;
+  transition: opacity 0.4s var(--ease) calc(0.26s + var(--n) * 0.05s);
+}
+.registrum-all:focus-visible {
+  outline: 1px solid var(--candle);
+  outline-offset: 4px;
+}
+.registrum-all-word {
+  font-family: var(--capitalis);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.66;
+  transition: opacity 0.25s var(--ease);
+}
+/* The meta's own voice and grade — the closing line reads as a colophon to the index, which
+   is what it is. */
+.registrum-all-gloss {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  opacity: 0.5;
+  transition: opacity 0.25s var(--ease);
+}
+.registrum-all:hover .registrum-all-word,
+.registrum-all:focus-visible .registrum-all-word {
+  opacity: 1;
+}
+.registrum-all:hover .registrum-all-gloss,
+.registrum-all:focus-visible .registrum-all-gloss {
+  opacity: 0.72;
+}
+/* Same rubric law as the ribbons: the archive is where you are, so its word is set rubric —
+   the drop's only red, exactly as one silk's stitch is on a concert page. */
+.registrum-all[aria-current="page"] .registrum-all-word,
+.registrum-all[aria-current="page"]:hover .registrum-all-word {
+  color: var(--rubric);
+  opacity: 1;
+}
+
 /* ── The hush and the page turn. The hush's DIM is a plain background: the View Transition
    snapshots it cleanly and it dissolves WITH the outgoing page — the nave stays quiet to the end
    of the turn. Its BLUR cannot make that crossing: Chromium mis-captures a live backdrop-filter
@@ -608,7 +690,8 @@
   .ribbon-line,
   .ribbon-meta,
   .ribbon-thread,
-  .ribbon-silk {
+  .ribbon-silk,
+  .registrum-all {
     transition: none !important; /* the set appears/retracts in place, no slide */
   }
   .ribbon-silk {

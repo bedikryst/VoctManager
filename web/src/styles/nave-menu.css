@@ -319,12 +319,16 @@
 
      The band is cut to the SCREEN, not to a fixed table: the page holds a known, finite set
      of lines, so it can be set to fit the surface exactly the way a smaller book takes a
-     smaller type. The page currently measures 9.07 bands — 1 antiphon + 4 voices + the Via's
-     6 rows at 0.42 + 0.2 of clearance above the foot's rule + the foot's 1.35 — against an
+     smaller type. The page currently measures 9.49 bands — 1 antiphon + 4 voices + the Via's
+     7 rows at 0.42 + 0.2 of clearance above the foot's rule + the foot's 1.35 — against an
      overhead of the brand row and both page paddings, which is what the slope and the offset
      below solve for (with ~18px of slack, so a rounding difference can't cost a scrollbar).
      RECOUNT BOTH when a line is added or removed, or the card starts to scroll on the phones
-     it used to fit.
+     it used to fit. The pair below is solved to occupy the SAME total height as the 9.07-band
+     page did (9.49·(aH − b) = 9.07·(0.104H − 9)), which is what keeps the fit envelope where
+     it was measured; what the extra row costs is type — every band is ~4% shorter — and ~24px
+     of headroom at the floor, where the scroll now begins a little under 612px of usable
+     height rather than 588.
 
      `svh`, not `vh`: the card is a fixed layer, so on iOS it fills the SMALL viewport while
      the URL bar is up — cut to `vh` (the large one) the page would overflow the visible card
@@ -334,9 +338,9 @@
      The ceiling stops the page growing into a stretched thing on a very tall device (that
      surplus goes to the head margin instead — see .nave-list); the floor is where legibility
      stops yielding, and under it the card scrolls, which is the honest failure. The floor is
-     reached just above 600px of usable height and the scroll begins a little under 585 — a
+     reached just above 630px of usable height and the scroll begins a little under 612 — a
      small phone, or any phone in landscape. */
-  --band: clamp(54px, calc(10.4svh - 9px), 96px);
+  --band: clamp(54px, calc(9.94svh - 8.6px), 96px);
   /* The Via register's own pitch — a sub-ruling at a fixed fraction of the band, so the
      concert rows scale with the page but stay clearly subordinate to the four voices. */
   --vrow: calc(var(--band) * 0.42);
@@ -807,6 +811,31 @@ html.voct-motion .chrome.menu-open .voice-pl {
 }
 .via-row:active .via-title {
   transform: translateX(3px);
+}
+
+/* ── The register's CLOSING ENTRY — the archive (/obrazy), the photographs of the evenings
+   listed above it. It is a row OF the Via and keeps everything a row has: the pitch, the ink,
+   the press, the rubric, and a line for the ribbon to stand on (--vb: 5, --vr: 6.5).
+   What it does not have is A ROMAN NUMERAL, and that absence is the whole signal — in a
+   register whose every other row is numbered, an unnumbered one reads as the closing entry
+   instead of as a sixth concert. Its right-hand column is the Latin incipit the VOICES carry
+   rather than a date, for the same reason: it is a page of this site, not an evening of the
+   Via. The row costs one --vrow and IS counted into the band divisor (see .nave-inner) — this
+   is the "answer emptiness with content" case the header names, one line later. ── */
+.via-all {
+  grid-template-columns: auto 1fr auto;
+}
+/* Sized off --vrow like everything else in the register, and set a shade under the title so
+   the pair reads as word-and-incipit rather than as two equal words. Subordination by
+   REGISTER, never by fading the ink (header, LEGIBILITY): --ink-muted is the floor the
+   voices' own incipits stand at. */
+.via-lat {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(10.5px, calc(var(--vrow) * 0.3), 14px);
+  line-height: 1;
+  color: var(--ink-muted);
+  white-space: nowrap;
 }
 
 /* ── The vitta: THE one ribbon — cord + cloth strip + notched tip — hanging down the left

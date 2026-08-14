@@ -258,6 +258,19 @@ A dark page, chronological, built as a **sequence of evenings** — never a mosa
 **Entrances (no nav slot), all three shipped:** the `Imagines` band on the landing (§8), the
 footer's Index column, and a link at the foot of each concert page's gallery to the other evenings.
 
+**Amended 2026-08-14 — a fourth entrance, inside the KONCERTY register.** "No nav slot" still
+holds and should keep holding: the archive is not a fifth voice in the bar beside O NAS /
+KONCERTY / KONTAKT / WESPRZYJ. What it now has is a subordinate line *inside* the section whose
+photographs it holds, on both surfaces that index that section — `.registrum-all`, the closing
+line of the desktop drop (`styles/registrum.css`), and `.via-all`, the closing entry of the
+mobile card's Via (`styles/nave-menu.css`). Both are marked as NOT a sixth concert by what they
+lack: no roman numeral, and on desktop no silk and no leader (a leader would run out to a tip
+that does not exist, which the staircase's geometry forbids). The mobile row costs one `--vrow`
+and the card's band divisor was recounted with it, 9.07 → 9.49; the scroll floor moves from ~588
+to ~612px of usable height. The reason for reopening the decision is that the footer's Index
+column is the only entrance a reader on `/o-nas` or `/kontakt` has, and the register is where
+this site answers "what else is under here".
+
 **The footer entrance moved, and the reason is a shelf.** The plan put it in the landing footer's
 CORPUS stanza. That stanza's gloss is *dokumenty* and it holds two things: the foundation's
 statute (a PDF) and the privacy policy. An image archive filed beside them reads as an
