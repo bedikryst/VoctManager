@@ -499,15 +499,24 @@
   # edge sat above the fold and split the title across two tones, and the same frame is already
   # `kd-wolanie-5` in the gallery below, which had the page showing one photograph twice.
   # BOTH masters are cut from `kd-wolanie-sala`, which keeps the room whole. The chandelier hangs
-  # a metre from the lens and holds the RIGHT third at foreground scale — the side the layout
-  # leaves empty, since `.kd-hero-inner` is a 1180 column whose type never crosses the middle.
-  # What the crop has to protect is the left: the raking shaft, the haze and the rows of empty
-  # seats are the ground the title is set on. Cutting narrower than this eats into the chandelier
-  # from the right until it stops reading as one and becomes an unlit mass in front of the camera,
-  # and it marches the lower tier's row of lit candles inward across the type — a dozen bright
-  # points in even rhythm beat display type every time. At this width the row stays clear of the
-  # inscriptio's right edge, which is what pins the geometry; do not narrow it.
-  #   -desktop = 4600×2588 at x 0, y 150.
+  # a metre from the lens and holds the right of the frame; the raking shaft, the haze and the rows
+  # of empty seats carry the left, where the type sits.
+  # What this crop is TUNED to is the row of lit candles on the chandelier's near tier: a dozen
+  # bright points in even rhythm beat display type every time, so the row has to clear the title's
+  # baseline — and it only just does. Tune it on a 16:9 window, never on whichever one happens to
+  # be open: `.bleed` is 120% of a `100svh` section, so from 16:9 up the box is NARROWER than the
+  # 1.778 source, `cover` scales to HEIGHT and the frame magnifies. On a short, wide window it
+  # scales to width instead, magnifies nothing, and the row sits harmlessly low — which is what
+  # makes this crop easy to misjudge. Height-driven also means `object-position` is no lever here
+  # (it crops horizontally), so the row's y is set by the crop's own geometry and nothing else.
+  # The candles' ink starts 67.1% down the crop, which clears the baseline by ~54 px at 1920×1080
+  # and ~16 px at 16:10, the tightest ratio in common use. `y 0` — anchoring at the master's top —
+  # is what buys that: at y 150 the row crosses 63 px INTO the letters. Width is the second lever
+  # and it is worth 20 px here; the widest cut that still clears, 4600, leaves only ~34 px, and a
+  # much narrower one drops the row to the bottom edge where it stops reading as the room's
+  # foreground. The chandelier is therefore CUT at the right on purpose: it still reads as a
+  # chandelier, and keeping the whole object costs the title.
+  #   -desktop = 4500×2531 at x 0, y 0.
   #   -mobile  = 1851×4024 at x 700 (0.46, the phone's own aspect).
   # An empty hall reads as the threshold rather than the evening, which is the one place in this
   # cycle where that is right: `prologue` below stands the reader in the doorway.
