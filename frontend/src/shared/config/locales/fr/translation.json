@@ -2196,7 +2196,8 @@
     "action_reload": "Actualiser",
     "action_retry": "Réessayer",
     "action_home": "Retour au panneau",
-    "detail_label": "Détails techniques"
+    "detail_label": "Détails techniques",
+    "action_report": "Signaler cette erreur"
   },
   "footer": {
     "actions": {
@@ -4625,5 +4626,37 @@
     "MEZ": "Mezzo-soprano",
     "SOP": "Soprano",
     "TEN": "Ténor"
+  },
+  "feedback": {
+    "dock": {
+      "aria": "Signaler un problème ou une idée"
+    },
+    "sheet": {
+      "title": "Dites-moi ce qui s'est passé",
+      "subtitle": "Vous écrivez directement à l'auteur de l'application"
+    },
+    "kind": {
+      "aria": "Type de signalement",
+      "bug": "Ne fonctionne pas",
+      "confusing": "Pas clair",
+      "idea": "Idée",
+      "praise": "Compliment"
+    },
+    "field": {
+      "label": "Que s'est-il passé ?",
+      "placeholder": "Ex. : « J'ai ouvert la partition d'Ave Maria et la page est restée vide. » Plus c'est précis, plus vite je peux corriger."
+    },
+    "context": {
+      "label": "Ce qui est envoyé avec ce message",
+      "body": "Votre nom et votre adresse e-mail, l'écran où vous vous trouvez, votre appareil et votre navigateur, votre langue et votre fuseau horaire, la version de l'application, ainsi que la dernière erreur technique le cas échéant. Le signalement arrive dans ma boîte de réception. Rien d'autre — je n'ai accès ni à votre mot de passe ni au contenu d'autres sites."
+    },
+    "action": {
+      "send": "Envoyer"
+    },
+    "toast": {
+      "sent": "Merci — votre signalement m'est bien parvenu.",
+      "queued": "Enregistré. Il partira dès le retour de la connexion.",
+      "failed": "Le signalement n'a pas pu être envoyé. Réessayez."
+    }
   }
 }

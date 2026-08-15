@@ -11,6 +11,12 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  // `__APP_BUILD__` is a build-time constant the app config injects. Vitest loads
+  // its own config, so without this any suite that reaches code stamping the
+  // build identity dies on an undefined global rather than on its assertion.
+  define: {
+    __APP_BUILD__: JSON.stringify("test"),
+  },
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],

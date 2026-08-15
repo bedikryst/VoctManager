@@ -2197,7 +2197,8 @@
     "action_reload": "Odśwież",
     "action_retry": "Spróbuj ponownie",
     "action_home": "Wróć do panelu",
-    "detail_label": "Szczegóły techniczne"
+    "detail_label": "Szczegóły techniczne",
+    "action_report": "Zgłoś ten błąd"
   },
   "footer": {
     "actions": {
@@ -4642,5 +4643,37 @@
     "MEZ": "Mezzosopran",
     "SOP": "Sopran",
     "TEN": "Tenor"
+  },
+  "feedback": {
+    "dock": {
+      "aria": "Zgłoś problem lub pomysł"
+    },
+    "sheet": {
+      "title": "Powiedz mi, co się stało",
+      "subtitle": "Piszesz wprost do autora aplikacji"
+    },
+    "kind": {
+      "aria": "Rodzaj zgłoszenia",
+      "bug": "Nie działa",
+      "confusing": "Nie rozumiem",
+      "idea": "Pomysł",
+      "praise": "Pochwała"
+    },
+    "field": {
+      "label": "Co się wydarzyło?",
+      "placeholder": "Np. „Kliknęłam w nuty do Ave Maria i strona została pusta.” Im konkretniej, tym szybciej to naprawię."
+    },
+    "context": {
+      "label": "Co wysyłam razem ze zgłoszeniem",
+      "body": "Twoje imię i adres e-mail, ekran, na którym jesteś, rodzaj urządzenia i przeglądarki, język i strefa czasowa, wersja aplikacji oraz ostatni błąd techniczny, jeśli wystąpił. Zgłoszenie trafia na moją skrzynkę. Nic poza tym — nie mam wglądu w Twoje hasło ani w zawartość innych stron."
+    },
+    "action": {
+      "send": "Wyślij"
+    },
+    "toast": {
+      "sent": "Dziękuję — zgłoszenie do mnie dotarło.",
+      "queued": "Zapisane. Wyślemy je, gdy wróci połączenie.",
+      "failed": "Nie udało się wysłać zgłoszenia. Spróbuj jeszcze raz."
+    }
   }
 }

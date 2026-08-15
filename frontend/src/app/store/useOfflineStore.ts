@@ -8,9 +8,8 @@
  *  1. Download manifests — which concerts the chorister explicitly pulled down
  *     for offline practice, and exactly which asset URLs back them (for precise
  *     eviction). Live download progress is kept here too, but ephemerally.
- *  2. The write queue — readiness/attendance taps made while offline, replayed
- *     in order once the network returns ([[reference_backend_test_db_workflow]]
- *     is server-side; this is the client mirror).
+ *  2. The write queue — readiness taps, attendance RSVPs and feedback reports
+ *     made while offline, replayed in order once the network returns.
  *
  * @architecture Enterprise SaaS 2026
  * @module store/useOfflineStore
@@ -44,7 +43,7 @@ export interface OfflineDownloadProgress {
   failed: number;
 }
 
-export type OfflineWriteKind = "readiness" | "attendance";
+export type OfflineWriteKind = "readiness" | "attendance" | "feedback";
 
 /** A deferred mutation captured while offline, replayed verbatim on reconnect. */
 export interface QueuedWrite {

@@ -2196,7 +2196,8 @@
     "action_reload": "Refresh",
     "action_retry": "Try again",
     "action_home": "Back to panel",
-    "detail_label": "Technical details"
+    "detail_label": "Technical details",
+    "action_report": "Report this error"
   },
   "footer": {
     "actions": {
@@ -4624,5 +4625,37 @@
     "MEZ": "Mezzo-soprano",
     "SOP": "Soprano",
     "TEN": "Tenor"
+  },
+  "feedback": {
+    "dock": {
+      "aria": "Report a problem or an idea"
+    },
+    "sheet": {
+      "title": "Tell me what happened",
+      "subtitle": "You are writing straight to the app's author"
+    },
+    "kind": {
+      "aria": "Type of report",
+      "bug": "Not working",
+      "confusing": "Unclear",
+      "idea": "Idea",
+      "praise": "Praise"
+    },
+    "field": {
+      "label": "What happened?",
+      "placeholder": "E.g. “I tapped the score for Ave Maria and the page went blank.” The more specific you are, the faster I can fix it."
+    },
+    "context": {
+      "label": "What gets sent with this",
+      "body": "Your name and e-mail address, the screen you are on, your device and browser, your language and time zone, the app version, and the last technical error if there was one. The report lands in my inbox. Nothing else — I cannot see your password or the contents of other sites."
+    },
+    "action": {
+      "send": "Send"
+    },
+    "toast": {
+      "sent": "Thank you — your report reached me.",
+      "queued": "Saved. It will be sent as soon as you are back online.",
+      "failed": "The report could not be sent. Please try again."
+    }
   }
 }

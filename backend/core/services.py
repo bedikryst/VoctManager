@@ -35,7 +35,7 @@ from .exceptions import (
     InvalidCredentialsException,
 )
 from .greetings import apply_vocative_rule, resolve_vocative
-from .models import UserProfile
+from .models import FeedbackReport, UserProfile
 from .signals import account_soft_deleted, user_email_changed, user_pii_updated
 
 logger = logging.getLogger(__name__)
@@ -570,3 +570,72 @@ class UserPreferencesService:
                 "phone_number": artist.phone_number,
             }
         return data
+
+
+#: Longest report excerpt carried in the subject line. The full text is in the
+#: body; this only has to be enough to triage the inbox without opening it.
+FEEDBACK_SUBJECT_EXCERPT = 70
+
+
+class FeedbackService:
+    """
+    In-app feedback handling. Its only side effect is a notification to the
+    maintainer's inbox — the report itself is already persisted by the time this
+    runs, and the admin queue remains the place it is worked.
+    """
+
+    @staticmethod
+    def build_subject(report: FeedbackReport) -> str:
+        """
+        A single-line subject for the report.
+
+        Collapsing whitespace is not cosmetic: the subject becomes a mail header,
+        and a header carrying a newline is rejected outright at send time. A member
+        typing Enter inside the first seventy characters is ordinary, so the raw
+        body can never be interpolated here.
+        """
+        excerpt = " ".join(report.body.split())
+        if len(excerpt) > FEEDBACK_SUBJECT_EXCERPT:
+            excerpt = excerpt[:FEEDBACK_SUBJECT_EXCERPT].rstrip() + "…"
+        return f"[{report.get_kind_display()}] {excerpt}"
+
+    @staticmethod
+    def notify_maintainer(report: FeedbackReport) -> None:
+        """
+        Pushes a new report to the maintainer's inbox so it is seen during a
+        rehearsal or concert, not the next time someone opens the admin.
+
+        Unlike the patronage lead ping this one carries its content: the reporter
+        is a member of the organisation writing about the product, not a data
+        subject whose details we are keeping out of the ESP's hands, and a
+        content-free alert would defeat the point of reading it on a phone.
+
+        Raises on dispatch failure; the caller swallows it.
+        """
+        reporter = report.reporter
+        reporter_label = (
+            f"{reporter.get_full_name() or reporter.email} <{reporter.email}>"
+            if reporter is not None
+            else _("Deleted account")
+        )
+        logger.info("Feedback report %s captured; notifying maintainer.", report.id)
+        send_transactional_email_task.delay(
+            recipient_email=settings.FEEDBACK_NOTIFICATION_EMAIL,
+            subject=FeedbackService.build_subject(report),
+            template_name="feedback_report",
+            context={
+                "kind": report.get_kind_display(),
+                "body": report.body,
+                "route": report.route,
+                "reporter": str(reporter_label),
+                "rows": [
+                    {"label": key.replace("_", " ").title(), "value": str(value)}
+                    for key, value in report.context.items()
+                    if key != "last_error"
+                ],
+                "last_error": report.context.get("last_error", ""),
+                "admin_url": f"{settings.FRONTEND_URL}/admin/core/feedbackreport/{report.id}/change/",
+            },
+            fallback_language="pl",
+            email_type=EmailType.OPERATIONAL,
+        )

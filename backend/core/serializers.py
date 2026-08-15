@@ -4,13 +4,15 @@
 # Standard: Enterprise SaaS 2026
 # ==========================================
 import zoneinfo
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import UserProfile
+from .models import FeedbackReport, UserProfile
 
 User = get_user_model()
 
@@ -156,6 +158,97 @@ class RequestEmailChangeSerializer(serializers.Serializer):
 class AccountDeletionSerializer(serializers.Serializer):
     """Strict validation for account deletion requiring re-authentication."""
     password = serializers.CharField(required=True, write_only=True)
+
+
+#: Hard cap on the free-text body. Generous for a real account of what happened,
+#: tight enough that a stuck client cannot post a novel.
+MAX_FEEDBACK_BODY_LENGTH = 4000
+
+#: Whitelist of accepted `context` keys → (type, max length). Anything absent
+#: from this map is dropped: the blob is client-controlled, and an unbounded
+#: JSON column is both a storage and a disclosure hazard.
+_CONTEXT_SPEC: dict[str, tuple[type, int]] = {
+    # Browser / device identification.
+    'user_agent': (str, 400),
+    'platform': (str, 120),
+    # Geometry, as "WxH" strings — enough to tell a phone from a desktop and to
+    # spot a layout fault that only exists at one size.
+    'viewport': (str, 40),
+    'screen': (str, 40),
+    'pixel_ratio': (str, 12),
+    # Session shape.
+    'locale': (str, 12),
+    'timezone': (str, 63),
+    # 'standalone' means the report came from the installed PWA, where the SW
+    # may be serving a stale build — the single most misleading failure mode.
+    'display_mode': (str, 24),
+    'connection': (str, 24),
+    'online': (bool, 0),
+    # Build identity. Without it, "already fixed" and "still broken" are
+    # indistinguishable in the queue.
+    'app_version': (str, 80),
+    # Client clock at capture. Divergence from `created_at` marks a report that
+    # sat in the offline queue — or a device with a wrong clock, which breaks
+    # token refresh and is worth seeing.
+    'captured_at': (str, 40),
+    # Whatever the app last caught (error boundary, failed request).
+    'last_error': (str, 2000),
+}
+
+
+class FeedbackReportSerializer(serializers.ModelSerializer):
+    """
+    Inbound in-app feedback. `reporter` is taken from the authenticated request
+    and is never client-supplied; `status` and `note` belong to triage.
+
+    `context` is a client-controlled JSON blob, so it is not stored as received:
+    `validate_context` rebuilds it key by key against `_CONTEXT_SPEC`, dropping
+    unknown keys and truncating long values. A new diagnostic field therefore
+    needs an entry in that spec or it will silently never arrive.
+    """
+
+    class Meta:
+        model = FeedbackReport
+        fields = ('id', 'kind', 'body', 'route', 'context', 'created_at')
+        read_only_fields = ('id', 'created_at')
+
+    def validate_body(self, value: str) -> str:
+        text = value.strip()
+        if not text:
+            raise serializers.ValidationError(_("Report cannot be empty."))
+        return text[:MAX_FEEDBACK_BODY_LENGTH]
+
+    def validate_route(self, value: str) -> str:
+        return value.strip()[:300]
+
+    def validate_context(self, value: Any) -> dict[str, Any]:
+        # Typed `Any` deliberately: a JSONField accepts any JSON value, so a
+        # client is free to send a list or a bare string here.
+        if not isinstance(value, dict):
+            return {}
+
+        cleaned: dict[str, Any] = {}
+        for key, (expected_type, max_length) in _CONTEXT_SPEC.items():
+            if key not in value:
+                continue
+            raw = value[key]
+            if expected_type is bool:
+                if isinstance(raw, bool):
+                    cleaned[key] = raw
+                continue
+            if raw is None:
+                continue
+            cleaned[key] = str(raw)[:max_length]
+
+        return cleaned
+
+    def create(self, validated_data: dict[str, Any]) -> FeedbackReport:
+        request = self.context.get('request')
+        reporter = getattr(request, 'user', None)
+        return FeedbackReport.objects.create(
+            reporter=reporter if reporter is not None and reporter.is_authenticated else None,
+            **validated_data,
+        )
 
 
 class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):

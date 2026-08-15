@@ -36,6 +36,7 @@ from core.views import (
     CSRFCookieView,
     CurrentUserRetrieveUpdateView,
     ExportUserDataView,
+    FeedbackReportView,
     MarkWelcomeSeenView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -175,6 +176,9 @@ urlpatterns = [
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
     path('api/users/me/seen-welcome/', MarkWelcomeSeenView.as_view(), name='user-seen-welcome'),
     path('api/users/me/avatar/', AvatarView.as_view(), name='user-avatar'),
+
+    # --- In-app feedback (bug reports, confusions, ideas from signed-in members) ---
+    path('api/feedback/', FeedbackReportView.as_view(), name='feedback-report'),
 
     path("api/logistics/", include("logistics.urls")),
 

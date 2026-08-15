@@ -17,7 +17,29 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
+import { execSync } from "node:child_process";
 import { fileURLToPath, URL } from "node:url";
+
+/**
+ * Build identity stamped into the bundle and attached to every in-app feedback
+ * report. Without it a report is unanchored in time: with a service worker able
+ * to serve a shell from days ago, "already fixed" and "still broken" look
+ * identical in the triage queue. Falls back to the timestamp alone outside a
+ * git checkout (CI export, tarball) rather than failing the build.
+ */
+const resolveBuildId = (): string => {
+  const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+  try {
+    const sha = execSync("git rev-parse --short HEAD", {
+      stdio: ["ignore", "pipe", "ignore"],
+    })
+      .toString()
+      .trim();
+    return `${stamp} · ${sha}`;
+  } catch {
+    return stamp;
+  }
+};
 
 export default defineConfig(({ mode }) => {
   const isAnalyze = mode === "analyze";
@@ -64,6 +86,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins,
+    define: {
+      __APP_BUILD__: JSON.stringify(resolveBuildId()),
+    },
     resolve: {
       alias: {
         "@": fileURLToPath(new URL("./src", import.meta.url)),

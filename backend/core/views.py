@@ -3,6 +3,8 @@
 # Core Account & Identity Views
 # Standard: Enterprise SaaS 2026
 # ==========================================
+import logging
+
 from django.contrib.auth import get_user_model, logout, update_session_auth_hash
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -16,6 +18,7 @@ from rest_framework import generics, status, views
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer
 from rest_framework.throttling import ScopedRateThrottle, UserRateThrottle
 
 from .avatar_service import AvatarService
@@ -37,10 +40,11 @@ from .exceptions import (
 )
 from .ical_service import ICalGeneratorService
 from .models import UserProfile
-from .serializers import UserMeSerializer, UserProfileSerializer
-from .services import UserIdentityService, UserPreferencesService
+from .serializers import FeedbackReportSerializer, UserMeSerializer, UserProfileSerializer
+from .services import FeedbackService, UserIdentityService, UserPreferencesService
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
 
 class CSRFCookieView(views.APIView):
     """
@@ -524,3 +528,28 @@ class CalendarFeedView(views.APIView):
         response['Content-Disposition'] = 'attachment; filename="voctmanager_schedule.ics"'
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
+
+
+class FeedbackReportView(generics.CreateAPIView):
+    """
+    POST /api/feedback/
+    In-app feedback from a signed-in member. Authenticated by design: the
+    reporter is resolved from the session, never asked for and never trusted
+    from the payload.
+    """
+    serializer_class = FeedbackReportSerializer
+    permission_classes = (IsAuthenticated,)
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'feedback'
+
+    def perform_create(self, serializer: BaseSerializer) -> None:
+        report = serializer.save()
+        try:
+            FeedbackService.notify_maintainer(report)
+        except Exception:
+            # Best-effort: the report is already persisted, so a broker or mail
+            # failure must never surface to the reporter as "your report failed"
+            # — that is the one error guaranteed to stop them reporting again.
+            logger.exception(
+                "Feedback report %s saved but the maintainer notification failed.", report.id
+            )

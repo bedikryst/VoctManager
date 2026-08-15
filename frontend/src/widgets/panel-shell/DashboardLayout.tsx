@@ -23,6 +23,7 @@ import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
+import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useOfflineSync } from "@/shared/offline/useOfflineSync";
 import { OfflineStatusBadge } from "@/shared/offline/OfflineStatusBadge";
 import { InstallAppPrompt } from "@/shared/pwa/InstallAppPrompt";
@@ -208,16 +209,21 @@ export const DashboardLayout = ({
       </main>
       <ProjectInvitationToasts />
       <CustomAdminMessageToast />
-      {/* Bottom dock — stacks the transient offline + install affordances so they
-          never overlap, clear of the mobile nav (safe-area aware). Sits a notch
-          higher than the editor save bars so an offline badge is never hidden by
-          one. Lives at body level already, so no Portal is needed here. */}
-      <div className="fixed inset-x-0 bottom-[calc(var(--nav-dock-h)+2.25rem)] z-40 flex flex-col items-center gap-2">
+      {/* Bottom dock — stacks the transient offline + install affordances and the
+          permanent feedback button so they never overlap, clear of the mobile nav
+          (safe-area aware). Sits a notch higher than the editor save bars so an
+          offline badge is never hidden by one. Lives at body level already, so no
+          Portal is needed here. The column itself is transparent to pointers:
+          it spans the full width, and every child re-arms its own hit area, so
+          without this it would swallow taps meant for the page beneath. */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--nav-dock-h)+2.25rem)] z-40 flex flex-col items-center gap-2">
         <OfflineStatusBadge {...offlineSync} />
         {/* The chorister's full-screen welcome owns the install ask while it's on
             screen — the ambient pill stays quiet until the member has crossed the
             threshold, then resumes its own cadence. One install nudge at a time. */}
         {!welcomeOverlayActive && <InstallAppPrompt />}
+        {/* Last, so the transient pills rise above it rather than over it. */}
+        <FeedbackDock />
       </div>
     </div>
     </CommandPaletteProvider>

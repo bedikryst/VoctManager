@@ -12,6 +12,9 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+/** Build identity ("YYYY-MM-DD HH:MM · <sha>"), injected by vite `define`. */
+declare const __APP_BUILD__: string;
+
 /**
  * Native CloseWatcher API definition (Chrome 120+)
  * Handles hardware back-button and ESC key routing automatically.

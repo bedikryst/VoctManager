@@ -216,6 +216,10 @@ REST_FRAMEWORK = {
         # Read-only public aggregate (settled donations) behind a 60s response
         # cache; the limit only guards against deliberate cache-busting floods.
         'donation_progress': '60/minute',
+        # In-app feedback. Authenticated, so abuse is attributable — the cap is
+        # really a circuit breaker against a wedged client retrying its report,
+        # while still allowing a burst during a live test session.
+        'feedback': '30/hour',
         # Re-sending an activation invite dispatches one e-mail to the artist's
         # own inbox per hit. The action is manager-only (a trusted actor), so this
         # is a defence-in-depth safety net against a stuck client or double-firing,
@@ -342,6 +346,16 @@ SITE_URL = env("SITE_URL", default=f"{FRONTEND_URL}/panel")
 # notification is deliberately content-free — no lead PII leaves the EU database —
 # so the e-mail provider never processes the data subject's personal data.
 PATRON_NOTIFICATION_EMAIL = env("PATRON_NOTIFICATION_EMAIL", default="krystian.bugalski@voctensemble.com")
+
+# Inbox that receives in-app feedback the moment a member submits it. Unlike the
+# patronage ping this one carries the report's content: it exists to be read on a
+# phone during a rehearsal, where opening the Django admin is not realistic.
+# Falls back on a BLANK value, not just an absent one — the variable ships
+# commented-in-but-empty in .env.example, and an empty recipient would send every
+# report into the void with no error anywhere.
+FEEDBACK_NOTIFICATION_EMAIL = (
+    env("FEEDBACK_NOTIFICATION_EMAIL", default="").strip() or PATRON_NOTIFICATION_EMAIL
+)
 
 # --- BUSINESS LOGIC DEFAULTS ---
 DEFAULT_ARTIST_PASSWORD = env('DEFAULT_ARTIST_PASSWORD', default='secure_password123')

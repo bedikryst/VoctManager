@@ -294,3 +294,90 @@ class UserProfile(EnterpriseBaseModel):
 
     def __str__(self) -> str:
         return f"Profile for {self.user.email}"
+
+
+class FeedbackKind(models.TextChoices):
+    """What the reporter believes they are telling us. Their own classification —
+    triage may disagree, and that is fine: it orders the queue, it does not bind it."""
+    BUG = 'BUG', _('Something is broken')
+    CONFUSING = 'CONFUSING', _('Something is unclear')
+    IDEA = 'IDEA', _('Suggestion')
+    PRAISE = 'PRAISE', _('Praise')
+
+
+class FeedbackStatus(models.TextChoices):
+    """Triage state, advanced by hand in the admin."""
+    NEW = 'NEW', _('New')
+    TRIAGED = 'TRIAGED', _('Triaged')
+    RESOLVED = 'RESOLVED', _('Resolved')
+    DISMISSED = 'DISMISSED', _('Dismissed')
+
+
+class FeedbackReport(EnterpriseBaseModel):
+    """
+    An in-app report from a signed-in member: a fault, a confusion, an idea.
+
+    The reason this model exists rather than a mailto: link is `context` — a
+    whitelisted snapshot of the client environment captured at the moment of
+    writing (route, viewport, user agent, build, connectivity, the last error the
+    app caught). Free text alone reliably produces "nie działa"; the snapshot is
+    what makes the report reproducible.
+
+    `reporter` is SET_NULL so a GDPR hard-delete of an account leaves the report —
+    and the defect it documents — intact.
+    """
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='feedback_reports',
+        help_text=_("Author. SET_NULL preserves the report if the account is purged (GDPR)."),
+    )
+    kind = models.CharField(
+        max_length=12,
+        choices=FeedbackKind.choices,
+        default=FeedbackKind.BUG,
+        db_index=True,
+        help_text=_("The reporter's own classification of what they are telling us."),
+    )
+    body = models.TextField(
+        help_text=_("What the reporter wrote. Length is capped at the serializer boundary."),
+    )
+    route = models.CharField(
+        max_length=300,
+        blank=True,
+        help_text=_("SPA path the reporter was on (e.g. /panel/projects/<id>/casting)."),
+    )
+    context = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_("Whitelisted client environment snapshot. Rebuilt key-by-key by the "
+                    "serializer — never stored as the client sent it."),
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=FeedbackStatus.choices,
+        default=FeedbackStatus.NEW,
+        db_index=True,
+        help_text=_("Triage state, advanced by hand."),
+    )
+    note = models.TextField(
+        blank=True,
+        help_text=_("Internal triage note. Never shown to the reporter."),
+    )
+
+    class Meta:
+        db_table = 'core_feedback_report'
+        ordering = ['-created_at']
+        verbose_name = _('Feedback Report')
+        verbose_name_plural = _('Feedback Reports')
+        indexes = [
+            # Declared explicitly because this model overrides Meta and so does
+            # not inherit EnterpriseBaseModel.Meta's equivalent composite index.
+            models.Index(fields=['is_deleted', '-created_at'], name='core_feedback_isdel_idx'),
+            models.Index(fields=['status', '-created_at'], name='core_feedback_status_idx'),
+        ]
+
+    def __str__(self) -> str:
+        return f"FeedbackReport[{self.status}] {self.kind} — {self.body[:48]}"

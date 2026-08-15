@@ -21,7 +21,7 @@
 import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { RefreshCw, ArrowLeft } from "lucide-react";
+import { RefreshCw, ArrowLeft, MessageCircleHeart } from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -40,6 +40,13 @@ export interface ErrorScreenProps {
   onHome?: () => void;
   /** Raw technical detail — shown only in dev, tucked behind a disclosure. */
   detail?: string;
+  /**
+   * Offers "report this" alongside the recovery actions. Passed in rather than
+   * wired here so this surface keeps its independence from stores and features:
+   * the caller decides whether a reporting path exists at all, which the
+   * full-screen boundary (shell gone, nothing left to open a sheet) cannot.
+   */
+  onReport?: () => void;
 }
 
 /** A held fermata: the musician's mark for an unmeasured pause — exactly this
@@ -90,6 +97,7 @@ export function ErrorScreen({
   onRetry,
   onHome,
   detail,
+  onReport,
 }: ErrorScreenProps): React.JSX.Element {
   const { t } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
@@ -189,6 +197,19 @@ export function ErrorScreen({
             {t("errors.action_home", "Wróć do panelu")}
           </Button>
         </div>
+
+        {/* A stale-chunk fault is a deploy, not a defect — asking the member to
+            report it would only collect noise about our own release cadence. */}
+        {onReport && !isStale && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onReport}
+            leftIcon={<MessageCircleHeart size={14} strokeWidth={2} />}
+          >
+            {t("errors.action_report", "Zgłoś ten błąd")}
+          </Button>
+        )}
 
         {import.meta.env.DEV && detail && (
           <details className="w-full max-w-full text-left">

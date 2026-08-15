@@ -12,6 +12,7 @@ from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.db import IntegrityError
+from django.template.loader import render_to_string
 from django.test import (
     RequestFactory,
     SimpleTestCase,
@@ -27,9 +28,9 @@ from .avatar_service import AVATAR_SIZE, THUMB_SIZE, AvatarService
 from .constants import AppRole
 from .dtos import UserPasswordChangeDTO, UserPreferencesUpdateDTO
 from .exceptions import EmailAlreadyInUseException, InvalidImageException, format_pydantic_validation_errors
-from .models import UserProfile
+from .models import FeedbackReport, UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
-from .services import UserIdentityService
+from .services import FeedbackService, UserIdentityService
 from .tasks import ping_beat_heartbeat
 
 # `get_user_model()` returns a runtime value mypy cannot use as a type. Bind the
@@ -1166,3 +1167,182 @@ class BeatHeartbeatTaskTests(SimpleTestCase):
         slots on retries — the real signal is the ping that never arrives."""
         with self.assertLogs("core.tasks", level="WARNING"):
             self.assertFalse(ping_beat_heartbeat())
+
+
+class FeedbackReportAPITests(APITestCase):
+    """
+    The report endpoint's job is to never lose a report and never trust one.
+    """
+
+    def setUp(self):
+        cache.clear()  # throttle state is cache-backed and leaks between tests
+        self.user = User.objects.create_user(
+            username=str(uuid4()), email="chorister@voct.test",
+            password="pw12345678", first_name="Ala",
+        )
+        self.url = "/api/feedback/"
+
+    def test_anonymous_cannot_report(self):
+        """The reporter is resolved from the session, so there is no anonymous path."""
+        response = self.client.post(self.url, {"kind": "BUG", "body": "x"}, format="json")
+        self.assertEqual(response.status_code, 401)
+
+    @patch("core.views.FeedbackService.notify_maintainer")
+    def test_report_is_attributed_to_the_session_user(self, _notify):
+        """A client-supplied reporter must be ignored, not honoured."""
+        self.client.force_authenticate(user=self.user)
+        other = User.objects.create_user(
+            username=str(uuid4()), email="other@voct.test", password="pw12345678",
+        )
+
+        response = self.client.post(
+            self.url,
+            {"kind": "BUG", "body": "Nie mogę otworzyć nut.", "reporter": str(other.id)},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        report = FeedbackReport.objects.get()
+        self.assertEqual(report.reporter, self.user)
+
+    @patch("core.views.FeedbackService.notify_maintainer")
+    def test_context_is_rebuilt_against_the_whitelist(self, _notify):
+        """The blob is client-controlled: unknown keys are dropped and long
+        values truncated, so neither storage nor the admin can be flooded."""
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(
+            self.url,
+            {
+                "kind": "CONFUSING",
+                "body": "Nie wiem, gdzie kliknąć.",
+                "route": "/panel/materials",
+                "context": {
+                    "viewport": "390x844",
+                    "online": True,
+                    "last_error": "E" * 5000,
+                    "cookies": "session=secret",  # not in the spec
+                },
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        stored = FeedbackReport.objects.get().context
+        self.assertEqual(stored["viewport"], "390x844")
+        self.assertIs(stored["online"], True)
+        self.assertEqual(len(stored["last_error"]), 2000)
+        self.assertNotIn("cookies", stored)
+
+    @patch("core.views.FeedbackService.notify_maintainer")
+    def test_non_dict_context_is_discarded_not_rejected(self, _notify):
+        """A malformed context must not cost the reporter their report."""
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(
+            self.url,
+            {"kind": "BUG", "body": "Coś nie gra.", "context": ["nope"]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(FeedbackReport.objects.get().context, {})
+
+    def test_blank_body_is_rejected(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post(self.url, {"kind": "BUG", "body": "   "}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    @patch(
+        "core.views.FeedbackService.notify_maintainer",
+        side_effect=RuntimeError("broker unreachable"),
+    )
+    def test_notification_failure_still_returns_success(self, _notify):
+        """A down broker (or a forgotten `docker restart voct_celery`) must never
+        tell a member their report failed — that is what stops them reporting."""
+        self.client.force_authenticate(user=self.user)
+
+        with self.assertLogs("core.views", level="ERROR"):
+            response = self.client.post(
+                self.url, {"kind": "BUG", "body": "Aplikacja zamarła."}, format="json"
+            )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(FeedbackReport.objects.count(), 1)
+
+
+class FeedbackNotificationTests(TestCase):
+    """
+    The notification is the whole point of the feature: the admin queue is where a
+    report is worked, but the e-mail is what makes anyone look. It has to survive
+    what members actually type.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username=str(uuid4()), email="chorister@voct.test",
+            password="pw12345678", first_name="Ala", last_name="Kowalska",
+        )
+
+    def _report(self, **overrides) -> FeedbackReport:
+        return FeedbackReport.objects.create(
+            reporter=self.user,
+            kind="BUG",
+            body=overrides.pop("body", "Nuty się nie otwierają."),
+            route=overrides.pop("route", "/panel/materials"),
+            context=overrides.pop("context", {"viewport": "390x844", "online": True}),
+            **overrides,
+        )
+
+    def test_multiline_body_yields_a_single_line_subject(self):
+        """A subject is a mail header. A member pressing Enter mid-sentence used
+        to make the send raise, losing the notification while the report stayed
+        in the queue with nobody looking at it."""
+        report = self._report(body="Kliknęłam w nuty\r\ni strona\nzostała pusta.")
+
+        subject = FeedbackService.build_subject(report)
+
+        self.assertNotIn("\n", subject)
+        self.assertNotIn("\r", subject)
+        self.assertIn("Kliknęłam w nuty i strona została pusta.", subject)
+
+    def test_long_body_is_elided_not_cut_mid_air(self):
+        report = self._report(body="a" * 400)
+
+        subject = FeedbackService.build_subject(report)
+
+        self.assertTrue(subject.endswith("…"))
+        self.assertLess(len(subject), 120)
+
+    @patch("core.services.send_transactional_email_task")
+    def test_notification_renders_and_reaches_the_configured_inbox(self, task):
+        """Renders both templates for real: a template fault would otherwise only
+        surface inside the Celery worker, long after the reporter saw success."""
+        report = self._report(body="Coś\nnie gra.")
+
+        with self.settings(FEEDBACK_NOTIFICATION_EMAIL="maintainer@voct.test"):
+            FeedbackService.notify_maintainer(report)
+
+        kwargs = task.delay.call_args.kwargs
+        self.assertEqual(kwargs["recipient_email"], "maintainer@voct.test")
+        self.assertIn("Ala Kowalska", kwargs["context"]["reporter"])
+        self.assertIn(str(report.id), kwargs["context"]["admin_url"])
+
+        for suffix in ("html", "txt"):
+            rendered = render_to_string(
+                f"emails/{kwargs['template_name']}.{suffix}",
+                {"lang": "pl", **kwargs["context"]},
+            )
+            self.assertIn("nie gra.", rendered)
+
+    @patch("core.services.send_transactional_email_task")
+    def test_purged_reporter_does_not_break_the_notification(self, task):
+        """SET_NULL keeps the report after a GDPR erasure; the e-mail must still
+        be sendable — a defect outlives the account that found it."""
+        report = self._report()
+        FeedbackReport.objects.filter(pk=report.pk).update(reporter=None)
+        report.refresh_from_db()
+
+        FeedbackService.notify_maintainer(report)
+
+        self.assertTrue(task.delay.called)

@@ -17,6 +17,7 @@ import React from "react";
 
 import { ErrorScreen } from "@/shared/ui/feedback/ErrorScreen";
 import { isStaleChunkError, describeError } from "@/shared/lib/errors";
+import { useFeedbackStore } from "@/app/store/useFeedbackStore";
 
 interface Props {
   children: React.ReactNode;
@@ -47,6 +48,18 @@ export class PanelErrorBoundary extends React.Component<Props, State> {
 
   private readonly retry = (): void => this.setState({ error: null });
 
+  /**
+   * Opens the feedback sheet with the fault already described. A crash is the
+   * one moment a member is least likely to report unprompted and most likely to
+   * be able to describe, so the stack travels with it rather than asking them
+   * to paraphrase it. Read off the store directly — this is a class component,
+   * and the sheet is mounted by the shell, which survives a panel-level fault.
+   */
+  private readonly report = (error: unknown) => (): void =>
+    useFeedbackStore.getState().openFeedback({
+      technicalDetail: describeError(error),
+    });
+
   render(): React.ReactNode {
     const { error } = this.state;
     if (!error) return this.props.children;
@@ -56,6 +69,7 @@ export class PanelErrorBoundary extends React.Component<Props, State> {
         tone="panel"
         isStale={isStaleChunkError(error)}
         onRetry={this.retry}
+        onReport={this.report(error)}
         detail={describeError(error)}
       />
     );
