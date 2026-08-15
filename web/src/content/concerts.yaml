@@ -30,7 +30,7 @@
       place: "Basilique du Sacré-Cœur · Cracovie"
       blurb: "Les débuts du cycle des Concerts Spirituels : Renaissance, baroque et création contemporaine réunis autour du mystère de la Nativité et de l'Incarnation."
   accent: "#c6a45b"
-  essence: "Próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, od zimowego półmroku Sandströma po jasność Monteverdiego."
+  essence: "Próba wejścia w tajemnicę Wcielenia: od zapowiedzi Izajasza po kantyk Symeona, w muzyce od Sandströma do Monteverdiego."
   facts:
     - 4 / 8 / 12 głosów
     - Renesans — XXI w.
@@ -189,9 +189,10 @@
     powszednim. Kiedy uświadamiamy sobie znaczenie tej tajemnicy, możemy odzyskać zmysł
     obecności Boga w naszym życiu.
   reflectionAttribution: "Florent de Bazelaire · 20 stycznia 2024"
-  reflectionNote: >-
-    Repertuar prowadzi od proroctw Izajasza po kantyk Symeona; po drodze zimowy półmrok
-    Sandströma ustępuje jasności Monteverdiego.
+  # No reflectionNote, deliberately — same call as Hymn Poległym. What stood here walked the
+  # repertoire from Isaiah to Simeon, which is what `essence` says two screens above (it is also
+  # this page's meta description and JSON-LD description) and what `programArc` says at length
+  # below. Three tellings of one journey; the band keeps the one voice that is not ours.
   # No pullQuote: the one composer's-own-words we have (Vivancos on Le cri des bergers)
   # lives on /koncerty/wolanie-gor — the evening NAMED after that piece; its essence stays
   # here in the work's program note. Do not print the same quote on two pages of the cycle.
@@ -2119,7 +2120,7 @@
     about: "z zapowiedzi koncertu"
   programLede: "Muzyczna modlitwa: dziewięć ogniw i bis"
   programArc: >-
-    Kolejność jest tu modlitwą, nie opowieścią. Wieczór otwierają słowa, które Kościół śpiewa
+    Kolejność jest tu modlitwą. Wieczór otwierają słowa, które Kościół śpiewa
     nad grobem, a zaraz potem schodzi najniżej, jak zejść można: do krzyku matki nad zabitymi
     dziećmi. Stamtąd prowadzi przez trzy prośby o pokój i przez ciężar krzyża, aż do miejsca,
     gdzie nawet jaskółka ma gniazdo, i do ostatniego refrenu, w którym całe stworzenie raduje się.
