@@ -39,7 +39,12 @@ export function VoxMoment({ poster }: VoxMomentProps): React.JSX.Element {
           <p className="vox-line reveal">
             Z tej ciszy — <em>głos.</em>
           </p>
-          <VideoPlayer src={VOX_VIDEO.src} poster={poster} caption={VOX_VIDEO.caption} />
+          <VideoPlayer
+            src={VOX_VIDEO.src}
+            srcAv1={VOX_VIDEO.srcAv1}
+            poster={poster}
+            caption={VOX_VIDEO.caption}
+          />
         </div>
       </section>
     </Typo>

@@ -10,12 +10,15 @@
  * @module data/landing/paths
  */
 
-import { videoAsset } from "../../lib/videos";
+import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 
 /** One curated fragment for a register entry — omit the whole slot when no footage exists. */
 export interface PathVideo {
-  /** Bundled URL of a self-hosted MP4 (H.264 + AAC). */
+  /** Bundled URL of a self-hosted MP4 (H.264 + AAC) — the fallback, and the identity the
+   *  resume position is keyed on. */
   readonly src: string;
+  /** Bundled URL of the AV1 rendition of the same film, offered ahead of `src`. */
+  readonly srcAv1: string;
   /** Phone-shot 9:16 document — the player switches to a portrait, height-driven frame. */
   readonly portrait?: boolean;
   /** Honest provenance line under the lightbox caption (piece credit · recording origin). */
@@ -164,7 +167,7 @@ export const PATHS: readonly Path[] = [
     frameSaturation: 0.85,
     // Same file as the hero modal (MODAL_VIDEO in video.ts), so cache and resume position
     // are shared only across this exact MP4.
-    video: { src: videoAsset("landing-modal") },
+    video: { src: videoAsset("landing-modal"), srcAv1: videoAssetAv1("landing-modal") },
     credit: "Rejestracja: Jakub Garbacz, Ars Sonora Studio. Reprise pod auspicjami Fundacji Carpe Diem.",
   },
   {
@@ -217,6 +220,7 @@ export const PATHS: readonly Path[] = [
     // height), `-6` prints the ensemble's own logotype mid-plate, `-7` is a posed group.
     video: {
       src: videoAsset("landing-wolanie"),
+      srcAv1: videoAssetAv1("landing-wolanie"),
       portrait: true,
       note: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo",
     },
@@ -327,6 +331,7 @@ export const PATHS: readonly Path[] = [
     frameLift: 0.9,
     video: {
       src: videoAsset("landing-aeternam"),
+      srcAv1: videoAssetAv1("landing-aeternam"),
       portrait: true,
       note: "C. Shaw — and the swallow (Psalm 84) · zapis z nawy · dźwięk na żywo",
     },

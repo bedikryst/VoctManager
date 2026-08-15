@@ -20,18 +20,37 @@
  *  line) render as a museum plaque BESIDE the frame on wide viewports (stacked below on
  *  narrow ones), while the utility row (time + fullscreen) stays under the scrub. A
  *  missing/broken file degrades to the poster + a quiet mono note. Self-hosted media only.
+ *
+ *  CODEC LADDER: `srcAv1` first, `src` (H.264) second, as `<source>` children rather than a
+ *  flat `src` attribute — the browser picks by `type`, and Safari, whose AV1 support starts at
+ *  17 and only on hardware that decodes it, falls through to H.264 instead of showing a dead
+ *  frame. Two consequences the element carries and this file has to honour:
+ *   - `<source>` is NOT live the way `src` is. Rewriting a child's `src` leaves the element
+ *     playing the old media until `load()` runs, so the effect below re-runs selection whenever
+ *     the pair changes. A flat `src` reloaded itself; this does not.
+ *   - `error` still fires on the VIDEO, not on a `<source>` (that one does not bubble), and only
+ *     once the selection algorithm has exhausted every candidate. The failure path is unchanged:
+ *     a broken AV1 file is not a failure while H.264 still answers.
  * @architecture Astro islands 2026
  * @module islands/landing/video/VideoPlayer
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AV1_MIME } from "../../../lib/videos";
 import { formatTime } from "./formatTime";
 import { clearPosition, readPosition, savePosition } from "./resumeStore";
 import { Typo } from "../lib/Typo";
 
 interface VideoPlayerProps {
+  /**
+   * H.264 fallback, and the player's IDENTITY: the resume key and the one-video-at-a-time
+   * broadcast both read it, so two visitors on different codecs still share a position and a
+   * surface still recognises its own media. Never swap this for whatever the browser picked.
+   */
   readonly src: string;
+  /** AV1 rendition of the same film, offered first. Omit where none was encoded. */
+  readonly srcAv1?: string;
   readonly poster?: string;
   readonly caption?: string;
   /** Provenance line under the caption (piece credit · recording origin) — serif italic. */
@@ -70,6 +89,7 @@ let playerIdSequence = 0;
 
 export function VideoPlayer({
   src,
+  srcAv1,
   poster,
   caption,
   note,
@@ -370,6 +390,19 @@ export function VideoPlayer({
     return () => document.removeEventListener("astro:page-load", recover);
   }, []);
 
+  // Re-run source selection when the ladder changes. A flat `src` attribute did this itself;
+  // <source> children do not — React rewrites their `src` and the element keeps playing what it
+  // already resolved. Skipped on the first pass, where the element is loading these very sources
+  // and an extra load() would restart the request the poster is already waiting on.
+  const ladderLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!ladderLoadedRef.current) {
+      ladderLoadedRef.current = true;
+      return;
+    }
+    videoRef.current?.load();
+  }, [src, srcAv1]);
+
   // Fullscreen tracking — drives the ✕/⤢ label and enables the idle chrome fade.
   useEffect(() => {
     const onChange = (): void => setFullscreen(document.fullscreenElement === rootRef.current);
@@ -590,12 +623,14 @@ export function VideoPlayer({
           )}
           <video
             ref={videoRef}
-            src={src}
             poster={poster}
             preload="metadata"
             playsInline
             onClick={toggle}
-          />
+          >
+            {srcAv1 && <source src={srcAv1} type={AV1_MIME} />}
+            <source src={src} type="video/mp4" />
+          </video>
           {poster && (
             <div
               className={`vplayer-veil${veiled ? "" : " is-lifted"}`}

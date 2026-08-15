@@ -25,3 +25,8 @@ src/assets/photos/
 # above. Astro imports them from src/assets/videos/ and emits content-hashed URLs, so
 # stable public `/video/*.mp4` paths are not generated.
 src/assets/videos/
+
+# Local A/B clips for grading decisions (docs/… none — throwaway). Served by `astro dev` at
+# /probki/ because only public/ is served statically; kept OUT of git and out of the image,
+# since anything under public/ is copied verbatim into dist/ and would ship to nginx.
+public/probki/

@@ -31,7 +31,7 @@ import { framedShot } from "../../lib/galleryFrame";
 import { candleFrom, candleInkFrom } from "../../lib/candle";
 import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
-import { videoAsset } from "../../lib/videos";
+import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
@@ -160,6 +160,7 @@ const filmPosterSrc = filmPoster
   ? (await getImage({ src: filmPoster, width: 1600, format: "webp" })).src
   : undefined;
 const filmVideoSrc = c.video ? videoAsset(c.video.asset) : undefined;
+const filmVideoSrcAv1 = c.video ? videoAssetAv1(c.video.asset) : undefined;
 
 // ── The tabula: this page's own table of contents, hung from the chrome's line and summoned by a
 // run back UP the document (lib/tabula, styles/tabula.css). These are the longest documents on the
@@ -697,6 +698,7 @@ const plDate = (iso: string): string =>
             <VideoPlayer
               client:load
               src={filmVideoSrc}
+              srcAv1={filmVideoSrcAv1}
               poster={filmPosterSrc}
               caption={c.video.caption}
               note={c.video.note}

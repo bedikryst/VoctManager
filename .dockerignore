@@ -54,6 +54,12 @@ web/.astro
 web/src/assets/photos/.original-photos
 web/src/assets/photos/.old-bg-desktop
 
+# The camera masters the web renditions are encoded FROM — ~1 GB, and read by nobody at build
+# time: lib/videos.ts imports three named files from `src/assets/videos/` directly, never this
+# folder. The encode is a host-side step, same shape as `npm run photos:proxy` above, and for the
+# same reason — this weight in the `COPY web/ ./` layer buys nothing and costs the BuildKit cache.
+web/src/assets/videos/oryginaly
+
 # ---- Python / Django (the backend has its OWN Dockerfile + context: ./backend,
 # but anything that would slip into this root context should still be excluded
 # in case the root image ever needs to reach in.) ----
@@ -88,3 +94,7 @@ docs/
 !web/README.md
 # (the two READMEs above are kept only because some tooling reads metadata
 # from them — strip them if image size matters more than introspection.)
+
+# Local A/B video clips (web/.gitignore too). Everything under public/ is copied verbatim into
+# dist/ by the web-builder stage, so without this the grading samples would ship to nginx.
+web/public/probki

@@ -50,6 +50,7 @@ const ogImage = (
 // modal plays, shared by browser cache and same-src resume). The credit is sourced from paths.ts
 // (`credit` on the wcielenie entry) — it belongs to THIS footage.
 const HERO_VIDEO = MODAL_VIDEO.src;
+const HERO_VIDEO_AV1 = MODAL_VIDEO.srcAv1;
 const heroPoster = (
   await getImage({ src: bleedPair("chor-spot").desktop, width: 1600, format: "webp" })
 ).src;
@@ -299,6 +300,7 @@ const jsonLd = {
           <VideoPlayer
             client:visible
             src={HERO_VIDEO}
+            srcAv1={HERO_VIDEO_AV1}
             poster={heroPoster}
             tone="dark"
             caption="Kontemplacja Wcielenia · Bazylika NSPJ w Krakowie · 2024"
@@ -443,6 +445,7 @@ const jsonLd = {
                   <VideoPlayer
                     client:visible
                     src={p.video.src}
+                    srcAv1={p.video.srcAv1}
                     poster={p.posterSrc}
                     portrait={p.video.portrait}
                     caption={`${p.title} · ${p.yearLabel}`}

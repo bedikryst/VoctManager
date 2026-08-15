@@ -388,6 +388,7 @@ function setupInterludeBreath(root: HTMLElement, reduce: boolean): void {
 function setupInteractions(root: HTMLElement): void {
   type VideoOpenDetail = {
     src?: string;
+    srcAv1?: string;
     caption?: string;
     portrait?: boolean;
     note?: string;
@@ -441,6 +442,7 @@ function setupInteractions(root: HTMLElement): void {
       event.preventDefault();
       const detail = {
         src: videoBtn.dataset.videoSrc,
+        srcAv1: videoBtn.dataset.videoSrcAv1,
         caption: videoBtn.dataset.videoCaption,
         portrait: videoBtn.dataset.videoPortrait === "true",
         note: videoBtn.dataset.videoNote,

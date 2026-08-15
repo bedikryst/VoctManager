@@ -20,6 +20,9 @@ import { VideoPlayer } from "./video/VideoPlayer";
 
 interface OpenDetail {
   readonly src?: string;
+  /** AV1 twin of `src`. Travels beside it rather than being derived, because the trigger reads
+   *  both off the DOM and this island cannot resolve a bundled asset URL on its own. */
+  readonly srcAv1?: string;
   readonly caption?: string;
   /** 9:16 audience document — the player switches to a portrait, height-driven frame. */
   readonly portrait?: boolean;
@@ -56,6 +59,7 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
       const detail = (event as CustomEvent<OpenDetail>).detail;
       setOpen({
         src: detail?.src,
+        srcAv1: detail?.srcAv1,
         caption: detail?.caption,
         portrait: detail?.portrait,
         note: detail?.note,
@@ -85,7 +89,12 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
 
   if (!open) return null;
 
+  // The pair falls back TOGETHER: a trigger that published neither opens the default reel in both
+  // codecs, and one that published only `src` (an older surface, or a film with no AV1 twin) must
+  // not inherit the default's AV1 — that would hand the browser a preferred source showing a
+  // different film. Hence the pairing on `open.src`, not two independent `??`.
   const src = open.src ?? MODAL_VIDEO.src;
+  const srcAv1 = open.src ? open.srcAv1 : MODAL_VIDEO.srcAv1;
 
   return (
     <div
@@ -112,6 +121,7 @@ export function VideoLightbox({ poster }: VideoLightboxProps): React.JSX.Element
             stillness; glow bleeds the frame's light past the panel into the dark nave. */}
         <VideoPlayer
           src={src}
+          srcAv1={srcAv1}
           poster={src === MODAL_VIDEO.src ? poster : undefined}
           caption={open.caption ?? MODAL_VIDEO.caption}
           note={open.note}

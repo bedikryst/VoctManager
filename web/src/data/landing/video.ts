@@ -8,11 +8,14 @@
  * @module data/landing/video
  */
 
-import { videoAsset } from "../../lib/videos";
+import { videoAsset, videoAssetAv1 } from "../../lib/videos";
 
 export interface VideoSource {
-  /** Bundled URL of a self-hosted MP4 (H.264 + AAC, +faststart). */
+  /** Bundled URL of a self-hosted MP4 (H.264 + AAC, +faststart). The fallback, and the
+   *  identity every surface keys on — see VideoPlayer's `src`. */
   readonly src: string;
+  /** Bundled URL of the AV1 rendition of the same film, offered ahead of `src`. */
+  readonly srcAv1: string;
   /** Mono caption line rendered under the frame and in the lightbox. */
   readonly caption: string;
 }
@@ -20,6 +23,7 @@ export interface VideoSource {
 /** Hero CTA "Zobacz i usłysz" → lightbox: the full ~5 min concert video (dark room only). */
 export const MODAL_VIDEO: VideoSource = {
   src: videoAsset("landing-modal"),
+  srcAv1: videoAssetAv1("landing-modal"),
   caption: "Wybrane fragmenty koncertu „Kontemplacja Wcielenia” · VoctEnsemble 2024",
 };
 

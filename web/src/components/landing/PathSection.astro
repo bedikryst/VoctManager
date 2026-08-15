@@ -76,6 +76,7 @@ const programFor = (id: string) => programById.get(id) ?? [];
                     class="path-entry-video plausible-event-name=path+fragment"
                     data-video-open
                     data-video-src={path.video.src}
+                    data-video-src-av1={path.video.srcAv1}
                     data-video-caption={`${path.title} · ${path.year}`}
                     data-video-portrait={path.video.portrait ? "true" : undefined}
                     data-video-note={path.video.note}
