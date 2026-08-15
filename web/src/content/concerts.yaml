@@ -46,16 +46,16 @@
     poster: kd-wcielenie-5
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/7GjD3G9ICb6GLbEQEIDe4v
   hasPage: true
-  programLede: "Dziesięć spojrzeń — i bis"
+  programLede: "Dziesięć spojrzeń i bis"
   programArc: >-
     Kolejność jest tu częścią kompozycji. Wieczór biegnie jak historia zbawienia: od różdżki
     z proroctwa Izajasza, przez nocną straż pasterzy i adwentowy róg Gallusa, po same narodziny.
-    Potem kontemplacja maryjna — i nagły cień: kołysanka matki nad dzieckiem skazanym przez
-    Heroda. Domyka ją kantyk Symeona w świątyni — „moje oczy ujrzały Twoje zbawienie” — czyli
+    Potem kontemplacja maryjna, a po niej nagły cień: kołysanka matki nad dzieckiem skazanym przez
+    Heroda. Domyka ją kantyk Symeona w świątyni: „moje oczy ujrzały Twoje zbawienie”. To
     spełnienie obietnicy, od której program się zaczął; stąd już tylko uwielbienie i radość bisu.
   prologue: >-
-    Dwudziesty stycznia, wieczór, Bazylika Najświętszego Serca Pana Jezusa w Krakowie —
-    dwadzieścia dni po tym, jak zespół powstał. Zanim zabrzmi pierwszy dźwięk,
+    Dwudziesty stycznia, wieczór, Bazylika Najświętszego Serca Pana Jezusa w Krakowie. Dwadzieścia
+    dni po tym, jak zespół powstał. Zanim zabrzmi pierwszy dźwięk,
     o. Jarek Naliwajko SJ wprowadza w tajemnicę Wcielenia.
   verbum:
     speaker: "o. Jarek Naliwajko SJ · 20 stycznia 2024"
@@ -127,8 +127,7 @@
       lat: Nativitas
       pl: Narodziny
       line: >-
-        Dziecko przychodzi. Wokół Niego zbiera się kontemplacja Matki — od renesansowej
-        Hiszpanii po polską kolędę.
+        Dziecko przychodzi. Wokół Niego zbiera się kontemplacja Matki: renesansowa Hiszpania i polska kolęda.
     - id: umbra
       lat: Umbra
       pl: Cień
@@ -143,7 +142,7 @@
       lat: Impletio
       pl: Spełnienie
       line: >-
-        W świątyni Symeon bierze Dziecko na ręce — „moje oczy ujrzały Twoje zbawienie”.
+        W świątyni Symeon bierze Dziecko na ręce: „moje oczy ujrzały Twoje zbawienie”.
         Obietnica z początku wieczoru dopełnia się.
     - id: laus
       lat: Laus
@@ -166,8 +165,8 @@
           Kwartet unoszący się nad chorałem w Es ist ein Ros' entsprungen;
           w Le cri des bergers dopełnia dwanaście głosów.
     note: >-
-      Wykonawcy i organizatorzy nie pobrali za ten wieczór honorariów —
-      debiut wsparła zbiórka społeczna wokół powstającego zespołu.
+      Wykonawcy i organizatorzy nie pobrali za ten wieczór honorariów; debiut wsparła zbiórka
+      społeczna wokół powstającego zespołu.
   gallery:
     # Two runs: the rehearsal, then the evening. The rehearsal carries no venue and no date
     # because neither was ever recorded — inheriting the basilica would assert a room nobody
@@ -191,8 +190,8 @@
     obecności Boga w naszym życiu.
   reflectionAttribution: "Florent de Bazelaire · 20 stycznia 2024"
   reflectionNote: >-
-    Repertuar — od proroctw Izajasza po kantyk Symeona, od zimowego półmroku Sandströma
-    po jasność Monteverdiego — układa się jako droga do samej istoty tego, co niewysłowione.
+    Repertuar prowadzi od proroctw Izajasza po kantyk Symeona; po drodze zimowy półmrok
+    Sandströma ustępuje jasności Monteverdiego.
   # No pullQuote: the one composer's-own-words we have (Vivancos on Le cri des bergers)
   # lives on /koncerty/wolanie-gor — the evening NAMED after that piece; its essence stays
   # here in the work's program note. Do not print the same quote on two pages of the cycle.
@@ -205,7 +204,7 @@
       voicing: "a 8 + kwartet"
       note: >-
         Niemiecka kolęda z końca XVI wieku (Trewir, 1587), wydana po raz pierwszy w jezuickim
-        śpiewniku ze Spiry (1599) — jego dwadzieścia trzy zwrotki prowadzą przez całą historię
+        śpiewniku ze Spiry (1599). Jego dwadzieścia trzy zwrotki prowadzą przez całą historię
         świętą, od proroctwa Izajasza po pokłon Mędrców: tę samą drogę, którą za chwilę przejdzie
         ten program. Po polsku znana jako „Cudowna różdżka wzrosła” (przekład ks. Pawła Sikory,
         1912). Sandström osnuwa dawny chorał wokół unoszącego się nad nim kwartetu solistów.
@@ -236,7 +235,7 @@
       voicing: "a 12"
       note: >-
         Krzyk pasterzy trzymających nocną straż nad trzodą. U Vivancosa to zagubiona melodia
-        samotności, która wsłuchana w „echo milczenia” przemienia się w piękno — dwanaście głosów
+        samotności, która wsłuchana w „echo milczenia” przemienia się w piękno. Dwanaście głosów
         rozpisanych na całą przestrzeń nawy.
       inscriptio: "Pastores erant in regione eadem vigilantes"
       inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
@@ -249,7 +248,7 @@
       voicing: "a 5 · TTTBB"
       note: >-
         Adwentowy motet pięciogłosowy na słowa proroka Zachariasza. Renesansowy kontrapunkt
-        Gallusa — Słoweńca z kręgu muzyki cesarskiej — obwieszcza nadejście jak głos rogu:
+        Gallusa, Słoweńca z kręgu muzyki cesarskiej, obwieszcza nadejście jak głos rogu:
         „Oto przychodzi Bóg, Zbawiciel nasz”.
       inscriptio: "Canite tuba in Sion · Ecce Deus salvator noster adveniet"
       inscriptioPl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz"
@@ -275,8 +274,8 @@
       year: "2001"
       voicing: "a 4"
       note: >-
-        Współczesna, prosta kolęda na cztery głosy do wiersza H. M. MacGilla z 1876 roku —
-        po zapowiedziach przychodzą same narodziny.
+        Współczesna, prosta kolęda na cztery głosy do wiersza H. M. MacGilla z 1876 roku. Po
+        zapowiedziach przychodzą same narodziny.
       inscriptioPl: "tekst: H. M. MacGill (1876)"
     - composer: "Tomás Luis de Victoria"
       years: "1548–1611"
@@ -286,7 +285,7 @@
       voicing: "a 8"
       note: >-
         Antyfona maryjna okresu adwentu, śpiewana od 1 grudnia do 2 lutego. Ośmiogłosowy motet
-        Victorii — osiem samodzielnych linii prowadzi ze sobą dialog pokrewny weneckiemu coro
+        Victorii: osiem samodzielnych linii prowadzi ze sobą dialog pokrewny weneckiemu coro
         spezzato, choć o rozstawieniu chóru w przestrzeni sam kompozytor nie zostawił wskazówek.
       inscriptio: "Alma Redemptoris Mater"
       inscriptioPl: "Czcigodna Matko Odkupiciela · antyfona maryjna"
@@ -307,7 +306,7 @@
       movement: nativitas
       voicing: "a 4"
       note: >-
-        Polska kolęda w opracowaniu Mariusza Kramarza — rodzimy głos w tym międzynarodowym
+        Polska kolęda w opracowaniu Mariusza Kramarza: rodzimy głos w tym międzynarodowym
         programie, tuż po współczesnych narodzinach.
       inscriptioPl: "aranżacja współczesna kolędy polskiej"
     - composer: "Philip Stopford"
@@ -318,7 +317,7 @@
       voicing: "a 4"
       note: >-
         Coventry Carol pochodzi z XVI-wiecznego misterium „The Shearmen and Tailors”. To
-        kołysanka śpiewana z perspektywy matki nad skazanym dzieckiem — cień rzezi niewiniątek,
+        kołysanka śpiewana z perspektywy matki nad skazanym dzieckiem: cień rzezi niewiniątek,
         który pada tuż po narodzinach. Stopford ubrał ją w 2008 roku w chłodną współczesną
         harmonię.
       inscriptio: "Coventry Carol — Rzeź Niewiniątek"
@@ -370,7 +369,7 @@
       year: "2001"
       note: >-
         Kantyk Symeona z Ofiarowania w świątyni: „moje oczy ujrzały Twoje zbawienie”. U Pärta,
-        w jego tintinnabuli, to spełnienie obietnicy, od której wieczór się zaczął — starzec może
+        w jego tintinnabuli, to spełnienie obietnicy, od której wieczór się zaczął; starzec może
         odejść w pokoju.
       inscriptio: "Nunc dimittis servum tuum, Domine"
       inscriptioPl: "Teraz, o Władco, pozwól odejść słudze Twemu · kantyk Symeona"
@@ -396,8 +395,8 @@
       year: "1620"
       voicing: "SSATBB"
       note: >-
-        Sześciogłosowy motet, wydany w 1620 roku w zbiorze Giulia Cesare Bianchiego. Radosny
-        trójmiar otwarcia — najpierw w czterech głosach, zaraz potem w pełnej szóstce — prowadzi
+        Sześciogłosowy motet, wydany w 1620 roku w zbiorze Giulia Cesare Bianchiego. Otwiera
+        radosny trójmiar: najpierw cztery głosy, zaraz potem pełna szóstka. Prowadzi
         przez splecione wersety Psalmów 96 i 98: wezwanie do nowej pieśni, którego radość
         słychać w samej fakturze.
       inscriptio: "Cantate Domino canticum novum"
@@ -410,7 +409,7 @@
       voicing: "SATTBB"
       note: >-
         Kolęda z fińsko-szwedzkiego zbioru świętych pieśni Piae Cantiones (1582), w opracowaniu
-        Briana Kaya. Radość jako bis — „Chrystus się narodził” — ostatnie słowo wieczoru.
+        Briana Kaya. Radość jako bis: „Chrystus się narodził”, ostatnie słowo wieczoru.
       inscriptio: "Gaudete, gaudete! Christus est natus"
       inscriptioPl: "Radujcie się! Chrystus się narodził"
       text: |-
@@ -527,12 +526,12 @@
     note: "J. Sykulski — Stoi lód na Prośnie · zapis z widowni · dźwięk na żywo"
     portrait: true
   prologue: >-
-    Pierwszy czerwca 2024, Dworek Gościnny w Szczawnicy — jedyny wieczór tego cyklu poza kościołem.
+    Pierwszy czerwca 2024, Dworek Gościnny w Szczawnicy. Jedyny wieczór tego cyklu poza kościołem.
     Program o wołaniu gór zabrzmiał w górach: za oknami Pieniny. Dwanaście głosów, skrzypce
     Radu Ropotana, dwie części i przerwa.
   reflectionNote: >-
     Góry uczą słuchania: głos posłany w przestrzeń wraca odmieniony. Ten program nasłuchuje,
-    co echo robi z ludzkim wołaniem — czy zostaje krzykiem, czy staje się modlitwą, lotem,
+    co echo robi z ludzkim wołaniem: czy zostaje krzykiem, czy staje się modlitwą, lotem,
     pieśnią. I czy samotny głos może liczyć na odpowiedź.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
@@ -544,7 +543,7 @@
       - { voice: "Tenory", names: ["Paweł Żurawski", "Piotr Szewczyk", "Mateusz Solarz"] }
       - { voice: "Basy", names: ["Michał Jan Barański", "Szymon Maziarz", "Jakub Ciępka"] }
     note: >-
-      Skład wieczoru w Szczawnicy, 1 czerwca 2024; na skrzypcach — Radu Ropotan.
+      Skład wieczoru w Szczawnicy, 1 czerwca 2024; na skrzypcach Radu Ropotan.
   # The composer's own words on the TITLE work — the evening takes its name from this piece,
   # so the quote is load-bearing here (moved from wcielenie, where its essence stays in the
   # work's program note). Full booklet version, with the resolution the short form dropped.
@@ -557,22 +556,22 @@
       zagubiona pieśń otrzymuje odpowiedź tej samej mocy.
     attribution: "Bernat Vivancos"
     about: "o utworze Le cri des bergers, od którego wieczór wziął nazwę"
-  programLede: "Dwanaście pieśni gór — i bis"
+  programLede: "Dwanaście pieśni gór i bis"
   programArc: >-
-    Kolejność prowadzi w górę i z powrotem. Wieczór otwiera wołanie bez słów — pasterskie „Eee-Ooo”
-    z Pirenejów — a zaraz potem to samo wołanie dostaje słowa: Salve Regina pasterzy z Rouergue,
+    Kolejność prowadzi w górę i z powrotem. Wieczór otwiera wołanie bez słów, pasterskie „Eee-Ooo”
+    z Pirenejów, a zaraz potem to samo wołanie dostaje słowa: Salve Regina pasterzy z Rouergue,
     „Ad te clamamus”, do Ciebie wołamy. Stąd program wspina się przez Ave Maria i trzy hymny
     śpiewane przed Najświętszym Sakramentem aż po nocne niebo Ešenvaldsa; tam wypada przerwa.
     Druga część zaczyna nisko i po ludzku, od wiejskiego skrzypka, a potem trzy razy próbuje lotu:
-    ptak Monteverdiego, Bach, i skowronek Vaughana Williamsa, który ginie w świetle. Zostaje powrót
-    na ziemię — lód na Prośnie — i bis, w którym światło zstępuje z tronu z powrotem ku nam.
+    ptak Monteverdiego, Bach, i skowronek Vaughana Williamsa, który ginie w świetle. Zostaje
+    powrót na ziemię: lód na Prośnie. I bis, w którym światło zstępuje z tronu z powrotem ku nam.
   programNote: >-
     Wieczór trwał godzinę i trzy kwadranse, z przerwą; gospodarzami koncertu byli
     Dworek Gościnny i Pieniny Resort & SPA.
   # Default textNote would claim "przekłady polskie własne" — untrue here: Salve Regina,
   # Tantum ergo, O salutaris and the Górecki carry the traditional church translations.
   textNote: >-
-    Teksty łacińskie i oryginalne — z programów zespołu; przekłady polskie hymnów
+    Teksty łacińskie i oryginalne pochodzą z programów zespołu; przekłady polskie hymnów
     i antyfon za tradycją kościelną, pozostałe własne.
   gallery:
     - { img: kd-wolanie-0, alt: "VoctEnsemble podczas próby do koncertu Wołanie Gór", moment: rehearsal }
@@ -588,19 +587,19 @@
       lat: Clamor
       pl: Wołanie
       line: >-
-        Zew pasterzy odbity od zboczy — jeszcze bez słów, sam głos w przestrzeni.
+        Zew pasterzy odbity od zboczy: jeszcze bez słów, sam głos w przestrzeni.
     - id: advocata
       lat: Advocata
       pl: Orędowniczka
       line: >-
-        Wołanie znajduje adresata: Matkę, do której wołają wygnańcy — i kobiety, których praca
+        Wołanie znajduje adresata: Matkę, do której wołają wygnańcy, i kobiety, których praca
         trzyma świat w ruchu.
     - id: sacramentum
       lat: Sacramentum
       pl: Tajemnica ołtarza
       line: >-
-        Trzy hymny przed Najświętszym Sakramentem: dwa do słów św. Tomasza z Akwinu — raz
-        w polifonii korsykańskiej, raz u współczesnego Łotysza — i polska pieśń Góreckiego.
+        Trzy hymny przed Najświętszym Sakramentem: dwa do słów św. Tomasza z Akwinu (raz w
+        polifonii korsykańskiej, raz u współczesnego Łotysza) i polska pieśń Góreckiego.
     - id: astra
       lat: Astra
       pl: Gwiazdy
@@ -611,14 +610,14 @@
       lat: Volatus
       pl: Lot
       line: >-
-        Po przerwie ziemia i powietrze: wiejski skrzypek, zakochany ptak, Bach — i skowronek,
+        Po przerwie ziemia i powietrze: wiejski skrzypek, zakochany ptak, Bach i skowronek,
         który wznosi się, aż zginie w świetle.
     - id: reditus
       lat: Reditus
       pl: Powrót
       line: >-
-        Z nieba z powrotem na ziemię: zamarznięta rzeka, dziewczyna przy młynie — i światło,
-        które zstępuje, by jutro wzejść na nowo.
+        Z nieba z powrotem na ziemię: zamarznięta rzeka, dziewczyna przy młynie. I światło, które
+        zstępuje, by jutro wzejść na nowo.
   program:
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
@@ -627,7 +626,7 @@
       year: "2004"
       voicing: "a 12"
       note: >-
-        Wołanie pasterzy z Pirenejów — jedyny „tekst” tego utworu to zew „Eee-Ooo”. Vivancos,
+        Wołanie pasterzy z Pirenejów; jedyny „tekst” tego utworu to zew „Eee-Ooo”. Vivancos,
         przez lata związany z Escolanią de Montserrat, osnuwa wokół niego dwanaście głosów
         rozpisanych na całą przestrzeń sali. Od tego bezsłownego wołania bierze nazwę cały wieczór.
       inscriptio: "Pastores erant in regione eadem vigilantes"
@@ -637,12 +636,12 @@
       work: "Salve Regina"
       movement: advocata
       note: >-
-        Antyfona maryjna w wersji pasterzy z Rouergue — dawnej krainy w dzisiejszej Oksytanii —
-        i mnichów z miasteczka Estaing. Surowa, prosta polifonia bliska korsykańskiej: wielogłos
+        Antyfona maryjna w wersji pasterzy z Rouergue (dawnej krainy w dzisiejszej Oksytanii) i
+        mnichów z miasteczka Estaing. Surowa, prosta polifonia bliska korsykańskiej: wielogłos
         jest tu formą wspólnoty. Stąd pochodzi zdanie, które stoi jako napis nad całym wieczorem:
-        „Ad te clamamus” — do Ciebie wołamy. Bezsłowne wołanie z pierwszego utworu dostaje tu
+        „Ad te clamamus”, do Ciebie wołamy. Bezsłowne wołanie z pierwszego utworu dostaje tu
         słowa. W nagraniach tej wersji antyfonę domyka Zdrowaś Maryjo recytowane w dialekcie
-        oksytańskim — „Adiu, Maria, siás tot de gràcia…” — modlitwa w mowie, którą pasterze
+        oksytańskim: „Adiu, Maria, siás tot de gràcia…”, modlitwa w mowie, którą pasterze
         naprawdę mówili.
       inscriptio: "Salve, Regina, mater misericordiae"
       inscriptioPl: "Witaj Królowo, Matko Miłosierdzia · antyfona maryjna"
@@ -678,7 +677,7 @@
         Kanadyjski kompozytor pisał ją, zbierając materiały do opery o wydarzeniach w Medziugorju,
         w ogarniętej wówczas wojną Bośni: sześcioro dzieci, którym od czerwca 1981 roku miała się
         codziennie ukazywać Matka Boża, i tłum odmawiający w tym czasie różaniec. Stąd sześć
-        głosów — sześcioro dzieci, sześć partii; utwór na same głosy wysokie. Fermata na ostatnim,
+        głosów: sześcioro dzieci, sześć partii; utwór na same głosy wysokie. Fermata na ostatnim,
         cichym takcie to w zamyśle MacIntyre'a moment zjawienia.
       inscriptioPl: "na sześć głosów wysokich · fermata ciszy na końcu"
     - composer: "Polifonia korsykańska"
@@ -687,7 +686,7 @@
       year: "XVII w."
       note: >-
         Korsykańska polifonia z tradycji franciszkańskiej. Tekst to dwie ostatnie zwrotki hymnu
-        Pange lingua św. Tomasza z Akwinu (XIII w.), śpiewane przy adoracji — najczęściej na
+        Pange lingua św. Tomasza z Akwinu (XIII w.), śpiewane przy adoracji, najczęściej na
         repozycję, gdy Najświętszy Sakrament wraca do tabernakulum.
       inscriptio: "Tantum ergo Sacramentum veneremur cernui"
       inscriptioPl: "Przed tak wielkim Sakramentem upadajmy na twarze · z hymnu Pange lingua"
@@ -727,7 +726,7 @@
       movement: sacramentum
       year: "2005"
       note: >-
-        Znowu św. Tomasz z Akwinu — dwie ostatnie zwrotki hymnu Verbum supernum prodiens,
+        Znowu św. Tomasz z Akwinu: dwie ostatnie zwrotki hymnu Verbum supernum prodiens,
         napisanego na Boże Ciało i śpiewanego przy wystawieniu Najświętszego Sakramentu.
         Ten sam obrzęd co przed chwilą, tylko język o siedem wieków późniejszy: u Ešenvaldsa
         wielowarstwowe harmonie i chóralne klastry.
@@ -762,7 +761,7 @@
       year: "1986"
       note: >-
         Z cyklu dwudziestu jeden Pieśni kościelnych op. 84, które Górecki napisał w Katowicach
-        w 1986 roku, opierając je na melodiach ze Śpiewnika kościelnego ks. Jana Siedleckiego —
+        w 1986 roku, opierając je na melodiach ze Śpiewnika kościelnego ks. Jana Siedleckiego,
         tego samego, z którego śpiewa się w polskich kościołach od pokoleń. Minimalne środki,
         maksymalny efekt. Oryginał jest polski i mówi „Jezu, jesteś niepojęty”; tu zabrzmiała
         wersja łacińska, w której ten sam wers mówi „Jezu, przychodzisz do nas”.
@@ -784,7 +783,7 @@
       year: "2011"
       note: >-
         Wiersz amerykańskiej poetki Sary Teasdale o samotnej nocy pod gwiazdami. Ešenvalds dopisał
-        do chóru szklane harmonijki — strojone kieliszki, po których wodzi się mokrym palcem — żeby
+        do chóru szklane harmonijki (strojone kieliszki, po których wodzi się mokrym palcem), żeby
         brzmiały jak migotanie. Harmonie są otwarte i przestronne; to najwyższy punkt wieczoru,
         i na nim kończy się pierwsza część.
       inscriptioPl: "tekst: Sara Teasdale"
@@ -846,10 +845,10 @@
       year: "1940"
       voicing: "skrzypce solo"
       note: >-
-        Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28 — wspomnień z dzieciństwa
+        Pierwsza z dziesięciu miniatur cyklu Impressions d'enfance op. 28, wspomnień z dzieciństwa
         ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
         i wschód słońca. Ménétrier to wiejski skrzypek, ten od wesel. Otwiera drugą część wieczoru;
-        gra Radu Ropotan — jak Enescu, Rumun.
+        gra Radu Ropotan: jak Enescu, Rumun.
       inscriptioPl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek"
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
@@ -857,10 +856,10 @@
       movement: volatus
       year: "1603"
       note: >-
-        Madrygał z czwartej księgi madrygałów pięciogłosowych, wydanej w Wenecji w 1603 roku —
-        u progu przejścia od renesansowej polifonii do baroku, gdy muzyka zaczyna malować afekty.
+        Madrygał z czwartej księgi madrygałów pięciogłosowych, wydanej w Wenecji w 1603 roku, u
+        progu przejścia od renesansowej polifonii do baroku, gdy muzyka zaczyna malować afekty.
         Ptak, który śpiewa „tak słodko”, jest metaforą zakochanego serca: gdyby miał ludzką duszę,
-        powiedziałby „płonę z miłości” — a drugi ptak mu odpowiada.
+        powiedziałby „płonę z miłości”, a drugi ptak mu odpowiada.
       inscriptio: "Quel augellin che canta sì dolcemente"
       inscriptioPl: "Ten ptaszek, co śpiewa tak słodko · z IV księgi madrygałów"
       text: |-
@@ -896,8 +895,9 @@
       year: "1720"
       voicing: "skrzypce solo"
       note: >-
-        Z trzeciej partity, z cyklu sześciu sonat i partit na skrzypce solo ukończonego w 1720 roku —
-        arcydzieł literatury skrzypcowej. Czysta energia i lekkość: druga w tym programie chwila,
+        Z trzeciej partity, z cyklu sześciu sonat i partit na skrzypce solo ukończonego w 1720
+        roku, arcydzieł literatury skrzypcowej. Czysta energia i lekkość: druga w tym programie
+        chwila,
         gdy zostają same skrzypce, i most między ptakiem Monteverdiego a skowronkiem Vaughana
         Williamsa.
       inscriptioPl: "z Partity na skrzypce solo nr 3 E-dur"
@@ -910,7 +910,7 @@
       note: >-
         Pastoralny poemat na skrzypce, napisany w 1914 roku i zrewidowany w 1920; na prawykonanie
         czekał sześć lat, bo wybuchła wojna. Inspirował go wiersz George'a Mereditha o skowronku
-        wznoszącym się ku niebu — linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
+        wznoszącym się ku niebu; linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
         przepisał utwór na skrzypce i chór, więc słowa Mereditha, w oryginale tylko wypisane nad
         nutami, tutaj naprawdę słychać.
       inscriptioPl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton"
@@ -951,11 +951,11 @@
       year: "2017"
       note: >-
         Sykulski napisał go na zamówienie Agnieszki Franków-Żelazny dla Polskiego Narodowego Chóru
-        Młodzieżowego — jako wokalizę, bez słów. Czegoś w nim jednak brakowało: „utwór nie niósł
+        Młodzieżowego: jako wokalizę, bez słów. Czegoś w nim jednak brakowało: „utwór nie niósł
         żadnego przesłania”. Kompozytor wysłał więc partyturę koledze, a ten w ciągu jednej nocy
-        dopisał całą historię — tak dopasowaną, że w muzyce nie trzeba było zmienić ani nuty.
-        Dziewczyna z Podzamcza płacze nad zamarzniętą Prosną, młyn stoi, chleba nie będzie —
-        a Jan Nepomucen, patron mostów i rzek, stoi przy niej.
+        dopisał całą historię, tak dopasowaną, że w muzyce nie trzeba było zmienić ani nuty.
+        Dziewczyna z Podzamcza płacze nad zamarzniętą Prosną, młyn stoi, chleba nie będzie, a Jan
+        Nepomucen, patron mostów i rzek, stoi przy niej.
       inscriptioPl: "pieśń w idiomie ludowym · słowa dopisane do wokalizy"
       text: |-
         Stoi lód na Prośnie,
@@ -992,7 +992,7 @@
         Indonezyjski kompozytor oparł utwór na skali Melayu, a śpiewane sylaby nic nie znaczą:
         to czysta eksploracja barw ludzkiego głosu. Punktem wyjścia jest wiersz, który Steven
         napisał sam. W partyturze prosi chór, by w pierwszych taktach dodał odgłosy nocnych
-        zwierząt — świerszcza, sowy — a potem, coraz gęściej, świergot ptaków; na końcu wszystko
+        zwierząt (świerszcza, sowy), a potem, coraz gęściej, świergot ptaków; na końcu wszystko
         wraca i cichnie.
       inscriptioPl: "wiersz kompozytora · śpiewane sylaby nie mają znaczenia"
       text: |-
@@ -1044,7 +1044,7 @@
   inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
   inscriptioPl: "Zmiłuj się nade mną, Boże, w swojej łaskawości"
   inscriptioRef: "Ps 51"
-  essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Miserere Allegriego, podzielone na dziewięć części, oplatało cały wieczór — między jego pokutne strofy wchodziły kolejno psalmy dziękczynienia, mądrości i radości."
+  essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Miserere Allegriego, podzielone na dziewięć części, oplatało cały wieczór; między jego pokutne strofy wchodziły kolejno psalmy dziękczynienia, mądrości i radości."
   facts:
     - 9 psalmów
     - 6 / 8 / 9 / 12 głosów
@@ -1070,7 +1070,7 @@
         admission: free,
       }
   prologue: >-
-    Szesnasty listopada 2024, Bazylika NSPJ w Krakowie — trzeci wieczór tego programu, po Rybniku
+    Szesnasty listopada 2024, Bazylika NSPJ w Krakowie. Trzeci wieczór tego programu, po Rybniku
     i Łodzi. Zanim zabrzmi pierwszy dźwięk, o. Przemysław Wysogląd SJ nakreśla kontekst psalmów,
     a przestrzeń rzeźbi światło Ady Bystrzyckiej. Zespół prosi o jedno: nie oklaskiwać
     poszczególnych utworów i zachować ciszę między nimi.
@@ -1084,8 +1084,8 @@
     - { role: "Reżyseria światła", name: "Ada Bystrzycka" }
   programLede: "Dziewięć psalmów, oplecionych Miserere"
   programArc: >-
-    Przy liście utworów zespół dopisał dwa słowa: „kolejność ważna”. Wieczór zaczyna się od pokuty —
-    Miserere Allegriego, Psalm 51 — i natychmiast ją przerywa: psalm zostaje rozcięty na dziewięć
+    Przy liście utworów zespół dopisał dwa słowa: „kolejność ważna”. Wieczór zaczyna się od pokuty
+    (Miserere Allegriego, Psalm 51) i natychmiast ją przerywa: psalm zostaje rozcięty na dziewięć
     części, a między nie wchodzą kolejno chwała, mądrość, prawo, radość, tron, dziękczynienie
     i pieśń nowa. Pokutnik nie dokończy swojej modlitwy, dopóki nie wybrzmi każdy inny głos
     Psałterza; dopiero po ostatnim wraca po raz dziewiąty i dopowiada ją do końca. Tak jak w życiu,
@@ -1094,7 +1094,7 @@
     Skład trzynaściorga wokalistów odnotowano dla wieczoru krakowskiego (16 listopada 2024);
     ten sam program, w tej samej kolejności, zespół wykonał wcześniej w Rybniku i w Łodzi.
   textNote: >-
-    Teksty i przekłady polskie — za programem koncertu.
+    Teksty i przekłady polskie za programem koncertu.
   # No `movements`: this evening has no acts to group. One psalm is cut into nine parts and
   # braided through the other eight, so the braid IS the structure — the clasps carry it.
   gallery:
@@ -1135,7 +1135,7 @@
         solistów przekazywano ustnie, z pokolenia na pokolenie. Czternastoletni Mozart usłyszał ją
         w 1770 roku i spisał z pamięci. Tutaj utwór został rozdzielony na dziewięć części, które
         oplatają pozostałe psalmy: pięciogłosowy chór prowadzi wers po wersie, a czterech solistów
-        odpowiada mu z oddalenia — stąd echo.
+        odpowiada mu z oddalenia; stąd echo.
       inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
       inscriptioPl: "Zmiłuj się nade mną, Boże, w łaskawości swojej"
       inscriptioRef: "Ps 51 (50)"
@@ -1155,7 +1155,7 @@
       work: "Laudate Dominum omnes gentes"
       voicing: "a 12"
       note: >-
-        Psalm 117 jest najkrótszy w całym Psałterzu — dwa wersety, wezwanie skierowane do
+        Psalm 117 jest najkrótszy w całym Psałterzu: dwa wersety, wezwanie skierowane do
         wszystkich narodów. Lassus, Flamandczyk od 1556 roku związany z dworem bawarskim
         w Monachium i autor przeszło dwóch tysięcy utworów, rozpisał je na dwanaście głosów
         w dialogujących chórach: najkrótszy tekst wieczoru dostaje jego największą obsadę.
@@ -1190,10 +1190,10 @@
       year: "1879"
       voicing: "a 8"
       note: >-
-        Gradual napisany dla Ignaza Traumihlera, kierownika chóru w opactwie św. Floriana —
-        tego samego, w którego krypcie Bruckner kazał się później pochować, pod organami.
+        Gradual napisany dla Ignaza Traumihlera, kierownika chóru w opactwie św. Floriana, tego
+        samego, w którego krypcie Bruckner kazał się później pochować, pod organami.
         Kompozytor narzucił sobie regułę równie surową jak prawo, o którym mówi psalm: ani jednego
-        krzyżyka, ani jednego bemola, żadnych akordów septymowych — wszystko w czystej skali
+        krzyżyka, ani jednego bemola, żadnych akordów septymowych, wszystko w czystej skali
         lidyjskiej. Chwalił się tym Traumihlerowi w liście. Po drugiej części Miserere, w której
         pokutnik uznaje swoją winę, wchodzi obraz człowieka sprawiedliwego.
       inscriptio: "Os justi meditabitur sapientiam"
@@ -1228,11 +1228,11 @@
       year: "1905"
       voicing: "a 6"
       note: >-
-        Psalm 119 jest najdłuższy w Psałterzu — sto siedemdziesiąt sześć wersetów o Prawie Bożym.
+        Psalm 119 jest najdłuższy w Psałterzu: sto siedemdziesiąt sześć wersetów o Prawie Bożym.
         Stanford bierze z niego jeden, pierwszy. Motet powstał dla chóru Trinity College
         w Cambridge, gdzie kompozytor był organistą, i ukazał się w 1905 roku w zbiorze trzech
         łacińskich motetów. Sześć głosów dzieli się na dwie trzygłosowe grupy, które podają sobie
-        tę samą frazę — droga, o której mowa, jest tu słyszalna.
+        tę samą frazę; droga, o której mowa, jest tu słyszalna.
       inscriptio: "Beati quorum via integra est"
       inscriptioPl: "Szczęśliwi, których droga nieskalana"
       inscriptioRef: "Ps 119, 1"
@@ -1263,7 +1263,7 @@
         wersety psalmu jak piłkę; kompozytor splata w nim Psalm 149, luterański chorał i wersety
         Psalmu 150. To najradośniejsze i najtrudniejsze ogniwo wieczoru, postawione dokładnie
         naprzeciw pokuty Miserere. Kiedy w 1789 roku Mozart usłyszał ten motet u św. Tomasza
-        w Lipsku, miał zawołać: „Oto nareszcie coś, z czego można się czegoś nauczyć” — i poprosił
+        w Lipsku, miał zawołać: „Oto nareszcie coś, z czego można się czegoś nauczyć”, i poprosił
         o rozłożenie głosów.
       inscriptio: "Singet dem Herrn ein neues Lied"
       inscriptioPl: "Śpiewajcie Panu pieśń nową"
@@ -1301,7 +1301,7 @@
       note: >-
         Gibbons, organista Chapel Royal, napisał ten ośmiogłosowy anthem w 1622 roku jako pracę
         doktorską dla Oksfordu; tekst pochodzi z anglikańskiego psałterza Coverdale'a. Psalm 47
-        sadza Boga na tronie wśród okrzyków i trąb — a chór rozbija się na osiem głosów, żeby ten
+        sadza Boga na tronie wśród okrzyków i trąb, a chór rozbija się na osiem głosów, żeby ten
         tłum było słychać.
       inscriptio: "O clap your hands together, all ye people"
       inscriptioPl: "Wszystkie narody, klaskajcie w dłonie"
@@ -1343,8 +1343,9 @@
       note: >-
         Rossi był Żydem na dworze Gonzagów w Mantui; książę zwolnił go z obowiązku noszenia żółtej
         oznaki, którą musieli nosić pozostali. W zbiorze „Ha-shirim asher li-Shlomo” (Wenecja)
-        jako pierwszy zastosował renesansową polifonię do hebrajskich tekstów liturgicznych —
-        przedmowę, broniącą wielogłosu w synagodze, napisał mu rabin Leon z Modeny. Tu, w programie
+        jako pierwszy zastosował renesansową polifonię do hebrajskich tekstów liturgicznych;
+        przedmowę, broniącą wielogłosu w synagodze, napisał mu rabin Leon z Modeny. Tu, w
+        programie
         ułożonym z psalmów łacińskich, niemieckich i angielskich, wraca ich język pierwotny.
       inscriptio: "Barukh haba b'shem Adonai"
       inscriptioPl: "Błogosławiony, który przybywa w imię Pańskie"
@@ -1384,10 +1385,10 @@
       year: "1619"
       voicing: "a 8 · dwa chóry"
       note: >-
-        Ze zbioru „Psalmen Davids” (Drezno, 1619) — pierwszego wielkiego dzieła Schütza po powrocie
+        Ze zbioru „Psalmen Davids” (Drezno, 1619), pierwszego wielkiego dzieła Schütza po powrocie
         z Wenecji, gdzie uczył się u Giovanniego Gabrielego. Przywiózł stamtąd wielochórowość
         i przyłożył ją do niemieckiego psałterza Lutra. Schütz urodził się dokładnie sto lat przed
-        Bachem; w tym programie oba ich psalmy brzmią po niemiecku i na dwa chóry — słychać
+        Bachem; w tym programie oba ich psalmy brzmią po niemiecku i na dwa chóry; słychać
         stulecie, które je dzieli.
       inscriptio: "Jauchzet dem Herren, alle Welt"
       inscriptioPl: "Wykrzykujcie na cześć Pana, wszystkie ziemie"
@@ -1445,7 +1446,7 @@
       voicing: "a 6 · SSATBB"
       note: >-
         Sześciogłosowy motet wydany w mediolańskim zbiorze Giulia Cesare Bianchiego. Tekst jest
-        spleciony z dwóch psalmów — wersety 98 przeplatają się z wersetem 96 — a wezwanie, od
+        spleciony z dwóch psalmów (wersety 98 przeplatają się z wersetem 96), a wezwanie, od
         którego się zaczyna, słychać już było tego wieczoru u Bacha: śpiewajcie Panu pieśń nową.
         Tym samym motetem zespół zamknął program „Kontemplacji Wcielenia”, od której zaczął się
         cykl; tutaj jest ostatnim słowem chwały przed dziewiątą częścią Miserere.
@@ -1488,8 +1489,8 @@
       work: "Drop, drop, slow tears"
       year: "1623"
       note: >-
-        Wiersz Phineasa Fletchera — wydrukowany dopiero w 1633 roku, choć krążył wcześniej —
-        w melodii Gibbonsa ze zbioru pieśni kościelnych George'a Withera. Ta sama ręka, która dała
+        Wiersz Phineasa Fletchera (wydrukowany dopiero w 1633 roku, choć krążył wcześniej) w
+        melodii Gibbonsa ze zbioru pieśni kościelnych George'a Withera. Ta sama ręka, która dała
         temu wieczorowi jego najbardziej triumfalny psalm, zostawia jego ostatnie i najcichsze
         słowo. Zespół prosił, żeby podczas bisu wyświetlić na ekranach polski tekst: po dziewięciu
         częściach Miserere te łzy miały zostać zrozumiane.
@@ -1579,7 +1580,7 @@
   realizacja: "Organy: Michał Piechnik · Krzysztof Michałek"
   hasPage: true
   prologue: >-
-    Dwudziesty drugi lutego 2025, sobota, godzina dwudziesta — Bazylika Mariacka w Krakowie,
+    Dwudziesty drugi lutego 2025, sobota, godzina dwudziesta. Bazylika Mariacka w Krakowie,
     dwa dni przed trzecią rocznicą pełnoskalowej inwazji na Ukrainę. Zanim padnie pierwsze
     słowo, kościół wypełniają organy; potem archiprezbiter bazyliki wprowadza w modlitwę.
   reflection: >-
@@ -1605,13 +1606,13 @@
       doświadczyli straty, i wyrazem naszej solidarności z narodem ukraińskim.
     attribution: "Anna Kaczka-Marcisz"
     about: "menedżer VoctEnsemble, z zapowiedzi koncertu"
-  programLede: "Modlitwa o pokój — trzynaście ogniw i bis"
+  programLede: "Modlitwa o pokój: trzynaście ogniw i bis"
   programArc: >-
     Kolejność jest tu obrzędem. Wieczór zaczyna się organami, a pierwsze słowo, jakie pada,
     jest po ukraińsku. Potem program schodzi tam, gdzie żałoba naprawdę mieszka: do litanii
     o pokój, do rzek Babilonu, nad którymi wygnańcy zawiesili swoje instrumenty, i do psalmu,
-    który pyta wprost — jak długo jeszcze? Stamtąd prowadzi przez dwie modlitwy o osłonę
-    i przez pogrzeb, aż po hymn, od którego wieczór wziął nazwę — bezsłowny. Dopiero na końcu
+    który pyta wprost: jak długo jeszcze? Stamtąd prowadzi przez dwie modlitwy o osłonę
+    i przez pogrzeb, aż po bezsłowny hymn, od którego wieczór wziął nazwę. Dopiero na końcu
     wolno mówić o świetle, i wtedy dzieje się jedyna rzecz, której nie da się zaśpiewać:
     otwiera się ołtarz.
   programNote: >-
@@ -1622,7 +1623,7 @@
   # Lux aeterna and the Bairstow carry the traditional church / Biblia Tysiąclecia renderings the
   # concert programme itself printed. That programme also printed several texts abridged.
   textNote: >-
-    Teksty oryginalne — z programu koncertu i ksiąg, z których pochodzą; program wieczoru
+    Teksty oryginalne za programem koncertu i księgami, z których pochodzą; program wieczoru
     drukowano ze skrótami. Przekłady polskie hymnów, antyfon i miejsc biblijnych za tradycją
     kościelną, pozostałe własne.
   gallery:
@@ -1658,19 +1659,19 @@
       pl: Żałoba
       line: >-
         Modlitwa zaczyna się od tego, co jest: litania o pokój, rzeki Babilonu, nad którymi
-        wygnańcy zawiesili swoje instrumenty — i psalm, który pyta wprost: jak długo jeszcze?
+        wygnańcy zawiesili swoje instrumenty, i psalm, który pyta wprost: jak długo jeszcze?
     - id: lorica
       lat: Lorica
       pl: Zbroja
       line: >-
-        Dwie modlitwy o osłonę: pancerz św. Patryka, w którym Chrystus staje ze wszystkich
-        stron — i hymn, w którym wierni proszą o siłę, bo „bój srogi” ich nęka.
+        Dwie modlitwy o osłonę: pancerz św. Patryka, w którym Chrystus staje ze wszystkich stron,
+        i hymn, w którym wierni proszą o siłę, bo „bój srogi” ich nęka.
     - id: exsequiae
       lat: Exsequiae
       pl: Nad grobem
       line: >-
-        Cztery ogniwa pogrzebu: lot aniołów nad grobem, hymn poległym — bez jednego słowa —
-        wezwanie do duszy, by się nie trwożyła, i prośba o odpoczynek.
+        Cztery ogniwa pogrzebu: lot aniołów nad grobem, hymn poległym bez jednego słowa, wezwanie
+        do duszy, by się nie trwożyła, i prośba o odpoczynek.
     - id: lux
       lat: Lux
       pl: Światłość
@@ -1679,7 +1680,7 @@
         pl: "Swe miecze przekują na lemiesze; i nie będą się więcej zaprawiać do wojny."
         ref: "Iz 2, 4"
       line: >-
-        Dopiero teraz wolno mówić o świetle — i wtedy otwiera się ołtarz.
+        Dopiero teraz wolno mówić o świetle, i wtedy otwiera się ołtarz.
   program:
     - composer: "J. S. Bach"
       years: "1685–1750"
@@ -1688,8 +1689,8 @@
       year: "ok. 1720"
       voicing: "organy"
       note: >-
-        „Wielka” fantazja i fuga g-moll, wiązana z wizytą Bacha w Hamburgu w 1720 roku — tą
-        samą, podczas której improwizował pół godziny na chorale „An Wasserflüssen Babylon”,
+        „Wielka” fantazja i fuga g-moll, wiązana z wizytą Bacha w Hamburgu w 1720 roku, tą samą,
+        podczas której improwizował pół godziny na chorale „An Wasserflüssen Babylon”,
         a sędziwy Reincken miał powiedzieć, że sądził, iż ta sztuka już umarła. Fantazja jest
         niemal operowa: recytatyw, zawieszenia, chromatyka bez dna. Grał Krzysztof Michałek,
         na wejście, zanim padło pierwsze słowo wieczoru; rzeki Babilonu wrócą tu za chwilę
@@ -1703,8 +1704,8 @@
       note: >-
         Rutter napisał ją w pierwszych tygodniach po rosyjskiej inwazji w 2022 roku i udostępnił
         chórom za darmo, prosząc w zamian o wsparcie dla ofiar wojny. Tekst to „Modlitwa za
-        Ukrainę” Ołeksandra Konyskiego, którą Mykoła Łysenko ułożył w 1885 roku — śpiewana do
-        dziś jako duchowy hymn Ukrainy. Pierwszym słowem tego wieczoru jest więc prośba
+        Ukrainę” Ołeksandra Konyskiego, którą Mykoła Łysenko ułożył w 1885 roku; śpiewana do dziś
+        jako duchowy hymn Ukrainy. Pierwszym słowem tego wieczoru jest więc prośba
         w języku tych, o których się modli.
       inscriptio: "Боже великий, єдиний, нам Україну храни"
       inscriptioPl: "Boże wielki, jedyny, Ukrainę nam chroń"
@@ -1749,7 +1750,7 @@
         Wielka ektenia otwiera prawosławną Boską Liturgię; nazywa się ją także ektenią pokoju,
         bo pierwsze prośby diakona są o pokój z wysokości i o pokój całego świata. Chór odpowiada
         na nie tylko dwoma zdaniami. Rachmaninow napisał Liturgię św. Jana Chryzostoma w 1910
-        roku w niespełna trzy tygodnie — było to jego pierwsze dzieło cerkiewne; siedem lat
+        roku w niespełna trzy tygodnie. Było to jego pierwsze dzieło cerkiewne; siedem lat
         później opuścił Rosję na zawsze. Tego wieczoru jego prośba o pokój całego świata
         zabrzmiała zaraz po modlitwie za Ukrainę.
       inscriptioPl: "z Liturgii św. Jana Chryzostoma · odpowiedzi chóru"
@@ -1766,7 +1767,7 @@
       year: "1581"
       voicing: "a 4"
       note: >-
-        Motet czterogłosowy wydany w 1581 roku. Psalm 137 — pieśń wygnańców, którzy nad rzekami
+        Motet czterogłosowy wydany w 1581 roku. Psalm 137, pieśń wygnańców, którzy nad rzekami
         Babilonu odłożyli muzykę: powiesili swoje instrumenty na wierzbach, bo nie umieli śpiewać
         pieśni Pańskiej w obcej ziemi. Palestrina prowadzi cztery głosy z całkowitym spokojem;
         żałoba jest tu w tym, co ucichło.
@@ -1791,10 +1792,10 @@
       movement: luctus
       voicing: "organy"
       note: >-
-        Organowe opracowanie chorału na melodię, którą świat zna dziś jako chorał pasyjny —
-        „O Haupt voll Blut und Wunden”, tę samą, którą Bach pięć razy przywołał w Pasji
+        Organowe opracowanie chorału na melodię, którą świat zna dziś jako chorał pasyjny: „O
+        Haupt voll Blut und Wunden”, tę samą, którą Bach pięć razy przywołał w Pasji
         Mateuszowej. Sam tekst chorału jest parafrazą Psalmu 6, pierwszego z psalmów pokutnych,
-        w którym dusza pyta wprost: jak długo jeszcze? Tu słów nie było — grał je na organach
+        w którym dusza pyta wprost: jak długo jeszcze? Tu słów nie było. Grał je na organach
         Michał Piechnik; kto zna melodię, ten je usłyszał.
       inscriptioPl: "opracowanie organowe chorału · parafraza Psalmu 6"
     - composer: "Arvo Pärt"
@@ -1805,7 +1806,7 @@
       voicing: "a 4"
       note: >-
         Pärt napisał go na zamówienie irlandzkiego Louth Contemporary Music Society. Tekst to
-        fragment „Pancerza św. Patryka” — modlitwy, którą według podania święty odmówił, idąc
+        fragment „Pancerza św. Patryka”, modlitwy, którą według podania święty odmówił, idąc
         nawracać króla Tary; jego ludzie mieli zobaczyć wtedy zamiast wędrowców stado jeleni,
         stąd druga nazwa: krzyk jelenia. To modlitwa ochronna: Chrystus ustawia się dookoła
         mówiącego ze wszystkich stron. Pärt w swoim tintinnabuli powtarza ją tak, jak powtarza
@@ -1841,10 +1842,10 @@
       movement: lorica
       year: "2005"
       note: >-
-        Ten sam hymn, który zabrzmiał w „Wołaniu Gór” — dwie ostatnie zwrotki Verbum supernum
+        Ten sam hymn, który zabrzmiał w „Wołaniu Gór”: dwie ostatnie zwrotki Verbum supernum
         prodiens św. Tomasza z Akwinu, śpiewane przy wystawieniu Najświętszego Sakramentu.
-        Tutaj słychać w nim jednak co innego: „bella premunt hostilia, da robur, fer auxilium” —
-        bój srogi nęka wiernych Ci, daj siłę, pomoc ześlij nam. Trzynastowieczny hymn
+        Tutaj słychać w nim jednak co innego: „bella premunt hostilia, da robur, fer auxilium”,
+        czyli bój srogi nęka wiernych Ci, daj siłę, pomoc ześlij nam. Trzynastowieczny hymn
         eucharystyczny mówi o wojnie wprost; jako jedyny tekst tego wieczoru zespół wydrukował
         go w programie w całości.
       inscriptio: "O salutaris Hostia, quae caeli pandis ostium"
@@ -1877,11 +1878,11 @@
       movement: exsequiae
       year: "1993"
       note: >-
-        Tavener napisał go po śmierci Athene Hariades — młodej aktorki, przyjaciółki rodziny,
+        Tavener napisał go po śmierci Athene Hariades, młodej aktorki i przyjaciółki rodziny,
         która zginęła w wypadku na rowerze. Tekst ułożyła matka Thekla, prawosławna mniszka
         i wieloletnia współpracowniczka kompozytora: splata w nim słowa Horacja z „Hamleta”
         („niech aniołów loty niosą cię do snu”) z prawosławnym nabożeństwem żałobnym. Pod
-        chórem trwa przez cały czas nieruchomy burdon basów — ison. Świat usłyszał ten utwór
+        chórem trwa przez cały czas nieruchomy burdon basów: ison. Świat usłyszał ten utwór
         w 1997 roku, gdy przy jego dźwiękach wynoszono z Opactwa Westminsterskiego trumnę
         księżnej Diany.
       inscriptioPl: "tekst: matka Thekla · Szekspir i prawosławne nabożeństwo żałobne"
@@ -1910,7 +1911,7 @@
       year: "1998"
       note: >-
         Z muzyki do „Szeregowca Ryana” Stevena Spielberga. Chór nie śpiewa w nim ani jednego
-        słowa — sama wokaliza; Williams pisał go nie pod konkretną scenę, lecz jako hymn dla
+        słowa: sama wokaliza; Williams pisał go nie pod konkretną scenę, lecz jako hymn dla
         poległych. Bez imion i bez języka, więc i bez granic. Od tego utworu wieczór wziął nazwę.
       inscriptioPl: "z muzyki do filmu „Szeregowiec Ryan” · chór bez słów"
     - composer: "Jean Sibelius"
@@ -1919,13 +1920,13 @@
       movement: exsequiae
       year: "1899"
       note: >-
-        Melodia pochodzi z finału poematu symfonicznego Finlandia, który Sibelius napisał
-        w 1899 roku — w roku, w którym carska Rosja ograniczyła autonomię Finlandii i nałożyła
+        Melodia pochodzi z finału poematu symfonicznego Finlandia, który Sibelius napisał w 1899
+        roku, gdy carska Rosja ograniczyła autonomię Finlandii i nałożyła
         cenzurę na fińską prasę. Utwór grywano wtedy pod zmyślonymi tytułami, żeby ominąć zakaz;
         stał się pieśnią oporu narodu, który nie miał jeszcze państwa. Do tej melodii dołożono
         później hymn Kathariny von Schlegel z 1752 roku, w angielskim przekładzie Jane Borthwick:
         nie trwóż się, duszo ma. W koncercie za poległych Ukrainy zabrzmiała więc fińska melodia
-        wolności — ze słowami o ukojeniu.
+        wolności ze słowami o ukojeniu.
       inscriptioPl: "słowa: K. von Schlegel (1752), przekład ang. J. Borthwick · zwrotka III"
       text: |-
         Be still, my soul: the hour is hastening on
@@ -1949,7 +1950,7 @@
       note: >-
         Czwarta i jedyna solowa część Requiem Fauré, pisana na głos chłopięcy. W całej swojej
         mszy żałobnej Fauré zrezygnował z sekwencji Dies irae, która w innych requiem zajmuje
-        najwięcej miejsca: nie ma tu sądu ani trwogi. Nazwano to dzieło „kołysanką śmierci” —
+        najwięcej miejsca: nie ma tu sądu ani trwogi. Nazwano to dzieło „kołysanką śmierci”;
         kompozytor się nie spierał, tak właśnie widział śmierć. Tekst to dwa zdania: zmiłuj się
         i daj odpoczynek.
       inscriptio: "Pie Jesu Domine, dona eis requiem"
@@ -1970,10 +1971,10 @@
       voicing: "a 8"
       rubric: "Podczas utworu otwarto ołtarz Wita Stwosza"
       note: >-
-        Nimrod to dziewiąta z Wariacji Enigma — portret Augusta Jaegera, wydawcy i przyjaciela,
+        Nimrod to dziewiąta z Wariacji Enigma: portret Augusta Jaegera, wydawcy i przyjaciela,
         który w chwili zwątpienia przekonał Elgara, żeby nie przestawał pisać. Jäger znaczy po
         niemiecku „myśliwy”, a Nimrod był biblijnym myśliwym: stąd nazwa. Wielka Brytania gra tę
-        muzykę nad grobami — co roku przy Cenotaph w Londynie, w Niedzielę Pamięci. John Cameron
+        muzykę nad grobami, co roku przy Cenotaph w Londynie, w Niedzielę Pamięci. John Cameron
         podłożył pod nią komunię z Mszy żałobnej: światłość wiekuistą.
       inscriptio: "Lux aeterna luceat eis, Domine"
       inscriptioPl: "Światłość wieczna niechaj im świeci, Panie · komunia z Mszy żałobnej"
@@ -1991,10 +1992,10 @@
       voicing: "organy"
       note: >-
         Hymn Ukrainy: słowa Pawła Czubynskiego z 1862 roku, melodia ks. Mychajły Werbyckiego,
-        greckokatolickiego duchownego — „jeszcze nie umarła Ukraina, ani jej chwała, ani wola”.
+        greckokatolickiego duchownego: „jeszcze nie umarła Ukraina, ani jej chwała, ani wola”.
         Tytularny organista Bazyliki Mariackiej zaimprowizował na ten temat przy już otwartym
         ołtarzu. Z wieży tego samego kościoła co godzinę gra się hejnał, który urywa się w pół
-        dźwięku — na pamiątkę najazdu.
+        dźwięku, na pamiątkę najazdu.
       inscriptioPl: "hymn Ukrainy · słowa: P. Czubynski (1862), melodia: ks. M. Werbycki"
       clasp: "Błogosławieństwo · ks. inf. Dariusz Raś"
     - composer: "Edward C. Bairstow"
@@ -2076,7 +2077,7 @@
       venue: "Kościół św. Bartłomieja Apostoła, Niedzica"
       time: "18:00"
   prologue: >-
-    Czternasty września 2025, dolny kościół w Mistrzejowicach — święto Podwyższenia Krzyża
+    Czternasty września 2025, dolny kościół w Mistrzejowicach. Święto Podwyższenia Krzyża
     Świętego, w przeddzień wspomnienia Matki Bożej Bolesnej. Zespół prosi o jedno: żeby wieczór
     wybrzmiał w ciszy, jako jedno dzieło.
   reflection: >-
@@ -2087,7 +2088,7 @@
   reflectionAttribution: "VoctEnsemble · wrzesień 2025"
   reflectionNote: >-
     Program prowadzi drogą, którą chrześcijaństwo zna od wieków: od modlitwy nad grobem, przez
-    lament matki i prośbę o pokój, przez obraz męki — aż po zawierzenie Tej, która stała
+    lament matki i prośbę o pokój, przez obraz męki, aż po zawierzenie Tej, która stała
     pod krzyżem.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
@@ -2109,22 +2110,22 @@
       - { voice: "Bas I", names: ["Dawid Janowiak", "Adam Dawiec"] }
       - { voice: "Bas II", names: ["Szymon Maziarz", "Jakub Ciępka"] }
     note: >-
-      Skład wieczoru w Mistrzejowicach, 14 września 2025 — za notą prasową zespołu.
+      Skład wieczoru w Mistrzejowicach, 14 września 2025, za notą prasową zespołu.
   pullQuote:
     text: >-
       Tam, gdzie ludność cywilna, dzieci i rodziny noszą na sobie ślady wojny, pytamy: czym
       jest dziś sprawiedliwość, pamięć i miłosierdzie? Jaki napis wyryć na grobie Gazy?
     attribution: "VoctEnsemble"
     about: "z zapowiedzi koncertu"
-  programLede: "Muzyczna modlitwa — dziewięć ogniw i bis"
+  programLede: "Muzyczna modlitwa: dziewięć ogniw i bis"
   programArc: >-
     Kolejność jest tu modlitwą, nie opowieścią. Wieczór otwierają słowa, które Kościół śpiewa
     nad grobem, a zaraz potem schodzi najniżej, jak zejść można: do krzyku matki nad zabitymi
-    dziećmi. Stamtąd prowadzi przez trzy prośby o pokój i przez ciężar krzyża — aż do miejsca,
+    dziećmi. Stamtąd prowadzi przez trzy prośby o pokój i przez ciężar krzyża, aż do miejsca,
     gdzie nawet jaskółka ma gniazdo, i do ostatniego refrenu, w którym całe stworzenie raduje się.
   programNote: >-
     Przerywniki instrumentalne różniły się między wieczorami: w Mistrzejowicach kwartet smyczkowy
-    grał Psalom Arvo Pärta, w Niedzicy Joanna Indyk — części suit wiolonczelowych Bacha.
+    grał Psalom Arvo Pärta, w Niedzicy Joanna Indyk grała części suit wiolonczelowych Bacha.
     Powyższa lista obejmuje ogniwa wspólne dla obu wykonań.
   movements:
     - id: epitaphium
@@ -2137,7 +2138,7 @@
       lat: Ploratus
       pl: Lament niewinnych
       line: >-
-        Rachel opłakuje swoje dzieci — w tradycji biblijnej figura każdej matki, której
+        Rachel opłakuje swoje dzieci: w tradycji biblijnej figura każdej matki, której
         odebrano dziecko.
     - id: oratio
       lat: Oratio pro pace
@@ -2153,7 +2154,7 @@
         pl: "Na widok miasta zapłakał nad nim: O gdybyś i ty poznało to, co służy pokojowi!"
         ref: "Łk 19, 41–42"
       line: >-
-        W połowie wieczoru — ciężar krzyża, wypisany chromatyką ośmiu głosów.
+        W połowie wieczoru: ciężar krzyża, wypisany chromatyką ośmiu głosów.
     - id: refugium
       lat: Refugium
       pl: Schronienie
@@ -2164,7 +2165,7 @@
       lat: Commendatio
       pl: Zawierzenie
       line: >-
-        Zostaje zawierzenie Tej, która stała pod krzyżem — i obietnica, którą niesie ostatni
+        Zostaje zawierzenie Tej, która stała pod krzyżem, i obietnica, którą niesie ostatni
         refren.
   gallery:
   # Two evenings, two runs, already in the order they were sung. The venues are per frame for the
@@ -2189,7 +2190,7 @@
       duration: "10′"
       note: >-
         Część Requiem katalońskiego kompozytora, przez lata związanego z chórem chłopięcym
-        Escolania de Montserrat. Podstawą jest Introit Mszy za zmarłych — słowa odmawiane nad
+        Escolania de Montserrat. Podstawą jest Introit Mszy za zmarłych, słowa odmawiane nad
         grobami od wieków. Vivancos zestawia współczesną heterofonię z prostotą dawnego chorału.
       inscriptioPl: "Introit Mszy za zmarłych"
       text: |-
@@ -2206,9 +2207,10 @@
       voicing: "a 4"
       duration: "4′"
       note: >-
-        Motet ze zbioru Communiones totius anni, wydanego w Wenecji w 1611 roku. Tekst — werset
-        Jeremiasza przywołany w Ewangelii Mateusza — Zieleński opracował tak, że nakładające się
-        głosy same stają się krzykiem. Rachel, matka Józefa i Beniamina, jest w tradycji biblijnej
+        Motet ze zbioru Communiones totius anni, wydanego w Wenecji w 1611 roku. Zieleński
+        opracował ten tekst, werset Jeremiasza przywołany w Ewangelii Mateusza, tak że nakładające
+        się głosy same stają się krzykiem. Rachel, matka Józefa i Beniamina, jest w tradycji
+        biblijnej
         figurą matki opłakującej wszystkie niewinne ofiary; motet śpiewano w liturgii dnia
         Świętych Młodzianków.
       inscriptioRef: "Mt 2, 18"
@@ -2232,7 +2234,7 @@
       note: >-
         Napisane na prośbę Jordiego Savalla trzy dni po zamachach w Madrycie 11 marca 2004 roku.
         Pärt wpisał średniowieczną antyfonę w swój styl tintinnabuli, odnaleziony po dziesięcioletnim
-        okresie twórczego milczenia. Prosta formuła wraca tu jak oddech — trwa, zamiast prowadzić
+        okresie twórczego milczenia. Prosta formuła wraca tu jak oddech: trwa, zamiast prowadzić
         do kulminacji.
       inscriptioPl: "antyfona średniowieczna"
       text: |-
@@ -2254,8 +2256,8 @@
       duration: "6′"
       note: >-
         Norweski kompozytor opracował responsorium O magnum mysterium na chór i solową wiolonczelę.
-        Głos instrumentu, porównywany do ludzkiego, prowadzi z chórem intymny dialog. Tekst mówi
-        o narodzinach — w tym programie o narodzinach Księcia Pokoju.
+        Głos instrumentu, porównywany do ludzkiego, prowadzi z chórem intymny dialog. Tekst mówi o
+        narodzinach; w tym programie o narodzinach Księcia Pokoju.
       inscriptio: "O magnum mysterium"
       inscriptioPl: "responsorium Bożego Narodzenia"
       text: |-
@@ -2307,7 +2309,7 @@
         Fragment Credo z mszy Lottiego, kompozytora działającego w Wenecji na przełomie XVII
         i XVIII wieku. Zachowały się jego liczne opracowania tego tekstu na różne obsady; wersja
         ośmiogłosowa należy do najbardziej przejmujących. Chromatyczne prowadzenie głosów i gęsta
-        faktura tworzą obraz ciężaru krzyża — barokowa ekspresja podporządkowana teologii pasyjnej.
+        faktura tworzą obraz ciężaru krzyża: barokowa ekspresja podporządkowana teologii pasyjnej.
       inscriptioPl: "z Credo Mszy"
       text: |-
         Crucifixus etiam pro nobis sub Pontio Pilato:
@@ -2325,7 +2327,7 @@
       note: >-
         Amerykańska kompozytorka, laureatka Nagrody Pulitzera, napisała ten utwór na zamówienie
         Nederlands Kamerkoor do cyklu „150 Psalms”. Kameralna obsada i lekka faktura odróżniają go
-        od reszty programu: zamiast lamentu — obraz najmniejszych stworzeń, które przy ołtarzu
+        od reszty programu: zamiast lamentu przychodzi obraz najmniejszych stworzeń, które przy ołtarzu
         znajdują gniazdo. Tym samym psalmem zespół zamknął zapowiedź wieczoru: nadzieją, że
         nadejdzie dzień, kiedy każdy będzie mógł wypowiedzieć „Jak miłe są przybytki Twoje, Panie”.
       inscriptioRef: "Ps 84, 2–4. 7"
@@ -2363,7 +2365,7 @@
       note: >-
         Część monumentalnego cyklu The Veil of the Temple (Zasłona Przybytku), prawykonanego
         w londyńskim Temple Church w 2003 roku; tekst pochodzi z poezji Michaiła Lermontowa.
-        Muzyka trwa w zupełnej statyce, bez kulminacji — jak ikona w dźwięku. W tym programie
+        Muzyka trwa w zupełnej statyce, bez kulminacji, jak ikona w dźwięku. W tym programie
         cisza jest kulminacją: gestem zawierzenia ofiar Gazy.
       inscriptioPl: "tekst: Michaił Lermontow"
       text: |-
@@ -2392,7 +2394,7 @@
       note: >-
         Jeden z najbardziej znanych utworów chóralnych Tavenera, napisany ku pamięci jego matki,
         do tekstu z liturgii bizantyjskiej. Kompozytor zestawia dwa sześciogłosowe chóry, których
-        nakładające się frazy tworzą rezonans i przestrzeń — dialog ziemi z niebem. Ostatni refren
+        nakładające się frazy tworzą rezonans i przestrzeń: dialog ziemi z niebem. Ostatni refren
         przenosi wieczór od bólu ku obietnicy.
       inscriptioPl: "tekst z liturgii bizantyjskiej"
       text: |-
@@ -2431,7 +2433,7 @@
       duration: "3′"
       note: >-
         Łotewski kompozytor opracował fragment hymnu Vexilla regis Wenancjusza Fortunata (VI w.).
-        To hymn święta Podwyższenia Krzyża Świętego — tego samego dnia, w którym zespół śpiewał
+        To hymn święta Podwyższenia Krzyża Świętego, tego samego dnia, w którym zespół śpiewał
         ten program po raz pierwszy. Prosta, niemal archaiczna faktura zamyka wieczór prośbą
         o przebaczenie.
       inscriptioPl: "z hymnu Vexilla regis · Wenancjusz Fortunat (VI w.)"
