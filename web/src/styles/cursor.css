@@ -253,130 +253,124 @@
   transform: translateY(2px);
 }
 
-/* ── Frame state — the viewfinder over a photograph that opens ────────────
-   Triggered over any `[data-image-open]`. It is deliberately NOT a fifth ring: the
-   thing under the cursor is a picture, and a ring is the site's mark for a control.
-   A viewfinder says the same thing about a photograph that a ring says about a link.
-   It reaches the two archive surfaces (/obrazy, a concert page's gallery) and nothing
-   else — the landing's Imagines panels are doors to their evening, not triggers.
+/* ── Frame state — the loupe over a photograph that opens ─────────────────
+   Triggered over any `[data-image-open]`. A ring, as the site's other media states are, but
+   what it holds is the photograph underneath at the rendition the frame will OPEN — the same
+   file `scripts/image-triggers.ts` warms on the same hover, sampled by useSiteCursor and handed
+   here as the `--lens*` custom properties.
 
-   THREE THINGS THIS FIGURE CANNOT DO WITHOUT, all found by looking at it on a photograph:
+   Which is the whole argument for this figure over any drawn one. A mark held over a photograph
+   costs the reader the patch of picture it stands on, and the picture is the thing they are
+   deciding about; a lens gives that patch back with more in it than the panel can show, because
+   the panel is serving a 560 or 1200 rendition and the frame's own is up to 1920. It is the one
+   shape whose footprint is not a debt.
 
-   `border-radius: 0` is load-bearing. The base cursor is a pill (999px), backgrounds are
-   clipped to the border box, and a rounded box cuts a corner tick down to the fragment
-   that survives inside the curve — eight ticks become eight dots on a circle, which is
-   precisely what a clipped viewfinder looks like and nothing like a viewfinder.
+   THE MAGNIFICATION IS THE PRESS. `--lens-z` deepens under `.is-down` rather than the box
+   changing size — the hook owns the factor AND the sampling, so the point under the ring's
+   centre stays exactly where it is while the ground opens up under it. A box that shrank
+   instead would move the sampled centre, and the site's press cue is a glyph that goes the way
+   it is about to go: down for the download arrow, sideways for the frame arrows, INTO the
+   picture here.
 
-   THE TICKS DO NOT MEET AT THE CORNER. Brackets that close a corner are the universal
-   "expand to fullscreen" glyph, and no amount of fine drawing stops four of them reading
-   as a stock control. A printer's registration mark leaves the corner itself void and sets
-   its two strokes back from it, which is what this is.
+   THE LENS IS `::before` AND NOT THE ELEMENT'S OWN BACKGROUND. The element carries the ring,
+   the rim and the width/height transition between the two variants below; a background painted
+   on it would inherit that transition and read as the photograph stretching rather than as the
+   lens growing.
 
-   WHAT MAKES IT READ AS A CORNER IS THE VOID BETWEEN THE TWO TICKS ON A SIDE, and that is a
-   RATIO, not a length — which is the thing the first drawing got wrong by taking the absolute
-   numbers of the same figure drawn at plate scale into a box a tenth of its size. At plate
-   scale it is 12px ticks on a ~296px box, so each side is 12 · 254 · 12 and the middle is
-   21× the ink: unmistakably four
-   corners. Scaled into 38px the same 9px ticks left a middle of 8px — SHORTER than the ink
-   either side of it — so all four sides read as evenly broken lines and the figure was a
-   marching-ants selection box, which is what a dashed rectangle over a photograph means
-   everywhere else. 6px ticks set back 4px leave 18px, three times the ink, and the corner
-   returns. The two copies stay one FIGURE (ticks, set back, corner void); they cannot be one
-   proportion, because at 38px a 21:1 middle would mean a tick under half a pixel.
+   The rim is `box-shadow` and never `filter` — an element with a filter becomes a backdrop
+   root, and states one screen away in this same file ask the compositor for a backdrop.
 
-   The stroke is heavier and brighter than that printed mark: 2px of --glyph against its
-   1px of --candle. They are the same figure, but the printed one is STILL and the eye finds
-   it at leisure, while this one is moving over changing luminance — a hairline in mid gold
-   disappears into a lit nave and is not much better on a dark one.
-
-   Legibility over a highlight is the DROP-SHADOW's job and not a ground's, and the
-   difference matters here: a shadow follows the alpha of what is drawn, so each of the
-   eight ticks carries its own dark halo, where a radial plate would have been darkest at
-   the centre — the one place this figure has no ink and the reader is looking THROUGH it.
-   `mix-blend-mode: normal` for the reason .is-video has it: difference-blended gold over a
-   chiaroscuro photograph inverts unpredictably from frame to frame.
-
-   THE FIGURE IS SPLIT ACROSS BOTH PSEUDO SLOTS AND THE ELEMENT CARRIES NO `filter`, which
-   looks like an odd way to draw eight rectangles and is the only way to draw them over a
-   lens. An element with a `filter` becomes a backdrop root: any `backdrop-filter` inside it
-   then samples an empty backdrop and blurs nothing at all. So the ticks and their halo live
-   on ::after with the halo as ::after's OWN filter, and ::before is left free to be glass. */
-/* 38px, and the size is a correction: at 46 this was a large object standing on a photograph the
-   reader is examining rather than a mark held over it. The other states can afford their diameter
-   because what is under them is chrome or footage; here the surface IS the content. */
+   WHEN THERE IS NOTHING TO MAGNIFY the ring keeps a drawn glyph, and that case is not an edge:
+   a trigger can be a NAME rather than a picture (the colophon opens a photographer's frames
+   from hers), and every lens has the fraction of a second before its rendition decodes. The
+   plate mark holds both, over type as well as over a photograph — which is why nothing in this
+   state blurs its backdrop. */
 .site-cursor.is-frame {
-  width: 38px;
-  height: 38px;
-  border-color: transparent;
-  border-radius: 0;
-  background-color: transparent;
+  width: 44px;
+  height: 44px;
+  border-color: rgba(226, 205, 149, 0.82);
+  background-color: rgba(8, 8, 7, 0.42);
   background-image: none;
   opacity: 1;
   mix-blend-mode: normal;
+  /* Named here rather than on the base cursor: the rim below arrives with the glass, and it has
+     to travel on the same 0.28s the ring's diameter does or it snaps on mid-growth. The base
+     element cannot carry it — `.is-autoscroll` drives box-shadow from a keyframe, and a
+     transition on the same property fights the animation for it. */
+  transition:
+    width 0.28s var(--ease, ease),
+    height 0.28s var(--ease, ease),
+    opacity 0.28s var(--ease, ease),
+    border-color 0.28s var(--ease, ease),
+    background-color 0.28s var(--ease, ease),
+    box-shadow 0.28s var(--ease, ease);
 }
 
-/* The lens. A viewfinder that only outlines is a shape on top of a photograph; one that holds
-   ground glass is an instrument being held over it — and the press then means what it looks
-   like, because releasing the blur is exactly what opening the frame does. Deliberately
-   shallow: this rides over the photograph the reader is deciding about, and a heavy blur would
-   hide the thing being decided. Same instinct as .is-video's ring, one state further on. */
+/* 60px, and the number is duplicated in useSiteCursor (LENS_SIZE) because the hook must know
+   the lens's own centre to place what it samples there. The two have to be changed together.
+   Bigger than any other state for the reason the state exists: a loupe you cannot read through
+   is an ornament. The dark hairline OUTSIDE the gold one is what keeps the rim off a blown
+   highlight — gold on a lit nave has nothing to sit against. */
+.site-cursor.is-frame.has-lens {
+  width: 60px;
+  height: 60px;
+  border-color: rgba(232, 207, 144, 0.9);
+  background-color: rgba(8, 8, 7, 0.2);
+  box-shadow:
+    0 0 0 1px rgba(8, 8, 7, 0.55),
+    0 10px 26px -12px rgba(0, 0, 0, 0.9);
+}
+
+/* The glass. Inert until the hook publishes a rendition — `--lens` unset resolves to `none`
+   and the disc paints nothing at zero opacity, so the ring above stands alone with its glyph. */
 .site-cursor.is-frame::before {
   content: "";
   display: block;
   position: absolute;
-  inset: 3px;
-  background: rgba(8, 8, 7, 0.12);
-  -webkit-backdrop-filter: blur(2.5px);
-  backdrop-filter: blur(2.5px);
-  transition:
-    -webkit-backdrop-filter 0.26s var(--ease, ease),
-    backdrop-filter 0.26s var(--ease, ease);
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  background-repeat: no-repeat;
+  background-image: var(--lens, none);
+  background-size: var(--lens-w, auto) var(--lens-h, auto);
+  background-position: var(--lens-x, 0) var(--lens-y, 0);
+  transition: opacity 0.3s var(--ease, ease);
 }
 
-/* The centre dot is not part of this figure — a viewfinder frames, it does not aim — so the
-   slot is repurposed for the mark itself. */
+.site-cursor.is-frame.has-lens::before {
+  opacity: 1;
+}
+
+/* The plate: a filled gold rectangle with a dark aperture punched at its shoulder. Filled
+   rather than outlined for the reason the frame arrows are — a hairline figure in mid gold
+   disappears into a lit nave, and this one has to hold over a name set in parchment too. */
 .site-cursor.is-frame::after {
-  position: absolute;
-  inset: 0;
-  width: auto;
-  height: auto;
-  border-radius: 0;
+  width: 15px;
+  height: 11px;
+  border-radius: 1px;
   background-color: transparent;
+  background-image:
+    radial-gradient(circle at 4px 3.2px, rgba(8, 8, 7, 0.92) 0 1.7px, transparent 1.8px),
+    linear-gradient(var(--glyph), var(--glyph));
+  margin: 0;
   opacity: 1;
   transform: none;
-  background-image:
-    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
-    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
-    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph)),
-    linear-gradient(var(--glyph), var(--glyph)), linear-gradient(var(--glyph), var(--glyph));
-  background-repeat: no-repeat;
-  background-size:
-    6px 2px, 2px 6px,
-    6px 2px, 2px 6px,
-    6px 2px, 2px 6px,
-    6px 2px, 2px 6px;
-  background-position:
-    left 4px top, left top 4px,
-    right 4px top, right top 4px,
-    left 4px bottom, left bottom 4px,
-    right 4px bottom, right bottom 4px;
-  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 9px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.9));
+  transition: opacity 0.24s var(--ease, ease), transform 0.24s var(--ease, ease);
 }
 
-/* Press: the viewfinder closes on the frame and the glass clears — which is what pressing it
-   is about to do to the whole photograph. The ticks keep their own size while the box shrinks,
-   so the middle void closes from 18px to 10px — the corners visibly converging, which is the
-   gesture. It is also the floor: any smaller box here and the ink meets the void and the mark
-   goes back to reading as a dashed rectangle. */
+/* Once the glass is up the plate has said its piece — two marks in one ring is one too many. */
+.site-cursor.is-frame.has-lens::after {
+  opacity: 0;
+}
+
 .site-cursor.is-frame.is-down {
-  width: 30px;
-  height: 30px;
-  border-color: transparent;
+  border-color: rgba(244, 241, 233, 0.94);
 }
 
-.site-cursor.is-frame.is-down::before {
-  -webkit-backdrop-filter: blur(0px);
-  backdrop-filter: blur(0px);
+/* The lensless press keeps a glyph that grows, since it has no ground to go into. */
+.site-cursor.is-frame.is-down::after {
+  transform: scale(1.28);
 }
 
 /* ── Frame halves — the arrow the press will perform ──────────────────────

@@ -13,7 +13,7 @@
  *  (the photograph's own box, with the trigger's decoded rendition blurred underneath it until the
  *  full one lands), the two halves that turn the set, and the counter in the caption row. The
  *  arrow the pointer takes over those halves is not here — a cursor state belongs to cursor.css,
- *  where the viewfinder over a `[data-image-open]` trigger lives too.
+ *  where the loupe over a `[data-image-open]` trigger lives too.
  * @architecture Astro islands 2026
  * @module styles/image-lightbox
  */

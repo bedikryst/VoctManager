@@ -40,6 +40,60 @@ const AUTOSCROLL_DEADZONE = 12;
 const AUTOSCROLL_RAMP = 60;
 const AUTOSCROLL_MAX = 40;
 
+// The loupe over a `[data-image-open]` photograph (styles/cursor.css, `.is-frame.has-lens`).
+//   SIZE  — the lens's diameter, and the same 60 the stylesheet draws. The sampled point has to
+//           land at the lens's own centre, so these are one number kept in two files.
+//   Z     — magnification against the rendition the PAGE is showing. A trigger publishes the
+//           frame's renditions (up to 1920) where its panel is served 560 or 1200, so at this
+//           factor the lens is still reading real pixels rather than stretching the panel's.
+//   PRESS — where Z travels while the button is held. The lens pushing INTO the picture is the
+//           press cue, in place of a box that changes size and takes the sampled centre with it.
+//   LERP  — how fast it travels. Slower than the follower's 0.24 on purpose: magnification that
+//           snaps reads as a glitch, magnification that eases reads as glass.
+const LENS_SIZE = 60;
+const LENS_Z = 2.2;
+const LENS_Z_PRESS = 2.9;
+const LENS_Z_LERP = 0.16;
+
+/**
+ * Lens renditions, keyed by the trigger's `data-image-src`. The value is the candidate the
+ * browser CHOSE, not the attribute: the loader hands it the trigger's own `sizes` + `srcset`
+ * unchanged so it resolves to the same file `scripts/image-triggers.ts` warms on the same hover.
+ * Requesting `src` directly would pull the 1920 into a window that had already fetched the 1200
+ * — a second copy of a photograph already on its way.
+ *
+ * Module scope rather than effect scope because a decoded photograph outlives a hover, and the
+ * hook mounts once per document. Nothing is evicted: one short string per photograph the pointer
+ * has actually rested on.
+ */
+const lensSources = new Map<string, string>();
+/** Requests in flight, so a pointer resting on a panel asks once instead of once per frame. */
+const lensRequested = new Set<string>();
+
+/** The rendition to sample, or `null` while it is still arriving — the ring keeps its drawn
+ *  plate until then, and the frame after the decode lands is the one that lights the glass. */
+const lensSourceFor = (trigger: HTMLElement): string | null => {
+  const key = trigger.dataset.imageSrc;
+  if (!key) return null;
+  const ready = lensSources.get(key);
+  if (ready) return ready;
+  if (lensRequested.has(key)) return null;
+  lensRequested.add(key);
+  const img = new Image();
+  img.decoding = "async";
+  // `sizes` before `srcset` before `src`: the candidate is chosen the moment the source set is,
+  // and an unset `sizes` at that moment is chosen against a 100vw default.
+  if (trigger.dataset.imageSizes) img.sizes = trigger.dataset.imageSizes;
+  if (trigger.dataset.imageSrcset) img.srcset = trigger.dataset.imageSrcset;
+  img.src = key;
+  const settle = (): void => {
+    lensSources.set(key, img.currentSrc || key);
+  };
+  if (img.complete && img.naturalWidth > 0) settle();
+  else img.addEventListener("load", settle, { once: true });
+  return null;
+};
+
 export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): void {
   useEffect(() => {
     const el = cursorRef.current;
@@ -69,6 +123,61 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
     // hovers a video then clicks play without moving the mouse would see the play glyph
     // stick around even though the video is now running).
     let currentVideo: HTMLVideoElement | null = null;
+
+    // Loupe state: the rendition being sampled and the photograph's box in viewport coordinates,
+    // both captured on move. The painting itself happens per frame in render(), because it has
+    // to follow the position the cursor is DRAWN at rather than the pointer's.
+    let lensUrl: string | null = null;
+    let lensRect: DOMRect | null = null;
+    let lensZ = LENS_Z;
+
+    const clearLens = (): void => {
+      if (!lensUrl) return;
+      lensUrl = null;
+      lensRect = null;
+      lensZ = LENS_Z;
+      el.classList.remove("has-lens");
+      el.style.removeProperty("--lens");
+      el.style.removeProperty("--lens-w");
+      el.style.removeProperty("--lens-h");
+      el.style.removeProperty("--lens-x");
+      el.style.removeProperty("--lens-y");
+    };
+
+    /**
+     * Put the point the lens is standing on at the lens's centre.
+     *
+     * Sampled at (currentX, currentY) — where the ring is DRAWN — and not at the pointer, because
+     * the follower trails the mouse by render()'s lerp: a lens magnifying where the mouse IS
+     * would show something other than what it is sitting on, which is the one mistake this figure
+     * cannot survive.
+     *
+     * Clamped to the photograph's own edges, as a loupe reaching the margin of a print stops
+     * panning rather than sliding off onto the table. A photograph narrower than the lens has no
+     * room to pan at all and is centred instead — neither gallery packs one that small, but any
+     * trigger can reach this state.
+     */
+    const paintLens = (): void => {
+      const rect = lensRect;
+      if (!rect) return;
+      const wanted = el.classList.contains("is-down") ? LENS_Z_PRESS : LENS_Z;
+      lensZ += (wanted - lensZ) * LENS_Z_LERP;
+      const w = rect.width * lensZ;
+      const h = rect.height * lensZ;
+      const half = LENS_SIZE / 2;
+      const x =
+        w > LENS_SIZE
+          ? Math.min(0, Math.max(LENS_SIZE - w, half - (currentX - rect.left) * lensZ))
+          : (LENS_SIZE - w) / 2;
+      const y =
+        h > LENS_SIZE
+          ? Math.min(0, Math.max(LENS_SIZE - h, half - (currentY - rect.top) * lensZ))
+          : (LENS_SIZE - h) / 2;
+      el.style.setProperty("--lens-w", `${w}px`);
+      el.style.setProperty("--lens-h", `${h}px`);
+      el.style.setProperty("--lens-x", `${x}px`);
+      el.style.setProperty("--lens-y", `${y}px`);
+    };
 
     // Autoscroll state — engaged on middle-click outside interactive elements. Replaces the
     // OS-level autoscroll widget (the 4-arrow icon) with our cursor's .is-autoscroll glyph,
@@ -157,6 +266,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
         "is-frame-prev",
         "is-frame-next",
       );
+      clearLens();
       // Pause Lenis so its lerp loop doesn't fight our discrete scrollBy ticks.
       getLenis()?.stop?.();
       if (autoscrollRaf === null) autoscrollRaf = window.requestAnimationFrame(autoscrollTick);
@@ -180,6 +290,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       currentX += (targetX - currentX) * 0.24;
       currentY += (targetY - currentY) * 0.24;
       el.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%)`;
+      if (lensUrl) paintLens();
       raf = window.requestAnimationFrame(render);
     };
 
@@ -200,7 +311,7 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       // mutually exclusive states with distinct cursor visuals:
       //   .is-seek    — caret + timestamp (the cursor IS the scrub tooltip)
       //   .is-video   — ring + ▶/⏸ glyph (paused/playing reflects video.paused)
-      //   .is-frame   — viewfinder over a photograph that opens (`[data-image-open]`)
+      //   .is-frame   — loupe over a photograph that opens (`[data-image-open]`)
       //   .is-frame-prev / .is-frame-next — the arrow the half of an open frame will perform
       //   .is-download — ring + ↓ arrow (line + triangle stacked vertically)
       //   .is-pointer — ring + small dot (standard link/button)
@@ -235,10 +346,12 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       // photograph, so the generic branch below would give it the link ring AND the magnetic
       // snap — and a panel 370 × 462 pulls the cursor a long way toward its own centre, which
       // over a picture reads as the pointer being taken away from what it is pointing at. Its
-      // own state removes both: the glyph is a viewfinder (a printer's registration mark, four
-      // corner ticks — styles/cursor.css), and being here rather than in the interactive branch
-      // is what leaves `snapEl` null. A surface that wraps a photograph in an ordinary LINK gets
-      // neither for free and has to opt out of the snap by hand (the landing's Imagines plate).
+      // own state removes both: the glyph is a loupe holding the photograph magnified
+      // (styles/cursor.css), and being here rather than in the interactive branch is what leaves
+      // `snapEl` null — which the lens needs harder than the ring ever did, since a drifting
+      // target would show the reader a patch of picture their hand is not on. A surface that
+      // wraps a photograph in an ordinary LINK gets neither for free and has to opt out of the
+      // snap by hand (the landing's Imagines plate).
       //
       // Inside an open frame the two halves declare which way they turn it, and the cursor
       // becomes that arrow — the affordance those halves deliberately do not draw.
@@ -296,6 +409,27 @@ export function useSiteCursor(cursorRef: React.RefObject<HTMLElement | null>): v
       el.classList.toggle("is-frame-prev", frameStep === "frame-prev");
       el.classList.toggle("is-frame-next", frameStep === "frame-next");
       el.classList.toggle("is-download", onDownload);
+
+      // The loupe measures the IMAGE's box, not the trigger's. The two coincide on both galleries
+      // (`width: 100%; height: auto` — the panel IS the photograph, uncropped), and the
+      // distinction is what keeps the state honest where they would not: a trigger that is a NAME
+      // rather than a picture has no `<img>` to measure and keeps the ring's drawn plate, which
+      // is the colophon's row of photographers.
+      const lensImg =
+        onFrame && !frameStep && frameEl ? frameEl.querySelector<HTMLImageElement>("img") : null;
+      const nextLens = frameEl && lensImg ? lensSourceFor(frameEl) : null;
+      if (lensImg && nextLens) {
+        lensRect = lensImg.getBoundingClientRect();
+        if (nextLens !== lensUrl) {
+          lensUrl = nextLens;
+          el.style.setProperty("--lens", `url("${nextLens}")`);
+          el.classList.add("has-lens");
+        }
+        paintLens();
+      } else {
+        clearLens();
+      }
+
       syncPlayingClass();
       if (raf === null) render();
     };
