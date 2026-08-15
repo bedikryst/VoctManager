@@ -498,15 +498,16 @@
   # projection screen that fills its top half, so a near-white rectangle with a hard horizontal
   # edge sat above the fold and split the title across two tones, and the same frame is already
   # `kd-wolanie-5` in the gallery below, which had the page showing one photograph twice.
-  # BOTH masters are cut hard to the LEFT of the frame — `kd-wolanie-sala` keeps it whole. The
-  # chandelier hangs a metre from the lens, so it survives any crop at foreground scale, and every
-  # wider cut only enlarged what it kept: centred it lays a row of a dozen lit candles straight
-  # across the title's own line, and a dozen bright points in even rhythm beat display type every
-  # time; cut off at both edges it stops reading as a chandelier at all and becomes an unlit mass
-  # in front of the camera. Pulled left it is a trace at the margin — a few candle tips and one
-  # corner — and the room, the raking light and the empty seats carry the frame, which is what the
-  # photograph is for.
-  #   -desktop = 3400×1913 at x 0, y 300.
+  # BOTH masters are cut from `kd-wolanie-sala`, which keeps the room whole. The chandelier hangs
+  # a metre from the lens and holds the RIGHT third at foreground scale — the side the layout
+  # leaves empty, since `.kd-hero-inner` is a 1180 column whose type never crosses the middle.
+  # What the crop has to protect is the left: the raking shaft, the haze and the rows of empty
+  # seats are the ground the title is set on. Cutting narrower than this eats into the chandelier
+  # from the right until it stops reading as one and becomes an unlit mass in front of the camera,
+  # and it marches the lower tier's row of lit candles inward across the type — a dozen bright
+  # points in even rhythm beat display type every time. At this width the row stays clear of the
+  # inscriptio's right edge, which is what pins the geometry; do not narrow it.
+  #   -desktop = 4600×2588 at x 0, y 150.
   #   -mobile  = 1851×4024 at x 700 (0.46, the phone's own aspect).
   # An empty hall reads as the threshold rather than the evening, which is the one place in this
   # cycle where that is right: `prologue` below stands the reader in the doorway.
