@@ -22,13 +22,23 @@ import { fileURLToPath, URL } from "node:url";
 
 /**
  * Build identity stamped into the bundle and attached to every in-app feedback
- * report. Without it a report is unanchored in time: with a service worker able
- * to serve a shell from days ago, "already fixed" and "still broken" look
- * identical in the triage queue. Falls back to the timestamp alone outside a
- * git checkout (CI export, tarball) rather than failing the build.
+ * report. Without it a report is unanchored: with a service worker able to serve
+ * a shell from days ago, "already fixed" and "still broken" look identical in the
+ * triage queue.
+ *
+ * `APP_BUILD_SHA` is checked before git because the production build runs inside
+ * Docker, where `.git` is excluded from the context — `git rev-parse` there finds
+ * no repository and the commit would be missing from exactly the builds that
+ * matter. The Makefile resolves it on the host and passes it through as a build
+ * arg. The git call is the local `npm run build` path; the bare timestamp is the
+ * last resort (a source tarball), never a build failure.
  */
 const resolveBuildId = (): string => {
   const stamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+
+  const injected = process.env.APP_BUILD_SHA?.trim();
+  if (injected) return `${stamp} · ${injected}`;
+
   try {
     const sha = execSync("git rev-parse --short HEAD", {
       stdio: ["ignore", "pipe", "ignore"],

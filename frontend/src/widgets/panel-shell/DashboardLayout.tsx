@@ -24,6 +24,7 @@ import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
+import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
 import { useOfflineSync } from "@/shared/offline/useOfflineSync";
 import { OfflineStatusBadge } from "@/shared/offline/OfflineStatusBadge";
 import { InstallAppPrompt } from "@/shared/pwa/InstallAppPrompt";
@@ -67,6 +68,7 @@ export const DashboardLayout = ({
   const location = useLocation();
   const queryClient = useQueryClient();
   const offlineSync = useOfflineSync();
+  const dockBarHeight = useBottomBarHeight();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
   // The chorister's first-run welcome is a full-screen moment that owns the
@@ -209,14 +211,22 @@ export const DashboardLayout = ({
       </main>
       <ProjectInvitationToasts />
       <CustomAdminMessageToast />
-      {/* Bottom dock — stacks the transient offline + install affordances and the
-          permanent feedback button so they never overlap, clear of the mobile nav
-          (safe-area aware). Sits a notch higher than the editor save bars so an
-          offline badge is never hidden by one. Lives at body level already, so no
-          Portal is needed here. The column itself is transparent to pointers:
-          it spans the full width, and every child re-arms its own hit area, so
-          without this it would swallow taps meant for the page beneath. */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--nav-dock-h)+2.25rem)] z-40 flex flex-col items-center gap-2">
+      {/* The shell's ambient column — offline badge, install prompt, and the
+          permanent feedback button — stacked so they can never overlap each other,
+          clear of the mobile nav (safe-area aware). Lives at body level already,
+          so no Portal is needed here.
+
+          `--dock-bar-h` is the measured height of whatever contextual bar (save,
+          autosave, bulk, practice player) currently owns the band below; the
+          `floating-dock` utility rides above it and settles back when it leaves.
+          Ambient yields to what the member is doing, and neither one covers the
+          other. The column is transparent to pointers: it spans the full width
+          and every child re-arms its own hit area, so without this it would
+          swallow taps meant for the page beneath. */}
+      <div
+        className="pointer-events-none floating-dock fixed inset-x-0 z-40 flex flex-col items-center gap-2"
+        style={{ "--dock-bar-h": `${dockBarHeight}px` } as React.CSSProperties}
+      >
         <OfflineStatusBadge {...offlineSync} />
         {/* The chorister's full-screen welcome owns the install ask while it's on
             screen — the ambient pill stays quiet until the member has crossed the

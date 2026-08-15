@@ -46,9 +46,14 @@ ARG VITE_GOOGLE_MAPS_FRONTEND_KEY
 ARG VITE_GOOGLE_MAP_ID
 ARG VITE_VAPID_PUBLIC_KEY
 ARG VAPID_PUBLIC_KEY
+# Commit the bundle is built from, stamped into it for feedback reports. Resolved
+# on the host (see the Makefile): `.git` is excluded from the build context, so
+# vite's own `git rev-parse` cannot answer this from inside the image.
+ARG APP_BUILD_SHA
 ENV VITE_API_URL=$VITE_API_URL \
     VITE_GOOGLE_MAPS_FRONTEND_KEY=$VITE_GOOGLE_MAPS_FRONTEND_KEY \
-    VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID
+    VITE_GOOGLE_MAP_ID=$VITE_GOOGLE_MAP_ID \
+    APP_BUILD_SHA=$APP_BUILD_SHA
 
 # Production build.
 #  - max-old-space-size=4096: rollup graphs for 3000+ modules with sourcemaps

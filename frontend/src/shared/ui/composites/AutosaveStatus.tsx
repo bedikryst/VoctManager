@@ -17,6 +17,7 @@ import { Check, Loader2 } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
+import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 
@@ -41,6 +42,7 @@ export const AutosaveStatus = ({
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>("idle");
   const wasSaving = useRef(false);
+  const slotRef = useBottomBarSlot();
 
   useEffect(() => {
     if (isSaving) {
@@ -68,6 +70,7 @@ export const AutosaveStatus = ({
       {phase !== "idle" && (
         <motion.div
           key="autosave-status"
+          ref={slotRef}
           role="status"
           aria-live="polite"
           initial={{ y: 60, opacity: 0, x: "-50%" }}

@@ -16,6 +16,7 @@ import { Save } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
+import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -64,6 +65,7 @@ export const EditorActionBar = ({
   className,
 }: EditorActionBarProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const slotRef = useBottomBarSlot();
 
   const resolvedEyebrow =
     eyebrow ?? t("common.editor_action_bar.unsaved", "Niezapisane zmiany");
@@ -76,6 +78,7 @@ export const EditorActionBar = ({
       {isOpen && (
         <motion.div
           key="editor-action-bar"
+          ref={slotRef}
           role="status"
           aria-live="polite"
           initial={{ y: 100, opacity: 0, x: "-50%" }}

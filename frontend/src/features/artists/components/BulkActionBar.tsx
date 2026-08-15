@@ -15,6 +15,7 @@ import { Archive, CheckCheck, RotateCcw, X } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 import { Portal } from "@/shared/lib/dom/Portal";
+import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 
 interface BulkActionBarProps {
   selectedTotal: number;
@@ -43,10 +44,12 @@ export const BulkActionBar = ({
 }: BulkActionBarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const allSelected = selectedTotal >= visibleCount && visibleCount > 0;
+  const slotRef = useBottomBarSlot();
 
   return (
     <Portal>
     <motion.div
+      ref={slotRef}
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}

@@ -1336,6 +1336,18 @@ class FeedbackNotificationTests(TestCase):
             self.assertIn("nie gra.", rendered)
 
     @patch("core.services.send_transactional_email_task")
+    def test_boolean_context_reads_as_words_not_python(self, task):
+        """`online` is a real bool in the snapshot, and `str(True)` puts Python's
+        own repr in front of a human reading the mail on a phone."""
+        report = self._report(context={"online": False, "viewport": "390x844"})
+
+        FeedbackService.notify_maintainer(report)
+
+        rows = {row["label"]: row["value"] for row in task.delay.call_args.kwargs["context"]["rows"]}
+        self.assertEqual(rows["Online"], "Nie")
+        self.assertEqual(rows["Viewport"], "390x844")
+
+    @patch("core.services.send_transactional_email_task")
     def test_purged_reporter_does_not_break_the_notification(self, task):
         """SET_NULL keeps the report after a GDPR erasure; the e-mail must still
         be sendable — a defect outlives the account that found it."""

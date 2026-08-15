@@ -600,6 +600,20 @@ class FeedbackService:
         return f"[{report.get_kind_display()}] {excerpt}"
 
     @staticmethod
+    def _format_context_value(value: Any) -> str:
+        # A bare str() on a bool renders Python's own repr ("True") into a
+        # human-facing e-mail. The rest of the snapshot is already strings.
+        #
+        # Literal Polish rather than gettext: this context is assembled in the
+        # REQUEST, under the reporter's active locale, while the template that
+        # consumes it is Polish by construction and dispatched with
+        # fallback_language="pl". Translating here would put a lone "Oui" in an
+        # otherwise Polish e-mail whenever a francophone member files a report.
+        if isinstance(value, bool):
+            return "Tak" if value else "Nie"
+        return str(value)
+
+    @staticmethod
     def notify_maintainer(report: FeedbackReport) -> None:
         """
         Pushes a new report to the maintainer's inbox so it is seen during a
@@ -616,7 +630,9 @@ class FeedbackService:
         reporter_label = (
             f"{reporter.get_full_name() or reporter.email} <{reporter.email}>"
             if reporter is not None
-            else _("Deleted account")
+            # Polish for the same reason as the booleans above: one e-mail, one
+            # voice, resolved here in whatever locale the reporter happened to use.
+            else "Konto usunięte"
         )
         logger.info("Feedback report %s captured; notifying maintainer.", report.id)
         send_transactional_email_task.delay(
@@ -629,7 +645,10 @@ class FeedbackService:
                 "route": report.route,
                 "reporter": str(reporter_label),
                 "rows": [
-                    {"label": key.replace("_", " ").title(), "value": str(value)}
+                    {
+                        "label": key.replace("_", " ").title(),
+                        "value": FeedbackService._format_context_value(value),
+                    }
                     for key, value in report.context.items()
                     if key != "last_error"
                 ],

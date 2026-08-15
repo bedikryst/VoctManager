@@ -16,7 +16,14 @@ COMPOSE_PROD = docker compose -f docker-compose.yml -f docker-compose.prod.yml
 # Dockerfile (frontend's panel-builder and web-builder) still overlap; serialising
 # those needs a dependency edge that would also make a panel change invalidate the
 # Astro image pass, so it is deliberately left alone.
-BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1
+BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git rev-parse --short HEAD 2>/dev/null)
+
+# The commit the panel bundle was built from, stamped into it and carried by every
+# in-app feedback report. It has to be resolved HERE: `.git` is excluded by
+# .dockerignore (it would push the whole history through the build context), so a
+# `git` call inside the image has nothing to read and the bundle would fall back to
+# a bare timestamp — leaving "already fixed" and "still broken" indistinguishable
+# in the triage queue, which is the one thing the stamp exists to prevent.
 
 .PHONY: up prod deploy gc down logs shell migrate seed superuser
 

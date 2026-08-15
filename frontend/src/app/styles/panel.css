@@ -154,6 +154,7 @@
        too short — the rendered dock is ~4.25rem before any safe-area inset. */
     --nav-dock-h: calc(4.25rem + max(env(safe-area-inset-bottom), 0.5rem));
     --bottom-dock-gap: calc(var(--nav-dock-h) + 0.875rem);
+    --floating-dock-gap: calc(var(--nav-dock-h) + 2.25rem);
   }
 
   /* A fine pointer gets the hover sidebar, not the bottom dock — so there is no
@@ -162,6 +163,7 @@
     :root {
       --nav-dock-h: 0px;
       --bottom-dock-gap: 2.5rem;
+      --floating-dock-gap: 2.5rem;
     }
   }
 
@@ -269,6 +271,40 @@
 
 @utility bottom-dock {
   bottom: var(--bottom-dock-gap);
+}
+
+/* The shell's floating column (offline badge, install prompt, feedback button):
+   a notch above `bottom-dock`, because the two bands are NOT the same job. A
+   contextual bar is what the member is doing right now and owns the space; the
+   column is ambient and must get out of its way.
+
+   A notch is not enough on its own — a save bar is 60–130px tall on a phone and
+   full-width, so at rest the column sits inside it and is painted over (z-40 vs
+   z-dock-bar). `--dock-bar-h` is published by `useBottomBarSlot`: the measured
+   height of the tallest bar currently on screen, zero when the band is free. The
+   column translates clear of it and settles back when the bar leaves.
+
+   translateY, not `bottom`, so the move is compositor-only. The side effect is
+   deliberate and worth knowing: a transform makes this element the containing
+   block for any `position: fixed` descendant, so anything inside that must stay
+   viewport-anchored (a sheet, a modal) has to portal out — which the surfaces
+   living here already do. */
+@utility floating-dock {
+  bottom: var(--floating-dock-gap);
+  transform: translateY(
+    calc(
+      -1 * max(
+        0px,
+        var(--bottom-dock-gap) + var(--dock-bar-h, 0px) + 0.75rem -
+          var(--floating-dock-gap)
+      )
+    )
+  );
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 }
 
 @utility no-scrollbar {

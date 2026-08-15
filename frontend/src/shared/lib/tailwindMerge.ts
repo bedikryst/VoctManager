@@ -70,9 +70,13 @@ export const etherealTwMerge = extendTailwindMerge({
         },
       ],
       // Nav-dock clearance: a real padding-bottom / bottom offset, and must
-      // therefore be overridable by (and override) a stock one.
+      // therefore be overridable by (and override) a stock one. `floating-dock`
+      // is named here rather than derived, since its class carries no `bottom-`
+      // prefix; it also sets a transform, which this ledger cannot express — one
+      // more reason it stays the shell's own utility and not a general-purpose
+      // one handed a caller's className.
       pb: [{ pb: ["nav-dock"] }],
-      bottom: [{ bottom: ["dock"] }],
+      bottom: [{ bottom: ["dock"] }, "floating-dock"],
       animate: ["ethereal-breath"],
     },
   },

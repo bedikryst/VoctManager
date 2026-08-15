@@ -13,6 +13,7 @@ import { Loader2, Music2, Pause, Play, X } from "lucide-react";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { Portal } from "@/shared/lib/dom/Portal";
+import { useBottomBarSlot } from "@/shared/lib/dom/useBottomBarSlot";
 import { usePracticePlayer } from "./PracticePlayerProvider";
 import { formatPlayerTime } from "./VoiceMixerPanel";
 
@@ -20,6 +21,7 @@ export const MiniPlayerBar = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { engine, snapshot } = usePracticePlayer();
   const location = useLocation();
+  const slotRef = useBottomBarSlot();
 
   const piece = snapshot.piece;
   const piecePath = piece
@@ -36,6 +38,7 @@ export const MiniPlayerBar = (): React.JSX.Element => {
     <AnimatePresence>
       {isVisible && piece && piecePath && (
         <motion.div
+          ref={slotRef}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 24 }}

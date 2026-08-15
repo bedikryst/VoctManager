@@ -3,14 +3,19 @@
  * @description The always-available way to report something, and the sheet it
  * opens.
  *
- * Anchoring: this renders as a member of the shell's bottom-dock column, not as
- * its own fixed element. That column already owns the band above the mobile nav
- * and stacks whatever is transiently in it (offline badge, install prompt), so
- * joining it is what keeps a permanent button from landing on top of a pill that
- * appears without warning — flexbox spaces them, nothing has to guess the other's
- * height. It stays BELOW the nav's own z-layer: a floating button that paints
- * over navigation is a trap, not an affordance, which also means every modal and
- * sheet simply covers it.
+ * Anchoring: this renders as a member of the shell's ambient floating column, not
+ * as its own fixed element. That column already owns the band above the mobile
+ * nav and stacks whatever is transiently in it (offline badge, install prompt),
+ * so joining it is what keeps a permanent button from landing on top of a pill
+ * that appears without warning — flexbox spaces them, nothing has to guess the
+ * other's height. The column in turn rides above whatever contextual bar owns the
+ * band below it (see the `floating-dock` utility), which is what stops a save bar
+ * or the practice player from burying the one control a member reaches for when
+ * something has gone wrong.
+ *
+ * It stays BELOW the nav's own z-layer: a floating button that paints over
+ * navigation is a trap, not an affordance, which also means every modal and sheet
+ * simply covers it.
  * @architecture Enterprise SaaS 2026
  * @module features/feedback/components/FeedbackDock
  */
