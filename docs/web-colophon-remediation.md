@@ -34,10 +34,12 @@ emitted CSS re-measured for every cascade claim, and the orphan sweep over `dist
 clean (matching an ordinary space, not `\s`, per the guardrails' Python gotcha). Em-dashes inside
 `<main>`: 5 → 1. What remains is in **Open**, and none of it is a defect on this page.
 
-**A later pass shipped 2026-08-15** — three changes on the page (the lede's last sentence, a frame
-tally in `Imagines`, a `Wideo` row), `dateModified` off the graph, and five of this page's own
-decisions applied to the surfaces that share its content. See **Pass 2026-08-15** below; it also
-supersedes the author-address item in **Open**.
+**Two later passes shipped 2026-08-15.** The first: three changes on the page (the lede's last
+sentence, a frame tally in `Imagines`, a `Wideo` row), `dateModified` off the graph, and five of
+this page's own decisions applied to the surfaces that share its content — it also supersedes the
+author-address item in **Open**. The second (`15b`): `Imagines` became the page's only interactive
+rubric, each name opening its own frames through a new authored-set form of the
+`[data-image-open]` contract. Both are below, in order.
 
 ---
 
@@ -700,11 +702,66 @@ the `Gratiarum actio` lede. The metric in the 2026-08-01 audit is stale, not vio
 
 **Considered and not done.** A photo rail beside the `Imagines` names — `web-imagines-spec.md §2`
 rejects thumbnail grids for this archive because these are low-contrast chiaroscuro frames that
-render as black rectangles when small, and a rail is that failure in a narrower strip. A lightbox
-on each name is *possible* (the machinery is `data-image-group` + the two islands, and `/obrazy`
-already emits the renditions) and was deliberately deferred behind the tally: a bare name that
-turns out to be pressable is a hidden affordance, whereas "8 fot." beside it is a legible
-invitation. Revisit only with the counts on the page.
+render as black rectangles when small, and a rail is that failure in a narrower strip. **Do not
+re-propose.**
+
+---
+
+## Pass 2026-08-15b — `Imagines` opens its frames
+
+The lightbox, shipped the same day once the tally was on the page. It was staged behind the count
+on purpose and the staging is the design: a bare name that turns out to be pressable is a hidden
+affordance, where "8 fot." beside it is a legible invitation. **The order was the point — do not
+read this as two passes that could have been one.**
+
+**What it answers that nothing else on the site does.** `/obrazy` is ordered by evening, so a
+photographer is scattered across it by construction; no surface could say *which of these are
+hers* until this one. Seven triggers, 21 frames: Grudzińska 8, Przybył 4, Gonet 3, Czajkowski 2,
+Płachetko 2, Garbacz 1, PieninyInfo 1.
+
+**A second form of the `[data-image-open]` contract, and why.** The set is AUTHORED as JSON on the
+one element that opens it (`data-image-set`), not collected by `data-image-group`. The group form
+is a DOM walk over the frames themselves, and this page shows no photograph — satisfying it would
+have meant emitting a row of hidden `[data-image-open]` carriers per hand, i.e. inventing markup so
+a lookup would work. Both forms arrive at the island as an `ImageFrameSet` and the room cannot tell
+them apart, which is what keeps this an extension rather than a mode. Documented in
+`lib/imageFrame.ts` (the contract's owner); three touch points in `scripts/image-triggers.ts`
+(`collect`, `preload`, the click guard). `JSON.parse` is wrapped — a throw inside a delegated
+CAPTURE-phase listener would take down every other trigger on the page, the vault's included.
+
+**Two things measured rather than assumed.**
+
+- **Zero new emitted images.** 620 emitted / 75 pruned, byte-identical to the build before the
+  lightbox, because `framedShot` is the same helper `/obrazy` calls and Astro dedupes the
+  transform. This was the main cost risk and it is not one.
+- **+5.0 KB gzip for the whole feature** (HTML + `image-lightbox.css` + the island), 117.7 → 122.7.
+  The JSON itself is +13.9 KB raw but only +1.5 KB gzip — 21 `srcset` strings sharing a path prefix
+  are close to free once compressed. Worth knowing before anyone "optimises" the payload into a
+  lookup table.
+
+**The room opens without a `thumb`, and that is unavoidable here.** Every other trigger on the site
+is a photograph, so it hands the room its own decoded rendition to stand under the frame while the
+full one loads. A name has none. The compensation is `preload` on hover, extended to warm an
+authored set's FIRST item — which is why that branch exists and must not be tidied away. On touch
+there is no hover and the frame opens dark for one load; accepted.
+
+**Traps for whoever touches the CSS.** `.kol-collab-open` deliberately carries **no `font`
+shorthand**: `font: inherit` resets family and size, `.kol-collab-name` (worn by the same element)
+sets both, the two tie at (0,1,0), and the shorthand would win on source order and set six
+photographers in the UA's system font. Verified in the emitted CSS. `justify-self: start` is
+load-bearing too — the row's first track is `1fr`, and a stretched button rules its hairline out to
+the column's width instead of the name's.
+
+**The hairline stands at REST**, which is `/obrazy`'s argument for its `↗` and binds harder here:
+`Gratiarum actio` below uses the identical row shape and is not pressable, so a mark that appeared
+only under a pointer would leave a reader who never hovers unable to tell the two lists apart.
+
+**Verification.** `astro check` 0 errors, build green, register audit clean (R10 only). All seven
+payloads parse, all 21 frames carry `href` back to their evening, singular/plural correct in the
+Polish `aria-label` (`otwórz fotografię` / `fotografie`). WCAG 2.5.3 holds — every accessible name
+opens with the visible text. Copy metrics unchanged: 0 orphans, 3 em-dashes (the pre-existing
+ones), 0 leaked comments. The seven new tab stops are real actions, which is the exact opposite of
+the four removed from the landing footer in the pass above.
 
 ---
 

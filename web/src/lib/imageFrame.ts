@@ -10,6 +10,23 @@
  *  island has exactly one shape to render, and arrow navigation needed no surface migrated to
  *  reach it: a trigger without `data-image-group` simply publishes itself.
  *
+ *  TWO WAYS A TRIGGER NAMES ITS SET, and which one a surface uses is decided by whether the
+ *  photographs are ON the page:
+ *
+ *  - `data-image-group` — membership by DOM order. The gallery surfaces (`/obrazy`, a concert
+ *    page) use it because every frame in the set is already rendered as its own trigger, and the
+ *    reading order IS the set's order.
+ *  - `data-image-set` — an authored `ImageFrameItem[]` as JSON on the ONE element that opens it,
+ *    pressed at index 0. For a surface that names photographs it does not show: the colophon's
+ *    `Imagines` opens a photographer's frames from her name, and there is no frame on that page to
+ *    hang a group off. The alternative was a row of hidden `[data-image-open]` carriers to satisfy
+ *    the DOM walk, i.e. inventing markup so a lookup mechanism would work — which is the tail
+ *    wagging the dog, and unreadable six months later.
+ *
+ *  A trigger carrying both is answered by `data-image-set`: the authored set is the specific claim.
+ *  Neither form reaches the island differently — both arrive as an `ImageFrameSet`, and the room
+ *  cannot tell them apart, which is the property that keeps this an extension and not a mode.
+ *
  *  Types only, plus the two event names. Nothing here may import `astro:assets` or any other
  *  virtual module — `image-triggers.ts` is a browser script and pulls whatever this file pulls.
  * @architecture Astro islands 2026

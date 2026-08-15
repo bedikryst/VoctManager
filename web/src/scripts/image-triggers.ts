@@ -45,6 +45,24 @@ const px = (value: string | undefined): number | undefined => {
   return Number.isFinite(n) && n > 0 ? n : undefined;
 };
 
+/**
+ * The set a trigger AUTHORED, as JSON on `data-image-set` (lib/imageFrame states when a surface
+ * uses this instead of a group). Parsed defensively rather than trusted: the attribute is written
+ * at build time by a page that knows the shape, but a `JSON.parse` throwing inside a delegated
+ * capture-phase listener would take the click handler down for every other trigger on the page —
+ * including the vault's, which shares this phase. A malformed set opens nothing instead.
+ */
+const readSet = (el: HTMLElement): ImageFrameItem[] | null => {
+  const raw = el.dataset.imageSet;
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? (parsed as ImageFrameItem[]) : null;
+  } catch {
+    return null;
+  }
+};
+
 const read = (el: HTMLElement): ImageFrameItem | null => {
   const src = el.dataset.imageSrc;
   if (!src) return null;
@@ -76,6 +94,11 @@ const read = (el: HTMLElement): ImageFrameItem | null => {
  * never at someone else's index, which would open a photograph nobody pressed.
  */
 const collect = (trigger: HTMLElement): ImageFrameSet => {
+  // An authored set answers first and never consults the DOM: it is the specific claim, and the
+  // surfaces that use it have no group to fall back to anyway.
+  const authored = readSet(trigger);
+  if (authored) return { items: authored, index: 0 };
+
   const own = read(trigger);
   const alone: ImageFrameSet = { items: own ? [own] : [], index: 0 };
   const group = trigger.dataset.imageGroup;
@@ -95,6 +118,8 @@ const collect = (trigger: HTMLElement): ImageFrameSet => {
 
 /** The full renditions already asked for, so an idle hand over a line of frames asks once. */
 const preloaded = new Set<string>();
+/** …and the triggers already answered, so a pointer resting on one does not re-parse its set. */
+const warmed = new WeakSet<HTMLElement>();
 
 /**
  * Warm the 1920 rendition while the pointer is still on the panel. The press then paints from
@@ -102,17 +127,27 @@ const preloaded = new Set<string>();
  * rendition standing under it (`thumb`), is the difference between a frame that opens and one
  * that loads. Hover only: on touch the equivalent moment is the press itself, and the fetch would
  * be a second copy of bytes already on their way.
+ *
+ * An authored set warms its FIRST item, which is the one the press will open. It matters more
+ * there than on a gallery: a set trigger is a name, not a photograph, so it publishes no `thumb`
+ * and the room has nothing to stand under the frame while it loads — this is the whole of what
+ * keeps that room from opening dark.
  */
 const preload = (el: HTMLElement): void => {
-  const src = el.dataset.imageSrc;
+  if (warmed.has(el)) return;
+  warmed.add(el);
+  const first = readSet(el)?.[0];
+  const src = first?.src ?? el.dataset.imageSrc;
   if (!src || preloaded.has(src)) return;
   preloaded.add(src);
   const img = new Image();
   img.decoding = "async";
   // `sizes` before `srcset` before `src`: the candidate is chosen when the source set is set, and
   // an unset `sizes` at that moment means it is chosen against a 100vw default.
-  if (el.dataset.imageSizes) img.sizes = el.dataset.imageSizes;
-  if (el.dataset.imageSrcset) img.srcset = el.dataset.imageSrcset;
+  const sizes = first ? first.sizes : el.dataset.imageSizes;
+  const srcset = first ? first.srcset : el.dataset.imageSrcset;
+  if (sizes) img.sizes = sizes;
+  if (srcset) img.srcset = srcset;
   img.src = src;
 };
 
@@ -123,7 +158,10 @@ function onClick(event: MouseEvent): void {
   if (!(target instanceof Element)) return;
   const trigger = target.closest<HTMLElement>("[data-image-open]");
   if (!trigger) return;
-  if (!trigger.dataset.imageSrc) return;
+  // Either form of the contract satisfies this: a frame of its own, or an authored set. The guard
+  // is what lets a marked-up trigger whose data never arrived fall through to the page's own
+  // navigation rather than swallowing the click.
+  if (!trigger.dataset.imageSrc && !trigger.dataset.imageSet) return;
   event.preventDefault();
 
   const detail = collect(trigger);

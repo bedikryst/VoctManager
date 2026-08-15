@@ -12,7 +12,13 @@
  *  THE PAGE'S ONE RULE, and the reason `Regula` is four sentences and not a paragraph: a colophon
  *  SHOWS its craft, it does not explain it. Every block here is set in the thing it describes —
  *  the type specimens demonstrate their own axes, the Regula lines are ruled and inked by the
- *  registers they name. Prose about the site's own metaphors belongs nowhere on it.
+ *  registers they name, and a photographer's name opens the photographs it is credited for.
+ *  Prose about the site's own metaphors belongs nowhere on it.
+ *
+ *  `Imagines` is therefore the page's only interactive rubric, and it is the one surface on the
+ *  site that can answer "which of these are hers": /obrazy is ordered by evening, so a hand is
+ *  scattered across it by construction. The frames are an AUTHORED set (`data-image-set`,
+ *  lib/imageFrame) rather than a DOM group, because this page shows no photograph to group.
  *
  *  Rubrics (`.kol-eyebrow`, `.kol-section-label`) deliberately declare no font-family or
  *  text-transform: base.css owns the two-voice rubric for every host carrying a `.lat` span
@@ -27,9 +33,14 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { VaultIsland } from "../islands/landing/VaultIsland";
-import { bleedPair } from "../lib/photos";
+import { ImageLightbox } from "../islands/landing/ImageLightbox";
+import { bleedPair, photo } from "../lib/photos";
 import { galleryRuns } from "../lib/galleryRuns";
+import { framedShot } from "../lib/galleryFrame";
+import { frameCredit } from "../lib/photoCredit";
+import type { ImageFrameItem } from "../lib/imageFrame";
 import "../styles/vault.css";
+import "../styles/image-lightbox.css";
 
 const title = "Kolofon — VoctEnsemble · VoctFoundation";
 const description =
@@ -90,17 +101,29 @@ const jsonLd = {
 // Hands and outlets are gathered apart and printed apart: an outlet's row says "źródło" in the
 // role column, because a masthead set in the same voice as a photographer's name is a claim that
 // the masthead took the picture.
+// Each name also OPENS its own frames, which is the one thing this rubric could do that /obrazy
+// cannot: the archive is ordered by evening, so it can never answer "which of these are hers".
+// The set is authored rather than collected from the DOM — there is no photograph on this page to
+// hang a `data-image-group` off (lib/imageFrame states both forms and why this surface takes this
+// one). `framedShot` is the SAME helper the two gallery surfaces call, so every rendition here is
+// a file /obrazy already emits and the page costs no new bytes on disk.
 interface Hand {
   /** Evening → the places inside it where this name's frames were taken. */
   readonly evenings: Map<string, Set<string>>;
-  /** How many frames stand behind the name — the scale of the hand's share of the archive. */
-  frames: number;
+  /** The frames themselves, in Via order — their count is the hand's share of the archive. */
+  readonly frames: ImageFrameItem[];
 }
 type Provenance = Map<string, Hand>;
-const note = (into: Provenance, name: string, evening: string, place: string): void => {
-  const hand = into.get(name) ?? { evenings: new Map<string, Set<string>>(), frames: 0 };
+const note = (
+  into: Provenance,
+  name: string,
+  evening: string,
+  place: string,
+  frame: ImageFrameItem,
+): void => {
+  const hand = into.get(name) ?? { evenings: new Map<string, Set<string>>(), frames: [] };
   into.set(name, hand);
-  hand.frames += 1;
+  hand.frames.push(frame);
   const places = hand.evenings.get(evening) ?? new Set<string>();
   hand.evenings.set(evening, places);
   if (place) places.add(place);
@@ -108,34 +131,61 @@ const note = (into: Provenance, name: string, evening: string, place: string): v
 
 const hands: Provenance = new Map();
 const outlets: Provenance = new Map();
-for (const { data: c } of (await getCollection("concerts")).sort(
-  (a, b) => a.data.order - b.data.order,
-)) {
+for (const entry of (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order)) {
+  const c = entry.data;
+  // Every frame keeps the road back to its own evening, exactly as /obrazy's do — a set opened
+  // from a name would otherwise be the dead end the frame's exit was built to close.
+  const exit = c.hasPage ? { href: `/koncerty/${entry.id}`, hrefLabel: c.title } : {};
   for (const run of galleryRuns(c.gallery, { venue: c.venue, date: c.date })) {
+    const caption = [run.title, run.date].filter(Boolean).join(" · ");
     // FRAME BY FRAME, never over `run.credits` — that roll is deduplicated per run, so walking it
     // would tally a hand once per evening and print "1 fot." under someone who shot eight. The
     // credit-before-source precedence is galleryRuns's own, restated here because this loop is
     // what decides which of the two lists a name lands in.
     for (const shot of run.shots) {
-      if (shot.credit) note(hands, shot.credit, c.title, run.title);
-      else if (shot.source) note(outlets, shot.source, c.title, run.title);
+      const into = shot.credit ? hands : shot.source ? outlets : null;
+      const name = shot.credit ?? shot.source;
+      if (!into || !name) continue;
+      // `photo`, not `photoOptional`: /obrazy may silently render one frame fewer, but a rubric
+      // whose entire job is attribution must not print "7 fot." over eight credited frames because
+      // a filename was mistyped. A missing asset fails the build here, loudly, and that is the
+      // trade this page wants.
+      const img = photo(shot.img);
+      note(into, name, c.title, run.title, {
+        ...(await framedShot(img)),
+        alt: shot.alt ?? "",
+        caption,
+        // Resolved by the trigger, never by the room — only a surface reading the gallery knows
+        // whether a frame has a photographer, an outlet or the ensemble behind it.
+        credit: frameCredit(shot),
+        ...exit,
+      });
     }
   }
 }
 
-const rows = (from: Provenance, lead: string): { name: string; role: string }[] =>
+const rows = (
+  from: Provenance,
+  lead: string,
+): { name: string; role: string; label: string; items: ImageFrameItem[] }[] =>
   [...from].map(([name, { evenings, frames }]) => ({
     name,
     // The tally, then "evening · place" — and a hand that stood at two of them carries both. The
     // count is what turns a roll of names into an attribution: without it the list states that six
-    // people photographed the cycle and leaves their shares indistinguishable. Abbreviated exactly
-    // as /obrazy abbreviates it, because one fact meeting the reader under two labels on two pages
-    // reads as two facts.
+    // people photographed the cycle and leaves their shares indistinguishable. It is also what
+    // makes the name legible as a DOOR — a name that merely turns out to be pressable is a hidden
+    // affordance, where "8 fot." beside it is an invitation. Abbreviated exactly as /obrazy
+    // abbreviates it, because one fact meeting the reader under two labels on two pages reads as
+    // two facts.
     role: [
       ...(lead ? [lead] : []),
-      `${frames} ${frames === 1 ? "fotografia" : "fot."}`,
+      `${frames.length} ${frames.length === 1 ? "fotografia" : "fot."}`,
       ...[...evenings].map(([evening, places]) => [evening, ...places].join(" · ")),
     ].join(" · "),
+    // The button's own name, because its visible text is only the person. The count is left out of
+    // it deliberately: the role line beside it is in the same list item and is read straight after.
+    label: `${name} — otwórz ${frames.length === 1 ? "fotografię" : "fotografie"}`,
+    items: frames,
   }));
 const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
 ---
@@ -342,11 +392,25 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
           Zdjęcia z&nbsp;Koncertów Duchowych. Fotografie bez podpisu — tu i&nbsp;w&nbsp;całym
           serwisie — pochodzą z&nbsp;archiwum zespołu i&nbsp;są własnością fundacji.
         </p>
+        {/* The name is the trigger, and the hairline under it is what says so AT REST. That is
+            /obrazy's argument for standing its `↗` at rest rather than on hover, and it binds
+            harder here: `Gratiarum actio` below uses this identical row shape and is not
+            pressable, so a mark that appeared only under a pointer would leave a reader who never
+            hovers unable to tell the two lists apart. A button, never a link — nothing is
+            navigated to; the frame opens over the page it was opened from. */}
         <ul class="kol-collab">
           {
             imagines.map((p) => (
               <li class="reveal reveal-rule">
-                <span class="kol-collab-name">{p.name}</span>
+                <button
+                  type="button"
+                  class="kol-collab-name kol-collab-open"
+                  data-image-open
+                  data-image-set={JSON.stringify(p.items)}
+                  aria-label={p.label}
+                >
+                  {p.name}
+                </button>
                 <span class="kol-collab-role kol-gloss">{p.role}</span>
               </li>
             ))
@@ -484,8 +548,10 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
   <SiteFooter />
 
   <VaultIsland client:idle />
+  <ImageLightbox client:idle />
   <script>
     import "../scripts/vault-triggers.ts";
+    import "../scripts/image-triggers.ts";
     import { buildSigilSvg, getOrCreateVisitSeed } from "../lib/sigil";
 
     // Redraw on every page-load, not just once: the sigil script is a module that runs once
@@ -795,6 +861,41 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
   .kol-collab li { display: grid; grid-template-columns: 1fr max-content; gap: 16px; padding-top: 12px; border-top: 1px solid var(--line); align-items: baseline; }
   .kol-collab-name { font-family: var(--serif); font-size: clamp(18px, 1.8vw, 22px); color: var(--ink); }
   .kol-collab-role { text-align: right; }
+
+  /* ── A photographer's name, which opens her frames ────────────────────────
+     Everything here is undoing the UA button, plus this page's own link idiom on top: colour and
+     a hairline, the same pair `.kol-link` carries, because that is the whole of how a door is
+     drawn on parchment here.
+
+     NO `font` SHORTHAND, and it is not a style preference: `font: inherit` resets family AND size,
+     and `.kol-collab-name` — which this element also wears — sets both. The two rules tie at
+     (0,1,0), so the shorthand would win on source order and set six photographers in the UA's
+     system font. Only the properties `.kol-collab-name` does NOT declare are inherited by name.
+
+     `justify-self: start` is load-bearing: the row's first track is `1fr`, and a stretched button
+     would rule its hairline out to the width of the column instead of the width of the name. */
+  .kol-collab-open {
+    appearance: none;
+    background: none;
+    border: 0;
+    margin: 0;
+    padding: 0 0 1px;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    text-align: left;
+    justify-self: start;
+    cursor: pointer;
+    border-bottom: 1px solid var(--line-strong);
+    transition: color .3s var(--ease, ease), border-color .3s var(--ease, ease);
+  }
+  .kol-collab-open:hover { color: var(--candle-ink); border-bottom-color: var(--candle-ink); }
+  .kol-collab-open:focus-visible { outline: 1px solid var(--candle-ink); outline-offset: 4px; }
+
+  /* The frame's own scroll-lock, named for THIS body class rather than declared in
+     image-lightbox.css: a blanket `body.image-open` rule would reach every document on the site,
+     including the ones that never mount the island. Same shape /obrazy and /koncerty/[id] use. */
+  :global(body.page-kolofon.image-open) { overflow: hidden; }
 
   /* Closing pair: the fact, then the inscription. */
   .kol-impressio { margin: 0 0 12px; font-family: var(--mono); font-size: 12px; letter-spacing: .05em; color: var(--ink-muted); }
