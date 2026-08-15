@@ -989,7 +989,7 @@
       movement: reditus
       year: "2020"
       note: >-
-        Indonezyjski kompozytor oparł utwór na skali Melayu, a śpiewane sylaby nie znaczą nic —
+        Indonezyjski kompozytor oparł utwór na skali Melayu, a śpiewane sylaby nic nie znaczą:
         to czysta eksploracja barw ludzkiego głosu. Punktem wyjścia jest wiersz, który Steven
         napisał sam. W partyturze prosi chór, by w pierwszych taktach dodał odgłosy nocnych
         zwierząt — świerszcza, sowy — a potem, coraz gęściej, świergot ptaków; na końcu wszystko
@@ -1075,10 +1075,9 @@
     a przestrzeń rzeźbi światło Ady Bystrzyckiej. Zespół prosi o jedno: nie oklaskiwać
     poszczególnych utworów i zachować ciszę między nimi.
   reflectionNote: >-
-    Psałterz nie porządkuje uczuć — kładzie je obok siebie: skarga sąsiaduje z dziękczynieniem,
-    prośba o litość z wezwaniem do tańca. Dziewięć kart tego wieczoru wybrano właśnie dla tej
-    rozpiętości, a spięto je jedną modlitwą pokutną, która wraca dziewięć razy i nie pozwala
-    o sobie zapomnieć.
+    Psałterz kładzie uczucia obok siebie: skarga sąsiaduje z dziękczynieniem, prośba o litość
+    z wezwaniem do tańca. Dziewięć kart tego wieczoru wybrano właśnie dla tej rozpiętości,
+    a spięto je jedną modlitwą pokutną, która wraca dziewięć razy.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
     - { role: "Słowo wprowadzające", name: "o. Przemysław Wysogląd SJ" }
@@ -1090,7 +1089,7 @@
     części, a między nie wchodzą kolejno chwała, mądrość, prawo, radość, tron, dziękczynienie
     i pieśń nowa. Pokutnik nie dokończy swojej modlitwy, dopóki nie wybrzmi każdy inny głos
     Psałterza; dopiero po ostatnim wraca po raz dziewiąty i dopowiada ją do końca. Tak jak w życiu,
-    w którym żal i radość nie ustawiają się w kolejce — przeplatają się.
+    w którym żal i radość przeplatają się.
   programNote: >-
     Skład trzynaściorga wokalistów odnotowano dla wieczoru krakowskiego (16 listopada 2024);
     ten sam program, w tej samej kolejności, zespół wykonał wcześniej w Rybniku i w Łodzi.
@@ -1588,10 +1587,12 @@
     dotknięci konfliktem — rodzin, przyjaciół, a także tych, którzy wciąż walczą o swoją wolność
     i godność.
   reflectionAttribution: "VoctEnsemble · luty 2025"
-  reflectionNote: >-
-    To nie był koncert o wojnie — to była modlitwa odprawiona muzyką. Stąd jego porządek: nie
-    kolejność wydarzeń, lecz droga żałoby, która musi przejść przez wszystkie swoje stacje,
-    zanim wolno jej mówić o świetle.
+  # No reflectionNote, deliberately. The band renders on the signed text alone (the template takes
+  # the two fields independently), and everything an unsigned note could add here is already
+  # placed and sourced: the doorway in `prologue`, the order of the evening in `programArc`, the
+  # organ improvisations in `programNote`, the wordless anthem in its own work note. What stood
+  # here asserted the evening's meaning in two sentences that stated no fact — and a page that has
+  # earned its meaning through facts does not need to claim it in the margin.
   credits:
     - { role: "Dyrygent", name: "Florent de Bazelaire" }
     - { role: "Słowo i błogosławieństwo", name: "ks. inf. dr hab. Dariusz Raś" }
@@ -1768,7 +1769,7 @@
         Motet czterogłosowy wydany w 1581 roku. Psalm 137 — pieśń wygnańców, którzy nad rzekami
         Babilonu odłożyli muzykę: powiesili swoje instrumenty na wierzbach, bo nie umieli śpiewać
         pieśni Pańskiej w obcej ziemi. Palestrina prowadzi cztery głosy z całkowitym spokojem;
-        żałoba jest tu nie w krzyku, lecz w tym, co ucichło.
+        żałoba jest tu w tym, co ucichło.
       inscriptio: "Super flumina Babylonis, illic sedimus et flevimus"
       inscriptioPl: "Nad rzekami Babilonu tam siedzieliśmy i płakali"
       inscriptioRef: "Ps 137 (136), 1–2"
