@@ -923,6 +923,18 @@ Recorded so they are not re-proposed.
 - **A hard `break-inside: avoid` on a programme entry** (Etap 4). Worth a full page on the maestro's
   card, and the tear it prevented was only ever the resources line leaving the piece behind. The
   guard belongs on the piece's identity.
+- **Reusing the panel's existing msgids for this document's short labels** (Etap 5). Twelve of them
+  already exist, and half mean something else there (`Focus` → *Plan próby*, `Casting` → *Obsada*).
+  Beyond the wording: a printed head sits in a measured width, so a shared msgid lets a notification
+  rewrite silently break a page. Short labels take a `call sheet` context; sentences, unique by
+  construction, reuse nothing by accident.
+- **Writing the date out in words** (§4's `niedziela, 9 sierpnia 2026`). It has to come from Django's
+  bundled catalogs, which capitalise the Polish weekday and the French month where neither language
+  wants it. `%d.%m.%Y` is one date in the one order all three locales read the same way.
+- **`makemessages` for these catalogs** (Etap 5). No GNU gettext on the dev host, and it would rewrite
+  every `#:` reference across three 770-entry catalogs while marking as obsolete every msgid it cannot
+  see at a call site — including the ones built from `_LANGUAGE_NAMES` and `_COVERAGE_COLUMNS`, whose
+  translations would then vanish from the compiled `.mo` with no error anywhere.
 - **A second consumer for the day timeline "because the spec said so".** §4 claimed "both the PDF and
   the schedule read-model consume it" — no backend read-model touches `run_sheet` (checked:
   `queries/`, `dashboard_serializers.py`, `serializers.py`), and none should be invented to justify
