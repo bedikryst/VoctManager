@@ -375,7 +375,7 @@ too. A day card should never ask its reader to fix data.
 
 Six stages. Etapy 0–1 are self-contained and worth shipping even if the split is rejected.
 
-**Status: Etapy 0, 1, 2, 3, 4 and 5 are DONE.** Etap 6 is open.
+**Status: all six stages are DONE** (Etap 6 closed 2026-08-15).
 
 **Etap 1's pagination claim was wrong, and was corrected in Etap 2 (2026-08-14).** The
 "five pages become three" outcome was reasoned from the CSS because WeasyPrint cannot render on the
@@ -878,13 +878,127 @@ Both now `addCleanup(translation.deactivate)`.
   dicts that are otherwise plain `dict[str, str]` — and a test walks both dicts against the compiled
   pl catalog, which is a stronger guarantee than extraction would have been.
 
-### Etap 6 — Data hygiene (separate track, needs migrations)
+### Etap 6 — Data hygiene (separate track, needs migrations) — DONE (2026-08-15)
 
-- **D19** duplicate-artist detection and a merge path in the roster.
-- **D21** address normalization on Places import.
 - **A7** structured day-of logistics on `Project`: entrance/gate, parking, dressing room, warm-up
   slot, sound-check window, on-site emergency contact — plus the editor fields for them. Until this
   lands, the day card is missing the content it most exists to carry.
+- **D21** address normalization on Places import.
+- **D19** duplicate-artist detection and a merge path in the roster.
+
+Done in that order: A7 is the content the document exists for and the only lever Etap 4 left on the
+singer's orphan page, D21 changes what A7's masthead prints (so it belongs in the same render pass),
+and D19 has no printed consequence left — Etap 0 gave it the `(2 wpisy)` marker and Etap 2 the
+blocker line, so it is a roster feature and was judged on its own.
+
+**A7 — as built.** Nine columns on `Project` (`0038`), all blank-by-default:
+`entrance_note` · `parking_note` · `dressing_room_note` · `warmup_start`/`warmup_end` ·
+`soundcheck_start`/`soundcheck_end` · `onsite_contact_name`/`onsite_contact_phone`. They sit on the
+project, not on `Location`, because they change per concert: the same church lends a different door,
+a different room and a different parking arrangement to a vigil and to a recording session. The
+venue owns what is permanent; this owns what is true on the day.
+
+Four decisions taken while building:
+
+- **The two windows are typed moments *of the run sheet's axis*, not a second list of hours.** The
+  generator turns them into `RunSheetPoint`s and merges them into the same sorted list
+  `build_day_timeline` already receives, so the day still has one axis (Etap 3) and
+  `day_timeline.py` and its cross-language parity fixture were not touched at all.
+  - The reason they are columns rather than two more run-sheet rows only shows up in print, and it
+    is the strongest argument in this stage: **a run-sheet title is free text somebody typed in
+    Polish, so the maestro's French card printed "Próba akustyczna".** A typed moment carries no
+    wording of its own and is named in the reader's language — visible in the French render, where
+    `Échauffement · jusqu'à 11:40` sits two rows above the seed data's still-Polish `Catering`.
+  - Their *values* are not translated and must not be: a gate code, a room number and a parking
+    arrangement are the producer's words. The label is translated, the fact is quoted.
+  - **This does not reinstate §5's rejected anchor-strip cells.** That rejection was about printing a
+    guess (matching free-text titles) in the heaviest type on the page; storing the hours removes
+    the guess but not the reason the strip carries only the two anchors every reader shares.
+- **The on-site number reaches every audience, the choir included** — and it is the only contact
+  datum on this sheet that may. It is typed for this concert rather than read off somebody's
+  profile, so printing it is the decision the producer already took when they entered it; a crew
+  member's private mobile is theirs and stays off the singer's card, which
+  `roster/tests.py` still locks. This is the ensemble-level ops number N1 filed here.
+- **An absent fact prints nothing.** The `Na miejscu` card renders only rows that exist (N3's rule),
+  and the report names the gap in its blocker list instead — one new blocker, `Brak telefonu na
+  miejscu`, worded as the abandonment it is.
+- **A window is validated as a pair and never silently dropped.** The DTO rejects an end with no
+  start and an end at or before its start; the editor clears the end when the start is cleared and
+  refuses the save before the API has to. The panel does *not* draw the two moments in its live
+  timeline preview: the fields sit under the day plan and the printed document composes the day.
+
+**Measured on the dev database** (`Koncert Wiosenny „Lux Aeterna”`, 8 pieces / 19 participations),
+all four combinations in both languages, rendered in the container and read as contact sheets:
+
+| sheet | Etap 5 · pl | Etap 6 · pl | Etap 5 · fr | Etap 6 · fr | Etap 6 · pl, fields filled in |
+|---|---|---|---|---|---|
+| report · production | 6 p | **7 p** | 7 p | 7 p | 7 p |
+| day card · production | 3 p | 3 p | 3 p | 3 p | **4 p** |
+| day card · conductor | 5 p | 5 p | 5 p | 5 p | **6 p** |
+| day card · chorister | 4 p | 4 p | 4 p | 4 p | 4 p |
+
+Two things in that table are worth knowing before touching this again.
+
+- **The Polish report's seventh page is bought by one blocker line, and the mechanism is the event
+  pair.** Measured by rendering with that single blocker suppressed: 6 pages, and page 2 opens with
+  `Przebieg dnia` instead of `Wydarzenie i przygotowanie`. So the two extra lines in the blocker band
+  push the event pair off page 1, it moves whole (the standing WeasyPrint behaviour), and the half
+  page it leaves cascades into a seventh at the end. The report is 7 pages with the field filled in
+  too — the blocker goes away and the on-site card, the two timeline rows and the extra contact take
+  its place — so this is the report's honest new length, not a transient.
+- **The singer's orphan is answered, and not by the page count.** The card is 4 pages either way,
+  but with the fields filled in its last page carries the roster and two contacts where it used to
+  carry one contact block on an otherwise blank page. Etap 4 measured that no break rule and no
+  section order could move it and named this stage as the only lever left; the lever turned out to
+  be content, exactly as predicted.
+
+**D21 — as built.** `logistics/address.py` (`address_parts` / `normalize_address`) runs in the
+`LocationCreateDTO` / `LocationUpdateDTO` validators, which is where a Places payload becomes domain
+data. It drops a part repeated verbatim and a bare part a later one already opens with — the
+observed `02-532, Rakowiecka 61, 02-532 Warszawa, Poland` → `Rakowiecka 61, 02-532 Warszawa,
+Poland` — and nothing else; a part that merely *contains* another survives, because this is a tidy,
+not an address parser. It is idempotent, which is what lets it run on every write.
+
+- **The country stays in the record and is dropped only on the page.** The stored address is what a
+  maps query and any postal use are built from; "a Polish sheet does not need to say the concert is
+  in Poland" is a printing decision. `_format_address` now composes `address_parts` and adds that
+  one removal, so the duplicate-fragment rule has exactly one implementation and the print guard got
+  smaller instead of bigger. Rows written before this still arrive dirty, which is why the guard
+  composes rather than assumes.
+- **Existing rows move by command, not by data migration:** `manage.py normalize_location_addresses`
+  prints the diff and writes only with `--apply`. An address is something a human typed or approved,
+  so it gets read before it is rewritten. `logistics/tests.py` (which was an empty file) covers the
+  normalizer, both write paths and the command.
+
+**D19 — as built.** `roster/duplicates.py` reports candidates; `ArtistHRService.merge_artists` acts
+on one. Detection buckets the active roster by folded e-mail, by the last nine digits of the phone,
+and by folded name, in that confidence order, and reports one membership once under its strongest
+signal. The fold handles stroked letters by hand — NFD does not decompose `ł`, so without it
+"Michał" and "Michal" are two people to every comparison in the system.
+
+The merge repoints participations, castings, readiness, attendance, invited-rehearsal links,
+messaging threads and the podium onto the surviving row, then retires the emptied one through
+`archive_artist` — nothing is deleted, and the account it held stops signing in. It returns a report
+of what moved, which the endpoint hands back and the panel shows. Three rules it will not bend:
+
+- **An activated duplicate is refused** (`ActivatedArtistMergeException`). A usable password means a
+  human signs in at that address; retiring the row would take their login with it, and choosing which
+  of two live accounts survives is an account decision, not a roster cleanup. This is the one part of
+  the stage deliberately left undone — the answer there is `audit_account_emails` plus a deliberate
+  archive, not a merge button.
+- **A project both rows appear in keeps the primary's participation**; the other is soft-deleted
+  after its dependents move across, because repointing it would break
+  `unique_active_project_participation` and put one singer on the riser twice. The survivor adopts
+  the *stronger* answer (confirmed beats invited beats declined) — a person who said yes on one of
+  their two rows has said yes.
+- **A fee is never averaged.** The survivor keeps its own and the report names the projects where
+  the two rows disagreed.
+
+The panel surface is a `Możliwe duplikaty` card at the top of the roster, absent entirely when the
+roster is clean, where the manager picks which entry survives — that choice decides who keeps the
+concert history, and it is the only roster action with no way back. A test renders the report before
+and after a merge and asserts the `(2 wpisy)` marker and the blocker line go quiet, which is where
+this defect was found in the first place.
 
 ---
 
@@ -935,6 +1049,24 @@ Recorded so they are not re-proposed.
   every `#:` reference across three 770-entry catalogs while marking as obsolete every msgid it cannot
   see at a call site — including the ones built from `_LANGUAGE_NAMES` and `_COVERAGE_COLUMNS`, whose
   translations would then vanish from the compiled `.mo` with no error anywhere.
+- **Warm-up and sound check as cells of the anchor strip, now that they are stored** (Etap 6). The
+  original rejection was about printing a *guess* — matching free-text run-sheet titles — in the
+  heaviest type on the page. Storing the hours removes the guess and not the reason: the strip
+  states the two anchors every reader shares, and the two windows are moments *inside* the day it
+  brackets, so they print on the axis with everything else.
+- **Translating the day-of logistics values** (Etap 6). A gate code, a room number and a parking
+  arrangement are the producer's words about one building on one day. The label is translated; the
+  fact is quoted. (The two *typed moments* are the opposite case, and that is exactly why they are
+  columns instead of run-sheet rows.)
+- **Dropping the country at the source** (Etap 6, D21). The stored address is what a maps query and
+  any postal use are built from, so normalization keeps it; only the printed sheet drops the country
+  that goes without saying. One rule for repetition, one place that knows which country is implied.
+- **A data migration rewriting stored addresses** (Etap 6, D21). Normalization is idempotent and
+  runs on every write, so the only rows needing it are historical — and an address is something a
+  human typed or approved. `normalize_location_addresses` prints the diff and writes on `--apply`.
+- **Merging two activated accounts** (Etap 6, D19). Two usable passwords mean two people have signed
+  in; picking which login dies is an account deletion wearing a cleanup's clothes. The service
+  refuses it by name and the panel says why.
 - **A second consumer for the day timeline "because the spec said so".** §4 claimed "both the PDF and
   the schedule read-model consume it" — no backend read-model touches `run_sheet` (checked:
   `queries/`, `dashboard_serializers.py`, `serializers.py`), and none should be invented to justify

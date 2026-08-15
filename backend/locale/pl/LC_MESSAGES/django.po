@@ -4128,3 +4128,117 @@ msgstr "Nagranie"
 msgctxt "coverage column"
 msgid "Casting"
 msgstr "Casting"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Warm-up"
+msgstr "Rozśpiewanie"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Sound check"
+msgstr "Próba akustyczna"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Entrance"
+msgstr "Wejście"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Parking"
+msgstr "Parking"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Dressing room"
+msgstr "Garderoba"
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "On site"
+msgstr "Na miejscu"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "On-site contact"
+msgstr "Kontakt na miejscu"
+
+#: roster/infrastructure/document_generator.py
+msgid "until %(time)s"
+msgstr "do %(time)s"
+
+#: roster/infrastructure/document_generator.py
+msgid "Reachable on the day of the concert."
+msgstr "Dostępny w dniu koncertu."
+
+#: roster/infrastructure/document_generator.py
+msgid "No on-site phone number"
+msgstr "Brak telefonu na miejscu"
+
+#: roster/infrastructure/document_generator.py
+msgid "A singer who is lost or late has nobody to call on the day."
+msgstr ""
+"Zagubiony lub spóźniony chórzysta nie ma w tym dniu do kogo zadzwonić."
+
+#: roster/models.py
+msgid "Entrance / gate"
+msgstr "Wejście / brama"
+
+#: roster/models.py
+msgid ""
+"Which door the ensemble uses, e.g. 'side entrance from Rakowiecka, gate 2'."
+msgstr ""
+"Którym wejściem wchodzi zespół, np. „wejście boczne od Rakowieckiej, brama "
+"nr 2”."
+
+#: roster/models.py
+msgid "Parking"
+msgstr "Parking"
+
+#: roster/models.py
+msgid "Where to leave a car, and under what conditions."
+msgstr "Gdzie zostawić samochód i na jakich zasadach."
+
+#: roster/models.py
+msgid "Dressing room"
+msgstr "Garderoba"
+
+#: roster/models.py
+msgid "Where to change and leave belongings."
+msgstr "Gdzie się przebrać i zostawić rzeczy."
+
+#: roster/models.py
+msgid "Warm-up (from)"
+msgstr "Rozśpiewanie (od)"
+
+#: roster/models.py
+msgid "Warm-up (until)"
+msgstr "Rozśpiewanie (do)"
+
+#: roster/models.py
+msgid "Sound check (from)"
+msgstr "Próba akustyczna (od)"
+
+#: roster/models.py
+msgid "Sound check (until)"
+msgstr "Próba akustyczna (do)"
+
+#: roster/models.py
+msgid "On-site contact"
+msgstr "Kontakt na miejscu"
+
+#: roster/models.py
+msgid "Who answers on the day — stage manager, sacristan, production."
+msgstr "Kto odbiera w dniu koncertu — kierownik sceny, zakrystian, produkcja."
+
+#: roster/models.py
+msgid "On-site phone"
+msgstr "Telefon na miejscu"
+
+#: roster/models.py
+msgid ""
+"Reachable on the day of the concert. Printed on every sheet, including the "
+"singers'."
+msgstr ""
+"Dostępny w dniu koncertu. Drukowany na każdym arkuszu, także chórzystów."

@@ -178,6 +178,59 @@ class Project(EnterpriseBaseModel):
         )
     )
     run_sheet = models.JSONField(default=list, blank=True, verbose_name=_("Run-sheet"))
+
+    # --- Day-of logistics. The facts a call sheet exists to carry, and the ones
+    #     that had nowhere to live: they used to be prose inside `description` or
+    #     `Location.internal_notes`, so neither reached a sheet as a fact.
+    #
+    #     They sit on the project, not on the Location, because they change per
+    #     concert: the same church lends a different door, a different room and a
+    #     different parking arrangement to a Christmas vigil and to a recording
+    #     session. The venue owns what is permanent (address, coordinates, zone);
+    #     this owns what is true on the day.
+    entrance_note = models.CharField(
+        max_length=200, blank=True,
+        verbose_name=_("Entrance / gate"),
+        help_text=_("Which door the ensemble uses, e.g. 'side entrance from Rakowiecka, gate 2'."),
+    )
+    parking_note = models.CharField(
+        max_length=200, blank=True,
+        verbose_name=_("Parking"),
+        help_text=_("Where to leave a car, and under what conditions."),
+    )
+    dressing_room_note = models.CharField(
+        max_length=200, blank=True,
+        verbose_name=_("Dressing room"),
+        help_text=_("Where to change and leave belongings."),
+    )
+
+    # Two moments of the day that are typed rather than free text, and that is
+    # the whole point: a run-sheet row carries a title someone wrote in Polish,
+    # so a francophone conductor's sheet printed it in Polish. These print in the
+    # reader's own language, and the printed day merges them with the run sheet
+    # (`roster.domain.day_timeline`) so the sheet keeps ONE axis for the day.
+    # Wall-clock times without a date: concert day is the run sheet's frame and
+    # these belong to the same frame.
+    warmup_start = models.TimeField(null=True, blank=True, verbose_name=_("Warm-up (from)"))
+    warmup_end = models.TimeField(null=True, blank=True, verbose_name=_("Warm-up (until)"))
+    soundcheck_start = models.TimeField(null=True, blank=True, verbose_name=_("Sound check (from)"))
+    soundcheck_end = models.TimeField(null=True, blank=True, verbose_name=_("Sound check (until)"))
+
+    # The number a lost or late singer calls. Typed for this concert rather than
+    # harvested from someone's profile — which is precisely what makes it
+    # printable on all forty sheets: the producer publishes it knowingly, where
+    # a crew member's private mobile is theirs and stays off the choir's card.
+    onsite_contact_name = models.CharField(
+        max_length=120, blank=True,
+        verbose_name=_("On-site contact"),
+        help_text=_("Who answers on the day — stage manager, sacristan, production."),
+    )
+    onsite_contact_phone = models.CharField(
+        max_length=32, blank=True,
+        verbose_name=_("On-site phone"),
+        help_text=_("Reachable on the day of the concert. Printed on every sheet, including the singers'."),
+    )
+
     spotify_playlist_url = models.URLField(blank=True, help_text=_("Spotify playlist URL"), verbose_name=_("Spotify Playlist"))
     score_pdf = models.FileField(
         upload_to='project_scores/',

@@ -87,6 +87,15 @@ const KNOWN_CODES: Record<string, { title: string; detail: string }> = {
     title: "errors.codes.piece_not_found.title",
     detail: "errors.codes.piece_not_found.detail",
   },
+  // Roster hygiene: merging two entries for one person.
+  artist_merge_activated: {
+    title: "errors.codes.artist_merge_activated.title",
+    detail: "errors.codes.artist_merge_activated.detail",
+  },
+  artist_merge_rejected: {
+    title: "errors.codes.artist_merge_rejected.title",
+    detail: "errors.codes.artist_merge_rejected.detail",
+  },
 };
 
 /** Localized title + detail fallback for each coarse kind. */

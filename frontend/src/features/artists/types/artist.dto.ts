@@ -6,6 +6,8 @@
 
 import { z } from "zod";
 
+import type { Artist } from "@/shared/types";
+
 // 1. Zod Schema defining both validation rules and the shape of the form
 export const artistFormSchema = z.object({
   first_name: z.string().min(1, "artists.validation.first_name_required"),
@@ -56,3 +58,36 @@ export interface ArtistCreateDTO {
  * be silently dropped.
  */
 export type ArtistUpdateDTO = Partial<ArtistCreateDTO>;
+
+/**
+ * Why two rows looked like one person, in the server's confidence order: an
+ * address or a number is near-certain, a shared name is a question — two people
+ * genuinely can be called the same thing.
+ */
+export type DuplicateSignal = "email" | "phone" | "name";
+
+export interface DuplicateGroup {
+  signal: DuplicateSignal;
+  /** The normalized value they collided on, so the reason can be shown. */
+  key: string;
+  artists: Artist[];
+}
+
+/** What the merge moved, so the manager is told what it cost. */
+export interface ArtistMergeResult {
+  artist: Artist;
+  merged: {
+    participations_moved: number;
+    participations_folded: number;
+    castings_moved: number;
+    castings_dropped: number;
+    readiness_moved: number;
+    attendances_moved: number;
+    attendances_dropped: number;
+    threads_moved: number;
+    projects_conducted: number;
+    statuses_upgraded: number;
+    /** Projects where both rows carried a different fee — the survivor kept its own. */
+    fee_conflicts: string[];
+  };
+}

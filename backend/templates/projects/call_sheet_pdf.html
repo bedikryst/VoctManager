@@ -558,6 +558,23 @@
                 </table>
                 {% if venue_map_url %}<div class="metaline" style="margin-top:7pt;">{% translate "Venue map" context "call sheet" %}: <a href="{{ venue_map_url }}">Google Maps</a>{% if not is_report %} — {% translate "the code sits beside the address in the masthead" %}{% endif %}.</div>{% endif %}
             </div>
+            {% if onsite_facts %}
+            {% comment %}
+                What the address cannot say: which door, where the car goes,
+                where to change. Only the rows that were actually recorded — a
+                card made of three "to be arranged" lines asks its reader to fix
+                data they have no way of fixing, and the report already names
+                the gap in its blocker list.
+            {% endcomment %}
+            <div class="card">
+                <div class="eyebrow" style="margin-bottom:6pt;">{% translate "On site" context "call sheet" %}</div>
+                <table class="facts">
+                    {% for fact in onsite_facts %}
+                    <tr><td class="label">{{ fact.label }}</td><td class="value">{{ fact.text }}</td></tr>
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
             <div class="card warm">
                 <div class="eyebrow" style="margin-bottom:6pt;">{% translate "Dress code" context "call sheet" %}</div>
                 {% for entry in dress_code_entries %}

@@ -843,6 +843,23 @@
       "pending_activation_desc": "The invitation was sent, but this artist hasn't activated their platform account yet.",
       "upcoming": "Upcoming"
     },
+    "duplicates": {
+      "title": "Possible duplicates",
+      "intro": "These entries look like one person. Two people can genuinely share a name, though — choose the entry that stays and the others are absorbed into it.",
+      "keep": "Keep this entry",
+      "activated": "Account active",
+      "confirm_title": "Merge the entries?",
+      "confirm_desc": "Participations, castings, attendance and conversations move to “{{name}}”. The other entries ({{n}}) are archived and lose access to the panel. This cannot be undone.",
+      "confirm_action": "Merge entries",
+      "signal": {
+        "email": "the same e-mail address",
+        "phone": "the same phone number",
+        "name": "the same name"
+      },
+      "toast": {
+        "merged": "Merged into: {{name}}"
+      }
+    },
     "editor": {
       "active_access_desc": "Unchecking will block login access.",
       "active_access_title": "Active platform access",
@@ -2154,6 +2171,14 @@
       "piece_not_found": {
         "title": "Piece not found",
         "detail": "The referenced piece doesn’t exist or was removed."
+      },
+      "artist_merge_activated": {
+        "title": "This entry cannot be absorbed",
+        "detail": "It has an activated account — somebody signs in with it. Merge the entry nobody has signed in to, or archive the account deliberately."
+      },
+      "artist_merge_rejected": {
+        "title": "These entries cannot be merged",
+        "detail": "Check that the entry meant to survive is not archived."
       }
     },
     "form": {
@@ -3310,6 +3335,7 @@
       "time_title": "Local Time",
       "toast": {
         "create_success": "New project and schedule created",
+        "invalid_window": "The window must end after it begins.",
         "pdf_remove_failed": "Project saved — failed to remove PDF.",
         "pdf_upload_failed": "Project saved — failed to upload PDF. Try again.",
         "saving": "Saving project details...",
@@ -3336,9 +3362,18 @@
         "description": "Event description",
         "dress_code_female": "Attire: women",
         "dress_code_male": "Attire: men",
+        "dressing_room": "Dressing room",
+        "entrance": "Entrance / gate",
         "location": "Concert venue",
+        "onsite_contact_name": "On-site contact",
+        "onsite_contact_phone": "On-site phone",
+        "parking": "Parking",
+        "soundcheck_end": "Sound check until",
+        "soundcheck_start": "Sound check from",
         "spotify": "Spotify playlist",
-        "title": "Project title *"
+        "title": "Project title *",
+        "warmup_end": "Warm-up until",
+        "warmup_start": "Warm-up from"
       },
       "call_time": {
         "offset_h": "{{hours}} h before the concert",
@@ -3359,7 +3394,12 @@
         "location": "Choose a venue",
         "location_clear": "No location",
         "conductor": "Choose a conductor",
-        "conductor_clear": "No conductor"
+        "conductor_clear": "No conductor",
+        "entrance": "e.g. side entrance from Rakowiecka, gate 2",
+        "parking": "e.g. courtyard, gates close at 18:00",
+        "dressing_room": "e.g. room under the tower, key with the sacristan",
+        "onsite_contact_name": "e.g. Anna Nowak (production)",
+        "onsite_contact_phone": "+48 600 000 000"
       },
       "run_sheet": {
         "description": "Description (optional)",
@@ -3369,7 +3409,8 @@
       "sections": {
         "day_plan": "Concert day plan",
         "ensemble_info": "Information for the ensemble",
-        "event": "Event"
+        "event": "Event",
+        "onsite": "On site"
       },
       "markers": {
         "concert": "Concert"

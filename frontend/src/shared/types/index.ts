@@ -164,6 +164,19 @@ export interface Project extends BaseModel {
   score_pdf?: string | null;
   status: ProjectStatus;
   run_sheet?: RunSheetItem[];
+  // Day-of logistics. Per concert, not per venue: the same church lends a
+  // different door and a different room to different events. The two windows
+  // are wall-clock `HH:MM:SS` on concert day — the same frame the run sheet
+  // uses — and the printed call sheet merges them into that one axis.
+  entrance_note?: string | null;
+  parking_note?: string | null;
+  dressing_room_note?: string | null;
+  warmup_start?: string | null;
+  warmup_end?: string | null;
+  soundcheck_start?: string | null;
+  soundcheck_end?: string | null;
+  onsite_contact_name?: string | null;
+  onsite_contact_phone?: string | null;
   program?: ProjectProgramItem[];
   cast?: Array<{
     id: string;

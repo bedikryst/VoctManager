@@ -3,10 +3,12 @@
  * @description Creation and editing of base project metadata and the concert-day
  * plan. Defers API sync via dirty-state tracking surfaced through the shared
  * `EditorActionBar`.
- * Three sections, by the job each does rather than by field type: what the
+ * Four sections, by the job each does rather than by field type: what the
  * concert IS (identity, time, venue, conductor), what the DAY looks like (the
- * call time and the run sheet it opens), and what the ENSEMBLE is told (attire,
- * reference playlist, notes) — every field of the third one is published to the
+ * call time and the run sheet it opens), where the day HAPPENS once everyone
+ * has arrived at the address (door, parking, dressing room, the two typed
+ * windows and the number to call), and what the ENSEMBLE is told (attire,
+ * reference playlist, notes) — every field of the last two is published to the
  * singers, which is why the notes no longer sit under a "production" heading.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/DetailsTab
@@ -16,6 +18,7 @@ import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Clock,
+  DoorOpen,
   Info,
   ListOrdered,
   Megaphone,
@@ -38,6 +41,7 @@ import { TimezoneField } from "../../components/TimezoneField";
 import { DayTimeline } from "./components/DayTimeline";
 import {
   DateTimeField,
+  TimeField,
   type CalendarMarker,
 } from "@/shared/ui/composites/DateTimeField";
 import { Input } from "@/shared/ui/primitives/Input";
@@ -479,6 +483,167 @@ export const DetailsTab = ({
                   }
                 />
               )}
+            </div>
+          </SectionCard>
+
+          {/* Where the day happens once everyone has found the address. These
+              used to be prose inside the description, so they reached nobody as
+              a fact — and the two windows are typed rather than written into the
+              run sheet because a typed moment prints in the reader's own
+              language, where a hand-written title prints in the writer's. */}
+          <SectionCard
+            as="h2"
+            icon={<DoorOpen size={15} aria-hidden="true" />}
+            title={t("projects.details_tab.sections.onsite", "Na miejscu")}
+          >
+            <div className="flex flex-col gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <TimeField
+                  label={t(
+                    "projects.details_tab.fields.warmup_start",
+                    "Rozśpiewanie od",
+                  )}
+                  value={formData.warmup_start}
+                  onChange={(warmup_start) =>
+                    setFormData({
+                      ...formData,
+                      warmup_start,
+                      // A window with no beginning is not a window; clearing
+                      // the start takes its end with it rather than leaving an
+                      // hour the API would refuse on save.
+                      warmup_end: warmup_start ? formData.warmup_end : "",
+                    })
+                  }
+                />
+                <TimeField
+                  label={t(
+                    "projects.details_tab.fields.warmup_end",
+                    "Rozśpiewanie do",
+                  )}
+                  value={formData.warmup_end}
+                  disabled={!formData.warmup_start}
+                  onChange={(warmup_end) =>
+                    setFormData({ ...formData, warmup_end })
+                  }
+                />
+                <TimeField
+                  label={t(
+                    "projects.details_tab.fields.soundcheck_start",
+                    "Próba akustyczna od",
+                  )}
+                  value={formData.soundcheck_start}
+                  onChange={(soundcheck_start) =>
+                    setFormData({
+                      ...formData,
+                      soundcheck_start,
+                      soundcheck_end: soundcheck_start
+                        ? formData.soundcheck_end
+                        : "",
+                    })
+                  }
+                />
+                <TimeField
+                  label={t(
+                    "projects.details_tab.fields.soundcheck_end",
+                    "Próba akustyczna do",
+                  )}
+                  value={formData.soundcheck_end}
+                  disabled={!formData.soundcheck_start}
+                  onChange={(soundcheck_end) =>
+                    setFormData({ ...formData, soundcheck_end })
+                  }
+                />
+              </div>
+
+              <div className="flex flex-col gap-5 border-t border-hairline pt-5">
+                <Input
+                  label={t("projects.details_tab.fields.entrance", "Wejście / brama")}
+                  type="text"
+                  value={formData.entrance_note}
+                  onChange={(event) =>
+                    setFormData({ ...formData, entrance_note: event.target.value })
+                  }
+                  placeholder={t(
+                    "projects.details_tab.placeholders.entrance",
+                    "np. wejście boczne od Rakowieckiej, brama nr 2",
+                  )}
+                />
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <Input
+                    label={t("projects.details_tab.fields.parking", "Parking")}
+                    type="text"
+                    value={formData.parking_note}
+                    onChange={(event) =>
+                      setFormData({ ...formData, parking_note: event.target.value })
+                    }
+                    placeholder={t(
+                      "projects.details_tab.placeholders.parking",
+                      "np. dziedziniec, wjazd do 18:00",
+                    )}
+                  />
+                  <Input
+                    label={t(
+                      "projects.details_tab.fields.dressing_room",
+                      "Garderoba",
+                    )}
+                    type="text"
+                    value={formData.dressing_room_note}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        dressing_room_note: event.target.value,
+                      })
+                    }
+                    placeholder={t(
+                      "projects.details_tab.placeholders.dressing_room",
+                      "np. sala pod wieżą, klucz u zakrystiana",
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* The one number that prints on all forty sheets. It is typed for
+                  this concert, not read off anybody's profile — which is what
+                  makes publishing it to the whole choir the producer's decision
+                  rather than a leak. */}
+              <div className="grid grid-cols-1 gap-5 border-t border-hairline pt-5 sm:grid-cols-2">
+                <Input
+                  label={t(
+                    "projects.details_tab.fields.onsite_contact_name",
+                    "Kontakt na miejscu",
+                  )}
+                  type="text"
+                  value={formData.onsite_contact_name}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      onsite_contact_name: event.target.value,
+                    })
+                  }
+                  placeholder={t(
+                    "projects.details_tab.placeholders.onsite_contact_name",
+                    "np. Anna Nowak (produkcja)",
+                  )}
+                />
+                <Input
+                  label={t(
+                    "projects.details_tab.fields.onsite_contact_phone",
+                    "Telefon na miejscu",
+                  )}
+                  type="tel"
+                  value={formData.onsite_contact_phone}
+                  onChange={(event) =>
+                    setFormData({
+                      ...formData,
+                      onsite_contact_phone: event.target.value,
+                    })
+                  }
+                  placeholder={t(
+                    "projects.details_tab.placeholders.onsite_contact_phone",
+                    "+48 600 000 000",
+                  )}
+                />
+              </div>
             </div>
           </SectionCard>
         </div>

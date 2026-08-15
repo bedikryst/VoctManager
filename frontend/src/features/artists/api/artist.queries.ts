@@ -21,6 +21,7 @@ export const artistKeys = {
     details: (id: string | number) => ["artists", String(id)] as const,
     dossier: (id: string | number) =>
       ["artists", String(id), "dossier"] as const,
+    duplicates: ["artists", "duplicates"] as const,
   },
 };
 
@@ -96,6 +97,40 @@ export const useResendActivation = () => {
       if (parseApiError(error).code === "account_already_active") {
         queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
       }
+    },
+  });
+};
+
+/**
+ * Duplicate candidates. Manager-only server side, so this stays opt-in per
+ * surface rather than riding along with the roster every screen loads.
+ */
+export const useArtistDuplicates = (enabled = true) => {
+  return useQuery({
+    queryKey: artistKeys.artists.duplicates,
+    queryFn: ArtistService.getDuplicates,
+    enabled,
+    staleTime: 1000 * 60 * 5,
+  });
+};
+
+/**
+ * Folds one roster row into another. Invalidates the whole `artists` tree
+ * rather than patching a cache: a merge moves participations, castings and
+ * conversations, so nearly every roster-derived list is now wrong.
+ */
+export const useMergeArtists = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      primaryId,
+      duplicateId,
+    }: {
+      primaryId: string;
+      duplicateId: string;
+    }) => ArtistService.merge(primaryId, duplicateId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: artistKeys.artists.all });
     },
   });
 };

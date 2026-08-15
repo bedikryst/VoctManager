@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { UserPlus, Users } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
+import { isManager } from "@/shared/auth/rbac";
+import { useArtistDuplicates } from "./api/artist.queries";
+import type { DuplicateGroup } from "./types/artist.dto";
 import { useArtistData } from "./hooks/useArtistData";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
@@ -25,6 +29,7 @@ import { ArtistCard } from "./components/ArtistCard";
 import { ArtistRow } from "./components/ArtistRow";
 import { ArtistDossier } from "./components/ArtistDossier";
 import { BulkActionBar } from "./components/BulkActionBar";
+import { DuplicateReview } from "./components/DuplicateReview";
 import { EnsembleBalance } from "./components/EnsembleBalance";
 import { RosterToolbar } from "./components/RosterToolbar";
 import { NewThreadModal } from "@/features/messages/components/NewThreadModal";
@@ -36,8 +41,12 @@ import {
 } from "@/shared/ui/kinematics/StaggeredBentoGrid";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 
+/** Stable identity, so an idle query never re-renders the page on a new []. */
+const EMPTY_DUPLICATE_GROUPS: DuplicateGroup[] = [];
+
 export default function ArtistManagement(): React.JSX.Element {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const {
     isLoading,
     isError,
@@ -87,6 +96,11 @@ export default function ArtistManagement(): React.JSX.Element {
     handleResendActivation,
     resendingIds,
   } = useArtistData();
+
+  // Manager-only server side, so the query is not merely hidden for anyone else
+  // — it is never sent.
+  const { data: duplicateGroups = EMPTY_DUPLICATE_GROUPS } =
+    useArtistDuplicates(isManager(user));
 
   useEffect(() => {
     if (isError) {
@@ -178,6 +192,16 @@ export default function ArtistManagement(): React.JSX.Element {
               onSelectSection={setVoiceFilter}
             />
           </StaggeredBentoItem>
+
+          {/* Triage before browsing: a duplicate is only visible when the two
+              rows are next to each other, which the sorted roster never does.
+              Absent entirely on a clean roster — an empty item would still take
+              the stack's gap. */}
+          {duplicateGroups.length > 0 && (
+            <StaggeredBentoItem>
+              <DuplicateReview groups={duplicateGroups} />
+            </StaggeredBentoItem>
+          )}
 
           <StaggeredBentoItem>
             <RosterToolbar

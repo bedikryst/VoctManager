@@ -45,6 +45,30 @@ class ActivatedEmailChangeException(RosterDomainException):
         "only be changed by them, in their own settings."
     )
 
+class ArtistMergeException(RosterDomainException):
+    """Raised when two roster rows cannot be folded into one.
+
+    A merge moves a person's whole history — participations, castings,
+    attendance, conversations, the podium — and then retires the row it emptied,
+    so every refusal here is a case where doing it would destroy something that
+    cannot be reconstructed."""
+    code = "artist_merge_rejected"
+    default_message = "These two roster entries cannot be merged."
+
+class ActivatedArtistMergeException(ArtistMergeException):
+    """Raised when the row being absorbed has an activated account.
+
+    A usable password means a human has signed in at that address: retiring the
+    row would take their login away without telling them, and choosing which of
+    two live accounts survives is an account decision, not a roster cleanup.
+    Detach it the other way — merge the row nobody has signed into, or archive
+    one account deliberately."""
+    code = "artist_merge_activated"
+    default_message = (
+        "This entry has an activated account, so it cannot be absorbed into "
+        "another one. Merge the entry nobody has signed in to."
+    )
+
 class AttendanceValidationException(RosterDomainException):
     pass
 

@@ -843,6 +843,23 @@
       "pending_activation_desc": "L'invitation a été envoyée, mais cet artiste n'a pas encore activé son compte sur la plateforme.",
       "upcoming": "À venir"
     },
+    "duplicates": {
+      "title": "Doublons possibles",
+      "intro": "Ces fiches semblent désigner une seule personne. Deux personnes peuvent toutefois porter le même nom — choisissez la fiche à conserver, les autres y seront absorbées.",
+      "keep": "Conserver cette fiche",
+      "activated": "Compte actif",
+      "confirm_title": "Fusionner les fiches ?",
+      "confirm_desc": "Les participations, les distributions, les présences et les conversations passeront à la fiche « {{name}} ». Les autres fiches ({{n}}) seront archivées et perdront l'accès au panneau. Cette opération est irréversible.",
+      "confirm_action": "Fusionner",
+      "signal": {
+        "email": "la même adresse e-mail",
+        "phone": "le même numéro de téléphone",
+        "name": "le même nom"
+      },
+      "toast": {
+        "merged": "Fusionné dans : {{name}}"
+      }
+    },
     "editor": {
       "active_access_desc": "Le décocher bloquera l'accès à la connexion.",
       "active_access_title": "Accès actif à la plateforme",
@@ -2154,6 +2171,14 @@
       "piece_not_found": {
         "title": "Œuvre introuvable",
         "detail": "L’œuvre référencée n’existe pas ou a été supprimée."
+      },
+      "artist_merge_activated": {
+        "title": "Cette fiche ne peut pas être absorbée",
+        "detail": "Son compte est activé — quelqu'un s'y connecte. Fusionnez la fiche à laquelle personne ne s'est connecté, ou archivez le compte délibérément."
+      },
+      "artist_merge_rejected": {
+        "title": "Ces fiches ne peuvent pas être fusionnées",
+        "detail": "Vérifiez que la fiche destinée à survivre n'est pas archivée."
       }
     },
     "form": {
@@ -3311,6 +3336,7 @@
       "time_title": "Heure locale",
       "toast": {
         "create_success": "Nouveau projet et planning créés",
+        "invalid_window": "La fin de la plage doit suivre son début.",
         "pdf_remove_failed": "Échec de la suppression du PDF",
         "pdf_upload_failed": "Échec de l'envoi du PDF",
         "saving": "Enregistrement des détails du projet...",
@@ -3337,9 +3363,18 @@
         "description": "Description de l'événement",
         "dress_code_female": "Tenue : femmes",
         "dress_code_male": "Tenue : hommes",
+        "dressing_room": "Loge",
+        "entrance": "Entrée / portail",
         "location": "Lieu du concert",
+        "onsite_contact_name": "Contact sur place",
+        "onsite_contact_phone": "Téléphone sur place",
+        "parking": "Stationnement",
+        "soundcheck_end": "Balance à",
+        "soundcheck_start": "Balance de",
         "spotify": "Playlist Spotify",
-        "title": "Titre du projet *"
+        "title": "Titre du projet *",
+        "warmup_end": "Échauffement à",
+        "warmup_start": "Échauffement de"
       },
       "call_time": {
         "offset_h": "{{hours}} h avant le concert",
@@ -3360,7 +3395,12 @@
         "location": "Choisir un lieu",
         "location_clear": "Aucun lieu",
         "conductor": "Choisir un chef de chœur",
-        "conductor_clear": "Aucun chef de chœur"
+        "conductor_clear": "Aucun chef de chœur",
+        "entrance": "p. ex. entrée latérale rue Rakowiecka, portail nº 2",
+        "parking": "p. ex. cour intérieure, accès jusqu'à 18h00",
+        "dressing_room": "p. ex. salle sous la tour, clé chez le sacristain",
+        "onsite_contact_name": "p. ex. Anna Nowak (production)",
+        "onsite_contact_phone": "+48 600 000 000"
       },
       "run_sheet": {
         "description": "Description (optionnelle)",
@@ -3370,7 +3410,8 @@
       "sections": {
         "day_plan": "Déroulé du jour du concert",
         "ensemble_info": "Informations pour l'ensemble",
-        "event": "Événement"
+        "event": "Événement",
+        "onsite": "Sur place"
       },
       "markers": {
         "concert": "Concert"

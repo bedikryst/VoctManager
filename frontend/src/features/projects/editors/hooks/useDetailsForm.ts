@@ -102,6 +102,17 @@ const normalizeRunSheet = (
   );
 };
 
+/**
+ * The API answers a wall-clock `HH:MM:SS`; the control edits `HH:MM`. Trimming
+ * on the way in is what keeps the dirty comparison from firing on the seconds
+ * the server appended to a value nobody touched.
+ */
+const toClockInput = (value?: string | null): string =>
+  value ? value.slice(0, 5) : "";
+
+/** Empty is a real answer here — it clears the window rather than leaving one. */
+const toClockPayload = (value: string): string | null => value.trim() || null;
+
 const getProjectLocationId = (
   project: Project | null | undefined,
 ): string | null => {
@@ -125,6 +136,34 @@ const getProjectConductorId = (
 };
 
 const EMPTY_PROJECTS: Project[] = [];
+
+/**
+ * The single mapping from a stored project onto the editable form — used to
+ * seed it, to reset it after a save, and to derive the baseline it is compared
+ * against. One function rather than three copies, so a field added to the form
+ * cannot be edited without ever making the save bar appear.
+ */
+const toFormData = (source: Project | null | undefined): ProjectFormData => ({
+  title: source?.title || "",
+  timezone: source?.timezone || "Europe/Warsaw",
+  date_time: toZonedInputString(source?.date_time, source?.timezone),
+  call_time: toZonedInputString(source?.call_time, source?.timezone),
+  location_id: getProjectLocationId(source),
+  conductor: getProjectConductorId(source),
+  dress_code_male: source?.dress_code_male || "",
+  dress_code_female: source?.dress_code_female || "",
+  spotify_playlist_url: source?.spotify_playlist_url || "",
+  description: source?.description || "",
+  entrance_note: source?.entrance_note || "",
+  parking_note: source?.parking_note || "",
+  dressing_room_note: source?.dressing_room_note || "",
+  warmup_start: toClockInput(source?.warmup_start),
+  warmup_end: toClockInput(source?.warmup_end),
+  soundcheck_start: toClockInput(source?.soundcheck_start),
+  soundcheck_end: toClockInput(source?.soundcheck_end),
+  onsite_contact_name: source?.onsite_contact_name || "",
+  onsite_contact_phone: source?.onsite_contact_phone || "",
+});
 
 const toZonedInputString = (
   dateString?: string | null,
@@ -169,18 +208,9 @@ export const useDetailsForm = (
 
   const [baseline, setBaseline] = useState<Project | null>(project);
 
-  const [formData, setFormData] = useState<ProjectFormData>({
-    title: project?.title || "",
-    timezone: project?.timezone || "Europe/Warsaw",
-    date_time: toZonedInputString(project?.date_time, project?.timezone),
-    call_time: toZonedInputString(project?.call_time, project?.timezone),
-    location_id: getProjectLocationId(project),
-    conductor: getProjectConductorId(project),
-    dress_code_male: project?.dress_code_male || "",
-    dress_code_female: project?.dress_code_female || "",
-    spotify_playlist_url: project?.spotify_playlist_url || "",
-    description: project?.description || "",
-  });
+  const [formData, setFormData] = useState<ProjectFormData>(() =>
+    toFormData(project),
+  );
 
   const [runSheet, setRunSheet] = useState<RunSheetItem[]>(() =>
     normalizeRunSheet(project?.run_sheet),
@@ -188,18 +218,7 @@ export const useDetailsForm = (
 
   const resetFormToProject = useCallback((source: Project) => {
     setBaseline(source);
-    setFormData({
-      title: source.title || "",
-      timezone: source.timezone || "Europe/Warsaw",
-      date_time: toZonedInputString(source.date_time, source.timezone),
-      call_time: toZonedInputString(source.call_time, source.timezone),
-      location_id: getProjectLocationId(source),
-      conductor: getProjectConductorId(source),
-      dress_code_male: source.dress_code_male || "",
-      dress_code_female: source.dress_code_female || "",
-      spotify_playlist_url: source.spotify_playlist_url || "",
-      description: source.description || "",
-    });
+    setFormData(toFormData(source));
     setRunSheet(normalizeRunSheet(source.run_sheet));
   }, []);
 
@@ -218,21 +237,11 @@ export const useDetailsForm = (
       );
     }
 
-    const baselineTimezone = baseline.timezone || "Europe/Warsaw";
-
+    // Compared against the same projection the form was seeded from, field by
+    // field in one shot: an enumerated comparison silently stops covering every
+    // field the moment one is added to the form and not to the list.
     const basicFieldsChanged =
-      formData.title !== (baseline.title || "") ||
-      formData.timezone !== baselineTimezone ||
-      formData.date_time !==
-        toZonedInputString(baseline.date_time, baselineTimezone) ||
-      formData.call_time !==
-        toZonedInputString(baseline.call_time, baselineTimezone) ||
-      formData.location_id !== getProjectLocationId(baseline) ||
-      formData.conductor !== getProjectConductorId(baseline) ||
-      formData.dress_code_male !== (baseline.dress_code_male || "") ||
-      formData.dress_code_female !== (baseline.dress_code_female || "") ||
-      formData.spotify_playlist_url !== (baseline.spotify_playlist_url || "") ||
-      formData.description !== (baseline.description || "");
+      JSON.stringify(formData) !== JSON.stringify(toFormData(baseline));
 
     // Compared chronologically on both sides: the form keeps the day sorted and
     // the server does not promise to, so a purely positional diff would open
@@ -295,6 +304,31 @@ export const useDetailsForm = (
       return;
     }
 
+    // A window that closes before it opens would print on the day card as a
+    // fact. Caught here rather than left to the API, whose rejection would
+    // arrive as a field-level message about a control the producer may have
+    // scrolled past — and would take the whole save down with it.
+    const invertedWindow = (
+      [
+        ["warmup_start", "warmup_end"],
+        ["soundcheck_start", "soundcheck_end"],
+      ] as const
+    ).some(([start, end]) => {
+      const from = formData[start].trim();
+      const until = formData[end].trim();
+      return Boolean(until) && (!from || until <= from);
+    });
+
+    if (invertedWindow) {
+      toast.error(
+        t(
+          "projects.details.toast.invalid_window",
+          "Koniec okna musi wypadać po jego początku.",
+        ),
+      );
+      return;
+    }
+
     const toastId = toast.loading(
       t("projects.details.toast.saving", "Zapisywanie szczegółów projektu..."),
     );
@@ -337,6 +371,17 @@ export const useDetailsForm = (
         spotify_playlist_url: formData.spotify_playlist_url || "",
         description: formData.description || "",
         run_sheet: sanitizedRunSheet,
+        entrance_note: formData.entrance_note || "",
+        parking_note: formData.parking_note || "",
+        dressing_room_note: formData.dressing_room_note || "",
+        // Both halves of a window always travel together: the API refuses a
+        // closing hour it cannot check against a start it was not sent.
+        warmup_start: toClockPayload(formData.warmup_start),
+        warmup_end: toClockPayload(formData.warmup_end),
+        soundcheck_start: toClockPayload(formData.soundcheck_start),
+        soundcheck_end: toClockPayload(formData.soundcheck_end),
+        onsite_contact_name: formData.onsite_contact_name || "",
+        onsite_contact_phone: formData.onsite_contact_phone || "",
       };
 
       let savedProject: Project;

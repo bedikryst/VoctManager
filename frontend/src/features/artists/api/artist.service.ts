@@ -7,7 +7,12 @@
 
 import api from "@/shared/api/api";
 import type { Artist } from "@/shared/types";
-import type { ArtistCreateDTO, ArtistUpdateDTO } from "../types/artist.dto";
+import type {
+  ArtistCreateDTO,
+  ArtistMergeResult,
+  ArtistUpdateDTO,
+  DuplicateGroup,
+} from "../types/artist.dto";
 import type { ArtistDossier } from "../types/artistDossier.dto";
 
 const BASE_URL = "/api/artists/";
@@ -65,6 +70,24 @@ export const ArtistService = {
 
   getDossier: async (id: string): Promise<ArtistDossier> => {
     const response = await api.get<ArtistDossier>(`${BASE_URL}${id}/dossier/`);
+    return response.data;
+  },
+
+  /** Roster rows that are probably one person. Candidates, never verdicts. */
+  getDuplicates: async (): Promise<DuplicateGroup[]> => {
+    const response = await api.get<DuplicateGroup[]>(`${BASE_URL}duplicates/`);
+    return response.data;
+  },
+
+  /**
+   * Folds `duplicateId` into `id`, which survives and keeps the history. The
+   * only roster action with no way back from the panel.
+   */
+  merge: async (id: string, duplicateId: string): Promise<ArtistMergeResult> => {
+    const response = await api.post<ArtistMergeResult>(
+      `${BASE_URL}${id}/merge/`,
+      { duplicate_id: duplicateId },
+    );
     return response.data;
   },
 };

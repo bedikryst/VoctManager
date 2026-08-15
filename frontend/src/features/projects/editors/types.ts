@@ -24,6 +24,17 @@ export interface ProjectFormData {
   dress_code_female: string;
   spotify_playlist_url: string;
   description: string;
+  entrance_note: string;
+  parking_note: string;
+  dressing_room_note: string;
+  /** `HH:MM` as typed, empty when unset — the payload trims it to a bare hour
+   *  or to `null`; the API stores a wall-clock time on concert day. */
+  warmup_start: string;
+  warmup_end: string;
+  soundcheck_start: string;
+  soundcheck_end: string;
+  onsite_contact_name: string;
+  onsite_contact_phone: string;
 }
 
 export interface RehearsalFormData {

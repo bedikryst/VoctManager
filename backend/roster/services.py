@@ -10,6 +10,7 @@ Views MUST delegate all business logic to these stateless classes.
 """
 import logging
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
@@ -64,9 +65,11 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .exceptions import (
+    ActivatedArtistMergeException,
     ActivatedEmailChangeException,
     ActivationResendException,
     ArtistEmailConflictException,
+    ArtistMergeException,
     ArtistProvisioningException,
     AttendanceValidationException,
     CastingValidationException,
@@ -173,8 +176,38 @@ def _casting_removed_metadata(piece_title: str, project: Project) -> dict[str, A
     ).model_dump(mode="json")
 
 
+@dataclass(frozen=True)
+class ArtistMergeReport:
+    """What a merge actually moved, so the manager who took the decision is told
+    what it cost rather than just that it succeeded."""
+
+    participations_moved: int = 0
+    participations_folded: int = 0
+    castings_moved: int = 0
+    castings_dropped: int = 0
+    readiness_moved: int = 0
+    attendances_moved: int = 0
+    attendances_dropped: int = 0
+    threads_moved: int = 0
+    projects_conducted: int = 0
+    statuses_upgraded: int = 0
+    # Projects where both rows carried a different fee. The surviving row keeps
+    # its own and this says where to go and look: money is not something a
+    # cleanup gets to average.
+    fee_conflicts: tuple[str, ...] = ()
+
+
 class ArtistHRService:
     """Service handling HR operations, onboarding, and artist lifecycles."""
+
+    # A person who answered "yes" on one of their two rows has answered yes.
+    # Ranked so the surviving participation can adopt the stronger answer
+    # without the merge having to ask which row was "the real one".
+    _PARTICIPATION_RANK: ClassVar[dict[str, int]] = {
+        Participation.Status.DECLINED: 0,
+        Participation.Status.INVITED: 1,
+        Participation.Status.CONFIRMED: 2,
+    }
 
     @staticmethod
     def provision_artist(dto: ArtistCreateDTO) -> Artist:
@@ -414,6 +447,168 @@ class ArtistHRService:
                 user.save(update_fields=['is_active'])
 
             logger.info(f"Artist {artist.email} archived and user access revoked.")
+
+    @staticmethod
+    def merge_artists(primary: Artist, duplicate: Artist) -> ArtistMergeReport:
+        """Folds one roster row into another and retires the emptied one.
+
+        Two `Artist` rows for one human are possible because uniqueness is on
+        the e-mail column alone, and they are not a cosmetic problem: the two
+        rows split one person's history in half and the concert sheet counts
+        them as two singers. Nothing is deleted here — every row that carries
+        history is repointed at `primary`, and the emptied row leaves through
+        the same door as any other departure (`archive_artist`), so its record
+        survives and its account stops signing in.
+
+        Two rules the caller cannot override:
+
+        - **An activated duplicate is refused.** A usable password means someone
+          has signed in at that address, and retiring the row would take their
+          login with it. Which of two live accounts survives is not a decision a
+          cleanup makes.
+        - **A project both rows appear in keeps the primary's participation.**
+          The other one is soft-deleted after its castings, readiness and
+          attendance move across — the alternative, repointing it, would break
+          `unique_active_project_participation` and put the same singer on the
+          riser twice.
+        """
+        from messaging.models import Thread
+
+        if primary.pk == duplicate.pk:
+            raise ArtistMergeException("An entry cannot be merged into itself.")
+        if primary.is_deleted:
+            raise ArtistMergeException(
+                "The surviving entry is archived. Restore it before merging into it."
+            )
+
+        duplicate_user = duplicate.user
+        if duplicate_user is not None and duplicate_user.has_usable_password():
+            raise ActivatedArtistMergeException()
+
+        with transaction.atomic():
+            report = ArtistHRService._merge_participations(primary, duplicate)
+
+            # The podium and the conversations follow the person, not the row.
+            # `all_objects` on purpose: a soft-deleted project or thread still
+            # holds a reference, and leaving it behind would split the history
+            # this merge exists to reunite.
+            projects_conducted = Project.all_objects.filter(
+                conductor=duplicate
+            ).update(conductor=primary)
+            threads_moved = Thread.all_objects.filter(artist=duplicate).update(
+                artist=primary
+            )
+
+            ArtistHRService.archive_artist(duplicate)
+
+        logger.info(
+            "Artist %s merged into %s (%s participations moved, %s folded)",
+            duplicate.pk, primary.pk,
+            report.participations_moved, report.participations_folded,
+        )
+        return replace(
+            report,
+            projects_conducted=projects_conducted,
+            threads_moved=threads_moved,
+        )
+
+    @staticmethod
+    def _merge_participations(primary: Artist, duplicate: Artist) -> ArtistMergeReport:
+        """Moves the duplicate's participations, folding the ones that collide.
+
+        A collision is the normal case for the duplicate that gets noticed —
+        both rows were invited to the same concert, which is exactly how the
+        person ends up printed twice in one voice section.
+        """
+        moved = folded = statuses_upgraded = 0
+        castings_moved = castings_dropped = 0
+        readiness_moved = attendances_moved = attendances_dropped = 0
+        fee_conflicts: list[str] = []
+
+        surviving = {
+            participation.project_id: participation
+            for participation in primary.participations.all()
+        }
+
+        for participation in duplicate.participations.select_related('project').all():
+            target = surviving.get(participation.project_id)
+
+            if target is None:
+                participation.artist = primary
+                participation.save(update_fields=['artist', 'updated_at'])
+                surviving[participation.project_id] = participation
+                moved += 1
+                continue
+
+            # One seat per piece and one attendance per rehearsal are already
+            # taken where the two rows overlap; those rows are the duplicate's
+            # copy of a fact the survivor already records.
+            taken_pieces = set(target.castings.values_list('piece_id', flat=True))
+            castings_moved += ProjectPieceCasting.objects.filter(
+                participation=participation
+            ).exclude(piece_id__in=taken_pieces).update(participation=target)
+            castings_dropped += ProjectPieceCasting.objects.filter(
+                participation=participation
+            ).delete()[0]
+
+            taken_readiness = set(
+                target.piece_readiness.values_list('piece_id', flat=True)
+            )
+            readiness_moved += PieceReadiness.objects.filter(
+                participation=participation
+            ).exclude(piece_id__in=taken_readiness).update(participation=target)
+            PieceReadiness.objects.filter(participation=participation).delete()
+
+            taken_rehearsals = set(
+                target.attendances.values_list('rehearsal_id', flat=True)
+            )
+            attendances_moved += Attendance.objects.filter(
+                participation=participation
+            ).exclude(rehearsal_id__in=taken_rehearsals).update(participation=target)
+            attendances_dropped += Attendance.objects.filter(
+                participation=participation
+            ).delete()[0]
+
+            for rehearsal in participation.invited_rehearsals.all():
+                rehearsal.invited_participations.add(target)
+                rehearsal.invited_participations.remove(participation)
+
+            fields: list[str] = []
+            if (
+                ArtistHRService._PARTICIPATION_RANK.get(participation.status, -1)
+                > ArtistHRService._PARTICIPATION_RANK.get(target.status, -1)
+            ):
+                target.status = participation.status
+                fields.append('status')
+                statuses_upgraded += 1
+
+            if target.fee is None and participation.fee is not None:
+                target.fee = participation.fee
+                fields.append('fee')
+            elif (
+                participation.fee is not None
+                and target.fee is not None
+                and participation.fee != target.fee
+            ):
+                fee_conflicts.append(participation.project.title)
+
+            if fields:
+                target.save(update_fields=[*fields, 'updated_at'])
+
+            participation.delete()
+            folded += 1
+
+        return ArtistMergeReport(
+            participations_moved=moved,
+            participations_folded=folded,
+            castings_moved=castings_moved,
+            castings_dropped=castings_dropped,
+            readiness_moved=readiness_moved,
+            attendances_moved=attendances_moved,
+            attendances_dropped=attendances_dropped,
+            statuses_upgraded=statuses_upgraded,
+            fee_conflicts=tuple(fee_conflicts),
+        )
 
     @staticmethod
     def restore_artist(artist: Artist) -> None:

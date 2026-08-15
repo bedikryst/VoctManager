@@ -42,6 +42,7 @@ from django.utils.translation import ngettext, pgettext
 
 from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
+from logistics.address import address_parts
 from roster.domain.day_timeline import (
     CallWindow,
     CallWindowProblem,
@@ -49,6 +50,7 @@ from roster.domain.day_timeline import (
     TimelineEntry,
     TimelineEntryKind,
     build_day_timeline,
+    clock_sort_key,
     localize,
     normalize_run_sheet,
     plan_end,
@@ -725,8 +727,18 @@ class DocumentGenerator:
         # a header built from the project's datetimes, so a stale "12:00 Start"
         # could sit under a masthead announcing a 20:02 downbeat — two
         # implementations of one concept, one of them wrong, in one document.
+        #
+        # The two structured moments join that axis rather than opening a second
+        # list of hours: warm-up and sound check are moments of this day like any
+        # run-sheet point, and the only thing that makes them different is that
+        # nobody has to type their name (which is why they print in the reader's
+        # language and a run-sheet title does not).
         run_sheet_points = normalize_run_sheet(project.run_sheet)
-        timeline = build_day_timeline(run_sheet_points, call_window)
+        day_points = sorted(
+            [*run_sheet_points, *DocumentGenerator._structured_day_points(project)],
+            key=lambda point: clock_sort_key(point.time),
+        )
+        timeline = build_day_timeline(day_points, call_window)
 
         # Polish is the only supported language with a distinct vocative, and
         # the rule that knows it lives in one place. Printing the stored form
@@ -812,7 +824,12 @@ class DocumentGenerator:
             # With no points of its own the merged axis is just the two anchors,
             # which the masthead already states — the section says so in words
             # instead of restating them as a two-row table.
-            'has_run_sheet': bool(run_sheet_points),
+            'has_run_sheet': bool(day_points),
+            # Where exactly, once the reader has arrived at the address. Only
+            # what is actually recorded: a card whose whole content is the
+            # absence of three facts is noise on the sheet of the person who
+            # cannot fill them in, and the report names the gap in its blockers.
+            'onsite_facts': DocumentGenerator._build_onsite_facts(project),
             'rehearsal_items': rehearsal_items,
             'rehearsals_done': rehearsals_done,
             # Composed here rather than in the template because a numeral
@@ -881,7 +898,7 @@ class DocumentGenerator:
                     confirmed_participations=confirmed_participations,
                     crew_list=crew_list,
                     venue=venue,
-                    run_sheet_points=run_sheet_points,
+                    day_points=day_points,
                 )
                 if is_report
                 else []
@@ -1123,6 +1140,93 @@ class DocumentGenerator:
         return ' · '.join(parts)
 
     @staticmethod
+    def _structured_day_points(project: Project) -> list[RunSheetPoint]:
+        """The day's two typed moments, as points of the same axis.
+
+        They exist as columns rather than as run-sheet rows for one reason that
+        only shows up in print: a run-sheet title is free text somebody typed in
+        Polish, so the maestro's French sheet printed "Próba akustyczna". A
+        typed moment carries no wording of its own and is named here, in the
+        reader's language.
+
+        An open window (a start with no end) is normal — the sound check ends
+        when it ends — so the closing hour is a qualifier, never a second row.
+        """
+        moments: list[RunSheetPoint] = []
+        for start, end, title in (
+            (
+                project.warmup_start,
+                project.warmup_end,
+                pgettext('call sheet', 'Warm-up'),
+            ),
+            (
+                project.soundcheck_start,
+                project.soundcheck_end,
+                pgettext('call sheet', 'Sound check'),
+            ),
+        ):
+            if start is None:
+                continue
+            moments.append(
+                RunSheetPoint(
+                    time=start.strftime('%H:%M'),
+                    title=title,
+                    description=(
+                        _('until %(time)s') % {'time': end.strftime('%H:%M')}
+                        if end is not None
+                        else ''
+                    ),
+                    location='',
+                )
+            )
+        return moments
+
+    @staticmethod
+    def _build_onsite_facts(project: Project) -> list[dict[str, str]]:
+        """Where exactly, once the reader is standing at the address.
+
+        The three facts a singer asks a stranger for — which door, where to
+        leave the car, where to change — and which used to exist only as prose
+        inside the project description or the venue's internal notes, so neither
+        reached the sheet as a fact anyone could act on.
+        """
+        return [
+            {'label': label, 'text': value}
+            for label, value in (
+                (pgettext('call sheet', 'Entrance'), project.entrance_note),
+                (pgettext('call sheet', 'Parking'), project.parking_note),
+                (pgettext('call sheet', 'Dressing room'), project.dressing_room_note),
+            )
+            if value
+        ]
+
+    @staticmethod
+    def _onsite_contact_entry(project: Project) -> dict[str, Any] | None:
+        """The number a lost or late singer calls, as a directory entry.
+
+        It reaches every audience, the choir included, and that is the one piece
+        of contact data on this sheet which may: it is typed for this concert
+        rather than read off somebody's profile, so printing it is the decision
+        the producer already took when they entered it. A crew member's private
+        mobile is theirs, and stays where it is.
+        """
+        name = project.onsite_contact_name.strip()
+        phone = project.onsite_contact_phone.strip()
+        if not name and not phone:
+            return None
+        # Unnamed, the role *is* the name — a nameless entry headed "On site"
+        # above a line reading "On-site contact" says one thing twice.
+        label = pgettext('call sheet', 'On-site contact')
+        return {
+            'name': name or label,
+            'role': label if name else '',
+            'organization': '',
+            'status': _('Reachable on the day of the concert.'),
+            'phone': phone,
+            'email': '',
+        }
+
+    @staticmethod
     def _build_contact_directory(
         project: Project,
         crew_list: list[CrewAssignment],
@@ -1130,22 +1234,27 @@ class DocumentGenerator:
     ) -> list[dict[str, Any]]:
         # RODO: the whole ensemble must never receive everyone's phone/email.
         # The singer sheet names who leads (no private numbers); the conductor
-        # and management sheets carry the full operational directory.
-        if audience == Audience.CHORISTER:
-            if not project.conductor:
-                return []
-            return [
-                {
-                    'name': f'{project.conductor.first_name} {project.conductor.last_name}',
-                    'role': pgettext('call sheet', 'Conducted by'),
-                    'organization': '',
-                    'status': _('For questions and delays, write in the app.'),
-                    'phone': '',
-                    'email': '',
-                }
-            ]
+        # and management sheets carry the full operational directory. The
+        # project's own on-site number opens all three, because a document read
+        # forty minutes before the downbeat is answering "whom do I call now".
+        onsite = DocumentGenerator._onsite_contact_entry(project)
 
-        directory: list[dict[str, Any]] = []
+        directory: list[dict[str, Any]] = [onsite] if onsite else []
+
+        if audience == Audience.CHORISTER:
+            if project.conductor:
+                directory.append(
+                    {
+                        'name': f'{project.conductor.first_name} {project.conductor.last_name}',
+                        'role': pgettext('call sheet', 'Conducted by'),
+                        'organization': '',
+                        'status': _('For questions and delays, write in the app.'),
+                        'phone': '',
+                        'email': '',
+                    }
+                )
+            return directory
+
         if project.conductor:
             directory.append(
                 {
@@ -1460,7 +1569,7 @@ class DocumentGenerator:
         confirmed_participations: list[Participation],
         crew_list: list[CrewAssignment],
         venue: Any,
-        run_sheet_points: list[RunSheetPoint],
+        day_points: list[RunSheetPoint],
     ) -> list[dict[str, str]]:
         """What is not closed yet, worst first.
 
@@ -1619,10 +1728,23 @@ class DocumentGenerator:
                 _('No collaborator is assigned.'),
             )
 
-        if not run_sheet_points:
+        # Counted over the merged day, not over the JSON field: a producer who
+        # only set the warm-up and the sound check has planned a day, and the
+        # detail below would be untrue of the sheet that actually prints.
+        if not day_points:
             add(
                 _('The run sheet has not been filled in'),
                 _('Performers will get only the hours from the masthead.'),
+            )
+
+        # The worst thing a call sheet can do is abandon its reader: a singer on
+        # the wrong tram, forty minutes out, with nobody to call. The conductor's
+        # private mobile is not the answer for a forty-voice choir, which is why
+        # the project carries a number of its own.
+        if not project.onsite_contact_phone.strip():
+            add(
+                _('No on-site phone number'),
+                _('A singer who is lost or late has nobody to call on the day.'),
             )
 
         if not project.dress_code_female and not project.dress_code_male:
@@ -1841,36 +1963,23 @@ class DocumentGenerator:
 
     @staticmethod
     def _format_address(formatted_address: str | None) -> str:
-        """Places addresses arrive as free text and occasionally repeat a
-        fragment ("02-532, Rakowiecka 61, 02-532 Warszawa"). Only exact repeats
-        of a comma-separated part are dropped, and the ensemble's own country is
-        left off — a Polish sheet does not need to say the concert is in Poland.
-        Anything else passes through untouched: this is a print-time tidy, not
-        an address parser. Nothing to tidy returns nothing: the placeholder is
-        the caller's, because "to be arranged" belongs in a facts table and is
-        noise inside a venue line. Normalisation belongs to the logistics import.
+        """The stored address, minus the country that goes without saying.
+
+        Repetition is dropped by ``logistics.address``, at the import that
+        introduces it; what is left here is the one removal that belongs to the
+        page rather than to the record — a Polish sheet for a Polish ensemble
+        does not need to say the concert is in Poland, while the stored value
+        keeps the country because a maps query and a postal use both want it.
+        Rows written before that normalisation existed still arrive dirty, which
+        is why this composes it rather than assuming it. Nothing to show returns
+        nothing: the placeholder is the caller's, because "to be arranged"
+        belongs in a facts table and is noise inside a venue line.
         """
-        if not formatted_address:
-            return ''
-        parts = [part.strip() for part in formatted_address.split(',') if part.strip()]
-        kept: list[str] = []
-        for part in parts:
-            if part in kept:
-                continue
-            if part.casefold() in _IMPLIED_COUNTRIES:
-                continue
-            kept.append(part)
-        # A postal code repeated inside a longer part ("02-532 Warszawa" after a
-        # bare "02-532") is the common Places shape; drop the bare one.
-        deduped = [
+        return ', '.join(
             part
-            for index, part in enumerate(kept)
-            if not any(
-                other != part and other.startswith(f'{part} ')
-                for other in kept[index + 1:]
-            )
-        ]
-        return ', '.join(deduped)
+            for part in address_parts(formatted_address)
+            if part.casefold() not in _IMPLIED_COUNTRIES
+        )
 
     @staticmethod
     def _format_timezone(timezone_name: str, event_local: Any) -> str:

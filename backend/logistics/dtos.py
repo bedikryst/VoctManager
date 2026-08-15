@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .address import normalize_address
 from .models import LocationCategory
 
 LOCATION_CATEGORY_VALUES = frozenset(LocationCategory.values)
@@ -23,6 +24,13 @@ def _blank_to_none(value: object) -> object:
         return value
     stripped = value.strip()
     return stripped or None
+
+
+def _normalized_address(value: object) -> object:
+    """Non-strings pass through so pydantic can report the real type error."""
+    if not isinstance(value, str):
+        return value
+    return normalize_address(value)
 
 
 def _blank_to_empty(value: object) -> object:
@@ -50,10 +58,18 @@ class LocationCreateDTO(LogisticsBaseDTO):
     longitude: Decimal | None = Field(None, ge=Decimal("-180"), le=Decimal("180"), decimal_places=6)
     internal_notes: str = ""
 
-    @field_validator("name", "formatted_address", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
     def normalize_required_text(cls, value: object) -> object:
         return _strip_required(value)
+
+    # The Places import is the boundary this repetition comes in through, so it
+    # is where it stops — not at print time, where every reader of the stored
+    # value would have to repeat the same cleanup.
+    @field_validator("formatted_address", mode="before")
+    @classmethod
+    def normalize_formatted_address(cls, value: object) -> object:
+        return _strip_required(_normalized_address(value))
 
     @field_validator("google_place_id", mode="before")
     @classmethod
@@ -86,12 +102,19 @@ class LocationUpdateDTO(LogisticsBaseDTO):
     internal_notes: str | None = None
     is_active: bool | None = None
 
-    @field_validator("name", "formatted_address", mode="before")
+    @field_validator("name", mode="before")
     @classmethod
     def normalize_required_text(cls, value: object) -> object:
         if value is None:
             return value
         return _strip_required(value)
+
+    @field_validator("formatted_address", mode="before")
+    @classmethod
+    def normalize_formatted_address(cls, value: object) -> object:
+        if value is None:
+            return value
+        return _strip_required(_normalized_address(value))
 
     @field_validator("google_place_id", mode="before")
     @classmethod

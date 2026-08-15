@@ -28,6 +28,17 @@ export interface ProjectCreateDTO {
   description?: string | null;
   status?: ProjectStatus;
   run_sheet?: RunSheetItem[];
+  entrance_note?: string | null;
+  parking_note?: string | null;
+  dressing_room_note?: string | null;
+  /** `HH:MM` wall-clock on concert day; `null` clears the window. The backend
+   *  rejects an end without a start, so both halves always travel together. */
+  warmup_start?: string | null;
+  warmup_end?: string | null;
+  soundcheck_start?: string | null;
+  soundcheck_end?: string | null;
+  onsite_contact_name?: string | null;
+  onsite_contact_phone?: string | null;
 }
 
 export type ProjectUpdateDTO = Partial<ProjectCreateDTO> & {

@@ -1,5 +1,6 @@
 import tempfile
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.conf import settings
@@ -15,7 +16,13 @@ from core.models import UserProfile
 from notifications.models import NotificationLevel, NotificationType
 
 from .dtos import ArtistCreateDTO, AttendanceRecordDTO, ProjectCreateDTO
-from .exceptions import ActivationResendException, CastingValidationException
+from .duplicates import DuplicateSignal, find_duplicate_groups
+from .exceptions import (
+    ActivatedArtistMergeException,
+    ActivationResendException,
+    ArtistMergeException,
+    CastingValidationException,
+)
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
@@ -4702,6 +4709,112 @@ class ConcertDaySheetTests(APITestCase):
         self.assertNotIn("crew-secret@test.pl", html)
         self.assertNotIn("600100100", html)
 
+    def test_typed_day_moments_join_the_one_axis(self) -> None:
+        """Warm-up and sound check are moments of the same day, so they are
+        placed among the run-sheet points rather than opening a second list of
+        hours — and they carry no wording of their own, which is why they can
+        print in the reader's language where a typed title cannot."""
+        self._pin_concert_day()
+        self.project.warmup_start = time(18, 40)
+        self.project.warmup_end = time(19, 0)
+        self.project.soundcheck_start = time(19, 20)
+        self.project.save(
+            update_fields=["warmup_start", "warmup_end", "soundcheck_start"]
+        )
+
+        rows = self._build_context(Audience.CHORISTER, self.singer_part)["day_timeline"]
+        self.assertEqual(
+            [(row["time"], row["title"]) for row in rows],
+            [
+                ("18:30", "Zbiórka"),
+                ("18:30", "Call & warm-up"),
+                ("18:40", "Rozśpiewanie"),
+                ("19:15", "Sound check"),
+                ("19:20", "Próba akustyczna"),
+                ("20:00", "Downbeat"),
+                ("20:00", "Początek koncertu"),
+            ],
+        )
+        # An open window is normal — the sound check ends when it ends — so the
+        # closing hour qualifies the moment instead of becoming a second row.
+        self.assertEqual(rows[2]["description"], "do 19:00")
+        self.assertEqual(rows[4]["description"], "")
+        # The free-text "Sound check" someone typed is NOT deduplicated against
+        # the typed moment: when they agree the repetition costs nothing, and
+        # when they disagree the repetition is the finding.
+        self.assertEqual(sum(1 for row in rows if "check" in row["title"].lower()), 1)
+
+    def test_typed_moments_alone_are_a_planned_day(self) -> None:
+        """A producer who set only the two windows has planned a day; the
+        section must not fall back to "nothing here, go by the masthead"."""
+        self._pin_concert_day()
+        self.project.run_sheet = []
+        self.project.soundcheck_start = time(19, 20)
+        self.project.save(update_fields=["run_sheet", "soundcheck_start"])
+
+        self.assertTrue(
+            self._build_context(Audience.CHORISTER, self.singer_part)["has_run_sheet"]
+        )
+        self.assertNotIn(
+            "Szczegółowy przebieg dnia",
+            self._render(Audience.PRODUCTION, None),
+        )
+
+    def test_on_site_card_lists_only_what_was_recorded(self) -> None:
+        """Where exactly, once the reader has found the address. A card whose
+        whole content is the absence of three facts asks its reader to fix data
+        they cannot reach — the report names the gap in its blockers instead."""
+        self.assertEqual(
+            self._build_context(Audience.CHORISTER, self.singer_part)["onsite_facts"],
+            [],
+        )
+
+        self.project.entrance_note = "Wejście boczne od Rakowieckiej, brama nr 2"
+        self.project.dressing_room_note = "Sala pod wieżą"
+        self.project.save(update_fields=["entrance_note", "dressing_room_note"])
+
+        facts = self._build_context(Audience.CHORISTER, self.singer_part)["onsite_facts"]
+        self.assertEqual([fact["label"] for fact in facts], ["Wejście", "Garderoba"])
+        self.assertIn("brama nr 2", self._render(Audience.CHORISTER, self.singer_part))
+
+    def test_on_site_number_reaches_the_singer_and_the_crew_number_still_does_not(
+        self,
+    ) -> None:
+        """The one contact a forty-voice choir may be handed: typed for this
+        concert by the producer, not read off somebody's profile."""
+        self.project.onsite_contact_name = "Anna Nowak"
+        self.project.onsite_contact_phone = "+48 600 000 000"
+        self.project.save(
+            update_fields=["onsite_contact_name", "onsite_contact_phone"]
+        )
+
+        directory = self._build_context(Audience.CHORISTER, self.singer_part)[
+            "contact_directory"
+        ]
+        self.assertEqual(directory[0]["name"], "Anna Nowak")
+        self.assertEqual(directory[0]["phone"], "+48 600 000 000")
+
+        html = self._render(Audience.CHORISTER, self.singer_part)
+        self.assertIn("+48 600 000 000", html)
+        self.assertNotIn("555999555", html)
+        self.assertNotIn("600100100", html)
+
+    def test_report_names_a_missing_on_site_number(self) -> None:
+        """The worst thing a call sheet can do is abandon its reader."""
+        blockers = [
+            blocker["text"]
+            for blocker in self._build_context(Audience.PRODUCTION, None)["blockers"]
+        ]
+        self.assertIn("Brak telefonu na miejscu", blockers)
+
+        self.project.onsite_contact_phone = "+48 600 000 000"
+        self.project.save(update_fields=["onsite_contact_phone"])
+        blockers = [
+            blocker["text"]
+            for blocker in self._build_context(Audience.PRODUCTION, None)["blockers"]
+        ]
+        self.assertNotIn("Brak telefonu na miejscu", blockers)
+
     def test_performer_sheets_list_no_absent_resources(self) -> None:
         """"Playlista referencyjna — Brak" tells the one reader who can do
         nothing about it that something is missing."""
@@ -5254,6 +5367,265 @@ class DayTimelineContractTests(SimpleTestCase):
                     ],
                     case["expected"],
                 )
+
+
+class ArtistDuplicateMergeTests(APITestCase):
+    """
+    Two `Artist` rows for one human: possible because uniqueness is on the
+    e-mail column alone, and first observed on a printed call sheet, which
+    listed one singer twice in a voice section and counted her as two. Detection
+    reports candidates; the merge is what the roster was missing entirely.
+    """
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+        from core.constants import VoiceLine
+
+        self.voice_line = VoiceLine.ALTO_1
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-merge", email="mgr-merge@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+
+        self.primary = Artist.objects.create(
+            first_name="Pia", last_name="Vućemilović",
+            email="pia@example.com", voice_type=VoiceType.MEZZO,
+            phone_number="+48 600 100 200",
+        )
+        self.twin = Artist.objects.create(
+            first_name="Pia", last_name="Vucemilovic",
+            email="pia.v@example.com", voice_type=VoiceType.MEZZO,
+            phone_number="600 100 200",
+        )
+
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=7),
+            timezone="Europe/Warsaw",
+        )
+        composer = Composer.objects.create(first_name="Wolfgang", last_name="Mozart")
+        self.piece = Piece.objects.create(title="Lacrimosa", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.piece, order=1)
+
+        self.primary_part = Participation.objects.create(
+            artist=self.primary, project=self.project,
+            status=Participation.Status.INVITED,
+        )
+        self.twin_part = Participation.objects.create(
+            artist=self.twin, project=self.project,
+            status=Participation.Status.CONFIRMED, fee=Decimal("300.00"),
+        )
+        ProjectPieceCasting.objects.create(
+            participation=self.twin_part, piece=self.piece,
+            voice_line=self.voice_line, gives_pitch=True,
+        )
+
+        self.client.force_authenticate(user=self.manager)
+
+    # --- detection ------------------------------------------------------ #
+
+    def test_a_shared_number_is_found_across_a_stroked_letter(self) -> None:
+        """`ł`/`ć` and a trunk prefix are the two ways one person becomes two
+        rows that no comparison in the system can see through."""
+        groups = find_duplicate_groups()
+        self.assertEqual([group.signal for group in groups], [DuplicateSignal.PHONE])
+        self.assertEqual(
+            set(groups[0].artist_ids),
+            {str(self.primary.pk), str(self.twin.pk)},
+        )
+
+    def test_one_pair_is_reported_once_under_its_strongest_signal(self) -> None:
+        """The pair already collides on the phone; folding the names together
+        must not report the same two rows a second time."""
+        self.twin.last_name = "Vućemilović"
+        self.twin.save(update_fields=["last_name"])
+
+        groups = find_duplicate_groups()
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0].signal, DuplicateSignal.PHONE)
+
+    def test_an_archived_row_is_not_reported_again(self) -> None:
+        """Archiving is how a resolved duplicate leaves the roster; re-reporting
+        it forever would make the list impossible to bring to zero."""
+        ArtistHRService.archive_artist(self.twin)
+        self.assertEqual(find_duplicate_groups(), [])
+
+    # --- merge ---------------------------------------------------------- #
+
+    def test_merge_folds_a_project_both_rows_sing(self) -> None:
+        """The normal case for a duplicate anyone notices: both rows invited to
+        one concert, so the person is on the riser twice."""
+        report = ArtistHRService.merge_artists(self.primary, self.twin)
+
+        self.assertEqual(report.participations_folded, 1)
+        self.assertEqual(report.participations_moved, 0)
+        self.assertEqual(report.castings_moved, 1)
+
+        self.assertEqual(
+            Participation.objects.filter(project=self.project).count(), 1
+        )
+        surviving = Participation.objects.get(project=self.project)
+        self.assertEqual(surviving.artist_id, self.primary.pk)
+        # The answer given on either row is the person's answer.
+        self.assertEqual(surviving.status, Participation.Status.CONFIRMED)
+        self.assertEqual(report.statuses_upgraded, 1)
+        # A fee the survivor never had is inherited rather than lost.
+        self.assertEqual(surviving.fee, Decimal("300.00"))
+        self.assertEqual(surviving.castings.count(), 1)
+
+    def test_merge_reports_a_fee_it_refused_to_choose_between(self) -> None:
+        """Money is not something a cleanup averages: the survivor keeps its own
+        and the report says where to go and look."""
+        self.primary_part.fee = Decimal("250.00")
+        self.primary_part.save(update_fields=["fee"])
+
+        report = ArtistHRService.merge_artists(self.primary, self.twin)
+
+        self.assertEqual(report.fee_conflicts, ("Requiem",))
+        self.primary_part.refresh_from_db()
+        self.assertEqual(self.primary_part.fee, Decimal("250.00"))
+
+    def test_merge_moves_a_project_the_survivor_was_not_in(self) -> None:
+        other = Project.objects.create(
+            title="Vespers", date_time=timezone.now() + timedelta(days=20),
+            timezone="Europe/Warsaw", conductor=self.twin,
+        )
+        Participation.objects.create(
+            artist=self.twin, project=other, status=Participation.Status.CONFIRMED
+        )
+
+        report = ArtistHRService.merge_artists(self.primary, self.twin)
+
+        self.assertEqual(report.participations_moved, 1)
+        self.assertEqual(report.projects_conducted, 1)
+        other.refresh_from_db()
+        self.assertEqual(other.conductor_id, self.primary.pk)
+        self.assertTrue(
+            Participation.objects.filter(project=other, artist=self.primary).exists()
+        )
+
+    def test_merge_retires_the_absorbed_row_through_the_archive(self) -> None:
+        """Nothing is deleted: the emptied row leaves by the same door as any
+        departure, so its record survives and its account stops signing in."""
+        user = get_user_model().objects.create_user(
+            username="twin-acct", email="pia.v@example.com"
+        )
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
+        self.twin.user = user
+        self.twin.save(update_fields=["user"])
+
+        ArtistHRService.merge_artists(self.primary, self.twin)
+
+        twin = Artist.all_objects.get(pk=self.twin.pk)
+        self.assertTrue(twin.is_deleted)
+        self.assertFalse(twin.is_active)
+        user.refresh_from_db()
+        self.assertFalse(user.is_active)
+
+    def test_merge_refuses_a_duplicate_somebody_has_signed_into(self) -> None:
+        """A usable password means a human uses that login. Choosing which of
+        two live accounts dies is an account decision, not a roster cleanup."""
+        user = get_user_model().objects.create_user(
+            username="twin-live", email="pia.v@example.com", password="real-pw-123"
+        )
+        self.twin.user = user
+        self.twin.save(update_fields=["user"])
+
+        with self.assertRaises(ActivatedArtistMergeException):
+            ArtistHRService.merge_artists(self.primary, self.twin)
+
+        self.assertFalse(Artist.all_objects.get(pk=self.twin.pk).is_deleted)
+
+    def test_merge_refuses_to_absorb_into_an_archived_row(self) -> None:
+        ArtistHRService.archive_artist(self.primary)
+        with self.assertRaises(ArtistMergeException):
+            ArtistHRService.merge_artists(
+                Artist.all_objects.get(pk=self.primary.pk), self.twin
+            )
+
+    def test_the_sheet_stops_printing_one_singer_twice(self) -> None:
+        """Where this thread started: the roster annotation and the blocker line
+        exist because the document must not let a duplicate pass unnoticed —
+        merging is what makes them go quiet."""
+        from .views import ProjectViewSet
+
+        for participation in (self.primary_part, self.twin_part):
+            participation.status = Participation.Status.CONFIRMED
+            participation.save(update_fields=["status"])
+        self.twin.last_name = "Vućemilović"
+        self.twin.save(update_fields=["last_name"])
+
+        def report_context() -> dict:
+            parts, crew, program, reh, cast = ProjectViewSet._call_sheet_querysets(
+                self.project
+            )
+            return DocumentGenerator._build_call_sheet_context(
+                project=self.project, participations=parts, crew=crew, program=program,
+                rehearsals=reh, castings=cast, audience=Audience.PRODUCTION,
+                recipient=None, base_url="http://testserver/",
+                kind=DocumentKind.PRODUCTION_REPORT,
+            )
+
+        before = report_context()
+        self.assertEqual(before["metrics"]["cast_confirmed"], 2)
+        self.assertIn(
+            "2 wpisy", before["ensemble_sections"][0]["members"][0]
+        )
+
+        ArtistHRService.merge_artists(self.primary, self.twin)
+
+        after = report_context()
+        self.assertEqual(after["metrics"]["cast_confirmed"], 1)
+        self.assertEqual(after["ensemble_sections"][0]["members"], ["Pia Vućemilović"])
+        self.assertNotIn(
+            "Pia Vućemilović",
+            " ".join(blocker["detail"] for blocker in after["blockers"]),
+        )
+
+    # --- API ------------------------------------------------------------ #
+
+    def test_merge_endpoint_is_manager_only(self) -> None:
+        singer_user = get_user_model().objects.create_user(
+            username="singer-merge", email="singer-merge@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=singer_user, role=AppRole.ARTIST)
+        self.client.force_authenticate(user=singer_user)
+
+        resp = self.client.post(
+            f"/api/artists/{self.primary.id}/merge/",
+            {"duplicate_id": str(self.twin.id)},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 403)
+
+    def test_duplicates_endpoint_returns_the_rows_it_is_asking_about(self) -> None:
+        resp = self.client.get("/api/artists/duplicates/")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(resp.data), 1)
+        self.assertEqual(resp.data[0]["signal"], "phone")
+        self.assertEqual(
+            {entry["id"] for entry in resp.data[0]["artists"]},
+            {str(self.primary.id), str(self.twin.id)},
+        )
+
+    def test_merge_endpoint_reports_what_it_moved(self) -> None:
+        resp = self.client.post(
+            f"/api/artists/{self.primary.id}/merge/",
+            {"duplicate_id": str(self.twin.id)},
+            format="json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["merged"]["participations_folded"], 1)
+        self.assertEqual(resp.data["merged"]["castings_moved"], 1)
+        self.assertEqual(resp.data["artist"]["id"], str(self.primary.id))
+
+    def test_merge_endpoint_rejects_a_missing_duplicate(self) -> None:
+        resp = self.client.post(
+            f"/api/artists/{self.primary.id}/merge/", {}, format="json"
+        )
+        self.assertEqual(resp.status_code, 400)
 
 
 class ArtistLifecycleStateTests(APITestCase):

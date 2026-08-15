@@ -11,10 +11,12 @@ Delegates ALL state-mutating business logic to the Service Layer.
 import io
 import logging
 import os
+from dataclasses import asdict
 from decimal import Decimal, InvalidOperation
 
 from celery.result import AsyncResult
 from django.core.cache import cache
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import FileResponse, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
@@ -58,6 +60,7 @@ from .dtos import (
     RehearsalCreateDTO,
     RehearsalUpdateDTO,
 )
+from .duplicates import find_duplicate_groups
 from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
 from .infrastructure.document_generator import (
     Audience,
@@ -369,6 +372,69 @@ class ArtistViewSet(viewsets.ModelViewSet):
         if not artist:
             return Response(None, status=status.HTTP_204_NO_CONTENT)
         return Response(self.get_serializer(artist).data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsManager])
+    def duplicates(self, request) -> Response:
+        """Roster rows that are probably one human, strongest signal first.
+
+        Candidates, not verdicts — two people can share a name — so this only
+        reports; `merge` is where a manager acts on one with both records in
+        front of them. The rows themselves come back serialized so the client
+        needs no second round trip to show what it is asking about.
+        """
+        groups = find_duplicate_groups()
+        artist_ids = {artist_id for group in groups for artist_id in group.artist_ids}
+        by_id = {
+            str(artist.pk): artist
+            for artist in Artist.objects.filter(pk__in=artist_ids).select_related(
+                'user', 'user__profile'
+            )
+        }
+        return Response([
+            {
+                'signal': group.signal.value,
+                'key': group.key,
+                'artists': [
+                    self.get_serializer(by_id[artist_id]).data
+                    for artist_id in group.artist_ids
+                    if artist_id in by_id
+                ],
+            }
+            for group in groups
+        ])
+
+    @action(detail=True, methods=['post'], permission_classes=[IsManager])
+    def merge(self, request, pk=None) -> Response:
+        """Folds another roster row into this one, which survives.
+
+        The surviving row is the URL's, so the choice of who keeps the history
+        is made by the caller and is visible in the request — this is the one
+        roster operation that cannot be undone from the panel.
+        """
+        primary = self.get_object()
+        duplicate_id = request.data.get('duplicate_id')
+        if not duplicate_id:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors={"duplicate_id": ["This field is required."]},
+            )
+
+        try:
+            duplicate = Artist.objects.get(pk=duplicate_id)
+        except (Artist.DoesNotExist, DjangoValidationError, ValueError):
+            return Response(
+                {"detail": "Duplicate artist not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        report = ArtistHRService.merge_artists(primary, duplicate)
+        return Response({
+            'artist': self.get_serializer(primary).data,
+            'merged': asdict(report),
+        })
 
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def dossier(self, request, pk=None) -> Response:

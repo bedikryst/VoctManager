@@ -3,7 +3,7 @@
 # Roster Data Transfer Objects (DTOs)
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
-from datetime import datetime
+from datetime import datetime, time
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -64,6 +64,25 @@ def _blankable_optional_string(value: object) -> object:
         return value
     stripped = value.strip()
     return stripped or None
+
+
+def _validate_day_window(
+    start: time | None, end: time | None, field_prefix: str
+) -> None:
+    """A window of the concert day is start-then-end, on that day.
+
+    An end with no start is not a window, it is a stray hour with nothing to
+    attach to; an end at or before its start is a typo the printed timeline
+    would state as a fact. Both are rejected at the boundary rather than
+    normalized away, because silently dropping a time the producer typed is how
+    a sheet ends up missing the very moment they meant to publish.
+    """
+    if end is None:
+        return
+    if start is None:
+        raise ValueError(f"{field_prefix}_end requires {field_prefix}_start.")
+    if end <= start:
+        raise ValueError(f"{field_prefix}_end must be later than {field_prefix}_start.")
 
 
 def _freeze_sequence(value: object) -> object:
@@ -243,6 +262,15 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     status: str = Field(default='DRAFT', max_length=10)
     spotify_playlist_url: str = Field(default='', max_length=500)
     run_sheet: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
+    entrance_note: str = Field(default='', max_length=200)
+    parking_note: str = Field(default='', max_length=200)
+    dressing_room_note: str = Field(default='', max_length=200)
+    warmup_start: time | None = None
+    warmup_end: time | None = None
+    soundcheck_start: time | None = None
+    soundcheck_end: time | None = None
+    onsite_contact_name: str = Field(default='', max_length=120)
+    onsite_contact_phone: str = Field(default='', max_length=32)
 
     @field_validator("title", mode="before")
     @classmethod
@@ -264,6 +292,11 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
         "dress_code_male",
         "dress_code_female",
         "spotify_playlist_url",
+        "entrance_note",
+        "parking_note",
+        "dressing_room_note",
+        "onsite_contact_name",
+        "onsite_contact_phone",
         mode="before",
     )
     @classmethod
@@ -274,6 +307,12 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def normalize_run_sheet(cls, value: object) -> object:
         return _freeze_sequence(value)
+
+    @model_validator(mode="after")
+    def validate_day_windows(self):
+        _validate_day_window(self.warmup_start, self.warmup_end, "warmup")
+        _validate_day_window(self.soundcheck_start, self.soundcheck_end, "soundcheck")
+        return self
 
 
 class ProjectUpdateDTO(EnterpriseBaseDTO):
@@ -290,6 +329,15 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     status: str | None = Field(None, max_length=10)
     spotify_playlist_url: str | None = None
     run_sheet: tuple[dict[str, Any], ...] | None = None
+    entrance_note: str | None = Field(None, max_length=200)
+    parking_note: str | None = Field(None, max_length=200)
+    dressing_room_note: str | None = Field(None, max_length=200)
+    warmup_start: time | None = None
+    warmup_end: time | None = None
+    soundcheck_start: time | None = None
+    soundcheck_end: time | None = None
+    onsite_contact_name: str | None = Field(None, max_length=120)
+    onsite_contact_phone: str | None = Field(None, max_length=32)
 
     @field_validator("title", mode="before")
     @classmethod
@@ -313,6 +361,11 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
         "dress_code_male",
         "dress_code_female",
         "spotify_playlist_url",
+        "entrance_note",
+        "parking_note",
+        "dressing_room_note",
+        "onsite_contact_name",
+        "onsite_contact_phone",
         mode="before",
     )
     @classmethod
@@ -329,6 +382,25 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
         for field_name in ("title", "date_time", "timezone", "status"):
             if field_name in self.model_fields_set and getattr(self, field_name) is None:
                 raise ValueError(f"{field_name} cannot be null.")
+        return self
+
+    @model_validator(mode="after")
+    def validate_day_windows(self):
+        """A window is validated as a pair, so both ends must travel together.
+
+        A patch carrying only the closing hour cannot be checked against a start
+        this DTO never sees, and a window whose end precedes its start prints as
+        a fact on the day card. Sending both is what the editor does anyway.
+        """
+        for prefix in ("warmup", "soundcheck"):
+            end_field, start_field = f"{prefix}_end", f"{prefix}_start"
+            if end_field not in self.model_fields_set:
+                continue
+            if getattr(self, end_field) is not None and start_field not in self.model_fields_set:
+                raise ValueError(f"{end_field} must be sent together with {start_field}.")
+            _validate_day_window(
+                getattr(self, start_field), getattr(self, end_field), prefix
+            )
         return self
 
 

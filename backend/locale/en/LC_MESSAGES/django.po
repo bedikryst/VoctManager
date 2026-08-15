@@ -2968,3 +2968,113 @@ msgstr ""
 msgctxt "coverage column"
 msgid "Casting"
 msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Warm-up"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Sound check"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Entrance"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Parking"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Dressing room"
+msgstr ""
+
+#: templates/projects/call_sheet_pdf.html
+msgctxt "call sheet"
+msgid "On site"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "On-site contact"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgid "until %(time)s"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgid "Reachable on the day of the concert."
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgid "No on-site phone number"
+msgstr ""
+
+#: roster/infrastructure/document_generator.py
+msgid "A singer who is lost or late has nobody to call on the day."
+msgstr ""
+
+#: roster/models.py
+msgid "Entrance / gate"
+msgstr ""
+
+#: roster/models.py
+msgid ""
+"Which door the ensemble uses, e.g. 'side entrance from Rakowiecka, gate 2'."
+msgstr ""
+
+#: roster/models.py
+msgid "Parking"
+msgstr ""
+
+#: roster/models.py
+msgid "Where to leave a car, and under what conditions."
+msgstr ""
+
+#: roster/models.py
+msgid "Dressing room"
+msgstr ""
+
+#: roster/models.py
+msgid "Where to change and leave belongings."
+msgstr ""
+
+#: roster/models.py
+msgid "Warm-up (from)"
+msgstr ""
+
+#: roster/models.py
+msgid "Warm-up (until)"
+msgstr ""
+
+#: roster/models.py
+msgid "Sound check (from)"
+msgstr ""
+
+#: roster/models.py
+msgid "Sound check (until)"
+msgstr ""
+
+#: roster/models.py
+msgid "On-site contact"
+msgstr ""
+
+#: roster/models.py
+msgid "Who answers on the day — stage manager, sacristan, production."
+msgstr ""
+
+#: roster/models.py
+msgid "On-site phone"
+msgstr ""
+
+#: roster/models.py
+msgid ""
+"Reachable on the day of the concert. Printed on every sheet, including the "
+"singers'."
+msgstr ""

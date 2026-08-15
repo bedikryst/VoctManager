@@ -844,6 +844,23 @@
       "pending_activation_desc": "Zaproszenie zostało wysłane, ale ten artysta nie aktywował jeszcze konta na platformie.",
       "upcoming": "Nadchodzące"
     },
+    "duplicates": {
+      "title": "Możliwe duplikaty",
+      "intro": "Te wpisy wyglądają na jedną osobę. Dwie osoby mogą jednak nosić to samo nazwisko — wybierz wpis, który ma zostać, a pozostałe zostaną do niego wchłonięte.",
+      "keep": "Zachowaj ten wpis",
+      "activated": "Konto aktywne",
+      "confirm_title": "Scalić wpisy?",
+      "confirm_desc": "Udział w projektach, obsady, obecności i rozmowy przejdą do wpisu „{{name}}”. Pozostałe wpisy ({{n}}) trafią do archiwum i stracą dostęp do panelu. Tej operacji nie da się cofnąć.",
+      "confirm_action": "Scal wpisy",
+      "signal": {
+        "email": "ten sam adres e-mail",
+        "phone": "ten sam numer telefonu",
+        "name": "to samo imię i nazwisko"
+      },
+      "toast": {
+        "merged": "Scalono z pozycją: {{name}}"
+      }
+    },
     "editor": {
       "active_access_desc": "Zablokuje logowanie w przypadku odznaczenia.",
       "active_access_title": "Aktywny dostęp do platformy",
@@ -2155,6 +2172,14 @@
       "piece_not_found": {
         "title": "Nie znaleziono utworu",
         "detail": "Wskazany utwór nie istnieje lub został usunięty."
+      },
+      "artist_merge_activated": {
+        "title": "Nie można wchłonąć tego wpisu",
+        "detail": "Ten wpis ma aktywowane konto — ktoś się nim loguje. Scal wpis, do którego nikt się nie logował, albo zarchiwizuj konto świadomie."
+      },
+      "artist_merge_rejected": {
+        "title": "Nie można scalić tych wpisów",
+        "detail": "Sprawdź, czy wpis, który ma zostać, nie jest zarchiwizowany."
       }
     },
     "form": {
@@ -3319,6 +3344,7 @@
       "time_title": "Czas lokalny",
       "toast": {
         "create_success": "Utworzono nowy projekt z harmonogramem",
+        "invalid_window": "Koniec okna musi wypadać po jego początku.",
         "pdf_remove_failed": "Nie udało się usunąć pliku PDF",
         "pdf_upload_failed": "Nie udało się wgrać pliku PDF",
         "saving": "Zapisywanie szczegółów projektu...",
@@ -3345,9 +3371,18 @@
         "description": "Opis wydarzenia",
         "dress_code_female": "Ubiór: panie",
         "dress_code_male": "Ubiór: panowie",
+        "dressing_room": "Garderoba",
+        "entrance": "Wejście / brama",
         "location": "Miejsce koncertu",
+        "onsite_contact_name": "Kontakt na miejscu",
+        "onsite_contact_phone": "Telefon na miejscu",
+        "parking": "Parking",
+        "soundcheck_end": "Próba akustyczna do",
+        "soundcheck_start": "Próba akustyczna od",
         "spotify": "Playlista Spotify",
-        "title": "Tytuł projektu *"
+        "title": "Tytuł projektu *",
+        "warmup_end": "Rozśpiewanie do",
+        "warmup_start": "Rozśpiewanie od"
       },
       "call_time": {
         "offset_h": "{{hours}} godz. przed koncertem",
@@ -3368,7 +3403,12 @@
         "location": "Wybierz miejsce",
         "location_clear": "Bez lokalizacji",
         "conductor": "Wybierz dyrygenta",
-        "conductor_clear": "Bez dyrygenta"
+        "conductor_clear": "Bez dyrygenta",
+        "entrance": "np. wejście boczne od Rakowieckiej, brama nr 2",
+        "parking": "np. dziedziniec, wjazd do 18:00",
+        "dressing_room": "np. sala pod wieżą, klucz u zakrystiana",
+        "onsite_contact_name": "np. Anna Nowak (produkcja)",
+        "onsite_contact_phone": "+48 600 000 000"
       },
       "run_sheet": {
         "description": "Opis (opcjonalny)",
@@ -3378,7 +3418,8 @@
       "sections": {
         "day_plan": "Plan dnia koncertu",
         "ensemble_info": "Informacje dla zespołu",
-        "event": "Wydarzenie"
+        "event": "Wydarzenie",
+        "onsite": "Na miejscu"
       },
       "markers": {
         "concert": "Koncert"
