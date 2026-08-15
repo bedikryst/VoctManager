@@ -36,7 +36,7 @@ export function QRPanel(): React.JSX.Element {
         <h3 className="method-title">Przelew z aplikacji bankowej</h3>
         <p className="method-note">
           Zeskanuj kod aparatem w aplikacji bankowej — wszystkie pola wypełnią się
-          automatycznie. Bez prowizji.
+          automatycznie.
         </p>
 
         <div className="method-qr-stage">
@@ -58,7 +58,7 @@ export function QRPanel(): React.JSX.Element {
           </div>
           <div className="qr-hint">
             <span>
-              Otwórz aplikację banku, wybierz <strong>&quot;Przelew QR&quot;</strong> i zeskanuj.
+              Otwórz aplikację banku, wybierz <strong>„Przelew QR”</strong> i zeskanuj.
               Kwotę wpiszesz w aplikacji.
             </span>
             <span className="qr-hint-banks">mBank · PKO · ING · Santander · Pekao · BNP</span>

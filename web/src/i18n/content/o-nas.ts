@@ -145,7 +145,9 @@ const pl: AboutCopy = {
     aria: "List Florenta",
     eyebrow: { lat: "Initium", label: "List założyciela" },
     h2: "Skąd się wzięliśmy?",
-    leadHtml: "Odpowiedź założyciela — cztery akapity, od&nbsp;tęsknoty po&nbsp;kruchość.",
+    // Names the writer and stops. The stanza rubrics below (Z tęsknoty … Kruchość) are the
+    // letter's own contents page, so a lead that counts or summarises them prints it twice.
+    leadHtml: "Odpowiada Florent de Bazelaire.",
     // VERBATIM founding text — stanzas I/II from Florent's "Skąd się wzięliśmy?", III from the
     // Kontemplacja Wcielenia booklet, IV from "Co śpiewamy?". Never rewrite the Polish; the
     // EN/FR renderings translate it while keeping its meditative register.
@@ -208,7 +210,9 @@ const pl: AboutCopy = {
       },
       {
         k: "Liturgia i uroczystości",
-        p: "Oprawa mszy i kościelnych świąt. Ostatnio — liturgia w uroczystość św. Andrzeja Boboli w Warszawie, w 100-lecie polskich prowincji jezuickich: Msza pod przewodnictwem abp. Adriana Galbasa, homilia o. Artura Sosy SJ.",
+        // Celebrant and homilist stay out: the milestones register lower on this page
+        // prints them in full, from concerts.yaml. The card names the occasion, not the rite.
+        p: "Oprawa mszy i kościelnych świąt. Ostatnio — liturgia w uroczystość św. Andrzeja Boboli w Warszawie, w 100-lecie polskich prowincji jezuickich.",
       },
       {
         k: "Dialog tradycji",
@@ -299,7 +303,7 @@ const en: AboutCopy = {
     aria: "Florent's letter",
     eyebrow: { lat: "Initium", label: "Founder's letter" },
     h2: "Where did we come from?",
-    leadHtml: "The founder's answer — four paragraphs, from longing to fragility.",
+    leadHtml: "Florent de Bazelaire answers.",
     stanzas: [
       {
         lat: "I",
@@ -359,7 +363,7 @@ const en: AboutCopy = {
       },
       {
         k: "Liturgy and celebrations",
-        p: "Music for Mass and church feasts. Most recently — the liturgy for the feast of St Andrew Bobola in Warsaw, marking the centenary of the Polish Jesuit provinces: Mass presided over by Archbishop Adrian Galbas, homily by Fr Arturo Sosa SJ.",
+        p: "Music for Mass and church feasts. Most recently — the liturgy for the feast of St Andrew Bobola in Warsaw, marking the centenary of the Polish Jesuit provinces.",
       },
       {
         k: "A dialogue of traditions",
@@ -450,7 +454,7 @@ const fr: AboutCopy = {
     aria: "La lettre de Florent",
     eyebrow: { lat: "Initium", label: "Lettre du fondateur" },
     h2: "D'où venons-nous ?",
-    leadHtml: "La réponse du fondateur — quatre paragraphes, de la nostalgie à la fragilité.",
+    leadHtml: "Florent de Bazelaire répond.",
     stanzas: [
       {
         lat: "I",
@@ -510,7 +514,7 @@ const fr: AboutCopy = {
       },
       {
         k: "Liturgie et célébrations",
-        p: "La musique de la messe et des fêtes de l'Église. Récemment — la liturgie de la fête de saint André Bobola à Varsovie, pour le centenaire des provinces jésuites polonaises : messe présidée par l'archevêque Adrian Galbas, homélie du père Arturo Sosa SJ.",
+        p: "La musique de la messe et des fêtes de l'Église. Récemment — la liturgie de la fête de saint André Bobola à Varsovie, pour le centenaire des provinces jésuites polonaises.",
       },
       {
         k: "Dialogue des traditions",

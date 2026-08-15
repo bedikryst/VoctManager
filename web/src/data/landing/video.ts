@@ -20,7 +20,7 @@ export interface VideoSource {
 /** Hero CTA "Zobacz i usłysz" → lightbox: the full ~5 min concert video (dark room only). */
 export const MODAL_VIDEO: VideoSource = {
   src: videoAsset("landing-modal"),
-  caption: "Wybrane fragmenty koncertu \"Kontemplacja Wcielenia\" · VoctEnsemble 2024",
+  caption: "Wybrane fragmenty koncertu „Kontemplacja Wcielenia” · VoctEnsemble 2024",
 };
 
 /**
