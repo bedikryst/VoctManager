@@ -34,6 +34,11 @@ emitted CSS re-measured for every cascade claim, and the orphan sweep over `dist
 clean (matching an ordinary space, not `\s`, per the guardrails' Python gotcha). Em-dashes inside
 `<main>`: 5 → 1. What remains is in **Open**, and none of it is a defect on this page.
 
+**A later pass shipped 2026-08-15** — three changes on the page (the lede's last sentence, a frame
+tally in `Imagines`, a `Wideo` row), `dateModified` off the graph, and five of this page's own
+decisions applied to the surfaces that share its content. See **Pass 2026-08-15** below; it also
+supersedes the author-address item in **Open**.
+
 ---
 
 ## The page, and what it is for
@@ -537,7 +542,7 @@ Both halves of this section are now wrong, and one of them had already cost some
   unattributed left to claim.
 
 Three hands joined the three already there: Tomasz Czajkowski (Wcielenie), Edyta Gonet (9 Kart ·
-Łódź) and Andrzej Płachetka (Hymn Poległym) — none of them needed an edit here. A fourth entry,
+Łódź) and Andrzej Płachetko (Hymn Poległym) — none of them needed an edit here. A fourth entry,
 PieninyInfo (Wołanie Gór), is an outlet rather than a photographer and carries the new
 `gallery[].source` field: the rubric prints it under its own `źródło` role, because a masthead set
 in a photographer's voice credits it with an authorship nobody claimed.
@@ -592,6 +597,16 @@ another page.
   the JSON-LD `author` node here, plus both `SiteFooter` copies (Astro and React). Splitting them
   would have left exactly the identity blur this item was filed about. **The mailbox has to exist
   on the foundation's domain** — the code now points at it either way.
+  **Superseded 2026-08-15 — the author's address is `krystian@bugalski.dev`.** The 2026-08-01
+  objection was to a *personal Gmail*, and a professional domain is not the thing it was filed
+  against. The distinction the `Auctor` rubric draws is the argument: a colophon carries the
+  printer's mark beside the publisher's imprint, and an address inside `voctensemble.com` folds
+  the two into one party. The foundation's mailbox is live and stays live — it is simply not what
+  signs the craft. Same five places, moved together for the original reason.
+  **The one place that legitimately keeps it** is `backend/config/settings.py:344`
+  (`PATRON_NOTIFICATION_EMAIL`): that is where a patronage lead is delivered, i.e. the developer
+  wearing a foundation hat, not the site's author. Left alone deliberately. Worth a separate look
+  that patronage leads land there rather than at `patronat@` — out of this page's scope.
 - **`lang="la"` on the other ~45 `.lat` hosts.** The colophon's ten are done. The same Latin/Polish
   rubric runs across `/koncerty`, `/koncerty/[id]`, `/o-nas` and the landing, all of it currently
   read aloud as Polish. Mechanical, but it touches every page, so it wants its own pass.
@@ -608,6 +623,88 @@ another page.
 - **`.kd-section-label` on `/koncerty/[id]` has Etap A2's defect**, unfixed. Same tie, same result.
 - **`/kolofon` is not in `TRANSLATED_ROUTES`.** Correct under the lazy ledger; noted because the
   EN/FR footers link to it by its Polish URL.
+
+---
+
+## Pass 2026-08-15 — the identity sweep, and three on the page itself
+
+Triggered by the developer asking three questions about the page and one about his address. The
+audit that came with it reached past `/kolofon`, because three of the five defects were the
+colophon's own decisions left unapplied on the surfaces that share its content.
+
+**On the page.**
+
+- **The lede's fourth sentence is gone** (`Tu robimy to samo.`). Etap G had already trimmed it once
+  (`… : w swoim rzemiośle.`), which was the right direction and not far enough. The reason is the
+  page's own Rule rather than concision: the lede names the three things a colophon records —
+  place, time, who published — and `Złożono i odbito …` / `Cracoviae · MMXXVI · Laus Deo` **are**
+  those three, in the historical order, at the foot of the page. Saying "we do the same here" at
+  the top spends the ending 2 000px before the reader reaches it. The definition stays: it glosses
+  the TITLE, a word most readers do not know, which is a different act from explaining a metaphor.
+- **`Imagines` prints a frame tally per hand** — `Kamila Grudzińska · 8 fot. · …`. A roll of six
+  names states that six people photographed the cycle and leaves their shares indistinguishable;
+  the count is what makes the block an attribution. Derived, like the rest of the rubric.
+  **The trap is in the loop**: `run.credits` is deduplicated per run, so tallying it counts
+  EVENINGS. The walk is now frame by frame over `run.shots`. Totals: Grudzińska 8, Przybył 4,
+  Gonet 3, Czajkowski 2, Płachetko 2, Garbacz 1, PieninyInfo 1 (`źródło`) = 21 credited of 48.
+  Abbreviated as `/obrazy` abbreviates (`1 fotografia` / `n fot.`) — one fact must not meet the
+  reader under two labels on two pages.
+- **`Constructio` gained a `Wideo` row** — `AV1 i H.264 · własny odtwarzacz, pliki z naszej domeny`.
+  The block described the image pipeline and was silent on film, which is the landing's heaviest
+  material. Phrased positively on purpose: the page runs on one negation (`bez cookies`) and
+  "bez osadzeń z YouTube" would have made a second. "Własny odtwarzacz" is also what keeps the
+  `Prywatność` row true of a page that plays video.
+- **`dateModified` is off the JSON-LD.** It was the build timestamp, spent twice with the visible
+  impression line so the two could not disagree — but a deploy is not an edit, so the graph
+  announced a modification to the colophon every time anything else on the site shipped. The
+  visible line stays: a colophon dating its own impression is the truth it exists for. This was the
+  only `dateModified` on the site.
+
+**Off the page — the colophon's decisions, applied where they were missed.**
+
+- **`↗` came off the author `mailto:` in BOTH footers.** The rule is Etap-era and was written into
+  `kolofon.astro` alone: the arrow marks a link that opens elsewhere IN THE BROWSER, and a
+  `mailto:` hands off to a mail client. `SiteFooter.astro` and `SiteFooter.tsx` had carried it
+  since.
+- **The landing footer's `Site ·` is now `Auctor ·`** (`lang="la"`), which is the vocabulary that
+  block already speaks — `omnia iura reservata` sits beside it, INSCRIPTIO FINALIS / CONSILIUM /
+  CORPUS / VOX above. It was the one English word in a Polish footer, and it is the rubric the
+  colophon puts over the same name. The site-map footer keeps Polish `Realizacja`: that string is
+  translated per locale (`t.realizedBy`), this one is not.
+- **The four typeface names in the landing footer lost `tabIndex={0}`** and gained the colophon's
+  arrival specimen (Etap D, ported to `06-footer.css`). Four stops in the tab order that announce
+  nothing and pay out in a font wobble no screen reader perceives. **`11-mobile.css:497` hides that
+  list on a phone**, so unlike the colophon there was no touch defect to fix — the win is keyboard
+  and everyone who never hovers. The four literals per face became `--ff-*` custom properties for
+  the same reason the colophon's did: three consumers now read them.
+- **`MecenatPanel.tsx` moved to `@voctensemble.com`.** It was the only file on the site using
+  `@voctfoundation.com` — two addresses, on the donation surface. Both domains are the foundation's
+  and both deliver (nginx `prod.conf` redirects them), so nothing was broken; what was broken is
+  that a reader deciding to commit money met `patronat@voctfoundation.com` here and
+  `patronat@voctensemble.com` in the footer and had to work out whether that is one inbox or two
+  organisations. `SITE` (`i18n/config.ts`) makes `voctensemble.com` canonical and every JSON-LD
+  `@id` hangs off it; addresses follow. **Recorded as a decision, so a foundation-voice/ensemble-
+  voice split is not re-proposed one panel at a time** — if it is ever wanted it is a whole-site
+  editorial pass, not nine files drifting apart.
+- **`Andrzej Płachetko`, not `Płachetka`.** `concerts.yaml` had it right in all three places and
+  therefore so did the site; both docs carried the typo, and this file is the one a later session
+  reads to check a credit against. Fixed here and in `web-imagines-spec.md:134`.
+
+**Verification.** `npx astro check` 0 errors; `astro build --outDir dist-verify` green; register
+audit clean (its 1 note is R10, six dark photographs, unrelated and pre-existing). Copy metrics
+re-measured on the built page: **0 orphans** against an ordinary space, 0 straight quotes, 0 leaked
+comments. **Em-dashes in `<main>` read 3, not the audit's 1 — and none of them is from this pass**:
+byte-identical in the previous `dist/`. They arrived with the 2026-08-10 `Imagines` lede
+(`Fotografie bez podpisu — tu i w całym serwisie — pochodzą …`, a genuine parenthetical pair) and
+the `Gratiarum actio` lede. The metric in the 2026-08-01 audit is stale, not violated.
+
+**Considered and not done.** A photo rail beside the `Imagines` names — `web-imagines-spec.md §2`
+rejects thumbnail grids for this archive because these are low-contrast chiaroscuro frames that
+render as black rectangles when small, and a rail is that failure in a narrower strip. A lightbox
+on each name is *possible* (the machinery is `data-image-group` + the two islands, and `/obrazy`
+already emits the renditions) and was deliberately deferred behind the tally: a bare name that
+turns out to be pressable is a hidden affordance, whereas "8 fot." beside it is a legible
+invitation. Revisit only with the counts on the page.
 
 ---
 

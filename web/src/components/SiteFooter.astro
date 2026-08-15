@@ -139,8 +139,13 @@ const tempus = tempusForDate(new Date());
       was invented to have something to draw. Rule first, imprint a beat behind. */}
   <div class="foot-base reveal reveal-rule">
     <span>© {year} Fundacja VoctFoundation</span>
+    {/* No `↗`, and it is the same rule the colophon's `Auctor` block states: the arrow is this
+        site's mark for a link that opens elsewhere IN THE BROWSER, and a `mailto:` hands off to a
+        mail client instead — the three social links above are where it belongs. The address is the
+        author's own domain because this line credits the person who built the site, not a role
+        inside the foundation; the foundation's own addresses are in the Vox column. */}
     <span>
-      {t.realizedBy} · <a href="mailto:krystian.bugalski@voctensemble.com" rel="author">Krystian Bugalski ↗</a>
+      {t.realizedBy} · <a href="mailto:krystian@bugalski.dev" rel="author">Krystian Bugalski</a>
     </span>
     <a href={localizePath("/", lang)}>voctensemble.com</a>
   </div>

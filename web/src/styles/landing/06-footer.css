@@ -743,7 +743,12 @@
      i światło się otwiera. Tu w miniaturze, bo to stopka, nie ekspozycja.
      Wagi docelowe są ograniczone tym, co realnie wysyłamy (base.css): Plex Mono
      ma DWIE statyczne odmiany, 300 i 400 — 620 dałoby syntetyczne pogrubienie
-     przeglądarki, więc jego hover kończy się na 400 i resztę pracy bierze światło. */
+     przeglądarki, więc jego hover kończy się na 400 i resztę pracy bierze światło.
+
+     KAŻDY KRÓJ PODAJE SWOJE CZTERY LICZBY RAZ, jako custom properties, a czytają je trzy
+     miejsca: stan spoczynku, powtórka na hover i klatka kluczowa wejścia. Zanim wejście
+     istniało, były to literały w dwóch miejscach — po dodaniu animacji byłyby w czterech
+     i pierwsza rozjechana para nie dałaby się zauważyć inaczej niż okiem. */
   .footer-colophon-faces {
     display: inline-flex;
     flex-wrap: wrap;
@@ -759,75 +764,105 @@
     color: var(--ink-soft);
     text-transform: none;
     cursor: default;
+    font-weight: var(--ff-wght);
+    letter-spacing: var(--ff-track);
     transition:
       font-weight 0.9s var(--ease-slow),
       letter-spacing 0.9s var(--ease-slow),
       color 0.6s var(--ease);
   }
 
-  .footer-colophon-faces .ff:hover,
-  .footer-colophon-faces .ff:focus-visible {
+  /* Sam hover — bez `:focus-visible`, bo te cztery nazwy nie są już w kolejności tabulacji
+     (SiteFooter.tsx). Demonstracja należy teraz do wejścia i tam dostaje ją klawiatura,
+     palec i wskaźnik naraz. */
+  .footer-colophon-faces .ff:hover {
     color: var(--ink);
-  }
-  /* Obrys fokusu bierze złoto TEKSTU, nie znaku: to element interfejsu, więc obowiązuje
-     go minimum 3:1, a pełny candle daje na pergaminie 2,10. */
-  .footer-colophon-faces .ff:focus-visible {
-    outline: 1px solid var(--candle-text);
-    outline-offset: 4px;
+    font-weight: var(--ff-wght-peak);
+    letter-spacing: var(--ff-track-peak);
   }
 
   .ff--cormorant {
     font-family: var(--serif);
     font-style: italic;
     font-size: 15px;
-    font-weight: 400;
-    letter-spacing: 0;
-  }
-  .ff--cormorant:hover,
-  .ff--cormorant:focus-visible {
-    font-weight: 560;
-    letter-spacing: 0.01em;
+    --ff-wght: 400;
+    --ff-track: 0;
+    --ff-wght-peak: 560;
+    --ff-track-peak: 0.01em;
   }
 
   .ff--cinzel {
     font-family: var(--capitalis);
     font-size: 11.5px;
-    font-weight: 400;
-    letter-spacing: 0.1em;
-  }
-  .ff--cinzel:hover,
-  .ff--cinzel:focus-visible {
-    font-weight: 620;
-    letter-spacing: 0.2em;
+    --ff-wght: 400;
+    --ff-track: 0.1em;
+    --ff-wght-peak: 620;
+    --ff-track-peak: 0.2em;
   }
 
   .ff--plex-sans {
     font-family: var(--sans);
     font-size: 12.5px;
-    font-weight: 350;
-    letter-spacing: 0;
-  }
-  .ff--plex-sans:hover,
-  .ff--plex-sans:focus-visible {
-    font-weight: 620;
-    letter-spacing: 0.05em;
+    --ff-wght: 350;
+    --ff-track: 0;
+    --ff-wght-peak: 620;
+    --ff-track-peak: 0.05em;
   }
 
   .ff--plex-mono {
     font-family: var(--mono);
     font-size: 11.5px;
-    font-weight: 300;
-    letter-spacing: 0.02em;
-  }
-  .ff--plex-mono:hover,
-  .ff--plex-mono:focus-visible {
-    font-weight: 400;
-    letter-spacing: 0.14em;
+    --ff-wght: 300;
+    --ff-track: 0.02em;
+    --ff-wght-peak: 400;
+    --ff-track-peak: 0.14em;
   }
 
+  /* ─── Krój demonstruje swoją oś na wejściu ───────────────────────────────
+     TAM I Z POWROTEM, czego rejestr wejścia (`ink`) celowo nie robi: imprint jest WEJŚCIEM
+     i musi być jednokierunkowy, bo inaczej powrót scrollem dopisuje nagłówek drugi raz.
+     Specimen wejściem nie jest — osią JEST temat, a osi dowodzi się przejeżdżając ją i
+     odkładając na miejsce. Dozwolone tutaj i na `/kolofon`, nigdzie indziej.
+
+     Wyzwalaczem jest RODZIC (`.site-footer-colophon.is-in`), nie cztery osobne węzły jak na
+     /kolofon: tam wiersze stoją ~134px od siebie i mają własne progi, tutaj wszystkie cztery
+     leżą w jednym wierszu 9px od siebie — to jeden gest i jeden onset.
+
+     Bez `animation-fill-mode`, i to jest nośne, a nie domyślne zostawione w spokoju:
+     `forwards` przytrzymałoby ostatnią klatkę na zawsze i hover nie miałby już jak jej
+     przelicytować. Bez fill nazwa wraca pod kontrolę arkusza w chwili, gdy gest się kończy. */
+  @keyframes footer-specimen {
+    0% {
+      font-weight: var(--ff-wght);
+      letter-spacing: var(--ff-track);
+      animation-timing-function: var(--ease);
+    }
+    42%,
+    58% {
+      font-weight: var(--ff-wght-peak);
+      letter-spacing: var(--ff-track-peak);
+      animation-timing-function: var(--ease-ink);
+    }
+    100% {
+      font-weight: var(--ff-wght);
+      letter-spacing: var(--ff-track);
+    }
+  }
+
+  html.voct-motion .site-footer-colophon.is-in .ff {
+    animation: footer-specimen 1.3s var(--ease) 0.6s;
+  }
+
+  /* Pod `reduce` bramka `voct-motion` w ogóle nie powstaje (DocumentGates), więc `.is-in` nie
+     ląduje i animacja nie ma jak wystartować. Te dwie reguły pokrywają jedyną ścieżkę, która
+     do nich dociera: preferencję przełączoną w trakcie sesji, kiedy bramka zostaje na <html>
+     do następnej nawigacji. */
   @media (prefers-reduced-motion: reduce) {
     .footer-colophon-faces .ff {
       transition: none;
+    }
+    html.voct-motion .site-footer-colophon.is-in .ff {
+      animation: none;
     }
   }
 

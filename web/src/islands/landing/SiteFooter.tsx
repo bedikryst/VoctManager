@@ -344,44 +344,49 @@ export function SiteFooter(): React.JSX.Element {
               </a>
               {/* Each name is set in the face it names — the list demonstrates the stack
                   rather than describing it, so it has to stay in sync with base.css.
-                  Focusable: the weight/tracking bloom is the only thing that happens here,
-                  and a keyboard reader deserves it as much as a pointer does. */}
+                  NOT focusable, and that reverses an earlier reading of the same problem. These
+                  four carried `tabIndex={0}` so a keyboard reader could reach the bloom — four
+                  stops in the tab order that announce nothing, do nothing, and pay out in a font
+                  wobble a screen reader cannot perceive at all. The bloom now fires on ARRIVAL
+                  (06-footer.css), which gives the demonstration to everyone who reaches the foot
+                  of the page rather than to whoever hovers; hover still answers on top of it.
+                  Desktop only either way — 11-mobile.css hides this list on a phone. */}
               <span className="footer-colophon-faces">
-                <span className="ff ff--cormorant" tabIndex={0}>
-                  Cormorant Garamond
-                </span>
+                <span className="ff ff--cormorant">Cormorant Garamond</span>
                 <span className="ff-sep" aria-hidden="true">
                   ·
                 </span>
-                <span className="ff ff--cinzel" tabIndex={0}>
-                  Cinzel
-                </span>
+                <span className="ff ff--cinzel">Cinzel</span>
                 <span className="ff-sep" aria-hidden="true">
                   ·
                 </span>
-                <span className="ff ff--plex-sans" tabIndex={0}>
-                  IBM Plex Sans
-                </span>
+                <span className="ff ff--plex-sans">IBM Plex Sans</span>
                 <span className="ff-sep" aria-hidden="true">
                   ·
                 </span>
-                <span className="ff ff--plex-mono" tabIndex={0}>
-                  IBM Plex Mono
-                </span>
+                <span className="ff ff--plex-mono">IBM Plex Mono</span>
               </span>
             </div>
             <div className="footer-colophon-signature micro">
               {/* Latin, like the rest of this footer's vocabulary (INSCRIPTIO FINALIS,
                   CONSILIUM, CORPUS, VOX): the standard rights formula, not a coinage. */}
               <span>MMXXVI · omnia iura reservata</span>
+              {/* `Auctor`, in the Latin this block already speaks (`omnia iura reservata` beside
+                  it, INSCRIPTIO FINALIS / CONSILIUM / CORPUS / VOX above) — it was the one English
+                  word in a Polish footer, and it is the same rubric the colophon puts over the
+                  same name. The site-map footer keeps its Polish `Realizacja`: that one is
+                  translated per locale, this one is not.
+                  No `↗` on the address: the arrow marks a link that opens elsewhere in the
+                  BROWSER, and a `mailto:` hands off to a mail client. Own domain, because the line
+                  credits the person who built the site rather than a role in the foundation. */}
               <span className="footer-colophon-author">
-                Site ·{" "}
+                <span lang="la">Auctor</span> ·{" "}
                 <a
-                  href="mailto:krystian.bugalski@voctensemble.com"
+                  href="mailto:krystian@bugalski.dev"
                   className="plausible-event-name=author+mail"
                   rel="author"
                 >
-                  Krystian Bugalski <span aria-hidden="true">↗</span>
+                  Krystian Bugalski
                 </a>
               </span>
             </div>

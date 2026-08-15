@@ -15,8 +15,15 @@ import { PatronInterestError, submitPatronInterest } from "../api/patronage";
 import { TransferFieldButton, type TransferField } from "./transferFields";
 import { Typo } from "../lib/Typo";
 
-const PATRON_EMAIL = "patronat@voctfoundation.com";
-const FOUNDER_EMAIL = "florent.de.bazelaire@voctfoundation.com";
+// `voctensemble.com` and not `voctfoundation.com`, which is what these two used to say. The
+// foundation owns both domains and both deliver to the same workspace, so neither address was
+// broken — but a reader who meets `patronat@voctfoundation.com` here and
+// `patronat@voctensemble.com` in the footer has to work out whether those are one inbox or two
+// organisations, and this panel is where someone decides to commit money. `SITE`
+// (i18n/config.ts) makes voctensemble.com the canonical origin and every JSON-LD `@id` on the
+// site hangs off it; the addresses follow that, and the other domains stay as redirects.
+const PATRON_EMAIL = "patronat@voctensemble.com";
+const FOUNDER_EMAIL = "florent.de.bazelaire@voctensemble.com";
 
 // Distinct title so the foundation can recognise an incoming standing order as patronage.
 const MECENAT_FIELDS: readonly TransferField[] = [

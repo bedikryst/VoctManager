@@ -131,7 +131,7 @@ is a claim those names took everything.
 confirmed that a gallery entry naming nobody was shot by the ensemble itself, so `credit` names a
 hand from OUTSIDE it and the surfaces print the rest as `archiwum zespołu` (`lib/photoCredit`)
 rather than reporting an unrecorded author. Six hands now, in Via order: Tomasz Czajkowski,
-Wojciech Przybył, Edyta Gonet, Jakub Garbacz, Kamila Grudzińska, Andrzej Płachetka.
+Wojciech Przybył, Edyta Gonet, Jakub Garbacz, Kamila Grudzińska, Andrzej Płachetko.
 
 A **third case** was found in the same pass and given its own field: `gallery[].source`, the outlet
 a frame comes from where no individual photographer is on record. One entry uses it (PieninyInfo,

@@ -39,21 +39,27 @@ const ogImage = (
   await getImage({ src: bleedPair("hero-landing").desktop, width: 1200, format: "webp" })
 ).src;
 
-// The impression: when this copy of the page was struck. Taken once at build time and spent
-// twice — as the closing statement of fact and as the graph's `dateModified` — so the two can
-// never disagree. `Intl` carries the Polish genitive month ("1 sierpnia"), which is the ordinary
-// reading and the reason not to hand-roll a month table.
-const impressio = new Date();
+// The impression: when THIS COPY of the page was struck, which is a fact about the printing and
+// is deliberately not published as the graph's `dateModified`. Every deploy restrikes the page,
+// so a machine-readable modification date taken from the build would announce an edit to the
+// colophon each time anything else on the site changed — a claim of authorship activity that did
+// not happen. The visible line stays because a colophon dating its own impression is the truth it
+// is for. `Intl` carries the Polish genitive month ("1 sierpnia"), which is the ordinary reading
+// and the reason not to hand-roll a month table.
 const impressioLabel = new Intl.DateTimeFormat("pl-PL", {
   day: "numeric",
   month: "long",
   year: "numeric",
-}).format(impressio);
-const impressioIso = impressio.toISOString();
+}).format(new Date());
 
 // Shared-entity JSON-LD: the page is authored by a named person and published by the SAME
 // foundation node the landing/o-nas graphs declare (#foundation), so this reads as one
 // entity's colophon — clean E-E-A-T signal for a young nonprofit.
+//
+// The author's address is on his OWN domain and the publisher's is not, which is the distinction
+// this node exists to draw: a colophon carries the printer's mark beside the publisher's imprint,
+// and an address inside voctensemble.com would fold the two into one party. Writing about how the
+// site was made reaches the person who made it.
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -61,11 +67,10 @@ const jsonLd = {
   url: "https://voctensemble.com/kolofon",
   description,
   inLanguage: "pl-PL",
-  dateModified: impressioIso,
   author: {
     "@type": "Person",
     name: "Krystian Bugalski",
-    email: "krystian.bugalski@voctensemble.com",
+    email: "krystian@bugalski.dev",
   },
   publisher: {
     "@type": "NGO",
@@ -85,12 +90,19 @@ const jsonLd = {
 // Hands and outlets are gathered apart and printed apart: an outlet's row says "źródło" in the
 // role column, because a masthead set in the same voice as a photographer's name is a claim that
 // the masthead took the picture.
-type Provenance = Map<string, Map<string, Set<string>>>;
+interface Hand {
+  /** Evening → the places inside it where this name's frames were taken. */
+  readonly evenings: Map<string, Set<string>>;
+  /** How many frames stand behind the name — the scale of the hand's share of the archive. */
+  frames: number;
+}
+type Provenance = Map<string, Hand>;
 const note = (into: Provenance, name: string, evening: string, place: string): void => {
-  const evenings = into.get(name) ?? new Map<string, Set<string>>();
-  into.set(name, evenings);
-  const places = evenings.get(evening) ?? new Set<string>();
-  evenings.set(evening, places);
+  const hand = into.get(name) ?? { evenings: new Map<string, Set<string>>(), frames: 0 };
+  into.set(name, hand);
+  hand.frames += 1;
+  const places = hand.evenings.get(evening) ?? new Set<string>();
+  hand.evenings.set(evening, places);
   if (place) places.add(place);
 };
 
@@ -100,17 +112,28 @@ for (const { data: c } of (await getCollection("concerts")).sort(
   (a, b) => a.data.order - b.data.order,
 )) {
   for (const run of galleryRuns(c.gallery, { venue: c.venue, date: c.date })) {
-    for (const name of run.credits) note(hands, name, c.title, run.title);
-    for (const name of run.sources) note(outlets, name, c.title, run.title);
+    // FRAME BY FRAME, never over `run.credits` — that roll is deduplicated per run, so walking it
+    // would tally a hand once per evening and print "1 fot." under someone who shot eight. The
+    // credit-before-source precedence is galleryRuns's own, restated here because this loop is
+    // what decides which of the two lists a name lands in.
+    for (const shot of run.shots) {
+      if (shot.credit) note(hands, shot.credit, c.title, run.title);
+      else if (shot.source) note(outlets, shot.source, c.title, run.title);
+    }
   }
 }
 
 const rows = (from: Provenance, lead: string): { name: string; role: string }[] =>
-  [...from].map(([name, evenings]) => ({
+  [...from].map(([name, { evenings, frames }]) => ({
     name,
-    // "Evening · place", and a hand that stood at two of them carries both.
+    // The tally, then "evening · place" — and a hand that stood at two of them carries both. The
+    // count is what turns a roll of names into an attribution: without it the list states that six
+    // people photographed the cycle and leaves their shares indistinguishable. Abbreviated exactly
+    // as /obrazy abbreviates it, because one fact meeting the reader under two labels on two pages
+    // reads as two facts.
     role: [
       ...(lead ? [lead] : []),
+      `${frames} ${frames === 1 ? "fotografia" : "fot."}`,
       ...[...evenings].map(([evening, places]) => [evening, ...places].join(" · ")),
     ].join(" · "),
   }));
@@ -142,9 +165,15 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
           <span>Pieczęć rzemiosła</span>
         </p>
         <h1 class="kol-title reveal ink-press" data-d="1">Kolofon.</h1>
+        {/* The definition stands alone, and the sentence that used to follow it ("Tu robimy to
+            samo.") is gone for the page's own reason rather than for brevity: the lede names three
+            things a colophon records — place, time, who published — and the last two lines of this
+            page ARE those three, in the historical order. Announcing the answer at the top spends
+            the ending before the reader reaches it, on the one page whose rule is that it shows
+            its craft instead of stating it. The h1 above already says which colophon this is. */}
         <p class="kol-lede reveal" data-d="2">
           Krótka inskrypcja na końcu książki, w której drukarz zapisywał miejsce
-          i czas oraz to, kto rzecz wydał. Tu robimy to samo.
+          i czas oraz to, kto rzecz wydał.
         </p>
       </div>
     </section>
@@ -243,6 +272,14 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
           <div class="kol-def reveal reveal-rule">
             <dt>Obrazy</dt>
             <dd>AVIF i WebP w wielu rozmiarach, generowane przy budowaniu</dd>
+          </div>
+          {/* Stated positively, and that is a constraint rather than a style note: the page runs
+              on one negation ("bez cookies") and a second would make a list of denials of what is
+              a list of materials. "Własny odtwarzacz" carries the half that matters — it is why
+              the privacy row below can still be true of a page that plays film. */}
+          <div class="kol-def reveal reveal-rule">
+            <dt>Wideo</dt>
+            <dd>AV1 i&nbsp;H.264 · własny odtwarzacz, pliki z&nbsp;naszej domeny</dd>
           </div>
           <div class="kol-def reveal reveal-rule">
             <dt>Pomiar</dt>
@@ -385,9 +422,13 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
         <p class="kol-author-role reveal" data-d="1">projekt · kod</p>
         <p class="kol-author-contact reveal" data-d="2">
           {/* No `↗` here: the arrow is the site's mark for a link that opens elsewhere in the
-              browser, and a `mailto:` hands off to a mail client instead. */}
-          <a href="mailto:krystian.bugalski@voctensemble.com" rel="author" class="kol-link">
-            krystian.bugalski@voctensemble.com
+              browser, and a `mailto:` hands off to a mail client instead.
+              The address is the author's own domain, not the foundation's, and that is the point
+              of the `Auctor` rubric: this block signs the CRAFT, where `Fundatio` above it signs
+              the publisher. Everything a reader might write to the foundation about is in the
+              site-map footer under its own addresses. */}
+          <a href="mailto:krystian@bugalski.dev" rel="author" class="kol-link">
+            krystian@bugalski.dev
           </a>
         </p>
       </div>
