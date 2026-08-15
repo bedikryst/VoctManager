@@ -291,7 +291,12 @@ const plDate = (iso: string): string =>
       <div class="kd-hero-media" aria-hidden="true">
         <BleedImage desktop={bg.desktop} mobile={bg.mobile} alt="" eager animate />
       </div>
-      <div class="kd-hero-veil" aria-hidden="true"></div>
+      <div
+        class="kd-hero-veil"
+        aria-hidden="true"
+        style={c.heroFoot ? `--hero-foot: ${c.heroFoot}` : undefined}
+      >
+      </div>
 
       <div class="kd-hero-inner">
         <p class="kd-hero-eyebrow reveal">
@@ -937,10 +942,18 @@ const plDate = (iso: string): string =>
   .kd-hero-media { position: absolute; inset: 0; z-index: -2; }
   .kd-hero-media :global(picture),
   .kd-hero-media :global(img) { width: 100%; height: 115%; display: block; object-fit: cover; }
+  /* Two standing gradients shaped for a dark church interior — a top wash for the chrome, a foot
+     that seats the title, a rake from the left the type hangs on — over a deepened foot the
+     station can raise (`heroFoot`, content.config). The standing foot only has to carry type;
+     where the photograph's own foreground is loud it also has to SUBDUE, which is a different
+     amount and reaches higher up the frame. Kept as its own bottom-anchored layer so raising it
+     never touches the light in the upper frame. Unset ⇒ 0, and the heroes that want no more foot
+     than they have render exactly as before. */
   .kd-hero-veil { position: absolute; inset: 0; z-index: -1; pointer-events: none;
     background:
       linear-gradient(180deg, rgba(8,8,7,.42) 0%, rgba(8,8,7,.08) 36%, rgba(16,15,13,.86) 100%),
-      linear-gradient(72deg, rgba(8,8,7,.74) 0%, rgba(8,8,7,.22) 48%, transparent 74%); }
+      linear-gradient(72deg, rgba(8,8,7,.74) 0%, rgba(8,8,7,.22) 48%, transparent 74%),
+      linear-gradient(0deg, rgba(8,8,7,var(--hero-foot, 0)) 0%, transparent 60%); }
 
   .kd-hero-inner { max-width: 1180px; width: 100%; margin: 0 auto; }
   .kd-hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--capitalis); font-size: 11px; letter-spacing: .26em; text-transform: uppercase; color: rgba(244, 241, 233, .72); margin: 0 0 22px; }

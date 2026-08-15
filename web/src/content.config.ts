@@ -81,11 +81,21 @@ const concerts = defineCollection({
         needs responsive variants. */
     bg: z.string(),
     /** The station's photograph, used full-bleed on the detail-page hero — photo() base name,
-        resolved through bleedPair (so an art-directed `-mobile` crop can be added later).
-        Names the SAME canonical file as `about.img` where the milestone and the hero share a
-        frame: one file, one emit, no duplicate original in dist. Falls back to `<bg>-desktop`
-        for stations that have no separate canonical original (the liturgy plate). */
+        resolved through bleedPair (so `-desktop` / `-mobile` can be genuinely different frames,
+        not two sizes of one). Names the SAME canonical file as `about.img` wherever the milestone
+        and the hero can share a frame: one file, one emit, no duplicate original in dist. Two
+        stations cannot, and name a purpose-cut `kd-*-hero` pair instead — see the note on each.
+        Falls back to `<bg>-desktop` for stations with no separate canonical original (the
+        liturgy plate). This is also the JSON-LD / OG image for the station (koncerty.astro),
+        so it is the frame that stands for the evening off-site as well as on it. */
     heroImg: z.string().optional(),
+    /** Extra black rising from the hero's bottom edge, 0–1, fading out by 60% height. The veil's
+        standing gradients are shaped for a dark church interior, where the foot only has to seat
+        the title; a frame carrying a SATURATED COLOUR in its foreground (Wołanie's red velvet
+        seats) needs that foot deeper and taller, and needs it without touching the upper frame —
+        a flat scrim would have dulled the raking light that is the reason to use the photograph.
+        Per station: the six evenings have no single correct veil. */
+    heroFoot: z.number().min(0).max(1).optional(),
     /** Framed poster — photo() base name. Absent for the liturgy plate. */
     poster: z.string().optional(),
     posterAlt: z.string().optional(),

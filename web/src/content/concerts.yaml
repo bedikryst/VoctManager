@@ -492,7 +492,30 @@
     - Pieniny
     - Od Pirenejów po Indonezję
   bg: st-wolanie-bg
-  heroImg: o-nas-wolanie-gor
+  # The only evening of the cycle outside a church, and the one hero that shows a room nobody is
+  # in yet: the Dworek's auditorium before the audience, one raking shaft through the haze, the
+  # chandelier hanging into it. `o-nas-wolanie-gor` cannot do this work — it is the stage under a
+  # projection screen that fills its top half, so a near-white rectangle with a hard horizontal
+  # edge sat above the fold and split the title across two tones, and the same frame is already
+  # `kd-wolanie-5` in the gallery below, which had the page showing one photograph twice.
+  # BOTH masters are cut hard to the LEFT of the frame — `kd-wolanie-sala` keeps it whole. The
+  # chandelier hangs a metre from the lens, so it survives any crop at foreground scale, and every
+  # wider cut only enlarged what it kept: centred it lays a row of a dozen lit candles straight
+  # across the title's own line, and a dozen bright points in even rhythm beat display type every
+  # time; cut off at both edges it stops reading as a chandelier at all and becomes an unlit mass
+  # in front of the camera. Pulled left it is a trace at the margin — a few candle tips and one
+  # corner — and the room, the raking light and the empty seats carry the frame, which is what the
+  # photograph is for.
+  #   -desktop = 3400×1913 at x 0, y 300.
+  #   -mobile  = 1851×4024 at x 700 (0.46, the phone's own aspect).
+  # An empty hall reads as the threshold rather than the evening, which is the one place in this
+  # cycle where that is right: `prologue` below stands the reader in the doorway.
+  heroImg: kd-wolanie-hero
+  # Red velvet across the foreground — the loudest colour anywhere on this site, and it sits under
+  # the title. The standing foot is sized to seat type on a dark church floor, not to put out a
+  # saturated ground; this takes it deeper and up to 60% of the frame, leaving the raking light —
+  # the reason for the photograph — untouched.
+  heroFoot: 0.85
   poster: poster-wolanie
   posterAlt: Plakat koncertu Wołanie Gór
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/6yCPC7QDiot7MqzgdASkAP
@@ -1539,7 +1562,18 @@
     - Modlitwa o pokój
     - Pamięć Ukrainy
   bg: st-hymn-bg
-  heroImg: o-nas-ukraina
+  # The one station whose hero cannot be its /o-nas milestone: `o-nas-ukraina` is the curtain-call
+  # keepsake — fifteen people in a line, facing the lens, holding roses — and a requiem's title set
+  # across smiling faces is the wrong register for this evening (it also stood as the OG image).
+  # The pair is cut from the two frames that hold the evening's culminating fact, the Mariacki
+  # altarpiece opened under the anthem, which `programArc` below names as the point of the night:
+  #   -desktop = kd-hymn-4 de-matted and white-balanced (the `kd-hymn-4-imagines` variant, whose
+  #     burnt-in cyan credit sat exactly where the hero title lands; Płachetko is still credited
+  #     in the gallery below, where that frame also appears intact).
+  #   -mobile  = kd-hymn-1, the nave from the organ loft, cut to 0.46 — the phone's own aspect.
+  # A single frame cannot serve both: kd-hymn-1 is 9:16, and altar and singers sit 57% of its
+  # height apart while a desktop window can hold 26–31% of it. One or the other, never both.
+  heroImg: kd-hymn-hero
   poster: poster-hymn
   posterAlt: Plakat koncertu Hymn Poległym
   # spotify (private — uncomment when playlist becomes public): https://open.spotify.com/playlist/2ncz4uimkLsFEvLhc3HqlM
