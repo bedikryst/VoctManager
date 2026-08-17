@@ -3,7 +3,7 @@
 # Roster Data Transfer Objects (DTOs)
 # Standard: Enterprise SaaS 2026 (Pydantic V2)
 # ==========================================
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -18,6 +18,10 @@ from .models import Attendance, Participation, PieceReadiness, Project, VoiceTyp
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
 SALUTATION_VALUES = frozenset({"F", "M", "N"})
 ATTENDANCE_STATUS_VALUES = frozenset(Attendance.Status.values)
+ABSENCE_RANGE_STATUS_VALUES = frozenset(
+    {Attendance.Status.ABSENT.value, Attendance.Status.EXCUSED.value}
+)
+MAX_ABSENCE_RANGE = timedelta(days=366)
 PROJECT_STATUS_VALUES = frozenset(Project.Status.values)
 PARTICIPATION_STATUS_VALUES = frozenset(Participation.Status.values)
 VOICE_TYPE_VALUES = frozenset(VoiceType.values)
@@ -162,6 +166,54 @@ class AttendanceRecordDTO(EnterpriseBaseDTO):
     @classmethod
     def normalize_excuse_note(cls, value: object) -> object:
         return _blankable_string(value)
+
+
+class AttendanceRangeDTO(EnterpriseBaseDTO):
+    """One absence stated once for a span of days, instead of once per evening.
+
+    The window is wall-clock (`yyyy-MM-ddTHH:mm`, no offset) and inclusive at both
+    ends, because "away until the 21st" is a calendar fact and not an instant —
+    the service reads it against each rehearsal's own venue clock.
+
+    Only the two absence statuses ride a range. A run of days is a statement about
+    being away; lateness and presence are statements about one evening, and
+    `minutes_late` has no meaning spread over a fortnight.
+    """
+
+    requesting_user_id: int | str
+    is_manager: bool = False
+    artist_id: UUID = Field(alias="artist")
+    window_start: datetime = Field(alias="starts_at")
+    window_end: datetime = Field(alias="ends_at")
+    status: str = Field(..., min_length=1, max_length=10)
+    excuse_note: str = Field(default='', max_length=255)
+
+    @field_validator("window_start", "window_end")
+    @classmethod
+    def require_wall_clock(cls, value: datetime) -> datetime:
+        if value.tzinfo is not None:
+            raise ValueError("The range is wall-clock — send it without a UTC offset.")
+        return value
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        return _require_choice(value, ABSENCE_RANGE_STATUS_VALUES, "status")
+
+    @field_validator("excuse_note", mode="before")
+    @classmethod
+    def normalize_excuse_note(cls, value: object) -> object:
+        return _blankable_string(value)
+
+    @model_validator(mode="after")
+    def validate_window(self) -> "AttendanceRangeDTO":
+        if self.window_end < self.window_start:
+            raise ValueError("ends_at must not precede starts_at.")
+        # A mistyped year would otherwise reach back over a singer's whole
+        # history and rewrite it in one request.
+        if self.window_end - self.window_start > MAX_ABSENCE_RANGE:
+            raise ValueError("The range may not span more than a year.")
+        return self
 
 
 class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):

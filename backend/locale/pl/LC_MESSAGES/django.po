@@ -4242,3 +4242,25 @@ msgid ""
 "singers'."
 msgstr ""
 "Dostępny w dniu koncertu. Drukowany na każdym arkuszu, także chórzystów."
+
+msgid "From"
+msgstr "Od"
+
+msgid "Until"
+msgstr "Do"
+
+msgid "Rehearsals covered"
+msgstr "Liczba prób"
+
+msgid ""
+"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+"below — approve or decline them in the panel."
+msgstr ""
+"%(artist)s prosi o zwolnienie z serii prób. Terminy poniżej — decyzję "
+"podejmiesz w panelu."
+
+msgid "You're not expected at these rehearsals."
+msgstr "Na tych próbach nie musisz być."
+
+msgid "We're counting on you at these rehearsals."
+msgstr "Liczymy na Ciebie na tych próbach."

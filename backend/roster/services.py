@@ -55,6 +55,7 @@ from notifications.time_metadata import build_event_time_metadata
 
 from .dtos import (
     ArtistCreateDTO,
+    AttendanceRangeDTO,
     AttendanceRecordDTO,
     PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
@@ -90,6 +91,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
 )
+from .queries.schedule_queries import get_artist_rehearsals_in_window
 
 logger = logging.getLogger(__name__)
 
@@ -1370,6 +1372,142 @@ class RehearsalOperationsService:
                 ))
                 
         return attendance
+
+    @staticmethod
+    def record_attendance_range(dto: AttendanceRangeDTO) -> list[Attendance]:
+        """
+        State one absence once, across every rehearsal of a span of days.
+
+        A singer away for three weeks used to open every rehearsal in turn and
+        retype the same sentence. This writes one row per rehearsal they are
+        actually part of inside the window — nothing for the rehearsals they were
+        never invited to, nothing for a project they are only conducting.
+
+        Idempotent by construction: the row is keyed on (rehearsal, participation),
+        so re-sending an overlapping range updates the same rows rather than
+        adding to them.
+
+        The managers hear about it **once per production**, not once per evening:
+        a fortnight away is one decision to make, and the project has to be named
+        truthfully when the span reaches across two of them.
+        """
+        try:
+            artist = Artist.objects.get(id=dto.artist_id, is_deleted=False)
+        except Artist.DoesNotExist:
+            raise AttendanceValidationException("Record not found.") from None
+
+        if not dto.is_manager and artist.user_id != dto.requesting_user_id:
+            raise AttendanceValidationException(
+                "Can only record self-attendance unless you are a Manager."
+            )
+
+        matched = get_artist_rehearsals_in_window(
+            artist.id, dto.window_start, dto.window_end
+        )
+        if not matched:
+            return []
+
+        by_project: dict[UUID, list[Rehearsal]] = {}
+        written: list[Attendance] = []
+
+        with transaction.atomic():
+            for rehearsal, participation_id in matched:
+                attendance, _created = Attendance.objects.update_or_create(
+                    rehearsal=rehearsal,
+                    participation_id=participation_id,
+                    defaults={
+                        'status': dto.status,
+                        # A span says nothing about one evening's lateness.
+                        'minutes_late': None,
+                        'excuse_note': dto.excuse_note,
+                    },
+                )
+                written.append(attendance)
+                by_project.setdefault(rehearsal.project_id, []).append(rehearsal)
+
+            for rehearsals in by_project.values():
+                RehearsalOperationsService._announce_attendance_span(
+                    dto, artist, rehearsals
+                )
+
+        return written
+
+    @staticmethod
+    def _announce_attendance_span(
+        dto: AttendanceRangeDTO, artist: Artist, rehearsals: list[Rehearsal]
+    ) -> None:
+        """One message for one production's slice of a range.
+
+        `matched` arrives ordered by start time, so the first and last entries of
+        a project's slice are its real edges — which is what the reader is told,
+        rather than the dates the singer happened to type.
+        """
+        first, last = rehearsals[0], rehearsals[-1]
+        opening = build_event_time_metadata(
+            first.date_time, first.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+        )
+        closing = build_event_time_metadata(
+            last.date_time, last.timezone, fallback_timezone=DEFAULT_EVENT_TIMEZONE
+        )
+        count = len(rehearsals)
+
+        if not dto.is_manager:
+            metadata = ManagerActionMetadata(
+                project_name=first.project.title,
+                artist_name=f"{artist.first_name} {artist.last_name}",
+                artist_id=str(artist.id),
+                project_id=str(first.project_id),
+                rehearsal_id=str(first.id),
+                starts_at=opening["starts_at"],
+                starts_at_display=opening["starts_at_display"],
+                timezone=opening["timezone"],
+                ends_at=closing["starts_at"],
+                ends_at_display=closing["starts_at_display"],
+                rehearsal_count=count,
+                rehearsal_date=opening["starts_at_display"],
+                status=dto.status,
+                excuse_note=dto.excuse_note or None,
+            ).model_dump(mode="json")
+
+            transaction.on_commit(
+                lambda: ManagerNotificationHelper.notify_managers(
+                    notification_type=NotificationType.ABSENCE_REQUESTED,
+                    metadata=metadata,
+                )
+            )
+            return
+
+        if not artist.user_id:
+            return
+
+        is_approved = dto.status == Attendance.Status.EXCUSED
+        notif_type = (
+            NotificationType.ABSENCE_APPROVED if is_approved
+            else NotificationType.ABSENCE_REJECTED
+        )
+        level = NotificationLevel.INFO if is_approved else NotificationLevel.WARNING
+        decision = AbsenceStatusMetadata(
+            rehearsal_id=first.id,
+            project_name=first.project.title,
+            starts_at=opening["starts_at"],
+            starts_at_display=opening["starts_at_display"],
+            timezone=opening["timezone"],
+            ends_at=closing["starts_at"],
+            ends_at_display=closing["starts_at_display"],
+            rehearsal_count=count,
+            rehearsal_date=opening["starts_at_display"],
+        ).model_dump(mode="json")
+        recipient_id = str(artist.user_id)
+
+        transaction.on_commit(
+            lambda: send_notification_task.delay(
+                recipient_id=recipient_id,
+                notification_type=notif_type,
+                level=level,
+                metadata=decision,
+            )
+        )
+
 
 class ParticipationService:
     @staticmethod

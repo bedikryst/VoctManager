@@ -8,16 +8,21 @@
  * @architecture Enterprise SaaS 2026
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { AttendanceStatus, Project } from "@/shared/types";
+import { toZonedWallClock } from "@/shared/lib/time/timezone";
 import {
+  useReportAbsenceRange,
   useScheduleDashboard,
   useUpsertScheduleAttendance,
 } from "../api/schedule.queries";
 import type {
+  AbsenceRangeControls,
+  AbsenceRangePreview,
+  AbsenceRangeStatus,
   ScheduleAttendanceStats,
   ScheduleViewMode,
   TimelineEvent,
@@ -40,6 +45,7 @@ export const useScheduleData = (artistId?: string | number) => {
 
   const { data = [], isLoading } = useScheduleDashboard(artistId);
   const attendanceMutation = useUpsertScheduleAttendance();
+  const rangeMutation = useReportAbsenceRange();
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
     if (!artistId || isLoading) return [];
@@ -221,6 +227,100 @@ export const useScheduleData = (artistId?: string | number) => {
     }
   };
 
+  /**
+   * What a span of days would actually touch, answered from the dashboard the
+   * chorister already has — the same set of rehearsals the server resolves the
+   * write against, so the number stated before submitting is the number written.
+   *
+   * A conductor's rehearsals carry no participation and are skipped: there is no
+   * seat there to mark absent from.
+   */
+  const resolveAbsenceRange = useCallback(
+    (from: string, to: string): AbsenceRangePreview => {
+      if (!from || !to || from > to) {
+        return { count: 0, inWindow: 0, rehearsalIds: [] };
+      }
+
+      const rehearsalIds: string[] = [];
+      let inWindow = 0;
+
+      for (const item of data) {
+        if (item.type !== "REHEARSAL") continue;
+        const startsAt = new Date(item.rehearsal.date_time);
+        if (Number.isNaN(startsAt.getTime())) continue;
+
+        const local = toZonedWallClock(startsAt, item.rehearsal.timezone);
+        if (local < from || local > to) continue;
+
+        inWindow += 1;
+        if (item.participation_id) {
+          rehearsalIds.push(String(item.rehearsal.id));
+        }
+      }
+
+      return { count: rehearsalIds.length, inWindow, rehearsalIds };
+    },
+    [data],
+  );
+
+  const handleAbsenceRangeSubmit = async (
+    status: AbsenceRangeStatus,
+    notes: string,
+    from: string,
+    to: string,
+  ): Promise<boolean> => {
+    if (!artistId) return false;
+
+    const preview = resolveAbsenceRange(from, to);
+    if (preview.count === 0) {
+      toast.error(
+        t(
+          "schedule.rehearsal.range.preview_empty",
+          "W tym zakresie nie ma żadnej Twojej próby.",
+        ),
+      );
+      return false;
+    }
+
+    const toastId = toast.loading(
+      t("schedule.toast.submitting", "Wysyłanie zgłoszenia..."),
+    );
+
+    try {
+      const result = await rangeMutation.mutateAsync({
+        artist: artistId,
+        starts_at: from,
+        ends_at: to,
+        status,
+        excuse_note: notes,
+      });
+
+      toast.success(
+        t(
+          "schedule.rehearsal.range.success_toast",
+          "Zgłoszono nieobecność na {{count}} próbach.",
+          { count: result.updated },
+        ),
+        { id: toastId },
+      );
+      return true;
+    } catch (error) {
+      toastApiError(error, t, {
+        id: toastId,
+        fallbackDescription: t(
+          "schedule.toast.submit_error_desc",
+          "Nie udało się zapisać zgłoszenia.",
+        ),
+      });
+      return false;
+    }
+  };
+
+  const absenceRange: AbsenceRangeControls = {
+    resolve: resolveAbsenceRange,
+    submit: handleAbsenceRangeSubmit,
+  };
+
   return {
     isLoading,
     viewMode,
@@ -233,6 +333,7 @@ export const useScheduleData = (artistId?: string | number) => {
     loadMorePast,
     attendanceStats,
     handleAbsenceSubmit,
+    absenceRange,
     artistId,
   };
 };

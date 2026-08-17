@@ -4263,3 +4263,25 @@ msgid ""
 msgstr ""
 "Joignable le jour du concert. Imprimé sur toutes les feuilles, y compris "
 "celles des choristes."
+
+msgid "From"
+msgstr "Du"
+
+msgid "Until"
+msgstr "Au"
+
+msgid "Rehearsals covered"
+msgstr "Nombre de répétitions"
+
+msgid ""
+"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+"below — approve or decline them in the panel."
+msgstr ""
+"%(artist)s demande une absence pour une série de répétitions. Les dates sont"
+" ci-dessous — acceptez-les ou refusez-les dans l’espace."
+
+msgid "You're not expected at these rehearsals."
+msgstr "Votre absence à ces répétitions est notée."
+
+msgid "We're counting on you at these rehearsals."
+msgstr "Nous comptons sur vous à ces répétitions."

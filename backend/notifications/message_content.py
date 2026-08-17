@@ -24,7 +24,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -39,7 +39,7 @@ from .models import (
     NotificationLevel,
     NotificationType,
 )
-from .time_metadata import display_event_time
+from .time_metadata import display_event_end, display_event_time
 
 logger = logging.getLogger(__name__)
 
@@ -1098,6 +1098,31 @@ def _compose_contract_issued(ctx: MessageContext) -> MessageContent:
     )
 
 
+def _span_rows(metadata: Mapping[str, Any], when: str) -> list[DetailRow]:
+    """
+    How an absence states the ground it covers.
+
+    One evening names the rehearsal. A span names both edges and how many
+    rehearsals fell between them — the count is what the reader acts on, and it
+    is never the number of days, because most days hold no rehearsal at all.
+    """
+    count = metadata.get("rehearsal_count")
+    if not isinstance(count, int) or count < 2:
+        return [_row(_("Rehearsal"), when)] if when else []
+
+    until = display_event_end(metadata)
+    rows = [_row(_("From"), when)] if when else []
+    if until:
+        rows.append(_row(_("Until"), until))
+    rows.append(_row(_("Rehearsals covered"), count))
+    return rows
+
+
+def _is_span(metadata: Mapping[str, Any]) -> bool:
+    count = metadata.get("rehearsal_count")
+    return isinstance(count, int) and count > 1
+
+
 def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     artist = m.get("artist_name") or _("A singer")
@@ -1106,8 +1131,7 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
     note = m.get("excuse_note")
     rehearsals_url = _rehearsals_url(ctx)
     details: list[DetailRow] = [_row(_("Singer"), artist), _row(_("Project"), project)]
-    if when:
-        details.append(_row(_("Rehearsal"), when))
+    details.extend(_span_rows(m, when))
     if note:
         details.append(_row(_("Note"), note))
     return MessageContent(
@@ -1120,9 +1144,16 @@ def _compose_absence_requested(ctx: MessageContext) -> MessageContent:
         actions=(_open_action(rehearsals_url),),
         subject=_("Absence request — %(artist)s") % {"artist": artist},
         eyebrow=_("Attendance"),
-        email_lead=_(
-            "%(artist)s is asking to be excused from a rehearsal. The request is"
-            " below — approve or decline it in the panel."
+        email_lead=(
+            _(
+                "%(artist)s is asking to be excused from a run of rehearsals. The"
+                " dates are below — approve or decline them in the panel."
+            )
+            if _is_span(m)
+            else _(
+                "%(artist)s is asking to be excused from a rehearsal. The request is"
+                " below — approve or decline it in the panel."
+            )
         ) % {"artist": artist},
         details=tuple(details),
         cta_label=_("Review the request"),
@@ -1134,15 +1165,16 @@ def _compose_absence_approved(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("your project")
     when = display_event_time(m, "rehearsal_date")
     details: list[DetailRow] = [_row(_("Project"), project)]
-    if when:
-        details.append(_row(_("Rehearsal"), when))
+    details.extend(_span_rows(m, when))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
         title=_("You're excused — %(project)s") % {"project": project},
         body=(
             _("Rehearsal %(when)s — you're not expected.") % {"when": when}
-            if when
+            if when and not _is_span(m)
+            else _("You're not expected at these rehearsals.")
+            if _is_span(m)
             else _("You're not expected at this rehearsal.")
         ),
         url_path=_rehearsals_url(ctx),
@@ -1165,15 +1197,16 @@ def _compose_absence_rejected(ctx: MessageContext) -> MessageContent:
     project = m.get("project_name") or _("your project")
     when = display_event_time(m, "rehearsal_date")
     details: list[DetailRow] = [_row(_("Project"), project)]
-    if when:
-        details.append(_row(_("Rehearsal"), when))
+    details.extend(_span_rows(m, when))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
         title=_("Absence not approved — %(project)s") % {"project": project},
         body=(
             _("We're counting on you at the rehearsal %(when)s.") % {"when": when}
-            if when
+            if when and not _is_span(m)
+            else _("We're counting on you at these rehearsals.")
+            if _is_span(m)
             else _("We're counting on you at this rehearsal.")
         ),
         url_path=_rehearsals_url(ctx),

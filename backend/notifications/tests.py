@@ -63,6 +63,39 @@ class MessageContentCompositionTests(SimpleTestCase):
                     self.assertTrue(c.tag, f"{ntype}: empty tag")
                     self.assertTrue(c.url_path, f"{ntype}: empty url_path")
 
+    def test_an_absence_span_states_both_edges_and_its_count(self) -> None:
+        """An absence covering several rehearsals names the span, not one evening."""
+        span_meta = {
+            **_RICH_META,
+            "starts_at": "2026-08-04T19:00:00+02:00",
+            "ends_at": "2026-08-18T19:00:00+02:00",
+            "timezone": "Europe/Warsaw",
+            "rehearsal_count": 4,
+        }
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO,
+                span_meta, is_manager=True,
+            )
+            labels = [row.label for row in c.details]
+            self.assertIn("From", labels)
+            self.assertIn("Until", labels)
+            self.assertNotIn("Rehearsal", labels)
+            self.assertIn(
+                "4", [row.value for row in c.details if row.label == "Rehearsals covered"]
+            )
+            self.assertIn("run of rehearsals", c.email_lead)
+
+    def test_a_single_absence_still_names_one_rehearsal(self) -> None:
+        with translation.override("en"):
+            c = MessageContentBuilder.build(
+                NotificationType.ABSENCE_REQUESTED, NotificationLevel.INFO,
+                _RICH_META, is_manager=True,
+            )
+            labels = [row.label for row in c.details]
+            self.assertIn("Rehearsal", labels)
+            self.assertNotIn("From", labels)
+
     def test_push_projection_is_faithful(self) -> None:
         """to_push() must mirror the canonical content (push UX unchanged)."""
         with translation.override("en"):

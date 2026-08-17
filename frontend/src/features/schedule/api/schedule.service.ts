@@ -13,6 +13,8 @@ import type {
   Participation,
 } from "@/shared/types";
 import type {
+  AbsenceRangeReportDTO,
+  AbsenceRangeResult,
   ScheduleAttendanceReportDTO,
   ScheduleDashboardItem,
   EnrichedRehearsal,
@@ -104,6 +106,21 @@ export const ScheduleService = {
     }
 
     const response = await api.post<Attendance>("/api/attendances/", payload);
+    return response.data;
+  },
+
+  /**
+   * One absence across a span of days. The server upserts a row per rehearsal
+   * the artist takes part in inside the window and answers with the count it
+   * actually reached — which is the number the form previewed before sending.
+   */
+  saveAbsenceRange: async (
+    payload: AbsenceRangeReportDTO,
+  ): Promise<AbsenceRangeResult> => {
+    const response = await api.post<AbsenceRangeResult>(
+      "/api/attendances/range/",
+      payload,
+    );
     return response.data;
   },
 

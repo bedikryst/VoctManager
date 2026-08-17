@@ -50,6 +50,7 @@ from .dashboard_serializers import (
 )
 from .dtos import (
     ArtistCreateDTO,
+    AttendanceRangeDTO,
     AttendanceRecordDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
@@ -1283,6 +1284,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
 
+# The range payload is whitelisted rather than splatted: the caller must not be
+# able to name `requesting_user_id` or `is_manager`, which the view alone decides.
+_ATTENDANCE_RANGE_FIELDS = frozenset({'artist', 'starts_at', 'ends_at', 'status', 'excuse_note'})
+
+
 class AttendanceViewSet(viewsets.ModelViewSet):
     serializer_class = AttendanceSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -1309,6 +1315,44 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return Response(self.get_serializer(attendance).data, status=status.HTTP_201_CREATED)
         except AttendanceValidationException as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='range')
+    def report_range(self, request) -> Response:
+        """
+        One absence over a span of days: an upsert of one row per rehearsal the
+        artist takes part in inside the window, all carrying the same note.
+
+        Self-scoped like every other attendance write — a singer may only speak
+        for themselves unless they are a manager. The window is wall-clock and
+        inclusive; `updated` is the authoritative count of rows the range reached,
+        which is the number the client previewed before sending.
+        """
+        payload = {
+            key: value
+            for key, value in request.data.items()
+            if key in _ATTENDANCE_RANGE_FIELDS
+        }
+        try:
+            dto = AttendanceRangeDTO(
+                requesting_user_id=request.user.id,
+                is_manager=user_is_manager(request.user),
+                **payload,
+            )
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            written = RehearsalOperationsService.record_attendance_range(dto)
+        except AttendanceValidationException as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {
+                "updated": len(written),
+                "attendances": self.get_serializer(written, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class RehearsalViewSet(viewsets.ModelViewSet):

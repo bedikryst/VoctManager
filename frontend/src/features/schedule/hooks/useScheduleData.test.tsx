@@ -56,6 +56,44 @@ const dashboard = (
   },
 ];
 
+const RANGE_URL = "*/api/attendances/range/";
+
+/**
+ * A fortnight of the artist's schedule: three rehearsals inside the window, one
+ * of which belongs to a project they only conduct (no participation, so no seat
+ * to be marked absent from), plus one the day after the window closes.
+ */
+const spanDashboard = (): ScheduleDashboardItem[] => {
+  const rehearsal = (
+    id: string,
+    dateTime: string,
+    participationId: string | null,
+  ): ScheduleDashboardItem => ({
+    type: "REHEARSAL",
+    participation_id: participationId,
+    project_title: "Nieszpory Rachmaninowa",
+    my_attendance: null,
+    rehearsal: {
+      id,
+      project: "proj-1",
+      date_time: dateTime,
+      timezone: "Europe/Warsaw",
+      is_mandatory: true,
+      absent_count: 0,
+    },
+  });
+
+  return [
+    rehearsal("reh-in-1", "2099-08-04T17:00:00Z", PARTICIPATION_ID),
+    rehearsal("reh-in-2", "2099-08-11T17:00:00Z", PARTICIPATION_ID),
+    // Conducted, not sung — the count must not claim it.
+    rehearsal("reh-podium", "2099-08-12T17:00:00Z", null),
+    // 00:30 on the 22nd in Warsaw is 22:30 on the 21st in UTC: inside the window
+    // only if the clock the singer reads is ignored.
+    rehearsal("reh-after", "2099-08-21T22:30:00Z", PARTICIPATION_ID),
+  ];
+};
+
 interface Captured {
   readonly method: string;
   readonly url: string;
@@ -205,6 +243,84 @@ describe("useScheduleData — RSVP", () => {
     });
 
     // No participation means no RSVP target; guessing one would mark somebody.
+    expect(accepted).toBe(false);
+    expect(writes).toHaveLength(0);
+  });
+});
+
+describe("useScheduleData — absence over a range", () => {
+  const WINDOW = ["2099-08-03T00:00", "2099-08-21T23:59"] as const;
+
+  const arrangeSpan = (): { readonly writes: Captured[] } => {
+    const writes: Captured[] = [];
+    server.use(
+      http.get(DASHBOARD_URL, () => HttpResponse.json(spanDashboard())),
+      http.post(RANGE_URL, async ({ request }) => {
+        writes.push({
+          method: request.method,
+          url: new URL(request.url).pathname,
+          body: await request.clone().json(),
+        });
+        return HttpResponse.json({ updated: 2 });
+      }),
+    );
+    return { writes };
+  };
+
+  it("counts only the rehearsals the artist holds a seat at, before anything is sent", async () => {
+    arrangeSpan();
+    const { result } = await mountSchedule();
+
+    const preview = result.current.absenceRange.resolve(...WINDOW);
+
+    // Four rehearsals fall in the window on the venue's clock — the conducted
+    // one and the one starting after midnight local are not the artist's to
+    // answer for.
+    expect(preview.inWindow).toBe(3);
+    expect(preview.count).toBe(2);
+    expect([...preview.rehearsalIds]).toEqual(["reh-in-1", "reh-in-2"]);
+  });
+
+  it("sends the whole span as one wall-clock write", async () => {
+    const { writes } = arrangeSpan();
+    const { result } = await mountSchedule();
+
+    let accepted = false;
+    await act(async () => {
+      accepted = await result.current.absenceRange.submit(
+        "ABSENT",
+        "Trzy tygodnie poza krajem.",
+        ...WINDOW,
+      );
+    });
+
+    expect(accepted).toBe(true);
+    expect(writes).toHaveLength(1);
+    expect(writes[0].method).toBe("POST");
+    expect(writes[0].url).toBe("/api/attendances/range/");
+    expect(writes[0].body).toEqual({
+      artist: ARTIST_ID,
+      starts_at: WINDOW[0],
+      ends_at: WINDOW[1],
+      status: "ABSENT",
+      excuse_note: "Trzy tygodnie poza krajem.",
+    });
+  });
+
+  it("refuses a window holding none of the artist's rehearsals rather than posting an empty write", async () => {
+    const { writes } = arrangeSpan();
+    const { result } = await mountSchedule();
+
+    let accepted = true;
+    await act(async () => {
+      accepted = await result.current.absenceRange.submit(
+        "ABSENT",
+        "Urlop.",
+        "2099-09-01T00:00",
+        "2099-09-30T23:59",
+      );
+    });
+
     expect(accepted).toBe(false);
     expect(writes).toHaveLength(0);
   });

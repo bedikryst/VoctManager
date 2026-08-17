@@ -3078,3 +3078,23 @@ msgid ""
 "Reachable on the day of the concert. Printed on every sheet, including the "
 "singers'."
 msgstr ""
+
+msgid "From"
+msgstr ""
+
+msgid "Until"
+msgstr ""
+
+msgid "Rehearsals covered"
+msgstr ""
+
+msgid ""
+"%(artist)s is asking to be excused from a run of rehearsals. The dates are "
+"below — approve or decline them in the panel."
+msgstr ""
+
+msgid "You're not expected at these rehearsals."
+msgstr ""
+
+msgid "We're counting on you at these rehearsals."
+msgstr ""

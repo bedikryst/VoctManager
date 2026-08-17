@@ -15,7 +15,11 @@ import {
   AlignLeft,
 } from "lucide-react";
 import type { AttendanceStatus } from "@/shared/types";
-import type { ScheduleViewMode, TimelineEvent } from "../types/schedule.dto";
+import type {
+  AbsenceRangeControls,
+  ScheduleViewMode,
+  TimelineEvent,
+} from "../types/schedule.dto";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { AbsenceReportForm } from "./AbsenceReportForm";
 import { AddToCalendar } from "./AddToCalendar";
@@ -37,6 +41,8 @@ interface TimelineRehearsalCardProps {
     notes: string,
   ) => Promise<boolean>;
   viewMode: ScheduleViewMode;
+  /** Lets the absence form answer for a run of days, not just this evening. */
+  absenceRange?: AbsenceRangeControls;
 }
 
 // A left accent strip in the status colour gives the (deliberately plainer)
@@ -118,6 +124,7 @@ export const TimelineRehearsalCard = ({
   onToggle,
   onSubmitReport,
   viewMode,
+  absenceRange,
 }: TimelineRehearsalCardProps): React.JSX.Element => {
   const { t } = useTranslation();
   const tz = (event.rawObj as { timezone?: string })?.timezone;
@@ -132,7 +139,14 @@ export const TimelineRehearsalCard = ({
     handleConfirmPresence,
     handleSubmitReport,
     enableReportingMode,
-  } = useTimelineRehearsalCard(event, onSubmitReport, onToggle, isExpanded);
+    range,
+  } = useTimelineRehearsalCard(
+    event,
+    onSubmitReport,
+    onToggle,
+    isExpanded,
+    absenceRange,
+  );
 
   const maskedStatus = currentMaskedStatus;
   // A conductor sees the rehearsal but isn't cast in it — no participation to
@@ -286,6 +300,7 @@ export const TimelineRehearsalCard = ({
                 isSubmitting={isSubmitting}
                 onSubmit={handleSubmitReport}
                 onCancel={() => setReportingMode(false)}
+                range={range}
               />
             </motion.div>
           )}

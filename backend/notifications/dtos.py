@@ -240,6 +240,11 @@ class AbsenceStatusMetadata(EnterpriseBaseDTO):
     timezone: str = ""
     rehearsal_date: str
     message: str | None = None
+    # A decision covering a span of days rather than one evening: the closing
+    # moment and how many rehearsals it actually reached. Absent on a single one.
+    ends_at: str = ""
+    ends_at_display: str = ""
+    rehearsal_count: int | None = None
 
 
 class ManagerActionMetadata(EnterpriseBaseDTO):
@@ -261,6 +266,11 @@ class ManagerActionMetadata(EnterpriseBaseDTO):
     excuse_note: str | None = None  # user-authored free text — passed through verbatim
     # Participation RSVP: new + previous status codes.
     previous_status: str | None = None
+    # An absence stated over a span of days rather than one evening: the closing
+    # moment and how many rehearsals it actually reached. Absent on a single one.
+    ends_at: str = ""
+    ends_at_display: str = ""
+    rehearsal_count: int | None = None
 
 
 class CustomAdminMessageMetadata(EnterpriseBaseDTO):

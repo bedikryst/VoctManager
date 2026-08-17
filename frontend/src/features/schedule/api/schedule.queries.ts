@@ -9,6 +9,7 @@ import {
 } from "@/shared/api/queryPolicy";
 import { ScheduleService } from "./schedule.service";
 import type {
+  AbsenceRangeReportDTO,
   ScheduleAttendanceReportDTO,
   ScheduleDashboardItem,
 } from "../types/schedule.dto";
@@ -143,6 +144,25 @@ export const useUpsertScheduleAttendance = () => {
 
     onSettled: async () => {
       if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      await queryClient.invalidateQueries({ queryKey: SCHEDULE_DASHBOARD_PREFIX });
+    },
+  });
+};
+
+/**
+ * Absence over a span of days. Deliberately NOT optimistic: the single-event
+ * RSVP patches one card because the tap and the card are the same object, while
+ * a range rewrites a fortnight of them and the server decides which — guessing
+ * the set on the client would paint rows the write may never reach. The refetch
+ * on settle is the answer, and it is one request either way.
+ */
+export const useReportAbsenceRange = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AbsenceRangeReportDTO) =>
+      ScheduleService.saveAbsenceRange(payload),
+    onSettled: async () => {
       await queryClient.invalidateQueries({ queryKey: SCHEDULE_DASHBOARD_PREFIX });
     },
   });

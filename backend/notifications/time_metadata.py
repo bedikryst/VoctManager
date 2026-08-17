@@ -139,6 +139,27 @@ def humanize_event_time(value: datetime) -> str:
     }
 
 
+def _display_moment(
+    metadata: Mapping[str, Any],
+    iso_key: str,
+    display_keys: tuple[str, ...],
+    legacy_keys: tuple[str, ...],
+) -> str:
+    parsed = _parse_iso_datetime(metadata.get(iso_key))
+    if parsed is not None:
+        timezone_name = metadata.get("timezone")
+        if timezone_name:
+            with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
+                parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
+        return humanize_event_time(parsed)
+
+    for key in (*display_keys, *legacy_keys):
+        value = metadata.get(key)
+        if value:
+            return str(value)
+    return ""
+
+
 def display_event_time(metadata: Mapping[str, Any], *legacy_keys: str) -> str:
     """
     Resolve the best human display value from canonical or legacy metadata.
@@ -149,20 +170,16 @@ def display_event_time(metadata: Mapping[str, Any], *legacy_keys: str) -> str:
     of a bare date. The stored display value remains the fallback for legacy rows
     and for multi-day ranges, which have no single moment to render.
     """
-    parsed = _parse_iso_datetime(metadata.get("starts_at"))
-    if parsed is not None:
-        timezone_name = metadata.get("timezone")
-        if timezone_name:
-            with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
-                parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
-        return humanize_event_time(parsed)
+    return _display_moment(
+        metadata, "starts_at", ("starts_at_display", "date_range_display"), legacy_keys
+    )
 
-    display_value = metadata.get("starts_at_display") or metadata.get("date_range_display")
-    if display_value:
-        return str(display_value)
 
-    for key in legacy_keys:
-        legacy_value = metadata.get(key)
-        if legacy_value:
-            return str(legacy_value)
-    return ""
+def display_event_end(metadata: Mapping[str, Any]) -> str:
+    """
+    The closing moment of a span, resolved the same way as its opening one.
+
+    Only a payload that covers several events carries this; a single event states
+    when it begins and the reader needs nothing else.
+    """
+    return _display_moment(metadata, "ends_at", ("ends_at_display",), ())

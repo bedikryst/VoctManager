@@ -45,7 +45,7 @@ import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
 
-import type { TimelineEvent } from "../types/schedule.dto";
+import type { AbsenceRangeControls, TimelineEvent } from "../types/schedule.dto";
 import { ScheduleService } from "../api/schedule.service";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { useScheduleProgramItems } from "../api/schedule.queries";
@@ -95,16 +95,23 @@ interface NextEventHeroProps {
     status: AttendanceStatus,
     notes: string,
   ) => Promise<boolean>;
+  /** Lets the absence form answer for a run of days, not just this evening. */
+  absenceRange?: AbsenceRangeControls;
 }
 
 export const NextEventHero = ({
   event,
   onSubmitReport,
+  absenceRange,
 }: NextEventHeroProps): React.JSX.Element =>
   event.type === "PROJECT" ? (
     <ProjectHero event={event} />
   ) : (
-    <RehearsalHero event={event} onSubmitReport={onSubmitReport} />
+    <RehearsalHero
+      event={event}
+      onSubmitReport={onSubmitReport}
+      absenceRange={absenceRange}
+    />
   );
 
 /* ── concert spotlight ────────────────────────────────────────────────── */
@@ -311,6 +318,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
 const RehearsalHero = ({
   event,
   onSubmitReport,
+  absenceRange,
 }: NextEventHeroProps): React.JSX.Element => {
   const { t } = useTranslation();
   const reh = event.rawObj as Rehearsal;
@@ -329,7 +337,14 @@ const RehearsalHero = ({
     handleConfirmPresence,
     handleSubmitReport,
     enableReportingMode,
-  } = useTimelineRehearsalCard(event, onSubmitReport, () => undefined, false);
+    range,
+  } = useTimelineRehearsalCard(
+    event,
+    onSubmitReport,
+    () => undefined,
+    false,
+    absenceRange,
+  );
 
   const { data: programItems = [], isLoading: isProgramLoading } =
     useScheduleProgramItems(event.project_id, isLive);
@@ -465,6 +480,7 @@ const RehearsalHero = ({
               isSubmitting={isSubmitting}
               onSubmit={handleSubmitReport}
               onCancel={() => setReportingMode(false)}
+              range={range}
             />
           </motion.div>
         )}

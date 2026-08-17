@@ -1,13 +1,91 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING, Any
+from uuid import UUID
 
 from django.db.models import Count, Prefetch, Q, QuerySet
 
+from roster.domain.day_timeline import localize
 from roster.models import Attendance, Participation, Project, Rehearsal
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import User
+
+# Slack around a wall-clock window before it is handed to the database. Every
+# zone on earth sits inside a day of UTC, so the SQL narrows and the exact edges
+# are then decided on each rehearsal's own clock.
+_WINDOW_SLACK = timedelta(days=1)
+
+
+def _schedule_seats(**artist_lookup: Any) -> list[tuple[UUID, UUID]]:
+    """`(participation_id, project_id)` for every seat that belongs in a schedule.
+
+    Drafts and declined seats drop here rather than downstream, so the rehearsals
+    and the participation map lose them in one stroke: a project the cast has not
+    been told about must not appear in their schedule, and a seat they turned
+    down is not theirs to be marked absent from.
+
+    Both the artist's dashboard and the range writer resolve their seats through
+    this one query, which is what stops the count a singer is shown before
+    submitting from disagreeing with the rows the submission writes.
+    """
+    return list(
+        Participation.objects.filter(is_deleted=False, **artist_lookup)
+        .exclude(status=Participation.Status.DECLINED)
+        .exclude(project__status=Project.Status.DRAFT)
+        .values_list("id", "project_id")
+    )
+
+
+def get_artist_rehearsals_in_window(
+    artist_id: UUID | str,
+    window_start: datetime,
+    window_end: datetime,
+) -> list[tuple[Rehearsal, UUID]]:
+    """
+    Every rehearsal the artist takes part in whose start falls inside the window,
+    each paired with the participation that seat belongs to.
+
+    The window is **wall-clock and inclusive at both ends**: "away until the 21st"
+    is a calendar fact, so each rehearsal is judged on its own venue clock rather
+    than against a single instant, and a tour crossing timezones keeps its edges.
+    Rehearsals of a project the artist merely conducts are absent by construction
+    — there is no participation there, so there is no attendance row to write.
+    """
+    seats = _schedule_seats(artist_id=artist_id)
+    if not seats:
+        return []
+
+    participation_by_project = {project_id: pid for pid, project_id in seats}
+    participation_ids = [pid for pid, _project_id in seats]
+
+    rehearsals = (
+        Rehearsal.objects.filter(
+            project_id__in=list(participation_by_project), is_deleted=False
+        )
+        .filter(
+            Q(invited_participations__isnull=True)
+            | Q(invited_participations__in=participation_ids)
+        )
+        .filter(
+            date_time__gte=(window_start - _WINDOW_SLACK).replace(tzinfo=UTC),
+            date_time__lte=(window_end + _WINDOW_SLACK).replace(tzinfo=UTC),
+        )
+        .distinct()
+        .select_related("project")
+        .order_by("date_time")
+    )
+
+    matched: list[tuple[Rehearsal, UUID]] = []
+    for rehearsal in rehearsals:
+        local = localize(rehearsal.date_time, rehearsal.timezone)
+        if local is None:
+            continue
+        if window_start <= local.replace(tzinfo=None) <= window_end:
+            matched.append((rehearsal, participation_by_project[rehearsal.project_id]))
+
+    return matched
 
 
 def get_artist_schedule(
@@ -39,12 +117,7 @@ def get_artist_schedule(
     # cast has not been told about must not appear in their schedule — being cast in
     # an unpublished concert is a plan the conductor is still making. The conductor's
     # own slice (`conducted_project_ids`) is untouched: they are the one planning it.
-    active_parts: list[tuple] = list(
-        Participation.objects.filter(artist__user=user, is_deleted=False)
-        .exclude(status=Participation.Status.DECLINED)
-        .exclude(project__status=Project.Status.DRAFT)
-        .values_list("id", "project_id")
-    )
+    active_parts = _schedule_seats(artist__user=user)
     participation_ids = [pid for pid, _ in active_parts]
     sung_project_ids = {proj_id for _, proj_id in active_parts}
     participation_by_project = {

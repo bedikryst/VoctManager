@@ -53,6 +53,7 @@ export default function Schedule(): React.JSX.Element {
     loadMorePast,
     attendanceStats,
     handleAbsenceSubmit,
+    absenceRange,
     artistId,
   } = useScheduleData(user?.artist_profile_id ?? undefined);
 
@@ -136,6 +137,7 @@ export default function Schedule(): React.JSX.Element {
                   <NextEventHero
                     event={heroEvent}
                     onSubmitReport={handleAbsenceSubmit}
+                    absenceRange={absenceRange}
                   />
                 </StaggeredBentoItem>
               )}
@@ -209,6 +211,7 @@ export default function Schedule(): React.JSX.Element {
                                 )
                               }
                               onSubmitReport={handleAbsenceSubmit}
+                              absenceRange={absenceRange}
                               viewMode={viewMode}
                             />
                           ),

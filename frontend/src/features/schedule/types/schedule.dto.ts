@@ -70,6 +70,50 @@ export interface ScheduleAttendanceReportDTO {
   excuse_note: string;
 }
 
+/** The two statuses a span of days can carry — see `AbsenceRangeReportDTO`. */
+export type AbsenceRangeStatus = Extract<AttendanceStatus, "ABSENT" | "EXCUSED">;
+
+/**
+ * One absence stated once for a run of days. Both edges are wall-clock strings
+ * (`yyyy-MM-ddTHH:mm`, no offset) and inclusive; the server reads them against
+ * each rehearsal's own venue clock.
+ */
+export interface AbsenceRangeReportDTO {
+  artist: string | number;
+  starts_at: string;
+  ends_at: string;
+  status: AbsenceRangeStatus;
+  excuse_note: string;
+}
+
+/** The server's answer to a range write: how many rows it actually reached. */
+export interface AbsenceRangeResult {
+  updated: number;
+}
+
+/**
+ * What a range would touch, resolved from the schedule the artist already holds
+ * — so the count can be stated while the dates are still being picked.
+ */
+export interface AbsenceRangePreview {
+  /** Rehearsals in the window the artist actually takes part in. */
+  readonly count: number;
+  /** Rehearsals in the window, including the ones that are not theirs. */
+  readonly inWindow: number;
+  readonly rehearsalIds: readonly string[];
+}
+
+/** The range half of the absence form, owned by `useScheduleData`. */
+export interface AbsenceRangeControls {
+  readonly resolve: (from: string, to: string) => AbsenceRangePreview;
+  readonly submit: (
+    status: AbsenceRangeStatus,
+    note: string,
+    from: string,
+    to: string,
+  ) => Promise<boolean>;
+}
+
 /** The chorister's own attendance mirror, derived from past rehearsals. */
 export interface ScheduleAttendanceStats {
   present: number;
