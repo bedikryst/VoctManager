@@ -6,7 +6,11 @@
  * set of columns that are blank-not-null — because the two are read together on
  * every submit and drift apart the moment they live in different files.
  *
- * The page keeps the form STATE (it also drives the composer, divisi and
+ * `title` is part of that contract but has no field here: it is the page's own
+ * heading, edited in place there, and a second input restating the h1 two lines
+ * below it was the record's identity written twice on one screen.
+ *
+ * The page keeps the form STATE (it also drives the title, composer, divisi and
  * duration controls outside this block) and passes it in, so this component
  * stays a rendering of one `useForm` instance rather than a second owner of it.
  * @architecture Enterprise SaaS 2026
@@ -117,16 +121,6 @@ export const PieceMetadataForm = ({
           title={t("archive.piece_card.group.identity", "Tożsamość")}
           className="grid grid-cols-1 gap-3 md:grid-cols-2"
         >
-          <LabeledField
-            label={t("archive.piece_card.fields.title", "Tytuł")}
-            chip={fieldChip("title")}
-          >
-            <Input
-              aria-label={t("archive.piece_card.fields.title", "Tytuł")}
-              error={errors.title?.message}
-              {...register("title")}
-            />
-          </LabeledField>
           <LabeledField
             label={t(
               "archive.piece_card.fields.arranger",

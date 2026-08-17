@@ -486,7 +486,6 @@
         "lyrics_original": "Tekst oryginalny",
         "opus": "Opus / Katalog",
         "text_source": "Źródło tekstu",
-        "title": "Tytuł",
         "voicing": "Obsada"
       },
       "fields_hint": "Sprawdź każde pole z podglądem PDF po lewej. Edytuj jeśli AI źle odczytał.",
@@ -496,7 +495,6 @@
         "musical": "Charakterystyka muzyczna",
         "text": "Tekst"
       },
-      "identifiers_section": "Identyfikatory utworu",
       "language_pick": "— wybierz —",
       "legend_ai": "Do sprawdzenia",
       "legend_verified": "Zweryfikowane",
@@ -528,7 +526,6 @@
       "review_remaining_other": "Do sprawdzenia pozostało: {{count}} pól",
       "save_btn": "Zapisz zmiany",
       "save_first": "Najpierw zapisz zmiany.",
-      "saved_state": "Wszystko zapisane",
       "section": {
         "details": "Szczegóły utworu",
         "metadata": "Metadane"
@@ -544,7 +541,11 @@
       "section_pending_many": "{{count}} do sprawdzenia",
       "section_pending_other": "{{count}} do sprawdzenia",
       "approve_modal_title": "Zatwierdzić i opublikować?",
-      "approve_modal_desc": "Materiały staną się widoczne dla chóru, a uczestnicy projektów z tym utworem dostaną powiadomienie. Upewnij się, że pola oznaczone „do sprawdzenia” są zweryfikowane."
+      "approve_modal_desc": "Materiały staną się widoczne dla chóru, a uczestnicy projektów z tym utworem dostaną powiadomienie. Upewnij się, że pola oznaczone „do sprawdzenia” są zweryfikowane.",
+      "edit_title": "Tytuł utworu",
+      "title_required": "Tytuł jest wymagany.",
+      "section_dirty": "Niezapisane",
+      "dirty_rows_hint": "Niezapisane zmiany w sekcjach powyżej — zapisz je w wierszach."
     },
     "review": {
       "delete": "Usuń",
@@ -4101,10 +4102,7 @@
       "section": "Kompozytor (źródło: MusicBrainz + Wikidata)"
     },
     "identifiers": {
-      "key": "Tonacja",
-      "mbid": "MusicBrainz Work",
-      "opus": "Opus / Katalog",
-      "text_source": "Źródło tekstu"
+      "mbid": "MusicBrainz Work"
     },
     "status": {
       "awaiting": "Czeka na przegląd",

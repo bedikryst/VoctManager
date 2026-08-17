@@ -46,6 +46,7 @@ import {
 } from "../api/archive.queries";
 import { InlineConfirmAction } from "./InlineConfirmAction";
 import { ProvenanceChip, childFieldProvenance } from "./ProvenanceChip";
+import { dirtyKey, useRegisterDirty } from "../hooks/usePieceDirty";
 
 /** The canonical (project-less) AI program note, if generated. Language-agnostic:
  *  the eager note is generated in the ensemble's language (Polish), and the
@@ -119,6 +120,7 @@ const MovementRow = ({
   const dirty =
     title.trim() !== movement.title ||
     tempo.trim() !== (movement.tempo_marking ?? "");
+  useRegisterDirty(dirtyKey("movement", movement.id), dirty);
 
   const save = (): void => {
     update.mutate(
@@ -245,6 +247,7 @@ const TranslationRow = ({
   const [text, setText] = useState(translation.text);
   const [translator, setTranslator] = useState(translation.translator);
   const dirty = text !== translation.text || translator !== translation.translator;
+  useRegisterDirty(dirtyKey("translation", translation.id), dirty);
 
   return (
     <li className="rounded-nested border border-hairline bg-ethereal-alabaster/60 p-3">
@@ -487,6 +490,7 @@ const ProgramNoteEditor = ({
 
   const [content, setContent] = useState(note.content);
   const dirty = content.trim() !== note.content.trim();
+  useRegisterDirty(dirtyKey("note", note.id), dirty);
 
   const save = (): void => {
     const next = content.trim();

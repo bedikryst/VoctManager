@@ -484,7 +484,6 @@
         "lyrics_original": "Texte original",
         "opus": "Opus / Catalogue",
         "text_source": "Source du texte",
-        "title": "Titre",
         "voicing": "Distribution"
       },
       "fields_hint": "Vérifiez chaque champ avec l'aperçu PDF à gauche. Modifiez si l'IA a mal lu.",
@@ -494,7 +493,6 @@
         "musical": "Détails musicaux",
         "text": "Texte"
       },
-      "identifiers_section": "Identifiants de la pièce",
       "language_pick": "— choisir —",
       "legend_ai": "À vérifier",
       "legend_verified": "Vérifiés",
@@ -522,7 +520,6 @@
       "review_remaining_other": "{{count}} champs à vérifier",
       "save_btn": "Enregistrer les modifications",
       "save_first": "Enregistrez d'abord vos modifications.",
-      "saved_state": "Tout est enregistré",
       "section": {
         "details": "Détails de la pièce",
         "metadata": "Métadonnées"
@@ -536,7 +533,11 @@
       "section_pending_one": "{{count}} à vérifier",
       "section_pending_other": "{{count}} à vérifier",
       "approve_modal_title": "Valider et publier ?",
-      "approve_modal_desc": "Les supports deviennent visibles pour le chœur et tous les participants aux projets comportant cette œuvre reçoivent une notification. Assurez-vous que les champs marqués « à vérifier » ont bien été contrôlés."
+      "approve_modal_desc": "Les supports deviennent visibles pour le chœur et tous les participants aux projets comportant cette œuvre reçoivent une notification. Assurez-vous que les champs marqués « à vérifier » ont bien été contrôlés.",
+      "edit_title": "Titre de l'œuvre",
+      "title_required": "Le titre est obligatoire.",
+      "section_dirty": "Non enregistré",
+      "dirty_rows_hint": "Modifications non enregistrées dans les sections ci-dessus — enregistrez-les dans leurs lignes."
     },
     "review": {
       "delete": "Supprimer",
@@ -4075,10 +4076,7 @@
       "section": "Compositeur (source : MusicBrainz + Wikidata)"
     },
     "identifiers": {
-      "key": "Tonalité",
-      "mbid": "Œuvre MusicBrainz",
-      "opus": "Opus / Catalogue",
-      "text_source": "Source du texte"
+      "mbid": "Œuvre MusicBrainz"
     },
     "status": {
       "awaiting": "En attente de révision",

@@ -484,7 +484,6 @@
         "lyrics_original": "Original text",
         "opus": "Opus / Catalogue",
         "text_source": "Text source",
-        "title": "Title",
         "voicing": "Voicing"
       },
       "fields_hint": "Check each field against the PDF preview on the left. Edit if the AI misread it.",
@@ -494,7 +493,6 @@
         "musical": "Musical details",
         "text": "Text"
       },
-      "identifiers_section": "Piece identifiers",
       "language_pick": "— select —",
       "legend_ai": "To review",
       "legend_verified": "Verified",
@@ -522,7 +520,6 @@
       "review_remaining_other": "{{count}} fields left to check",
       "save_btn": "Save changes",
       "save_first": "Save your changes first.",
-      "saved_state": "All changes saved",
       "section": {
         "details": "Piece details",
         "metadata": "Metadata"
@@ -536,7 +533,11 @@
       "section_pending_one": "{{count}} to check",
       "section_pending_other": "{{count}} to check",
       "approve_modal_title": "Approve and publish?",
-      "approve_modal_desc": "The materials become visible to the choir, and everyone cast in a project featuring this piece gets a notification. Make sure the fields marked “to check” have been verified."
+      "approve_modal_desc": "The materials become visible to the choir, and everyone cast in a project featuring this piece gets a notification. Make sure the fields marked “to check” have been verified.",
+      "edit_title": "Piece title",
+      "title_required": "Title is required.",
+      "section_dirty": "Unsaved",
+      "dirty_rows_hint": "Unsaved changes in the sections above — save them in their rows."
     },
     "review": {
       "delete": "Delete",
@@ -4074,10 +4075,7 @@
       "section": "Composer (source: MusicBrainz + Wikidata)"
     },
     "identifiers": {
-      "key": "Key",
-      "mbid": "MusicBrainz Work",
-      "opus": "Opus / Catalogue",
-      "text_source": "Text source"
+      "mbid": "MusicBrainz Work"
     },
     "status": {
       "awaiting": "Awaiting review",

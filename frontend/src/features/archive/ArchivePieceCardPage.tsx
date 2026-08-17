@@ -12,6 +12,11 @@
  * field flips its provenance chip "AI · do sprawdzenia" → "Zweryfikowane" (the
  * server stamps MANUAL provenance for exactly the changed fields).
  *
+ * Two save contracts meet here and the page has to hold both: the scalar form
+ * defers to the footer, while each artifact row (movement, translation, note)
+ * owns its own mutation. `usePieceDirty` is what keeps the second visible to the
+ * first — without it the publish gate can only see half of what is unsaved.
+ *
  * Reachable at `/panel/archive-management/:id`; the legacy `/edit` and `/review`
  * routes redirect here. Default export: consumed by App.tsx via React.lazy.
  * @architecture Enterprise SaaS 2026
@@ -26,7 +31,7 @@ import React, {
   useState,
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -34,10 +39,10 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
-  Check,
   ChevronRight,
   CircleAlert,
   Disc3,
+  ExternalLink,
   FileText,
   Languages,
   Library,
@@ -57,7 +62,8 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
-import { ComposerCard, WorkIdentifiersGrid } from "@/shared/ui/composites/repertoire";
+import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
+import { ComposerCard } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
 import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
@@ -103,6 +109,7 @@ import {
   EMPTY_COMPOSER_DRAFT,
   type InlineComposerDraft,
 } from "./hooks/usePieceFormState";
+import { PieceDirtyProvider, countDirty } from "./hooks/usePieceDirty";
 import { getReviewPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece, type VoiceLine } from "@/shared/types";
 
@@ -160,6 +167,22 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const [isScoreOpen, setIsScoreOpen] = useState(false);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
 
+  // The row editors below (movements, translations, program notes) hold their
+  // own drafts behind their own save buttons, so the page can only learn about
+  // an unsent correction by being told — see `usePieceDirty`.
+  const [dirtyRows, setDirtyRows] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
+  const registerDirty = useCallback((key: string, dirty: boolean): void => {
+    setDirtyRows((prev) => {
+      if (prev.has(key) === dirty) return prev;
+      const next = new Set(prev);
+      if (dirty) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }, []);
+
   // ---- Scalar form (RHF) -------------------------------------------------
   const initial = useMemo<PieceCardFormValues>(() => {
     const totalSeconds = piece?.estimated_duration ?? 0;
@@ -191,6 +214,11 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     formState: { errors, dirtyFields, isDirty },
     reset,
   } = form;
+
+  // The title has no input in the metadata form — it is edited in place at the
+  // head of the card. Subscribed field-wise so a keystroke anywhere else in the
+  // form does not re-render the heading.
+  const titleValue = useWatch({ control: form.control, name: "title" });
 
   // ---- Composer + divisi side-state (not RHF fields) ---------------------
   const initialComposerId = piece?.composer?.id ?? "";
@@ -259,6 +287,11 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     [requirements, initialRequirements],
   );
   const hasChanges = isDirty || composerDirty || requirementsDirty;
+  // What actually blocks publication. `hasChanges` alone left the approve button
+  // live while a corrected translation sat unsent in its textarea — and the
+  // footer announced "wszystko zapisane" over the top of it.
+  const hasUnsavedRows = dirtyRows.size > 0;
+  const hasUnsaved = hasChanges || hasUnsavedRows;
 
   // Dirty-aware reconcile: pull server values into every input only when clean.
   const lastSyncedUpdatedAt = useRef<string | null>(null);
@@ -510,13 +543,38 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
               className="text-ethereal-graphite/40"
             />
             <div className="min-w-0">
+              {/* The record's identity is edited where it is stated — a second
+                  input two lines below repeating the h1 was the title written
+                  twice on one screen. `size={null}` leaves the landmark to the
+                  h1 and the type to the control, whose `display` variant carries
+                  the serif step the swap needs. The value comes from the form,
+                  not the payload, so an unsaved rename shows what will be sent;
+                  it lands in the same patch as the rest of the metadata. */}
               <Heading
                 as="h1"
-                size="lg"
-                weight="medium"
-                className="truncate font-serif"
+                size={null}
+                className="flex min-w-0 items-center gap-2"
               >
-                {piece.title}
+                <InlineEditable
+                  value={titleValue}
+                  onSave={(next) =>
+                    form.setValue("title", next, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  validate={(next) =>
+                    next.trim().length > 0
+                      ? null
+                      : t(
+                          "archive.piece_card.title_required",
+                          "Tytuł jest wymagany.",
+                        )
+                  }
+                  ariaLabel={t("archive.piece_card.edit_title", "Tytuł utworu")}
+                  variant="display"
+                />
+                {fieldChip("title")}
               </Heading>
               <Caption color="muted" className="block truncate">
                 {composerName}
@@ -649,8 +707,11 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
               "Dane utworu",
             )}
           >
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-              <div className="space-y-4">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-2 py-2">
+              {/* Transparent in the DOM — the sections stay direct children of
+                  the scroller. It only gives the row editors a way to report
+                  their unsaved drafts back up here. */}
+              <PieceDirtyProvider value={registerDirty}>
                 {awaitingEdition && <AIHallucinationWarning piece={piece} />}
 
                 {/* The record-wide scoreboard sits above the sections it counts
@@ -665,7 +726,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   label={t("archive.piece_card.section.metadata", "Metadane")}
                   icon={<Sparkles size={14} aria-hidden="true" />}
                   pending={awaitingEdition ? review.metadata.pending : 0}
-                  defaultOpen
+                  collapsible={false}
                 >
                   <PieceMetadataForm
                     form={form}
@@ -680,7 +741,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                 <CockpitSection
                   label={t("archive.piece_card.section.details", "Szczegóły utworu")}
                   icon={<SlidersHorizontal size={14} aria-hidden="true" />}
-                  defaultOpen
+                  collapsible={false}
                 >
                   <div className="space-y-5">
                     <ComposerPicker
@@ -761,33 +822,36 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         {...register("description")}
                       />
                     </div>
+                    {/* The work's canonical id, and the only identifier the
+                        cockpit does not already edit above. It used to arrive
+                        with three neighbours in a read-only "Identyfikatory"
+                        card — opus, key and text source restated verbatim from
+                        the inputs a screen higher, a leftover from when review
+                        and edit were two separate screens. */}
+                    {piece.mbid_work && (
+                      <div>
+                        <Eyebrow color="muted" className="mb-1 block">
+                          {t("repertoire.identifiers.mbid", "MusicBrainz Work")}
+                        </Eyebrow>
+                        <a
+                          href={`https://musicbrainz.org/work/${piece.mbid_work}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 font-mono text-xs text-ethereal-gold hover:underline"
+                        >
+                          {piece.mbid_work}
+                          <ExternalLink size={11} aria-hidden="true" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </CockpitSection>
-
-                {(piece.opus_catalog ||
-                  piece.musical_key ||
-                  piece.text_source ||
-                  piece.mbid_work) && (
-                  <CockpitSection
-                    label={t(
-                      "archive.piece_card.identifiers_section",
-                      "Identyfikatory utworu",
-                    )}
-                  >
-                    <WorkIdentifiersGrid
-                      opus_catalog={piece.opus_catalog}
-                      musical_key={piece.musical_key}
-                      text_source={piece.text_source}
-                      mbid_work={piece.mbid_work}
-                    />
-                  </CockpitSection>
-                )}
 
                 <CockpitSection
                   label={t("archive.piece_card.editions_section", "Wydania nutowe")}
                   icon={<Library size={14} aria-hidden="true" />}
                   count={editions.length}
-                  defaultOpen
+                  collapsible={false}
                 >
                   <EditionsList editions={editions} />
                   <div className="mt-5 border-t border-hairline pt-5">
@@ -804,6 +868,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     icon={<Music2 size={14} aria-hidden="true" />}
                     count={movements.length}
                     pending={awaitingEdition ? review.movements.pending : 0}
+                    dirty={countDirty(dirtyRows, "movement") > 0}
                     defaultOpen={Boolean(awaitingEdition) && review.movements.pending > 0}
                   >
                     <MovementsEditor piece={piece} />
@@ -816,6 +881,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     icon={<Languages size={14} aria-hidden="true" />}
                     count={translations.length}
                     pending={awaitingEdition ? review.translations.pending : 0}
+                    dirty={countDirty(dirtyRows, "translation") > 0}
                     defaultOpen={
                       Boolean(awaitingEdition) && review.translations.pending > 0
                     }
@@ -830,6 +896,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     "Notka programowa",
                   )}
                   icon={<ScrollText size={14} aria-hidden="true" />}
+                  dirty={countDirty(dirtyRows, "note") > 0}
                 >
                   <ProgramNoteSection piece={piece} />
                 </CockpitSection>
@@ -846,75 +913,84 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     <RecordingsEditor piece={piece} />
                   </CockpitSection>
                 )}
-              </div>
+              </PieceDirtyProvider>
             </div>
 
             {/* Action tray — a floating rounded bar (not a full-bleed rule),
-                pinned below the scroll. Warms to gold while there are unsaved
-                edits so the Save affordance reads at a glance. */}
-            <footer
-              className={cn(
-                "mx-2 mb-1 mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 rounded-nested border px-4 py-3 shadow-glass-ethereal",
-                hasChanges
-                  ? "border-ethereal-gold/40 bg-ethereal-gold/10"
-                  : "border-glass-border bg-glass-surface",
-              )}
-            >
-              {hasChanges ? (
-                <Caption
-                  color="gold"
-                  className="mr-auto inline-flex items-center gap-1.5"
-                >
-                  <PenLine size={13} aria-hidden="true" />
-                  {t("archive.piece_card.dirty_hint", "Masz niezapisane zmiany")}
-                </Caption>
-              ) : awaitingEdition ? (
-                <Caption color="muted" className="mr-auto">
-                  {t(
-                    "archive.piece_card.approve_hint",
-                    "Sprawdź pola powyżej, a następnie zatwierdź.",
-                  )}
-                </Caption>
-              ) : (
-                <Caption
-                  color="sage"
-                  className="mr-auto inline-flex items-center gap-1.5"
-                >
-                  <Check size={13} aria-hidden="true" />
-                  {t("archive.piece_card.saved_state", "Wszystko zapisane")}
-                </Caption>
-              )}
-              {/* Save appears only when there is something to save — no lonely
-                  greyed-out CTA in the resting state. */}
-              {hasChanges && (
-                <Button
-                  type="button"
-                  onClick={onSubmit}
-                  variant={awaitingEdition ? "outline" : "primary"}
-                  disabled={isBusy}
-                  isLoading={updatePiece.isPending}
-                >
-                  {t("archive.piece_card.save_btn", "Zapisz zmiany")}
-                </Button>
-              )}
-              {awaitingEdition && (
-                <Button
-                  type="button"
-                  variant="primary"
-                  leftIcon={<ShieldCheck size={15} aria-hidden="true" />}
-                  disabled={hasChanges || approveEdition.isPending}
-                  isLoading={approveEdition.isPending}
-                  onClick={() => setIsApproveOpen(true)}
-                  title={
-                    hasChanges
-                      ? t("archive.piece_card.save_first", "Najpierw zapisz zmiany.")
-                      : undefined
-                  }
-                >
-                  {t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
-                </Button>
-              )}
-            </footer>
+                pinned below the scroll. It exists only while there is something
+                to say: a permanent strip announcing "wszystko zapisane" on every
+                visit reserves the loudest slot on the panel for the resting
+                default, which is the one state that never needs stating. */}
+            {(hasUnsaved || awaitingEdition) && (
+              <footer
+                className={cn(
+                  "mx-2 mb-1 mt-3 flex shrink-0 flex-wrap items-center justify-end gap-3 rounded-nested border px-4 py-3 shadow-glass-ethereal",
+                  hasUnsaved
+                    ? "border-ethereal-gold/40 bg-ethereal-gold/10"
+                    : "border-glass-border bg-glass-surface",
+                )}
+              >
+                {hasChanges ? (
+                  <Caption
+                    color="gold"
+                    className="mr-auto inline-flex items-center gap-1.5"
+                  >
+                    <PenLine size={13} aria-hidden="true" />
+                    {t("archive.piece_card.dirty_hint", "Masz niezapisane zmiany")}
+                  </Caption>
+                ) : hasUnsavedRows ? (
+                  // Nothing here can save these — each row owns its own mutation
+                  // — so the bar names where the work is instead of offering a
+                  // button that would not reach it. The section headers carry the
+                  // matching gold chip.
+                  <Caption
+                    color="gold"
+                    className="mr-auto inline-flex items-center gap-1.5"
+                  >
+                    <PenLine size={13} aria-hidden="true" />
+                    {t(
+                      "archive.piece_card.dirty_rows_hint",
+                      "Niezapisane zmiany w sekcjach powyżej — zapisz je w wierszach.",
+                    )}
+                  </Caption>
+                ) : (
+                  <Caption color="muted" className="mr-auto">
+                    {t(
+                      "archive.piece_card.approve_hint",
+                      "Sprawdź pola powyżej, a następnie zatwierdź.",
+                    )}
+                  </Caption>
+                )}
+                {hasChanges && (
+                  <Button
+                    type="button"
+                    onClick={onSubmit}
+                    variant={awaitingEdition ? "outline" : "primary"}
+                    disabled={isBusy}
+                    isLoading={updatePiece.isPending}
+                  >
+                    {t("archive.piece_card.save_btn", "Zapisz zmiany")}
+                  </Button>
+                )}
+                {awaitingEdition && (
+                  <Button
+                    type="button"
+                    variant="primary"
+                    leftIcon={<ShieldCheck size={15} aria-hidden="true" />}
+                    disabled={hasUnsaved || approveEdition.isPending}
+                    isLoading={approveEdition.isPending}
+                    onClick={() => setIsApproveOpen(true)}
+                    title={
+                      hasUnsaved
+                        ? t("archive.piece_card.save_first", "Najpierw zapisz zmiany.")
+                        : undefined
+                    }
+                  >
+                    {t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
+                  </Button>
+                )}
+              </footer>
+            )}
           </section>
         </div>
 
