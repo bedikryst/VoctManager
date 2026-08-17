@@ -16,6 +16,11 @@ from .models import EpochChoices
 EPOCH_VALUES = frozenset(EpochChoices.values)
 VOICE_LINE_VALUES = frozenset(VoiceLine.values)
 
+# Plausible bounds for a year of composition, shared by the manual write path
+# and the AI extraction schemas so both reject the same nonsense.
+MIN_COMPOSITION_YEAR = 500
+MAX_COMPOSITION_YEAR = 2100
+
 
 def _require_choice(value: str, allowed_values: frozenset[str], field_name: str) -> str:
     if value not in allowed_values:
@@ -54,7 +59,7 @@ class PieceWriteDTO(EnterpriseBaseDTO):
     lyrics_original: str | None = None
     lyrics_ipa: str | None = None
 
-    composition_year: int | None = Field(None, ge=500, le=2100)
+    composition_year: int | None = Field(None, ge=MIN_COMPOSITION_YEAR, le=MAX_COMPOSITION_YEAR)
     epoch: str | None = Field(None, max_length=4)
 
     opus_catalog: str = Field(default="", max_length=40)
@@ -128,6 +133,44 @@ class ProvenanceClaim(EnterpriseBaseDTO):
 
 # --- AI structured-output schemas (NOT frozen - SDK populates them) ---------
 
+# Phrased as a SOURCING rule, not as a definition. A reprint's title page nearly
+# always carries a year - the publisher's - and almost never the year the music
+# was written, so a field that merely defines "composition year" invites the
+# model to hand over the copyright date or, worse, a date recalled from its
+# training (plausible, inside the composer's lifespan, and therefore invisible
+# to the lifespan cross-check downstream). Null is the correct answer for most
+# scores and costs nothing: an unset field grows no provenance row and no review
+# backlog. Mirrors the sung-text rule in ANALYZE_SCORE, which fights the same
+# pull towards remembered knowledge over what is printed.
+COMPOSITION_YEAR_DESCRIPTION = (
+    "Year the MUSIC WAS COMPOSED - only when THIS score dates it as such: a date "
+    "under the final bar, a dated dedication or manuscript date, 'skomponowano "
+    "1998', a critical edition's 'composed 1723'. NEVER the copyright (c), "
+    "publication, printing, edition, imprimatur or arrangement year - a reprint's "
+    "title page dates the EDITION, not the work. Never supply a year from your own "
+    "knowledge of the piece, however famous it is. If this score prints no date of "
+    "composition, return null."
+)
+
+
+def _sane_composition_year(value: Any) -> int | None:
+    """Degrade an implausible or non-numeric year to null instead of raising.
+
+    `ScoreAnalysisResult` is parsed from model-authored JSON, where one stray
+    field must not cost the whole analysis - the same reasoning that makes the
+    sub-models `extra='ignore'`.
+    """
+    if value is None or value == "":
+        return None
+    try:
+        year = int(value)
+    except (TypeError, ValueError):
+        return None
+    if year < MIN_COMPOSITION_YEAR or year > MAX_COMPOSITION_YEAR:
+        return None
+    return year
+
+
 class ExtractedWorkIdentity(BaseModel):
     """
     First-pass extraction from the front matter of a score PDF.
@@ -152,6 +195,10 @@ class ExtractedWorkIdentity(BaseModel):
     composer_birth_year: int | None = Field(
         default=None,
         description="Composer's birth year if printed on the score, else null."
+    )
+    composition_year: int | None = Field(
+        default=None,
+        description=COMPOSITION_YEAR_DESCRIPTION,
     )
     opus_catalog: str | None = Field(
         default=None,
@@ -192,6 +239,11 @@ class ExtractedWorkIdentity(BaseModel):
         description="Self-rated confidence in this extraction, 0.0-1.0. "
                     "Use <0.5 if the PDF is illegible or appears to be the wrong type of document."
     )
+
+    @field_validator("composition_year", mode="before")
+    @classmethod
+    def validate_composition_year(cls, value: Any) -> int | None:
+        return _sane_composition_year(value)
 
 
 class ExtractedMovement(BaseModel):
@@ -267,6 +319,9 @@ class ScoreAnalysisResult(BaseModel):
     composer_birth_year: int | None = Field(
         default=None, description="Composer's birth year if printed, else null."
     )
+    composition_year: int | None = Field(
+        default=None, description=COMPOSITION_YEAR_DESCRIPTION,
+    )
     opus_catalog: str | None = Field(
         default=None, description="Opus or catalog identifier (e.g. 'BWV 243', 'K. 626')."
     )
@@ -320,6 +375,11 @@ class ScoreAnalysisResult(BaseModel):
         default_factory=list,
         description="One prose translation per requested target language."
     )
+
+    @field_validator("composition_year", mode="before")
+    @classmethod
+    def validate_composition_year(cls, value: Any) -> int | None:
+        return _sane_composition_year(value)
 
 
 # --- External-source lookups (consumed by Phase 1 clients) -----------------

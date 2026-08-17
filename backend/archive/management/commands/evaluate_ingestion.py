@@ -65,6 +65,10 @@ SCORABLE_FIELDS = (
     'language',
     'text_source',
     'epoch',
+    # Scoring this one needs golden entries that expect null: the failure mode
+    # to measure is not a wrong year but a year invented for a score that never
+    # printed one (a copyright date, or one recalled from the model's training).
+    'composition_year',
     'sung_text_language',
 )
 

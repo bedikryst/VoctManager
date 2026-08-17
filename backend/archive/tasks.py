@@ -882,6 +882,7 @@ def _identity_from_analysis(analysis: dict) -> ExtractedWorkIdentity:
         'composer_full_name': analysis['composer_full_name'],
         'arranger': analysis.get('arranger'),
         'composer_birth_year': analysis.get('composer_birth_year'),
+        'composition_year': analysis.get('composition_year'),
         'opus_catalog': analysis.get('opus_catalog'),
         'musical_key': analysis.get('musical_key'),
         'voicing': analysis.get('voicing'),

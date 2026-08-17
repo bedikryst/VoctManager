@@ -19,7 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.test import SimpleTestCase, TestCase
 from rest_framework.test import APITestCase
 
-from archive.dtos import ComposerLookupResult
+from archive.dtos import ComposerLookupResult, ExtractedWorkIdentity
 from archive.infrastructure import _http
 from archive.infrastructure._http import GetResult
 from archive.infrastructure.musicbrainz_client import MusicBrainzClient
@@ -39,6 +39,8 @@ from archive.models import (
     ScoreEdition,
 )
 from archive.services import enrichment
+from archive.services.resolvers import resolve_or_create_piece
+from archive.tasks import _identity_from_analysis
 from core.constants import AppRole
 from core.models import UserProfile
 
@@ -694,3 +696,104 @@ class OrphanIngestionsEndpointTests(APITestCase):
         resp = self.client.delete(f"/api/archive/editions/{self.orphan.id}/")
         self.assertEqual(resp.status_code, 204)
         self.assertEqual(self.client.get(self.url).json(), [])
+
+
+# ===========================================================================
+# composition_year — from the analysis JSON to a review chip
+# ===========================================================================
+
+class CompositionYearIngestionTests(TestCase):
+    """The one identity fact a reprint's title page usually does NOT carry.
+
+    What the score prints is the publisher's year, so the prompt tells the model
+    to answer null unless the page dates the composition itself. These guard the
+    consequences of that: a stray year degrades to null instead of failing the
+    whole analysis; a year that IS written arrives stamped AI (inside the review
+    backlog, never trusted); and an absent year writes no provenance row at all,
+    so it costs the conductor's meter nothing.
+    """
+
+    def setUp(self) -> None:
+        self.composer = Composer.objects.create(
+            first_name="Wolfgang Amadeus", last_name="Mozart",
+        )
+
+    @staticmethod
+    def _identity(**overrides) -> ExtractedWorkIdentity:
+        return ExtractedWorkIdentity.model_validate({
+            "title": "Ave Verum Corpus",
+            "composer_full_name": "Wolfgang Amadeus Mozart",
+            "confidence": 0.9,
+            **overrides,
+        })
+
+    def _year_provenance(self, piece: Piece):
+        return ProvenanceRecord.objects.filter(
+            object_id=piece.pk, field_name="composition_year",
+        )
+
+    def test_implausible_year_degrades_to_null(self) -> None:
+        # One bad field must not cost the whole run: the analysis is parsed from
+        # model-authored JSON, and everything else in it is still usable.
+        for raw in (12, 20250, "nie podano", None):
+            with self.subTest(raw=raw):
+                identity = self._identity(composition_year=raw)
+                self.assertIsNone(identity.composition_year)
+
+    def test_numeric_string_is_accepted(self) -> None:
+        self.assertEqual(self._identity(composition_year="1791").composition_year, 1791)
+
+    def test_analysis_projection_carries_the_year(self) -> None:
+        # The projection onto the resolver's DTO is where a newly added identity
+        # field silently disappears if it is not listed.
+        identity = _identity_from_analysis({
+            "title": "Ave Verum Corpus",
+            "composer_full_name": "Wolfgang Amadeus Mozart",
+            "composition_year": 1791,
+            "confidence": 0.9,
+        })
+        self.assertEqual(identity.composition_year, 1791)
+
+    def test_created_piece_carries_the_year_stamped_ai(self) -> None:
+        outcome = resolve_or_create_piece(
+            composer_id=self.composer.id,
+            extracted=self._identity(composition_year=1791),
+        )
+        piece = Piece.objects.get(pk=outcome.entity_id)
+        self.assertEqual(piece.composition_year, 1791)
+        record = self._year_provenance(piece).latest("retrieved_at")
+        self.assertEqual(record.source, ProvenanceSource.AI_SONNET)
+
+    def test_absent_year_writes_no_provenance_row(self) -> None:
+        # Null is the expected answer on most scores. It must stay free: a row
+        # here would enlarge the review meter with a field nothing populated.
+        outcome = resolve_or_create_piece(
+            composer_id=self.composer.id, extracted=self._identity(),
+        )
+        piece = Piece.objects.get(pk=outcome.entity_id)
+        self.assertIsNone(piece.composition_year)
+        self.assertFalse(self._year_provenance(piece).exists())
+
+    def test_merge_fills_a_blank_year(self) -> None:
+        piece = Piece.objects.create(
+            title="Ave Verum Corpus", composer=self.composer,
+        )
+        resolve_or_create_piece(
+            composer_id=self.composer.id,
+            extracted=self._identity(composition_year=1791),
+        )
+        piece.refresh_from_db()
+        self.assertEqual(piece.composition_year, 1791)
+        self.assertTrue(self._year_provenance(piece).exists())
+
+    def test_merge_never_overwrites_an_existing_year(self) -> None:
+        # A conductor's correction outranks the next upload's guess.
+        piece = Piece.objects.create(
+            title="Ave Verum Corpus", composer=self.composer, composition_year=1791,
+        )
+        resolve_or_create_piece(
+            composer_id=self.composer.id,
+            extracted=self._identity(composition_year=1618),
+        )
+        piece.refresh_from_db()
+        self.assertEqual(piece.composition_year, 1791)

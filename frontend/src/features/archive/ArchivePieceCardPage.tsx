@@ -26,10 +26,8 @@ import React, {
   useState,
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import {
@@ -53,13 +51,10 @@ import {
 
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
-import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
-import { Select } from "@/shared/ui/primitives/Select";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { ComposerCard, WorkIdentifiersGrid } from "@/shared/ui/composites/repertoire";
@@ -89,8 +84,15 @@ import {
   ProvenanceChip,
   pieceFieldProvenance,
   pieceReviewBreakdown,
-  type ReviewProgress,
 } from "./components/ProvenanceChip";
+import { CockpitSection } from "./components/CockpitSection";
+import { ReviewMeter } from "./components/ReviewMeter";
+import {
+  PieceMetadataForm,
+  TEXT_FIELD_KEYS,
+  pieceCardSchema,
+  type PieceCardFormValues,
+} from "./components/PieceMetadataForm";
 import {
   MovementsEditor,
   ProgramNoteSection,
@@ -101,308 +103,8 @@ import {
   EMPTY_COMPOSER_DRAFT,
   type InlineComposerDraft,
 } from "./hooks/usePieceFormState";
-import { getArchiveEpochOptions } from "./constants/archiveEpochs";
-import {
-  getArchiveLanguageOptions,
-  getLanguageLabel,
-} from "./constants/archiveLanguages";
 import { getReviewPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece, type VoiceLine } from "@/shared/types";
-
-/**
- * Label + provenance chip header over a control. It exists because the `Input`
- * API has no label-adornment slot, so the chip cannot ride along inside it — but
- * the label itself is the same `Eyebrow` the primitive renders, at the same
- * size, colour and offset. The wrapped control uses `aria-label`, not a second
- * visible label, which is why this one is not an `as="label"`.
- */
-const LabeledField = ({
-  label,
-  chip,
-  children,
-}: {
-  label: string;
-  chip?: React.ReactNode;
-  children: React.ReactNode;
-}): React.JSX.Element => (
-  <div className="flex w-full flex-col gap-1.5">
-    <div className="flex items-center gap-2">
-      <Eyebrow color="muted" className="ml-1">
-        {label}
-      </Eyebrow>
-      {chip}
-    </div>
-    {children}
-  </div>
-);
-
-/**
- * A collapsible cockpit section. The row of collapsed headers doubles as the
- * section nav for the long right column. Only opacity/transform animate (the
- * chevron rotates, the body fades) — height is not animated, per the motion
- * guidelines.
- *
- * `pending` is the section's own review backlog. A collapsed header that says
- * only "Tłumaczenia · 3" hides whether any of the three still needs a human, so
- * the amethyst chip carries that and the caller opens the section when it is
- * non-zero: the work a review exists to do must never be behind a chevron.
- */
-const CockpitSection = ({
-  label,
-  icon,
-  count,
-  pending = 0,
-  defaultOpen = false,
-  children,
-}: {
-  label: string;
-  icon?: React.ReactNode;
-  count?: number;
-  pending?: number;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 text-left"
-      >
-        {icon && (
-          <span className="text-ethereal-gold" aria-hidden="true">
-            {icon}
-          </span>
-        )}
-        <Eyebrow color="graphite" className="flex-1">
-          {label}
-        </Eyebrow>
-        {pending > 0 && (
-          <Badge variant="amethyst" casing="natural" className="py-0">
-            {t("archive.piece_card.section_pending", "{{count}} do sprawdzenia", {
-              count: pending,
-            })}
-          </Badge>
-        )}
-        {typeof count === "number" && (
-          <Badge variant="neutral" className="py-0 tabular-nums">
-            {count}
-          </Badge>
-        )}
-        <motion.span
-          animate={{ rotate: open ? 90 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="text-ethereal-graphite/50"
-          aria-hidden="true"
-        >
-          <ChevronRight size={16} />
-        </motion.span>
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="mt-4"
-          >
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </GlassCard>
-  );
-};
-
-/**
- * A titled sub-block inside a cockpit section. The gradient hairline beside the
- * title reads as a divider, so related fields cluster (Identity / Musical / Text)
- * instead of pooling into one undifferentiated stack — the layout controls its
- * own inner grid via `className`.
- */
-const FieldGroup = ({
-  title,
-  className,
-  children,
-}: {
-  title: string;
-  className?: string;
-  children: React.ReactNode;
-}): React.JSX.Element => (
-  <div className="space-y-3">
-    <div className="flex items-center gap-2.5">
-      <Eyebrow color="graphite" className="shrink-0">
-        {title}
-      </Eyebrow>
-      <span
-        aria-hidden="true"
-        className="h-px flex-1 bg-linear-to-r from-hairline-strong to-transparent"
-      />
-    </div>
-    <div className={className}>{children}</div>
-  </div>
-);
-
-/** One entry in the review meter's legend: a tone dot + count. */
-const LegendDot = ({
-  toneClass,
-  label,
-}: {
-  toneClass: string;
-  label: string;
-}): React.JSX.Element => (
-  <span className="inline-flex items-center gap-1.5">
-    <span
-      aria-hidden="true"
-      className={cn("h-2 w-2 rounded-full border", toneClass)}
-    />
-    <Text as="span" size="xs" color="muted">
-      {label}
-    </Text>
-  </span>
-);
-
-/**
- * Trust scoreboard for the whole record: gives the per-field provenance dots a
- * job (a target to drive to zero) and a sense of closure the loose pills never
- * offered. It counts every field the conductor can verify — metadata, movement
- * titles, translation texts — because "Zatwierdź i opublikuj" publishes all of
- * them; a meter scoped to one section reported "wszystko zweryfikowane" over a
- * stack of untouched translations. Hidden entirely for manually-authored pieces
- * (no provenance at all). The bar animates via `scaleX` (transform-only), per
- * the motion guidelines.
- */
-const ReviewMeter = ({
-  progress,
-  active,
-}: {
-  progress: ReviewProgress;
-  active: boolean;
-}): React.JSX.Element | null => {
-  const { t } = useTranslation();
-  if (progress.total === 0) return null;
-
-  // Calm state (piece already published, no edition awaiting review): a full
-  // progress bar reading "Zweryfikowano 0 z 9 · 0%" nags about a review that
-  // isn't happening. Say nothing when nothing's pending; otherwise a single
-  // quiet amethyst line — no bar, no percentage, no legend.
-  if (!active) {
-    if (progress.pending === 0) return null;
-    return (
-      <div className="flex items-center gap-2 px-1">
-        <span
-          aria-hidden="true"
-          className="h-2 w-2 shrink-0 rounded-full border border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
-        />
-        <Text as="span" size="sm" color="muted">
-          {t(
-            "archive.piece_card.review_remaining",
-            "Do sprawdzenia pozostało: {{count}} pól",
-            { count: progress.pending },
-          )}
-        </Text>
-      </div>
-    );
-  }
-
-  // Live review: keep the bar (it's the whole point), but drop the redundant
-  // "%" — the "X z Y" line and the bar already carry the ratio.
-  const ratio = progress.verified / progress.total;
-  const allClear = progress.pending === 0;
-  return (
-    <div className="rounded-nested border border-hairline bg-ethereal-alabaster/50 px-4 py-3">
-      <div className="flex items-center gap-2">
-        {allClear ? (
-          <ShieldCheck
-            size={14}
-            className="text-ethereal-sage"
-            aria-hidden="true"
-          />
-        ) : (
-          <Sparkles
-            size={14}
-            className="text-ethereal-amethyst"
-            aria-hidden="true"
-          />
-        )}
-        <Text as="span" size="sm" weight="medium">
-          {allClear
-            ? t(
-                "archive.piece_card.review_all_clear",
-                "Wszystkie pola zweryfikowane",
-              )
-            : t(
-                "archive.piece_card.review_progress",
-                "Zweryfikowano {{verified}} z {{total}}",
-                { verified: progress.verified, total: progress.total },
-              )}
-        </Text>
-      </div>
-      <div className="mt-2 h-1 overflow-hidden rounded-full bg-hairline-strong">
-        <div
-          className="h-full origin-left rounded-full bg-ethereal-sage transition-transform duration-500"
-          style={{ transform: `scaleX(${ratio})` }}
-        />
-      </div>
-      {progress.pending > 0 && (
-        // A legend decodes the dots on the fields below — colour ↔ meaning, and
-        // nothing else. It used to carry counts too, so "Zweryfikowano 4 z 9"
-        // sat two lines above "Zweryfikowane: 4": the same figure twice, in two
-        // inflections of the same word. The arithmetic belongs to the sentence
-        // that owns it.
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-          <LegendDot
-            toneClass="border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
-            label={t("archive.piece_card.legend_ai", "Do sprawdzenia")}
-          />
-          <LegendDot
-            toneClass="border-ethereal-sage/45 bg-ethereal-sage/15"
-            label={t("archive.piece_card.legend_verified", "Zweryfikowane")}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-const pieceCardSchema = z.object({
-  title: z.string().min(1, "Tytuł jest wymagany").max(200),
-  arranger: z.string().max(150).default(""),
-  opus_catalog: z.string().max(40).default(""),
-  musical_key: z.string().max(20).default(""),
-  language: z.string().max(50).default(""),
-  voicing: z.string().max(50).default(""),
-  text_source: z.string().max(200).default(""),
-  composition_year: z
-    .union([z.coerce.number().int().min(500).max(2100), z.literal("")])
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? null : v)),
-  epoch: z.string().max(4).default(""),
-  lyrics_original: z.string().default(""),
-  lyrics_ipa: z.string().default(""),
-  description: z.string().default(""),
-  duration_mins: z
-    .union([z.coerce.number().int().min(0).max(600), z.literal("")])
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? 0 : v)),
-  duration_secs: z
-    .union([z.coerce.number().int().min(0).max(59), z.literal("")])
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? 0 : v)),
-});
-
-type PieceCardFormValues = z.infer<typeof pieceCardSchema>;
-
-/** Text fields whose backend column is `blank=True, null=False`: clearing one
- *  sends "" (a valid blank), never null (which DRF would reject). */
-const TEXT_FIELD_KEYS: ReadonlySet<keyof PieceCardFormValues> = new Set([
-  "title", "arranger", "opus_catalog", "musical_key", "language", "voicing",
-  "text_source", "epoch", "lyrics_original", "lyrics_ipa", "description",
-]);
 
 const reqKey = (r: VoiceRequirementDTO): string => `${r.voice_line}:${r.quantity}`;
 const sameRequirements = (
@@ -484,7 +186,6 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     defaultValues: initial,
   });
   const {
-    control,
     handleSubmit,
     register,
     formState: { errors, dirtyFields, isDirty },
@@ -778,19 +479,6 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
       }
     />
   );
-  const epochOptions = getArchiveEpochOptions(t);
-  // Localised language dropdown over the canonical ISO value; any non-plain
-  // current value (e.g. the bilingual "pl+la") is kept selectable so it is never
-  // silently dropped on edit.
-  const languageOptions = getArchiveLanguageOptions(t);
-  const languageValue = form.watch("language");
-  const languageChoices =
-    languageValue && !languageOptions.some((o) => o.value === languageValue)
-      ? [
-          { value: languageValue, label: getLanguageLabel(languageValue, t) },
-          ...languageOptions,
-        ]
-      : languageOptions;
 
   return (
     // The shell's <main> is flex-1 inside a min-h-screen container, so a plain
@@ -979,222 +667,12 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   pending={awaitingEdition ? review.metadata.pending : 0}
                   defaultOpen
                 >
-                  {awaitingEdition && (
-                    <Text size="xs" color="graphite" className="mb-4 block">
-                      {t(
-                        "archive.piece_card.fields_hint",
-                        "Sprawdź każde pole z podglądem PDF po lewej. Edytuj jeśli AI źle odczytał.",
-                      )}
-                    </Text>
-                  )}
-                  <form
-                    id="piece-card-form"
+                  <PieceMetadataForm
+                    form={form}
                     onSubmit={onSubmit}
-                    noValidate
-                    className="space-y-6"
-                  >
-                    <FieldGroup
-                      title={t("archive.piece_card.group.identity", "Tożsamość")}
-                      className="grid grid-cols-1 gap-3 md:grid-cols-2"
-                    >
-                      <LabeledField
-                        label={t("archive.piece_card.fields.title", "Tytuł")}
-                        chip={fieldChip("title")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.title", "Tytuł")}
-                          error={errors.title?.message}
-                          {...register("title")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t(
-                          "archive.piece_card.fields.arranger",
-                          "Opracowanie / aranżacja",
-                        )}
-                        chip={fieldChip("arranger")}
-                      >
-                        <Input
-                          aria-label={t(
-                            "archive.piece_card.fields.arranger",
-                            "Opracowanie / aranżacja",
-                          )}
-                          placeholder={t("archive.piece_card.ph_arranger", "np. opr. T. Kuras")}
-                          error={errors.arranger?.message}
-                          {...register("arranger")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t("archive.piece_card.fields.opus", "Opus / Katalog")}
-                        chip={fieldChip("opus_catalog")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.opus", "Opus / Katalog")}
-                          placeholder={t("archive.piece_card.ph_opus", "np. BWV 243")}
-                          error={errors.opus_catalog?.message}
-                          {...register("opus_catalog")}
-                        />
-                      </LabeledField>
-                    </FieldGroup>
-
-                    <FieldGroup
-                      title={t(
-                        "archive.piece_card.group.musical",
-                        "Charakterystyka muzyczna",
-                      )}
-                      className="grid grid-cols-1 gap-3 md:grid-cols-2"
-                    >
-                      <LabeledField
-                        label={t("archive.piece_card.fields.key", "Tonacja")}
-                        chip={fieldChip("musical_key")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.key", "Tonacja")}
-                          placeholder={t("archive.piece_card.ph_key", "np. D-dur")}
-                          error={errors.musical_key?.message}
-                          {...register("musical_key")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t("archive.piece_card.fields.voicing", "Obsada")}
-                        chip={fieldChip("voicing")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.voicing", "Obsada")}
-                          placeholder={t("archive.piece_card.ph_voicing", "np. SATB")}
-                          error={errors.voicing?.message}
-                          {...register("voicing")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t("archive.piece_card.fields.language", "Język śpiewu")}
-                        chip={fieldChip("language")}
-                      >
-                        <Controller
-                          control={control}
-                          name="language"
-                          render={({ field }) => (
-                            <Select
-                              ariaLabel={t(
-                                "archive.piece_card.fields.language",
-                                "Język śpiewu",
-                              )}
-                              name={field.name}
-                              value={field.value ?? ""}
-                              onValueChange={field.onChange}
-                              placeholder={t(
-                                "archive.piece_card.language_pick",
-                                "Wybierz",
-                              )}
-                              clearLabel={t(
-                                "archive.piece_card.language_pick",
-                                "Wybierz",
-                              )}
-                              options={languageChoices}
-                            />
-                          )}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t("archive.piece_card.fields.epoch", "Epoka")}
-                        chip={fieldChip("epoch")}
-                      >
-                        <Controller
-                          control={control}
-                          name="epoch"
-                          render={({ field }) => (
-                            <Select
-                              ariaLabel={t(
-                                "archive.piece_card.fields.epoch",
-                                "Epoka",
-                              )}
-                              name={field.name}
-                              value={field.value ?? ""}
-                              onValueChange={field.onChange}
-                              placeholder={t(
-                                "archive.piece_card.epoch_pick",
-                                "Wybierz",
-                              )}
-                              clearLabel={t(
-                                "archive.piece_card.epoch_pick",
-                                "Wybierz",
-                              )}
-                              options={epochOptions}
-                            />
-                          )}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t(
-                          "archive.piece_card.fields.composition_year",
-                          "Rok kompozycji",
-                        )}
-                      >
-                        <div className="max-w-36">
-                          <Input
-                            aria-label={t(
-                              "archive.piece_card.fields.composition_year",
-                              "Rok kompozycji",
-                            )}
-                            type="number"
-                            error={errors.composition_year?.message}
-                            {...register("composition_year")}
-                          />
-                        </div>
-                      </LabeledField>
-                    </FieldGroup>
-
-                    <FieldGroup
-                      title={t("archive.piece_card.group.text", "Tekst")}
-                      className="space-y-4"
-                    >
-                      <LabeledField
-                        label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
-                        chip={fieldChip("text_source")}
-                      >
-                        <Input
-                          aria-label={t("archive.piece_card.fields.text_source", "Źródło tekstu")}
-                          placeholder={t(
-            "archive.piece_card.ph_text_source",
-            "np. Magnificat (Łk 1,46-55)",
-          )}
-                          error={errors.text_source?.message}
-                          {...register("text_source")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t(
-                          "archive.piece_card.fields.lyrics_original",
-                          "Tekst oryginalny",
-                        )}
-                        chip={fieldChip("lyrics_original")}
-                      >
-                        <Textarea
-                          aria-label={t(
-                            "archive.piece_card.fields.lyrics_original",
-                            "Tekst oryginalny",
-                          )}
-                          rows={4}
-                          error={errors.lyrics_original?.message}
-                          {...register("lyrics_original")}
-                        />
-                      </LabeledField>
-                      <LabeledField
-                        label={t("archive.piece_card.fields.lyrics_ipa", "Transkrypcja IPA")}
-                        chip={fieldChip("lyrics_ipa")}
-                      >
-                        <Textarea
-                          aria-label={t(
-                            "archive.piece_card.fields.lyrics_ipa",
-                            "Transkrypcja IPA",
-                          )}
-                          rows={3}
-                          error={errors.lyrics_ipa?.message}
-                          {...register("lyrics_ipa")}
-                        />
-                      </LabeledField>
-                    </FieldGroup>
-                  </form>
+                    fieldChip={fieldChip}
+                    isReviewing={Boolean(awaitingEdition)}
+                  />
                 </CockpitSection>
 
                 {/* Details — the fields that used to live only on the full-edit

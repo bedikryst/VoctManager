@@ -1,6 +1,6 @@
 # Archive AI compiler — audit and remediation
 
-Status: **two items open** · Audited 2026-08-17 · Surface: `frontend/src/features/archive/`
+Status: **closed** · Audited 2026-08-17 · Surface: `frontend/src/features/archive/`
 plus the `backend/archive` endpoints it consumes.
 
 Companion to `docs/archive-ai-ingestion-pipeline.md`, which describes how the pipeline *works*.
@@ -30,6 +30,8 @@ Recorded so the next pass does not re-audit them. Code is the source of truth.
 | 9 | Piece Card's left pane picked `getPrimaryPdf` (default-then-newest), not the edition under review | `getReviewPdf()` prefers the AWAITING edition; annotations follow it |
 | 10 | Five upload-row strings rendered in Polish for EN/FR users; `archive.provenance.*` absent from PL | Full pl/en/fr parity across the `archive` namespace; dead keys removed |
 | 11 | `„tytuł"` — mismatched Polish quotation in the live analysis preview | `„tytuł”` |
+| 12 | Two of `AIHallucinationWarning`'s three checks compared a `composition_year` the pipeline could never produce — the field was null on every AI-ingested piece | The AI now extracts it (§2). Both schemas, `_merge_piece`, `_stamp`, the review meter and a chip on the card |
+| 13 | `ArchivePieceCardPage.tsx` held five presentational components, the form contract and the whole render tree in 1450 lines | Split into `CockpitSection` / `ReviewMeter` / `PieceMetadataForm`; the page is ~950 lines of shell, wiring, submit and approve (§3) |
 
 **Investigated and dismissed:** local edit buffers in `MovementRow` / `TranslationRow` do not
 re-seed after a refetch. This looked like a staleness bug, but `persist_analysis` is idempotent
@@ -40,7 +42,7 @@ buffer here would be machinery for a scenario the pipeline cannot produce.
 
 ---
 
-## 2. Open — B: the year checks cannot fire
+## 2. Shipped — B: the year checks can now fire
 
 **`AIHallucinationWarning` advertises coverage it does not have.** Two of its three checks
 compare `piece.composition_year` against the composer's lifespan; its own header cites
@@ -62,48 +64,60 @@ themselves — flagging the human's own input as a possible AI mistake.
 
 The IPA-line-count check and the arranger-vs-modern-epoch check are real and do work.
 
-**This needs a product decision before code:**
+**Resolved as (a) — the AI extracts the year.** `composition_year` is now on both
+`ExtractedWorkIdentity` and `ScoreAnalysisResult`, projected through `_identity_from_analysis`,
+written by `_create_piece`, blank-filled by `_merge_piece`, stamped `AI_SONNET` by `_stamp`, and
+listed in `METADATA_PROVENANCE_FIELDS` — so it grows a chip on the card and joins the review
+meter. It was already in the server's `_PROVENANCE_TRACKED_FIELDS`, so verify/edit stamping
+needed no change. Seven tests in `archive/tests.py`.
 
-- **(a) Make the checks real.** Add `composition_year` to `ExtractedWorkIdentity` with a prompt
-  description that distinguishes composition date from edition/arrangement date (the classic
-  confusion on a reprint's title page), set it in `_merge_piece`, stamp AI provenance in
-  `_stamp`, and add `"composition_year"` to `METADATA_PROVENANCE_FIELDS` so it grows a chip and
-  joins the review meter — it is already in the server's `_PROVENANCE_TRACKED_FIELDS`, so
-  verify/edit stamping needs no change. Cost: a few output tokens per ingest; the risk is a
-  hallucinated year, which is precisely what the check then catches.
-- **(b) Drop the pretence.** Delete both year branches from `AIHallucinationWarning` and
-  `hasYearAnomaly` from `PieceRow`, leaving the two checks that work. Cheaper and honest, but
-  the conductor loses the field entirely on AI-ingested pieces.
+**The prompt is written as a SOURCING rule, not as a definition** — this is the whole substance
+of the change and the part to preserve on any future edit:
 
-Recommendation: **(a)**. The year is on the title page the model already reads, the field
-exists, the review apparatus around it exists, and it is the single most common thing a
-conductor wants to know about a piece that the archive currently cannot tell them.
+- The hard case is not "composition year vs edition year". It is that a reprint's title page
+  usually prints NO composition date at all, only the publisher's. A field defined as "the
+  composition year" therefore has no correct answer on most scores, and the model's two
+  attractors are the year it can SEE (©) and the year it REMEMBERS ("Ave verum — 1791").
+- Describing the distinction defends only against the first. The second is the dangerous one: a
+  recalled year is plausible, sits inside the composer's lifespan, and so passes the very check
+  this field exists to feed. Hence the explicit anti-recall clause, mirroring the sung-text rule
+  ("transcribe the words PRINTED ON THIS SCORE… even when the work is famous") that already
+  fights the same pull. Null is stated as the expected answer.
+- Null is free: `_stamp` skips empty values and the rollup only counts fields with a provenance
+  row, so a score with no printed date adds nothing to the conductor's backlog.
+- A year outside 500-2100, or non-numeric, degrades to null rather than raising —
+  `ScoreAnalysisResult` is parsed from model-authored JSON, where one stray field must not cost
+  the whole run.
 
-Estimate: ~2 h plus one ingest to verify against a real score.
+**Known limits — do not oversell these checks.** The lifespan comparison needs a `composer` with
+parseable dates, which traditional carols, hymns and folk arrangements (the bulk of this
+archive) do not have; for those the warning stays silent whatever the year says. And it only
+catches years OUTSIDE the lifespan, never a plausible invented one. What actually protects the
+record is the provenance chip and the review meter: the field arrives unverified and a human
+clears it before approve. `composition_year` is in `evaluate_ingestion`'s `SCORABLE_FIELDS` —
+measure it with golden entries that expect **null**, since the failure mode worth counting is a
+year invented for a score that never printed one.
 
 ---
 
-## 3. Open — C: `ArchivePieceCardPage.tsx` is 1450 lines
+## 3. Shipped — C: `ArchivePieceCardPage.tsx` split
 
-Not a defect — the page works and its structure is sound. But it holds four presentational
-components (`LabeledField`, `CockpitSection`, `FieldGroup`, `LegendDot`, `ReviewMeter`), the
-zod schema, the patch-diffing submit, and the whole render tree in one file. It is the piece of
-the archive most likely to be edited next, and every edit now costs a full read.
-
-Suggested split, behaviour-preserving:
+Never a defect — the page worked and its structure was sound; it was simply 1450 lines, so every
+edit to the most-edited surface in the archive cost a full read. Split with no behaviour change:
 
 ```
-ArchivePieceCardPage.tsx      page shell, data wiring, submit, approve
-components/CockpitSection.tsx CockpitSection + FieldGroup + LabeledField
-components/ReviewMeter.tsx    ReviewMeter + LegendDot
-components/PieceMetadataForm.tsx  the zod schema, TEXT_FIELD_KEYS, the three FieldGroups
+ArchivePieceCardPage.tsx          page shell, data wiring, submit, approve  (~950)
+components/CockpitSection.tsx     CockpitSection + FieldGroup + LabeledField
+components/ReviewMeter.tsx        ReviewMeter + LegendDot
+components/PieceMetadataForm.tsx  pieceCardSchema, TEXT_FIELD_KEYS, the three FieldGroups
 ```
 
-Constraint: `pieceCardSchema` and `TEXT_FIELD_KEYS` must stay together — they are two halves of
+`pieceCardSchema` and `TEXT_FIELD_KEYS` deliberately live in one file — they are two halves of
 one contract (which fields are blank-not-null on PATCH; see the `reference_serializer_blank_vs_null`
-gotcha). Verify with `npm run build`; the developer checks the UI visually.
-
-Estimate: ~2 h.
+gotcha), and the page imports both from there. The page still owns the single `useForm` instance
+and passes it down, because the composer, divisi and duration controls outside the metadata block
+are driven by the same form; `PieceMetadataForm` renders that instance rather than owning a
+second one.
 
 ---
 

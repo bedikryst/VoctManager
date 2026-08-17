@@ -198,7 +198,8 @@ export interface ReviewProgress {
  */
 export const METADATA_PROVENANCE_FIELDS = [
   "title", "arranger", "opus_catalog", "musical_key", "language",
-  "voicing", "epoch", "text_source", "lyrics_original", "lyrics_ipa",
+  "voicing", "epoch", "composition_year", "text_source",
+  "lyrics_original", "lyrics_ipa",
 ] as const;
 
 /** The one chip-bearing field on each AI-generated child. Mirrors the server's

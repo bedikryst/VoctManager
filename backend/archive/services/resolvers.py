@@ -354,7 +354,7 @@ def _merge_piece(
             source_reference=str(mbz_work.mbid),
         )
 
-    fill_pairs: list[tuple[str, str, str, str]] = []
+    fill_pairs: list[tuple[str, str | int, str, str]] = []
     if mbz_work:
         # NB: `language` is deliberately NOT filled here. It is a sung-text
         # property owned solely by `persist_analysis`, which normalises it to a
@@ -380,6 +380,10 @@ def _merge_piece(
     safe_epoch = _safe_epoch(extracted.epoch)
     if safe_epoch:
         fill_pairs.append(('epoch', safe_epoch, ProvenanceSource.AI_SONNET, 'analyze_score'))
+    if extracted.composition_year:
+        fill_pairs.append(
+            ('composition_year', extracted.composition_year, ProvenanceSource.AI_SONNET, 'analyze_score')
+        )
 
     for field, value, src, ref in fill_pairs:
         if not value:
@@ -434,6 +438,7 @@ def _create_piece(
         text_source=text_source,
         arranger=arranger,
         epoch=epoch,
+        composition_year=extracted.composition_year,
         mbid_work=(mbz_work.mbid if mbz_work else None),
     )
 
@@ -445,7 +450,7 @@ def _create_piece(
     # `_merge_piece`: canonical when MusicBrainz supplied the value, else AI.
     mbid_ref = str(mbz_work.mbid) if (mbz_work and mbz_work.mbid) else ''
 
-    def _stamp(field: str, value: str, from_mbz: bool) -> None:
+    def _stamp(field: str, value: str | int | None, from_mbz: bool) -> None:
         if not value:
             return
         if from_mbz:
@@ -467,6 +472,7 @@ def _create_piece(
     _stamp('text_source', text_source, from_mbz=False)
     _stamp('arranger', arranger, from_mbz=False)
     _stamp('epoch', epoch, from_mbz=False)
+    _stamp('composition_year', extracted.composition_year, from_mbz=False)
     if mbz_work and mbz_work.mbid:
         provenance.record_external(
             target=piece, field_name='mbid_work',
