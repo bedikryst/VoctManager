@@ -15,7 +15,7 @@ import React, { useEffect } from "react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Clock, Edit3, Loader2 } from "lucide-react";
+import { CalendarRange, Clock, Edit3, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
@@ -50,6 +50,13 @@ interface ArtistRowProps {
   rehearsalId: string;
   existingRecord: Attendance | undefined;
   density?: "compact" | "rollcall";
+  /**
+   * Opens the span sheet for this singer. The sheet itself is mounted once by
+   * the inspector — forty rows carrying forty portals is the alternative.
+   * Must be referentially stable: the row is memoized on record identity and
+   * never re-renders for a new callback.
+   */
+  onOpenSpan?: (artistId: string) => void;
 }
 
 export const ArtistRow = React.memo(
@@ -59,6 +66,7 @@ export const ArtistRow = React.memo(
     rehearsalId,
     existingRecord,
     density = "compact",
+    onOpenSpan,
   }: ArtistRowProps) => {
     const { t } = useTranslation();
 
@@ -210,7 +218,9 @@ export const ArtistRow = React.memo(
     const showMinutes = status === "LATE";
     const showNote =
       status === "ABSENT" || status === "LATE" || status === "EXCUSED";
-    const hasExtras = showMinutes || showNote;
+    const showSpan =
+      !!onOpenSpan && (status === "ABSENT" || status === "EXCUSED");
+    const hasExtras = showMinutes || showNote || showSpan;
 
     const extraFields = (
       <div
@@ -266,6 +276,24 @@ export const ArtistRow = React.memo(
               disabled={isSyncing}
             />
           </div>
+        )}
+
+        {/* "…and for longer" appears only once this evening is already settled as
+            an absence — which is the moment the thought occurs, and keeps the
+            action off the other thirty-nine rows. */}
+        {showSpan && (
+          <button
+            type="button"
+            onClick={() => onOpenSpan?.(String(part.artist))}
+            disabled={isSyncing}
+            title={t("rehearsals.row.span_action_long", "Zgłoś nieobecność w zakresie dni")}
+            className="flex shrink-0 items-center gap-1.5 rounded-chip px-2.5 py-1.5 text-ethereal-graphite transition-colors hover:bg-ethereal-marble hover:text-ethereal-ink disabled:opacity-50"
+          >
+            <CalendarRange size={13} aria-hidden="true" />
+            <Eyebrow as="span" size="overline-sm" color="inherit">
+              {t("rehearsals.row.span_action", "Dłużej")}
+            </Eyebrow>
+          </button>
         )}
       </div>
     );
@@ -334,7 +362,10 @@ export const ArtistRow = React.memo(
     prev.existingRecord?.excuse_note === next.existingRecord?.excuse_note &&
     prev.existingRecord?.minutes_late === next.existingRecord?.minutes_late &&
     prev.rehearsalId === next.rehearsalId &&
-    prev.density === next.density,
+    prev.density === next.density &&
+    // Presence of the span action, not its identity: the callback is stable by
+    // contract, so comparing it would only ever be a false negative.
+    !!prev.onOpenSpan === !!next.onOpenSpan,
 );
 
 ArtistRow.displayName = "ArtistRow";

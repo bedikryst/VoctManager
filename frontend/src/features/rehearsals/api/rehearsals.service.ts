@@ -11,7 +11,12 @@ import type {
   Project,
   Rehearsal,
 } from "@/shared/types";
-import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
+import type {
+  AbsenceSpanDTO,
+  AbsenceSpanPreview,
+  AbsenceSpanResult,
+  AttendanceUpsertDTO,
+} from "../types/rehearsals.dto";
 import type { LocationDto } from "../../logistics/types/logistics.dto";
 
 export const RehearsalsService = {
@@ -58,6 +63,33 @@ export const RehearsalsService = {
 
   deleteAttendance: async (id: string): Promise<void> => {
     await api.delete(`/api/attendances/${id}/`);
+  },
+
+  /**
+   * Which evenings a span would reach for this singer, resolved by the server —
+   * across every production they sing in, not only the one on screen. The seat
+   * rule (declined, draft, cancelled, invited-or-tutti) lives there, and asking
+   * for it is what keeps the number a manager is shown equal to the rows the
+   * write produces.
+   */
+  getAbsenceSpanPreview: async (
+    artistId: string,
+    startsAt: string,
+    endsAt: string,
+  ): Promise<AbsenceSpanPreview> => {
+    const response = await api.get<AbsenceSpanPreview>(
+      "/api/attendances/range-preview/",
+      { params: { artist: artistId, starts_at: startsAt, ends_at: endsAt } },
+    );
+    return response.data;
+  },
+
+  saveAbsenceSpan: async (payload: AbsenceSpanDTO): Promise<AbsenceSpanResult> => {
+    const response = await api.post<AbsenceSpanResult>(
+      "/api/attendances/range/",
+      payload,
+    );
+    return response.data;
   },
 
   getLocations: async (): Promise<LocationDto[]> => {

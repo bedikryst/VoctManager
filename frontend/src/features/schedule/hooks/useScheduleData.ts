@@ -14,6 +14,7 @@ import { toastApiError } from "@/shared/api/errors";
 import { useTranslation } from "react-i18next";
 import type { AttendanceStatus, Project } from "@/shared/types";
 import { toZonedWallClock } from "@/shared/lib/time/timezone";
+import { isOpenToSelfReport } from "../lib/absenceWindow";
 import {
   useReportAbsenceRange,
   useScheduleDashboard,
@@ -232,17 +233,20 @@ export const useScheduleData = (artistId?: string | number) => {
    * chorister already has — the same set of rehearsals the server resolves the
    * write against, so the number stated before submitting is the number written.
    *
-   * A conductor's rehearsals carry no participation and are skipped: there is no
-   * seat there to mark absent from.
+   * Two kinds of rehearsal in the window are not part of that number, and they
+   * are counted apart rather than quietly dropped: a conductor's, which carries
+   * no participation and so no seat to be absent from, and one already held,
+   * which belongs to the roll call and which the server will refuse a singer.
    */
   const resolveAbsenceRange = useCallback(
     (from: string, to: string): AbsenceRangePreview => {
       if (!from || !to || from > to) {
-        return { count: 0, inWindow: 0, rehearsalIds: [] };
+        return { count: 0, inWindow: 0, past: 0, rehearsalIds: [] };
       }
 
       const rehearsalIds: string[] = [];
       let inWindow = 0;
+      let past = 0;
 
       for (const item of data) {
         if (item.type !== "REHEARSAL") continue;
@@ -253,12 +257,16 @@ export const useScheduleData = (artistId?: string | number) => {
         if (local < from || local > to) continue;
 
         inWindow += 1;
-        if (item.participation_id) {
+        if (!item.participation_id) continue;
+
+        if (isOpenToSelfReport(startsAt, item.rehearsal.timezone)) {
           rehearsalIds.push(String(item.rehearsal.id));
+        } else {
+          past += 1;
         }
       }
 
-      return { count: rehearsalIds.length, inWindow, rehearsalIds };
+      return { count: rehearsalIds.length, inWindow, past, rehearsalIds };
     },
     [data],
   );
@@ -273,11 +281,25 @@ export const useScheduleData = (artistId?: string | number) => {
 
     const preview = resolveAbsenceRange(from, to);
     if (preview.count === 0) {
+      // Three ways to reach nought, and only one of them is "you have no
+      // rehearsals then": the dates can be crossed, or the whole span can be
+      // behind, in which case nothing is written because those evenings belong
+      // to the roll call. The refusal has to name which one it is.
       toast.error(
-        t(
-          "schedule.rehearsal.range.preview_empty",
-          "W tym zakresie nie ma żadnej Twojej próby.",
-        ),
+        from > to
+          ? t(
+              "schedule.rehearsal.range.range_inverted",
+              "Dzień powrotu jest wcześniejszy niż początek nieobecności.",
+            )
+          : preview.past > 0
+            ? t(
+                "schedule.rehearsal.range.preview_all_past",
+                "Wszystkie Twoje próby z tego zakresu już się odbyły — ich wpisy zostają bez zmian.",
+              )
+            : t(
+                "schedule.rehearsal.range.preview_empty",
+                "W tym zakresie nie ma żadnej Twojej próby.",
+              ),
       );
       return false;
     }

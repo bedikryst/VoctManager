@@ -2198,6 +2198,10 @@
       "artist_merge_rejected": {
         "title": "Ces fiches ne peuvent pas être fusionnées",
         "detail": "Vérifiez que la fiche destinée à survivre n'est pas archivée."
+      },
+      "attendance_window_closed": {
+        "title": "Cette répétition a déjà eu lieu",
+        "detail": "La présence à une répétition passée appartient au registre de l'appel. Demandez à un responsable s'il faut la corriger."
       }
     },
     "form": {
@@ -4047,7 +4051,9 @@
       "status_excused": "Absence justifiée",
       "status_late": "Retard",
       "status_none": "Aucune saisie",
-      "status_present": "Présence"
+      "status_present": "Présence",
+      "span_action": "Plus long",
+      "span_action_long": "Signaler une absence sur plusieurs jours"
     },
     "stats": {
       "absent": "Absents",
@@ -4082,6 +4088,27 @@
       "other": "Autres",
       "sopranos": "Sopranos",
       "tenors": "Ténors"
+    },
+    "span": {
+      "title": "Absence sur une période",
+      "badge": "Plusieurs répétitions",
+      "from_label": "Du",
+      "to_label": "Au",
+      "status_label": "Statut",
+      "note_label": "Motif (optionnel)",
+      "note_placeholder": "ex. Maladie",
+      "covered": "Répétitions concernées",
+      "awaiting_end": "Indiquez le dernier jour de l'absence.",
+      "checking": "Vérification du calendrier...",
+      "preview_error": "Impossible de vérifier combien de répétitions sont concernées.",
+      "preview_empty": "Cette personne n'a aucune répétition sur cette période.",
+      "range_inverted": "La fin de la période précède son début.",
+      "overwrites_one": "L'une d'elles a déjà une saisie — elle sera écrasée.",
+      "overwrites_other": "{{count}} d'entre elles ont déjà des saisies — elles seront écrasées.",
+      "submit": "Enregistrer l'absence",
+      "success_one": "Enregistré pour une répétition.",
+      "success_other": "Enregistré pour {{count}} répétitions.",
+      "error": "L'absence sur cette période n'a pas pu être enregistrée."
     }
   },
   "repertoire": {
@@ -4253,12 +4280,16 @@
         "preview_one": "Cela couvrira {{count}} répétition à laquelle vous participez.",
         "preview_other": "Cela couvrira {{count}} répétitions auxquelles vous participez.",
         "preview_empty": "Aucune de vos répétitions ne tombe dans cette période.",
+        "preview_all_past": "Toutes vos répétitions de cette période ont déjà eu lieu — leurs relevés restent inchangés.",
+        "range_inverted": "Le jour de votre retour précède le début de l'absence.",
         "success_toast_few": "Absence enregistrée pour {{count}} répétitions.",
         "success_toast_many": "Absence enregistrée pour {{count}} répétitions.",
         "success_toast_one": "Absence enregistrée pour {{count}} répétition.",
         "success_toast_other": "Absence enregistrée pour {{count}} répétitions.",
         "to_label": "Au",
-        "toggle": "Je serai absent plus longtemps"
+        "toggle": "Je serai absent plus longtemps",
+        "past_untouched_one": "Une répétition de cette période a déjà eu lieu — son relevé reste inchangé.",
+        "past_untouched_other": "{{count}} répétitions de cette période ont déjà eu lieu — leurs relevés restent inchangés."
       },
       "status_absent": "Absent",
       "status_late": "Retard",

@@ -3,12 +3,18 @@
  * @description React Query hooks for the Rehearsals domain.
  */
 
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { RehearsalsService } from "./rehearsals.service";
-import type { AttendanceUpsertDTO } from "../types/rehearsals.dto";
+import type { AbsenceSpanDTO, AttendanceUpsertDTO } from "../types/rehearsals.dto";
 import type { Attendance } from "@/shared/types";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { artistKeys } from "@/features/artists/api/artist.queries";
+import { PERSONAL_READMODEL_KEYS } from "@/shared/api/queryPolicy";
 
 export const rehearsalKeys = {
   rehearsals: {
@@ -26,6 +32,8 @@ export const rehearsalKeys = {
       ["attendances", { artist: String(artistId) }] as const,
     byProject: (projectId: string | number) =>
       ["attendances", { project: String(projectId) }] as const,
+    span: (artistId: string, from: string, to: string) =>
+      ["attendances", "span", artistId, from, to] as const,
   },
 };
 
@@ -196,6 +204,50 @@ export const useDeleteAttendanceRecord = () => {
     onError: (_error, _variables, context) =>
       rollbackOptimistic(queryClient, context),
     onSettled: () => settleOptimistic(queryClient),
+  });
+};
+
+/**
+ * What a span would reach for one singer, answered by the server before the
+ * manager commits to it. Keyed on the window itself, so moving a date is a new
+ * question rather than a stale answer; a preview is a read of a moment and is
+ * not worth persisting past the sheet that asked for it.
+ */
+export const useAbsenceSpanPreview = (
+  artistId: string | null,
+  from: string,
+  to: string,
+) =>
+  useQuery({
+    queryKey: rehearsalKeys.attendances.span(artistId ?? "none", from, to),
+    queryFn: () =>
+      RehearsalsService.getAbsenceSpanPreview(artistId as string, from, to),
+    enabled: !!artistId && !!from && !!to && from <= to,
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+/**
+ * Excusing one singer across a span. Not optimistic, for the same reason the
+ * chorister's own span is not: one tap and one card are the same object, while a
+ * span rewrites a fortnight of them and the server decides which. The
+ * invalidation covers the roll call the manager is looking at *and* the singer's
+ * personal schedule, which this write has just changed under them.
+ */
+export const useReportAbsenceSpan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: AbsenceSpanDTO) =>
+      RehearsalsService.saveAbsenceSpan(payload),
+    onSettled: async () => {
+      await Promise.all([
+        invalidateRehearsalsDomain(queryClient),
+        queryClient.invalidateQueries({
+          queryKey: PERSONAL_READMODEL_KEYS.scheduleDashboard,
+        }),
+      ]);
+    },
   });
 };
 

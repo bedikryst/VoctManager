@@ -2,7 +2,8 @@
 
 Written 2026-08-17 from a full audit of `frontend/` + `backend/`. Four stages, each sized to one
 session. Surface: the command palette (`widgets/panel-shell/command`), a new glossary layer in
-`shared/ui`, the frontend test harness, and the chorister's absence report.
+`shared/ui`, the frontend test harness, and the chorister's absence report. A fifth stage was added
+afterwards, from what Stage 4 found on its way through the attendance paths.
 
 The audit's finding was that the hygiene layer is closed — zero locale drift (3396 base keys × 3),
 zero TODOs in own code, 13 475 lines of backend tests, ruff + mypy clean. Everything below is
@@ -371,6 +372,268 @@ Constraints:
 rows only for rehearsals the artist actually participates in; submitting the same range twice leaves
 the same number of rows.
 
+### Stage 4 — landed (2026-08-17)
+
+**No schema change, no migration** — as planned. `Attendance` is still unique on
+`(rehearsal, participation)`, and the range is `update_or_create` in a loop.
+
+**Backend — one query decides the set, and both sides read it.** The seat filter that
+`get_artist_schedule` used inline (not deleted, not declined, project not DRAFT) is now
+`_schedule_seats(**artist_lookup)` in `roster/queries/schedule_queries.py`, called by the dashboard
+*and* by the new `get_artist_rehearsals_in_window(artist_id, start, end)`. That shared predicate is
+what makes the count the singer is shown equal the rows the write produces; two copies of the rule
+would have drifted the first time either was touched.
+
+- **The window is wall-clock, judged on each rehearsal's own venue clock.** SQL narrows on UTC with a
+  day of slack either side (every zone on earth fits inside that), then `localize()` — the helper
+  `day_timeline` already had — decides the exact edges. "Away until the 21st" is a calendar fact; a
+  tour crossing timezones must not move it.
+- `AttendanceRangeDTO` (`roster/dtos.py`): `artist`, `starts_at`, `ends_at` as **naive** wall-clock
+  datetimes (a payload carrying an offset is refused), `status`, `excuse_note`. Two guards beyond the
+  obvious: `ends_at` may not precede `starts_at`, and the span may not exceed 366 days — a mistyped
+  year would otherwise reach back over a singer's whole history in one request.
+- `RehearsalOperationsService.record_attendance_range` gates exactly like `record_attendance` does,
+  one line moved from participation to artist: `artist.user_id != dto.requesting_user_id` unless
+  `is_manager`.
+- `POST /api/attendances/range/` (an action on `AttendanceViewSet`) answers
+  `{updated, attendances}`. The payload is **whitelisted, not splatted** — the existing `create`
+  does `**request.data`, which means a caller naming `requesting_user_id` raises `TypeError` and
+  returns 500. The new path does not inherit that.
+
+**Rejected: LATE over a span.** The range accepts `ABSENT` and `EXCUSED` only. Three weeks of
+"I'll be a little late" is not a statement anyone can act on, and `minutes_late` has no meaning
+spread over a fortnight (range writes set it to `None`). The form's status select is disabled while
+the span is on, so the narrowing is visible rather than a validation surprise.
+
+**Rejected: one notification per rehearsal.** A fortnight away would have pushed six identical
+ABSENCE_REQUESTED alerts. It sends **one per production** instead — grouped by project, because a
+span reaching across two of them cannot name one project truthfully. `ManagerActionMetadata` and
+`AbsenceStatusMetadata` gained `ends_at` / `ends_at_display` / `rehearsal_count`; `display_event_end`
+resolves the closing moment the same way `display_event_time` resolves the opening one (both now
+share `_display_moment`, which is what that function's docstring already anticipated). The three
+absence composers swap the single `Rehearsal` detail row for `From` / `Until` / `Rehearsals covered`
+when the count is above one — **no new `NotificationType`**, which would have cost eight layers.
+
+**Frontend — the count is stated before the send, from the data already on the client.**
+`useScheduleData` exposes `absenceRange = { resolve, submit }`. `resolve(from, to)` walks the
+schedule dashboard, converts each rehearsal to its venue-local wall clock via the new
+`toZonedWallClock` (`shared/lib/time/timezone.ts`, built from `formatToParts`), and returns
+`{count, inWindow, rehearsalIds}`. `inWindow` is deliberately separate from `count`: a range covering
+seven rehearsals of which four are the singer's says **four**, and the difference is the rehearsals
+they were never invited to plus any they only conduct (no participation, no seat).
+
+- No preview endpoint. The dashboard is already the complete set of rehearsals the artist takes part
+  in, all time, and it is resolved by the same predicate the server writes against — so a round trip
+  per keystroke would buy nothing and would go silent offline.
+- `useReportAbsenceRange` is **not optimistic**, unlike the single-event RSVP. One tap and one card
+  are the same object; a span rewrites a fortnight of them and the server decides which. Guessing the
+  set on the client would paint rows the write may never reach; the invalidate on settle is honest
+  and costs the same one request.
+- `AbsenceReportForm` grows an optional `range` prop: a checkbox, two `DateTimeField`s (`00:00` and
+  `23:59` defaults, wall-clock strings — no native `type="date"` was added), and one live line that
+  reads *"Zgłoszenie obejmie 4 Twoje próby w tym zakresie"*, *"…nie ma żadnej Twojej próby"*, or a
+  prompt to pick the return day. Both existing mounts (timeline card, next-event hero) pass it
+  through `useTimelineRehearsalCard`, which owns the span state per card — so two open cards cannot
+  share one half-typed range. The span starts on the opened rehearsal's own day.
+
+**Verified.** `ruff` + `mypy` clean on `roster` and `notifications`; **567 backend tests OK**
+(`config.test_settings_sqlite`), including ten new ones in `roster/test_absence_range.py` and two
+composer tests in `notifications/tests.py`. Frontend: `npm run test` **86 tests** (logic 71 /
+flows 15 — three new range tests in `useScheduleData.test.tsx`, through the Stage 3 harness, no
+second wrapper), `npm run lint` and `npm run build` clean.
+
+The two acceptance checks are tests, not prose:
+`test_range_writes_only_rehearsals_the_artist_takes_part_in` builds seven rehearsals in the window
+across two live productions, a draft and a declined project, and asserts the four the singer holds a
+seat at; `test_the_same_range_twice_leaves_the_same_rows` sends the same window twice and asserts the
+row count is unchanged and the second note is the one that stands.
+
+Strings landed in all three locales (`schedule.rehearsal.range.*`, with the four Polish plural forms)
+and six new msgids in `pl` / `fr` / `en` `django.po` + recompiled `.mo`.
+
+---
+
+## Stage 5 — the four things Stage 4 found
+
+**Why a fifth stage:** three defects and one missing door, all surfaced by Stage 4 and none of
+them belonging inside it. Three are rule changes on paths Stage 4 only *read*; the fourth is a UI
+for an endpoint that already existed. Written up after the fact — this stage was not in the plan.
+
+### Stage 5 — landed (2026-08-17)
+
+**1. A self-report can no longer rewrite the past.** The rule now exists and has one home:
+`roster/domain/attendance_window.py` → `is_open_to_self_report(rehearsal)`.
+
+- **The line is the rehearsal's own calendar day, read on the venue clock** — not "in the future".
+  Two things depend on that choice: *"I'm running late"* and *"I never made it tonight"* are both
+  reports a singer files **after** the downbeat, and a stricter gate would have refused the very
+  message the feature exists to carry. Yesterday's evening is closed to them. The same wall-clock
+  reading a span of days is judged by, so the two cannot disagree about which day an evening is on.
+- **A manager is never asked the question.** Correcting the record after the fact is the whole of
+  their job, and the roll call is the record.
+- **The create path was never where the hole was.** `AttendanceViewSet` had no `update` of its own,
+  so a singer could PATCH a row of theirs straight through the serializer — which is also how the
+  panel's own RSVP edits an existing report. Gating `record_attendance` alone would have been
+  theatre. `update` and `destroy` now carry the same gate, answered by `_refuse_closed_row`.
+- **One further hole, found while fixing that one.** `AttendanceSerializer` is `fields = "__all__"`,
+  so `participation` was writable: the queryset scoped a singer to rows of their own, and one of
+  those rows was a pointer they could re-aim at any seat in the choir. The edit path now whitelists
+  `status · minutes_late · excuse_note` — the row's identity is not editable. PUT is served with
+  the same partial semantics rather than failing on two fields it is no longer allowed to set; both
+  clients already re-send exactly the values they read.
+- **One refusal, whichever door.** All three paths answer with a 403 carrying the stable code
+  `attendance_window_closed` and curated copy in the three locales — a bare 403 renders as "Nie masz
+  dostępu do tej operacji", which is not the reason (the row is not out of bounds; the evening is
+  over). The create path gets there through `SelfReportWindowClosedException`, so the *rule* stays
+  in the service and only its wire shape is decided in the view.
+- **The range inherits it through the resolver, not through a second rule.**
+  `RehearsalOperationsService.resolve_attendance_range` is what both the write and the new preview
+  call; a singer's span drops the evenings already held there, before the loop, so the count they
+  are promised is the count they get.
+- The chorister's client mirrors it in `features/schedule/lib/absenceWindow.ts` for one purpose:
+  the count stated before sending. A span reaching backwards is a normal thing to type — it is the
+  day you fell ill — so the form now **names what it will leave alone** ("3 próby z tego zakresu już
+  się odbyły — ich wpisy zostają bez zmian.") instead of quietly returning a smaller number than the
+  dates on screen imply.
+
+**2. `**request.data` — swept, in one helper.** `core/request_utils.client_payload(source, only=…)`,
+at all 13 sites across `core/views.py` and `roster/views.py`. It closes two crashes a stranger can
+reach with one curl: a body that is not a JSON object (`**` on a list raises before any validator
+runs) and, where the view supplies its own arguments beside the payload, a caller naming
+`requesting_user_id` or `is_manager` and hitting the duplicate keyword. Unpacking semantics are
+preserved exactly, form-encoded case included — `{**QueryDict}` yields lists, and a DTO refusing a
+list is the same 400 it always was. Query strings are the exception and say so at the call site:
+`request.query_params.dict()` first, or every field arrives as a one-item list.
+
+**3. A cancelled project takes its rehearsals with it.** One predicate, as predicted:
+`_schedule_seats` now excludes `CANCELLED` alongside `DRAFT`, and the conductor's own id set
+excludes it too (their drafts stay — they are the one planning them). `projects_qs`'s own
+`.exclude(CANCELLED)` went with it: cancellation is decided upstream now, on both id sets, which is
+exactly what stops the concert row and its evenings from parting company again. The range agreed
+with the dashboard before this change and still does, for free.
+
+**4. The manager's door onto the range.** `AbsenceSpanSheet`, mounted **once** by
+`RehearsalInspector` and opened from a roster row.
+
+- **The trigger appears only once tonight is already settled as an absence** (`ABSENT`/`EXCUSED`) —
+  which is the moment the thought occurs, and keeps the action off the other thirty-nine rows.
+- **A preview endpoint after all** — `GET /api/attendances/range-preview/`. This does not contradict
+  Stage 4's "no preview endpoint": that was about the *chorister*, whose own schedule read-model
+  already **is** the set and stays honest offline. A manager excusing somebody else holds no such
+  list, and rebuilding the seat rule (declined · draft · cancelled · invited-or-tutti) in the browser
+  is precisely how the number shown and the rows written begin to disagree. It resolves through the
+  same `resolve_attendance_range` the write uses.
+- The sheet **lists the evenings by name and by production**, because a span opened from one
+  production reaches into every other the singer sits in — and it names how many of them already
+  carry a record, since a manager's span can overwrite a roll call that was actually taken.
+
+**Declined, and why.**
+- **Notifying on an edit.** A manager PATCHing a row still sends nothing, as before. Unifying
+  `update` into `record_attendance` would have been tidier and would have put the singer's phone in
+  the path of a roll call: tap ABSENT, correct to PRESENT, correct back — three messages about one
+  person. The inconsistency (create notifies, edit does not) is now recorded under "Still open"
+  rather than fixed by accident inside a security pass.
+- **Clamping the singer's span to today on the client.** Silently moving a date the singer typed is
+  a worse answer than counting honestly and saying what is left alone.
+- **`freezegun` / `time-machine`.** The rule is about the clock, so the fixtures had to stop being
+  written in fixed dates — but that is a fixture problem, not a dependency problem. Both suites now
+  build every date as an offset from the run. (This was not optional: `test_absence_range`'s August
+  2026 fixture had already drifted into the past, and three of its tests failed the moment the gate
+  landed — they were asserting the rule this stage forbids.)
+- **A project-scoped span for the manager.** The endpoint is per artist across productions, and
+  pretending otherwise in the UI would have written rows the sheet never mentioned.
+- **A day of grace on top of the boundary.** Tempting, because of one case: an RSVP made offline in
+  a church basement and replayed after midnight is now refused, and `flushOfflineQueue` drops a 4xx
+  rather than retrying it forever (the member is told — `offline.sync.rejected` — and the refusal
+  copy names the manager as the way back). A grace would also cover "I forgot last night, I'll say
+  so at breakfast". Both were declined: the ask was that a singer gets the future, a grace buys
+  back precisely the ability to rewrite an evening the roll call has just settled, and the timeline
+  already withholds the RSVP controls four hours after a start — so the second case cannot be
+  reached through the UI anyway, with or without this rule.
+
+**Verification.** `ruff` + `mypy` clean on `roster` and `core`; **678 backend tests OK** across
+`roster · notifications · core` (`config.test_settings_sqlite`), including the new
+`roster/test_self_report_window.py` (9) and five new range/preview tests. Frontend: `npm run test`
+**87 tests** (logic 71 / flows 16), `npm run lint` and `npm run build` clean. Strings landed in all
+three locales.
+
+One pre-existing failure, untouched and unrelated: `documents.tests.DocumentCategoryTests.
+test_artist_cannot_see_manager_category` raises `NotSupportedError: contains lookup is not supported`
+— a JSONField `contains` that only Postgres implements, so it fails under the sqlite settings and
+passes in the container. Not this stage's, and not a regression.
+
+### Stage 5 — review pass, before the commit (2026-08-17)
+
+A second read of the whole uncommitted stage. The rules held — the window gate, the `client_payload`
+sweep and the cancelled-project predicate were all sound, and their tests assert the right things.
+What did not hold was what three surfaces *said*, in each case where a count is nil for a reason the
+copy does not name.
+
+- **A crossed range left the sheet on a sentence that was no longer true.** `AbsenceSpanSheet` gated
+  its preview query on `from <= to` and then read `preview.isPending` — which a disabled query
+  reports as `true` forever, so picking an end before the start parked the box on *"Sprawdzam
+  kalendarz…"* while nothing was being asked of anything. It now names the crossed dates
+  (`rehearsals.span.range_inverted`). `isPending` was left alone deliberately for the live case: it
+  is the one that also covers the first fetch of a new window. The singer's own form had the same
+  typo reading as an answer — it resolves a crossed pair to nought and printed *"nie ma żadnej Twojej
+  próby"* — so it gained the matching line, in its own vocabulary (*dzień powrotu*), on the summary
+  and on the toast that refuses the write.
+- **"W tym zakresie nie ma żadnej Twojej próby" was a lie whenever the whole span was behind.** The
+  singer's form printed it in crimson and then, one line down, "3 próby z tego zakresu już się
+  odbyły" — two statements that cannot both be true, and the same wrong sentence went out as the
+  toast that refuses the write. Both now branch on `preview.past`
+  (`schedule.rehearsal.range.preview_all_past`), and the `past_untouched` line stands down when it
+  would only repeat it.
+- **Plural agreement in the overwrite warning.** `overwrites_*` counted the entries and then
+  referred to them in the singular in all three locales ("5 z nich ma już wpis — zostanie
+  nadpisany"; "…it will be overwritten"; "…elle sera écrasée").
+
+**And one rule finished, on the product owner's call: a chorister's own projects are decided by one
+predicate.** Stage 5 took a cancelled concert's rehearsals off the schedule and stopped there, which
+left the singer being told two things — no concert on the timeline, its programme still open in the
+Songbook. Pulling that thread found the same rule copied into six places, disagreeing in three
+different ways. It is now `Participation.live_seats(**artist_lookup)` on the model, and everything a
+chorister is offered about their own projects goes through it.
+
+**The seat, stated once.** Not deleted, not declined, and in a project the cast may see at all
+(`Project.HIDDEN_FROM_CAST_STATUSES` — `DRAFT`, `CANCELLED`). Callers: `_schedule_seats` (so the
+schedule and the absence range are unchanged in behaviour and shorter in code),
+`get_artist_materials_queryset`, `artist_has_live_access_to_piece` and `artist_live_piece_ids` (the
+score and shared-annotation gate), and the non-manager branch of the five plain endpoints —
+`projects`, `rehearsals`, `program-items`, `project-piece-castings`, `crew-assignments`. Score access
+composes **on top**: `CLOSED_PROJECT_STATUSES` narrows it further once the concert is over, and never
+widens it.
+
+Three holes closed by saying it once:
+
+- **A cancelled concert now leaves entire.** The card goes with the score the gate was already
+  refusing. The *pieces* stay in the archive — they belong to the choir, not to any one project, and
+  a test asserts it.
+- **A draft is no longer served underneath the silence.** It was hidden from both read-models and
+  handed over by `GET /api/projects/`, `/api/rehearsals/` and — the one that mattered — the score
+  endpoint, because `artist_has_live_access_to_piece` asked only whether a project had *closed*. The
+  earlier reasoning for leaving it (a draft is "live", so a cast could rehearse from real scores
+  before announcement) does not survive contact with the announcement queue: DRAFT is silence, the
+  cast has not been told, so there is nobody to rehearse.
+- **Declining a project hands back its music.** The schedule understood this from the start; the
+  songbook and the score gate never asked about the seat's status at all.
+
+**Three fixtures changed, and that is the finding underneath.** `Project.status` defaults to `DRAFT`,
+so `_ServeBase` and `ContractsSettlementTests` were quietly proving chorister access *on unannounced
+projects*. They now say `status=ACTIVE`, which is what they always meant. Whenever a project fixture
+omits the status, check which rule it is actually exercising.
+
+Pinned by `DraftInvisibleToCastTests` (extended), `DeclinedSeatKeepsNothingTests`,
+`CancelledInvisibleToCastTests` and `SeatBoundScoreAccessTests` — every one of them carrying a
+control (a live concert, a colleague who kept their seat, a manager) so an assertion cannot pass
+against a query that has simply stopped answering.
+
+Re-verified whole: ruff + mypy clean, **803 backend tests OK** across `roster · notifications · core ·
+archive · messaging · payments · logistics`, `npm run typecheck / lint / test` (87) `/ build` clean,
+locales at zero drift (3437 base keys × 3, diacritics checked by codepoint),
+`makemigrations --check` clean — `live_seats` is a classmethod and `HIDDEN_FROM_CAST_STATUSES` a
+class attribute, so neither is a schema change.
+
 ---
 
 ## Decisions, settled
@@ -424,7 +687,30 @@ Do not reopen these without a reason that is new.
 - **Section-mates in the palette** — blocked on a chorister having any per-person destination.
   Would need an anchor in the Chorister Hub, or a "message this person" route that does not require
   an existing thread id. Declined in Stage 1.
-- Nothing owed from Stage 1 or Stage 2 — both stages' gates are green.
+- Nothing owed from Stage 1, 2 or 3 — every stage's gates are green.
+
+**Found by Stage 4 — all four closed in Stage 5.** The self-report time gate, the `**request.data`
+sweep, the cancelled project's orphaned rehearsals, and the manager's UI for the range. Read that
+stage's landed block for the rules that came out of it; do not re-derive them here.
+
+**Found by Stage 5, left deliberately.**
+
+- **An edit notifies nobody.** A singer changing an existing report (ABSENT → PRESENT, or a new
+  reason) sends no message, while filing the first one does — the difference is only whether a row
+  happened to exist already, which nobody chose. The same asymmetry runs on the manager's side: they
+  are told when a singer files, not when they change their mind. The fix is not "notify on PATCH" —
+  a roll call taken on a tablet would put three messages on one singer's phone for one person's
+  correction. It needs a rule about *what changed* (status crossed between present and absent) and
+  probably a debounce, which is a notifications question, not an attendance one.
+- **The rest of the panel has not been read against `Participation.live_seats`.** The rule is now
+  stated once and every door in `roster` calls it, but the sweep went as far as the surfaces the
+  cancellation thread ran through. `documents`, `messaging`, `payments` and `notifications` each
+  decide for themselves what a chorister's project is; none was found wrong, none was audited. If a
+  fifth disagreement turns up, that is where.
+- **`Attendance` has no author and no timestamp.** Nothing on the row records who wrote it or when,
+  so "the manager marked me absent" and "I marked myself absent" are indistinguishable after the
+  fact, and the new time gate is enforced only at the moment of writing. Fine for a choir of this
+  size; the first thing to add if attendance ever becomes contested.
 
 **What Stage 3's harness does not reach.** Not a to-do list — the ceiling was deliberate — but these
 are the specific things a later pass should not assume are covered:

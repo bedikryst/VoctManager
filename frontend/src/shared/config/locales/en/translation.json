@@ -2198,6 +2198,10 @@
       "artist_merge_rejected": {
         "title": "These entries cannot be merged",
         "detail": "Check that the entry meant to survive is not archived."
+      },
+      "attendance_window_closed": {
+        "title": "This rehearsal has already been held",
+        "detail": "Attendance for a past rehearsal is the roll call's record. Ask a manager if it needs correcting."
       }
     },
     "form": {
@@ -4046,7 +4050,9 @@
       "status_excused": "Excused",
       "status_late": "Late",
       "status_none": "Unmarked",
-      "status_present": "Present"
+      "status_present": "Present",
+      "span_action": "Longer",
+      "span_action_long": "Report an absence over several days"
     },
     "stats": {
       "absent": "Missing",
@@ -4081,6 +4087,27 @@
       "other": "Other",
       "sopranos": "Sopranos",
       "tenors": "Tenors"
+    },
+    "span": {
+      "title": "Absence over a range of days",
+      "badge": "Several rehearsals",
+      "from_label": "From",
+      "to_label": "Until",
+      "status_label": "Status",
+      "note_label": "Reason (optional)",
+      "note_placeholder": "e.g. Illness",
+      "covered": "Rehearsals covered",
+      "awaiting_end": "Pick the last day of the absence.",
+      "checking": "Checking the calendar...",
+      "preview_error": "Could not check how many rehearsals this covers.",
+      "preview_empty": "This person has no rehearsal in that range.",
+      "range_inverted": "The end of the range falls before its start.",
+      "overwrites_one": "One of them already has a record — it will be overwritten.",
+      "overwrites_other": "{{count}} of them already have records — they will be overwritten.",
+      "submit": "Save the absence",
+      "success_one": "Saved for one rehearsal.",
+      "success_other": "Saved for {{count}} rehearsals.",
+      "error": "The absence for that range could not be saved."
     }
   },
   "repertoire": {
@@ -4252,12 +4279,16 @@
         "preview_one": "This will cover {{count}} rehearsal you take part in.",
         "preview_other": "This will cover {{count}} rehearsals you take part in.",
         "preview_empty": "None of your rehearsals fall in that range.",
+        "preview_all_past": "Every rehearsal of yours in this range has already been held — their records stay as they are.",
+        "range_inverted": "The day you are back falls before the absence begins.",
         "success_toast_few": "Absence filed for {{count}} rehearsals.",
         "success_toast_many": "Absence filed for {{count}} rehearsals.",
         "success_toast_one": "Absence filed for {{count}} rehearsal.",
         "success_toast_other": "Absence filed for {{count}} rehearsals.",
         "to_label": "Until",
-        "toggle": "I will be away for longer"
+        "toggle": "I will be away for longer",
+        "past_untouched_one": "One rehearsal in this range has already been held — its record stays as it is.",
+        "past_untouched_other": "{{count}} rehearsals in this range have already been held — their records stay as they are."
       },
       "status_absent": "Absent",
       "status_late": "Running Late",

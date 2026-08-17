@@ -2208,6 +2208,10 @@
       "artist_merge_rejected": {
         "title": "Nie można scalić tych wpisów",
         "detail": "Sprawdź, czy wpis, który ma zostać, nie jest zarchiwizowany."
+      },
+      "attendance_window_closed": {
+        "title": "Ta próba już się odbyła",
+        "detail": "Obecność na minionej próbie jest zapisem odprawy. Poproś menedżera, jeśli trzeba ją poprawić."
       }
     },
     "form": {
@@ -4073,7 +4077,9 @@
       "status_excused": "Usprawiedliwienie",
       "status_late": "Spóźnienie",
       "status_none": "Bez wpisu",
-      "status_present": "Obecność"
+      "status_present": "Obecność",
+      "span_action": "Dłużej",
+      "span_action_long": "Zgłoś nieobecność na kilka dni"
     },
     "stats": {
       "absent": "Braki",
@@ -4108,6 +4114,31 @@
       "other": "Pozostali",
       "sopranos": "Soprany",
       "tenors": "Tenory"
+    },
+    "span": {
+      "title": "Nieobecność w zakresie dni",
+      "badge": "Wiele prób",
+      "from_label": "Od",
+      "to_label": "Do",
+      "status_label": "Status",
+      "note_label": "Powód (opcjonalnie)",
+      "note_placeholder": "np. Choroba",
+      "covered": "Obejmie próby",
+      "awaiting_end": "Wskaż ostatni dzień nieobecności.",
+      "checking": "Sprawdzam kalendarz...",
+      "preview_error": "Nie udało się sprawdzić, ilu prób to dotyczy.",
+      "preview_empty": "W tym zakresie ta osoba nie ma żadnej próby.",
+      "range_inverted": "Koniec zakresu wypada przed jego początkiem.",
+      "overwrites_one": "Jedna z nich ma już wpis — zostanie nadpisany.",
+      "overwrites_few": "{{count}} z nich mają już wpisy — zostaną nadpisane.",
+      "overwrites_many": "{{count}} z nich ma już wpisy — zostaną nadpisane.",
+      "overwrites_other": "{{count}} z nich ma już wpisy — zostaną nadpisane.",
+      "submit": "Zapisz nieobecność",
+      "success_one": "Zapisano dla jednej próby.",
+      "success_few": "Zapisano dla {{count}} prób.",
+      "success_many": "Zapisano dla {{count}} prób.",
+      "success_other": "Zapisano dla {{count}} prób.",
+      "error": "Nie udało się zapisać nieobecności w tym zakresie."
     }
   },
   "repertoire": {
@@ -4279,12 +4310,18 @@
         "preview_one": "Zgłoszenie obejmie {{count}} Twoją próbę w tym zakresie.",
         "preview_other": "Zgłoszenie obejmie {{count}} Twoich prób w tym zakresie.",
         "preview_empty": "W tym zakresie nie ma żadnej Twojej próby.",
+        "preview_all_past": "Wszystkie Twoje próby z tego zakresu już się odbyły — ich wpisy zostają bez zmian.",
+        "range_inverted": "Dzień powrotu jest wcześniejszy niż początek nieobecności.",
         "success_toast_few": "Zgłoszono nieobecność na {{count}} próbach.",
         "success_toast_many": "Zgłoszono nieobecność na {{count}} próbach.",
         "success_toast_one": "Zgłoszono nieobecność na {{count}} próbie.",
         "success_toast_other": "Zgłoszono nieobecność na {{count}} próbach.",
         "to_label": "Do",
-        "toggle": "Nie będzie mnie przez dłuższy czas"
+        "toggle": "Nie będzie mnie przez dłuższy czas",
+        "past_untouched_one": "Jedna próba z tego zakresu już się odbyła — jej wpis zostaje bez zmian.",
+        "past_untouched_few": "{{count}} próby z tego zakresu już się odbyły — ich wpisy zostają bez zmian.",
+        "past_untouched_many": "{{count}} prób z tego zakresu już się odbyło — ich wpisy zostają bez zmian.",
+        "past_untouched_other": "{{count}} prób z tego zakresu już się odbyło — ich wpisy zostają bez zmian."
       },
       "status_absent": "Nieobecność",
       "status_late": "Spóźnienie",

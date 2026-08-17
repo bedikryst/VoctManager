@@ -100,6 +100,12 @@ export interface AbsenceRangePreview {
   readonly count: number;
   /** Rehearsals in the window, including the ones that are not theirs. */
   readonly inWindow: number;
+  /**
+   * Their own rehearsals inside the window that have already been held. The
+   * span leaves those exactly as the roll call wrote them, so they are named
+   * rather than silently dropped from the count.
+   */
+  readonly past: number;
   readonly rehearsalIds: readonly string[];
 }
 

@@ -146,22 +146,52 @@ export const AbsenceReportForm = ({
                 className="mt-2.5 ml-1"
                 role="status"
               >
+                {/* One line, five things it can honestly be. The two zero cases
+                    at the bottom are not the same statement: a crossed pair of
+                    dates is a typo to name, and a span made entirely of evenings
+                    already held is a rule to explain — "you have no rehearsals
+                    then" is false of both. */}
                 {range.to === ""
                   ? t(
                       "schedule.rehearsal.range.awaiting_end",
                       "Wskaż dzień powrotu, aby zobaczyć, ilu prób to dotyczy.",
                     )
-                  : range.preview.count > 0
+                  : range.from > range.to
                     ? t(
-                        "schedule.rehearsal.range.preview",
-                        "Zgłoszenie obejmie {{count}} Twoich prób w tym zakresie.",
-                        { count: range.preview.count },
+                        "schedule.rehearsal.range.range_inverted",
+                        "Dzień powrotu jest wcześniejszy niż początek nieobecności.",
                       )
-                    : t(
-                        "schedule.rehearsal.range.preview_empty",
-                        "W tym zakresie nie ma żadnej Twojej próby.",
-                      )}
+                    : range.preview.count > 0
+                      ? t(
+                          "schedule.rehearsal.range.preview",
+                          "Zgłoszenie obejmie {{count}} Twoich prób w tym zakresie.",
+                          { count: range.preview.count },
+                        )
+                      : range.preview.past > 0
+                        ? t(
+                            "schedule.rehearsal.range.preview_all_past",
+                            "Wszystkie Twoje próby z tego zakresu już się odbyły — ich wpisy zostają bez zmian.",
+                          )
+                        : t(
+                            "schedule.rehearsal.range.preview_empty",
+                            "W tym zakresie nie ma żadnej Twojej próby.",
+                          )}
               </Text>
+
+              {/* A span that reaches backwards is a normal thing to type — it is
+                  the day you fell ill. The rehearsals behind it stay as the roll
+                  call recorded them, and saying so beats a count that silently
+                  disagrees with the dates on screen. When *every* evening in the
+                  span is behind, the line above already says so on its own. */}
+              {range.preview.count > 0 && range.preview.past > 0 && (
+                <Text size="sm" color="muted" className="mt-1 ml-1" role="status">
+                  {t(
+                    "schedule.rehearsal.range.past_untouched",
+                    "{{count}} prób z tego zakresu już się odbyło — ich wpisy zostają bez zmian.",
+                    { count: range.preview.past },
+                  )}
+                </Text>
+              )}
             </>
           )}
         </div>

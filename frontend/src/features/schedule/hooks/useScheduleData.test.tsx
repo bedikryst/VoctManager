@@ -18,6 +18,7 @@ import { HttpResponse, http } from "msw";
 import { TEST_ARTIST, renderHookWithPanel } from "@/test/harness";
 import { server } from "@/test/server";
 import type { Attendance } from "@/shared/types";
+import { toZonedWallClock } from "@/shared/lib/time/timezone";
 
 import { scheduleKeys } from "../api/schedule.queries";
 import type {
@@ -57,6 +58,26 @@ const dashboard = (
 ];
 
 const RANGE_URL = "*/api/attendances/range/";
+const VENUE_TZ = "Europe/Warsaw";
+
+const rehearsal = (
+  id: string,
+  dateTime: string,
+  participationId: string | null,
+): ScheduleDashboardItem => ({
+  type: "REHEARSAL",
+  participation_id: participationId,
+  project_title: "Nieszpory Rachmaninowa",
+  my_attendance: null,
+  rehearsal: {
+    id,
+    project: "proj-1",
+    date_time: dateTime,
+    timezone: VENUE_TZ,
+    is_mandatory: true,
+    absent_count: 0,
+  },
+});
 
 /**
  * A fortnight of the artist's schedule: three rehearsals inside the window, one
@@ -64,25 +85,6 @@ const RANGE_URL = "*/api/attendances/range/";
  * to be marked absent from), plus one the day after the window closes.
  */
 const spanDashboard = (): ScheduleDashboardItem[] => {
-  const rehearsal = (
-    id: string,
-    dateTime: string,
-    participationId: string | null,
-  ): ScheduleDashboardItem => ({
-    type: "REHEARSAL",
-    participation_id: participationId,
-    project_title: "Nieszpory Rachmaninowa",
-    my_attendance: null,
-    rehearsal: {
-      id,
-      project: "proj-1",
-      date_time: dateTime,
-      timezone: "Europe/Warsaw",
-      is_mandatory: true,
-      absent_count: 0,
-    },
-  });
-
   return [
     rehearsal("reh-in-1", "2099-08-04T17:00:00Z", PARTICIPATION_ID),
     rehearsal("reh-in-2", "2099-08-11T17:00:00Z", PARTICIPATION_ID),
@@ -305,6 +307,38 @@ describe("useScheduleData — absence over a range", () => {
       status: "ABSENT",
       excuse_note: "Trzy tygodnie poza krajem.",
     });
+  });
+
+  it("promises only the rehearsals still ahead, not the ones already held", async () => {
+    // Dates relative to the run, because the rule is about the clock: a fixture
+    // in fixed dates would drift and end up asserting the opposite.
+    const daysOut = (days: number): Date =>
+      new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    const venueDay = (days: number, clock: string): string =>
+      `${toZonedWallClock(daysOut(days), VENUE_TZ).slice(0, 10)}T${clock}`;
+
+    server.use(
+      http.get(DASHBOARD_URL, () =>
+        HttpResponse.json([
+          rehearsal("reh-held", daysOut(-3).toISOString(), PARTICIPATION_ID),
+          rehearsal("reh-ahead", daysOut(3).toISOString(), PARTICIPATION_ID),
+        ]),
+      ),
+    );
+    const { result } = await mountSchedule();
+
+    const preview = result.current.absenceRange.resolve(
+      venueDay(-5, "00:00"),
+      venueDay(5, "23:59"),
+    );
+
+    // The span may honestly start in the past — it is the day you fell ill. The
+    // server refuses to rewrite what the roll call already recorded, so counting
+    // those here would promise a fortnight and deliver a week.
+    expect(preview.inWindow).toBe(2);
+    expect(preview.past).toBe(1);
+    expect(preview.count).toBe(1);
+    expect([...preview.rehearsalIds]).toEqual(["reh-ahead"]);
   });
 
   it("refuses a window holding none of the artist's rehearsals rather than posting an empty write", async () => {

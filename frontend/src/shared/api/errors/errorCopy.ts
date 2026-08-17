@@ -87,6 +87,11 @@ const KNOWN_CODES: Record<string, { title: string; detail: string }> = {
     title: "errors.codes.piece_not_found.title",
     detail: "errors.codes.piece_not_found.detail",
   },
+  // A singer reaching for the attendance of a rehearsal already held.
+  attendance_window_closed: {
+    title: "errors.codes.attendance_window_closed.title",
+    detail: "errors.codes.attendance_window_closed.detail",
+  },
   // Roster hygiene: merging two entries for one person.
   artist_merge_activated: {
     title: "errors.codes.artist_merge_activated.title",

@@ -9,7 +9,7 @@
  * @module features/rehearsals/components/RehearsalInspector
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -48,6 +48,7 @@ import {
   voiceSectionLabelKey,
 } from "../constants/attendanceMeta";
 import { ArtistRow } from "./ArtistRow";
+import { AbsenceSpanSheet } from "./AbsenceSpanSheet";
 
 interface RehearsalInspectorProps {
   rehearsal: Rehearsal;
@@ -118,6 +119,13 @@ export const RehearsalInspector = ({
 }: RehearsalInspectorProps): React.JSX.Element => {
   const { t } = useTranslation();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
+  /* One sheet for the whole roster, named by whoever opened it. The setter is
+     what the rows receive, so the callback stays stable across re-renders and
+     the memoized rows keep their optimistic state through a roll call. */
+  const [spanArtistId, setSpanArtistId] = useState<string | null>(null);
+  const openSpan = useCallback((artistId: string) => setSpanArtistId(artistId), []);
+  const closeSpan = useCallback(() => setSpanArtistId(null), []);
+  const spanArtist = spanArtistId ? artistMap.get(spanArtistId) : undefined;
 
   const isSectional = (rehearsal.invited_participations?.length ?? 0) > 0;
 
@@ -397,6 +405,7 @@ export const RehearsalInspector = ({
                         existingRecord={attendanceMap.get(String(part.id))}
                         rehearsalId={String(rehearsal.id)}
                         density="rollcall"
+                        onOpenSpan={openSpan}
                       />
                     );
                   })}
@@ -414,6 +423,7 @@ export const RehearsalInspector = ({
                         existingRecord={attendanceMap.get(String(part.id))}
                         rehearsalId={String(rehearsal.id)}
                         density="compact"
+                        onOpenSpan={openSpan}
                       />
                     );
                   })}
@@ -423,6 +433,19 @@ export const RehearsalInspector = ({
           ))
         )}
       </div>
+
+      {/* Mounted, not conditional: the sheet animates out, and unmounting it on
+          close would cut that short. The id going null is what shuts it. */}
+      <AbsenceSpanSheet
+        isOpen={!!spanArtist}
+        onClose={closeSpan}
+        artistId={spanArtist ? String(spanArtist.id) : null}
+        artistName={
+          spanArtist ? `${spanArtist.first_name} ${spanArtist.last_name}` : ""
+        }
+        anchorDate={rehearsal.date_time}
+        anchorTimezone={rehearsal.timezone}
+      />
     </GlassCard>
   );
 };

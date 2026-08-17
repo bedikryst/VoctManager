@@ -17,6 +17,7 @@ type ReportStatus = Extract<AttendanceStatus, "ABSENT" | "LATE">;
 const EMPTY_PREVIEW: AbsenceRangePreview = {
   count: 0,
   inWindow: 0,
+  past: 0,
   rehearsalIds: [],
 };
 
