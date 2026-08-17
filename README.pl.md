@@ -130,7 +130,7 @@ Architektura, koszty, priorytety i to, co zostaje na zewnątrz — moje. Z tego 
 
 ## Jakość i utrzymanie
 
-**Testy.** Około 676, w roster, archive, payments, messaging, notifications, documents i core. Generowanie umów, kokpit śpiewnika, ochrona nut licencjonowanych i pipeline pochodzenia są pokryte. Pokrycie frontendu jest cienkie i to jest następne w kolejce.
+**Testy.** Około 676 w backendzie, w roster, archive, payments, messaging, notifications, documents i core. Generowanie umów, kokpit śpiewnika, ochrona nut licencjonowanych i pipeline pochodzenia są pokryte. Frontend ma 83, i mała liczba jest tu decyzją, a nie stanem rzeczy: harness komponentowy plus dwanaście testów skierowanych wyłącznie na zapisy, których nie da się cofnąć — publikacja projektu wysyła mail do całego chóru, a RSVP, oznaczanie obecności i aktywacja konta zmieniają stan w czyimś imieniu. Resztę panelu nadal sprawdza `tsc`, build i spojrzenie na ekran. Procent pokrycia liczony po 569 plikach źródłowych mierzyłby co innego.
 
 **CI.** Ruff, mypy w trybie strict i pełny zestaw testów na PostgreSQL 16 przy każdym pushu i pull requeście.
 

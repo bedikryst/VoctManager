@@ -130,7 +130,7 @@ Architecture, cost, priorities, and what stays out are mine. Those are the parts
 
 ## Quality and operations
 
-**Tests.** Around 676 of them, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. Frontend coverage is thin and that's next.
+**Tests.** Around 676 on the backend, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. The frontend has 83, and the small number is the decision rather than the state of it: a component harness plus twelve tests pointed only at the writes that can't be taken back — publishing a project mails the whole choir, and RSVP, attendance marking and account activation each change state on someone else's behalf. The rest of the panel is still verified by `tsc`, a build and a look at the screen. A coverage percentage over 569 source files would have measured something else.
 
 **CI.** Ruff, mypy in strict mode, and the full suite against PostgreSQL 16 on every push and pull request.
 
