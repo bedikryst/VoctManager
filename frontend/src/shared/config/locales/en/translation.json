@@ -81,6 +81,7 @@
       "before_birth": "Composition year ({{year}}) predates the composer's birth ({{birth}}).",
       "long_after_death": "Composition year ({{year}}) is long after the composer's death ({{death}}).",
       "title": "AI may have got it wrong — verify the data before approving",
+      "title_resting": "This record contradicts itself — worth fixing",
       "arrangement_epoch": "This work has an arranger but its epoch is marked as contemporary — make sure it isn't an arrangement of a traditional work (in which case the epoch = the original's origin).",
       "ipa_misaligned": "The IPA transcription has {{ipa}} lines and the text {{lyrics}} — the line-by-line alignment may be wrong."
     },
@@ -486,7 +487,6 @@
         "text_source": "Text source",
         "voicing": "Voicing"
       },
-      "fields_hint": "Check each field against the PDF preview on the left. Edit if the AI misread it.",
       "form_panel_aria": "Piece data",
       "group": {
         "identity": "Identity",
@@ -537,7 +537,12 @@
       "edit_title": "Piece title",
       "title_required": "Title is required.",
       "section_dirty": "Unsaved",
-      "dirty_rows_hint": "Unsaved changes in the sections above — save them in their rows."
+      "dirty_rows_hint": "Unsaved changes in the sections above — save them in their rows.",
+      "fields_hint_score": "The score beside this settles the title, arranger, voicing, key and text.",
+      "fields_hint_catalog": "Epoch, composition year and opus number are rarely printed in a score — the AI took them from a catalogue or from its own knowledge, and they are the ones it invents most often.",
+      "year_invalid": "Composition year: a whole number between 500 and 2100.",
+      "score_widen": "Widen the score preview",
+      "score_narrow": "Narrow the score preview"
     },
     "review": {
       "delete": "Delete",
@@ -561,6 +566,7 @@
       "note_saved": "Note saved.",
       "note_slow": "This is taking longer than usual — refresh the page in a moment.",
       "note_words": "Words",
+      "go_to_page": "Show page {{page}} in the score",
       "open_recording": "Open recording",
       "page_short": "p.",
       "recording_deleted": "Recording deleted.",
@@ -1995,7 +2001,8 @@
           "navigation": "Navigation",
           "pinned": "Pinned",
           "projects": "Projects",
-          "recent": "Recent"
+          "recent": "Recent",
+          "repertoire": "Repertoire"
         },
         "title": "Quick jump",
         "unpin_project": "Unpin project"

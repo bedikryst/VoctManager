@@ -81,6 +81,7 @@
       "before_birth": "L'année de composition ({{year}}) précède la naissance du compositeur ({{birth}}).",
       "long_after_death": "L'année de composition ({{year}}) est bien postérieure à la mort du compositeur ({{death}}).",
       "title": "L'IA a pu se tromper — vérifiez les données avant de valider",
+      "title_resting": "Ces données se contredisent — à corriger",
       "arrangement_epoch": "Cette œuvre a un arrangeur mais son époque est marquée comme contemporaine — vérifiez qu'il ne s'agit pas d'un arrangement d'une œuvre traditionnelle (auquel cas l'époque = l'origine de l'original).",
       "ipa_misaligned": "La transcription API a {{ipa}} lignes et le texte {{lyrics}} — l'alignement ligne à ligne peut être erroné."
     },
@@ -486,7 +487,6 @@
         "text_source": "Source du texte",
         "voicing": "Distribution"
       },
-      "fields_hint": "Vérifiez chaque champ avec l'aperçu PDF à gauche. Modifiez si l'IA a mal lu.",
       "form_panel_aria": "Données de la pièce",
       "group": {
         "identity": "Identité",
@@ -537,7 +537,12 @@
       "edit_title": "Titre de l'œuvre",
       "title_required": "Le titre est obligatoire.",
       "section_dirty": "Non enregistré",
-      "dirty_rows_hint": "Modifications non enregistrées dans les sections ci-dessus — enregistrez-les dans leurs lignes."
+      "dirty_rows_hint": "Modifications non enregistrées dans les sections ci-dessus — enregistrez-les dans leurs lignes.",
+      "fields_hint_score": "La partition ci-contre vous donne le titre, l'arrangeur, l'effectif, la tonalité et le texte.",
+      "fields_hint_catalog": "L'époque, l'année de composition et le numéro d'opus figurent rarement sur une partition — l'IA les a pris dans un catalogue ou dans ses propres connaissances, et ce sont eux qu'elle invente le plus souvent.",
+      "year_invalid": "Année de composition : un nombre entier entre 500 et 2100.",
+      "score_widen": "Élargir l'aperçu de la partition",
+      "score_narrow": "Réduire l'aperçu de la partition"
     },
     "review": {
       "delete": "Supprimer",
@@ -561,6 +566,7 @@
       "note_saved": "Note enregistrée.",
       "note_slow": "Cela prend plus de temps que d'habitude — actualisez la page dans un instant.",
       "note_words": "Mots",
+      "go_to_page": "Afficher la page {{page}} dans la partition",
       "open_recording": "Ouvrir l'enregistrement",
       "page_short": "p.",
       "recording_deleted": "Enregistrement supprimé.",
@@ -1995,7 +2001,8 @@
           "navigation": "Navigation",
           "pinned": "Épinglés",
           "projects": "Projets",
-          "recent": "Récents"
+          "recent": "Récents",
+          "repertoire": "Répertoire"
         },
         "title": "Accès rapide",
         "unpin_project": "Détacher le projet"

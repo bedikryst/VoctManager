@@ -25,7 +25,7 @@ import { CornerDownLeft, Search, Star, X } from "lucide-react";
 import { cn } from "@/shared/lib/utils";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { Divider } from "@/shared/ui/primitives/Divider";
-import { Eyebrow, Label } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
@@ -207,14 +207,26 @@ export const CommandPalette = ({
             {t("dashboard.layout.command.current", "Tutaj")}
           </Eyebrow>
         ) : (
-          item.hint && (
+          item.hint &&
+          // A hint carrying human content (a composer, a concert title) stays in
+          // the sans at its own casing and yields width to the label it
+          // qualifies; the overline slot is for the machine labels it was built
+          // for — a date, a voice type — where `tabular-nums` also earns its keep.
+          (item.hintCasing === "natural" ? (
+            <Caption
+              color="muted"
+              className="min-w-0 max-w-[45%] shrink truncate text-right"
+            >
+              {item.hint}
+            </Caption>
+          ) : (
             <Eyebrow
               color="muted"
               className="shrink-0 tabular-nums"
             >
               {item.hint}
             </Eyebrow>
-          )
+          ))
         )}
 
         {item.kind === "project" && item.projectId && (

@@ -1,11 +1,17 @@
 /**
  * @file useCommandItems.ts
- * @description Assembles every command-palette row from four sources — quick
- * actions, navigation destinations, projects and artists — plus the conductor's
- * pinned/recent projects. Project & artist data is fetched **lazily and
- * non-blocking** (plain useQuery gated on `enabled`, sharing the feature cache
- * keys) so the always-mounted palette never suspends the shell and rides warm
- * cache when those tabs were already visited.
+ * @description Assembles every command-palette row from five sources — quick
+ * actions, navigation destinations, projects, artists and the repertoire —
+ * plus the conductor's pinned/recent projects. Every data source is fetched
+ * **lazily and non-blocking** (plain useQuery gated on `enabled`, sharing the
+ * feature cache keys) so the always-mounted palette never suspends the shell
+ * and rides warm cache when those tabs were already visited.
+ *
+ * Repertoire is the one source that differs by role, because the two roles do
+ * not have the same library: a manager searches the whole archive and lands on
+ * the Piece Card, while a chorister searches only the pieces they are actually
+ * cast in and lands on their practice page for that piece *in that project*.
+ * Same section, same question ("where is that piece"), two honest answers.
  * @module widgets/panel-shell/command
  * @architecture Enterprise SaaS 2026
  */
@@ -14,27 +20,42 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, User, type LucideIcon } from "lucide-react";
+import { CalendarDays, Music, User, type LucideIcon } from "lucide-react";
 
 import type { AuthUser } from "@/shared/auth/auth.types";
-import type { Artist, Project } from "@/shared/types";
+import { isArtist } from "@/shared/auth/rbac";
+import type { Artist, Piece, Project } from "@/shared/types";
 import { ProjectService } from "@/features/projects/api/project.service";
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { ArtistService } from "@/features/artists/api/artist.service";
 import { artistKeys } from "@/features/artists/api/artist.queries";
+import { ArchiveService } from "@/features/archive/api/archive.service";
+import { archiveKeys } from "@/features/archive/api/archive.queries";
+import { MaterialsService } from "@/features/materials/api/materials.service";
+import { materialsKeys } from "@/features/materials/api/materials.queries";
+import type { MaterialsDashboardItem } from "@/features/materials/types/materials.dto";
 
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { foldSearchText } from "../lib/navSearch";
 import { COMMAND_ACTIONS } from "./commandActions";
 import { useProjectQuickAccess } from "./quickAccessStore";
 
-export type CommandKind = "action" | "nav" | "project" | "artist";
+export type CommandKind = "action" | "nav" | "project" | "artist" | "piece";
 
 export interface CommandItem {
   readonly id: string;
   readonly kind: CommandKind;
   readonly label: string;
   readonly hint?: string;
+  /**
+   * How the hint is set. `overline` (default) is the machine label the slot was
+   * built for — a date, a voice type. `natural` is for a hint carrying human
+   * content, and a composer's name is exactly that: the design canon keeps a
+   * person in the sans at their own casing, in every view, so an uppercased
+   * overline would read as a machine label. Same axis, same reason, as
+   * `Badge`'s `casing`.
+   */
+  readonly hintCasing?: "overline" | "natural";
   readonly icon: LucideIcon;
   readonly to: string;
   readonly keywords: string;
@@ -69,8 +90,8 @@ export const useCommandItems = (
   const location = useLocation();
   const { favorites, recents } = useProjectQuickAccess();
 
-  // Project + artist search is a manager affordance; choristers keep a lean
-  // palette (nav + their actions). Fetch only once the palette is opened.
+  // Project + artist search is a manager affordance — a chorister may not read
+  // either collection. Fetch only once the palette is opened.
   const enabled = isOpen && isManager;
 
   const { data: projects } = useQuery<Project[]>({
@@ -84,6 +105,29 @@ export const useCommandItems = (
     queryKey: artistKeys.artists.all,
     queryFn: ArtistService.getAll,
     enabled,
+    staleTime: DATA_STALE_TIME,
+  });
+
+  // The archive, for a manager: the whole library, keyed to the Piece Card.
+  const { data: pieces } = useQuery<Piece[]>({
+    queryKey: archiveKeys.pieces.all,
+    queryFn: ArchiveService.getPieces,
+    enabled,
+    staleTime: DATA_STALE_TIME,
+  });
+
+  // The chorister's own repertoire read-model — the same cache their Materials
+  // tab fills, so the palette usually opens onto warm data and never asks for a
+  // collection they are not permitted. Gated on the ARTIST role rather than on
+  // `!isManager`, because the read-model is joined from participations: a crew
+  // member is neither, and would spend a 403 every time they opened the palette.
+  // Deliberately WITHOUT `RECONCILING_REFETCH` — the palette is a reader mounted
+  // for the whole session, and forcing a refetch belongs to the page that owns
+  // the read-model.
+  const { data: myMaterials } = useQuery<MaterialsDashboardItem[]>({
+    queryKey: materialsKeys.dashboard,
+    queryFn: MaterialsService.getArtistMaterialsDashboard,
+    enabled: isOpen && isArtist(user),
     staleTime: DATA_STALE_TIME,
   });
 
@@ -181,6 +225,59 @@ export const useCommandItems = (
         };
       });
 
+    // ---- Repertoire ----
+    // A manager searches the library and lands on the Piece Card; a chorister
+    // searches what they are cast in and lands on the practice page for that
+    // piece in that project. The same piece sung in two concerts is genuinely
+    // two rows: different divisi, different readiness, different destination —
+    // so the hint names the project that tells them apart.
+    const pieceItems: CommandItem[] = isManager
+      ? (pieces ?? []).map((piece) => {
+          const id = String(piece.id);
+          const composer = piece.composer
+            ? piece.composer.full_name ||
+              `${piece.composer.first_name ?? ""} ${piece.composer.last_name}`.trim()
+            : "";
+          return {
+            id: `piece:${id}`,
+            kind: "piece",
+            label: piece.title,
+            hint: composer || undefined,
+            hintCasing: "natural",
+            icon: Music,
+            to: `/panel/archive-management/${id}`,
+            keywords: foldSearchText(
+              `${piece.title} ${composer} ${piece.opus_catalog ?? ""}`,
+            ),
+            isCurrent: location.pathname.startsWith(
+              `/panel/archive-management/${id}`,
+            ),
+          };
+        })
+      : (myMaterials ?? []).flatMap((group) =>
+          group.program.map((entry) => {
+            const projectId = String(group.project.id);
+            const pieceId = String(entry.piece.id);
+            const composer = entry.piece.composer?.full_name ?? "";
+            const to = `/panel/materials/${projectId}/${pieceId}`;
+            return {
+              id: `piece:${projectId}:${pieceId}`,
+              kind: "piece" as const,
+              label: entry.piece.title,
+              hint: composer
+                ? `${composer} · ${group.project.title}`
+                : group.project.title,
+              hintCasing: "natural" as const,
+              icon: Music,
+              to,
+              keywords: foldSearchText(
+                `${entry.piece.title} ${composer} ${group.project.title}`,
+              ),
+              isCurrent: location.pathname === to,
+            };
+          }),
+        );
+
     const tokens = foldSearchText(query).split(/\s+/).filter(Boolean);
     const sections: CommandSection[] = [];
 
@@ -229,6 +326,7 @@ export const useCommandItems = (
 
       const navMatches = navItems.filter(matches);
       const projectMatches = projectItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
+      const pieceMatches = pieceItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
       const artistMatches = artistItems.filter(matches).slice(0, SEARCH_RESULT_CAP);
       const actionMatches = actionItems.filter(matches);
 
@@ -244,6 +342,13 @@ export const useCommandItems = (
           id: "projects",
           titleKey: "dashboard.layout.command.sections.projects",
           items: projectMatches,
+        });
+      }
+      if (pieceMatches.length > 0) {
+        sections.push({
+          id: "repertoire",
+          titleKey: "dashboard.layout.command.sections.repertoire",
+          items: pieceMatches,
         });
       }
       if (artistMatches.length > 0) {
@@ -271,6 +376,8 @@ export const useCommandItems = (
     i18n.language,
     isManager,
     location.pathname,
+    myMaterials,
+    pieces,
     projects,
     query,
     recents,

@@ -81,6 +81,7 @@
       "before_birth": "Rok kompozycji ({{year}}) jest przed urodzeniem kompozytora ({{birth}}).",
       "long_after_death": "Rok kompozycji ({{year}}) jest dużo po śmierci kompozytora ({{death}}).",
       "title": "AI mógł się pomylić — sprawdź dane przed zatwierdzeniem",
+      "title_resting": "Te dane sobie przeczą — warto je poprawić",
       "arrangement_epoch": "Utwór ma aranżera, a epokę oznaczono jako współczesną — upewnij się, że to nie opracowanie utworu tradycyjnego (wtedy epoka = pochodzenie oryginału).",
       "ipa_misaligned": "Transkrypcja IPA ma {{ipa}} linii, a tekst {{lyrics}} — wyrównanie wers-do-wersu może być błędne."
     },
@@ -488,7 +489,6 @@
         "text_source": "Źródło tekstu",
         "voicing": "Obsada"
       },
-      "fields_hint": "Sprawdź każde pole z podglądem PDF po lewej. Edytuj jeśli AI źle odczytał.",
       "form_panel_aria": "Dane utworu",
       "group": {
         "identity": "Tożsamość",
@@ -545,7 +545,12 @@
       "edit_title": "Tytuł utworu",
       "title_required": "Tytuł jest wymagany.",
       "section_dirty": "Niezapisane",
-      "dirty_rows_hint": "Niezapisane zmiany w sekcjach powyżej — zapisz je w wierszach."
+      "dirty_rows_hint": "Niezapisane zmiany w sekcjach powyżej — zapisz je w wierszach.",
+      "fields_hint_score": "W partyturze obok sprawdzisz tytuł, aranżera, obsadę, tonację i tekst.",
+      "fields_hint_catalog": "Epoki, roku kompozycji i numeru opusu w nutach zwykle nie ma — AI wziął je z katalogu albo z własnej wiedzy i to one najczęściej bywają zmyślone.",
+      "year_invalid": "Rok kompozycji: liczba całkowita od 500 do 2100.",
+      "score_widen": "Poszerz podgląd partytury",
+      "score_narrow": "Zwęź podgląd partytury"
     },
     "review": {
       "delete": "Usuń",
@@ -569,6 +574,7 @@
       "note_saved": "Zapisano notkę.",
       "note_slow": "Generowanie trwa dłużej niż zwykle — odśwież stronę za chwilę.",
       "note_words": "Słowa",
+      "go_to_page": "Pokaż stronę {{page}} w partyturze",
       "open_recording": "Otwórz nagranie",
       "page_short": "str.",
       "recording_deleted": "Usunięto nagranie.",
@@ -2005,7 +2011,8 @@
           "navigation": "Nawigacja",
           "pinned": "Przypięte",
           "projects": "Projekty",
-          "recent": "Ostatnie"
+          "recent": "Ostatnie",
+          "repertoire": "Repertuar"
         },
         "title": "Szybkie przejście",
         "unpin_project": "Odepnij projekt"
