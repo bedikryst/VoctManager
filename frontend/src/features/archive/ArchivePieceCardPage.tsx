@@ -3,14 +3,18 @@
  * @description The single canonical "Piece Card" — one cockpit that unifies
  * what used to be two overlapping screens (full metadata edit + AI verification).
  * Score with conductor annotations on the left, the piece's full editable data
- * on the right, split into collapsible sections so a long record stays navigable.
+ * on the right, in sections so a long record stays navigable.
  *
  * Verification is a STATE of this page, not a separate route: when the piece has
  * an AWAITING edition the right column grows the verification apparatus
- * (hallucination warning, "Zatwierdź i opublikuj", "Następne do przeglądu");
- * otherwise it is a plain editor whose primary action is "Zapisz". Editing any
- * field flips its provenance chip "AI · do sprawdzenia" → "Zweryfikowane" (the
- * server stamps MANUAL provenance for exactly the changed fields).
+ * ("Zatwierdź i opublikuj", "Następne do przeglądu", the review meter) and the
+ * score takes half the width, because every field is read against it; otherwise
+ * it is a plain editor whose primary action is "Zapisz", the score steps back to
+ * a third, and the musical facts collapse to one editable line. A record spends
+ * one session awaiting review and years published — the layout follows the state
+ * rather than dressing for the rarer one. Editing any field flips its provenance
+ * chip "AI · do sprawdzenia" → "Zweryfikowane" (the server stamps MANUAL
+ * provenance for exactly the changed fields).
  *
  * Two save contracts meet here and the page has to hold both: the scalar form
  * defers to the footer, while each artifact row (movement, translation, note)
@@ -40,6 +44,8 @@ import {
   ArrowRight,
   BookOpen,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   CircleAlert,
   Disc3,
   ExternalLink,
@@ -65,7 +71,7 @@ import { Caption, Eyebrow, Heading, Text } from "@/shared/ui/primitives/typograp
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { ComposerCard } from "@/shared/ui/composites/repertoire";
 import { cn } from "@/shared/lib/utils";
-import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
+import { PdfViewer, type PdfPageApi } from "@/shared/ui/composites/PdfViewer";
 import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 import { ScoreStandModal, useScoreAnnotator } from "@/features/annotations";
@@ -166,6 +172,39 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const isDesktopScore = useMediaQuery("(min-width: 1024px)");
   const [isScoreOpen, setIsScoreOpen] = useState(false);
   const [isApproveOpen, setIsApproveOpen] = useState(false);
+
+  // How wide the score pane sits. `null` means "follow the record's state" — a
+  // review reads the score against the fields and takes half the width, a
+  // published record is opened for its data and gives that half back. The
+  // override is what keeps the resting default from being a verdict: a manager
+  // who came to READ the score widens it and the page stops guessing.
+  const [scoreWideOverride, setScoreWideOverride] = useState<boolean | null>(
+    null,
+  );
+  // "Następne do przeglądu" swaps the record under a mounted page, so an
+  // override taken on one piece would otherwise decide the layout of the next.
+  useEffect(() => {
+    setScoreWideOverride(null);
+  }, [id]);
+
+  // Two consumers of one page handle: the annotator's index (jump to the page a
+  // comment lives on) and this page's own movement anchors. `onPageApiChange`
+  // is a single prop, so composing them is the only way to add the second
+  // without silently unhooking the first. The handle lands in a ref, not state:
+  // it is read on click, and re-rendering the whole cockpit on every page turn
+  // of the PDF would be a re-render for nothing.
+  const pageApiRef = useRef<PdfPageApi | null>(null);
+  const annotatorPageApi = annotator.onPageApiChange;
+  const handlePageApiChange = useCallback(
+    (api: PdfPageApi): void => {
+      pageApiRef.current = api;
+      annotatorPageApi(api);
+    },
+    [annotatorPageApi],
+  );
+  const goToScorePage = useCallback((page: number): void => {
+    pageApiRef.current?.goToPage(page);
+  }, []);
 
   // The row editors below (movements, translations, program notes) hold their
   // own drafts behind their own save buttons, so the page can only learn about
@@ -463,6 +502,15 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
   );
   const awaitingEdition = awaitingEditions[0];
+  const isScoreWide = scoreWideOverride ?? Boolean(awaitingEdition);
+  const scoreWidthLabel = isScoreWide
+    ? t("archive.piece_card.score_narrow", "Zwęź podgląd partytury")
+    : t("archive.piece_card.score_widen", "Poszerz podgląd partytury");
+
+  // A movement anchor is only offered where there is a viewer to steer: below
+  // lg the score lives in the full-screen stand, which this page does not open
+  // at a page.
+  const canAnchorScore = Boolean(scorePdf) && isDesktopScore;
 
   const handleApprove = (): void => {
     if (!awaitingEdition) return;
@@ -600,7 +648,14 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
           {/* Score preview — the elevated hero panel: rounded so the PDF's own
               corners round with it, resting on a soft glass shadow. */}
           <section
-            className="relative shrink-0 overflow-hidden rounded-surface border border-glass-border bg-glass-surface shadow-glass-ethereal lg:w-1/2"
+            className={cn(
+              "relative shrink-0 overflow-hidden rounded-surface border border-glass-border bg-glass-surface shadow-glass-ethereal",
+              // Half the page is what a review needs — the score is read against
+              // every field. Once the record is published nobody comes here to
+              // read music, so the pane steps back to a third and the data takes
+              // the room it was borrowing.
+              isScoreWide ? "lg:w-1/2" : "lg:w-1/3",
+            )}
             aria-label={t(
               "archive.piece_card.pdf_preview_aria",
               "Podgląd PDF partytury",
@@ -618,12 +673,25 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       className="shrink-0 text-ethereal-graphite/45"
                       aria-hidden="true"
                     />
-                    <Caption color="muted" className="truncate">
+                    <Caption color="muted" className="flex-1 truncate">
                       {scorePdf.label}
                       {scorePdf.page_count
                         ? ` · ${t("archive.piece_card.page_count", { count: scorePdf.page_count })}`
                         : ""}
                     </Caption>
+                    <button
+                      type="button"
+                      onClick={() => setScoreWideOverride(!isScoreWide)}
+                      aria-label={scoreWidthLabel}
+                      title={scoreWidthLabel}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-control text-ethereal-graphite/55 transition-colors hover:bg-ethereal-gold/10 hover:text-ethereal-gold"
+                    >
+                      {isScoreWide ? (
+                        <ChevronsLeft size={15} aria-hidden="true" />
+                      ) : (
+                        <ChevronsRight size={15} aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
                   <div className="min-h-0 flex-1">
                     <PdfViewer
@@ -637,7 +705,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       toolbarSlot={annotator.toolbarSlot}
                       renderPageOverlay={annotator.renderPageOverlay}
                       overlaySlot={annotator.overlaySlot}
-                      onPageApiChange={annotator.onPageApiChange}
+                      onPageApiChange={handlePageApiChange}
                     />
                   </div>
                 </div>
@@ -699,9 +767,11 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
           </section>
 
           {/* Data panel — a scrolling column of glass section-cards on the
-              canvas (matching every other panel page), not a boxed pane. */}
+              canvas (matching every other panel page), not a boxed pane. It
+              declares no width: `flex-1` zeroes the basis, so the column is
+              whatever the score pane leaves — half, or two thirds at rest. */}
           <section
-            className="flex min-h-0 flex-1 flex-col lg:w-1/2"
+            className="flex min-h-0 flex-1 flex-col"
             aria-label={t(
               "archive.piece_card.form_panel_aria",
               "Dane utworu",
@@ -712,7 +782,15 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   the scroller. It only gives the row editors a way to report
                   their unsaved drafts back up here. */}
               <PieceDirtyProvider value={registerDirty}>
-                {awaitingEdition && <AIHallucinationWarning piece={piece} />}
+                {/* Bound to the contradiction, not to the review: a year that
+                    predates its composer stays wrong after approval, and the
+                    warning that only ran during the review was the one moment
+                    it would ever be said. It renders nothing when the record
+                    holds no contradiction. */}
+                <AIHallucinationWarning
+                  piece={piece}
+                  isReviewing={Boolean(awaitingEdition)}
+                />
 
                 {/* The record-wide scoreboard sits above the sections it counts
                     — inside "Metadane" it read as that section's own tally. */}
@@ -871,7 +949,10 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     dirty={countDirty(dirtyRows, "movement") > 0}
                     defaultOpen={Boolean(awaitingEdition) && review.movements.pending > 0}
                   >
-                    <MovementsEditor piece={piece} />
+                    <MovementsEditor
+                      piece={piece}
+                      onGoToPage={canAnchorScore ? goToScorePage : undefined}
+                    />
                   </CockpitSection>
                 )}
 

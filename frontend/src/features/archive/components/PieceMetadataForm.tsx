@@ -10,6 +10,10 @@
  * heading, edited in place there, and a second input restating the h1 two lines
  * below it was the record's identity written twice on one screen.
  *
+ * The musical-character group has two shapes for the same five fields: the grid
+ * of labelled boxes while an edition is under review, and `PieceFactStrip` — one
+ * dense line, edited in place — for the years the record then spends published.
+ *
  * The page keeps the form STATE (it also drives the title, composer, divisi and
  * duration controls outside this block) and passes it in, so this component
  * stays a rendering of one `useForm` instance rather than a second owner of it.
@@ -20,6 +24,7 @@
 import React from "react";
 import { Controller, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { Database, FileText } from "lucide-react";
 import { z } from "zod";
 
 import { Input } from "@/shared/ui/primitives/Input";
@@ -28,11 +33,9 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Text } from "@/shared/ui/primitives/typography";
 
 import { FieldGroup, LabeledField } from "./CockpitSection";
+import { PieceFactStrip } from "./PieceFactStrip";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
-import {
-  getArchiveLanguageOptions,
-  getLanguageLabel,
-} from "../constants/archiveLanguages";
+import { getArchiveLanguageChoices } from "../constants/archiveLanguages";
 
 export const pieceCardSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany").max(200),
@@ -96,25 +99,45 @@ export const PieceMetadataForm = ({
   // Localised language dropdown over the canonical ISO value; any non-plain
   // current value (e.g. the bilingual "pl+la") is kept selectable so it is never
   // silently dropped on edit.
-  const languageOptions = getArchiveLanguageOptions(t);
-  const languageValue = watch("language");
-  const languageChoices =
-    languageValue && !languageOptions.some((o) => o.value === languageValue)
-      ? [
-          { value: languageValue, label: getLanguageLabel(languageValue, t) },
-          ...languageOptions,
-        ]
-      : languageOptions;
+  const languageChoices = getArchiveLanguageChoices(watch("language"), t);
 
   return (
     <>
       {isReviewing && (
-        <Text size="xs" color="graphite" className="mb-4 block">
-          {t(
-            "archive.piece_card.fields_hint",
-            "Sprawdź każde pole z podglądem PDF po lewej. Edytuj jeśli AI źle odczytał.",
-          )}
-        </Text>
+        // Two kinds of checking, because the fields below do not all come from
+        // the same place. "Sprawdź każde pole z podglądem PDF po lewej" was true
+        // of the ones the model read off the page and false of the ones it
+        // supplied from a catalogue or its own knowledge — which are exactly the
+        // ones it invents. Each line takes the icon its source wears on the
+        // provenance dots (page / catalogue).
+        <div className="mb-4 space-y-1.5">
+          <div className="flex items-start gap-2">
+            <FileText
+              size={12}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-ethereal-graphite/50"
+            />
+            <Text size="xs" color="graphite">
+              {t(
+                "archive.piece_card.fields_hint_score",
+                "W partyturze obok sprawdzisz tytuł, aranżera, obsadę, tonację i tekst.",
+              )}
+            </Text>
+          </div>
+          <div className="flex items-start gap-2">
+            <Database
+              size={12}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-ethereal-graphite/50"
+            />
+            <Text size="xs" color="graphite">
+              {t(
+                "archive.piece_card.fields_hint_catalog",
+                "Epoki, roku kompozycji i numeru opusu w nutach zwykle nie ma — AI wziął je z katalogu albo z własnej wiedzy i to one najczęściej bywają zmyślone.",
+              )}
+            </Text>
+          </div>
+        </div>
       )}
       <form id="piece-card-form" onSubmit={onSubmit} noValidate className="space-y-6">
         <FieldGroup
@@ -151,98 +174,113 @@ export const PieceMetadataForm = ({
           </LabeledField>
         </FieldGroup>
 
-        <FieldGroup
-          title={t(
-            "archive.piece_card.group.musical",
-            "Charakterystyka muzyczna",
-          )}
-          className="grid grid-cols-1 gap-3 md:grid-cols-2"
-        >
-          <LabeledField
-            label={t("archive.piece_card.fields.key", "Tonacja")}
-            chip={fieldChip("musical_key")}
-          >
-            <Input
-              aria-label={t("archive.piece_card.fields.key", "Tonacja")}
-              placeholder={t("archive.piece_card.ph_key", "np. D-dur")}
-              error={errors.musical_key?.message}
-              {...register("musical_key")}
-            />
-          </LabeledField>
-          <LabeledField
-            label={t("archive.piece_card.fields.voicing", "Obsada")}
-            chip={fieldChip("voicing")}
-          >
-            <Input
-              aria-label={t("archive.piece_card.fields.voicing", "Obsada")}
-              placeholder={t("archive.piece_card.ph_voicing", "np. SATB")}
-              error={errors.voicing?.message}
-              {...register("voicing")}
-            />
-          </LabeledField>
-          <LabeledField
-            label={t("archive.piece_card.fields.language", "Język śpiewu")}
-            chip={fieldChip("language")}
-          >
-            <Controller
-              control={control}
-              name="language"
-              render={({ field }) => (
-                <Select
-                  ariaLabel={t(
-                    "archive.piece_card.fields.language",
-                    "Język śpiewu",
-                  )}
-                  name={field.name}
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                  placeholder={t("archive.piece_card.language_pick", "Wybierz")}
-                  clearLabel={t("archive.piece_card.language_pick", "Wybierz")}
-                  options={languageChoices}
-                />
-              )}
-            />
-          </LabeledField>
-          <LabeledField
-            label={t("archive.piece_card.fields.epoch", "Epoka")}
-            chip={fieldChip("epoch")}
-          >
-            <Controller
-              control={control}
-              name="epoch"
-              render={({ field }) => (
-                <Select
-                  ariaLabel={t("archive.piece_card.fields.epoch", "Epoka")}
-                  name={field.name}
-                  value={field.value ?? ""}
-                  onValueChange={field.onChange}
-                  placeholder={t("archive.piece_card.epoch_pick", "Wybierz")}
-                  clearLabel={t("archive.piece_card.epoch_pick", "Wybierz")}
-                  options={epochOptions}
-                />
-              )}
-            />
-          </LabeledField>
-          <LabeledField
-            label={t(
-              "archive.piece_card.fields.composition_year",
-              "Rok kompozycji",
+        {/* Shape follows state. In a review each of the five is a labelled box
+            beside the score, because that is the pass they are read in; at rest
+            they are five short facts and take a line, editable in place. Both
+            render the same form fields and save through the same footer. */}
+        {isReviewing ? (
+          <FieldGroup
+            title={t(
+              "archive.piece_card.group.musical",
+              "Charakterystyka muzyczna",
             )}
-            chip={fieldChip("composition_year")}
+            className="grid grid-cols-1 gap-3 md:grid-cols-2"
           >
-            <div className="max-w-36">
+            <LabeledField
+              label={t("archive.piece_card.fields.key", "Tonacja")}
+              chip={fieldChip("musical_key")}
+            >
               <Input
-                aria-label={t(
-                  "archive.piece_card.fields.composition_year",
-                  "Rok kompozycji",
-                )}
-                type="number"
-                error={errors.composition_year?.message}
-                {...register("composition_year")}
+                aria-label={t("archive.piece_card.fields.key", "Tonacja")}
+                placeholder={t("archive.piece_card.ph_key", "np. D-dur")}
+                error={errors.musical_key?.message}
+                {...register("musical_key")}
               />
-            </div>
-          </LabeledField>
-        </FieldGroup>
+            </LabeledField>
+            <LabeledField
+              label={t("archive.piece_card.fields.voicing", "Obsada")}
+              chip={fieldChip("voicing")}
+            >
+              <Input
+                aria-label={t("archive.piece_card.fields.voicing", "Obsada")}
+                placeholder={t("archive.piece_card.ph_voicing", "np. SATB")}
+                error={errors.voicing?.message}
+                {...register("voicing")}
+              />
+            </LabeledField>
+            <LabeledField
+              label={t("archive.piece_card.fields.language", "Język śpiewu")}
+              chip={fieldChip("language")}
+            >
+              <Controller
+                control={control}
+                name="language"
+                render={({ field }) => (
+                  <Select
+                    ariaLabel={t(
+                      "archive.piece_card.fields.language",
+                      "Język śpiewu",
+                    )}
+                    name={field.name}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    placeholder={t("archive.piece_card.language_pick", "Wybierz")}
+                    clearLabel={t("archive.piece_card.language_pick", "Wybierz")}
+                    options={languageChoices}
+                  />
+                )}
+              />
+            </LabeledField>
+            <LabeledField
+              label={t("archive.piece_card.fields.epoch", "Epoka")}
+              chip={fieldChip("epoch")}
+            >
+              <Controller
+                control={control}
+                name="epoch"
+                render={({ field }) => (
+                  <Select
+                    ariaLabel={t("archive.piece_card.fields.epoch", "Epoka")}
+                    name={field.name}
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                    placeholder={t("archive.piece_card.epoch_pick", "Wybierz")}
+                    clearLabel={t("archive.piece_card.epoch_pick", "Wybierz")}
+                    options={epochOptions}
+                  />
+                )}
+              />
+            </LabeledField>
+            <LabeledField
+              label={t(
+                "archive.piece_card.fields.composition_year",
+                "Rok kompozycji",
+              )}
+              chip={fieldChip("composition_year")}
+            >
+              <div className="max-w-36">
+                <Input
+                  aria-label={t(
+                    "archive.piece_card.fields.composition_year",
+                    "Rok kompozycji",
+                  )}
+                  type="number"
+                  error={errors.composition_year?.message}
+                  {...register("composition_year")}
+                />
+              </div>
+            </LabeledField>
+          </FieldGroup>
+        ) : (
+          <FieldGroup
+            title={t(
+              "archive.piece_card.group.musical",
+              "Charakterystyka muzyczna",
+            )}
+          >
+            <PieceFactStrip form={form} fieldChip={fieldChip} />
+          </FieldGroup>
+        )}
 
         <FieldGroup
           title={t("archive.piece_card.group.text", "Tekst")}

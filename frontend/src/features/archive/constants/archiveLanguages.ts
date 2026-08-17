@@ -70,3 +70,19 @@ export const getLanguageLabel = (
     .filter(Boolean)
     .join(" + ");
 };
+
+/** The option list a picker must offer for a piece whose CURRENT value sits
+ *  outside the vocabulary — the bilingual "pl+la" form, or a code an older
+ *  import left behind. Prepending it is what stops a listbox from dropping a
+ *  value merely by rendering it, so every language picker in the archive builds
+ *  its options here instead of re-deriving the rule. */
+export const getArchiveLanguageChoices = (
+  current: string | null | undefined,
+  t: TFunction,
+): ArchiveLanguageOption[] => {
+  const options = getArchiveLanguageOptions(t);
+  if (!current || options.some((option) => option.value === current)) {
+    return options;
+  }
+  return [{ value: current, label: getLanguageLabel(current, t) }, ...options];
+};

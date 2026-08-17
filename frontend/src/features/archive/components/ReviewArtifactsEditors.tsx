@@ -15,7 +15,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ExternalLink, Sparkles, Star, Trash2 } from "lucide-react";
+import { BookOpen, ExternalLink, Sparkles, Star, Trash2 } from "lucide-react";
 
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -88,15 +88,24 @@ const DeleteButton = ({
 
 export const MovementsEditor = ({
   piece,
+  onGoToPage,
 }: {
   readonly piece: Piece;
+  /** Steers the score preview to a page. Absent where no viewer is mounted to
+   *  steer (a phone, a piece with no PDF) — the anchor then stays plain type. */
+  readonly onGoToPage?: (page: number) => void;
 }): React.JSX.Element | null => {
   const movements = piece.movements ?? [];
   if (movements.length === 0) return null;
   return (
     <ul role="list" className="space-y-2">
       {movements.map((movement) => (
-        <MovementRow key={movement.id} piece={piece} movement={movement} />
+        <MovementRow
+          key={movement.id}
+          piece={piece}
+          movement={movement}
+          onGoToPage={onGoToPage}
+        />
       ))}
     </ul>
   );
@@ -105,9 +114,11 @@ export const MovementsEditor = ({
 const MovementRow = ({
   piece,
   movement,
+  onGoToPage,
 }: {
   readonly piece: Piece;
   readonly movement: Movement;
+  readonly onGoToPage?: (page: number) => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const update = useUpdateMovement();
@@ -115,6 +126,12 @@ const MovementRow = ({
   const verify = useVerifyPieceField();
   const pieceId = String(piece.id);
 
+  const pageNumber = movement.starts_on_page ?? 0;
+  const goToPageLabel = t(
+    "archive.review.go_to_page",
+    "Pokaż stronę {{page}} w partyturze",
+    { page: pageNumber },
+  );
   const [title, setTitle] = useState(movement.title);
   const [tempo, setTempo] = useState(movement.tempo_marking ?? "");
   const dirty =
@@ -159,10 +176,29 @@ const MovementRow = ({
           }
           isVerifying={verify.isPending}
         />
+        {/* The page the AI says this movement opens on — the one datum on this
+            row that the score can be checked against, so where a viewer is
+            mounted the fact IS the control that turns to it. Without one it
+            stays what it always was: a fact, in plain type. */}
         {movement.starts_on_page ? (
-          <Caption color="muted">
-            {t("archive.review.page_short", "str.")} {movement.starts_on_page}
-          </Caption>
+          onGoToPage ? (
+            <button
+              type="button"
+              onClick={() => onGoToPage(pageNumber)}
+              aria-label={goToPageLabel}
+              title={goToPageLabel}
+              className="inline-flex items-center gap-1 rounded-chip px-1.5 py-1 text-ethereal-graphite/70 transition-colors hover:bg-ethereal-gold/10 hover:text-ethereal-gold"
+            >
+              <BookOpen size={11} aria-hidden="true" />
+              <Caption color="inherit">
+                {t("archive.review.page_short", "str.")} {pageNumber}
+              </Caption>
+            </button>
+          ) : (
+            <Caption color="muted">
+              {t("archive.review.page_short", "str.")} {pageNumber}
+            </Caption>
+          )
         ) : null}
         <div className="ml-auto">
           <DeleteButton
