@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Shirt,
   Eye,
-  Download,
   Users,
   Music,
   Wrench,
@@ -69,12 +68,10 @@ export const TimelineProjectCard = ({
     setActiveSubTab,
     expandedPieceId,
     setExpandedPieceId,
-    isDownloading,
     programItems,
     isProgramLoading,
     castings,
     isCastingsLoading,
-    handleDownloadDaySheet,
     isDaySheetPreviewOpen,
     fetchDaySheetBlob,
     handleOpenDaySheetPreview,
@@ -83,7 +80,7 @@ export const TimelineProjectCard = ({
     fetchScorePdfBlob,
     handleOpenScorePdfPreview,
     handleCloseScorePdfPreview,
-  } = useTimelineProjectCard(proj.id, proj.title, isExpanded);
+  } = useTimelineProjectCard(proj.id, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
   const readiness = useProjectReadiness(
@@ -244,11 +241,47 @@ export const TimelineProjectCard = ({
               />
 
               <div className="min-w-0">
-                {isUpcoming && (
-                  <div className="mb-4">
-                    <AddToCalendar event={event} tone="dark" layout="inline" />
+                {/* Take-away row, above the tabs' content and outside them: the
+                    sheet written for this reader and the calendar entry are the
+                    two things you leave with, and neither belongs to Logistyka
+                    or Repertuar more than the other. */}
+                <div className="mb-4 flex flex-col gap-4">
+                  <div>
+                    <Eyebrow
+                      color="parchment-muted"
+                      className="mb-1.5 flex items-center gap-1.5"
+                    >
+                      <FileText size={12} aria-hidden="true" />
+                      {t("schedule.day_sheet.title", "Karta dnia")}
+                    </Eyebrow>
+                    <Button
+                      variant="outline"
+                      size="touch"
+                      onClick={handleOpenDaySheetPreview}
+                      leftIcon={<Eye size={13} aria-hidden="true" />}
+                      aria-label={t(
+                        "schedule.day_sheet.open_aria",
+                        "Otwórz kartę dnia (PDF)",
+                      )}
+                      className="w-full border-ethereal-gold/50 text-ethereal-gold hover:bg-ethereal-gold/15 sm:w-auto"
+                    >
+                      {t("schedule.day_sheet.open", "Otwórz (PDF)")}
+                    </Button>
+                    <Text
+                      size="xs"
+                      color="parchment-muted"
+                      className="mt-1.5 block text-ethereal-parchment/60"
+                    >
+                      {t(
+                        "schedule.day_sheet.hint",
+                        "Twój egzemplarz: zbiórka, przebieg dnia i Twoja obsada. Do pobrania w podglądzie.",
+                      )}
+                    </Text>
                   </div>
-                )}
+                  {isUpcoming && (
+                    <AddToCalendar event={event} tone="dark" layout="inline" />
+                  )}
+                </div>
                 {/* ── LOGISTICS tab ─────────────────────────────── */}
                 {activeSubTab === "LOGISTICS" && (
                   <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
@@ -323,44 +356,12 @@ export const TimelineProjectCard = ({
 
                     {/* run sheet */}
                     <div>
-                      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                        <Eyebrow color="parchment">
-                          {t(
-                            "schedule.card.run_sheet_title",
-                            "Harmonogram Dnia",
-                          )}
-                        </Eyebrow>
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={handleOpenDaySheetPreview}
-                            leftIcon={<Eye size={11} aria-hidden="true" />}
-                            className="border-ethereal-gold/50 text-ethereal-gold hover:bg-ethereal-gold/15"
-                          >
-                            {t(
-                              "schedule.card.preview_day_sheet",
-                              "Karta dnia",
-                            )}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleDownloadDaySheet}
-                            disabled={isDownloading}
-                            isLoading={isDownloading}
-                            aria-label={t(
-                              "schedule.card.download_day_sheet_aria",
-                              "Pobierz kartę dnia (PDF)",
-                            )}
-                            className="text-ethereal-gold/70 hover:text-ethereal-gold hover:bg-ethereal-gold/15"
-                          >
-                            {!isDownloading && (
-                              <Download size={13} aria-hidden="true" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
+                      <Eyebrow color="parchment" className="mb-3 block">
+                        {t(
+                          "schedule.card.run_sheet_title",
+                          "Harmonogram Dnia",
+                        )}
+                      </Eyebrow>
 
                       {/* Score PDF — only shown when the manager has uploaded one */}
                       {proj.score_pdf && (
@@ -755,7 +756,7 @@ export const TimelineProjectCard = ({
 
       <PdfViewerModal
         isOpen={isDaySheetPreviewOpen}
-        title={t("schedule.card.day_sheet_preview_title", "Karta dnia")}
+        title={t("schedule.day_sheet.title", "Karta dnia")}
         subtitle={proj.title}
         fileName={`Karta_${proj.title.replace(/\s+/g, "_")}.pdf`}
         fetchBlob={fetchDaySheetBlob}
@@ -765,7 +766,7 @@ export const TimelineProjectCard = ({
           type: "project-day-sheet",
           id: proj.id,
           hint: {
-            title: t("schedule.card.day_sheet_preview_title", "Karta dnia"),
+            title: t("schedule.day_sheet.title", "Karta dnia"),
             subtitle: proj.title,
             fileName: `Karta_${proj.title.replace(/\s+/g, "_")}.pdf`,
           },

@@ -489,6 +489,19 @@ export const ProjectService = {
     await api.delete(`${PROJECTS_BASE_URL}${projectId}/score_pdf/`);
   },
 
+  /**
+   * The stage manager's concert-day card. Same endpoint as the personal day
+   * sheet, asked for in its production shape — which the server only grants a
+   * manager. Assembled per request, so it is never cached.
+   */
+  fetchDayCardBlob: async (projectId: string | number): Promise<Blob> => {
+    const response = await api.get(
+      `${PROJECTS_BASE_URL}${projectId}/export_day_sheet/`,
+      { responseType: "blob", params: { audience: "production" } },
+    );
+    return response.data as Blob;
+  },
+
   fetchScorePdfBlob: async (projectId: string): Promise<Blob> => {
     const response = await api.get(
       `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,

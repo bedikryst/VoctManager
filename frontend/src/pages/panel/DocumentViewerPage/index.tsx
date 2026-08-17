@@ -33,6 +33,7 @@ import {
 const KNOWN_DOCUMENT_TYPES: readonly DocumentType[] = [
   "project-score",
   "project-call-sheet",
+  "project-day-card",
   "project-day-sheet",
   "chorister-hub",
 ] as const;
@@ -85,11 +86,21 @@ const resolveDocument = (
           hint?.title ??
           t(
             "document_viewer.fallback.project_call_sheet_title",
-            "Call Sheet",
+            "Raport produkcji",
           ),
         subtitle: hint?.subtitle,
-        fileName: hint?.fileName ?? `CallSheet_${idSegment}.pdf`,
+        fileName: hint?.fileName ?? `Raport_${idSegment}.pdf`,
         fetchBlob: () => ScheduleService.exportCallSheet(id),
+        volatile: true,
+      };
+    case "project-day-card":
+      return {
+        title:
+          hint?.title ??
+          t("document_viewer.fallback.project_day_card_title", "Karta dnia"),
+        subtitle: hint?.subtitle,
+        fileName: hint?.fileName ?? `KartaDnia_${idSegment}.pdf`,
+        fetchBlob: () => ProjectService.fetchDayCardBlob(id),
         volatile: true,
       };
     case "project-day-sheet":

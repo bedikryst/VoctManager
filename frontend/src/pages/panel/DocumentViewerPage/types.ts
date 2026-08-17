@@ -12,10 +12,17 @@
 /**
  * Closed set of document types the viewer route knows how to resolve.
  * Adding a new type requires extending the resolver in `./index.tsx`.
+ *
+ * The concert-day sheet appears twice on purpose. `project-day-sheet` is the
+ * *personal* one — the server reads the audience off the caller, so a manager
+ * who is neither cast nor conducting is refused it. `project-day-card` is the
+ * production shape a manager asks for explicitly. One type for both would make
+ * every manager's deep link a 403.
  */
 export type DocumentType =
   | "project-score"
   | "project-call-sheet"
+  | "project-day-card"
   | "project-day-sheet"
   | "chorister-hub";
 

@@ -152,6 +152,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size, fullWidth, className }))}
         disabled={isDisabled}
         aria-disabled={isDisabled}
+        // A loading button is disabled, and a disabled control announces nothing
+        // further — so the work in flight has to be stated separately or a
+        // screen-reader user hears the label go silent and assumes a dead click.
+        aria-busy={isLoading || undefined}
         {...props}
       >
         {asChild ? slotted : compose(children)}

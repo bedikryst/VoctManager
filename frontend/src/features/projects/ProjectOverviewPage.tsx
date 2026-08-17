@@ -65,7 +65,8 @@ const StatusStripSkeleton = (): React.JSX.Element => (
 );
 
 export default function ProjectOverviewPage(): React.JSX.Element {
-  const { project, openScore } = useOutletContext<ProjectHubContext>();
+  const { project, openScore, openDayCard } =
+    useOutletContext<ProjectHubContext>();
   const navigate = useNavigate();
 
   const base = `/panel/projects/${project.id}`;
@@ -97,7 +98,11 @@ export default function ProjectOverviewPage(): React.JSX.Element {
             </Suspense>
           </StaggeredBentoItem>
           <StaggeredBentoItem>
-            <RunSheetWidget project={project} onEdit={go("details")} />
+            <RunSheetWidget
+              project={project}
+              onEdit={go("details")}
+              onOpenDayCard={openDayCard}
+            />
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
 

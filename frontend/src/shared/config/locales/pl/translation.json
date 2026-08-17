@@ -1867,7 +1867,6 @@
       "badge_late": "Spóźnienie",
       "badge_rehearsal": "Próba",
       "btn_confirm_presence": "Potwierdź Obecność",
-      "btn_download_runsheet": "Harmonogram (PDF)",
       "btn_edit_report": "Edytuj zgłoszenie",
       "btn_materials": "Nuty i Audio",
       "btn_report_issue": "Zgłoś problem",
@@ -1913,9 +1912,6 @@
       "title_main": "Przestrzeń chórzysty",
       "toast_confirm_success": "Obecność potwierdzona!",
       "toast_confirming": "Potwierdzanie obecności...",
-      "toast_download_error": "Błąd pobierania harmonogramu",
-      "toast_download_success": "Pobrano harmonogram pomyślnie",
-      "toast_downloading_runsheet": "Generowanie harmonogramu...",
       "toast_report_success": "Zgłoszenie zostało wysłane",
       "toast_saving_report": "Zapisywanie zgłoszenia...",
       "tools": {
@@ -2074,9 +2070,10 @@
     "back_to_app": "Powrót do panelu",
     "fallback": {
       "chorister_hub_title": "Dokument",
-      "project_call_sheet_title": "Call-Sheet",
+      "project_call_sheet_title": "Raport produkcji",
       "project_day_sheet_title": "Karta dnia",
-      "project_score_title": "Partytura koncertu"
+      "project_score_title": "Partytura koncertu",
+      "project_day_card_title": "Karta dnia"
     },
     "invalid_description": "Nie rozpoznaliśmy tego linku do dokumentu. Może być uszkodzony lub nieaktualny.",
     "invalid_title": "Nieobsługiwany dokument"
@@ -3455,17 +3452,22 @@
       "workspace_description": "Zarządzaj szczegółami projektu, próbami, obsadą i logistyką w jednym kontekście roboczym."
     },
     "exports": {
-      "call_sheet": "Pobierz raport produkcji",
-      "day_card": "Pobierz kartę dnia",
-      "download_group": "Pobierz",
-      "dtp": "Pobierz notkę do DTP",
-      "menu": "Eksport",
-      "open_runsheet": "Otwórz Harmonogram",
+      "call_sheet": "Raport produkcji",
+      "day_card": "Karta dnia",
+      "dtp": "Notka do DTP",
+      "menu": "Dokumenty",
       "open_score_pdf": "Otwórz Partyturę (PDF)",
-      "preview_group": "Podgląd",
-      "runsheet_title": "Harmonogram (Runsheet)",
       "score_pdf": "Partytura (PDF)",
-      "zaiks": "Pobierz ZAiKS"
+      "zaiks": "ZAiKS (CSV)",
+      "day_card_desc": "Przebieg dnia dla realizacji — na miejscu, przy scenie.",
+      "call_sheet_desc": "Pełny stan przygotowań: braki, obsada, kontakty.",
+      "score_pdf_desc": "Książka nutowa koncertu dla śpiewaków.",
+      "zaiks_desc": "Wykaz utworów do raportu ZAiKS.",
+      "dtp_desc": "Skład zespołu do programu koncertu.",
+      "documents_group": "Dokumenty (PDF)",
+      "data_group": "Dane do wysyłki",
+      "conductor_sheet": "Karta dyrygenta",
+      "conductor_sheet_desc": "Twój egzemplarz z pulpitu: repertuar, obsada, kto daje ton."
     },
     "filters": {
       "active": "W przygotowaniu",
@@ -3814,7 +3816,8 @@
     "run_sheet": {
       "aria_label": "Zarządzaj harmonogramem dnia",
       "empty": "Brak harmonogramu dnia",
-      "title": "Harmonogram dnia koncertu"
+      "title": "Harmonogram dnia koncertu",
+      "open_day_card_aria": "Otwórz kartę dnia (PDF)"
     },
     "spotify": {
       "consent_note": "Wbudowany odtwarzacz łączy się z serwerami Spotify (pliki cookie i dane). Załaduje się dopiero po Twojej zgodzie.",
@@ -4112,11 +4115,6 @@
     },
     "card": {
       "call_time": "Zbiórka:",
-      "day_sheet_preview_title": "Karta dnia",
-      "download_day_sheet_aria": "Pobierz kartę dnia (PDF)",
-      "download_error_desc": "Nie udało się pobrać pliku.",
-      "download_loading": "Przygotowywanie karty dnia...",
-      "download_success": "Plik został pobrany",
       "dress_code_men": "Panowie:",
       "dress_code_title": "Szczegóły ubioru",
       "dress_code_women": "Panie:",
@@ -4130,7 +4128,6 @@
       "no_spotify": "Brak playlisty referencyjnej.",
       "note_label": "Notatka:",
       "open_detail": "Otwórz szczegóły: {{title}}",
-      "preview_day_sheet": "Karta dnia",
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
       "run_sheet_untitled": "Punkt harmonogramu",
@@ -4167,7 +4164,7 @@
       "rehearsal_prefix": "Próba:"
     },
     "hero": {
-      "concert_hint": "Szczegóły dnia koncertu znajdziesz na karcie wydarzenia poniżej.",
+      "concert_hint": "Karta dnia zbiera wszystko o tym koncercie: zbiórkę, przebieg i Twoją obsadę.",
       "countdown": {
         "days": "Za {{count}} dni",
         "days_one": "Za {{count}} dni",
@@ -4258,6 +4255,12 @@
       "submit_error_title": "Błąd zapisu",
       "submit_success": "Zgłoszenie zostało zapisane.",
       "submitting": "Wysyłanie zgłoszenia..."
+    },
+    "day_sheet": {
+      "title": "Karta dnia",
+      "open": "Otwórz (PDF)",
+      "open_aria": "Otwórz kartę dnia (PDF)",
+      "hint": "Twój egzemplarz: zbiórka, przebieg dnia i Twoja obsada. Do pobrania w podglądzie."
     }
   },
   "settings": {

@@ -26,21 +26,25 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   AlignLeft,
   ArrowLeft,
+  BookOpen,
   CheckCircle2,
   ChevronDown,
   ClipboardList,
   Download,
-  Eye,
   FileText,
+  FolderOpen,
   Megaphone,
   MoreHorizontal,
+  Music2,
   RotateCcw,
   Send,
   Trash2,
   UserX,
 } from "lucide-react";
 
+import { useAuth } from "@/app/providers/AuthProvider";
 import { toastApiError } from "@/shared/api/errors";
+import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import type { Project } from "@/shared/types";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -77,6 +81,7 @@ import {
 import { PROJECT_STATUS } from "./constants/projectDomain";
 import {
   getArtistDisplayName,
+  getConductorArtistId,
   getProjectStatusPresentation,
   isProjectDraft,
 } from "./lib/projectPresentation";
@@ -97,6 +102,13 @@ export interface ProjectHubContext {
    * the modal. No-op when the project has no score uploaded.
    */
   openScore: () => void;
+  /**
+   * Opens the stage manager's concert-day card in the same shared viewer. The
+   * document leads with the run sheet, so the Overview's run-sheet card offers
+   * it in place — the export menu is the catalogue, this is the shortcut from
+   * where the question is actually asked.
+   */
+  openDayCard: () => void;
 }
 
 export default function ProjectHubLayout(): React.JSX.Element {
@@ -112,7 +124,11 @@ export default function ProjectHubLayout(): React.JSX.Element {
   const updateStatus = useUpdateProjectStatus();
   const deleteProject = useDeleteProject();
 
-  const [isRunsheetOpen, setRunsheetOpen] = useState<boolean>(false);
+  const { user } = useAuth();
+
+  const [isDayCardOpen, setDayCardOpen] = useState<boolean>(false);
+  const [isConductorSheetOpen, setConductorSheetOpen] = useState<boolean>(false);
+  const [isReportOpen, setReportOpen] = useState<boolean>(false);
   const [isScoreOpen, setScoreOpen] = useState<boolean>(false);
   const [confirmDelete, setConfirmDelete] = useState<boolean>(false);
   const [isPublishOpen, setPublishOpen] = useState<boolean>(false);
@@ -221,7 +237,25 @@ export default function ProjectHubLayout(): React.JSX.Element {
   });
   const isQueuePrompt = blocker.state === "blocked" && !isDirty;
 
-  const fetchRunsheetBlob = useCallback(async () => {
+  // Both concert documents open in the viewer rather than downloading: the
+  // viewer already carries download, share and open-in-browser, and it does so
+  // on bytes it has — a second download button would re-run the whole PDF
+  // build server-side to produce a file the reader is already looking at.
+  const fetchDayCardBlob = useCallback(
+    () => ProjectService.fetchDayCardBlob(id),
+    [id],
+  );
+
+  // No audience parameter, deliberately: the maestro sheet is the caller's own
+  // entitlement, and the endpoint reads it off the account. A manager who is
+  // also this project's conductor is the only person this resolves for, which
+  // is exactly who the menu row is shown to.
+  const fetchConductorSheetBlob = useCallback(
+    () => ScheduleService.exportDaySheet(id),
+    [id],
+  );
+
+  const fetchReportBlob = useCallback(async () => {
     const response = await ProjectService.downloadReport(
       id,
       "export_call_sheet",
@@ -301,6 +335,21 @@ export default function ProjectHubLayout(): React.JSX.Element {
     project.conductor,
     project.conductor_name,
   );
+  // Mirrors the endpoint's own `<stub>_<title>.pdf`, so a file saved from the
+  // viewer and one saved from a direct link land in the folder under one name.
+  const fileStub = project.title.replace(/\s+/g, "_");
+  const dayCardFileName = `Karta_${fileStub}.pdf`;
+  const reportFileName = `Raport_${fileStub}.pdf`;
+  const conductorSheetFileName = `KartaDyrygenta_${fileStub}.pdf`;
+
+  // A conductor is frequently a manager too, and the hub always asks for the
+  // production shape of the day card — so without this the maestro's own sheet,
+  // a document the backend renders for exactly one person, was reachable only
+  // from their personal schedule. Offered strictly to that one person: anyone
+  // else selecting it would be refused by the endpoint.
+  const isViewerConductor =
+    user?.artist_profile_id != null &&
+    getConductorArtistId(project) === String(user.artist_profile_id);
 
   return (
     <PageTransition>
@@ -393,31 +442,65 @@ export default function ProjectHubLayout(): React.JSX.Element {
                     variant="outline"
                     size="sm"
                     isLoading={isDownloading !== null}
-                    leftIcon={<Download size={14} aria-hidden="true" />}
-                    aria-label={t("projects.exports.menu", "Eksport")}
+                    leftIcon={<FolderOpen size={14} aria-hidden="true" />}
+                    aria-label={t("projects.exports.menu", "Dokumenty")}
                   >
                     <span className="hidden items-center gap-1.5 sm:inline-flex">
-                      {t("projects.exports.menu", "Eksport")}
+                      {t("projects.exports.menu", "Dokumenty")}
                       <ChevronDown size={14} aria-hidden="true" />
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
+                {/* Grouped by what the entry *is*, not by the verb behind it.
+                    The old split (Podgląd / Pobierz) listed the production
+                    report twice under two different names, and left the day
+                    card — the one document read minutes before the downbeat —
+                    download-only. Every PDF now has exactly one row, and the
+                    second line says who the document is written for, because
+                    the three of them are all "about this concert". */}
                 <DropdownMenuContent>
                   <DropdownMenuLabel>
-                    {t("projects.exports.preview_group", "Podgląd")}
+                    {t("projects.exports.documents_group", "Dokumenty (PDF)")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem
-                    icon={<Eye size={15} aria-hidden="true" />}
-                    onSelect={() => setRunsheetOpen(true)}
-                  >
-                    {t(
-                      "projects.exports.runsheet_title",
-                      "Harmonogram (Runsheet)",
+                    icon={<ClipboardList size={15} aria-hidden="true" />}
+                    description={t(
+                      "projects.exports.day_card_desc",
+                      "Przebieg dnia dla realizacji — na miejscu, przy scenie.",
                     )}
+                    onSelect={() => setDayCardOpen(true)}
+                  >
+                    {t("projects.exports.day_card", "Karta dnia")}
+                  </DropdownMenuItem>
+                  {isViewerConductor && (
+                    <DropdownMenuItem
+                      icon={<Music2 size={15} aria-hidden="true" />}
+                      description={t(
+                        "projects.exports.conductor_sheet_desc",
+                        "Twój egzemplarz z pulpitu: repertuar, obsada, kto daje ton.",
+                      )}
+                      onSelect={() => setConductorSheetOpen(true)}
+                    >
+                      {t("projects.exports.conductor_sheet", "Karta dyrygenta")}
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    icon={<FileText size={15} aria-hidden="true" />}
+                    description={t(
+                      "projects.exports.call_sheet_desc",
+                      "Pełny stan przygotowań: braki, obsada, kontakty.",
+                    )}
+                    onSelect={() => setReportOpen(true)}
+                  >
+                    {t("projects.exports.call_sheet", "Raport produkcji")}
                   </DropdownMenuItem>
                   {project.score_pdf && (
                     <DropdownMenuItem
-                      icon={<FileText size={15} aria-hidden="true" />}
+                      icon={<BookOpen size={15} aria-hidden="true" />}
+                      description={t(
+                        "projects.exports.score_pdf_desc",
+                        "Książka nutowa koncertu dla śpiewaków.",
+                      )}
                       onSelect={() => setScoreOpen(true)}
                     >
                       {t("projects.exports.score_pdf", "Partytura (PDF)")}
@@ -425,35 +508,14 @@ export default function ProjectHubLayout(): React.JSX.Element {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel>
-                    {t("projects.exports.download_group", "Pobierz")}
+                    {t("projects.exports.data_group", "Dane do wysyłki")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem
-                    icon={<ClipboardList size={15} aria-hidden="true" />}
-                    onSelect={() =>
-                      downloadReport(
-                        "export_day_sheet",
-                        `KartaDnia_${project.title}.pdf`,
-                        "DAY_CARD",
-                        { audience: "production" },
-                      )
-                    }
-                  >
-                    {t("projects.exports.day_card", "Karta dnia")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    icon={<FileText size={15} aria-hidden="true" />}
-                    onSelect={() =>
-                      downloadReport(
-                        "export_call_sheet",
-                        `RaportProdukcji_${project.title}.pdf`,
-                        "CALL_SHEET",
-                      )
-                    }
-                  >
-                    {t("projects.exports.call_sheet", "Raport produkcji")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
                     icon={<Download size={15} aria-hidden="true" />}
+                    description={t(
+                      "projects.exports.zaiks_desc",
+                      "Wykaz utworów do raportu ZAiKS.",
+                    )}
                     onSelect={() =>
                       downloadReport(
                         "export_zaiks",
@@ -466,6 +528,10 @@ export default function ProjectHubLayout(): React.JSX.Element {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     icon={<AlignLeft size={15} aria-hidden="true" />}
+                    description={t(
+                      "projects.exports.dtp_desc",
+                      "Skład zespołu do programu koncertu.",
+                    )}
                     onSelect={() =>
                       downloadReport(
                         "export_dtp",
@@ -583,6 +649,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
                   project,
                   setDirty,
                   openScore: () => setScoreOpen(true),
+                  openDayCard: () => setDayCardOpen(true),
                 } satisfies ProjectHubContext
               }
             />
@@ -591,23 +658,65 @@ export default function ProjectHubLayout(): React.JSX.Element {
       </div>
 
       <PdfViewerModal
-        isOpen={isRunsheetOpen}
-        title={t("projects.exports.runsheet_title", "Harmonogram (Runsheet)")}
+        isOpen={isDayCardOpen}
+        title={t("projects.exports.day_card", "Karta dnia")}
         subtitle={project.title}
-        fileName={`Runsheet_${project.title}.pdf`}
-        fetchBlob={fetchRunsheetBlob}
-        docKey={`runsheet-${project.id}`}
+        fileName={dayCardFileName}
+        fetchBlob={fetchDayCardBlob}
+        docKey={`day-card-${project.id}`}
+        volatile
+        fullView={{
+          type: "project-day-card",
+          id: project.id,
+          hint: {
+            title: t("projects.exports.day_card", "Karta dnia"),
+            subtitle: project.title,
+            fileName: dayCardFileName,
+          },
+        }}
+        onClose={() => setDayCardOpen(false)}
+      />
+
+      {isViewerConductor && (
+        <PdfViewerModal
+          isOpen={isConductorSheetOpen}
+          title={t("projects.exports.conductor_sheet", "Karta dyrygenta")}
+          subtitle={project.title}
+          fileName={conductorSheetFileName}
+          fetchBlob={fetchConductorSheetBlob}
+          docKey={`conductor-sheet-${project.id}`}
+          volatile
+          fullView={{
+            type: "project-day-sheet",
+            id: project.id,
+            hint: {
+              title: t("projects.exports.conductor_sheet", "Karta dyrygenta"),
+              subtitle: project.title,
+              fileName: conductorSheetFileName,
+            },
+          }}
+          onClose={() => setConductorSheetOpen(false)}
+        />
+      )}
+
+      <PdfViewerModal
+        isOpen={isReportOpen}
+        title={t("projects.exports.call_sheet", "Raport produkcji")}
+        subtitle={project.title}
+        fileName={reportFileName}
+        fetchBlob={fetchReportBlob}
+        docKey={`report-${project.id}`}
         volatile
         fullView={{
           type: "project-call-sheet",
           id: project.id,
           hint: {
-            title: t("projects.exports.runsheet_title", "Harmonogram (Runsheet)"),
+            title: t("projects.exports.call_sheet", "Raport produkcji"),
             subtitle: project.title,
-            fileName: `Runsheet_${project.title}.pdf`,
+            fileName: reportFileName,
           },
         }}
-        onClose={() => setRunsheetOpen(false)}
+        onClose={() => setReportOpen(false)}
       />
 
       {project.score_pdf && (

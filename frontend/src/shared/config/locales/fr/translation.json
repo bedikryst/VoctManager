@@ -1866,7 +1866,6 @@
       "badge_late": "En retard",
       "badge_rehearsal": "Répétition",
       "btn_confirm_presence": "Confirmer la présence",
-      "btn_download_runsheet": "Planning (PDF)",
       "btn_edit_report": "Modifier le signalement",
       "btn_materials": "Partitions et audio",
       "btn_report_issue": "Signaler un problème",
@@ -1912,9 +1911,6 @@
       "title_main": "Espace de l'artiste",
       "toast_confirm_success": "Présence confirmée !",
       "toast_confirming": "Confirmation de la présence...",
-      "toast_download_error": "Erreur de téléchargement du planning",
-      "toast_download_success": "Planning téléchargé avec succès",
-      "toast_downloading_runsheet": "Génération du planning...",
       "toast_report_success": "Signalement envoyé",
       "toast_saving_report": "Enregistrement du signalement...",
       "tools": {
@@ -2073,9 +2069,10 @@
     "back_to_app": "Retour au tableau de bord",
     "fallback": {
       "chorister_hub_title": "Document",
-      "project_call_sheet_title": "Feuille de service",
+      "project_call_sheet_title": "Rapport de production",
       "project_day_sheet_title": "Feuille du jour",
-      "project_score_title": "Partition de concert"
+      "project_score_title": "Partition de concert",
+      "project_day_card_title": "Feuille de jour"
     },
     "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
     "invalid_title": "Document non pris en charge"
@@ -3447,17 +3444,22 @@
       "workspace_description": "Gérez les détails du projet, les répétitions, la distribution et la logistique dans un seul espace opérationnel."
     },
     "exports": {
-      "call_sheet": "Télécharger le rapport de production",
-      "day_card": "Télécharger la feuille de jour",
-      "download_group": "Télécharger",
-      "dtp": "Télécharger la note DTP",
-      "menu": "Exporter",
-      "open_runsheet": "Ouvrir le planning",
+      "call_sheet": "Rapport de production",
+      "day_card": "Feuille de jour",
+      "dtp": "Note pour la PAO",
+      "menu": "Documents",
       "open_score_pdf": "Ouvrir la partition (PDF)",
-      "preview_group": "Aperçu",
-      "runsheet_title": "Planning (Runsheet)",
       "score_pdf": "Partition (PDF)",
-      "zaiks": "Télécharger ZAiKS"
+      "zaiks": "ZAiKS (CSV)",
+      "day_card_desc": "Le déroulé du jour pour l'équipe — sur place, au plateau.",
+      "call_sheet_desc": "État complet des préparatifs : manques, distribution, contacts.",
+      "score_pdf_desc": "Le recueil de partitions du concert pour les chanteurs.",
+      "zaiks_desc": "Liste des œuvres pour le rapport ZAiKS.",
+      "dtp_desc": "Effectif de l'ensemble pour le programme du concert.",
+      "documents_group": "Documents (PDF)",
+      "data_group": "Données à transmettre",
+      "conductor_sheet": "Feuille du chef",
+      "conductor_sheet_desc": "Votre exemplaire depuis le pupitre : programme, distribution, qui donne le ton."
     },
     "filters": {
       "active": "En préparation",
@@ -3806,7 +3808,8 @@
     "run_sheet": {
       "aria_label": "Gérer le déroulé de la journée",
       "empty": "Aucune feuille de route",
-      "title": "Feuille de route du jour du concert"
+      "title": "Feuille de route du jour du concert",
+      "open_day_card_aria": "Ouvrir la feuille de jour (PDF)"
     },
     "spotify": {
       "consent_note": "Le lecteur intégré se connecte aux serveurs de Spotify (cookies et données). Il ne se charge qu'après votre consentement.",
@@ -4095,11 +4098,6 @@
     },
     "card": {
       "call_time": "Convocation :",
-      "day_sheet_preview_title": "Feuille du jour",
-      "download_day_sheet_aria": "Télécharger la feuille du jour (PDF)",
-      "download_error_desc": "Impossible de télécharger le fichier.",
-      "download_loading": "Préparation de la feuille du jour...",
-      "download_success": "Fichier téléchargé avec succès",
       "dress_code_men": "Hommes :",
       "dress_code_title": "Détails de la tenue",
       "dress_code_women": "Femmes :",
@@ -4113,7 +4111,6 @@
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
       "open_detail": "Ouvrir les détails : {{title}}",
-      "preview_day_sheet": "Feuille du jour",
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
       "run_sheet_untitled": "Élément du programme",
@@ -4150,7 +4147,7 @@
       "rehearsal_prefix": "Répétition :"
     },
     "hero": {
-      "concert_hint": "Vous trouverez les détails du jour du concert sur la carte de l'événement ci-dessous.",
+      "concert_hint": "La feuille du jour rassemble tout sur ce concert : la convocation, le déroulé et votre distribution.",
       "countdown": {
         "days": "Dans {{count}} jours",
         "days_one": "Dans {{count}} jour",
@@ -4241,6 +4238,12 @@
       "submit_error_title": "Erreur d'enregistrement",
       "submit_success": "Le signalement a été enregistré.",
       "submitting": "Envoi du signalement..."
+    },
+    "day_sheet": {
+      "title": "Feuille du jour",
+      "open": "Ouvrir (PDF)",
+      "open_aria": "Ouvrir votre feuille du jour (PDF)",
+      "hint": "Votre exemplaire : convocation, déroulé du jour et votre distribution. Téléchargeable depuis l'aperçu."
     }
   },
   "settings": {

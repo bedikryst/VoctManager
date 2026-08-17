@@ -13,7 +13,7 @@ import React from "react";
 import * as RadixDropdown from "@radix-ui/react-dropdown-menu";
 
 import { cn } from "@/shared/lib/utils";
-import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 export const DropdownMenu = RadixDropdown.Root;
 export const DropdownMenuTrigger = RadixDropdown.Trigger;
@@ -52,6 +52,12 @@ export const DropdownMenuContent = ({
 export interface DropdownMenuItemProps {
   children: React.ReactNode;
   icon?: React.ReactNode;
+  /**
+   * Second line under the label, for menus whose entries are hard to tell apart
+   * by name alone (several documents about the same concert). Kept out of the
+   * item's `textValue` so keyboard typeahead still matches the label only.
+   */
+  description?: string;
   onSelect?: () => void;
   disabled?: boolean;
   /** Renders the item in the destructive (crimson) register. */
@@ -62,6 +68,7 @@ export interface DropdownMenuItemProps {
 export const DropdownMenuItem = ({
   children,
   icon,
+  description,
   onSelect,
   disabled,
   destructive,
@@ -70,8 +77,10 @@ export const DropdownMenuItem = ({
   <RadixDropdown.Item
     disabled={disabled}
     onSelect={onSelect}
+    textValue={typeof children === "string" ? children : undefined}
     className={cn(
-      "group flex cursor-pointer select-none items-center gap-2.5 rounded-control px-3 py-2 outline-none transition-colors",
+      "group flex cursor-pointer select-none gap-2.5 rounded-control px-3 py-2 outline-none transition-colors",
+      description ? "items-start" : "items-center",
       "focus:bg-ethereal-marble/70 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       destructive
         ? "text-ethereal-crimson focus:bg-ethereal-crimson/10"
@@ -83,6 +92,7 @@ export const DropdownMenuItem = ({
       <span
         className={cn(
           "shrink-0",
+          description && "mt-0.5",
           destructive ? "text-ethereal-crimson" : "text-ethereal-graphite/60",
         )}
         aria-hidden="true"
@@ -90,9 +100,12 @@ export const DropdownMenuItem = ({
         {icon}
       </span>
     )}
-    <Text as="span" size="sm" weight="medium" color="inherit" className="flex-1">
-      {children}
-    </Text>
+    <span className="flex min-w-0 flex-1 flex-col">
+      <Text as="span" size="sm" weight="medium" color="inherit">
+        {children}
+      </Text>
+      {description && <Caption color="muted">{description}</Caption>}
+    </span>
   </RadixDropdown.Item>
 );
 

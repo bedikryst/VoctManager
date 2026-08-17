@@ -23,6 +23,7 @@ import {
   Check,
   CheckCircle2,
   ChevronRight,
+  ClipboardList,
   Clock,
   ListMusic,
   Music2,
@@ -45,6 +46,7 @@ import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
 
 import type { TimelineEvent } from "../types/schedule.dto";
+import { ScheduleService } from "../api/schedule.service";
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { useScheduleProgramItems } from "../api/schedule.queries";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
@@ -113,10 +115,20 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const countdown = useCountdownLabel(event.date_time);
   const readiness = useProjectReadiness(event.project_id, true);
   const [scoreOpen, setScoreOpen] = useState(false);
+  const [daySheetOpen, setDaySheetOpen] = useState(false);
   const fetchScoreBlob = useCallback(
     () => ProjectService.fetchScorePdfBlob(String(proj.id)),
     [proj.id],
   );
+  // Written for this reader by the server — their voice, their casting, in
+  // their language. It belongs on the spotlight rather than three taps down in
+  // the event sheet, because the morning of the concert is when it is opened.
+  const fetchDaySheetBlob = useCallback(
+    () => ScheduleService.exportDaySheet(proj.id),
+    [proj.id],
+  );
+  const daySheetFileName = `Karta_${proj.title.replace(/\s+/g, "_")}.pdf`;
+  const daySheetTitle = t("schedule.day_sheet.title", "Karta dnia");
 
   return (
     <>
@@ -207,11 +219,26 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           <Text size="xs" color="parchment-muted" className="max-w-xs text-ethereal-parchment/70">
             {t(
               "schedule.hero.concert_hint",
-              "Szczegóły dnia koncertu znajdziesz na karcie wydarzenia poniżej.",
+              "Karta dnia zbiera wszystko o tym koncercie: zbiórkę, przebieg i Twoją obsadę.",
             )}
           </Text>
         )}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {/* The day sheet leads: it is the only one of these written for this
+              singer, and the only one that answers "where do I stand, and
+              when". */}
+          <Button
+            variant="secondary"
+            size="touch"
+            leftIcon={<ClipboardList size={14} aria-hidden="true" />}
+            onClick={() => setDaySheetOpen(true)}
+            aria-label={t(
+              "schedule.day_sheet.open_aria",
+              "Otwórz kartę dnia (PDF)",
+            )}
+          >
+            {daySheetTitle}
+          </Button>
           {proj.score_pdf && (
             <Button
               variant="secondary"
@@ -234,6 +261,26 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         </div>
       </div>
     </GlassCard>
+
+    <PdfViewerModal
+      isOpen={daySheetOpen}
+      title={daySheetTitle}
+      subtitle={proj.title}
+      fileName={daySheetFileName}
+      fetchBlob={fetchDaySheetBlob}
+      docKey={`day-sheet-hero-${proj.id}`}
+      volatile
+      fullView={{
+        type: "project-day-sheet",
+        id: proj.id,
+        hint: {
+          title: daySheetTitle,
+          subtitle: proj.title,
+          fileName: daySheetFileName,
+        },
+      }}
+      onClose={() => setDaySheetOpen(false)}
+    />
 
     {proj.score_pdf && (
       <PdfViewerModal

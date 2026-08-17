@@ -1866,7 +1866,6 @@
       "badge_late": "Late",
       "badge_rehearsal": "Rehearsal",
       "btn_confirm_presence": "Confirm Presence",
-      "btn_download_runsheet": "Schedule (PDF)",
       "btn_edit_report": "Edit report",
       "btn_materials": "Scores and Audio",
       "btn_report_issue": "Report an issue",
@@ -1912,9 +1911,6 @@
       "title_main": "Artist navigation",
       "toast_confirm_success": "Presence confirmed!",
       "toast_confirming": "Confirming presence...",
-      "toast_download_error": "Error downloading schedule",
-      "toast_download_success": "Schedule downloaded successfully",
-      "toast_downloading_runsheet": "Generating schedule...",
       "toast_report_success": "Report submitted",
       "toast_saving_report": "Saving report...",
       "tools": {
@@ -2073,9 +2069,10 @@
     "back_to_app": "Back to dashboard",
     "fallback": {
       "chorister_hub_title": "Document",
-      "project_call_sheet_title": "Call Sheet",
+      "project_call_sheet_title": "Production report",
       "project_day_sheet_title": "Day Sheet",
-      "project_score_title": "Concert Score"
+      "project_score_title": "Concert Score",
+      "project_day_card_title": "Day card"
     },
     "invalid_description": "We could not recognize this document link. It may be malformed or out of date.",
     "invalid_title": "Unsupported document"
@@ -3446,17 +3443,22 @@
       "workspace_description": "Manage project details, rehearsals, casting, and logistics in one operational workspace."
     },
     "exports": {
-      "call_sheet": "Download production report",
-      "day_card": "Download day card",
-      "download_group": "Download",
-      "dtp": "Download DTP Note",
-      "menu": "Export",
-      "open_runsheet": "Open Run Sheet",
+      "call_sheet": "Production report",
+      "day_card": "Day card",
+      "dtp": "DTP note",
+      "menu": "Documents",
       "open_score_pdf": "Open Score (PDF)",
-      "preview_group": "Preview",
-      "runsheet_title": "Run Sheet",
       "score_pdf": "Score (PDF)",
-      "zaiks": "Download ZAiKS"
+      "zaiks": "ZAiKS (CSV)",
+      "day_card_desc": "The run of the day for the crew — on site, at the stage.",
+      "call_sheet_desc": "Full state of preparations: gaps, casting, contacts.",
+      "score_pdf_desc": "The concert's score book for the singers.",
+      "zaiks_desc": "Programme listing for the ZAiKS report.",
+      "dtp_desc": "Ensemble line-up for the concert programme.",
+      "documents_group": "Documents (PDF)",
+      "data_group": "Data to send on",
+      "conductor_sheet": "Conductor sheet",
+      "conductor_sheet_desc": "Your own copy from the podium: programme, casting, who gives the pitch."
     },
     "filters": {
       "active": "In preparation",
@@ -3805,7 +3807,8 @@
     "run_sheet": {
       "aria_label": "Manage the day schedule",
       "empty": "No run sheet yet",
-      "title": "Concert Day Run Sheet"
+      "title": "Concert Day Run Sheet",
+      "open_day_card_aria": "Open the day card (PDF)"
     },
     "spotify": {
       "consent_note": "The embedded player connects to Spotify's servers (cookies and data). It only loads after you consent.",
@@ -4094,11 +4097,6 @@
     },
     "card": {
       "call_time": "Call Time:",
-      "day_sheet_preview_title": "Day Sheet",
-      "download_day_sheet_aria": "Download day sheet (PDF)",
-      "download_error_desc": "Failed to download the file.",
-      "download_loading": "Preparing your day sheet...",
-      "download_success": "File downloaded successfully",
       "dress_code_men": "Men:",
       "dress_code_title": "Dress Code Details",
       "dress_code_women": "Women:",
@@ -4112,7 +4110,6 @@
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
       "open_detail": "Open details: {{title}}",
-      "preview_day_sheet": "Day Sheet",
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
       "run_sheet_untitled": "Schedule item",
@@ -4149,7 +4146,7 @@
       "rehearsal_prefix": "Rehearsal:"
     },
     "hero": {
-      "concert_hint": "You'll find the concert-day details on the event card below.",
+      "concert_hint": "The day sheet gathers everything about this concert: call time, the run of the day and your casting.",
       "countdown": {
         "days": "In {{count}} days",
         "days_one": "In {{count}} day",
@@ -4240,6 +4237,12 @@
       "submit_error_title": "Save error",
       "submit_success": "Report has been saved.",
       "submitting": "Submitting report..."
+    },
+    "day_sheet": {
+      "title": "Day sheet",
+      "open": "Open (PDF)",
+      "open_aria": "Open your day sheet (PDF)",
+      "hint": "Your own copy: call time, the run of the day and your casting. Downloadable from the preview."
     }
   },
   "settings": {

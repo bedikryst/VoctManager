@@ -11,9 +11,10 @@
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock } from "lucide-react";
+import { Clock, ClipboardList } from "lucide-react";
 
 import type { Project } from "@/shared/types";
+import { Button } from "@/shared/ui/primitives/Button";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
@@ -21,6 +22,12 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 interface RunSheetWidgetProps {
   project: Project;
   onEdit?: () => void;
+  /**
+   * Opens the printable day card, which leads with exactly this agenda. Offered
+   * here because the run sheet is where the concert day is being thought about;
+   * the export menu keeps the full catalogue.
+   */
+  onOpenDayCard?: () => void;
 }
 
 const DISPLAY_LIMIT = 6;
@@ -28,6 +35,7 @@ const DISPLAY_LIMIT = 6;
 export function RunSheetWidget({
   project,
   onEdit,
+  onOpenDayCard,
 }: RunSheetWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
 
@@ -44,6 +52,22 @@ export function RunSheetWidget({
       icon={<Clock size={15} aria-hidden="true" />}
       onActivate={onEdit}
       ariaLabel={t("projects.run_sheet.aria_label", "Zarządzaj harmonogramem dnia")}
+      action={
+        onOpenDayCard && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onOpenDayCard}
+            leftIcon={<ClipboardList size={13} aria-hidden="true" />}
+            aria-label={t(
+              "projects.run_sheet.open_day_card_aria",
+              "Otwórz kartę dnia (PDF)",
+            )}
+          >
+            {t("projects.exports.day_card", "Karta dnia")}
+          </Button>
+        )
+      }
     >
       {sortedRunSheet.length > 0 ? (
         <ul className="relative ml-1 space-y-4 border-l border-hairline-strong pl-5">

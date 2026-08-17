@@ -159,6 +159,22 @@ const isArtistReference = (artist: unknown): artist is Artist =>
   typeof (artist as Artist).first_name === "string" &&
   typeof (artist as Artist).last_name === "string";
 
+/**
+ * The conductor's Artist id, whichever shape the serializer sent (bare id on a
+ * list payload, embedded object on a detail one). Callers compare it against
+ * the viewer's own `artist_profile_id` — the same identity the day-sheet
+ * endpoint resolves the maestro audience by.
+ */
+export const getConductorArtistId = (
+  project: Pick<Project, "conductor"> | null | undefined,
+): string | null => {
+  const conductor = project?.conductor;
+  if (typeof conductor === "string") {
+    return conductor.length > 0 ? conductor : null;
+  }
+  return isArtistReference(conductor) ? String(conductor.id) : null;
+};
+
 export const getArtistDisplayName = (
   artist: Project["conductor"] | Artist | null | undefined,
   fallbackName?: string | null,
