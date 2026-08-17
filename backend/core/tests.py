@@ -14,7 +14,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import EmailMultiAlternatives
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import IntegrityError, connection
+from django.db import IntegrityError
 from django.template.loader import render_to_string
 from django.test import (
     RequestFactory,
@@ -1368,11 +1368,18 @@ class FeedbackNotificationTests(TestCase):
         self.assertTrue(task.delay.called)
 
 
-class ResetTestDataCommandTests(TestCase):
+class ResetTestDataCommandTests(TransactionTestCase):
     """
     Guards the pre-test-round wipe. The interlocks matter more than the deletion
     itself: this command runs against production, where the cost of an over-broad
     table list is unrecoverable data rather than a failing assertion.
+
+    TransactionTestCase because the command truncates. Postgres creates every
+    Django foreign key DEFERRABLE INITIALLY DEFERRED, so rows written inside an
+    open transaction leave pending trigger events, and it refuses to TRUNCATE a
+    table that has them — a single-transaction TestCase would fixture itself out
+    of the very statement under test. Committed fixtures are what the command
+    meets in production anyway.
     """
 
     def setUp(self) -> None:
@@ -1396,10 +1403,7 @@ class ResetTestDataCommandTests(TestCase):
         FeedbackReport.objects.create(reporter=self.member, body="Coś nie działa.")
 
     def _run(self, **kwargs: object) -> None:
-        # SQLite emits ordered DELETEs where Postgres emits one TRUNCATE, so a
-        # parent can precede its children here. Postgres never sees this path.
-        with connection.constraint_checks_disabled():
-            call_command("reset_test_data", stdout=io.StringIO(), **kwargs)
+        call_command("reset_test_data", stdout=io.StringIO(), **kwargs)
 
     def test_wipe_list_never_contains_a_protected_table(self) -> None:
         command = ResetTestData()

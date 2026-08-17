@@ -216,12 +216,6 @@
     "editions": {
       "ai_cost": "Coût IA : {{cost}}",
       "ai_cost_title": "Coût cumulé de l'analyse IA de cette édition.",
-      "approve": "Valider",
-      "approve_confirm": "Valider",
-      "approve_error": "Impossible de valider l'édition.",
-      "approve_modal_desc": "Une fois validés, les supports deviennent visibles pour le chœur et chaque participant du projet reçoit une notification. Assurez-vous que les champs extraits par l'IA (titre, compositeur, IPA, traductions) sont vérifiés.",
-      "approve_modal_title": "Valider l'édition ?",
-      "approve_success": "Édition validée — le chœur sera notifié.",
       "default": "par défaut",
       "delete_aria": "Supprimer l'édition",
       "delete_confirm": "Supprimer l'édition",
@@ -538,7 +532,11 @@
       "toast_save_success": "Modifications enregistrées.",
       "translations_section": "Traductions",
       "verify_failed": "Impossible de marquer le champ comme correct.",
-      "no_pdf_hint": "Importez une partition ci-dessous — l'IA complétera les métadonnées, l'IPA et les traductions."
+      "no_pdf_hint": "Importez une partition ci-dessous — l'IA complétera les métadonnées, l'IPA et les traductions.",
+      "section_pending_one": "{{count}} à vérifier",
+      "section_pending_other": "{{count}} à vérifier",
+      "approve_modal_title": "Valider et publier ?",
+      "approve_modal_desc": "Les supports deviennent visibles pour le chœur et tous les participants aux projets comportant cette œuvre reçoivent une notification. Assurez-vous que les champs marqués « à vérifier » ont bien été contrôlés."
     },
     "review": {
       "delete": "Supprimer",
@@ -703,14 +701,17 @@
       "in_flight_other": "{{count}} en cours d'import",
       "row_failed": "Échec de l'import",
       "row_remove_aria": "Retirer {{name}} de la liste",
-      "row_succeeded": "Importé · pipeline lancé",
       "section": "Import de partitions",
       "subtitle": "ou cliquez pour choisir. Plusieurs fichiers à la fois · 50 Mo max chacun",
       "subtitle_existing": "Bärenreiter, IMSLP, votre propre arrangement — glissez ou cliquez pour choisir · 50 Mo max",
       "title": "Glissez des PDF de partition",
       "title_existing": "Ajouter une autre édition de cette pièce",
       "toast_failed": "Échec de l'import",
-      "toast_success": "{{name}} — pipeline lancé"
+      "toast_success": "{{name}} — pipeline lancé",
+      "row_awaiting_short": "L’IA a terminé",
+      "row_review_cta": "Vérifier et valider",
+      "row_ready": "Validé",
+      "row_ingest_failed": "Le traitement a échoué"
     },
     "upload_drawer": {
       "aria": "Importer un PDF de partition",
@@ -749,6 +750,19 @@
       "canonical_title": "Confirmé par une source canonique : {{source}}.",
       "verify_hint": "Cliquez pour marquer comme correct",
       "verify_aria": "Marquer comme correct : {{label}}"
+    },
+    "orphans": {
+      "section": "Analyses inachevées",
+      "aria": "Fichiers importés que l’IA n’a pas pu traiter",
+      "hint": "L’IA n’est pas allée jusqu’à identifier l’œuvre : ces fichiers ne sont rattachés à aucune fiche. Relancez l’analyse ou supprimez le fichier.",
+      "untitled": "Sans titre",
+      "retry": "Relancer",
+      "retry_started": "Analyse relancée.",
+      "retry_failed": "Impossible de relancer l’analyse.",
+      "delete": "Supprimer le fichier importé",
+      "delete_short": "Supprimer",
+      "deleted": "Fichier importé supprimé.",
+      "delete_failed": "Impossible de supprimer le fichier."
     }
   },
   "artists": {

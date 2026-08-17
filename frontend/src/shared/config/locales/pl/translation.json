@@ -80,7 +80,9 @@
     "ai_warning": {
       "before_birth": "Rok kompozycji ({{year}}) jest przed urodzeniem kompozytora ({{birth}}).",
       "long_after_death": "Rok kompozycji ({{year}}) jest dużo po śmierci kompozytora ({{death}}).",
-      "title": "AI mógł się pomylić — sprawdź dane przed zatwierdzeniem"
+      "title": "AI mógł się pomylić — sprawdź dane przed zatwierdzeniem",
+      "arrangement_epoch": "Utwór ma aranżera, a epokę oznaczono jako współczesną — upewnij się, że to nie opracowanie utworu tradycyjnego (wtedy epoka = pochodzenie oryginału).",
+      "ipa_misaligned": "Transkrypcja IPA ma {{ipa}} linii, a tekst {{lyrics}} — wyrównanie wers-do-wersu może być błędne."
     },
     "card": {
       "actions": {
@@ -214,12 +216,6 @@
     "editions": {
       "ai_cost": "Koszt AI: {{cost}}",
       "ai_cost_title": "Łączny koszt analizy AI tego wydania (kumulatywny).",
-      "approve": "Zatwierdź",
-      "approve_confirm": "Zatwierdź",
-      "approve_error": "Nie udało się zatwierdzić wydania.",
-      "approve_modal_desc": "Po zatwierdzeniu materiały staną się widoczne dla chóru, a wszyscy uczestnicy projektu dostaną powiadomienie. Upewnij się, że AI-wyciągnięte pola (tytuł, kompozytor, IPA, tłumaczenia) są zweryfikowane.",
-      "approve_modal_title": "Zatwierdzić wydanie?",
-      "approve_success": "Wydanie zatwierdzone — chór dostanie powiadomienie.",
       "default": "domyślne",
       "delete_aria": "Usuń wydanie",
       "delete_confirm": "Usuń wydanie",
@@ -542,7 +538,13 @@
       "toast_save_success": "Zapisano zmiany.",
       "translations_section": "Tłumaczenia",
       "verify_failed": "Nie udało się oznaczyć pola jako poprawne.",
-      "no_pdf_hint": "Wgraj partyturę poniżej — AI uzupełni metadane, IPA i tłumaczenia."
+      "no_pdf_hint": "Wgraj partyturę poniżej — AI uzupełni metadane, IPA i tłumaczenia.",
+      "section_pending_one": "{{count}} do sprawdzenia",
+      "section_pending_few": "{{count}} do sprawdzenia",
+      "section_pending_many": "{{count}} do sprawdzenia",
+      "section_pending_other": "{{count}} do sprawdzenia",
+      "approve_modal_title": "Zatwierdzić i opublikować?",
+      "approve_modal_desc": "Materiały staną się widoczne dla chóru, a uczestnicy projektów z tym utworem dostaną powiadomienie. Upewnij się, że pola oznaczone „do sprawdzenia” są zweryfikowane."
     },
     "review": {
       "delete": "Usuń",
@@ -707,14 +709,12 @@
       "in_flight_few": "{{count}} w trakcie wysyłki",
       "in_flight_many": "{{count}} w trakcie wysyłki",
       "in_flight_other": "{{count}} w trakcie wysyłki",
-      "row_awaiting": "Gotowe — sprawdź i zatwierdź",
       "row_awaiting_short": "AI zakończył pracę",
       "row_review_cta": "Sprawdź i zatwierdź",
       "row_failed": "Błąd wysyłki",
       "row_ingest_failed": "Przetwarzanie nie powiodło się",
       "row_ready": "Zatwierdzone",
       "row_remove_aria": "Usuń {{name}} z listy",
-      "row_succeeded": "Wysłano · pipeline uruchomiony",
       "section": "Upload partytur",
       "subtitle": "lub kliknij, by wybrać. Obsługujemy wiele plików naraz · max 50 MB każdy",
       "subtitle_existing": "Bärenreiter, IMSLP, własna aranżacja — przeciągnij lub kliknij, by wybrać · max 50 MB",
@@ -750,6 +750,29 @@
       "cs": "czeski",
       "uk": "ukraiński",
       "ru": "rosyjski"
+    },
+    "provenance": {
+      "verified": "Zweryfikowane",
+      "verified_title": "Sprawdzone i poprawione ręcznie.",
+      "ai": "AI · do sprawdzenia",
+      "ai_title": "Wyciągnięte przez AI ({{model}}), niezweryfikowane — sprawdź z PDF i popraw w razie potrzeby.",
+      "canonical": "{{source}} · potwierdzone",
+      "canonical_title": "Potwierdzone przez kanoniczne źródło: {{source}}.",
+      "verify_hint": "Kliknij, aby oznaczyć jako poprawne",
+      "verify_aria": "Oznacz jako poprawne: {{label}}"
+    },
+    "orphans": {
+      "section": "Nieukończone analizy",
+      "aria": "Wgrane pliki, których AI nie zdołał przetworzyć",
+      "hint": "AI nie zdążył rozpoznać utworu, więc te pliki nie trafiły do żadnej karty. Ponów analizę albo usuń plik.",
+      "untitled": "Bez nazwy",
+      "retry": "Ponów",
+      "retry_started": "Analiza uruchomiona ponownie.",
+      "retry_failed": "Nie udało się ponowić analizy.",
+      "delete": "Usuń wgrany plik",
+      "delete_short": "Usuń",
+      "deleted": "Usunięto wgrany plik.",
+      "delete_failed": "Nie udało się usunąć pliku."
     }
   },
   "artists": {

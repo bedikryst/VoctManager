@@ -216,12 +216,6 @@
     "editions": {
       "ai_cost": "AI cost: {{cost}}",
       "ai_cost_title": "Cumulative AI ingestion cost for this edition.",
-      "approve": "Approve",
-      "approve_confirm": "Approve",
-      "approve_error": "Couldn't approve the edition.",
-      "approve_modal_desc": "Once approved, the materials become visible to the choir and every project participant gets a notification. Make sure the AI-extracted fields (title, composer, IPA, translations) are verified.",
-      "approve_modal_title": "Approve edition?",
-      "approve_success": "Edition approved — the choir will be notified.",
       "default": "default",
       "delete_aria": "Delete edition",
       "delete_confirm": "Delete edition",
@@ -538,7 +532,11 @@
       "toast_save_success": "Changes saved.",
       "translations_section": "Translations",
       "verify_failed": "Couldn't mark the field as correct.",
-      "no_pdf_hint": "Upload a score below — the AI will fill in the metadata, IPA and translations."
+      "no_pdf_hint": "Upload a score below — the AI will fill in the metadata, IPA and translations.",
+      "section_pending_one": "{{count}} to check",
+      "section_pending_other": "{{count}} to check",
+      "approve_modal_title": "Approve and publish?",
+      "approve_modal_desc": "The materials become visible to the choir, and everyone cast in a project featuring this piece gets a notification. Make sure the fields marked “to check” have been verified."
     },
     "review": {
       "delete": "Delete",
@@ -703,14 +701,17 @@
       "in_flight_other": "{{count}} uploading",
       "row_failed": "Upload failed",
       "row_remove_aria": "Remove {{name}} from the list",
-      "row_succeeded": "Uploaded · pipeline started",
       "section": "Score upload",
       "subtitle": "or click to choose. Multiple files at once · max 50 MB each",
       "subtitle_existing": "Bärenreiter, IMSLP, your own arrangement — drag or click to choose · max 50 MB",
       "title": "Drag in score PDFs",
       "title_existing": "Add another edition of this piece",
       "toast_failed": "Upload failed",
-      "toast_success": "{{name}} — pipeline started"
+      "toast_success": "{{name}} — pipeline started",
+      "row_awaiting_short": "AI has finished",
+      "row_review_cta": "Review and approve",
+      "row_ready": "Approved",
+      "row_ingest_failed": "Processing failed"
     },
     "upload_drawer": {
       "aria": "Upload a score PDF",
@@ -749,6 +750,19 @@
       "canonical_title": "Confirmed by a canonical source: {{source}}.",
       "verify_hint": "Click to mark as correct",
       "verify_aria": "Mark as correct: {{label}}"
+    },
+    "orphans": {
+      "section": "Unfinished analyses",
+      "aria": "Uploaded files the AI could not process",
+      "hint": "The AI never got as far as identifying the work, so these files reached no piece card. Retry the analysis or delete the file.",
+      "untitled": "Untitled",
+      "retry": "Retry",
+      "retry_started": "Analysis started again.",
+      "retry_failed": "Couldn't restart the analysis.",
+      "delete": "Delete uploaded file",
+      "delete_short": "Delete",
+      "deleted": "Uploaded file deleted.",
+      "delete_failed": "Couldn't delete the file."
     }
   },
   "artists": {

@@ -22,15 +22,13 @@ import { cn } from "@/shared/lib/utils";
 
 import { useActiveIngestions, useCancelEdition } from "../api/archive.queries";
 import type { ActiveIngestion } from "../api/archive.service";
+import { formatIngestionCost } from "../constants/ingestionCost";
 import {
   isOverloadWait,
   liveAnalysisDetail,
   liveIngestionLabel,
 } from "../constants/ingestionProgress";
 import { InlineConfirmAction } from "./InlineConfirmAction";
-
-const fmtCents = (cents?: number): string =>
-  cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
 
 const fmtElapsed = (seconds: number): string => {
   const s = Math.max(0, seconds);
@@ -126,10 +124,15 @@ const ActiveRow = ({ item, now }: ActiveRowProps): React.JSX.Element => {
             liveIngestionLabel(t, item.ingestion_status, item.ingestion_progress)}
         </Caption>
         <Caption color="muted" className="mt-0.5 block">
-          {fmtElapsed(elapsed)} · {fmtCents(item.ingestion_cost_cents_lifetime)}
-          {item.page_count
-            ? ` · ${item.page_count} ${t("archive.active.pages", "str.")}`
-            : ""}
+          {[
+            fmtElapsed(elapsed),
+            formatIngestionCost(item.ingestion_cost_cents_lifetime),
+            item.page_count
+              ? `${item.page_count} ${t("archive.active.pages", "str.")}`
+              : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </Caption>
       </div>
       <CancelControl editionId={item.id} />

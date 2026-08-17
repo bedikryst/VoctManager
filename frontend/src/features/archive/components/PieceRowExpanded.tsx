@@ -30,15 +30,13 @@ import { INGESTION_STATUS } from "@/shared/types";
 import { hasPdf, getPiecePdfLinks } from "../constants/piecePdfs";
 import type { EnrichedPiece } from "../types/archive.dto";
 import { usePiece } from "../api/archive.queries";
+import { pieceReviewBreakdown } from "./ProvenanceChip";
 
 import { PieceRowTracks } from "./PieceRowTracks";
 
 interface PieceRowExpandedProps {
   readonly piece: EnrichedPiece;
 }
-
-/** Provenance sources that mean "AI guessed this, a human hasn't confirmed it". */
-const AI_SOURCES: ReadonlySet<string> = new Set(["AIS", "AIH", "AIO"]);
 
 export const PieceRowExpanded = ({
   piece,
@@ -74,12 +72,12 @@ export const PieceRowExpanded = ({
 
   // Provenance lives only on the piece-detail endpoint — fetch it (cached, and
   // reused by the Piece Card) only for pieces that actually went through the AI.
+  // The count comes from the same rollup the Piece Card's meter uses, so the row
+  // never promises a backlog the card then reports as clear (it used to count
+  // every provenance row, including fields the cockpit has no verify control
+  // for — a number the conductor could not drive to zero).
   const { data: detail } = usePiece(editions.length > 0 ? String(piece.id) : null);
-  const unverifiedCount = detail?.provenance
-    ? Object.values(detail.provenance).filter((entry) =>
-        AI_SOURCES.has(entry.source),
-      ).length
-    : 0;
+  const unverifiedCount = detail ? pieceReviewBreakdown(detail).all.pending : 0;
 
   const openEdition = pdfLinks.find((p) => p.id === openEditionId) ?? null;
 

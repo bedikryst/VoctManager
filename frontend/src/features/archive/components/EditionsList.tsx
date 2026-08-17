@@ -1,13 +1,14 @@
 /**
  * @file EditionsList.tsx
- * @description Per-edition card list inside the Archive editor's AI Review
- * tab. Each card surfaces: PDF download, ingestion status, cost-to-date,
- * pipeline error (if any), plus actions: Approve (AWAI → RDY), Re-run
- * pipeline (incurs new AI cost), Delete edition (soft-delete).
+ * @description Per-edition card list inside the Piece Card. Each card surfaces:
+ * open in the score stand, ingestion status, licence, cost-to-date, pipeline
+ * error (if any), plus Re-run pipeline (incurs new AI cost) and Delete edition
+ * (soft-delete).
  *
- * Manager flow: upload → pipeline runs → status flips to AWAI →
- * conductor reviews piece-level fields above this list → Approve here to
- * mark the edition canonical and notify the chorus.
+ * Approve (AWAI → RDY) is deliberately NOT here: it belongs to the Piece Card's
+ * action tray, which blocks it while the conductor has unsaved corrections. A
+ * second approve button on this row skipped that guard and published a record
+ * with its fixes still in the form.
  * @architecture Enterprise SaaS 2026
  * @module features/archive/components/EditionsList
  */
@@ -20,7 +21,6 @@ import { toastApiError } from "@/shared/api/errors";
 import { getDateFnsLocale } from "@/shared/lib/time/dateFnsLocale";
 import {
   BookOpen,
-  CheckCircle2,
   FileText,
   Globe,
   Lock,
@@ -43,22 +43,15 @@ import { ScoreStandModal } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 
 import {
-  useApproveEdition,
   useDeleteEdition,
   usePatchEdition,
   useReingestEdition,
 } from "../api/archive.queries";
+import { formatIngestionCost } from "../constants/ingestionCost";
 
 // Order the licence picker top-to-bottom by how common each status is for this
 // (mostly public-domain) choir; UNKNOWN last as the "not yet triaged" default.
 const LICENSE_ORDER: readonly ScoreLicenseType[] = ["PD", "LC", "PDG", "UNK"];
-
-const fmtCost = (cents: number | undefined): string => {
-  const value = cents ?? 0;
-  if (value <= 0) return "—";
-  if (value < 100) return `${value}¢`;
-  return `$${(value / 100).toFixed(2)}`;
-};
 
 const fmtRelative = (iso: string | undefined, language?: string): string => {
   if (!iso) return "";
@@ -90,6 +83,7 @@ const EditionLicenseControl = ({
   const licenseType: ScoreLicenseType = edition.license_type ?? "UNK";
   const isLicensedCopies = licenseType === "LC";
   const isProtected = licenseType !== "PD";
+  const cost = formatIngestionCost(edition.ingestion_cost_cents);
 
   const [copies, setCopies] = useState(
     edition.copies_owned != null ? String(edition.copies_owned) : "",
@@ -180,7 +174,7 @@ const EditionLicenseControl = ({
         )}
       </Caption>
 
-      {(edition.ingestion_cost_cents ?? 0) > 0 && (
+      {cost && (
         <Caption
           color="muted"
           className="ml-auto inline-flex items-center gap-1 whitespace-nowrap tabular-nums"
@@ -189,9 +183,7 @@ const EditionLicenseControl = ({
             "Łączny koszt analizy AI tego wydania (kumulatywny).",
           )}
         >
-          {t("archive.editions.ai_cost", "Koszt AI: {{cost}}", {
-            cost: fmtCost(edition.ingestion_cost_cents),
-          })}
+          {t("archive.editions.ai_cost", "Koszt AI: {{cost}}", { cost })}
         </Caption>
       )}
     </div>
@@ -206,12 +198,10 @@ export const EditionsList = ({
   editions,
 }: EditionsListProps): React.JSX.Element | null => {
   const { t, i18n } = useTranslation();
-  const [pendingApproveId, setPendingApproveId] = useState<string | null>(null);
   const [pendingReingestId, setPendingReingestId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [openEditionId, setOpenEditionId] = useState<string | null>(null);
 
-  const approve = useApproveEdition();
   const reingest = useReingestEdition();
   const remove = useDeleteEdition();
 
@@ -223,25 +213,6 @@ export const EditionsList = ({
     if (a.is_default !== b.is_default) return a.is_default ? -1 : 1;
     return (b.created_at ?? "").localeCompare(a.created_at ?? "");
   });
-
-  const handleApprove = (id: string) => {
-    approve.mutate(id, {
-      onSuccess: () => {
-        toast.success(
-          t(
-            "archive.editions.approve_success",
-            "Wydanie zatwierdzone — chór dostanie powiadomienie.",
-          ),
-        );
-        setPendingApproveId(null);
-      },
-      onError: (err) =>
-        toastApiError(err, t, { fallbackDescription: t(
-                "archive.editions.approve_error",
-                "Nie udało się zatwierdzić wydania.",
-              ) }),
-    });
-  };
 
   const handleReingest = (id: string) => {
     reingest.mutate(
@@ -282,9 +253,12 @@ export const EditionsList = ({
     <>
       <ul role="list" className="flex flex-col gap-3">
         {ordered.map((edition) => {
-          const canApprove =
-            edition.ingestion_status === INGESTION_STATUS.AWAITING;
           const isFailed = edition.ingestion_status === INGESTION_STATUS.FAILED;
+          // Re-running an approved edition drops it back to AWAITING, which
+          // un-publishes materials the choir already has. Never from a resting
+          // row: recovery belongs to what is broken or still unreviewed.
+          const canReingest =
+            edition.ingestion_status !== INGESTION_STATUS.READY;
 
           return (
             <li
@@ -354,29 +328,21 @@ export const EditionsList = ({
                         {t("archive.editions.open", "Otwórz")}
                       </Button>
                     )}
-                    {canApprove && (
+                    {canReingest && (
                       <Button
+                        variant="outline"
                         size="sm"
-                        leftIcon={<CheckCircle2 size={13} aria-hidden="true" />}
-                        onClick={() => setPendingApproveId(edition.id)}
-                        disabled={approve.isPending}
+                        leftIcon={<RefreshCcw size={13} aria-hidden="true" />}
+                        onClick={() => setPendingReingestId(edition.id)}
+                        disabled={reingest.isPending}
+                        title={t(
+                          "archive.editions.reingest_title",
+                          "Uruchom pipeline ponownie (naliczy nowe koszty AI)",
+                        )}
                       >
-                        {t("archive.editions.approve", "Zatwierdź")}
+                        {t("archive.editions.reingest", "Ponów analizę")}
                       </Button>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      leftIcon={<RefreshCcw size={13} aria-hidden="true" />}
-                      onClick={() => setPendingReingestId(edition.id)}
-                      disabled={reingest.isPending}
-                      title={t(
-                        "archive.editions.reingest_title",
-                        "Uruchom pipeline ponownie (naliczy nowe koszty AI)",
-                      )}
-                    >
-                      {t("archive.editions.reingest", "Ponów analizę")}
-                    </Button>
                     <Button
                       variant="icon"
                       size="icon"
@@ -399,23 +365,6 @@ export const EditionsList = ({
           );
         })}
       </ul>
-
-      <ConfirmModal
-        isOpen={pendingApproveId !== null}
-        title={t(
-          "archive.editions.approve_modal_title",
-          "Zatwierdzić wydanie?",
-        )}
-        description={t(
-          "archive.editions.approve_modal_desc",
-          "Po zatwierdzeniu materiały staną się widoczne dla chóru, a wszyscy uczestnicy projektu dostaną powiadomienie. Upewnij się, że AI-wyciągnięte pola (tytuł, kompozytor, IPA, tłumaczenia) są zweryfikowane.",
-        )}
-        confirmText={t("archive.editions.approve_confirm", "Zatwierdź")}
-        cancelText={t("common.actions.cancel", "Anuluj")}
-        isLoading={approve.isPending}
-        onCancel={() => setPendingApproveId(null)}
-        onConfirm={() => pendingApproveId && handleApprove(pendingApproveId)}
-      />
 
       <ConfirmModal
         isOpen={pendingReingestId !== null}

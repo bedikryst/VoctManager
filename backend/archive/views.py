@@ -479,6 +479,9 @@ class ProgramNoteViewSet(viewsets.ModelViewSet):
 #   DELETE /api/archive/editions/{id}/           soft-delete
 #   POST   /api/archive/editions/{id}/approve/   mark AWAITING → READY
 #   POST   /api/archive/editions/{id}/reingest/  re-run the pipeline
+#   POST   /api/archive/editions/{id}/cancel/    stop an in-flight ingestion
+#   GET    /api/archive/editions/active/         every in-flight ingestion
+#   GET    /api/archive/editions/orphans/        ingestions that died piece-less
 #
 # Per-field edits to piece / composer / movements / etc. go through their
 # existing dedicated endpoints (/api/pieces/, /api/composers/) — this
@@ -731,6 +734,30 @@ class ScoreEditionViewSet(viewsets.ModelViewSet):
             preview = found.get(keys[row['id']])
             row['live_preview'] = preview if isinstance(preview, dict) else None
         return Response(rows)
+
+    @action(detail=False, methods=['get'])
+    def orphans(self, request):
+        """Ingestions that ended without ever reaching a Piece.
+
+        The resolver is what attaches an edition to its Piece, so a pipeline
+        that fails (or is cancelled) BEFORE that step leaves a row belonging to
+        nothing: terminal, so it is gone from `active/`; piece-less, so it is on
+        no piece's card. The upload row in the browser was its only trace and a
+        page reload wiped that — the PDF, the error and the money it cost simply
+        disappeared, with no way left to retry or delete it. This endpoint is
+        that dead-letter queue.
+
+        Failures AFTER the resolver are deliberately excluded: those sit on
+        their piece's card with the same error and the same actions.
+        """
+        qs = self.get_queryset().filter(
+            ingestion_status=IngestionStatus.FAILED,
+            piece__isnull=True,
+        ).order_by('-updated_at')
+        serializer = ScoreEditionListSerializer(
+            qs, many=True, context={'request': request},
+        )
+        return Response(serializer.data)
 
 
 # ===========================================================================

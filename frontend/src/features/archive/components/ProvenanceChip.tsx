@@ -192,23 +192,81 @@ export interface ReviewProgress {
 }
 
 /**
- * Roll up per-field provenance into a review scoreboard for a set of fields.
- * Fields with no provenance row are ignored (manually-authored pieces), so the
- * meter never shows a denominator the AI pipeline never populated. A field is
- * "pending" only while its source is still AI — the moment it is hand-corrected
- * the server stamps MANUAL and it flips to "verified".
+ * The piece's own fields that render a chip in the review cockpit — and so the
+ * exact denominator of its review meter. Kept here rather than in the page so
+ * every surface that counts "pól do sprawdzenia" counts the same set.
  */
-export const pieceReviewProgress = (
-  piece: Piece,
-  fields: readonly string[],
+export const METADATA_PROVENANCE_FIELDS = [
+  "title", "arranger", "opus_catalog", "musical_key", "language",
+  "voicing", "epoch", "text_source", "lyrics_original", "lyrics_ipa",
+] as const;
+
+/** The one chip-bearing field on each AI-generated child. Mirrors the server's
+ *  verify allow-list (`_resolve_child_provenance_target`): anything outside it
+ *  cannot be verified, so counting it would print a target that never reaches
+ *  zero. Recordings carry provenance but no verify affordance — hence absent. */
+const MOVEMENT_REVIEW_FIELD = "title";
+const TRANSLATION_REVIEW_FIELD = "text";
+
+const rollup = (
+  entries: readonly (ProvenanceEntry | undefined)[],
 ): ReviewProgress => {
   let total = 0;
   let pending = 0;
-  for (const field of fields) {
-    const entry = pieceFieldProvenance(piece, field);
+  for (const entry of entries) {
     if (!entry) continue;
     total += 1;
     if (AI_SOURCES.has(entry.source)) pending += 1;
   }
   return { total, verified: total - pending, pending };
+};
+
+const sumProgress = (...parts: readonly ReviewProgress[]): ReviewProgress =>
+  parts.reduce(
+    (acc, part) => ({
+      total: acc.total + part.total,
+      verified: acc.verified + part.verified,
+      pending: acc.pending + part.pending,
+    }),
+    { total: 0, verified: 0, pending: 0 },
+  );
+
+export interface PieceReviewBreakdown {
+  readonly metadata: ReviewProgress;
+  readonly movements: ReviewProgress;
+  readonly translations: ReviewProgress;
+  /** Everything a conductor can actually verify on this piece. */
+  readonly all: ReviewProgress;
+}
+
+/**
+ * Roll up per-field provenance into the review scoreboard, split by the section
+ * that owns each field so a collapsed section can announce its own backlog.
+ * Fields with no provenance row are ignored (manually-authored pieces), so the
+ * meter never shows a denominator the AI pipeline never populated. A field is
+ * "pending" only while its source is still AI — the moment it is hand-corrected
+ * (or click-verified) the server stamps MANUAL and it flips to "verified".
+ */
+export const pieceReviewBreakdown = (piece: Piece): PieceReviewBreakdown => {
+  const metadata = rollup(
+    METADATA_PROVENANCE_FIELDS.map((field) =>
+      pieceFieldProvenance(piece, field),
+    ),
+  );
+  const movements = rollup(
+    (piece.movements ?? []).map((movement) =>
+      childFieldProvenance(piece, movement.id, MOVEMENT_REVIEW_FIELD),
+    ),
+  );
+  const translations = rollup(
+    (piece.translations ?? []).map((translation) =>
+      childFieldProvenance(piece, translation.id, TRANSLATION_REVIEW_FIELD),
+    ),
+  );
+  return {
+    metadata,
+    movements,
+    translations,
+    all: sumProgress(metadata, movements, translations),
+  };
 };

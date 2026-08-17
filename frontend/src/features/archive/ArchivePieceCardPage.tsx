@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 
 import { applyFieldErrors, toastApiError } from "@/shared/api/errors";
+import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -87,7 +88,7 @@ import { DivisiEditor } from "./components/DivisiEditor";
 import {
   ProvenanceChip,
   pieceFieldProvenance,
-  pieceReviewProgress,
+  pieceReviewBreakdown,
   type ReviewProgress,
 } from "./components/ProvenanceChip";
 import {
@@ -105,7 +106,7 @@ import {
   getArchiveLanguageOptions,
   getLanguageLabel,
 } from "./constants/archiveLanguages";
-import { getPrimaryPdf } from "./constants/piecePdfs";
+import { getReviewPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece, type VoiceLine } from "@/shared/types";
 
 /**
@@ -140,20 +141,28 @@ const LabeledField = ({
  * section nav for the long right column. Only opacity/transform animate (the
  * chevron rotates, the body fades) — height is not animated, per the motion
  * guidelines.
+ *
+ * `pending` is the section's own review backlog. A collapsed header that says
+ * only "Tłumaczenia · 3" hides whether any of the three still needs a human, so
+ * the amethyst chip carries that and the caller opens the section when it is
+ * non-zero: the work a review exists to do must never be behind a chevron.
  */
 const CockpitSection = ({
   label,
   icon,
   count,
+  pending = 0,
   defaultOpen = false,
   children,
 }: {
   label: string;
   icon?: React.ReactNode;
   count?: number;
+  pending?: number;
   defaultOpen?: boolean;
   children: React.ReactNode;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(defaultOpen);
   return (
     <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
@@ -171,6 +180,13 @@ const CockpitSection = ({
         <Eyebrow color="graphite" className="flex-1">
           {label}
         </Eyebrow>
+        {pending > 0 && (
+          <Badge variant="amethyst" casing="natural" className="py-0">
+            {t("archive.piece_card.section_pending", "{{count}} do sprawdzenia", {
+              count: pending,
+            })}
+          </Badge>
+        )}
         {typeof count === "number" && (
           <Badge variant="neutral" className="py-0 tabular-nums">
             {count}
@@ -250,20 +266,17 @@ const LegendDot = ({
   </span>
 );
 
-/** The metadata fields that carry AI provenance and drive the review meter —
- *  exactly the set that renders a provenance chip below. */
-const METADATA_PROVENANCE_FIELDS = [
-  "title", "arranger", "opus_catalog", "musical_key", "language",
-  "voicing", "epoch", "text_source", "lyrics_original", "lyrics_ipa",
-] as const;
-
 /**
- * Trust scoreboard for the metadata section: gives the per-field provenance dots
- * a job (a target to drive to zero) and a sense of closure the loose pills never
- * offered. Hidden entirely for manually-authored pieces (no provenance at all).
- * The bar animates via `scaleX` (transform-only), per the motion guidelines.
+ * Trust scoreboard for the whole record: gives the per-field provenance dots a
+ * job (a target to drive to zero) and a sense of closure the loose pills never
+ * offered. It counts every field the conductor can verify — metadata, movement
+ * titles, translation texts — because "Zatwierdź i opublikuj" publishes all of
+ * them; a meter scoped to one section reported "wszystko zweryfikowane" over a
+ * stack of untouched translations. Hidden entirely for manually-authored pieces
+ * (no provenance at all). The bar animates via `scaleX` (transform-only), per
+ * the motion guidelines.
  */
-const MetadataReviewMeter = ({
+const ReviewMeter = ({
   progress,
   active,
 }: {
@@ -280,7 +293,7 @@ const MetadataReviewMeter = ({
   if (!active) {
     if (progress.pending === 0) return null;
     return (
-      <div className="mb-5 flex items-center gap-2">
+      <div className="flex items-center gap-2 px-1">
         <span
           aria-hidden="true"
           className="h-2 w-2 shrink-0 rounded-full border border-ethereal-amethyst/40 bg-ethereal-amethyst/15"
@@ -301,7 +314,7 @@ const MetadataReviewMeter = ({
   const ratio = progress.verified / progress.total;
   const allClear = progress.pending === 0;
   return (
-    <div className="mb-5 rounded-nested border border-hairline bg-ethereal-alabaster/50 px-4 py-3">
+    <div className="rounded-nested border border-hairline bg-ethereal-alabaster/50 px-4 py-3">
       <div className="flex items-center gap-2">
         {allClear ? (
           <ShieldCheck
@@ -433,7 +446,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   // Conductor markup, right in the main score preview. Archive is manager-only,
   // so editing is always on.
   const annotator = useScoreAnnotator({
-    editionId: piece ? getPrimaryPdf(piece)?.id ?? null : null,
+    editionId: piece ? getReviewPdf(piece)?.id ?? null : null,
     mode: "conductor",
   });
 
@@ -443,6 +456,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   // on phones.
   const isDesktopScore = useMediaQuery("(min-width: 1024px)");
   const [isScoreOpen, setIsScoreOpen] = useState(false);
+  const [isApproveOpen, setIsApproveOpen] = useState(false);
 
   // ---- Scalar form (RHF) -------------------------------------------------
   const initial = useMemo<PieceCardFormValues>(() => {
@@ -699,7 +713,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const movements = piece.movements ?? [];
   const translations = piece.translations ?? [];
   const recordings = piece.recordings ?? [];
-  const primaryPdf = getPrimaryPdf(piece);
+  const scorePdf = getReviewPdf(piece);
   const composerName = composer
     ? `${composer.first_name ?? ""} ${composer.last_name}`.trim()
     : t("archive.piece_card.no_composer", "Brak kompozytora");
@@ -707,38 +721,52 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
   const nextAwaiting = findNextAwaiting(allPieces, String(piece.id));
   const hasNext = nextAwaiting && String(nextAwaiting.id) !== String(piece.id);
 
-  // The edition this review is verifying. Approve (AWAITING → READY) is the
-  // terminal action — promoted out of the buried editions sub-list.
-  const awaitingEdition = editions.find(
+  // The editions this review is verifying. Approve (AWAITING → READY) is the
+  // terminal action and this footer is its ONLY door: the editions sub-list used
+  // to carry a second Zatwierdź that skipped the unsaved-changes guard, so a
+  // conductor could publish a record while their corrections sat unsent.
+  const awaitingEditions = editions.filter(
     (e) => e.ingestion_status === INGESTION_STATUS.AWAITING,
   );
+  const awaitingEdition = awaitingEditions[0];
 
   const handleApprove = (): void => {
     if (!awaitingEdition) return;
     approveEdition.mutate(String(awaitingEdition.id), {
       onSuccess: () => {
+        setIsApproveOpen(false);
         toast.success(
           t(
             "archive.piece_card.approved",
             "Zatwierdzono — materiały są gotowe do udostępnienia.",
           ),
         );
+        // A piece can hold more than one awaiting edition (a second upload of
+        // the same work). Stay put so the next one keeps its footer instead of
+        // being silently left behind.
+        if (awaitingEditions.length > 1) return;
         if (hasNext && nextAwaiting) {
           navigate(cardPath(nextAwaiting.id));
         } else {
           navigate("/panel/archive-management");
         }
       },
-      onError: () =>
-        toast.error(
-          t("archive.piece_card.approve_failed", "Nie udało się zatwierdzić."),
-        ),
+      onError: (err) => {
+        setIsApproveOpen(false);
+        toastApiError(err, t, {
+          fallbackDescription: t(
+            "archive.piece_card.approve_failed",
+            "Nie udało się zatwierdzić.",
+          ),
+        });
+      },
     });
   };
 
   // One unified dot everywhere (metadata + artifacts), each a click-to-verify
-  // control for the AI fields — no more mix of loud pills and quiet dots.
-  const reviewProgress = pieceReviewProgress(piece, METADATA_PROVENANCE_FIELDS);
+  // control for the AI fields — no more mix of loud pills and quiet dots. The
+  // breakdown feeds both the record-wide meter and each section's own backlog.
+  const review = pieceReviewBreakdown(piece);
   const fieldChip = (field: string): React.ReactNode => (
     <ProvenanceChip
       entry={pieceFieldProvenance(piece, field)}
@@ -832,7 +860,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
               "Podgląd PDF partytury",
             )}
           >
-            {primaryPdf ? (
+            {scorePdf ? (
               isDesktopScore ? (
                 <div className="flex h-full flex-col">
                   {/* Slim filename bar. Download is intentionally NOT duplicated
@@ -845,21 +873,21 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                       aria-hidden="true"
                     />
                     <Caption color="muted" className="truncate">
-                      {primaryPdf.label}
-                      {primaryPdf.page_count
-                        ? ` · ${t("archive.piece_card.page_count", { count: primaryPdf.page_count })}`
+                      {scorePdf.label}
+                      {scorePdf.page_count
+                        ? ` · ${t("archive.piece_card.page_count", { count: scorePdf.page_count })}`
                         : ""}
                     </Caption>
                   </div>
                   <div className="min-h-0 flex-1">
                     <PdfViewer
                       fetchBlob={() =>
-                        MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
+                        MaterialsService.fetchScoreEditionBlob(scorePdf.id)
                       }
-                      docKey={primaryPdf.id}
+                      docKey={scorePdf.id}
                       title={piece.title}
-                      subtitle={primaryPdf.label}
-                      fileName={primaryPdf.label}
+                      subtitle={scorePdf.label}
+                      fileName={scorePdf.label}
                       toolbarSlot={annotator.toolbarSlot}
                       renderPageOverlay={annotator.renderPageOverlay}
                       overlaySlot={annotator.overlaySlot}
@@ -881,12 +909,12 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     </span>
                     <div className="min-w-0 flex-1">
                       <Text size="sm" weight="semibold" truncate className="block">
-                        {primaryPdf.label}
+                        {scorePdf.label}
                       </Text>
-                      {primaryPdf.page_count ? (
+                      {scorePdf.page_count ? (
                         <Caption color="muted" className="block">
                           {t("archive.piece_card.page_count", {
-                            count: primaryPdf.page_count,
+                            count: scorePdf.page_count,
                           })}
                         </Caption>
                       ) : null}
@@ -937,16 +965,20 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
               <div className="space-y-4">
                 {awaitingEdition && <AIHallucinationWarning piece={piece} />}
 
+                {/* The record-wide scoreboard sits above the sections it counts
+                    — inside "Metadane" it read as that section's own tally. */}
+                <ReviewMeter
+                  progress={review.all}
+                  active={Boolean(awaitingEdition)}
+                />
+
                 {/* Metadata — the AI-extracted scalar fields with source chips */}
                 <CockpitSection
                   label={t("archive.piece_card.section.metadata", "Metadane")}
                   icon={<Sparkles size={14} aria-hidden="true" />}
+                  pending={awaitingEdition ? review.metadata.pending : 0}
                   defaultOpen
                 >
-                  <MetadataReviewMeter
-                    progress={reviewProgress}
-                    active={Boolean(awaitingEdition)}
-                  />
                   {awaitingEdition && (
                     <Text size="xs" color="graphite" className="mb-4 block">
                       {t(
@@ -1285,11 +1317,16 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   </div>
                 </CockpitSection>
 
+                {/* Movements and translations are the AI's most error-prone
+                    output, so during a review they open with their own backlog
+                    on the header rather than waiting behind a chevron. */}
                 {movements.length > 0 && (
                   <CockpitSection
                     label={t("archive.piece_card.movements_section", "Części")}
                     icon={<Music2 size={14} aria-hidden="true" />}
                     count={movements.length}
+                    pending={awaitingEdition ? review.movements.pending : 0}
+                    defaultOpen={Boolean(awaitingEdition) && review.movements.pending > 0}
                   >
                     <MovementsEditor piece={piece} />
                   </CockpitSection>
@@ -1300,6 +1337,10 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                     label={t("archive.piece_card.translations_section", "Tłumaczenia")}
                     icon={<Languages size={14} aria-hidden="true" />}
                     count={translations.length}
+                    pending={awaitingEdition ? review.translations.pending : 0}
+                    defaultOpen={
+                      Boolean(awaitingEdition) && review.translations.pending > 0
+                    }
                   >
                     <TranslationsEditor piece={piece} />
                   </CockpitSection>
@@ -1385,7 +1426,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                   leftIcon={<ShieldCheck size={15} aria-hidden="true" />}
                   disabled={hasChanges || approveEdition.isPending}
                   isLoading={approveEdition.isPending}
-                  onClick={handleApprove}
+                  onClick={() => setIsApproveOpen(true)}
                   title={
                     hasChanges
                       ? t("archive.piece_card.save_first", "Najpierw zapisz zmiany.")
@@ -1399,20 +1440,40 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
           </section>
         </div>
 
+        {/* Publishing is what makes the AI's work visible to the whole choir and
+            fires their notifications — irreversible in effect, so it is the one
+            action here that stops to say what it is about to do. */}
+        <ConfirmModal
+          isOpen={isApproveOpen}
+          title={t(
+            "archive.piece_card.approve_modal_title",
+            "Zatwierdzić i opublikować?",
+          )}
+          description={t(
+            "archive.piece_card.approve_modal_desc",
+            "Materiały staną się widoczne dla chóru, a uczestnicy projektów z tym utworem dostaną powiadomienie. Upewnij się, że pola oznaczone „do sprawdzenia” są zweryfikowane.",
+          )}
+          confirmText={t("archive.piece_card.approve_btn", "Zatwierdź i opublikuj")}
+          cancelText={t("common.actions.cancel", "Anuluj")}
+          isLoading={approveEdition.isPending}
+          onCancel={() => setIsApproveOpen(false)}
+          onConfirm={handleApprove}
+        />
+
         {/* Phone entry to the full-screen music stand (see the score section). */}
         <ScoreStandModal
           isOpen={isScoreOpen}
-          editionId={primaryPdf?.id ?? null}
+          editionId={scorePdf?.id ?? null}
           mode="conductor"
           title={piece.title}
-          subtitle={primaryPdf?.label}
-          fileName={primaryPdf?.label}
+          subtitle={scorePdf?.label}
+          fileName={scorePdf?.label}
           fetchBlob={
-            primaryPdf
-              ? () => MaterialsService.fetchScoreEditionBlob(primaryPdf.id)
+            scorePdf
+              ? () => MaterialsService.fetchScoreEditionBlob(scorePdf.id)
               : null
           }
-          canExport={primaryPdf?.canExport ?? true}
+          canExport={scorePdf?.canExport ?? true}
           onClose={() => setIsScoreOpen(false)}
         />
     </div>

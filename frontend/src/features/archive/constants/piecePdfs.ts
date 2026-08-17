@@ -5,7 +5,7 @@
  * download buttons). Default edition surfaces first; the rest is ordered by
  * recency.
  */
-import type { Piece, ScoreEditionSummary } from "@/shared/types";
+import { INGESTION_STATUS, type Piece, type ScoreEditionSummary } from "@/shared/types";
 
 export interface PiecePdfLink {
   /** Edition id (UUID). */
@@ -63,3 +63,24 @@ export const hasPdf = (piece: PieceLike): boolean =>
 
 export const getPrimaryPdf = (piece: PieceLike): PiecePdfLink | null =>
   getPiecePdfLinks(piece)[0] ?? null;
+
+/**
+ * The score a Piece Card should put on screen: the edition awaiting approval
+ * when there is one, otherwise the piece's primary.
+ *
+ * A review means checking one document's extractions against that document —
+ * and its annotations belong to it too. Falling back to "default, then newest"
+ * happened to land on the right edition only because nothing in the app sets
+ * `is_default`; the moment anything does, the conductor would be verifying
+ * edition B's fields against edition A's pages.
+ */
+export const getReviewPdf = (piece: PieceLike): PiecePdfLink | null => {
+  const links = getPiecePdfLinks(piece);
+  const awaiting = (piece.editions ?? []).find(
+    (edition) => edition.ingestion_status === INGESTION_STATUS.AWAITING,
+  );
+  const underReview = awaiting
+    ? links.find((link) => link.id === awaiting.id)
+    : undefined;
+  return underReview ?? links[0] ?? null;
+};

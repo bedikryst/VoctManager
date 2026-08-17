@@ -30,11 +30,13 @@ from archive.infrastructure.wikidata_client import (
 )
 from archive.models import (
     Composer,
+    IngestionStatus,
     Movement,
     Piece,
     ProgramNote,
     ProvenanceRecord,
     ProvenanceSource,
+    ScoreEdition,
 )
 from archive.services import enrichment
 from core.constants import AppRole
@@ -621,3 +623,74 @@ class ProgramNoteEndpointTests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         ids = {row["id"] for row in resp.json()}
         self.assertEqual(ids, {str(self.note.id)})
+
+
+class OrphanIngestionsEndpointTests(APITestCase):
+    """GET /api/archive/editions/orphans/ — the dead-letter queue.
+
+    A pipeline that dies before the resolver attaches a Piece leaves a row that
+    is terminal (so `active/` has dropped it) and piece-less (so no piece card
+    shows it). Without this endpoint the upload, its error and its AI spend were
+    unreachable after a page reload, with no way left to retry or delete. These
+    guard exactly that boundary: piece-less failures in, everything else out.
+    """
+
+    @staticmethod
+    def _user(username: str, email: str, role: str):
+        user = User.objects.create_user(username=username, email=email, password="pw123456")
+        UserProfile.objects.create(user=user, role=role)
+        return user
+
+    @staticmethod
+    def _edition(name: str, status: str, piece: Piece | None = None) -> ScoreEdition:
+        return ScoreEdition.objects.create(
+            piece=piece,
+            original_filename=name,
+            pdf_file=f"scores/{name}",
+            ingestion_status=status,
+            ingestion_error="Nie udało się odczytać PDF." if status == IngestionStatus.FAILED else "",
+            sha256="",
+            page_count=0,
+        )
+
+    def setUp(self) -> None:
+        self.manager = self._user("mgr4", "mgr4@test.pl", AppRole.MANAGER)
+        self.artist = self._user("art4", "art4@test.pl", AppRole.ARTIST)
+        self.piece = Piece.objects.create(title="Ave Verum")
+        self.orphan = self._edition("orphan.pdf", IngestionStatus.FAILED)
+        self.url = "/api/archive/editions/orphans/"
+
+    def test_requires_manager(self) -> None:
+        self.client.force_authenticate(self.artist)
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+
+    def test_returns_piece_less_failures(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200)
+        rows = resp.json()
+        self.assertEqual([row["id"] for row in rows], [str(self.orphan.id)])
+        # The reason and the money spent are the whole point of the row.
+        self.assertIn("ingestion_error", rows[0])
+        self.assertIn("ingestion_cost_cents_lifetime", rows[0])
+
+    def test_excludes_failures_that_reached_a_piece(self) -> None:
+        # Those already appear on their piece's card, with the same error and
+        # the same actions — listing them here would duplicate the door.
+        self._edition("attached.pdf", IngestionStatus.FAILED, piece=self.piece)
+        self.client.force_authenticate(self.manager)
+        ids = {row["id"] for row in self.client.get(self.url).json()}
+        self.assertEqual(ids, {str(self.orphan.id)})
+
+    def test_excludes_in_flight_and_settled_runs(self) -> None:
+        self._edition("running.pdf", IngestionStatus.EXTRACTING)
+        self._edition("awaiting.pdf", IngestionStatus.AWAITING)
+        self.client.force_authenticate(self.manager)
+        ids = {row["id"] for row in self.client.get(self.url).json()}
+        self.assertEqual(ids, {str(self.orphan.id)})
+
+    def test_deleting_an_orphan_clears_it(self) -> None:
+        self.client.force_authenticate(self.manager)
+        resp = self.client.delete(f"/api/archive/editions/{self.orphan.id}/")
+        self.assertEqual(resp.status_code, 204)
+        self.assertEqual(self.client.get(self.url).json(), [])

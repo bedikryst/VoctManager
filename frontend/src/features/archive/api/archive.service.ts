@@ -68,6 +68,9 @@ export interface ComposerRefreshResult {
 export interface ScoreEditionDetail extends ScoreEditionSummary {
   sha256: string;
   uploaded_by: number | null;
+  /** Owning Piece id — null until the resolver step attaches one. It is what
+   *  lets a finished upload row link straight to the review cockpit. */
+  piece: string | null;
   /** Present on POST responses (upload, reingest) only. */
   celery_task_id?: string;
 }
@@ -275,6 +278,14 @@ export const ArchiveService = {
    *  "AI w toku" panel that survives a page refresh. */
   getActiveEditions: async (): Promise<ActiveIngestion[]> => {
     const response = await api.get<ActiveIngestion[]>(`${EDITIONS_URL}active/`);
+    return response.data;
+  },
+
+  /** Ingestions that died before the resolver attached a Piece. Terminal, so
+   *  absent from `active/`; piece-less, so on no piece's card — without this
+   *  they are unreachable and can be neither retried nor deleted. */
+  getOrphanEditions: async (): Promise<ActiveIngestion[]> => {
+    const response = await api.get<ActiveIngestion[]>(`${EDITIONS_URL}orphans/`);
     return response.data;
   },
 

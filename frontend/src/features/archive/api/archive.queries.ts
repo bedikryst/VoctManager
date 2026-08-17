@@ -49,6 +49,8 @@ export const archiveKeys = {
   },
   editions: {
     detail: (id: string) => ["editions", id] as const,
+    active: ["editions", "active"] as const,
+    orphans: ["editions", "orphans"] as const,
   },
 };
 
@@ -322,7 +324,7 @@ export const useUploadEdition = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
       // Surface the new ingestion in the persistent "AI w toku" panel at once.
-      qc.invalidateQueries({ queryKey: ["editions", "active"] });
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.active });
     },
   });
 };
@@ -339,7 +341,7 @@ export const useActiveIngestions = () => {
   const previousActiveIds = useRef<Set<string> | null>(null);
 
   const query = useQuery({
-    queryKey: ["editions", "active"],
+    queryKey: archiveKeys.editions.active,
     queryFn: ArchiveService.getActiveEditions,
     ...RECONCILING_REFETCH,
     refetchInterval: (q) => {
@@ -350,10 +352,11 @@ export const useActiveIngestions = () => {
 
   // Durable, refresh-proof completion signal. The `active/` endpoint returns
   // only non-terminal ingestions (PEND/EXTR/ENRI/GENR) — an edition leaves this
-  // set exactly when it reaches AWAITING, i.e. once the resolver has persisted
-  // its Piece and created/linked its Composer. Reconcile both lists here so the
-  // new piece and composer appear even when the user navigated away from the
-  // SSE-connected upload row (whose `done` handler is the only other trigger).
+  // set exactly when it settles, i.e. once the resolver has persisted its Piece
+  // and created/linked its Composer, or the run died. Reconcile the affected
+  // lists here so the new piece and composer appear (and a piece-less failure
+  // reaches the orphans panel) even when the user navigated away from the
+  // SSE-connected upload row — whose `done` handler is the only other trigger.
   useEffect(() => {
     const current = new Set((query.data ?? []).map((item) => item.id));
     const previous = previousActiveIds.current;
@@ -364,11 +367,27 @@ export const useActiveIngestions = () => {
     if (completed) {
       void qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
       void qc.invalidateQueries({ queryKey: archiveKeys.composers.all });
+      void qc.invalidateQueries({ queryKey: archiveKeys.editions.orphans });
     }
   }, [query.data, qc]);
 
   return query;
 };
+
+/**
+ * Ingestions that ended without ever reaching a Piece — the archive's
+ * dead-letter queue. Deliberately NOT polled: this set only changes when a run
+ * leaves `active/` (which {@link useActiveIngestions} detects and invalidates
+ * from) or when the manager retries/deletes a row here. Almost always empty, so
+ * a second timer against the server would buy nothing.
+ */
+export const useOrphanIngestions = () =>
+  useQuery({
+    queryKey: archiveKeys.editions.orphans,
+    queryFn: ArchiveService.getOrphanEditions,
+    ...RECONCILING_REFETCH,
+    staleTime: 1000 * 60,
+  });
 
 export const usePatchEdition = () => {
   const qc = useQueryClient();
@@ -406,7 +425,11 @@ export const useDeleteEdition = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => ArchiveService.deleteEdition(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      // Discarding a dead upload is the orphans panel's main job.
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.orphans });
+    },
   });
 };
 
@@ -424,7 +447,10 @@ export const useCancelEdition = () => {
     mutationFn: (id) => ArchiveService.cancelEdition(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
-      qc.invalidateQueries({ queryKey: ["editions", "active"] });
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.active });
+      // Cancelling marks the edition FAILED; if it never reached a Piece it
+      // lands in the orphans panel, which is the only place left to delete it.
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.orphans });
     },
   });
 };
@@ -545,7 +571,10 @@ export const useLiveIngestion = (id: string | null): LiveIngestion | null => {
       ingestion_cost_cents: d.ingestion_cost_cents ?? 0,
       ingestion_cost_cents_lifetime: d.ingestion_cost_cents_lifetime ?? 0,
       page_count: d.page_count ?? null,
-      piece_id: null,
+      // The resolved piece, so the finished upload row still offers its
+      // "Sprawdź i zatwierdź" link when SSE was unavailable. `live_preview` has
+      // no poll equivalent (it is published to cache, not to the row).
+      piece_id: d.piece ?? null,
     };
   }
   return null;
@@ -560,7 +589,12 @@ export const useReingestEdition = () => {
   >({
     mutationFn: ({ id, force = false }) =>
       ArchiveService.reingestEdition(id, force),
-    onSuccess: () => qc.invalidateQueries({ queryKey: archiveKeys.pieces.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      // A retry moves the row out of the dead-letter queue and back in flight.
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.orphans });
+      qc.invalidateQueries({ queryKey: archiveKeys.editions.active });
+    },
   });
 };
 

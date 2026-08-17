@@ -93,7 +93,7 @@ export const liveAnalysisDetail = (
   const section = LIVE_SECTION_LABEL[preview.section];
   if (!section) return null;
   const parts: string[] = [];
-  if (preview.title) parts.push(`„${preview.title}"`);
+  if (preview.title) parts.push(`„${preview.title}”`);
   if (preview.composer) parts.push(preview.composer);
   if (preview.section !== "identity" && (preview.movements ?? 0) > 1) {
     parts.push(

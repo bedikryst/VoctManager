@@ -42,14 +42,12 @@ import { cn } from "@/shared/lib/utils";
 import { INGESTION_STATUS } from "@/shared/types";
 
 import { useLiveIngestion, useUploadEdition } from "../api/archive.queries";
+import { formatIngestionCost } from "../constants/ingestionCost";
 import {
   isOverloadWait,
   liveAnalysisDetail,
   liveIngestionLabel,
 } from "../constants/ingestionProgress";
-
-const fmtCents = (cents?: number): string =>
-  cents && cents > 0 ? `$${(cents / 100).toFixed(2)}` : "$0.00";
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
@@ -344,6 +342,7 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
   const live = useLiveIngestion(editionId ?? null);
   const ingStatus = live?.ingestion_status;
   const overloaded = isOverloadWait(live?.ingestion_progress);
+  const liveCost = formatIngestionCost(live?.ingestion_cost_cents_lifetime);
 
   const view: RowView =
     phase === "queued"
@@ -419,10 +418,8 @@ const UploadRow = ({ entry, onRemove }: UploadRowProps): React.JSX.Element => {
                 )}
             </Caption>
           )}
-          {view === "ingesting" && (live?.ingestion_cost_cents_lifetime ?? 0) > 0 && (
-            <Caption color="muted">
-              {fmtCents(live?.ingestion_cost_cents_lifetime)}
-            </Caption>
+          {view === "ingesting" && liveCost && (
+            <Caption color="muted">{liveCost}</Caption>
           )}
           {view === "awaiting" && (
             <Caption color="muted">

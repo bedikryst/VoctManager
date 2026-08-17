@@ -46,6 +46,7 @@ import {
 import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { ArchiveWelcomeState } from "./components/ArchiveWelcomeState";
 import { EditionUploadDrawer } from "./components/EditionUploadDrawer";
+import { OrphanIngestionsPanel } from "./components/OrphanIngestionsPanel";
 import { PieceRow } from "./components/PieceRow";
 import { useArchiveData } from "./hooks/useArchiveData";
 import { getArchiveEpochOptions } from "./constants/archiveEpochs";
@@ -269,8 +270,11 @@ export default function ArchiveManagement(): React.JSX.Element {
         )}
 
         {/* Persistent, refresh-proof live view of every ingestion in flight —
-            rendered in both the fresh and populated archive states. */}
+            rendered in both the fresh and populated archive states, and paired
+            with the dead-letter queue for the runs that never reached a piece
+            (silent until there is one, which is nearly always). */}
         <ActiveIngestionsPanel />
+        <OrphanIngestionsPanel />
 
         {isFreshArchive ? (
           <ArchiveWelcomeState onAddManually={navigateToNew} />
