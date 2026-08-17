@@ -28,6 +28,7 @@ import {
 import { cn } from "@/shared/lib/utils";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import type { SegmentedTabItem } from "@/shared/ui/composites/SegmentedTabs";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -491,7 +492,9 @@ export function ScorePackagePanel({
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="flex flex-col gap-1.5">
                       <Eyebrow as="span" color="muted" className="ml-1">
-                        {t("projects.score_package.density.label", "Układ")}
+                        <GlossaryTerm term="density">
+                          {t("projects.score_package.density.label", "Układ")}
+                        </GlossaryTerm>
                       </Eyebrow>
                       <SegmentedTabs<DensityId>
                         items={densityItems}

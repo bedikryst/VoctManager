@@ -2252,6 +2252,13 @@
       "location": "Cracovie, PL"
     }
   },
+  "glossary": {
+    "density": "La disposition des textes dans le recueil : « Concert » place une fiche avant chaque œuvre, « Messe » regroupe tous les textes au début.",
+    "divisi": "La division d'un pupitre en parties distinctes — les sopranos en S1 et S2, par exemple — telle que l'exige l'œuvre.",
+    "edition": "Une édition de la partition en PDF — une œuvre peut en avoir plusieurs, et vous en choisissez une par concert.",
+    "epoch": "La période stylistique de l'œuvre — du Moyen Âge à la musique contemporaine, traditionnelle ou populaire.",
+    "license": "Le statut des droits de l'édition — hors domaine public, les choristes n'y accèdent que dans l'application, avec filigrane."
+  },
   "logistics": {
     "atlas": {
       "empty_desc": "Ajoutez un lieu depuis Google Maps pour le voir apparaître sur l'atlas.",

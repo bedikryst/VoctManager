@@ -17,6 +17,7 @@ import type { Composer } from "@/shared/types";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { FilterTokens, type FilterToken } from "@/shared/ui/composites/FilterTokens";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -156,7 +157,9 @@ export const ArchiveSearchBar = ({
               </div>
               <div>
                 <Eyebrow color="muted" className="mb-1 ml-1 block">
-                  {t("archive.search.epoch", "Epoka")}
+                  <GlossaryTerm term="epoch">
+                    {t("archive.search.epoch", "Epoka")}
+                  </GlossaryTerm>
                 </Eyebrow>
                 <Select
                   value={epochFilter}

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Users } from "lucide-react";
 
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import type { MaterialsCasting } from "../types/materials.dto";
 
@@ -38,7 +39,9 @@ export const PieceDivisiRoster = ({
           aria-hidden="true"
         />
         <Eyebrow color="muted">
-          {t("materials.piece.cast_divisi", "Obsada (Divisi)")}
+          <GlossaryTerm term="divisi">
+            {t("materials.piece.cast_divisi", "Obsada (Divisi)")}
+          </GlossaryTerm>
         </Eyebrow>
       </div>
 

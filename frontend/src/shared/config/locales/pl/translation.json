@@ -2262,6 +2262,13 @@
       "location": "Kraków, PL"
     }
   },
+  "glossary": {
+    "density": "Rozkład tekstów w książce nutowej: „Koncert” daje kartę przed każdym utworem, „Msza” zbiera wszystkie teksty na początku.",
+    "divisi": "Podział sekcji na osobne partie — na przykład sopranów na S1 i S2 — którego wymaga dany utwór.",
+    "edition": "Konkretne wydanie nut w PDF — jeden utwór może mieć ich kilka, a do koncertu wybierasz jedno.",
+    "epoch": "Okres stylistyczny utworu — od średniowiecza po muzykę współczesną, ludową i rozrywkową.",
+    "license": "Status praw autorskich wydania — wszystko poza domeną publiczną chórzyści widzą tylko w aplikacji i ze znakiem wodnym."
+  },
   "logistics": {
     "atlas": {
       "empty_desc": "Dodaj lokację z mapy Google, aby zobaczyć ją na atlasie.",

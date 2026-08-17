@@ -2252,6 +2252,13 @@
       "location": "Krakow, PL"
     }
   },
+  "glossary": {
+    "density": "How texts sit in the score book: “Concert” puts a card before every piece, “Mass” gathers all the texts at the front.",
+    "divisi": "The split of a section into separate parts — sopranos into S1 and S2, say — that a given work calls for.",
+    "edition": "One published PDF of the score — a work can have several, and you pick one for each concert.",
+    "epoch": "The work's stylistic period — from medieval to contemporary, folk and popular music.",
+    "license": "The edition's copyright status — anything other than public domain reaches choristers in the app only, watermarked."
+  },
   "logistics": {
     "atlas": {
       "empty_desc": "Add a location from Google Maps to see it on the atlas.",

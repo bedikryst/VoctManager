@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { Minus, Plus, X } from "lucide-react";
 
 import type { VoiceLine, VoiceLineOption } from "@/shared/types";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { VoiceRequirementDTO } from "../types/archive.dto";
@@ -60,7 +61,9 @@ export const DivisiEditor = ({
   return (
     <div>
       <Eyebrow color="muted" className="mb-1 block">
-        {t("archive.form.fields.divisi", "Divisi (opcjonalnie)")}
+        <GlossaryTerm term="divisi">
+          {t("archive.form.fields.divisi", "Divisi (opcjonalnie)")}
+        </GlossaryTerm>
       </Eyebrow>
       <Caption color="muted" className="mb-3 block">
         {t(

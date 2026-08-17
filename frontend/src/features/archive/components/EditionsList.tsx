@@ -33,6 +33,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Select } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { ConfirmModal } from "@/shared/ui/composites/ConfirmModal";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
 import {
   INGESTION_STATUS,
@@ -120,7 +121,9 @@ const EditionLicenseControl = ({
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-hairline pt-3">
       <Caption color="muted" className="shrink-0">
-        {t("archive.editions.license.label", "Licencja")}
+        <GlossaryTerm term="license">
+          {t("archive.editions.license.label", "Licencja")}
+        </GlossaryTerm>
       </Caption>
       <div className="w-56">
         <Select

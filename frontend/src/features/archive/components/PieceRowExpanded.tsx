@@ -24,6 +24,7 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { ComposerCard, EditionStatusBadge } from "@/shared/ui/composites/repertoire";
+import { GlossaryTerm } from "@/shared/ui/composites/glossary/GlossaryTerm";
 import { ScoreStandModal } from "@/features/annotations";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 import { INGESTION_STATUS } from "@/shared/types";
@@ -127,11 +128,15 @@ export const PieceRowExpanded = ({
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <Eyebrow color="muted">
                   <FileText size={11} className="mr-1 inline" aria-hidden="true" />
-                  {pdfLinks.length === 1
-                    ? t("archive.row_expanded.pdf_one", "Partytura PDF")
-                    : t("archive.row_expanded.pdf_many", "Wydania ({{count}})", {
-                        count: pdfLinks.length,
-                      })}
+                  <GlossaryTerm term="edition">
+                    {pdfLinks.length === 1
+                      ? t("archive.row_expanded.pdf_one", "Partytura PDF")
+                      : t(
+                          "archive.row_expanded.pdf_many",
+                          "Wydania ({{count}})",
+                          { count: pdfLinks.length },
+                        )}
+                  </GlossaryTerm>
                 </Eyebrow>
                 {representativeStatus && (
                   <EditionStatusBadge status={representativeStatus} />
