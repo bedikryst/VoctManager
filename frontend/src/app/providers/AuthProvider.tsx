@@ -69,7 +69,7 @@ const LOGIN_ERROR_KEYS: Partial<Record<ApiErrorKind, string>> = {
   server: "auth.login.errors.unavailable",
 };
 
-interface AuthContextType {
+export interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -78,7 +78,13 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+/**
+ * Exported so the flow-test harness can seat a session without a live token
+ * endpoint. `useAuth` resolves this context by identity, so a look-alike
+ * provider cannot stand in for it. Application code reads the session through
+ * `useAuth` and never touches the context directly.
+ */
+export const AuthContext = createContext<AuthContextType | null>(null);
 
 const silentAuthCheckConfig: AuthRequestConfig = {
   skipAuthRefresh: true,

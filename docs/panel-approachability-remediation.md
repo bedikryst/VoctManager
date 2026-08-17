@@ -255,6 +255,95 @@ say so in the config comment so a later pass does not read the gap as an oversig
 publication test and confirm it fails (a suite that cannot fail is not a suite); `npm run build`
 still clean.
 
+### Stage 3 — landed (2026-08-17)
+
+**Shipped — the harness, three files in `src/test/`.** It lives at the top level beside
+`app / pages / widgets / features / shared` rather than inside `shared/`, because it imports the auth
+provider from `app/` and `shared/` stays domain-free.
+
+- `harness.tsx` — the one render entry. `renderWithPanel` for components, `renderHookWithPanel` for
+  the flows whose irreversible step is a hook rather than a button; both wrap the same `PanelHarness`
+  (`QueryClient` with retries off → `AuthContext.Provider` → `MemoryRouter`) and both hand the test
+  back the `QueryClient`, so an optimistic patch can be read out of the cache. Two seated identities,
+  `TEST_MANAGER` and `TEST_ARTIST`. Extend this file; the plan's warning about a second harness is
+  the reason it also carries the fixtures.
+- `setup.ts` — the browser APIs jsdom omits (`matchMedia` for framer-motion's reduced-motion query,
+  `ResizeObserver`), the msw lifecycle, and the language pin.
+- `server.ts` — one msw server with **no default handlers**, run as
+  `onUnhandledRequest: "error"`. In a suite whose whole subject is writes that cannot be undone, a
+  request nobody stubbed is the finding.
+
+One app-code change: `AuthContext` and `AuthContextType` are now exported from `AuthProvider.tsx`.
+`useAuth` resolves the context by identity, so a look-alike provider cannot seat a session, and
+`vi.mock` on the module would have hidden the real provider from every suite at once.
+
+**The vitest split.** `test.projects` with `extends: true` (so both inherit the path aliases and the
+`__APP_BUILD__` define): `logic` — node, `src/**/*.test.ts`, no setup file; and `flows` — jsdom,
+`src/**/*.test.tsx`, `setupFiles: ["./src/test/setup.ts"]`. The six existing files did not move and
+did not slow down (71 tests in ~180 ms); the jsdom environment alone costs seconds to stand up on
+Windows, which is the whole argument for the split rather than one DOM project.
+
+**The scope ceiling is written into the config header**, at length, so a later pass reads the
+untested remainder as a decision: these four flows are where a regression sends mail, marks the wrong
+person absent, or burns a single-use invitation link — the places where `tsc`, a build and a look at
+the screen genuinely are not evidence.
+
+**The i18n decision: the application's own instance, not a test copy.** `setup.ts` seeds
+`localStorage.voctmanager_lang = "pl"` *before* importing `shared/config/i18n` (the detector reads
+that key first, and jsdom's navigator reports en-US), then awaits `i18nReady`. So the tests find
+controls by the Polish words a chorister actually reads — `Opublikuj i wyślij`, `Aktywuj konto`,
+`Zaznacz akceptację regulaminu…` — and `pl/translation.json` is now load-bearing for the suite. A
+second instance seeded with test strings would have let the locale files rot while the suite stayed
+green, and react-i18next keeps one default instance anyway, so two `initReactI18next` calls would
+race.
+
+**Twelve tests, four flows.**
+
+| flow | file | what is asserted |
+| --- | --- | --- |
+| publication (4) | `PublishProjectModal.test.tsx` | the recipient count and every warning are stated before the act; confirming sends **exactly one** POST to `publish/` and reports back; an unpublishable project cannot be sent; the dialog resists Escape, cancel and close while the write is in flight |
+| RSVP (4) | `useScheduleData.test.tsx` | confirming presence POSTs `PRESENT` with the artist's own participation and **no invented excuse note**; editing an existing report PATCHes that row instead of filing a second; a refused write leaves no confirmation in the cache; a rehearsal the artist is not cast in produces no request at all |
+| roll-call (2) | `rehearsals.queries.test.tsx` | a tap lands on the roster before the server answers and sends one record, leaving neighbouring rows alone; "mark the rest present" writes one request per singer — PATCH for those who have a row, POST for those who do not |
+| activation (2) | `ActivatePage.test.tsx` | an unticked consent box does not spend the invitation, and the form names the rule it is holding on; the happy path POSTs `terms_version` equal to the `LEGAL_DOCS_VERSION` the screen displayed |
+
+Publication and activation are driven through the real components with `user-event`; RSVP and
+roll-call through `renderHookWithPanel`, because that is where their irreversible half lives.
+
+**One harness bug the tests found.** `gcTime: 0` in the test `QueryClient` — it looks like hygiene
+and it evicts any cache with no observer, which is exactly the shape of the roll-call roster
+(`["attendances"]`, patched optimistically, read by an assertion rather than by a component). The
+roll-call test failed as *expected undefined to be 'PRESENT'*: an eviction dressed as a missing
+write. Removed, with the reasoning recorded in `createTestQueryClient` so nobody re-adds it.
+
+**Declined, and why.**
+- **`@testing-library/jest-dom`.** Not among the four dependencies the plan named, and every
+  assertion here reads fine without it (`expect((confirm as HTMLButtonElement).disabled).toBe(true)`).
+  Adding a matcher library to make four `.disabled` checks prettier is not worth widening the stated
+  dependency set.
+- **Mocking `axios` or the service layer instead of msw.** The value of these tests *is* the request
+  — method, URL, body. A stubbed `ProjectService.publish` proves the component calls a function; the
+  msw handler proves the choir is mailed once, at the right URL, with the right payload.
+- **`TimelineRehearsalCard` as the RSVP entry point.** The card receives `onSubmitReport` as a prop,
+  so a test through it proves prop wiring and stops short of the network. The parts that can mark the
+  wrong person — the participation lookup and the create-vs-edit decision — are in
+  `useScheduleData.handleAbsenceSubmit`, and that is what is tested.
+- **Rendering `Schedule` or `Rehearsals` whole.** Both pull in map, audio and scroll surfaces with no
+  bearing on the write, and would make the suite fail for reasons that are not the flow.
+- **A coverage threshold or a `--coverage` gate.** A percentage measured over 569 sources would
+  report this deliberate ceiling as a failure, and the cure would be tests written to move a number.
+
+**Verification.** `npm run test` → 10 files, 83 tests, both projects green (`logic` 71 / `flows` 12).
+`npm run build` clean — and note that it was the build, not vitest, that caught three type errors in
+the new test files: vitest transpiles without checking, while `tsconfig.app.json` includes
+`src/**/*`, so the tests are inside `tsc -b` and stay there. `npm run lint` clean. No new
+user-facing strings, so no locale change this stage.
+
+**Proof the suite can fail.** In *"sends exactly one publish request"*,
+`expect(publish.count()).toBe(1)` → `toBe(2)`. Result: `1 failed | 82 passed`, reported as
+`AssertionError: expected 1 to be 2` at `PublishProjectModal.test.tsx:134` — the assertion reads the
+count of requests that actually reached the msw handler, not a value the test set itself. Reverted;
+re-run green at 83.
+
 ---
 
 ## Stage 4 — absence over a date range
@@ -336,3 +425,31 @@ Do not reopen these without a reason that is new.
   Would need an anchor in the Chorister Hub, or a "message this person" route that does not require
   an existing thread id. Declined in Stage 1.
 - Nothing owed from Stage 1 or Stage 2 — both stages' gates are green.
+
+**What Stage 3's harness does not reach.** Not a to-do list — the ceiling was deliberate — but these
+are the specific things a later pass should not assume are covered:
+
+- **Everything the server decides.** msw answers whatever the test tells it to, so the suite proves
+  the panel *sends* the right request and never that the backend accepts it. Publication's real
+  contract — one `Announcement` per awaiting participation, none for those who already replied, the
+  `is_publishable` verdict itself — is backend behaviour and belongs in `backend/projects` tests
+  (`--settings=config.test_settings_sqlite`). If those tests do not exist, that is the larger gap,
+  and it is a backend stage.
+- **The activation link's dead states.** `linkStatus` (`checking` / `expired` / `invalid`) gates the
+  whole password form, and only the live `ok` path is tested. Reaching the others means driving
+  `parseApiError` off a stubbed error code — cheap, and worth adding next time this file is opened.
+- **The offline RSVP branch.** `useUpsertScheduleAttendance` treats an error with no `response` as
+  "still offline" and enqueues the write in `useOfflineStore` instead of rolling back. That branch —
+  the one that decides whether a POST replays as a POST — is untested; it needs a network-level
+  failure plus the zustand store, not just a 500.
+- **Optimistic reconciliation after settle.** The roll-call test asserts the optimistic patch and the
+  requests, then stops. `settleOptimistic`'s "only the *last* in-flight write reconciles" rule — the
+  thing that stops a rapid roll-call from overwriting taps still in the air — would need several
+  concurrent mutations with independently released responses. It is the subtlest logic in the file and
+  has no test.
+- **Whole pages.** `Schedule`, `Rehearsals` and the project hub are not rendered anywhere in the
+  suite; the flows enter through one component or one hook. Anything that only breaks when a page
+  wires its parts together is still eye-only.
+- **`ActivatePage`'s success panel** renders `useWelcomeTone` (Web Audio) and `navigator.clipboard`,
+  neither of which jsdom provides. The two activation tests stop at the request; the screen the member
+  sees afterwards is unasserted.
