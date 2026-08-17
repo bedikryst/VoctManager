@@ -159,6 +159,69 @@ Constraints:
 base keys (the audit's diff script, or any flat-key comparison ignoring plural suffixes); and a term
 that appears eight times on one screen is glossed once.
 
+### Stage 2 — landed (2026-08-17)
+
+**Shipped.** `shared/ui/composites/glossary/` — `glossaryTerms.ts` (the closed set of term ids and
+the one rule for finding a sentence: `glossary.<id>`) and `GlossaryTerm.tsx` (the mark). Five terms,
+six mounts, each on the label slot where that reader first meets the word:
+
+| term | mount | reader |
+| --- | --- | --- |
+| `divisi` | `DivisiEditor` — *Divisi (opcjonalnie)* | conductor, where divisi is defined |
+| `divisi` | `PieceDivisiRoster` — *Obsada (Divisi)* | chorister, Songbook piece page |
+| `epoch` | `ArchiveSearchBar` — *Epoka* | conductor, archive filters |
+| `edition` | `PieceRowExpanded` — *Wydania (n)* | conductor, archive row |
+| `license` | `EditionsList` — *Licencja* | conductor, per edition |
+| `density` | `ScorePackagePanel` — *Układ* | conductor, score-book cockpit |
+
+The sentence lives in `glossary.*` in the three locale files and **nowhere else** — the module
+carries no `t()` fallback string, deliberately breaking the house `t(key, "Polish default")` style,
+because that fallback would be the second copy of the definition this stage exists to avoid. The
+term text stays whatever the surface already wrote; the mark only underlines it.
+
+**One design decision this forced: a Popover, not the `Tooltip` primitive.** The plan named
+`Tooltip`, and it is the wrong instrument twice over. Radix suppresses a tooltip on touch (the
+trigger's `pointerdown` closes it and the focus-open is then ignored), so on a phone — where a
+chorister meets most of this vocabulary — the definition would not exist at all, which is the
+touch-first rule in the canon. And its content is a `whitespace-nowrap` `Label` sized for a two-word
+chrome hint. `GlossaryTerm` is a Radix Popover: tap, click and Enter all open it. Its surface is
+composed (`GlassCard variant="solid"` inside a `popover-motion` content at `z-popover`) rather than a
+third private copy of the dropdown/select popover skin.
+
+**Declined, and why.**
+- **TUTTI — needs renaming, not defining.** The panel spends the word on three different things: a
+  rehearsal the whole cast is called to (`projects.rehearsals.form.type_tutti`), an audio track
+  carrying all voices (`archive.row_tracks.tutti`), and "all sections / clear the filter" on the
+  roster (`artists.filters.all` is literally *Tutti*). One sentence cannot hold three meanings, so
+  by this stage's own rule it goes to "Still open". Mechanically it is also unmountable today —
+  `SegmentedTabs` takes `label: string` — and the rehearsal form already answers it in context
+  (*Kto jest wezwany?* over *Tutti · Sekcyjna · Wybrani*).
+- **Proweniencja — the word is not on screen.** Zero hits for `prowenienc` in all three locales:
+  what the reader sees is `ProvenanceChip`'s dot, which already states its own sentence per state
+  ("Wyciągnięte przez AI (…), niezweryfikowane…", "Potwierdzone przez kanoniczne źródło: …").
+  Glossing a term the product never prints would mean inventing the vocabulary in order to explain
+  it.
+- **Gotowość partii — no honest single mount.** For the singer, `ReadinessControl` spells its three
+  states in plain Polish (*Nie zaczęte · Ćwiczę · Znam partię*) and `materials.piece_page.readiness_hint`
+  already says who reads it. For the conductor — who is the one who could mistake a self-report for
+  an assessment — the figure sits in `SetlistRow`'s per-row readiness line, and the setlist card's
+  header and footer name no readiness at all, so the only available mounts are *every row* (exactly
+  the bug this stage forbids) or a label that does not exist. Recorded in "Still open" as a mount
+  problem, not a definition problem. (`ReadinessRing`, the chorister's other readiness surface, is
+  wrapped in a `<Link>`; a button inside it is invalid nesting and would swallow the tap.)
+
+**Verification.** `npm run typecheck` clean, `npm run build` green, 71 tests pass, `npx eslint` clean
+on all eight changed/added files. Locales at zero drift — 3406 base keys in each of pl/en/fr after
+this stage's five, compared with plural suffixes stripped — each locale file `+7` lines and nothing
+else, with the Polish and French diacritics (`ł ó ą ż ę „ ”`, `é œ Â à`) verified by codepoint rather
+than by eye.
+
+Same note as Stage 1 for whoever reads the history: the **archive refactor is still in flight** in
+the working tree (`ArchivePieceCardPage`, `PieceMetadataForm`, `PieceFactStrip`,
+`ReviewArtifactsEditors`, `AIHallucinationWarning`, `archiveLanguages`). Nothing here touched those
+files — the mounts were deliberately chosen in archive files the other session does not hold. This
+stage's commit is the two new `glossary/` files, six mount files and the three locales.
+
 ---
 
 ## Stage 3 — the frontend test harness, then the flow tests
@@ -250,10 +313,26 @@ Do not reopen these without a reason that is new.
   this plan, still unswept.
 - Stage 2 may surface terms that need **renaming** rather than defining. Record them here as they
   are found; renaming is not in scope for this plan.
+  - **TUTTI, found in Stage 2.** Three meanings under one word: the rehearsal the whole cast is
+    called to, an audio track carrying all voices, and the roster filter's "all sections" reset
+    (`artists.filters.all` = *Tutti*, whose siblings are voice sections — the odd one out, and the
+    cheapest to rename). A definition would have to say three things, so it gets none until the
+    third meaning is renamed.
+- **`Tooltip`'s content cannot wrap.** The primitive sets `whitespace-nowrap` on a `Label` sized for
+  a two-word chrome hint, but `ProvenanceChip` already passes sentence-length copy into it
+  ("Wyciągnięte przez AI (…), niezweryfikowane — sprawdź z PDF i popraw w razie potrzeby."), which
+  renders as one unwrappable line. Stage 2 routed around it (its own mark is a Popover) rather than
+  fixing it, because the fix belongs with the archive files another session is holding. A `max-w` +
+  wrapping content, checked against the sidebar's short labels, is a small pass for whoever gets
+  there next.
+- **A mount for "gotowość partii".** The conductor's readiness figure lives per row in `SetlistRow`
+  with no column header or legend to hold a definition, so the term cannot be glossed without
+  marking every row. Whichever surface grows a header that owns that figure is where the gloss goes;
+  the sentence itself is a five-minute job once the slot exists.
 - **Schedule events in the palette** — blocked on `/panel/schedule` gaining a URL-addressable event
   (`?event=`) plus a shared `PROJ-*`/`REH-*` id helper so the palette does not retype the scheme.
   Declined in Stage 1; a candidate, not an omission.
 - **Section-mates in the palette** — blocked on a chorister having any per-person destination.
   Would need an anchor in the Chorister Hub, or a "message this person" route that does not require
   an existing thread id. Declined in Stage 1.
-- Nothing owed from Stage 1 — its gates are green.
+- Nothing owed from Stage 1 or Stage 2 — both stages' gates are green.
