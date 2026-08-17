@@ -1,6 +1,7 @@
 import io
 import tempfile
 from contextlib import contextmanager
+from decimal import Decimal
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
 from uuid import uuid4
@@ -11,7 +12,9 @@ from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.mail import EmailMultiAlternatives
-from django.db import IntegrityError
+from django.core.management import call_command
+from django.core.management.base import CommandError
+from django.db import IntegrityError, connection
 from django.template.loader import render_to_string
 from django.test import (
     RequestFactory,
@@ -24,10 +27,15 @@ from PIL import Image
 from pydantic import ValidationError
 from rest_framework.test import APITestCase
 
+from archive.models import Composer
+from documents.models import DocumentCategory
+from payments.models import Donation, PatronLead
+
 from .avatar_service import AVATAR_SIZE, THUMB_SIZE, AvatarService
 from .constants import AppRole
 from .dtos import UserPasswordChangeDTO, UserPreferencesUpdateDTO
 from .exceptions import EmailAlreadyInUseException, InvalidImageException, format_pydantic_validation_errors
+from .management.commands.reset_test_data import Command as ResetTestData
 from .models import FeedbackReport, UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
 from .services import FeedbackService, UserIdentityService
@@ -1358,3 +1366,101 @@ class FeedbackNotificationTests(TestCase):
         FeedbackService.notify_maintainer(report)
 
         self.assertTrue(task.delay.called)
+
+
+class ResetTestDataCommandTests(TestCase):
+    """
+    Guards the pre-test-round wipe. The interlocks matter more than the deletion
+    itself: this command runs against production, where the cost of an over-broad
+    table list is unrecoverable data rather than a failing assertion.
+    """
+
+    def setUp(self) -> None:
+        self.superuser = User.objects.create_superuser(
+            username="root", email="root@example.com", password="rootpass123"
+        )
+        self.member = User.objects.create_user(
+            username="singer", email="singer@example.com", password="singerpass123"
+        )
+        # Created explicitly: no signal builds a profile, the service layer does.
+        # Both are needed here — the superuser's must survive, the member's must
+        # cascade away with the account.
+        UserProfile.objects.create(user=self.superuser)
+        UserProfile.objects.create(user=self.member)
+        Donation.objects.create(email="donor@example.com", amount=Decimal("250.00"))
+        PatronLead.objects.create(
+            first_name="Anna", last_name="Kowalska", email="patron@example.com"
+        )
+        DocumentCategory.objects.create(name="Statut", slug="statut")
+        Composer.objects.create(last_name="Bach", first_name="Johann Sebastian")
+        FeedbackReport.objects.create(reporter=self.member, body="Coś nie działa.")
+
+    def _run(self, **kwargs: object) -> None:
+        # SQLite emits ordered DELETEs where Postgres emits one TRUNCATE, so a
+        # parent can precede its children here. Postgres never sees this path.
+        with connection.constraint_checks_disabled():
+            call_command("reset_test_data", stdout=io.StringIO(), **kwargs)
+
+    def test_wipe_list_never_contains_a_protected_table(self) -> None:
+        command = ResetTestData()
+        tables = set(command._resolve_tables())
+
+        for table in (
+            "payments_donation",
+            "payments_patronlead",
+            "documents_document",
+            "documents_documentcategory",
+            "core_user_profile",
+            "auth_user",
+        ):
+            self.assertNotIn(table, tables, f"{table} must survive the wipe")
+
+    def test_wipe_list_covers_implicit_m2m_through_tables(self) -> None:
+        # A hand-maintained list is exactly what misses these, and their rows
+        # outlive the wipe as dangling references if they are skipped.
+        tables = set(ResetTestData()._resolve_tables())
+        self.assertIn("roster_rehearsal_invited_participations", tables)
+
+    def test_preserves_payments_documents_and_superuser(self) -> None:
+        self._run(noinput=True, keep_media=True)
+
+        self.assertEqual(Donation.objects.count(), 1)
+        self.assertEqual(PatronLead.objects.count(), 1)
+        self.assertEqual(DocumentCategory.objects.count(), 1)
+        self.assertTrue(User.objects.filter(pk=self.superuser.pk).exists())
+        self.assertTrue(UserProfile.objects.filter(user=self.superuser).exists())
+
+    def test_wipes_operational_data_and_non_superuser_accounts(self) -> None:
+        self._run(noinput=True, keep_media=True)
+
+        self.assertEqual(Composer.all_objects.count(), 0)
+        self.assertEqual(FeedbackReport.all_objects.count(), 0)
+        self.assertFalse(User.objects.filter(pk=self.member.pk).exists())
+        # Cascaded through the account rather than truncated, which is what lets
+        # the superuser keep theirs.
+        self.assertFalse(UserProfile.all_objects.filter(user_id=self.member.pk).exists())
+
+    def test_soft_deleted_rows_are_removed_not_just_flagged(self) -> None:
+        # The trap this command exists to avoid: `.delete()` on a soft-delete
+        # queryset flips `is_deleted` and leaves the row, so a wipe that looks
+        # clean through the ORM still collides on unique constraints later.
+        Composer.objects.all().delete()
+        self.assertEqual(Composer.all_objects.count(), 1)
+
+        self._run(noinput=True, keep_media=True)
+
+        self.assertEqual(Composer.all_objects.count(), 0)
+
+    def test_dry_run_changes_nothing(self) -> None:
+        self._run(dry_run=True, noinput=True)
+
+        self.assertEqual(Composer.all_objects.count(), 1)
+        self.assertTrue(User.objects.filter(pk=self.member.pk).exists())
+
+    def test_refuses_to_run_without_a_surviving_superuser(self) -> None:
+        User.objects.filter(is_superuser=True).delete()
+
+        with self.assertRaises(CommandError):
+            self._run(noinput=True, keep_media=True)
+
+        self.assertEqual(Composer.all_objects.count(), 1)

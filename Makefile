@@ -25,7 +25,7 @@ BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git rev-parse --short
 # a bare timestamp — leaving "already fixed" and "still broken" indistinguishable
 # in the triage queue, which is the one thing the stamp exists to prevent.
 
-.PHONY: up prod deploy gc down logs shell migrate seed superuser
+.PHONY: up prod deploy gc down logs shell migrate seed superuser reset-test-data
 
 up:
 	$(BUILD_ENV) $(COMPOSE_DEV) up --build -d
@@ -87,3 +87,18 @@ seed:
 
 superuser:
 	docker compose exec web python manage.py createsuperuser
+
+# Destructive pre-test-round wipe. Empties operational data but keeps donations,
+# patron leads, the knowledge base and the superuser accounts. The script owns
+# the procedure around the wipe — confirmation, backup, and stopping celery so a
+# beat-scheduled task cannot write into tables as they are emptied; the table
+# list and its safety interlocks live in `manage.py reset_test_data`.
+#
+# Preview it first — the dry run reports every row count and touches nothing:
+#   make reset-test-data ARGS=--dry-run
+#
+# NOTE: never reach for `make seed` on production to do this. `seed_db --clear`
+# hard-wipes donations, patron leads and the knowledge base, which is precisely
+# what this target exists to preserve.
+reset-test-data:
+	bash infra/reset-test-data.sh $(ARGS)
