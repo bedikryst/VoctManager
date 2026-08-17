@@ -40,7 +40,7 @@ from archive.score_protection import (
 from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
-from core.request_utils import request_user
+from core.request_utils import client_payload, request_user
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.models import PendingAnnouncement
 
@@ -48,9 +48,15 @@ from .dashboard_serializers import (
     ConductedProjectMaterialsSerializer,
     ParticipationMaterialsSerializer,
 )
+from .domain.attendance_window import (
+    SELF_REPORT_CLOSED_CODE,
+    SELF_REPORT_CLOSED_MESSAGE,
+    is_open_to_self_report,
+)
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRangeDTO,
+    AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
@@ -62,7 +68,12 @@ from .dtos import (
     RehearsalUpdateDTO,
 )
 from .duplicates import find_duplicate_groups
-from .exceptions import ArtistProvisioningException, AttendanceValidationException, CastingValidationException
+from .exceptions import (
+    ArtistProvisioningException,
+    AttendanceValidationException,
+    CastingValidationException,
+    SelfReportWindowClosedException,
+)
 from .infrastructure.document_generator import (
     Audience,
     DocumentGenerator,
@@ -290,7 +301,7 @@ class ArtistViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs) -> Response:
         try:
-            dto = ArtistCreateDTO(**request.data)
+            dto = ArtistCreateDTO(**client_payload(request.data))
         except ValidationError as e:
             return make_error_response(
                 request,
@@ -510,11 +521,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
             )
 
-        return base_qs.filter(participations__artist__user=user).distinct()
-    
+        # The seat decides, not the join: being named in a project is not the
+        # same as holding a place in it. Dropping off the dashboards is what a
+        # singer sees; dropping off here is what a bookmark or a stale client
+        # gets. The subquery also keeps the census annotations above honest —
+        # they count the whole cast, and a join to one member would have needed
+        # `distinct()` to say so.
+        return base_qs.filter(
+            id__in=Participation.live_seats(artist__user=user).values('project_id')
+        )
+
     def create(self, request, *args, **kwargs) -> Response:
         try:
-            dto = ProjectCreateDTO(**request.data)
+            dto = ProjectCreateDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -524,7 +543,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs) -> Response:
         project = self.get_object()
         try:
-            dto = ProjectUpdateDTO(**request.data)
+            dto = ProjectUpdateDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -1185,7 +1204,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            dto = PieceReadinessUpdateDTO(**request.data)
+            dto = PieceReadinessUpdateDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1198,7 +1217,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['patch'], url_path='bulk-fee', permission_classes=[IsManager])
     def bulk_fee(self, request) -> Response:
         try:
-            dto = ProjectBulkFeeDTO(**request.data)
+            dto = ProjectBulkFeeDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1220,7 +1239,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            dto = ParticipationStatusUpdateDTO(**request.data)
+            dto = ParticipationStatusUpdateDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1284,9 +1303,21 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         return Response(payload, status=status.HTTP_200_OK)
 
 
-# The range payload is whitelisted rather than splatted: the caller must not be
-# able to name `requesting_user_id` or `is_manager`, which the view alone decides.
+# Every attendance payload is whitelisted rather than splatted: the caller must
+# not be able to name `requesting_user_id` or `is_manager`, which the view alone
+# decides. On the row endpoints the whitelist also holds the row's *identity*
+# (`rehearsal`, `participation`) out of an edit — see `update` below.
+#
+# The cost is that a misspelled field is dropped here instead of refused by the
+# DTO's `extra="forbid"`. Worth it only where the view supplies arguments of its
+# own — everywhere else `client_payload` passes the whole body through and the
+# DTO keeps the last word.
+_ATTENDANCE_RECORD_FIELDS = frozenset(
+    {'rehearsal', 'participation', 'status', 'minutes_late', 'excuse_note'}
+)
+_ATTENDANCE_ROW_FIELDS = frozenset({'status', 'minutes_late', 'excuse_note'})
 _ATTENDANCE_RANGE_FIELDS = frozenset({'artist', 'starts_at', 'ends_at', 'status', 'excuse_note'})
+_ATTENDANCE_WINDOW_FIELDS = frozenset({'artist', 'starts_at', 'ends_at'})
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):
@@ -1301,20 +1332,84 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             return qs
         return qs.filter(participation__artist__user=request_user(self.request))
 
+    def _window_closed_response(self, request) -> Response:
+        """One refusal, whichever door the singer came through.
+
+        A coded 403 rather than a plain message: a 403 with no code renders as
+        "you do not have access", which is not the reason — the row is not out of
+        bounds, the evening is over. The code carries curated copy on the client,
+        in the reader's own language.
+        """
+        return make_error_response(
+            request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code=SELF_REPORT_CLOSED_CODE,
+            detail=str(SELF_REPORT_CLOSED_MESSAGE),
+        )
+
+    def _refuse_closed_row(self, request, attendance: Attendance) -> Response | None:
+        """The 403 for a singer reaching for a rehearsal that has already been held.
+
+        The queryset above answers *whose* row this is; this answers *when* they
+        may still touch it. A manager is never refused — correcting the record
+        after the evening is exactly their job.
+        """
+        if user_is_manager(request.user):
+            return None
+        if is_open_to_self_report(attendance.rehearsal):
+            return None
+        return self._window_closed_response(request)
+
     def create(self, request, *args, **kwargs) -> Response:
         try:
             dto = AttendanceRecordDTO(
                 requesting_user_id=request.user.id,
                 is_manager=user_is_manager(request.user),
-                **request.data
+                **client_payload(request.data, only=_ATTENDANCE_RECORD_FIELDS),
             )
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
         try:
             attendance = RehearsalOperationsService.record_attendance(dto)
             return Response(self.get_serializer(attendance).data, status=status.HTTP_201_CREATED)
+        except SelfReportWindowClosedException:
+            # The service owns the rule; the view only decides how a refusal of
+            # *this* kind reads on the wire. Same answer as an edit's.
+            return self._window_closed_response(request)
         except AttendanceValidationException as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, *args, **kwargs) -> Response:
+        """
+        Edit what a row *says*, never who it is about.
+
+        `rehearsal` and `participation` are the row's identity and are dropped
+        from the payload: the queryset scopes a singer to rows of their own, so a
+        writable `participation` would let them re-point one of those at a
+        colleague and file an attendance in someone else's name. Both clients
+        already re-send the values they read, so nothing legitimate is lost —
+        which is also why PUT is served with the same partial semantics as PATCH
+        rather than failing on two fields it is not allowed to set.
+        """
+        attendance = self.get_object()
+        refusal = self._refuse_closed_row(request, attendance)
+        if refusal is not None:
+            return refusal
+
+        serializer = self.get_serializer(
+            attendance,
+            data=client_payload(request.data, only=_ATTENDANCE_ROW_FIELDS),
+            partial=True,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def destroy(self, request, *args, **kwargs) -> Response:
+        refusal = self._refuse_closed_row(request, self.get_object())
+        if refusal is not None:
+            return refusal
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=False, methods=['post'], url_path='range')
     def report_range(self, request) -> Response:
@@ -1323,20 +1418,16 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         artist takes part in inside the window, all carrying the same note.
 
         Self-scoped like every other attendance write — a singer may only speak
-        for themselves unless they are a manager. The window is wall-clock and
-        inclusive; `updated` is the authoritative count of rows the range reached,
-        which is the number the client previewed before sending.
+        for themselves unless they are a manager, and only about rehearsals that
+        have not been held yet. The window is wall-clock and inclusive; `updated`
+        is the authoritative count of rows the range reached, which is the number
+        the client previewed before sending.
         """
-        payload = {
-            key: value
-            for key, value in request.data.items()
-            if key in _ATTENDANCE_RANGE_FIELDS
-        }
         try:
             dto = AttendanceRangeDTO(
                 requesting_user_id=request.user.id,
                 is_manager=user_is_manager(request.user),
-                **payload,
+                **client_payload(request.data, only=_ATTENDANCE_RANGE_FIELDS),
             )
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1350,6 +1441,62 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             {
                 "updated": len(written),
                 "attendances": self.get_serializer(written, many=True).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=['get'], url_path='range-preview')
+    def preview_range(self, request) -> Response:
+        """
+        Which rehearsals a span would actually reach, before anything is written.
+
+        A chorister needs no round trip — their own schedule read-model *is* the
+        set, and answering it locally keeps the count honest offline. A manager
+        excusing somebody else holds no such list, and rebuilding the seat rule on
+        the client is how the number stated and the rows written start to
+        disagree. So this resolves through the very predicate the write uses.
+        """
+        try:
+            dto = AttendanceRangeWindowDTO(
+                requesting_user_id=request.user.id,
+                is_manager=user_is_manager(request.user),
+                # `.dict()` first: a query string is multi-valued, and unpacking a
+                # QueryDict hands every field over as a one-item list.
+                **client_payload(
+                    request.query_params.dict(), only=_ATTENDANCE_WINDOW_FIELDS
+                ),
+            )
+        except ValidationError as e:
+            return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            matched = RehearsalOperationsService.preview_attendance_range(dto)
+        except AttendanceValidationException as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        recorded = dict(
+            Attendance.objects.filter(
+                rehearsal_id__in=[rehearsal.id for rehearsal, _ in matched],
+                participation_id__in={pid for _, pid in matched},
+            ).values_list('rehearsal_id', 'status')
+        )
+
+        return Response(
+            {
+                "count": len(matched),
+                "rehearsals": [
+                    {
+                        "id": str(rehearsal.id),
+                        "date_time": rehearsal.date_time,
+                        "timezone": rehearsal.timezone,
+                        "project": str(rehearsal.project_id),
+                        "project_title": rehearsal.project.title,
+                        # What is already written there, so a manager sees which
+                        # evenings the span would overwrite rather than fill in.
+                        "current_status": recorded.get(rehearsal.id),
+                    }
+                    for rehearsal, _participation_id in matched
+                ],
             },
             status=status.HTTP_200_OK,
         )
@@ -1370,8 +1517,13 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         if user_is_manager(user):
             return qs
-        return qs.filter(project__participations__artist__user=user).filter(
-            Q(invited_participations__isnull=True) | Q(invited_participations__artist__user=user)
+        # An evening leading to a concert they no longer hold a place at must not
+        # be reachable on its own — that is the orphan the schedule stopped
+        # listing. The sectional check reads the same seats, so an invitation
+        # addressed to a seat since given up does not resurrect the rehearsal.
+        seats = Participation.live_seats(artist__user=user)
+        return qs.filter(project_id__in=seats.values('project_id')).filter(
+            Q(invited_participations__isnull=True) | Q(invited_participations__in=seats)
         ).distinct()
 
     @staticmethod
@@ -1460,14 +1612,15 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Data partitioning: a chorister may read the setlist only for projects
-        # they are cast in — never the whole organisation's programming.
+        # they hold a seat in — never the whole organisation's programming.
         qs = ProgramItem.objects.select_related('piece').order_by('order')
         if user_is_manager(self.request.user):
             return qs
         return qs.filter(
-            project__participations__artist__user=request_user(self.request),
-            project__participations__is_deleted=False,
-        ).distinct()
+            project_id__in=Participation.live_seats(
+                artist__user=request_user(self.request)
+            ).values('project_id')
+        )
 
 
 class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
@@ -1483,9 +1636,10 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
         if user_is_manager(self.request.user):
             return qs
         return qs.filter(
-            participation__project__participations__artist__user=request_user(self.request),
-            participation__project__participations__is_deleted=False,
-        ).distinct()
+            participation__project_id__in=Participation.live_seats(
+                artist__user=request_user(self.request)
+            ).values('project_id')
+        )
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)
@@ -1517,7 +1671,7 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
         actually persisted rather than on what it hoped it sent.
         """
         try:
-            dto = PieceCastingBoardDTO(**request.data)
+            dto = PieceCastingBoardDTO(**client_payload(request.data))
         except ValidationError as e:
             return make_error_response(
                 request,
@@ -1560,9 +1714,10 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
         if user_is_manager(self.request.user):
             return qs
         return qs.filter(
-            project__participations__artist__user=request_user(self.request),
-            project__participations__is_deleted=False,
-        ).distinct()
+            project_id__in=Participation.live_seats(
+                artist__user=request_user(self.request)
+            ).values('project_id')
+        )
 
     def get_serializer_class(self):
         # Financial fields (fee / is_paid / paid_at) are manager-only, mirroring
@@ -1599,7 +1754,7 @@ class CrewAssignmentViewSet(viewsets.ModelViewSet):
     def bulk_fee(self, request) -> Response:
         """Applies one standard rate across a project's crew (skips settled rows)."""
         try:
-            dto = ProjectBulkFeeDTO(**request.data)
+            dto = ProjectBulkFeeDTO(**client_payload(request.data))
         except ValidationError as e:
             return Response({"validation_errors": format_pydantic_validation_errors(e)}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -189,7 +189,13 @@ class _ServeBase(APITestCase):
         )
         UserProfile.objects.create(user=self.singer2_user, role=AppRole.ARTIST)
 
-        self.project = Project.objects.create(title="Koncert Maryjny")
+        # ACTIVE, not the model default: score access follows the seat, and a seat
+        # in an unannounced draft is not one the singer has been told about.
+        # `DraftScoreAccessTests` below is where that rule is asserted; here it
+        # would only be a fixture quietly testing the wrong thing.
+        self.project = Project.objects.create(
+            title="Koncert Maryjny", status=Project.Status.ACTIVE
+        )
         self.artist = Artist.objects.create(
             user=self.singer_user, first_name="Jan", last_name="Kowalski",
             email="singer@test.pl", voice_type=VoiceType.TENOR,
@@ -423,3 +429,45 @@ class EditionMetadataPatchTests(_ServeBase):
         self.assertIn(response.status_code, (403, 404))
         self.edition.refresh_from_db()
         self.assertEqual(self.edition.license_type, ScoreLicenseType.UNKNOWN)
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class SeatBoundScoreAccessTests(_ServeBase):
+    """A score follows the seat, and the seat has to be a real one.
+
+    Both halves used to leak. `artist_has_live_access_to_piece` asked only whether
+    the project had *closed*, so a piece programmed exclusively in an unannounced
+    draft resolved for anyone cast in it — while every surface that could have led
+    them to it was busy hiding that project. And it never looked at the seat's own
+    status, so declining a project took it off the schedule and left its music
+    open. Managers are outside all of this; they keep the archive.
+    """
+
+    def _download(self, user) -> int:
+        self.client.force_authenticate(user)
+        with mock.patch("roster.views.stamp_pdf", return_value=b"X"):
+            return self.client.get(self.download_url).status_code
+
+    def test_a_draft_is_not_a_score_the_singer_has_been_offered(self) -> None:
+        self.project.status = Project.Status.DRAFT
+        self.project.save(update_fields=["status"])
+
+        # 404 rather than 403 is the established answer here: a singer who has no
+        # access must not be able to confirm the file exists.
+        self.assertEqual(self._download(self.singer_user), 404)
+        self.assertEqual(self._download(self.manager), 200)
+
+    def test_declining_the_project_hands_back_its_music(self) -> None:
+        seat = Participation.objects.get(artist=self.artist, project=self.project)
+        seat.status = Participation.Status.DECLINED
+        seat.save(update_fields=["status"])
+
+        self.assertEqual(self._download(self.singer_user), 404)
+        # The colleague who kept their seat is untouched — the rule is per seat,
+        # not per project.
+        self.assertEqual(self._download(self.singer2_user), 200)
+
+    def test_an_announced_seat_still_resolves(self) -> None:
+        # The control: without it every assertion above would also pass against a
+        # gate that had simply stopped letting anyone through.
+        self.assertEqual(self._download(self.singer_user), 200)

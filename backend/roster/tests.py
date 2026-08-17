@@ -467,8 +467,11 @@ class ContractsSettlementTests(APITestCase):
         )
         UserProfile.objects.create(user=self.artist_user, role=AppRole.ARTIST)
 
+        # Announced, not the model default: what a chorister may read here is
+        # gated on holding a seat in a project they have been told about.
         self.project = Project.objects.create(
-            title="Spring Gala", date_time=timezone.now(), timezone="UTC"
+            title="Spring Gala", date_time=timezone.now(), timezone="UTC",
+            status=Project.Status.ACTIVE,
         )
         self.artist = Artist.objects.create(
             user=self.artist_user, first_name="Ada", last_name="Lovelace",
@@ -1654,13 +1657,18 @@ class ScheduleDashboardTests(APITestCase):
             status=Participation.Status.CONFIRMED,
         )
 
-        # Cancelled project — cast but must drop off the schedule.
+        # Cancelled project — cast but must drop off the schedule, and it takes
+        # its rehearsals with it: an evening that leads to a concert nobody is
+        # giving is not an evening.
         self.project_cancelled = Project.objects.create(
             title="Scrapped Gala", date_time=now, status=Project.Status.CANCELLED
         )
         Participation.objects.create(
             artist=self.singer, project=self.project_cancelled,
             status=Participation.Status.CONFIRMED,
+        )
+        self.reh_cancelled = Rehearsal.objects.create(
+            project=self.project_cancelled, date_time=now + timedelta(days=1),
         )
 
         # Declined project — must drop off the schedule.
@@ -1728,6 +1736,16 @@ class ScheduleDashboardTests(APITestCase):
         self.assertIn(str(self.reh_invited.id), rehearsal_ids)  # explicitly invited
         self.assertNotIn(str(self.reh_other.id), rehearsal_ids)  # invites someone else
         self.assertNotIn(str(self.reh_foreign.id), rehearsal_ids)  # foreign project
+
+    def test_a_cancelled_project_takes_its_rehearsals_with_it(self) -> None:
+        # The concert row and its rehearsals leave together. They used to part
+        # company: the project dropped, its evenings stayed on the timeline as
+        # orphans of a concert nobody could find.
+        data = self._fetch()
+        rehearsal_ids = {
+            item["rehearsal"]["id"] for item in data if item["type"] == "REHEARSAL"
+        }
+        self.assertNotIn(str(self.reh_cancelled.id), rehearsal_ids)
 
     def test_rehearsal_carries_attendance_and_participation(self) -> None:
         data = self._fetch()
@@ -2382,6 +2400,20 @@ class DraftInvisibleToCastTests(APITestCase):
         }
         self.assertIn(str(self.draft.id), project_ids)
 
+    def test_the_draft_is_not_served_on_the_plain_endpoints_either(self) -> None:
+        # The read-models are what a singer is shown; these are what a stale
+        # client or a curious one can ask for. Publishing is the control inside
+        # the test — the same request has to start answering.
+        self.client.force_authenticate(user=self.singer_user)
+        self.assertEqual(self.client.get("/api/projects/").data, [])
+        self.assertEqual(self.client.get("/api/rehearsals/").data, [])
+
+        self.draft.status = Project.Status.ACTIVE
+        self.draft.save(update_fields=["status"])
+
+        self.assertEqual(len(self.client.get("/api/projects/").data), 1)
+        self.assertEqual(len(self.client.get("/api/rehearsals/").data), 1)
+
     def test_publishing_reveals_the_project_to_the_singer(self) -> None:
         self.draft.status = Project.Status.ACTIVE
         self.draft.save(update_fields=["status"])
@@ -2392,6 +2424,217 @@ class DraftInvisibleToCastTests(APITestCase):
             item["project"]["id"] for item in resp.data if item["type"] == "PROJECT"
         }
         self.assertIn(str(self.draft.id), project_ids)
+
+
+class DeclinedSeatKeepsNothingTests(APITestCase):
+    """Turning a project down gives back everything that came with the seat.
+
+    The schedule understood this from the start — a seat you declined is not one
+    you can be marked absent from. Nothing else did: the songbook went on offering
+    the programme and the recordings, and the score gate never looked at the seat's
+    status at all, so declining a concert left its music open indefinitely. The
+    colleague who kept their seat is the control on every assertion: this is a rule
+    about one seat, not about the project.
+    """
+
+    MATERIALS_URL = "/api/participations/materials-dashboard/"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        User = get_user_model()
+        self.project = Project.objects.create(
+            title="Pasja", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.ACTIVE,
+        )
+        composer = Composer.objects.create(first_name="Jan", last_name="Bach")
+        piece = Piece.objects.create(title="Erbarme dich", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=piece, order=1)
+        Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=10)
+        )
+
+        def _member(handle: str, seat_status: str):
+            user = User.objects.create_user(
+                username=handle, email=f"{handle}@test.pl", password="pw123456"
+            )
+            UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+            artist = Artist.objects.create(
+                user=user, first_name=handle.title(), last_name="Testowy",
+                email=f"{handle}@test.pl", voice_type=VoiceType.BASS,
+            )
+            Participation.objects.create(
+                artist=artist, project=self.project, status=seat_status
+            )
+            return user
+
+        self.refuser = _member("dec-refuser", Participation.Status.DECLINED)
+        self.singer = _member("dec-singer", Participation.Status.CONFIRMED)
+
+    def _project_ids(self, user, url: str) -> set[str]:
+        self.client.force_authenticate(user=user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return {str(row.get("id", "")) for row in response.data}
+
+    def test_the_songbook_closes_with_the_seat(self) -> None:
+        self.client.force_authenticate(user=self.refuser)
+        self.assertEqual(self.client.get(self.MATERIALS_URL).data, [])
+
+        self.client.force_authenticate(user=self.singer)
+        kept = self.client.get(self.MATERIALS_URL).data
+        self.assertEqual(
+            {str(row["project"]["id"]) for row in kept}, {str(self.project.id)}
+        )
+
+    def test_the_plain_endpoints_agree_with_it(self) -> None:
+        self.assertEqual(self._project_ids(self.refuser, "/api/projects/"), set())
+        self.assertEqual(
+            self._project_ids(self.singer, "/api/projects/"), {str(self.project.id)}
+        )
+
+        self.client.force_authenticate(user=self.refuser)
+        self.assertEqual(self.client.get("/api/rehearsals/").data, [])
+        self.assertEqual(self.client.get("/api/program-items/").data, [])
+
+
+class CancelledInvisibleToCastTests(APITestCase):
+    """A called-off concert leaves the singer's world whole, not in pieces.
+
+    Cancellation used to be enforced surface by surface, and the surfaces
+    disagreed: the concert row dropped off the schedule while its rehearsals
+    stayed on the timeline, and its programme sat in the songbook with the scores
+    behind it already refused. It is now withdrawn at every door — the two
+    read-models and the plain endpoints alike — which is the difference between a
+    concert a singer is not shown and one they cannot reach.
+
+    The live project alongside is the control: without it these assertions would
+    also pass on a query that had simply stopped returning anything.
+    """
+
+    SCHEDULE_URL = "/api/participations/schedule-dashboard/"
+    MATERIALS_URL = "/api/participations/materials-dashboard/"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        User = get_user_model()
+        self.singer_user = User.objects.create_user(
+            username="canc-singer", email="canc@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.singer_user, role=AppRole.ARTIST)
+        self.singer = Artist.objects.create(
+            user=self.singer_user, first_name="Cyprian", last_name="Cichy",
+            email="canc@test.pl", voice_type=VoiceType.BASS,
+        )
+
+        composer = Composer.objects.create(first_name="Henryk", last_name="Górecki")
+        piece = Piece.objects.create(title="Totus Tuus", composer=composer)
+
+        def _concert(title: str, status: str) -> Project:
+            project = Project.objects.create(
+                title=title, date_time=timezone.now() + timedelta(days=30),
+                status=status,
+            )
+            Participation.objects.create(
+                artist=self.singer, project=project,
+                status=Participation.Status.CONFIRMED,
+            )
+            ProgramItem.objects.create(project=project, piece=piece, order=1)
+            Rehearsal.objects.create(
+                project=project, date_time=timezone.now() + timedelta(days=10)
+            )
+            return project
+
+        self.cancelled = _concert("Odwołane Nieszpory", Project.Status.CANCELLED)
+        self.live = _concert("Kolędy", Project.Status.ACTIVE)
+        self.piece = piece
+
+        # A conductor who is not cast: their slice of the materials dashboard is
+        # a different query with a different draft rule, so it needs its own case.
+        self.maestro_user = User.objects.create_user(
+            username="canc-cond", email="cancc@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        self.maestro = Artist.objects.create(
+            user=self.maestro_user, first_name="Marta", last_name="Batuta",
+            email="cancc@test.pl", voice_type=VoiceType.CONDUCTOR,
+        )
+        self.podium_draft = Project.objects.create(
+            title="Szkic z pulpitu", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT, conductor=self.maestro,
+        )
+        self.podium_cancelled = Project.objects.create(
+            title="Odwołane z pulpitu", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.CANCELLED, conductor=self.maestro,
+        )
+
+    def _get(self, url: str):
+        self.client.force_authenticate(user=self.singer_user)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return response.data
+
+    def _ids(self, url: str) -> set[str]:
+        return {str(row["id"]) for row in self._get(url)}
+
+    def test_the_concert_is_off_the_schedule_with_its_rehearsals(self) -> None:
+        data = self._get(self.SCHEDULE_URL)
+        project_ids = {
+            item["project"]["id"] for item in data if item["type"] == "PROJECT"
+        }
+        rehearsal_projects = {
+            str(item["rehearsal"]["project"])
+            for item in data
+            if item["type"] == "REHEARSAL"
+        }
+
+        self.assertNotIn(str(self.cancelled.id), project_ids)
+        self.assertNotIn(str(self.cancelled.id), rehearsal_projects)
+        self.assertIn(str(self.live.id), project_ids)
+        self.assertIn(str(self.live.id), rehearsal_projects)
+
+    def test_the_music_goes_with_it(self) -> None:
+        # The score gate (`CLOSED_PROJECT_STATUSES`) already refused the PDF; what
+        # was left was the card around it, which is what a singer actually reads.
+        project_ids = {row["project"]["id"] for row in self._get(self.MATERIALS_URL)}
+
+        self.assertNotIn(str(self.cancelled.id), project_ids)
+        self.assertIn(str(self.live.id), project_ids)
+
+    def test_it_is_not_served_on_the_plain_endpoints_either(self) -> None:
+        # Dropping it from the read-models is what the singer sees; dropping it
+        # here is what a bookmark or a stale client gets.
+        self.assertNotIn(str(self.cancelled.id), self._ids("/api/projects/"))
+        self.assertIn(str(self.live.id), self._ids("/api/projects/"))
+
+        rehearsal_projects = {
+            str(row["project"]) for row in self._get("/api/rehearsals/")
+        }
+        self.assertNotIn(str(self.cancelled.id), rehearsal_projects)
+        self.assertIn(str(self.live.id), rehearsal_projects)
+
+        programme = self._get(f"/api/program-items/?project={self.cancelled.id}")
+        self.assertEqual(list(programme), [])
+
+    def test_the_conductor_keeps_their_draft_and_loses_the_cancellation(self) -> None:
+        # The two halves of the exception, in one assertion: a draft is the desk
+        # they are assembling on, a cancellation is a concert nobody is giving.
+        self.client.force_authenticate(user=self.maestro_user)
+        response = self.client.get(self.MATERIALS_URL)
+        self.assertEqual(response.status_code, 200)
+        project_ids = {str(row["project"]["id"]) for row in response.data}
+
+        self.assertIn(str(self.podium_draft.id), project_ids)
+        self.assertNotIn(str(self.podium_cancelled.id), project_ids)
+
+    def test_the_piece_itself_survives_in_the_archive(self) -> None:
+        # A cancellation withdraws one project, never the choir's repertoire.
+        from archive.models import Piece
+
+        self.assertTrue(
+            Piece.objects.filter(id=self.piece.id, is_deleted=False).exists()
+        )
 
 
 class CastingBeforeConfirmationTests(TestCase):

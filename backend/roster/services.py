@@ -53,9 +53,11 @@ from notifications.services import NotificationRecipientPolicy
 from notifications.tasks import send_bulk_notifications_task, send_notification_task
 from notifications.time_metadata import build_event_time_metadata
 
+from .domain.attendance_window import SELF_REPORT_CLOSED_MESSAGE, is_open_to_self_report
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRangeDTO,
+    AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
     PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
@@ -77,6 +79,7 @@ from .exceptions import (
     ParticipationException,
     ProjectAlreadyPublishedException,
     ProjectUnpublishException,
+    SelfReportWindowClosedException,
 )
 from .invitations import build_invitation_context, build_invitation_metadata
 from .models import (
@@ -1294,6 +1297,10 @@ class RehearsalOperationsService:
         if not dto.is_manager and participation.artist.user_id != dto.requesting_user_id:
             raise AttendanceValidationException("Can only record self-attendance unless you are a Manager.")
 
+        # A report is about what one is going to do; once the evening is over,
+        # the row is the roll call's record and only a manager may still write it.
+        if not dto.is_manager and not is_open_to_self_report(rehearsal):
+            raise SelfReportWindowClosedException(str(SELF_REPORT_CLOSED_MESSAGE))
 
         with transaction.atomic():
             attendance, _created = Attendance.objects.update_or_create(
@@ -1374,6 +1381,46 @@ class RehearsalOperationsService:
         return attendance
 
     @staticmethod
+    def _artist_spoken_for(dto: AttendanceRangeWindowDTO) -> Artist:
+        """The artist a range is about, once the asker is allowed to speak for them."""
+        try:
+            artist = Artist.objects.get(id=dto.artist_id, is_deleted=False)
+        except Artist.DoesNotExist:
+            raise AttendanceValidationException("Record not found.") from None
+
+        if not dto.is_manager and artist.user_id != dto.requesting_user_id:
+            raise AttendanceValidationException(
+                "Can only record self-attendance unless you are a Manager."
+            )
+        return artist
+
+    @staticmethod
+    def resolve_attendance_range(
+        dto: AttendanceRangeWindowDTO, artist: Artist
+    ) -> list[tuple[Rehearsal, UUID]]:
+        """Every rehearsal a span would reach, in the order it would write them.
+
+        The one resolver behind three answers — the write, the count a manager is
+        shown before sending, and the count the write reports back. The rehearsals
+        already held drop out for a singer here rather than inside the loop, so
+        the number they are promised is the number they get.
+        """
+        matched = get_artist_rehearsals_in_window(
+            artist.id, dto.window_start, dto.window_end
+        )
+        if dto.is_manager:
+            return matched
+        return [pair for pair in matched if is_open_to_self_report(pair[0])]
+
+    @staticmethod
+    def preview_attendance_range(
+        dto: AttendanceRangeWindowDTO,
+    ) -> list[tuple[Rehearsal, UUID]]:
+        """What `record_attendance_range` would touch, without touching it."""
+        artist = RehearsalOperationsService._artist_spoken_for(dto)
+        return RehearsalOperationsService.resolve_attendance_range(dto, artist)
+
+    @staticmethod
     def record_attendance_range(dto: AttendanceRangeDTO) -> list[Attendance]:
         """
         State one absence once, across every rehearsal of a span of days.
@@ -1390,20 +1437,12 @@ class RehearsalOperationsService:
         The managers hear about it **once per production**, not once per evening:
         a fortnight away is one decision to make, and the project has to be named
         truthfully when the span reaches across two of them.
+
+        A singer's span reaches forward only — the rehearsals inside it that have
+        already been held stay as the roll call wrote them.
         """
-        try:
-            artist = Artist.objects.get(id=dto.artist_id, is_deleted=False)
-        except Artist.DoesNotExist:
-            raise AttendanceValidationException("Record not found.") from None
-
-        if not dto.is_manager and artist.user_id != dto.requesting_user_id:
-            raise AttendanceValidationException(
-                "Can only record self-attendance unless you are a Manager."
-            )
-
-        matched = get_artist_rehearsals_in_window(
-            artist.id, dto.window_start, dto.window_end
-        )
+        artist = RehearsalOperationsService._artist_spoken_for(dto)
+        matched = RehearsalOperationsService.resolve_attendance_range(dto, artist)
         if not matched:
             return []
 

@@ -5,7 +5,7 @@
 # ==========================================
 from datetime import datetime, time, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, Self
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -168,16 +168,13 @@ class AttendanceRecordDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class AttendanceRangeDTO(EnterpriseBaseDTO):
-    """One absence stated once for a span of days, instead of once per evening.
+class AttendanceRangeWindowDTO(EnterpriseBaseDTO):
+    """One artist, one span of days — the question both the preview and the write
+    ask, so neither can resolve a different set of rehearsals than the other.
 
     The window is wall-clock (`yyyy-MM-ddTHH:mm`, no offset) and inclusive at both
     ends, because "away until the 21st" is a calendar fact and not an instant —
     the service reads it against each rehearsal's own venue clock.
-
-    Only the two absence statuses ride a range. A run of days is a statement about
-    being away; lateness and presence are statements about one evening, and
-    `minutes_late` has no meaning spread over a fortnight.
     """
 
     requesting_user_id: int | str
@@ -185,8 +182,6 @@ class AttendanceRangeDTO(EnterpriseBaseDTO):
     artist_id: UUID = Field(alias="artist")
     window_start: datetime = Field(alias="starts_at")
     window_end: datetime = Field(alias="ends_at")
-    status: str = Field(..., min_length=1, max_length=10)
-    excuse_note: str = Field(default='', max_length=255)
 
     @field_validator("window_start", "window_end")
     @classmethod
@@ -194,6 +189,28 @@ class AttendanceRangeDTO(EnterpriseBaseDTO):
         if value.tzinfo is not None:
             raise ValueError("The range is wall-clock — send it without a UTC offset.")
         return value
+
+    @model_validator(mode="after")
+    def validate_window(self) -> Self:
+        if self.window_end < self.window_start:
+            raise ValueError("ends_at must not precede starts_at.")
+        # A mistyped year would otherwise reach back over a singer's whole
+        # history and rewrite it in one request.
+        if self.window_end - self.window_start > MAX_ABSENCE_RANGE:
+            raise ValueError("The range may not span more than a year.")
+        return self
+
+
+class AttendanceRangeDTO(AttendanceRangeWindowDTO):
+    """One absence stated once for a span of days, instead of once per evening.
+
+    Only the two absence statuses ride a range. A run of days is a statement about
+    being away; lateness and presence are statements about one evening, and
+    `minutes_late` has no meaning spread over a fortnight.
+    """
+
+    status: str = Field(..., min_length=1, max_length=10)
+    excuse_note: str = Field(default='', max_length=255)
 
     @field_validator("status")
     @classmethod
@@ -204,16 +221,6 @@ class AttendanceRangeDTO(EnterpriseBaseDTO):
     @classmethod
     def normalize_excuse_note(cls, value: object) -> object:
         return _blankable_string(value)
-
-    @model_validator(mode="after")
-    def validate_window(self) -> "AttendanceRangeDTO":
-        if self.window_end < self.window_start:
-            raise ValueError("ends_at must not precede starts_at.")
-        # A mistyped year would otherwise reach back over a singer's whole
-        # history and rewrite it in one request.
-        if self.window_end - self.window_start > MAX_ABSENCE_RANGE:
-            raise ValueError("The range may not span more than a year.")
-        return self
 
 
 class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):

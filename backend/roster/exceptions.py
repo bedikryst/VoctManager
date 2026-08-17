@@ -72,6 +72,14 @@ class ActivatedArtistMergeException(ArtistMergeException):
 class AttendanceValidationException(RosterDomainException):
     pass
 
+class SelfReportWindowClosedException(AttendanceValidationException):
+    """Raised when a singer reaches for the attendance of a rehearsal that has
+    already been held. Not a validation failure but a question of authorship: a
+    report is what they are going to do, while the record of an evening that
+    happened belongs to the roll call, and only a manager writes that. Carries
+    its own code so the panel can say which of the two it is."""
+    code = "attendance_window_closed"
+
 class ParticipationException(RosterDomainException):
     """Raised for invalid contractual or financial participation operations."""
     pass

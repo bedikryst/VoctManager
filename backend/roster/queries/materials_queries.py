@@ -44,11 +44,8 @@ def artist_has_live_access_to_piece(user: User, piece_id: uuid.UUID | str | None
     if piece_id is None:
         return False
     return (
-        Participation.objects.filter(
-            artist__user=user,
-            is_deleted=False,
-            project__program_items__piece_id=piece_id,
-        )
+        Participation.live_seats(artist__user=user)
+        .filter(project__program_items__piece_id=piece_id)
         .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
         .exists()
     )
@@ -63,8 +60,9 @@ def artist_live_piece_ids(user: User) -> QuerySet[ProgramItem, uuid.UUID]:
     """
     return (
         ProgramItem.objects.filter(
-            project__participations__artist__user=user,
-            project__participations__is_deleted=False,
+            project_id__in=Participation.live_seats(artist__user=user).values(
+                'project_id'
+            )
         )
         .exclude(project__status__in=CLOSED_PROJECT_STATUSES)
         .values_list('piece_id', flat=True)
@@ -151,14 +149,13 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
       program_item.piece.prefetched_tracks  → list[Track]
       program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
     """
-    # Unpublished projects are withheld: the singer has not been told the concert
-    # exists, so its scores and recordings must not surface in their materials
-    # either. The conductor's slice (get_conductor_materials_projects) keeps drafts —
-    # they need the tree they are still assembling.
-    base_qs: QuerySet[Participation] = Participation.objects.filter(
-        artist__user=user,
-        is_deleted=False,
-    ).exclude(project__status=Project.Status.DRAFT)
+    # The same seats the schedule is built from, so the songbook and the timeline
+    # cannot describe different seasons. Cancellation in particular has to drop the
+    # whole card and not merely the score behind it (`CLOSED_PROJECT_STATUSES`
+    # already refuses that): a concert absent from the timeline whose programme is
+    # still open here is the singer being told two things. The conductor's slice
+    # below keeps drafts — they need the tree they are still assembling.
+    base_qs: QuerySet[Participation] = Participation.live_seats(artist__user=user)
 
     # Materialise once: used to build bounded sub-queries.
     # Typical cardinality is <50, so the IN-clause is cheap.
@@ -222,6 +219,9 @@ def get_conductor_materials_projects(user: User) -> QuerySet[Project]:
         Project.objects
         .filter(conductor__user=user, conductor__is_deleted=False)
         .exclude(id__in=sung_project_ids)
+        # Drafts stay — this is the desk they are assembled on. A cancellation
+        # does not: it leaves the podium exactly as it leaves the schedule.
+        .exclude(status=Project.Status.CANCELLED)
     )
     project_ids: list[uuid.UUID] = list(conducted_qs.values_list('id', flat=True))
 

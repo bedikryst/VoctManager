@@ -21,20 +21,13 @@ _WINDOW_SLACK = timedelta(days=1)
 def _schedule_seats(**artist_lookup: Any) -> list[tuple[UUID, UUID]]:
     """`(participation_id, project_id)` for every seat that belongs in a schedule.
 
-    Drafts and declined seats drop here rather than downstream, so the rehearsals
-    and the participation map lose them in one stroke: a project the cast has not
-    been told about must not appear in their schedule, and a seat they turned
-    down is not theirs to be marked absent from.
-
-    Both the artist's dashboard and the range writer resolve their seats through
-    this one query, which is what stops the count a singer is shown before
-    submitting from disagreeing with the rows the submission writes.
+    `Participation.live_seats` in the shape this module reads it. Materialising
+    the pairs here is what lets the dashboard and the absence range share one
+    answer: the count a singer is shown before submitting cannot disagree with
+    the rows the submission writes, because neither re-derives the rule.
     """
     return list(
-        Participation.objects.filter(is_deleted=False, **artist_lookup)
-        .exclude(status=Participation.Status.DECLINED)
-        .exclude(project__status=Project.Status.DRAFT)
-        .values_list("id", "project_id")
+        Participation.live_seats(**artist_lookup).values_list("id", "project_id")
     )
 
 
@@ -128,20 +121,22 @@ def get_artist_schedule(
     # conductor is never cast, so they have no Participation — surface their
     # podium projects, and *every* rehearsal within, alongside the projects they
     # sing in. These items simply carry no participation id (no self-RSVP).
+    # Drafts stay: the conductor is the one planning them. A cancellation is
+    # dropped on both sides, exactly as `_schedule_seats` drops it for the cast.
     conducted_project_ids = set(
-        Project.objects.filter(
-            conductor__user=user, conductor__is_deleted=False
-        ).values_list("id", flat=True)
+        Project.objects.filter(conductor__user=user, conductor__is_deleted=False)
+        .exclude(status=Project.Status.CANCELLED)
+        .values_list("id", flat=True)
     )
     all_project_ids = sung_project_ids | conducted_project_ids
 
-    # Cancelled projects drop off the schedule entirely. The prefetch mirrors
-    # ProjectViewSet.get_queryset so ProjectSerializer.get_cast / get_program
-    # resolve without N+1; the count annotations are omitted (the serializer
-    # falls back to its `default=0`, and the schedule never reads them).
+    # Cancellation was already decided upstream, on both id sets, which is what
+    # keeps the concert row and its rehearsals from parting company. The prefetch
+    # mirrors ProjectViewSet.get_queryset so ProjectSerializer.get_cast /
+    # get_program resolve without N+1; the count annotations are omitted (the
+    # serializer falls back to its `default=0`, and the schedule never reads them).
     projects_qs = (
         Project.objects.filter(id__in=all_project_ids)
-        .exclude(status=Project.Status.CANCELLED)
         .select_related("conductor", "location")
         .prefetch_related("participations__artist", "program_items__piece")
         .order_by("date_time")

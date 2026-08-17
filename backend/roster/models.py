@@ -7,6 +7,7 @@
 Database models for HR and Logistics entities.
 """
 import uuid
+from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -133,6 +134,18 @@ class Project(EnterpriseBaseModel):
         ACTIVE = 'ACTIVE', _('Active / In Prep')
         COMPLETED = 'DONE', _('Completed')
         CANCELLED = 'CANC', _('Cancelled')
+
+    # What a project in either state has to say to its cast: nothing. One has not
+    # been announced, the other has been called off — and a concert that is not
+    # happening takes its rehearsals, its programme and its music with it. The
+    # archive is untouched: the pieces belong to the choir, not to one project.
+    #
+    # Read through `Participation.live_seats`, which every chorister-facing door
+    # goes through — the two dashboards, the score and annotation gate, and the
+    # plain REST endpoints underneath them — so a project cannot be missing from
+    # one and present in another. The conductor's own slice is the deliberate
+    # exception and keeps drafts: they are the one assembling them.
+    HIDDEN_FROM_CAST_STATUSES = (Status.DRAFT, Status.CANCELLED)
 
     title = models.CharField(max_length=200, verbose_name=_("Project Title"))
     date_time = models.DateTimeField(verbose_name=_("Event Date & Time"), default=timezone.now)
@@ -519,6 +532,33 @@ class Participation(EnterpriseBaseModel):
 
     def __str__(self):
         return f"{self.artist.last_name} -> {self.project.title}"
+
+    @classmethod
+    def live_seats(cls, **artist_lookup: Any) -> models.QuerySet["Participation"]:
+        """Every seat a singer actually holds, named by whichever key the caller
+        has: ``artist_id=…`` for one person, ``artist__user=…`` for the one asking.
+
+        Three conditions that are really one idea — the seat exists, it was not
+        turned down, and the project is one the cast may see at all. Everything a
+        chorister is offered about their own projects resolves through this: the
+        schedule and the absence range, the songbook, the score and its shared
+        markings, and the plain REST endpoints underneath all of them.
+
+        It is one method because it kept being six, and the six disagreed. A
+        cancelled concert left the timeline while its programme stayed open in
+        the songbook; a project somebody had declined went on handing them its
+        music. Both were the same bug wearing different clothes — a rule copied
+        rather than called.
+
+        Score access narrows this further (a licensed score stops being theirs
+        once the concert is over) but never widens it, so `CLOSED_PROJECT_STATUSES`
+        composes on top rather than replacing anything here.
+        """
+        return (
+            cls.objects.filter(is_deleted=False, **artist_lookup)
+            .exclude(status=cls.Status.DECLINED)
+            .exclude(project__status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+        )
 
 
 class ProjectPieceCasting(models.Model):

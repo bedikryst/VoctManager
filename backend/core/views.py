@@ -40,6 +40,7 @@ from .exceptions import (
 )
 from .ical_service import ICalGeneratorService
 from .models import UserProfile
+from .request_utils import client_payload
 from .serializers import FeedbackReportSerializer, UserMeSerializer, UserProfileSerializer
 from .services import FeedbackService, UserIdentityService, UserPreferencesService
 
@@ -71,7 +72,7 @@ class ActivateAccountView(views.APIView):
     @extend_schema(responses={200: dict, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
-            dto = UserAccountActivationDTO(**request.data)
+            dto = UserAccountActivationDTO(**client_payload(request.data))
             validate_password(dto.new_password)
         except ValidationError as e:
             return make_error_response(
@@ -163,7 +164,7 @@ class PasswordResetRequestView(views.APIView):
     @extend_schema(responses={200: dict, 400: dict})
     def post(self, request, *args, **kwargs):
         try:
-            dto = UserPasswordResetRequestDTO(**request.data)
+            dto = UserPasswordResetRequestDTO(**client_payload(request.data))
         except ValidationError as e:
             return make_error_response(
                 request,
@@ -193,7 +194,7 @@ class PasswordResetConfirmView(views.APIView):
     @extend_schema(responses={200: dict, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
-            dto = UserPasswordResetConfirmDTO(**request.data)
+            dto = UserPasswordResetConfirmDTO(**client_payload(request.data))
             validate_password(dto.new_password)
         except ValidationError as e:
             return make_error_response(
@@ -303,7 +304,7 @@ class ChangePasswordView(views.APIView):
     @extend_schema(responses={204: None, 400: dict, 403: dict})
     def post(self, request, *args, **kwargs):
         try:
-            dto = UserPasswordChangeDTO(**request.data)
+            dto = UserPasswordChangeDTO(**client_payload(request.data))
         except ValidationError as e:
             return make_error_response(
                 request,
