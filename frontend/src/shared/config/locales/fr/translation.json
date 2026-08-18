@@ -4037,16 +4037,15 @@
       "dismiss": "Fermer",
       "in_app": "Ouvrez cette page dans Safari — la fenêtre intégrée à une autre application ne permet pas l’installation.",
       "in_app_hint": "Menu « ••• » → « Ouvrir dans Safari ».",
-      "ios_step_1": "Appuyez sur",
+      "ios_step_1": "Appuyez sur l’icône Partager",
       "ios_step_2": "puis « Sur l’écran d’accueil »",
-      "other_choose": "et choisissez l’ajout à l’écran d’accueil",
-      "other_hint": "Pas d’entrée de ce type ? Ouvrez cette adresse dans Safari.",
-      "other_tap": "Ouvrez le menu du navigateur",
-      "share_hint": "Vous ne voyez pas cette icône ? Ouvrez le menu « ••• » de la barre du navigateur.",
+      "other_hint": "Vous ne voyez pas cette entrée ? Faites défiler la feuille de partage.",
+      "share_hint": "Vous ne voyez pas l’icône ? La disposition compacte de Safari la cache sous « ••• ».",
       "subtitle": "Plein écran et répétition hors ligne.",
       "title": "Installer VoctManager",
       "where_ipad": "dans la barre supérieure, à côté de l’adresse,",
-      "where_iphone": "dans la barre inférieure,"
+      "where_iphone": "près de la barre d’adresse,",
+      "where_other": "dans la barre d’adresse,"
     }
   },
   "rehearsals": {
@@ -4443,8 +4442,9 @@
       },
       "apple_other": {
         "hint": "Pas d'entrée de ce type ? Ouvrez cette adresse dans Safari — l'ajout y est toujours disponible.",
-        "step_1": "Ouvrez le menu du navigateur — « ••• » ou « ⋮ » dans la barre",
-        "step_2": "Choisissez l'entrée qui ajoute la page à l'écran d'accueil",
+        "step_1": "Touchez l'icône Partager dans la barre d'adresse",
+        "step_2": "Choisissez « Sur l'écran d'accueil » — l'entrée peut se trouver plus bas, faites défiler",
+        "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",
         "title": "Ajouter à l'écran d'accueil"
       },
       "in_app": {
@@ -4454,8 +4454,8 @@
         "title": "Ouvrir la page dans Safari"
       },
       "ios": {
-        "hint": "Vous ne voyez pas l'icône Partager ? Dans une barre Safari étroite, elle se cache sous « ••• » (Plus).",
-        "step_1": "Touchez l'icône Partager dans la barre inférieure du navigateur",
+        "hint": "Vous ne voyez pas l'icône Partager ? Ouvrez « ••• » (Plus) — ou choisissez la disposition « Bas » ou « Haut » dans Réglages → Apps → Safari → Onglets.",
+        "step_1": "Touchez l'icône Partager près de la barre d'adresse — la disposition compacte la cache sous « ••• »",
         "step_1_tablet": "Touchez l'icône Partager dans la barre supérieure, à côté de l'adresse",
         "step_2": "Choisissez « Sur l'écran d'accueil »",
         "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",

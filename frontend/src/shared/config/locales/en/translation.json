@@ -4036,16 +4036,15 @@
       "dismiss": "Dismiss",
       "in_app": "Open this page in Safari — an in-app browser window cannot install the app.",
       "in_app_hint": "“•••” menu → “Open in Safari”.",
-      "ios_step_1": "Tap",
+      "ios_step_1": "Tap the Share icon",
       "ios_step_2": "then “Add to Home Screen”",
-      "other_choose": "and choose the add-to-home-screen entry",
-      "other_hint": "No such entry? Open this address in Safari.",
-      "other_tap": "Open the browser menu",
-      "share_hint": "Can't see that icon? Open the “•••” menu in the browser bar.",
+      "other_hint": "Can't see that entry? Scroll further down the share sheet.",
+      "share_hint": "Can't see the icon? Safari's compact layout hides it under “•••”.",
       "subtitle": "Full screen and offline practice.",
       "title": "Install VoctManager",
       "where_ipad": "in the top bar, next to the address,",
-      "where_iphone": "in the bottom bar,"
+      "where_iphone": "by the address bar,",
+      "where_other": "in the address bar,"
     }
   },
   "rehearsals": {
@@ -4442,8 +4441,9 @@
       },
       "apple_other": {
         "hint": "No such entry? Open this address in Safari — adding is always available there.",
-        "step_1": "Open the browser menu — “•••” or “⋮” in the toolbar",
-        "step_2": "Choose the entry that adds the page to your home screen",
+        "step_1": "Tap the Share icon in the address bar",
+        "step_2": "Choose “Add to Home Screen” — it can sit further down, so scroll the sheet",
+        "step_3": "Confirm — the icon appears on your home screen",
         "title": "Add to Home Screen"
       },
       "in_app": {
@@ -4453,8 +4453,8 @@
         "title": "Open the page in Safari"
       },
       "ios": {
-        "hint": "Can't see the Share icon? In a narrow Safari bar it hides under “•••” (More).",
-        "step_1": "Tap the Share icon in the browser's bottom bar",
+        "hint": "Can't see the Share icon? Open “•••” (More) — or pick the “Bottom” or “Top” layout in Settings → Apps → Safari → Tabs.",
+        "step_1": "Tap the Share icon by the address bar — the compact layout hides it under “•••”",
         "step_1_tablet": "Tap the Share icon in the top bar, next to the address",
         "step_2": "Choose “Add to Home Screen”",
         "step_3": "Confirm — the icon appears on your home screen",

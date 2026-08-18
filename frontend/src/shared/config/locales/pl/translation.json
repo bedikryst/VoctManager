@@ -4063,16 +4063,15 @@
       "dismiss": "Zamknij",
       "in_app": "Otwórz tę stronę w Safari — w okienku wbudowanym w inną aplikację instalacja jest niedostępna.",
       "in_app_hint": "Menu „•••” → „Otwórz w Safari”.",
-      "ios_step_1": "Dotknij",
+      "ios_step_1": "Dotknij ikony Udostępnij",
       "ios_step_2": "a potem „Do ekranu początkowego”",
-      "other_choose": "i wybierz dodanie do ekranu początkowego",
-      "other_hint": "Nie ma takiej pozycji? Otwórz ten adres w Safari.",
-      "other_tap": "Rozwiń menu przeglądarki",
-      "share_hint": "Nie widzisz tej ikony? Rozwiń „•••” na pasku przeglądarki.",
+      "other_hint": "Nie widzisz tej pozycji? Przewiń arkusz udostępniania niżej.",
+      "share_hint": "Nie widzisz ikony? W układzie kompaktowym Safari chowa ją pod „•••”.",
       "subtitle": "Pełny ekran i ćwiczenia offline.",
       "title": "Zainstaluj VoctManager",
       "where_ipad": "na górnym pasku, obok adresu,",
-      "where_iphone": "na dolnym pasku,"
+      "where_iphone": "przy pasku adresu,",
+      "where_other": "w pasku adresu,"
     }
   },
   "rehearsals": {
@@ -4474,9 +4473,10 @@
         "title": "Aplikacja jest zainstalowana"
       },
       "apple_other": {
-        "hint": "Nie ma takiej pozycji? Otwórz ten adres w Safari — tam dodawanie jest zawsze dostępne.",
-        "step_1": "Rozwiń menu przeglądarki — „•••” lub „⋮” na pasku",
-        "step_2": "Wybierz pozycję dodającą stronę do ekranu początkowego",
+        "hint": "Nie ma tej pozycji? Otwórz ten adres w Safari — tam dodawanie jest zawsze dostępne.",
+        "step_1": "Dotknij ikony Udostępnij w pasku adresu",
+        "step_2": "Wybierz „Do ekranu początkowego” — bywa niżej na liście, przewiń arkusz",
+        "step_3": "Potwierdź — ikona pojawi się na ekranie początkowym",
         "title": "Dodaj do ekranu początkowego"
       },
       "in_app": {
@@ -4486,8 +4486,8 @@
         "title": "Otwórz stronę w Safari"
       },
       "ios": {
-        "hint": "Nie widzisz ikony Udostępnij? W wąskim pasku Safari chowa ją pod „•••” (Więcej).",
-        "step_1": "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
+        "hint": "Nie widzisz ikony Udostępnij? Rozwiń „•••” (Więcej) — albo w Ustawieniach → Aplikacje → Safari → Karty wybierz układ „Dół” lub „Góra”.",
+        "step_1": "Dotknij ikony Udostępnij przy pasku adresu — w układzie kompaktowym kryje się pod „•••”",
         "step_1_tablet": "Dotknij ikony Udostępnij na górnym pasku, obok adresu",
         "step_2": "Wybierz „Do ekranu początkowego”",
         "step_3": "Potwierdź — ikona pojawi się na ekranie początkowym",

@@ -19,7 +19,6 @@ import {
   ExternalLink,
   Link2,
   Maximize2,
-  MoreHorizontal,
   Share,
   Share2,
   Smartphone,
@@ -82,12 +81,13 @@ const Step = ({
 
 /**
  * The manual route to the home screen, told for the app the member is actually
- * holding. Safari hides Add-to-Home-Screen behind the share sheet, Chrome and
- * Firefox behind their own "•••" menu, and a WebView embedded in Messenger or
- * Gmail does not offer it at all — one set of steps for all four is how someone
- * ends up hunting for a glyph their browser never draws. Each variant closes
- * with a fallback, because the detection is user-agent sniffing and iPadOS
- * desktop mode can still make Chrome look like Safari.
+ * holding. Since iOS 16.4 every real browser reaches it through the same share
+ * sheet; what differs is where the Share button sits — the top toolbar on an
+ * iPad, under "•••" in the compact layout iOS 26 made the iPhone default, in
+ * the address bar in Chrome (where the entry also sits further down the sheet).
+ * Only a WebView embedded in Messenger or Gmail has no route at all. Each
+ * variant closes with a fallback, because the detection is user-agent sniffing
+ * and iPadOS desktop mode can still make Chrome look like Safari.
  */
 const AppleInstallCard = ({
   guide,
@@ -133,23 +133,29 @@ const AppleInstallCard = ({
           {t("settings.app.apple_other.title", "Dodaj do ekranu początkowego")}
         </Text>
         <ol className="space-y-2.5">
-          <Step icon={MoreHorizontal}>
+          <Step icon={Share}>
             {t(
               "settings.app.apple_other.step_1",
-              "Rozwiń menu przeglądarki — „•••” lub „⋮” na pasku",
+              "Dotknij ikony Udostępnij w pasku adresu",
             )}
           </Step>
           <Step icon={SquarePlus}>
             {t(
               "settings.app.apple_other.step_2",
-              "Wybierz pozycję dodającą stronę do ekranu początkowego",
+              "Wybierz „Do ekranu początkowego” — bywa niżej na liście, przewiń arkusz",
+            )}
+          </Step>
+          <Step icon={Check}>
+            {t(
+              "settings.app.apple_other.step_3",
+              "Potwierdź — ikona pojawi się na ekranie początkowym",
             )}
           </Step>
         </ol>
         <Caption as="p" color="muted">
           {t(
             "settings.app.apple_other.hint",
-            "Nie ma takiej pozycji? Otwórz ten adres w Safari — tam dodawanie jest zawsze dostępne.",
+            "Nie ma tej pozycji? Otwórz ten adres w Safari — tam dodawanie jest zawsze dostępne.",
           )}
         </Caption>
       </div>
@@ -163,8 +169,9 @@ const AppleInstallCard = ({
       </Text>
       <ol className="space-y-2.5">
         <Step icon={Share}>
-          {/* Safari puts Share at the bottom on iPhone and at the top on iPad;
-              pointing at the wrong edge is the same as no instruction at all. */}
+          {/* An iPad keeps Share on the top toolbar; on iPhone the compact
+              layout iOS 26 defaults to hides it under "•••" by the address
+              bar. Pointing at the wrong edge is as good as no instruction. */}
           {guide === "safari-ipad"
             ? t(
                 "settings.app.ios.step_1_tablet",
@@ -172,7 +179,7 @@ const AppleInstallCard = ({
               )
             : t(
                 "settings.app.ios.step_1",
-                "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
+                "Dotknij ikony Udostępnij przy pasku adresu — w układzie kompaktowym kryje się pod „•••”",
               )}
         </Step>
         <Step icon={SquarePlus}>
@@ -188,7 +195,7 @@ const AppleInstallCard = ({
       <Caption as="p" color="muted">
         {t(
           "settings.app.ios.hint",
-          "Nie widzisz ikony Udostępnij? W wąskim pasku Safari chowa ją pod „•••” (Więcej).",
+          "Nie widzisz ikony Udostępnij? Rozwiń „•••” (Więcej) — albo w Ustawieniach → Aplikacje → Safari → Karty wybierz układ „Dół” lub „Góra”.",
         )}
       </Caption>
     </div>

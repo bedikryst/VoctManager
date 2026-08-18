@@ -5,8 +5,10 @@
  * one is the reason this file exists: it says "Macintosh" and carries no iPad
  * token, so a UA-only check silently classified every tablet as a desktop and
  * hid both the install nudge and the push explanation from it. The second
- * detection picks the *instruction*: pointing an in-app WebView at Safari's
- * share glyph sends someone hunting for a button their browser never draws.
+ * detection picks the *instruction*: every real browser reaches the home screen
+ * through the same share sheet, but an in-app WebView has no route at all, and
+ * pointing at the wrong edge of the screen sends someone hunting for a button
+ * that is not there.
  * @architecture Enterprise SaaS 2026
  * @module shared/pwa/platform.test
  */
@@ -94,7 +96,7 @@ describe("resolveAppleInstallGuide", () => {
     expect(resolveAppleInstallGuide()).toBe("safari-iphone");
   });
 
-  it("never shows Safari's share glyph to a browser that has its own menu", () => {
+  it("points Chrome and its kin at the address bar, not Safari's toolbar", () => {
     asDevice(UA.chromeIOS, 5);
     expect(resolveAppleInstallGuide()).toBe("other-browser");
 

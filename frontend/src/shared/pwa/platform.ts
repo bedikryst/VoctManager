@@ -51,8 +51,12 @@ export type AppleBrowser = "safari" | "other-browser" | "in-app";
 const IN_APP_TOKENS =
   /FBAN|FBAV|FB_IAB|Instagram|Messenger|LinkedInApp|Line\/|Twitter|MicroMessenger|Snapchat|Pinterest|GSA\//i;
 
-/** iOS browsers that hide their own Add-to-Home-Screen in a "•••" menu instead
- *  of Safari's share sheet, so the share glyph is the wrong thing to point at. */
+/**
+ * iOS browsers that reach Add-to-Home-Screen through the same share sheet as
+ * Safari (iOS 16.4 opened it to them) but keep the Share button in the address
+ * bar rather than the toolbar, and sit further down the sheet. Same route, two
+ * different things to point at.
+ */
 const OTHER_BROWSER_TOKENS = /CriOS|EdgiOS|FxiOS|OPiOS|OPT\/|DuckDuckGo|YaBrowser/i;
 
 /**
@@ -70,7 +74,12 @@ export const detectAppleBrowser = (): AppleBrowser => {
 };
 
 /**
- * The one instruction this member needs, device and app folded together.
+ * The one instruction this member needs, device and app folded together. Only
+ * the in-app WebView is a genuinely different route; the rest share the sheet
+ * and differ in where the Share button sits — top toolbar on an iPad, hidden
+ * under "•••" in the compact layout iOS 26 made the iPhone default, in the
+ * address bar in Chrome and its kin.
+ *
  * `null` = nothing to explain (not an Apple touch device).
  */
 export type AppleInstallGuide =

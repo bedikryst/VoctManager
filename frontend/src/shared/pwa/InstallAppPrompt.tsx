@@ -10,6 +10,7 @@ import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
+  ChevronsDown,
   Download,
   ExternalLink,
   MoreHorizontal,
@@ -24,11 +25,12 @@ import type { AppleInstallGuide } from "./platform";
 import { useInstallPrompt } from "./useInstallPrompt";
 
 /**
- * A glyph on its own is not an instruction: whoever cannot find it has nowhere
- * to go. Every route therefore names *where* the control sits and carries a
- * fallback for the case where it sits somewhere else — Safari's compact toolbar
- * folds Share into "•••", and the browser sniffing behind {@link AppleInstallGuide}
- * can be fooled by iPadOS desktop mode.
+ * A glyph on its own is not an instruction: the drawn icon never matches the
+ * one the browser paints exactly, so the button is named in words and the icon
+ * only illustrates. Each variant then says *where* it sits and carries a
+ * fallback for when it sits elsewhere — Safari's compact layout folds Share
+ * into "•••", and the sniffing behind {@link AppleInstallGuide} can be fooled by
+ * iPadOS desktop mode.
  */
 const AppleInstructions = ({
   guide,
@@ -64,32 +66,12 @@ const AppleInstructions = ({
     );
   }
 
-  if (guide === "other-browser") {
-    return (
-      <>
-        <Text
-          color="parchment-muted"
-          className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug"
-        >
-          <span>{t("pwa.install.other_tap", "Rozwiń menu przeglądarki")}</span>
-          <MoreHorizontal size={13} className="inline text-ethereal-gold" aria-hidden="true" />
-          <span>
-            {t(
-              "pwa.install.other_choose",
-              "i wybierz dodanie do ekranu początkowego",
-            )}
-          </span>
-        </Text>
-        {hintLine(
-          <ExternalLink size={12} aria-hidden="true" />,
-          t(
-            "pwa.install.other_hint",
-            "Nie ma takiej pozycji? Otwórz ten adres w Safari.",
-          ),
-        )}
-      </>
-    );
-  }
+  const where =
+    guide === "safari-ipad"
+      ? t("pwa.install.where_ipad", "na górnym pasku, obok adresu,")
+      : guide === "other-browser"
+        ? t("pwa.install.where_other", "w pasku adresu,")
+        : t("pwa.install.where_iphone", "przy pasku adresu,");
 
   return (
     <>
@@ -97,23 +79,27 @@ const AppleInstructions = ({
         color="parchment-muted"
         className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug"
       >
-        <span>{t("pwa.install.ios_step_1", "Dotknij")}</span>
+        <span>{t("pwa.install.ios_step_1", "Dotknij ikony Udostępnij")}</span>
         <Share size={13} className="inline text-ethereal-gold" aria-hidden="true" />
-        <span>
-          {guide === "safari-ipad"
-            ? t("pwa.install.where_ipad", "na górnym pasku, obok adresu,")
-            : t("pwa.install.where_iphone", "na dolnym pasku,")}
-        </span>
+        <span>{where}</span>
         <span>{t("pwa.install.ios_step_2", "a potem „Do ekranu początkowego”")}</span>
         <SquarePlus size={13} className="inline text-ethereal-gold" aria-hidden="true" />
       </Text>
-      {hintLine(
-        <MoreHorizontal size={12} aria-hidden="true" />,
-        t(
-          "pwa.install.share_hint",
-          "Nie widzisz tej ikony? Rozwiń „•••” na pasku przeglądarki.",
-        ),
-      )}
+      {guide === "other-browser"
+        ? hintLine(
+            <ChevronsDown size={12} aria-hidden="true" />,
+            t(
+              "pwa.install.other_hint",
+              "Nie widzisz tej pozycji? Przewiń arkusz udostępniania niżej.",
+            ),
+          )
+        : hintLine(
+            <MoreHorizontal size={12} aria-hidden="true" />,
+            t(
+              "pwa.install.share_hint",
+              "Nie widzisz ikony? W układzie kompaktowym Safari chowa ją pod „•••”.",
+            ),
+          )}
     </>
   );
 };
