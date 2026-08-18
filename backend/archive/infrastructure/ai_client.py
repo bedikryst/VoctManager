@@ -153,10 +153,17 @@ _MODELS_REQUIRING_THINKING_AT_TOP_EFFORT: Final[frozenset[str]] = frozenset({AIM
 # tiers document a far larger max output (128K) than the 64K allowed here, and
 # one analysis is not worth more than that. Haiku tasks are pure extraction — a
 # truncation there means something is odd, so its ceiling stays lower still.
+# The legacy ids carry their successors' ceilings so a harness baseline run
+# escalates on the same terms as the current model. Without them the lookup
+# falls back to the caller's `max_tokens`, no escalation is possible, and a
+# truncation scores as a total miss on the old model only — an asymmetry that
+# reads as a quality win for the new one.
 _MODEL_OUTPUT_CEILING: Final[dict[str, int]] = {
     AIModel.HAIKU: 16384,
     AIModel.SONNET: 65536,
     AIModel.OPUS: 65536,
+    LEGACY_SONNET: 65536,
+    LEGACY_OPUS: 65536,
 }
 
 # How many times we double `max_tokens` after a truncation before declaring the

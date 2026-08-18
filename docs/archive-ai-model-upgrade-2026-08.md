@@ -47,16 +47,20 @@ high-resolution vision (2576 px long edge vs 1568 px). The dominant task is read
 under staves on scanned choral scores — raster resolution is the lever that matters, not
 general model intelligence.
 
-### Cost consequence, stated honestly
+### Cost consequence — this section was wrong, see Stage 2
 
-Sonnet 5 is **more expensive per score than Sonnet 4.6**, despite identical $3/$15 sticker pricing:
+It predicted Sonnet 5 would cost **more** per score than Sonnet 4.6 (~$0.08 → ~$0.11), reasoning
+from a ~30% tokenizer expansion plus higher image-token counts, and accepted that as the price of
+better extraction.
 
-- its tokenizer produces ~30% more tokens for the same text
-- high-resolution vision raises image tokens per page
+Stage 2 measured it and found the opposite: **31% cheaper and 2.6× faster at identical accuracy.**
+Input grew only ~9%, and Sonnet 5 reached the same result in 39% fewer *output* tokens — which at
+$15/1M is where the bill actually lives. The reasoning above was not wrong about input tokenization;
+it was wrong about which side of the ledger dominates.
 
-Estimated cost per typical 8-page SATB score: **~$0.08 → ~$0.11**. Across a 500-score archive that
-is ~$40 → ~$57, one time. This is accepted deliberately: at these volumes AI spend is not the
-bottleneck — conductor correction time is, and correction time is what better extraction buys back.
+The paragraph is kept rather than deleted because its closing premise still governs every decision
+in this document: at these volumes AI spend is not the bottleneck — conductor correction time is.
+That is why Stage 2 declined to cut `effort` for a cost saving it could not show was free.
 
 ### Rejected alternatives — do not re-litigate without new evidence
 
@@ -158,8 +162,14 @@ grep -n "ANALYZE_MAX_TOKENS" backend/archive/tasks.py
 
 **Verified 2026-08-18:** ruff clean, mypy clean (35 files), 57/57 archive tests pass, migration
 generated. Note what this does *not* prove: the suite mocks the Claude client, so no live call was
-made. Stage 1 is verified correct in shape, not accepted by the API — the first real proof that
-`claude-sonnet-5` and `thinking: disabled` are accepted arrives in Stage 2.
+made.
+
+**Live proof, Stage 2 (2026-08-18):** `claude-sonnet-5` accepted, six real analyses returned
+`stop_reason=end_turn` on `attempt=1`, pricing and cost attribution work end to end. What is still
+unproven live: **`thinking: {"type": "disabled"}` has never been sent.** `analyze_score` and the
+harness both run with thinking enabled; only `generate_program_note` takes the disabled path, and no
+programme note has been generated on Sonnet 5 yet. 1.1 remains verified in shape only — Stage 3 is
+where it meets the API.
 
 ### Question this
 
@@ -168,14 +178,15 @@ made. Stage 1 is verified correct in shape, not accepted by the API — the firs
   and harmless — but the urgency argument evaporates.
 - Is the Opus 5 `thinking: disabled` + `effort >= xhigh` rejection still real? If it was lifted, the
   guard becomes dead code worth deleting rather than carrying.
-- Is 49152 right? It is derived from a ~30% tokenizer estimate, not a measurement. Stage 2 produces
-  the real number — if no golden-set file truncates at 32768, this was over-cautious.
+- ~~Is 49152 right?~~ **Answered in Stage 2:** over-cautious but harmless. Peak measured output is
+  16 724 tokens, so even 32768 would not have truncated. An unused budget is not billed; lowering it
+  only buys truncation risk on a long anthem. Left alone.
 
 ---
 
 ## Stage 2 — Golden-set measurement and `effort` tuning
 
-**Status: NOT STARTED**
+**Status: DONE (2026-08-18) — Sonnet 5 confirmed, `effort` decision deliberately deferred**
 
 Stage 1 makes Sonnet 5 *safe*. Stage 2 establishes whether it is *better*, and finds the cheapest
 `effort` that holds quality. This stage **cannot be executed by an agent alone** — it needs the
@@ -207,15 +218,106 @@ The essentials once it exists:
 Do this **before 2026-08-31** if convenient — Sonnet 5 introductory pricing makes the sweep a third
 cheaper, and a sweep is the most call-heavy thing in this spec.
 
+### What was actually built and run (2026-08-18)
+
+**The upgrade's stated rationale does not apply to this archive.** Stage 1 justified Sonnet 5 by
+high-resolution vision for *scanned* scores. The developer confirmed scans are practically absent —
+the real population is born-digital engravings that ship a text layer alongside the page image, where
+raster resolution is not the constraint. Of the six real scores on disk, four carry no raster at all,
+one is a 1215 px image (below even the *old* 1568 px ceiling, so both models see identical pixels)
+and exactly one page — `Cicha_noc` p2, a 300 DPI scan — could in principle show the difference.
+Corollary worth keeping: a scan only tests high-resolution vision if its long edge exceeds 1568 px.
+A 150 DPI photocopy is downsampled the same by both generations.
+
+Stage 2 therefore stopped being a tuning exercise and became a **keep-or-roll-back test**.
+
+Golden set lives at `voct_data/golden_set/` (gitignored — copyrighted editions), 6 scores,
+51 identity cells, 23 sung-text phrases, with a `README.md` recording why each file is in the set
+and which fields were deliberately left unscored. The rule applied: only what the page answers
+unambiguously goes into `expected.json` — an omitted field costs nothing, a wrong expectation
+poisons every future comparison. Left out and documented: `composer_full_name` where the score
+credits only an arranger (what a required field should hold when the source is silent is a product
+decision, not a page fact), two-name and no-space arranger credits (measures formatting, not
+extraction), and `musical_key` for accidental-bearing tonics (no canonical `B-flat`/`B♭`/`Bb` form).
+
+Harness changes in the same commit:
+
+- `sung_text_contains` — per-file phrases matched against the transcribed `sung_text`,
+  **diacritic-sensitive** (the identity fold strips diacritics and would erase the signal), and
+  punctuation-insensitive so an incidental syllable hyphen still matches the word while the
+  engraver's word-joining underscore does not.
+- `--only FILENAME` (repeatable) — iterating on one score must not re-bill the set.
+- `_MODEL_OUTPUT_CEILING` gained the legacy ids. Without them the lookup fell back to the caller's
+  `max_tokens`, so a baseline run could not escalate at all while the current model got two
+  attempts — an asymmetry that would have read as a quality win for the new model.
+- Token totals in the summary, because the cent column moves with the system prompt's cache state.
+
+### Results
+
+Two files (`01_adoro_te_devote` — 5 pages, Polish/Latin alternating verses, underscore-joined
+underlay; `06_wsrod_nocnej_ciszy` — 3 pages, syllabified Polish underlay, arranger-only credit).
+15 identity cells + 10 phrases per configuration. Cost at **standard** rates, not the promo.
+
+| Configuration | Identity | Sung text | Cost | Wall time | Output tokens |
+|---|---|---|---|---|---|
+| `sonnet-4-6` / medium | 15/15 | 10/10 | 35¢ | 281 s | 18 089 |
+| `sonnet-5` / medium | 15/15 | 10/10 | 24¢ | 110 s | 10 993 |
+| `sonnet-5` / low | 15/15 | 10/10 | 17¢ | 57 s | 5 413 |
+
+Per file, Sonnet 5 / medium: Adoro 20¢ / 101 s, Wśród nocnej ciszy 4¢ / 9 s. The spread is the
+ECONOMY rules — a wholly-Polish score returns no IPA and no translation, so it costs a fifth of a
+bilingual one. Every call returned `stop_reason=end_turn` on `attempt=1`; nothing truncated.
+
+### Decisions
+
+**Keep Sonnet 5 — on measured grounds, not the ones Stage 1 argued.** Identical accuracy to Sonnet
+4.6 at **31% lower cost and 2.6× lower latency**. The mechanism is output volume: Sonnet 5 reached
+the same perfect result in 39% fewer output tokens, and output at $15/1M dominates the bill. Input
+grew only ~9% (20 283 → 22 110), not the ~30% the tokenizer estimate predicted.
+
+**Default `effort` stays `medium`.** `low` matched it on every cell and is a third cheaper again, but
+the set does not discriminate: *every* configuration scored 100%, including the old model. A test
+everything passes cannot rank quality, and promoting a quality-reducing dial on that basis is the
+error this stage exists to prevent. It is also the wrong trade for this project — the spec's own
+premise is that AI spend is not the bottleneck, conductor correction time is, and lower effort
+trades exactly the wrong way for an unmeasured gain. Promote `low` only after the golden set
+contains cases that actually separate configurations (ambiguous credits, a multi-movement work,
+an unclear key) and `low` still matches `medium` on them.
+
+**Do not touch the `ANALYZE_SCORE` prompt.** A gap was hypothesised in its `== SUNG TEXT ==` section:
+it never says the underlay is syllabified and must be reassembled into words. The measurement
+refuted it — both models reconstruct `w_Ho-stii` → `w Hostii` and `w_o-fie-rze` → `w ofierze`
+correctly as written, 10/10 phrases including the tightest underlay in the set. Changing a prompt
+that scores perfectly would invalidate the cache and the provenance version for nothing.
+
+**Leave `ANALYZE_MAX_TOKENS` at 49152.** Peak observed output is 16 724 tokens (Sonnet 4.6 on the
+5-page bilingual score); Sonnet 5 peaked at 10 465. So 49152 is roughly triple what the hardest file
+in the set needs — but an unused budget is not billed, and lowering it only buys a truncation risk on
+a long anthem. Stage 1's "Question this" asked whether 49152 was over-cautious: yes, harmlessly.
+
+### Still open
+
+- The set is 6 files, of which 2 are measured. The spec's original target was 10–15 with hard cases.
+  Every configuration scoring 100% is the symptom of a set that is too easy, not of a solved problem.
+- Sung-text scoring covers 23 phrases, not full transcription fidelity. It catches the named failure
+  modes; it does not measure IPA alignment or translation quality at all.
+- `xhigh` / `max` and Opus 5 were not run. With accuracy already at ceiling they can only cost more;
+  they become worth measuring when the set contains files that `medium` fails.
+
+Spend for this stage: 93¢ reported at standard rates (~74¢ actual under the promo), including one
+17¢ call lost to a console-encoding crash on the host before its result was scored.
+
 ### Question this
 
-- The harness scores identity fields only (`SCORABLE_FIELDS`). It does **not** score sung-text
-  fidelity, IPA alignment or translation quality — the outputs high-res vision was supposed to
-  improve. A pass on identity is therefore weak evidence for the actual thesis of this upgrade.
-  Consider adding a sung-text similarity check before trusting the result.
-- `_normalize` strips diacritics on both sides, so a Polish transcription error in exactly the place
-  that matters most (`Bóstwo` vs `Bostwo`) scores as a hit. Fine for identity, misleading if the
-  harness is ever extended to sung text.
+- Both models scored 100%. That is a statement about the golden set, not about the models — treat
+  every conclusion above as bounded by two born-digital scores whose fields were chosen for being
+  unambiguous. The cost and latency findings are robust (large, consistent, mechanistically
+  explained); the accuracy finding is only "no regression on easy material".
+- The keep-Sonnet-5 decision now rests on cost and speed. If a future release inverts that, the
+  decision inverts with it — there is no longer a capability argument holding it in place.
+- `_normalize` still strips diacritics for identity fields, so a Polish composer name misread as
+  `Kramarz`/`Kramarz` with a wrong diacritic scores as a hit. Only the sung-text path is
+  diacritic-sensitive.
 
 ---
 
@@ -265,12 +367,14 @@ Honesty ledger, so nobody treats an estimate as a fact:
 
 | Claim | Basis |
 |---|---|
-| Sonnet 5 vision = 2576 px; Sonnet 4.6 = 1568 px | Anthropic docs |
-| Sonnet 5 tokenizer ≈ +30% tokens | Anthropic migration docs |
+| Sonnet 5 vision = 2576 px; Sonnet 4.6 = 1568 px | Anthropic docs. **Irrelevant to this archive** — Stage 2 found the scores are born-digital. |
+| Sonnet 5 tokenizer ≈ +30% tokens | Anthropic migration docs. **Measured at ~+9%** on real score PDFs (Stage 2). |
 | Absent `thinking` = adaptive on Sonnet 5 | Anthropic docs |
 | Opus 5 rejects `thinking: disabled` at effort ≥ xhigh | Anthropic docs |
 | Cache minimum: 1024 (Sonnet) / 512 (Opus 5) | Anthropic docs |
 | Gemini 258 tokens per PDF page, 3072 px, 1000 pages | ai.google.dev — primary source |
 | Gemini / GPT per-token pricing | **Third-party aggregators. Verify at source before acting.** |
-| ~$0.08 per score today, ~$0.11 on Sonnet 5 | **Estimate.** Real figure: `ScoreEdition.objects.filter(ingestion_cost_cents__gt=0).aggregate(Avg('ingestion_cost_cents'))` |
+| ~$0.08 per score today, ~$0.11 on Sonnet 5 | **Falsified.** Measured 2026-08-18: Sonnet 5 is 31% *cheaper* than 4.6. Per-score cost is dominated by sung language, not model — a wholly-Polish score skips IPA and translation and costs 4¢ against 20¢ for a bilingual one. |
+| Sonnet 5 accuracy ≥ Sonnet 4.6 | **Measured, weakly.** 15/15 identity + 10/10 phrases for both, on two born-digital scores. Establishes no regression; does not establish superiority. |
+| Peak output for one analysis = 16 724 tokens | Measured (Sonnet 4.6, 5-page bilingual score). Sonnet 5 peaked at 10 465. |
 | GPT PDF-page tokenization | **Never verified.** Would decide any GPT comparison. |

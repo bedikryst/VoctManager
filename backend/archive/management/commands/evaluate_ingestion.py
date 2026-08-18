@@ -23,11 +23,18 @@ Description:
             "epoch": "FOLK",
             "sung_text_language": "pl",
             "voicing": "SATB",
-            "musical_key": "F major"
+            "musical_key": "F major",
+            "sung_text_contains": ["Wśród nocnej ciszy głos się rozchodzi"]
           },
           …
         }
     Only the keys present per file are scored, so a partial golden set is fine.
+
+    `sung_text_contains` is scored apart from the identity fields: each entry is
+    a phrase that must appear in the transcribed `sung_text`, matched WITHOUT
+    the diacritic fold the identity fields use. Identity accuracy is read off
+    the title page and says nothing about the underlay — this is the column that
+    measures whether the words under the staves came back as printed.
 
     NOTE: every evaluated PDF is a REAL, BILLED Anthropic call (roughly the
     cost of one ingestion per file). No DB rows are written and no edition is
@@ -79,6 +86,10 @@ SCORABLE_FIELDS = (
     'sung_text_language',
 )
 
+# Scored separately from the identity fields: a list of phrases that must appear
+# in the transcribed `sung_text`.
+SUNG_TEXT_KEY = 'sung_text_contains'
+
 _MODEL_BY_NAME = {
     'haiku': AIModel.HAIKU,
     'sonnet': AIModel.SONNET,
@@ -98,6 +109,21 @@ def _normalize(value: Any) -> str:
         return ''
     text = unicodedata.normalize('NFKD', str(value))
     text = ''.join(ch for ch in text if not unicodedata.combining(ch))
+    return ' '.join(text.casefold().split())
+
+
+def _normalize_fragment(value: str) -> str:
+    """Comparison form for sung text — case-insensitive, punctuation-insensitive,
+    and deliberately DIACRITIC-SENSITIVE: `Bostwo` must not pass for `Bóstwo`,
+    because recovering Polish diacritics from a cramped underlay is the quality
+    being measured here. The identity fold above would erase exactly that signal.
+
+    Punctuation is dropped so an incidental syllable hyphen ('fal-li-tur') still
+    matches the word, while the engraver's word-joining underscore ('w_Hostii')
+    does not — copying that marker through means the underlay was transcribed
+    mechanically instead of read as words, which is a real defect.
+    """
+    text = ''.join(ch if ch.isalnum() or ch.isspace() else '' for ch in value)
     return ' '.join(text.casefold().split())
 
 
@@ -127,6 +153,11 @@ class Command(BaseCommand):
             help="max_tokens budget per call (default matches the pipeline).",
         )
         parser.add_argument(
+            '--only', action='append', metavar='FILENAME',
+            help="Evaluate only this file (repeatable). Applied before --limit. "
+                 "Iterating on one score's phrasing must not re-bill the set.",
+        )
+        parser.add_argument(
             '--limit', type=int, default=0,
             help="Evaluate at most N files (0 = all). Handy for a cheap smoke run.",
         )
@@ -147,6 +178,14 @@ class Command(BaseCommand):
             expected_path.read_text(encoding='utf-8'),
         )
         entries = sorted(expected_by_file.items())
+        only: list[str] | None = options['only']
+        if only:
+            unknown_files = set(only) - set(expected_by_file)
+            if unknown_files:
+                raise CommandError(
+                    f"--only names files absent from expected.json: {sorted(unknown_files)}"
+                )
+            entries = [(name, exp) for name, exp in entries if name in set(only)]
         limit = options['limit']
         if limit > 0:
             entries = entries[:limit]
@@ -175,7 +214,13 @@ class Command(BaseCommand):
 
         field_hits: dict[str, int] = dict.fromkeys(SCORABLE_FIELDS, 0)
         field_totals: dict[str, int] = dict.fromkeys(SCORABLE_FIELDS, 0)
+        text_hits = 0
+        text_totals = 0
         total_cents = 0
+        # Reported alongside cost because the cent column moves with the system
+        # prompt's cache state: the first configuration run in a 5-minute window
+        # pays the cache write, later ones read it back at a tenth of the price.
+        tokens_in = tokens_out = tokens_cache_w = tokens_cache_r = 0
         failures: list[str] = []
 
         for filename, expected in entries:
@@ -185,7 +230,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"✗ {filename} — missing file"))
                 continue
 
-            unknown = set(expected) - set(SCORABLE_FIELDS)
+            unknown = set(expected) - set(SCORABLE_FIELDS) - {SUNG_TEXT_KEY}
             if unknown:
                 self.stdout.write(self.style.WARNING(
                     f"  {filename}: skipping unknown expected keys {sorted(unknown)}"
@@ -209,6 +254,10 @@ class Command(BaseCommand):
                 continue
             elapsed = time.monotonic() - t0
             total_cents += cost.total_cents
+            tokens_in += cost.input_tokens
+            tokens_out += cost.output_tokens
+            tokens_cache_w += cost.cache_creation_input_tokens
+            tokens_cache_r += cost.cache_read_input_tokens
 
             got = analysis.model_dump(mode='json')
             hits = 0
@@ -222,16 +271,30 @@ class Command(BaseCommand):
                 else:
                     misses.append(field)
 
-            style = self.style.SUCCESS if not misses else self.style.WARNING
+            fragments: list[str] = list(expected.get(SUNG_TEXT_KEY) or [])
+            got_text = _normalize_fragment(str(got.get('sung_text') or ''))
+            frag_misses = [f for f in fragments if _normalize_fragment(f) not in got_text]
+            text_totals += len(fragments)
+            text_hits += len(fragments) - len(frag_misses)
+
+            clean = not misses and not frag_misses
+            text_part = (
+                f"{len(fragments) - len(frag_misses)}/{len(fragments)} text, "
+                if fragments else ''
+            )
+            style = self.style.SUCCESS if clean else self.style.WARNING
             self.stdout.write(style(
-                f"{'✓' if not misses else '~'} {filename} — {hits}/{len(scored)} fields, "
-                f"{cost.total_cents}¢, {elapsed:.0f}s, confidence={analysis.confidence:.2f}"
+                f"{'✓' if clean else '~'} {filename} — {hits}/{len(scored)} fields, "
+                f"{text_part}{cost.total_cents}¢, {elapsed:.0f}s, "
+                f"confidence={analysis.confidence:.2f}"
             ))
-            if misses and options['verbose_fields']:
+            if options['verbose_fields']:
                 for field in misses:
                     self.stdout.write(
                         f"    {field}: got {got.get(field)!r}, expected {expected[field]!r}"
                     )
+                for fragment in frag_misses:
+                    self.stdout.write(f"    sung_text missing: {fragment!r}")
 
         self.stdout.write("")
         self.stdout.write(self.style.MIGRATE_HEADING(
@@ -244,7 +307,17 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"  {field:<22} {field_hits[field]}/{field_totals[field]}"
             )
-        self.stdout.write(f"\nTotal cost: {total_cents}¢ (${total_cents / 100:.2f})")
+        if text_totals:
+            self.stdout.write(
+                f"  {'sung_text (phrases)':<22} {text_hits}/{text_totals}"
+            )
+        self.stdout.write(
+            f"\nTokens: in={tokens_in} out={tokens_out} "
+            f"cache_write={tokens_cache_w} cache_read={tokens_cache_r}"
+        )
+        # Sonnet 5's introductory rate is not in `_PRICING` — see the table's
+        # note — so this is what the run would cost at the standard rate.
+        self.stdout.write(f"Total cost: {total_cents}¢ (${total_cents / 100:.2f}) at standard rates")
         if failures:
             self.stdout.write(self.style.ERROR(
                 f"{len(failures)} file(s) failed: " + "; ".join(failures)
