@@ -118,8 +118,11 @@ MAX_PDF_PAGES: int = 100
 
 # Output budget for the consolidated analysis (sung text + line-aligned IPA +
 # 2 translations + adaptive thinking, all sharing `max_tokens`). The client
-# escalates toward the model's 64K cap on truncation rather than failing.
-ANALYZE_MAX_TOKENS: int = 32768
+# escalates toward the model's 64K ceiling on truncation rather than failing,
+# but each escalation re-bills the whole call — so the starting budget carries
+# headroom for Sonnet 5's tokenizer, which yields ~30% more tokens than 4.6 did
+# for the same text. Stays under the ceiling so one escalation remains possible.
+ANALYZE_MAX_TOKENS: int = 49152
 PROGRAM_NOTE_MAX_TOKENS: int = 8192
 
 # The canonical programme note is generated eagerly in the ensemble's language.

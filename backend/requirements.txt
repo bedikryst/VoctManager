@@ -62,7 +62,10 @@ Pillow==12.2.0
 pywebpush>=2.0.0
 
 # AI / Score Package Compiler
-anthropic>=0.88.0
+# Pinned exact, not floored: the ingestion pipeline depends on version-sensitive
+# SDK behaviour (`thinking`, `output_config.effort`, structured-output parsing).
+# An unpinned floor lets a container rebuild change how scores are analysed.
+anthropic==0.103.1
 pypdf>=5.0.0
 # Page rasterisation for the build-cockpit page-trim thumbnails. PDFium binding
 # with a permissive (Apache-2.0/BSD-3) licence; ships self-contained wheels with

@@ -13,10 +13,10 @@ Description:
       * `record_external(...)`  — value came from an external API
       * `record_manual(...)`    — conductor edited the field by hand
 
-    The model-version constants align with `ProvenanceSource`:
-      AI_HAIKU  ↔ claude-haiku-4-5
-      AI_SONNET ↔ claude-sonnet-4-6
-      AI_OPUS   ↔ claude-opus-4-7
+    `ProvenanceSource` records the model TIER (Haiku / Sonnet / Opus), never the
+    exact version — the precise id of the model that produced a value lives in
+    each row's `model_version`. That split is what lets a model upgrade land
+    without a data migration; see `_AI_MODEL_TO_SOURCE` below.
 
 Standards: SaaS 2026, every claim is attributable.
 ===============================================================================
@@ -35,10 +35,18 @@ from archive.models import ProvenanceRecord, ProvenanceSource
 logger = logging.getLogger(__name__)
 
 
-# Map of Anthropic model id → ProvenanceSource enum value.
-# When a new model lands, add it here and bump the enum in models.py.
+# Map of Anthropic model id → ProvenanceSource tier.
+#
+# EVERY model id the pipeline can emit must appear here. A miss is not benign:
+# `record_ai` falls back to AI_OPUS, so an unmapped id silently attributes the
+# value to the wrong tier in the review cockpit while `model_version` says
+# something else. Superseded ids stay mapped so a model rollback — or a
+# re-render of historical rows — keeps attributing correctly.
 _AI_MODEL_TO_SOURCE: Final[dict[str, str]] = {
     'claude-haiku-4-5':  ProvenanceSource.AI_HAIKU,
+    'claude-sonnet-5':   ProvenanceSource.AI_SONNET,
+    'claude-opus-5':     ProvenanceSource.AI_OPUS,
+    # Superseded — kept for rollback and for re-runs pinned to the old tier.
     'claude-sonnet-4-6': ProvenanceSource.AI_SONNET,
     'claude-opus-4-8':   ProvenanceSource.AI_OPUS,
 }
@@ -55,9 +63,14 @@ def record_ai(
     """Record that `target.field_name` was produced by a Claude call."""
     source = _AI_MODEL_TO_SOURCE.get(model_id)
     if source is None:
-        # Unknown model id — log loudly so we notice when adding a new model.
-        logger.warning("provenance.unknown_ai_model model_id=%s", model_id)
-        source = ProvenanceSource.AI_OPUS  # safest default for audit purposes
+        # A miss means this row is about to be attributed to the wrong tier —
+        # error level, because the only fix is a code change in the map above.
+        logger.error(
+            "provenance.unknown_ai_model model_id=%s — attributing to AI_OPUS; "
+            "add it to _AI_MODEL_TO_SOURCE",
+            model_id,
+        )
+        source = ProvenanceSource.AI_OPUS
     return _create(
         target=target,
         field_name=field_name,

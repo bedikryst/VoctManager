@@ -24,8 +24,10 @@ Description:
       5. **Provenance** — every call emits the prompt version + model id, so
          the caller can stamp `ProvenanceRecord` rows with full attribution.
 
-    Adheres to the Anthropic 2026 defaults: adaptive thinking, no sampling
-    parameters, Opus 4.8 / Sonnet 4.6 / Haiku 4.5 as the supported model tier.
+    Adheres to the Anthropic 2026 defaults: no sampling parameters, and
+    Opus 5 / Sonnet 5 / Haiku 4.5 as the supported model tier. Thinking is
+    always set EXPLICITLY — see `parse()`; an omitted key does not mean the
+    same thing on every model generation.
 
 Standards: SaaS 2026, Anthropic SDK best practices, provenance-aware.
 ===============================================================================
@@ -60,17 +62,28 @@ T = TypeVar('T', bound=BaseModel)
 # of these constants per task; downstream code never hard-codes the strings.
 
 class AIModel:
-    """Canonical model IDs (Claude API, May 2026). Never construct your own."""
+    """Canonical model IDs (Claude API, August 2026). Never construct your own."""
     HAIKU: Final[str] = "claude-haiku-4-5"      # cheap classification, dedup, simple extraction
-    SONNET: Final[str] = "claude-sonnet-4-6"    # enrichment, translations, program notes
-    OPUS: Final[str] = "claude-opus-4-8"        # hardest reasoning / multi-step decisions
+    SONNET: Final[str] = "claude-sonnet-5"      # score analysis, translations, program notes
+    OPUS: Final[str] = "claude-opus-5"          # hardest reasoning / audience-facing prose
+
+
+# Superseded ids, kept ONLY so the golden-set harness can price a baseline run
+# against the previous generation (`evaluate_ingestion --model`). Nothing in the
+# pipeline selects these; delete them once no comparison run needs a floor.
+LEGACY_SONNET: Final[str] = "claude-sonnet-4-6"
+LEGACY_OPUS: Final[str] = "claude-opus-4-8"
 
 
 # ---------------------------------------------------------------------------
-# Pricing table (USD per 1M tokens, May 2026)
+# Pricing table (USD per 1M tokens, August 2026)
 # Source: https://platform.claude.com/docs/en/pricing
 # Update if Anthropic publishes new prices. Cents are rounded UP to never
 # under-report cost in the audit log.
+#
+# Sonnet 5 carries an introductory rate of $2/$10 until 2026-08-31. We keep the
+# $3/$15 standard rate here on purpose: during the promo that over-reports
+# spend, which is the safe direction and matches the round-up policy above.
 # ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -100,6 +113,20 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
         cache_write_5m_per_1m=Decimal("1.25"),
         cache_read_per_1m=Decimal("0.10"),
     ),
+    # Previous generation — same rates as their successors; present so a
+    # harness baseline run does not die on "Unknown model for pricing".
+    LEGACY_SONNET: _ModelPricing(
+        input_per_1m=Decimal("3.00"),
+        output_per_1m=Decimal("15.00"),
+        cache_write_5m_per_1m=Decimal("3.75"),
+        cache_read_per_1m=Decimal("0.30"),
+    ),
+    LEGACY_OPUS: _ModelPricing(
+        input_per_1m=Decimal("5.00"),
+        output_per_1m=Decimal("25.00"),
+        cache_write_5m_per_1m=Decimal("6.25"),
+        cache_read_per_1m=Decimal("0.50"),
+    ),
 }
 
 
@@ -110,13 +137,22 @@ _PRICING: Final[dict[str, _ModelPricing]] = {
 _MODELS_WITHOUT_EFFORT: Final[frozenset[str]] = frozenset({AIModel.HAIKU})
 
 
+# Opus 5's top effort tiers are defined in terms of extended thinking, so it
+# returns 400 when `thinking` is disabled at `xhigh` or `max`. A caller that
+# wants prose without thinking (the programme note) must stay at `high` or
+# below; we refuse locally rather than spend a round trip to learn it.
+_EFFORTS_REQUIRING_THINKING: Final[frozenset[str]] = frozenset({"xhigh", "max"})
+_MODELS_REQUIRING_THINKING_AT_TOP_EFFORT: Final[frozenset[str]] = frozenset({AIModel.OPUS})
+
+
 # Hard upper bound on `max_tokens` per model when we auto-escalate after a
 # `stop_reason='max_tokens'` truncation. `max_tokens` is shared by thinking AND
 # output tokens, so a big translation with adaptive thinking can overshoot a
 # modest budget; we double and retry up to this ceiling before giving up.
-# Values track each model's documented max output cap (Sonnet/Haiku 64K).
-# Haiku tasks are pure extraction — a truncation there means something is odd,
-# so its ceiling stays low to avoid runaway spend.
+# These are SPEND guards, not the models' capability limits: the Sonnet and Opus
+# tiers document a far larger max output (128K) than the 64K allowed here, and
+# one analysis is not worth more than that. Haiku tasks are pure extraction — a
+# truncation there means something is odd, so its ceiling stays lower still.
 _MODEL_OUTPUT_CEILING: Final[dict[str, int]] = {
     AIModel.HAIKU: 16384,
     AIModel.SONNET: 65536,
@@ -354,8 +390,10 @@ class AIClient:
         Run one structured-output call. Returns the parsed Pydantic instance
         plus a `CallCost` populated from `response.usage`.
 
-        Defaults align with the Claude 4.7 / 4.6 / 4.5 family:
-          - `thinking: {type: "adaptive"}` (only valid form on 4.7)
+        Defaults align with the Claude 5 / 4.5 family:
+          - `thinking` is sent explicitly on every call — `adaptive` when
+            `enable_thinking`, `disabled` otherwise. Never omitted: the meaning
+            of an absent key changed between model generations.
           - `output_config.effort` controls overall reasoning depth
           - System prompt is cached for the run
 
@@ -439,8 +477,22 @@ class AIClient:
         # that honour it.
         if model not in _MODELS_WITHOUT_EFFORT:
             base_params["output_config"] = {"effort": effort}
+        # ALWAYS explicit. An omitted `thinking` key is not a stable "off" —
+        # Sonnet 4.6 read it as disabled, Sonnet 5 reads it as adaptive. The
+        # programme note relies on thinking being genuinely off (it shares the
+        # `max_tokens` budget with the output), so silence is not an option.
         if enable_thinking:
             base_params["thinking"] = {"type": "adaptive"}
+        else:
+            if (
+                model in _MODELS_REQUIRING_THINKING_AT_TOP_EFFORT
+                and effort in _EFFORTS_REQUIRING_THINKING
+            ):
+                raise AIClientPermanentError(
+                    f"{model} rejects thinking=disabled at effort={effort!r}. "
+                    f"Use effort 'high' or below, or enable thinking."
+                )
+            base_params["thinking"] = {"type": "disabled"}
 
         # `max_tokens` is shared between thinking and output. If a generous
         # initial budget still truncates (stop_reason='max_tokens'), doubling

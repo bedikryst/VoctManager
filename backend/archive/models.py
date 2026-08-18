@@ -82,9 +82,11 @@ class IngestionProgress(models.TextChoices):
 
 class ProvenanceSource(models.TextChoices):
     MANUAL      = 'MAN', _('Manual entry')
-    AI_HAIKU    = 'AIH', _('AI — Haiku 4.5')
-    AI_SONNET   = 'AIS', _('AI — Sonnet 4.6')
-    AI_OPUS     = 'AIO', _('AI — Opus 4.7')
+    # Tier labels carry no version: the exact model id per row lives in
+    # `ProvenanceRecord.model_version`, so a model upgrade never restates these.
+    AI_HAIKU    = 'AIH', _('AI — Haiku')
+    AI_SONNET   = 'AIS', _('AI — Sonnet')
+    AI_OPUS     = 'AIO', _('AI — Opus')
     MUSICBRAINZ = 'MBZ', _('MusicBrainz')
     WIKIDATA    = 'WKD', _('Wikidata')
     SPOTIFY     = 'SPF', _('Spotify Web API')

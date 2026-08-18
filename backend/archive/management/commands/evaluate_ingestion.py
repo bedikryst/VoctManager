@@ -50,8 +50,15 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from archive.dtos import ScoreAnalysisResult
-from archive.infrastructure.ai_client import AIClient, AIClientError, AIModel
+from archive.infrastructure.ai_client import (
+    LEGACY_OPUS,
+    LEGACY_SONNET,
+    AIClient,
+    AIClientError,
+    AIModel,
+)
 from archive.infrastructure.prompts import ANALYZE_SCORE
+from archive.tasks import ANALYZE_MAX_TOKENS
 
 # Identity fields the harness knows how to score. `expected.json` may use any
 # subset per file; unknown keys are reported (typo guard) and skipped.
@@ -76,6 +83,10 @@ _MODEL_BY_NAME = {
     'haiku': AIModel.HAIKU,
     'sonnet': AIModel.SONNET,
     'opus': AIModel.OPUS,
+    # Previous generation, so an upgrade can be measured against a real floor
+    # instead of a remembered one. Priced, but never selected by the pipeline.
+    'sonnet-4-6': LEGACY_SONNET,
+    'opus-4-8': LEGACY_OPUS,
 }
 
 
@@ -106,11 +117,13 @@ class Command(BaseCommand):
             help="Model tier to evaluate (default: sonnet — the pipeline's choice).",
         )
         parser.add_argument(
-            '--effort', choices=['low', 'medium', 'high'], default='medium',
-            help="output_config.effort to evaluate (default: medium).",
+            '--effort', choices=['low', 'medium', 'high', 'xhigh', 'max'],
+            default='medium',
+            help="output_config.effort to evaluate (default: medium). The two "
+                 "top tiers exist only on Sonnet 5 / Opus 5.",
         )
         parser.add_argument(
-            '--max-tokens', type=int, default=32768,
+            '--max-tokens', type=int, default=ANALYZE_MAX_TOKENS,
             help="max_tokens budget per call (default matches the pipeline).",
         )
         parser.add_argument(

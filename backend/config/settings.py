@@ -367,15 +367,17 @@ ANTHROPIC_API_KEY = env('ANTHROPIC_API_KEY', default='')
 
 # Hard ceiling, in USD cents, the ingestion pipeline may spend per ScoreEdition
 # PER RUN. Tasks check this BEFORE each Claude call and refuse to proceed once
-# `ingestion_cost_cents` (this run) hits it. ~$0.30 covers a full v2 native-PDF
-# run on a typical motet; the headroom absorbs a max_tokens escalation.
-INGESTION_COST_CEILING_CENTS = env.int('INGESTION_COST_CEILING_CENTS', default=100)
+# `ingestion_cost_cents` (this run) hits it. A typical motet runs ~10¢ on
+# Sonnet 5; the headroom covers a long score (high-resolution vision bills every
+# page) plus a max_tokens escalation, so a big PDF fails on quality grounds
+# rather than on a budget that no longer matches the model.
+INGESTION_COST_CEILING_CENTS = env.int('INGESTION_COST_CEILING_CENTS', default=150)
 
 # LIFETIME ceiling per ScoreEdition, in USD cents — across every (re)ingest.
 # The per-run counter resets on reingest; this one never does. Stops a PDF that
 # keeps getting re-processed from silently draining the account (the "it took
-# $5 doing the same thing" failure mode).
-INGESTION_LIFETIME_CEILING_CENTS = env.int('INGESTION_LIFETIME_CEILING_CENTS', default=500)
+# $5 doing the same thing" failure mode). Tracks the per-run ceiling at ~5x.
+INGESTION_LIFETIME_CEILING_CENTS = env.int('INGESTION_LIFETIME_CEILING_CENTS', default=750)
 
 # Org-wide DAILY spend guard, in USD cents. Summed across all editions ingested
 # in the current UTC day; new runs are refused once exceeded. A circuit breaker
