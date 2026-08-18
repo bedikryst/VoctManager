@@ -4,7 +4,9 @@
  * long it runs, and — only where the ensemble has actually started work — how
  * far they have got with it. Where the event is an order of service the row
  * also carries its place in the rite: the label the singer reads, and the
- * picker that sets it.
+ * picker that sets it. Where the piece exists in more than one edition it
+ * carries the arrangement this concert sings from, for the same reason: both
+ * are decisions about this one performance of the work.
  * The row sits in a flat divided list rather than on its own bordered card;
  * the surface, the gold edge and the shadow arrive when it is picked up, so
  * the only thing that looks liftable is the thing being lifted.
@@ -14,7 +16,7 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { GripVertical, Star, Trash2 } from "lucide-react";
+import { BookOpen, GripVertical, Star, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -40,6 +42,17 @@ interface SetlistRowProps {
    */
   readonly slotOptions?: readonly SelectOption[];
   readonly onChangeSlot?: (item: ProgramTabItem, slot: string) => void;
+  /**
+   * The arrangements this piece was published in — offered only where there is
+   * a genuine choice, which is two editions or more. The pick governs the whole
+   * production, not just the printed book: the divisi the casting board offers
+   * and the practice tracks the singers get follow the bound edition.
+   */
+  readonly editionOptions?: readonly SelectOption[];
+  /** What auto-selection binds today, named — so "automatically" still tells the
+   *  producer which edition the concert is on. */
+  readonly autoEditionLabel?: string;
+  readonly onChangeEdition?: (item: ProgramTabItem, editionId: string) => void;
   readonly onToggleEncore: (item: ProgramTabItem) => void;
   readonly onDelete: (sortableId: string) => void;
 }
@@ -114,6 +127,9 @@ export function SetlistRow({
   readiness,
   slotOptions,
   onChangeSlot,
+  editionOptions,
+  autoEditionLabel,
+  onChangeEdition,
   onToggleEncore,
   onDelete,
 }: SetlistRowProps): React.JSX.Element {
@@ -130,6 +146,15 @@ export function SetlistRow({
   const encoreLabel = item.is_encore
     ? t("projects.program.actions.remove_encore", "Usuń oznaczenie BIS")
     : t("projects.program.actions.add_encore", "Oznacz jako BIS");
+
+  // Bare "automatically" would leave the producer guessing which score the
+  // concert is on. The resting entry names the edition auto-selection lands on,
+  // so choosing and not choosing are read in the same terms.
+  const autoEditionEntry = autoEditionLabel
+    ? t("projects.program.edition.auto", "Automatycznie: {{label}}", {
+        label: autoEditionLabel,
+      })
+    : undefined;
 
   return (
     <li
@@ -229,6 +254,24 @@ export function SetlistRow({
                   "projects.program.liturgy.slot_clear",
                   "Bez miejsca w liturgii",
                 )}
+              />
+            </div>
+          )}
+          {editionOptions && autoEditionEntry && onChangeEdition && (
+            <div className="mt-1.5 max-w-72">
+              <Select
+                size="sm"
+                leftIcon={<BookOpen aria-hidden="true" />}
+                value={item.score_edition ?? ""}
+                onValueChange={(editionId) => onChangeEdition(item, editionId)}
+                options={editionOptions}
+                ariaLabel={t(
+                  "projects.program.edition.aria",
+                  "Wydanie nut: {{title}}",
+                  { title: item.piece_title },
+                )}
+                placeholder={autoEditionEntry}
+                clearLabel={autoEditionEntry}
               />
             </div>
           )}

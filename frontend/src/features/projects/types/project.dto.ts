@@ -109,7 +109,16 @@ export interface ProgramItemCreateDTO {
   liturgical_slot?: string;
 }
 
-export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO>;
+export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO> & {
+  /**
+   * The published arrangement this concert sings from; `null` returns the row to
+   * auto-selection (the piece's default edition, else the most recent). Written
+   * only where the piece has more than one — and it settles more than which PDF
+   * binds into the score book: the divisi the casting board offers and the
+   * practice tracks the singers are served both follow it.
+   */
+  score_edition?: string | null;
+};
 
 /** One seat on the divisi board: this participant, on this voice line. */
 export interface PieceCastingBoardRowDTO {

@@ -159,8 +159,11 @@ export const ProjectRow = ({
       )}
     >
       <div className="min-w-0 flex-1">
-        <div className="flex items-baseline gap-2">
-          <span onClick={(event) => event.stopPropagation()}>
+        {/* Wraps, and the title may shrink: a concert name is arbitrarily long
+            and the chips beside it are not, so on a phone the chips drop under
+            the title rather than pushing the row off the screen. */}
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="min-w-0" onClick={(event) => event.stopPropagation()}>
             {/* Serif, like the same title at the head of the project hub: a
                 concert is named, not labelled, and the row is where that name is
                 first read. Two pixels above the shared `display` size, not a
@@ -196,9 +199,16 @@ export const ProjectRow = ({
             <Badge
               variant="glass"
               className="inline-flex shrink-0 items-center gap-1"
+              title={t("projects.announce.badge", "Do ogłoszenia")}
             >
               <Megaphone size={10} aria-hidden="true" />
-              {t("projects.announce.badge", "Do ogłoszenia")}
+              {/* Icon alone on a phone, as the hub's own queue button already
+                  does below `md`: the megaphone carries the whole meaning, and
+                  the words cost more width here than the status chip beside
+                  them. Still read aloud, and still on hover. */}
+              <span className="sr-only sm:not-sr-only">
+                {t("projects.announce.badge", "Do ogłoszenia")}
+              </span>
             </Badge>
           )}
         </div>

@@ -3792,6 +3792,10 @@
         "encore": "BIS"
       },
       "duration_unknown": "Czas nieznany",
+      "edition": {
+        "aria": "Wydanie nut: {{title}}",
+        "auto": "Automatycznie: {{label}}"
+      },
       "empty": {
         "no_results": "Brak wyników",
         "setlist_desc": "Wybierz kompozycje z bazy, aby zbudować program koncertu.",
@@ -3823,6 +3827,7 @@
         "add_error": "Nie powiodło się dodanie utworu.",
         "add_success": "Dodano do setlisty",
         "adding": "Dodawanie utworu...",
+        "edition_error": "Nie udało się zmienić wydania.",
         "encore_error": "Nie udało się zmienić statusu BIS.",
         "encore_toggled": "Status BIS zmieniony",
         "remove_success": "Usunięto z programu",

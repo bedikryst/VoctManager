@@ -3774,6 +3774,10 @@
         "encore": "ENCORE"
       },
       "duration_unknown": "Duration unknown",
+      "edition": {
+        "aria": "Score edition: {{title}}",
+        "auto": "Automatic: {{label}}"
+      },
       "empty": {
         "no_results": "No results",
         "setlist_desc": "Pick compositions from the database to build the concert programme.",
@@ -3805,6 +3809,7 @@
         "add_error": "Failed to add piece.",
         "add_success": "Added to setlist",
         "adding": "Adding piece...",
+        "edition_error": "Couldn’t change the edition.",
         "encore_error": "Couldn’t change the encore status.",
         "encore_toggled": "Encore status changed",
         "remove_success": "Removed from program",

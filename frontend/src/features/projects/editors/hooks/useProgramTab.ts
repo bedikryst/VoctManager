@@ -87,6 +87,12 @@ export interface UseProgramTabResult {
   handleAddPiece: (pieceId: string) => Promise<void>;
   handleToggleEncore: (item: ProgramTabItem) => Promise<void>;
   handleChangeSlot: (item: ProgramTabItem, slot: string) => Promise<void>;
+  /** Binds one row to a published arrangement; `""` returns it to the
+   *  auto-selection. */
+  handleChangeEdition: (
+    item: ProgramTabItem,
+    editionId: string,
+  ) => Promise<void>;
   handleDeleteItem: (itemId: string) => Promise<void>;
   handleDragEnd: (event: DragEndEvent) => void;
   /** Stages the canonical order as an unsaved edit — never writes. The producer
@@ -113,6 +119,7 @@ const normalizeProgramItem = (
     is_encore: item.is_encore,
     liturgical_slot: item.liturgical_slot ?? "",
     slot_label: item.slot_label ?? "",
+    score_edition: item.score_edition ?? null,
   };
 };
 
@@ -355,6 +362,48 @@ export const useProgramTab = (
     }
   };
 
+  /**
+   * Writes immediately, like the slot — but its reach is wider than the row it
+   * sits on. The bound edition is the arrangement this concert works from, so
+   * the seats the casting board offers and the labels those seats carry are
+   * resolved against it server-side; the score-book cockpit reads the same
+   * field. All three read models are dropped here, because the setlist's own
+   * refetch would leave them describing the edition that was just replaced.
+   */
+  const handleChangeEdition = async (
+    item: ProgramTabItem,
+    editionId: string,
+  ): Promise<void> => {
+    const nextEdition = editionId || null;
+
+    if (nextEdition === item.score_edition) {
+      return;
+    }
+
+    try {
+      await updateProgramMutation.mutateAsync({
+        id: item.id,
+        data: { score_edition: nextEdition },
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.pieceCastings.byProject(projectId),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: projectKeys.scorePackage.byProject(projectId),
+        }),
+      ]);
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "projects.program.toast.edition_error",
+          "Nie udało się zmienić wydania.",
+        ),
+      });
+    }
+  };
+
   const handleDeleteItem = async (itemId: string): Promise<void> => {
     const toastId = toast.loading(
       t("projects.program.toast.removing", "Usuwanie utworu..."),
@@ -587,6 +636,7 @@ export const useProgramTab = (
     handleAddPiece,
     handleToggleEncore,
     handleChangeSlot,
+    handleChangeEdition,
     handleDeleteItem,
     handleDragEnd,
     handleSortByLiturgy,

@@ -64,6 +64,10 @@ export interface ProgramTabItem {
   /** The slot as the singer will read it — numbered and translated by the
    *  server. Never composed here. */
   slot_label: string;
+  /** The arrangement pinned for this concert; `null` leaves the choice to the
+   *  auto-selection. Only a piece published in more than one edition has
+   *  anything to pin. */
+  score_edition: string | null;
 }
 
 export interface FeeMutation {

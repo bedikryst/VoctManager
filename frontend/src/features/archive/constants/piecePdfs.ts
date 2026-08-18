@@ -58,6 +58,19 @@ export const getPiecePdfLinks = (piece: PieceLike): PiecePdfLink[] => {
     }));
 };
 
+/**
+ * How an edition is named where one has to be *chosen* rather than downloaded:
+ * the publisher and the year, which is how a conductor asks for a score, and the
+ * upload's filename only when neither is known. Mirrors the naming rule of
+ * `roster/score_package_config.edition_label`, so the setlist picker and the
+ * score-book cockpit put the same words on the same edition — the cockpit adds
+ * the page count, which a running order has no use for.
+ */
+export const formatEditionLabel = (link: PiecePdfLink): string => {
+  const parts = [link.publisher, link.edition_year].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : link.label;
+};
+
 export const hasPdf = (piece: PieceLike): boolean =>
   getPiecePdfLinks(piece).length > 0;
 

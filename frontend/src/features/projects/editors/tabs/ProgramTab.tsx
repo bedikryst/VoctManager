@@ -34,6 +34,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
+import {
+  formatEditionLabel,
+  getPiecePdfLinks,
+} from "@/features/archive/constants/piecePdfs";
 import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
@@ -108,6 +112,7 @@ export const ProgramTab = ({
     handleAddPiece,
     handleToggleEncore,
     handleChangeSlot,
+    handleChangeEdition,
     handleDeleteItem,
     handleDragEnd,
     handleSortByLiturgy,
@@ -144,6 +149,38 @@ export const ProgramTab = ({
     () => new Map(pieces.map((piece) => [String(piece.id), piece])),
     [pieces],
   );
+
+  /**
+   * Which pieces give the producer an arrangement to choose, and what the choice
+   * is called. Only a work published more than once has one — a single edition
+   * binds itself, and offering a picker with one entry would suggest a decision
+   * where there is none.
+   *
+   * The list arrives from `getPiecePdfLinks` already in the order the server
+   * resolves an unpinned item by (default edition first, then most recent), so
+   * its head is exactly what auto-selection would bind.
+   */
+  const editionChoiceByPiece = React.useMemo(() => {
+    const choices = new Map<
+      string,
+      { options: SelectOption[]; autoLabel: string }
+    >();
+
+    for (const piece of pieces) {
+      const links = getPiecePdfLinks(piece);
+      if (links.length < 2) continue;
+
+      choices.set(String(piece.id), {
+        options: links.map((link) => ({
+          value: link.id,
+          label: formatEditionLabel(link),
+        })),
+        autoLabel: formatEditionLabel(links[0]),
+      });
+    }
+
+    return choices;
+  }, [pieces]);
 
   const sortableIds = React.useMemo(
     () =>
@@ -263,9 +300,9 @@ export const ProgramTab = ({
             >
               <ul className="divide-y divide-hairline">
                 {programItems.map((item, index) => {
-                  const piece = pieceById.get(
-                    String(item.piece_id || item.piece),
-                  );
+                  const pieceId = String(item.piece_id || item.piece);
+                  const piece = pieceById.get(pieceId);
+                  const editionChoice = editionChoiceByPiece.get(pieceId);
                   return (
                     <SetlistRow
                       key={sortableIds[index]}
@@ -274,11 +311,12 @@ export const ProgramTab = ({
                       position={index + 1}
                       meta={buildPieceMeta(piece)}
                       durationSeconds={piece?.estimated_duration}
-                      readiness={readinessByPiece.get(
-                        String(item.piece_id || item.piece),
-                      )}
+                      readiness={readinessByPiece.get(pieceId)}
                       slotOptions={slotSelectOptions}
                       onChangeSlot={handleChangeSlot}
+                      editionOptions={editionChoice?.options}
+                      autoEditionLabel={editionChoice?.autoLabel}
+                      onChangeEdition={handleChangeEdition}
                       onToggleEncore={handleToggleEncore}
                       onDelete={handleDeleteItem}
                     />
