@@ -2926,6 +2926,12 @@
       "now_mandatory": "Teraz obowiązkowa",
       "now_optional": "Teraz nieobowiązkowa",
       "run_sheet": "Harmonogram dnia",
+      "warmup": "Rozśpiewanie",
+      "soundcheck": "Próba akustyczna",
+      "entrance": "Wejście",
+      "parking": "Parking",
+      "dressing_room": "Garderoba",
+      "onsite_contact": "Kontakt na miejscu",
       "boolean": {
         "true": "Tak",
         "false": "Nie"
@@ -3431,8 +3437,6 @@
         "offset_after": "Zbiórka nie wypada przed koncertem"
       },
       "day_plan": {
-        "anchor_call": "Zbiórka",
-        "anchor_concert": "Koncert",
         "untitled_count": "Bez nazwy: {{count}}"
       },
       "placeholders": {
@@ -3857,6 +3861,13 @@
       "title_placeholder": "Tytuł",
       "title_required": "Tytuł jest wymagany"
     },
+    "day_timeline": {
+      "call": "Zbiórka",
+      "warmup": "Rozśpiewanie",
+      "soundcheck": "Próba akustyczna",
+      "concert": "Koncert",
+      "until": "do {{time}}"
+    },
     "run_sheet": {
       "aria_label": "Zarządzaj harmonogramem dnia",
       "empty": "Brak harmonogramu dnia",
@@ -4199,6 +4210,13 @@
       "project_badge": "Koncert / Wydarzenie",
       "run_sheet_title": "Harmonogram Dnia",
       "run_sheet_untitled": "Punkt harmonogramu",
+      "onsite": {
+        "title": "Na miejscu",
+        "entrance": "Wejście",
+        "parking": "Parking",
+        "dressing_room": "Garderoba",
+        "contact": "Kontakt na miejscu"
+      },
       "score_pdf_label": "Partytura / Program",
       "score_pdf_modal_title": "Partytura Koncertu",
       "tabs_aria": "Sekcje wydarzenia",

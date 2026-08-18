@@ -4264,3 +4264,15 @@ msgstr "Na tych próbach nie musisz być."
 
 msgid "We're counting on you at these rehearsals."
 msgstr "Liczymy na Ciebie na tych próbach."
+
+#: notifications/message_content.py:320
+msgid "Warm-up"
+msgstr "Rozśpiewanie"
+
+#: notifications/message_content.py:321
+msgid "Sound check"
+msgstr "Próba akustyczna"
+
+#: notifications/message_content.py:322
+msgid "Entrance"
+msgstr "Wejście"

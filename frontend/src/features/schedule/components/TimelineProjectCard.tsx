@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
   Clock,
   ChevronDown,
   ChevronRight,
+  DoorOpen,
+  Phone,
   Shirt,
   Eye,
   Users,
@@ -17,6 +19,14 @@ import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
+import {
+  buildProjectDayTimeline,
+  isDayWindow,
+} from "../../projects/lib/dayTimeline";
+import {
+  DAY_FIXTURE_PRESENTATION,
+  DAY_WINDOW_UNTIL,
+} from "../../projects/lib/projectPresentation";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -88,6 +98,48 @@ export const TimelineProjectCard = ({
     isExpanded && activeSubTab === "SETLIST",
   );
   const isUpcoming = event.date_time.getTime() > Date.now();
+
+  // One axis for the day, the same one the printed card draws: the run sheet
+  // with the call, the downbeat and the two typed windows merged in. Read off
+  // the project rather than `event.run_sheet` — the windows and the venue clock
+  // live there, and a second reading of the same day is how the two diverge.
+  const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
+  const hasDayPlan = dayEntries.some(
+    (entry) => entry.kind === "point" || isDayWindow(entry),
+  );
+
+  // Where exactly, once you are standing at the address. Only what the producer
+  // actually entered: a row reading "Parking: —" answers nothing and pushes the
+  // one fact that does answer something further down a phone screen.
+  const onsiteFacts = useMemo(
+    () =>
+      [
+        {
+          id: "entrance",
+          label: t("schedule.card.onsite.entrance", "Wejście"),
+          value: proj.entrance_note,
+        },
+        {
+          id: "parking",
+          label: t("schedule.card.onsite.parking", "Parking"),
+          value: proj.parking_note,
+        },
+        {
+          id: "dressing_room",
+          label: t("schedule.card.onsite.dressing_room", "Garderoba"),
+          value: proj.dressing_room_note,
+        },
+      ].filter((fact): fact is typeof fact & { value: string } =>
+        Boolean(fact.value?.trim()),
+      ),
+    [proj.entrance_note, proj.parking_note, proj.dressing_room_note, t],
+  );
+
+  const onsiteContactName = proj.onsite_contact_name?.trim() || "";
+  const onsiteContactPhone = proj.onsite_contact_phone?.trim() || "";
+  const hasOnsiteBlock =
+    onsiteFacts.length > 0 || Boolean(onsiteContactName || onsiteContactPhone);
+  const hasDressCode = Boolean(proj.dress_code_female || proj.dress_code_male);
 
   return (
     <motion.div
@@ -287,7 +339,7 @@ export const TimelineProjectCard = ({
                   <div className="space-y-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:space-y-0">
                     {/* dress code + description */}
                     <div className="space-y-4">
-                      {(proj.dress_code_female || proj.dress_code_male) && (
+                      {hasDressCode && (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Eyebrow
                             color="parchment"
@@ -330,7 +382,79 @@ export const TimelineProjectCard = ({
                           )}
                         </div>
                       )}
-                      {proj.description ? (
+                      {/* The facts a singer would otherwise ask a stranger for
+                          at the door. They live in the app as well as on the
+                          printed card because the card is a blob fetched on
+                          demand: outside a church with no signal it is the one
+                          thing that cannot open, while this sheet paints from
+                          the persisted cache. */}
+                      {hasOnsiteBlock && (
+                        <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
+                          <Eyebrow
+                            color="parchment"
+                            className="mb-3 flex items-center gap-2"
+                          >
+                            <DoorOpen size={13} aria-hidden="true" />
+                            {t("schedule.card.onsite.title", "Na miejscu")}
+                          </Eyebrow>
+                          <div className="space-y-1.5">
+                            {onsiteFacts.map((fact) => (
+                              <Text
+                                key={fact.id}
+                                as="p"
+                                size="sm"
+                                color="white"
+                              >
+                                <Text
+                                  as="span"
+                                  color="parchment-muted"
+                                  className="mr-2"
+                                >
+                                  {fact.label}
+                                </Text>
+                                {fact.value}
+                              </Text>
+                            ))}
+                          </div>
+                          {(onsiteContactName || onsiteContactPhone) && (
+                            <div className="mt-3 border-t border-ethereal-incense/20 pt-3">
+                              {/* Unnamed, the role IS the name: a line reading
+                                  "Kontakt na miejscu" under a label saying the
+                                  same thing states one fact twice. */}
+                              <Eyebrow color="parchment-muted" className="mb-1.5">
+                                {t(
+                                  "schedule.card.onsite.contact",
+                                  "Kontakt na miejscu",
+                                )}
+                              </Eyebrow>
+                              {onsiteContactName && (
+                                <Text
+                                  as="p"
+                                  size="sm"
+                                  color="white"
+                                  className="mb-2"
+                                >
+                                  {onsiteContactName}
+                                </Text>
+                              )}
+                              {onsiteContactPhone && (
+                                <Button
+                                  variant="outline"
+                                  size="touch"
+                                  asChild
+                                  leftIcon={<Phone size={13} aria-hidden="true" />}
+                                  className="w-full border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20 sm:w-auto"
+                                >
+                                  <a href={`tel:${onsiteContactPhone.replace(/\s+/g, "")}`}>
+                                    {onsiteContactPhone}
+                                  </a>
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {proj.description && (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Text
                             size="base"
@@ -340,7 +464,11 @@ export const TimelineProjectCard = ({
                             {proj.description}
                           </Text>
                         </div>
-                      ) : (
+                      )}
+                      {/* The empty state answers for the whole column, not for
+                          the notes alone: with a dress code or a door on
+                          screen, "nothing here" is not true. */}
+                      {!proj.description && !hasOnsiteBlock && !hasDressCode && (
                         <Text
                           size="sm"
                           color="parchment-muted"
@@ -398,27 +526,55 @@ export const TimelineProjectCard = ({
                         </div>
                       )}
 
-                      {event.run_sheet && event.run_sheet.length > 0 ? (
+                      {hasDayPlan ? (
                         <div className="relative pl-5 border-l border-ethereal-incense/20 space-y-4 ml-2">
-                          {[...event.run_sheet]
-                            .sort((a, b) => a.time.localeCompare(b.time))
-                            .map((item, idx) => (
+                          {dayEntries.map((entry, idx) => {
+                            const isPoint = entry.kind === "point";
+                            // A fixed moment is named here, in the reader's
+                            // language; a typed point carries whatever the
+                            // producer wrote, which may be nothing at all.
+                            const rowTitle =
+                              entry.kind === "point"
+                                ? entry.item.title
+                                : t(
+                                    DAY_FIXTURE_PRESENTATION[entry.kind].labelKey,
+                                    DAY_FIXTURE_PRESENTATION[entry.kind]
+                                      .fallbackLabel,
+                                  );
+
+                            return (
                               <div
-                                key={item.id || idx}
+                                key={
+                                  isPoint
+                                    ? entry.item.id || `point-${idx}`
+                                    : entry.kind
+                                }
                                 className="relative group/run"
                               >
-                                <div className="absolute -left-6 top-1.5 w-2.5 h-2.5 bg-ethereal-ink border-2 border-ethereal-gold rounded-full shadow-glass-solid group-hover/run:scale-125 transition-transform" />
+                                {/* Filled for a moment the producer set in a
+                                    field, hollow for a typed point — the same
+                                    distinction the editor and the printed card
+                                    draw. */}
+                                <div
+                                  className={cn(
+                                    "absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full shadow-glass-solid transition-transform group-hover/run:scale-125",
+                                    isPoint
+                                      ? "bg-ethereal-ink border-2 border-ethereal-gold"
+                                      : "bg-ethereal-gold",
+                                  )}
+                                  aria-hidden="true"
+                                />
                                 <Eyebrow
                                   as="span"
                                   color="gold"
                                   className="bg-ethereal-gold/15 self-start px-2 py-0.5 rounded border border-ethereal-gold/40 mb-1.5 inline-block"
                                 >
-                                  {item.time}
+                                  {isPoint ? entry.item.time : entry.time}
                                 </Eyebrow>
                                 <div className="bg-ethereal-incense/10 p-3.5 rounded-xl border border-ethereal-incense/20 hover:bg-ethereal-incense/20 transition-colors">
-                                  {item.title ? (
+                                  {rowTitle ? (
                                     <Text weight="bold" color="white">
-                                      {item.title}
+                                      {rowTitle}
                                     </Text>
                                   ) : (
                                     <Text
@@ -432,18 +588,32 @@ export const TimelineProjectCard = ({
                                       )}
                                     </Text>
                                   )}
-                                  {item.description && (
+                                  {isDayWindow(entry) && entry.endTime && (
                                     <Text
                                       size="sm"
                                       color="parchment-muted"
                                       className="mt-1 leading-relaxed text-ethereal-parchment/80"
                                     >
-                                      {item.description}
+                                      {t(
+                                        DAY_WINDOW_UNTIL.labelKey,
+                                        DAY_WINDOW_UNTIL.fallbackLabel,
+                                        { time: entry.endTime },
+                                      )}
+                                    </Text>
+                                  )}
+                                  {isPoint && entry.item.description && (
+                                    <Text
+                                      size="sm"
+                                      color="parchment-muted"
+                                      className="mt-1 leading-relaxed text-ethereal-parchment/80"
+                                    >
+                                      {entry.item.description}
                                     </Text>
                                   )}
                                 </div>
                               </div>
-                            ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <Text

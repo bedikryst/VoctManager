@@ -70,6 +70,12 @@ _LEVEL_RANK: dict[str, int] = {
 # than per emitter so the escalation cannot drift between projects and rehearsals,
 # and so it stays correct after collapsing — a reschedule that reverts loses its
 # urgency along with its row.
+#
+# The warm-up and the sound check are hours too, and they are deliberately NOT
+# here: the call time is the hour the cast is held to, and it does not move when
+# a window inside the day does. A singer who is told to be there at 17:00 is
+# still due at 17:00 after the sound check slides — so that news travels as news,
+# not as an alarm.
 _TIME_CRITICAL_FIELDS = frozenset({"date_time", "call_time"})
 
 # The diff lives in dedicated columns, so it is stripped from the stored metadata

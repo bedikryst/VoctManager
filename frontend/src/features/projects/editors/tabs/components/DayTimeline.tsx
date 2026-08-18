@@ -1,13 +1,15 @@
 /**
  * @file DayTimeline.tsx
- * @description The concert day as one runway. The two anchors a producer plans
- * around — the call and the downbeat — are derived from the fields above and
- * rendered as fixed stops among the editable points, so the plan is built inside
- * a visible frame instead of against two times kept in other cards.
- * The frame also does the warning: a point that lands before the call or after
- * the downbeat simply appears outside the anchors, which needs no advisory copy
- * and no validation rule. The row language is the Overview run-sheet widget's —
- * one spine, gold clock, optional title — because this edits what that displays.
+ * @description The concert day as one runway. Every moment the producer typed
+ * into a field rather than into the list — the call, the downbeat, and the two
+ * windows from the card below — is derived and rendered as a fixed stop among
+ * the editable points, so the plan is built inside a visible frame instead of
+ * against times kept in other cards.
+ * The frame also does the warning: a point that lands before the call, after
+ * the downbeat, or on top of the sound check simply appears there, which needs
+ * no advisory copy and no validation rule. The row language is the Overview
+ * run-sheet widget's — one spine, gold clock, optional title — because this
+ * edits what that displays.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/components/DayTimeline
  */
@@ -19,7 +21,14 @@ import { AnimatePresence } from "framer-motion";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { RunSheetItem } from "@/shared/types";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
-import type { DayAnchorKind, DayTimelineEntry } from "../../../lib/dayTimeline";
+import {
+  isDayWindow,
+  type DayTimelineEntry,
+} from "../../../lib/dayTimeline";
+import {
+  DAY_FIXTURE_PRESENTATION,
+  DAY_WINDOW_UNTIL,
+} from "../../../lib/projectPresentation";
 import { RunSheetRow } from "./RunSheetRow";
 
 interface DayTimelineProps {
@@ -36,11 +45,6 @@ interface DayTimelineProps {
   /** Same shape, for the call time — the only anchor that can move days. */
   readonly callDate: string | null;
 }
-
-const ANCHOR_LABEL_KEYS: Record<DayAnchorKind, readonly [string, string]> = {
-  call: ["projects.details_tab.day_plan.anchor_call", "Zbiórka"],
-  concert: ["projects.details_tab.day_plan.anchor_concert", "Koncert"],
-};
 
 export const DayTimeline = ({
   entries,
@@ -68,14 +72,18 @@ export const DayTimeline = ({
             );
           }
 
-          const [labelKey, labelFallback] = ANCHOR_LABEL_KEYS[entry.kind];
+          const { labelKey, fallbackLabel } = DAY_FIXTURE_PRESENTATION[entry.kind];
           const anchorDate = entry.kind === "call" ? callDate : concertDate;
-          const showsDate = entry.dayOffset !== 0 && Boolean(anchorDate);
+          const showsDate =
+            !isDayWindow(entry) && entry.dayOffset !== 0 && Boolean(anchorDate);
 
           return (
             <li key={entry.kind} className="relative py-1">
-              {/* Filled, where an editable point is a ring: the anchor is a
-                  consequence of the fields above, not a row to type into. */}
+              {/* Filled, where an editable point is a ring: a fixed stop is a
+                  consequence of the fields, not a row to type into. One
+                  treatment for all four — the label already says which moment
+                  it is, so a second colour would spend an accent on a
+                  distinction the words carry. */}
               <span
                 className="absolute -left-[1.65rem] top-2 h-3 w-3 rounded-full bg-ethereal-gold"
                 aria-hidden="true"
@@ -89,7 +97,7 @@ export const DayTimeline = ({
                 >
                   {entry.time}
                 </Text>
-                <Eyebrow color="graphite">{t(labelKey, labelFallback)}</Eyebrow>
+                <Eyebrow color="graphite">{t(labelKey, fallbackLabel)}</Eyebrow>
                 {showsDate && (
                   <Caption color="muted">
                     {/* Noon, not midnight: a bare `yyyy-MM-dd` parses as UTC and
@@ -97,6 +105,13 @@ export const DayTimeline = ({
                     {formatLocalizedDate(`${anchorDate}T12:00`, {
                       day: "numeric",
                       month: "long",
+                    })}
+                  </Caption>
+                )}
+                {isDayWindow(entry) && entry.endTime && (
+                  <Caption color="muted">
+                    {t(DAY_WINDOW_UNTIL.labelKey, DAY_WINDOW_UNTIL.fallbackLabel, {
+                      time: entry.endTime,
                     })}
                   </Caption>
                 )}

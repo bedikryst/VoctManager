@@ -2914,6 +2914,12 @@
       "now_mandatory": "Désormais obligatoire",
       "now_optional": "Désormais facultative",
       "run_sheet": "Déroulé de la journée",
+      "warmup": "Échauffement",
+      "soundcheck": "Balance",
+      "entrance": "Entrée",
+      "parking": "Stationnement",
+      "dressing_room": "Loge",
+      "onsite_contact": "Contact sur place",
       "boolean": {
         "true": "Oui",
         "false": "Non"
@@ -3414,8 +3420,6 @@
         "offset_after": "La convocation n'est pas avant le concert"
       },
       "day_plan": {
-        "anchor_call": "Convocation",
-        "anchor_concert": "Concert",
         "untitled_count": "Sans nom : {{count}}"
       },
       "placeholders": {
@@ -3840,6 +3844,13 @@
       "title_placeholder": "Titre",
       "title_required": "Le titre est requis"
     },
+    "day_timeline": {
+      "call": "Convocation",
+      "warmup": "Échauffement",
+      "soundcheck": "Balance",
+      "concert": "Concert",
+      "until": "jusqu'à {{time}}"
+    },
     "run_sheet": {
       "aria_label": "Gérer le déroulé de la journée",
       "empty": "Aucune feuille de route",
@@ -4169,6 +4180,13 @@
       "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
       "run_sheet_untitled": "Élément du programme",
+      "onsite": {
+        "title": "Sur place",
+        "entrance": "Entrée",
+        "parking": "Stationnement",
+        "dressing_room": "Loge",
+        "contact": "Contact sur place"
+      },
       "score_pdf_label": "Partition / Programme",
       "score_pdf_modal_title": "Partition du concert",
       "tabs_aria": "Sections de l’événement",

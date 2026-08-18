@@ -4285,3 +4285,15 @@ msgstr "Votre absence à ces répétitions est notée."
 
 msgid "We're counting on you at these rehearsals."
 msgstr "Nous comptons sur vous à ces répétitions."
+
+#: notifications/message_content.py:320
+msgid "Warm-up"
+msgstr "Échauffement"
+
+#: notifications/message_content.py:321
+msgid "Sound check"
+msgstr "Balance"
+
+#: notifications/message_content.py:322
+msgid "Entrance"
+msgstr "Entrée"

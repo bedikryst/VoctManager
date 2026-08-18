@@ -1,25 +1,36 @@
 /**
  * @file dayTimeline.ts
- * @description Concert-day arithmetic for the run sheet: it merges the two
- * anchors a producer plans around — the call time and the downbeat — with the
- * editable points between them into one chronological list.
+ * @description Concert-day arithmetic for the run sheet: it merges the fixed
+ * moments a producer plans around — the call time, the downbeat, and the two
+ * typed windows (warm-up, sound check) — with the editable points between them
+ * into one chronological list.
  * The run sheet stores bare `HH:mm`, so the concert day is its implicit frame;
  * an anchor that falls on another day therefore carries a day offset and is
  * placed by it. Ordering is the only warning this needs: a point that lands
  * before the call or after the downbeat simply renders outside the anchors.
+ * The windows join this axis rather than opening a second list of hours,
+ * because a producer who moves the sound check on top of a run-sheet point can
+ * only see the collision on one axis — and the printed sheet already merges
+ * them (`roster/infrastructure/document_generator._structured_day_points`).
  * @architecture Enterprise SaaS 2026
  * @module features/projects/lib/dayTimeline
  */
 
-import type { RunSheetItem } from "@/shared/types";
+import { formatInTimeZone } from "date-fns-tz";
+
+import type { Project, RunSheetItem } from "@/shared/types";
 
 /** Length of the `yyyy-MM-ddTHH:mm` wall-clock value a date field holds. */
 const LOCAL_INPUT_LENGTH = 16;
 const MINUTES_PER_DAY = 24 * 60;
 const LAST_MINUTE_OF_DAY = MINUTES_PER_DAY - 1;
 const MS_PER_DAY = 86_400_000;
+/** The choir's own zone, for a project stored before the field was required. */
+const DEFAULT_TIMEZONE = "Europe/Warsaw";
 
 export type DayAnchorKind = "call" | "concert";
+export type DayWindowKind = "warmup" | "soundcheck";
+export type DayFixtureKind = DayAnchorKind | DayWindowKind;
 
 export interface DayTimelineAnchor {
   readonly kind: DayAnchorKind;
@@ -29,12 +40,33 @@ export interface DayTimelineAnchor {
   readonly dayOffset: number;
 }
 
+/**
+ * A moment of the day that carries no wording of its own — which is exactly why
+ * it is a typed column and not a run-sheet row: the surface names it in the
+ * reader's language, where a hand-typed title stays in the writer's.
+ */
+export interface DayTimelineWindow {
+  readonly kind: DayWindowKind;
+  /** Wall-clock time on concert day — the run sheet's own frame. */
+  readonly time: string;
+  /** Closing hour where one is set; an open window is the normal case. */
+  readonly endTime: string | null;
+}
+
 export interface DayTimelinePoint {
   readonly kind: "point";
   readonly item: RunSheetItem;
 }
 
-export type DayTimelineEntry = DayTimelineAnchor | DayTimelinePoint;
+/** Anything placed on the day by a field rather than typed into the list. */
+export type DayTimelineFixture = DayTimelineAnchor | DayTimelineWindow;
+
+export type DayTimelineEntry = DayTimelineFixture | DayTimelinePoint;
+
+export const isDayWindow = (
+  entry: DayTimelineEntry,
+): entry is DayTimelineWindow =>
+  entry.kind === "warmup" || entry.kind === "soundcheck";
 
 interface WallClock {
   /** Whole days since the epoch — a calendar index, never an instant. */
@@ -202,12 +234,28 @@ export const suggestRunSheetTime = ({
   return "12:00";
 };
 
-const anchorSortKey = (anchor: DayTimelineAnchor): number =>
-  anchor.dayOffset * MINUTES_PER_DAY +
-  (parseClockTime(anchor.time) ?? 0) +
-  // Tie-break, so a point sharing an anchor's minute reads as happening inside
-  // the day the anchors bracket rather than before it opens or after it ends.
-  (anchor.kind === "call" ? -0.5 : 0.5);
+/**
+ * Where a fixture goes when it shares a minute with a typed point. The call
+ * opens the day, so it precedes one; the downbeat closes it. A window sits
+ * between the two, which is what the printed sheet does — there the windows are
+ * appended to the point list and a stable sort leaves a point of the same
+ * minute ahead of them.
+ */
+const FIXTURE_NUDGE: Record<DayFixtureKind, number> = {
+  call: -0.5,
+  warmup: 0.25,
+  soundcheck: 0.25,
+  concert: 0.5,
+};
+
+/**
+ * A window is a wall-clock time on concert day — the same frame the run sheet
+ * uses — so it has no offset to carry; only an anchor can sit on another date.
+ */
+const fixtureSortKey = (fixture: DayTimelineFixture): number =>
+  (isDayWindow(fixture) ? 0 : fixture.dayOffset) * MINUTES_PER_DAY +
+  (parseClockTime(fixture.time) ?? 0) +
+  FIXTURE_NUDGE[fixture.kind];
 
 const buildAnchor = (
   kind: DayAnchorKind,
@@ -229,28 +277,78 @@ const buildAnchor = (
 };
 
 /**
- * Merges the anchors INTO the run sheet without reordering it. The points
- * arrive in the order the form committed (see `useDetailsForm`, which sorts on
- * commit rather than on keystroke, so a half-typed time cannot yank the row
- * being edited to the top of the day).
+ * The API answers `HH:MM:SS` and the editor holds `HH:MM`; both read here, and
+ * an unparsable value is dropped rather than placed at midnight.
+ */
+const readWallClock = (value?: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const [rawHours, rawMinutes] = value.trim().split(":");
+
+  if (rawMinutes === undefined) {
+    return null;
+  }
+
+  const minutes = parseClockTime(`${rawHours}:${rawMinutes}`);
+
+  return minutes === null ? null : toClockTime(minutes);
+};
+
+/**
+ * An end without a start is not a window but half of one, and it is dropped —
+ * the same answer the printed sheet gives, and the reason the editor clears the
+ * closing hour when the opening one goes.
+ */
+const buildWindow = (
+  kind: DayWindowKind,
+  start: string | null | undefined,
+  end: string | null | undefined,
+): DayTimelineWindow | null => {
+  const time = readWallClock(start);
+
+  return time === null ? null : { kind, time, endTime: readWallClock(end) };
+};
+
+export interface DayTimelineInput {
+  readonly runSheet: readonly RunSheetItem[];
+  readonly callTime?: string | null;
+  readonly concertTime?: string | null;
+  readonly warmupStart?: string | null;
+  readonly warmupEnd?: string | null;
+  readonly soundcheckStart?: string | null;
+  readonly soundcheckEnd?: string | null;
+}
+
+/**
+ * Merges the fixtures INTO the run sheet without reordering it. The points
+ * arrive in the order the caller settled on (see `useDetailsForm`, which sorts
+ * on commit rather than on keystroke, so a half-typed time cannot yank the row
+ * being edited to the top of the day; stored days are sorted by
+ * `buildProjectDayTimeline`).
  */
 export const buildDayTimeline = ({
   runSheet,
   callTime,
   concertTime,
-}: {
-  readonly runSheet: readonly RunSheetItem[];
-  readonly callTime?: string | null;
-  readonly concertTime?: string | null;
-}): DayTimelineEntry[] => {
+  warmupStart,
+  warmupEnd,
+  soundcheckStart,
+  soundcheckEnd,
+}: DayTimelineInput): DayTimelineEntry[] => {
   const concertDayIndex = parseLocalInput(concertTime)?.dayIndex ?? null;
 
-  const anchors = [
+  // Listed in the order two fixtures of the same minute should read; a stable
+  // sort is what makes that order the tie-break.
+  const fixtures = [
     buildAnchor("call", callTime, concertDayIndex),
+    buildWindow("warmup", warmupStart, warmupEnd),
+    buildWindow("soundcheck", soundcheckStart, soundcheckEnd),
     buildAnchor("concert", concertTime, concertDayIndex),
   ]
-    .filter((anchor): anchor is DayTimelineAnchor => anchor !== null)
-    .sort((left, right) => anchorSortKey(left) - anchorSortKey(right));
+    .filter((fixture): fixture is DayTimelineFixture => fixture !== null)
+    .sort((left, right) => fixtureSortKey(left) - fixtureSortKey(right));
 
   // An unset time inherits its predecessor's position, so a row mid-edit stays
   // between the same neighbours instead of collapsing to the start of the day.
@@ -261,19 +359,75 @@ export const buildDayTimeline = ({
   });
 
   const entries: DayTimelineEntry[] = [];
-  let nextAnchor = 0;
+  let nextFixture = 0;
 
   runSheet.forEach((item, index) => {
     while (
-      nextAnchor < anchors.length &&
-      anchorSortKey(anchors[nextAnchor]) < pointKeys[index]
+      nextFixture < fixtures.length &&
+      fixtureSortKey(fixtures[nextFixture]) < pointKeys[index]
     ) {
-      entries.push(anchors[nextAnchor]);
-      nextAnchor += 1;
+      entries.push(fixtures[nextFixture]);
+      nextFixture += 1;
     }
 
     entries.push({ kind: "point", item });
   });
 
-  return [...entries, ...anchors.slice(nextAnchor)];
+  return [...entries, ...fixtures.slice(nextFixture)];
 };
+
+/**
+ * The instant a project stores, read as the wall clock its venue keeps — the
+ * `yyyy-MM-ddTHH:mm` shape every function here parses. It is the one conversion
+ * between the two forms: a stored instant sent through the browser's own offset
+ * would move the whole day plan by however far the reader is from the choir.
+ */
+export const toWallClockInput = (
+  value?: string | null,
+  timezone?: string | null,
+): string => {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return formatInTimeZone(
+      new Date(value),
+      timezone || DEFAULT_TIMEZONE,
+      "yyyy-MM-dd'T'HH:mm",
+    );
+  } catch {
+    return "";
+  }
+};
+
+/**
+ * The stored day, for every surface that displays rather than edits it. Mirrors
+ * what the printed sheet does in two steps: the run sheet is sorted here — a
+ * manager who typed the day out of order still reads a clean timeline — and the
+ * fixtures are merged into it afterwards without reordering anything.
+ */
+export const buildProjectDayTimeline = (
+  project: Pick<
+    Project,
+    | "run_sheet"
+    | "call_time"
+    | "date_time"
+    | "timezone"
+    | "warmup_start"
+    | "warmup_end"
+    | "soundcheck_start"
+    | "soundcheck_end"
+  >,
+): DayTimelineEntry[] =>
+  buildDayTimeline({
+    runSheet: [...(project.run_sheet ?? [])].sort((left, right) =>
+      compareRunSheetTimes(left.time || "", right.time || ""),
+    ),
+    callTime: toWallClockInput(project.call_time, project.timezone),
+    concertTime: toWallClockInput(project.date_time, project.timezone),
+    warmupStart: project.warmup_start,
+    warmupEnd: project.warmup_end,
+    soundcheckStart: project.soundcheck_start,
+    soundcheckEnd: project.soundcheck_end,
+  });

@@ -2914,6 +2914,12 @@
       "now_mandatory": "Now mandatory",
       "now_optional": "Now optional",
       "run_sheet": "Day schedule",
+      "warmup": "Warm-up",
+      "soundcheck": "Sound check",
+      "entrance": "Entrance",
+      "parking": "Parking",
+      "dressing_room": "Dressing room",
+      "onsite_contact": "On-site contact",
       "boolean": {
         "true": "Yes",
         "false": "No"
@@ -3413,8 +3419,6 @@
         "offset_after": "Call time is not before the concert"
       },
       "day_plan": {
-        "anchor_call": "Call",
-        "anchor_concert": "Concert",
         "untitled_count": "Unnamed: {{count}}"
       },
       "placeholders": {
@@ -3839,6 +3843,13 @@
       "title_placeholder": "Title",
       "title_required": "Title is required"
     },
+    "day_timeline": {
+      "call": "Call",
+      "warmup": "Warm-up",
+      "soundcheck": "Sound check",
+      "concert": "Concert",
+      "until": "until {{time}}"
+    },
     "run_sheet": {
       "aria_label": "Manage the day schedule",
       "empty": "No run sheet yet",
@@ -4168,6 +4179,13 @@
       "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
       "run_sheet_untitled": "Schedule item",
+      "onsite": {
+        "title": "On site",
+        "entrance": "Entrance",
+        "parking": "Parking",
+        "dressing_room": "Dressing room",
+        "contact": "On-site contact"
+      },
       "score_pdf_label": "Score / Program",
       "score_pdf_modal_title": "Concert Score",
       "tabs_aria": "Event sections",

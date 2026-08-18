@@ -314,6 +314,15 @@ def _change_field_label(field_key: str) -> str:
         "gives_pitch": _("Starting pitch"),
         "notes": _("Part note"),
         "run_sheet": _("Day schedule"),
+        # The day-of logistics. Same words the printed day card uses, which is
+        # deliberate: the singer reads "Wejście" on the card and has to
+        # recognise it in the message that says it changed.
+        "warmup": _("Warm-up"),
+        "soundcheck": _("Sound check"),
+        "entrance": _("Entrance"),
+        "parking": _("Parking"),
+        "dressing_room": _("Dressing room"),
+        "onsite_contact": _("On-site contact"),
     }.get(field_key, field_key.replace("_", " ").capitalize())
 
 

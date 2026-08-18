@@ -18,7 +18,7 @@ from __future__ import annotations
 import zoneinfo
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, time
 from enum import StrEnum
 from typing import Any
 
@@ -187,6 +187,22 @@ def format_clock(minutes: int) -> str:
     return f'{hours:02d}:{remainder:02d}'
 
 
+def format_time_window(start: time | None, end: time | None) -> str | None:
+    """Both ends of a typed day window (warm-up, sound check) as one value.
+
+    The window is one fact stored in two columns, and every surface that states
+    it outside the day's axis reads it as a pair for that reason: a value naming
+    an hour without saying whether it opens or closes the sound check is worse
+    than no value at all. An open window — a start with no end — is the normal
+    case and states only the hour it opens.
+    """
+    if start is None:
+        return None
+    if end is None:
+        return start.strftime('%H:%M')
+    return f"{start.strftime('%H:%M')}-{end.strftime('%H:%M')}"
+
+
 def clock_sort_key(value: str) -> tuple[int, int]:
     """Sort key for a run-sheet time. Unparsable entries sort last rather than
     being dropped or guessed at; their relative order is the input's, because a
@@ -347,6 +363,7 @@ __all__ = [
     "build_day_timeline",
     "clock_sort_key",
     "format_clock",
+    "format_time_window",
     "localize",
     "normalize_run_sheet",
     "parse_clock_minutes",

@@ -2072,6 +2072,87 @@ class ProjectUpdateNotificationEmitterTests(TestCase):
         self.project.refresh_from_db()
         self.assertEqual(self.project.run_sheet, [{"time": "18:00", "label": "Zbiórka"}])
 
+    def test_a_moved_window_reaches_the_cast_as_one_row_with_both_ends(self) -> None:
+        """The four window columns are two facts, and the diff says which moved.
+
+        A sound check pulled forward the day before the concert used to be a
+        silent save: the singer who read the card yesterday had no way of
+        learning it, because the columns were added to the model and never to
+        the surfaceable set.
+        """
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        self.project.soundcheck_start = time(17, 0)
+        self.project.soundcheck_end = time(17, 40)
+        self.project.save(update_fields=["soundcheck_start", "soundcheck_end"])
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(soundcheck_start=time(15, 30), soundcheck_end=time(16, 10)),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        meta = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(
+            [c for c in meta["changes"] if c["field"] == "soundcheck"],
+            [{"field": "soundcheck", "old": "17:00-17:40", "new": "15:30-16:10"}],
+        )
+        # The window that did not move says nothing.
+        self.assertNotIn("warmup", [c["field"] for c in meta["changes"]])
+        # News, not an alarm: the call time is the hour the cast is held to, and
+        # it has not moved.
+        self.assertEqual(bulk.call_args.kwargs["level"], NotificationLevel.WARNING)
+
+    def test_an_open_window_states_only_the_hour_it_opens(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project, ProjectUpdateDTO(warmup_start=time(18, 40)),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        meta = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(
+            [c for c in meta["changes"] if c["field"] == "warmup"],
+            [{"field": "warmup", "old": None, "new": "18:40"}],
+        )
+
+    def test_a_door_that_moves_is_named_by_its_own_field(self) -> None:
+        from notifications.announcement_queue import AnnouncementQueue
+
+        from .dtos import ProjectUpdateDTO
+
+        self.project.entrance_note = "Wejście główne"
+        self.project.save(update_fields=["entrance_note"])
+
+        with patch(self.BULK) as bulk, self.captureOnCommitCallbacks(execute=True):
+            ProjectManagementService.update_project(
+                self.project,
+                ProjectUpdateDTO(entrance_note="Wejście boczne od Rakowieckiej, brama 2"),
+            )
+            AnnouncementQueue.publish(self.project)
+
+        meta = bulk.call_args.kwargs["metadata"]
+        self.assertEqual(
+            [c for c in meta["changes"] if c["field"] == "entrance"],
+            [
+                {
+                    "field": "entrance",
+                    "old": "Wejście główne",
+                    "new": "Wejście boczne od Rakowieckiej, brama 2",
+                }
+            ],
+        )
+        # Each note is its own fact: the parking and the dressing room, untouched,
+        # do not ride along on the door's row.
+        self.assertEqual(len(meta["changes"]), 1)
+
     def test_description_only_change_does_not_notify_the_cast(self) -> None:
         from .dtos import ProjectUpdateDTO
 
@@ -4548,6 +4629,10 @@ class ConcertDaySheetTests(APITestCase):
 
         self.project = Project.objects.create(
             title="Vespers of Light", date_time=now, timezone="Europe/Warsaw",
+            # Published, like every concert whose day sheet somebody fetches. The
+            # fixture used to take the model's DRAFT default and so asserted the
+            # access model against a project the cast is not shown at all.
+            status=Project.Status.ACTIVE,
             call_time=now - timedelta(hours=1), conductor=self.maestro,
             run_sheet=[
                 {"time": "20:00", "title": "Downbeat"},
@@ -4664,6 +4749,20 @@ class ConcertDaySheetTests(APITestCase):
     def test_day_sheet_forbidden_for_outsider(self) -> None:
         self.client.force_authenticate(user=self.outsider_user)
         resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+        self.assertEqual(resp.status_code, 403)
+
+    def test_day_sheet_refuses_a_project_the_cast_cannot_see(self) -> None:
+        """Being cast in a draft is a plan the conductor is still making.
+
+        Every other chorister-facing door reads `live_seats`; this one hand-rolled
+        two of its three conditions and left out the one about the project.
+        """
+        self.project.status = Project.Status.DRAFT
+        self.project.save(update_fields=["status"])
+        self.client.force_authenticate(user=self.singer_user)
+
+        resp = self.client.get(f"/api/projects/{self.project.id}/export_day_sheet/")
+
         self.assertEqual(resp.status_code, 403)
 
     @patch("roster.views.DocumentGenerator.generate_call_sheet_pdf")

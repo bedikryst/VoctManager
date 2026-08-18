@@ -1,6 +1,7 @@
 import io
 import tempfile
 from contextlib import contextmanager
+from datetime import time, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
@@ -23,6 +24,7 @@ from django.test import (
     TransactionTestCase,
     override_settings,
 )
+from django.utils import timezone
 from PIL import Image
 from pydantic import ValidationError
 from rest_framework.test import APITestCase
@@ -35,6 +37,7 @@ from .avatar_service import AVATAR_SIZE, THUMB_SIZE, AvatarService
 from .constants import AppRole
 from .dtos import UserPasswordChangeDTO, UserPreferencesUpdateDTO
 from .exceptions import EmailAlreadyInUseException, InvalidImageException, format_pydantic_validation_errors
+from .ical_service import ICalGeneratorService
 from .management.commands.reset_test_data import Command as ResetTestData
 from .models import FeedbackReport, UserProfile
 from .permissions import IsManager, IsManagerOrReadOnly
@@ -1468,3 +1471,140 @@ class ResetTestDataCommandTests(TransactionTestCase):
             self._run(noinput=True, keep_media=True)
 
         self.assertEqual(Composer.all_objects.count(), 1)
+
+
+class CalendarFeedTests(TestCase):
+    """The subscribed .ics is a chorister-facing door like any other.
+
+    It used to be the one that wrote its own visibility rule: three conditions
+    typed by hand, of which the third disagreed with the panel. A DRAFT concert
+    — absent from the schedule, never announced, still being planned — was
+    published into the singer's calendar, where it survives in whatever client
+    synced it.
+    """
+
+    def setUp(self) -> None:
+        from roster.models import Artist, Participation, Project, Rehearsal
+
+        self.Artist = Artist
+        self.Participation = Participation
+        self.Project = Project
+        self.Rehearsal = Rehearsal
+
+        user = get_user_model().objects.create_user(
+            username="ics-ada", email="ics-ada@test.pl", password="pw123456"
+        )
+        # English so the assertions read the labels rather than a catalog.
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST, language="en")
+        self.user = user
+        self.artist = Artist.objects.create(
+            user=user, first_name="Ada", last_name="Alto",
+            email="ics-ada@test.pl", voice_type="A",
+        )
+
+    def _project(self, title: str, status: str):
+        return self.Project.objects.create(
+            title=title,
+            date_time=timezone.now() + timedelta(days=20),
+            status=status,
+            timezone="Europe/Warsaw",
+        )
+
+    def _seat(self, project, status=None):
+        return self.Participation.objects.create(
+            artist=self.artist,
+            project=project,
+            status=status or self.Participation.Status.CONFIRMED,
+        )
+
+    def _feed(self) -> str:
+        return ICalGeneratorService.generate_user_feed(self.user)
+
+    def test_a_draft_concert_never_reaches_the_calendar(self) -> None:
+        live = self._project("Requiem", self.Project.Status.ACTIVE)
+        draft = self._project("Coś, o czym nikt nie wie", self.Project.Status.DRAFT)
+        self._seat(live)
+        self._seat(draft)
+
+        feed = self._feed()
+
+        self.assertIn("Requiem", feed)
+        self.assertNotIn("nikt nie wie", feed)
+
+    def test_a_seat_the_singer_gave_up_takes_its_concert_with_it(self) -> None:
+        declined = self._project("Nieszpory", self.Project.Status.ACTIVE)
+        self._seat(declined, status=self.Participation.Status.DECLINED)
+
+        self.assertNotIn("Nieszpory", self._feed())
+
+    def test_a_sectional_for_other_voices_stays_out(self) -> None:
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        seat = self._seat(project)
+
+        self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=5),
+            focus="Tutti",
+        )
+        basses = self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=6),
+            focus="Tylko basy",
+        )
+        other_seat = self.Participation.objects.create(
+            artist=self.Artist.objects.create(
+                first_name="Bo", last_name="Bass", email="ics-bo@test.pl", voice_type="B",
+            ),
+            project=project,
+            status=self.Participation.Status.CONFIRMED,
+        )
+        basses.invited_participations.add(other_seat)
+        mine = self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=7),
+            focus="Alty",
+        )
+        mine.invited_participations.add(seat)
+
+        deleted = self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=8),
+            focus="Odwołana",
+        )
+        deleted.is_deleted = True
+        deleted.save(update_fields=["is_deleted"])
+
+        feed = self._feed()
+
+        self.assertIn("Tutti", feed)
+        self.assertIn("Alty", feed)
+        self.assertNotIn("Tylko basy", feed)
+        self.assertNotIn("Odwołana", feed)
+
+    def test_the_day_facts_travel_with_the_concert(self) -> None:
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        project.call_time = project.date_time - timedelta(hours=2)
+        project.entrance_note = "Wejście boczne, brama 2"
+        project.parking_note = "Dziedziniec"
+        project.warmup_start = time(18, 40)
+        project.warmup_end = time(19, 10)
+        project.onsite_contact_name = "Anna Nowak"
+        project.onsite_contact_phone = "+48 600 000 000"
+        project.save()
+        self._seat(project)
+
+        feed = self._feed()
+
+        self.assertIn("Warm-up: 18:40-19:10", feed)
+        self.assertIn("Parking: Dziedziniec", feed)
+        self.assertIn(r"On-site contact: Anna Nowak\, +48 600 000 000", feed)
+        # Escaped exactly once: escaping a part and then the whole assembled
+        # string doubled every backslash the first pass had written.
+        self.assertIn(r"Entrance: Wejście boczne\, brama 2", feed)
+        self.assertNotIn(r"\\,", feed)
+
+    def test_an_empty_fact_states_nothing(self) -> None:
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        self._seat(project)
+
+        feed = self._feed()
+
+        # The old feed printed every label with an empty value after it.
+        self.assertNotIn("Parking:", feed)
+        self.assertNotIn("Dress Code (Male):", feed)

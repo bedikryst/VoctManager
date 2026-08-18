@@ -10,6 +10,7 @@ import { compareAsc, compareDesc, isAfter, isBefore, isValid, parseISO } from "d
 import type { Artist, LocationSnippet, Project, Rehearsal } from "@/shared/types";
 
 import { PROJECT_STATUS, type ProjectStatus } from "../constants/projectDomain";
+import type { DayFixtureKind } from "./dayTimeline";
 
 type ProjectLocationReference = Project["location"] | Rehearsal["location"];
 
@@ -174,6 +175,47 @@ export const getConductorArtistId = (
   }
   return isArtistReference(conductor) ? String(conductor.id) : null;
 };
+
+/**
+ * What the day's fixed moments are called, for the three surfaces that draw the
+ * same axis — the producer's editor, the Overview widget and the chorister's
+ * event sheet. One table, because a warm-up named differently in two of them is
+ * two moments to the reader.
+ *
+ * The words are the printed sheet's, msgid for msgid (`document_generator`,
+ * context `call sheet`): the singer who opens the card and the singer who reads
+ * the PDF are looking at one day, and a second vocabulary would say otherwise.
+ */
+export const DAY_FIXTURE_PRESENTATION: Record<
+  DayFixtureKind,
+  { readonly labelKey: string; readonly fallbackLabel: string }
+> = {
+  call: {
+    labelKey: "projects.day_timeline.call",
+    fallbackLabel: "Zbiórka",
+  },
+  warmup: {
+    labelKey: "projects.day_timeline.warmup",
+    fallbackLabel: "Rozśpiewanie",
+  },
+  soundcheck: {
+    labelKey: "projects.day_timeline.soundcheck",
+    fallbackLabel: "Próba akustyczna",
+  },
+  concert: {
+    labelKey: "projects.day_timeline.concert",
+    fallbackLabel: "Koncert",
+  },
+};
+
+/**
+ * How a window states its closing hour. A qualifier on the moment, never a
+ * second row: the sound check ends when it ends, and an open window is normal.
+ */
+export const DAY_WINDOW_UNTIL = {
+  labelKey: "projects.day_timeline.until",
+  fallbackLabel: "do {{time}}",
+} as const;
 
 export const getArtistDisplayName = (
   artist: Project["conductor"] | Artist | null | undefined,

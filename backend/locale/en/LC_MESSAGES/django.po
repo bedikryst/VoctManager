@@ -3098,3 +3098,15 @@ msgstr ""
 
 msgid "We're counting on you at these rehearsals."
 msgstr ""
+
+#: notifications/message_content.py:320
+msgid "Warm-up"
+msgstr ""
+
+#: notifications/message_content.py:321
+msgid "Sound check"
+msgstr ""
+
+#: notifications/message_content.py:322
+msgid "Entrance"
+msgstr ""

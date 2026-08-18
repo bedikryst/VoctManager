@@ -54,6 +54,7 @@ from notifications.tasks import send_bulk_notifications_task, send_notification_
 from notifications.time_metadata import build_event_time_metadata
 
 from .domain.attendance_window import SELF_REPORT_CLOSED_MESSAGE, is_open_to_self_report
+from .domain.day_timeline import format_time_window
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRangeDTO,
@@ -817,11 +818,31 @@ class ProjectManagementService:
             
     # Maps a model attribute to a stable, localizable change key. Keys (not English
     # labels) drive both rendering and the urgency escalation below.
+    #
+    # The day-of logistics belong here for the same reason the run sheet does:
+    # they are facts the cast acts on, and a singer who read the day card
+    # yesterday has no way of learning that the door moved. Each note keeps its
+    # own key, because each is its own fact with its own name — grouping them
+    # would produce one row that names an hour or a sentence without saying
+    # which of three it belongs to. The contact is the exception and is one
+    # entry: a name and a number are one person to call.
     _PROJECT_CHANGE_KEYS: ClassVar[dict[str, str]] = {
         "title": "title", "date_time": "date_time", "location_id": "location",
         "call_time": "call_time", "status": "status", "conductor": "conductor",
         "dress_code_male": "dress_code", "dress_code_female": "dress_code",
+        "entrance_note": "entrance", "parking_note": "parking",
+        "dressing_room_note": "dressing_room",
+        "onsite_contact_name": "onsite_contact",
+        "onsite_contact_phone": "onsite_contact",
     }
+
+    # The two typed windows, each as (change key, opening column, closing one).
+    # Diffed as pairs rather than through the map above — see
+    # :func:`roster.domain.day_timeline.format_time_window`.
+    _DAY_WINDOWS: ClassVar[tuple[tuple[str, str, str], ...]] = (
+        ("warmup", "warmup_start", "warmup_end"),
+        ("soundcheck", "soundcheck_start", "soundcheck_end"),
+    )
 
     @staticmethod
     def update_project(project: Project, dto: ProjectUpdateDTO) -> Project:
@@ -838,6 +859,14 @@ class ProjectManagementService:
         # Leaving DRAFT is the project's publication: the cast has heard nothing so
         # far, so this save owes them an invitation rather than a field diff.
         was_draft = project.status == Project.Status.DRAFT
+
+        # Read before anything is written onto the instance: the loop below sets
+        # the four window columns one at a time, so the pair can only be
+        # compared as a whole from here.
+        old_windows = {
+            key: format_time_window(getattr(project, start), getattr(project, end))
+            for key, start, end in ProjectManagementService._DAY_WINDOWS
+        }
 
         # Publication is one-way. Sending a live project back to DRAFT would
         # silence a concert the cast is already preparing for and would leave its
@@ -890,9 +919,17 @@ class ProjectManagementService:
                     elif attr in ProjectManagementService._PROJECT_CHANGE_KEYS:
                         key = ProjectManagementService._PROJECT_CHANGE_KEYS[attr]
                         changes.append(_change(key, old_value, value))
-                    # Fields outside the surfaceable set (description, spotify URL)
-                    # persist silently — a note tweak isn't worth alerting the cast.
+                    # Fields outside the surfaceable set (description, spotify URL,
+                    # and the window columns diffed as pairs below) persist
+                    # silently here — a note tweak isn't worth alerting the cast.
                 setattr(project, attr, value)
+
+            for key, start, end in ProjectManagementService._DAY_WINDOWS:
+                new_window = format_time_window(
+                    getattr(project, start), getattr(project, end)
+                )
+                if new_window != old_windows[key]:
+                    changes.append(_change(key, old_windows[key], new_window))
 
             project.save()
 

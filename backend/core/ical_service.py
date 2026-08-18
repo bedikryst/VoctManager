@@ -2,10 +2,12 @@
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
 
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.utils.translation import override
 
+from roster.domain.day_timeline import format_time_window, localize
 from roster.models import Participation, Project, Rehearsal
 
 
@@ -41,19 +43,31 @@ class ICalGeneratorService:
         artist = user.artist_profile
         language = getattr(user.profile, 'language', 'en')
 
-        # We force the translation to the user's preferred language, 
+        # We force the translation to the user's preferred language,
         # because calendar clients might not send 'Accept-Language' headers.
         with override(language):
-            active_statuses = [Participation.Status.INVITED, Participation.Status.CONFIRMED]
-            
+            # `Participation.live_seats` and nothing else. This feed used to
+            # write its own three conditions and disagreed with the panel on the
+            # third: it dropped only cancelled projects, so a DRAFT concert —
+            # invisible in the schedule, never announced to anybody — was
+            # published into the singer's subscribed calendar.
+            seats = Participation.live_seats(artist=artist)
             projects = Project.objects.filter(
-                participations__artist=artist,
-                participations__status__in=active_statuses
-            ).exclude(status=Project.Status.CANCELLED).select_related('location')
+                id__in=seats.values('project_id')
+            ).select_related('location')
 
-            rehearsals = Rehearsal.objects.filter(
-                project__in=projects
-            ).distinct().select_related('project', 'location')
+            # The same rule the schedule reads: a sectional IS its list of
+            # names, so a soprano's calendar does not fill with the basses'
+            # rehearsals — and a deleted session leaves the calendar with it.
+            rehearsals = (
+                Rehearsal.objects.filter(project__in=projects, is_deleted=False)
+                .filter(
+                    Q(invited_participations__isnull=True)
+                    | Q(invited_participations__in=seats)
+                )
+                .distinct()
+                .select_related('project', 'location')
+            )
 
             return cls._build_ics(projects, rehearsals)
 
@@ -120,6 +134,54 @@ class ICalGeneratorService:
         lines.append("END:VCALENDAR")
         return "\r\n".join(lines)
 
+    @staticmethod
+    def _project_description(project: Project) -> str:
+        """What the singer needs on the day, in the calendar entry itself.
+
+        A subscribed calendar is where a chorister looks on the morning of a
+        concert, so the facts that used to exist only on the printed day card
+        belong here as well — the door, the parking, the room, the number to
+        call. Only what was actually entered: a line reading "Parking: —"
+        answers nothing and pushes the fact that does answer something off a
+        phone screen.
+
+        The entry opens at the call time, so the downbeat is stated here rather
+        than left for the reader to infer from an event that has already begun.
+        """
+        rows: list[tuple[str, str]] = []
+
+        event_local = localize(project.date_time, project.timezone)
+        if project.call_time and event_local is not None:
+            rows.append((_('Concert'), event_local.strftime('%H:%M')))
+
+        for label, value in (
+            (_('Warm-up'), format_time_window(project.warmup_start, project.warmup_end)),
+            (
+                _('Sound check'),
+                format_time_window(project.soundcheck_start, project.soundcheck_end),
+            ),
+            (_('Entrance'), project.entrance_note),
+            (_('Parking'), project.parking_note),
+            (_('Dressing room'), project.dressing_room_note),
+            (_('Dress Code (Female)'), project.dress_code_female),
+            (_('Dress Code (Male)'), project.dress_code_male),
+        ):
+            if value:
+                rows.append((label, value))
+
+        contact = ', '.join(
+            part
+            for part in (project.onsite_contact_name, project.onsite_contact_phone)
+            if part
+        )
+        if contact:
+            rows.append((_('On-site contact'), contact))
+
+        lines = [f'{label}: {value}' for label, value in rows]
+        if project.description:
+            lines.append(project.description)
+        return '\n'.join(lines)
+
     @classmethod
     def _build_ics(cls, projects, rehearsals) -> str:
         lines = [
@@ -140,8 +202,13 @@ class ICalGeneratorService:
             
             title = cls._escape_ics_text(f"[{_('Rehearsal')}] {reh.project.title}")
             location = cls._escape_ics_text(reh.location.name if reh.location else "")
-            focus_text = cls._escape_ics_text(reh.focus) if reh.focus else _('None')
-            description = cls._escape_ics_text(f"{_('Focus')}: {focus_text}\n{_('Project')}: {reh.project.title}")
+            # Escaped once, on the assembled text. Escaping a part and then the
+            # whole doubled every backslash the first pass wrote, so a comma in
+            # a conductor's focus note reached the calendar as `\,`.
+            focus_text = reh.focus or _('None')
+            description = cls._escape_ics_text(
+                f"{_('Focus')}: {focus_text}\n{_('Project')}: {reh.project.title}"
+            )
 
             lines.extend([
                 "BEGIN:VEVENT",
@@ -161,16 +228,7 @@ class ICalGeneratorService:
             
             title = cls._escape_ics_text(f"[{_('Concert')}] {proj.title}")
             location = cls._escape_ics_text(proj.location.name if proj.location else "")
-            desc_text = cls._escape_ics_text(proj.description)
-            
-            # Using gettext for labels
-            dress_m_label = _('Dress Code (Male)')
-            dress_f_label = _('Dress Code (Female)')
-            description = cls._escape_ics_text(
-                f"{dress_m_label}: {proj.dress_code_male}\n"
-                f"{dress_f_label}: {proj.dress_code_female}\n"
-                f"{desc_text}"
-            )
+            description = cls._escape_ics_text(cls._project_description(proj))
 
             lines.extend([
                 "BEGIN:VEVENT",

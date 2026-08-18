@@ -21,7 +21,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
+import { fromZonedTime } from "date-fns-tz";
 
 import { toastApiError } from "@/shared/api/errors";
 import type { Project, RunSheetItem } from "@/shared/types";
@@ -30,7 +30,11 @@ import {
   useProjects,
   useUpdateProject,
 } from "../../api/project.queries";
-import { compareRunSheetTimes, suggestRunSheetTime } from "../../lib/dayTimeline";
+import {
+  compareRunSheetTimes,
+  suggestRunSheetTime,
+  toWallClockInput,
+} from "../../lib/dayTimeline";
 import type {
   ProjectCreateDTO,
   ProjectUpdateDTO,
@@ -146,8 +150,8 @@ const EMPTY_PROJECTS: Project[] = [];
 const toFormData = (source: Project | null | undefined): ProjectFormData => ({
   title: source?.title || "",
   timezone: source?.timezone || "Europe/Warsaw",
-  date_time: toZonedInputString(source?.date_time, source?.timezone),
-  call_time: toZonedInputString(source?.call_time, source?.timezone),
+  date_time: toWallClockInput(source?.date_time, source?.timezone),
+  call_time: toWallClockInput(source?.call_time, source?.timezone),
   location_id: getProjectLocationId(source),
   conductor: getProjectConductorId(source),
   dress_code_male: source?.dress_code_male || "",
@@ -164,25 +168,6 @@ const toFormData = (source: Project | null | undefined): ProjectFormData => ({
   onsite_contact_name: source?.onsite_contact_name || "",
   onsite_contact_phone: source?.onsite_contact_phone || "",
 });
-
-const toZonedInputString = (
-  dateString?: string | null,
-  timezone = "Europe/Warsaw",
-): string => {
-  if (!dateString) {
-    return "";
-  }
-
-  try {
-    return formatInTimeZone(
-      new Date(dateString),
-      timezone,
-      "yyyy-MM-dd'T'HH:mm",
-    );
-  } catch {
-    return "";
-  }
-};
 
 export const useDetailsForm = (
   projectId: string | undefined,

@@ -33,6 +33,7 @@ import { useProjectArtistsDictionary } from "../../api/project.queries";
 import {
   buildDayTimeline,
   getCallOffsetMinutes,
+  isDayWindow,
   readInputDate,
   readInputTime,
   shiftClockTime,
@@ -108,14 +109,36 @@ export const DetailsTab = ({
     [artists],
   );
 
+  // The two typed windows are edited in the card below this one, and they are
+  // merged here on purpose: a sound check moved on top of a run-sheet point is
+  // a collision only one axis can show.
   const timelineEntries = useMemo(
     () =>
       buildDayTimeline({
         runSheet,
         callTime: formData.call_time,
         concertTime: formData.date_time,
+        warmupStart: formData.warmup_start,
+        warmupEnd: formData.warmup_end,
+        soundcheckStart: formData.soundcheck_start,
+        soundcheckEnd: formData.soundcheck_end,
       }),
-    [runSheet, formData.call_time, formData.date_time],
+    [
+      runSheet,
+      formData.call_time,
+      formData.date_time,
+      formData.warmup_start,
+      formData.warmup_end,
+      formData.soundcheck_start,
+      formData.soundcheck_end,
+    ],
+  );
+
+  // The anchors are the frame, not the plan: a day carrying nothing but a call
+  // and a downbeat still has nothing planned between them, and the empty state
+  // says so in words the two anchors cannot.
+  const hasDayPlan = timelineEntries.some(
+    (entry) => entry.kind === "point" || isDayWindow(entry),
   );
 
   const callOffsetMinutes = getCallOffsetMinutes(
@@ -453,7 +476,7 @@ export const DetailsTab = ({
                 )}
               </div>
 
-              {runSheet.length > 0 ? (
+              {hasDayPlan ? (
                 <DayTimeline
                   entries={timelineEntries}
                   onUpdate={handleUpdateRunSheetItem}

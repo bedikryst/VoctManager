@@ -1013,9 +1013,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if project.conductor_id and project.conductor and project.conductor.user_id == user.id:
             return Audience.CONDUCTOR, None
         recipient = (
-            Participation.objects
-            .filter(project=project, artist__user=user, is_deleted=False)
-            .exclude(status=Participation.Status.DECLINED)
+            # `live_seats`, like every other chorister-facing door: the seat
+            # exists, it was not declined, and the project is one the cast may
+            # see at all. Hand-rolling the first two conditions here left the
+            # third out, so a singer cast into an unpublished draft could still
+            # fetch its day card. The conductor's branch above keeps drafts on
+            # purpose — they are the one assembling them.
+            Participation.live_seats(project=project, artist__user=user)
             # The profile comes along because the sheet is set in the singer's
             # own language, which is stored on it.
             .select_related('artist', 'artist__user__profile')
