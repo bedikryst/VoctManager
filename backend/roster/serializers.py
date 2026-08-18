@@ -15,6 +15,7 @@ from typing import Any
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 
 from archive.services.voice_scope import voice_scope
 from core.permissions import user_is_manager
@@ -179,7 +180,7 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
 # queryset needs nothing from the payload, and still lets a soft-deleted seat be
 # re-created instead of being reported as a duplicate.
 PARTICIPATION_UNIQUENESS = [
-    serializers.UniqueTogetherValidator(
+    UniqueTogetherValidator(
         queryset=Participation.objects.filter(is_deleted=False),
         fields=('artist', 'project'),
     )
