@@ -29,6 +29,7 @@ import {
 
 import type { Artist } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Avatar } from "@/shared/ui/composites/Avatar";
@@ -116,12 +117,7 @@ export const ArtistCard = React.memo(
         role="button"
         tabIndex={0}
         onClick={activate}
-        onKeyDown={(event: React.KeyboardEvent) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            activate();
-          }
-        }}
+        onKeyDown={onActivate(activate)}
         aria-pressed={selectionMode ? selected : undefined}
         aria-label={
           selectionMode

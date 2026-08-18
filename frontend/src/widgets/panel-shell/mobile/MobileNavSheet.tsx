@@ -32,6 +32,7 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
 import { useNavigationAura } from "../hooks/useNavigationAura";
@@ -110,12 +111,7 @@ export const MobileNavSheet = ({
         role="button"
         tabIndex={0}
         onClick={() => go(item.to)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            go(item.to);
-          }
-        }}
+        onKeyDown={onActivate(() => go(item.to))}
         className="group/row relative flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 outline-none transition-[background-color,transform] duration-200 hover:bg-ethereal-graphite/[0.04] focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
       >
         <span

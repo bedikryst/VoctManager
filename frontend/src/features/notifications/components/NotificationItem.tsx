@@ -42,6 +42,7 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
@@ -539,12 +540,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       role="button"
       tabIndex={0}
       onClick={handleClick}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          handleClick();
-        }
-      }}
+      onKeyDown={onActivate(handleClick)}
       className={cn(
         "group relative flex cursor-pointer gap-3 rounded-nested p-3 outline-none transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isRead

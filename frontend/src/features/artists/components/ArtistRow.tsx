@@ -31,6 +31,7 @@ import {
 
 import type { Artist } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { formatLocalizedDateTime } from "@/shared/lib/time/intl";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -103,12 +104,7 @@ export const ArtistRow = React.memo(
         role="button"
         tabIndex={0}
         onClick={activate}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            activate();
-          }
-        }}
+        onKeyDown={onActivate(activate)}
         aria-pressed={selectionMode ? selected : undefined}
         aria-label={
           selectionMode

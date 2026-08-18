@@ -18,6 +18,7 @@ import type { TFunction } from "i18next";
 import { MapPin, Pencil } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import {
   Caption,
   Text,
@@ -80,12 +81,7 @@ const LocationRowComponent = ({
       tabIndex={0}
       aria-pressed={isActive}
       onClick={() => onSelect(String(location.id))}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect(String(location.id));
-        }
-      }}
+      onKeyDown={onActivate(() => onSelect(String(location.id)))}
       className={cn(
         "group flex cursor-pointer items-center gap-3 rounded-nested border px-3 py-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
         isActive

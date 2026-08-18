@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { Briefcase, ChevronRight, Mail, Phone, Trash2 } from "lucide-react";
 
 import type { Collaborator } from "@/shared/types";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import {
   Caption,
@@ -54,12 +55,7 @@ const CrewCardComponent = ({
       role="button"
       tabIndex={0}
       onClick={() => onOpen(person)}
-      onKeyDown={(event: React.KeyboardEvent) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(person);
-        }
-      }}
+      onKeyDown={onActivate(() => onOpen(person))}
       aria-label={t("crew.card.open_aria", {
         defaultValue: "Edytuj: {{name}}",
         name: fullName,

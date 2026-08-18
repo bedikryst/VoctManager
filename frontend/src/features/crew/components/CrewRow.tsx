@@ -13,6 +13,7 @@ import { Briefcase, ChevronRight, Mail, Phone, Trash2 } from "lucide-react";
 
 import type { Collaborator } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import { CrewSpecialtyBadge } from "./CrewSpecialtyBadge";
@@ -45,12 +46,7 @@ const CrewRowComponent = ({
       role="button"
       tabIndex={0}
       onClick={() => onOpen(person)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(person);
-        }
-      }}
+      onKeyDown={onActivate(() => onOpen(person))}
       aria-label={t("crew.card.open_aria", {
         defaultValue: "Edytuj: {{name}}",
         name: fullName,
