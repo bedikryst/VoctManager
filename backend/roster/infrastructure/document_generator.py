@@ -58,6 +58,7 @@ from roster.domain.day_timeline import (
     plan_end,
     resolve_call_window,
 )
+from roster.domain.event_kind import CONCERT, MASS, OTHER, WEDDING
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.infrastructure.print_fonts import (
     BRAND_SANS_STACK,
@@ -166,11 +167,19 @@ _VOICE_TYPE_ORDER: dict[str, int] = {
 }
 # The day's two fixed points, named for the printed sheet. Placing them is the
 # domain's job (``day_timeline``); only the wording belongs to the document.
-# Msgids under the ``call sheet`` context — the same two the masthead band uses,
-# so the timeline below it can never call them something else.
-_ANCHOR_LABELS: dict[TimelineEntryKind, str] = {
-    TimelineEntryKind.CALL: 'Call time',
-    TimelineEntryKind.CONCERT: 'Concert start',
+# Msgids under the ``call sheet`` context — the same ones the masthead band
+# uses, so the timeline below it can never call them something else.
+_CALL_ANCHOR_MSGID = 'Call time'
+# The downbeat is named for what the ensemble is actually singing at, because a
+# wedding Mass whose run sheet says "Początek koncertu" is telling the singer
+# holding it something untrue. Whole msgid per kind rather than a slot filled
+# with the kind's name: Polish declines the noun after "Początek", and French
+# contracts the article, so an interpolated vocabulary cannot be written twice.
+_EVENT_START_MSGIDS: dict[str, str] = {
+    CONCERT: 'Concert start',
+    MASS: 'Mass start',
+    WEDDING: 'Wedding Mass start',
+    OTHER: 'Event start',
 }
 
 
@@ -849,7 +858,9 @@ class DocumentGenerator:
             ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
-            'day_timeline': DocumentGenerator._build_timeline_rows(timeline),
+            'day_timeline': DocumentGenerator._build_timeline_rows(
+                timeline, project.event_kind
+            ),
             # With no points of its own the merged axis is just the two anchors,
             # which the masthead already states — the section says so in words
             # instead of restating them as a two-row table.
@@ -1827,7 +1838,9 @@ class DocumentGenerator:
         return mapping
 
     @staticmethod
-    def _build_timeline_rows(timeline: list[TimelineEntry]) -> list[dict[str, Any]]:
+    def _build_timeline_rows(
+        timeline: list[TimelineEntry], event_kind: str
+    ) -> list[dict[str, Any]]:
         """The merged day, flattened for the template.
 
         Anchors print in the heavier voice and carry their date when they fall
@@ -1843,7 +1856,7 @@ class DocumentGenerator:
                     'title': (
                         point.title
                         if point is not None
-                        else DocumentGenerator._anchor_label(entry.kind)
+                        else DocumentGenerator._anchor_label(entry.kind, event_kind)
                     ),
                     'description': point.description if point is not None else '',
                     'location': point.location if point is not None else '',
@@ -1858,10 +1871,21 @@ class DocumentGenerator:
         return rows
 
     @staticmethod
-    def _anchor_label(kind: TimelineEntryKind) -> str:
+    def _event_start_label(event_kind: str) -> str:
+        """What the downbeat is called on this project's sheet."""
+        return pgettext(
+            'call sheet',
+            _EVENT_START_MSGIDS.get(event_kind, _EVENT_START_MSGIDS[CONCERT]),
+        )
+
+    @staticmethod
+    def _anchor_label(kind: TimelineEntryKind, event_kind: str) -> str:
         """The printed name of one of the day's two fixed points."""
-        msgid = _ANCHOR_LABELS.get(kind)
-        return pgettext('call sheet', msgid) if msgid else ''
+        if kind is TimelineEntryKind.CALL:
+            return pgettext('call sheet', _CALL_ANCHOR_MSGID)
+        if kind is TimelineEntryKind.CONCERT:
+            return DocumentGenerator._event_start_label(event_kind)
+        return ''
 
     @staticmethod
     def _day_offset_note(day_offset: int) -> str:
@@ -1911,7 +1935,7 @@ class DocumentGenerator:
                 'accent': True,
             },
             {
-                'label': pgettext('call sheet', 'Concert start'),
+                'label': DocumentGenerator._event_start_label(project.event_kind),
                 'value': DocumentGenerator._format_time(call_window.event_local),
                 'note': '',
                 'accent': False,

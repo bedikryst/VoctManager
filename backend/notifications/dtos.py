@@ -134,6 +134,11 @@ class ProjectBriefingMetadata(EnterpriseBaseDTO):
     """
     project_id: UUID | None = None
     project_name: str
+    # What the ensemble is singing at, as a CODE — the briefing heads its project
+    # section with the event's own name, and a Mass filed under "Koncert" is the
+    # heading a singer stops trusting. Empty on legacy rows, which read as the
+    # model's default.
+    event_kind: str = ""
     # The conductor's own words, written when publishing the queue. Free text,
     # passed through verbatim like any other authored message.
     note: str = ""
@@ -309,6 +314,10 @@ class NotificationReadReceiptMetadata(EnterpriseBaseDTO):
 class ProjectReminderMetadata(EventMomentMetadata):
     project_id: UUID | None = None
     project_name: str
+    # Language-neutral CODE for what the ensemble is singing at, so the reminder
+    # that lands the evening before names it in the recipient's own language
+    # rather than calling every engagement a concert. Empty on legacy rows.
+    event_kind: str = ""
     date_range: str | None = None
     location: str | None = None
     message: str | None = None

@@ -674,7 +674,7 @@
                 </tbody>
             </table>
             {% else %}
-            <p class="empty">{% if rehearsals_all_done_note %}{{ rehearsals_all_done_note }}{% elif is_chorister %}{% translate "You have no rehearsals assigned for this concert." %}{% else %}{% translate "No rehearsals are defined for this project." %}{% endif %}</p>
+            <p class="empty">{% if rehearsals_all_done_note %}{{ rehearsals_all_done_note }}{% elif is_chorister %}{% translate "You have no rehearsals assigned for this event." %}{% else %}{% translate "No rehearsals are defined for this project." %}{% endif %}</p>
             {% endif %}
         </div>
     </div>
@@ -718,7 +718,7 @@
                 </div>
                 {% endfor %}
             {% else %}
-            <p class="empty">{% if is_report %}{% translate "The programme has not been settled — the sheet has nothing to list." %}{% else %}{% translate "The programme for this concert has not been written out yet." %}{% endif %}</p>
+            <p class="empty">{% if is_report %}{% translate "The programme has not been settled — the sheet has nothing to list." %}{% else %}{% translate "The programme for this event has not been written out yet." %}{% endif %}</p>
             {% endif %}
         </div>
     </div>

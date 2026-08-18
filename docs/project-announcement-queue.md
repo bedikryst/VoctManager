@@ -1091,6 +1091,92 @@ not have bought a stale cached client anything: `safety_net` is a group id that 
 seen, so its label falls back to the raw key regardless. The degradation is cosmetic and survives one
 refresh either way.
 
+## Stage 8 — the close says what it closes, and a verdict leaves the inbox · SHIPPED
+
+Two small corrections, both 2026-08-18, both from the same observation: a control is only worth what
+its reader thinks it does.
+
+**The queue's close was named as a deletion, so nobody would press it.** `AnnouncementQueue.discard`
+has always kept the saved data and dropped only the announcement — Stage 4's confirm said so in
+words. But the control wore `Trash2`, `text-ethereal-crimson` and the word "Odrzuć", and the case it
+was built for is a conductor who has just fixed a typo and is deciding whether their *correction* is
+at stake. Three signals said it was. The mechanism is unchanged; the surface now reads
+**"Nie ogłaszaj" / `BellOff` / no crimson**, the confirm asks "Zachować zmiany bez powiadomienia?"
+and its verb is "Nie wysyłaj". `isDestructive` is no longer hardcoded: it is `has_cast_removal`, so
+the alarm colour is spent on the one case that is a defect — a person taken off the cast whom nobody
+would ever tell. The i18n keys keep the `discard*` names, because `discard` is still the backend's
+verb and renaming them would only churn three locales.
+
+**`ABSENCE_APPROVED` / `ABSENCE_REJECTED` left `commitments` for their own group, `requests`
+(e-mail OFF, push ON).** This is the group rule working as designed rather than an exception: the
+reader filed the request *in the app* and comes back to see how it went, which makes a verdict the
+one commitment whose audience is guaranteed to look. Both directions stay in one group deliberately —
+a group that e-mailed only refusals would turn the arrival of an e-mail into the verdict. Migration
+`notifications/0015` mirrors `0014` exactly, dropping only rows at the precise old default pair
+(e-mail on **and** push on) so system-seeded rows fall through to the new default while a real
+opinion about push survives. `QUEUEABLE_TYPES` is untouched — an absence verdict never rode a
+briefing — so the "everything a briefing can carry shares one group" invariant is unaffected.
+
+**Rejected in the same conversation: "no e-mail by default at all."** The proposal was that only
+truly critical news deserves an inbox, since critical news is passed on outside the app anyway. It
+does not survive the reach test. Push requires an installed PWA (on iOS, added to the home screen)
+*and* a granted permission, and `NotificationRouter.route` fires the two channels independently —
+there is no "no active device, fall back to e-mail" path. Turning e-mail off wholesale would leave a
+chorister who never installed the app with nothing, and the justification ("we'll phone them anyway")
+is an argument for the product not being the channel. The volume complaint it came from was already
+answered by this feature: since Stage 3 the ceiling is one envelope per recipient per publication,
+not one per edit. See also the open decision below on muting e-mail once push is *proven*.
+
+**Verified:** 111 notifications + 539 roster tests pass (one new, `test_an_absence_verdict_is_a_
+request_and_stays_out_of_the_inbox`; the two ledger-shape tests updated for the new group and its
+render position); ruff and mypy clean; frontend typecheck, lint and build clean.
+
+## Stage 9 — e-mail steps aside once push is proven · SHIPPED
+
+The idea was "when push is switched on, drop e-mail". Shipped as **an offer on evidence**, because
+the three obstacles below make the automatic reading unsafe, and each is still true of the tree:
+
+- **A subscription is not proof of delivery.** Browsers rotate push endpoints, so `register_web_push`
+  fires repeatedly over a member's life, not once — an auto-mute hung there would re-mute someone who
+  had deliberately switched e-mail back on.
+- **A dead subscription is discovered by the message that needed it.** `is_active=False` is written
+  only when a send returns 404/410. Mute first, and the news lost is the one that revealed the loss.
+- **`NotificationPreference` cannot tell a default from a choice.** The router mints rows with
+  `get_or_create(defaults=…)`, so a stored row is indistinguishable from a deliberate setting.
+
+**The trigger is a delivery, and `send_test_push` had to be made honest first.** It returned
+`len(devices)` — attempts, not arrivals — while `_deliver` swallowed every failure. A subscription the
+browser had already discarded therefore came back as `delivered: 1` and was quietly deactivated on the
+way out: the precise false positive the offer must never act on. `_send_vapid_batch` and
+`_send_fcm_batch` now return their success counts, `_deliver` sums them, and the endpoint reports
+arrivals. Production dispatch ignores the number; this call exists to state it.
+
+**The mute is the master switch, never the ledger.** `UserProfile.email_notifications_enabled`
+already gated every operational e-mail, so muting writes one field and the per-type rows survive
+untouched underneath — which dissolves the third obstacle entirely rather than working around it.
+Turning e-mail back on restores what the member chose, not a recommended baseline.
+
+**The offer is a question asked once, and either answer ends it.** `push_email_offer_seen_at`
+(migration `core/0024`) is stamped by `POST /api/users/me/seen-push-email-offer/` on *both* answers —
+server-side for `welcome_seen_at`'s reason: the choice is about the account, so declining on one
+device must settle it everywhere. Deliberately separate from the mute: declining changes no delivery,
+and switching e-mail back on later does not un-ask the question.
+
+**Two defects found while wiring it, both live before this stage:**
+1. **The daily-digest controls had never saved.** `UserPreferencesUpdateDTO` is `extra="forbid"` and
+   had no `digest_enabled` / `digest_hour`, so every toggle 400'd — and the optimistic mutation rolled
+   the switch back, making a setting that had never once persisted look merely stubborn. All three
+   delivery fields are now in the DTO, seeded in the view from the stored profile so a partial patch
+   cannot reset its neighbours.
+2. **An ESP unsubscribe was a one-way door.** `email_notifications_enabled` had no UI at all, so the
+   `unsubscribed` webhook opted a member out with no route back inside the app. It is writable now,
+   and `EmailMutedNotice` renders the way back whenever the switch is off, whatever turned it off.
+
+**Verified:** 776 notifications + core + roster tests pass (13 new: the test push counting arrivals
+rather than attempts across delivered / stale-410 / transport-error / no-device, the stamp's
+idempotence and server authority, the master switch travelling both ways, and the two digest
+regressions above); ruff and mypy clean; frontend typecheck, lint and build clean.
+
 ## Open decisions
 
 Decide them when the stage arrives and record the answer here.

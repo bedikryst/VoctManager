@@ -300,6 +300,27 @@ def _event_kind_label(code: str | None) -> str:
     }.get(code or "", code or "")
 
 
+def _event_moment_label(code: str | None) -> str:
+    """
+    The event named as the moment it is — the word that leads a reminder and heads
+    the briefing's project section.
+
+    A second table beside `_event_kind_label` rather than a reuse of it: that one
+    answers "which kind is this?" and therefore says "Other event", which is an
+    answer to a question the recipient never asked. Kept local for the reason the
+    status labels are: notifications compose from language-neutral codes and own
+    their own vocabulary, so a copy edit in the roster's picker cannot silently
+    rewrite a push title. An unknown code reads as a concert — the model default,
+    and what every row stored before the kind existed is.
+    """
+    return {
+        "CONCERT": pgettext("event moment", "Concert"),
+        "MASS": pgettext("event moment", "Mass"),
+        "WEDDING": pgettext("event moment", "Wedding Mass"),
+        "OTHER": pgettext("event moment", "Event"),
+    }.get(code or "", pgettext("event moment", "Concert"))
+
+
 def _voice_line_label(code: str | None, scope: Iterable[str] = ()) -> str:
     """Localized label for a VoiceLine CODE (e.g. 'B1' → 'Bas 1').
 
@@ -621,11 +642,13 @@ _BRIEFING_SECTION_ORDER: tuple[str, ...] = (
 _BRIEFING_GLANCE_LIMIT = 3
 
 
-def _briefing_section_title(subject_type: str) -> str:
+def _briefing_section_title(subject_type: str, event_kind: str | None = None) -> str:
     titles: dict[str, str] = {
         AnnouncementSubject.CASTING: _("Your part"),
         AnnouncementSubject.REHEARSAL: _("Rehearsals"),
-        AnnouncementSubject.PROJECT: _("The concert"),
+        # The event itself, headed by its own name: the two sections above it are
+        # named for what they contain, and this one has to be too.
+        AnnouncementSubject.PROJECT: _event_moment_label(event_kind),
     }
     return titles.get(subject_type, _("Other changes"))
 
@@ -686,7 +709,7 @@ def _briefing_project_items(m: dict[str, Any]) -> list[BriefingItem]:
     ]
 
 
-def _briefing_sections(items: Any) -> tuple[MessageSection, ...]:
+def _briefing_sections(items: Any, event_kind: str | None = None) -> tuple[MessageSection, ...]:
     """Group the briefing's items into rendered sections.
 
     Each item carries the payload its own emitter built, so the line a briefing
@@ -716,7 +739,10 @@ def _briefing_sections(items: Any) -> tuple[MessageSection, ...]:
         grouped.setdefault(subject, []).extend(entry for entry in built if entry.primary)
 
     return tuple(
-        MessageSection(title=_briefing_section_title(subject), items=tuple(grouped[subject]))
+        MessageSection(
+            title=_briefing_section_title(subject, event_kind),
+            items=tuple(grouped[subject]),
+        )
         for subject in _BRIEFING_SECTION_ORDER
         if grouped.get(subject)
     )
@@ -733,7 +759,7 @@ def _compose_project_briefing(ctx: MessageContext) -> MessageContent:
     """
     m = ctx.metadata
     project = m.get("project_name") or _("your project")
-    sections = _briefing_sections(m.get("items"))
+    sections = _briefing_sections(m.get("items"), str(m.get("event_kind") or ""))
     headlines = [item.primary for section in sections for item in section.items]
     note = str(m.get("note") or "").strip()
 
@@ -794,13 +820,20 @@ def _compose_project_cancelled(ctx: MessageContext) -> MessageContent:
 
 def _compose_project_reminder(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
-    project = m.get("project_name") or _("your next concert")
+    # The event's own name, which is also the only thing left to call it when the
+    # project has no title on the row.
+    moment = _event_moment_label(m.get("event_kind"))
+    project = m.get("project_name") or moment
     when = display_event_time(m, "date_range", "starts_at")
     venue = m.get("location")
-    # The moment leads the title, so a long concert name can never push it off a
-    # lock screen; the name and venue follow in the body.
+    # The moment leads the title, so a long project name can never push it off a
+    # lock screen; the name and venue follow in the body. Both forms keep the
+    # event's name in the nominative — Polish declines it after a preposition and
+    # French needs its article, and neither survives a shared slot.
     title = (
-        _("Concert — %(when)s") % {"when": when} if when else _("Your concert is coming up")
+        _("%(event)s — %(when)s") % {"event": moment, "when": when}
+        if when
+        else _("Coming up: %(event)s") % {"event": moment}
     )
     details: list[DetailRow] = []
     if when:

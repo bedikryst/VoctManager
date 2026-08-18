@@ -1111,6 +1111,7 @@ def _dispatch_briefing(
     metadata = ProjectBriefingMetadata(
         project_id=project.id,
         project_name=project.title,
+        event_kind=project.event_kind,
         note=note,
         items=tuple(items),
         ics=tuple(calendar),

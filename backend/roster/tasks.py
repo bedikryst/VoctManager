@@ -238,11 +238,17 @@ def _dispatch_project_reminders(now) -> int:
         metadata = {
             "project_name": proj.title,
             "project_id": str(proj.id),
+            # Language-neutral code; every surface names the kind for itself.
+            "event_kind": proj.event_kind,
             "date_range": event_time_metadata["starts_at_display"],
             **event_time_metadata,
             "location": location_name,
             "ics": {
                 "kind": "project",
+                # Carried inside the calendar payload too: the .ics attachment is
+                # built from this dict alone, and its subject is the line that
+                # ends up in the recipient's own calendar for years.
+                "event_kind": proj.event_kind,
                 "uid": f"project_{proj.id}@voctensemble.com",
                 "start": start.isoformat(),
                 "end": (proj.date_time + _CONCERT_DURATION).isoformat(),

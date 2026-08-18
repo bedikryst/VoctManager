@@ -208,12 +208,20 @@ class EmailDispatcherService:
         from django.utils.translation import gettext as _gettext
 
         from core.ical_service import ICalGeneratorService
+        from roster.domain.event_kind import event_moment_label
 
         events = []
         for entry in entries:
             project_name = entry.get("project_name") or ""
+            # A project entry is named by what the ensemble is singing at, from
+            # the code the emitter carried; a rehearsal is a rehearsal whatever
+            # it prepares. The bracket lands in the recipient's own calendar and
+            # outlives the email, so "[Koncert] Ślub Anny i Piotra" is a mistake
+            # they keep re-reading for months.
             label = (
-                _gettext("Concert") if entry.get("kind") == "project" else _gettext("Rehearsal")
+                event_moment_label(str(entry.get("event_kind") or ""))
+                if entry.get("kind") == "project"
+                else _gettext("Rehearsal")
             )
             description_parts = []
             if entry.get("focus"):

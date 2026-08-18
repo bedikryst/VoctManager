@@ -111,7 +111,13 @@ class PushDispatcherService:
     def send_test_push(cls, user) -> int:
         """
         Sends a diagnostic notification through the same composition pipeline as
-        production dispatch. Returns the device count we attempted to reach.
+        production dispatch. Returns how many devices the push **actually reached**.
+
+        Attempts would be the easier number and the wrong one. This is the only
+        call in the system whose entire purpose is to answer "does push work for
+        me?", and the settings tab offers to mute e-mail on the strength of that
+        answer — so a subscription the browser has already discarded has to come
+        back as 0 here, not as 1 that was quietly invalidated on the way out.
         """
         target = cls._resolve_target(str(user.id))
         if target is None or not target.devices:
@@ -120,12 +126,12 @@ class PushDispatcherService:
         with translation.override(target.language):
             payload = PushPayloadBuilder.build_test(is_manager=target.is_manager)
 
-        cls._deliver(target, payload)
+        delivered = cls._deliver(target, payload)
         logger.info(
-            "[PushService] Test push dispatched to %d device(s) for UID:%s",
-            len(target.devices), target.user_id,
+            "[PushService] Test push reached %d of %d device(s) for UID:%s",
+            delivered, len(target.devices), target.user_id,
         )
-        return len(target.devices)
+        return delivered
 
     # ------------------------------------------------------------------ #
     # Subscription lifecycle                                             #
@@ -199,14 +205,20 @@ class PushDispatcherService:
         )
 
     @classmethod
-    def _deliver(cls, target: _DispatchTarget, payload: PushPayload) -> None:
+    def _deliver(cls, target: _DispatchTarget, payload: PushPayload) -> int:
+        """Fan the payload out to every transport, and report how many devices it
+        actually reached. Production dispatch ignores the number — a failed push
+        is logged and retried by the task, not surfaced — but `send_test_push`
+        exists to state it, so the transports have to count rather than assume."""
         web_devices = [d for d in target.devices if d.device_type == DeviceType.WEB]
         mobile_devices = [d for d in target.devices if d.device_type != DeviceType.WEB]
 
+        delivered = 0
         if web_devices:
-            cls._send_vapid_batch(web_devices, payload, target.language)
+            delivered += cls._send_vapid_batch(web_devices, payload, target.language)
         if mobile_devices:
-            cls._send_fcm_batch(mobile_devices, payload, target.language)
+            delivered += cls._send_fcm_batch(mobile_devices, payload, target.language)
+        return delivered
 
     # ------------------------------------------------------------------ #
     # VAPID (Web Push)                                                   #
@@ -218,7 +230,7 @@ class PushDispatcherService:
         devices: list[PushDevice],
         payload: PushPayload,
         language: str,
-    ) -> None:
+    ) -> int:
         data = payload.to_dict()
         data["lang"] = language  # lets the SW set <notification lang> for a11y
         body = json.dumps(data, ensure_ascii=False)
@@ -226,6 +238,7 @@ class PushDispatcherService:
         ttl = _URGENT_TTL if payload.level == NotificationLevel.URGENT else _DEFAULT_TTL
 
         stale_ids: list[UUID] = []
+        delivered = 0
 
         for device in devices:
             if not device.p256dh_key or not device.auth_key:
@@ -246,6 +259,7 @@ class PushDispatcherService:
                     ttl=ttl,
                     headers={"Urgency": urgency},
                 )
+                delivered += 1
             except WebPushException as exc:
                 status_code = exc.response.status_code if exc.response is not None else None
                 if status_code in _VAPID_STALE_STATUSES:
@@ -263,6 +277,8 @@ class PushDispatcherService:
                 invalidated,
             )
 
+        return delivered
+
     # ------------------------------------------------------------------ #
     # FCM (mobile)                                                       #
     # ------------------------------------------------------------------ #
@@ -273,7 +289,7 @@ class PushDispatcherService:
         devices: list[PushDevice],
         payload: PushPayload,
         language: str,
-    ) -> None:
+    ) -> int:
         tokens = [d.registration_token for d in devices]
 
         # Mirror the structured payload into FCM's `data` channel so the mobile
@@ -330,7 +346,7 @@ class PushDispatcherService:
             raise
 
         if response.failure_count == 0:
-            return
+            return len(tokens)
 
         stale_tokens: list[str] = []
         for idx, resp in enumerate(response.responses):
@@ -352,3 +368,5 @@ class PushDispatcherService:
             logger.warning(
                 "[PushService] Auto-invalidated %d stale FCM tokens.", invalidated,
             )
+
+        return response.success_count

@@ -20,6 +20,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
 from pydantic import ValidationError
+from pywebpush import WebPushException
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
@@ -33,7 +34,15 @@ from .message_content import (
     MessageContentBuilder,
     PushPayload,
 )
-from .models import Notification, NotificationLevel, NotificationPreference, NotificationType
+from .models import (
+    DeviceType,
+    Notification,
+    NotificationLevel,
+    NotificationPreference,
+    NotificationType,
+    PushDevice,
+)
+from .push_service import PushDispatcherService
 
 User = get_user_model()
 
@@ -523,6 +532,8 @@ class TransactionalEmailTests(TestCase):
 _BRIEFING_META: dict = {
     "project_id": "p1",
     "project_name": "Requiem",
+    # The briefing heads its project section with the event's own name.
+    "event_kind": "MASS",
     "note": "",
     "items": [
         {
@@ -583,15 +594,25 @@ class BriefingCompositionTests(SimpleTestCase):
         with translation.override("en"):
             content = self._build()
 
+        # The third section is headed by what the ensemble is actually singing
+        # at — the two above it are named for what they contain, and this one has
+        # to be too.
         self.assertEqual(
             [section.title for section in content.sections],
-            ["Your part", "Rehearsals", "The concert"],
+            ["Your part", "Rehearsals", "Mass"],
         )
         # The casting item names the piece and the line it moved to.
         casting = content.sections[0].items[0]
         self.assertEqual(casting.primary, "Lacrimosa")
         self.assertEqual(casting.secondary, "Soprano 2")
         self.assertIn("Soprano 1", casting.detail)
+
+    def test_a_row_stored_before_the_event_kind_existed_reads_as_a_concert(self) -> None:
+        legacy = {k: v for k, v in _BRIEFING_META.items() if k != "event_kind"}
+        with translation.override("en"):
+            content = self._build(legacy)
+
+        self.assertEqual(content.sections[-1].title, "Concert")
 
     def test_a_rehearsal_is_named_by_its_moment(self) -> None:
         with translation.override("en"):
@@ -628,7 +649,7 @@ class BriefingCompositionTests(SimpleTestCase):
 
         self.assertEqual(one.title, "1 zmiana — Requiem")
         self.assertEqual(few.title, "3 zmiany — Requiem")
-        self.assertEqual(sections, ["Twoja partia", "Próby", "Koncert"])
+        self.assertEqual(sections, ["Twoja partia", "Próby", "Msza"])
 
     def test_an_unknown_subject_is_dropped_rather_than_guessed_at(self) -> None:
         with translation.override("en"):
@@ -670,7 +691,7 @@ class BriefingEmailTests(TestCase):
 
         # The apostrophe in "St John's" arrives HTML-escaped, which is the point —
         # assert on the part that is not entity-encoded.
-        for expected in ("Your part", "Rehearsals", "The concert",
+        for expected in ("Your part", "Rehearsals", "Mass",
                          "Lacrimosa", "St John", "Please be punctual."):
             self.assertIn(expected, html)
         # The plain-text alternative carries the same account.
@@ -1762,3 +1783,156 @@ class AnnouncementNudgeCopyTests(SimpleTestCase):
         with translation.override("en"):
             labels = [row.label for row in self._build(recipient_count=0).details]
         self.assertNotIn("Not yet told", labels)
+
+
+class TestPushHonestyTests(TestCase):
+    """The diagnostic push may only report what actually arrived.
+
+    This is the one call whose entire purpose is to answer "does push work for
+    me?", and the settings tab offers to drop the member's e-mail on the strength
+    of that answer. Counting attempts would make a subscription the browser has
+    already discarded look like proof of reachability — the exact failure the
+    offer exists to avoid.
+    """
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="push-honest", email="push-honest@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.user, role=AppRole.ARTIST, language="en")
+        PushDevice.objects.create(
+            user=self.user,
+            registration_token="https://push.example/endpoint-1",
+            p256dh_key="key",
+            auth_key="auth",
+            device_type=DeviceType.WEB,
+        )
+
+    def test_a_delivered_push_is_counted(self) -> None:
+        with patch("notifications.push_service.webpush", return_value=None):
+            self.assertEqual(PushDispatcherService.send_test_push(self.user), 1)
+
+    def test_a_stale_subscription_reports_zero_rather_than_one(self) -> None:
+        # 410 Gone: the browser dropped this subscription. Before the count was
+        # honest this returned 1 while quietly deactivating the device, so the
+        # tab would have offered to mute e-mail for a member push cannot reach.
+        gone = WebPushException("gone", response=SimpleNamespace(status_code=410))
+        with patch("notifications.push_service.webpush", side_effect=gone):
+            self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+        self.assertFalse(
+            PushDevice.objects.get(user=self.user).is_active,
+            "a 410 must still invalidate the device, count or no count",
+        )
+
+    def test_a_transport_error_that_is_not_staleness_also_reports_zero(self) -> None:
+        # A 500 from the push service leaves the subscription valid, so the device
+        # stays active — but nothing arrived, and "delivered" must say so.
+        boom = WebPushException("boom", response=SimpleNamespace(status_code=500))
+        with patch("notifications.push_service.webpush", side_effect=boom):
+            self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+        self.assertTrue(PushDevice.objects.get(user=self.user).is_active)
+
+    def test_a_member_with_no_device_reports_zero(self) -> None:
+        PushDevice.objects.filter(user=self.user).delete()
+        self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+
+
+class PushEmailOfferStampTests(APITestCase):
+    """The offer is a question asked once per account, and the mute is a separate
+    fact from having answered."""
+
+    URL = "/api/users/me/seen-push-email-offer/"
+    ME = "/api/users/me/"
+
+    def setUp(self) -> None:
+        self.user = User.objects.create_user(
+            username="offer", email="offer@test.pl", password="pw123456",
+            # The profile PATCH validates the whole identity, not the patched
+            # field alone, so a nameless fixture 400s for reasons of its own.
+            first_name="Jan", last_name="Kowalski",
+        )
+        self.profile = UserProfile.objects.create(user=self.user, role=AppRole.ARTIST)
+        self.client.force_authenticate(self.user)
+
+    def test_answering_stamps_the_offer(self) -> None:
+        self.assertIsNone(self.profile.push_email_offer_seen_at)
+        response = self.client.post(self.URL)
+        self.assertEqual(response.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.profile.push_email_offer_seen_at)
+
+    def test_the_stamp_is_idempotent(self) -> None:
+        self.client.post(self.URL)
+        self.profile.refresh_from_db()
+        first = self.profile.push_email_offer_seen_at
+        self.client.post(self.URL)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.push_email_offer_seen_at, first)
+
+    def test_declining_settles_the_question_without_muting_anything(self) -> None:
+        # "Keep e-mail" is a real answer: it must stop the offer returning while
+        # leaving delivery exactly as it was.
+        self.client.post(self.URL)
+        self.profile.refresh_from_db()
+        self.assertIsNotNone(self.profile.push_email_offer_seen_at)
+        self.assertTrue(self.profile.email_notifications_enabled)
+
+    def test_the_master_switch_travels_both_ways_over_the_profile(self) -> None:
+        # The way back matters more than the way out: before this field was
+        # exposed, an ESP unsubscribe left a member opted out with no route back
+        # inside the app.
+        muted = self.client.patch(
+            self.ME, {"profile": {"email_notifications_enabled": False}}, format="json"
+        )
+        self.assertEqual(muted.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.email_notifications_enabled)
+
+        restored = self.client.patch(
+            self.ME, {"profile": {"email_notifications_enabled": True}}, format="json"
+        )
+        self.assertEqual(restored.status_code, 200)
+        self.profile.refresh_from_db()
+        self.assertTrue(self.profile.email_notifications_enabled)
+
+    def test_every_delivery_switch_survives_the_profile_patch(self) -> None:
+        # Regression, and it was live: the update DTO forbids unknown keys, and
+        # the digest fields were missing from it — so every toggle of the daily
+        # digest 400'd and the optimistic UI rolled back, making a setting that
+        # had never once saved look merely stubborn. One field is all it takes.
+        response = self.client.patch(
+            self.ME,
+            {"profile": {"digest_enabled": False, "digest_hour": 21}},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.profile.refresh_from_db()
+        self.assertFalse(self.profile.digest_enabled)
+        self.assertEqual(self.profile.digest_hour, 21)
+
+    def test_patching_one_switch_leaves_its_neighbours_alone(self) -> None:
+        # The other half: the view seeds the payload from the stored profile, so
+        # a tab that sends a single switch cannot silently reset the rest.
+        self.profile.digest_hour = 21
+        self.profile.digest_enabled = False
+        self.profile.save(update_fields=["digest_hour", "digest_enabled"])
+
+        self.client.patch(
+            self.ME, {"profile": {"email_notifications_enabled": False}}, format="json"
+        )
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.digest_hour, 21)
+        self.assertFalse(self.profile.digest_enabled)
+        self.assertFalse(self.profile.email_notifications_enabled)
+
+    def test_the_stamp_cannot_be_set_by_the_client(self) -> None:
+        # Server-authoritative, like welcome_seen_at: a client that could write it
+        # could also un-ask the question, and the point of the stamp is that the
+        # answer is final.
+        self.client.patch(
+            self.ME,
+            {"profile": {"push_email_offer_seen_at": "2020-01-01T00:00:00Z"}},
+            format="json",
+        )
+        self.profile.refresh_from_db()
+        self.assertIsNone(self.profile.push_email_offer_seen_at)
