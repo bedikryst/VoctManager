@@ -33,8 +33,6 @@ export interface PracticeTrackSource {
   label: string;
   url: string;
   isMine: boolean;
-  /** The manager's practice note for this take. Empty when none was written. */
-  note: string;
 }
 
 export interface PracticePieceSource {

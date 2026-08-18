@@ -51,7 +51,7 @@ from .models import (
 )
 from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
-from .services.voice_scope import scoped_to_edition, voice_scope
+from .services.voice_scope import tracks_for_edition, voice_scope
 
 
 def _edition_can_export(obj: "ScoreEdition", context: Mapping[str, Any]) -> bool:
@@ -209,7 +209,7 @@ def _piece_naming_scope(
     codes = voice_scope(list(piece.voice_requirements.all()), edition_id)
     codes.update(
         track.voice_part
-        for track in scoped_to_edition(list(piece.tracks.all()), edition_id)
+        for track in tracks_for_edition(list(piece.tracks.all()), edition_id)
     )
     if own_code:
         codes.add(own_code)

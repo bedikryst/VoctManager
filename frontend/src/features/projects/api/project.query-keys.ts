@@ -14,7 +14,8 @@ export const projectKeys = {
     collaborators: ["collaborators"] as const,
     /** Deliberately identical to `OPTIONS_QUERY_KEYS.voiceLines` — the board and
      *  the archive read the same endpoint and must share one cached copy. */
-    voiceLines: ["options", "voiceLines", DICTIONARY_VERSION] as const,
+    voiceLines: (language: string) =>
+      ["options", "voiceLines", DICTIONARY_VERSION, language] as const,
     /** Keyed by language on purpose: the vocabulary is served already
      *  translated and is then held for the session, so the language is the only
      *  thing that can make the cached copy wrong. */

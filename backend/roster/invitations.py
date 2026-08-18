@@ -143,9 +143,12 @@ def _project_voice_scope(project: Project) -> tuple[str, ...]:
         .select_related("piece")
         .prefetch_related("piece__editions", "piece__voice_requirements")
     )
+    # Seats hanging off a soft-deleted participation are off the board, so they
+    # must not keep a family numbered: a singer who was removed cannot be the
+    # reason everyone else still reads "Tenor 1".
     codes: set[str] = set(
         ProjectPieceCasting.objects
-        .filter(participation__project=project)
+        .filter(participation__project=project, participation__is_deleted=False)
         .values_list("voice_line", flat=True)
     )
     for item in items:

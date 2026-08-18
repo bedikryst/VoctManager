@@ -10,11 +10,19 @@ Description:
     `edition` — and this module is the single place that decides which layer
     wins for a given reader.
 
-    Resolution is an OVERRIDE, never a merge: an edition that declares its own
-    divisi replaces the piece-wide one outright, because "unison" and "three
-    parts" added together describe no arrangement anyone sings. A piece whose
-    editions declare nothing falls back to the piece-wide layer, which is what
-    every row written before editions could carry a divisi means.
+    The two resolve DIFFERENTLY, because they are different kinds of statement:
+
+      * A divisi is a DECLARATION, so an edition overrides the piece-wide one
+        outright — "unison" and "three parts" added together describe no
+        arrangement anyone sings.
+      * A practice track is an INVENTORY, so the layers UNION, with the
+        edition's take winning per voice line. A recording made for one
+        arrangement contradicts nothing; it supplements. Overriding here would
+        mean a single file dropped onto an edition silently takes every other
+        guide track away from the singers of that concert.
+
+    Either way, an edition that says nothing inherits the piece-wide layer,
+    which is what every row written before editions could carry a scope means.
 
     The resolved set is also what names the lines — see [core.voice_labels]:
     a family with one line in the resolved scope is printed without its index.
@@ -30,24 +38,46 @@ from archive.models import PieceVoiceRequirement, Track
 from core.voice_labels import collapse_voice_labels
 
 
-# Constrained to the two edition-scoped sub-entities of the Piece aggregate
-# rather than merely bounded, so the concrete row type survives the call.
-def scoped_to_edition[Scoped: (PieceVoiceRequirement, Track)](
-    rows: Sequence[Scoped],
+def requirements_for_edition(
+    rows: Sequence[PieceVoiceRequirement],
     edition_id: UUID | None,
-) -> list[Scoped]:
-    """The rows that apply to `edition_id`, with the piece-wide layer as fallback.
+) -> list[PieceVoiceRequirement]:
+    """The divisi that applies to `edition_id` — an OVERRIDE (see module docs).
 
-    `rows` is every row of one piece (typically a prefetched list, so this stays
-    query-free). Pass `edition_id=None` for a reader with no edition in hand —
-    the archive list, a piece nobody has bound yet — which resolves to the
-    piece-wide layer.
+    `rows` is every requirement of one piece (typically a prefetched list, so
+    this stays query-free). Pass `edition_id=None` for a reader with no edition
+    in hand — the archive list, a piece nobody has bound yet — which resolves to
+    the piece-wide layer.
     """
     if edition_id is not None:
         own = [row for row in rows if row.edition_id == edition_id]
         if own:
             return own
     return [row for row in rows if row.edition_id is None]
+
+
+def tracks_for_edition(
+    rows: Sequence[Track],
+    edition_id: UUID | None,
+) -> list[Track]:
+    """The practice tracks a reader of `edition_id` gets — a UNION, per line.
+
+    The edition's own takes, plus every piece-wide take for a voice line the
+    edition has not re-recorded. Another edition's takes never leak in. Input
+    order is preserved, because the callers' prefetches already sort into the
+    order a musician reads.
+    """
+    own_lines = {
+        row.voice_part
+        for row in rows
+        if edition_id is not None and row.edition_id == edition_id
+    }
+    return [
+        row
+        for row in rows
+        if (edition_id is not None and row.edition_id == edition_id)
+        or (row.edition_id is None and row.voice_part not in own_lines)
+    ]
 
 
 def voice_scope(
@@ -61,7 +91,7 @@ def voice_scope(
     divisi: a singer cast on T2 of a piece that only declares T1 must not read
     "Tenor" beside "Tenor 2", so what is on the board widens the scope.
     """
-    codes = {row.voice_line for row in scoped_to_edition(requirements, edition_id)}
+    codes = {row.voice_line for row in requirements_for_edition(requirements, edition_id)}
     codes.update(code for code in extra_codes if code)
     return codes
 

@@ -40,7 +40,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
-from archive.services.voice_scope import scoped_to_edition
+from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels
@@ -92,10 +92,10 @@ def _item_line_labels(
     """
     bound_edition = resolve_item_edition(item)
     bound_edition_id = bound_edition.pk if bound_edition else None
-    requirements = scoped_to_edition(
+    requirements = requirements_for_edition(
         getattr(item.piece, 'prefetched_voice_requirements', []), bound_edition_id,
     )
-    tracks = scoped_to_edition(getattr(item.piece, 'prefetched_tracks', []), bound_edition_id)
+    tracks = tracks_for_edition(getattr(item.piece, 'prefetched_tracks', []), bound_edition_id)
     return collapse_voice_labels({
         *(requirement.voice_line for requirement in requirements),
         *(casting.voice_line for casting in piece_castings),
@@ -1342,11 +1342,11 @@ class DocumentGenerator:
         # and in three parts would otherwise print one sheet listing both
         # arrangements' lines, which describes no performance.
         tracks = sorted(
-            scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
+            tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
             key=lambda track: _VOICE_LINE_ORDER.get(track.voice_part, 999),
         )
         voice_requirements = sorted(
-            scoped_to_edition(
+            requirements_for_edition(
                 getattr(piece, 'prefetched_voice_requirements', []), bound_edition_id,
             ),
             key=lambda requirement: _VOICE_LINE_ORDER.get(requirement.voice_line, 999),

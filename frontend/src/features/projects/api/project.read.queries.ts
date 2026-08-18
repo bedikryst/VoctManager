@@ -218,9 +218,11 @@ export const useProjectCollaboratorsDictionary = (enabled = true) =>
     select: selectCollaboratorsDictionary,
   });
 
-export const useProjectVoiceLinesDictionary = (enabled = true) =>
-  useSuspenseQuery({
-    queryKey: projectKeys.dictionaries.voiceLines,
+export const useProjectVoiceLinesDictionary = (enabled = true) => {
+  const { i18n } = useTranslation();
+
+  return useSuspenseQuery({
+    queryKey: projectKeys.dictionaries.voiceLines(i18n.language),
     ...(enabled
       ? {
           queryFn: ProjectService.getVoiceLinesDictionary,
@@ -229,6 +231,7 @@ export const useProjectVoiceLinesDictionary = (enabled = true) =>
       : getDisabledListQueryConfig<VoiceLineOption>()),
     select: selectVoiceLinesDictionary,
   });
+};
 
 /**
  * The order of the Mass, named by the server in the reader's language.

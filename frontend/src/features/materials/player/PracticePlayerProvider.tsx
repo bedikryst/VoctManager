@@ -188,7 +188,6 @@ export const buildPracticeSources = (
       label: track.voice_part_display || track.voice_part,
       url: track.audio_file,
       isMine: myVoicePart !== null && track.voice_part === myVoicePart,
-      note: track.description ?? "",
     })),
   };
 };

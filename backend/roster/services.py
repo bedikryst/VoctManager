@@ -182,14 +182,23 @@ def _casting_metadata(
     casting: ProjectPieceCasting,
     project: Project,
     changes: list[dict[str, str | None]] | None = None,
+    scope: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
-    """Payload for an announcement about a seat the singer still holds."""
+    """Payload for an announcement about a seat the singer still holds.
+
+    `scope` is the naming scope, three queries' worth. A caller announcing a
+    whole board at once resolves it ONCE for the piece and passes it in — every
+    seat on that board shares the arrangement, so recomputing it per singer buys
+    nothing and costs the transaction three queries per row.
+    """
     return PieceCastingMetadata(
         piece_id=casting.piece_id,
         piece_title=casting.piece.title,
         # Language-neutral CODE — localized per surface at render time.
         voice_line=casting.voice_line,
-        voice_scope=_piece_voice_scope(casting.piece_id, project),
+        voice_scope=(
+            _piece_voice_scope(casting.piece_id, project) if scope is None else scope
+        ),
         project_id=project.id,
         project_name=project.title,
         **build_event_time_metadata(
@@ -1924,19 +1933,22 @@ class CastingAndCrewService:
             ]
 
             if is_announceable(project):
+                # One board, one piece, one arrangement — so one lookup, read
+                # after the writes above so the seats just filled are in it.
+                scope = _piece_voice_scope(piece.id, project)
                 for casting in created:
                     CastingAndCrewService._queue_casting(
                         project, participations[casting.participation_id], piece.id,
                         AnnouncementKind.CREATED,
                         NotificationType.PIECE_CASTING_ASSIGNED, NotificationLevel.INFO,
-                        _casting_metadata(casting, project),
+                        _casting_metadata(casting, project, scope=scope),
                     )
                 for casting, _row, changes in to_update:
                     CastingAndCrewService._queue_casting(
                         project, participations[casting.participation_id], piece.id,
                         AnnouncementKind.CHANGED,
                         NotificationType.PIECE_CASTING_UPDATED, NotificationLevel.INFO,
-                        _casting_metadata(casting, project, changes),
+                        _casting_metadata(casting, project, changes, scope=scope),
                     )
                 for casting in emptied:
                     CastingAndCrewService._queue_casting(

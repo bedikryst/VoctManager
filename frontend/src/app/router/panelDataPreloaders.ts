@@ -17,6 +17,7 @@ import { ContractsService } from "@/features/contracts/api/contracts.service";
 import { crewKeys } from "@/features/crew/api/crew.queries";
 import { CrewService } from "@/features/crew/api/crew.service";
 import { logisticsQueryKeys } from "@/features/logistics/api/logistics.queries";
+import i18n from "@/shared/config/i18n";
 import { logisticsService } from "@/features/logistics/api/logistics.service";
 import { materialsKeys } from "@/features/materials/api/materials.queries";
 import { MaterialsService } from "@/features/materials/api/materials.service";
@@ -215,7 +216,7 @@ const preloadManagerWorkspace = async ({
     ),
     prefetchQuery(
       queryClient,
-      projectKeys.dictionaries.voiceLines,
+      projectKeys.dictionaries.voiceLines(i18n.language),
       ProjectService.getVoiceLinesDictionary,
       STATIC_DICTIONARY_STALE_TIME,
     ),

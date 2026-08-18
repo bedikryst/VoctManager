@@ -373,6 +373,18 @@ class TrackViewSet(viewsets.ModelViewSet):
             headers=self.get_success_headers(output.data),
         )
 
+    def perform_update(self, serializer) -> None:
+        """A replaced file replaces its name too.
+
+        `original_filename` exists so a manager can tell which take landed on a
+        line; a name left over from the previous upload is worse than none,
+        because it reads as evidence. The field is read-only on the serializer,
+        so it is stamped here rather than accepted from the client.
+        """
+        upload = serializer.validated_data.get('audio_file')
+        name = getattr(upload, 'name', None)
+        serializer.save(**({'original_filename': name[:255]} if name else {}))
+
     def perform_destroy(self, instance) -> None:
         """Ensures safe deletion via service layer."""
         services.ArchiveManagementService.delete_track(instance)

@@ -17,7 +17,7 @@ from archive.models import (
 )
 from archive.score_protection import can_export as edition_can_export
 from archive.score_protection import user_is_manager
-from archive.services.voice_scope import scoped_to_edition
+from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.voice_labels import collapse_voice_labels
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
@@ -37,10 +37,10 @@ def _item_line_labels(
     of this page's business.
     """
     piece = item.piece
-    requirements = scoped_to_edition(
+    requirements = requirements_for_edition(
         getattr(piece, 'prefetched_voice_requirements', []), bound_edition_id,
     )
-    tracks = scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id)
+    tracks = tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id)
     castings = [
         casting for casting in getattr(piece, 'scope_castings', [])
         if casting.participation.project_id == item.project_id
@@ -243,11 +243,12 @@ class PieceMaterialsSerializer(serializers.Serializer):
         editions = [] if materials_locked else EditionSnippetSerializer(
             getattr(piece, 'prefetched_editions', []), many=True, context=child_context,
         ).data
-        # Tracks follow the bound arrangement: a singer in a unison concert has
-        # no use for the three-part edition's guide tracks, and handing them all
-        # over is how somebody rehearses the wrong line.
+        # Another arrangement's guide tracks are kept away — that is how somebody
+        # rehearses the wrong line — but the piece-wide ones stay, except on the
+        # lines this edition re-recorded. A take made for one edition supplements
+        # the common set; it does not retract it.
         tracks = [] if materials_locked else TrackSnippetSerializer(
-            scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
+            tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
             many=True, context=child_context,
         ).data
 
