@@ -753,7 +753,7 @@ const PushEmailOffer: React.FC<PushEmailOfferProps> = ({ t, isBusy, onMute, onKe
     className="mb-6 flex flex-col gap-4 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-5 sm:p-6"
   >
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-      <div className="shrink-0 rounded-control bg-ethereal-gold/10 p-3">
+      <div className="self-start shrink-0 rounded-control bg-ethereal-gold/10 p-3">
         <BellRing className="h-5 w-5 text-ethereal-gold" aria-hidden="true" />
       </div>
       <div className="min-w-0 flex-1">
@@ -858,7 +858,10 @@ const PushHero: React.FC<PushHeroProps> = ({
       className={`relative overflow-hidden flex flex-col gap-4 p-5 sm:p-6 mb-6 rounded-nested bg-ethereal-parchment/15 border border-ethereal-parchment/40 ring-1 ${palette.ring}`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-        <div className={`p-3 rounded-control shrink-0 ${palette.iconBg}`}>
+        {/* `self-start`, not `shrink-0`: the tile is stacked above the text below
+            `sm`, and a column flex child stretches across the cross axis unless
+            it opts out — which turned the tinted square into a full-width band. */}
+        <div className={`self-start p-3 rounded-control shrink-0 ${palette.iconBg}`}>
           <Icon className={`w-5 h-5 ${palette.iconColor}`} />
         </div>
 
