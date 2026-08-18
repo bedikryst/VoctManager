@@ -16,8 +16,7 @@
  * @module features/projects/lib/dayTimeline
  */
 
-import { formatInTimeZone } from "date-fns-tz";
-
+import { toZonedWallClock } from "@/shared/lib/time/timezone";
 import type { Project, RunSheetItem } from "@/shared/types";
 
 /** Length of the `yyyy-MM-ddTHH:mm` wall-clock value a date field holds. */
@@ -381,6 +380,11 @@ export const buildDayTimeline = ({
  * `yyyy-MM-ddTHH:mm` shape every function here parses. It is the one conversion
  * between the two forms: a stored instant sent through the browser's own offset
  * would move the whole day plan by however far the reader is from the choir.
+ *
+ * The formatting itself belongs to `toZonedWallClock`, which the absence range
+ * already reads — this adds only what a stored project needs on top: an ISO
+ * string rather than a `Date`, the choir's zone for a row saved before the field
+ * was required, and an empty answer for an unusable zone rather than a throw.
  */
 export const toWallClockInput = (
   value?: string | null,
@@ -391,11 +395,7 @@ export const toWallClockInput = (
   }
 
   try {
-    return formatInTimeZone(
-      new Date(value),
-      timezone || DEFAULT_TIMEZONE,
-      "yyyy-MM-dd'T'HH:mm",
-    );
+    return toZonedWallClock(new Date(value), timezone || DEFAULT_TIMEZONE);
   } catch {
     return "";
   }
