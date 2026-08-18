@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AbstractBaseUser
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils import timezone, translation
@@ -1887,6 +1888,137 @@ class RehearsalNotificationEmitterTests(TestCase):
         self.assertEqual(meta["project_id"], str(self.project.id))
         self.assertEqual(meta["starts_at"], "2026-06-19T17:00:00+00:00")
         self.assertEqual(meta["starts_at_display"], "19.06.2026, 19:00")
+
+
+class TuttiRehearsalIsAStandingCallTests(APITestCase):
+    """A rehearsal that names nobody calls the whole ensemble, for as long as it
+    exists.
+
+    Both halves of that sentence are load-bearing. "Names nobody" is what lets a
+    conductor lay out a concert's rehearsals before a single singer has been
+    invited — the roster the session would have been frozen against does not
+    exist yet. "For as long as it exists" is what makes a singer who accepts
+    their invitation next month walk into a calendar that already expects them,
+    with no session to go back and amend.
+
+    A sectional is the opposite by design: it IS its list of names, so it stays
+    exactly as written and a newcomer is not swept into it.
+    """
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.maestro_user = User.objects.create_user(
+            username="tutti-cond", email="tutticond@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        self.maestro = Artist.objects.create(
+            user=self.maestro_user, first_name="Wanda", last_name="Baton",
+            email="tutticond@test.pl", voice_type=VoiceType.CONDUCTOR,
+        )
+        self.project = Project.objects.create(
+            title="Requiem", date_time=timezone.now() + timedelta(days=60),
+            status=Project.Status.ACTIVE, conductor=self.maestro,
+        )
+        self.client.force_authenticate(user=self.maestro_user)
+
+    def _latecomer(self) -> tuple[AbstractBaseUser, Participation]:
+        """A singer added to the project after its calendar was already built."""
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="tutti-late", email="tuttilate@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST)
+        artist = Artist.objects.create(
+            user=user, first_name="Sam", last_name="Singer",
+            email="tuttilate@test.pl", voice_type=VoiceType.TENOR,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED
+        )
+        return user, participation
+
+    def test_a_rehearsal_can_be_booked_before_anyone_is_cast(self) -> None:
+        self.assertEqual(
+            Participation.objects.filter(project=self.project).count(), 0
+        )
+        response = self.client.post(
+            "/api/rehearsals/",
+            {
+                "project_id": str(self.project.id),
+                "date_time": (timezone.now() + timedelta(days=30)).isoformat(),
+                "timezone": "Europe/Warsaw",
+                "focus": "Lacrimosa",
+                "is_mandatory": True,
+                "invited_participations": [],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["invited_participations"], [])
+
+    def test_a_latecomer_walks_into_the_tutti_sessions_already_booked(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=30)
+        )
+        user, _participation = self._latecomer()
+
+        self.client.force_authenticate(user=user)
+        response = self.client.get("/api/rehearsals/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [row["id"] for row in response.data], [str(rehearsal.id)]
+        )
+
+    def test_a_sectional_stays_the_list_it_was_written_as(self) -> None:
+        sectional = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=31)
+        )
+        named_user = get_user_model().objects.create_user(
+            username="tutti-named", email="tuttinamed@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=named_user, role=AppRole.ARTIST)
+        named_artist = Artist.objects.create(
+            user=named_user, first_name="Ada", last_name="Alto",
+            email="tuttinamed@test.pl", voice_type=VoiceType.ALTO,
+        )
+        sectional.invited_participations.add(
+            Participation.objects.create(
+                artist=named_artist, project=self.project,
+                status=Participation.Status.CONFIRMED,
+            )
+        )
+
+        latecomer_user, _ = self._latecomer()
+        self.client.force_authenticate(user=latecomer_user)
+        self.assertEqual(self.client.get("/api/rehearsals/").data, [])
+
+    def test_clearing_the_guest_list_hands_a_sectional_back_to_the_ensemble(self) -> None:
+        # The edit path is how a session booked as a frozen roster is converted
+        # to the standing rule; an empty list has to mean "everyone", not "skip".
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=30)
+        )
+        _user, participation = self._latecomer()
+        rehearsal.invited_participations.add(participation)
+
+        response = self.client.patch(
+            f"/api/rehearsals/{rehearsal.id}/",
+            {"invited_participations": []},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(rehearsal.invited_participations.count(), 0)
+
+    def test_the_dossier_counts_tutti_sessions_as_rehearsals_invited(self) -> None:
+        from .queries import get_artist_dossier
+
+        Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=30)
+        )
+        _user, participation = self._latecomer()
+
+        dossier = get_artist_dossier(participation.artist)
+        self.assertEqual(dossier["stats"]["rehearsals_invited"], 1)
 
 
 class ProjectUpdateNotificationEmitterTests(TestCase):

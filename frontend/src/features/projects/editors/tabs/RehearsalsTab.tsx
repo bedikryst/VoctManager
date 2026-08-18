@@ -95,6 +95,10 @@ export const RehearsalsTab = ({
 
   const isEditing = editingRehearsal !== null;
 
+  /* Only a named call can be empty by mistake. Tutti names nobody on purpose —
+     flagging it gold would make the ordinary case look like an error. */
+  const isCallEmpty = targetType !== "TUTTI" && invitedCount === 0;
+
   /**
    * What the project already occupies, in the timezone each entry was booked
    * in — a rehearsal stored as an instant is only "the 14th" when read back
@@ -370,18 +374,29 @@ export const RehearsalsTab = ({
                   size={12}
                   className={cn(
                     "shrink-0",
-                    invitedCount === 0
+                    isCallEmpty
                       ? "text-ethereal-gold"
                       : "text-ethereal-graphite/40",
                   )}
                   aria-hidden="true"
                 />
-                <Caption color={invitedCount === 0 ? "gold" : "muted"}>
-                  {t(
-                    "projects.rehearsals.status.invited",
-                    "Wezwanych: {{count}}",
-                    { count: invitedCount },
-                  )}
+                <Caption color={isCallEmpty ? "gold" : "muted"}>
+                  {targetType === "TUTTI"
+                    ? invitedCount === 0
+                      ? t(
+                          "projects.rehearsals.status.tutti_empty_cast",
+                          "Cały zespół — obsada dołączy później",
+                        )
+                      : t(
+                          "projects.rehearsals.status.tutti_count",
+                          "Cały zespół — obecnie {{count}} os.",
+                          { count: invitedCount },
+                        )
+                    : t(
+                        "projects.rehearsals.status.invited",
+                        "Wezwanych: {{count}}",
+                        { count: invitedCount },
+                      )}
                 </Caption>
               </div>
 

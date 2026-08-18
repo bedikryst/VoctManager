@@ -70,7 +70,9 @@ export interface UseRehearsalsTabResult {
   setTargetType: Dispatch<SetStateAction<RehearsalTargetType>>;
   selectedSections: string[];
   customParticipants: string[];
-  /** How many people the current target selection actually calls, live. */
+  /** How many people the current target selection calls against today's cast.
+   *  Under `TUTTI` it is a running headcount, not a guest list — the session is
+   *  stored as "everyone" and grows with the project. */
   invitedCount: number;
   project: Project | null;
   projectRehearsals: Rehearsal[];
@@ -223,7 +225,12 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     [locations],
   );
 
-  const resolveInvitedParticipants = useCallback((): string[] => {
+  /**
+   * Who the current selection calls, read against the cast as it stands today.
+   * This is the number the form reports — never what gets stored; see
+   * `buildInvitedPayload`.
+   */
+  const resolveCalledParticipations = useCallback((): string[] => {
     if (targetType === "TUTTI") {
       return projectParticipations.map((participation) =>
         String(participation.id),
@@ -255,12 +262,25 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     targetType,
   ]);
 
+  /**
+   * What lands in `invited_participations`. Tutti stores an EMPTY list rather
+   * than today's roster: the backend reads "no one named" as "the whole
+   * ensemble" and resolves it per request, so whoever accepts their invitation
+   * next week is called to every tutti session already in the calendar.
+   * Enumerating the cast here would freeze the guest list at booking time — and
+   * would make a session unbookable before anyone is on the project at all.
+   */
+  const buildInvitedPayload = useCallback(
+    (): string[] => (targetType === "TUTTI" ? [] : resolveCalledParticipations()),
+    [resolveCalledParticipations, targetType],
+  );
+
   // Recomputed with the selection so the form can state, before submitting, how
   // many people the chosen target actually reaches — the number the conductor
   // is really deciding on when they tick sections or names.
   const invitedCount = useMemo(
-    () => resolveInvitedParticipants().length,
-    [resolveInvitedParticipants],
+    () => resolveCalledParticipations().length,
+    [resolveCalledParticipations],
   );
 
   const resetForm = useCallback(() => {
@@ -298,6 +318,10 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
 
       const invitedIds = rehearsal.invited_participations?.map(String) || [];
 
+      // Two ways a session reads as tutti: it names nobody, or it names the
+      // whole cast. The second is how sessions booked before tutti became a
+      // standing rule look — reopening one and saving it converts the frozen
+      // list into that rule, so it starts calling people who join later.
       if (
         invitedIds.length === 0 ||
         invitedIds.length === projectParticipations.length
@@ -332,9 +356,10 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       return;
     }
 
-    const invitedParticipants = resolveInvitedParticipants();
-
-    if (invitedParticipants.length === 0) {
+    // A sectional or a hand-picked call IS its list of names, so an empty one is
+    // a slip worth stopping. Tutti names nobody by design — blocking it would
+    // forbid planning the rehearsals of a concert before its cast exists.
+    if (targetType !== "TUTTI" && invitedCount === 0) {
       toast.warning(
         t(
           "projects.rehearsals.toast.select_target",
@@ -343,6 +368,8 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
       );
       return;
     }
+
+    const invitedParticipants = buildInvitedPayload();
 
     const isEditing = editingRehearsalId !== null;
 

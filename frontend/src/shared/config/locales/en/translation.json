@@ -3801,7 +3801,9 @@
       "status": {
         "optional": "Optional",
         "tutti": "Tutti",
-        "invited": "Called: {{count}}"
+        "invited": "Called: {{count}}",
+        "tutti_count": "Whole ensemble — {{count}} so far",
+        "tutti_empty_cast": "Whole ensemble — the cast joins later"
       },
       "title_short": "rehearsals",
       "toast": {

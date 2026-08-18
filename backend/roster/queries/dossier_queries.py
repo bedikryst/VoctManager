@@ -14,7 +14,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
 
 from core.constants import VoiceLine
@@ -102,9 +102,17 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
     reliability_base = present + late + absent
     attendance_rate = ((present + late) / reliability_base) if reliability_base else None
 
+    # A session that names nobody calls the whole ensemble — the same rule the
+    # schedule, the reminder and the invitation read it by. Counting only the
+    # named ones would report zero rehearsals for a singer whose project runs
+    # entirely on tutti calls, which is the normal shape of a concert.
     rehearsals_invited = (
         Rehearsal.objects.filter(
-            invited_participations__in=participation_ids, is_deleted=False
+            project_id__in={p.project_id for p in participations}, is_deleted=False
+        )
+        .filter(
+            Q(invited_participations__isnull=True)
+            | Q(invited_participations__in=participation_ids)
         )
         .distinct()
         .count()

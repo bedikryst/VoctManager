@@ -3819,7 +3819,9 @@
       "status": {
         "optional": "Opcjonalna",
         "tutti": "Tutti",
-        "invited": "Wezwanych: {{count}}"
+        "invited": "Wezwanych: {{count}}",
+        "tutti_count": "Cały zespół — obecnie {{count}} os.",
+        "tutti_empty_cast": "Cały zespół — obsada dołączy później"
       },
       "title_short": "prób",
       "toast": {
