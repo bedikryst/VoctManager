@@ -28,6 +28,10 @@ import {
 
 import { useLocations } from "@/features/logistics/api/logistics.queries";
 import type { Project } from "@/shared/types";
+import {
+  PROJECT_EVENT_KIND,
+  type ProjectEventKind,
+} from "../../constants/projectDomain";
 import { useDetailsForm } from "../hooks/useDetailsForm";
 import { useProjectArtistsDictionary } from "../../api/project.queries";
 import {
@@ -96,6 +100,31 @@ export const DetailsTab = ({
           : location.name,
       })),
     [locationsData],
+  );
+
+  // The four kinds are a closed set the API validates, so they are named here
+  // rather than fetched; the liturgical *vocabulary* is the opposite case and
+  // stays server-side, where one table names every moment for every reader.
+  const eventKindOptions = useMemo<SelectOption[]>(
+    () => [
+      {
+        value: PROJECT_EVENT_KIND.CONCERT,
+        label: t("projects.details_tab.event_kind.concert", "Koncert"),
+      },
+      {
+        value: PROJECT_EVENT_KIND.MASS,
+        label: t("projects.details_tab.event_kind.mass", "Msza"),
+      },
+      {
+        value: PROJECT_EVENT_KIND.WEDDING,
+        label: t("projects.details_tab.event_kind.wedding", "Msza ślubna"),
+      },
+      {
+        value: PROJECT_EVENT_KIND.OTHER,
+        label: t("projects.details_tab.event_kind.other", "Inne wydarzenie"),
+      },
+    ],
+    [t],
   );
 
   const conductorOptions = useMemo<SelectOption[]>(
@@ -307,26 +336,50 @@ export const DetailsTab = ({
                 />
               </div>
 
-              <div className="md:col-span-2">
+              <Select
+                label={t("projects.details_tab.fields.conductor", "Dyrygent")}
+                value={formData.conductor || ""}
+                onValueChange={(conductor) =>
+                  setFormData({
+                    ...formData,
+                    conductor: conductor || null,
+                  })
+                }
+                placeholder={t(
+                  "projects.details_tab.placeholders.conductor",
+                  "Wybierz dyrygenta",
+                )}
+                clearLabel={t(
+                  "projects.details_tab.placeholders.conductor_clear",
+                  "Bez dyrygenta",
+                )}
+                options={conductorOptions}
+              />
+
+              {/* Not a label on the poster: this is the answer that decides
+                  whether the programme is a running order or an order of
+                  service, and the cast is told when it changes. */}
+              <div className="flex flex-col gap-1.5">
                 <Select
-                  label={t("projects.details_tab.fields.conductor", "Dyrygent")}
-                  value={formData.conductor || ""}
-                  onValueChange={(conductor) =>
+                  label={t(
+                    "projects.details_tab.fields.event_kind",
+                    "Rodzaj wydarzenia",
+                  )}
+                  value={formData.event_kind}
+                  onValueChange={(eventKind) =>
                     setFormData({
                       ...formData,
-                      conductor: conductor || null,
+                      event_kind: eventKind as ProjectEventKind,
                     })
                   }
-                  placeholder={t(
-                    "projects.details_tab.placeholders.conductor",
-                    "Wybierz dyrygenta",
-                  )}
-                  clearLabel={t(
-                    "projects.details_tab.placeholders.conductor_clear",
-                    "Bez dyrygenta",
-                  )}
-                  options={conductorOptions}
+                  options={eventKindOptions}
                 />
+                <Caption color="muted" className="ml-1">
+                  {t(
+                    "projects.details_tab.event_kind.hint",
+                    "Msza i ślub pozwalają przypisać utworom miejsce w liturgii.",
+                  )}
+                </Caption>
               </div>
             </div>
           </SectionCard>

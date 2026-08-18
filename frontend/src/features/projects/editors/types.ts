@@ -13,8 +13,13 @@ import type {
   Participation,
 } from "@/shared/types";
 
+import type { ProjectEventKind } from "../constants/projectDomain";
+
 export interface ProjectFormData {
   title: string;
+  /** What the ensemble is singing at — a Mass is programmed against the order
+   *  of the rite, a concert against a running order. */
+  event_kind: ProjectEventKind;
   timezone: string;
   date_time: string;
   call_time: string;
@@ -54,6 +59,11 @@ export interface ProgramTabItem {
   piece_id?: string;
   piece_title: string;
   is_encore: boolean;
+  /** The slot code the picker writes; `""` for an unplaced or concert item. */
+  liturgical_slot: string;
+  /** The slot as the singer will read it — numbered and translated by the
+   *  server. Never composed here. */
+  slot_label: string;
 }
 
 export interface FeeMutation {

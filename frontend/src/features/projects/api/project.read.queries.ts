@@ -5,7 +5,8 @@
  * @module features/projects/api
  */
 
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import type {
   Artist,
@@ -21,10 +22,14 @@ import type {
   VoiceLineOption,
 } from "@/shared/types";
 
-import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
+import {
+  RECONCILING_REFETCH,
+  SESSION_STATIC_DICTIONARY,
+} from "@/shared/api/queryPolicy";
 
 import {
   ProjectService,
+  type LiturgicalSlotVocabulary,
   type ProjectReadinessSummaryEntry,
 } from "./project.service";
 import { projectKeys } from "./project.query-keys";
@@ -224,6 +229,25 @@ export const useProjectVoiceLinesDictionary = (enabled = true) =>
       : getDisabledListQueryConfig<VoiceLineOption>()),
     select: selectVoiceLinesDictionary,
   });
+
+/**
+ * The order of the Mass, named by the server in the reader's language.
+ *
+ * Deliberately not a suspense query, unlike the dictionaries above: a setlist
+ * whose slot picker cannot load is still a setlist, and suspending (or throwing
+ * into the tab's error boundary) would take the running order down with the
+ * vocabulary. Callers render the picker only once `data` is there.
+ */
+export const useLiturgicalSlots = (enabled = true) => {
+  const { i18n } = useTranslation();
+
+  return useQuery<LiturgicalSlotVocabulary>({
+    queryKey: projectKeys.dictionaries.liturgicalSlots(i18n.language),
+    queryFn: ProjectService.getLiturgicalSlots,
+    enabled,
+    ...SESSION_STATIC_DICTIONARY,
+  });
+};
 
 export const useProjectParticipations = (projectId: string | undefined) =>
   useSuspenseQuery({

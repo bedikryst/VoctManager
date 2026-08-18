@@ -19,6 +19,12 @@ export interface EnrichedProgramItem {
   pieceId: string;
   title: string;
   order: number;
+  /**
+   * Where in the rite this piece happens, as the server names it — numbered
+   * ("Na Komunię 2") and in the reader's language. Empty for a concert item,
+   * and for a Mass item nobody has placed yet.
+   */
+  slotLabel: string;
   statusVariant: "success" | "warning" | "neutral";
   statusText: string;
   /**
@@ -112,6 +118,7 @@ export const useProgramFulfillment = (project: Project) => {
           pieceId,
           title: item.title || pieceObj?.title || "",
           order: item.order,
+          slotLabel: item.slot_label ?? "",
           statusVariant,
           statusText,
           missingCount: missingTotal,

@@ -13,7 +13,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { ListOrdered, Library, Music, Search } from "lucide-react";
+import {
+  ArrowDownNarrowWide,
+  ListOrdered,
+  Library,
+  Music,
+  Search,
+} from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -32,8 +38,11 @@ import { EditorActionBar } from "@/shared/ui/composites/EditorActionBar";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Input } from "@/shared/ui/primitives/Input";
+import type { SelectOption } from "@/shared/ui/primitives/Select";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
+import type { ProjectEventKind } from "../../constants/projectDomain";
 import { useProgramTab } from "../hooks/useProgramTab";
 import { useProjectReadinessSummary } from "../../api/project.read.queries";
 import { buildPieceMeta } from "../../lib/pieceLabels";
@@ -44,6 +53,9 @@ import { TabLoadingCard } from "./components/TabLoadingCard";
 
 interface ProgramTabProps {
   projectId: string;
+  /** Decides whether the programme is an order of service, and therefore
+   *  whether the setlist carries a place in the rite at all. */
+  eventKind?: ProjectEventKind;
   onDirtyStateChange?: (isDirty: boolean) => void;
 }
 
@@ -74,6 +86,7 @@ const formatTotalDuration = (
 
 export const ProgramTab = ({
   projectId,
+  eventKind,
   onDirtyStateChange,
 }: ProgramTabProps): React.JSX.Element | null => {
   const { t } = useTranslation();
@@ -89,13 +102,31 @@ export const ProgramTab = ({
     addedPieceIds,
     filteredPieces,
     pieces,
+    slotOptions,
+    hasLiturgyProblem,
+    canSortByLiturgy,
     handleAddPiece,
     handleToggleEncore,
+    handleChangeSlot,
     handleDeleteItem,
     handleDragEnd,
+    handleSortByLiturgy,
     handleCancel,
     handleSaveChanges,
-  } = useProgramTab(projectId, onDirtyStateChange);
+  } = useProgramTab(projectId, eventKind, onDirtyStateChange);
+
+  // The picker's entries carry the server's own words for each moment — the
+  // client never names a slot itself, so there is nothing to translate here.
+  const slotSelectOptions = React.useMemo<SelectOption[] | undefined>(
+    () =>
+      slotOptions.length > 0
+        ? slotOptions.map((slot) => ({
+            value: slot.value,
+            label: slot.label,
+          }))
+        : undefined,
+    [slotOptions],
+  );
 
   const { data: readinessSummary } = useProjectReadinessSummary(projectId);
   const readinessByPiece = React.useMemo(
@@ -164,6 +195,25 @@ export const ProgramTab = ({
         bodyClassName="p-0"
         icon={<ListOrdered size={15} aria-hidden="true" />}
         title={t("projects.program.sections.setlist", "Setlista wydarzenia")}
+        action={
+          /* Offered, never applied on its own: the running order is the
+             producer's, and a programme may depart from the rite on purpose.
+             The rearrangement lands on the save bar like any other. */
+          canSortByLiturgy ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSortByLiturgy}
+              leftIcon={<ArrowDownNarrowWide size={14} aria-hidden="true" />}
+            >
+              {t(
+                "projects.program.liturgy.sort_action",
+                "Uporządkuj wg liturgii",
+              )}
+            </Button>
+          ) : undefined
+        }
         footer={
           programItems.length > 0 ? (
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
@@ -172,6 +222,14 @@ export const ProgramTab = ({
                   count: programItems.length,
                 })}
               </Eyebrow>
+              {hasLiturgyProblem && (
+                <Eyebrow as="span" color="gold">
+                  {t(
+                    "projects.program.liturgy.out_of_order",
+                    "Kolejność odbiega od porządku liturgii",
+                  )}
+                </Eyebrow>
+              )}
               {totalDurationLabel && (
                 <span className="inline-flex items-center gap-1.5 text-ethereal-graphite/60">
                   <Music size={12} aria-hidden="true" className="shrink-0" />
@@ -219,6 +277,8 @@ export const ProgramTab = ({
                       readiness={readinessByPiece.get(
                         String(item.piece_id || item.piece),
                       )}
+                      slotOptions={slotSelectOptions}
+                      onChangeSlot={handleChangeSlot}
                       onToggleEncore={handleToggleEncore}
                       onDelete={handleDeleteItem}
                     />

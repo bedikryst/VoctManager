@@ -13,7 +13,10 @@ import type {
   ParticipationStatus,
 } from "@/shared/types";
 
-import type { ProjectStatus } from "../constants/projectDomain";
+import type {
+  ProjectEventKind,
+  ProjectStatus,
+} from "../constants/projectDomain";
 
 export interface ProjectCreateDTO {
   title: string;
@@ -27,6 +30,7 @@ export interface ProjectCreateDTO {
   spotify_playlist_url?: string | null;
   description?: string | null;
   status?: ProjectStatus;
+  event_kind?: ProjectEventKind;
   run_sheet?: RunSheetItem[];
   entrance_note?: string | null;
   parking_note?: string | null;
@@ -98,6 +102,9 @@ export interface ProgramItemCreateDTO {
   piece: string;
   order: number;
   is_encore: boolean;
+  /** Slot code from the served vocabulary; `""` clears it. The labels the app
+   *  shows are derived from it server-side and are never sent back. */
+  liturgical_slot?: string;
 }
 
 export type ProgramItemUpdateDTO = Partial<ProgramItemCreateDTO>;

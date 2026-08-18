@@ -2,6 +2,10 @@
  * @file useProgramTab.ts
  * @description Encapsulates DnD logic, API synchronization, and dirty-state tracking
  * for the Project Program manager. Strictly synchronizes unsaved changes with the parent panel.
+ * Where the programme is an order of service it also owns the liturgical slot:
+ * the picker's vocabulary, the immediate write of one row's slot, and the
+ * proposed canonical reordering — proposed, because `order` remains the single
+ * source of truth for the running order and only the producer commits it.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/hooks/useProgramTab
  */
@@ -24,14 +28,25 @@ import { foldDiacritics } from "@/shared/lib/text";
 import type { Piece, ProgramItem } from "@/shared/types";
 import { getComposerName } from "../../lib/pieceLabels";
 import {
+  buildSlotRanks,
+  hasLiturgyOrderProblem,
+  sortByLiturgy,
+} from "../../lib/liturgy";
+import {
   projectKeys,
   useCreateProgramItem,
   useDeleteProgramItem,
+  useLiturgicalSlots,
   useProjectPiecesDictionary,
   useProjectProgram,
   useUpdateProgramItem,
 } from "../../api/project.queries";
-import { ProjectService } from "../../api/project.service";
+import {
+  ProjectService,
+  type LiturgicalSlotOption,
+} from "../../api/project.service";
+import type { ProjectEventKind } from "../../constants/projectDomain";
+import { isLiturgicalEventKind } from "../../constants/projectDomain";
 import type { ProgramTabItem } from "../types";
 
 export interface UseProgramTabResult {
@@ -57,10 +72,27 @@ export interface UseProgramTabResult {
   addedPieceIds: string[];
   filteredPieces: Piece[];
   pieces: Piece[];
+  /**
+   * The slot vocabulary for the picker, with the ones this kind of event is
+   * offered first at the top. Empty for a concert — and empty until the
+   * vocabulary lands, which is what keeps the picker from appearing with
+   * nothing in it.
+   */
+  slotOptions: LiturgicalSlotOption[];
+  /** The running order contradicts the order of the rite. Stated, not fixed. */
+  hasLiturgyProblem: boolean;
+  /** There is a rearrangement to propose — the programme is not already in the
+   *  order the rite would run it. */
+  canSortByLiturgy: boolean;
   handleAddPiece: (pieceId: string) => Promise<void>;
   handleToggleEncore: (item: ProgramTabItem) => Promise<void>;
+  handleChangeSlot: (item: ProgramTabItem, slot: string) => Promise<void>;
   handleDeleteItem: (itemId: string) => Promise<void>;
   handleDragEnd: (event: DragEndEvent) => void;
+  /** Stages the canonical order as an unsaved edit — never writes. The producer
+   *  owns the running order, so the sort is a proposal they confirm on the
+   *  save bar like any other reordering. */
+  handleSortByLiturgy: () => void;
   handleCancel: () => void;
   handleSaveChanges: () => Promise<void>;
 }
@@ -79,6 +111,8 @@ const normalizeProgramItem = (
     piece_id: pieceId,
     piece_title: item.piece_title ?? matchedPiece?.title ?? "Untitled piece",
     is_encore: item.is_encore,
+    liturgical_slot: item.liturgical_slot ?? "",
+    slot_label: item.slot_label ?? "",
   };
 };
 
@@ -87,13 +121,16 @@ const EMPTY_PROGRAM: ProgramItem[] = [];
 
 export const useProgramTab = (
   projectId: string,
+  eventKind: ProjectEventKind | undefined,
   onDirtyStateChange?: (isDirty: boolean) => void,
 ): UseProgramTabResult => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  const isLiturgical = isLiturgicalEventKind(eventKind);
   const projectPiecesQuery = useProjectPiecesDictionary();
   const projectProgramQuery = useProjectProgram(projectId);
+  const liturgyQuery = useLiturgicalSlots(isLiturgical);
   const pieces = projectPiecesQuery.data ?? EMPTY_PIECES;
   const fetchedProgram = projectProgramQuery.data ?? EMPTY_PROGRAM;
 
@@ -106,11 +143,24 @@ export const useProgramTab = (
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    setProgramItems(
-      fetchedProgram.map((programItem) =>
-        normalizeProgramItem(programItem, pieces),
-      ),
+    const fresh = fetchedProgram.map((programItem) =>
+      normalizeProgramItem(programItem, pieces),
     );
+
+    setProgramItems((current) => {
+      // A refetch must not throw away a reordering that is still on the save
+      // bar. Setting one row's slot writes immediately and re-fetches the whole
+      // programme, so as long as the same rows come back, the order the
+      // producer is looking at wins and only the fields are refreshed.
+      const freshById = new Map(fresh.map((item) => [item.id, item]));
+      const isSameSet =
+        current.length === fresh.length &&
+        current.every((item) => freshById.has(item.id));
+
+      return isSameSet
+        ? current.map((item) => freshById.get(item.id) as ProgramTabItem)
+        : fresh;
+    });
   }, [fetchedProgram, pieces]);
 
   const isDirty = useMemo(() => {
@@ -153,6 +203,44 @@ export const useProgramTab = (
     () => programItems.map((item) => item.piece_id || item.piece),
     [programItems],
   );
+
+  // The vocabulary arrives in canonical order, so its array positions are the
+  // ranking the sort and the contradiction check both read.
+  const slotRanks = useMemo(
+    () => buildSlotRanks(liturgyQuery.data?.slots ?? []),
+    [liturgyQuery.data],
+  );
+
+  /**
+   * The picker's order: what this kind of event is offered first, then the rest
+   * of the vocabulary. Nothing is withheld — a Mass that skips the Gloria in
+   * Lent is not an error, and neither is a wedding that keeps every ordinary
+   * part — but a plain Mass should not have to walk past the marriage vows.
+   */
+  const slotOptions = useMemo<LiturgicalSlotOption[]>(() => {
+    const vocabulary = liturgyQuery.data;
+    if (!vocabulary || !isLiturgical) return [];
+
+    const suggested = new Set(vocabulary.templates[eventKind ?? ""] ?? []);
+    return [
+      ...vocabulary.slots.filter((slot) => suggested.has(slot.value)),
+      ...vocabulary.slots.filter((slot) => !suggested.has(slot.value)),
+    ];
+  }, [eventKind, isLiturgical, liturgyQuery.data]);
+
+  const hasLiturgyProblem = useMemo(
+    () => isLiturgical && hasLiturgyOrderProblem(programItems, slotRanks),
+    [isLiturgical, programItems, slotRanks],
+  );
+
+  const canSortByLiturgy = useMemo(() => {
+    if (!isLiturgical || slotRanks.size === 0 || programItems.length < 2) {
+      return false;
+    }
+
+    const proposed = sortByLiturgy(programItems, slotRanks);
+    return proposed.some((item, index) => item.id !== programItems[index].id);
+  }, [isLiturgical, programItems, slotRanks]);
 
   const filteredPieces = useMemo(() => {
     const query = foldDiacritics(searchQuery.trim());
@@ -238,6 +326,35 @@ export const useProgramTab = (
     }
   };
 
+  /**
+   * Writes immediately, like the encore flag: placing a piece in the rite is a
+   * fact about that one row, and nothing else on the setlist moves because of
+   * it. The running order is the only deferred edit here (see
+   * `handleSortByLiturgy`).
+   */
+  const handleChangeSlot = async (
+    item: ProgramTabItem,
+    slot: string,
+  ): Promise<void> => {
+    if (slot === item.liturgical_slot) {
+      return;
+    }
+
+    try {
+      await updateProgramMutation.mutateAsync({
+        id: item.id,
+        data: { liturgical_slot: slot },
+      });
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "projects.program.toast.slot_error",
+          "Nie udało się zmienić miejsca w liturgii.",
+        ),
+      });
+    }
+  };
+
   const handleDeleteItem = async (itemId: string): Promise<void> => {
     const toastId = toast.loading(
       t("projects.program.toast.removing", "Usuwanie utworu..."),
@@ -278,6 +395,10 @@ export const useProgramTab = (
 
       return arrayMove(items, oldIndex, newIndex);
     });
+  };
+
+  const handleSortByLiturgy = (): void => {
+    setProgramItems((items) => sortByLiturgy(items, slotRanks));
   };
 
   const handleCancel = (): void => {
@@ -460,10 +581,15 @@ export const useProgramTab = (
     addedPieceIds,
     filteredPieces,
     pieces,
+    slotOptions,
+    hasLiturgyProblem,
+    canSortByLiturgy,
     handleAddPiece,
     handleToggleEncore,
+    handleChangeSlot,
     handleDeleteItem,
     handleDragEnd,
+    handleSortByLiturgy,
     handleCancel,
     handleSaveChanges,
   };

@@ -3185,9 +3185,9 @@
         "translation_literal": "literal",
         "performers": "Performers / cast",
         "performers_ph": "e.g. Soprano solo: J. Smith · organ: A. Brown",
-        "section_label": "Section",
+        "section_label": "Section (override)",
         "section_ph": "e.g. Liturgy of the Eucharist",
-        "role_prefix": "Role / function",
+        "role_prefix": "Role / function (override)",
         "role_ph": "e.g. Offertory:",
         "text_override": "Text (override)",
         "text_override_ph": "Leave empty to use the stored text.",
@@ -3196,7 +3196,8 @@
         "preview_card": "Preview card",
         "reset_elements": "Default",
         "binding": "Binding",
-        "override_count": "Overrides: {{count}}"
+        "override_count": "Overrides: {{count}}",
+        "slot_derived": "Place in the liturgy: {{slot}}. An empty field = what follows from it."
       },
       "empty_title": "The programme is empty",
       "empty_action": "Open the programme",
@@ -3410,7 +3411,8 @@
         "spotify": "Spotify playlist",
         "title": "Project title *",
         "warmup_end": "Warm-up until",
-        "warmup_start": "Warm-up from"
+        "warmup_start": "Warm-up from",
+        "event_kind": "Event kind"
       },
       "call_time": {
         "offset_h": "{{hours}} h before the concert",
@@ -3449,6 +3451,13 @@
       },
       "markers": {
         "concert": "Concert"
+      },
+      "event_kind": {
+        "concert": "Concert",
+        "mass": "Mass",
+        "wedding": "Wedding Mass",
+        "other": "Other event",
+        "hint": "A Mass or a wedding lets each piece be given its place in the liturgy."
       }
     },
     "editor": {
@@ -3745,7 +3754,8 @@
         "removing": "Removing piece...",
         "save_order_error": "Server rejected some changes. Refreshing view.",
         "save_order_success": "Order saved successfully",
-        "saving_order": "Saving new order..."
+        "saving_order": "Saving new order...",
+        "slot_error": "Could not change the place in the liturgy."
       },
       "unfulfilled": "Unfulfilled",
       "gaps_count_one": "{{count}} missing",
@@ -3759,6 +3769,13 @@
         "pieces_many": "{{count}} pieces",
         "pieces_other": "{{count}} pieces",
         "untimed": "{{count}} without a duration"
+      },
+      "liturgy": {
+        "slot_aria": "Place in the liturgy: {{title}}",
+        "slot_placeholder": "No place in the liturgy",
+        "slot_clear": "No place in the liturgy",
+        "sort_action": "Order by liturgy",
+        "out_of_order": "The running order departs from the liturgy"
       }
     },
     "rehearsals": {

@@ -106,4 +106,5 @@ export const buildOptimisticProgramItem = (
   piece: data.piece,
   order: data.order,
   is_encore: data.is_encore,
+  liturgical_slot: data.liturgical_slot ?? "",
 });

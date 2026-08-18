@@ -29,6 +29,30 @@ export const PROJECT_STATUS = {
 export type ProjectStatus =
   (typeof PROJECT_STATUS)[keyof typeof PROJECT_STATUS];
 
+// What the ensemble is singing at. It decides whether a programme item has a
+// place in a rite to name: a Mass is programmed against the order of the
+// liturgy, a concert against a running order.
+export const PROJECT_EVENT_KIND = {
+  CONCERT: "CONCERT",
+  MASS: "MASS",
+  WEDDING: "WEDDING",
+  OTHER: "OTHER",
+} as const;
+
+export type ProjectEventKind =
+  (typeof PROJECT_EVENT_KIND)[keyof typeof PROJECT_EVENT_KIND];
+
+/**
+ * Whether this project's programme is an order of service — the client-side
+ * mirror of `Project.is_liturgical`. A wedding differs from a Mass only in
+ * which slots the picker offers first, so both answer yes.
+ */
+export const isLiturgicalEventKind = (
+  eventKind: ProjectEventKind | undefined,
+): boolean =>
+  eventKind === PROJECT_EVENT_KIND.MASS ||
+  eventKind === PROJECT_EVENT_KIND.WEDDING;
+
 export const PROJECT_FILTER = {
   ACTIVE: "ACTIVE",
   // Unpublished projects. They also remain under ACTIVE — a draft is genuinely

@@ -1,6 +1,6 @@
 # The liturgical programme — spec
 
-**Status:** stage 1 (backend) **done** 2026-08-18 · stage 2 (frontend) open
+**Status:** stage 1 (backend) **done** 2026-08-18 · stage 2 (frontend) **done** 2026-08-18
 **Audience of the feature:** the singer and the conductor. Not the congregation — a
 guest-facing order-of-service booklet is explicitly out of scope (see *Not doing*).
 
@@ -180,22 +180,40 @@ tests and `notifications` 110 tests green; `makemigrations --check` clean.
 `slot_label` is already numbered ("Na Komunię 2"). Nothing on the client
 re-derives, re-numbers or re-translates it (D8).
 
-### Stage 2 — frontend (next session)
+### Stage 2 — frontend
 
-- [ ] Types + service: `liturgical_slot` on the program item, `event_kind` on the
+- [x] Types + service: `liturgical_slot` on the program item, `event_kind` on the
       project, the derived `slot_label` / `section` / `role_prefix` read fields.
-- [ ] `ProjectDetailsTab` (or wherever the project's own facts are edited): the
-      event-kind select.
-- [ ] `SetlistRow` in `ProgramTab`: the slot select, the slot shown on the row,
+      The vocabulary client is `useLiturgicalSlots`, keyed by language and held
+      for the session (`SESSION_STATIC_DICTIONARY` in `shared/api/queryPolicy`).
+- [x] `DetailsTab`: the event-kind select, beside the conductor.
+- [x] `SetlistRow` in `ProgramTab`: the slot select, the slot shown on the row,
       and the "order by liturgy" action committed through the existing
-      `EditorActionBar` (deferred edit — never an auto-sort, D5).
-- [ ] `ProgramWidget` (overview) shows the slot.
-- [ ] The singer's setlist (`TimelineProjectCard`, SETLIST sub-tab) shows the slot
+      `EditorActionBar` (deferred edit — never an auto-sort, D5). The ranking
+      both the sort and the out-of-order hint read is the served vocabulary's
+      own array order (`features/projects/lib/liturgy.ts`).
+- [x] `ProgramWidget` (overview) shows the slot.
+- [x] The singer's setlist (`TimelineProjectCard`, SETLIST sub-tab) shows the slot
       — this is the surface the whole feature exists for.
-- [ ] `ScorePackageItemRow`: the two override fields now say what they override,
-      with the derived value as the placeholder.
-- [ ] i18n: pl/en/fr `translation.json`, Polish first and native.
-- [ ] One `npm run typecheck` + `npm run build` at the end.
+- [x] `ScorePackageItemRow`: the two override fields now say what they override,
+      with the derived value as the placeholder; the row header previews
+      `role_prefix_effective`, which is what actually prints.
+- [x] i18n: pl/en/fr `translation.json`, Polish first and native.
+- [x] One `npm run typecheck` + `npm run build` at the end.
+
+Also landed: two tests for the setlist write path (`ProgramItemSerializer`
+accepts a slot, accepts being cleared, refuses an invented one) — stage 1 left
+that door untested, and it is the one the picker writes through.
+
+Decided while building: the slot **writes immediately**, like the encore flag —
+placing one piece in the rite moves nothing else. Only the running order is a
+deferred edit, which is what keeps D5 visible in the interaction itself. The
+setlist re-sync was made order-preserving for the same reason: writing a slot
+refetches the programme, and that must not throw away a rearrangement still
+sitting on the save bar.
+
+**Verified:** `npm run typecheck`, `npm run lint` and `npm run build` clean;
+`roster.test_liturgy` 36 tests green; ruff + mypy clean on `roster`.
 
 ## Not doing
 

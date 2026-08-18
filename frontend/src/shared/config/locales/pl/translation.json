@@ -3203,9 +3203,9 @@
         "translation_literal": "dosłowne",
         "performers": "Wykonawcy / obsada",
         "performers_ph": "np. Sopran solo: J. Kowalska · organy: A. Nowak",
-        "section_label": "Sekcja",
+        "section_label": "Sekcja (nadpisanie)",
         "section_ph": "np. Liturgia eucharystyczna",
-        "role_prefix": "Rola / funkcja",
+        "role_prefix": "Rola / funkcja (nadpisanie)",
         "role_ph": "np. Ofiarowanie:",
         "text_override": "Tekst (nadpisanie)",
         "text_override_ph": "Zostaw puste, aby użyć tekstu z bazy.",
@@ -3214,7 +3214,8 @@
         "preview_card": "Podgląd karty",
         "reset_elements": "Domyślne",
         "binding": "Oprawa",
-        "override_count": "Nadpisania: {{count}}"
+        "override_count": "Nadpisania: {{count}}",
+        "slot_derived": "Miejsce w liturgii: {{slot}}. Puste pole = to, co z niego wynika."
       },
       "empty_title": "Program jest pusty",
       "empty_action": "Otwórz program",
@@ -3428,7 +3429,8 @@
         "spotify": "Playlista Spotify",
         "title": "Tytuł projektu *",
         "warmup_end": "Rozśpiewanie do",
-        "warmup_start": "Rozśpiewanie od"
+        "warmup_start": "Rozśpiewanie od",
+        "event_kind": "Rodzaj wydarzenia"
       },
       "call_time": {
         "offset_h": "{{hours}} godz. przed koncertem",
@@ -3467,6 +3469,13 @@
       },
       "markers": {
         "concert": "Koncert"
+      },
+      "event_kind": {
+        "concert": "Koncert",
+        "mass": "Msza",
+        "wedding": "Msza ślubna",
+        "other": "Inne wydarzenie",
+        "hint": "Msza i ślub pozwalają przypisać utworom miejsce w liturgii."
       }
     },
     "editor": {
@@ -3763,7 +3772,8 @@
         "removing": "Usuwanie utworu...",
         "save_order_error": "Serwer odrzucił część zmian. Odświeżam widok.",
         "save_order_success": "Układ zapisany pomyślnie",
-        "saving_order": "Zapisywanie nowego układu..."
+        "saving_order": "Zapisywanie nowego układu...",
+        "slot_error": "Nie udało się zmienić miejsca w liturgii."
       },
       "unfulfilled": "Nieobsadzony",
       "gaps_count_one": "{{count}} luka",
@@ -3777,6 +3787,13 @@
         "pieces_many": "{{count}} utworów",
         "pieces_other": "{{count}} utworów",
         "untimed": "{{count}} bez podanego czasu"
+      },
+      "liturgy": {
+        "slot_aria": "Miejsce w liturgii: {{title}}",
+        "slot_placeholder": "Bez miejsca w liturgii",
+        "slot_clear": "Bez miejsca w liturgii",
+        "sort_action": "Uporządkuj wg liturgii",
+        "out_of_order": "Kolejność odbiega od porządku liturgii"
       }
     },
     "rehearsals": {

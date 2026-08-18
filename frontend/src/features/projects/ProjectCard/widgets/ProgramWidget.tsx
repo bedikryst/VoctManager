@@ -115,9 +115,19 @@ export function ProgramWidget({
                 >
                   {String(index + 1).padStart(2, "0")}
                 </Text>
-                <Text as="span" size="sm" weight="medium" truncate>
-                  {item.title}
-                </Text>
+                <div className="flex min-w-0 flex-col">
+                  {/* An order of service answers "when", not just "what" — and
+                      the answer is the server's word for that moment, in the
+                      reader's language. */}
+                  {item.slotLabel && (
+                    <Eyebrow as="span" color="incense" className="truncate">
+                      {item.slotLabel}
+                    </Eyebrow>
+                  )}
+                  <Text as="span" size="sm" weight="medium" truncate>
+                    {item.title}
+                  </Text>
+                </div>
               </div>
               <ProgramStatus item={item} />
             </li>

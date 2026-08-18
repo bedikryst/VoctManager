@@ -524,6 +524,21 @@ export const TimelineProjectCard = ({
                                       {idx + 1}.
                                     </Eyebrow>
                                     <div className="min-w-0">
+                                      {/* The reason this whole feature exists:
+                                          a singer holding the book has to know
+                                          the next piece is the one at the
+                                          Offertory and not the one at Communion.
+                                          The words are the server's — numbered
+                                          and in their own language. */}
+                                      {pi.slot_label && (
+                                        <Eyebrow
+                                          as="span"
+                                          color="gold"
+                                          className="mb-0.5 block truncate"
+                                        >
+                                          {pi.slot_label}
+                                        </Eyebrow>
+                                      )}
                                       <Text
                                         weight="bold"
                                         color="white"

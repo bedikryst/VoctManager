@@ -43,6 +43,24 @@ export const RECONCILING_REFETCH = {
 } as const;
 
 /**
+ * Freshness tier for a closed vocabulary the server renders in the reader's
+ * language — the liturgical slots, and anything else whose only variable is the
+ * language it is asked in. It cannot change under a running session, so it is
+ * fetched once and never revalidated.
+ *
+ * The contract that makes `staleTime: Infinity` safe here: the query key MUST
+ * carry the language. Without it a reader who switches locale keeps the first
+ * language's labels for the life of the persisted cache — which is exactly the
+ * failure the server-side vocabulary exists to prevent.
+ */
+export const SESSION_STATIC_DICTIONARY = {
+  staleTime: Infinity,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+/**
  * Personal, server-joined read-models that several features write into
  * indirectly. They live in their own feature namespaces (materials / schedule),
  * but project-side mutations (casting, participation, rehearsals) change what

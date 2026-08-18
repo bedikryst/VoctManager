@@ -275,6 +275,33 @@ class SetlistApiTests(_ProgrammeBase):
         # The stored override stays empty — only the derived value is filled in.
         self.assertEqual(row["role_prefix"], "")
 
+    def test_setlist_write_path_sets_and_clears_the_slot(self) -> None:
+        """The setlist picker's own write. Clearing matters as much as setting:
+        blank is the resting state of an item nobody has placed yet, so the
+        field has to accept being emptied through the same door."""
+        serializer = ProgramItemSerializer(
+            self.items[0], data={"liturgical_slot": "entrance"}, partial=True,
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+        self.items[0].refresh_from_db()
+        self.assertEqual(self.items[0].liturgical_slot, "entrance")
+
+        serializer = ProgramItemSerializer(
+            self.items[0], data={"liturgical_slot": ""}, partial=True,
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        serializer.save()
+        self.items[0].refresh_from_db()
+        self.assertEqual(self.items[0].liturgical_slot, "")
+
+    def test_setlist_write_path_refuses_an_invented_slot(self) -> None:
+        serializer = ProgramItemSerializer(
+            self.items[0], data={"liturgical_slot": "sequentia"}, partial=True,
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("liturgical_slot", serializer.errors)
+
 
 class CockpitWriteTests(_ProgrammeBase):
     def test_cockpit_accepts_a_known_slot(self) -> None:

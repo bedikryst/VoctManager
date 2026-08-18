@@ -3186,9 +3186,9 @@
         "translation_literal": "littérale",
         "performers": "Interprètes / distribution",
         "performers_ph": "p. ex. Soprano solo : J. Dupont · orgue : A. Martin",
-        "section_label": "Section",
+        "section_label": "Section (remplacement)",
         "section_ph": "p. ex. Liturgie eucharistique",
-        "role_prefix": "Rôle / fonction",
+        "role_prefix": "Rôle / fonction (remplacement)",
         "role_ph": "p. ex. Offertoire :",
         "text_override": "Texte (remplacer)",
         "text_override_ph": "Laissez vide pour utiliser le texte enregistré.",
@@ -3197,7 +3197,8 @@
         "preview_card": "Aperçu de la fiche",
         "reset_elements": "Par défaut",
         "binding": "Reliure",
-        "override_count": "Remplacements : {{count}}"
+        "override_count": "Remplacements : {{count}}",
+        "slot_derived": "Place dans la liturgie : {{slot}}. Champ vide = ce qui en découle."
       },
       "empty_title": "Le programme est vide",
       "empty_action": "Ouvrir le programme",
@@ -3411,7 +3412,8 @@
         "spotify": "Playlist Spotify",
         "title": "Titre du projet *",
         "warmup_end": "Échauffement à",
-        "warmup_start": "Échauffement de"
+        "warmup_start": "Échauffement de",
+        "event_kind": "Type d'événement"
       },
       "call_time": {
         "offset_h": "{{hours}} h avant le concert",
@@ -3450,6 +3452,13 @@
       },
       "markers": {
         "concert": "Concert"
+      },
+      "event_kind": {
+        "concert": "Concert",
+        "mass": "Messe",
+        "wedding": "Messe de mariage",
+        "other": "Autre événement",
+        "hint": "Une messe ou un mariage permet d'attribuer à chaque pièce sa place dans la liturgie."
       }
     },
     "editor": {
@@ -3746,7 +3755,8 @@
         "removing": "Suppression de la pièce...",
         "save_order_error": "Le serveur a rejeté certaines modifications. Actualisation de la vue.",
         "save_order_success": "Ordre enregistré avec succès",
-        "saving_order": "Enregistrement du nouvel ordre..."
+        "saving_order": "Enregistrement du nouvel ordre...",
+        "slot_error": "Impossible de modifier la place dans la liturgie."
       },
       "unfulfilled": "Non couvert",
       "gaps_count_one": "{{count}} à pourvoir",
@@ -3760,6 +3770,13 @@
         "pieces_many": "{{count}} pièces",
         "pieces_other": "{{count}} pièces",
         "untimed": "{{count}} sans durée"
+      },
+      "liturgy": {
+        "slot_aria": "Place dans la liturgie : {{title}}",
+        "slot_placeholder": "Aucune place dans la liturgie",
+        "slot_clear": "Aucune place dans la liturgie",
+        "sort_action": "Classer selon la liturgie",
+        "out_of_order": "L'ordre s'écarte de la liturgie"
       }
     },
     "rehearsals": {

@@ -6,7 +6,10 @@
  * @module shared/types
  */
 
-import type { ProjectStatus } from "@features/projects/constants/projectDomain";
+import type {
+  ProjectEventKind,
+  ProjectStatus,
+} from "@features/projects/constants/projectDomain";
 
 export interface BaseModel {
   id: string;
@@ -145,6 +148,16 @@ export interface ProjectProgramItem {
   piece_id: string | number;
   title: string;
   is_encore: boolean;
+  /** Where in the rite this piece happens; empty for a concert item. */
+  liturgical_slot: string;
+  /**
+   * The slot as the reader sees it, already numbered against the rest of the
+   * programme ("Na Komunię 2") and already in their language. Derived
+   * server-side and never re-derived here — see `LiturgicalSlotOption`.
+   */
+  slot_label: string;
+  /** The division of the rite this item is grouped under, or a manual override. */
+  section: string;
 }
 
 export interface Project extends BaseModel {
@@ -163,6 +176,9 @@ export interface Project extends BaseModel {
   spotify_playlist_url?: string | null;
   score_pdf?: string | null;
   status: ProjectStatus;
+  /** What the ensemble is singing at. Decides whether the programme is an order
+   *  of service or a running order. */
+  event_kind?: ProjectEventKind;
   run_sheet?: RunSheetItem[];
   // Day-of logistics. Per concert, not per venue: the same church lends a
   // different door and a different room to different events. The two windows
@@ -583,6 +599,16 @@ export interface ProgramItem {
   piece_title?: string;
   order: number;
   is_encore: boolean;
+  /** The only writable half of the liturgical identity: a slot code from
+   *  `GET /api/program-items/slots/`, empty for a concert item. */
+  liturgical_slot?: string;
+  /** Read-only, resolved against the whole programme (repeats numbered) and
+   *  already in the reader's language. */
+  slot_label?: string;
+  section?: string;
+  /** What the score-book card prints before the title — set only for the slots
+   *  where a reader cannot otherwise know when the piece happens. */
+  role_prefix_effective?: string;
 }
 
 // Backend ProjectPieceCasting is a plain models.Model — no soft-delete fields.

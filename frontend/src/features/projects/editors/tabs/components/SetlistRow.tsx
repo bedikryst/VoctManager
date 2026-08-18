@@ -2,7 +2,9 @@
  * @file SetlistRow.tsx
  * @description One piece in the running order: its position, what it is, how
  * long it runs, and — only where the ensemble has actually started work — how
- * far they have got with it.
+ * far they have got with it. Where the event is an order of service the row
+ * also carries its place in the rite: the label the singer reads, and the
+ * picker that sets it.
  * The row sits in a flat divided list rather than on its own bordered card;
  * the surface, the gold edge and the shadow arrive when it is picked up, so
  * the only thing that looks liftable is the thing being lifted.
@@ -18,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import type { ProjectReadinessSummaryEntry } from "../../../api/project.service";
 import type { ProgramTabItem } from "../../types";
@@ -30,6 +33,13 @@ interface SetlistRowProps {
   readonly meta: string | null;
   readonly durationSeconds?: number | null;
   readonly readiness?: ProjectReadinessSummaryEntry;
+  /**
+   * The order of the rite, for an event that has one. Empty for a concert —
+   * where a "place in the liturgy" column would be a column of blanks on every
+   * row of the setlist.
+   */
+  readonly slotOptions?: readonly SelectOption[];
+  readonly onChangeSlot?: (item: ProgramTabItem, slot: string) => void;
   readonly onToggleEncore: (item: ProgramTabItem) => void;
   readonly onDelete: (sortableId: string) => void;
 }
@@ -102,6 +112,8 @@ export function SetlistRow({
   meta,
   durationSeconds,
   readiness,
+  slotOptions,
+  onChangeSlot,
   onToggleEncore,
   onDelete,
 }: SetlistRowProps): React.JSX.Element {
@@ -170,8 +182,18 @@ export function SetlistRow({
           {String(position).padStart(2, "0")}
         </Text>
 
-        <span className="flex min-w-0 flex-1 flex-col">
+        {/* A block, not a span: the slot picker below is a real field, and a
+            field inside phrasing content is invalid nesting. */}
+        <div className="flex min-w-0 flex-1 flex-col">
           <span className="flex min-w-0 items-center gap-2">
+            {/* The slot as the singer will read it — numbered by the server
+                against the rest of the programme, so it says "Na Komunię 2"
+                where the picker below can only say "Na Komunię". */}
+            {item.slot_label && (
+              <Badge variant="incense" casing="natural" className="shrink-0">
+                {item.slot_label}
+              </Badge>
+            )}
             <Text as="span" size="sm" weight="medium" truncate>
               {item.piece_title}
             </Text>
@@ -187,7 +209,30 @@ export function SetlistRow({
             </Caption>
           )}
           {readiness && <ReadinessLine readiness={readiness} />}
-        </span>
+          {slotOptions && onChangeSlot && (
+            <div className="mt-1.5 max-w-60">
+              <Select
+                size="sm"
+                value={item.liturgical_slot}
+                onValueChange={(slot) => onChangeSlot(item, slot)}
+                options={slotOptions}
+                ariaLabel={t(
+                  "projects.program.liturgy.slot_aria",
+                  "Miejsce w liturgii: {{title}}",
+                  { title: item.piece_title },
+                )}
+                placeholder={t(
+                  "projects.program.liturgy.slot_placeholder",
+                  "Bez miejsca w liturgii",
+                )}
+                clearLabel={t(
+                  "projects.program.liturgy.slot_clear",
+                  "Bez miejsca w liturgii",
+                )}
+              />
+            </div>
+          )}
+        </div>
 
         <DurationCell seconds={durationSeconds} />
 

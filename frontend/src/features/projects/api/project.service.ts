@@ -70,6 +70,31 @@ export type ProjectReportEndpoint =
   | "export_zaiks"
   | "export_dtp";
 
+/**
+ * One moment of the Mass, as the server names it. Both `label` and `part_label`
+ * arrive resolved in the reader's language: the client picks a slot by `value`
+ * and never composes, translates or renumbers a name of its own (a second copy
+ * of one moment's name is a singer reading two names for one moment).
+ */
+export interface LiturgicalSlotOption {
+  value: string;
+  label: string;
+  part: string;
+  part_label: string;
+  /** `function` slots are the ones whose name also prints before the title. */
+  kind: "ordinary" | "proper" | "function";
+}
+
+/**
+ * The whole vocabulary, in canonical order of the rite — the array order IS the
+ * canonical rank, which is what the "order by liturgy" action sorts against.
+ * `templates` lists which slots each kind of event is offered first.
+ */
+export interface LiturgicalSlotVocabulary {
+  slots: LiturgicalSlotOption[];
+  templates: Record<string, string[]>;
+}
+
 /** One programme piece in the conductor's readiness heatmap. */
 export interface ProjectReadinessSummaryEntry {
   piece_id: string;
@@ -286,6 +311,14 @@ export interface ScorePackageItem {
   performers: string;
   section_label: string;
   role_prefix: string;
+  /** Writable slot code; the three fields below are what it resolves to. */
+  liturgical_slot: string;
+  slot_label: string;
+  /** What the card actually prints once the overrides are resolved against the
+   *  slot — the cockpit shows these as the placeholders of the two override
+   *  fields, so an empty field reads as "inherited", not as "missing". */
+  section_effective: string;
+  role_prefix_effective: string;
   card_enabled: boolean | null;
   card_enabled_effective: boolean;
   card_elements: CardElement[] | null;
@@ -307,6 +340,7 @@ export interface ScorePackageItemPatch {
   performers: string;
   section_label: string;
   role_prefix: string;
+  liturgical_slot: string;
   card_enabled: boolean | null;
   card_elements: CardElement[] | null;
   text_override: string;
@@ -747,6 +781,15 @@ export const ProjectService = {
     return [...data].sort(
       (a: ProgramItem, b: ProgramItem) => a.order - b.order,
     );
+  },
+
+  /** The liturgical vocabulary in the caller's language. Static per language —
+   *  see `SESSION_STATIC_DICTIONARY` and the language-keyed query key. */
+  getLiturgicalSlots: async (): Promise<LiturgicalSlotVocabulary> => {
+    const response = await api.get<LiturgicalSlotVocabulary>(
+      `${PROGRAM_ITEMS_BASE_URL}slots/`,
+    );
+    return response.data;
   },
 
   createProgramItem: async (

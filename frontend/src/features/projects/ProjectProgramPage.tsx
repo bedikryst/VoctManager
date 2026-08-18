@@ -19,7 +19,11 @@ export default function ProjectProgramPage(): React.JSX.Element {
   const { project, setDirty } = useOutletContext<ProjectHubContext>();
   return (
     <div className="flex flex-col gap-6">
-      <ProgramTab projectId={project.id} onDirtyStateChange={setDirty} />
+      <ProgramTab
+        projectId={project.id}
+        eventKind={project.event_kind}
+        onDirtyStateChange={setDirty}
+      />
       <ScorePackageBridge projectId={String(project.id)} />
     </div>
   );

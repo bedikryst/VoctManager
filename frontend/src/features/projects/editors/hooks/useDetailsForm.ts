@@ -30,6 +30,7 @@ import {
   useProjects,
   useUpdateProject,
 } from "../../api/project.queries";
+import { PROJECT_EVENT_KIND } from "../../constants/projectDomain";
 import {
   compareRunSheetTimes,
   suggestRunSheetTime,
@@ -149,6 +150,7 @@ const EMPTY_PROJECTS: Project[] = [];
  */
 const toFormData = (source: Project | null | undefined): ProjectFormData => ({
   title: source?.title || "",
+  event_kind: source?.event_kind || PROJECT_EVENT_KIND.CONCERT,
   timezone: source?.timezone || "Europe/Warsaw",
   date_time: toWallClockInput(source?.date_time, source?.timezone),
   call_time: toWallClockInput(source?.call_time, source?.timezone),
@@ -346,6 +348,7 @@ export const useDetailsForm = (
 
       const payload = {
         title: formData.title,
+        event_kind: formData.event_kind,
         timezone: formData.timezone,
         date_time: absoluteDateTime,
         call_time: absoluteCallTime,

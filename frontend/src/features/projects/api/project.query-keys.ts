@@ -11,6 +11,11 @@ export const projectKeys = {
     pieces: ["pieces"] as const,
     collaborators: ["collaborators"] as const,
     voiceLines: ["options", "voiceLines"] as const,
+    /** Keyed by language on purpose: the vocabulary is served already
+     *  translated and is then held for the session, so the language is the only
+     *  thing that can make the cached copy wrong. */
+    liturgicalSlots: (language: string) =>
+      ["options", "liturgicalSlots", language] as const,
   },
   projects: {
     all: ["projects"] as const,

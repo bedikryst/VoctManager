@@ -226,7 +226,9 @@ export function ScorePackageItemRow({
               color={item.is_encore ? "amethyst" : "default"}
               className={cn("min-w-0", item.is_encore && "italic")}
             >
-              {item.role_prefix ? `${item.role_prefix} ` : ""}
+              {/* What the card will actually print: the typed override where
+                  one is set, otherwise the slot's own name. */}
+              {item.role_prefix_effective ? `${item.role_prefix_effective} ` : ""}
               {item.title}
             </Text>
             {item.is_encore && (
@@ -636,27 +638,54 @@ export function ScorePackageItemRow({
                     />
                   </div>
 
+                  {/* Both fields override something the slot already decides,
+                      so each shows the value it would replace as its
+                      placeholder: an empty field means "as the liturgy has
+                      it", not "nothing will print". Where there is no slot the
+                      placeholder falls back to an example, which is the only
+                      case in which these fields are the sole source. */}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Input
-                      label={t("projects.score_package.item.section_label", "Sekcja")}
-                      variant="glass"
-                      placeholder={t(
-                        "projects.score_package.item.section_ph",
-                        "np. Liturgia eucharystyczna",
+                      label={t(
+                        "projects.score_package.item.section_label",
+                        "Sekcja (nadpisanie)",
                       )}
+                      variant="glass"
+                      placeholder={
+                        item.section_effective ||
+                        t(
+                          "projects.score_package.item.section_ph",
+                          "np. Liturgia eucharystyczna",
+                        )
+                      }
                       value={draft.section}
                       onChange={(e) => setDraft((d) => ({ ...d, section: e.target.value }))}
                       onBlur={(e) => commitText("section_label", e.target.value)}
                     />
                     <Input
-                      label={t("projects.score_package.item.role_prefix", "Rola / funkcja")}
+                      label={t(
+                        "projects.score_package.item.role_prefix",
+                        "Rola / funkcja (nadpisanie)",
+                      )}
                       variant="glass"
-                      placeholder={t("projects.score_package.item.role_ph", "np. Ofiarowanie:")}
+                      placeholder={
+                        item.role_prefix_effective ||
+                        t("projects.score_package.item.role_ph", "np. Ofiarowanie:")
+                      }
                       value={draft.role}
                       onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))}
                       onBlur={(e) => commitText("role_prefix", e.target.value)}
                     />
                   </div>
+                  {item.slot_label && (
+                    <Caption color="muted">
+                      {t(
+                        "projects.score_package.item.slot_derived",
+                        "Miejsce w liturgii: {{slot}}. Puste pole = to, co z niego wynika.",
+                        { slot: item.slot_label },
+                      )}
+                    </Caption>
+                  )}
 
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Textarea
