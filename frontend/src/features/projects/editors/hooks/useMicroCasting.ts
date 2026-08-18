@@ -431,11 +431,18 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
         item.score_edition,
       ).map((requirement) => requirement.voice_line);
 
-      const existing = pieceCastings.filter(
-        (casting) =>
-          String(casting.piece) === pieceId &&
-          memberMap.has(String(casting.participation)),
-      );
+      // One seat per singer per piece: a legacy duplicate would otherwise ride
+      // into a payload the server refuses whole, taking the programme with it.
+      // Keeping the first row is what the server does with duplicates anyway.
+      const existing: PieceCasting[] = [];
+      const seen = new Set<string>();
+      for (const casting of pieceCastings) {
+        const participationId = String(casting.participation);
+        if (String(casting.piece) !== pieceId) continue;
+        if (!memberMap.has(participationId) || seen.has(participationId)) continue;
+        seen.add(participationId);
+        existing.push(casting);
+      }
       const result = autoCastPiece(
         members,
         lines,

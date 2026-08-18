@@ -65,6 +65,11 @@ export interface AutoCastResult {
  * first line of each family is what a plain four-part reading means — those four
  * print as "Sopran", "Alt"… precisely because nothing else of their family ends
  * up on the board.
+ *
+ * A singer whose line-up seat carries an index therefore lands on their family's
+ * first line here, not on the seat: "Sopran 2" against a divisi nobody wrote
+ * promises the singer a second soprano part the score never mentions. Declare
+ * the divisi and the seat is honoured exactly.
  */
 const IMPLICIT_LINES: readonly VoiceLine[] = ["S1", "A1", "T1", "B1"];
 
