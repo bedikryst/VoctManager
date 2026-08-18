@@ -233,14 +233,29 @@ class PushDeviceViewSet(viewsets.ViewSet):
         Dispatches a one-shot test notification to all active devices of the
         current user. Used by Settings → Notifications to confirm the
         push pipeline end-to-end (browser permission → SW → backend → device).
+
+        The two ways this fails are answered apart, because they ask different
+        things of the caller: nothing registered (409 — the browser holds a
+        subscription this account no longer has a row for, which re-subscribing
+        fixes) versus registered and refused (502 — the push service rejected
+        every send, which nothing in the UI can fix). `reason` carries that
+        distinction to the client; `detail` stays a developer-facing string.
         """
-        delivered = PushDispatcherService.send_test_push(user=request.user)
-        if delivered == 0:
+        outcome = PushDispatcherService.send_test_push(user=request.user)
+        if outcome.devices == 0:
             return Response(
-                {"detail": "No active push devices for this user."},
+                {"detail": "No active push devices for this user.", "reason": "no_devices"},
                 status=status.HTTP_409_CONFLICT,
             )
-        return Response({"delivered": delivered}, status=status.HTTP_200_OK)
+        if outcome.delivered == 0:
+            return Response(
+                {
+                    "detail": "Every registered device rejected the push.",
+                    "reason": "undeliverable",
+                },
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+        return Response({"delivered": outcome.delivered}, status=status.HTTP_200_OK)
 
 
 class NotificationPreferenceAPIView(views.APIView):

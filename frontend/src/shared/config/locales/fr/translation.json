@@ -3010,7 +3010,9 @@
         "unavailable": "Notifications momentanément indisponibles. Contactez l’administrateur.",
         "subscribe_failed": "Impossible d’activer les notifications. Réessayez bientôt.",
         "unsubscribe_failed": "Impossible de désactiver les notifications push.",
-        "test_failed": "Impossible d’envoyer le test. Réessayez."
+        "test_failed": "Impossible d’envoyer le test. Réessayez.",
+        "test_no_device": "Cet appareil n’est plus enregistré pour les notifications push. Désactivez le push puis réactivez-le.",
+        "test_undeliverable": "Le service push du navigateur a refusé l’envoi. Réessayez dans un instant."
       }
     }
   },

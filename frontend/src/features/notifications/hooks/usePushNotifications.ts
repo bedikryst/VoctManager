@@ -7,7 +7,8 @@
  * @architecture Enterprise SaaS 2026
  * @module notifications/hooks/usePushNotifications
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isAxiosError } from "axios";
 import { toast } from "sonner";
 import i18n from "@/shared/config/i18n";
 import {
@@ -16,11 +17,33 @@ import {
   useSendTestPush,
 } from "@/features/notifications/api/devices";
 import { isAppleTouchDevice, isStandaloneDisplay } from "@/shared/pwa/platform";
+import {
+  forgetPushDeviceSync,
+  markPushDeviceSynced,
+  syncPushDevice,
+  toSubscribeDTO,
+} from "../lib/pushDeviceSync";
 import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
 /** Localized toast text. The hook isn't a component, so it reads the shared
  * i18n instance directly (resources are loaded at app init). */
 const tt = (key: string): string => i18n.t(`notifications.push.toasts.${key}`);
+
+/**
+ * The diagnostic endpoint names *why* nothing arrived, and the two reasons ask
+ * different things of the member: a device the server no longer holds is fixed
+ * from this very tab, while a push service that refused the send is fixed by
+ * nobody here. A response without a reason (a network drop, an old server)
+ * falls back to the generic failure.
+ */
+const testFailureKey = (error: unknown): string => {
+  const reason = isAxiosError(error)
+    ? (error.response?.data as { reason?: string } | undefined)?.reason
+    : undefined;
+  if (reason === "no_devices") return "test_no_device";
+  if (reason === "undeliverable") return "test_undeliverable";
+  return "test_failed";
+};
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
@@ -107,18 +130,23 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
 
   const isLoading = registerMutation.isPending || unregisterMutation.isPending;
 
-  // Sync existing subscription state on mount.
+  // The mutation object's identity changes with its own state, so effects that
+  // must not re-run on every dispatch reach the trigger through this ref.
+  const registerDeviceRef = useRef(registerMutation.mutate);
+  useEffect(() => {
+    registerDeviceRef.current = registerMutation.mutate;
+  });
+
+  // Read the browser's subscription on mount — and re-assert it server-side, so
+  // a device row the server dropped or deactivated is repaired rather than left
+  // showing as ON here. Deduplicated per session, so opening this tab after the
+  // shell has already synced costs nothing.
   useEffect(() => {
     if (!isReady) return;
     let cancelled = false;
-    navigator.serviceWorker.ready
-      .then((registration) => registration.pushManager.getSubscription())
-      .then((existing) => {
-        if (!cancelled) setIsSubscribed(!!existing);
-      })
-      .catch(() => {
-        /* noop — SW not yet registered, treated as unsubscribed */
-      });
+    void syncPushDevice().then((existing) => {
+      if (!cancelled) setIsSubscribed(!!existing);
+    });
     return () => {
       cancelled = true;
     };
@@ -131,13 +159,14 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type === "PUSH_SUBSCRIPTION_CHANGED") {
         const payload = event.data.subscription as WebPushSubscribeDTO;
-        registerMutation.mutate(payload);
+        markPushDeviceSynced(payload.endpoint);
+        registerDeviceRef.current(payload);
       }
     };
 
     navigator.serviceWorker.addEventListener("message", handleMessage);
     return () => navigator.serviceWorker.removeEventListener("message", handleMessage);
-  }, [isReady, registerMutation]);
+  }, [isReady]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
     if (availability.kind !== "ready") {
@@ -172,16 +201,14 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY!),
         }));
 
-      const json = subscription.toJSON() as {
-        endpoint: string;
-        keys: { p256dh: string; auth: string };
-      };
+      const payload = toSubscribeDTO(subscription);
+      if (!payload) {
+        toast.error(tt("subscribe_failed"));
+        return false;
+      }
 
-      await registerMutation.mutateAsync({
-        endpoint: json.endpoint,
-        p256dh_key: json.keys.p256dh,
-        auth_key: json.keys.auth,
-      });
+      await registerMutation.mutateAsync(payload);
+      markPushDeviceSynced(payload.endpoint);
 
       setIsSubscribed(true);
       toast.success(tt("enabled"));
@@ -208,6 +235,7 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       const endpoint = subscription.endpoint;
       await subscription.unsubscribe();
       await unregisterMutation.mutateAsync(endpoint);
+      forgetPushDeviceSync(endpoint);
       setIsSubscribed(false);
       toast.success(tt("disabled"));
     } catch (error) {
@@ -222,8 +250,8 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
       const { delivered } = await testMutation.mutateAsync();
       toast.success(tt("test_sent"));
       return delivered;
-    } catch {
-      toast.error(tt("test_failed"));
+    } catch (error) {
+      toast.error(tt(testFailureKey(error)));
       return 0;
     }
   }, [isReady, isSubscribed, testMutation]);

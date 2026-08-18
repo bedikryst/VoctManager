@@ -3027,7 +3027,9 @@
         "unavailable": "Powiadomienia są chwilowo niedostępne. Skontaktuj się z administratorem.",
         "subscribe_failed": "Nie udało się włączyć powiadomień. Spróbuj ponownie za chwilę.",
         "unsubscribe_failed": "Nie udało się wyłączyć powiadomień push.",
-        "test_failed": "Nie udało się wysłać testu. Spróbuj ponownie."
+        "test_failed": "Nie udało się wysłać testu. Spróbuj ponownie.",
+        "test_no_device": "To urządzenie nie jest już zapisane do powiadomień. Wyłącz push i włącz go ponownie.",
+        "test_undeliverable": "Usługa powiadomień przeglądarki odrzuciła wysyłkę. Spróbuj ponownie za chwilę."
       }
     }
   },

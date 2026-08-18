@@ -21,6 +21,7 @@ import { PanelErrorBoundary } from "@/app/router/PanelErrorBoundary";
 import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
+import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
@@ -69,6 +70,10 @@ export const DashboardLayout = ({
   const queryClient = useQueryClient();
   const offlineSync = useOfflineSync();
   const dockBarHeight = useBottomBarHeight();
+  // Repairs a push subscription the server has stopped honouring. Here rather
+  // than in the settings tab, because a member whose device row went inactive
+  // has no symptom that would send them there.
+  usePushDeviceSync();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
   // The chorister's first-run welcome is a full-screen moment that owns the

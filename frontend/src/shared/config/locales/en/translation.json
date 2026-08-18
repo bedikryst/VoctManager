@@ -3009,7 +3009,9 @@
         "unavailable": "Notifications are temporarily unavailable. Contact your administrator.",
         "subscribe_failed": "Couldn’t enable notifications. Please try again shortly.",
         "unsubscribe_failed": "Couldn’t turn off push notifications.",
-        "test_failed": "Couldn’t send the test. Please try again."
+        "test_failed": "Couldn’t send the test. Please try again.",
+        "test_no_device": "This device is no longer registered for push. Turn push off and on again.",
+        "test_undeliverable": "The browser’s push service rejected the message. Please try again shortly."
       }
     }
   },

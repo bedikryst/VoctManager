@@ -9,13 +9,18 @@ import { useMutation } from "@tanstack/react-query";
 import api from "@/shared/api/api";
 import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
+/**
+ * Registers (or refreshes) this browser's subscription. The endpoint is an
+ * update_or_create keyed on the endpoint URL, so re-posting a subscription the
+ * server already knows is a no-op that also lifts it back to active — which is
+ * what the boot-time sync relies on.
+ */
+export const registerPushDevice = async (payload: WebPushSubscribeDTO): Promise<void> => {
+  await api.post("/api/notifications/devices/", payload);
+};
+
 export const useRegisterPushDevice = () => {
-  return useMutation({
-    mutationFn: async (payload: WebPushSubscribeDTO) => {
-      const { data } = await api.post("/api/notifications/devices/", payload);
-      return data;
-    },
-  });
+  return useMutation({ mutationFn: registerPushDevice });
 };
 
 export const useUnregisterPushDevice = () => {

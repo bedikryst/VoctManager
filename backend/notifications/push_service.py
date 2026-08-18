@@ -57,6 +57,20 @@ _VAPID_STALE_STATUSES = frozenset({404, 410})
 
 
 @dataclass(frozen=True)
+class TestPushOutcome:
+    """What the diagnostic push found.
+
+    Two very different failures both end at zero deliveries, and the settings tab
+    has to tell them apart: no registered device is a gap the member closes from
+    that very tab, while devices that all rejected the send is an outage they can
+    do nothing about. Reporting only the delivered count would collapse them into
+    one unhelpful answer.
+    """
+    devices: int
+    delivered: int
+
+
+@dataclass(frozen=True)
 class _DispatchTarget:
     """Resolved per-recipient context computed once per dispatch."""
     user_id: str
@@ -108,10 +122,11 @@ class PushDispatcherService:
         cls._deliver(target, payload)
 
     @classmethod
-    def send_test_push(cls, user) -> int:
+    def send_test_push(cls, user) -> TestPushOutcome:
         """
         Sends a diagnostic notification through the same composition pipeline as
-        production dispatch. Returns how many devices the push **actually reached**.
+        production dispatch. Reports how many devices the push **actually reached**,
+        alongside how many it was offered to.
 
         Attempts would be the easier number and the wrong one. This is the only
         call in the system whose entire purpose is to answer "does push work for
@@ -121,17 +136,26 @@ class PushDispatcherService:
         """
         target = cls._resolve_target(str(user.id))
         if target is None or not target.devices:
-            return 0
+            return TestPushOutcome(devices=0, delivered=0)
 
         with translation.override(target.language):
             payload = PushPayloadBuilder.build_test(is_manager=target.is_manager)
 
         delivered = cls._deliver(target, payload)
-        logger.info(
-            "[PushService] Test push reached %d of %d device(s) for UID:%s",
-            delivered, len(target.devices), target.user_id,
-        )
-        return delivered
+        if delivered == 0:
+            # Every registered device refused it. The per-device lines above name
+            # the status; this one is the signal worth alerting on, because the
+            # member is now silently unreachable on a channel they enabled.
+            logger.error(
+                "[PushService] Test push reached NONE of %d device(s) for UID:%s",
+                len(target.devices), target.user_id,
+            )
+        else:
+            logger.info(
+                "[PushService] Test push reached %d of %d device(s) for UID:%s",
+                delivered, len(target.devices), target.user_id,
+            )
+        return TestPushOutcome(devices=len(target.devices), delivered=delivered)
 
     # ------------------------------------------------------------------ #
     # Subscription lifecycle                                             #

@@ -1785,7 +1785,7 @@ class AnnouncementNudgeCopyTests(SimpleTestCase):
         self.assertNotIn("Not yet told", labels)
 
 
-class TestPushHonestyTests(TestCase):
+class TestPushHonestyTests(APITestCase):
     """The diagnostic push may only report what actually arrived.
 
     This is the one call whose entire purpose is to answer "does push work for
@@ -1810,7 +1810,8 @@ class TestPushHonestyTests(TestCase):
 
     def test_a_delivered_push_is_counted(self) -> None:
         with patch("notifications.push_service.webpush", return_value=None):
-            self.assertEqual(PushDispatcherService.send_test_push(self.user), 1)
+            outcome = PushDispatcherService.send_test_push(self.user)
+        self.assertEqual((outcome.devices, outcome.delivered), (1, 1))
 
     def test_a_stale_subscription_reports_zero_rather_than_one(self) -> None:
         # 410 Gone: the browser dropped this subscription. Before the count was
@@ -1818,7 +1819,7 @@ class TestPushHonestyTests(TestCase):
         # tab would have offered to mute e-mail for a member push cannot reach.
         gone = WebPushException("gone", response=SimpleNamespace(status_code=410))
         with patch("notifications.push_service.webpush", side_effect=gone):
-            self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+            self.assertEqual(PushDispatcherService.send_test_push(self.user).delivered, 0)
         self.assertFalse(
             PushDevice.objects.get(user=self.user).is_active,
             "a 410 must still invalidate the device, count or no count",
@@ -1829,12 +1830,30 @@ class TestPushHonestyTests(TestCase):
         # stays active — but nothing arrived, and "delivered" must say so.
         boom = WebPushException("boom", response=SimpleNamespace(status_code=500))
         with patch("notifications.push_service.webpush", side_effect=boom):
-            self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+            outcome = PushDispatcherService.send_test_push(self.user)
+        # A device that was offered the push and refused it is not the same story
+        # as no device at all — the endpoint answers the two apart.
+        self.assertEqual((outcome.devices, outcome.delivered), (1, 0))
         self.assertTrue(PushDevice.objects.get(user=self.user).is_active)
 
     def test_a_member_with_no_device_reports_zero(self) -> None:
         PushDevice.objects.filter(user=self.user).delete()
-        self.assertEqual(PushDispatcherService.send_test_push(self.user), 0)
+        outcome = PushDispatcherService.send_test_push(self.user)
+        self.assertEqual((outcome.devices, outcome.delivered), (0, 0))
+
+    def test_the_endpoint_names_which_zero_it_hit(self) -> None:
+        self.client.force_authenticate(user=self.user)
+
+        boom = WebPushException("boom", response=SimpleNamespace(status_code=500))
+        with patch("notifications.push_service.webpush", side_effect=boom):
+            refused = self.client.post("/api/notifications/devices/test/")
+        self.assertEqual(refused.status_code, 502)
+        self.assertEqual(refused.data["reason"], "undeliverable")
+
+        PushDevice.objects.filter(user=self.user).delete()
+        missing = self.client.post("/api/notifications/devices/test/")
+        self.assertEqual(missing.status_code, 409)
+        self.assertEqual(missing.data["reason"], "no_devices")
 
 
 class PushEmailOfferStampTests(APITestCase):
