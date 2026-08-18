@@ -3674,6 +3674,7 @@
         "conductor": "Dyrygent",
         "title": "Szczegóły",
         "venue": "Miejsce",
+        "onsite_contact": "Kontakt na miejscu",
         "when": "Termin"
       },
       "kpi": {
@@ -4271,6 +4272,7 @@
         "tomorrow": "Jutro"
       },
       "next_concert": "Najbliższy koncert",
+      "concert_today": "Dziś koncert",
       "next_rehearsal": "Najbliższa próba",
       "prepare_cta": "Śpiewnik",
       "score_cta": "Partytura",

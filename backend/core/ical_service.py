@@ -46,23 +46,46 @@ class ICalGeneratorService:
         # We force the translation to the user's preferred language,
         # because calendar clients might not send 'Accept-Language' headers.
         with override(language):
-            # `Participation.live_seats` and nothing else. This feed used to
-            # write its own three conditions and disagreed with the panel on the
-            # third: it dropped only cancelled projects, so a DRAFT concert —
-            # invisible in the schedule, never announced to anybody — was
-            # published into the singer's subscribed calendar.
+            # `Participation.live_seats` and nothing else for the cast. This
+            # feed used to write its own three conditions and disagreed with the
+            # panel on the third: it dropped only cancelled projects, so a DRAFT
+            # concert — invisible in the schedule, never announced to anybody —
+            # was published into the singer's subscribed calendar.
             seats = Participation.live_seats(artist=artist)
+
+            # A conductor holds no seat, so the query above cannot see the
+            # projects they only conduct — their subscribed calendar was empty
+            # of the dates they are the reason for.
+            #
+            # `get_artist_schedule` hands them their drafts as well, deliberately:
+            # they are the one assembling them. This file is a different room.
+            # It leaves the panel, is mirrored onto a calendar provider's servers
+            # and refreshed on that provider's cadence — hours to days — so a
+            # plan still moving daily would sit there wrong, and would sit there
+            # after being abandoned. Published only, therefore: the same gate the
+            # cast's own seats pass through.
+            conducted_ids = set(
+                Project.objects.filter(
+                    conductor__user=user, conductor__is_deleted=False
+                )
+                .exclude(status__in=Project.HIDDEN_FROM_CAST_STATUSES)
+                .values_list('id', flat=True)
+            )
+
             projects = Project.objects.filter(
-                id__in=seats.values('project_id')
+                Q(id__in=seats.values('project_id')) | Q(id__in=conducted_ids)
             ).select_related('location')
 
             # The same rule the schedule reads: a sectional IS its list of
             # names, so a soprano's calendar does not fill with the basses'
             # rehearsals — and a deleted session leaves the calendar with it.
+            # A conductor runs every rehearsal of their own project, which is
+            # why that project's id short-circuits the invite list.
             rehearsals = (
                 Rehearsal.objects.filter(project__in=projects, is_deleted=False)
                 .filter(
-                    Q(invited_participations__isnull=True)
+                    Q(project_id__in=conducted_ids)
+                    | Q(invited_participations__isnull=True)
                     | Q(invited_participations__in=seats)
                 )
                 .distinct()

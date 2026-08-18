@@ -1608,3 +1608,116 @@ class CalendarFeedTests(TestCase):
         # The old feed printed every label with an empty value after it.
         self.assertNotIn("Parking:", feed)
         self.assertNotIn("Dress Code (Male):", feed)
+
+
+class CalendarFeedConductorTests(TestCase):
+    """A conductor holds no seat, so the feed used to be empty of the very dates
+    they are the reason for.
+
+    The panel and the file deliberately disagree about drafts: `get_artist_schedule`
+    hands a conductor their unpublished plans because they are the one assembling
+    them, while this file leaves the panel for a calendar provider that mirrors and
+    re-reads it on its own cadence. Both halves are asserted here so neither is
+    "fixed" into agreement by accident.
+    """
+
+    def setUp(self) -> None:
+        from roster.models import Artist, Project, Rehearsal
+
+        self.Project = Project
+        self.Rehearsal = Rehearsal
+
+        user = get_user_model().objects.create_user(
+            username="ics-maestro", email="ics-maestro@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=user, role=AppRole.ARTIST, language="en")
+        self.user = user
+        self.conductor = Artist.objects.create(
+            user=user, first_name="Maria", last_name="Maestro",
+            email="ics-maestro@test.pl", voice_type="DIR",
+        )
+
+    def _podium(self, title: str, status: str):
+        return self.Project.objects.create(
+            title=title,
+            date_time=timezone.now() + timedelta(days=20),
+            status=status,
+            timezone="Europe/Warsaw",
+            conductor=self.conductor,
+        )
+
+    def _feed(self) -> str:
+        return ICalGeneratorService.generate_user_feed(self.user)
+
+    def test_the_podium_reaches_the_calendar_with_every_rehearsal(self) -> None:
+        project = self._podium("Requiem", self.Project.Status.ACTIVE)
+        self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=5),
+            focus="Tutti",
+        )
+        # A sectional invites named singers, none of them the conductor — who
+        # still runs it. The cast's rule would have dropped this row.
+        from roster.models import Artist, Participation
+
+        sectional = self.Rehearsal.objects.create(
+            project=project, date_time=timezone.now() + timedelta(days=6),
+            focus="Tylko basy",
+        )
+        sectional.invited_participations.add(
+            Participation.objects.create(
+                artist=Artist.objects.create(
+                    first_name="Bo", last_name="Bass",
+                    email="ics-bo2@test.pl", voice_type="BAS",
+                ),
+                project=project,
+                status=Participation.Status.CONFIRMED,
+            )
+        )
+
+        feed = self._feed()
+
+        self.assertIn("Requiem", feed)
+        self.assertIn("Tutti", feed)
+        self.assertIn("Tylko basy", feed)
+
+    def test_a_draft_stays_in_the_panel_and_out_of_the_file(self) -> None:
+        from roster.queries.schedule_queries import get_artist_schedule
+
+        draft = self._podium("Plan na maj", self.Project.Status.DRAFT)
+        self.Rehearsal.objects.create(
+            project=draft, date_time=timezone.now() + timedelta(days=5),
+            focus="Czytanie",
+        )
+
+        projects_qs, rehearsals_qs, _ = get_artist_schedule(self.user)
+
+        # The panel keeps giving them the plan they are still making…
+        self.assertIn(draft.id, {project.id for project in projects_qs})
+        self.assertEqual(rehearsals_qs.count(), 1)
+        # …and nothing of it is written into a file that syncs elsewhere.
+        feed = self._feed()
+        self.assertNotIn("Plan na maj", feed)
+        self.assertNotIn("Czytanie", feed)
+
+    def test_a_cancelled_podium_project_takes_its_rehearsals_with_it(self) -> None:
+        cancelled = self._podium("Odwołany", self.Project.Status.CANCELLED)
+        self.Rehearsal.objects.create(
+            project=cancelled, date_time=timezone.now() + timedelta(days=5),
+            focus="Nieaktualna",
+        )
+
+        feed = self._feed()
+
+        self.assertNotIn("Odwołany", feed)
+        self.assertNotIn("Nieaktualna", feed)
+
+    def test_the_day_facts_travel_to_the_podium_too(self) -> None:
+        project = self._podium("Requiem", self.Project.Status.ACTIVE)
+        project.entrance_note = "Wejście od zakrystii"
+        project.onsite_contact_phone = "+48 600 000 000"
+        project.save()
+
+        feed = self._feed()
+
+        self.assertIn("Entrance: Wejście od zakrystii", feed)
+        self.assertIn("On-site contact: +48 600 000 000", feed)

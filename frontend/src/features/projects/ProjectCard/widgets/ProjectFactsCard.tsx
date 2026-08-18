@@ -1,10 +1,11 @@
 /**
  * @file ProjectFactsCard.tsx
  * @description Context-rail card for the Project Overview. Consolidates the bare facts a
- * conductor scans first — concert date/time, venue, conductor, estimated budget — plus an
- * optional event note, into one calm definition list. Subsumes the former single-metric
- * BudgetWidget (the cost now lives as one fact among others, not a lone number in a tall
- * card). The whole card deep-links to the Details work area.
+ * conductor scans first — concert date/time, venue, what waits at that venue on the day,
+ * conductor, estimated budget — plus an optional event note, into one calm definition
+ * list. Subsumes the former single-metric BudgetWidget (the cost now lives as one fact
+ * among others, not a lone number in a tall card). The whole card deep-links to the
+ * Details work area, which is where every one of these is typed.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/ProjectCard/widgets/ProjectFactsCard
  */
@@ -78,6 +79,44 @@ export function ProjectFactsCard({
   );
   const dash = "—";
 
+  // Where exactly, once somebody has arrived at the address. Named in the words
+  // the Details form uses, because that is the one place these are typed and the
+  // card deep-links there. Only what was entered — a row reading "Parking: —"
+  // states that a field is empty, which is not a fact about the concert.
+  const onsiteNotes = useMemo(
+    () =>
+      [
+        {
+          id: "entrance",
+          label: t("projects.details_tab.fields.entrance", "Wejście / brama"),
+          value: project.entrance_note?.trim(),
+        },
+        {
+          id: "parking",
+          label: t("projects.details_tab.fields.parking", "Parking"),
+          value: project.parking_note?.trim(),
+        },
+        {
+          id: "dressing_room",
+          label: t("projects.details_tab.fields.dressing_room", "Garderoba"),
+          value: project.dressing_room_note?.trim(),
+        },
+      ].filter((note): note is typeof note & { value: string } =>
+        Boolean(note.value),
+      ),
+    [
+      project.entrance_note,
+      project.parking_note,
+      project.dressing_room_note,
+      t,
+    ],
+  );
+
+  // One row, because a name and a number are one person to call — the same
+  // grouping the change notification makes of the same two columns.
+  const contactName = project.onsite_contact_name?.trim() || "";
+  const contactPhone = project.onsite_contact_phone?.trim() || "";
+
   return (
     <SectionCard
       title={t("projects.overview.facts.title", "Szczegóły")}
@@ -131,6 +170,44 @@ export function ProjectFactsCard({
             </Text>
           )}
         </FactRow>
+
+        {onsiteNotes.map((note) => (
+          <FactRow key={note.id} label={note.label}>
+            <Text
+              size="sm"
+              weight="medium"
+              className="whitespace-pre-wrap text-pretty"
+            >
+              {note.value}
+            </Text>
+          </FactRow>
+        ))}
+
+        {(contactName || contactPhone) && (
+          <FactRow
+            label={t(
+              "projects.overview.facts.onsite_contact",
+              "Kontakt na miejscu",
+            )}
+          >
+            <div className="flex flex-col gap-0.5">
+              {contactName && (
+                <Text size="sm" weight="medium">
+                  {contactName}
+                </Text>
+              )}
+              {/* Stated, not dialled. The whole card is one control that opens
+                  Details, so an anchor here would follow its own href AND
+                  navigate the card away underneath it; the tap-to-call belongs
+                  to the surfaces the singer reads (`OnSiteFacts`). */}
+              {contactPhone && (
+                <Text size="sm" weight="medium" color="graphite">
+                  {contactPhone}
+                </Text>
+              )}
+            </div>
+          </FactRow>
+        )}
 
         <FactRow label={t("projects.overview.facts.conductor", "Dyrygent")}>
           <Text size="sm" weight="medium" color={conductorName ? "default" : "muted"}>

@@ -7,11 +7,15 @@
  *  - PROJECT  → dark concert card (call time, dress code, location, prep CTA)
  *  - REHEARSAL → light card with one-tap RSVP and the conductor's focus plan
  *
- * When a rehearsal is imminent or running (−2h … +3h) the card escalates into
- * Rehearsal Mode: tonight's programme with one-tap jumps into the Songbook
- * piece pages plus a Web Audio pitch pipe.
+ * Both escalate as their moment arrives, because this card is the whole surface
+ * then: the schedule feed hands the very next event to the spotlight and renders
+ * everything *after* it, so on the day of a concert there is no second card to
+ * open. When a rehearsal is imminent or running (−2h … +3h) it becomes Rehearsal
+ * Mode — tonight's programme with one-tap jumps into the Songbook plus a Web
+ * Audio pitch pipe. On the day of a concert it opens the day: where the door is,
+ * whom to call, and the run sheet the printed card draws.
  */
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -44,6 +48,8 @@ import { ProjectService } from "@/features/projects/api/project.service";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
+import { resolveImminence } from "@/features/logistics/constants/eventImminence";
+import { buildProjectDayTimeline } from "@/features/projects/lib/dayTimeline";
 
 import type { AbsenceRangeControls, TimelineEvent } from "../types/schedule.dto";
 import { ScheduleService } from "../api/schedule.service";
@@ -51,6 +57,8 @@ import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { useScheduleProgramItems } from "../api/schedule.queries";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
 import { AbsenceReportForm } from "./AbsenceReportForm";
+import { ConcertDayPlan, hasConcertDayPlan } from "./ConcertDayPlan";
+import { OnSiteFacts, hasOnSiteFacts } from "./OnSiteFacts";
 import { ReadinessRing } from "./ReadinessRing";
 import { AddToCalendar } from "./AddToCalendar";
 
@@ -66,9 +74,13 @@ export const isRehearsalLive = (event: TimelineEvent, now: Date): boolean => {
   );
 };
 
-const useCountdownLabel = (date: Date): string => {
+/**
+ * Takes the caller's clock rather than starting its own: both heroes already
+ * hold one to decide which mode they are in, and a card whose countdown and
+ * whose mode disagree about what time it is reads worse than a stale one.
+ */
+const useCountdownLabel = (date: Date, now: Date): string => {
   const { t } = useTranslation();
-  const now = useNow();
   const diffMs = date.getTime() - now.getTime();
 
   if (diffMs <= 0) return t("schedule.hero.countdown.now", "Trwa teraz");
@@ -119,10 +131,20 @@ export const NextEventHero = ({
 const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => {
   const { t } = useTranslation();
   const proj = event.rawObj as Project;
-  const countdown = useCountdownLabel(event.date_time);
+  const now = useNow();
+  const countdown = useCountdownLabel(event.date_time, now);
   const readiness = useProjectReadiness(event.project_id, true);
   const [scoreOpen, setScoreOpen] = useState(false);
   const [daySheetOpen, setDaySheetOpen] = useState(false);
+
+  // The day the card stops being a countdown and starts being the surface
+  // somebody opens while standing outside the church, having forgotten which
+  // door it was. The bucket is `resolveImminence`'s, so "today" means the same
+  // thing here as on the logistics atlas.
+  const isConcertDay = resolveImminence(event.date_time, now) === "TODAY";
+  const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
+  const showOnSite = hasOnSiteFacts(proj);
+  const showDayPlan = hasConcertDayPlan(dayEntries);
   const fetchScoreBlob = useCallback(
     () => ProjectService.fetchScorePdfBlob(String(proj.id)),
     [proj.id],
@@ -142,11 +164,16 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
     <GlassCard variant="dark" glow withNoise isHoverable={false} padding="none">
       <div className="p-4 sm:p-6">
         <div className="flex flex-wrap items-center gap-2">
+          {/* `pulse` is the panel's one live signal, and this is a state that
+              genuinely expires: at midnight the concert is no longer today. */}
           <Badge
             variant="warning"
+            pulse={isConcertDay}
             icon={<Sparkles size={11} aria-hidden="true" />}
           >
-            {t("schedule.hero.next_concert", "Najbliższy koncert")}
+            {isConcertDay
+              ? t("schedule.hero.concert_today", "Dziś koncert")
+              : t("schedule.hero.next_concert", "Najbliższy koncert")}
           </Badge>
           <Badge variant="incense">{countdown}</Badge>
         </div>
@@ -218,6 +245,28 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           </div>
         )}
       </div>
+
+      {/* ── concert day: the card opens the day it is about ──────────── */}
+      {isConcertDay && (showOnSite || showDayPlan) && (
+        <div className="grid gap-5 border-t border-ethereal-incense/15 bg-ethereal-ink/20 p-4 sm:grid-cols-2 sm:p-6">
+          {showOnSite && <OnSiteFacts project={proj} />}
+          {showDayPlan && (
+            <div className="min-w-0">
+              <Eyebrow color="parchment" className="mb-3 block">
+                {t("schedule.card.run_sheet_title", "Harmonogram Dnia")}
+              </Eyebrow>
+              {/* Capped like the rehearsal programme below: a long day must not
+                  push the card's own actions off the screen it is opened on.
+                  The cap sits on a wrapper, not on the plan — the plan hangs its
+                  dots outside its own padding box, and an overflow there would
+                  clip them. */}
+              <div className="max-h-[50dvh] overflow-y-auto overscroll-contain no-scrollbar">
+                <ConcertDayPlan entries={dayEntries} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ethereal-incense/15 bg-ethereal-ink/30 px-5 py-3 sm:px-6">
         {readiness.hasData ? (
@@ -323,7 +372,7 @@ const RehearsalHero = ({
   const { t } = useTranslation();
   const reh = event.rawObj as Rehearsal;
   const now = useNow();
-  const countdown = useCountdownLabel(event.date_time);
+  const countdown = useCountdownLabel(event.date_time, now);
   const isLive = isRehearsalLive(event, now);
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
 

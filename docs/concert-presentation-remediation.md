@@ -102,27 +102,86 @@ tie, `HH:MM:SS`, an end with no start, the stored-day sort), 3 on the change dif
 Nothing here was verified by eye. The panel is the developer's to look at, and the
 `.ics` has not been opened in a real calendar client.
 
+## Second pass (2026-08-18)
+
+**The spotlight was not one tap from the event sheet. It was the only card there was.**
+`Schedule` hands the very next event to `NextEventHero` and renders the feed from
+`visibleEvents.slice(1)` — so a concert has no `TimelineProjectCard` while it is the
+next thing due, which is precisely the day everything above was written for. The
+dashboard is the hero alone, and `GoalConcertCard` suppresses itself when the concert
+*is* the next event. The block that shipped into the event sheet was therefore
+unreachable, in the app, on concert day: the facts existed only in the PDF that cannot
+open without signal and in a subscribed `.ics`. (This is the third finding asserted
+from reading a component without tracing the surface that renders it — see below.)
+
+**So the concert hero opens the day, the way the rehearsal hero already opens the
+evening.** `RehearsalHero` had escalated into Rehearsal Mode for a −2h…+3h window since
+the beginning; `ProjectHero` had no equivalent. It has one now, bound to
+`resolveImminence(...) === "TODAY"` — the logistics taxonomy's own bucket, so "today"
+means one thing product-wide, and the badge earns `pulse` because at midnight it stops
+being true. On that day the card carries "Na miejscu" and the day plan; on every other
+day it is exactly what it was.
+
+- The two blocks are shared components (`OnSiteFacts`, `ConcertDayPlan`), not a second
+  copy: the spotlight and the event sheet are the same reader looking at the same day,
+  and a door named differently on the two is two doors. `hasOnSiteFacts` /
+  `hasConcertDayPlan` are exported beside them, because the caller owns the heading and
+  the empty state and has to be able to ask before it renders.
+- `ConcertDayPlan` hangs its dots outside its own padding box, so a height cap goes on a
+  wrapper — capping the plan itself clips them. Said in the component, where the next
+  caller will be standing.
+- `useCountdownLabel` now takes the caller's clock instead of starting a second one.
+  Both heroes already held a `useNow()` to decide their mode; a card whose countdown and
+  whose mode disagree about the time is worse than one that is merely stale.
+
+**The manager's Overview states the on-site facts in `ProjectFactsCard`**, not in a card
+of its own — it was already a definition list of the concert's bare facts deep-linking
+to Details, which is where all four are typed. They sit under `Miejsce` (the address,
+then where exactly at it, then who is there), labelled in the Details form's own words
+rather than the singer's, and only when entered. The contact is one row, because a name
+and a number are one person to call — the same grouping the change notification makes of
+the same two columns.
+
+- The number is **stated, not dialled**, and that is a `SectionCard` constraint rather
+  than a preference: `onActivate` is an `onClick` on the card itself (`role="button"`),
+  and only the `action` slot stops propagation. A `tel:` anchor in the body would follow
+  its own href *and* navigate the card to Details underneath it. Nothing interactive
+  belongs in a `SectionCard` body while its whole surface is the control; the tap-to-call
+  lives on the surfaces the singer reads.
+
+**The `.ics` feed gains the podium, and drafts stay out of it.** A conductor holds no
+seat, so a feed resolving `live_seats` was empty of the dates they are the reason for;
+their conducted projects and *every* rehearsal within them now join it. Drafts do not,
+and this is the one place the file and the panel deliberately disagree:
+`get_artist_schedule` hands a conductor their unpublished plans because they are the one
+assembling them, while this file leaves the panel to be mirrored onto a calendar
+provider's servers and re-read on that provider's cadence — hours to days. A plan still
+moving daily would sit there wrong, and would sit there after being abandoned. Both
+halves are pinned by one test, so neither gets "fixed" into agreement by accident.
+
+**Verified.** `npm run typecheck` · `npm run lint` · `npm run build` · `ruff` + `mypy` on
+`core` (clean) · `manage.py test core roster --settings=config.test_settings_sqlite`
+(597 tests, OK). New tests: 4 on the conductor's feed — the podium with its sectionals, a
+draft held in the panel and withheld from the file, a cancelled project taking its
+rehearsals, and the day facts on a podium entry. By eye: nothing, as above.
+
 ## Still open
 
-1. **The concert-morning surface is `NextEventHero`, and it carries none of this.** The
-   event sheet is one tap further, and on the day of a concert the hero is what people
-   look at. A compact line (entrance + the phone) is the obvious move; the reason it was
-   not made is "one primary element per card", which is a real rule and may still lose
-   to the use case. **Decide, don't drift.**
-2. **The manager's Overview has no on-site card.** The facts are one click away in the
-   Details editor where they are entered, which is why this was left — but Overview is
-   the producer's one screen for the concert.
-3. **The conductor's subscribed calendar is still empty of the projects they only
-   conduct.** `get_artist_schedule` gives them their podium projects (drafts included,
-   deliberately); the feed gives them nothing, because it resolves seats. Fixing it means
-   deciding whether a draft belongs in a file that syncs to other people's devices.
-4. The i18n dead-key sweep is still pending overall (`projects.details_tab.day_plan.anchor_*`
-   were removed here because they were replaced).
+1. The i18n dead-key sweep is still pending overall (`projects.details_tab.day_plan.anchor_*`
+   were removed in the first pass because they were replaced).
+2. Unrelated, found while verifying: `ActivatePage.test.tsx`'s two cases fail in a full
+   `vitest run` and pass in isolation, on a clean tree as well as a dirty one. Each takes
+   ~4.5s to render and the `waitFor` loses the race under parallel load. It is a flake in
+   the test, not in the page.
 
 ## Withdrawn findings
 
-Recorded because both were asserted from reading a component in isolation, and both
-were wrong once the data was traced:
+Recorded because each was asserted from reading a component in isolation, and each was
+wrong once the data — or the surface doing the rendering — was traced:
+
+- **"The event sheet is one tap further."** It is not, for the one event this whole
+  record is about; see the second pass above. Reading `TimelineProjectCard` says where a
+  block lives, and says nothing about when that component is on screen.
 
 - **`tabular-nums` on the run-sheet clock is correct.** `.ai/04_design_system.md`
   §Typography: figures that align down a column — a ledger, a duration column, *a clock*

@@ -3656,6 +3656,7 @@
         "conductor": "Conductor",
         "title": "Details",
         "venue": "Venue",
+        "onsite_contact": "On-site contact",
         "when": "Date"
       },
       "kpi": {
@@ -4240,6 +4241,7 @@
         "tomorrow": "Tomorrow"
       },
       "next_concert": "Next concert",
+      "concert_today": "Concert today",
       "next_rehearsal": "Next rehearsal",
       "prepare_cta": "Songbook",
       "score_cta": "Score",

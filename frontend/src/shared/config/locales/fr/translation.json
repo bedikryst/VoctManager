@@ -3657,6 +3657,7 @@
         "conductor": "Chef de chœur",
         "title": "Détails",
         "venue": "Lieu",
+        "onsite_contact": "Contact sur place",
         "when": "Date"
       },
       "kpi": {
@@ -4241,6 +4242,7 @@
         "tomorrow": "Demain"
       },
       "next_concert": "Prochain concert",
+      "concert_today": "Concert aujourd'hui",
       "next_rehearsal": "Prochaine répétition",
       "prepare_cta": "Recueil",
       "score_cta": "Partition",

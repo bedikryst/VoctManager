@@ -5,8 +5,6 @@ import {
   Clock,
   ChevronDown,
   ChevronRight,
-  DoorOpen,
-  Phone,
   Shirt,
   Eye,
   Users,
@@ -19,14 +17,7 @@ import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
-import {
-  buildProjectDayTimeline,
-  isDayWindow,
-} from "../../projects/lib/dayTimeline";
-import {
-  DAY_FIXTURE_PRESENTATION,
-  DAY_WINDOW_UNTIL,
-} from "../../projects/lib/projectPresentation";
+import { buildProjectDayTimeline } from "../../projects/lib/dayTimeline";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -38,6 +29,8 @@ import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
 import { ReadinessRing } from "./ReadinessRing";
 import { AddToCalendar } from "./AddToCalendar";
+import { ConcertDayPlan, hasConcertDayPlan } from "./ConcertDayPlan";
+import { OnSiteFacts, hasOnSiteFacts } from "./OnSiteFacts";
 import type { TimelineEvent } from "../types/schedule.dto";
 import { cn } from "@/shared/lib/utils";
 import { onActivate } from "@/shared/lib/dom/a11y";
@@ -104,41 +97,9 @@ export const TimelineProjectCard = ({
   // the project rather than `event.run_sheet` — the windows and the venue clock
   // live there, and a second reading of the same day is how the two diverge.
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
-  const hasDayPlan = dayEntries.some(
-    (entry) => entry.kind === "point" || isDayWindow(entry),
-  );
+  const hasDayPlan = hasConcertDayPlan(dayEntries);
 
-  // Where exactly, once you are standing at the address. Only what the producer
-  // actually entered: a row reading "Parking: —" answers nothing and pushes the
-  // one fact that does answer something further down a phone screen.
-  const onsiteFacts = useMemo(
-    () =>
-      [
-        {
-          id: "entrance",
-          label: t("schedule.card.onsite.entrance", "Wejście"),
-          value: proj.entrance_note,
-        },
-        {
-          id: "parking",
-          label: t("schedule.card.onsite.parking", "Parking"),
-          value: proj.parking_note,
-        },
-        {
-          id: "dressing_room",
-          label: t("schedule.card.onsite.dressing_room", "Garderoba"),
-          value: proj.dressing_room_note,
-        },
-      ].filter((fact): fact is typeof fact & { value: string } =>
-        Boolean(fact.value?.trim()),
-      ),
-    [proj.entrance_note, proj.parking_note, proj.dressing_room_note, t],
-  );
-
-  const onsiteContactName = proj.onsite_contact_name?.trim() || "";
-  const onsiteContactPhone = proj.onsite_contact_phone?.trim() || "";
-  const hasOnsiteBlock =
-    onsiteFacts.length > 0 || Boolean(onsiteContactName || onsiteContactPhone);
+  const hasOnsiteBlock = hasOnSiteFacts(proj);
   const hasDressCode = Boolean(proj.dress_code_female || proj.dress_code_male);
 
   return (
@@ -382,78 +343,7 @@ export const TimelineProjectCard = ({
                           )}
                         </div>
                       )}
-                      {/* The facts a singer would otherwise ask a stranger for
-                          at the door. They live in the app as well as on the
-                          printed card because the card is a blob fetched on
-                          demand: outside a church with no signal it is the one
-                          thing that cannot open, while this sheet paints from
-                          the persisted cache. */}
-                      {hasOnsiteBlock && (
-                        <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
-                          <Eyebrow
-                            color="parchment"
-                            className="mb-3 flex items-center gap-2"
-                          >
-                            <DoorOpen size={13} aria-hidden="true" />
-                            {t("schedule.card.onsite.title", "Na miejscu")}
-                          </Eyebrow>
-                          <div className="space-y-1.5">
-                            {onsiteFacts.map((fact) => (
-                              <Text
-                                key={fact.id}
-                                as="p"
-                                size="sm"
-                                color="white"
-                              >
-                                <Text
-                                  as="span"
-                                  color="parchment-muted"
-                                  className="mr-2"
-                                >
-                                  {fact.label}
-                                </Text>
-                                {fact.value}
-                              </Text>
-                            ))}
-                          </div>
-                          {(onsiteContactName || onsiteContactPhone) && (
-                            <div className="mt-3 border-t border-ethereal-incense/20 pt-3">
-                              {/* Unnamed, the role IS the name: a line reading
-                                  "Kontakt na miejscu" under a label saying the
-                                  same thing states one fact twice. */}
-                              <Eyebrow color="parchment-muted" className="mb-1.5">
-                                {t(
-                                  "schedule.card.onsite.contact",
-                                  "Kontakt na miejscu",
-                                )}
-                              </Eyebrow>
-                              {onsiteContactName && (
-                                <Text
-                                  as="p"
-                                  size="sm"
-                                  color="white"
-                                  className="mb-2"
-                                >
-                                  {onsiteContactName}
-                                </Text>
-                              )}
-                              {onsiteContactPhone && (
-                                <Button
-                                  variant="outline"
-                                  size="touch"
-                                  asChild
-                                  leftIcon={<Phone size={13} aria-hidden="true" />}
-                                  className="w-full border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20 sm:w-auto"
-                                >
-                                  <a href={`tel:${onsiteContactPhone.replace(/\s+/g, "")}`}>
-                                    {onsiteContactPhone}
-                                  </a>
-                                </Button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {hasOnsiteBlock && <OnSiteFacts project={proj} />}
                       {proj.description && (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Text
@@ -527,94 +417,7 @@ export const TimelineProjectCard = ({
                       )}
 
                       {hasDayPlan ? (
-                        <div className="relative pl-5 border-l border-ethereal-incense/20 space-y-4 ml-2">
-                          {dayEntries.map((entry, idx) => {
-                            const isPoint = entry.kind === "point";
-                            // A fixed moment is named here, in the reader's
-                            // language; a typed point carries whatever the
-                            // producer wrote, which may be nothing at all.
-                            const rowTitle =
-                              entry.kind === "point"
-                                ? entry.item.title
-                                : t(
-                                    DAY_FIXTURE_PRESENTATION[entry.kind].labelKey,
-                                    DAY_FIXTURE_PRESENTATION[entry.kind]
-                                      .fallbackLabel,
-                                  );
-
-                            return (
-                              <div
-                                key={
-                                  isPoint
-                                    ? entry.item.id || `point-${idx}`
-                                    : entry.kind
-                                }
-                                className="relative group/run"
-                              >
-                                {/* Filled for a moment the producer set in a
-                                    field, hollow for a typed point — the same
-                                    distinction the editor and the printed card
-                                    draw. */}
-                                <div
-                                  className={cn(
-                                    "absolute -left-6 top-1.5 w-2.5 h-2.5 rounded-full shadow-glass-solid transition-transform group-hover/run:scale-125",
-                                    isPoint
-                                      ? "bg-ethereal-ink border-2 border-ethereal-gold"
-                                      : "bg-ethereal-gold",
-                                  )}
-                                  aria-hidden="true"
-                                />
-                                <Eyebrow
-                                  as="span"
-                                  color="gold"
-                                  className="bg-ethereal-gold/15 self-start px-2 py-0.5 rounded border border-ethereal-gold/40 mb-1.5 inline-block"
-                                >
-                                  {isPoint ? entry.item.time : entry.time}
-                                </Eyebrow>
-                                <div className="bg-ethereal-incense/10 p-3.5 rounded-xl border border-ethereal-incense/20 hover:bg-ethereal-incense/20 transition-colors">
-                                  {rowTitle ? (
-                                    <Text weight="bold" color="white">
-                                      {rowTitle}
-                                    </Text>
-                                  ) : (
-                                    <Text
-                                      weight="medium"
-                                      color="parchment-muted"
-                                      className="italic text-ethereal-parchment/50"
-                                    >
-                                      {t(
-                                        "schedule.card.run_sheet_untitled",
-                                        "Punkt harmonogramu",
-                                      )}
-                                    </Text>
-                                  )}
-                                  {isDayWindow(entry) && entry.endTime && (
-                                    <Text
-                                      size="sm"
-                                      color="parchment-muted"
-                                      className="mt-1 leading-relaxed text-ethereal-parchment/80"
-                                    >
-                                      {t(
-                                        DAY_WINDOW_UNTIL.labelKey,
-                                        DAY_WINDOW_UNTIL.fallbackLabel,
-                                        { time: entry.endTime },
-                                      )}
-                                    </Text>
-                                  )}
-                                  {isPoint && entry.item.description && (
-                                    <Text
-                                      size="sm"
-                                      color="parchment-muted"
-                                      className="mt-1 leading-relaxed text-ethereal-parchment/80"
-                                    >
-                                      {entry.item.description}
-                                    </Text>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <ConcertDayPlan entries={dayEntries} />
                       ) : (
                         <Text
                           size="sm"
