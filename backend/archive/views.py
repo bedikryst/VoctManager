@@ -359,11 +359,19 @@ class TrackViewSet(viewsets.ModelViewSet):
         """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         track = services.ArchiveManagementService.create_track(serializer.validated_data)
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(self.get_serializer(track).data, status=status.HTTP_201_CREATED, headers=headers)
+
+        # Both the body and the headers are rendered from the SAVED row. A
+        # serializer that was never saved represents its own `validated_data`,
+        # and a plain dict has no `.piece` for the display fields to name the
+        # voice line against.
+        output = self.get_serializer(track)
+        return Response(
+            output.data,
+            status=status.HTTP_201_CREATED,
+            headers=self.get_success_headers(output.data),
+        )
 
     def perform_destroy(self, instance) -> None:
         """Ensures safe deletion via service layer."""

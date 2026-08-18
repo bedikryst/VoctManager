@@ -5,12 +5,16 @@
  * @module features/projects/api
  */
 
+import { DICTIONARY_VERSION } from "@/shared/api/options.queries";
+
 export const projectKeys = {
   dictionaries: {
     artists: ["artists"] as const,
     pieces: ["pieces"] as const,
     collaborators: ["collaborators"] as const,
-    voiceLines: ["options", "voiceLines"] as const,
+    /** Deliberately identical to `OPTIONS_QUERY_KEYS.voiceLines` — the board and
+     *  the archive read the same endpoint and must share one cached copy. */
+    voiceLines: ["options", "voiceLines", DICTIONARY_VERSION] as const,
     /** Keyed by language on purpose: the vocabulary is served already
      *  translated and is then held for the session, so the language is the only
      *  thing that can make the cached copy wrong. */

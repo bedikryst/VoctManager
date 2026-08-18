@@ -11,12 +11,14 @@
 @architecture Enterprise SaaS 2026
 @module archive/tests
 """
+import tempfile
 from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.test import SimpleTestCase, TestCase
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.utils.translation import override as override_language
 from rest_framework.test import APITestCase
 
@@ -925,3 +927,54 @@ class EditionScopedDivisiTests(TestCase):
         rows = list(self.piece.tracks.all())
         self.assertEqual(scoped_to_edition(rows, self.three_part.pk), [three_part_track])
         self.assertEqual(scoped_to_edition(rows, self.unison.pk), [piece_wide])
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp())
+class TrackUploadEndpointTests(APITestCase):
+    """POST /api/tracks/ — the response is rendered from the saved row.
+
+    The display fields resolve a voice line against its piece's divisi, so they
+    need a Track, not the validated payload: rendering an unsaved serializer
+    hands them a plain dict and the upload dies with a 500 after the file has
+    already landed.
+    """
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(
+            username="trk-mgr", email="trk@test.pl", password="pw123456",
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.piece = Piece.objects.create(title="Ave verum")
+        PieceVoiceRequirement.objects.create(
+            piece=self.piece, voice_line="T1", quantity=4,
+        )
+        self.client.force_authenticate(self.manager)
+
+    def _upload(self, **extra: object):
+        return self.client.post(
+            "/api/tracks/",
+            {
+                "piece": str(self.piece.id),
+                "voice_part": "T1",
+                "audio_file": SimpleUploadedFile(
+                    "tenor-take-3.mp3", b"ID3\x03\x00\x00\x00", content_type="audio/mpeg",
+                ),
+                **extra,
+            },
+            format="multipart",
+        )
+
+    def test_upload_returns_the_created_track(self) -> None:
+        with override_language("en"):
+            response = self._upload()
+        self.assertEqual(response.status_code, 201, getattr(response, "data", None))
+        self.assertEqual(response.data["voice_part"], "T1")
+        # One tenor line on the piece, so the part is named plainly.
+        self.assertEqual(response.data["voice_part_display"], "Tenor")
+        self.assertEqual(response.data["original_filename"], "tenor-take-3.mp3")
+        self.assertEqual(Track.objects.filter(piece=self.piece).count(), 1)
+
+    def test_the_note_travels_with_the_upload(self) -> None:
+        response = self._upload(description="od taktu 34, tempo 90")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["description"], "od taktu 34, tempo 90")
