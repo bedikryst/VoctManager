@@ -15,10 +15,13 @@ Description:
                                       + IPA + translations in ONE call)
           → resolve_composer_and_piece  (MusicBrainz + Wikidata + DB dedup)
           → persist_analysis        (write movements / lyrics / translations)
-          → generate_program_note   (Claude — Sonnet, text-only)
           → lookup_spotify
           → lookup_youtube
           → finalize_edition
+
+    `generate_program_note` (Claude — Opus, text-only) is NOT in the chain: it
+    runs on demand from the review cockpit once the conductor has verified the
+    identity — see `build_ingestion_chain`.
 
     Why the rewrite (vs the old 4-call text-only chain):
       * One vision call over the real document — handles scans, full pages,
@@ -779,18 +782,24 @@ def generate_program_note(self, payload: dict) -> dict:
     )
 
     client = AIClient()
-    # A programme note is prose, not a reasoning task: extended thinking just ate
-    # the shared `max_tokens` budget and left too little for the output (the
-    # stub-note bug). Disable thinking so the whole budget is the note, and keep
-    # a moderate effort for quality.
+    # The only text in this pipeline that reaches the audience verbatim, printed
+    # in a concert programme — hence the Opus tier for ~1¢ more than Sonnet.
+    #
+    # Thinking stays ON at a low effort rather than disabled: `thinking:disabled`
+    # on Opus can leak `<thinking>` tags into the visible response, which here
+    # would be printed. The historical reason for disabling it — extended
+    # thinking eating the shared `max_tokens` and starving the note (the stub-note
+    # bug) — no longer applies at this budget: the note is ~850 output tokens
+    # against 8192, and a genuine truncation would raise rather than persist a
+    # stub. Measured: adaptive/low costs the same as disabled/medium.
     result, cost = client.parse(
-        model=AIModel.SONNET,
+        model=AIModel.OPUS,
         prompt=GENERATE_PROGRAM_NOTE,
         user_content=user_content,
         output_schema=GeneratedProgramNote,
         max_tokens=PROGRAM_NOTE_MAX_TOKENS,
-        effort="medium",
-        enable_thinking=False,
+        effort="low",
+        enable_thinking=True,
     )
     _bill_edition(edition, cost.total_cents)
 
@@ -810,7 +819,7 @@ def generate_program_note(self, payload: dict) -> dict:
         )
         provenance.record_ai(
             target=note, field_name='content',
-            model_id=AIModel.SONNET,
+            model_id=AIModel.OPUS,
             prompt_version=GENERATE_PROGRAM_NOTE.version,
         )
     return payload

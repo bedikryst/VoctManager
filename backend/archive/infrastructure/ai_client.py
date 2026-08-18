@@ -64,7 +64,7 @@ T = TypeVar('T', bound=BaseModel)
 class AIModel:
     """Canonical model IDs (Claude API, August 2026). Never construct your own."""
     HAIKU: Final[str] = "claude-haiku-4-5"      # cheap classification, dedup, simple extraction
-    SONNET: Final[str] = "claude-sonnet-5"      # score analysis, translations, program notes
+    SONNET: Final[str] = "claude-sonnet-5"      # score analysis, translations
     OPUS: Final[str] = "claude-opus-5"          # hardest reasoning / audience-facing prose
 
 
@@ -138,9 +138,11 @@ _MODELS_WITHOUT_EFFORT: Final[frozenset[str]] = frozenset({AIModel.HAIKU})
 
 
 # Opus 5's top effort tiers are defined in terms of extended thinking, so it
-# returns 400 when `thinking` is disabled at `xhigh` or `max`. A caller that
-# wants prose without thinking (the programme note) must stay at `high` or
-# below; we refuse locally rather than spend a round trip to learn it.
+# returns 400 when `thinking` is disabled at `xhigh` or `max`. No task takes the
+# disabled path today (a disabled-thinking Opus call can leak `<thinking>` tags
+# into the visible text, which is unacceptable for prose we print), but
+# `enable_thinking=False` stays a supported argument — so a caller combining it
+# with a top tier is refused locally rather than after a paid round trip.
 _EFFORTS_REQUIRING_THINKING: Final[frozenset[str]] = frozenset({"xhigh", "max"})
 _MODELS_REQUIRING_THINKING_AT_TOP_EFFORT: Final[frozenset[str]] = frozenset({AIModel.OPUS})
 
@@ -485,9 +487,9 @@ class AIClient:
         if model not in _MODELS_WITHOUT_EFFORT:
             base_params["output_config"] = {"effort": effort}
         # ALWAYS explicit. An omitted `thinking` key is not a stable "off" —
-        # Sonnet 4.6 read it as disabled, Sonnet 5 reads it as adaptive. The
-        # programme note relies on thinking being genuinely off (it shares the
-        # `max_tokens` budget with the output), so silence is not an option.
+        # Sonnet 4.6 read it as disabled, Sonnet 5 and Opus 5 read it as
+        # adaptive. `enable_thinking` must therefore mean the same thing on
+        # every model generation, so silence is not an option.
         if enable_thinking:
             base_params["thinking"] = {"type": "adaptive"}
         else:

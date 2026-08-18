@@ -323,27 +323,99 @@ Spend for this stage: 93¢ reported at standard rates (~74¢ actual under the pr
 
 ## Stage 3 — Programme note on Opus 5
 
-**Status: NOT STARTED**
+**Status: DONE (2026-08-18) — Opus 5 with thinking ON, not the disabled path this stage prescribed**
 
-Move `tasks.generate_program_note` from Sonnet to Opus 5. The note is ~900 input tokens and ~400
-output: **~1.5¢ on Opus 5 vs ~0.9¢ on Sonnet 5**, a difference of six tenths of a cent per note. It
-is also the only text in this pipeline that reaches the audience verbatim, printed in a concert
-programme. Opus 5 writes materially better prose.
+Move `tasks.generate_program_note` from Sonnet to Opus 5. It is the only text in this pipeline that
+reaches the audience verbatim, printed in a concert programme.
 
-Depends on Stage 1's explicit `thinking: disabled` (1.1) and its effort guard — without both, this
-stage either re-breaks the stub-note bug or 400s.
+The stage was written as "Opus 5 + `thinking: disabled`, depends on Stage 1.1". **That dependency was
+the wrong call and the code now does the opposite** — see Decisions below. Stage 1.1 is still correct
+and still needed; it just turned out to protect a path nothing takes.
 
-Secondary benefit: `GENERATE_PROGRAM_NOTE` is ~480 tokens, below Sonnet's 1024-token minimum
-cacheable prefix, so its `cache_control` marker is currently dead. **Opus 5's minimum is 512
-tokens** — still above 480. The marker stays dead unless the prompt grows past 512 tokens; if this
-stage also expands the prompt, caching starts working as a side effect. Do not expand it *just* to
-cross the threshold — a 5-minute-TTL cache is worth little on an on-demand, one-at-a-time call.
+### What the numbers actually were
+
+The stage's cost arithmetic was wrong in both terms. Measured on one real note (obscure Polish
+carol, arranger-only credit — the thinnest fact sheet the pipeline produces):
+
+| Configuration | Input | Cache write | Output | Cost | Words |
+|---|---|---|---|---|---|
+| `sonnet-5` / medium / thinking off | 1319 | 0 | 825 | 2¢ | 233 |
+| `opus-5` / medium / thinking off | 399 | 920 | 810 | 3¢ | 235 |
+| `opus-5` / low / thinking adaptive | 399 | 920 | 856 | 3¢ | 232 |
+
+Not ~900 in / ~400 out but **~1300 in / ~850 out**, so ~2¢ on Sonnet against ~3¢ on Opus — a whole
+cent per note rather than six tenths, and still irrelevant next to a 20¢ analysis.
+
+**The cache paragraph was also wrong, in the useful direction.** `GENERATE_PROGRAM_NOTE` is not
+~480 tokens — the API cached **920**. It is under Sonnet's 1024 minimum (hence `cache_write=0` on
+Sonnet, the marker genuinely dead) but comfortably over Opus 5's 512, so moving to Opus brought the
+`cache_control` marker to life with no prompt expansion. On a one-at-a-time on-demand call the write
+premium (1.25×) mostly won't earn its read back; it is a fraction of a cent either way. No action.
+
+### Decisions
+
+**Thinking stays ON, at `effort=low`.** This reverses the stage's premise. Three reasons, in order
+of weight:
+
+1. Anthropic's current guidance is to prefer thinking-on at lower effort over `thinking: disabled` on
+   Opus 5, because the disabled path can **leak `<thinking>` tags into the visible response**. In the
+   one text this project prints verbatim, that is the worst available failure mode.
+2. The original reason for `enable_thinking=False` — extended thinking sharing `max_tokens` and
+   starving the note (the stub-note bug) — is dead at this budget. The note is ~850 output tokens
+   against 8192, and adaptive thinking at `low` added ~45 of them. A genuine truncation would raise
+   `AIClientTruncatedError`, not persist a stub.
+3. It is free: adaptive/`low` and disabled/`medium` both measured 3¢ and both returned `end_turn` on
+   attempt 1.
+
+**`thinking: {"type": "disabled"}` finally went to the API — and works.** Accepted on Opus 5 at
+`effort=medium`, `stop_reason=end_turn`, no 400 and no tag leak in that sample. Stage 1.1 is now
+verified live, not just in shape. The `xhigh`/`max` guard was never exercised (nothing asks for it)
+and stays as a cheap local refusal for future callers.
+
+**The prompt's gloss rule was fixed.** Opus 5 exposed a real defect the weaker model happened to
+dodge: told to "quote a phrase … with a short gloss in parentheses", it glossed Polish quotations
+**into English** inside a Polish note. The instruction silently assumed the sung language always
+differs from the note's language. It now glosses only across a genuine language gap, and never into
+a third language. This is the `Question this` block answering itself — the prompt *was* a real
+target, and only a better model made it visible.
+
+### Not fixed here — the actual production bug
+
+A note truncating mid-sentence at 50–70 words was reported on Sonnet 4.6, before the swap. Two
+things are now established:
+
+- **It is not the model, and not the budget.** The current config wrote 233 complete words on the
+  hardest fact sheet in the set. And a budget truncation *cannot* produce a saved stub: the note goes
+  through `messages.parse`, so truncated JSON means `parsed_output is None` → escalation →
+  `AIClientTruncatedError` → the edition is marked FAILED. A short note that reaches the database was
+  never truncated by `max_tokens`.
+- **The strongest remaining candidate is the print layer, not the AI.** In
+  `templates/projects/score_package_cards.html`, `.fp-note` is the last child of `.frontispiece`,
+  which is `display:flex; flex-direction:column; min-height:245mm`, and it sits after the full sung
+  text plus the IPA block. WeasyPrint does not fragment flex containers — overflow is dropped rather
+  than carried to the next page. `_text_scale` in `score_package_builder.py` picks its density class
+  from the **longest line's character count**, i.e. horizontal fit only; nothing measures the
+  column's height. That mechanism predicts the symptom exactly, including the part model randomness
+  cannot: identical truncation on every regenerate.
+
+Unverified — WeasyPrint will not load its native libs on the Windows host and needs the container.
+**To confirm:** build a score package for a piece with a long sung text plus IPA and a 250-word note,
+and check whether the note is cut in the PDF while `ProgramNote.content` in the database is whole.
+If it is, the fix belongs to the print layer (let the frontispiece fragment, or move the note to its
+own block), not to this document.
+
+Related: "the note takes the most money" does not hold either. At 2–3¢ it is the cheapest call in the
+pipeline. The panels display `ingestion_cost_cents_lifetime`, which accumulates across every run and
+every regenerate and is reset only by `start_ingestion` — a cumulative counter read as a per-call one.
 
 ### Question this
 
-- Is prose quality actually the constraint? If conductors rewrite notes for reasons other than
-  style (wrong facts, wrong length, wrong tone), a better writer model fixes nothing and the
-  prompt or the fact sheet is the real target.
+- One note per configuration. The cost and token figures are solid; the prose comparison is not a
+  measurement. What it does establish is that the note is complete and idiomatic on all three.
+- The Sonnet 5 sample carried a Polish grammar error (`najstarzej`) and a stray U+3000 space; neither
+  Opus sample did. Suggestive of the tier difference this stage assumed, but n=1.
+- `GeneratedProgramNote.actual_word_count` is written nowhere and read nowhere, and every model
+  over-reported it by ~7%. It is billed output that nothing consumes. Left alone as out of scope.
 
 ---
 
@@ -370,8 +442,11 @@ Honesty ledger, so nobody treats an estimate as a fact:
 | Sonnet 5 vision = 2576 px; Sonnet 4.6 = 1568 px | Anthropic docs. **Irrelevant to this archive** — Stage 2 found the scores are born-digital. |
 | Sonnet 5 tokenizer ≈ +30% tokens | Anthropic migration docs. **Measured at ~+9%** on real score PDFs (Stage 2). |
 | Absent `thinking` = adaptive on Sonnet 5 | Anthropic docs |
-| Opus 5 rejects `thinking: disabled` at effort ≥ xhigh | Anthropic docs |
-| Cache minimum: 1024 (Sonnet) / 512 (Opus 5) | Anthropic docs |
+| Opus 5 rejects `thinking: disabled` at effort ≥ xhigh | Anthropic docs. Never exercised — the guard refuses locally and no task asks for it. |
+| Opus 5 *accepts* `thinking: disabled` at effort `medium` | **Measured** (Stage 3): `end_turn`, no 400. The pipeline still doesn't use it — tag-leak risk. |
+| Cache minimum: 1024 (Sonnet) / 512 (Opus 5) | Anthropic docs. **Consistent with measurement**: the 920-token note prompt cached on Opus 5 and not on Sonnet 5. |
+| `GENERATE_PROGRAM_NOTE` ≈ 480 tokens | **Falsified.** 920 tokens (Stage 3). |
+| Programme note ≈ 900 in / 400 out | **Falsified.** ~1300 in / ~850 out; 2¢ on Sonnet 5, 3¢ on Opus 5. |
 | Gemini 258 tokens per PDF page, 3072 px, 1000 pages | ai.google.dev — primary source |
 | Gemini / GPT per-token pricing | **Third-party aggregators. Verify at source before acting.** |
 | ~$0.08 per score today, ~$0.11 on Sonnet 5 | **Falsified.** Measured 2026-08-18: Sonnet 5 is 31% *cheaper* than 4.6. Per-score cost is dominated by sung language, not model — a wholly-Polish score skips IPA and translation and costs 4¢ against 20¢ for a bilingual one. |
