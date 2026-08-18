@@ -17,8 +17,39 @@ from archive.models import (
 )
 from archive.score_protection import can_export as edition_can_export
 from archive.score_protection import user_is_manager
+from archive.services.voice_scope import scoped_to_edition
+from core.voice_labels import collapse_voice_labels
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
+from roster.score_package_config import resolve_item_edition
+
+
+def _item_line_labels(
+    item: ProgramItem,
+    bound_edition_id: uuid.UUID | None,
+) -> dict[str, str]:
+    """Voice code → display name for one programme item.
+
+    The bound arrangement's divisi names the lines, widened by the seats
+    actually filled on this project: a singer sitting on T2 of a piece that
+    declares only T1 must not read "Tenor" next to "Tenor 2". Castings from the
+    reader's OTHER projects are excluded — a different concert's divisi is none
+    of this page's business.
+    """
+    piece = item.piece
+    requirements = scoped_to_edition(
+        getattr(piece, 'prefetched_voice_requirements', []), bound_edition_id,
+    )
+    tracks = scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id)
+    castings = [
+        casting for casting in getattr(piece, 'scope_castings', [])
+        if casting.participation.project_id == item.project_id
+    ]
+    return collapse_voice_labels({
+        *(requirement.voice_line for requirement in requirements),
+        *(casting.voice_line for casting in castings),
+        *(track.voice_part for track in tracks),
+    })
 
 
 def _liturgy_map(
@@ -114,11 +145,19 @@ class EditionSnippetSerializer(serializers.ModelSerializer):
 
 
 class TrackSnippetSerializer(serializers.ModelSerializer):
-    voice_part_display = serializers.CharField(source='get_voice_part_display', read_only=True)
+    """One practice track. `description` is the manager's note to the singer
+    ("od taktu 34, tempo 90"); the uploaded filename stays out of the payload —
+    it is a manager's verification aid, not something a singer can act on."""
+
+    voice_part_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Track
-        fields = ('id', 'voice_part', 'voice_part_display', 'audio_file')
+        fields = ('id', 'voice_part', 'voice_part_display', 'audio_file', 'description')
+
+    def get_voice_part_display(self, obj: Track) -> str:
+        labels: dict[str, str] = self.context.get('line_labels', {})
+        return labels.get(obj.voice_part) or obj.get_voice_part_display()
 
 
 class CastingSnippetSerializer(serializers.ModelSerializer):
@@ -130,7 +169,7 @@ class CastingSnippetSerializer(serializers.ModelSerializer):
 
     artist_id = serializers.UUIDField(source='participation.artist_id', read_only=True)
     artist_name = serializers.SerializerMethodField()
-    voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
+    voice_line_display = serializers.SerializerMethodField()
     is_me = serializers.SerializerMethodField()
 
     class Meta:
@@ -143,6 +182,12 @@ class CastingSnippetSerializer(serializers.ModelSerializer):
 
     def get_artist_name(self, obj: ProjectPieceCasting) -> str:
         return f"{obj.participation.artist.first_name} {obj.participation.artist.last_name}"
+
+    def get_voice_line_display(self, obj: ProjectPieceCasting) -> str:
+        """Named inside this programme item's arrangement — see
+        [ProgramItemMaterialsSerializer], which resolves the scope once."""
+        labels: dict[str, str] = self.context.get('line_labels', {})
+        return labels.get(obj.voice_line) or obj.get_voice_line_display()
 
     def get_is_me(self, obj: ProjectPieceCasting) -> bool:
         my_artist_id: uuid.UUID | None = self.context.get('artist_id')
@@ -160,6 +205,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
       piece.prefetched_recordings   — set by get_artist_materials_queryset()
       piece.prefetched_program_notes — set by get_artist_materials_queryset()
       piece.prefetched_editions     — set by get_artist_materials_queryset()
+      piece.prefetched_voice_requirements — set by get_artist_materials_queryset()
 
     Required context keys:
       project_id        uuid.UUID  — slices scope_castings to this project only
@@ -167,15 +213,21 @@ class PieceMaterialsSerializer(serializers.Serializer):
       my_readiness_map  dict       — piece_id → readiness status (this artist)
       artist_id         uuid.UUID  — propagated to CastingSnippetSerializer for is_me
       request           Request    — propagated to TrackSnippetSerializer for media URLs
+      bound_edition_id  uuid.UUID | None — the arrangement this concert sings, set
+                        by ProgramItemMaterialsSerializer; scopes tracks and names
+                        the voice lines
+      line_labels       dict       — voice code → display name inside that arrangement
     """
 
     def to_representation(self, piece: Piece) -> dict[str, Any]:
         project_id: uuid.UUID = self.context['project_id']
         my_piece_castings: list[ProjectPieceCasting] = self.context['my_piece_castings']
         my_readiness_map: dict[uuid.UUID, str] = self.context.get('my_readiness_map', {})
+        bound_edition_id: uuid.UUID | None = self.context.get('bound_edition_id')
         child_context: dict[str, Any] = {
             'artist_id': self.context.get('artist_id'),
             'request': self.context.get('request'),
+            'line_labels': self.context.get('line_labels', {}),
         }
 
         scope_castings: list[ProjectPieceCasting] = getattr(piece, 'scope_castings', [])
@@ -191,8 +243,12 @@ class PieceMaterialsSerializer(serializers.Serializer):
         editions = [] if materials_locked else EditionSnippetSerializer(
             getattr(piece, 'prefetched_editions', []), many=True, context=child_context,
         ).data
+        # Tracks follow the bound arrangement: a singer in a unison concert has
+        # no use for the three-part edition's guide tracks, and handing them all
+        # over is how somebody rehearses the wrong line.
         tracks = [] if materials_locked else TrackSnippetSerializer(
-            getattr(piece, 'prefetched_tracks', []), many=True, context=child_context,
+            scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
+            many=True, context=child_context,
         ).data
 
         return {
@@ -248,13 +304,24 @@ class ProgramItemMaterialsSerializer(serializers.Serializer):
 
     def to_representation(self, item: ProgramItem) -> dict[str, Any]:
         presentation = self.context.get('liturgy', {}).get(item.pk)
+        # Which arrangement this concert sings decides both which practice
+        # tracks reach the singer and what their part is called. Resolved once
+        # per item, here, because the piece serializer below sees a Piece and
+        # has no way back to the programme row that pinned the edition.
+        bound_edition = resolve_item_edition(item)
+        bound_edition_id = bound_edition.pk if bound_edition else None
+        piece_context = {
+            **self.context,
+            'bound_edition_id': bound_edition_id,
+            'line_labels': _item_line_labels(item, bound_edition_id),
+        }
         return {
             'order': item.order,
             'is_encore': item.is_encore,
             'liturgical_slot': item.liturgical_slot,
             'slot_label': presentation.slot_label if presentation else '',
             'section': presentation.section if presentation else '',
-            'piece': PieceMaterialsSerializer(item.piece, context=self.context).data,
+            'piece': PieceMaterialsSerializer(item.piece, context=piece_context).data,
         }
 
 

@@ -101,9 +101,17 @@ def _auto_select(active_editions: list[ScoreEdition]) -> ScoreEdition | None:
 
 
 def active_editions(piece: Piece) -> list[ScoreEdition]:
-    """The piece's non-deleted editions that actually carry a PDF file. Relies on
-    ``piece.editions`` being prefetched with the active manager."""
-    return [e for e in piece.editions.all() if e.pdf_file]
+    """The piece's non-deleted editions that actually carry a PDF file.
+
+    Reads the ``prefetched_editions`` to_attr list when the caller's queryset
+    set one — the materials and call-sheet read models both do — and falls back
+    to ``piece.editions``, which their own callers prefetch. `to_attr` always
+    sets the attribute, so an EMPTY list is a valid answer and must not send a
+    materialless piece back to the database for a result already known.
+    """
+    prefetched = getattr(piece, 'prefetched_editions', None)
+    editions = piece.editions.all() if prefetched is None else prefetched
+    return [e for e in editions if e.pdf_file]
 
 
 def select_edition(piece: Piece) -> ScoreEdition | None:

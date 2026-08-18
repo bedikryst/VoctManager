@@ -28,6 +28,8 @@ from django.utils.translation import gettext_lazy as _
 from pydantic import ValidationError as PydanticValidationError
 from rest_framework import serializers
 
+from core.voice_labels import voice_line_label
+
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     PERSONAL_ANNOTATION_LAYER,
@@ -48,6 +50,7 @@ from .models import (
 )
 from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
+from .services.voice_scope import voice_scope
 
 
 def _edition_can_export(obj: "ScoreEdition", context: Mapping[str, Any]) -> bool:
@@ -187,23 +190,65 @@ class ComposerSerializer(serializers.ModelSerializer):
         return self.get_pieces_count(obj) == 0
 
 
+def _piece_requirement_rows(piece: Piece) -> list[PieceVoiceRequirement]:
+    """Every divisi row of one piece, from the prefetch when there is one."""
+    return list(piece.voice_requirements.all())
+
+
 class TrackSerializer(serializers.ModelSerializer):
-    """Serializes individual rehearsal tracks with human-readable voice line."""
-    voice_part_display = serializers.CharField(source='get_voice_part_display', read_only=True)
+    """Serializes individual rehearsal tracks with human-readable voice line.
+
+    `original_filename` is the manager's only way to check that the take that
+    landed on a line is the take they picked — the stored path is renamed on
+    collision, so it proves nothing.
+    """
+    voice_part_display = serializers.SerializerMethodField()
     audio_file = serializers.FileField(use_url=True)
 
     class Meta:
         model = Track
-        fields = ['id', 'piece', 'voice_part', 'voice_part_display', 'audio_file']
+        fields = [
+            'id', 'piece', 'edition', 'voice_part', 'voice_part_display',
+            'audio_file', 'original_filename', 'description',
+        ]
+        read_only_fields = ['original_filename']
+
+    def get_voice_part_display(self, obj: Track) -> str:
+        """Named inside the arrangement the track belongs to: a guide track for
+        a piece with one tenor line is "Tenor", not "Tenor 1"."""
+        rows = _piece_requirement_rows(obj.piece)
+        return voice_line_label(
+            obj.voice_part,
+            voice_scope(rows, obj.edition_id, extra_codes=[obj.voice_part]),
+        )
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        """An edition from another work would silently hide this track from
+        every reader — nothing resolves to an arrangement the piece has no
+        copy of. Rejected here rather than left to fail quietly downstream."""
+        edition = attrs.get('edition') or getattr(self.instance, 'edition', None)
+        piece = attrs.get('piece') or getattr(self.instance, 'piece', None)
+        if edition is not None and piece is not None and edition.piece_id != piece.pk:
+            raise serializers.ValidationError({
+                'edition': _('That edition belongs to a different piece.'),
+            })
+        return attrs
 
 
 class PieceVoiceRequirementSerializer(serializers.ModelSerializer):
     """Serializes vocal arrangement requirements (divisi) for a specific piece."""
-    voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
+    voice_line_display = serializers.SerializerMethodField()
 
     class Meta:
         model = PieceVoiceRequirement
-        fields = ['id', 'piece', 'voice_line', 'voice_line_display', 'quantity']
+        fields = ['id', 'piece', 'edition', 'voice_line', 'voice_line_display', 'quantity']
+
+    def get_voice_line_display(self, obj: PieceVoiceRequirement) -> str:
+        """Each layer names itself: a row is read against the other rows of its
+        own arrangement, so an edition in unison prints "Tenor" while a
+        three-part sibling edition keeps "Tenor 1"."""
+        rows = _piece_requirement_rows(obj.piece)
+        return voice_line_label(obj.voice_line, voice_scope(rows, obj.edition_id))
 
 
 # ===========================================================================
@@ -783,7 +828,9 @@ class PieceSerializer(serializers.ModelSerializer):
             )
 
         validated: list[dict[str, Any]] = []
-        seen: set[str] = set()
+        # Keyed per arrangement: the same line may exist once on the piece-wide
+        # layer and once inside an edition — that is an override, not a clash.
+        seen: set[tuple[Any, str]] = set()
         duplicates: set[str] = set()
         for index, requirement in enumerate(value):
             if not isinstance(requirement, dict):
@@ -795,10 +842,11 @@ class PieceSerializer(serializers.ModelSerializer):
             except PydanticValidationError as exc:
                 clean = exc.errors(include_url=False, include_input=False, include_context=False)
                 raise serializers.ValidationError({str(index): cast("list[Any]", clean)}) from exc
-            if dto.voice_line in seen:
+            key = (dto.edition_id, dto.voice_line)
+            if key in seen:
                 duplicates.add(dto.voice_line)
-            seen.add(dto.voice_line)
-            validated.append(dto.model_dump())
+            seen.add(key)
+            validated.append(dto.model_dump(mode='json'))
 
         if duplicates:
             raise serializers.ValidationError(
@@ -816,7 +864,11 @@ class PieceSerializer(serializers.ModelSerializer):
         req_dtos: tuple[VoiceRequirementDTO, ...] | None = None
         if 'voice_requirements' in vd and vd['voice_requirements'] is not None:
             req_dtos = tuple(
-                VoiceRequirementDTO(voice_line=req['voice_line'], quantity=req['quantity'])
+                VoiceRequirementDTO(
+                    voice_line=req['voice_line'],
+                    quantity=req['quantity'],
+                    edition_id=req.get('edition_id'),
+                )
                 for req in vd['voice_requirements']
             )
 

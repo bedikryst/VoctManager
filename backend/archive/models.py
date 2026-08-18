@@ -207,16 +207,31 @@ class Piece(EnterpriseBaseModel):
         return f"{composer_str}{self.title}{year_str}{suffix}"
 
 
-class PieceVoiceRequirement(EnterpriseBaseModel): 
+class PieceVoiceRequirement(EnterpriseBaseModel):
     """
     Defines the specific vocal divisi requirements for a piece.
     Strictly managed as a sub-entity of the Piece Aggregate Root.
+
+    `edition` scopes the requirement to one arrangement: the same work published
+    once in unison and once in three parts is two [ScoreEdition] rows with two
+    different divisi, and a concert reads the one its bound edition declares.
+    Blank means the requirement holds for the whole piece — the resting state,
+    and what every row written before editions carried a divisi of their own
+    means. Resolution order lives in [archive.services.voice_scope].
     """
     piece = models.ForeignKey(
-        Piece, 
-        on_delete=models.RESTRICT, 
-        related_name='voice_requirements', 
+        Piece,
+        on_delete=models.RESTRICT,
+        related_name='voice_requirements',
         verbose_name=_("Piece")
+    )
+    edition = models.ForeignKey(
+        'archive.ScoreEdition',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='voice_requirements',
+        help_text=_("Arrangement this divisi belongs to. Blank = the whole piece."),
+        verbose_name=_("Score Edition"),
     )
     voice_line = models.CharField(max_length=12, choices=VoiceLine.choices, verbose_name=_("Voice Line"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Required Singers"))
@@ -225,12 +240,20 @@ class PieceVoiceRequirement(EnterpriseBaseModel):
         verbose_name = _("Voice Requirement")
         verbose_name_plural = _("Voice Requirements")
         constraints = [
-            # Advanced constraint aware of the EnterpriseBaseModel soft-deletion mechanism
+            # Two constraints, not one: SQL treats NULLs as distinct, so a single
+            # (piece, edition, voice_line) index would let the piece-wide layer
+            # hold "T1" twice. Each layer therefore guards itself.
+            # Both stay aware of the EnterpriseBaseModel soft-deletion mechanism.
             models.UniqueConstraint(
                 fields=['piece', 'voice_line'],
-                condition=models.Q(is_deleted=False),
+                condition=models.Q(is_deleted=False, edition__isnull=True),
                 name='unique_active_voice_requirement'
-            )
+            ),
+            models.UniqueConstraint(
+                fields=['edition', 'voice_line'],
+                condition=models.Q(is_deleted=False, edition__isnull=False),
+                name='unique_active_edition_voice_requirement'
+            ),
         ]
 
     def __str__(self) -> str:
@@ -240,19 +263,44 @@ class PieceVoiceRequirement(EnterpriseBaseModel):
 class Track(EnterpriseBaseModel):
     """
     Audio rehearsal materials (MIDI/MP3) associated with a piece.
+
+    `edition` scopes the track the same way [PieceVoiceRequirement] is scoped:
+    the unison arrangement's single guide track and the three-part
+    arrangement's three belong to their own editions, and a singer is only
+    served the ones their concert's bound edition owns. Blank = the whole piece.
     """
     piece = models.ForeignKey(
-        Piece, 
-        on_delete=models.RESTRICT, 
-        related_name='tracks', 
+        Piece,
+        on_delete=models.RESTRICT,
+        related_name='tracks',
         verbose_name=_("Piece")
     )
+    edition = models.ForeignKey(
+        'archive.ScoreEdition',
+        on_delete=models.CASCADE,
+        null=True, blank=True,
+        related_name='tracks',
+        help_text=_("Arrangement this track was recorded for. Blank = the whole piece."),
+        verbose_name=_("Score Edition"),
+    )
     voice_part = models.CharField(max_length=10, choices=VoiceLine.choices, verbose_name=_("Melody Line"))
-    
+
     audio_file = models.FileField(
-        upload_to='audio_tracks/', 
-        validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size], 
+        upload_to='audio_tracks/',
+        validators=[FileExtensionValidator(['mp3', 'wav', 'midi']), validate_file_size],
         verbose_name=_("Audio File (MIDI/MP3)")
+    )
+    original_filename = models.CharField(
+        max_length=255, blank=True,
+        help_text=_("Name of the uploaded file, kept so a manager can tell at a glance "
+                    "whether the right take landed on the right voice. Storage renames "
+                    "collisions, so the served path is not proof of what was picked."),
+        verbose_name=_("Original Filename"),
+    )
+    description = models.CharField(
+        max_length=200, blank=True,
+        help_text=_("Practice note shown with the track, e.g. 'tempo 90, from bar 34'."),
+        verbose_name=_("Note"),
     )
 
     class Meta:

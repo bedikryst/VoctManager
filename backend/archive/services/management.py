@@ -61,11 +61,31 @@ class ArchiveManagementService:
         piece: Piece,
         requirements: Sequence[VoiceRequirementDTO],
     ) -> None:
-        """Atomically replace voice requirements — soft-delete preserves the unique constraint."""
+        """Atomically replace voice requirements — soft-delete preserves the unique constraint.
+
+        The payload carries every layer at once (piece-wide plus one list per
+        arrangement), so a line removed from an edition disappears rather than
+        surviving as an orphan of a partial write.
+        """
+        own_edition_ids = {
+            str(edition_id)
+            for edition_id in piece.editions.values_list('id', flat=True)
+        }
+        for requirement in requirements:
+            if requirement.edition_id and str(requirement.edition_id) not in own_edition_ids:
+                raise PieceValidationException(
+                    f"Edition {requirement.edition_id} does not belong to this piece."
+                )
+
         piece.voice_requirements.all().delete()
 
         new_requirements = [
-            PieceVoiceRequirement(piece=piece, voice_line=req.voice_line, quantity=req.quantity)
+            PieceVoiceRequirement(
+                piece=piece,
+                edition_id=req.edition_id,
+                voice_line=req.voice_line,
+                quantity=req.quantity,
+            )
             for req in requirements
         ]
         PieceVoiceRequirement.objects.bulk_create(new_requirements)
@@ -213,9 +233,18 @@ class ArchiveManagementService:
 
     @classmethod
     def create_track(cls, validated_data: dict) -> Track:
-        """Provision a new rehearsal track and notify project participants on commit."""
+        """Provision a new rehearsal track and notify project participants on commit.
+
+        The uploaded name is captured here rather than read back off the storage
+        path: storage renames on collision, so `audio_tracks/alt_2.mp3` is no
+        evidence of which take the manager actually picked.
+        """
+        upload = validated_data.get('audio_file')
+        original_name = getattr(upload, 'name', '') or ''
         with transaction.atomic():
-            track = Track.objects.create(**validated_data)
+            track = Track.objects.create(
+                **{'original_filename': original_name[:255], **validated_data},
+            )
             transaction.on_commit(
                 lambda: piece_material_updated_event.send(
                     sender=cls.__class__, piece=track.piece, kind="recording",

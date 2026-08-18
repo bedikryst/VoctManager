@@ -35,6 +35,11 @@ class VoiceRequirementDTO(EnterpriseBaseDTO):
     voice_line: str = Field(..., min_length=1, max_length=12)
     # Enterprise constraint: you cannot require 0 or negative singers
     quantity: int = Field(..., ge=1)
+    # Which arrangement asks for this line. None = the whole piece; see
+    # [archive.services.voice_scope] for how the two layers resolve.
+    # Aliased to `edition` so the write payload round-trips the read shape,
+    # where the nested serializer emits the FK under its field name.
+    edition_id: UUID | None = Field(None, alias="edition")
 
     @field_validator("voice_line")
     @classmethod
@@ -78,15 +83,18 @@ class PieceWriteDTO(EnterpriseBaseDTO):
 
     @model_validator(mode="after")
     def validate_unique_voice_requirements(self):
+        """A line may appear once per arrangement — the same code on the
+        piece-wide layer and on an edition is not a duplicate but an override."""
         if not self.voice_requirements:
             return self
 
-        seen: set[str] = set()
+        seen: set[tuple[UUID | None, str]] = set()
         duplicates: set[str] = set()
         for requirement in self.voice_requirements:
-            if requirement.voice_line in seen:
+            key = (requirement.edition_id, requirement.voice_line)
+            if key in seen:
                 duplicates.add(requirement.voice_line)
-            seen.add(requirement.voice_line)
+            seen.add(key)
 
         if duplicates:
             duplicate_list = ", ".join(sorted(duplicates))

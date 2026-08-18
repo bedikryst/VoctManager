@@ -20,7 +20,8 @@ from django.db import IntegrityError, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from archive.models import Piece
+from archive.models import Piece, PieceVoiceRequirement
+from archive.services.voice_scope import voice_scope
 from core.exceptions import EmailAlreadyInUseException
 from core.models import UserProfile
 from core.services import UserIdentityService
@@ -96,6 +97,7 @@ from .models import (
     Rehearsal,
 )
 from .queries.schedule_queries import get_artist_rehearsals_in_window
+from .score_package_config import resolve_item_edition
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +152,32 @@ DECLINED_CASTING_MESSAGE = _(
 )
 
 
+def _piece_voice_scope(piece_id: UUID, project: Project) -> tuple[str, ...]:
+    """Every line this piece divides into for THIS concert, as codes.
+
+    Carried on the payload rather than looked up at render time, because the
+    message composers are pure functions over metadata — and without the scope
+    a message cannot know that "T1" is the only tenor line here and should read
+    plainly as "Tenor". Widened by the seats already filled, for the same reason
+    the panel widens it: a singer on T2 must keep T1 numbered.
+    """
+    item = (
+        ProgramItem.objects
+        .filter(project=project, piece_id=piece_id)
+        .select_related('piece')
+        .prefetch_related('piece__editions')
+        .first()
+    )
+    edition = resolve_item_edition(item) if item is not None else None
+    requirements = PieceVoiceRequirement.objects.filter(piece_id=piece_id)
+    cast_codes = ProjectPieceCasting.objects.filter(
+        piece_id=piece_id, participation__project=project, participation__is_deleted=False,
+    ).values_list('voice_line', flat=True)
+    return tuple(sorted(voice_scope(
+        list(requirements), edition.pk if edition else None, extra_codes=cast_codes,
+    )))
+
+
 def _casting_metadata(
     casting: ProjectPieceCasting,
     project: Project,
@@ -161,6 +189,7 @@ def _casting_metadata(
         piece_title=casting.piece.title,
         # Language-neutral CODE — localized per surface at render time.
         voice_line=casting.voice_line,
+        voice_scope=_piece_voice_scope(casting.piece_id, project),
         project_id=project.id,
         project_name=project.title,
         **build_event_time_metadata(

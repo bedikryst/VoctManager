@@ -17,6 +17,7 @@ from uuid import UUID
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.test import SimpleTestCase, TestCase
+from django.utils.translation import override as override_language
 from rest_framework.test import APITestCase
 
 from archive.dtos import ComposerLookupResult, ExtractedWorkIdentity
@@ -33,16 +34,20 @@ from archive.models import (
     IngestionStatus,
     Movement,
     Piece,
+    PieceVoiceRequirement,
     ProgramNote,
     ProvenanceRecord,
     ProvenanceSource,
     ScoreEdition,
+    Track,
 )
 from archive.services import enrichment
 from archive.services.resolvers import resolve_or_create_piece
+from archive.services.voice_scope import scoped_to_edition, voice_labels
 from archive.tasks import _identity_from_analysis
 from core.constants import AppRole
 from core.models import UserProfile
+from core.voice_labels import collapse_voice_labels, voice_line_label
 
 User = get_user_model()
 
@@ -797,3 +802,126 @@ class CompositionYearIngestionTests(TestCase):
         )
         piece.refresh_from_db()
         self.assertEqual(piece.composition_year, 1791)
+
+
+# ===========================================================================
+# Contextual voice-line naming + edition-scoped divisi / tracks
+# ===========================================================================
+
+class VoiceLabelRuleTests(SimpleTestCase):
+    """The naming rule itself, with no database in the way.
+
+    Pinned to English so the assertions test the RULE rather than the contents
+    of the Polish catalogue — the rendered-sheet tests in `roster` cover the
+    translated output. Pinned per test rather than by decorating the class:
+    `translation.override` is a ContextDecorator, and applied to a class it
+    replaces it with a function the test loader then never collects.
+    """
+
+    def setUp(self) -> None:
+        self.enterContext(override_language("en"))
+
+    def test_undivided_family_drops_its_index(self) -> None:
+        labels = collapse_voice_labels({"S1", "A1", "T1", "B1"})
+        self.assertEqual(
+            [labels[code] for code in ("S1", "A1", "T1", "B1")],
+            ["Soprano", "Alto", "Tenor", "Bass"],
+        )
+
+    def test_a_divided_family_keeps_every_index(self) -> None:
+        labels = collapse_voice_labels({"S1", "S2", "T1"})
+        self.assertEqual(labels["S1"], "Soprano 1")
+        self.assertEqual(labels["S2"], "Soprano 2")
+        # Its undivided neighbour is unaffected — the rule is per family.
+        self.assertEqual(labels["T1"], "Tenor")
+
+    def test_a_lone_second_line_is_still_the_only_one(self) -> None:
+        # Odd but legal: a part book labelled "Tenor 2" with no Tenor 1 beside
+        # it is, in that arrangement, simply the tenor line.
+        self.assertEqual(collapse_voice_labels({"T2"})["T2"], "Tenor")
+
+    def test_untyped_canon_parts_collapse_the_same_way(self) -> None:
+        self.assertEqual(collapse_voice_labels({"V1", "V2"})["V1"], "Voice 1")
+        self.assertEqual(collapse_voice_labels({"V1"})["V1"], "Voice")
+
+    def test_standalone_roles_are_never_collapsed(self) -> None:
+        labels = collapse_voice_labels({"TUTTI", "SOLO"})
+        self.assertEqual(labels["TUTTI"], "Tutti (All)")
+        self.assertEqual(labels["SOLO"], "Solo")
+
+    def test_an_unknown_scope_keeps_the_index(self) -> None:
+        # No scope is not evidence of no divisi: a legacy payload must not be
+        # renamed on a guess.
+        self.assertEqual(voice_line_label("S2", ()), "Soprano 2")
+        self.assertEqual(voice_line_label("S2", ("S2",)), "Soprano")
+
+
+class EditionScopedDivisiTests(TestCase):
+    """An edition that declares its own divisi overrides the piece-wide layer
+    outright; one that declares nothing inherits it."""
+
+    def setUp(self) -> None:
+        self.piece = Piece.objects.create(title="Dona nobis pacem")
+        self.unison = ScoreEdition.objects.create(
+            piece=self.piece, original_filename="unison.pdf",
+            sha256="a" * 64, is_default=True,
+        )
+        self.three_part = ScoreEdition.objects.create(
+            piece=self.piece, original_filename="three.pdf", sha256="b" * 64,
+        )
+
+    def _require(self, line: str, edition: ScoreEdition | None) -> PieceVoiceRequirement:
+        return PieceVoiceRequirement.objects.create(
+            piece=self.piece, edition=edition, voice_line=line, quantity=4,
+        )
+
+    def test_an_edition_overrides_rather_than_adds_to_the_piece_layer(self) -> None:
+        self._require("S1", None)
+        self._require("A1", None)
+        self._require("V1", self.three_part)
+        self._require("V2", self.three_part)
+        self._require("V3", self.three_part)
+
+        rows = list(self.piece.voice_requirements.all())
+        self.assertEqual(
+            sorted(r.voice_line for r in scoped_to_edition(rows, self.three_part.pk)),
+            ["V1", "V2", "V3"],
+        )
+
+    def test_an_edition_without_its_own_divisi_inherits_the_piece_layer(self) -> None:
+        self._require("S1", None)
+        self._require("V1", self.three_part)
+
+        rows = list(self.piece.voice_requirements.all())
+        self.assertEqual(
+            [r.voice_line for r in scoped_to_edition(rows, self.unison.pk)], ["S1"],
+        )
+
+    def test_each_edition_names_its_own_lines(self) -> None:
+        self._require("T1", self.unison)
+        self._require("T1", self.three_part)
+        self._require("T2", self.three_part)
+        self._require("B1", self.three_part)
+
+        rows = list(self.piece.voice_requirements.all())
+        self.assertEqual(voice_labels(rows, self.unison.pk)["T1"], "Tenor")
+        self.assertEqual(voice_labels(rows, self.three_part.pk)["T1"], "Tenor 1")
+
+    def test_the_same_line_may_exist_on_both_layers(self) -> None:
+        # The unique constraints guard each layer separately — a piece-wide
+        # "T1" and an edition's "T1" are an override, not a duplicate.
+        self._require("T1", None)
+        self._require("T1", self.three_part)
+        self.assertEqual(self.piece.voice_requirements.count(), 2)
+
+    def test_tracks_follow_the_bound_arrangement(self) -> None:
+        piece_wide = Track.objects.create(
+            piece=self.piece, voice_part="TUTTI", audio_file="audio_tracks/all.mp3",
+        )
+        three_part_track = Track.objects.create(
+            piece=self.piece, edition=self.three_part, voice_part="T1",
+            audio_file="audio_tracks/tenor.mp3",
+        )
+        rows = list(self.piece.tracks.all())
+        self.assertEqual(scoped_to_edition(rows, self.three_part.pk), [three_part_track])
+        self.assertEqual(scoped_to_edition(rows, self.unison.pk), [piece_wide])

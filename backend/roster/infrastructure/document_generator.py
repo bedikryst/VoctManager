@@ -40,8 +40,10 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
+from archive.services.voice_scope import scoped_to_edition
 from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
+from core.voice_labels import collapse_voice_labels
 from logistics.address import address_parts
 from roster.domain.day_timeline import (
     CallWindow,
@@ -73,8 +75,32 @@ from roster.models import (
     Rehearsal,
     VoiceType,
 )
+from roster.score_package_config import resolve_item_edition
 
 _VOICE_LINE_ORDER = {value: idx for idx, value in enumerate(VoiceLine.values)}
+
+
+def _item_line_labels(
+    item: ProgramItem,
+    piece_castings: list[ProjectPieceCasting],
+) -> dict[str, str]:
+    """One naming scope for everything printed about this programme item.
+
+    The arrangement's own divisi names the lines; whoever is actually cast
+    widens the scope, so the requirement matrix, the casting table and the
+    singer's "you sing this" line can never disagree about one part.
+    """
+    bound_edition = resolve_item_edition(item)
+    bound_edition_id = bound_edition.pk if bound_edition else None
+    requirements = scoped_to_edition(
+        getattr(item.piece, 'prefetched_voice_requirements', []), bound_edition_id,
+    )
+    tracks = scoped_to_edition(getattr(item.piece, 'prefetched_tracks', []), bound_edition_id)
+    return collapse_voice_labels({
+        *(requirement.voice_line for requirement in requirements),
+        *(casting.voice_line for casting in piece_castings),
+        *(track.voice_part for track in tracks),
+    })
 # Language codes carried by `Piece.language` are free text ('la', 'la-pl'), so
 # this only softens what it recognises — an unknown token passes through
 # untouched rather than being guessed at.
@@ -1298,32 +1324,33 @@ class DocumentGenerator:
         # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
         # answer — testing it for truthiness sends every materialless piece back
         # to the database for a result already known to be nothing.
-        prefetched_editions = getattr(piece, 'prefetched_editions', None)
         prefetched_recordings = getattr(piece, 'prefetched_recordings', None)
-        editions = list(
-            piece.editions.all() if prefetched_editions is None else prefetched_editions
-        )
         recordings = list(
             piece.recordings.all() if prefetched_recordings is None else prefetched_recordings
         )
+        # The conductor's pinned edition when it is still a live, file-bearing
+        # edition of this piece; otherwise the default, then the most recent.
+        primary_edition = resolve_item_edition(item)
+        bound_edition_id = primary_edition.pk if primary_edition else None
+        line_labels = _item_line_labels(item, piece_castings)
+
         # Voice lines are stored as codes ('S1', 'A1', 'T1', 'B1'), so ordering
         # them in the database sorts alphabetically — Alt before Bas before
         # Sopran. Musical order is the only order a musician reads.
+        #
+        # Scoped to the bound edition first: a piece published both in unison
+        # and in three parts would otherwise print one sheet listing both
+        # arrangements' lines, which describes no performance.
         tracks = sorted(
-            getattr(piece, 'prefetched_tracks', []),
+            scoped_to_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
             key=lambda track: _VOICE_LINE_ORDER.get(track.voice_part, 999),
         )
         voice_requirements = sorted(
-            getattr(piece, 'prefetched_voice_requirements', []),
+            scoped_to_edition(
+                getattr(piece, 'prefetched_voice_requirements', []), bound_edition_id,
+            ),
             key=lambda requirement: _VOICE_LINE_ORDER.get(requirement.voice_line, 999),
         )
-
-        # Default edition first; otherwise the most-recent edition with a PDF.
-        editions_sorted = sorted(
-            (e for e in editions if e.pdf_file),
-            key=lambda e: (0 if e.is_default else 1, -(e.created_at.timestamp() if e.created_at else 0)),
-        )
-        primary_edition = editions_sorted[0] if editions_sorted else None
         # The per-piece "Nuty PDF" link points at the access-gated edition download
         # view (watermarked + logged per recipient), never the raw /media file —
         # nginx serves /media/score_editions/ `internal;` only, so a direct file
@@ -1373,10 +1400,13 @@ class DocumentGenerator:
                 material_badges.append(pgettext('call sheet', 'Casting'))
 
         voice_requirements_summary = ', '.join(
-            f'{requirement.quantity}x {requirement.get_voice_line_display()}'
+            f'{requirement.quantity}x {line_labels.get(requirement.voice_line, requirement.voice_line)}'
             for requirement in voice_requirements
         )
-        track_labels = [track.get_voice_part_display() for track in tracks]
+        track_labels = [
+            line_labels.get(track.voice_part, track.get_voice_part_display())
+            for track in tracks
+        ]
         # Assembled here, not chained in the template: each `{% if %}` carried
         # its own " · " prefix, so a piece with no duration opened on a bullet.
         #
@@ -1399,7 +1429,9 @@ class DocumentGenerator:
         you = None
         if recipient_casting is not None:
             you = {
-                'voice_line': recipient_casting.get_voice_line_display(),
+                'voice_line': line_labels.get(
+                    recipient_casting.voice_line, recipient_casting.get_voice_line_display(),
+                ),
                 'gives_pitch': recipient_casting.gives_pitch,
                 'notes': recipient_casting.notes.strip() if recipient_casting.notes else '',
             }
@@ -1435,6 +1467,7 @@ class DocumentGenerator:
         item: ProgramItem,
         piece_castings: list[ProjectPieceCasting],
     ) -> dict[str, Any]:
+        line_labels = _item_line_labels(item, piece_castings)
         grouped_castings: dict[str, list[ProjectPieceCasting]] = defaultdict(list)
         for casting in sorted(
             piece_castings,
@@ -1444,7 +1477,8 @@ class DocumentGenerator:
                 entry.participation.artist.first_name,
             ),
         ):
-            grouped_castings[casting.get_voice_line_display()].append(casting)
+            label = line_labels.get(casting.voice_line, casting.get_voice_line_display())
+            grouped_castings[label].append(casting)
 
         rows = []
         for voice_line, assignments in grouped_castings.items():

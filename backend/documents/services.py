@@ -14,6 +14,8 @@ from django.utils.functional import Promise
 if TYPE_CHECKING:
     from rest_framework.request import Request
 
+from archive.models import PieceVoiceRequirement
+from archive.services.voice_scope import voice_labels, voice_labels_for_pieces
 from core.constants import AppRole, VoiceLine
 
 from .dtos import (
@@ -192,21 +194,36 @@ class ArtistMetricsService:
         active_seasons = len(season_years)
         first_project_year = min(season_years) if season_years else None
 
+        # Counted per (piece, line) rather than per line alone: what a part is
+        # CALLED depends on the piece it was sung in, so the tally has to be
+        # folded by name. Ten evenings on the single tenor line of ten unison
+        # pieces is ten evenings of "Tenor", not of "Tenor 1".
         casting_counts = (
             ProjectPieceCasting.objects.filter(participation_id__in=participation_ids)
-            .values('voice_line')
+            .values('piece_id', 'voice_line')
             .annotate(count=Count('id'))
-            .order_by('-count')
+        )
+        counted = list(casting_counts)
+        sung_codes: dict[UUID, set[str]] = {}
+        for entry in counted:
+            sung_codes.setdefault(entry['piece_id'], set()).add(entry['voice_line'])
+        labels_by_piece = voice_labels_for_pieces(
+            sung_codes.keys(), extra_codes_by_piece=sung_codes,
         )
 
-        vocal_distribution = [
-            VocalLineEntryDTO(
-                voice_line=entry['voice_line'],
-                voice_line_display=str(cls._VOICE_LINE_LABELS.get(entry['voice_line'], entry['voice_line'])),
-                count=entry['count'],
+        by_name: dict[str, VocalLineEntryDTO] = {}
+        for entry in counted:
+            piece_labels = labels_by_piece.get(entry['piece_id'], {})
+            name = piece_labels.get(entry['voice_line']) or str(
+                cls._VOICE_LINE_LABELS.get(entry['voice_line'], entry['voice_line'])
             )
-            for entry in casting_counts
-        ]
+            existing = by_name.get(name)
+            by_name[name] = VocalLineEntryDTO(
+                voice_line=existing.voice_line if existing else entry['voice_line'],
+                voice_line_display=name,
+                count=(existing.count if existing else 0) + entry['count'],
+            )
+        vocal_distribution = sorted(by_name.values(), key=lambda e: -e.count)
 
         repertoire = cls._build_repertoire(participation_ids)
         composer_names = {entry.composer_name for entry in repertoire if entry.composer_name}
@@ -236,6 +253,15 @@ class ArtistMetricsService:
             .select_related('piece__composer', 'participation__project')
         )
 
+        # A career passport has no concert in hand, so lines are named against
+        # the piece-wide divisi widened by what this singer actually sang.
+        sung_codes: dict[UUID, set[str]] = {}
+        for casting in castings:
+            sung_codes.setdefault(casting.piece_id, set()).add(casting.voice_line)
+        labels_by_piece = voice_labels_for_pieces(
+            sung_codes.keys(), extra_codes_by_piece=sung_codes,
+        )
+
         grouped: dict[UUID, dict] = {}
         for casting in castings:
             piece = casting.piece
@@ -251,7 +277,8 @@ class ArtistMetricsService:
                 'years': set(),
             })
             bucket['voice_lines'].add(
-                str(cls._VOICE_LINE_LABELS.get(casting.voice_line, casting.voice_line))
+                labels_by_piece.get(casting.piece_id, {}).get(casting.voice_line)
+                or str(cls._VOICE_LINE_LABELS.get(casting.voice_line, casting.voice_line))
             )
             project = casting.participation.project
             bucket['projects'].add(project.pk)
@@ -383,7 +410,6 @@ class EnsembleDirectoryService:
         )
 
         vl_order = {value: idx for idx, (value, _) in enumerate(VoiceLine.choices)}
-        vl_label = {value: str(label) for value, label in VoiceLine.choices}
 
         # project_id → {title, date} and (project_id, piece_id) → {piece_title, voice_line → {artist_id → artist}}
         projects: dict = {}
@@ -408,10 +434,49 @@ class EnsembleDirectoryService:
             projects=projects,
             pieces=pieces,
             vl_order=vl_order,
-            vl_label=vl_label,
+            labels=cls._section_labels(pieces),
             request=request,
         )
         return MyEnsembleDTO(me=me, concerts=concerts)
+
+    @staticmethod
+    def _section_labels(pieces: dict) -> dict[tuple, dict[str, str]]:
+        """(project_id, piece_id) → voice code → display name.
+
+        Each concert names its own sections: the arrangement it binds decides
+        whether a tenor line is "Tenor" or "Tenor 1", and the same piece sung
+        elsewhere from another edition may legitimately read differently.
+        """
+        from roster.models import ProgramItem
+        from roster.score_package_config import resolve_item_edition
+
+        if not pieces:
+            return {}
+        project_ids = {project_id for project_id, _ in pieces}
+        bound_edition: dict[tuple, UUID | None] = {}
+        for item in (
+            ProgramItem.objects
+            .filter(project_id__in=project_ids)
+            .select_related('piece')
+            .prefetch_related('piece__editions')
+        ):
+            edition = resolve_item_edition(item)
+            bound_edition[(item.project_id, item.piece_id)] = edition.pk if edition else None
+
+        requirements: dict[UUID, list] = {}
+        for requirement in PieceVoiceRequirement.objects.filter(
+            piece_id__in={piece_id for _, piece_id in pieces},
+        ):
+            requirements.setdefault(requirement.piece_id, []).append(requirement)
+
+        return {
+            key: voice_labels(
+                requirements.get(key[1], []),
+                bound_edition.get(key),
+                extra_codes=data['voices'].keys(),
+            )
+            for key, data in pieces.items()
+        }
 
     @classmethod
     def _build_concerts(
@@ -423,16 +488,17 @@ class EnsembleDirectoryService:
         projects: dict,
         pieces: dict,
         vl_order: dict,
-        vl_label: dict,
+        labels: dict[tuple, dict[str, str]],
         request: "Request | None",
     ) -> tuple[ConcertRosterDTO, ...]:
         by_project: dict = {}
         for (project_id, piece_id), data in pieces.items():
             mine_lines = my_voice_lines.get((project_id, piece_id), set())
+            piece_labels = labels.get((project_id, piece_id), {})
             sections = tuple(
                 PieceVoiceSectionDTO(
                     voice_line=voice_line,
-                    voice_line_display=vl_label.get(voice_line, voice_line),
+                    voice_line_display=piece_labels.get(voice_line, voice_line),
                     is_mine=voice_line in mine_lines,
                     members=tuple(
                         SectionMemberDTO(

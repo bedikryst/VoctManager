@@ -24,7 +24,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -32,6 +32,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
 from core.constants import VoiceLine
+from core.voice_labels import voice_line_label
 
 from .models import (
     AnnouncementKind,
@@ -299,16 +300,28 @@ def _event_kind_label(code: str | None) -> str:
     }.get(code or "", code or "")
 
 
-def _voice_line_label(code: str | None) -> str:
-    """Localized label for a VoiceLine CODE (e.g. 'B1' → 'Bas 1'). Tolerant of a
-    legacy pre-rendered value or an unknown code — returns it unchanged so an old
-    row never renders blank."""
+def _voice_line_label(code: str | None, scope: Iterable[str] = ()) -> str:
+    """Localized label for a VoiceLine CODE (e.g. 'B1' → 'Bas 1').
+
+    `scope` is the arrangement the part is read in, carried on the metadata as
+    `voice_scope`: a family with one line there loses its index ('T1' → 'Tenor').
+    Tolerant of a legacy pre-rendered value or an unknown code — returns it
+    unchanged so an old row never renders blank.
+    """
     if not code:
         return ""
     try:
-        return str(VoiceLine(code).label)
+        VoiceLine(code)
     except ValueError:
         return str(code)
+    return voice_line_label(code, scope)
+
+
+def _voice_scope(m: Mapping[str, Any]) -> tuple[str, ...]:
+    """The naming scope carried on a metadata payload. Empty on legacy rows,
+    which then read exactly as they used to."""
+    raw = m.get("voice_scope") or ()
+    return tuple(str(code) for code in raw if code)
 
 
 def _change_field_label(field_key: str) -> str:
@@ -350,7 +363,7 @@ def _boolean_label(value: str) -> str:
     return {"True": _("Yes"), "False": _("No")}.get(value, value)
 
 
-def _change_value(field_key: str, value: Any) -> Any:
+def _change_value(field_key: str, value: Any, scope: Iterable[str] = ()) -> Any:
     """Localizes a change value where the field carries a language-neutral code
     (voice line, project status, boolean flag); passes pre-formatted display values
     through unchanged. Without this the diff shows the raw database code
@@ -358,7 +371,7 @@ def _change_value(field_key: str, value: Any) -> Any:
     if not value:
         return value
     if field_key == "voice_line":
-        return _voice_line_label(str(value))
+        return _voice_line_label(str(value), scope)
     if field_key == "status":
         return _project_status_label(str(value))
     if field_key == "event_kind":
@@ -368,12 +381,12 @@ def _change_value(field_key: str, value: Any) -> Any:
     return value
 
 
-def _render_change(change: dict[str, Any]) -> str:
+def _render_change(change: dict[str, Any], scope: Iterable[str] = ()) -> str:
     """One change as a compact localized phrase: 'Venue: A → B' / 'Conductor'."""
     field_key = str(change.get("field", ""))
     label = _change_field_label(field_key)
-    old = _change_value(field_key, change.get("old"))
-    new = _change_value(field_key, change.get("new"))
+    old = _change_value(field_key, change.get("old"), scope)
+    new = _change_value(field_key, change.get("new"), scope)
     if old and new:
         return _("%(label)s: %(old)s → %(new)s") % {"label": label, "old": old, "new": new}
     if new:
@@ -381,18 +394,22 @@ def _render_change(change: dict[str, Any]) -> str:
     return label
 
 
-def _summarize_changes(changes: Any, limit: int = 3) -> str:
-    """A scannable, localized one-liner summarizing structured field changes."""
+def _summarize_changes(changes: Any, limit: int = 3, scope: Iterable[str] = ()) -> str:
+    """A scannable, localized one-liner summarizing structured field changes.
+
+    `scope` names any voice line inside the diff the way the rest of the message
+    names it — a move between two lines of an undivided family would otherwise
+    read "Tenor 1 → Tenor 2" beside a heading that says plain "Tenor"."""
     if not isinstance(changes, (list, tuple)) or not changes:
         return ""
-    rendered = [_render_change(c) for c in changes if isinstance(c, dict)]
+    rendered = [_render_change(c, scope) for c in changes if isinstance(c, dict)]
     head = "; ".join(rendered[:limit])
     if len(rendered) > limit:
         head += " " + _("(+%(count)d more)") % {"count": len(rendered) - limit}
     return head
 
 
-def _change_rows(changes: Any) -> tuple[DetailRow, ...]:
+def _change_rows(changes: Any, scope: Iterable[str] = ()) -> tuple[DetailRow, ...]:
     """Structured changes as labelled email detail rows."""
     if not isinstance(changes, (list, tuple)):
         return ()
@@ -402,8 +419,8 @@ def _change_rows(changes: Any) -> tuple[DetailRow, ...]:
             continue
         field_key = str(c.get("field", ""))
         label = _change_field_label(field_key)
-        old = _change_value(field_key, c.get("old"))
-        new = _change_value(field_key, c.get("new"))
+        old = _change_value(field_key, c.get("old"), scope)
+        new = _change_value(field_key, c.get("new"), scope)
         value = f"{old} → {new}" if old and new else (new or old or "—")
         rows.append(DetailRow(label=label, value=str(value)))
     return tuple(rows)
@@ -480,8 +497,13 @@ def _compose_project_invitation(ctx: MessageContext) -> MessageContent:
         "%(count)d rehearsal", "%(count)d rehearsals", rehearsal_count
     ) % {"count": rehearsal_count} if rehearsal_count else ""
 
+    invitation_scope = _voice_scope(m)
     voice_lines = ", ".join(
-        _voice_line_label(str(code)) for code in (m.get("voice_lines") or ()) if code
+        dict.fromkeys(
+            _voice_line_label(str(code), invitation_scope)
+            for code in (m.get("voice_lines") or ())
+            if code
+        )
     )
 
     # Push carries the glance facts; the invitation's warmth lives in the email
@@ -615,14 +637,15 @@ def _briefing_casting_items(kind: str, m: dict[str, Any]) -> list[BriefingItem]:
     if kind == AnnouncementKind.REMOVED:
         return [BriefingItem(primary=piece, detail=_("You're no longer singing this one."))]
 
-    voice = _voice_line_label(m.get("voice_line"))
+    scope = _voice_scope(m)
+    voice = _voice_line_label(m.get("voice_line"), scope)
     if kind == AnnouncementKind.CREATED:
         return [BriefingItem(primary=piece, secondary=voice, detail=_("A new part for you."))]
     return [
         BriefingItem(
             primary=piece,
             secondary=voice,
-            detail=_summarize_changes(m.get("changes"), limit=4),
+            detail=_summarize_changes(m.get("changes"), limit=4, scope=scope),
         )
     ]
 
@@ -954,7 +977,7 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
 def _compose_piece_casting_assigned(ctx: MessageContext) -> MessageContent:
     m = ctx.metadata
     piece = m.get("piece_title") or _("a new piece")
-    voice = _voice_line_label(m.get("voice_line"))
+    voice = _voice_line_label(m.get("voice_line"), _voice_scope(m))
     project = m.get("project_name")
     when = display_event_time(m, "starts_at")
     score_url = _materials_url(ctx)
@@ -1030,9 +1053,10 @@ def _compose_piece_casting_updated(ctx: MessageContext) -> MessageContent:
         )
 
     project = m.get("project_name")
-    summary = _summarize_changes(m.get("changes"))
+    scope = _voice_scope(m)
+    summary = _summarize_changes(m.get("changes"), scope=scope)
     body = summary or _("Open the score to see your part.")
-    details = list(_change_rows(m.get("changes")))
+    details = list(_change_rows(m.get("changes"), scope))
     if project:
         details.append(_row(_("Project"), project))
     return MessageContent(

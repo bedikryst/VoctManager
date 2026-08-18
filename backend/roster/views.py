@@ -11,6 +11,8 @@ Delegates ALL state-mutating business logic to the Service Layer.
 import io
 import logging
 import os
+import uuid
+from collections import defaultdict
 from dataclasses import asdict
 from decimal import Decimal, InvalidOperation
 
@@ -105,6 +107,7 @@ from .queries import (
     get_conductor_materials_projects,
 )
 from .queries.materials_queries import CLOSED_PROJECT_STATUSES
+from .score_package_config import resolve_item_edition
 from .score_package_service import ScorePackageItemError, ScorePackageService
 
 # Serializers
@@ -1645,7 +1648,15 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Data partitioning: a chorister sees the divisi (and casting notes) only
         # for projects they are cast in, mirroring ProgramItem/Project scoping.
-        qs = ProjectPieceCasting.objects.all()
+        #
+        # `piece__voice_requirements` is what NAMES each seat — a piece with one
+        # tenor line reads "Tenor", not "Tenor 1" — so it is prefetched rather
+        # than paid for per row.
+        qs = (
+            ProjectPieceCasting.objects
+            .select_related('piece')
+            .prefetch_related('piece__voice_requirements')
+        )
         if user_is_manager(self.request.user):
             return qs
         return qs.filter(
@@ -1653,6 +1664,47 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
                 artist__user=request_user(self.request)
             ).values('project_id')
         )
+
+    def _scoped_project_id(self) -> str | None:
+        """The project this request is about, from the list filter or the board
+        payload. Without one there is no bound edition and no sibling seats to
+        widen the naming scope with — the piece-wide divisi is all there is."""
+        param = self.request.query_params.get('participation__project')
+        if param:
+            return str(param)
+        payload_project = getattr(self.request, 'data', {})
+        if isinstance(payload_project, dict) and payload_project.get('project'):
+            return str(payload_project['project'])
+        return None
+
+    def get_serializer_context(self) -> dict:
+        ctx = dict(super().get_serializer_context())
+        project_id = self._scoped_project_id()
+        if not project_id:
+            return ctx
+        # Two small reads that spare the serializer a query per row: which
+        # arrangement each piece is bound to, and every seat already filled on
+        # it — a singer sitting on T2 must keep the rest of the board from
+        # collapsing T1 to a plain "Tenor".
+        program_items = (
+            ProgramItem.objects
+            .filter(project_id=project_id)
+            .select_related('piece')
+            .prefetch_related('piece__editions')
+        )
+        ctx['bound_edition_by_piece'] = {
+            item.piece_id: (edition.pk if (edition := resolve_item_edition(item)) else None)
+            for item in program_items
+        }
+        cast_codes: defaultdict[uuid.UUID, set[str]] = defaultdict(set)
+        for piece_id, voice_line in (
+            ProjectPieceCasting.objects
+            .filter(participation__project_id=project_id, participation__is_deleted=False)
+            .values_list('piece_id', 'voice_line')
+        ):
+            cast_codes[piece_id].add(voice_line)
+        ctx['cast_codes_by_piece'] = dict(cast_codes)
+        return ctx
 
     def create(self, request, *args, **kwargs) -> Response:
         serializer = self.get_serializer(data=request.data)

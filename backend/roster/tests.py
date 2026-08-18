@@ -5015,9 +5015,21 @@ class ConcertDaySheetTests(APITestCase):
         self.assertNotIn("Nagranie referencyjne", card["material_badges"])
         self.assertNotIn("Nuty PDF", card["material_badges"])
 
+    def _requirements_summary(self) -> str:
+        card = next(
+            c
+            for c in self._build_context(Audience.PRODUCTION, None)["program_cards"]
+            if c["piece_id"] == self.piece1.id
+        )
+        return card["voice_requirements_summary"]
+
     def test_voice_requirements_read_in_satb_order(self) -> None:
         """Voice lines are stored as codes, so ordering them in the database
-        sorts Alt before Bas before Sopran."""
+        sorts Alt before Bas before Sopran.
+
+        Undivided families also drop their index: a plain SATB setting has no
+        "Sopran 2" anywhere, so calling its top line "Sopran 1" promises a
+        division the score never wrote."""
         from archive.models import PieceVoiceRequirement
         from core.constants import VoiceLine
 
@@ -5031,14 +5043,29 @@ class ConcertDaySheetTests(APITestCase):
                 piece=self.piece1, voice_line=line, quantity=2
             )
 
-        card = next(
-            c
-            for c in self._build_context(Audience.PRODUCTION, None)["program_cards"]
-            if c["piece_id"] == self.piece1.id
-        )
         self.assertEqual(
-            card["voice_requirements_summary"],
-            "2x Sopran 1, 2x Alt 1, 2x Tenor 1, 2x Bas 1",
+            self._requirements_summary(),
+            "2x Sopran, 2x Alt, 2x Tenor, 2x Bas",
+        )
+
+    def test_a_divided_family_keeps_its_index(self) -> None:
+        """The moment a family really is divided, every one of its lines is
+        numbered again — including the siblings that stay undivided."""
+        from archive.models import PieceVoiceRequirement
+        from core.constants import VoiceLine
+
+        for line in (
+            VoiceLine.SOPRANO_1,
+            VoiceLine.SOPRANO_2,
+            VoiceLine.TENOR_1,
+        ):
+            PieceVoiceRequirement.objects.create(
+                piece=self.piece1, voice_line=line, quantity=2
+            )
+
+        self.assertEqual(
+            self._requirements_summary(),
+            "2x Sopran 1, 2x Sopran 2, 2x Tenor",
         )
 
     def test_program_metaline_never_opens_on_a_separator(self) -> None:

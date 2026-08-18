@@ -101,6 +101,10 @@ class ProjectInvitationMetadata(EnterpriseBaseDTO):
     # This artist's own voice lines across the programme, as language-neutral
     # VoiceLine CODES. Empty when they have not been cast yet.
     voice_lines: tuple[str, ...] = ()
+    # Every line the programme's arrangements divide into, across the pieces this
+    # artist is cast on — the scope those codes are NAMED in, so a part that is
+    # the only tenor line anywhere in the concert reads "Tenor", not "Tenor 1".
+    voice_scope: tuple[str, ...] = ()
     message: str | None = None
 
 class BriefingItemMetadata(EnterpriseBaseDTO):
@@ -214,6 +218,11 @@ class PieceCastingMetadata(EventMomentMetadata):
     # NotificationItem). A legacy row may still carry a pre-rendered label; the
     # renderers fall back to it unchanged.
     voice_line: str | None = None
+    # Every line this piece's bound arrangement divides into, as CODES. Carried
+    # rather than looked up because composers are pure functions over metadata,
+    # and without it the renderer cannot know that "T1" is the only tenor line
+    # here and should read "Tenor". Empty on legacy rows — those keep the index.
+    voice_scope: tuple[str, ...] = ()
     # The concert this casting belongs to — so the singer sees WHICH programme the
     # part is for. `starts_at` (inherited, ISO-8601) carries the concert moment.
     project_id: UUID | None = None

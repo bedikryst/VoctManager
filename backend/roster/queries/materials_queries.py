@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.db.models import Prefetch, QuerySet
 
 from archive.models import (
+    PieceVoiceRequirement,
     ProgramNote,
     Recording,
     ScoreEdition,
@@ -104,6 +105,14 @@ def _materials_program_items_prefetch(
                 'piece__castings',
                 queryset=castings_in_scope_qs,
                 to_attr='scope_castings',
+            ),
+            # The divisi is not shown to the singer as a list, but it is what
+            # NAMES their part: a piece with one tenor line says "Tenor", not
+            # "Tenor 1". Without it every casting label would cost a query.
+            Prefetch(
+                'piece__voice_requirements',
+                queryset=PieceVoiceRequirement.objects.filter(is_deleted=False),
+                to_attr='prefetched_voice_requirements',
             ),
             # Score Compiler enrichments — same prefetch pattern, soft-delete
             # safe via the default manager. Used by PieceMaterialsSerializer

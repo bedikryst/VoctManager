@@ -16,8 +16,10 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 
+from archive.services.voice_scope import voice_scope
 from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
+from core.voice_labels import voice_line_label
 from logistics.models import Location
 from roster.domain.liturgy import (
     ProgramItemPresentation,
@@ -308,6 +310,11 @@ class ProjectSerializer(serializers.ModelSerializer):
                 'liturgical_slot': item.liturgical_slot,
                 'slot_label': presentation.slot_label,
                 'section': presentation.section,
+                # Which arrangement this item binds. Null = auto-select. The
+                # overview's fulfilment counter needs it: a piece published in
+                # unison and in three parts declares two divisi, and scoring a
+                # concert against both reports it short of seats it never had.
+                'score_edition': str(item.score_edition_id) if item.score_edition_id else None,
             }
             for item, presentation in zip(items, presentations, strict=True)
         ]
@@ -472,7 +479,7 @@ class ProgramItemSerializer(serializers.ModelSerializer):
         return self._presentation(obj).role_prefix
 
 class ProjectPieceCastingSerializer(serializers.ModelSerializer):
-    voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)
+    voice_line_display = serializers.SerializerMethodField()
     artist_name = serializers.SerializerMethodField()
     project_id = serializers.SerializerMethodField()
     artist_id = serializers.SerializerMethodField()
@@ -480,6 +487,25 @@ class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProjectPieceCasting
         fields = '__all__'
+
+    def get_voice_line_display(self, obj) -> str:
+        """The seat's name as read on THIS piece: an undivided family drops its
+        index, so a piece with one tenor line casts "Tenor", not "Tenor 1".
+
+        The scope comes from the bound arrangement's divisi plus every seat
+        already filled on the piece — both primed by
+        [ProjectPieceCastingViewSet.get_serializer_context]. Without that
+        context (a bare detail read) the piece-wide divisi still names it."""
+        edition_id = self.context.get('bound_edition_by_piece', {}).get(obj.piece_id)
+        cast_codes = self.context.get('cast_codes_by_piece', {}).get(obj.piece_id, ())
+        return voice_line_label(
+            obj.voice_line,
+            voice_scope(
+                list(obj.piece.voice_requirements.all()),
+                edition_id,
+                extra_codes=[obj.voice_line, *cast_codes],
+            ),
+        )
 
     def get_artist_name(self, obj) -> str:
         return f"{obj.participation.artist.first_name} {obj.participation.artist.last_name}"

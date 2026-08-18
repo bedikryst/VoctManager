@@ -27,6 +27,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
+from archive.services.voice_scope import voice_scope
 from notifications.dtos import InvitationRehearsalMetadata, ProjectInvitationMetadata
 from notifications.time_metadata import build_event_time_metadata
 
@@ -38,6 +39,7 @@ from .models import (
     ProjectPieceCasting,
     Rehearsal,
 )
+from .score_package_config import resolve_item_edition
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +65,8 @@ class ProjectInvitationContext:
         default_factory=dict
     )
     voice_lines_by_participation: dict[UUID, tuple[str, ...]] = field(default_factory=dict)
+    # Naming scope for those codes — see `_project_voice_scope`.
+    voice_scope: tuple[str, ...] = ()
 
 
 def _rehearsal_payload(rehearsal: Rehearsal) -> InvitationRehearsalMetadata:
@@ -120,7 +124,37 @@ def build_invitation_context(project: Project) -> ProjectInvitationContext:
         voice_lines_by_participation={
             key: tuple(value) for key, value in voice_lines.items()
         },
+        voice_scope=_project_voice_scope(project),
     )
+
+
+def _project_voice_scope(project: Project) -> tuple[str, ...]:
+    """Every voice line this concert's programme divides into, as codes.
+
+    An invitation names a singer's part before any page of it exists, and it
+    names it once for the whole evening — so the scope is the union across the
+    programme rather than one piece's divisi. A concert with a single tenor line
+    anywhere calls it "Tenor"; one that divides the tenors somewhere keeps the
+    index everywhere, which is the honest reading of a mixed programme.
+    """
+    items = list(
+        ProgramItem.objects
+        .filter(project=project)
+        .select_related("piece")
+        .prefetch_related("piece__editions", "piece__voice_requirements")
+    )
+    codes: set[str] = set(
+        ProjectPieceCasting.objects
+        .filter(participation__project=project)
+        .values_list("voice_line", flat=True)
+    )
+    for item in items:
+        edition = resolve_item_edition(item)
+        codes.update(voice_scope(
+            list(item.piece.voice_requirements.all()),
+            edition.pk if edition else None,
+        ))
+    return tuple(sorted(code for code in codes if code))
 
 
 def build_invitation_metadata(
@@ -162,9 +196,11 @@ def build_invitation_metadata(
     rehearsals: tuple[InvitationRehearsalMetadata, ...] = ()
     program: tuple[str, ...] = ()
     voice_lines: tuple[str, ...] = ()
+    scope: tuple[str, ...] = ()
     if context is not None:
         program = context.program
         voice_lines = context.voice_lines_by_participation.get(participation.id, ())
+        scope = context.voice_scope
         rehearsals = tuple(
             payload
             for _, payload in sorted(
@@ -196,4 +232,5 @@ def build_invitation_metadata(
         rehearsals=rehearsals,
         program=program,
         voice_lines=voice_lines,
+        voice_scope=scope,
     ).model_dump(mode="json")

@@ -4436,3 +4436,23 @@ msgid ""
 msgstr ""
 "Nadpisuje wiersz drukowany przed tytułem. Puste = wynika z wybranego momentu"
 " liturgii."
+
+#: core/constants.py
+msgid "Voice"
+msgstr "Głos"
+
+#: core/constants.py
+msgid "Voice 1"
+msgstr "Głos 1"
+
+#: core/constants.py
+msgid "Voice 2"
+msgstr "Głos 2"
+
+#: core/constants.py
+msgid "Voice 3"
+msgstr "Głos 3"
+
+#: core/constants.py
+msgid "Voice 4"
+msgstr "Głos 4"

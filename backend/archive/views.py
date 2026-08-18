@@ -338,10 +338,18 @@ class TrackViewSet(viewsets.ModelViewSet):
     """
     Endpoint for managing individual rehearsal audio tracks.
     """
-    queryset = Track.objects.select_related('piece').all()
+    # `piece__voice_requirements` is not decoration: a track's label is read
+    # against its arrangement's divisi, so serializing one without it costs a
+    # query per row.
+    queryset = (
+        Track.objects
+        .select_related('piece')
+        .prefetch_related('piece__voice_requirements')
+        .all()
+    )
     serializer_class = TrackSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['piece', 'voice_part']
+    filterset_fields = ['piece', 'voice_part', 'edition']
     permission_classes = [permissions.IsAuthenticated, IsManager]
 
     def create(self, request, *args, **kwargs) -> Response:
@@ -372,7 +380,12 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     be mutated independently of their parent to prevent orphaned records and 
     domain state corruption. Mutate them via PieceViewSet (`PieceWriteDTO`).
     """
-    queryset = PieceVoiceRequirement.objects.all()
+    queryset = (
+        PieceVoiceRequirement.objects
+        .select_related('piece')
+        .prefetch_related('piece__voice_requirements')
+        .all()
+    )
     serializer_class = PieceVoiceRequirementSerializer
     permission_classes = [permissions.IsAuthenticated, IsManager]
 

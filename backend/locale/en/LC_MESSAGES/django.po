@@ -3110,3 +3110,23 @@ msgstr ""
 #: notifications/message_content.py:322
 msgid "Entrance"
 msgstr ""
+
+#: core/constants.py
+msgid "Voice"
+msgstr "Voice"
+
+#: core/constants.py
+msgid "Voice 1"
+msgstr "Voice 1"
+
+#: core/constants.py
+msgid "Voice 2"
+msgstr "Voice 2"
+
+#: core/constants.py
+msgid "Voice 3"
+msgstr "Voice 3"
+
+#: core/constants.py
+msgid "Voice 4"
+msgstr "Voice 4"
