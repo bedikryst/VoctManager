@@ -79,6 +79,23 @@ export const useUpdateDigestSettings = () => {
   });
 };
 
+/**
+ * Settles the one-time push/e-mail offer. Patches the cached profile in place
+ * rather than invalidating, so the card disappears on the same frame the member
+ * answers — the offer must never flicker back after being dismissed.
+ */
+export const useMarkPushEmailOfferSeen = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsService.markPushEmailOfferSeen(),
+    onSuccess: (profile) => {
+      queryClient.setQueryData<UserMeDTO>(settingsKeys.data, (prev) =>
+        prev ? { ...prev, profile } : prev,
+      );
+    },
+  });
+};
+
 export const useChangePassword = () => {
   return useMutation({
     mutationFn: (payload: ChangePasswordPayload) =>

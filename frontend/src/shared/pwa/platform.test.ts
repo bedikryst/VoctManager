@@ -1,17 +1,22 @@
 /**
  * @file platform.test.ts
- * @description Guards the one detection that decides whether an Apple member
- * ever sees an install instruction. The user agents below are real strings, and
- * the iPadOS one is the reason this file exists: it says "Macintosh" and carries
- * no iPad token, so a UA-only check silently classified every tablet as a
- * desktop and hid both the install nudge and the push explanation from it.
+ * @description Guards the two detections that decide what an Apple member is
+ * told about installing. The user agents below are real strings, and the iPadOS
+ * one is the reason this file exists: it says "Macintosh" and carries no iPad
+ * token, so a UA-only check silently classified every tablet as a desktop and
+ * hid both the install nudge and the push explanation from it. The second
+ * detection picks the *instruction*: pointing an in-app WebView at Safari's
+ * share glyph sends someone hunting for a button their browser never draws.
  * @architecture Enterprise SaaS 2026
  * @module shared/pwa/platform.test
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { detectAppleTouchDevice } from "@/shared/pwa/platform";
+import {
+  detectAppleTouchDevice,
+  resolveAppleInstallGuide,
+} from "@/shared/pwa/platform";
 
 const UA = {
   /** iPadOS 13+ Safari — desktop-class UA, no iPad token anywhere. */
@@ -25,6 +30,15 @@ const UA = {
   /** Chrome on iOS — WebKit underneath, Add-to-Home-Screen available. */
   chromeIOS:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/122.0 Mobile/15E148 Safari/604.1",
+  /** Chrome on an iPad still sending the mobile UA. */
+  chromeIPad:
+    "Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/122.0 Mobile/15E148 Safari/604.1",
+  /** Facebook's in-app browser — vendor tokens, and no `Safari/` either. */
+  facebookIOS:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/450.0.0.36.109]",
+  /** A plain WKWebView (a link opened inside a mail client) — no vendor token. */
+  webView:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
   macSafari:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
   android:
@@ -68,5 +82,39 @@ describe("detectAppleTouchDevice", () => {
   it("leaves Android to the native install prompt", () => {
     asDevice(UA.android, 5);
     expect(detectAppleTouchDevice()).toBeNull();
+  });
+});
+
+describe("resolveAppleInstallGuide", () => {
+  it("sends an iPad to the top toolbar and an iPhone to the bottom one", () => {
+    asDevice(UA.ipadOS, 5);
+    expect(resolveAppleInstallGuide()).toBe("safari-ipad");
+
+    asDevice(UA.iphone, 5);
+    expect(resolveAppleInstallGuide()).toBe("safari-iphone");
+  });
+
+  it("never shows Safari's share glyph to a browser that has its own menu", () => {
+    asDevice(UA.chromeIOS, 5);
+    expect(resolveAppleInstallGuide()).toBe("other-browser");
+
+    asDevice(UA.chromeIPad, 5);
+    expect(resolveAppleInstallGuide()).toBe("other-browser");
+  });
+
+  it("tells an in-app WebView to reopen in Safari — it cannot install at all", () => {
+    asDevice(UA.facebookIOS, 5);
+    expect(resolveAppleInstallGuide()).toBe("in-app");
+
+    asDevice(UA.webView, 5);
+    expect(resolveAppleInstallGuide()).toBe("in-app");
+  });
+
+  it("has nothing to explain away from Apple devices", () => {
+    asDevice(UA.android, 5);
+    expect(resolveAppleInstallGuide()).toBeNull();
+
+    asDevice(UA.macSafari, 0);
+    expect(resolveAppleInstallGuide()).toBeNull();
   });
 });

@@ -9,7 +9,12 @@ import { compareAsc, compareDesc, isAfter, isBefore, isValid, parseISO } from "d
 
 import type { Artist, LocationSnippet, Project, Rehearsal } from "@/shared/types";
 
-import { PROJECT_STATUS, type ProjectStatus } from "../constants/projectDomain";
+import {
+  PROJECT_EVENT_KIND,
+  PROJECT_STATUS,
+  type ProjectEventKind,
+  type ProjectStatus,
+} from "../constants/projectDomain";
 import type { DayFixtureKind } from "./dayTimeline";
 
 type ProjectLocationReference = Project["location"] | Rehearsal["location"];
@@ -176,6 +181,53 @@ export const getConductorArtistId = (
   return isArtistReference(conductor) ? String(conductor.id) : null;
 };
 
+export interface LabelPresentation {
+  readonly labelKey: string;
+  readonly fallbackLabel: string;
+}
+
+/**
+ * The event named as the moment it is: the downbeat row on the day's axis, the
+ * badge that says what is next, the subtitle on an event sheet. Every surface
+ * that points at a clock and says what happens then resolves it here, so one
+ * evening cannot be a concert in the run sheet and a Mass on the card above it.
+ *
+ * Deliberately not the picker's own words (`projects.details_tab.event_kind.*`):
+ * "Inne wydarzenie" answers "which of the four kinds is this?", a question only
+ * the manager choosing the kind is asking. A singer reading "18:00 · Inne
+ * wydarzenie" is being answered a question they never asked, so OTHER is simply
+ * "Wydarzenie" here. The backend keeps the same split (`event moment` vs
+ * `event kind` gettext contexts) for the same reason.
+ */
+const EVENT_MOMENT_PRESENTATION: Record<ProjectEventKind, LabelPresentation> = {
+  [PROJECT_EVENT_KIND.CONCERT]: {
+    labelKey: "projects.event_moment.concert",
+    fallbackLabel: "Koncert",
+  },
+  [PROJECT_EVENT_KIND.MASS]: {
+    labelKey: "projects.event_moment.mass",
+    fallbackLabel: "Msza",
+  },
+  [PROJECT_EVENT_KIND.WEDDING]: {
+    labelKey: "projects.event_moment.wedding",
+    fallbackLabel: "Msza ślubna",
+  },
+  [PROJECT_EVENT_KIND.OTHER]: {
+    labelKey: "projects.event_moment.other",
+    fallbackLabel: "Wydarzenie",
+  },
+};
+
+/**
+ * An absent or unrecognised kind reads as a concert — the model's default, and
+ * what every project stored before the field existed is.
+ */
+export const getEventMomentPresentation = (
+  eventKind: ProjectEventKind | null | undefined,
+): LabelPresentation =>
+  EVENT_MOMENT_PRESENTATION[eventKind as ProjectEventKind] ??
+  EVENT_MOMENT_PRESENTATION[PROJECT_EVENT_KIND.CONCERT];
+
 /**
  * What the day's fixed moments are called, for the three surfaces that draw the
  * same axis — the producer's editor, the Overview widget and the chorister's
@@ -185,10 +237,12 @@ export const getConductorArtistId = (
  * The words are the printed sheet's, msgid for msgid (`document_generator`,
  * context `call sheet`): the singer who opens the card and the singer who reads
  * the PDF are looking at one day, and a second vocabulary would say otherwise.
+ * The downbeat is missing from it on purpose — it is the one fixture whose name
+ * depends on the project, which is what `getDayFixturePresentation` resolves.
  */
-export const DAY_FIXTURE_PRESENTATION: Record<
-  DayFixtureKind,
-  { readonly labelKey: string; readonly fallbackLabel: string }
+const DAY_FIXTURE_PRESENTATION: Record<
+  Exclude<DayFixtureKind, "concert">,
+  LabelPresentation
 > = {
   call: {
     labelKey: "projects.day_timeline.call",
@@ -202,11 +256,21 @@ export const DAY_FIXTURE_PRESENTATION: Record<
     labelKey: "projects.day_timeline.soundcheck",
     fallbackLabel: "Próba akustyczna",
   },
-  concert: {
-    labelKey: "projects.day_timeline.concert",
-    fallbackLabel: "Koncert",
-  },
 };
+
+/**
+ * What one fixed moment of the day is called on this project's timeline. Three
+ * of the four are the same wherever they appear; the downbeat is named for what
+ * the ensemble is actually singing at, because a wedding Mass whose run sheet
+ * says "18:00 Koncert" is lying to the singer standing in the sacristy.
+ */
+export const getDayFixturePresentation = (
+  kind: DayFixtureKind,
+  eventKind: ProjectEventKind | null | undefined,
+): LabelPresentation =>
+  kind === "concert"
+    ? getEventMomentPresentation(eventKind)
+    : DAY_FIXTURE_PRESENTATION[kind];
 
 /**
  * How a window states its closing hour. A qualifier on the moment, never a

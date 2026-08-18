@@ -17,7 +17,10 @@ import {
   triggerInstallPrompt,
   type InstallOutcome,
 } from "./installController";
-import { detectAppleTouchDevice } from "./platform";
+import {
+  resolveAppleInstallGuide,
+  type AppleInstallGuide,
+} from "./platform";
 
 const DISMISS_KEY = "voct.pwa.install.dismissed-at";
 const DISMISS_COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // re-offer the nudge after two weeks
@@ -29,8 +32,8 @@ export interface InstallPromptState {
   canPrompt: boolean;
   /** iOS / iPadOS — show manual Add-to-Home-Screen instructions instead. */
   isIOS: boolean;
-  /** iPad: Safari keeps Share in the TOP toolbar, so the steps read differently. */
-  isIPad: boolean;
+  /** Which Apple instruction fits this device *and* this browser; `null` elsewhere. */
+  appleGuide: AppleInstallGuide | null;
   /** Already running as an installed app. */
   isInstalled: boolean;
   /** The ambient nudge should be surfaced (not installed, not dismissed). */
@@ -58,8 +61,8 @@ export const useInstallPrompt = (): InstallPromptState => {
     getInstallSnapshot, // server snapshot — identical, this is a CSR-only app
   );
   const [dismissed, setDismissed] = useState<boolean>(recentlyDismissed);
-  const appleDevice = detectAppleTouchDevice();
-  const isIOS = appleDevice !== null;
+  const appleGuide = resolveAppleInstallGuide();
+  const isIOS = appleGuide !== null;
 
   const dismiss = useCallback(() => {
     try {
@@ -82,7 +85,7 @@ export const useInstallPrompt = (): InstallPromptState => {
   return {
     canPrompt,
     isIOS,
-    isIPad: appleDevice === "ipad",
+    appleGuide,
     isInstalled,
     shouldOffer,
     platform,

@@ -18,6 +18,7 @@ import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { SpotifyWidget } from "../../projects/ProjectCard/widgets/SpotifyWidget";
 import { buildProjectDayTimeline } from "../../projects/lib/dayTimeline";
+import { getEventMomentPresentation } from "../../projects/lib/projectPresentation";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { Project, ProgramItem, PieceCasting } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -99,6 +100,16 @@ export const TimelineProjectCard = ({
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const hasDayPlan = hasConcertDayPlan(dayEntries);
 
+  // The card's eyebrow and its sheet's subtitle are the same claim about the
+  // same evening, so they read from one table — and it is the project's own
+  // kind, not the hedged "Koncert / Wydarzenie" that stood here while nothing
+  // knew which of the two it was.
+  const eventMomentLabel = getEventMomentPresentation(proj.event_kind);
+  const eventMoment = t(
+    eventMomentLabel.labelKey,
+    eventMomentLabel.fallbackLabel,
+  );
+
   const hasOnsiteBlock = hasOnSiteFacts(proj);
   const hasDressCode = Boolean(proj.dress_code_female || proj.dress_code_male);
 
@@ -173,7 +184,7 @@ export const TimelineProjectCard = ({
                 color="gold"
                 className="whitespace-nowrap px-2.5 py-1 bg-ethereal-gold/15 border border-ethereal-gold/40 rounded-md shadow-glass-ethereal"
               >
-                {t("schedule.card.project_badge", "Koncert / Wydarzenie")}
+                {eventMoment}
               </Eyebrow>
             </div>
 
@@ -230,7 +241,7 @@ export const TimelineProjectCard = ({
           onClose={onToggle}
           tone="dark"
           title={event.title}
-          subtitle={t("schedule.card.project_badge", "Koncert / Wydarzenie")}
+          subtitle={eventMoment}
         >
           <div className="flex flex-col gap-4">
               {/* sub-tab bar */}
@@ -417,7 +428,10 @@ export const TimelineProjectCard = ({
                       )}
 
                       {hasDayPlan ? (
-                        <ConcertDayPlan entries={dayEntries} />
+                        <ConcertDayPlan
+                          entries={dayEntries}
+                          eventKind={proj.event_kind}
+                        />
                       ) : (
                         <Text
                           size="sm"
@@ -765,7 +779,7 @@ export const TimelineProjectCard = ({
       {proj.score_pdf && (
         <PdfViewerModal
           isOpen={isScorePdfPreviewOpen}
-          title={t("schedule.card.score_pdf_modal_title", "Partytura Koncertu")}
+          title={t("schedule.card.score_pdf_modal_title", "Partytura")}
           subtitle={proj.title}
           fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
@@ -776,7 +790,7 @@ export const TimelineProjectCard = ({
             hint: {
               title: t(
                 "schedule.card.score_pdf_modal_title",
-                "Partytura Koncertu",
+                "Partytura",
               ),
               subtitle: proj.title,
               fileName: `Score_${proj.title.replace(/\s+/g, "_")}.pdf`,

@@ -34,6 +34,7 @@ import {
   useUpdatePreference,
 } from "@/features/notifications/api/preferences";
 import {
+  useMarkPushEmailOfferSeen,
   useSettingsData,
   useUpdateDigestSettings,
 } from "@/features/settings/api/settings.queries";
@@ -249,6 +250,9 @@ export const NotificationsTab: React.FC = () => {
   const updateMutation = useUpdatePreference();
   const groupChannelMutation = useUpdateGroupChannel();
   const restoreMutation = useRestoreRecommendedPreferences();
+  const { data: settings } = useSettingsData();
+  const digestMutation = useUpdateDigestSettings();
+  const markOfferSeen = useMarkPushEmailOfferSeen();
   const {
     availability,
     permission,
@@ -269,6 +273,10 @@ export const NotificationsTab: React.FC = () => {
     () => new Set<NotificationGroupId>(),
   );
   const [restoringGroup, setRestoringGroup] = useState<NotificationGroupId | null>(null);
+  // Set only by a test push the server reports as *delivered*. Session state on
+  // purpose: it is evidence gathered a moment ago about this device, not a fact
+  // about the account, and the account-level answer is the stamp below.
+  const [pushProven, setPushProven] = useState(false);
 
   const pushGranted = availability.kind === "ready" && permission === "granted" && isSubscribed;
   const canManagePushColumn = pushGranted;
@@ -302,13 +310,43 @@ export const NotificationsTab: React.FC = () => {
 
   const groups = groupNotificationPreferences(matrix);
 
+  const emailMasterEnabled = settings?.profile?.email_notifications_enabled ?? true;
+  const offerAnswered = Boolean(settings?.profile?.push_email_offer_seen_at);
+
+  // Asked once, and only on evidence. Every condition is load-bearing: a proven
+  // delivery (not a subscription, which browsers rotate and silently expire),
+  // e-mail still doing work, and no answer on record for this account.
+  const showPushEmailOffer = pushProven && emailMasterEnabled && !offerAnswered;
+
+  const runTestPush = async () => {
+    const delivered = await sendTest();
+    if (delivered > 0) setPushProven(true);
+  };
+
   const handlePrimerAccept = async () => {
     const ok = await subscribe();
     setPrimerOpen(false);
     if (ok) {
       // Auto-fire a test push so the user gets immediate, tangible confirmation.
-      void sendTest();
+      void runTestPush();
     }
+  };
+
+  const handleMuteEmail = async () => {
+    // The master switch, never the ledger rows. Muting by rewriting preferences
+    // would erase decisions the member actually made — and there is no way to
+    // tell those from rows the router minted at a default — so the granular
+    // ledger survives underneath, ready for the day they switch e-mail back on.
+    await digestMutation.mutateAsync({ email_notifications_enabled: false });
+    await markOfferSeen.mutateAsync();
+  };
+
+  const handleKeepEmail = async () => {
+    await markOfferSeen.mutateAsync();
+  };
+
+  const handleUnmuteEmail = async () => {
+    await digestMutation.mutateAsync({ email_notifications_enabled: true });
   };
 
   const handleUnsubscribeConfirm = async () => {
@@ -363,8 +401,25 @@ export const NotificationsTab: React.FC = () => {
           isSendingTest={isSendingTest}
           onActivate={() => setPrimerOpen(true)}
           onDeactivate={() => setUnsubConfirmOpen(true)}
-          onSendTest={sendTest}
+          onSendTest={runTestPush}
         />
+
+        {showPushEmailOffer && (
+          <PushEmailOffer
+            t={t}
+            isBusy={digestMutation.isPending || markOfferSeen.isPending}
+            onMute={handleMuteEmail}
+            onKeep={handleKeepEmail}
+          />
+        )}
+
+        {!emailMasterEnabled && (
+          <EmailMutedNotice
+            t={t}
+            isBusy={digestMutation.isPending}
+            onUnmute={handleUnmuteEmail}
+          />
+        )}
 
         <Text size="xs" color="muted" className="mb-4 leading-relaxed">
           {t("settings.notifications.in_app_note")}
@@ -671,6 +726,107 @@ const PreferenceRow: React.FC<PreferenceRowProps> = ({
   );
 };
 
+interface PushEmailOfferProps {
+  t: TFunc;
+  isBusy: boolean;
+  onMute: () => Promise<void>;
+  onKeep: () => Promise<void>;
+}
+
+/**
+ * The one-time offer to stop e-mailing a member push demonstrably reaches.
+ *
+ * It appears only after a test push the server confirms was *delivered*, which
+ * is the whole design: e-mail is the fallback for readers nothing else can
+ * reach, so it may only be withdrawn from someone shown to be reachable. Both
+ * answers settle it for good — "Zostaw" is a real answer, not a postponement,
+ * and a question that returns until it gets the answer we prefer is a nag.
+ *
+ * Gold, never crimson: nothing is lost here and everything is reversible from
+ * the notice this offer's acceptance puts in its place.
+ */
+const PushEmailOffer: React.FC<PushEmailOfferProps> = ({ t, isBusy, onMute, onKeep }) => (
+  <motion.div
+    layout
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="mb-6 flex flex-col gap-4 rounded-nested border border-ethereal-gold/30 bg-ethereal-gold/5 p-5 sm:p-6"
+  >
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+      <div className="shrink-0 rounded-control bg-ethereal-gold/10 p-3">
+        <BellRing className="h-5 w-5 text-ethereal-gold" aria-hidden="true" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <Eyebrow className="text-ethereal-gold">
+          {t("settings.notifications.push_email_offer.eyebrow")}
+        </Eyebrow>
+        <Text size="sm" weight="medium" className="mt-1">
+          {t("settings.notifications.push_email_offer.title")}
+        </Text>
+        <Text size="xs" color="muted" className="mt-1 leading-relaxed">
+          {t("settings.notifications.push_email_offer.description")}
+        </Text>
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+      <Button variant="ghost" size="sm" onClick={() => void onKeep()} disabled={isBusy}>
+        {t("settings.notifications.push_email_offer.keep")}
+      </Button>
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => void onMute()}
+        isLoading={isBusy}
+        leftIcon={<Inbox size={14} aria-hidden="true" />}
+      >
+        {t("settings.notifications.push_email_offer.mute")}
+      </Button>
+    </div>
+  </motion.div>
+);
+
+interface EmailMutedNoticeProps {
+  t: TFunc;
+  isBusy: boolean;
+  onUnmute: () => Promise<void>;
+}
+
+/**
+ * The way back. Rendered whenever the master e-mail switch is off, from any
+ * cause — the offer above, or an unsubscribe click the ESP reported, which used
+ * to opt a member out with no route back inside the app at all.
+ *
+ * The ledger below stays visible and operable while this is up: its rows still
+ * hold what the member chose per event, and turning e-mail back on restores
+ * exactly that rather than a recommended baseline. The notice says so, because
+ * a switched-off master over a ledger full of "on" toggles is otherwise a lie.
+ */
+const EmailMutedNotice: React.FC<EmailMutedNoticeProps> = ({ t, isBusy, onUnmute }) => (
+  <div className="mb-6 flex flex-col gap-3 rounded-nested border border-hairline-strong bg-ethereal-ink/4 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex min-w-0 items-start gap-3">
+      <Inbox className="mt-0.5 h-4 w-4 shrink-0 text-ethereal-graphite/70" aria-hidden="true" />
+      <div className="min-w-0">
+        <Text size="sm" weight="medium">
+          {t("settings.notifications.email_muted.title")}
+        </Text>
+        <Text size="xs" color="muted" className="mt-0.5 leading-relaxed">
+          {t("settings.notifications.email_muted.description")}
+        </Text>
+      </div>
+    </div>
+    <Button
+      variant="secondary"
+      size="sm"
+      onClick={() => void onUnmute()}
+      isLoading={isBusy}
+      className="shrink-0"
+    >
+      {t("settings.notifications.email_muted.restore")}
+    </Button>
+  </div>
+);
+
 interface PushHeroProps {
   variant: HeroVariant;
   availability: ReturnType<typeof usePushNotifications>["availability"];
@@ -678,7 +834,7 @@ interface PushHeroProps {
   isSendingTest: boolean;
   onActivate: () => void;
   onDeactivate: () => void;
-  onSendTest: () => void;
+  onSendTest: () => void | Promise<void>;
 }
 
 const PushHero: React.FC<PushHeroProps> = ({

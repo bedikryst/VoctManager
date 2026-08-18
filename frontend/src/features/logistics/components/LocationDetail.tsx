@@ -40,6 +40,7 @@ import {
 import { getImminenceDefinition } from "../constants/eventImminence";
 import { buildDirectionsUrl, buildPlaceUrl } from "../lib/mapsLinks";
 import type { LogisticsEvent, VenueActivity } from "../hooks/useLogisticsEvents";
+import { getLogisticsEventPresentation } from "../lib/eventLabel";
 import type { LocationDto } from "../types/logistics.dto";
 
 import { LocationCategoryBadge } from "./LocationCategoryBadge";
@@ -72,6 +73,7 @@ const DetailEventRow = ({
   const { t } = useTranslation();
   const imminence = getImminenceDefinition(event.imminence);
   const TypeIcon = event.type === "CONCERT" ? Music : Repeat;
+  const typeLabel = getLogisticsEventPresentation(event);
   const dateLabel = new Intl.DateTimeFormat("pl-PL", {
     weekday: "short",
     day: "numeric",
@@ -94,9 +96,7 @@ const DetailEventRow = ({
           {event.title}
         </Text>
         <Caption color="muted" truncate className="mt-0.5">
-          {event.type === "CONCERT"
-            ? t("logistics.event.concert", "Koncert")
-            : t("logistics.event.rehearsal", "Próba")}{" "}
+          {t(typeLabel.labelKey, typeLabel.fallbackLabel)}{" "}
           · {dateLabel}
         </Caption>
       </div>

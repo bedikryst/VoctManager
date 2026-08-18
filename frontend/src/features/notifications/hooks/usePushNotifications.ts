@@ -39,7 +39,13 @@ export interface UsePushNotificationsReturn {
   isSendingTest: boolean;
   subscribe: () => Promise<boolean>;
   unsubscribe: () => Promise<void>;
-  sendTest: () => Promise<void>;
+  /**
+   * Fires the diagnostic push and reports how many devices it **actually
+   * reached** — the server counts successful sends, not attempts, so a
+   * subscription the browser has already discarded comes back as 0. Callers may
+   * treat a positive number as proof the whole chain works for this member.
+   */
+  sendTest: () => Promise<number>;
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -210,13 +216,15 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
     }
   }, [isReady, unregisterMutation]);
 
-  const sendTest = useCallback(async () => {
-    if (!isReady || !isSubscribed) return;
+  const sendTest = useCallback(async (): Promise<number> => {
+    if (!isReady || !isSubscribed) return 0;
     try {
-      await testMutation.mutateAsync();
+      const { delivered } = await testMutation.mutateAsync();
       toast.success(tt("test_sent"));
+      return delivered;
     } catch {
       toast.error(tt("test_failed"));
+      return 0;
     }
   }, [isReady, isSubscribed, testMutation]);
 

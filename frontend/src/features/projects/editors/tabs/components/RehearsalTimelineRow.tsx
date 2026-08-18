@@ -35,6 +35,8 @@ interface RehearsalTimelineRowProps {
   readonly isEditing: boolean;
   readonly isPast: boolean;
   readonly concertTitle: string;
+  /** What the closing row is called — resolved by the tab, which knows the kind. */
+  readonly eventMoment: string;
   readonly onEdit: () => void;
   readonly onDelete: () => void;
 }
@@ -46,6 +48,7 @@ export const RehearsalTimelineRow = ({
   isEditing,
   isPast,
   concertTitle,
+  eventMoment,
   onEdit,
   onDelete,
 }: RehearsalTimelineRowProps): React.JSX.Element => {
@@ -115,9 +118,7 @@ export const RehearsalTimelineRow = ({
 
       {isConcert ? (
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <Eyebrow color="gold">
-            {t("projects.rehearsals.list.concert", "Koncert")}
-          </Eyebrow>
+          <Eyebrow color="gold">{eventMoment}</Eyebrow>
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <Text size="base" weight="medium" className="min-w-0 truncate">
               {concertTitle}

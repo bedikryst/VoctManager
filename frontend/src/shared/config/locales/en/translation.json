@@ -1769,7 +1769,7 @@
         "transport": "Transport",
         "vendors": "Vendors"
       },
-      "inv_col_concert": "Concert",
+      "inv_col_concert": "Event",
       "inv_col_email": "Email",
       "inv_col_person": "Person",
       "inv_col_phone": "Phone",
@@ -2111,7 +2111,7 @@
       "chorister_hub_title": "Document",
       "project_call_sheet_title": "Production report",
       "project_day_sheet_title": "Day Sheet",
-      "project_score_title": "Concert Score",
+      "project_score_title": "Score",
       "project_day_card_title": "Day card"
     },
     "invalid_description": "We could not recognize this document link. It may be malformed or out of date.",
@@ -2394,7 +2394,6 @@
       "title": "No locations in the current view"
     },
     "event": {
-      "concert": "Concert",
       "no_venue": "No venue",
       "rehearsal": "Rehearsal"
     },
@@ -2513,7 +2512,7 @@
       "description": "Scores, the voice mixer and your parts — everything you need to prepare.",
       "empty_archive_desc": "Materials from concerts that have already finished will appear here.",
       "empty_archive_title": "The archive is empty",
-      "empty_desc": "You currently have no upcoming projects or the conductor hasn't approved any concert program yet.",
+      "empty_desc": "You currently have no upcoming projects or the conductor hasn't approved any programme yet.",
       "empty_title": "No assigned materials",
       "empty_unpracticed_desc": "Great work — you've marked every part as ready.",
       "empty_unpracticed_title": "Everything practised",
@@ -3090,7 +3089,7 @@
   },
   "projects": {
     "score_package": {
-      "title": "Concert score book",
+      "title": "Score book",
       "settings": "Settings",
       "items_heading": "Pieces in the programme",
       "ready": "Ready",
@@ -3296,8 +3295,8 @@
       "score_pdf_download_aria": "Download score PDF",
       "score_pdf_downloaded": "PDF downloaded",
       "score_pdf_downloading": "Downloading score...",
-      "score_pdf_label": "Concert score (PDF)",
-      "score_pdf_modal_title": "Concert Score",
+      "score_pdf_label": "Score (PDF)",
+      "score_pdf_modal_title": "Score",
       "score_pdf_preview": "Preview",
       "status_active": "Project marked as in preparation",
       "status_done": "Project marked as completed",
@@ -3351,7 +3350,7 @@
       },
       "search_placeholder": "Search by name, company or specialty...",
       "specialty_unknown": "No specialty",
-      "empty_assigned": "Nobody is running this concert yet",
+      "empty_assigned": "Nobody is running this event yet",
       "empty_assigned_desc": "Hire collaborators from the database — the crew gets no accounts and no notifications, this is a production note for the conductor.",
       "empty_available": "The whole database is already on the crew",
       "empty_no_matches": "No results",
@@ -3414,7 +3413,7 @@
       },
       "empty": {
         "run_sheet": "No day plan yet",
-        "run_sheet_frame": "Call at {{call}}, concert at {{concert}} — plan what happens in between.",
+        "run_sheet_frame": "Call at {{call}}, start at {{start}} — plan what happens in between.",
         "run_sheet_hint": "Add the first item to lay out the day."
       },
       "fab": {
@@ -3430,7 +3429,7 @@
         "dress_code_male": "Attire: men",
         "dressing_room": "Dressing room",
         "entrance": "Entrance / gate",
-        "location": "Concert venue",
+        "location": "Event venue",
         "onsite_contact_name": "On-site contact",
         "onsite_contact_phone": "On-site phone",
         "parking": "Parking",
@@ -3443,10 +3442,10 @@
         "event_kind": "Event kind"
       },
       "call_time": {
-        "offset_h": "{{hours}} h before the concert",
-        "offset_hm": "{{hours}} h {{minutes}} min before the concert",
-        "offset_m": "{{minutes}} min before the concert",
-        "offset_after": "Call time is not before the concert"
+        "offset_h": "{{hours}} h before the start",
+        "offset_hm": "{{hours}} h {{minutes}} min before the start",
+        "offset_m": "{{minutes}} min before the start",
+        "offset_after": "Call time is not before the start"
       },
       "day_plan": {
         "untitled_count": "Unnamed: {{count}}"
@@ -3472,14 +3471,12 @@
         "title": "Item name"
       },
       "sections": {
-        "day_plan": "Concert day plan",
+        "day_plan": "Day plan",
         "ensemble_info": "Information for the ensemble",
         "event": "Event",
         "onsite": "On site"
       },
-      "markers": {
-        "concert": "Concert"
-      },
+      "markers": {},
       "event_kind": {
         "concert": "Concert",
         "mass": "Mass",
@@ -3526,9 +3523,9 @@
       "zaiks": "ZAiKS (CSV)",
       "day_card_desc": "The run of the day for the crew — on site, at the stage.",
       "call_sheet_desc": "Full state of preparations: gaps, casting, contacts.",
-      "score_pdf_desc": "The concert's score book for the singers.",
+      "score_pdf_desc": "The score book for the singers.",
       "zaiks_desc": "Programme listing for the ZAiKS report.",
-      "dtp_desc": "Ensemble line-up for the concert programme.",
+      "dtp_desc": "Ensemble line-up for the event programme.",
       "documents_group": "Documents (PDF)",
       "data_group": "Data to send on",
       "conductor_sheet": "Conductor sheet",
@@ -3631,7 +3628,7 @@
       },
       "buttons": {
         "fill_piece": "Fill this piece",
-        "fill_piece_hint": "Seats every free singer on their line from the concert's line-up. Skips anyone the choice is not unambiguous for.",
+        "fill_piece_hint": "Seats every free singer on their line from the event's line-up. Skips anyone the choice is not unambiguous for.",
         "fill_program": "Fill the programme",
         "fill_program_dirty": "Save or discard the changes to this piece first.",
         "fill_program_hint": "The same rule applied to every piece in the programme.",
@@ -3641,7 +3638,7 @@
         "no_matches": "No matches",
         "pieces": "The programme is empty",
         "pieces_action": "Open programme",
-        "pieces_desc": "Divisi splits the voices of one piece — build the concert programme first.",
+        "pieces_desc": "Divisi splits the voices of one piece — build the programme first.",
         "unassigned": "Everyone is assigned"
       },
       "label": {
@@ -3658,7 +3655,7 @@
       "program_fill": {
         "announced": "This project is no longer a draft — the casting will go to the announcement queue.",
         "confirm": "Fill",
-        "summary": "New seats: {{seats}} · Pieces: {{pieces}}. Derived from the concert's line-up; seats already cast stay as they are.",
+        "summary": "New seats: {{seats}} · Pieces: {{pieces}}. Derived from the event's line-up; seats already cast stay as they are.",
         "title": "Fill the casting of the whole programme?",
         "unresolved_one": "No unambiguous line for {{count}} singer — they will be skipped.",
         "unresolved_few": "No unambiguous line for {{count}} singers — they will be skipped.",
@@ -3709,7 +3706,7 @@
         "clear_title": "All set",
         "no_cast": "No vocal cast",
         "no_dress": "No dress code set",
-        "no_program": "Empty concert programme",
+        "no_program": "Empty programme",
         "no_rehearsals": "No scheduled rehearsals",
         "no_runsheet": "No day schedule",
         "no_score": "No score (PDF)",
@@ -3727,7 +3724,7 @@
       },
       "kpi": {
         "artists": "artists",
-        "countdown": "To the concert",
+        "countdown": "To the event",
         "countdown_aria": "Date details",
         "days": "days",
         "ensemble": "Ensemble",
@@ -3769,7 +3766,7 @@
       "and_more_few": "and {{count}} more…",
       "and_more_many": "and {{count}} more…",
       "and_more_other": "and {{count}} more...",
-      "aria_label": "Manage concert program",
+      "aria_label": "Manage the event programme",
       "badges": {
         "encore": "ENCORE"
       },
@@ -3780,7 +3777,7 @@
       },
       "empty": {
         "no_results": "No results",
-        "setlist_desc": "Pick compositions from the database to build the concert programme.",
+        "setlist_desc": "Pick compositions from the database to build the programme.",
         "setlist_title": "Setlist is empty"
       },
       "fab": {
@@ -3804,7 +3801,7 @@
         "database": "Composition Database",
         "setlist": "Event Setlist"
       },
-      "title": "Concert Program",
+      "title": "Event Programme",
       "toast": {
         "add_error": "Failed to add piece.",
         "add_success": "Added to setlist",
@@ -3849,7 +3846,7 @@
       "aria_label": "Manage project rehearsals",
       "empty": {
         "no_rehearsals": "No rehearsals scheduled",
-        "no_rehearsals_desc": "The first rehearsal you save will appear on this schedule, ahead of the concert date."
+        "no_rehearsals_desc": "The first rehearsal you save will appear on this schedule, ahead of the event date."
       },
       "form": {
         "date_time": "Date and time *",
@@ -3874,8 +3871,7 @@
       "list": {
         "title": "Rehearsal schedule",
         "group_upcoming": "Upcoming",
-        "group_past": "Past",
-        "concert": "Concert"
+        "group_past": "Past"
       },
       "modal": {
         "delete_desc": "Attendance lists associated with this rehearsal will be permanently deleted. This operation cannot be undone.",
@@ -3910,7 +3906,6 @@
         "tenors": "Tenors"
       },
       "markers": {
-        "concert": "Concert",
         "rehearsal": "Rehearsal"
       }
     },
@@ -3927,13 +3922,12 @@
       "call": "Call",
       "warmup": "Warm-up",
       "soundcheck": "Sound check",
-      "concert": "Concert",
       "until": "until {{time}}"
     },
     "run_sheet": {
       "aria_label": "Manage the day schedule",
       "empty": "No run sheet yet",
-      "title": "Concert Day Run Sheet",
+      "title": "Day Run Sheet",
       "open_day_card_aria": "Open the day card (PDF)"
     },
     "spotify": {
@@ -3962,7 +3956,7 @@
       "warning_no_cast": "Nobody has been invited yet — no message will go out.",
       "warning_no_rehearsals": "No rehearsals scheduled — the invitation won't state any dates.",
       "warning_no_program": "The programme is empty — the invitation won't state the repertoire.",
-      "warning_no_location": "No concert venue has been set.",
+      "warning_no_location": "No venue has been set.",
       "warning_unreachable": "Some of the cast have no account yet — the invitation won't reach them.",
       "unreachable_list": "No account — the invitation won't reach them:",
       "irreversible_hint": "Once published, the project becomes visible to the cast, and sent messages cannot be recalled.",
@@ -3979,7 +3973,6 @@
       "change_count_one": "{{count}} change",
       "change_count_other": "{{count}} changes",
       "intro": "The cast already sees the current data in the app. This is one message for the people who aren't looking — untick anything that should wait.",
-      "section_project": "The concert",
       "section_rehearsal": "Rehearsals",
       "section_casting": "Parts",
       "section_participation": "Removed from the cast",
@@ -4027,16 +4020,30 @@
     "timezone_field": {
       "label": "Time zone",
       "resolved": "Times in: {{timezone}}"
+    },
+    "event_moment": {
+      "concert": "Concert",
+      "mass": "Mass",
+      "wedding": "Wedding Mass",
+      "other": "Event"
     }
   },
   "pwa": {
     "install": {
       "action": "Install",
       "dismiss": "Dismiss",
+      "in_app": "Open this page in Safari — an in-app browser window cannot install the app.",
+      "in_app_hint": "“•••” menu → “Open in Safari”.",
       "ios_step_1": "Tap",
       "ios_step_2": "then “Add to Home Screen”",
+      "other_choose": "and choose the add-to-home-screen entry",
+      "other_hint": "No such entry? Open this address in Safari.",
+      "other_tap": "Open the browser menu",
+      "share_hint": "Can't see that icon? Open the “•••” menu in the browser bar.",
       "subtitle": "Full screen and offline practice.",
-      "title": "Install VoctManager"
+      "title": "Install VoctManager",
+      "where_ipad": "in the top bar, next to the address,",
+      "where_iphone": "in the bottom bar,"
     }
   },
   "rehearsals": {
@@ -4256,7 +4263,6 @@
       "no_spotify": "No reference playlist.",
       "note_label": "Note:",
       "open_detail": "Open details: {{title}}",
-      "project_badge": "Concert / Event",
       "run_sheet_title": "Run Sheet",
       "run_sheet_untitled": "Schedule item",
       "onsite": {
@@ -4267,7 +4273,7 @@
         "contact": "On-site contact"
       },
       "score_pdf_label": "Score / Program",
-      "score_pdf_modal_title": "Concert Score",
+      "score_pdf_modal_title": "Score",
       "tabs_aria": "Event sections",
       "tab": {
         "logistics": "Logistics",
@@ -4299,7 +4305,6 @@
       "rehearsal_prefix": "Rehearsal:"
     },
     "hero": {
-      "concert_hint": "The day sheet gathers everything about this concert: call time, the run of the day and your casting.",
       "countdown": {
         "days": "In {{count}} days",
         "days_one": "In {{count}} day",
@@ -4319,15 +4324,16 @@
         "now": "Happening now",
         "tomorrow": "Tomorrow"
       },
-      "next_concert": "Next concert",
-      "concert_today": "Concert today",
       "next_rehearsal": "Next rehearsal",
       "prepare_cta": "Songbook",
       "score_cta": "Score",
       "program_loading": "Loading repertoire...",
       "rehearsal_mode": "Rehearsal mode",
       "tonight_program": "Project repertoire",
-      "untitled_piece": "Piece"
+      "untitled_piece": "Piece",
+      "event_today": "Today: {{event}}",
+      "event_upcoming": "Coming up: {{event}}",
+      "day_hint": "The day sheet gathers everything about the day: call time, the run of the day and your casting."
     },
     "loading": "Loading schedule...",
     "past": {
@@ -4432,9 +4438,22 @@
         "desc": "You're running VoctManager as an app on this device.",
         "title": "The app is installed"
       },
+      "apple_other": {
+        "hint": "No such entry? Open this address in Safari — adding is always available there.",
+        "step_1": "Open the browser menu — “•••” or “⋮” in the toolbar",
+        "step_2": "Choose the entry that adds the page to your home screen",
+        "title": "Add to Home Screen"
+      },
+      "in_app": {
+        "desc": "This page is running inside another app's built-in browser window (Messenger, Gmail…). That browser cannot add apps to the home screen.",
+        "step_1": "Tap “•••” in the corner and choose “Open in Safari”",
+        "step_2": "In Safari, add the app to your home screen",
+        "title": "Open the page in Safari"
+      },
       "ios": {
+        "hint": "Can't see the Share icon? In a narrow Safari bar it hides under “•••” (More).",
         "step_1": "Tap the Share icon in the browser's bottom bar",
-        "step_1_tablet": "Tap the Share icon in the browser's top bar",
+        "step_1_tablet": "Tap the Share icon in the top bar, next to the address",
         "step_2": "Choose “Add to Home Screen”",
         "step_3": "Confirm — the icon appears on your home screen",
         "title": "Add to Home Screen"
@@ -4615,6 +4634,18 @@
         "timezone_note": "In your timezone ({{timezone}})"
       },
       "in_app_note": "Everything lands in the in-app bell, always, whatever you set here. Below you are only choosing email and push.",
+      "push_email_offer": {
+        "eyebrow": "Push works",
+        "title": "The notification reached this device.",
+        "description": "Email is the fallback for people push cannot reach. Since it reaches you, you can switch notification email off — your settings below stay untouched and take effect again the day you turn email back on.",
+        "mute": "Switch email off",
+        "keep": "Keep email"
+      },
+      "email_muted": {
+        "title": "Notification email is switched off",
+        "description": "Nothing goes to your address, whatever the toggles below say — they are waiting untouched and apply again once you turn email back on.",
+        "restore": "Turn email back on"
+      },
       "groups": {
         "commitments": "Your commitments",
         "requests": "Your requests",
@@ -4627,7 +4658,7 @@
         "PROJECT_INVITATION": "You're invited to sing in a project",
         "PROJECT_BRIEFING": "Several changes at once, gathered into one message",
         "PROJECT_UPDATED": "A project's details change",
-        "PROJECT_REMINDER": "Shortly before a concert",
+        "PROJECT_REMINDER": "Shortly before an event",
         "REHEARSAL_UPDATED": "A rehearsal's time, place or focus changes",
         "REHEARSAL_REMINDER": "About a day before a rehearsal",
         "PIECE_CASTING_ASSIGNED": "You're cast in a piece",
@@ -4641,7 +4672,7 @@
         "ABSENCE_REQUESTED": "A singer requests an absence",
         "SYSTEM_ALERT": "Maintenance and important system notices",
         "ANNOUNCEMENT_PENDING": "A project's queue is waiting and the cast still doesn't know",
-        "PROJECT_CANCELLED": "A concert is called off",
+        "PROJECT_CANCELLED": "An event is called off",
         "REHEARSAL_SCHEDULED": "A new rehearsal joins the schedule",
         "REHEARSAL_CANCELLED": "A rehearsal is called off",
         "MESSAGE_RECEIVED": "A reply in your conversation"

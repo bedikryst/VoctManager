@@ -192,7 +192,7 @@ export const ProjectStatusStrip = ({
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
       <StatusTile
-        label={t("projects.overview.kpi.countdown", "Do koncertu")}
+        label={t("projects.overview.kpi.countdown", "Do wydarzenia")}
         value={countdown.value}
         unit={countdown.unit}
         tone={countdown.tone}

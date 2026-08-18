@@ -1,22 +1,127 @@
 /**
  * @file InstallAppPrompt.tsx
  * @description Quiet, dismissible "install the app" card surfaced in the panel
- * shell. Offers a one-tap install on Chromium, step instructions on iOS Safari,
- * and never shows once installed or recently dismissed ({@link useInstallPrompt}).
+ * shell. Offers a one-tap install on Chromium, the matching Add-to-Home-Screen
+ * route on Apple devices, and never shows once installed or recently dismissed
+ * ({@link useInstallPrompt}).
  * @module shared/pwa/InstallAppPrompt
  */
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
-import { Download, Share, SquarePlus, X } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  MoreHorizontal,
+  Share,
+  SquarePlus,
+  X,
+} from "lucide-react";
 
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import type { AppleInstallGuide } from "./platform";
 import { useInstallPrompt } from "./useInstallPrompt";
+
+/**
+ * A glyph on its own is not an instruction: whoever cannot find it has nowhere
+ * to go. Every route therefore names *where* the control sits and carries a
+ * fallback for the case where it sits somewhere else — Safari's compact toolbar
+ * folds Share into "•••", and the browser sniffing behind {@link AppleInstallGuide}
+ * can be fooled by iPadOS desktop mode.
+ */
+const AppleInstructions = ({
+  guide,
+}: {
+  guide: AppleInstallGuide;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+
+  const hintLine = (icon: React.JSX.Element, text: string): React.JSX.Element => (
+    <Text
+      color="marble-muted"
+      className="mt-1 flex items-start gap-1.5 text-[11px] leading-snug"
+    >
+      <span className="mt-px shrink-0">{icon}</span>
+      <span>{text}</span>
+    </Text>
+  );
+
+  if (guide === "in-app") {
+    return (
+      <>
+        <Text color="parchment-muted" className="mt-1 text-xs leading-snug">
+          {t(
+            "pwa.install.in_app",
+            "Otwórz tę stronę w Safari — w okienku wbudowanym w inną aplikację instalacja jest niedostępna.",
+          )}
+        </Text>
+        {hintLine(
+          <ExternalLink size={12} aria-hidden="true" />,
+          t("pwa.install.in_app_hint", "Menu „•••” → „Otwórz w Safari”."),
+        )}
+      </>
+    );
+  }
+
+  if (guide === "other-browser") {
+    return (
+      <>
+        <Text
+          color="parchment-muted"
+          className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug"
+        >
+          <span>{t("pwa.install.other_tap", "Rozwiń menu przeglądarki")}</span>
+          <MoreHorizontal size={13} className="inline text-ethereal-gold" aria-hidden="true" />
+          <span>
+            {t(
+              "pwa.install.other_choose",
+              "i wybierz dodanie do ekranu początkowego",
+            )}
+          </span>
+        </Text>
+        {hintLine(
+          <ExternalLink size={12} aria-hidden="true" />,
+          t(
+            "pwa.install.other_hint",
+            "Nie ma takiej pozycji? Otwórz ten adres w Safari.",
+          ),
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Text
+        color="parchment-muted"
+        className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug"
+      >
+        <span>{t("pwa.install.ios_step_1", "Dotknij")}</span>
+        <Share size={13} className="inline text-ethereal-gold" aria-hidden="true" />
+        <span>
+          {guide === "safari-ipad"
+            ? t("pwa.install.where_ipad", "na górnym pasku, obok adresu,")
+            : t("pwa.install.where_iphone", "na dolnym pasku,")}
+        </span>
+        <span>{t("pwa.install.ios_step_2", "a potem „Do ekranu początkowego”")}</span>
+        <SquarePlus size={13} className="inline text-ethereal-gold" aria-hidden="true" />
+      </Text>
+      {hintLine(
+        <MoreHorizontal size={12} aria-hidden="true" />,
+        t(
+          "pwa.install.share_hint",
+          "Nie widzisz tej ikony? Rozwiń „•••” na pasku przeglądarki.",
+        ),
+      )}
+    </>
+  );
+};
 
 export const InstallAppPrompt = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const { shouldOffer, platform, promptInstall, dismiss } = useInstallPrompt();
+  const { shouldOffer, platform, appleGuide, promptInstall, dismiss } =
+    useInstallPrompt();
 
   return (
     <AnimatePresence>
@@ -42,13 +147,8 @@ export const InstallAppPrompt = (): React.JSX.Element => {
                 {t("pwa.install.title", "Zainstaluj VoctManager")}
               </Eyebrow>
 
-              {platform === "ios" ? (
-                <Text color="parchment-muted" className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug">
-                  <span>{t("pwa.install.ios_step_1", "Dotknij")}</span>
-                  <Share size={13} className="inline text-ethereal-gold" aria-hidden="true" />
-                  <span>{t("pwa.install.ios_step_2", "a potem „Do ekranu początkowego”")}</span>
-                  <SquarePlus size={13} className="inline text-ethereal-gold" aria-hidden="true" />
-                </Text>
+              {platform === "ios" && appleGuide !== null ? (
+                <AppleInstructions guide={appleGuide} />
               ) : (
                 <Text color="parchment-muted" className="mt-0.5 text-xs leading-snug">
                   {t("pwa.install.subtitle", "Pełny ekran i ćwiczenia offline.")}

@@ -26,9 +26,10 @@ import {
   type DayTimelineEntry,
 } from "../../../lib/dayTimeline";
 import {
-  DAY_FIXTURE_PRESENTATION,
   DAY_WINDOW_UNTIL,
+  getDayFixturePresentation,
 } from "../../../lib/projectPresentation";
+import type { ProjectEventKind } from "../../../constants/projectDomain";
 import { RunSheetRow } from "./RunSheetRow";
 
 interface DayTimelineProps {
@@ -44,6 +45,9 @@ interface DayTimelineProps {
   readonly concertDate: string | null;
   /** Same shape, for the call time — the only anchor that can move days. */
   readonly callDate: string | null;
+  /** Names the downbeat: the form's live value, so switching the kind renames
+   *  the row before the project is saved. */
+  readonly eventKind: ProjectEventKind;
 }
 
 export const DayTimeline = ({
@@ -53,6 +57,7 @@ export const DayTimeline = ({
   onRemove,
   concertDate,
   callDate,
+  eventKind,
 }: DayTimelineProps): React.JSX.Element => {
   const { t } = useTranslation();
 
@@ -72,7 +77,10 @@ export const DayTimeline = ({
             );
           }
 
-          const { labelKey, fallbackLabel } = DAY_FIXTURE_PRESENTATION[entry.kind];
+          const { labelKey, fallbackLabel } = getDayFixturePresentation(
+            entry.kind,
+            eventKind,
+          );
           const anchorDate = entry.kind === "call" ? callDate : concertDate;
           const showsDate =
             !isDayWindow(entry) && entry.dayOffset !== 0 && Boolean(anchorDate);

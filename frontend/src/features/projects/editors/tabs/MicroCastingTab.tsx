@@ -207,7 +207,7 @@ export const MicroCastingTab = ({
   const programFillDescription = [
     t(
       "projects.micro_cast.program_fill.summary",
-      "Nowe miejsca: {{seats}} · Utwory: {{pieces}}. Wyliczone ze składu koncertu; miejsca już obsadzone zostają bez zmian.",
+      "Nowe miejsca: {{seats}} · Utwory: {{pieces}}. Wyliczone ze składu wydarzenia; miejsca już obsadzone zostają bez zmian.",
       { seats: programFill.seats, pieces: programFill.pieces },
     ),
     programFill.unresolved > 0
@@ -375,7 +375,7 @@ export const MicroCastingTab = ({
           title={t("projects.micro_cast.empty.pieces", "Program jest pusty")}
           description={t(
             "projects.micro_cast.empty.pieces_desc",
-            "Divisi rozdziela głosy w konkretnym utworze — najpierw ułóż program koncertu.",
+            "Divisi rozdziela głosy w konkretnym utworze — najpierw ułóż program.",
           )}
           actions={
             <Button asChild variant="outline" size="sm">
@@ -548,7 +548,7 @@ export const MicroCastingTab = ({
                         disabled={pieceFill.seats.length === 0 || isSaving}
                         title={t(
                           "projects.micro_cast.buttons.fill_piece_hint",
-                          "Sadza każdego wolnego śpiewaka na jego linii ze składu koncertu. Pomija tych, dla których wybór nie jest jednoznaczny.",
+                          "Sadza każdego wolnego śpiewaka na jego linii ze składu wydarzenia. Pomija tych, dla których wybór nie jest jednoznaczny.",
                         )}
                       >
                         {t(

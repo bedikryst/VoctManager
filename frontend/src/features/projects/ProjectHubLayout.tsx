@@ -499,7 +499,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
                       icon={<BookOpen size={15} aria-hidden="true" />}
                       description={t(
                         "projects.exports.score_pdf_desc",
-                        "Książka nutowa koncertu dla śpiewaków.",
+                        "Książka nutowa dla śpiewaków.",
                       )}
                       onSelect={() => setScoreOpen(true)}
                     >
@@ -530,7 +530,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
                     icon={<AlignLeft size={15} aria-hidden="true" />}
                     description={t(
                       "projects.exports.dtp_desc",
-                      "Skład zespołu do programu koncertu.",
+                      "Skład zespołu do programu wydarzenia.",
                     )}
                     onSelect={() =>
                       downloadReport(
@@ -722,7 +722,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
       {project.score_pdf && (
         <PdfViewerModal
           isOpen={isScoreOpen}
-          title={t("projects.card.score_pdf_modal_title", "Partytura Koncertu")}
+          title={t("projects.card.score_pdf_modal_title", "Partytura")}
           subtitle={project.title}
           fileName={`Score_${project.title.replace(/\s+/g, "_")}.pdf`}
           fetchBlob={fetchScorePdfBlob}
@@ -736,7 +736,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
             hint: {
               title: t(
                 "projects.card.score_pdf_modal_title",
-                "Partytura Koncertu",
+                "Partytura",
               ),
               subtitle: project.title,
               fileName: `Score_${project.title.replace(/\s+/g, "_")}.pdf`,
@@ -797,6 +797,7 @@ export default function ProjectHubLayout(): React.JSX.Element {
         isOpen={isAnnounceOpen}
         projectId={id}
         projectTitle={project.title}
+        eventKind={project.event_kind}
         onClose={() => setAnnounceOpen(false)}
       />
 

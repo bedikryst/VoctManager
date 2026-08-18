@@ -67,7 +67,7 @@ export function ScorePackageBridge({
 
   return (
     <SectionCard
-      title={t("projects.score_package.title", "Partytura koncertowa")}
+      title={t("projects.score_package.title", "Książka nutowa")}
       icon={<BookOpen size={15} aria-hidden="true" />}
       bodyClassName="flex flex-wrap items-center justify-between gap-3"
     >

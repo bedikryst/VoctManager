@@ -15,7 +15,10 @@
 import { useMemo } from "react";
 
 import type { Project, Rehearsal } from "@/shared/types";
-import { PROJECT_STATUS } from "@/features/projects/constants/projectDomain";
+import {
+  PROJECT_STATUS,
+  type ProjectEventKind,
+} from "@/features/projects/constants/projectDomain";
 
 import {
   useLogisticsProjects,
@@ -32,6 +35,13 @@ export type LogisticsEventType = "CONCERT" | "REHEARSAL";
 export interface LogisticsEvent {
   id: string;
   type: LogisticsEventType;
+  /**
+   * What the ensemble is singing at, on a project row. `type` only separates a
+   * project from a rehearsal — it is a discriminator, not a name — so the row
+   * that says "Koncert" against a wedding Mass needs this to say otherwise.
+   * Undefined on a rehearsal, which is a rehearsal whatever it prepares.
+   */
+  eventKind?: ProjectEventKind;
   title: string;
   /** Secondary line — project title for a rehearsal, or the rehearsal focus. */
   subtitle: string | null;
@@ -112,6 +122,7 @@ export const useLogisticsEvents = (
       collected.push({
         id: `concert-${project.id}`,
         type: "CONCERT",
+        eventKind: project.event_kind,
         title: project.title,
         subtitle: null,
         date,

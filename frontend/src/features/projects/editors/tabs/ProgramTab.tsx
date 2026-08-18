@@ -336,7 +336,7 @@ export const ProgramTab = ({
             )}
             description={t(
               "projects.program.empty.setlist_desc",
-              "Wybierz kompozycje z bazy, aby zbudować program koncertu.",
+              "Wybierz kompozycje z bazy, aby zbudować program wydarzenia.",
             )}
           />
         )}

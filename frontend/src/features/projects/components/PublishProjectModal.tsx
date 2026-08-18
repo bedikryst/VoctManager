@@ -54,7 +54,7 @@ const WARNING_COPY: Record<
   },
   no_location: {
     key: "projects.publish.warning_no_location",
-    fallback: "Nie ustalono miejsca koncertu.",
+    fallback: "Nie ustalono miejsca wydarzenia.",
   },
   unreachable_artists: {
     key: "projects.publish.warning_unreachable",

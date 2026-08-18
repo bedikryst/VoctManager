@@ -223,7 +223,7 @@ export const Materials = (): React.JSX.Element => {
                           )
                         : t(
                             "materials.dashboard.empty_desc",
-                            "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu koncertu.",
+                            "W tej chwili nie masz nadchodzących projektów lub dyrygent nie zatwierdził jeszcze żadnego programu.",
                           )}
                   </Text>
                 </GlassCard>

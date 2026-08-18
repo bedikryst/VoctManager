@@ -23,8 +23,8 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { buildProjectDayTimeline, isDayWindow } from "../../lib/dayTimeline";
 import {
-  DAY_FIXTURE_PRESENTATION,
   DAY_WINDOW_UNTIL,
+  getDayFixturePresentation,
 } from "../../lib/projectPresentation";
 
 interface RunSheetWidgetProps {
@@ -58,7 +58,7 @@ export function RunSheetWidget({
 
   return (
     <SectionCard
-      title={t("projects.run_sheet.title", "Harmonogram dnia koncertu")}
+      title={t("projects.run_sheet.title", "Harmonogram dnia")}
       icon={<Clock size={15} aria-hidden="true" />}
       onActivate={onEdit}
       ariaLabel={t("projects.run_sheet.aria_label", "Zarządzaj harmonogramem dnia")}
@@ -117,7 +117,10 @@ export function RunSheetWidget({
               );
             }
 
-            const { labelKey, fallbackLabel } = DAY_FIXTURE_PRESENTATION[entry.kind];
+            const { labelKey, fallbackLabel } = getDayFixturePresentation(
+              entry.kind,
+              project.event_kind,
+            );
 
             return (
               <li key={entry.kind} className="relative">

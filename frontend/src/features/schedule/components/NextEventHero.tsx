@@ -50,6 +50,7 @@ import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
 import { resolveImminence } from "@/features/logistics/constants/eventImminence";
 import { buildProjectDayTimeline } from "@/features/projects/lib/dayTimeline";
+import { getEventMomentPresentation } from "@/features/projects/lib/projectPresentation";
 
 import type { AbsenceRangeControls, TimelineEvent } from "../types/schedule.dto";
 import { ScheduleService } from "../api/schedule.service";
@@ -142,6 +143,11 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   // door it was. The bucket is `resolveImminence`'s, so "today" means the same
   // thing here as on the logistics atlas.
   const isConcertDay = resolveImminence(event.date_time, now) === "TODAY";
+  const eventMomentLabel = getEventMomentPresentation(proj.event_kind);
+  const eventMoment = t(
+    eventMomentLabel.labelKey,
+    eventMomentLabel.fallbackLabel,
+  );
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const showOnSite = hasOnSiteFacts(proj);
   const showDayPlan = hasConcertDayPlan(dayEntries);
@@ -171,9 +177,15 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             pulse={isConcertDay}
             icon={<Sparkles size={11} aria-hidden="true" />}
           >
+            {/* The event names itself; "dziś"/"wkrótce" only place it. Written as
+                a colon phrase rather than "Najbliższy {{event}}" because Polish
+                agrees the adjective with the noun's gender and French its
+                article — neither survives one slot filled from a table. */}
             {isConcertDay
-              ? t("schedule.hero.concert_today", "Dziś koncert")
-              : t("schedule.hero.next_concert", "Najbliższy koncert")}
+              ? t("schedule.hero.event_today", "Dziś: {{event}}", { event: eventMoment })
+              : t("schedule.hero.event_upcoming", "Wkrótce: {{event}}", {
+                  event: eventMoment,
+                })}
           </Badge>
           <Badge variant="incense">{countdown}</Badge>
         </div>
@@ -261,7 +273,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
                   dots outside its own padding box, and an overflow there would
                   clip them. */}
               <div className="max-h-[50dvh] overflow-y-auto overscroll-contain no-scrollbar">
-                <ConcertDayPlan entries={dayEntries} />
+                <ConcertDayPlan entries={dayEntries} eventKind={proj.event_kind} />
               </div>
             </div>
           )}
@@ -274,8 +286,8 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         ) : (
           <Text size="xs" color="parchment-muted" className="max-w-xs text-ethereal-parchment/70">
             {t(
-              "schedule.hero.concert_hint",
-              "Karta dnia zbiera wszystko o tym koncercie: zbiórkę, przebieg i Twoją obsadę.",
+              "schedule.hero.day_hint",
+              "Karta dnia zbiera wszystko o tym dniu: zbiórkę, przebieg i Twoją obsadę.",
             )}
           </Text>
         )}
@@ -341,7 +353,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
     {proj.score_pdf && (
       <PdfViewerModal
         isOpen={scoreOpen}
-        title={t("schedule.card.score_pdf_modal_title", "Partytura Koncertu")}
+        title={t("schedule.card.score_pdf_modal_title", "Partytura")}
         subtitle={proj.title}
         fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
         fetchBlob={fetchScoreBlob}
@@ -350,7 +362,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           type: "project-score",
           id: proj.id,
           hint: {
-            title: t("schedule.card.score_pdf_modal_title", "Partytura Koncertu"),
+            title: t("schedule.card.score_pdf_modal_title", "Partytura"),
             subtitle: proj.title,
             fileName: `Score_${proj.title.replace(/\s+/g, "_")}.pdf`,
           },

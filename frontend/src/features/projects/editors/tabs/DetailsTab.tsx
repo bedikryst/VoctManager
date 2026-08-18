@@ -42,6 +42,7 @@ import {
   readInputTime,
   shiftClockTime,
 } from "../../lib/dayTimeline";
+import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import { TimezoneField } from "../../components/TimezoneField";
 import { DayTimeline } from "./components/DayTimeline";
 import {
@@ -177,17 +178,18 @@ export const DetailsTab = ({
 
   const concertDayMarker = useMemo<CalendarMarker[] | undefined>(() => {
     const concertDay = readInputDate(formData.date_time);
+    const moment = getEventMomentPresentation(formData.event_kind);
 
     return concertDay
       ? [
           {
             date: concertDay,
             tone: "gold",
-            label: t("projects.details_tab.markers.concert", "Koncert"),
+            label: t(moment.labelKey, moment.fallbackLabel),
           },
         ]
       : undefined;
-  }, [formData.date_time, t]);
+  }, [formData.date_time, formData.event_kind, t]);
 
   const callDefaultTime = useMemo(() => {
     const concertClockTime = readInputTime(formData.date_time);
@@ -215,7 +217,7 @@ export const DetailsTab = ({
         isWarning: true,
         text: t(
           "projects.details_tab.call_time.offset_after",
-          "Zbiórka nie wypada przed koncertem",
+          "Zbiórka nie wypada przed rozpoczęciem",
         ),
       };
     }
@@ -228,7 +230,7 @@ export const DetailsTab = ({
         isWarning: false,
         text: t(
           "projects.details_tab.call_time.offset_m",
-          "{{minutes}} min przed koncertem",
+          "{{minutes}} min przed rozpoczęciem",
           { minutes },
         ),
       };
@@ -240,12 +242,12 @@ export const DetailsTab = ({
         minutes === 0
           ? t(
               "projects.details_tab.call_time.offset_h",
-              "{{hours}} godz. przed koncertem",
+              "{{hours}} godz. przed rozpoczęciem",
               { hours },
             )
           : t(
               "projects.details_tab.call_time.offset_hm",
-              "{{hours}} godz. {{minutes}} min przed koncertem",
+              "{{hours}} godz. {{minutes}} min przed rozpoczęciem",
               { hours, minutes },
             ),
     };
@@ -302,7 +304,7 @@ export const DetailsTab = ({
               />
 
               <Select
-                label={t("projects.details_tab.fields.location", "Miejsce koncertu")}
+                label={t("projects.details_tab.fields.location", "Miejsce wydarzenia")}
                 value={formData.location_id || ""}
                 onValueChange={(locationId) => {
                   const selected = (locationsData ?? []).find(
@@ -471,7 +473,7 @@ export const DetailsTab = ({
           <SectionCard
             as="h2"
             icon={<ListOrdered size={15} aria-hidden="true" />}
-            title={t("projects.details_tab.sections.day_plan", "Plan dnia koncertu")}
+            title={t("projects.details_tab.sections.day_plan", "Plan dnia")}
             action={
               <Button
                 type="button"
@@ -537,6 +539,7 @@ export const DetailsTab = ({
                   onRemove={handleRemoveRunSheetItem}
                   callDate={readInputDate(formData.call_time)}
                   concertDate={readInputDate(formData.date_time)}
+                  eventKind={formData.event_kind}
                 />
               ) : (
                 /* The empty state states the frame it is empty inside — the two
@@ -549,8 +552,8 @@ export const DetailsTab = ({
                     callClock && concertClock
                       ? t(
                           "projects.details_tab.empty.run_sheet_frame",
-                          "Zbiórka {{call}}, koncert {{concert}} — ułóż przebieg pomiędzy.",
-                          { call: callClock, concert: concertClock },
+                          "Zbiórka {{call}}, początek {{start}} — ułóż przebieg pomiędzy.",
+                          { call: callClock, start: concertClock },
                         )
                       : t(
                           "projects.details_tab.empty.run_sheet_hint",

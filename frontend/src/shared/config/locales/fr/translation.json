@@ -1769,7 +1769,7 @@
         "transport": "Transport",
         "vendors": "Fournisseurs"
       },
-      "inv_col_concert": "Concert",
+      "inv_col_concert": "Événement",
       "inv_col_email": "E-mail",
       "inv_col_person": "Personne",
       "inv_col_phone": "Téléphone",
@@ -2111,7 +2111,7 @@
       "chorister_hub_title": "Document",
       "project_call_sheet_title": "Rapport de production",
       "project_day_sheet_title": "Feuille du jour",
-      "project_score_title": "Partition de concert",
+      "project_score_title": "Partition",
       "project_day_card_title": "Feuille de jour"
     },
     "invalid_description": "Nous n'avons pas reconnu ce lien de document. Il peut être malformé ou obsolète.",
@@ -2394,7 +2394,6 @@
       "title": "Aucun lieu dans la vue actuelle"
     },
     "event": {
-      "concert": "Concert",
       "no_venue": "Sans lieu",
       "rehearsal": "Répétition"
     },
@@ -2513,7 +2512,7 @@
       "description": "Les partitions, le mixeur de voix et vos parties — tout ce qu'il faut pour vous préparer.",
       "empty_archive_desc": "Les supports des concerts déjà terminés apparaîtront ici.",
       "empty_archive_title": "Les archives sont vides",
-      "empty_desc": "Vous n'avez actuellement aucun projet à venir ou le chef n'a pas encore validé le programme du concert.",
+      "empty_desc": "Vous n’avez actuellement aucun projet à venir ou le chef n’a pas encore validé le programme.",
       "empty_title": "Aucun support attribué",
       "empty_unpracticed_desc": "Beau travail — vous avez marqué chaque partie comme prête.",
       "empty_unpracticed_title": "Tout est travaillé",
@@ -3091,7 +3090,7 @@
   },
   "projects": {
     "score_package": {
-      "title": "Partition de concert",
+      "title": "Recueil de partitions",
       "settings": "Réglages",
       "items_heading": "Œuvres du programme",
       "ready": "Prête",
@@ -3297,8 +3296,8 @@
       "score_pdf_download_aria": "Télécharger le PDF de la partition",
       "score_pdf_downloaded": "Partition téléchargée",
       "score_pdf_downloading": "Téléchargement de la partition...",
-      "score_pdf_label": "Partition du concert (PDF)",
-      "score_pdf_modal_title": "Partition du concert",
+      "score_pdf_label": "Partition (PDF)",
+      "score_pdf_modal_title": "Partition",
       "score_pdf_preview": "Aperçu",
       "status_active": "Projet marqué comme en préparation",
       "status_done": "Projet marqué comme terminé",
@@ -3352,7 +3351,7 @@
       },
       "search_placeholder": "Rechercher par nom, société ou spécialité...",
       "specialty_unknown": "Sans spécialité",
-      "empty_assigned": "Personne n'assure encore ce concert",
+      "empty_assigned": "Personne n’assure encore cet événement",
       "empty_assigned_desc": "Engagez des collaborateurs depuis la base — l'équipe n'a ni compte ni notifications, c'est une note de production pour le chef de chœur.",
       "empty_available": "Toute la base fait déjà partie de l'équipe",
       "empty_no_matches": "Aucun résultat",
@@ -3415,7 +3414,7 @@
       },
       "empty": {
         "run_sheet": "Aucun déroulé de journée",
-        "run_sheet_frame": "Convocation à {{call}}, concert à {{concert}} — organisez ce qui se passe entre les deux.",
+        "run_sheet_frame": "Convocation à {{call}}, début à {{start}} — organisez ce qui se passe entre les deux.",
         "run_sheet_hint": "Ajoutez une première étape pour organiser la journée."
       },
       "fab": {
@@ -3431,7 +3430,7 @@
         "dress_code_male": "Tenue : hommes",
         "dressing_room": "Loge",
         "entrance": "Entrée / portail",
-        "location": "Lieu du concert",
+        "location": "Lieu de l’événement",
         "onsite_contact_name": "Contact sur place",
         "onsite_contact_phone": "Téléphone sur place",
         "parking": "Stationnement",
@@ -3444,10 +3443,10 @@
         "event_kind": "Type d'événement"
       },
       "call_time": {
-        "offset_h": "{{hours}} h avant le concert",
-        "offset_hm": "{{hours}} h {{minutes}} min avant le concert",
-        "offset_m": "{{minutes}} min avant le concert",
-        "offset_after": "La convocation n'est pas avant le concert"
+        "offset_h": "{{hours}} h avant le début",
+        "offset_hm": "{{hours}} h {{minutes}} min avant le début",
+        "offset_m": "{{minutes}} min avant le début",
+        "offset_after": "La convocation n’est pas avant le début"
       },
       "day_plan": {
         "untitled_count": "Sans nom : {{count}}"
@@ -3473,14 +3472,12 @@
         "title": "Nom de l'étape"
       },
       "sections": {
-        "day_plan": "Déroulé du jour du concert",
+        "day_plan": "Déroulé du jour",
         "ensemble_info": "Informations pour l'ensemble",
         "event": "Événement",
         "onsite": "Sur place"
       },
-      "markers": {
-        "concert": "Concert"
-      },
+      "markers": {},
       "event_kind": {
         "concert": "Concert",
         "mass": "Messe",
@@ -3527,9 +3524,9 @@
       "zaiks": "ZAiKS (CSV)",
       "day_card_desc": "Le déroulé du jour pour l'équipe — sur place, au plateau.",
       "call_sheet_desc": "État complet des préparatifs : manques, distribution, contacts.",
-      "score_pdf_desc": "Le recueil de partitions du concert pour les chanteurs.",
+      "score_pdf_desc": "Le recueil de partitions pour les chanteurs.",
       "zaiks_desc": "Liste des œuvres pour le rapport ZAiKS.",
-      "dtp_desc": "Effectif de l'ensemble pour le programme du concert.",
+      "dtp_desc": "Effectif de l’ensemble pour le programme de l’événement.",
       "documents_group": "Documents (PDF)",
       "data_group": "Données à transmettre",
       "conductor_sheet": "Feuille du chef",
@@ -3632,7 +3629,7 @@
       },
       "buttons": {
         "fill_piece": "Compléter cette pièce",
-        "fill_piece_hint": "Place chaque chanteur libre sur sa ligne d'après l'effectif du concert. Ignore ceux dont le choix n'est pas univoque.",
+        "fill_piece_hint": "Place chaque chanteur libre sur sa ligne d’après l’effectif de l’événement. Ignore ceux dont le choix n’est pas univoque.",
         "fill_program": "Compléter le programme",
         "fill_program_dirty": "Enregistrez ou annulez d'abord les modifications de cette pièce.",
         "fill_program_hint": "La même règle appliquée à chaque pièce du programme.",
@@ -3642,7 +3639,7 @@
         "no_matches": "Aucun résultat",
         "pieces": "Le programme est vide",
         "pieces_action": "Ouvrir le programme",
-        "pieces_desc": "Le divisi répartit les voix d'une pièce — composez d'abord le programme du concert.",
+        "pieces_desc": "Le divisi répartit les voix d’une pièce — composez d’abord le programme.",
         "unassigned": "Tout le monde est affecté"
       },
       "label": {
@@ -3659,7 +3656,7 @@
       "program_fill": {
         "announced": "Ce projet n'est plus un brouillon — la distribution ira dans la file d'annonces.",
         "confirm": "Compléter",
-        "summary": "Nouvelles places : {{seats}} · Pièces : {{pieces}}. Déduites de l'effectif du concert ; les places déjà distribuées restent inchangées.",
+        "summary": "Nouvelles places : {{seats}} · Pièces : {{pieces}}. Déduites de l’effectif de l’événement ; les places déjà distribuées restent inchangées.",
         "title": "Compléter la distribution de tout le programme ?",
         "unresolved_one": "Aucune ligne univoque pour {{count}} chanteur — il sera ignoré.",
         "unresolved_few": "Aucune ligne univoque pour {{count}} chanteurs — ils seront ignorés.",
@@ -3710,7 +3707,7 @@
         "clear_title": "Tout est prêt",
         "no_cast": "Aucune distribution vocale",
         "no_dress": "Aucun code vestimentaire défini",
-        "no_program": "Programme de concert vide",
+        "no_program": "Programme vide",
         "no_rehearsals": "Aucune répétition programmée",
         "no_runsheet": "Aucun déroulé de journée",
         "no_score": "Aucune partition (PDF)",
@@ -3728,7 +3725,7 @@
       },
       "kpi": {
         "artists": "artistes",
-        "countdown": "Avant le concert",
+        "countdown": "Avant l’événement",
         "countdown_aria": "Détails de la date",
         "days": "jours",
         "ensemble": "Ensemble",
@@ -3770,7 +3767,7 @@
       "and_more_few": "et {{count}} de plus...",
       "and_more_many": "et {{count}} de plus...",
       "and_more_other": "et {{count}} de plus...",
-      "aria_label": "Gérer le programme du concert",
+      "aria_label": "Gérer le programme de l’événement",
       "badges": {
         "encore": "BIS"
       },
@@ -3781,7 +3778,7 @@
       },
       "empty": {
         "no_results": "Aucun résultat",
-        "setlist_desc": "Choisissez des compositions dans la base pour construire le programme du concert.",
+        "setlist_desc": "Choisissez des compositions dans la base pour construire le programme.",
         "setlist_title": "La setlist est vide"
       },
       "fab": {
@@ -3805,7 +3802,7 @@
         "database": "Base des compositions",
         "setlist": "Setlist de l'événement"
       },
-      "title": "Programme du concert",
+      "title": "Programme de l’événement",
       "toast": {
         "add_error": "Impossible d'ajouter la pièce.",
         "add_success": "Ajouté à la setlist",
@@ -3850,7 +3847,7 @@
       "aria_label": "Gérer les répétitions du projet",
       "empty": {
         "no_rehearsals": "Aucune répétition planifiée",
-        "no_rehearsals_desc": "La première répétition enregistrée apparaîtra dans ce calendrier, avant la date du concert."
+        "no_rehearsals_desc": "La première répétition enregistrée apparaîtra dans ce calendrier, avant la date de l’événement."
       },
       "form": {
         "date_time": "Date et heure *",
@@ -3875,8 +3872,7 @@
       "list": {
         "title": "Calendrier des répétitions",
         "group_upcoming": "À venir",
-        "group_past": "Passées",
-        "concert": "Concert"
+        "group_past": "Passées"
       },
       "modal": {
         "delete_desc": "Les listes de présence liées à cette répétition seront supprimées définitivement. Cette opération est irréversible.",
@@ -3911,7 +3907,6 @@
         "tenors": "Ténors"
       },
       "markers": {
-        "concert": "Concert",
         "rehearsal": "Répétition"
       }
     },
@@ -3928,13 +3923,12 @@
       "call": "Convocation",
       "warmup": "Échauffement",
       "soundcheck": "Balance",
-      "concert": "Concert",
       "until": "jusqu'à {{time}}"
     },
     "run_sheet": {
       "aria_label": "Gérer le déroulé de la journée",
       "empty": "Aucune feuille de route",
-      "title": "Feuille de route du jour du concert",
+      "title": "Feuille de route du jour",
       "open_day_card_aria": "Ouvrir la feuille de jour (PDF)"
     },
     "spotify": {
@@ -3963,7 +3957,7 @@
       "warning_no_cast": "Personne n'est encore invité — aucun message ne partira.",
       "warning_no_rehearsals": "Aucune répétition au calendrier — l'invitation n'en donnera pas les dates.",
       "warning_no_program": "Le programme est vide — l'invitation ne donnera pas le répertoire.",
-      "warning_no_location": "Aucun lieu de concert n'a été fixé.",
+      "warning_no_location": "Aucun lieu n’a été fixé.",
       "warning_unreachable": "Une partie des chanteurs n'a pas encore de compte — l'invitation ne leur parviendra pas.",
       "unreachable_list": "Sans compte — l'invitation ne leur parviendra pas :",
       "irreversible_hint": "Une fois publié, le projet devient visible pour les chanteurs, et les messages envoyés ne peuvent pas être rappelés.",
@@ -3980,7 +3974,6 @@
       "change_count_one": "{{count}} modification",
       "change_count_other": "{{count}} modifications",
       "intro": "Les choristes voient déjà les données à jour dans l'application. Ceci est un seul message pour celles et ceux qui ne les consultent pas — décochez ce qui peut encore attendre.",
-      "section_project": "Le concert",
       "section_rehearsal": "Répétitions",
       "section_casting": "Parties",
       "section_participation": "Retraits de la distribution",
@@ -4028,16 +4021,30 @@
     "timezone_field": {
       "label": "Fuseau horaire",
       "resolved": "Heures en : {{timezone}}"
+    },
+    "event_moment": {
+      "concert": "Concert",
+      "mass": "Messe",
+      "wedding": "Messe de mariage",
+      "other": "Événement"
     }
   },
   "pwa": {
     "install": {
       "action": "Installer",
       "dismiss": "Fermer",
+      "in_app": "Ouvrez cette page dans Safari — la fenêtre intégrée à une autre application ne permet pas l’installation.",
+      "in_app_hint": "Menu « ••• » → « Ouvrir dans Safari ».",
       "ios_step_1": "Appuyez sur",
       "ios_step_2": "puis « Sur l’écran d’accueil »",
+      "other_choose": "et choisissez l’ajout à l’écran d’accueil",
+      "other_hint": "Pas d’entrée de ce type ? Ouvrez cette adresse dans Safari.",
+      "other_tap": "Ouvrez le menu du navigateur",
+      "share_hint": "Vous ne voyez pas cette icône ? Ouvrez le menu « ••• » de la barre du navigateur.",
       "subtitle": "Plein écran et répétition hors ligne.",
-      "title": "Installer VoctManager"
+      "title": "Installer VoctManager",
+      "where_ipad": "dans la barre supérieure, à côté de l’adresse,",
+      "where_iphone": "dans la barre inférieure,"
     }
   },
   "rehearsals": {
@@ -4257,7 +4264,6 @@
       "no_spotify": "Aucune playlist de référence.",
       "note_label": "Note :",
       "open_detail": "Ouvrir les détails : {{title}}",
-      "project_badge": "Concert / Événement",
       "run_sheet_title": "Feuille de route",
       "run_sheet_untitled": "Élément du programme",
       "onsite": {
@@ -4268,7 +4274,7 @@
         "contact": "Contact sur place"
       },
       "score_pdf_label": "Partition / Programme",
-      "score_pdf_modal_title": "Partition du concert",
+      "score_pdf_modal_title": "Partition",
       "tabs_aria": "Sections de l’événement",
       "tab": {
         "logistics": "Logistique",
@@ -4300,7 +4306,6 @@
       "rehearsal_prefix": "Répétition :"
     },
     "hero": {
-      "concert_hint": "La feuille du jour rassemble tout sur ce concert : la convocation, le déroulé et votre distribution.",
       "countdown": {
         "days": "Dans {{count}} jours",
         "days_one": "Dans {{count}} jour",
@@ -4320,15 +4325,16 @@
         "now": "En cours",
         "tomorrow": "Demain"
       },
-      "next_concert": "Prochain concert",
-      "concert_today": "Concert aujourd'hui",
       "next_rehearsal": "Prochaine répétition",
       "prepare_cta": "Recueil",
       "score_cta": "Partition",
       "program_loading": "Chargement du répertoire...",
       "rehearsal_mode": "Mode répétition",
       "tonight_program": "Répertoire du projet",
-      "untitled_piece": "Pièce"
+      "untitled_piece": "Pièce",
+      "event_today": "Aujourd’hui : {{event}}",
+      "event_upcoming": "Bientôt : {{event}}",
+      "day_hint": "La feuille du jour rassemble tout sur la journée : la convocation, le déroulé et votre distribution."
     },
     "loading": "Chargement du planning...",
     "past": {
@@ -4433,9 +4439,22 @@
         "desc": "Vous utilisez VoctManager en tant qu'application sur cet appareil.",
         "title": "L'application est installée"
       },
+      "apple_other": {
+        "hint": "Pas d'entrée de ce type ? Ouvrez cette adresse dans Safari — l'ajout y est toujours disponible.",
+        "step_1": "Ouvrez le menu du navigateur — « ••• » ou « ⋮ » dans la barre",
+        "step_2": "Choisissez l'entrée qui ajoute la page à l'écran d'accueil",
+        "title": "Ajouter à l'écran d'accueil"
+      },
+      "in_app": {
+        "desc": "Cette page s'affiche dans la fenêtre intégrée d'une autre application (Messenger, Gmail…). Ce navigateur ne peut pas ajouter d'application à l'écran d'accueil.",
+        "step_1": "Touchez « ••• » dans le coin et choisissez « Ouvrir dans Safari »",
+        "step_2": "Dans Safari, ajoutez l'application à l'écran d'accueil",
+        "title": "Ouvrir la page dans Safari"
+      },
       "ios": {
+        "hint": "Vous ne voyez pas l'icône Partager ? Dans une barre Safari étroite, elle se cache sous « ••• » (Plus).",
         "step_1": "Touchez l'icône Partager dans la barre inférieure du navigateur",
-        "step_1_tablet": "Touchez l'icône Partager dans la barre supérieure du navigateur",
+        "step_1_tablet": "Touchez l'icône Partager dans la barre supérieure, à côté de l'adresse",
         "step_2": "Choisissez « Sur l'écran d'accueil »",
         "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",
         "title": "Ajouter à l'écran d'accueil"
@@ -4616,6 +4635,18 @@
         "timezone_note": "Dans votre fuseau horaire ({{timezone}})"
       },
       "in_app_note": "Tout arrive dans la cloche de l’application, toujours, quels que soient ces réglages. Ci-dessous, vous ne choisissez que l’e-mail et les notifications push.",
+      "push_email_offer": {
+        "eyebrow": "Le push fonctionne",
+        "title": "La notification est arrivée sur cet appareil.",
+        "description": "L’e-mail est le canal de secours pour ceux que le push n’atteint pas. Puisqu’il vous atteint, vous pouvez désactiver les e-mails de notification — vos réglages ci-dessous restent intacts et reprendront effet le jour où vous réactiverez l’e-mail.",
+        "mute": "Désactiver les e-mails",
+        "keep": "Garder les e-mails"
+      },
+      "email_muted": {
+        "title": "Les e-mails de notification sont désactivés",
+        "description": "Rien ne part vers votre adresse, quels que soient les interrupteurs ci-dessous — ils attendent intacts et s’appliqueront de nouveau dès que vous réactiverez l’e-mail.",
+        "restore": "Réactiver les e-mails"
+      },
       "groups": {
         "commitments": "Vos engagements",
         "requests": "Vos demandes",
@@ -4628,7 +4659,7 @@
         "PROJECT_INVITATION": "Vous êtes invité à chanter dans un projet",
         "PROJECT_BRIEFING": "Plusieurs changements à la fois, réunis en un seul message",
         "PROJECT_UPDATED": "Les détails d'un projet changent",
-        "PROJECT_REMINDER": "Peu avant un concert",
+        "PROJECT_REMINDER": "Peu avant un événement",
         "REHEARSAL_UPDATED": "L'heure, le lieu ou le programme d'une répétition change",
         "REHEARSAL_REMINDER": "Environ un jour avant une répétition",
         "PIECE_CASTING_ASSIGNED": "Vous êtes distribué dans une œuvre",
@@ -4642,7 +4673,7 @@
         "ABSENCE_REQUESTED": "Un choriste demande une absence",
         "SYSTEM_ALERT": "Maintenance et avis système importants",
         "ANNOUNCEMENT_PENDING": "La file d'un projet attend et les chanteurs l'ignorent encore",
-        "PROJECT_CANCELLED": "Un concert est annulé",
+        "PROJECT_CANCELLED": "Un événement est annulé",
         "REHEARSAL_SCHEDULED": "Une nouvelle répétition rejoint le calendrier",
         "REHEARSAL_CANCELLED": "Une répétition est annulée",
         "MESSAGE_RECEIVED": "Une réponse dans votre conversation"

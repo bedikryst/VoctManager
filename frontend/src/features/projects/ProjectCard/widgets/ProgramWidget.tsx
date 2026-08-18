@@ -80,10 +80,10 @@ export function ProgramWidget({
 
   return (
     <SectionCard
-      title={t("projects.program.title", "Program koncertu")}
+      title={t("projects.program.title", "Program wydarzenia")}
       icon={<ListOrdered size={15} aria-hidden="true" />}
       onActivate={onEdit}
-      ariaLabel={t("projects.program.aria_label", "Zarządzaj programem koncertu")}
+      ariaLabel={t("projects.program.aria_label", "Zarządzaj programem wydarzenia")}
       footer={
         /* A running total is the quietest thing in the card, so it is set as
            one — a bordered chip here outweighed every piece title above it. */

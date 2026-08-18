@@ -97,6 +97,18 @@ export const settingsService = {
   },
 
   /**
+   * Settles the one-time "push works — drop e-mail?" offer, whichever way the
+   * member answered it. Separate from the mute itself, which is an ordinary
+   * profile PATCH: declining is an answer that changes no delivery.
+   */
+  markPushEmailOfferSeen: async (): Promise<UserProfileDTO> => {
+    const response = await api.post<UserProfileDTO>(
+      `${BASE_URL}seen-push-email-offer/`,
+    );
+    return response.data;
+  },
+
+  /**
    * Uploads a (client-cropped) avatar. The server re-encodes it and returns the
    * refreshed profile with the new render URLs.
    */

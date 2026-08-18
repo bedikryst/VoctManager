@@ -128,7 +128,7 @@ export const ProjectAttentionPanel = ({
         id: "no-program",
         tone: "amber",
         icon: ListOrdered,
-        label: t("projects.overview.attention.no_program", "Pusty program koncertu"),
+        label: t("projects.overview.attention.no_program", "Pusty program wydarzenia"),
         segment: "program",
       });
     }

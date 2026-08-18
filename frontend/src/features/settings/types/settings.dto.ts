@@ -25,11 +25,19 @@ export interface UserProfileDTO {
   // Notification delivery (daily digest of routine manager alerts).
   digest_enabled?: boolean;
   digest_hour?: number;
+  /** Master switch above the per-type ledger: false silences every operational
+   *  e-mail, whatever the individual rows say. */
+  email_notifications_enabled?: boolean;
+  /** When the member answered the one-time "push works — drop e-mail?" offer.
+   *  Stamped on either answer, server-side, so the question is asked once per
+   *  account rather than once per browser. */
+  push_email_offer_seen_at?: string | null;
 }
 
 export interface DigestSettingsPayload {
   digest_enabled?: boolean;
   digest_hour?: number;
+  email_notifications_enabled?: boolean;
 }
 
 export interface UserMeDTO {

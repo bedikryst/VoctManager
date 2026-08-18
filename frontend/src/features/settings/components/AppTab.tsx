@@ -3,8 +3,9 @@
  * @description "Aplikacja" settings pane: a deterministic, always-available home
  * for installing VoctManager to the device — independent of the ambient nudge
  * card, which is best-effort by nature. Resolves every platform case (installed
- * / one-tap Chromium / iOS Add-to-Home-Screen / other browsers) and lets users
- * hand the app to the ensemble via link, native share sheet, or a scannable QR.
+ * / one-tap Chromium / the four Apple routes to the home screen / other
+ * browsers) and lets users hand the app to the ensemble via link, native share
+ * sheet, or a scannable QR.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AppTab
  */
@@ -15,8 +16,10 @@ import {
   Check,
   Copy,
   Download,
+  ExternalLink,
   Link2,
   Maximize2,
+  MoreHorizontal,
   Share,
   Share2,
   Smartphone,
@@ -30,6 +33,7 @@ import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
 import { Button } from "@ui/primitives/Button";
 import { Text, Caption } from "@ui/primitives/typography";
+import type { AppleInstallGuide } from "@/shared/pwa/platform";
 import { useInstallPrompt } from "@/shared/pwa/useInstallPrompt";
 
 const InstallQrCode = lazy(() =>
@@ -57,9 +61,143 @@ const Benefit = ({
   </div>
 );
 
+const Step = ({
+  icon: Icon,
+  children,
+}: {
+  icon: LucideIcon;
+  children: React.ReactNode;
+}): React.JSX.Element => (
+  <li className="flex items-start gap-2.5">
+    <Icon
+      size={15}
+      className="mt-0.5 shrink-0 text-ethereal-gold"
+      aria-hidden="true"
+    />
+    <Text size="sm" color="graphite">
+      {children}
+    </Text>
+  </li>
+);
+
+/**
+ * The manual route to the home screen, told for the app the member is actually
+ * holding. Safari hides Add-to-Home-Screen behind the share sheet, Chrome and
+ * Firefox behind their own "•••" menu, and a WebView embedded in Messenger or
+ * Gmail does not offer it at all — one set of steps for all four is how someone
+ * ends up hunting for a glyph their browser never draws. Each variant closes
+ * with a fallback, because the detection is user-agent sniffing and iPadOS
+ * desktop mode can still make Chrome look like Safari.
+ */
+const AppleInstallCard = ({
+  guide,
+}: {
+  guide: AppleInstallGuide;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+
+  if (guide === "in-app") {
+    return (
+      <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+        <Text weight="medium">
+          {t("settings.app.in_app.title", "Otwórz stronę w Safari")}
+        </Text>
+        <Text size="sm" color="muted">
+          {t(
+            "settings.app.in_app.desc",
+            "Ta strona działa w okienku wbudowanym w inną aplikację (np. Messenger, Gmail). Taka przeglądarka nie potrafi dodać aplikacji do ekranu początkowego.",
+          )}
+        </Text>
+        <ol className="space-y-2.5">
+          <Step icon={ExternalLink}>
+            {t(
+              "settings.app.in_app.step_1",
+              "Dotknij „•••” w rogu okna i wybierz „Otwórz w Safari”",
+            )}
+          </Step>
+          <Step icon={SquarePlus}>
+            {t(
+              "settings.app.in_app.step_2",
+              "W Safari dodaj aplikację do ekranu początkowego",
+            )}
+          </Step>
+        </ol>
+      </div>
+    );
+  }
+
+  if (guide === "other-browser") {
+    return (
+      <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+        <Text weight="medium">
+          {t("settings.app.apple_other.title", "Dodaj do ekranu początkowego")}
+        </Text>
+        <ol className="space-y-2.5">
+          <Step icon={MoreHorizontal}>
+            {t(
+              "settings.app.apple_other.step_1",
+              "Rozwiń menu przeglądarki — „•••” lub „⋮” na pasku",
+            )}
+          </Step>
+          <Step icon={SquarePlus}>
+            {t(
+              "settings.app.apple_other.step_2",
+              "Wybierz pozycję dodającą stronę do ekranu początkowego",
+            )}
+          </Step>
+        </ol>
+        <Caption as="p" color="muted">
+          {t(
+            "settings.app.apple_other.hint",
+            "Nie ma takiej pozycji? Otwórz ten adres w Safari — tam dodawanie jest zawsze dostępne.",
+          )}
+        </Caption>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+      <Text weight="medium">
+        {t("settings.app.ios.title", "Dodaj do ekranu początkowego")}
+      </Text>
+      <ol className="space-y-2.5">
+        <Step icon={Share}>
+          {/* Safari puts Share at the bottom on iPhone and at the top on iPad;
+              pointing at the wrong edge is the same as no instruction at all. */}
+          {guide === "safari-ipad"
+            ? t(
+                "settings.app.ios.step_1_tablet",
+                "Dotknij ikony Udostępnij na górnym pasku, obok adresu",
+              )
+            : t(
+                "settings.app.ios.step_1",
+                "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
+              )}
+        </Step>
+        <Step icon={SquarePlus}>
+          {t("settings.app.ios.step_2", "Wybierz „Do ekranu początkowego”")}
+        </Step>
+        <Step icon={Check}>
+          {t(
+            "settings.app.ios.step_3",
+            "Potwierdź — ikona pojawi się na ekranie początkowym",
+          )}
+        </Step>
+      </ol>
+      <Caption as="p" color="muted">
+        {t(
+          "settings.app.ios.hint",
+          "Nie widzisz ikony Udostępnij? W wąskim pasku Safari chowa ją pod „•••” (Więcej).",
+        )}
+      </Caption>
+    </div>
+  );
+};
+
 export const AppTab = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const { canPrompt, isIOS, isIPad, isInstalled, promptInstall } =
+  const { canPrompt, isIOS, appleGuide, isInstalled, promptInstall } =
     useInstallPrompt();
   const [justCopied, setJustCopied] = useState(false);
 
@@ -163,58 +301,8 @@ export const AppTab = (): React.JSX.Element => {
               {t("settings.app.install_action", "Zainstaluj aplikację")}
             </Button>
           </div>
-        ) : isIOS ? (
-          <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
-            <Text weight="medium">
-              {t("settings.app.ios.title", "Dodaj do ekranu początkowego")}
-            </Text>
-            <ol className="space-y-2.5">
-              <li className="flex items-center gap-2.5">
-                <Share
-                  size={15}
-                  className="shrink-0 text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Text size="sm" color="graphite">
-                  {/* Safari puts Share at the bottom on iPhone and at the top on
-                      iPad; pointing at the wrong edge is the same as no
-                      instruction at all. */}
-                  {isIPad
-                    ? t(
-                        "settings.app.ios.step_1_tablet",
-                        "Dotknij ikony Udostępnij na górnym pasku przeglądarki",
-                      )
-                    : t(
-                        "settings.app.ios.step_1",
-                        "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
-                      )}
-                </Text>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <SquarePlus
-                  size={15}
-                  className="shrink-0 text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Text size="sm" color="graphite">
-                  {t("settings.app.ios.step_2", "Wybierz „Do ekranu początkowego”")}
-                </Text>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <Check
-                  size={15}
-                  className="shrink-0 text-ethereal-gold"
-                  aria-hidden="true"
-                />
-                <Text size="sm" color="graphite">
-                  {t(
-                    "settings.app.ios.step_3",
-                    "Potwierdź — ikona pojawi się na ekranie początkowym",
-                  )}
-                </Text>
-              </li>
-            </ol>
-          </div>
+        ) : isIOS && appleGuide !== null ? (
+          <AppleInstallCard guide={appleGuide} />
         ) : (
           <div className="space-y-2 rounded-nested border border-hairline-strong bg-white/40 p-4">
             <Text weight="medium">

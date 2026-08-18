@@ -22,6 +22,7 @@ import {
   getImminenceDefinition,
 } from "../constants/eventImminence";
 import type { LogisticsEvent } from "../hooks/useLogisticsEvents";
+import { getLogisticsEventPresentation } from "../lib/eventLabel";
 
 interface LogisticsEventRowProps {
   event: LogisticsEvent;
@@ -46,6 +47,7 @@ const LogisticsEventRowComponent = ({
   const { t } = useTranslation();
   const imminence = getImminenceDefinition(event.imminence);
   const TypeIcon = event.type === "CONCERT" ? Music : Repeat;
+  const typeLabel = getLogisticsEventPresentation(event);
   const dayNumber = new Intl.DateTimeFormat("pl-PL", { day: "numeric" }).format(
     event.date,
   );
@@ -109,9 +111,7 @@ const LogisticsEventRowComponent = ({
             className="shrink-0"
           />
           <Eyebrow color="muted">
-            {event.type === "CONCERT"
-              ? t("logistics.event.concert", "Koncert")
-              : t("logistics.event.rehearsal", "Próba")}
+            {t(typeLabel.labelKey, typeLabel.fallbackLabel)}
           </Eyebrow>
         </div>
         <Text

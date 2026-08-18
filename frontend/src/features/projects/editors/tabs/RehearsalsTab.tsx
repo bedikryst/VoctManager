@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { useRehearsalsTab } from "../hooks/useRehearsalsTab";
+import { getEventMomentPresentation } from "../../lib/projectPresentation";
 import type { RehearsalTargetType } from "../types";
 import { RehearsalTimelineRow } from "./components/RehearsalTimelineRow";
 import { cn } from "@/shared/lib/utils";
@@ -99,6 +100,14 @@ export const RehearsalsTab = ({
      flagging it gold would make the ordinary case look like an error. */
   const isCallEmpty = targetType !== "TUTTI" && invitedCount === 0;
 
+  // The day the runway leads to, named for what the ensemble is singing at: it
+  // marks the calendar and closes the timeline, and both must say the same word.
+  const eventMomentLabel = getEventMomentPresentation(project?.event_kind);
+  const eventMoment = t(
+    eventMomentLabel.labelKey,
+    eventMomentLabel.fallbackLabel,
+  );
+
   /**
    * What the project already occupies, in the timezone each entry was booked
    * in — a rehearsal stored as an instant is only "the 14th" when read back
@@ -115,7 +124,7 @@ export const RehearsalsTab = ({
           "yyyy-MM-dd",
         ),
         tone: "gold",
-        label: t("projects.rehearsals.markers.concert", "Koncert"),
+        label: eventMoment,
       });
     }
 
@@ -138,7 +147,14 @@ export const RehearsalsTab = ({
     });
 
     return markers;
-  }, [editingRehearsal, project?.date_time, project?.timezone, projectRehearsals, t]);
+  }, [
+    editingRehearsal,
+    eventMoment,
+    project?.date_time,
+    project?.timezone,
+    projectRehearsals,
+    t,
+  ]);
 
   const targetOptions: readonly SegmentedTabItem<RehearsalTargetType>[] = [
     {
@@ -188,6 +204,7 @@ export const RehearsalsTab = ({
           }
           isPast={isPast}
           concertTitle={concertTitle}
+          eventMoment={eventMoment}
           onEdit={() => {
             if (entry.rehearsal) handleEditClick(entry.rehearsal);
           }}
@@ -531,7 +548,7 @@ export const RehearsalsTab = ({
               )}
               description={t(
                 "projects.rehearsals.empty.no_rehearsals_desc",
-                "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą koncertu.",
+                "Pierwsza zapisana próba pojawi się w tym harmonogramie, przed datą wydarzenia.",
               )}
             />
           )}

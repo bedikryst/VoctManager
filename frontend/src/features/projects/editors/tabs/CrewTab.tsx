@@ -154,7 +154,7 @@ export const CrewTab = ({ projectId }: CrewTabProps): React.JSX.Element => {
               variant="inline"
               className="px-5 py-10"
               icon={<Wrench size={26} aria-hidden="true" />}
-              title={t("projects.crew.empty_assigned", "Nikt jeszcze nie obsługuje tego koncertu")}
+              title={t("projects.crew.empty_assigned", "Nikt jeszcze nie obsługuje tego wydarzenia")}
               description={t(
                 "projects.crew.empty_assigned_desc",
                 "Zatrudnij współpracowników z bazy — ekipa nie dostaje kont ani powiadomień, to notatka produkcyjna dla dyrygenta.",

@@ -304,7 +304,7 @@ export function ScorePackagePanel({
   return (
     <SectionCard
       as="h2"
-      title={t("projects.score_package.title", "Partytura koncertowa")}
+      title={t("projects.score_package.title", "Książka nutowa")}
       icon={<FileText size={15} aria-hidden="true" />}
       bodyClassName="flex flex-col gap-5"
       footer={
@@ -325,7 +325,7 @@ export function ScorePackagePanel({
           title={t("projects.score_package.empty_title", "Program jest pusty")}
           description={t(
             "projects.score_package.empty",
-            "Partytura składa się z utworów programu — najpierw ułóż program koncertu.",
+            "Partytura składa się z utworów programu — najpierw ułóż program.",
           )}
           actions={
             <Button asChild variant="outline" size="sm">
@@ -667,7 +667,7 @@ export function ScorePackagePanel({
           book after pressing "Wygeneruj ponownie". */}
       <PdfViewerModal
         isOpen={bookPreviewOpen}
-        title={projectTitle ?? t("projects.score_package.title", "Partytura koncertowa")}
+        title={projectTitle ?? t("projects.score_package.title", "Książka nutowa")}
         subtitle={t("projects.score_package.preview_book_full", "Podgląd partytury")}
         fileName={`${sanitizeFilename(projectTitle ?? "partytura")}.pdf`}
         fetchBlob={

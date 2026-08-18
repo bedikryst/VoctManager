@@ -22,6 +22,7 @@ export type AppleTouchDevice = "iphone" | "ipad" | null;
  * underneath and all current ones offer Add-to-Home-Screen; the CriOS / FxiOS /
  * EdgiOS tokens also vanish in desktop-UA mode, so excluding them was both
  * unreliable and a way to hide the instructions from people who need them.
+ * Which *instruction* to show is a separate question — {@link detectAppleBrowser}.
  */
 export const detectAppleTouchDevice = (): AppleTouchDevice => {
   if (typeof navigator === "undefined") return null;
@@ -34,6 +35,58 @@ export const detectAppleTouchDevice = (): AppleTouchDevice => {
 
 export const isAppleTouchDevice = (): boolean =>
   detectAppleTouchDevice() !== null;
+
+/** Which app is rendering the page — each one reaches the home screen its own way. */
+export type AppleBrowser = "safari" | "other-browser" | "in-app";
+
+/**
+ * A WebView embedded in a native app — a link opened inside Messenger, Gmail,
+ * Instagram, LinkedIn. It renders the page but has no Add-to-Home-Screen entry
+ * at all, so the Safari steps are a dead end there; the only instruction that
+ * leads anywhere is "reopen this in Safari". Two signals, because neither alone
+ * covers the field: the vendor tokens the large apps append, and the missing
+ * `Safari/` token that plain WKWebViews have — real browsers, Chrome and
+ * Firefox on iOS included, always keep that token.
+ */
+const IN_APP_TOKENS =
+  /FBAN|FBAV|FB_IAB|Instagram|Messenger|LinkedInApp|Line\/|Twitter|MicroMessenger|Snapchat|Pinterest|GSA\//i;
+
+/** iOS browsers that hide their own Add-to-Home-Screen in a "•••" menu instead
+ *  of Safari's share sheet, so the share glyph is the wrong thing to point at. */
+const OTHER_BROWSER_TOKENS = /CriOS|EdgiOS|FxiOS|OPiOS|OPT\/|DuckDuckGo|YaBrowser/i;
+
+/**
+ * Best effort, and knowingly so: iPadOS "Request Desktop Website" strips the
+ * CriOS / FxiOS tokens, so a Chrome user can still be read as Safari. That is
+ * why the Safari copy carries the "can't see the icon? open ••• " fallback —
+ * it has to survive being shown to the wrong browser.
+ */
+export const detectAppleBrowser = (): AppleBrowser => {
+  if (typeof navigator === "undefined") return "safari";
+  const ua = navigator.userAgent;
+  if (IN_APP_TOKENS.test(ua) || !/Safari\//i.test(ua)) return "in-app";
+  if (OTHER_BROWSER_TOKENS.test(ua)) return "other-browser";
+  return "safari";
+};
+
+/**
+ * The one instruction this member needs, device and app folded together.
+ * `null` = nothing to explain (not an Apple touch device).
+ */
+export type AppleInstallGuide =
+  | "safari-iphone"
+  | "safari-ipad"
+  | "other-browser"
+  | "in-app";
+
+export const resolveAppleInstallGuide = (): AppleInstallGuide | null => {
+  const device = detectAppleTouchDevice();
+  if (device === null) return null;
+
+  const browser = detectAppleBrowser();
+  if (browser !== "safari") return browser;
+  return device === "ipad" ? "safari-ipad" : "safari-iphone";
+};
 
 /**
  * Launched as an installed app. `display-mode` covers every platform; the legacy

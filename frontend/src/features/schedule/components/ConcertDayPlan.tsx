@@ -21,9 +21,10 @@ import {
   type DayTimelineEntry,
 } from "../../projects/lib/dayTimeline";
 import {
-  DAY_FIXTURE_PRESENTATION,
   DAY_WINDOW_UNTIL,
+  getDayFixturePresentation,
 } from "../../projects/lib/projectPresentation";
+import type { ProjectEventKind } from "../../projects/constants/projectDomain";
 
 /**
  * Whether the day carries a plan rather than only its frame. A project with a
@@ -37,10 +38,13 @@ export const hasConcertDayPlan = (
 
 interface ConcertDayPlanProps {
   entries: readonly DayTimelineEntry[];
+  /** Names the downbeat row — a Mass says "Msza", not "Koncert". */
+  eventKind: ProjectEventKind | undefined;
 }
 
 export const ConcertDayPlan = ({
   entries,
+  eventKind,
 }: ConcertDayPlanProps): React.JSX.Element => {
   const { t } = useTranslation();
 
@@ -52,13 +56,16 @@ export const ConcertDayPlan = ({
         const isPoint = entry.kind === "point";
         // A fixed moment is named here, in the reader's language; a typed point
         // carries whatever the producer wrote, which may be nothing at all.
-        const rowTitle =
-          entry.kind === "point"
-            ? entry.item.title
-            : t(
-                DAY_FIXTURE_PRESENTATION[entry.kind].labelKey,
-                DAY_FIXTURE_PRESENTATION[entry.kind].fallbackLabel,
-              );
+        let rowTitle: string;
+        if (entry.kind === "point") {
+          rowTitle = entry.item.title;
+        } else {
+          const { labelKey, fallbackLabel } = getDayFixturePresentation(
+            entry.kind,
+            eventKind,
+          );
+          rowTitle = t(labelKey, fallbackLabel);
+        }
 
         return (
           <div

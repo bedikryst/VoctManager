@@ -59,11 +59,18 @@ import type {
   AnnouncementChange,
   AnnouncementReview,
 } from "../api/project.service";
+import type { ProjectEventKind } from "../constants/projectDomain";
+import {
+  getEventMomentPresentation,
+  type LabelPresentation,
+} from "../lib/projectPresentation";
 
 interface AnnouncementReviewSheetProps {
   readonly isOpen: boolean;
   readonly projectId: string;
   readonly projectTitle: string;
+  /** Names the project section — a Mass is not filed under "Koncert". */
+  readonly eventKind: ProjectEventKind | undefined;
   readonly onClose: () => void;
 }
 
@@ -73,19 +80,35 @@ interface AnnouncementReviewSheetProps {
 const SECTION_ORDER = ["PROJECT", "REHEARSAL", "CASTING", "PARTICIPATION"] as const;
 type SectionKey = (typeof SECTION_ORDER)[number];
 
+// The project's own section is missing here on purpose: it is headed by the
+// event's own name, which is the one heading on this sheet that depends on the
+// project. `sectionMeta` resolves it, from the table the singer's briefing reads.
 const SECTION_META: Record<
-  SectionKey,
-  { titleKey: string; fallback: string; danger?: boolean }
+  Exclude<SectionKey, "PROJECT">,
+  LabelPresentation & { danger?: boolean }
 > = {
-  PROJECT: { titleKey: "projects.announce.section_project", fallback: "Koncert" },
-  REHEARSAL: { titleKey: "projects.announce.section_rehearsal", fallback: "Próby" },
-  CASTING: { titleKey: "projects.announce.section_casting", fallback: "Partie" },
+  REHEARSAL: {
+    labelKey: "projects.announce.section_rehearsal",
+    fallbackLabel: "Próby",
+  },
+  CASTING: {
+    labelKey: "projects.announce.section_casting",
+    fallbackLabel: "Partie",
+  },
   PARTICIPATION: {
-    titleKey: "projects.announce.section_participation",
-    fallback: "Skreślenia z obsady",
+    labelKey: "projects.announce.section_participation",
+    fallbackLabel: "Skreślenia z obsady",
     danger: true,
   },
 };
+
+const sectionMeta = (
+  sectionKey: SectionKey,
+  eventKind: ProjectEventKind | undefined,
+): LabelPresentation & { danger?: boolean } =>
+  sectionKey === "PROJECT"
+    ? getEventMomentPresentation(eventKind)
+    : SECTION_META[sectionKey];
 
 type TFunc = ReturnType<typeof useTranslation>["t"];
 
@@ -147,6 +170,7 @@ export const AnnouncementReviewSheet = ({
   isOpen,
   projectId,
   projectTitle,
+  eventKind,
   onClose,
 }: AnnouncementReviewSheetProps): React.JSX.Element => {
   const { t, i18n } = useTranslation();
@@ -371,6 +395,7 @@ export const AnnouncementReviewSheet = ({
                   changes={lines}
                   heldIds={heldIds}
                   onToggle={toggle}
+                  eventKind={eventKind}
                   t={t}
                   lang={lang}
                 />
@@ -454,6 +479,7 @@ interface ChangeSectionProps {
   changes: AnnouncementChange[];
   heldIds: Set<string>;
   onToggle: (change: AnnouncementChange) => void;
+  eventKind: ProjectEventKind | undefined;
   t: TFunc;
   lang: string;
 }
@@ -463,10 +489,11 @@ const ChangeSection = ({
   changes,
   heldIds,
   onToggle,
+  eventKind,
   t,
   lang,
 }: ChangeSectionProps): React.JSX.Element => {
-  const meta = SECTION_META[sectionKey];
+  const meta = sectionMeta(sectionKey, eventKind);
   return (
     <section className="flex flex-col gap-2">
       <Eyebrow
@@ -474,7 +501,7 @@ const ChangeSection = ({
         className="flex items-center gap-1.5"
       >
         {meta.danger && <UserMinus size={12} aria-hidden="true" />}
-        {t(meta.titleKey, meta.fallback)}
+        {t(meta.labelKey, meta.fallbackLabel)}
       </Eyebrow>
       <ul className="flex flex-col gap-1.5">
         {changes.map((change) => (
