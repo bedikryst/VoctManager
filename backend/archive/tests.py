@@ -45,7 +45,11 @@ from archive.models import (
 )
 from archive.services import enrichment
 from archive.services.resolvers import resolve_or_create_piece
-from archive.services.voice_scope import scoped_to_edition, voice_labels
+from archive.services.voice_scope import (
+    requirements_for_edition,
+    tracks_for_edition,
+    voice_labels,
+)
 from archive.tasks import _identity_from_analysis
 from core.constants import AppRole
 from core.models import UserProfile
@@ -886,7 +890,7 @@ class EditionScopedDivisiTests(TestCase):
 
         rows = list(self.piece.voice_requirements.all())
         self.assertEqual(
-            sorted(r.voice_line for r in scoped_to_edition(rows, self.three_part.pk)),
+            sorted(r.voice_line for r in requirements_for_edition(rows, self.three_part.pk)),
             ["V1", "V2", "V3"],
         )
 
@@ -896,7 +900,7 @@ class EditionScopedDivisiTests(TestCase):
 
         rows = list(self.piece.voice_requirements.all())
         self.assertEqual(
-            [r.voice_line for r in scoped_to_edition(rows, self.unison.pk)], ["S1"],
+            [r.voice_line for r in requirements_for_edition(rows, self.unison.pk)], ["S1"],
         )
 
     def test_each_edition_names_its_own_lines(self) -> None:
@@ -916,17 +920,42 @@ class EditionScopedDivisiTests(TestCase):
         self._require("T1", self.three_part)
         self.assertEqual(self.piece.voice_requirements.count(), 2)
 
-    def test_tracks_follow_the_bound_arrangement(self) -> None:
-        piece_wide = Track.objects.create(
-            piece=self.piece, voice_part="TUTTI", audio_file="audio_tracks/all.mp3",
+    def _track(self, line: str, edition: ScoreEdition | None) -> Track:
+        return Track.objects.create(
+            piece=self.piece, edition=edition, voice_part=line,
+            audio_file=f"audio_tracks/{line}-{edition.pk if edition else 'all'}.mp3",
         )
-        three_part_track = Track.objects.create(
-            piece=self.piece, edition=self.three_part, voice_part="T1",
-            audio_file="audio_tracks/tenor.mp3",
-        )
+
+    def test_an_edition_never_sees_another_editions_takes(self) -> None:
+        unison_take = self._track("TUTTI", self.unison)
+        three_part_take = self._track("T1", self.three_part)
+
         rows = list(self.piece.tracks.all())
-        self.assertEqual(scoped_to_edition(rows, self.three_part.pk), [three_part_track])
-        self.assertEqual(scoped_to_edition(rows, self.unison.pk), [piece_wide])
+        self.assertEqual(tracks_for_edition(rows, self.three_part.pk), [three_part_take])
+        self.assertEqual(tracks_for_edition(rows, self.unison.pk), [unison_take])
+
+    def test_an_edition_take_supplements_the_common_ones(self) -> None:
+        """The rule that separates tracks from divisi: a recording made for one
+        arrangement adds to the common set instead of retracting it, so a single
+        file dropped onto an edition cannot take the other guide tracks away
+        from that concert's singers."""
+        shared_soprano = self._track("S1", None)
+        shared_tenor = self._track("T1", None)
+        own_tenor = self._track("T1", self.three_part)
+
+        rows = list(self.piece.tracks.all())
+        # The edition's own tenor take wins on ITS line; soprano still arrives.
+        self.assertEqual(
+            tracks_for_edition(rows, self.three_part.pk), [shared_soprano, own_tenor],
+        )
+        # An edition that recorded nothing keeps the whole common set.
+        self.assertEqual(
+            tracks_for_edition(rows, self.unison.pk), [shared_soprano, shared_tenor],
+        )
+        # And a reader with no edition in hand reads the common layer.
+        self.assertEqual(
+            tracks_for_edition(rows, None), [shared_soprano, shared_tenor],
+        )
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp())
