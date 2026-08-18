@@ -66,7 +66,6 @@ export const useScheduleData = (artistId?: string | number) => {
           title: proj.title,
           location: proj.location,
           call_time: proj.call_time,
-          run_sheet: proj.run_sheet,
           description: proj.description,
           status: null,
           project_id: proj.id,

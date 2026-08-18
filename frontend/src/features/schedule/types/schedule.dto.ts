@@ -3,7 +3,6 @@ import type {
   LocationSnippet,
   Project,
   Rehearsal,
-  RunSheetItem,
 } from "@/shared/types";
 
 export type ScheduleViewMode = "UPCOMING" | "PAST";
@@ -26,7 +25,6 @@ export interface TimelineEvent {
   absences?: number;
   project_id: string | number;
   call_time?: string | null;
-  run_sheet?: RunSheetItem[];
   description?: string | null;
   /** The artist's own participation for this event's project (RSVP target). */
   participationId?: string | number;
