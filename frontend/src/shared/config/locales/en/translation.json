@@ -524,6 +524,7 @@
         "details": "Piece details",
         "metadata": "Metadata"
       },
+      "toast_invalid": "Not saved — fix the piece's data.",
       "toast_no_changes": "Nothing to save.",
       "toast_save_error": "Couldn't save the changes.",
       "toast_save_success": "Changes saved.",

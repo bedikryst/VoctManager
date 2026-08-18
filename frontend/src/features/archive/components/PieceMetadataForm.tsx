@@ -41,14 +41,22 @@ export const pieceCardSchema = z.object({
   title: z.string().min(1, "Tytuł jest wymagany").max(200),
   arranger: z.string().max(150).default(""),
   opus_catalog: z.string().max(40).default(""),
-  musical_key: z.string().max(20).default(""),
+  // The fact strip edits these two in cells that render no error slot of their
+  // own, so their message can only ever be read in the submit toast — it has to
+  // be a sentence, not zod's English default.
+  musical_key: z.string().max(20, "Tonacja: maksymalnie 20 znaków").default(""),
   language: z.string().max(50).default(""),
-  voicing: z.string().max(50).default(""),
+  voicing: z.string().max(50, "Obsada: maksymalnie 50 znaków").default(""),
   text_source: z.string().max(200).default(""),
+  // `null` is the API's "no year", the card's default for a piece that has none
+  // and what the fact strip writes when the cell is cleared — so it has to parse
+  // as a VALUE. A bare `.optional()` admits only absence: `null` would fall into
+  // the coerced-number branch as 0, fail `min(500)`, and block every submit on a
+  // yearless record.
   composition_year: z
-    .union([z.coerce.number().int().min(500).max(2100), z.literal("")])
+    .union([z.coerce.number().int().min(500).max(2100), z.literal(""), z.null()])
     .optional()
-    .transform((v) => (v === "" || v === undefined ? null : v)),
+    .transform((v) => (v === "" || v == null ? null : v)),
   epoch: z.string().max(4).default(""),
   lyrics_original: z.string().default(""),
   lyrics_ipa: z.string().default(""),

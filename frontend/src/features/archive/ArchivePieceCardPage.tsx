@@ -35,7 +35,7 @@ import React, {
   useState,
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -354,6 +354,30 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
 
   const isBusy = updatePiece.isPending || createComposer.isPending;
 
+  // Not every field here has an error slot to fail into: the title and the five
+  // musical facts are inline cells that render only their OWN validation. A
+  // rejection landing on one of them is otherwise a save button that does
+  // nothing and says nothing, so the submit itself has to speak.
+  const reportInvalid = useCallback(
+    (invalid: FieldErrors<PieceCardFormValues>): void => {
+      const firstMessage = Object.values(invalid)
+        .map((entry) =>
+          entry && typeof entry === "object" && "message" in entry
+            ? entry.message
+            : undefined,
+        )
+        .find((message): message is string => typeof message === "string");
+      toast.error(
+        t(
+          "archive.piece_card.toast_invalid",
+          "Nie zapisano — popraw dane utworu.",
+        ),
+        firstMessage ? { description: firstMessage } : undefined,
+      );
+    },
+    [t],
+  );
+
   const onSubmit = handleSubmit(async (values) => {
     if (!piece) return;
 
@@ -444,7 +468,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
       });
       applyFieldErrors(form.setError, normalized);
     }
-  });
+  }, reportInvalid);
 
   // ---- Loading / error states -------------------------------------------
   if (isLoading || !piece) {

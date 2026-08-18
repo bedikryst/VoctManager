@@ -530,6 +530,7 @@
         "details": "Szczegóły utworu",
         "metadata": "Metadane"
       },
+      "toast_invalid": "Nie zapisano — popraw dane utworu.",
       "toast_no_changes": "Nic do zapisania.",
       "toast_save_error": "Nie udało się zapisać zmian.",
       "toast_save_success": "Zapisano zmiany.",

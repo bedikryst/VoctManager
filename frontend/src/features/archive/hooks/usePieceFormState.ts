@@ -35,10 +35,13 @@ export const pieceFormSchema = z.object({
     .union([z.coerce.number().int().min(0).max(59), z.literal("")])
     .optional()
     .transform((v) => (v === "" || v === undefined ? 0 : v)),
+  // `null` is "no year" — the form's own default and what the API returns — so
+  // it has to parse as a value. Under a bare `.optional()` it falls into the
+  // coerced-number branch as 0 and fails `min(500)` before anything is typed.
   composition_year: z
-    .union([z.coerce.number().int().min(500).max(2100), z.literal("")])
+    .union([z.coerce.number().int().min(500).max(2100), z.literal(""), z.null()])
     .optional()
-    .transform((v) => (v === "" || v === undefined ? null : v)),
+    .transform((v) => (v === "" || v == null ? null : v)),
   epoch: z.string().max(4).default(""),
   lyrics_original: z.string().default(""),
 });

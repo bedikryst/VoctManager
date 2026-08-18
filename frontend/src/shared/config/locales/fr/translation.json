@@ -524,6 +524,7 @@
         "details": "Détails de la pièce",
         "metadata": "Métadonnées"
       },
+      "toast_invalid": "Non enregistré — corrigez les données de la pièce.",
       "toast_no_changes": "Rien à enregistrer.",
       "toast_save_error": "Impossible d'enregistrer les modifications.",
       "toast_save_success": "Modifications enregistrées.",
