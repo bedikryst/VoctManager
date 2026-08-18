@@ -47,6 +47,7 @@ import {
 } from "../../lib/voiceFamilies";
 import { foldDiacritics } from "@/shared/lib/text";
 import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
+import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { CastMemberChip } from "./components/CastMemberChip";
 import { DivisiBucket } from "./components/DivisiBucket";
 import { DroppableBucket } from "./components/DroppableBucket";
@@ -152,9 +153,14 @@ export const MicroCastingTab = ({
   const referenceUrl = selectedPiece
     ? getPrimaryReferenceRecording(selectedPiece)
     : null;
+  // The board casts the arrangement THIS concert binds — a piece published in
+  // unison and in three parts would otherwise offer both sets of seats at once.
+  const selectedItem = program.find(
+    (item) => String(item.piece) === selectedPieceId,
+  );
   const requirements = useMemo<VoiceRequirement[]>(
-    () => selectedPiece?.voice_requirements_read ?? [],
-    [selectedPiece],
+    () => scopedRequirements(selectedPiece, selectedItem?.score_edition),
+    [selectedPiece, selectedItem?.score_edition],
   );
   const progress = selectedPieceId ? pieceProgress[selectedPieceId] : undefined;
 
@@ -253,6 +259,7 @@ export const MicroCastingTab = ({
     A: t("projects.micro_cast.voices.altos", "Alty"),
     T: t("projects.micro_cast.voices.tenors", "Tenory"),
     B: t("projects.micro_cast.voices.basses", "Basy"),
+    V: t("projects.micro_cast.voices.untyped", "Głosy nieokreślone"),
     ROLE: t("projects.micro_cast.voices.special", "Linie specjalne"),
   };
 

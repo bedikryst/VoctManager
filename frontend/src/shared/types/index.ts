@@ -67,6 +67,12 @@ export type VoiceLine =
   | "B1"
   | "B2"
   | "B3"
+  // Untyped parts, for a canon or a round: equal entries with no tessitura,
+  // where naming them "Soprano 1" would invent a voicing the score never wrote.
+  | "V1"
+  | "V2"
+  | "V3"
+  | "V4"
   | "SOLO"
   | "VP"
   | "TUTTI"
@@ -158,6 +164,11 @@ export interface ProjectProgramItem {
   slot_label: string;
   /** The division of the rite this item is grouped under, or a manual override. */
   section: string;
+  /**
+   * Edition this item binds; `null` = auto-select. It decides which of the
+   * piece's divisi layers the concert is actually scored against.
+   */
+  score_edition?: string | null;
 }
 
 export interface Project extends BaseModel {
@@ -326,23 +337,38 @@ export interface Composer extends BaseModel {
 }
 
 // Backend PieceVoiceRequirement model extends EnterpriseBaseModel but the
-// serializer only exposes the 5 fields below.
+// serializer only exposes the fields below.
 export interface VoiceRequirement {
   id?: string;
   piece?: string;
+  /** Arrangement this line belongs to; `null` = the whole piece. */
+  edition?: string | null;
   voice_line: VoiceLine;
+  /**
+   * Server-rendered name, already read inside its own arrangement — an
+   * undivided family arrives without its index ("Tenor", not "Tenor 1").
+   */
   voice_line_display?: string;
   quantity: number;
 }
 
 // Backend Track model extends EnterpriseBaseModel but TrackSerializer only
-// exposes the 5 fields below.
+// exposes the fields below.
 export interface Track {
   id: string;
   piece: string;
+  /** Arrangement this take was recorded for; `null` = the whole piece. */
+  edition?: string | null;
   voice_part: VoiceLine;
   voice_part_display?: string;
   audio_file: string;
+  /**
+   * Name of the uploaded file. Manager-only verification aid — storage renames
+   * collisions, so the served path is no evidence of which take was picked.
+   */
+  original_filename?: string;
+  /** Practice note shown with the track ("od taktu 34, tempo 90"). */
+  description?: string;
 }
 
 // ---- Score Compiler nested entities ----------------------------------------
@@ -609,6 +635,12 @@ export interface ProgramItem {
   /** What the score-book card prints before the title — set only for the slots
    *  where a reader cannot otherwise know when the piece happens. */
   role_prefix_effective?: string;
+  /**
+   * Edition the conductor pinned for this item. `null` = auto-select (the
+   * piece's default, then the most recent). It decides which arrangement's
+   * divisi and practice tracks this concert works from.
+   */
+  score_edition?: string | null;
 }
 
 // Backend ProjectPieceCasting is a plain models.Model — no soft-delete fields.

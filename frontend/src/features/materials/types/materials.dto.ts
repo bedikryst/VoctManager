@@ -85,8 +85,14 @@ export interface MaterialsLocation {
 export interface MaterialsTrack {
   id: string;
   voice_part: string;
+  /**
+   * Already read inside the arrangement this concert binds — an undivided
+   * family arrives without its index ("Tenor", not "Tenor 1").
+   */
   voice_part_display: string;
   audio_file: string;
+  /** The manager's practice note, e.g. "od taktu 34, tempo 90". May be empty. */
+  description: string;
 }
 
 export interface MaterialsCasting {

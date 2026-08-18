@@ -91,7 +91,7 @@ import { AIHallucinationWarning } from "./components/AIHallucinationWarning";
 import { EditionsList } from "./components/EditionsList";
 import { EditionUploadZone } from "./components/EditionUploadZone";
 import { ComposerPicker } from "./components/ComposerPicker";
-import { DivisiEditor } from "./components/DivisiEditor";
+import { DivisiSection } from "./components/DivisiSection";
 import {
   ProvenanceChip,
   pieceFieldProvenance,
@@ -119,7 +119,11 @@ import { PieceDirtyProvider, countDirty } from "./hooks/usePieceDirty";
 import { getReviewPdf } from "./constants/piecePdfs";
 import { INGESTION_STATUS, type Piece, type VoiceLine } from "@/shared/types";
 
-const reqKey = (r: VoiceRequirementDTO): string => `${r.voice_line}:${r.quantity}`;
+// The arrangement is part of the identity: moving a line from the piece-wide
+// layer into one edition changes nothing about its code or count, and without
+// the edition in the key the card would call that save a no-op.
+const reqKey = (r: VoiceRequirementDTO): string =>
+  `${r.edition ?? ""}|${r.voice_line}:${r.quantity}`;
 const sameRequirements = (
   a: VoiceRequirementDTO[],
   b: VoiceRequirementDTO[],
@@ -266,6 +270,7 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
       (piece?.voice_requirements_read ?? []).map((r) => ({
         voice_line: r.voice_line,
         quantity: r.quantity,
+        edition: r.edition ?? null,
       })),
     [piece],
   );
@@ -276,13 +281,20 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
     useState<InlineComposerDraft>(EMPTY_COMPOSER_DRAFT);
   const [requirements, setRequirements] = useState<VoiceRequirementDTO[]>([]);
 
-  const addRequirement = useCallback((voiceLine: VoiceLine) => {
-    setRequirements((prev) =>
-      prev.some((r) => r.voice_line === voiceLine)
-        ? prev
-        : [...prev, { voice_line: voiceLine, quantity: 1 }],
-    );
-  }, []);
+  // Uniqueness is per LAYER: the same line may sit once piece-wide and once
+  // inside an arrangement that overrides it — that is not a duplicate.
+  const addRequirement = useCallback(
+    (voiceLine: VoiceLine, editionId: string | null = null) => {
+      setRequirements((prev) =>
+        prev.some(
+          (r) => r.voice_line === voiceLine && (r.edition ?? null) === editionId,
+        )
+          ? prev
+          : [...prev, { voice_line: voiceLine, quantity: 1, edition: editionId }],
+      );
+    },
+    [],
+  );
   const adjustRequirement = useCallback((index: number, delta: number) => {
     setRequirements((prev) => {
       const next = [...prev];
@@ -895,9 +907,10 @@ export default function ArchivePieceCardPage(): React.JSX.Element {
                         </div>
                       </div>
                     </div>
-                    <DivisiEditor
+                    <DivisiSection
                       voiceLines={voiceLines}
                       requirements={requirements}
+                      piece={piece}
                       addRequirement={addRequirement}
                       adjustRequirement={adjustRequirement}
                       removeRequirement={removeRequirement}

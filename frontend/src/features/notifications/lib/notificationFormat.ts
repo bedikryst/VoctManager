@@ -12,6 +12,8 @@
 
 import type { useTranslation } from "react-i18next";
 
+import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
+
 import type { EventMomentMetadata } from "../types/notifications.dto";
 
 export type TFunc = ReturnType<typeof useTranslation>["t"];
@@ -29,8 +31,28 @@ export const firstText = (
  * still carries a pre-rendered label ("Bass 1") — or an unknown code — never
  * renders blank.
  */
-export const voiceLineLabel = (t: TFunc, code?: string): string =>
-  code ? t(`notifications.voiceLines.${code}`, code) : "";
+export const voiceLineLabel = (
+  t: TFunc,
+  code?: string,
+  scope: readonly string[] = [],
+): string => {
+  if (!code) return "";
+  const known = scope.filter(Boolean);
+  // An empty scope means the arrangement is unknown — a legacy payload written
+  // before `voice_scope` existed — so nothing collapses and the index stays.
+  if (known.length === 0) return t(`notifications.voiceLines.${code}`, code);
+  const dictionary = Array.from(new Set([...known, code])).map((value) => ({
+    value,
+    label: t(`notifications.voiceLines.${value}`, value),
+  }));
+  return (
+    collapseVoiceLabels(
+      dictionary.map((entry) => entry.value),
+      dictionary,
+      t,
+    )[code] ?? t(`notifications.voiceLines.${code}`, code)
+  );
+};
 
 /**
  * Renders an event moment the way a person says it — "jutro o 19:00", "piątek,
@@ -111,7 +133,11 @@ export const changeLabel = (t: TFunc, fieldKey: string): string =>
  * `field` key. We never assume the shape, so a single stale row can't blank the
  * whole surface (the `field.replace` it used to crash on is now guarded).
  */
-export const renderChange = (t: TFunc, change: unknown): string => {
+export const renderChange = (
+  t: TFunc,
+  change: unknown,
+  scope: readonly string[] = [],
+): string => {
   if (typeof change === "string") return change;
   if (!change || typeof change !== "object") return "";
 
@@ -127,7 +153,7 @@ export const renderChange = (t: TFunc, change: unknown): string => {
   const value = (raw: unknown): string => {
     if (raw == null) return "";
     const rawText = String(raw);
-    if (fieldKey === "voice_line") return voiceLineLabel(t, rawText);
+    if (fieldKey === "voice_line") return voiceLineLabel(t, rawText, scope);
     if (fieldKey === "gives_pitch") {
       return t(`notifications.changes.boolean.${rawText.toLowerCase()}`, rawText);
     }
@@ -143,10 +169,21 @@ export const renderChange = (t: TFunc, change: unknown): string => {
 
 /** Maps a (possibly legacy/loose) `changes` payload to chip labels, dropping any
  *  entry that can't be rendered. Never assumes an array of structured objects. */
-export const renderChanges = (t: TFunc, changes: unknown): string[] =>
+export const renderChanges = (
+  t: TFunc,
+  changes: unknown,
+  scope: readonly string[] = [],
+): string[] =>
   Array.isArray(changes)
-    ? changes.map((change) => renderChange(t, change)).filter(Boolean)
+    ? changes.map((change) => renderChange(t, change, scope)).filter(Boolean)
     : [];
+
+/** The naming scope a metadata payload carries. Empty on rows written before
+ *  `voice_scope` existed — those keep their divisi index. */
+export const voiceScopeOf = (metadata: unknown): string[] => {
+  const raw = (metadata as { voice_scope?: unknown } | null)?.voice_scope;
+  return Array.isArray(raw) ? raw.map(String).filter(Boolean) : [];
+};
 
 export const compactMetaLine = (
   ...values: readonly unknown[]
@@ -182,7 +219,8 @@ export const briefingItemSummary = (
   item: DescribableChange,
 ): string => {
   const m = item.metadata as EventMomentMetadata & Record<string, unknown>;
-  const changes = renderChanges(t, m.changes).join("; ");
+  const scope = voiceScopeOf(m);
+  const changes = renderChanges(t, m.changes, scope).join("; ");
 
   if (item.subject_type === "CASTING") {
     const piece = m.piece_title == null ? "" : String(m.piece_title);
@@ -192,6 +230,7 @@ export const briefingItemSummary = (
     const voice = voiceLineLabel(
       t,
       typeof m.voice_line === "string" ? m.voice_line : undefined,
+      scope,
     );
     return compactMetaLine(piece, voice, changes) ?? "";
   }

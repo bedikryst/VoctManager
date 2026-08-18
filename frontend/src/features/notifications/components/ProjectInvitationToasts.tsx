@@ -29,7 +29,11 @@ import {
 } from "lucide-react";
 
 import { useProjectInvitationQueue } from "../hooks/useProjectInvitationQueue";
-import { formatEventMoment, voiceLineLabel } from "../lib/notificationFormat";
+import {
+  formatEventMoment,
+  voiceLineLabel,
+  voiceScopeOf,
+} from "../lib/notificationFormat";
 import { Caption, Text, Heading, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -71,10 +75,17 @@ export const ProjectInvitationToasts: React.FC = () => {
   const metadata = current?.metadata;
   const rehearsals = metadata?.rehearsals ?? [];
   const program = metadata?.program ?? [];
-  const voiceParts = (metadata?.voice_lines ?? [])
-    .map((code) => voiceLineLabel(t, code))
-    .filter(Boolean)
-    .join(", ");
+  // Named inside the programme's own scope: a part that is the only tenor line
+  // anywhere in this concert reads "Tenor", not "Tenor 1". Deduplicated after
+  // collapsing, since two numbered lines can resolve to one name.
+  const voiceScope = voiceScopeOf(metadata);
+  const voiceParts = Array.from(
+    new Set(
+      (metadata?.voice_lines ?? [])
+        .map((code) => voiceLineLabel(t, code, voiceScope))
+        .filter(Boolean),
+    ),
+  ).join(", ");
   const callTime = metadata
     ? formatEventMoment(
         {

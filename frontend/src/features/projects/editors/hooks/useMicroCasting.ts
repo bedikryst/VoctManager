@@ -41,6 +41,7 @@ import {
   useProjectVoiceLinesDictionary,
   useSavePieceCastingBoard,
 } from "../../api/project.queries";
+import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { voiceTypeRank } from "../../lib/voiceFamilies";
 
 /**
@@ -304,8 +305,12 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
       const piece = pieces.find(
         (candidate) => String(candidate.id) === pieceId,
       );
-      const requirements: VoiceRequirement[] =
-        piece?.voice_requirements_read ?? [];
+      // Scored against the arrangement this concert binds, so a piece with a
+      // unison edition is not reported short by the three-part edition's lines.
+      const requirements: VoiceRequirement[] = scopedRequirements(
+        piece,
+        item.score_edition,
+      );
 
       if (requirements.length === 0) {
         progress[pieceId] = {

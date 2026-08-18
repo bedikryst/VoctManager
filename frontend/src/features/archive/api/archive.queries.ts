@@ -32,6 +32,8 @@ import type {
   PieceWriteDTO,
   ScoreEditionPatchDTO,
   ScoreEditionUploadDTO,
+  TrackPatchDTO,
+  TrackUploadDTO,
 } from "../types/archive.dto";
 
 export const archiveKeys = {
@@ -274,15 +276,25 @@ export const useTracks = (pieceId: string | number) =>
 export const useUploadTrack = () => {
   const qc = useQueryClient();
   return useMutation({
+    mutationFn: (payload: TrackUploadDTO) =>
+      ArchiveService.uploadTrack(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
+      qc.invalidateQueries({ queryKey: archiveKeys.tracks.all });
+    },
+  });
+};
+
+export const useUpdateTrack = () => {
+  const qc = useQueryClient();
+  return useMutation({
     mutationFn: ({
-      pieceId,
-      voiceLine,
-      file,
+      trackId,
+      patch,
     }: {
-      pieceId: string | number;
-      voiceLine: string;
-      file: File;
-    }) => ArchiveService.uploadTrack(pieceId, voiceLine, file),
+      trackId: string;
+      patch: TrackPatchDTO;
+    }) => ArchiveService.updateTrack(trackId, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: archiveKeys.pieces.all });
       qc.invalidateQueries({ queryKey: archiveKeys.tracks.all });

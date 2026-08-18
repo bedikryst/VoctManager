@@ -401,7 +401,9 @@
         "folk": "Folk / Ludowa",
         "oth": "Inne"
       },
-      "language_pick": "— wybierz —"
+      "language_pick": "— wybierz —",
+      "divisi_hint_editions": "Kliknij głos, by dodać. Wydanie z własnym podziałem zastępuje wspólny — zostaw puste, żeby odziedziczyło wspólne głosy.",
+      "divisi_layer_shared": "Wspólne dla wydań"
     },
     "hero": {
       "badge": "Operacje Archiwum",
@@ -632,7 +634,9 @@
       "unverified_count_one": "{{count}} pole do weryfikacji",
       "unverified_count_few": "{{count}} pola do weryfikacji",
       "unverified_count_many": "{{count}} pól do weryfikacji",
-      "unverified_count_other": "{{count}} pól do weryfikacji"
+      "unverified_count_other": "{{count}} pól do weryfikacji",
+      "divisi_shared": "Wspólne dla wydań",
+      "divisi_other_edition": "Inne wydanie"
     },
     "row_tracks": {
       "add_first": "Dodaj pierwszą ścieżkę",
@@ -647,12 +651,18 @@
       "empty_hint": "MP3 dla głosów dostępne dla śpiewaków w zakładce Materiały.",
       "loading": "Ładowanie…",
       "pick": "Wybierz",
-      "tutti": "Tutti",
       "upload_btn": "Wgraj",
       "upload_error": "Błąd wgrywania. Sprawdź format pliku (MP3/WAV/MIDI).",
       "upload_success": "Ścieżka dodana.",
       "uploading": "Wgrywanie ścieżki…",
-      "voice_part": "Partia wokalna"
+      "voice_part": "Partia wokalna",
+      "edition": "Wydanie",
+      "edition_any": "Wspólne dla wydań",
+      "note": "Komentarz",
+      "note_hint": "Komentarz dla śpiewaków (np. „od taktu 34, tempo 90”)",
+      "note_placeholder": "Dodaj komentarz",
+      "note_aria": "Komentarz do ścieżki {{label}}",
+      "note_error": "Nie udało się zapisać komentarza."
     },
     "search": {
       "all_composers": "Wszyscy",
@@ -1404,6 +1414,13 @@
     "filters": {
       "remove_token": "Usuń filtr: {{label}}",
       "clear_all": "Wyczyść filtry"
+    },
+    "voice_family": {
+      "S": "Sopran",
+      "A": "Alt",
+      "T": "Tenor",
+      "B": "Bas",
+      "V": "Głos"
     }
   },
   "contact_filters": {
@@ -2951,6 +2968,10 @@
       "B1": "Bas 1",
       "B2": "Bas 2",
       "B3": "Bas 3",
+      "V1": "Głos 1",
+      "V2": "Głos 2",
+      "V3": "Głos 3",
+      "V4": "Głos 4",
       "SOLO": "Solo",
       "VP": "Perkusja wokalna / Beatbox",
       "TUTTI": "Tutti (wszyscy)",
@@ -3661,7 +3682,8 @@
         "sopranos": "Soprany",
         "special": "Linie specjalne",
         "tenors": "Tenory",
-        "unknown": "Głos nieokreślony"
+        "unknown": "Głos nieokreślony",
+        "untyped": "Głosy nieokreślone"
       }
     },
     "overview": {

@@ -37,6 +37,7 @@ import {
   formatEventMoment,
   renderChanges,
   voiceLineLabel,
+  voiceScopeOf,
   type TFunc,
 } from "../lib/notificationFormat";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -210,7 +211,11 @@ const describe = (
       // the singer sees exactly which programme this part is for.
       return {
         title: notification.metadata.piece_title,
-        pill: voiceLineLabel(t, notification.metadata.voice_line),
+        pill: voiceLineLabel(
+          t,
+          notification.metadata.voice_line,
+          voiceScopeOf(notification.metadata),
+        ),
         context: compactMetaLine(
           notification.metadata.project_name,
           formatEventMoment(notification.metadata, lang, t),
@@ -226,9 +231,17 @@ const describe = (
       }
       return {
         title: notification.metadata.piece_title,
-        pill: voiceLineLabel(t, notification.metadata.voice_line),
+        pill: voiceLineLabel(
+          t,
+          notification.metadata.voice_line,
+          voiceScopeOf(notification.metadata),
+        ),
         context: notification.metadata.project_name,
-        changeChips: renderChanges(t, notification.metadata.changes),
+        changeChips: renderChanges(
+          t,
+          notification.metadata.changes,
+          voiceScopeOf(notification.metadata),
+        ),
       };
     case "MATERIAL_UPLOADED":
       // Piece-scoped (fans out across every concert programming it), so there's no

@@ -27,6 +27,8 @@ import type {
   PieceWriteDTO,
   ScoreEditionPatchDTO,
   ScoreEditionUploadDTO,
+  TrackPatchDTO,
+  TrackUploadDTO,
 } from "../types/archive.dto";
 
 const PIECES_URL = "/api/pieces/";
@@ -225,19 +227,27 @@ export const ArchiveService = {
     return response.data;
   },
 
-  uploadTrack: async (
-    pieceId: string | number,
-    voiceLine: string,
-    file: File,
-  ): Promise<Track> => {
+  uploadTrack: async (payload: TrackUploadDTO): Promise<Track> => {
     const formData = new FormData();
-    formData.append("piece", String(pieceId));
-    formData.append("voice_part", voiceLine);
-    formData.append("audio_file", file);
+    formData.append("piece", String(payload.pieceId));
+    formData.append("voice_part", payload.voiceLine);
+    formData.append("audio_file", payload.file);
+    if (payload.description) formData.append("description", payload.description);
+    // Omitted rather than sent empty: DRF reads "" as an invalid UUID, while an
+    // absent key leaves the FK null — the piece-wide layer.
+    if (payload.editionId) formData.append("edition", payload.editionId);
 
     const response = await api.post<Track>(TRACKS_URL, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return response.data;
+  },
+
+  updateTrack: async (
+    trackId: string,
+    patch: TrackPatchDTO,
+  ): Promise<Track> => {
+    const response = await api.patch<Track>(`${TRACKS_URL}${trackId}/`, patch);
     return response.data;
   },
 

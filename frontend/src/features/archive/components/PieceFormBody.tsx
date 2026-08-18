@@ -30,7 +30,7 @@ import {
 } from "../constants/archiveLanguages";
 import type { PieceFormState } from "../hooks/usePieceFormState";
 import { ComposerPicker } from "./ComposerPicker";
-import { DivisiEditor } from "./DivisiEditor";
+import { DivisiSection } from "./DivisiSection";
 
 interface PieceFormBodyProps {
   readonly state: PieceFormState;
@@ -219,7 +219,7 @@ export const PieceFormBody = ({
 
         {/* Divisi */}
         <div className="mt-5">
-          <DivisiEditor
+          <DivisiSection
             voiceLines={voiceLines}
             requirements={requirements}
             addRequirement={addRequirement}

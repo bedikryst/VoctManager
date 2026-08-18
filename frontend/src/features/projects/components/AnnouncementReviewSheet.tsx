@@ -43,6 +43,7 @@ import {
   compactMetaLine,
   renderChanges,
   voiceLineLabel,
+  voiceScopeOf,
 } from "@/features/notifications/lib/notificationFormat";
 
 import {
@@ -100,6 +101,7 @@ const lineTitle = (t: TFunc, lang: string, change: AnnouncementChange): string =
 
   if (change.subject_type === "CASTING") {
     const { piece_title: piece, voice_line: voice } = change.metadata;
+    const scope = voiceScopeOf(change.metadata);
     return (
       compactMetaLine(
         t(
@@ -107,8 +109,8 @@ const lineTitle = (t: TFunc, lang: string, change: AnnouncementChange): string =
           CASTING_KIND_FALLBACK[change.kind],
         ),
         piece == null ? "" : String(piece),
-        voiceLineLabel(t, typeof voice === "string" ? voice : undefined),
-        renderChanges(t, change.metadata.changes).join("; "),
+        voiceLineLabel(t, typeof voice === "string" ? voice : undefined, scope),
+        renderChanges(t, change.metadata.changes, scope).join("; "),
       ) ?? ""
     );
   }

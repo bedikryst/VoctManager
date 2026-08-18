@@ -8,6 +8,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Project, VoiceRequirement } from "@/shared/types";
+import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import {
   useProjectPiecesDictionary,
   useProjectPieceCastings,
@@ -83,8 +84,13 @@ export const useProgramFulfillment = (project: Project) => {
       .map((item) => {
         const pieceId = String(item.piece_id);
         const pieceObj = piecesMap.get(pieceId);
-        const requirements: VoiceRequirement[] =
-          pieceObj?.voice_requirements_read || [];
+        // Scored against the arrangement this concert binds — see
+        // [divisiScope]. Summing every layer would report a unison programme
+        // short of the three-part edition's seats.
+        const requirements: VoiceRequirement[] = scopedRequirements(
+          pieceObj,
+          item.score_edition,
+        );
 
         let statusVariant: "success" | "warning" | "neutral" = "neutral";
         let statusText = t("projects.program.no_reqs", "Brak wymagań");

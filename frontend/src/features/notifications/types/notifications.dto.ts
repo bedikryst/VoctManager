@@ -87,6 +87,9 @@ export interface ProjectInvitationMetadata extends EventMomentMetadata {
   program?: string[];
   /** This artist's own voice lines, as language-neutral VoiceLine codes. */
   voice_lines?: string[];
+  /** Every line the programme divides into — the scope those codes are NAMED
+   *  in. Empty on rows written before it existed; those keep their index. */
+  voice_scope?: string[];
 }
 
 export interface ProjectUpdatedMetadata {
@@ -195,6 +198,9 @@ export interface PieceCastingMetadata extends EventMomentMetadata {
   /** Language-neutral VoiceLine CODE (e.g. "B1"), localized at render time.
    *  Legacy rows may carry a pre-rendered label; the renderer falls back to it. */
   voice_line?: string;
+  /** The bound arrangement's lines — the scope `voice_line` is named in, so a
+   *  piece with one tenor line reads "Tenor". Empty on legacy rows. */
+  voice_scope?: string[];
   /** The concert this part belongs to (name + `starts_at` moment). */
   project_id?: string;
   project_name?: string;

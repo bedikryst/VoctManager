@@ -401,7 +401,9 @@
         "folk": "Folk / Traditional",
         "oth": "Other"
       },
-      "language_pick": "— select —"
+      "language_pick": "— select —",
+      "divisi_hint_editions": "Tap a voice to add it. An edition with its own divisi replaces the shared one — leave it empty to inherit the shared voices.",
+      "divisi_layer_shared": "Shared across editions"
     },
     "hero": {
       "badge": "Archive Operations",
@@ -622,7 +624,9 @@
       "pdf_many_many": "Editions ({{count}})",
       "pdf_many_other": "Editions ({{count}})",
       "unverified_count_one": "{{count}} field to verify",
-      "unverified_count_other": "{{count}} fields to verify"
+      "unverified_count_other": "{{count}} fields to verify",
+      "divisi_shared": "Shared across editions",
+      "divisi_other_edition": "Another edition"
     },
     "row_tracks": {
       "add_first": "Add the first track",
@@ -637,12 +641,18 @@
       "empty_hint": "Voice MP3s are available to singers in the Materials tab.",
       "loading": "Loading…",
       "pick": "Choose",
-      "tutti": "Tutti",
       "upload_btn": "Upload",
       "upload_error": "Upload error. Check the file format (MP3/WAV/MIDI).",
       "upload_success": "Track added.",
       "uploading": "Uploading track…",
-      "voice_part": "Voice part"
+      "voice_part": "Voice part",
+      "edition": "Edition",
+      "edition_any": "Shared across editions",
+      "note": "Note",
+      "note_hint": "Note for the singers (e.g. “from bar 34, tempo 90”)",
+      "note_placeholder": "Add a note",
+      "note_aria": "Note on the {{label}} track",
+      "note_error": "Couldn't save the note."
     },
     "search": {
       "all_composers": "All",
@@ -1394,6 +1404,13 @@
     "filters": {
       "remove_token": "Remove filter: {{label}}",
       "clear_all": "Clear filters"
+    },
+    "voice_family": {
+      "S": "Soprano",
+      "A": "Alto",
+      "T": "Tenor",
+      "B": "Bass",
+      "V": "Voice"
     }
   },
   "contact_filters": {
@@ -2939,6 +2956,10 @@
       "B1": "Bass 1",
       "B2": "Bass 2",
       "B3": "Bass 3",
+      "V1": "Voice 1",
+      "V2": "Voice 2",
+      "V3": "Voice 3",
+      "V4": "Voice 4",
       "SOLO": "Solo",
       "VP": "Vocal Percussion / Beatbox",
       "TUTTI": "Tutti (All)",
@@ -3643,7 +3664,8 @@
         "sopranos": "Sopranos",
         "special": "Special lines",
         "tenors": "Tenors",
-        "unknown": "Voice not set"
+        "unknown": "Voice not set",
+        "untyped": "Untyped voices"
       }
     },
     "overview": {

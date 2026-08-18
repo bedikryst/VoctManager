@@ -93,7 +93,7 @@ export interface PieceFormState {
   setRequirements: (v: VoiceRequirementDTO[]) => void;
   adjustRequirement: (index: number, delta: number) => void;
   removeRequirement: (index: number) => void;
-  addRequirement: (voiceLine: VoiceLine) => void;
+  addRequirement: (voiceLine: VoiceLine, editionId?: string | null) => void;
 }
 
 export const usePieceFormState = (
@@ -137,13 +137,22 @@ export const usePieceFormState = (
     });
   }, []);
 
-  const addRequirement = useCallback((voiceLine: VoiceLine) => {
-    setRequirements((prev) =>
-      prev.some((r) => r.voice_line === voiceLine)
-        ? prev
-        : [...prev, { voice_line: voiceLine, quantity: 1 }],
-    );
-  }, []);
+  // Uniqueness is per LAYER: the same line may exist once piece-wide and once
+  // inside an arrangement that overrides it. Only a repeat within one layer is
+  // a duplicate.
+  const addRequirement = useCallback(
+    (voiceLine: VoiceLine, editionId: string | null = null) => {
+      setRequirements((prev) =>
+        prev.some(
+          (r) =>
+            r.voice_line === voiceLine && (r.edition ?? null) === editionId,
+        )
+          ? prev
+          : [...prev, { voice_line: voiceLine, quantity: 1, edition: editionId }],
+      );
+    },
+    [],
+  );
 
   return {
     form,

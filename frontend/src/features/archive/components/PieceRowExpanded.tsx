@@ -8,7 +8,7 @@
  * @module features/archive/components/PieceRowExpanded
  */
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
@@ -46,9 +46,37 @@ export const PieceRowExpanded = ({
   const composer = piece.composer ?? null;
   const pdfLinks = getPiecePdfLinks(piece);
   const editions = piece.editions ?? [];
-  const requirements = piece.voice_requirements_read ?? [];
+  const requirements = useMemo(
+    () => piece.voice_requirements_read ?? [],
+    [piece.voice_requirements_read],
+  );
   const audioCount = piece.tracks?.length ?? 0;
   const [openEditionId, setOpenEditionId] = useState<string | null>(null);
+
+  // Layers in reading order: what holds for the whole piece, then whatever an
+  // individual arrangement overrides. A layer's heading is dropped when it is
+  // the only one — a single divisi needs no label saying which divisi it is.
+  const divisiLayers = useMemo(() => {
+    const byEdition = new Map<string, typeof requirements>();
+    for (const requirement of requirements) {
+      const key = requirement.edition ?? "";
+      byEdition.set(key, [...(byEdition.get(key) ?? []), requirement]);
+    }
+    const editionLabels = new Map(
+      getPiecePdfLinks(piece).map((edition) => [edition.id, edition.label]),
+    );
+    const single = byEdition.size <= 1;
+    return Array.from(byEdition, ([key, rows]) => ({
+      key: key || "shared",
+      label: single
+        ? ""
+        : key
+          ? (editionLabels.get(key) ??
+            t("archive.row_expanded.divisi_other_edition", "Inne wydanie"))
+          : t("archive.row_expanded.divisi_shared", "Wspólne dla wydań"),
+      requirements: rows,
+    })).sort((a, b) => (a.key === "shared" ? -1 : b.key === "shared" ? 1 : 0));
+  }, [requirements, piece, t]);
 
   const cardPath = `/panel/archive-management/${piece.id}`;
   const hasAIContent = Boolean(
@@ -101,18 +129,32 @@ export const PieceRowExpanded = ({
                 <Mic size={11} className="mr-1 inline" aria-hidden="true" />
                 {t("archive.row_expanded.divisi", "Divisi")}
               </Eyebrow>
-              <div className="flex flex-wrap gap-1.5">
-                {requirements.map((requirement) => (
-                  <Badge
-                    key={requirement.id ?? requirement.voice_line}
-                    variant="warning"
-                    className="gap-1 py-0.5"
-                  >
-                    {requirement.voice_line_display ?? requirement.voice_line}
-                    <Text as="span" size="xs" className="text-ethereal-gold/70">
-                      ×{requirement.quantity}
-                    </Text>
-                  </Badge>
+              {/* One block per arrangement: a piece published in unison and in
+                  three parts has two divisi, and merging them into one badge
+                  row describes a voicing nobody sings. */}
+              <div className="space-y-2">
+                {divisiLayers.map((layer) => (
+                  <div key={layer.key}>
+                    {layer.label && (
+                      <Caption color="muted" className="mb-1 block">
+                        {layer.label}
+                      </Caption>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {layer.requirements.map((requirement) => (
+                        <Badge
+                          key={requirement.id ?? requirement.voice_line}
+                          variant="warning"
+                          className="gap-1 py-0.5"
+                        >
+                          {requirement.voice_line_display ?? requirement.voice_line}
+                          <Text as="span" size="xs" className="text-ethereal-gold/70">
+                            ×{requirement.quantity}
+                          </Text>
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

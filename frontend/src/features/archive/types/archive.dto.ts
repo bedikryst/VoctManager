@@ -17,6 +17,32 @@ import type {
 export interface VoiceRequirementDTO {
   voice_line: VoiceLine;
   quantity: number;
+  /**
+   * Arrangement this line belongs to. `null` = the whole piece — the resting
+   * state, and what every requirement written before editions could carry a
+   * divisi of their own means. An edition that declares its own lines
+   * OVERRIDES the piece-wide layer for that edition; the two never merge.
+   */
+  edition?: string | null;
+}
+
+export interface TrackUploadDTO {
+  pieceId: string | number;
+  voiceLine: string;
+  file: File;
+  /** Practice note shown with the track. */
+  description?: string;
+  /**
+   * Arrangement this take belongs to. Omit / `null` for a track that applies to
+   * the whole piece — the resting state for a work with a single edition.
+   */
+  editionId?: string | null;
+}
+
+/** The two fields a manager can correct without re-uploading the audio. */
+export interface TrackPatchDTO {
+  description?: string;
+  voice_part?: VoiceLine;
 }
 
 export interface ComposerWriteDTO {

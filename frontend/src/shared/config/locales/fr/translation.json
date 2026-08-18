@@ -401,7 +401,9 @@
         "folk": "Folk / Traditionnelle",
         "oth": "Autre"
       },
-      "language_pick": "— choisir —"
+      "language_pick": "— choisir —",
+      "divisi_hint_editions": "Touchez une voix pour l’ajouter. Une édition avec son propre divisi remplace le divisi commun — laissez vide pour hériter des voix communes.",
+      "divisi_layer_shared": "Commun à toutes les éditions"
     },
     "hero": {
       "badge": "Opérations d'archive",
@@ -622,7 +624,9 @@
       "pdf_many_many": "Éditions ({{count}})",
       "pdf_many_other": "Éditions ({{count}})",
       "unverified_count_one": "{{count}} champ à vérifier",
-      "unverified_count_other": "{{count}} champs à vérifier"
+      "unverified_count_other": "{{count}} champs à vérifier",
+      "divisi_shared": "Commun à toutes les éditions",
+      "divisi_other_edition": "Autre édition"
     },
     "row_tracks": {
       "add_first": "Ajouter la première piste",
@@ -637,12 +641,18 @@
       "empty_hint": "Les MP3 par voix sont disponibles pour les choristes dans l'onglet Supports.",
       "loading": "Chargement…",
       "pick": "Choisir",
-      "tutti": "Tutti",
       "upload_btn": "Importer",
       "upload_error": "Erreur d'import. Vérifiez le format du fichier (MP3/WAV/MIDI).",
       "upload_success": "Piste ajoutée.",
       "uploading": "Import de la piste…",
-      "voice_part": "Pupitre"
+      "voice_part": "Pupitre",
+      "edition": "Édition",
+      "edition_any": "Commun à toutes les éditions",
+      "note": "Commentaire",
+      "note_hint": "Commentaire pour les chanteurs (p. ex. « à partir de la mesure 34, tempo 90 »)",
+      "note_placeholder": "Ajouter un commentaire",
+      "note_aria": "Commentaire sur la piste {{label}}",
+      "note_error": "Impossible d’enregistrer le commentaire."
     },
     "search": {
       "all_composers": "Tous",
@@ -1394,6 +1404,13 @@
     "filters": {
       "remove_token": "Retirer le filtre : {{label}}",
       "clear_all": "Effacer les filtres"
+    },
+    "voice_family": {
+      "S": "Soprano",
+      "A": "Alto",
+      "T": "Ténor",
+      "B": "Basse",
+      "V": "Voix"
     }
   },
   "contact_filters": {
@@ -2939,6 +2956,10 @@
       "B1": "Basse 1",
       "B2": "Basse 2",
       "B3": "Basse 3",
+      "V1": "Voix 1",
+      "V2": "Voix 2",
+      "V3": "Voix 3",
+      "V4": "Voix 4",
       "SOLO": "Solo",
       "VP": "Percussion vocale / Beatbox",
       "TUTTI": "Tutti (tous)",
@@ -3644,7 +3665,8 @@
         "sopranos": "Sopranos",
         "special": "Lignes spéciales",
         "tenors": "Ténors",
-        "unknown": "Voix non définie"
+        "unknown": "Voix non définie",
+        "untyped": "Voix non typées"
       }
     },
     "overview": {

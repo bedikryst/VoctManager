@@ -28,10 +28,13 @@ export interface PracticeTrackSource {
   id: string;
   /** Raw voice-line code (S1, A2, …) — matches casting.voice_line. */
   voicePart: string;
-  /** Human label, e.g. "Sopran 1". */
+  /** Human label, e.g. "Sopran 1" — or plain "Sopran" where the piece has one
+   *  soprano line. Server-rendered inside this concert's arrangement. */
   label: string;
   url: string;
   isMine: boolean;
+  /** The manager's practice note for this take. Empty when none was written. */
+  note: string;
 }
 
 export interface PracticePieceSource {

@@ -14,18 +14,23 @@
 
 import type { VoiceType } from "@/shared/types";
 
-export type VoiceFamilyId = "S" | "A" | "T" | "B" | "ROLE";
+export type VoiceFamilyId = "S" | "A" | "T" | "B" | "V" | "ROLE";
 
-/** Score order: top staff downwards, then everything that is not a choral line. */
+/**
+ * Score order: top staff downwards, then the untyped parts a canon divides
+ * into (they have no tessitura, so they sit below the choral staves rather
+ * than inside them), then everything that is not a voice line at all.
+ */
 export const VOICE_FAMILY_ORDER: readonly VoiceFamilyId[] = [
   "S",
   "A",
   "T",
   "B",
+  "V",
   "ROLE",
 ];
 
-const DIVISI_LINE = /^([SATB])\d+$/;
+const DIVISI_LINE = /^([SATBV])\d+$/;
 
 export const voiceFamilyOf = (voiceLine: string): VoiceFamilyId => {
   const match = DIVISI_LINE.exec(voiceLine.toUpperCase());
