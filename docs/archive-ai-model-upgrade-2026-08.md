@@ -412,8 +412,9 @@ every regenerate and is reset only by `start_ingestion` — a cumulative counter
 
 - One note per configuration. The cost and token figures are solid; the prose comparison is not a
   measurement. What it does establish is that the note is complete and idiomatic on all three.
-- The Sonnet 5 sample carried a Polish grammar error (`najstarzej`) and a stray U+3000 space; neither
-  Opus sample did. Suggestive of the tier difference this stage assumed, but n=1.
+- The Sonnet 5 sample carried an awkward superlative (`jedną z najstarzej śpiewanych` — a form that
+  exists but reads as translated Polish) and a stray U+3000 ideographic space that would have printed;
+  neither Opus sample had either. Suggestive of the tier difference this stage assumed, but n=1.
 - `GeneratedProgramNote.actual_word_count` is written nowhere and read nowhere, and every model
   over-reported it by ~7%. It is billed output that nothing consumes. Left alone as out of scope.
 
