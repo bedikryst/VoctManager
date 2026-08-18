@@ -304,6 +304,13 @@
             font-family: {{ font_serif|safe }};
             font-size: 16pt; font-weight: 600; line-height: 1.05; color: var(--gold-ink);
         }
+        /* The moment in the rite, above the title. Gold because gold is this
+           document's structural voice, and on a Mass the order of service IS the
+           structure — a singer scans for "Na Komunię", not for a piece's name. */
+        .prog-slot {
+            font-size: 7pt; text-transform: uppercase; letter-spacing: 1.2pt;
+            font-weight: 600; color: var(--gold-ink); margin-bottom: 1pt;
+        }
         .prog h3 { font-family: {{ font_serif|safe }}; font-size: 15pt; font-weight: 600; line-height: 1.12; }
         .prog .by { color: var(--ink-3); font-size: 8.5pt; margin: 1pt 0 3pt; }
         .prog .you {
@@ -683,6 +690,7 @@
                     <div class="prog-id">
                         <div class="prog-no"><div class="no">{{ piece.order }}</div></div>
                         <div class="prog-body">
+                            {% if piece.slot_label %}<div class="prog-slot">{{ piece.slot_label }}</div>{% endif %}
                             <h3>{{ piece.title }}{% if piece.is_encore %} <span class="pill">{% translate "Encore" context "call sheet" %}</span>{% endif %}</h3>
                             <div class="by">{% if piece.composer %}{{ piece.composer }}{% else %}{% translate "Composer not filled in" context "call sheet" %}{% endif %}{% if piece.arranger %} · {% blocktranslate with arranger=piece.arranger %}arr. {{ arranger }}{% endblocktranslate %}{% endif %}</div>
                             {% if piece.meta_line %}<div class="metaline">{{ piece.meta_line }}</div>{% endif %}

@@ -34,6 +34,7 @@ from archive.models import (
     ScoreEdition,
     Translation,
 )
+from roster.domain.liturgy import build_program_presentation
 from roster.infrastructure.pdf_raster import (
     PdfRasterDependencyError,
     render_pdf_thumbnails,
@@ -316,7 +317,11 @@ class CardContextTests(_Base):
             start_index=0, bound_page_count=0, is_placeholder=False,
         )
         config = resolve_card_config(self.item, self.package)
-        return _card_context(planned, config, self.package, self.project, page_label="s. 1")
+        presentation = build_program_presentation([self.item])[0]
+        return _card_context(
+            planned, config, self.package, self.project,
+            page_label="s. 1", presentation=presentation,
+        )
 
     def test_rows_pair_text_with_translation(self) -> None:
         self.piece.lyrics_original = "Locus iste\na Deo factus est\n\ninaestimabile sacramentum"

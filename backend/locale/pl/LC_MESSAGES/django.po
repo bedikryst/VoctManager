@@ -4276,3 +4276,163 @@ msgstr "Próba akustyczna"
 #: notifications/message_content.py:322
 msgid "Entrance"
 msgstr "Wejście"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Before Mass"
+msgstr "Przed Mszą"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Entrance"
+msgstr "Na wejście"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Kyrie"
+msgstr "Kyrie"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Gloria"
+msgstr "Gloria"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Responsorial psalm"
+msgstr "Psalm responsoryjny"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Gospel acclamation"
+msgstr "Aklamacja"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Marriage vows"
+msgstr "Przysięga małżeńska"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Blessing of the rings"
+msgstr "Błogosławieństwo obrączek"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Prayer of the faithful"
+msgstr "Modlitwa powszechna"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Offertory"
+msgstr "Na ofiarowanie"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Sanctus"
+msgstr "Sanctus"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Benedictus"
+msgstr "Benedictus"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Agnus Dei"
+msgstr "Agnus Dei"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Communion"
+msgstr "Na Komunię"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Thanksgiving"
+msgstr "Na uwielbienie"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgical slot"
+msgid "Recessional"
+msgstr "Na wyjście"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgy part"
+msgid "Before Mass"
+msgstr "Przed Mszą"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgy part"
+msgid "Introductory rites"
+msgstr "Obrzędy wstępne"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgy part"
+msgid "Liturgy of the Word"
+msgstr "Liturgia Słowa"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgy part"
+msgid "Liturgy of the Eucharist"
+msgstr "Liturgia eucharystyczna"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "liturgy part"
+msgid "Concluding rites"
+msgstr "Obrzędy zakończenia"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "event kind"
+msgid "Concert"
+msgstr "Koncert"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "event kind"
+msgid "Mass"
+msgstr "Msza"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "event kind"
+msgid "Wedding Mass"
+msgstr "Msza ślubna"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgctxt "event kind"
+msgid "Other event"
+msgstr "Inne wydarzenie"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid "Event kind"
+msgstr "Rodzaj wydarzenia"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid "Liturgical slot"
+msgstr "Część liturgii"
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid ""
+"A Mass is programmed against the order of the rite, a concert against a "
+"running order."
+msgstr ""
+"Msza układa się według porządku liturgii, koncert według kolejności utworów."
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid "Where in the Mass this piece belongs. Blank for a concert item."
+msgstr "Miejsce utworu we Mszy. Puste dla pozycji koncertowej."
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid ""
+"Overrides the section heading. Blank = the liturgical slot's own part of the"
+" rite, or the piece's text source."
+msgstr ""
+"Nadpisuje nagłówek sekcji. Puste = część liturgii wynikająca z wybranego "
+"momentu albo źródło tekstu utworu."
+
+#. Liturgical programme vocabulary (roster/domain/liturgy.py).
+msgid ""
+"Overrides the line printed before the title. Blank = derived from the "
+"liturgical slot."
+msgstr ""
+"Nadpisuje wiersz drukowany przed tytułem. Puste = wynika z wybranego momentu"
+" liturgii."

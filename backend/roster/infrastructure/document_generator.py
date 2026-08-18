@@ -56,6 +56,7 @@ from roster.domain.day_timeline import (
     plan_end,
     resolve_call_window,
 )
+from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.infrastructure.print_fonts import (
     BRAND_SANS_STACK,
     BRAND_SERIF_STACK,
@@ -610,6 +611,7 @@ class DocumentGenerator:
             if recipient is not None
             else {}
         )
+        program_presentations = build_program_presentation(program_items)
         program_cards = [
             DocumentGenerator._build_program_card(
                 item,
@@ -617,8 +619,9 @@ class DocumentGenerator:
                 recipient_line_by_piece.get(item.piece_id),
                 base_url,
                 is_report,
+                presentation,
             )
-            for item in program_items
+            for item, presentation in zip(program_items, program_presentations, strict=True)
         ]
         total_program_duration_seconds = sum(
             item.piece.estimated_duration or 0 for item in program_items
@@ -1289,6 +1292,7 @@ class DocumentGenerator:
         recipient_casting: ProjectPieceCasting | None,
         base_url: str | None,
         is_report: bool = True,
+        presentation: ProgramItemPresentation | None = None,
     ) -> dict[str, Any]:
         piece = item.piece
         # `to_attr` always sets the attribute, so an EMPTY prefetch is a valid
@@ -1404,6 +1408,10 @@ class DocumentGenerator:
             'piece_id': item.piece_id,
             'order': item.order,
             'is_encore': item.is_encore,
+            # On a Mass the moment is what a singer scans this list for — "which
+            # one is the Communion piece" — so it is printed above the title, not
+            # buried in the metadata line.
+            'slot_label': presentation.slot_label if presentation else '',
             'title': piece.title,
             'composer': str(piece.composer) if piece.composer else '',
             'arranger': piece.arranger,

@@ -10,6 +10,7 @@ Delegates role-based data exposure to explicitly defined serializers routed via 
 """
 import zoneinfo
 from datetime import timedelta
+from typing import Any
 
 from django.conf import settings
 from django.utils import timezone
@@ -18,6 +19,10 @@ from rest_framework import serializers
 from core.permissions import user_is_manager
 from core.serializers import UserProfileSerializer
 from logistics.models import Location
+from roster.domain.liturgy import (
+    ProgramItemPresentation,
+    build_program_presentation,
+)
 
 from .models import (
     Artist,
@@ -285,16 +290,26 @@ class ProjectSerializer(serializers.ModelSerializer):
         return value
     
     def get_program(self, obj) -> list[dict]:
-        """Returns ordered setlist configuration."""
-        items = obj.program_items.all()
+        """Returns ordered setlist configuration.
+
+        Carries the liturgical labels because this snippet is what the overview
+        widget and the singer's card read — a Mass whose order of service is
+        visible only in the score-book PDF is the defect this feature exists to
+        close.
+        """
+        items = list(obj.program_items.all())
+        presentations = build_program_presentation(items)
         return [
             {
                 'order': item.order,
                 'piece_id': item.piece.id,
                 'title': item.piece.title,
-                'is_encore': item.is_encore
+                'is_encore': item.is_encore,
+                'liturgical_slot': item.liturgical_slot,
+                'slot_label': presentation.slot_label,
+                'section': presentation.section,
             }
-            for item in items
+            for item, presentation in zip(items, presentations, strict=True)
         ]
 
 
@@ -396,12 +411,65 @@ class AttendanceSerializer(serializers.ModelSerializer):
         model = Attendance
         fields = '__all__'
 
+# Fallback for a row deleted between the queryset read and the presentation load
+# in a concurrent session: the response still serializes, simply without labels.
+_BLANK_PRESENTATION = ProgramItemPresentation(
+    slot='', slot_label='', section='', role_prefix='', rank=None,
+)
+
+
 class ProgramItemSerializer(serializers.ModelSerializer):
+    """One setlist row, plus the liturgical labels resolved against its siblings.
+
+    The three derived fields are read-only: what prints is `override or derived`,
+    and only the override is writable. They are computed per project rather than
+    per row because numbering a repeated slot ("Na Komunię 2") is a fact about the
+    whole programme — the same reason `roster.domain.liturgy` exists at all.
+    """
+
     piece_title = serializers.CharField(source='piece.title', read_only=True)
+    slot_label = serializers.SerializerMethodField()
+    section = serializers.SerializerMethodField()
+    role_prefix_effective = serializers.SerializerMethodField()
 
     class Meta:
         model = ProgramItem
         fields = '__all__'
+
+    def _presentation(self, item: ProgramItem) -> ProgramItemPresentation:
+        """Resolved labels for one item, memoized per project on the serializer
+        instance — `many=True` reuses one child, so a whole setlist costs one
+        extra query.
+
+        Loads the project's programme in full rather than reusing the view's
+        queryset on purpose: a filtered or paginated read still has to number a
+        repeated slot against every sibling, not against the ones that survived
+        the filter.
+        """
+        cache: dict[Any, dict[Any, ProgramItemPresentation]]
+        cache = getattr(self, '_liturgy_presentations', None) or {}
+        self._liturgy_presentations = cache
+        if item.project_id not in cache:
+            siblings = list(
+                ProgramItem.objects.filter(project_id=item.project_id).order_by('order')
+            )
+            cache[item.project_id] = dict(
+                zip(
+                    (sibling.pk for sibling in siblings),
+                    build_program_presentation(siblings),
+                    strict=True,
+                )
+            )
+        return cache[item.project_id].get(item.pk, _BLANK_PRESENTATION)
+
+    def get_slot_label(self, obj: ProgramItem) -> str:
+        return self._presentation(obj).slot_label
+
+    def get_section(self, obj: ProgramItem) -> str:
+        return self._presentation(obj).section
+
+    def get_role_prefix_effective(self, obj: ProgramItem) -> str:
+        return self._presentation(obj).role_prefix
 
 class ProjectPieceCastingSerializer(serializers.ModelSerializer):
     voice_line_display = serializers.CharField(source='get_voice_line_display', read_only=True)

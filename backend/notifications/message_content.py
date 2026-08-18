@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from django.utils.translation import gettext as _
-from django.utils.translation import ngettext
+from django.utils.translation import ngettext, pgettext
 
 from core.constants import VoiceLine
 
@@ -284,6 +284,21 @@ def _project_status_label(code: str | None) -> str:
     }.get(code or "", code or "")
 
 
+def _event_kind_label(code: str | None) -> str:
+    """
+    Localized label for a Project.EventKind CODE. Same msgids as the model's
+    choices, for the reason the status labels share theirs: a change row must
+    name the kind exactly as every other surface names it. Unknown codes pass
+    through so a legacy row never renders blank.
+    """
+    return {
+        "CONCERT": pgettext("event kind", "Concert"),
+        "MASS": pgettext("event kind", "Mass"),
+        "WEDDING": pgettext("event kind", "Wedding Mass"),
+        "OTHER": pgettext("event kind", "Other event"),
+    }.get(code or "", code or "")
+
+
 def _voice_line_label(code: str | None) -> str:
     """Localized label for a VoiceLine CODE (e.g. 'B1' → 'Bas 1'). Tolerant of a
     legacy pre-rendered value or an unknown code — returns it unchanged so an old
@@ -304,6 +319,9 @@ def _change_field_label(field_key: str) -> str:
         "location": _("Venue"),
         "call_time": _("Call time"),
         "status": _("Status"),
+        # Same msgid as the model's own verbose name, for the reason the status
+        # labels share theirs: one fact, one word, everywhere it is named.
+        "event_kind": _("Event kind"),
         "conductor": _("Conductor"),
         "dress_code": _("Dress code"),
         "focus": _("Focus"),
@@ -343,6 +361,8 @@ def _change_value(field_key: str, value: Any) -> Any:
         return _voice_line_label(str(value))
     if field_key == "status":
         return _project_status_label(str(value))
+    if field_key == "event_kind":
+        return _event_kind_label(str(value))
     if field_key == "gives_pitch":
         return _boolean_label(str(value))
     return value

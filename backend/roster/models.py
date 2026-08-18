@@ -15,9 +15,11 @@ from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
 from core.constants import VoiceLine
 from core.models import EnterpriseBaseModel
+from roster.domain.liturgy import SLOT_CHOICES
 
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
 
@@ -135,6 +137,25 @@ class Project(EnterpriseBaseModel):
         COMPLETED = 'DONE', _('Completed')
         CANCELLED = 'CANC', _('Cancelled')
 
+    class EventKind(models.TextChoices):
+        """What the ensemble is singing at. Not a status and not a layout setting:
+        it is the fact that decides whether a programme item has a place in a rite
+        to name, and it is the one answer `ScorePackage.density_mode` defaults
+        from — so a Mass does not get a concert book by omission."""
+
+        # Contexts, not bare msgids: "Concert" already exists as a word in this
+        # catalogue for something else, and a choice label that follows somebody
+        # else's copy edit is a bug waiting for a translator.
+        CONCERT = 'CONCERT', pgettext_lazy('event kind', 'Concert')
+        MASS = 'MASS', pgettext_lazy('event kind', 'Mass')
+        WEDDING = 'WEDDING', pgettext_lazy('event kind', 'Wedding Mass')
+        OTHER = 'OTHER', pgettext_lazy('event kind', 'Other event')
+
+    # The two kinds whose programme is an order of service rather than a running
+    # order. Read by every surface that decides whether to offer or show a
+    # liturgical slot, so the definition of "liturgical" lives in one place.
+    LITURGICAL_EVENT_KINDS = (EventKind.MASS, EventKind.WEDDING)
+
     # What a project in either state has to say to its cast: nothing. One has not
     # been announced, the other has been called off — and a concert that is not
     # happening takes its rehearsals, its programme and its music with it. The
@@ -177,6 +198,11 @@ class Project(EnterpriseBaseModel):
     )
     description = models.TextField(blank=True, verbose_name=_("Description"))
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.DRAFT, verbose_name=_("Status"))
+    event_kind = models.CharField(
+        max_length=12, choices=EventKind.choices, default=EventKind.CONCERT,
+        verbose_name=_("Event kind"),
+        help_text=_("A Mass is programmed against the order of the rite, a concert against a running order."),
+    )
     reminder_sent_at = models.DateTimeField(
         null=True, blank=True, db_index=True,
         help_text=_("When the automated upcoming-event reminder was dispatched. Null = not yet sent.")
@@ -265,6 +291,11 @@ class Project(EnterpriseBaseModel):
     def __str__(self):
         return f"[{self.get_status_display()}] {self.title}"
 
+    @property
+    def is_liturgical(self) -> bool:
+        """Whether this project's programme is an order of service."""
+        return self.event_kind in Project.LITURGICAL_EVENT_KINDS
+
 
 class ProgramItem(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -272,6 +303,19 @@ class ProgramItem(models.Model):
     piece = models.ForeignKey('archive.Piece', on_delete=models.RESTRICT, verbose_name=_("Piece"))
     order = models.PositiveIntegerField(verbose_name=_("Order (1, 2, 3...)"))
     is_encore = models.BooleanField(default=False, verbose_name=_("Is Encore?"))
+
+    # Where in the rite this piece happens. Typed rather than written out, for the
+    # reason the day's warm-up and sound-check windows are typed: a prefix somebody
+    # keys in Polish prints in Polish for a francophone singer, and the singer's
+    # app, the day card and the score book would each carry their own wording of
+    # one moment. The vocabulary, the derived section and the numbering of a slot
+    # used twice all live in `roster.domain.liturgy` — nothing derives them again.
+    # Blank is the resting state: a concert item has no place in a liturgy.
+    liturgical_slot = models.CharField(
+        max_length=24, blank=True, choices=SLOT_CHOICES,
+        verbose_name=_("Liturgical slot"),
+        help_text=_("Where in the Mass this piece belongs. Blank for a concert item."),
+    )
 
     # --- Score-package build cockpit (Phase 3). Per-item overrides of the
     #     package defaults; all nullable/blank so an untouched item simply
@@ -294,12 +338,12 @@ class ProgramItem(models.Model):
     )
     section_label = models.CharField(
         max_length=80, blank=True,
-        help_text=_("Section heading shown as the card eyebrow, e.g. 'LITURGIA EUCHARYSTYCZNA'. Blank = the piece's text source."),
+        help_text=_("Overrides the section heading. Blank = the liturgical slot's own part of the rite, or the piece's text source."),
         verbose_name=_("Section Label"),
     )
     role_prefix = models.CharField(
         max_length=60, blank=True,
-        help_text=_("Liturgical/role prefix shown before the title, e.g. 'Ofiarowanie:'."),
+        help_text=_("Overrides the line printed before the title. Blank = derived from the liturgical slot."),
         verbose_name=_("Role Prefix"),
     )
     card_enabled = models.BooleanField(

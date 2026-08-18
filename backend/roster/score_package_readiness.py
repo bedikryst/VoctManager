@@ -24,6 +24,7 @@ from typing import Any
 from django.contrib.contenttypes.models import ContentType
 
 from archive.models import Piece, ProvenanceRecord, Translation
+from roster.domain.liturgy import SLOTS_BY_CODE
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
     CARD_ELEMENTS,
@@ -90,8 +91,10 @@ def _element_statuses(
     """Compute the traffic light for every canonical card element of one item."""
     piece = item.piece
 
-    # eyebrow — the section/text-source line.
-    if item.section_label:
+    # eyebrow — the section/text-source line. A liturgical slot answers it as
+    # firmly as a hand-typed heading does: the part of the rite is derived from
+    # the slot, so an item that has one is never missing its section.
+    if item.section_label or item.liturgical_slot in SLOTS_BY_CODE:
         eyebrow = READY
     else:
         eyebrow = _field_status(

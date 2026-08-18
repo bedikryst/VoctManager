@@ -23,6 +23,7 @@ ABSENCE_RANGE_STATUS_VALUES = frozenset(
 )
 MAX_ABSENCE_RANGE = timedelta(days=366)
 PROJECT_STATUS_VALUES = frozenset(Project.Status.values)
+PROJECT_EVENT_KIND_VALUES = frozenset(Project.EventKind.values)
 PARTICIPATION_STATUS_VALUES = frozenset(Participation.Status.values)
 VOICE_TYPE_VALUES = frozenset(VoiceType.values)
 VOICE_LINE_VALUES = frozenset(VoiceLine.values)
@@ -319,6 +320,7 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     dress_code_male: str = Field(default='', max_length=100)
     dress_code_female: str = Field(default='', max_length=100)
     status: str = Field(default='DRAFT', max_length=10)
+    event_kind: str = Field(default='CONCERT', max_length=12)
     spotify_playlist_url: str = Field(default='', max_length=500)
     run_sheet: tuple[dict[str, Any], ...] = Field(default_factory=tuple)
     entrance_note: str = Field(default='', max_length=200)
@@ -345,6 +347,11 @@ class ProjectCreateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_status(cls, value: str) -> str:
         return _require_choice(value, PROJECT_STATUS_VALUES, "status")
+
+    @field_validator("event_kind")
+    @classmethod
+    def validate_event_kind(cls, value: str) -> str:
+        return _require_choice(value, PROJECT_EVENT_KIND_VALUES, "event_kind")
 
     @field_validator(
         "description",
@@ -386,6 +393,7 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     dress_code_male: str | None = Field(None, max_length=100)
     dress_code_female: str | None = Field(None, max_length=100)
     status: str | None = Field(None, max_length=10)
+    event_kind: str | None = Field(None, max_length=12)
     spotify_playlist_url: str | None = None
     run_sheet: tuple[dict[str, Any], ...] | None = None
     entrance_note: str | None = Field(None, max_length=200)
@@ -414,6 +422,14 @@ class ProjectUpdateDTO(EnterpriseBaseDTO):
     @classmethod
     def validate_status(cls, value: str | None) -> str | None:
         return _require_choice(value, PROJECT_STATUS_VALUES, "status") if value is not None else value
+
+    @field_validator("event_kind")
+    @classmethod
+    def validate_event_kind(cls, value: str | None) -> str | None:
+        return (
+            _require_choice(value, PROJECT_EVENT_KIND_VALUES, "event_kind")
+            if value is not None else value
+        )
 
     @field_validator(
         "description",

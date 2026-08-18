@@ -28,6 +28,7 @@ from django.template.loader import render_to_string
 from pypdf import PdfReader, PdfWriter, Transformation
 
 from archive.models import Piece, ScoreEdition
+from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.infrastructure.document_generator import (
     DocumentRenderDependencyError,
     _render_pdf,
@@ -300,21 +301,28 @@ def _card_context(
     package: ScorePackage,
     project: Project,
     page_label: str,
+    presentation: ProgramItemPresentation,
 ) -> dict:
     """Assemble one item's card context from existing AI data, honouring its
-    resolved element set and per-item overrides."""
+    resolved element set and per-item overrides.
+
+    The eyebrow and the role line come from the resolved presentation, so a Mass
+    prints "Liturgia eucharystyczna" / "Na Komunię 2:" in the book's language
+    without anyone having typed either — and a hand-written override still wins,
+    because the presentation is where that precedence lives.
+    """
     piece = planned.piece
     item = planned.item
     name, years = _composer_parts(piece)
     language = package.translation_language
 
     if planned.is_placeholder:
-        eyebrow = (item.section_label or piece.text_source or "").strip()
+        eyebrow = (presentation.section or piece.text_source or "").strip()
         return {
             "placeholder": True,
             "order": planned.order,
             "eyebrow": eyebrow,
-            "role": (item.role_prefix or "").strip(),
+            "role": presentation.role_prefix,
             "title": piece.title,
             "composer": name,
             "years": years,
@@ -350,7 +358,7 @@ def _card_context(
             note = (note_obj.content or "").strip() if note_obj else ""
     ipa = (piece.lyrics_ipa or "").strip() if config.shows("ipa") else ""
     eyebrow = (
-        (item.section_label or piece.text_source or "").strip()
+        (presentation.section or piece.text_source or "").strip()
         if config.shows("eyebrow") else ""
     )
 
@@ -373,7 +381,7 @@ def _card_context(
         "placeholder": False,
         "order": planned.order,
         "eyebrow": eyebrow,
-        "role": (item.role_prefix or "").strip(),
+        "role": presentation.role_prefix,
         "title": piece.title,
         "composer": name,
         "years": years,
@@ -656,11 +664,25 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
     #    same whether or not duplex later inserts (unnumbered) recto-start spacers.
     #    A placeholder always gets a divider page; a bound piece gets a frontispiece
     #    only in CONCERT density while its card is kept.
+    # Resolved once for the whole programme: a slot used twice is numbered against
+    # its siblings, so no single card can work this out on its own.
+    presentations = dict(
+        zip(
+            (planned.item.pk for planned in plan),
+            build_program_presentation([planned.item for planned in plan]),
+            strict=True,
+        )
+    )
+
     cursor = 1
     for planned in plan:
         config = resolve_card_config(planned.item, package)
         if planned.is_placeholder or (concert_cards and config.enabled):
-            context = _card_context(planned, config, package, project, page_label=f"s. {cursor}")
+            context = _card_context(
+                planned, config, package, project,
+                page_label=f"s. {cursor}",
+                presentation=presentations[planned.item.pk],
+            )
             planned.card_bytes = _render_cards([context], section_header=None)
             planned.card_count = len(PdfReader(BytesIO(planned.card_bytes)).pages)
         cursor += planned.card_count + planned.bound_page_count
@@ -696,7 +718,11 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
             if planned.is_placeholder:
                 continue
             config = resolve_card_config(planned.item, package)
-            ctx = _card_context(planned, config, package, project, page_label=f"s. {planned.start_page}")
+            ctx = _card_context(
+                planned, config, package, project,
+                page_label=f"s. {planned.start_page}",
+                presentation=presentations[planned.item.pk],
+            )
             if ctx["has_text"]:
                 contexts.append(ctx)
         if contexts:
@@ -784,7 +810,24 @@ def render_item_card_preview(project: Project, package: ScorePackage, item: Prog
         is_placeholder=edition is None,
     )
     config = resolve_card_config(item, package)
-    context = _card_context(planned, config, package, project, page_label="")
+    # The preview reads the whole programme for one card, on purpose: a slot used
+    # twice is numbered against its siblings, and a preview that says "Na Komunię"
+    # where the book will say "Na Komunię 2" is worse than no preview at all.
+    siblings = list(
+        ProgramItem.objects.filter(project=project).order_by("order")
+    )
+    presentations = dict(
+        zip(
+            (sibling.pk for sibling in siblings),
+            build_program_presentation(siblings),
+            strict=True,
+        )
+    )
+    context = _card_context(
+        planned, config, package, project,
+        page_label="",
+        presentation=presentations[item.pk],
+    )
     return _render_cards([context], section_header=None)
 
 

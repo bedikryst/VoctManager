@@ -830,6 +830,10 @@ class ProjectManagementService:
         "title": "title", "date_time": "date_time", "location_id": "location",
         "call_time": "call_time", "status": "status", "conductor": "conductor",
         "dress_code_male": "dress_code", "dress_code_female": "dress_code",
+        # A concert that turns into a Mass changes what the cast is preparing —
+        # the running order becomes an order of service — so it is a change the
+        # singer is told about, not one that lands silently in the programme.
+        "event_kind": "event_kind",
         "entrance_note": "entrance", "parking_note": "parking",
         "dressing_room_note": "dressing_room",
         "onsite_contact_name": "onsite_contact",

@@ -17,7 +17,22 @@ from archive.models import (
 )
 from archive.score_protection import can_export as edition_can_export
 from archive.score_protection import user_is_manager
+from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
+
+
+def _liturgy_map(
+    ordered_program: list[ProgramItem],
+) -> dict[uuid.UUID, ProgramItemPresentation]:
+    """Resolve the whole programme's liturgical labels once per project, keyed by
+    item, for the per-row serializer to look up."""
+    return dict(
+        zip(
+            (item.pk for item in ordered_program),
+            build_program_presentation(ordered_program),
+            strict=True,
+        )
+    )
 
 
 class ComposerSnippetSerializer(serializers.ModelSerializer):
@@ -225,12 +240,20 @@ class PieceMaterialsSerializer(serializers.Serializer):
 class ProgramItemMaterialsSerializer(serializers.Serializer):
     """
     Thin wrapper around ProgramItem that forwards context to PieceMaterialsSerializer.
+
+    The liturgical labels arrive pre-resolved under the ``liturgy`` context key:
+    numbering a repeated slot needs the whole programme, and this serializer sees
+    one row at a time.
     """
 
     def to_representation(self, item: ProgramItem) -> dict[str, Any]:
+        presentation = self.context.get('liturgy', {}).get(item.pk)
         return {
             'order': item.order,
             'is_encore': item.is_encore,
+            'liturgical_slot': item.liturgical_slot,
+            'slot_label': presentation.slot_label if presentation else '',
+            'section': presentation.section if presentation else '',
             'piece': PieceMaterialsSerializer(item.piece, context=self.context).data,
         }
 
@@ -262,6 +285,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             'my_readiness_map': {entry.piece_id: entry.status for entry in my_readiness_entries},
             'artist_id': participation.artist_id,
             'request': self.context.get('request'),
+            'liturgy': _liturgy_map(ordered_program),
             # Scores + practice tracks are withheld once the concert is over.
             'materials_locked': project.status in (
                 Project.Status.COMPLETED, Project.Status.CANCELLED,
@@ -292,6 +316,7 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
                 'date_time': project.date_time,
                 'status': project.status,
                 'status_display': project.get_status_display(),
+                'event_kind': project.event_kind,
                 'location': location_data,
             },
             'program': ProgramItemMaterialsSerializer(
@@ -325,6 +350,7 @@ class ConductedProjectMaterialsSerializer(serializers.Serializer):
             'my_readiness_map': {},
             'artist_id': None,
             'request': self.context.get('request'),
+            'liturgy': _liturgy_map(ordered_program),
             # Same lifecycle gate as singers: scores + tracks are withheld once
             # the concert is over (they remain reachable through the manager
             # surfaces, which re-check access on every request).
@@ -355,6 +381,7 @@ class ConductedProjectMaterialsSerializer(serializers.Serializer):
                 'date_time': project.date_time,
                 'status': project.status,
                 'status_display': project.get_status_display(),
+                'event_kind': project.event_kind,
                 'location': location_data,
             },
             'program': ProgramItemMaterialsSerializer(

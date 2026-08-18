@@ -609,14 +609,16 @@ PROJECTS: tuple[ProjectSpec, ...] = (
     ),
 )
 
-# Concert-specific card overrides for the Mass project's programme, applied by
-# position: a liturgy names each piece by its function, not by its opus number.
-MASS_ITEM_OVERRIDES: tuple[tuple[str, str, str], ...] = (
-    ("OBRZĘDY WSTĘPNE", "Wejście:", ""),
-    ("LITURGIA EUCHARYSTYCZNA", "Ofiarowanie:", "Sopran solo: A. Kowalska"),
-    ("LITURGIA EUCHARYSTYCZNA", "Komunia:", "Organy: P. Organista"),
-    ("OBRZĘDY ZAKOŃCZENIA", "Uwielbienie:", ""),
-    ("OBRZĘDY ZAKOŃCZENIA", "Wyjście:", ""),
+# The Mass project's programme, by position: a liturgy names each piece by its
+# moment in the rite, not by its opus number. The moment is the typed slot — the
+# section heading and the printed role line derive from it — so the only thing
+# left to seed beside it is the performers line, which is genuinely per concert.
+MASS_ITEM_SLOTS: tuple[tuple[str, str], ...] = (
+    ("entrance", ""),
+    ("offertory", "Sopran solo: A. Kowalska"),
+    ("communion", "Organy: P. Organista"),
+    ("thanksgiving", ""),
+    ("recessional", ""),
 )
 
 KNOWLEDGE_BASE: tuple[tuple[str, str, str, tuple[str, ...], str, tuple[str, ...]], ...] = (
@@ -1418,6 +1420,14 @@ class Command(BaseCommand):
                 title=spec.title,
                 defaults={
                     "date_time": when, "call_time": call_time, "status": spec.status,
+                    # The seed's Mass is the only liturgical fixture; the kind is
+                    # what makes its programme show an order of service rather
+                    # than a running order.
+                    "event_kind": (
+                        Project.EventKind.MASS
+                        if spec.density == ScorePackage.Density.MASS
+                        else Project.EventKind.CONCERT
+                    ),
                     "location": location, "timezone": location.timezone,
                     "conductor": self.conductors[spec.conductor],
                     "description": "Pełna obsługa logistyczna: catering, garderoby, transport.",
@@ -1527,17 +1537,16 @@ class Command(BaseCommand):
                     "pdf_page_start": 3 if piece.movements.exists() else None,
                 },
             )
-            if not is_mass or order > len(MASS_ITEM_OVERRIDES):
+            if not is_mass or order > len(MASS_ITEM_SLOTS):
                 continue
-            section, role_prefix, performers = MASS_ITEM_OVERRIDES[order - 1]
-            item.section_label = section
-            item.role_prefix = role_prefix
+            slot, performers = MASS_ITEM_SLOTS[order - 1]
+            item.liturgical_slot = slot
             item.performers = performers
             # A liturgy prints only the text and its translation; the meta strip and
             # programme notes belong to a concert card, not to a Mass sheet.
             item.card_elements = ["eyebrow", "text", "translation"]
             item.hide_source_page_numbers = True
-            if order == len(MASS_ITEM_OVERRIDES):
+            if order == len(MASS_ITEM_SLOTS):
                 item.note_override = "Utwór wykonywany podczas procesji wyjścia — bez oklasków."
             item.save()
 

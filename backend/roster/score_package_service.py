@@ -24,6 +24,11 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from archive.models import ScoreEdition, ScoreLicenseType
+from roster.domain.liturgy import (
+    SLOTS_BY_CODE,
+    ProgramItemPresentation,
+    build_program_presentation,
+)
 from roster.infrastructure.pdf_raster import (
     DEFAULT_THUMBNAIL_WIDTH_PX,
     PdfRasterDependencyError,
@@ -100,7 +105,20 @@ class ScorePackageService:
 
     @staticmethod
     def get_or_create(project: Project) -> ScorePackage:
-        package, _ = ScorePackage.objects.get_or_create(project=project)
+        # The density is a print decision and stays independently editable — a
+        # conductor may want concert frontispieces for a liturgy. It only takes
+        # its opening value from what the event actually is, so a Mass never gets
+        # a concert book purely because nobody opened the cockpit.
+        package, _ = ScorePackage.objects.get_or_create(
+            project=project,
+            defaults={
+                "density_mode": (
+                    ScorePackage.Density.MASS
+                    if project.is_liturgical
+                    else ScorePackage.Density.CONCERT
+                ),
+            },
+        )
         return package
 
     @staticmethod
@@ -138,6 +156,7 @@ class ScorePackageService:
             "page_end": item.pdf_page_end,
             "section": item.section_label,
             "role": item.role_prefix,
+            "slot": item.liturgical_slot,
             "card_enabled": item.card_enabled,
             "card_elements": item.card_elements,
             "text_override": item.text_override,
@@ -219,9 +238,18 @@ class ScorePackageService:
 
     @staticmethod
     def _serialize_item(
-        item: ProgramItem, package: ScorePackage, readiness: dict[str, Any], cast_size: int
+        item: ProgramItem,
+        package: ScorePackage,
+        readiness: dict[str, Any],
+        cast_size: int,
+        presentation: ProgramItemPresentation,
     ) -> dict[str, Any]:
-        """Cockpit read model for one program item."""
+        """Cockpit read model for one program item.
+
+        The presentation is passed in rather than derived here: numbering a
+        repeated slot is a property of the whole programme, so it is resolved once
+        per read and never per row.
+        """
         piece = item.piece
         editions = active_editions(piece)
         resolved = resolve_item_edition(item)
@@ -271,6 +299,13 @@ class ScorePackageService:
             "performers": item.performers,
             "section_label": item.section_label,
             "role_prefix": item.role_prefix,
+            "liturgical_slot": item.liturgical_slot,
+            # What the card will actually print once the overrides above are
+            # resolved against the slot — so the cockpit can show the derived
+            # value as a placeholder instead of an empty field.
+            "slot_label": presentation.slot_label,
+            "section_effective": presentation.section,
+            "role_prefix_effective": presentation.role_prefix,
             "card_enabled": item.card_enabled,
             "card_enabled_effective": config.enabled,
             "card_elements": item.card_elements,
@@ -292,9 +327,12 @@ class ScorePackageService:
         readiness = compute_program_readiness(project, items, package)
         # Ensemble size drives the "more singers than licensed copies" warning.
         cast_size = project.participations.filter(is_deleted=False).count()
+        presentations = build_program_presentation(items)
         serialized_items = [
-            ScorePackageService._serialize_item(item, package, readiness[item.pk], cast_size)
-            for item in items
+            ScorePackageService._serialize_item(
+                item, package, readiness[item.pk], cast_size, presentation
+            )
+            for item, presentation in zip(items, presentations, strict=True)
         ]
         missing = [it["title"] for it in serialized_items if not it["has_pdf"]]
         # Titles whose bound licensed edition is short of physical copies for the cast.
@@ -478,6 +516,13 @@ class ScorePackageService:
 
         if "performers" in patch:
             _set("performers", str(patch["performers"] or "")[:200])
+
+        if "liturgical_slot" in patch:
+            raw = patch["liturgical_slot"]
+            slot = "" if raw in (None, "", "null") else str(raw)
+            if slot and slot not in SLOTS_BY_CODE:
+                raise ScorePackageItemError("Nieznana część liturgii.")
+            _set("liturgical_slot", slot)
 
         if "section_label" in patch:
             _set("section_label", str(patch["section_label"] or "")[:80])

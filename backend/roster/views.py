@@ -53,6 +53,7 @@ from .domain.attendance_window import (
     SELF_REPORT_CLOSED_MESSAGE,
     is_open_to_self_report,
 )
+from .domain.liturgy import vocabulary_payload
 from .dtos import (
     ArtistCreateDTO,
     AttendanceRangeDTO,
@@ -1613,6 +1614,14 @@ class ProgramItemViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsManagerOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['project', 'piece']
+
+    @action(detail=False, methods=['get'], url_path='slots')
+    def slots(self, request) -> Response:
+        """The liturgical vocabulary in the reader's language, for the setlist's
+        slot picker. Served rather than restated in the client: two copies of one
+        moment's name is how a singer ends up reading two names for one moment.
+        Static per language, so the client may cache it for the session."""
+        return Response(vocabulary_payload())
 
     def get_queryset(self):
         # Data partitioning: a chorister may read the setlist only for projects
