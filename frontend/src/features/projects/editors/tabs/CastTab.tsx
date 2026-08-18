@@ -141,7 +141,7 @@ function CastRow({
       {/* Their standing place in this concert. Empty is a real answer — the
           automatic fill then reads it from their voice type, which is all an
           undivided family ever needs. */}
-      <span className="w-28 shrink-0 sm:w-36">
+      <div className="w-28 shrink-0 sm:w-36">
         <Select
           size="sm"
           options={seatOptions}
@@ -156,7 +156,7 @@ function CastRow({
             { name: entry.displayName },
           )}
         />
-      </span>
+      </div>
 
       <button
         type="button"
