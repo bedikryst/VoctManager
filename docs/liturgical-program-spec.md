@@ -1,6 +1,7 @@
 # The liturgical programme — spec
 
 **Status:** stage 1 (backend) **done** 2026-08-18 · stage 2 (frontend) **done** 2026-08-18
+· stage 3 (naming the event) **done** 2026-08-18
 **Audience of the feature:** the singer and the conductor. Not the congregation — a
 guest-facing order-of-service booklet is explicitly out of scope (see *Not doing*).
 
@@ -214,6 +215,55 @@ sitting on the save bar.
 
 **Verified:** `npm run typecheck`, `npm run lint` and `npm run build` clean;
 `roster.test_liturgy` 36 tests green; ruff + mypy clean on `roster`.
+
+### Stage 3 — naming the event
+
+Stages 1 and 2 made `event_kind` a *programming* fact: it decides whether an item
+has a slot and which density a new score package opens on. It was not a *naming*
+fact, so every surface that points at a clock still said "Koncert" from a
+constant — including the run sheet a singer reads standing in the sacristy of a
+wedding Mass.
+
+**D9 — the event's name is one table per side, and it is not the picker's.**
+Backend `roster/domain/event_kind.py` (`event moment` gettext context), frontend
+`projects.event_moment.*` resolved through `getEventMomentPresentation`. The
+picker's own labels stay separate on purpose: `OTHER` reads "Inne wydarzenie"
+there, because that answers *which of the four is this?* — a question only the
+manager choosing the kind is asking. On a timeline row it is simply "Wydarzenie".
+A test asserts the two differ.
+
+**D10 — whole labels per kind, never a slot filled with the kind's name.**
+Polish declines the noun after a preposition ("Początek **Mszy**", "przed
+**Mszą**") and agrees adjectives with its gender ("Najbliższ**a** Msza"); French
+needs the article. So the day card carries four msgids (`Concert start` / `Mass
+start` / `Wedding Mass start` / `Event start`), and any place that had to
+interpolate was rewritten to a colon phrase that keeps the name in the nominative
+("Dziś: Msza", "Już wkrótce: Msza"). This is the same rule as
+`reference_polish_interpolation_dates`.
+
+**D11 — where the kind is obvious from the page, the word is neutral, not
+per-kind.** A heading inside a project ("Plan dnia koncertu" → "Plan dnia"), a
+countdown KPI ("Do koncertu" → "Do wydarzenia"), a call-time offset ("przed
+koncertem" → "przed rozpoczęciem"). Naming the kind is for a claim about a
+*moment* the reader could act on wrongly; a section heading two lines under the
+project title is not one.
+
+Surfaces changed: the day axis in all four places that draw it (editor,
+Overview widget, chorister's plan, printed card + its masthead), the subscribed
+`.ics` and the emailed one, the reminder push/e-mail, the briefing's project
+section and the conductor's review sheet that mirrors it, the schedule spotlight
+and event card, the logistics atlas rows, the rehearsal runway's closing row and
+both calendar markers.
+
+Deliberately **not** changed: aggregate copy about the ensemble's work in general
+("Wykonane koncerty", "Nadchodzące koncerty", the first-run "Zaplanuj pierwszy
+koncert"), which is about a class of activity rather than one evening; and
+`ScorePackage.density_mode` CONCERT/MASS, which is a print-layout decision a
+conductor may take against the grain of the event (D6).
+
+**Verified:** ruff + mypy clean on `roster`, `notifications`, `core`; 776 tests
+green across those three apps (`roster/test_event_naming.py` is new);
+`npm run typecheck`, `lint`, `test` (111) and `build` clean.
 
 ## Not doing
 
