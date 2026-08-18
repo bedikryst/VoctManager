@@ -266,8 +266,8 @@ class PieceCastingRowDTO(EnterpriseBaseDTO):
         return _blankable_string(value)
 
 
-class PieceCastingBoardDTO(EnterpriseBaseDTO):
-    """The complete divisi board for one piece of one project.
+class PieceBoardDTO(EnterpriseBaseDTO):
+    """The complete divisi board for one piece.
 
     Declarative rather than incremental: whatever the conductor sees on screen is
     what gets sent, and the server reconciles. One save is one request and at most
@@ -278,7 +278,6 @@ class PieceCastingBoardDTO(EnterpriseBaseDTO):
     An empty `castings` list is legitimate — it clears the piece.
     """
 
-    project: UUID
     piece: UUID
     castings: tuple[PieceCastingRowDTO, ...] = Field(default_factory=tuple)
 
@@ -298,6 +297,45 @@ class PieceCastingBoardDTO(EnterpriseBaseDTO):
             if row.participation in seen:
                 raise ValueError("castings must hold at most one voice line per participant.")
             seen.add(row.participation)
+        return self
+
+
+class PieceCastingBoardDTO(PieceBoardDTO):
+    """One piece's board, named with the project it belongs to."""
+
+    project: UUID
+
+
+class PieceCastingBoardsDTO(EnterpriseBaseDTO):
+    """Several boards of one project, saved as one act.
+
+    What the line-up fill sends: the programme is cast in a single stroke, so it
+    must land as a single stroke — a per-piece loop that fails on the eighth
+    request leaves the conductor guessing which seven took.
+
+    Each entry is a whole board, exactly as the single-piece endpoint takes one,
+    which is what lets both paths share the same reconciliation.
+    """
+
+    project: UUID
+    boards: tuple[PieceBoardDTO, ...] = Field(default_factory=tuple)
+
+    @field_validator("boards", mode="before")
+    @classmethod
+    def normalize_boards(cls, value: object) -> object:
+        if value is None:
+            return ()
+        if isinstance(value, list | tuple):
+            return tuple(value)
+        return value
+
+    @model_validator(mode="after")
+    def reject_repeated_pieces(self):
+        seen: set[UUID] = set()
+        for board in self.boards:
+            if board.piece in seen:
+                raise ValueError("boards must hold at most one board per piece.")
+            seen.add(board.piece)
         return self
 
 

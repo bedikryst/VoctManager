@@ -171,6 +171,21 @@ class ArtistDetailedSerializer(ArtistBasicSerializer):
 
 # --- 2. PARTICIPATION SERIALIZERS ---
 
+# The same rule as the model's `unique_active_project_participation` constraint —
+# one live seat per artist per project — stated as a filtered queryset rather than
+# left to DRF's constraint discovery. Discovery reads the CONDITION's fields
+# (`is_deleted`) straight out of the payload, which no client sends, so every
+# partial update of a seat died with a KeyError before it reached the view. A
+# queryset needs nothing from the payload, and still lets a soft-deleted seat be
+# re-created instead of being reported as a duplicate.
+PARTICIPATION_UNIQUENESS = [
+    serializers.UniqueTogetherValidator(
+        queryset=Participation.objects.filter(is_deleted=False),
+        fields=('artist', 'project'),
+    )
+]
+
+
 class ParticipationBasicSerializer(serializers.ModelSerializer):
     """
     Contract configuration safe for general cast consumption.
@@ -179,10 +194,11 @@ class ParticipationBasicSerializer(serializers.ModelSerializer):
     artist_name = serializers.CharField(source='artist.__str__', read_only=True)
     project_name = serializers.CharField(source='project.title', read_only=True)
     artist_voice_type_display = serializers.CharField(source='artist.get_voice_type_display', read_only=True)
-    
+
     class Meta:
         model = Participation
         exclude = ('fee',)
+        validators = PARTICIPATION_UNIQUENESS
 
 class ParticipationDetailedSerializer(ParticipationBasicSerializer):
     """
@@ -195,6 +211,7 @@ class ParticipationDetailedSerializer(ParticipationBasicSerializer):
         model = Participation
         fields = '__all__'
         read_only_fields = ('is_paid', 'paid_at')
+        validators = PARTICIPATION_UNIQUENESS
 
 # --- 3. PROJECT & REHEARSAL SERIALIZERS ---
 

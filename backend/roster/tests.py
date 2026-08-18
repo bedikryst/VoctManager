@@ -1,4 +1,5 @@
 import tempfile
+import uuid
 from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
@@ -3171,6 +3172,172 @@ class PieceCastingBoardTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, 403)
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+
+class ProgrammeCastingBoardsTests(APITestCase):
+    """Casting the whole programme from the line-up is one decision, so it is one
+    write. The multi-board endpoint reconciles each piece exactly as the
+    single-board one does, inside a single transaction — half a programme written
+    is worse than none of it, because nothing on screen says which half."""
+
+    URL = "/api/piece-castings/boards/"
+
+    def setUp(self) -> None:
+        from archive.models import Composer, Piece
+
+        User = get_user_model()
+        self.manager_user = User.objects.create_user(
+            username="boards-mgr", email="boardsmgr@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager_user, role=AppRole.MANAGER)
+
+        self.project = Project.objects.create(
+            title="Nieszpory", date_time=timezone.now() + timedelta(days=30),
+            status=Project.Status.DRAFT,
+        )
+        composer = Composer.objects.create(first_name="Claudio", last_name="Monteverdi")
+        self.first = Piece.objects.create(title="Dixit Dominus", composer=composer)
+        self.second = Piece.objects.create(title="Laudate pueri", composer=composer)
+        ProgramItem.objects.create(project=self.project, piece=self.first, order=1)
+        ProgramItem.objects.create(project=self.project, piece=self.second, order=2)
+
+        self.ada = self._singer("ada", VoiceType.SOPRANO)
+        self.bo = self._singer("bo", VoiceType.ALTO)
+
+        self.client.force_authenticate(user=self.manager_user)
+
+    def _singer(self, slug: str, voice_type: str) -> Participation:
+        artist = Artist.objects.create(
+            first_name=slug.title(), last_name="Singer",
+            email=f"boards-{slug}@test.pl", voice_type=voice_type,
+        )
+        return Participation.objects.create(
+            artist=artist, project=self.project, status=Participation.Status.CONFIRMED,
+        )
+
+    def _row(self, participation: Participation, voice_line: str) -> dict:
+        return {"participation": str(participation.id), "voice_line": voice_line}
+
+    def _put(self, boards: list[dict]):
+        return self.client.put(
+            self.URL,
+            {"project": str(self.project.id), "boards": boards},
+            format="json",
+        )
+
+    def _lines(self, piece) -> dict[str, str]:
+        return {
+            str(casting.participation_id): casting.voice_line
+            for casting in ProjectPieceCasting.objects.filter(piece=piece)
+        }
+
+    def test_several_boards_land_in_one_request(self) -> None:
+        response = self._put([
+            {"piece": str(self.first.id), "castings": [self._row(self.ada, "S1")]},
+            {
+                "piece": str(self.second.id),
+                "castings": [self._row(self.ada, "S2"), self._row(self.bo, "A1")],
+            },
+        ])
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._lines(self.first), {str(self.ada.id): "S1"})
+        self.assertEqual(
+            self._lines(self.second),
+            {str(self.ada.id): "S2", str(self.bo.id): "A1"},
+        )
+        # The response is every persisted seat across the boards it was given.
+        self.assertEqual(len(response.data), 3)
+
+    def test_a_refusal_on_one_board_rolls_the_others_back(self) -> None:
+        self.bo.status = Participation.Status.DECLINED
+        self.bo.save(update_fields=["status"])
+
+        response = self._put([
+            {"piece": str(self.first.id), "castings": [self._row(self.ada, "S1")]},
+            {"piece": str(self.second.id), "castings": [self._row(self.bo, "A1")]},
+        ])
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["error_code"], "casting_validation")
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+    def test_an_unknown_piece_writes_nothing(self) -> None:
+        response = self._put([
+            {"piece": str(self.first.id), "castings": [self._row(self.ada, "S1")]},
+            {"piece": str(uuid.uuid4()), "castings": []},
+        ])
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+    def test_a_singer_cannot_cast_the_programme(self) -> None:
+        singer_user = get_user_model().objects.create_user(
+            username="boards-singer", email="boardssinger@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=singer_user, role=AppRole.ARTIST)
+        self.ada.artist.user = singer_user
+        self.ada.artist.save(update_fields=["user"])
+        self.client.force_authenticate(user=singer_user)
+
+        response = self._put([
+            {"piece": str(self.first.id), "castings": [self._row(self.ada, "S1")]},
+        ])
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(ProjectPieceCasting.objects.count(), 0)
+
+    def test_a_partial_update_of_a_seat_survives_the_uniqueness_rule(self) -> None:
+        """Editing one field of a seat — re-inviting someone who declined, setting
+        their line-up place — is a PATCH. DRF derives the seat's uniqueness rule
+        from a CONDITIONAL constraint and reads the condition's `is_deleted` out
+        of the payload, which no client sends: every such edit died before it
+        reached the view until the rule was stated as a filtered queryset."""
+        self.bo.status = Participation.Status.DECLINED
+        self.bo.save(update_fields=["status"])
+
+        response = self.client.patch(
+            f"/api/participations/{self.bo.id}/",
+            {"status": Participation.Status.INVITED},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.bo.refresh_from_db()
+        self.assertEqual(self.bo.status, Participation.Status.INVITED)
+
+    def test_a_second_live_seat_for_the_same_artist_is_still_refused(self) -> None:
+        response = self.client.post(
+            "/api/participations/",
+            {
+                "artist": str(self.ada.artist_id),
+                "project": str(self.project.id),
+                "status": Participation.Status.INVITED,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            Participation.objects.filter(
+                artist=self.ada.artist, project=self.project
+            ).count(),
+            1,
+        )
+
+    def test_the_line_up_seat_is_a_manager_field_on_the_participation(self) -> None:
+        """The seat feeds the fill and nothing else — writing it casts nobody."""
+        response = self.client.patch(
+            f"/api/participations/{self.ada.id}/",
+            {"default_voice_line": "S2"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["default_voice_line"], "S2")
+        self.ada.refresh_from_db()
+        self.assertEqual(self.ada.default_voice_line, "S2")
         self.assertEqual(ProjectPieceCasting.objects.count(), 0)
 
 

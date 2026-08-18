@@ -550,6 +550,23 @@ class Participation(EnterpriseBaseModel):
     artist = models.ForeignKey(Artist, on_delete=models.RESTRICT, related_name='participations', verbose_name=_("Artist"))
     project = models.ForeignKey(Project, on_delete=models.RESTRICT, related_name='participations', verbose_name=_("Project"))
     status = models.CharField(max_length=3, choices=Status.choices, default=Status.INVITED, verbose_name=_("Status"))
+
+    # Where this singer sits in THIS concert's line-up: the seat they take when a
+    # piece's board is filled from the line-up rather than by hand. It lives on the
+    # participation and not on the Artist because a line is not a property of a
+    # person — the same soprano sits on S1 in one programme and S2 in the next.
+    #
+    # It is an INPUT to casting and never a substitute for it: [ProjectPieceCasting]
+    # stays the only record of who sings what, so no surface ever has to ask whether
+    # a seat it is reading is real or merely implied. Blank is the resting state and
+    # means "derive from their voice type", which is enough for every piece whose
+    # divisi leaves a family undivided.
+    default_voice_line = models.CharField(
+        max_length=5, blank=True, choices=VoiceLine.choices,
+        verbose_name=_("Line-up Seat"),
+        help_text=_("Voice line this singer takes when a piece's casting is filled "
+                    "from the line-up. Blank = derived from their voice type."),
+    )
     fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
     is_paid = models.BooleanField(
         default=False,

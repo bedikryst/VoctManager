@@ -19,8 +19,9 @@ from decimal import Decimal, InvalidOperation
 from celery.result import AsyncResult
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.db.models import Count, Exists, OuterRef, Prefetch, Q
-from django.http import FileResponse, HttpResponse, StreamingHttpResponse
+from django.http import FileResponse, Http404, HttpResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.translation import gettext as _
@@ -63,6 +64,7 @@ from .dtos import (
     AttendanceRecordDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
+    PieceCastingBoardsDTO,
     PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
     ProjectCreateDTO,
@@ -1752,6 +1754,46 @@ class ProjectPieceCastingViewSet(viewsets.ModelViewSet):
             project=project, piece=piece, rows=dto.castings
         )
         return Response(self.get_serializer(castings, many=True).data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['put'], url_path='boards', permission_classes=[IsManager])
+    def boards(self, request) -> Response:
+        """Several pieces' boards, saved as one act.
+
+        What filling the whole programme from the line-up sends. Each entry is a
+        complete board and is reconciled exactly as the single-piece endpoint
+        reconciles one — the difference is the transaction around all of them:
+        casting a programme is one decision by the conductor, and half of it
+        written is worse than none of it, because nothing on screen says which
+        half.
+        """
+        try:
+            dto = PieceCastingBoardsDTO(**client_payload(request.data))
+        except ValidationError as e:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
+        project = get_object_or_404(Project, pk=dto.project)
+        pieces = {
+            piece.pk: piece
+            for piece in Piece.objects.filter(pk__in=[board.piece for board in dto.boards])
+        }
+        if any(board.piece not in pieces for board in dto.boards):
+            raise Http404("One of the submitted boards names a piece that does not exist.")
+
+        saved: list[ProjectPieceCasting] = []
+        with transaction.atomic():
+            for board in dto.boards:
+                saved.extend(
+                    CastingAndCrewService.save_piece_board(
+                        project=project, piece=pieces[board.piece], rows=board.castings
+                    )
+                )
+        return Response(self.get_serializer(saved, many=True).data, status=status.HTTP_200_OK)
 
 
 class CollaboratorViewSet(viewsets.ModelViewSet):
