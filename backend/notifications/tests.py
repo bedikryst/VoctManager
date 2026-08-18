@@ -1493,6 +1493,20 @@ class PreferenceGroupPolicyTests(SimpleTestCase):
             self.assertEqual(GROUP_OF_TYPE[ntype], "commitments")
             self.assertTrue(default_channel_preferences(ntype)["email_enabled"])
 
+    def test_an_absence_verdict_is_a_request_and_stays_out_of_the_inbox(self) -> None:
+        # The one commitment whose reader is guaranteed to come back and look:
+        # they filed the request in the app. Both directions share the group, so
+        # the arrival of an e-mail can never itself be the verdict.
+        from .delivery import GROUP_OF_TYPE, default_channel_preferences
+
+        for ntype in (
+            NotificationType.ABSENCE_APPROVED,
+            NotificationType.ABSENCE_REJECTED,
+        ):
+            self.assertEqual(GROUP_OF_TYPE[ntype], "requests")
+            self.assertFalse(default_channel_preferences(ntype)["email_enabled"])
+            self.assertTrue(default_channel_preferences(ntype)["push_enabled"])
+
     def test_everything_a_briefing_can_carry_shares_one_group(self) -> None:
         # The invariant that retires the fold's bypass in practice. The router
         # still filters a briefing per item — that stays as the enforcement — but
@@ -1560,7 +1574,7 @@ class PreferenceLedgerShapeTests(APITestCase):
         matrix = self._matrix(self.manager)
         self.assertEqual(
             [group["id"] for group in matrix["groups"]],
-            ["commitments", "messages", "materials", "safety_net", "team"],
+            ["commitments", "requests", "messages", "materials", "safety_net", "team"],
         )
 
     def test_every_row_names_a_group_the_response_declares(self) -> None:
@@ -1580,6 +1594,7 @@ class PreferenceLedgerShapeTests(APITestCase):
             {gid: group["recommended_email"] for gid, group in groups.items()},
             {
                 "commitments": True,
+                "requests": False,
                 "messages": True,
                 "materials": False,
                 "safety_net": True,

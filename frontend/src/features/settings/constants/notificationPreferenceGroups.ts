@@ -30,6 +30,7 @@ import {
   PencilLine,
   Repeat,
   ShieldCheck,
+  Stamp,
   UserCheck,
   XCircle,
   type LucideIcon,
@@ -47,6 +48,9 @@ export type { NotificationGroupId };
 
 export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = {
   commitments: CalendarCheck,
+  // A verdict on something the reader filed — the stamp, not either outcome, so
+  // the group does not wear the face of an approval or of a refusal.
+  requests: Stamp,
   messages: MessagesSquare,
   materials: Library,
   // A one-member group, so it shares its single row's glyph rather than inventing
@@ -61,7 +65,7 @@ export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = 
  * appear here — one with no group has no row to draw a glyph on.
  */
 export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon>> = {
-  // Commitments — what you have said yes to, and decisions on your own requests
+  // Commitments — what you have said yes to
   PROJECT_INVITATION: MailPlus,
   PROJECT_UPDATED: PencilLine,
   PROJECT_CANCELLED: CalendarX,
@@ -70,6 +74,7 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   REHEARSAL_CANCELLED: CalendarX,
   PIECE_CASTING_ASSIGNED: Music,
   PIECE_CASTING_UPDATED: Repeat,
+  // Requests — the verdict on what you filed yourself
   ABSENCE_APPROVED: CheckCircle2,
   ABSENCE_REJECTED: XCircle,
   // Messages — someone writing to you

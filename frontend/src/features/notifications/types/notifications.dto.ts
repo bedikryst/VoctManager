@@ -372,6 +372,7 @@ export interface UnreadCountResponse {
  */
 export type NotificationGroupId =
   | "commitments"
+  | "requests"
   | "messages"
   | "materials"
   | "safety_net"

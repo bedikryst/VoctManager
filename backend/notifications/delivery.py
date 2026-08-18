@@ -49,9 +49,13 @@ class PreferenceGroup:
 #
 # The organizing line is what a change *costs the reader*, which is also the line
 # the router has always drawn:
-#   • commitments — something you have said yes to has changed, or a decision on
-#     your own request has landed. E-mail ON + push ON: the reader must not miss
-#     these even if they never open the app.
+#   • commitments — something you have said yes to has changed. E-mail ON + push
+#     ON: the reader must not miss these even if they never open the app.
+#   • requests — the verdict on something the reader themselves asked for. Push
+#     ON, e-mail OFF: they opened the app to file it and they come back to see
+#     how it went, which is the one case where the app is certain to be looked
+#     at. The two directions share a group deliberately — a group that e-mailed
+#     only refusals would turn its own arrival into the answer.
 #   • messages — a person is writing to you. E-mail ON + push ON, for the same
 #     reason a direct message deserves an inbox.
 #   • materials — preparation and nudges: new scores and recordings, reminders.
@@ -84,8 +88,12 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
             # group is a second, load-bearing effect — see NotificationRouter.
             NotificationType.PIECE_CASTING_ASSIGNED,
             NotificationType.PIECE_CASTING_UPDATED,
-            # The outcome of the reader's own request, in both directions, so good
-            # news is not the only kind that stays in-app.
+        ),
+    ),
+    PreferenceGroup(
+        id="requests",
+        email=False,
+        types=(
             NotificationType.ABSENCE_APPROVED,
             NotificationType.ABSENCE_REJECTED,
         ),

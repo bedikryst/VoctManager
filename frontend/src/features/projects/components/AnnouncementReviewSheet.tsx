@@ -9,8 +9,12 @@
  * stays in the queue for the next review, which is why one per-line control is
  * enough. The counts (and the confirm button) come from the server for the current
  * selection, so the number promised is the number sent. A note folds everyone who
- * has news into a briefing; discarding the whole queue warns first when it holds a
+ * has news into a briefing; closing the queue unsent warns first when it holds a
  * cast removal — the one silence that is a defect rather than a choice.
+ *
+ * What that close destroys is the announcement, never the data: the saved edits
+ * stand either way. Its words and its colour say so, because a conductor fixing a
+ * typo has to be able to reach for it without fearing their correction is at stake.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/components/AnnouncementReviewSheet
  */
@@ -19,10 +23,10 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  BellOff,
   Inbox,
   Megaphone,
   Send,
-  Trash2,
   UserMinus,
   Users,
 } from "lucide-react";
@@ -237,19 +241,22 @@ export const AnnouncementReviewSheet = ({
 
   const handleDiscard = async (): Promise<void> => {
     const toastId = toast.loading(
-      t("projects.announce.discarding", "Odrzucanie…"),
+      t("projects.announce.discarding", "Zamykanie kolejki…"),
     );
     try {
       await discard.mutateAsync();
       toast.success(
-        t("projects.announce.discarded", "Kolejka odrzucona — nic nie wyszło."),
+        t(
+          "projects.announce.discarded",
+          "Zmiany zostają w aplikacji. Powiadomienie nie poszło.",
+        ),
         { id: toastId },
       );
       reset();
       onClose();
     } catch {
       toast.error(
-        t("projects.announce.discard_error", "Nie udało się odrzucić kolejki."),
+        t("projects.announce.discard_error", "Nie udało się zamknąć kolejki."),
         { id: toastId },
       );
     }
@@ -279,18 +286,19 @@ export const AnnouncementReviewSheet = ({
         footer={
           !isEmpty && data ? (
             <div className="flex items-center justify-between gap-3">
-              {/* Always behind a confirm: abandoning the queue cannot be undone,
-                  and when it holds a cast removal the confirm names that person. */}
+              {/* Always behind a confirm: closing the queue cannot be undone,
+                  and when it holds a cast removal the confirm names that person.
+                  Neither crimson nor a bin, though — nothing saved is at risk
+                  here, and a control that looks like deletion is one the typo
+                  case will never dare press. */}
               <Button
                 variant="ghost"
                 size="touch"
                 onClick={() => setConfirmDiscard(true)}
                 disabled={isBusy}
-                leftIcon={<Trash2 size={15} aria-hidden="true" />}
+                leftIcon={<BellOff size={15} aria-hidden="true" />}
               >
-                <span className="text-ethereal-crimson">
-                  {t("projects.announce.discard", "Odrzuć")}
-                </span>
+                {t("projects.announce.discard", "Nie ogłaszaj")}
               </Button>
               <Button
                 variant="primary"
@@ -406,23 +414,29 @@ export const AnnouncementReviewSheet = ({
         )}
       </BottomSheet>
 
+      {/* Crimson is reserved for the one case that is a defect: a person taken off
+          the cast who would now never be told. Choosing not to announce an edit is
+          an editorial call, and the modal stays gold for it. */}
       <ConfirmModal
         isOpen={confirmDiscard}
-        isDestructive
-        title={t("projects.announce.discard_title", "Odrzucić całą kolejkę?")}
+        isDestructive={data?.has_cast_removal ?? false}
+        title={t(
+          "projects.announce.discard_title",
+          "Zachować zmiany bez powiadomienia?",
+        )}
         description={
           data?.has_cast_removal
             ? t("projects.announce.discard_removal_warning", {
                 names: removedNames.join(", "),
                 defaultValue:
-                  "W kolejce jest skreślenie z obsady: {{names}}. Po odrzuceniu zmiana zostaje w bazie, ale nikt się o niej nie dowie. Odrzucić mimo to?",
+                  "W kolejce jest skreślenie z obsady: {{names}}. Zmiana zostaje w bazie, ale nikt się o niej nie dowie. Zamknąć kolejkę mimo to?",
               })
             : t(
                 "projects.announce.discard_desc",
-                "Zapisane zmiany zostaną — zniknie tylko powiadomienie o nich. Tej akcji nie da się cofnąć.",
+                "Zapisane zmiany zostają — zniknie tylko powiadomienie o nich. Tej akcji nie da się cofnąć.",
               )
         }
-        confirmText={t("projects.announce.discard_confirm", "Odrzuć kolejkę")}
+        confirmText={t("projects.announce.discard_confirm", "Nie wysyłaj")}
         cancelText={t("common.actions.cancel", "Anuluj")}
         onConfirm={() => {
           setConfirmDiscard(false);
