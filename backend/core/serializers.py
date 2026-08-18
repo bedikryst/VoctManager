@@ -44,18 +44,26 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'phone_number', 'language', 'timezone', 'salutation',
             'clothing_size', 'shoe_size', 'height_cm',
 
-            # Notification delivery
-            'digest_enabled', 'digest_hour',
+            # Notification delivery. `email_notifications_enabled` is the master
+            # switch over every operational e-mail, sitting above the per-type
+            # ledger; it is writable so the settings tab can both take the offer
+            # to mute e-mail and — the part that matters — undo it. Before it was
+            # exposed, an ESP unsubscribe left a member opted out with no way back
+            # inside the app.
+            'digest_enabled', 'digest_hour', 'email_notifications_enabled',
 
-            # Onboarding (read-only; stamped server-side via the seen-welcome action)
-            'welcome_seen_at',
+            # Onboarding + one-time offers (read-only; stamped server-side via
+            # their own actions)
+            'welcome_seen_at', 'push_email_offer_seen_at',
 
             # Integrations
             'calendar_token'
         )
         # Critical Security: Users cannot escalate their own role or spoof tokens.
-        # welcome_seen_at is server-authoritative — clients read it but cannot set it.
-        read_only_fields = ('role', 'calendar_token', 'welcome_seen_at')
+        # The two stamps are server-authoritative — clients read them but cannot set them.
+        read_only_fields = (
+            'role', 'calendar_token', 'welcome_seen_at', 'push_email_offer_seen_at',
+        )
 
     def _absolute_media_url(self, field) -> str | None:
         if not field:

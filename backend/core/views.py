@@ -274,6 +274,14 @@ class CurrentUserRetrieveUpdateView(generics.RetrieveUpdateAPIView):
                 "clothing_size": getattr(profile, 'clothing_size', ''),
                 "shoe_size": getattr(profile, 'shoe_size', ''),
                 "height_cm": getattr(profile, 'height_cm', None),
+                # Seeded from the stored profile like every field above, so a
+                # partial patch (the settings tab sends one switch at a time)
+                # cannot reset the neighbours it did not mention.
+                "digest_enabled": getattr(profile, 'digest_enabled', True),
+                "digest_hour": getattr(profile, 'digest_hour', 8),
+                "email_notifications_enabled": getattr(
+                    profile, 'email_notifications_enabled', True
+                ),
                 **profile_data,
             }
             # The DTO will automatically fail-fast if data is malformed
@@ -457,6 +465,34 @@ class MarkWelcomeSeenView(views.APIView):
         if profile is not None and profile.welcome_seen_at is None:
             profile.welcome_seen_at = timezone.now()
             profile.save(update_fields=['welcome_seen_at', 'updated_at'])
+        return Response(
+            UserProfileSerializer(profile, context={"request": request}).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class MarkPushEmailOfferSeenView(views.APIView):
+    """
+    POST /api/users/me/seen-push-email-offer/
+    Settles the one-time offer to drop notification e-mail once push has been
+    proven to reach this member. Stamped on **either** answer — taking it or
+    declining it — because the offer is a question asked once, not a reminder
+    that keeps coming back until it gets the answer we prefer.
+
+    Deliberately separate from the mute itself (a plain profile PATCH of
+    `email_notifications_enabled`): the two are different facts. A member who
+    declines has answered without changing any delivery, and a member who later
+    switches e-mail back on has changed delivery without un-asking the question.
+    Idempotent — a repeat call keeps the original timestamp.
+    """
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(responses={200: UserProfileSerializer})
+    def post(self, request, *args, **kwargs):
+        profile = getattr(request.user, 'profile', None)
+        if profile is not None and profile.push_email_offer_seen_at is None:
+            profile.push_email_offer_seen_at = timezone.now()
+            profile.save(update_fields=['push_email_offer_seen_at', 'updated_at'])
         return Response(
             UserProfileSerializer(profile, context={"request": request}).data,
             status=status.HTTP_200_OK,

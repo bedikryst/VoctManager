@@ -525,6 +525,9 @@ class UserPreferencesService:
                     'clothing_size': dto.clothing_size,
                     'shoe_size': dto.shoe_size,
                     'height_cm': dto.height_cm,
+                    'digest_enabled': dto.digest_enabled,
+                    'digest_hour': dto.digest_hour,
+                    'email_notifications_enabled': dto.email_notifications_enabled,
                 }
             )
 

@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import override
 
 from roster.domain.day_timeline import format_time_window, localize
+from roster.domain.event_kind import event_moment_label
 from roster.models import Participation, Project, Rehearsal
 
 
@@ -175,7 +176,10 @@ class ICalGeneratorService:
 
         event_local = localize(project.date_time, project.timezone)
         if project.call_time and event_local is not None:
-            rows.append((_('Concert'), event_local.strftime('%H:%M')))
+            # The entry opens at the call time, so this row is what the reader is
+            # actually being called for — named by kind, because "Koncert 18:00"
+            # inside a wedding Mass's entry is the one line they would act on.
+            rows.append((event_moment_label(project.event_kind), event_local.strftime('%H:%M')))
 
         for label, value in (
             (_('Warm-up'), format_time_window(project.warmup_start, project.warmup_end)),
@@ -249,7 +253,9 @@ class ICalGeneratorService:
             start_time = proj.call_time if proj.call_time else proj.date_time
             end_time = proj.date_time + timedelta(hours=4)
             
-            title = cls._escape_ics_text(f"[{_('Concert')}] {proj.title}")
+            title = cls._escape_ics_text(
+                f"[{event_moment_label(proj.event_kind)}] {proj.title}"
+            )
             location = cls._escape_ics_text(proj.location.name if proj.location else "")
             description = cls._escape_ics_text(cls._project_description(proj))
 

@@ -4456,3 +4456,54 @@ msgstr "Głos 3"
 #: core/constants.py
 msgid "Voice 4"
 msgstr "Głos 4"
+
+#: roster/domain/event_kind.py notifications/message_content.py
+msgctxt "event moment"
+msgid "Concert"
+msgstr "Koncert"
+
+#: roster/domain/event_kind.py notifications/message_content.py
+msgctxt "event moment"
+msgid "Mass"
+msgstr "Msza"
+
+#: roster/domain/event_kind.py notifications/message_content.py
+msgctxt "event moment"
+msgid "Wedding Mass"
+msgstr "Msza ślubna"
+
+#: roster/domain/event_kind.py notifications/message_content.py
+msgctxt "event moment"
+msgid "Event"
+msgstr "Wydarzenie"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Mass start"
+msgstr "Początek Mszy"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Wedding Mass start"
+msgstr "Początek Mszy ślubnej"
+
+#: roster/infrastructure/document_generator.py
+msgctxt "call sheet"
+msgid "Event start"
+msgstr "Początek wydarzenia"
+
+#: notifications/message_content.py
+msgid "%(event)s — %(when)s"
+msgstr "%(event)s — %(when)s"
+
+#: notifications/message_content.py
+msgid "Coming up: %(event)s"
+msgstr "Już wkrótce: %(event)s"
+
+#: templates/projects/call_sheet_pdf.html
+msgid "You have no rehearsals assigned for this event."
+msgstr "Nie masz przypisanych prób do tego wydarzenia."
+
+#: templates/projects/call_sheet_pdf.html
+msgid "The programme for this event has not been written out yet."
+msgstr "Program tego wydarzenia nie jest jeszcze rozpisany."

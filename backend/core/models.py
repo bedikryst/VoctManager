@@ -205,6 +205,15 @@ class UserProfile(EnterpriseBaseModel):
         default=True,
         help_text=_("Determines if the user receives non-critical operational emails.")
     )
+    push_email_offer_seen_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the member answered the one-time offer to drop notification "
+                    "e-mail because push was proven to reach them. Stamped on either "
+                    "answer — the offer is a question asked once, not a reminder. "
+                    "Server-side for the same reason as welcome_seen_at: the choice is "
+                    "about the account, so declining on one device must settle it "
+                    "everywhere.")
+    )
 
     # System-controlled (set by ESP bounce/complaint webhooks, not the user). When
     # set, all notification email to this address is suppressed until it is cleared

@@ -68,6 +68,15 @@ class UserPreferencesUpdateDTO(EnterpriseBaseDTO):
     # Automatically validates that height is physically realistic
     height_cm: int | None = Field(None, ge=100, le=250)
 
+    # Notification delivery. The DTO forbids extra keys, so a field missing here
+    # is not merely unsaved — it 400s the whole request, which is how the daily
+    # digest controls silently never worked. The view seeds each of these from
+    # the stored profile before applying the patch, so sending one never resets
+    # its neighbours.
+    digest_enabled: bool = True
+    digest_hour: int = Field(default=8, ge=0, le=23)
+    email_notifications_enabled: bool = True
+
     @field_validator("first_name", "last_name", mode="before")
     @classmethod
     def normalize_required_text(cls, value: object) -> object:

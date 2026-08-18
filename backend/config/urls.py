@@ -37,6 +37,7 @@ from core.views import (
     CurrentUserRetrieveUpdateView,
     ExportUserDataView,
     FeedbackReportView,
+    MarkPushEmailOfferSeenView,
     MarkWelcomeSeenView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
@@ -175,6 +176,11 @@ urlpatterns = [
     path('api/users/me/delete-account/', RequestAccountDeletionView.as_view(), name='user-delete-account'),
     path('api/users/me/reset-calendar-token/', ResetCalendarTokenView.as_view(), name='user-reset-calendar-token'),
     path('api/users/me/seen-welcome/', MarkWelcomeSeenView.as_view(), name='user-seen-welcome'),
+    path(
+        'api/users/me/seen-push-email-offer/',
+        MarkPushEmailOfferSeenView.as_view(),
+        name='user-seen-push-email-offer',
+    ),
     path('api/users/me/avatar/', AvatarView.as_view(), name='user-avatar'),
 
     # --- In-app feedback (bug reports, confusions, ideas from signed-in members) ---
