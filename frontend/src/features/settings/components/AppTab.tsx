@@ -59,7 +59,8 @@ const Benefit = ({
 
 export const AppTab = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const { canPrompt, isIOS, isInstalled, promptInstall } = useInstallPrompt();
+  const { canPrompt, isIOS, isIPad, isInstalled, promptInstall } =
+    useInstallPrompt();
   const [justCopied, setJustCopied] = useState(false);
 
   // start_url of the installable app (the manifest scope entry point). Sharing
@@ -175,10 +176,18 @@ export const AppTab = (): React.JSX.Element => {
                   aria-hidden="true"
                 />
                 <Text size="sm" color="graphite">
-                  {t(
-                    "settings.app.ios.step_1",
-                    "Dotknij ikony Udostępnij na dolnym pasku Safari",
-                  )}
+                  {/* Safari puts Share at the bottom on iPhone and at the top on
+                      iPad; pointing at the wrong edge is the same as no
+                      instruction at all. */}
+                  {isIPad
+                    ? t(
+                        "settings.app.ios.step_1_tablet",
+                        "Dotknij ikony Udostępnij na górnym pasku przeglądarki",
+                      )
+                    : t(
+                        "settings.app.ios.step_1",
+                        "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
+                      )}
                 </Text>
               </li>
               <li className="flex items-center gap-2.5">
@@ -200,7 +209,7 @@ export const AppTab = (): React.JSX.Element => {
                 <Text size="sm" color="graphite">
                   {t(
                     "settings.app.ios.step_3",
-                    "Potwierdź — ikona pojawi się na ekranie telefonu",
+                    "Potwierdź — ikona pojawi się na ekranie początkowym",
                   )}
                 </Text>
               </li>

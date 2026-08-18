@@ -4429,7 +4429,8 @@
         "title": "L'application est installée"
       },
       "ios": {
-        "step_1": "Touchez l'icône Partager dans la barre inférieure de Safari",
+        "step_1": "Touchez l'icône Partager dans la barre inférieure du navigateur",
+        "step_1_tablet": "Touchez l'icône Partager dans la barre supérieure du navigateur",
         "step_2": "Choisissez « Sur l'écran d'accueil »",
         "step_3": "Confirmez — l'icône apparaît sur votre écran d'accueil",
         "title": "Ajouter à l'écran d'accueil"

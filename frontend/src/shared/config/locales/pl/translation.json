@@ -4461,9 +4461,10 @@
         "title": "Aplikacja jest zainstalowana"
       },
       "ios": {
-        "step_1": "Dotknij ikony Udostępnij na dolnym pasku Safari",
+        "step_1": "Dotknij ikony Udostępnij na dolnym pasku przeglądarki",
+        "step_1_tablet": "Dotknij ikony Udostępnij na górnym pasku przeglądarki",
         "step_2": "Wybierz „Do ekranu początkowego”",
-        "step_3": "Potwierdź — ikona pojawi się na ekranie telefonu",
+        "step_3": "Potwierdź — ikona pojawi się na ekranie początkowym",
         "title": "Dodaj do ekranu początkowego"
       },
       "other": {

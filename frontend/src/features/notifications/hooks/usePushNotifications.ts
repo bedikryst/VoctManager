@@ -15,6 +15,7 @@ import {
   useUnregisterPushDevice,
   useSendTestPush,
 } from "@/features/notifications/api/devices";
+import { isAppleTouchDevice, isStandaloneDisplay } from "@/shared/pwa/platform";
 import type { WebPushSubscribeDTO } from "../types/notifications.dto";
 
 /** Localized toast text. The hook isn't a component, so it reads the shared
@@ -58,12 +59,11 @@ function detectAvailability(): PushAvailability {
   const hasApi =
     "Notification" in window && "serviceWorker" in navigator && "PushManager" in window;
   if (!hasApi) {
-    // iOS Safari only exposes Push API when the page is launched as a PWA from the home screen.
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isStandalone =
-      window.matchMedia?.("(display-mode: standalone)").matches ||
-      (navigator as Navigator & { standalone?: boolean }).standalone === true;
-    if (isIOS && !isStandalone) {
+    // iOS Safari only exposes Push API when the page is launched as a PWA from
+    // the home screen — which is a fixable state, unlike a browser that simply
+    // cannot do push, so the device must be recognised (iPadOS included) or the
+    // member gets a dead end instead of the install instruction.
+    if (isAppleTouchDevice() && !isStandaloneDisplay()) {
       return { kind: "unsupported", reason: "ios-not-standalone" };
     }
     return { kind: "unsupported", reason: "browser" };

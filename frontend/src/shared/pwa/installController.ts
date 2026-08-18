@@ -11,6 +11,7 @@
  * The deferred event is consumed exactly once per the browser contract.
  * @module shared/pwa/installController
  */
+import { isStandaloneDisplay } from "./platform";
 
 /** Chromium-only event; not yet in the DOM lib typings. */
 export interface BeforeInstallPromptEvent extends Event {
@@ -47,11 +48,6 @@ export interface InstallSnapshot {
 
 export type InstallOutcome = "accepted" | "dismissed" | "unavailable";
 
-const detectStandalone = (): boolean =>
-  typeof window !== "undefined" &&
-  (window.matchMedia?.("(display-mode: standalone)").matches === true ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true);
-
 // The deferred event is held OUTSIDE the snapshot on purpose: it is a single-use,
 // mutable browser object (calling `.prompt()` consumes it) and must never be
 // compared by `Object.is`. The snapshot exposes only its *presence* (`canPrompt`).
@@ -59,7 +55,7 @@ let deferredEvent: BeforeInstallPromptEvent | null = null;
 
 let snapshot: InstallSnapshot = {
   canPrompt: false,
-  isInstalled: detectStandalone(),
+  isInstalled: isStandaloneDisplay(),
 };
 
 const listeners = new Set<() => void>();
