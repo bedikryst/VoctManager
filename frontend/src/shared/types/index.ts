@@ -230,6 +230,14 @@ export interface Participation extends BaseModel {
   artist: string;
   project: string;
   status: ParticipationStatus;
+  /**
+   * Where this singer sits in THIS concert's line-up — the seat an automatic
+   * fill gives them on a piece that declares the line. `""` = none recorded,
+   * which means "derive it from their voice type". It is an input to casting,
+   * never a record of it: `PieceCasting` stays the only truth about who sings
+   * what.
+   */
+  default_voice_line?: VoiceLine | "";
   fee?: string | number | null;
   // Settlement state — mutated only through the dedicated `payment` action.
   is_paid?: boolean;

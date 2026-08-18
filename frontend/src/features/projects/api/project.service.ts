@@ -30,6 +30,7 @@ import type {
   ParticipationCreateDTO,
   ParticipationUpdateDTO,
   PieceCastingBoardDTO,
+  PieceCastingBoardsDTO,
   ProgramItemCreateDTO,
   ProgramItemUpdateDTO,
   ProjectBulkFeeDTO,
@@ -831,6 +832,20 @@ export const ProjectService = {
   ): Promise<PieceCasting[]> => {
     const response = await api.put<PieceCasting[]>(
       `${PIECE_CASTINGS_BASE_URL}board/`,
+      data,
+    );
+    return response.data;
+  },
+
+  /**
+   * Saves several pieces' boards in one transaction; resolves with every
+   * persisted seat across them.
+   */
+  savePieceCastingBoards: async (
+    data: PieceCastingBoardsDTO,
+  ): Promise<PieceCasting[]> => {
+    const response = await api.put<PieceCasting[]>(
+      `${PIECE_CASTINGS_BASE_URL}boards/`,
       data,
     );
     return response.data;

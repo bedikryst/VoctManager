@@ -28,6 +28,7 @@ import type {
   Piece,
   PieceCasting,
   ProgramItem,
+  VoiceLine,
   VoiceLineOption,
   VoiceRequirement,
   VoiceType,
@@ -40,9 +41,12 @@ import {
   useProjectProgram,
   useProjectVoiceLinesDictionary,
   useSavePieceCastingBoard,
+  useSavePieceCastingBoards,
 } from "../../api/project.queries";
 import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { voiceTypeRank } from "../../lib/voiceFamilies";
+import { autoCastPiece, type AutoCastResult } from "../../lib/autoCast";
+import type { PieceBoardDTO } from "../../types/project.dto";
 
 /**
  * One castable person on this project. The board used to read the artist
@@ -57,9 +61,23 @@ export interface CastMember {
   readonly voiceType: VoiceType | null;
   /** Localised voice type ("Sopran"); empty when the roster record is gone. */
   readonly voiceLabel: string;
+  /** Their seat in this concert's line-up; `null` when none was recorded. */
+  readonly seat: VoiceLine | null;
   readonly status: ParticipationStatus;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
+}
+
+/**
+ * What filling the whole programme from the line-up would do, priced before it
+ * is offered. `unresolved` counts PEOPLE, not seats: the same singer skipped on
+ * eleven pieces is one line-up entry to fix, not eleven.
+ */
+export interface ProgramFillPlan {
+  readonly boards: PieceBoardDTO[];
+  readonly pieces: number;
+  readonly seats: number;
+  readonly unresolved: number;
 }
 
 /**
@@ -86,6 +104,8 @@ export interface UseMicroCastingResult {
   voiceLines: VoiceLineOption[];
   pieces: Piece[];
   selectedPieceId: string | null;
+  /** The divisi the open piece is cast against, read through its bound edition. */
+  selectedRequirements: VoiceRequirement[];
   localCastings: PieceCasting[];
   activeDragId: string | null;
   /** Everyone on the project, in roster order (voice type, then name). */
@@ -101,6 +121,17 @@ export interface UseMicroCastingResult {
   isDirty: boolean;
   isSaving: boolean;
   pendingCounts: PendingCounts;
+  /** Seats the open piece would gain from the line-up, and who it cannot place. */
+  pieceFill: AutoCastResult;
+  programFill: ProgramFillPlan;
+  /** Writes the line-up's seats into the open piece's DRAFT; nothing is saved. */
+  fillPieceFromLineUp: () => AutoCastResult;
+  /**
+   * Casts every piece of the programme from the line-up. Spans pieces, so it
+   * cannot ride the draft — it writes, in one transaction, and resolves with
+   * what it did (null when the write failed; the mutation has already said so).
+   */
+  fillProgramFromLineUp: () => Promise<ProgramFillPlan | null>;
   pendingPieceSwitch: string | null;
   requestSelectPiece: (pieceId: string) => void;
   confirmPieceSwitch: () => void;
@@ -146,7 +177,8 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
   const pieceCastings = pieceCastingsQuery.data ?? EMPTY_PIECE_CASTINGS;
 
   const saveMutation = useSavePieceCastingBoard(projectId);
-  const isSaving = saveMutation.isPending;
+  const saveBoardsMutation = useSavePieceCastingBoards(projectId);
+  const isSaving = saveMutation.isPending || saveBoardsMutation.isPending;
   const isLoading =
     piecesQuery.isLoading ||
     programQuery.isLoading ||
@@ -197,6 +229,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
                 artist?.voice_type_display ?? voiceType,
               )
             : (participation.artist_voice_type_display ?? ""),
+          seat: participation.default_voice_line || null,
           status: participation.status,
           isUnresolved: !artist,
         };
@@ -354,6 +387,133 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
 
     return progress;
   }, [pieceCastings, pieces, program, selectedPieceId, localCastings, memberMap]);
+
+  // The arrangement THIS concert binds — a piece published in unison and in
+  // three parts would otherwise offer both sets of seats at once.
+  const selectedItem = useMemo(
+    () => program.find((item) => String(item.piece) === selectedPieceId),
+    [program, selectedPieceId],
+  );
+
+  const selectedRequirements = useMemo<VoiceRequirement[]>(
+    () =>
+      scopedRequirements(
+        pieces.find((piece) => String(piece.id) === selectedPieceId),
+        selectedItem?.score_edition,
+      ),
+    [pieces, selectedPieceId, selectedItem?.score_edition],
+  );
+
+  const pieceFill = useMemo<AutoCastResult>(
+    () =>
+      autoCastPiece(
+        members,
+        selectedRequirements.map((requirement) => requirement.voice_line),
+        new Set(localCastings.map((casting) => String(casting.participation))),
+      ),
+    [members, selectedRequirements, localCastings],
+  );
+
+  /**
+   * The same fill, priced across the whole programme. Every board carries the
+   * seats it already had as well as the new ones — the write is declarative, so
+   * a board sent short of them would empty what the conductor cast by hand.
+   */
+  const programFill = useMemo<ProgramFillPlan>(() => {
+    const boards: PieceBoardDTO[] = [];
+    const unresolved = new Set<string>();
+    let seats = 0;
+
+    for (const item of program) {
+      const pieceId = String(item.piece);
+      const lines = scopedRequirements(
+        pieces.find((piece) => String(piece.id) === pieceId),
+        item.score_edition,
+      ).map((requirement) => requirement.voice_line);
+
+      const existing = pieceCastings.filter(
+        (casting) =>
+          String(casting.piece) === pieceId &&
+          memberMap.has(String(casting.participation)),
+      );
+      const result = autoCastPiece(
+        members,
+        lines,
+        new Set(existing.map((casting) => String(casting.participation))),
+      );
+      result.skipped.forEach((participationId) =>
+        unresolved.add(participationId),
+      );
+
+      if (result.seats.length === 0) continue;
+      seats += result.seats.length;
+      boards.push({
+        piece: pieceId,
+        castings: [
+          ...existing.map((casting) => ({
+            participation: String(casting.participation),
+            voice_line: casting.voice_line,
+            gives_pitch: casting.gives_pitch ?? false,
+            notes: casting.notes ?? "",
+          })),
+          ...result.seats.map((seat) => ({
+            participation: seat.participationId,
+            voice_line: seat.voiceLine,
+            gives_pitch: false,
+            notes: "",
+          })),
+        ],
+      });
+    }
+
+    return { boards, pieces: boards.length, seats, unresolved: unresolved.size };
+  }, [program, pieces, pieceCastings, members, memberMap]);
+
+  const fillPieceFromLineUp = useCallback((): AutoCastResult => {
+    if (!selectedPieceId || pieceFill.seats.length === 0) return pieceFill;
+
+    setLocalCastings((previous) => [
+      ...previous,
+      ...pieceFill.seats.map((seat) => ({
+        id: `${TEMP_PREFIX}${Date.now()}-${seat.participationId}`,
+        participation: seat.participationId,
+        piece: selectedPieceId,
+        voice_line: seat.voiceLine,
+        gives_pitch: false,
+      })),
+    ]);
+    return pieceFill;
+  }, [pieceFill, selectedPieceId]);
+
+  const fillProgramFromLineUp =
+    useCallback(async (): Promise<ProgramFillPlan | null> => {
+      if (programFill.boards.length === 0 || isSaving) return null;
+
+      try {
+        const saved = await saveBoardsMutation.mutateAsync({
+          project: projectId,
+          boards: programFill.boards,
+        });
+
+        // The open piece is one of the written ones as often as not, and its
+        // draft is now a claim about a board that has moved. Re-baseline it on
+        // what was persisted rather than leaving the two to disagree.
+        const touchedSelected = programFill.boards.some(
+          (board) => board.piece === String(selectedPieceId),
+        );
+        if (touchedSelected) {
+          const board = saved.filter(
+            (casting) => String(casting.piece) === String(selectedPieceId),
+          );
+          setOriginalCastings(board);
+          setLocalCastings(board);
+        }
+        return programFill;
+      } catch {
+        // The mutation already toasted the reason; nothing local changed.
+        return null;
+      }
+    }, [isSaving, programFill, projectId, saveBoardsMutation, selectedPieceId]);
 
   const handleUpdateNote = useCallback(
     (castingId: string, newNote: string): void => {
@@ -523,6 +683,7 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     voiceLines,
     pieces,
     selectedPieceId,
+    selectedRequirements,
     localCastings,
     activeDragId,
     members,
@@ -532,6 +693,10 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
     isDirty,
     isSaving,
     pendingCounts,
+    pieceFill,
+    programFill,
+    fillPieceFromLineUp,
+    fillProgramFromLineUp,
     pendingPieceSwitch,
     requestSelectPiece,
     confirmPieceSwitch,

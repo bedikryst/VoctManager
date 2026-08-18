@@ -3324,6 +3324,12 @@
         "switch_aria": "Switch cast list"
       },
       "search_placeholder": "Search artist...",
+      "seat": {
+        "aria": "Line-up seat: {{name}}",
+        "clear": "From voice type",
+        "hint": "The line-up seat says which line a singer takes when a piece's divisi is filled automatically.",
+        "placeholder": "From voice type"
+      },
       "sections": {
         "assigned": "Project Cast",
         "available": "Artist Database"
@@ -3624,6 +3630,11 @@
         "aria_with_title": "Drop zone: {{title}}"
       },
       "buttons": {
+        "fill_piece": "Fill this piece",
+        "fill_piece_hint": "Seats every free singer on their line from the concert's line-up. Skips anyone the choice is not unambiguous for.",
+        "fill_program": "Fill the programme",
+        "fill_program_dirty": "Save or discard the changes to this piece first.",
+        "fill_program_hint": "The same rule applied to every piece in the programme.",
         "play_reference": "Play: {{platform}}"
       },
       "empty": {
@@ -3644,6 +3655,16 @@
       "program": {
         "ready": "Pieces cast: {{done}} of {{total}}"
       },
+      "program_fill": {
+        "announced": "This project is no longer a draft — the casting will go to the announcement queue.",
+        "confirm": "Fill",
+        "summary": "New seats: {{seats}} · Pieces: {{pieces}}. Derived from the concert's line-up; seats already cast stay as they are.",
+        "title": "Fill the casting of the whole programme?",
+        "unresolved_one": "No unambiguous line for {{count}} singer — they will be skipped.",
+        "unresolved_few": "No unambiguous line for {{count}} singers — they will be skipped.",
+        "unresolved_many": "No unambiguous line for {{count}} singers — they will be skipped.",
+        "unresolved_other": "No unambiguous line for {{count}} singers — they will be skipped."
+      },
       "search": {
         "placeholder": "Search person..."
       },
@@ -3655,6 +3676,19 @@
         "over": "Over plan: {{count}}"
       },
       "toast": {
+        "fill_piece_one": "{{count}} seat filled from the line-up",
+        "fill_piece_few": "{{count}} seats filled from the line-up",
+        "fill_piece_many": "{{count}} seats filled from the line-up",
+        "fill_piece_other": "{{count}} seats filled from the line-up",
+        "fill_program_one": "{{count}} piece cast",
+        "fill_program_few": "{{count}} pieces cast",
+        "fill_program_many": "{{count}} pieces cast",
+        "fill_program_other": "{{count}} pieces cast",
+        "fill_program_desc": "New seats: {{seats}}.",
+        "fill_skipped_one": "No unambiguous line for {{count}} singer — set their line-up seat on the Cast tab.",
+        "fill_skipped_few": "No unambiguous line for {{count}} singers — set their line-up seats on the Cast tab.",
+        "fill_skipped_many": "No unambiguous line for {{count}} singers — set their line-up seats on the Cast tab.",
+        "fill_skipped_other": "No unambiguous line for {{count}} singers — set their line-up seats on the Cast tab.",
         "save_success": "Casting saved",
         "save_success_desc": "All changes have been synchronized."
       },

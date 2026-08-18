@@ -3342,6 +3342,12 @@
         "switch_aria": "Przełącz listę obsady"
       },
       "search_placeholder": "Szukaj artysty...",
+      "seat": {
+        "aria": "Miejsce w składzie: {{name}}",
+        "clear": "Z typu głosu",
+        "hint": "Miejsce w składzie mówi, na którą linię trafi śpiewak, gdy divisi utworu uzupełniasz automatycznie.",
+        "placeholder": "Z typu głosu"
+      },
       "sections": {
         "assigned": "Obsada projektu",
         "available": "Baza artystów"
@@ -3642,6 +3648,11 @@
         "aria_with_title": "Sekcja upuszczania: {{title}}"
       },
       "buttons": {
+        "fill_piece": "Uzupełnij ten utwór",
+        "fill_piece_hint": "Sadza każdego wolnego śpiewaka na jego linii ze składu koncertu. Pomija tych, dla których wybór nie jest jednoznaczny.",
+        "fill_program": "Uzupełnij program",
+        "fill_program_dirty": "Najpierw zapisz lub odrzuć zmiany w tym utworze.",
+        "fill_program_hint": "Ta sama reguła zastosowana do każdego utworu w programie.",
         "play_reference": "Odtwórz: {{platform}}"
       },
       "empty": {
@@ -3662,6 +3673,16 @@
       "program": {
         "ready": "Obsadzone utwory: {{done}} z {{total}}"
       },
+      "program_fill": {
+        "announced": "Projekt nie jest już szkicem — obsada trafi do kolejki ogłoszeń.",
+        "confirm": "Uzupełnij",
+        "summary": "Nowe miejsca: {{seats}} · Utwory: {{pieces}}. Wyliczone ze składu koncertu; miejsca już obsadzone zostają bez zmian.",
+        "title": "Uzupełnić obsadę całego programu?",
+        "unresolved_one": "Bez jednoznacznej linii: {{count}} osoba — zostanie pominięta.",
+        "unresolved_few": "Bez jednoznacznej linii: {{count}} osoby — zostaną pominięte.",
+        "unresolved_many": "Bez jednoznacznej linii: {{count}} osób — zostaną pominięte.",
+        "unresolved_other": "Bez jednoznacznej linii: {{count}} osób — zostaną pominięte."
+      },
       "search": {
         "placeholder": "Szukaj osoby..."
       },
@@ -3673,6 +3694,19 @@
         "over": "Ponad plan: {{count}}"
       },
       "toast": {
+        "fill_piece_one": "Obsadzono {{count}} miejsce ze składu",
+        "fill_piece_few": "Obsadzono {{count}} miejsca ze składu",
+        "fill_piece_many": "Obsadzono {{count}} miejsc ze składu",
+        "fill_piece_other": "Obsadzono {{count}} miejsc ze składu",
+        "fill_program_one": "Obsadzono {{count}} utwór",
+        "fill_program_few": "Obsadzono {{count}} utwory",
+        "fill_program_many": "Obsadzono {{count}} utworów",
+        "fill_program_other": "Obsadzono {{count}} utworów",
+        "fill_program_desc": "Nowe miejsca: {{seats}}.",
+        "fill_skipped_one": "Bez jednoznacznej linii: {{count}} osoba — ustaw jej miejsce w składzie na zakładce Obsada.",
+        "fill_skipped_few": "Bez jednoznacznej linii: {{count}} osoby — ustaw ich miejsce w składzie na zakładce Obsada.",
+        "fill_skipped_many": "Bez jednoznacznej linii: {{count}} osób — ustaw ich miejsce w składzie na zakładce Obsada.",
+        "fill_skipped_other": "Bez jednoznacznej linii: {{count}} osób — ustaw ich miejsce w składzie na zakładce Obsada.",
         "save_success": "Casting zapisany",
         "save_success_desc": "Wszystkie zmiany zostały zsynchronizowane."
       },

@@ -24,6 +24,7 @@ import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Input } from "@/shared/ui/primitives/Input";
+import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
 import {
@@ -68,6 +69,8 @@ interface CastRowProps {
    */
   readonly showAnswerState: boolean;
   readonly isBusy: boolean;
+  readonly seatOptions: readonly SelectOption[];
+  readonly onSeatChange: (seat: string) => void;
   readonly onRemove: () => void;
 }
 
@@ -75,6 +78,8 @@ function CastRow({
   entry,
   showAnswerState,
   isBusy,
+  seatOptions,
+  onSeatChange,
   onRemove,
 }: CastRowProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -131,6 +136,26 @@ function CastRow({
             {meta}
           </Caption>
         )}
+      </span>
+
+      {/* Their standing place in this concert. Empty is a real answer — the
+          automatic fill then reads it from their voice type, which is all an
+          undivided family ever needs. */}
+      <span className="w-28 shrink-0 sm:w-36">
+        <Select
+          size="sm"
+          options={seatOptions}
+          value={entry.seat}
+          onValueChange={onSeatChange}
+          disabled={isBusy || isDeclined}
+          placeholder={t("projects.cast.seat.placeholder", "Z typu głosu")}
+          clearLabel={t("projects.cast.seat.clear", "Z typu głosu")}
+          ariaLabel={t(
+            "projects.cast.seat.aria",
+            "Miejsce w składzie: {{name}}",
+            { name: entry.displayName },
+          )}
+        />
       </span>
 
       <button
@@ -199,6 +224,9 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     castCount,
     poolCount,
     castBalance,
+    seatOptions,
+    setSeat,
+    isSaving,
     searchQuery,
     setSearchQuery,
     processingId,
@@ -258,6 +286,18 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           icon={<UserCheck size={15} aria-hidden="true" />}
           title={t("projects.cast.sections.assigned", "Obsada projektu")}
           action={<Badge variant="neutral">{castCount}</Badge>}
+          toolbar={
+            castCount > 0 ? (
+              <div className="pb-3">
+                <Caption color="muted">
+                  {t(
+                    "projects.cast.seat.hint",
+                    "Miejsce w składzie mówi, na którą linię trafi śpiewak, gdy divisi utworu uzupełniasz automatycznie.",
+                  )}
+                </Caption>
+              </div>
+            ) : undefined
+          }
           footer={
             castCount > 0 && castBalance.length > 0 ? (
               <BalanceRail balance={castBalance} />
@@ -278,6 +318,10 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                       entry={entry}
                       showAnswerState={showAnswerState}
                       isBusy={processingId === entry.artistId}
+                      seatOptions={seatOptions}
+                      onSeatChange={(seat) =>
+                        void setSeat(entry.participationId, seat)
+                      }
                       onRemove={() =>
                         void removeFromCast(
                           entry.artistId,
@@ -381,7 +425,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
         </SectionCard>
       </div>
 
-      <AutosaveStatus isSaving={processingId !== null} />
+      <AutosaveStatus isSaving={isSaving} />
     </div>
   );
 };

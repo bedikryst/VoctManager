@@ -28,14 +28,17 @@ import {
 import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import {
   Info,
+  ListChecks,
   ListOrdered,
   MicVocal,
   PlayCircleIcon,
   Search,
   Users,
+  Wand2,
 } from "lucide-react";
+import { toast } from "sonner";
 
-import type { Project, VoiceRequirement } from "@/shared/types";
+import type { Project } from "@/shared/types";
 
 import { useMicroCasting, type CastMember } from "../hooks/useMicroCasting";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
@@ -47,7 +50,6 @@ import {
 } from "../../lib/voiceFamilies";
 import { foldDiacritics } from "@/shared/lib/text";
 import { getPrimaryReferenceRecording } from "@/features/archive/constants/referenceRecordings";
-import { scopedRequirements } from "@/features/archive/constants/divisiScope";
 import { CastMemberChip } from "./components/CastMemberChip";
 import { DivisiBucket } from "./components/DivisiBucket";
 import { DroppableBucket } from "./components/DroppableBucket";
@@ -97,13 +99,15 @@ export const MicroCastingTab = ({
 
   // Before publication nobody has been asked anything, so an answer state on
   // every chip would state the default forty times over.
-  const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
+  const isDraft = project.status === PROJECT_STATUS.DRAFT;
+  const showAnswerState = !isDraft;
 
   const {
     program,
     voiceLines,
     pieces,
     selectedPieceId,
+    selectedRequirements: requirements,
     localCastings,
     activeDragId,
     members,
@@ -113,6 +117,10 @@ export const MicroCastingTab = ({
     isDirty,
     isSaving,
     pendingCounts,
+    pieceFill,
+    programFill,
+    fillPieceFromLineUp,
+    fillProgramFromLineUp,
     pendingPieceSwitch,
     requestSelectPiece,
     confirmPieceSwitch,
@@ -126,6 +134,7 @@ export const MicroCastingTab = ({
   } = useMicroCasting(projectId);
 
   const [poolQuery, setPoolQuery] = useState<string>("");
+  const [isProgramFillOpen, setIsProgramFillOpen] = useState(false);
 
   useEffect(() => {
     onDirtyStateChange?.(isDirty);
@@ -153,16 +162,70 @@ export const MicroCastingTab = ({
   const referenceUrl = selectedPiece
     ? getPrimaryReferenceRecording(selectedPiece)
     : null;
-  // The board casts the arrangement THIS concert binds — a piece published in
-  // unison and in three parts would otherwise offer both sets of seats at once.
-  const selectedItem = program.find(
-    (item) => String(item.piece) === selectedPieceId,
-  );
-  const requirements = useMemo<VoiceRequirement[]>(
-    () => scopedRequirements(selectedPiece, selectedItem?.score_edition),
-    [selectedPiece, selectedItem?.score_edition],
-  );
   const progress = selectedPieceId ? pieceProgress[selectedPieceId] : undefined;
+
+  const handleFillPiece = (): void => {
+    const result = fillPieceFromLineUp();
+    toast.success(
+      t("projects.micro_cast.toast.fill_piece", "Obsadzono ze składu", {
+        count: result.seats.length,
+      }),
+      {
+        description:
+          result.skipped.length > 0
+            ? t(
+                "projects.micro_cast.toast.fill_skipped",
+                "Bez jednoznacznej linii: {{count}} — ustaw ich miejsce w składzie na zakładce Obsada.",
+                { count: result.skipped.length },
+              )
+            : undefined,
+      },
+    );
+  };
+
+  const handleFillProgram = async (): Promise<void> => {
+    const plan = await fillProgramFromLineUp();
+    setIsProgramFillOpen(false);
+    if (!plan) return;
+
+    toast.success(
+      t("projects.micro_cast.toast.fill_program", "Program obsadzony", {
+        count: plan.pieces,
+      }),
+      {
+        description: t(
+          "projects.micro_cast.toast.fill_program_desc",
+          "Nowe miejsca: {{seats}}.",
+          { seats: plan.seats },
+        ),
+      },
+    );
+  };
+
+  // Priced before it is offered, and stated as a ledger rather than a sentence:
+  // two counts that both need Polish agreement read worse than they count.
+  const programFillDescription = [
+    t(
+      "projects.micro_cast.program_fill.summary",
+      "Nowe miejsca: {{seats}} · Utwory: {{pieces}}. Wyliczone ze składu koncertu; miejsca już obsadzone zostają bez zmian.",
+      { seats: programFill.seats, pieces: programFill.pieces },
+    ),
+    programFill.unresolved > 0
+      ? t(
+          "projects.micro_cast.program_fill.unresolved",
+          "Bez jednoznacznej linii: {{count}} — te osoby zostaną pominięte.",
+          { count: programFill.unresolved },
+        )
+      : "",
+    !isDraft
+      ? t(
+          "projects.micro_cast.program_fill.announced",
+          "Projekt nie jest już szkicem — obsada trafi do kolejki ogłoszeń.",
+        )
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const railItems = useMemo<ProgramCastingRailItem[]>(
     () =>
@@ -476,28 +539,69 @@ export const MicroCastingTab = ({
                         </Eyebrow>
                       )}
                     </div>
-                    {referenceUrl && (
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button
-                        asChild
                         variant="outline"
                         size="sm"
-                        leftIcon={
-                          <PlayCircleIcon size={12} aria-hidden="true" />
+                        leftIcon={<Wand2 size={12} aria-hidden="true" />}
+                        onClick={handleFillPiece}
+                        disabled={pieceFill.seats.length === 0 || isSaving}
+                        title={t(
+                          "projects.micro_cast.buttons.fill_piece_hint",
+                          "Sadza każdego wolnego śpiewaka na jego linii ze składu koncertu. Pomija tych, dla których wybór nie jest jednoznaczny.",
+                        )}
+                      >
+                        {t(
+                          "projects.micro_cast.buttons.fill_piece",
+                          "Uzupełnij ten utwór",
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<ListChecks size={12} aria-hidden="true" />}
+                        onClick={() => setIsProgramFillOpen(true)}
+                        disabled={programFill.seats === 0 || isDirty || isSaving}
+                        title={
+                          isDirty
+                            ? t(
+                                "projects.micro_cast.buttons.fill_program_dirty",
+                                "Najpierw zapisz lub odrzuć zmiany w tym utworze.",
+                              )
+                            : t(
+                                "projects.micro_cast.buttons.fill_program_hint",
+                                "Ta sama reguła zastosowana do każdego utworu w programie.",
+                              )
                         }
                       >
-                        <a
-                          href={referenceUrl.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          {t(
-                            "projects.micro_cast.buttons.play_reference",
-                            "Odtwórz: {{platform}}",
-                            { platform: referenceUrl.label },
-                          )}
-                        </a>
+                        {t(
+                          "projects.micro_cast.buttons.fill_program",
+                          "Uzupełnij program",
+                        )}
                       </Button>
-                    )}
+                      {referenceUrl && (
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          leftIcon={
+                            <PlayCircleIcon size={12} aria-hidden="true" />
+                          }
+                        >
+                          <a
+                            href={referenceUrl.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {t(
+                              "projects.micro_cast.buttons.play_reference",
+                              "Odtwórz: {{platform}}",
+                              { platform: referenceUrl.label },
+                            )}
+                          </a>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : undefined
               }
@@ -618,6 +722,21 @@ export const MicroCastingTab = ({
         cancelText={t("common.actions.discard", "Odrzuć")}
         confirmText={t("projects.micro_cast.action_bar.save", "Zapisz casting")}
         isLoading={isSaving}
+      />
+
+      <ConfirmModal
+        isOpen={isProgramFillOpen}
+        title={t(
+          "projects.micro_cast.program_fill.title",
+          "Uzupełnić obsadę całego programu?",
+        )}
+        description={programFillDescription}
+        confirmText={t("projects.micro_cast.program_fill.confirm", "Uzupełnij")}
+        cancelText={t("common.actions.cancel", "Anuluj")}
+        onConfirm={() => void handleFillProgram()}
+        onCancel={() => setIsProgramFillOpen(false)}
+        isLoading={isSaving}
+        isDestructive={false}
       />
 
       <ConfirmModal

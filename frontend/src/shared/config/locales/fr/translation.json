@@ -3325,6 +3325,12 @@
         "switch_aria": "Changer de liste"
       },
       "search_placeholder": "Rechercher un artiste...",
+      "seat": {
+        "aria": "Place dans l'effectif : {{name}}",
+        "clear": "D'après le type de voix",
+        "hint": "La place dans l'effectif indique la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement.",
+        "placeholder": "D'après le type de voix"
+      },
       "sections": {
         "assigned": "Distribution du projet",
         "available": "Base artistes"
@@ -3625,6 +3631,11 @@
         "aria_with_title": "Zone de dépôt : {{title}}"
       },
       "buttons": {
+        "fill_piece": "Compléter cette pièce",
+        "fill_piece_hint": "Place chaque chanteur libre sur sa ligne d'après l'effectif du concert. Ignore ceux dont le choix n'est pas univoque.",
+        "fill_program": "Compléter le programme",
+        "fill_program_dirty": "Enregistrez ou annulez d'abord les modifications de cette pièce.",
+        "fill_program_hint": "La même règle appliquée à chaque pièce du programme.",
         "play_reference": "Écouter : {{platform}}"
       },
       "empty": {
@@ -3645,6 +3656,16 @@
       "program": {
         "ready": "Pièces distribuées : {{done}} sur {{total}}"
       },
+      "program_fill": {
+        "announced": "Ce projet n'est plus un brouillon — la distribution ira dans la file d'annonces.",
+        "confirm": "Compléter",
+        "summary": "Nouvelles places : {{seats}} · Pièces : {{pieces}}. Déduites de l'effectif du concert ; les places déjà distribuées restent inchangées.",
+        "title": "Compléter la distribution de tout le programme ?",
+        "unresolved_one": "Aucune ligne univoque pour {{count}} chanteur — il sera ignoré.",
+        "unresolved_few": "Aucune ligne univoque pour {{count}} chanteurs — ils seront ignorés.",
+        "unresolved_many": "Aucune ligne univoque pour {{count}} chanteurs — ils seront ignorés.",
+        "unresolved_other": "Aucune ligne univoque pour {{count}} chanteurs — ils seront ignorés."
+      },
       "search": {
         "placeholder": "Rechercher une personne..."
       },
@@ -3656,6 +3677,19 @@
         "over": "Au-delà du plan : {{count}}"
       },
       "toast": {
+        "fill_piece_one": "{{count}} place pourvue d'après l'effectif",
+        "fill_piece_few": "{{count}} places pourvues d'après l'effectif",
+        "fill_piece_many": "{{count}} places pourvues d'après l'effectif",
+        "fill_piece_other": "{{count}} places pourvues d'après l'effectif",
+        "fill_program_one": "{{count}} pièce distribuée",
+        "fill_program_few": "{{count}} pièces distribuées",
+        "fill_program_many": "{{count}} pièces distribuées",
+        "fill_program_other": "{{count}} pièces distribuées",
+        "fill_program_desc": "Nouvelles places : {{seats}}.",
+        "fill_skipped_one": "Aucune ligne univoque pour {{count}} chanteur — définissez sa place dans l'effectif sur l'onglet Distribution.",
+        "fill_skipped_few": "Aucune ligne univoque pour {{count}} chanteurs — définissez leur place dans l'effectif sur l'onglet Distribution.",
+        "fill_skipped_many": "Aucune ligne univoque pour {{count}} chanteurs — définissez leur place dans l'effectif sur l'onglet Distribution.",
+        "fill_skipped_other": "Aucune ligne univoque pour {{count}} chanteurs — définissez leur place dans l'effectif sur l'onglet Distribution.",
         "save_success": "Casting enregistré",
         "save_success_desc": "Toutes les modifications sont synchronisées."
       },

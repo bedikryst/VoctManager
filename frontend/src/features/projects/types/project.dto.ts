@@ -54,6 +54,8 @@ export interface ParticipationCreateDTO {
   project: string;
   status: ParticipationStatus;
   fee?: string | number | null;
+  /** This singer's seat in the concert's line-up; `""` clears it. */
+  default_voice_line?: VoiceLine | "";
 }
 
 export type ParticipationUpdateDTO = Partial<ParticipationCreateDTO>;
@@ -126,6 +128,22 @@ export interface PieceCastingBoardDTO {
   project: string;
   piece: string;
   castings: PieceCastingBoardRowDTO[];
+}
+
+/** One piece's board inside a multi-piece write. */
+export interface PieceBoardDTO {
+  piece: string;
+  castings: PieceCastingBoardRowDTO[];
+}
+
+/**
+ * Several boards of one project, saved as one act — what filling the programme
+ * from the line-up sends. Each board is still declarative, so every board must
+ * carry the seats that are to survive it, not only the ones being added.
+ */
+export interface PieceCastingBoardsDTO {
+  project: string;
+  boards: PieceBoardDTO[];
 }
 
 export interface AttendanceCreateDTO {

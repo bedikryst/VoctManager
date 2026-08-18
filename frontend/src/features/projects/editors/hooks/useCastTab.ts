@@ -20,15 +20,19 @@ import type {
   Artist,
   Participation,
   ParticipationStatus,
+  VoiceLine,
   VoiceType,
 } from "@/shared/types";
+import type { SelectOption } from "@/shared/ui/primitives/Select";
 import {
   useCreateParticipation,
   useDeleteParticipation,
   useProjectArtistsDictionary,
   useProjectParticipations,
+  useProjectVoiceLinesDictionary,
   useUpdateParticipation,
 } from "../../api/project.queries";
+import { LINE_UP_SEATS } from "../../lib/autoCast";
 import { VOICE_TYPE_ORDER, voiceTypeRank } from "../../lib/voiceFamilies";
 import type { CastTabMobileView } from "../types";
 
@@ -51,6 +55,11 @@ export interface CastEntry extends RosterFacts {
   readonly participationId: string;
   readonly artistId: string;
   readonly status: ParticipationStatus;
+  /**
+   * Their seat in this concert's line-up; `""` = none, which the automatic fill
+   * reads as "derive it from their voice type".
+   */
+  readonly seat: VoiceLine | "";
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
 }
@@ -87,6 +96,11 @@ export interface UseCastTabResult {
   castCount: number;
   poolCount: number;
   castBalance: readonly CastBalanceEntry[];
+  /** The line-up's vocabulary, in score order, for the per-singer seat picker. */
+  seatOptions: readonly SelectOption[];
+  setSeat: (participationId: string, seat: string) => Promise<void>;
+  /** Any write is in flight — what the autosave pill reports. */
+  isSaving: boolean;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
   processingId: string | null;
@@ -146,6 +160,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
 
   const artistsQuery = useProjectArtistsDictionary();
   const participationsQuery = useProjectParticipations(projectId);
+  const voiceLinesQuery = useProjectVoiceLinesDictionary();
   const artists = artistsQuery.data ?? EMPTY_ARTISTS;
   const participations = participationsQuery.data ?? EMPTY_PARTICIPATIONS;
 
@@ -195,6 +210,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           rangeLabel: rangeOf(artist),
           sightReading: artist?.sight_reading_skill ?? null,
           status: participation.status,
+          seat: participation.default_voice_line ?? "",
           isUnresolved: !artist,
         };
       })
@@ -274,6 +290,41 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     );
   }, [castEntries, poolEntries, t]);
 
+  /**
+   * The picker names the vocabulary a seat is chosen FROM, so its entries keep
+   * their index ("Sopran 1") even when the concert ends up using one line of
+   * that family. Collapsing belongs where a part is being READ — on the board,
+   * in the songbook — not where it is being picked.
+   */
+  const seatOptions = useMemo<SelectOption[]>(() => {
+    const byCode = new Map(
+      voiceLinesQuery.data.map((line) => [String(line.value), line.label]),
+    );
+    return LINE_UP_SEATS.flatMap((code) => {
+      const label = byCode.get(code);
+      return label ? [{ value: code, label }] : [];
+    });
+  }, [voiceLinesQuery.data]);
+
+  const setSeat = async (
+    participationId: string,
+    seat: string,
+  ): Promise<void> => {
+    try {
+      await updateParticipationMutation.mutateAsync({
+        id: participationId,
+        data: { default_voice_line: seat as VoiceLine | "" },
+      });
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "common.errors.database_error",
+          "Wystąpił problem z połączeniem z bazą danych.",
+        ),
+      });
+    }
+  };
+
   const addToCast = async (artistId: string): Promise<void> => {
     setProcessingId(artistId);
 
@@ -338,6 +389,9 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     castCount: castEntries.length,
     poolCount: filteredPool.length,
     castBalance,
+    seatOptions,
+    setSeat,
+    isSaving: processingId !== null || updateParticipationMutation.isPending,
     searchQuery,
     setSearchQuery,
     processingId,
