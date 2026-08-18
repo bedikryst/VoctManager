@@ -22,6 +22,7 @@ a Piece has no status of its own. See [_aggregate_ingestion_status].
 import json
 from collections.abc import Mapping
 from typing import Any, cast
+from uuid import UUID
 
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -50,7 +51,7 @@ from .models import (
 )
 from .score_protection import can_export as edition_can_export
 from .score_protection import user_is_manager
-from .services.voice_scope import voice_scope
+from .services.voice_scope import scoped_to_edition, voice_scope
 
 
 def _edition_can_export(obj: "ScoreEdition", context: Mapping[str, Any]) -> bool:
@@ -190,9 +191,29 @@ class ComposerSerializer(serializers.ModelSerializer):
         return self.get_pieces_count(obj) == 0
 
 
-def _piece_requirement_rows(piece: Piece) -> list[PieceVoiceRequirement]:
-    """Every divisi row of one piece, from the prefetch when there is one."""
-    return list(piece.voice_requirements.all())
+def _piece_naming_scope(
+    piece: Piece,
+    edition_id: UUID | None,
+    own_code: str | None = None,
+) -> set[str]:
+    """Every line a reader of this piece sees at once, inside one arrangement.
+
+    Divisi rows AND practice tracks, because the Archive prints them side by
+    side: a requirement badge reading "Tenor" beside a track badge reading
+    "Tenor 2" is exactly the contradiction the naming rule exists to prevent.
+    The call sheet and the singer's materials compose their scope the same way,
+    so one part never reads two ways across surfaces.
+
+    Both lists come from the prefetch when the caller set one up.
+    """
+    codes = voice_scope(list(piece.voice_requirements.all()), edition_id)
+    codes.update(
+        track.voice_part
+        for track in scoped_to_edition(list(piece.tracks.all()), edition_id)
+    )
+    if own_code:
+        codes.add(own_code)
+    return codes
 
 
 class TrackSerializer(serializers.ModelSerializer):
@@ -216,10 +237,9 @@ class TrackSerializer(serializers.ModelSerializer):
     def get_voice_part_display(self, obj: Track) -> str:
         """Named inside the arrangement the track belongs to: a guide track for
         a piece with one tenor line is "Tenor", not "Tenor 1"."""
-        rows = _piece_requirement_rows(obj.piece)
         return voice_line_label(
             obj.voice_part,
-            voice_scope(rows, obj.edition_id, extra_codes=[obj.voice_part]),
+            _piece_naming_scope(obj.piece, obj.edition_id, obj.voice_part),
         )
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -247,8 +267,10 @@ class PieceVoiceRequirementSerializer(serializers.ModelSerializer):
         """Each layer names itself: a row is read against the other rows of its
         own arrangement, so an edition in unison prints "Tenor" while a
         three-part sibling edition keeps "Tenor 1"."""
-        rows = _piece_requirement_rows(obj.piece)
-        return voice_line_label(obj.voice_line, voice_scope(rows, obj.edition_id))
+        return voice_line_label(
+            obj.voice_line,
+            _piece_naming_scope(obj.piece, obj.edition_id, obj.voice_line),
+        )
 
 
 # ===========================================================================

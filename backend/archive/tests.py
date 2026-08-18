@@ -978,3 +978,21 @@ class TrackUploadEndpointTests(APITestCase):
         response = self._upload(description="od taktu 34, tempo 90")
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data["description"], "od taktu 34, tempo 90")
+
+    def test_a_take_on_an_undeclared_line_renames_the_whole_card(self) -> None:
+        """Requirements and tracks are printed side by side, so they share one
+        scope: a take sitting on T2 divides the tenors for the divisi badge too,
+        rather than leaving "Tenor" next to "Tenor 2" on one screen."""
+        Track.objects.create(
+            piece=self.piece, voice_part="T2", audio_file="audio_tracks/t2.mp3",
+        )
+        with override_language("en"):
+            response = self.client.get(f"/api/pieces/{self.piece.id}/")
+            self.assertEqual(response.status_code, 200)
+            requirement = response.data["voice_requirements_read"][0]
+            track_labels = {
+                track["voice_part"]: track["voice_part_display"]
+                for track in response.data["tracks"]
+            }
+        self.assertEqual(requirement["voice_line_display"], "Tenor 1")
+        self.assertEqual(track_labels, {"T2": "Tenor 2"})

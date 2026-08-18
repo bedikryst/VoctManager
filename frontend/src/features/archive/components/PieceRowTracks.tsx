@@ -30,6 +30,7 @@ import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { useVoiceLines } from "@/shared/api/options.queries";
 import { collapseVoiceLabels } from "@/shared/lib/voiceLabels";
 
+import { scopedToEdition } from "../constants/divisiScope";
 import { getPiecePdfLinks } from "../constants/piecePdfs";
 import type { EnrichedPiece } from "../types/archive.dto";
 import {
@@ -82,24 +83,24 @@ export const PieceRowTracks = ({
     // reads worse than the server's own display — so wait for it to land.
     if (voiceLines.length === 0) return new Map<string, Record<string, string>>();
     const requirements = piece.voice_requirements_read ?? [];
-    const layers = new Map<string, string[]>();
-    for (const track of tracks) {
-      const key = track.edition ?? "";
-      const scope = [
-        ...requirements
-          .filter((r) => (r.edition ?? "") === key)
-          .map((r) => String(r.voice_line)),
-        ...tracks
-          .filter((other) => (other.edition ?? "") === key)
-          .map((other) => String(other.voice_part)),
-      ];
-      layers.set(key, scope);
-    }
+    const keys = new Set(tracks.map((track) => track.edition ?? ""));
     return new Map(
-      Array.from(layers, ([key, scope]) => [
-        key,
-        collapseVoiceLabels(scope, voiceLines, t),
-      ]),
+      Array.from(keys, (key) => {
+        const scope = [
+          // Through `scopedToEdition`, exactly as the server resolves it: an
+          // edition that declares no divisi of its own is read against the
+          // piece-wide layer, never against its own takes alone. Filtering the
+          // rows by hand here would name a lone take "Tenor" while the singer's
+          // materials — which do fall back — say "Tenor 1".
+          ...scopedToEdition(requirements, key || null).map((requirement) =>
+            String(requirement.voice_line),
+          ),
+          ...tracks
+            .filter((other) => (other.edition ?? "") === key)
+            .map((other) => String(other.voice_part)),
+        ];
+        return [key, collapseVoiceLabels(scope, voiceLines, t)] as const;
+      }),
     );
   }, [piece.voice_requirements_read, tracks, voiceLines, t]);
 

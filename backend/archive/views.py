@@ -338,13 +338,13 @@ class TrackViewSet(viewsets.ModelViewSet):
     """
     Endpoint for managing individual rehearsal audio tracks.
     """
-    # `piece__voice_requirements` is not decoration: a track's label is read
-    # against its arrangement's divisi, so serializing one without it costs a
-    # query per row.
+    # The two prefetches are not decoration: a track's label is read against
+    # its arrangement's divisi AND its sibling takes, so serializing one
+    # without them costs two queries per row.
     queryset = (
         Track.objects
         .select_related('piece')
-        .prefetch_related('piece__voice_requirements')
+        .prefetch_related('piece__voice_requirements', 'piece__tracks')
         .all()
     )
     serializer_class = TrackSerializer
@@ -391,7 +391,7 @@ class PieceVoiceRequirementViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
         PieceVoiceRequirement.objects
         .select_related('piece')
-        .prefetch_related('piece__voice_requirements')
+        .prefetch_related('piece__voice_requirements', 'piece__tracks')
         .all()
     )
     serializer_class = PieceVoiceRequirementSerializer
