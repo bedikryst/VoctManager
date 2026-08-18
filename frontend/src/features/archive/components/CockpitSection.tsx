@@ -17,6 +17,7 @@ import { ChevronRight } from "lucide-react";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
+import { cn } from "@/shared/lib/utils";
 
 /**
  * Label + provenance chip header over a control. It exists because the `Input`
@@ -125,13 +126,25 @@ export const CockpitSection = ({
     );
   }
 
+  // The card carries no padding of its own: the header button owns it instead,
+  // so a closed section IS its button — the whole tile answers a click, not just
+  // the strip of type in the middle of it. That means restating `padding="lg"`
+  // (`p-7 md:p-10`) here, and the two shapes have to keep matching the
+  // non-collapsible branch above.
   return (
-    <GlassCard variant="ethereal" padding="lg" isHoverable={false}>
+    <GlassCard
+      variant="ethereal"
+      padding="none"
+      isHoverable={!open}
+    >
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 text-left"
+        className={cn(
+          "flex w-full items-center gap-3 px-7 pt-7 text-left md:px-10 md:pt-10",
+          open ? "pb-0" : "pb-7 md:pb-10",
+        )}
       >
         {glyph}
         <Eyebrow color="graphite" className="flex-1">
@@ -154,7 +167,7 @@ export const CockpitSection = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="mt-4"
+            className="mt-4 px-7 pb-7 md:px-10 md:pb-10"
           >
             {children}
           </motion.div>

@@ -39,6 +39,7 @@ import { EditionStatusBadge } from "@/shared/ui/composites/repertoire";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import { hasPdf } from "../constants/piecePdfs";
 import { getArchiveEpochOptions } from "../constants/archiveEpochs";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { cn } from "@/shared/lib/utils";
 
 import { useUpdatePiece } from "../api/archive.queries";
@@ -202,12 +203,7 @@ export const PieceRow = ({
         role="button"
         tabIndex={0}
         onClick={() => setIsExpanded((v) => !v)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setIsExpanded((v) => !v);
-          }
-        }}
+        onKeyDown={onActivate(() => setIsExpanded((v) => !v))}
         className={cn(
           "group flex w-full cursor-pointer items-start gap-3 px-4 py-3 md:items-center",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset",
@@ -216,15 +212,17 @@ export const PieceRow = ({
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-2">
-            <div onClick={(event) => event.stopPropagation()}>
-              <InlineEditable
-                value={piece.title}
-                onSave={(next) => patch("title", next)}
-                ariaLabel={t("archive.row.edit_title", "Tytuł")}
-                variant="display"
-                placeholder={t("archive.row.title_placeholder", "Tytuł utworu")}
-              />
-            </div>
+            {/* No stopPropagation wrapper anywhere in this row: `InlineEditable`
+                already swallows the click on its own control, and a wrapper
+                around it swallowed the whole LINE — the empty space beside a
+                title is the largest target the row offers for expanding it. */}
+            <InlineEditable
+              value={piece.title}
+              onSave={(next) => patch("title", next)}
+              ariaLabel={t("archive.row.edit_title", "Tytuł")}
+              variant="display"
+              placeholder={t("archive.row.title_placeholder", "Tytuł utworu")}
+            />
             {epochLabel && (
               <Eyebrow
                 color="muted"
@@ -234,10 +232,7 @@ export const PieceRow = ({
               </Eyebrow>
             )}
           </div>
-          <div
-            className="mt-0.5 flex items-baseline gap-1.5"
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className="mt-0.5 flex items-baseline gap-1.5">
             <Text size="xs" color="graphite" className="truncate">
               {composer}
             </Text>
@@ -300,15 +295,13 @@ export const PieceRow = ({
         {/* Intrinsic facts — voicing, duration, tracks: plain typography, no chip chrome */}
         <div className="hidden shrink-0 items-baseline gap-3 md:flex">
           {piece.voicing && (
-            <span onClick={(event) => event.stopPropagation()}>
-              <InlineEditable
-                value={piece.voicing}
-                onSave={(next) => patch("voicing", next)}
-                ariaLabel={t("archive.row.edit_voicing", "Obsada")}
-                variant="subtle"
-                placeholder="SATB"
-              />
-            </span>
+            <InlineEditable
+              value={piece.voicing}
+              onSave={(next) => patch("voicing", next)}
+              ariaLabel={t("archive.row.edit_voicing", "Obsada")}
+              variant="subtle"
+              placeholder="SATB"
+            />
           )}
           {duration && (
             <Caption color="muted" className="inline-flex items-center gap-1 tabular-nums">

@@ -32,6 +32,7 @@ import {
 
 import { toastApiError } from "@/shared/api/errors";
 import type { Project } from "@/shared/types";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -147,12 +148,7 @@ export const ProjectRow = ({
       role="button"
       tabIndex={0}
       onClick={open}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          open();
-        }
-      }}
+      onKeyDown={onActivate(open)}
       aria-label={t("projects.card.open", "Otwórz projekt {{title}}", {
         title: project.title,
       })}

@@ -26,6 +26,7 @@ import { Checkbox } from "@/shared/ui/primitives/Checkbox";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 import { InlineEditable } from "@/shared/ui/primitives/InlineEditable";
 import type { Composer } from "@/shared/types";
+import { onActivate } from "@/shared/lib/dom/a11y";
 import { cn } from "@/shared/lib/utils";
 
 import { useUpdateComposer } from "../api/archive.queries";
@@ -135,21 +136,16 @@ export const ComposerRow = ({
         role="button"
         tabIndex={0}
         onClick={() => setIsExpanded((v) => !v)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            setIsExpanded((v) => !v);
-          }
-        }}
+        onKeyDown={onActivate(() => setIsExpanded((v) => !v))}
         className="group flex w-full cursor-pointer items-start gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 focus-visible:ring-inset md:items-center"
         aria-expanded={isExpanded}
       >
-        {/* Bulk-select checkbox */}
+        {/* Bulk-select checkbox. The wrapper only keeps the click off the row —
+            selecting is the checkbox's own `onChange`, and calling it from here
+            as well toggled the same box twice per click, which is a box that
+            never changes. */}
         <span
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleSelected(String(composer.id));
-          }}
+          onClick={(event) => event.stopPropagation()}
           className="flex shrink-0 items-center"
         >
           <Checkbox
@@ -186,11 +182,12 @@ export const ComposerRow = ({
 
         {/* Name + lifespan + nationality */}
         <div className="min-w-0 flex-1">
+          {/* No stopPropagation wrappers here: `InlineEditable` already swallows
+              the click on its own control, and a wrapper around it swallowed the
+              whole line — the empty space beside a name is the largest target
+              the row offers for expanding it. */}
           <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-            <span
-              className="inline-flex items-baseline"
-              onClick={(event) => event.stopPropagation()}
-            >
+            <span className="inline-flex items-baseline">
               <InlineEditable
                 value={composer.last_name}
                 onSave={(next) => patch("last_name", next)}
@@ -201,19 +198,14 @@ export const ComposerRow = ({
                 ,
               </Text>
             </span>
-            <div onClick={(event) => event.stopPropagation()}>
-              <InlineEditable
-                value={composer.first_name ?? ""}
-                onSave={(next) => patch("first_name", next)}
-                ariaLabel={t("archive.composer_row.edit_first", "Imię")}
-                emptyDisplay={t("archive.composer_row.first_empty", "imię?")}
-              />
-            </div>
+            <InlineEditable
+              value={composer.first_name ?? ""}
+              onSave={(next) => patch("first_name", next)}
+              ariaLabel={t("archive.composer_row.edit_first", "Imię")}
+              emptyDisplay={t("archive.composer_row.first_empty", "imię?")}
+            />
           </div>
-          <div
-            className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
-            onClick={(event) => event.stopPropagation()}
-          >
+          <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
             <InlineEditable
               value={composer.birth_year ?? ""}
               onSave={(next) => patch("birth_year", next)}
