@@ -556,6 +556,19 @@ class CollaboratorSerializer(CollaboratorBasicSerializer):
         model = Collaborator
         fields = '__all__'
 
+    def to_internal_value(self, data: Any) -> Any:
+        """Fold a blank e-mail into NULL, the column's single spelling of "absent".
+
+        The crew form always sends a string, so an untouched field arrives as
+        ''. Left alone it would be stored as a value — one that every further
+        contactless crew member would then repeat. Duck-typed rather than
+        isinstance'd on Mapping: a multipart payload is a QueryDict, whose
+        `copy()` is what keeps the remaining keys intact."""
+        if hasattr(data, 'get') and data.get('email') == '':
+            data = data.copy()
+            data['email'] = None
+        return super().to_internal_value(data)
+
 class CrewAssignmentBasicSerializer(serializers.ModelSerializer):
     """
     Crew booking without the financial payload. Surfaces the collaborator's

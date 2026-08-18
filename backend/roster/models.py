@@ -750,7 +750,10 @@ class Collaborator(EnterpriseBaseModel):
 
     first_name = models.CharField(max_length=50, verbose_name=_("First Name"))
     last_name = models.CharField(max_length=50, verbose_name=_("Last Name"))
-    email = models.EmailField(blank=True, null=True, verbose_name=_("Email")) # Removed unique=True
+    # Optional: a driver or a stagehand is often reachable by phone only. An
+    # absent address is stored as NULL (the serializer folds blank into it), so
+    # that "no e-mail" is one value the uniqueness rule below can ignore.
+    email = models.EmailField(blank=True, null=True, verbose_name=_("Email"))
     # Same width as every other phone field in the project: a real number written
     # with a country code and separators does not fit in 15 characters.
     phone_number = models.CharField(max_length=32, blank=True, verbose_name=_("Phone"))
@@ -761,9 +764,20 @@ class Collaborator(EnterpriseBaseModel):
         verbose_name = _("Collaborator (Crew)")
         verbose_name_plural = _("Collaborators")
         constraints = [
+            # Only a real address is a shared identity worth rejecting a duplicate
+            # over — an address-less crew member must be storable any number of
+            # times. Blank is excluded alongside NULL because Postgres treats ''
+            # as a value (NULLs never collide, '' does), and because DRF derives a
+            # UniqueValidator from this very condition: a condition covering ''
+            # rejects the second contactless collaborator with a spurious
+            # "already exists" long before the database is asked.
             models.UniqueConstraint(
                 fields=['email'],
-                condition=models.Q(is_deleted=False) & models.Q(email__isnull=False),
+                condition=(
+                    models.Q(is_deleted=False)
+                    & models.Q(email__isnull=False)
+                    & ~models.Q(email='')
+                ),
                 name='unique_active_collaborator_email'
             )
         ]
