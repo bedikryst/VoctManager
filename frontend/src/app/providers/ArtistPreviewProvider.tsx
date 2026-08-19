@@ -44,6 +44,35 @@ export interface ArtistPreviewState {
   artist: PreviewArtistIdentity | null;
 }
 
+/**
+ * Where the preview keeps its own state. The surface being shown and the piece
+ * being read ride in the query string rather than in the path: the preview is
+ * ONE route, and a nested route would remount the identity bar and the gate
+ * query every time the manager opened a song.
+ */
+export const PREVIEW_TAB_PARAM = "tab";
+export const PREVIEW_PROJECT_PARAM = "project";
+export const PREVIEW_PIECE_PARAM = "piece";
+
+/** The preview's songbook — where a previewed piece goes back to. */
+export const previewSongbookPath = (artistId: string): string =>
+  `/panel/artists/${artistId}/preview?${PREVIEW_TAB_PARAM}=materials`;
+
+/**
+ * One piece of somebody's songbook, read inside the preview. A row in a
+ * member's songbook must never lead to `/panel/materials/…`: that is the
+ * MANAGER's own copy of the same piece, with their casting, their guidelines
+ * and their readiness on it.
+ */
+export const previewPiecePath = (
+  artistId: string,
+  projectId: string,
+  pieceId: string,
+): string =>
+  `${previewSongbookPath(artistId)}` +
+  `&${PREVIEW_PROJECT_PARAM}=${encodeURIComponent(projectId)}` +
+  `&${PREVIEW_PIECE_PARAM}=${encodeURIComponent(pieceId)}`;
+
 const RESTING_STATE: ArtistPreviewState = { isPreview: false, artist: null };
 
 const ArtistPreviewContext = createContext<ArtistPreviewState>(RESTING_STATE);

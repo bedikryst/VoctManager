@@ -18,6 +18,12 @@
  * person's rehearsal tracks after the manager has left the preview is a docked
  * control with nobody's session behind it.
  *
+ * The Songbook also has a second level, and it stays inside the preview: a piece
+ * named in the query string renders `PiecePage` in place of the list, since the
+ * singer's own part, the conductor's note to them, the sung text and the divisi
+ * are on that page and on no other. Its controls go inert there; the tabs above
+ * it drop the parameters, so a return to the songbook is a return to the list.
+ *
  * Gate: one query — the schedule read-model with `?artist=` — decides whether
  * there is a view at all. Every one of the five endpoints passes through the
  * same `core/preview.py::resolve_preview_target`, so they refuse or admit
@@ -35,6 +41,9 @@ import { BookMarked, CalendarClock, LayoutDashboard, Music2 } from "lucide-react
 
 import {
   ArtistPreviewProvider,
+  PREVIEW_PIECE_PARAM,
+  PREVIEW_PROJECT_PARAM,
+  PREVIEW_TAB_PARAM,
   type PreviewArtistIdentity,
 } from "@/app/providers/ArtistPreviewProvider";
 import { artistKeys } from "@/features/artists/api/artist.queries";
@@ -45,6 +54,7 @@ import { PracticePlayerProvider } from "@/features/materials/player/PracticePlay
 import ArtistDashboard from "@/features/dashboard/ArtistDashboard";
 import Schedule from "@/features/schedule/Schedule";
 import { Materials } from "@/features/materials/Materials";
+import PiecePage from "@/features/materials/PiecePage";
 import ChoristerHubPage from "@/features/chorister-hub/ChoristerHubPage";
 
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -141,12 +151,26 @@ const ArtistPreviewShell = ({
   // the surface being discussed. `replace` keeps the four tabs out of the
   // history stack — Back belongs to the roster the manager came from.
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
+  const tabParam = searchParams.get(PREVIEW_TAB_PARAM);
   const tab: PreviewTab = isPreviewTab(tabParam) ? tabParam : "desk";
+
+  // The songbook's second level. It is a PUSH, unlike the tabs: opening a song
+  // is the one move here a manager expects Back to undo, and it lands on the
+  // songbook rather than on the roster.
+  const previewProjectId = searchParams.get(PREVIEW_PROJECT_PARAM);
+  const previewPieceId = searchParams.get(PREVIEW_PIECE_PARAM);
+  const openPiece =
+    tab === "materials" && previewProjectId && previewPieceId
+      ? { projectId: previewProjectId, pieceId: previewPieceId }
+      : null;
 
   const handleTabChange = (next: PreviewTab): void => {
     const params = new URLSearchParams(searchParams);
-    params.set("tab", next);
+    params.set(PREVIEW_TAB_PARAM, next);
+    // Leaving the songbook closes the song with it — kept, the parameters
+    // would reopen it the moment the manager came back to this tab.
+    params.delete(PREVIEW_PROJECT_PARAM);
+    params.delete(PREVIEW_PIECE_PARAM);
     setSearchParams(params, { replace: true });
   };
 
@@ -212,7 +236,14 @@ const ArtistPreviewShell = ({
               {tab === "schedule" && <Schedule />}
               {tab === "materials" && (
                 <PracticePlayerProvider>
-                  <Materials />
+                  {openPiece ? (
+                    <PiecePage
+                      projectId={openPiece.projectId}
+                      pieceId={openPiece.pieceId}
+                    />
+                  ) : (
+                    <Materials />
+                  )}
                 </PracticePlayerProvider>
               )}
               {tab === "card" && <ChoristerHubPage />}

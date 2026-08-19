@@ -2578,6 +2578,7 @@
       "pitch_section": "Diapason",
       "readiness_hint": "Votre note personnelle — personne d'autre ne la voit. Cochez ce que vous avez déjà travaillé.",
       "readiness_section": "Votre préparation",
+      "readiness_withheld": "Masquée — seul le choriste la voit.",
       "reference_section": "Enregistrements de référence",
       "score_section": "Partition",
       "tab_cast": "Distribution",
@@ -4928,7 +4929,7 @@
         "readiness": "La préparation des parties — nous avons promis au choriste que personne d'autre ne voit cette note. L'aperçu affiche « masquée » à sa place.",
         "messages": "Ses messages 1:1 — les conversations sont privées, y compris pour un manager. C'est pourquoi il n'y a pas d'onglet Messages ici.",
         "notifications": "Sa boîte de notifications — le compteur appartient au compte qui la lit.",
-        "controls": "Aucun bouton n'est actionnable ici : présence, documents et téléchargement hors ligne restent affichés et ne font rien."
+        "controls": "Aucun bouton n'enregistre ni n'ouvre de document ici : présence, documents, partitions et téléchargement hors ligne restent affichés et ne font rien. Seules les vues s'ouvrent — les onglets et une pièce du recueil."
       }
     }
   }

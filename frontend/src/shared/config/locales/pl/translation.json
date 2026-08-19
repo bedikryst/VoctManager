@@ -2588,6 +2588,7 @@
       "pitch_section": "Kamerton",
       "readiness_hint": "Twoja prywatna notatka — nikt poza Tobą jej nie widzi. Zaznaczaj, co masz już przećwiczone.",
       "readiness_section": "Twoja gotowość",
+      "readiness_withheld": "Ukryta — widzi ją tylko chórzysta.",
       "reference_section": "Nagrania referencyjne",
       "score_section": "Nuty",
       "tab_cast": "Obsada",
@@ -4960,7 +4961,7 @@
         "readiness": "Gotowości partii — obiecaliśmy chórzyście, że tej notatki nie widzi nikt poza nim. Podgląd pokazuje w jej miejscu „ukryta”.",
         "messages": "Wiadomości 1:1 — rozmowy są prywatne, także przed menedżerem. Dlatego nie ma tu zakładki Wiadomości.",
         "notifications": "Skrzynki powiadomień — licznik należy do konta, które ją czyta.",
-        "controls": "Żadnego przycisku nie da się tu nacisnąć: obecność, dokumenty i pobieranie offline zostają na ekranie, ale nie działają."
+        "controls": "Żaden przycisk tu nie zapisuje i nie otwiera dokumentu: obecność, dokumenty, nuty i pobieranie offline zostają na ekranie, ale nie działają. Otwierają się tylko widoki — zakładki i utwory w śpiewniku."
       }
     }
   }

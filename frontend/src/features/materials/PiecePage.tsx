@@ -7,6 +7,14 @@
  * On a phone the surface is split into Ćwicz / Tekst / Obsada tabs to kill the
  * scroll; from `lg:` up everything fans into two columns. Deep-linkable from
  * schedule and rehearsal mode.
+ *
+ * The manager's member preview renders this same page from its own query
+ * string, which is why the ids are also accepted as props. There every control
+ * is inert and nothing but the reading survives: each of them resolves from the
+ * CALLER, so a score would open under the manager's watermark and burn a copy
+ * number in the singer's name. What the page is for in a preview is the half of
+ * the songbook that lives nowhere else — the singer's part, the conductor's
+ * note to them, the text and the divisi.
  */
 import React, { useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -14,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
   ArrowLeft,
+  EyeOff,
   FileText,
   KeyRound,
   Languages,
@@ -26,6 +35,11 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import {
+  previewSongbookPath,
+  useArtistPreview,
+} from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { ScoreStandModal } from "@/features/annotations";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -66,13 +80,31 @@ type PieceTab = "practice" | "text" | "cast";
 const pdfFileName = (label: string): string =>
   label.toLowerCase().endsWith(".pdf") ? label : `${label}.pdf`;
 
-export default function PiecePage(): React.JSX.Element {
+interface PiecePageProps {
+  /**
+   * Preview only: the piece is named by the preview's query string instead of
+   * the route path, because the preview is one route carrying four tabs.
+   */
+  projectId?: string;
+  pieceId?: string;
+}
+
+export default function PiecePage({
+  projectId: previewProjectId,
+  pieceId: previewPieceId,
+}: PiecePageProps): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { projectId, pieceId } = useParams<{
-    projectId: string;
-    pieceId: string;
-  }>();
+  const { isPreview, artist: previewArtist } = useArtistPreview();
+  const params = useParams<{ projectId: string; pieceId: string }>();
+  const projectId = previewProjectId ?? params.projectId;
+  const pieceId = previewPieceId ?? params.pieceId;
+
+  /** Back leads to the songbook the reader came from — a preview has its own. */
+  const songbookPath =
+    isPreview && previewArtist
+      ? previewSongbookPath(previewArtist.id)
+      : "/panel/materials";
 
   const { isLoading, filteredGroups } = useMaterialsData("", !!user);
   const readinessMutation = useSetPieceReadiness();
@@ -105,7 +137,7 @@ export default function PiecePage(): React.JSX.Element {
             )}
             actions={
               <Button variant="secondary" asChild>
-                <Link to="/panel/materials">
+                <Link to={songbookPath}>
                   {t("materials.piece_page.back_to_songbook", "Wróć do śpiewnika")}
                 </Link>
               </Button>
@@ -137,12 +169,17 @@ export default function PiecePage(): React.JSX.Element {
     : "";
 
   // A conductor views their own project's materials but has no participation to
-  // self-report against — the readiness console is a singer-only affordance.
-  // A withheld readiness (`null`, what a manager's preview is served) rules it
-  // out for the same reason from the other side: there is no current value to
-  // put in the control, and NOT_STARTED would be an answer nobody gave.
-  const reportableReadiness: MaterialsReadinessStatus | null =
-    !group.isConducting && group.participationId ? piece.my_readiness : null;
+  // self-report against — the readiness console is a singer-only affordance, so
+  // the slot itself is absent for them, in a preview too.
+  const hasReadinessSlot = !group.isConducting && Boolean(group.participationId);
+  // A withheld readiness (`null`, what a manager's preview is served) empties
+  // the control from the other side: there is no current value to put in it,
+  // and NOT_STARTED would be an answer nobody gave. The slot still states the
+  // withholding rather than vanishing — a section that is simply gone reads as
+  // "this person has no such control".
+  const reportableReadiness: MaterialsReadinessStatus | null = hasReadinessSlot
+    ? piece.my_readiness
+    : null;
 
   const handleReadinessChange = (status: MaterialsReadinessStatus) => {
     if (!group.participationId) return;
@@ -173,7 +210,7 @@ export default function PiecePage(): React.JSX.Element {
         {/* ── breadcrumb / context ─────────────────────────────────── */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-5">
           <Link
-            to="/panel/materials"
+            to={songbookPath}
             className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 -ml-2 text-ethereal-graphite transition-colors hover:bg-ethereal-marble/40 hover:text-ethereal-ink"
           >
             <ArrowLeft size={14} aria-hidden="true" />
@@ -298,7 +335,10 @@ export default function PiecePage(): React.JSX.Element {
                 {t("materials.piece_page.score_section", "Nuty")}
               </SectionLabel>
               {pdfLinks.length > 0 ? (
-                <div className="flex flex-col gap-2">
+                <div
+                  inert={isPreview}
+                  className={cn("flex flex-col gap-2", isPreview && INERT_SURFACE)}
+                >
                   <button
                     type="button"
                     onClick={() => setOpenEdition(pdfLinks[0])}
@@ -357,7 +397,12 @@ export default function PiecePage(): React.JSX.Element {
                     <SectionLabel icon={<Music2 size={13} />}>
                       {t("materials.piece_page.mixer_section", "Konsola ćwiczeń")}
                     </SectionLabel>
-                    <VoiceMixerPanel piece={piece} projectId={group.project.id} />
+                    <div
+                      inert={isPreview}
+                      className={cn(isPreview && INERT_SURFACE)}
+                    >
+                      <VoiceMixerPanel piece={piece} projectId={group.project.id} />
+                    </div>
                     {/* The conductor's notes on the takes themselves — where a
                         track starts, what tempo it sits at. Listed under the
                         mixer rather than crammed into its rows, which are a
@@ -392,7 +437,13 @@ export default function PiecePage(): React.JSX.Element {
                     <SectionLabel icon={<Youtube size={13} />}>
                       {t("materials.piece_page.reference_section", "Nagrania referencyjne")}
                     </SectionLabel>
-                    <div className="flex flex-wrap gap-2">
+                    <div
+                      inert={isPreview}
+                      className={cn(
+                        "flex flex-wrap gap-2",
+                        isPreview && INERT_SURFACE,
+                      )}
+                    >
                       {referenceLinks.map((ref, idx) => (
                         <a
                           key={`${ref.platform}-${idx}`}
@@ -448,22 +499,43 @@ export default function PiecePage(): React.JSX.Element {
                   <SectionLabel icon={<KeyRound size={13} />}>
                     {t("materials.piece_page.pitch_section", "Kamerton")}
                   </SectionLabel>
-                  <PitchPipe suggestedTonic={suggestedTonic} />
+                  <div
+                    inert={isPreview}
+                    className={cn(isPreview && INERT_SURFACE)}
+                  >
+                    <PitchPipe suggestedTonic={suggestedTonic} />
+                  </div>
                 </div>
 
                 {/* readiness self-report — singer-only, and private to them:
                     a conductor has no participation to report against, and no
                     surface anywhere reads these rows back as a roll-call */}
-                {reportableReadiness !== null && (
+                {hasReadinessSlot && (
                   <div className={tabVisibility("practice")}>
                     <SectionLabel icon={<User size={13} />}>
                       {t("materials.piece_page.readiness_section", "Twoja gotowość")}
                     </SectionLabel>
-                    <ReadinessControl
-                      value={reportableReadiness}
-                      onChange={handleReadinessChange}
-                      disabled={readinessMutation.isPending}
-                    />
+                    {reportableReadiness !== null ? (
+                      <ReadinessControl
+                        value={reportableReadiness}
+                        onChange={handleReadinessChange}
+                        disabled={readinessMutation.isPending}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2.5 rounded-control border border-dashed border-ethereal-incense/25 bg-ethereal-parchment/40 px-3 py-2.5">
+                        <EyeOff
+                          size={15}
+                          className="shrink-0 text-ethereal-graphite/60"
+                          aria-hidden="true"
+                        />
+                        <Text size="sm" color="muted">
+                          {t(
+                            "materials.piece_page.readiness_withheld",
+                            "Ukryta — widzi ją tylko chórzysta.",
+                          )}
+                        </Text>
+                      </div>
+                    )}
                     <Text size="xs" color="muted" className="mt-2 px-1">
                       {t(
                         "materials.piece_page.readiness_hint",
@@ -519,31 +591,36 @@ export default function PiecePage(): React.JSX.Element {
       </div>
 
       {/* Managers write the shared/conductor layers; choristers get their own
-          private pencil-mark layer on top of the conductor's shared markings. */}
-      <ScoreStandModal
-        isOpen={openEdition !== null}
-        editionId={openEdition?.id ?? null}
-        mode={isManager(user) ? "conductor" : "personal"}
-        title={piece.title}
-        subtitle={openEdition?.label ?? composerName}
-        fileName={openEdition ? pdfFileName(openEdition.label) : undefined}
-        fetchBlob={
-          openEdition
-            ? () => MaterialsService.fetchScoreEditionBlob(openEdition.id)
-            : null
-        }
-        canExport={openEdition?.canExport ?? true}
-        extraOverlay={
-          /* Rehearsal instrument: starting pitches + practice-player remote,
-             available while the score is on the stand. */
-          <RehearsalDock
-            piece={piece}
-            projectId={group.project.id}
-            canEditPitches={isManager(user)}
-          />
-        }
-        onClose={() => setOpenEdition(null)}
-      />
+          private pencil-mark layer on top of the conductor's shared markings.
+          Never mounted in a preview: the openers above are inert, and the stand
+          would be the manager's own — their annotations, their watermark, their
+          copy number logged against the singer's page. */}
+      {!isPreview && (
+        <ScoreStandModal
+          isOpen={openEdition !== null}
+          editionId={openEdition?.id ?? null}
+          mode={isManager(user) ? "conductor" : "personal"}
+          title={piece.title}
+          subtitle={openEdition?.label ?? composerName}
+          fileName={openEdition ? pdfFileName(openEdition.label) : undefined}
+          fetchBlob={
+            openEdition
+              ? () => MaterialsService.fetchScoreEditionBlob(openEdition.id)
+              : null
+          }
+          canExport={openEdition?.canExport ?? true}
+          extraOverlay={
+            /* Rehearsal instrument: starting pitches + practice-player remote,
+               available while the score is on the stand. */
+            <RehearsalDock
+              piece={piece}
+              projectId={group.project.id}
+              canEditPitches={isManager(user)}
+            />
+          }
+          onClose={() => setOpenEdition(null)}
+        />
+      )}
     </PageTransition>
   );
 }

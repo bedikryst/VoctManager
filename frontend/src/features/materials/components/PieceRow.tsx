@@ -11,7 +11,10 @@ import { useTranslation } from "react-i18next";
 import { ChevronRight, FileText, Lock, Play, Square } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import {
+  previewPiecePath,
+  useArtistPreview,
+} from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
@@ -48,12 +51,15 @@ export const PieceRow = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  // Inside a preview this row belongs to somebody else's screen. Opening the
-  // piece page would leave the preview for the manager's OWN view of it, and
-  // the score modal would layer the manager's conductor annotations over what
-  // the singer actually sees — so both go inert. That the buttons are still
-  // there is the answer to "does Kasia have the score for Sunday".
-  const { isPreview } = useArtistPreview();
+  // Inside a preview this row belongs to somebody else's screen. It still
+  // opens — into the piece as the SINGER is served it, inside the preview —
+  // because half of what they are given (their part, the conductor's note to
+  // them, the text, the divisi) lives nowhere else. The quick actions do not:
+  // the score modal would layer the manager's conductor annotations over the
+  // page the singer sees and burn a copy number in their name, and the player
+  // has no docked transport in a preview. That the buttons are still there,
+  // dimmed, is the answer to "does Kasia have the score for Sunday".
+  const { isPreview, artist: previewArtist } = useArtistPreview();
   const { engine, snapshot } = usePracticePlayer();
   const [isScoreOpen, setIsScoreOpen] = useState<boolean>(false);
 
@@ -68,7 +74,11 @@ export const PieceRow = ({
     ? `${piece.composer.first_name || ""} ${piece.composer.last_name}`.trim()
     : t("materials.piece.traditional", "Tradycyjny / Nieznany");
 
-  const piecePath = `/panel/materials/${projectId}/${piece.id}`;
+  const piecePath =
+    isPreview && previewArtist
+      ? previewPiecePath(previewArtist.id, projectId, piece.id)
+      : `/panel/materials/${projectId}/${piece.id}`;
+  const isNavigable = !isPreview || previewArtist !== null;
 
   const handlePlayToggle = (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -86,15 +96,15 @@ export const PieceRow = ({
       variant={isArchived ? "dark" : "ethereal"}
       padding="none"
       isHoverable={false}
-      onClick={isPreview ? undefined : () => navigate(piecePath)}
-      role={isPreview ? undefined : "link"}
-      aria-label={isPreview ? undefined : piece.title}
+      onClick={isNavigable ? () => navigate(piecePath) : undefined}
+      role={isNavigable ? "link" : undefined}
+      aria-label={isNavigable ? piece.title : undefined}
       className={cn(
         "overflow-hidden transition-all duration-300",
-        !isPreview && "cursor-pointer",
+        isNavigable && "cursor-pointer",
         isArchived
           ? "opacity-75"
-          : !isPreview &&
+          : isNavigable &&
               "hover:border-ethereal-gold/40 hover:shadow-glass-ethereal-hover active:scale-[0.995]",
         isThisPieceLoaded && !isArchived && "border-ethereal-sage/40",
       )}
@@ -169,7 +179,7 @@ export const PieceRow = ({
             aria-hidden="true"
           />
         ) : (
-          !isPreview && (
+          isNavigable && (
             <ChevronRight
               size={17}
               className="shrink-0 text-ethereal-graphite/35"

@@ -225,7 +225,7 @@ export const PreviewBoundaries = (): React.JSX.Element => {
             <BoundaryItem>
               {t(
                 "artist_preview.boundaries.from_you.controls",
-                "Żadnego przycisku nie da się tu nacisnąć: obecność, dokumenty i pobieranie offline zostają na ekranie, ale nie działają.",
+                "Żaden przycisk tu nie zapisuje i nie otwiera dokumentu: obecność, dokumenty, nuty i pobieranie offline zostają na ekranie, ale nie działają. Otwierają się tylko widoki — zakładki i utwory w śpiewniku.",
               )}
             </BoundaryItem>
           </BoundaryList>

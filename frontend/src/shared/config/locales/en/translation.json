@@ -2578,6 +2578,7 @@
       "pitch_section": "Pitch pipe",
       "readiness_hint": "Your own private note — nobody else sees it. Mark off what you have already practised.",
       "readiness_section": "Your readiness",
+      "readiness_withheld": "Hidden — only the singer sees it.",
       "reference_section": "Reference recordings",
       "score_section": "Score",
       "tab_cast": "Cast",
@@ -4927,7 +4928,7 @@
         "readiness": "Practice readiness — the singer was promised nobody else sees that note. The preview says “hidden” in its place.",
         "messages": "Their 1:1 messages — conversations are private, from managers too. That is why there is no Messages tab here.",
         "notifications": "Their notifications inbox — the count belongs to the account reading it.",
-        "controls": "No button here can be pressed: attendance, documents and offline download stay on screen and do nothing."
+        "controls": "No button here writes anything or opens a document: attendance, documents, scores and offline download stay on screen and do nothing. Only views open — the tabs, and a song in the songbook."
       }
     }
   }
