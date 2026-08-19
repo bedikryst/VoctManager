@@ -1,6 +1,6 @@
 # Artist preview — "What does Kasia see?" — spec
 
-**Status:** stages 1–4 **done** 2026-08-19 · feature complete, verified
+**Status:** stages 1–6 **done** 2026-08-19 · feature complete, verified
 **Audience of the feature:** the manager and the conductor, answering a question a
 chorister asked them. Never the chorister — nothing about this feature is visible
 to an artist account.
@@ -135,9 +135,10 @@ edition carries the caller's watermark and burns a copy number in
 `ScoreAccessLog`, and `ScoreStandModal` would layer the conductor's annotations
 over the page the singer actually sees. That the button exists is the answer to
 "does Kasia have the score for Sunday"; opening it is the manager's own act and
-belongs to the manager's own surfaces. Same rule retires the row-to-piece-page
-navigation, the four `QuickTile` links, the calendar subscription link and
-`AddToCalendar` (which would file the singer's rehearsal in the manager's diary).
+belongs to the manager's own surfaces. Same rule retires the four `QuickTile`
+links, the calendar subscription link and `AddToCalendar` (which would file the
+singer's rehearsal in the manager's diary). It does **not** retire navigation to
+the piece itself — see 14.
 
 **12. Two widgets are suppressed outright rather than made inert**, because
 neither is a control and both would be lying about the reader. `WelcomeMoment`
@@ -173,6 +174,41 @@ name, face and voice that `ArtistPreviewProvider` carries, and `MembershipCard`
 and the greeting read them from there. Left on the session's user, "Moja Karta"
 would print the manager's face above somebody else's history.
 
+**14. Opening a piece is navigation, not a control — so the songbook row lives.**
+The first iteration killed the row along with its buttons, and that cost the
+preview the half of the songbook that exists nowhere else: the singer's own part
+on this piece, the conductor's note addressed to them, the sung text with its
+IPA and translations, and the divisi they sit in. None of it is reachable from a
+manager surface *as that singer receives it*, which makes "expand the piece" the
+one question the preview could not answer. A row that opens produces no write,
+resolves no document from the caller and sends no request that was not already
+sent — the whole programme arrives in the one materials read-model.
+
+Two rules keep it honest:
+
+- **The row leads into the preview, never out of it.** `previewPiecePath`
+  (`app/providers/ArtistPreviewProvider`) points at
+  `?tab=materials&project=…&piece=…` on the preview's own route;
+  `/panel/materials/:projectId/:pieceId` is the MANAGER's copy of the same
+  piece, carrying their casting, their guidelines and their readiness. The piece
+  rides in the query string rather than in a nested route so the identity bar
+  and the gate query do not remount around it, and it is a **push** where the
+  tabs are a `replace`: opening a song is the one move a manager expects Back to
+  undo, and Back lands on the songbook, not on the roster.
+- **Everything on that page that is a control is inert** — the score openers,
+  the mixer, the reference recordings and the pitch pipe (13b: the practice
+  column dies together, or three dead panels beside one live one read as three
+  broken panels). `ScoreStandModal` is not mounted at all in a preview: the
+  openers above it are dead, and a stand that did open would be the manager's
+  own — their annotations, their watermark, their copy number logged against the
+  singer's page.
+
+The readiness console is the fourth surface to state the withholding rather than
+vanish (see 4): the slot keeps its label and says "ukryta" where the control
+would be, because a section that is simply gone reads as "this person has no
+such control". It stays absent for a member CONDUCTING the project, who has no
+participation to report against and genuinely has no console.
+
 ## Shape
 
 Route: `/panel/artists/:artistId/preview`, inside `ManagerRoute`.
@@ -184,6 +220,11 @@ header identifying whose view this is and that it is read-only, then the four
 artist surfaces as tabs — **Pulpit**, **Harmonogram**, **Materiały**, **Kartoteka** —
 each rendered with the *same components the artist uses*, fed from the preview
 queries. Messages are absent by design, and the "what is hidden" panel says so.
+
+The songbook has a second level inside the tab: `?tab=materials&project=…&piece=…`
+renders `PiecePage` in place of the list, every control on it inert (decision
+14). No further request — the whole programme is already in the materials
+read-model the tab fetched.
 
 ### The transport
 
@@ -250,8 +291,9 @@ Grounded in code, not folklore:
   explicit "hidden" marker, never as an empty state.
 - **Their 1:1 messages** — private by design, including from other managers.
 - **Their notifications inbox.**
-- **Any working control** — attendance, documents and offline download keep their
-  place and do nothing.
+- **Any working control** — attendance, documents, scores and offline download
+  keep their place and do nothing. Views still open: the four tabs, and a song
+  in the songbook (decision 14).
 
 Both lists ship as copy in `artist_preview.boundaries.*` and are rendered by
 `PreviewBoundaries`. Change one and change the other in the same commit: a list
@@ -346,6 +388,20 @@ changed the shell to `text-base fine-pointer:text-sm`. Its frozen legacy block
 is evidence and must never be edited to match — the change is DECLARED instead,
 as `DECIDED.touchTextScale`, merged into the fourteen expectations it touches.
 22/22 green.
+
+**Stage 6 — the songbook's second level (done).** The one thing a manager
+reported as blocked, and the one place the preview was answering less than it
+holds. `previewPiecePath` + `previewSongbookPath` in the provider module (the
+only module both ends already import, so the URL scheme has one owner);
+`PiecePage` accepts the ids as optional props and keeps reading `useParams` on
+its own route; the row in `PieceRow` navigates again — into the preview — while
+its quick actions stay inert; the shell renders the piece in place of the list
+and drops both parameters on any tab change, so leaving the songbook closes the
+song. Score openers, mixer, reference recordings and pitch pipe inert;
+`ScoreStandModal` unmounted; the readiness console keeps its slot and says
+"ukryta". Copy: `materials.piece_page.readiness_withheld` in pl/en/fr, and the
+boundaries sheet's fourth line rewritten in all three — it claimed no button on
+the page could be pressed, which stopped being true the moment a row opened.
 
 ## Not doing
 
