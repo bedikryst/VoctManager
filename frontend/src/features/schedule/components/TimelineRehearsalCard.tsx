@@ -23,6 +23,7 @@ import type {
 import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { AbsenceReportForm } from "./AbsenceReportForm";
 import { AddToCalendar } from "./AddToCalendar";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -152,6 +153,11 @@ export const TimelineRehearsalCard = ({
   // A conductor sees the rehearsal but isn't cast in it — no participation to
   // RSVP against, so the self-attendance controls are withheld.
   const canRsvp = !!event.participationId;
+  // In a preview the RSVP pair stays on screen — the singer has it, and whether
+  // they have answered is half the question being asked — but it must not fire:
+  // a manager may set anybody's attendance, so this tap would record the
+  // singer's absence for real, in their name, from a read-only screen.
+  const { isPreview } = useArtistPreview();
 
   return (
     <motion.div
@@ -271,7 +277,13 @@ export const TimelineRehearsalCard = ({
         {/* ── action buttons — mobile: stacked full-width (no clipping),
              desktop: sidebar inside the expanded panel ─────────────────── */}
         {viewMode === "UPCOMING" && canRsvp && !reportingMode && (
-          <div className="flex flex-col gap-2 px-4 pb-4 pt-0 sm:hidden">
+          <div
+            inert={isPreview}
+            className={cn(
+              "flex flex-col gap-2 px-4 pb-4 pt-0 sm:hidden",
+              isPreview && "opacity-55",
+            )}
+          >
             <RehearsalActions
               fullWidth
               maskedStatus={maskedStatus}
@@ -363,12 +375,21 @@ export const TimelineRehearsalCard = ({
                     <Text size="sm" color="muted" className="mb-3 px-4">
                       {t("schedule.rehearsal.details.materials_desc", "Pobierz nuty PDF i przećwicz swoje partie z odtwarzaczem.")}
                     </Text>
-                    <Button variant="secondary" size="sm" asChild>
-                      <Link to="/panel/materials" className="inline-flex items-center gap-2">
+                    {/* A jump out of the preview would land the manager in
+                        their OWN songbook under the singer's header. */}
+                    {isPreview ? (
+                      <Button variant="secondary" size="sm" inert className="opacity-55">
                         {t("schedule.rehearsal.details.materials_button", "Materiały")}
                         <ArrowRight size={13} aria-hidden="true" />
-                      </Link>
-                    </Button>
+                      </Button>
+                    ) : (
+                      <Button variant="secondary" size="sm" asChild>
+                        <Link to="/panel/materials" className="inline-flex items-center gap-2">
+                          {t("schedule.rehearsal.details.materials_button", "Materiały")}
+                          <ArrowRight size={13} aria-hidden="true" />
+                        </Link>
+                      </Button>
+                    )}
                   </GlassCard>
                 </div>
               </div>
@@ -381,7 +402,13 @@ export const TimelineRehearsalCard = ({
 
               {/* desktop action buttons inside expanded — hidden on mobile (bottom row handles it) */}
               {viewMode === "UPCOMING" && canRsvp && (
-                <div className="hidden sm:flex gap-2 px-6 pb-5 pt-0 justify-end border-t border-ethereal-incense/10">
+                <div
+                  inert={isPreview}
+                  className={cn(
+                    "hidden sm:flex gap-2 px-6 pb-5 pt-0 justify-end border-t border-ethereal-incense/10",
+                    isPreview && "opacity-55",
+                  )}
+                >
                   <RehearsalActions
                     maskedStatus={maskedStatus}
                     currentMaskedStatus={currentMaskedStatus}

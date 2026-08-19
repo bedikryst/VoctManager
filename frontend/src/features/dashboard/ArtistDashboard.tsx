@@ -12,6 +12,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { useArtistDashboardData } from "./hooks/useArtistDashboardData";
 
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -32,6 +33,7 @@ import { WelcomeMoment } from "./components/WelcomeMoment";
 export default function ArtistDashboard(): React.JSX.Element {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { isPreview, artist: previewArtist } = useArtistPreview();
 
   const {
     isLoading,
@@ -43,7 +45,9 @@ export default function ArtistDashboard(): React.JSX.Element {
     handleAbsenceSubmit,
     greeting,
     firstNameVocative,
-  } = useArtistDashboardData(user?.artist_profile_id ?? undefined);
+  } = useArtistDashboardData(
+    (isPreview ? previewArtist?.id : user?.artist_profile_id) ?? undefined,
+  );
 
   if (isLoading) {
     return (
@@ -59,10 +63,16 @@ export default function ArtistDashboard(): React.JSX.Element {
     return <DashboardErrorState onRetry={refetch} />;
   }
 
+  // The vocative comes from the roster row this dashboard is about, so in a
+  // preview it is already the member's — only the fallback has to follow, or
+  // the singer's own home screen would greet them by the manager's name.
+  const plainName = isPreview
+    ? previewArtist?.firstName
+    : user?.first_name;
   const highlight =
     user?.profile?.language === "pl" && firstNameVocative
       ? firstNameVocative
-      : user?.first_name || t("common.artist_generic", "Artysty");
+      : plainName || t("common.artist_generic", "Artysty");
 
   const todayLabel = formatLocalizedDate(
     new Date(),
@@ -90,9 +100,18 @@ export default function ArtistDashboard(): React.JSX.Element {
           titleHighlight={highlight}
         />
 
-        <WelcomeMoment name={highlight} />
-
-        <UnreadMessagesAlert />
+        {/* Neither belongs to a preview. The welcome is a once-ever ceremony
+            whose "seen" flag is written server-side against the CALLER, so
+            opening somebody's view would spend the manager's own first
+            crossing. The unread banner counts the manager's inbox, and 1:1
+            threads are private from managers by design — the preview says so on
+            its own list rather than showing a number that is not theirs. */}
+        {!isPreview && (
+          <>
+            <WelcomeMoment name={highlight} />
+            <UnreadMessagesAlert />
+          </>
+        )}
 
         {nextEvent ? (
           <NextEventHero event={nextEvent} onSubmitReport={handleAbsenceSubmit} />

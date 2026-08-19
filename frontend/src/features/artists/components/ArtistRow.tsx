@@ -16,10 +16,12 @@
  */
 
 import React from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   CheckCircle2,
   ChevronRight,
+  Eye,
   Mail,
   MailWarning,
   MessageSquare,
@@ -234,6 +236,23 @@ export const ArtistRow = React.memo(
 
         {!selectionMode && (
           <div className="flex shrink-0 items-center gap-1">
+            {/* "What does this person see?" — only where there is a view to
+                see. An archived member and one with no account behind them
+                genuinely have none, and both already say so on this row. */}
+            {isActive && hasAccount && (
+              <Link
+                to={`/panel/artists/${artist.id}/preview`}
+                onClick={stop}
+                title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
+                aria-label={t("artists.card.preview_aria", {
+                  defaultValue: "Zobacz, co widzi {{name}}",
+                  name: fullName,
+                })}
+                className="flex h-8 w-8 items-center justify-center rounded-chip text-ethereal-graphite/60 transition-colors hover:bg-ethereal-gold/12 hover:text-ethereal-gold"
+              >
+                <Eye size={14} aria-hidden="true" />
+              </Link>
+            )}
             {accountPending && onResendActivation && (
               <button
                 type="button"

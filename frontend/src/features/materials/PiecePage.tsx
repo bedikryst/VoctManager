@@ -138,7 +138,11 @@ export default function PiecePage(): React.JSX.Element {
 
   // A conductor views their own project's materials but has no participation to
   // self-report against — the readiness console is a singer-only affordance.
-  const canReportReadiness = !group.isConducting && !!group.participationId;
+  // A withheld readiness (`null`, what a manager's preview is served) rules it
+  // out for the same reason from the other side: there is no current value to
+  // put in the control, and NOT_STARTED would be an answer nobody gave.
+  const reportableReadiness: MaterialsReadinessStatus | null =
+    !group.isConducting && group.participationId ? piece.my_readiness : null;
 
   const handleReadinessChange = (status: MaterialsReadinessStatus) => {
     if (!group.participationId) return;
@@ -450,13 +454,13 @@ export default function PiecePage(): React.JSX.Element {
                 {/* readiness self-report — singer-only, and private to them:
                     a conductor has no participation to report against, and no
                     surface anywhere reads these rows back as a roll-call */}
-                {canReportReadiness && (
+                {reportableReadiness !== null && (
                   <div className={tabVisibility("practice")}>
                     <SectionLabel icon={<User size={13} />}>
                       {t("materials.piece_page.readiness_section", "Twoja gotowość")}
                     </SectionLabel>
                     <ReadinessControl
-                      value={piece.my_readiness}
+                      value={reportableReadiness}
                       onChange={handleReadinessChange}
                       disabled={readinessMutation.isPending}
                     />

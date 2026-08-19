@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
 import { toastApiError } from '@/shared/api/errors';
+import { useArtistPreview } from '@/app/providers/ArtistPreviewProvider';
+import { PREVIEW_QUERY_OPTIONS } from '@/shared/api/queryPolicy';
 import { choristerHubKeys } from './chorister-hub.query-keys';
 import { ChoristerHubService } from './chorister-hub.service';
 import type {
@@ -16,26 +18,54 @@ import type {
 const CATEGORIES_STALE = 5 * 60 * 1000;
 const METRICS_STALE = 10 * 60 * 1000;
 
-export const useDocumentCategories = () =>
-  useSuspenseQuery({
-    queryKey: choristerHubKeys.categories.list(),
-    queryFn: ChoristerHubService.getCategories,
+/**
+ * The member a read is about: the caller normally, the previewed member inside
+ * `/panel/artists/:id/preview`. One hook so the three reads below cannot end up
+ * describing two different people on the same card.
+ */
+const usePreviewedArtistId = (): string | null => {
+  const { isPreview, artist } = useArtistPreview();
+  return isPreview ? (artist?.id ?? null) : null;
+};
+
+export const useDocumentCategories = () => {
+  const previewId = usePreviewedArtistId();
+
+  return useSuspenseQuery({
+    queryKey: previewId
+      ? choristerHubKeys.preview.categories(previewId)
+      : choristerHubKeys.categories.list(),
+    queryFn: () => ChoristerHubService.getCategories(previewId ?? undefined),
     staleTime: CATEGORIES_STALE,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
   });
+};
 
-export const useArtistMetrics = () =>
-  useSuspenseQuery({
-    queryKey: choristerHubKeys.artistMetrics.mine(),
-    queryFn: ChoristerHubService.getArtistMetrics,
-    staleTime: METRICS_STALE,
-  });
+export const useArtistMetrics = () => {
+  const previewId = usePreviewedArtistId();
 
-export const useMyEnsemble = () =>
-  useSuspenseQuery({
-    queryKey: choristerHubKeys.myEnsemble.mine(),
-    queryFn: ChoristerHubService.getMyEnsemble,
+  return useSuspenseQuery({
+    queryKey: previewId
+      ? choristerHubKeys.preview.artistMetrics(previewId)
+      : choristerHubKeys.artistMetrics.mine(),
+    queryFn: () => ChoristerHubService.getArtistMetrics(previewId ?? undefined),
     staleTime: METRICS_STALE,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
   });
+};
+
+export const useMyEnsemble = () => {
+  const previewId = usePreviewedArtistId();
+
+  return useSuspenseQuery({
+    queryKey: previewId
+      ? choristerHubKeys.preview.myEnsemble(previewId)
+      : choristerHubKeys.myEnsemble.mine(),
+    queryFn: () => ChoristerHubService.getMyEnsemble(previewId ?? undefined),
+    staleTime: METRICS_STALE,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
+  });
+};
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();

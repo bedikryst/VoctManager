@@ -9,6 +9,8 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
+
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
@@ -95,8 +97,19 @@ export const QuickTile = ({
   className,
 }: QuickTileProps): React.JSX.Element => {
   const body = <TileBody Icon={Icon} accent={accent} label={label} hint={hint} />;
+  const { isPreview } = useArtistPreview();
 
   if (to) {
+    // Inside a preview these four tiles are the singer's routes into their own
+    // surfaces; following one would drop the manager into THEIRS, under the
+    // preview's header. The tile keeps its place and stops being a door.
+    if (isPreview) {
+      return (
+        <span inert className={cn(TILE_BASE, "opacity-55", className)}>
+          {body}
+        </span>
+      );
+    }
     return (
       <Link to={to} className={cn(TILE_BASE, className)}>
         {body}

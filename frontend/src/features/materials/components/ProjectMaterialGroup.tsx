@@ -1,8 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, Briefcase, CalendarDays, Wand2 } from "lucide-react";
+import { Archive, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
 
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
+import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceRow } from "./PieceRow";
@@ -26,6 +27,12 @@ export const ProjectMaterialGroup = ({
   const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
   const ringTone =
     readyPct === 100 ? "sage" : readyPct > 0 ? "gold" : "graphite";
+  // The server withholds a member's practice self-report from a preview, and
+  // sends null rather than NOT_STARTED so the two cannot be confused. The ring
+  // and its caption have to go with it — 0/N here would read as "has not
+  // touched a single piece", which is a claim nobody made.
+  const isReadinessWithheld =
+    total > 0 && group.program.every((item) => item.piece.my_readiness === null);
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -97,21 +104,36 @@ export const ProjectMaterialGroup = ({
           total > 0 && (
             <div className="shrink-0 flex items-center gap-2.5">
               <OfflineDownloadControl group={group} />
-              <Text
-                size="xs"
-                color="muted"
-                className="hidden text-right leading-tight sm:block"
-              >
-                {t("materials.project.readiness_caption", "{{ready}} z {{total}} partii gotowych", {
-                  ready,
-                  total,
-                })}
-              </Text>
-              <CompletionRing value={readyPct} tone={ringTone} size={44}>
-                <span className="text-[11px] font-bold tabular-nums text-ethereal-ink">
-                  {ready}/{total}
-                </span>
-              </CompletionRing>
+              {isReadinessWithheld ? (
+                <Badge
+                  variant="neutral"
+                  icon={<EyeOff size={11} aria-hidden="true" />}
+                  title={t(
+                    "materials.project.readiness_withheld_hint",
+                    "Gotowość partii to prywatna notatka chórzysty — nie pokazujemy jej nikomu innemu.",
+                  )}
+                >
+                  {t("materials.project.readiness_withheld", "Gotowość ukryta")}
+                </Badge>
+              ) : (
+                <>
+                  <Text
+                    size="xs"
+                    color="muted"
+                    className="hidden text-right leading-tight sm:block"
+                  >
+                    {t("materials.project.readiness_caption", "{{ready}} z {{total}} partii gotowych", {
+                      ready,
+                      total,
+                    })}
+                  </Text>
+                  <CompletionRing value={readyPct} tone={ringTone} size={44}>
+                    <span className="text-[11px] font-bold tabular-nums text-ethereal-ink">
+                      {ready}/{total}
+                    </span>
+                  </CompletionRing>
+                </>
+              )}
             </div>
           )
         )}

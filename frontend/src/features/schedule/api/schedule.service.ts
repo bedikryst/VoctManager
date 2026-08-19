@@ -26,10 +26,19 @@ export const ScheduleService = {
    * cast in + rehearsals they are invited to, each carrying their participation
    * and attendance. Replaces the four separate list calls the timeline used to
    * fetch and re-join on the client.
+   *
+   * `previewArtistId` asks for a member's timeline instead of the caller's — a
+   * manager answering "what does Kasia see". The server gates it (403/404/409),
+   * never falls back to the caller's own rows, and only GETs honour it. Must be
+   * called through an arrow: React Query hands the query function its own
+   * context object as the first argument.
    */
-  getScheduleDashboard: async (): Promise<ScheduleDashboardItem[]> => {
+  getScheduleDashboard: async (
+    previewArtistId?: string,
+  ): Promise<ScheduleDashboardItem[]> => {
     const response = await api.get<ScheduleDashboardItem[]>(
       "/api/participations/schedule-dashboard/",
+      previewArtistId ? { params: { artist: previewArtistId } } : undefined,
     );
     return response.data;
   },

@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronRight, FileText, Lock, Play, Square } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { ScoreStandModal } from "@/features/annotations";
@@ -46,6 +47,12 @@ export const PieceRow = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  // Inside a preview this row belongs to somebody else's screen. Opening the
+  // piece page would leave the preview for the manager's OWN view of it, and
+  // the score modal would layer the manager's conductor annotations over what
+  // the singer actually sees — so both go inert. That the buttons are still
+  // there is the answer to "does Kasia have the score for Sunday".
+  const { isPreview } = useArtistPreview();
   const { engine, snapshot } = usePracticePlayer();
   const [isScoreOpen, setIsScoreOpen] = useState<boolean>(false);
 
@@ -78,14 +85,16 @@ export const PieceRow = ({
       variant={isArchived ? "dark" : "ethereal"}
       padding="none"
       isHoverable={false}
-      onClick={() => navigate(piecePath)}
-      role="link"
-      aria-label={piece.title}
+      onClick={isPreview ? undefined : () => navigate(piecePath)}
+      role={isPreview ? undefined : "link"}
+      aria-label={isPreview ? undefined : piece.title}
       className={cn(
-        "cursor-pointer overflow-hidden transition-all duration-300",
+        "overflow-hidden transition-all duration-300",
+        !isPreview && "cursor-pointer",
         isArchived
           ? "opacity-75"
-          : "hover:border-ethereal-gold/40 hover:shadow-glass-ethereal-hover active:scale-[0.995]",
+          : !isPreview &&
+              "hover:border-ethereal-gold/40 hover:shadow-glass-ethereal-hover active:scale-[0.995]",
         isThisPieceLoaded && !isArchived && "border-ethereal-sage/40",
       )}
     >
@@ -146,8 +155,10 @@ export const PieceRow = ({
           </div>
         </div>
 
-        {/* readiness + chevron */}
-        {!isArchived && !hideReadiness && (
+        {/* readiness + chevron. A withheld readiness (null) says nothing here:
+            the group header states it once, and a "hidden" glyph repeated down
+            twelve rows would bury the rows that do carry a mark. */}
+        {!isArchived && !hideReadiness && piece.my_readiness !== null && (
           <ReadinessDot value={piece.my_readiness} />
         )}
         {isArchived ? (
@@ -157,17 +168,25 @@ export const PieceRow = ({
             aria-hidden="true"
           />
         ) : (
-          <ChevronRight
-            size={17}
-            className="shrink-0 text-ethereal-graphite/35"
-            aria-hidden="true"
-          />
+          !isPreview && (
+            <ChevronRight
+              size={17}
+              className="shrink-0 text-ethereal-graphite/35"
+              aria-hidden="true"
+            />
+          )
         )}
       </div>
 
       {/* quick actions — always visible, never hover-gated (touch first) */}
       {!isArchived && (primaryPdf || hasTracks) && (
-        <div className="flex gap-2 border-t border-ethereal-marble/60 bg-ethereal-parchment/25 px-3.5 py-2.5 sm:px-4">
+        <div
+          inert={isPreview}
+          className={cn(
+            "flex gap-2 border-t border-ethereal-marble/60 bg-ethereal-parchment/25 px-3.5 py-2.5 sm:px-4",
+            isPreview && "opacity-55",
+          )}
+        >
           {primaryPdf && (
             <button
               type="button"

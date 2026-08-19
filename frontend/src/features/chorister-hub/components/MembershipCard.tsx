@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { Library, Music, UserRound } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -33,11 +34,25 @@ const Stat = ({
 export const MembershipCard = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { isPreview, artist: previewArtist } = useArtistPreview();
   const { data: ensemble } = useMyEnsemble();
   const { data: metrics } = useArtistMetrics();
 
-  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
-  const avatarUrl = user?.profile?.avatar_url ?? user?.profile?.avatar_thumb_url ?? null;
+  // The figures below already describe the previewed member (the server resolved
+  // them from `?artist=`), so the face and the name have to follow. Left on the
+  // session's own user, this card would put the manager's identity on top of
+  // somebody else's history — the one lie a "what does Kasia see" screen must
+  // never tell.
+  const fullName = isPreview
+    ? (previewArtist?.fullName ?? "")
+    : [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
+  const avatarUrl = isPreview
+    ? (previewArtist?.avatarUrl ?? null)
+    : (user?.profile?.avatar_url ?? user?.profile?.avatar_thumb_url ?? null);
+  // A name is all a preview has — no login to fall back on, and none to show.
+  const identityFallback = isPreview
+    ? fullName
+    : (fullName || user?.username || user?.email);
 
   // ── Curator card (no artist record) ───────────────────────────────────────
   if (!ensemble.me.is_linked) {
@@ -60,7 +75,7 @@ export const MembershipCard = (): React.JSX.Element => {
               {t("chorister_hub.card.curator_role", "Kurator zespołu")}
             </Caption>
             <Heading size="xl" className="truncate tracking-tight">
-              {fullName || user?.username || user?.email}
+              {identityFallback}
             </Heading>
             <Text size="sm" color="muted" className="mt-1 block">
               {t(
@@ -76,7 +91,9 @@ export const MembershipCard = (): React.JSX.Element => {
 
   // ── Personal membership card ──────────────────────────────────────────────
   const voiceLabel =
-    ensemble.me.voice_type_display ?? user?.voice_type_display ?? null;
+    ensemble.me.voice_type_display ??
+    (isPreview ? previewArtist?.voiceLabel : user?.voice_type_display) ??
+    null;
   const hasHistory = metrics.total_concerts > 0;
 
   return (
@@ -103,7 +120,7 @@ export const MembershipCard = (): React.JSX.Element => {
                 : t("chorister_hub.card.member_inactive", "Członek (nieaktywny)")}
             </Caption>
             <Heading size="2xl" className="truncate tracking-tight">
-              {fullName || user?.username || user?.email}
+              {identityFallback}
             </Heading>
             {voiceLabel && (
               <Badge variant="glass" className="mt-2 inline-flex">

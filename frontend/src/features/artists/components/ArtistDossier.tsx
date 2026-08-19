@@ -11,6 +11,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import {
@@ -19,6 +20,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Coins,
+  Eye,
   Layers,
   MailWarning,
   MessageSquare,
@@ -417,14 +419,34 @@ export const ArtistDossier = ({
                   </div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                aria-label={t("common.actions.close", "Zamknij")}
-                className="shrink-0 rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
-              >
-                <X size={20} aria-hidden="true" />
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* The dossier answers "who is this person to us"; the preview
+                    answers "and what does the app tell them". Offered here as
+                    an icon rather than a third footer slab — the footer already
+                    carries the two things a manager does FROM this panel. */}
+                {artist.is_active && artist.user && (
+                  <Link
+                    to={`/panel/artists/${artist.id}/preview`}
+                    onClick={onClose}
+                    title={t("artists.card.preview_title", "Zobacz, co widzi ta osoba")}
+                    aria-label={t("artists.card.preview_aria", {
+                      defaultValue: "Zobacz, co widzi {{name}}",
+                      name: `${artist.first_name} ${artist.last_name}`,
+                    })}
+                    className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-gold/12 hover:text-ethereal-gold active:scale-95"
+                  >
+                    <Eye size={20} aria-hidden="true" />
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={t("common.actions.close", "Zamknij")}
+                  className="rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster p-2.5 text-ethereal-graphite shadow-sm transition-all hover:bg-ethereal-marble hover:text-ethereal-ink active:scale-95"
+                >
+                  <X size={20} aria-hidden="true" />
+                </button>
+              </div>
             </div>
 
             {/* Body */}

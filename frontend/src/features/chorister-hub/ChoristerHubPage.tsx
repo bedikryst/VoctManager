@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { History, Library, Users } from 'lucide-react';
 
 import { useAuth } from '@/app/providers/AuthProvider';
+import { useArtistPreview } from '@/app/providers/ArtistPreviewProvider';
 import { SegmentedTabs } from '@/shared/ui/composites/SegmentedTabs';
 import { ConfirmModal } from '@/shared/ui/composites/ConfirmModal';
 import { PageTransition } from '@/shared/ui/kinematics/PageTransition';
@@ -27,9 +28,14 @@ type Tab = 'team' | 'knowledge' | 'journey';
 export default function ChoristerHubPage(): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // A manager normally gets the curator surface — knowledge-base curation, no
+  // tabs, because they have no concerts and no passport of their own. Inside a
+  // preview that branch is exactly wrong: the question is what the MEMBER's card
+  // looks like, so the chorister surface is the one to render.
+  const { isPreview } = useArtistPreview();
 
   const {
-    isManagerUser,
+    isManagerUser: isCuratorUser,
     isCategoryModalOpen,
     isDocumentModalOpen,
     isPreviewModalOpen,
@@ -54,6 +60,8 @@ export default function ChoristerHubPage(): React.JSX.Element {
     handlePreviewDocument,
     handlePreviewModalClose,
   } = useChoristerHub(user);
+
+  const isManagerUser = isCuratorUser && !isPreview;
 
   // A manager has no concerts and no personal passport, so they get the curator
   // surface only: knowledge-base curation, no tabs. Choristers get the full set.

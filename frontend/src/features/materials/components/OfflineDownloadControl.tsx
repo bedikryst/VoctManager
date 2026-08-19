@@ -12,6 +12,7 @@ import { Check, CloudDownload, Loader2, RotateCw, Trash2, TriangleAlert } from "
 
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
 import {
   downloadProjectForOffline,
@@ -28,6 +29,7 @@ export const OfflineDownloadControl = ({
   group,
 }: OfflineDownloadControlProps): React.JSX.Element | null => {
   const { t } = useTranslation();
+  const { isPreview } = useArtistPreview();
   const projectId = group.project.id;
   const manifest = useOfflineStore((state) => state.manifests[projectId]);
   const progress = useOfflineStore((state) => state.progress[projectId]);
@@ -70,6 +72,25 @@ export const OfflineDownloadControl = ({
 
   // Offline storage needs a service worker — hide the control where unsupported.
   if (!isServiceWorkerSupported()) return null;
+
+  // Inside a preview the three states below would report the MANAGER's own
+  // offline store for this concert, keyed by project alone — "Dostępne offline"
+  // on a screen that is supposed to be the singer's. So the affordance shows in
+  // its resting shape and does nothing: the singer has it, this device is not
+  // the one that gets to fill up with their materials.
+  if (isPreview) {
+    return (
+      <span
+        inert
+        className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-2.5 py-1.5 text-ethereal-graphite opacity-55 shadow-glass-solid"
+      >
+        <CloudDownload size={13} className="text-ethereal-gold" aria-hidden="true" />
+        <Eyebrow color="inherit">
+          {t("offline.download.action", "Pobierz na offline")}
+        </Eyebrow>
+      </span>
+    );
+  }
 
   if (isDownloading) {
     const total = progress?.total ?? 0;

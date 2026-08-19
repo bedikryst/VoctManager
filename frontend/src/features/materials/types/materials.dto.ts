@@ -146,7 +146,14 @@ export interface MaterialsPiece {
   tracks: MaterialsTrack[];
   castings: MaterialsCasting[];
   my_casting: MaterialsCasting | null;
-  my_readiness: MaterialsReadinessStatus;
+  /**
+   * The singer's own practice self-report — and `null` when it is WITHHELD,
+   * which is a different answer from `NOT_STARTED`. The songbook promises the
+   * singer that nobody else sees this, so a manager previewing their view gets
+   * null for every piece. Never render it as zero or as "not started": that
+   * turns a refusal to say into a claim about the person.
+   */
+  my_readiness: MaterialsReadinessStatus | null;
 }
 
 export interface MaterialsProgramItem {

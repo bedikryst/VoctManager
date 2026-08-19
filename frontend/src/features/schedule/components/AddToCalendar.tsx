@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { CalendarPlus, ExternalLink, Download } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import {
@@ -47,6 +48,10 @@ export const AddToCalendar = ({
   layout = "menu",
 }: AddToCalendarProps): React.JSX.Element => {
   const { t } = useTranslation();
+  // Inside a preview both routes would put the singer's rehearsal into the
+  // MANAGER's calendar. Nothing is written server-side, but the control would
+  // act on the wrong person's diary, so it stays visible and does nothing.
+  const { isPreview } = useArtistPreview();
 
   // The UI title drops the "Próba:" prefix (the badge carries it); the calendar
   // entry re-adds it so the event reads clearly outside the app.
@@ -69,7 +74,7 @@ export const AddToCalendar = ({
     const darkBtn =
       "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20";
     return (
-      <div>
+      <div inert={isPreview} className={cn(isPreview && "opacity-55")}>
         <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="mb-1.5 flex items-center gap-1.5">
           <CalendarPlus size={12} aria-hidden="true" />
           {t("schedule.calendar.menu_label", "Zapisz wydarzenie")}
@@ -104,6 +109,26 @@ export const AddToCalendar = ({
     );
   }
 
+  const triggerClasses = cn(
+    tone === "dark" &&
+      "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20",
+    triggerClassName,
+  );
+
+  if (isPreview) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        inert
+        leftIcon={<CalendarPlus size={13} aria-hidden="true" />}
+        className={cn(triggerClasses, "opacity-55")}
+      >
+        {t("schedule.calendar.add", "Dodaj do kalendarza")}
+      </Button>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -111,11 +136,7 @@ export const AddToCalendar = ({
           variant="outline"
           size="sm"
           leftIcon={<CalendarPlus size={13} aria-hidden="true" />}
-          className={cn(
-            tone === "dark" &&
-              "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20",
-            triggerClassName,
-          )}
+          className={triggerClasses}
         >
           {t("schedule.calendar.add", "Dodaj do kalendarza")}
         </Button>

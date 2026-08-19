@@ -12,6 +12,7 @@ import {
   Wrench,
   FileText,
 } from "lucide-react";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -87,6 +88,10 @@ export const TimelineProjectCard = ({
   } = useTimelineProjectCard(proj.id, isExpanded);
 
   const populatedCastings = castings as PopulatedPieceCasting[];
+  // Documents on this card are fetched as the caller — the day sheet is written
+  // per audience and the score carries the caller's watermark — so inside a
+  // preview they stay visible and refuse to open.
+  const { isPreview } = useArtistPreview();
   const readiness = useProjectReadiness(
     proj.id,
     isExpanded && activeSubTab === "SETLIST",
@@ -270,7 +275,10 @@ export const TimelineProjectCard = ({
                     two things you leave with, and neither belongs to Logistyka
                     or Repertuar more than the other. */}
                 <div className="mb-4 flex flex-col gap-4">
-                  <div>
+                  {/* The server writes this sheet for whoever asks for it, so a
+                      manager previewing would open their own production copy
+                      under the singer's name. Present, and inert. */}
+                  <div inert={isPreview} className={cn(isPreview && "opacity-55")}>
                     <Eyebrow
                       color="parchment-muted"
                       className="mb-1.5 flex items-center gap-1.5"
@@ -415,9 +423,13 @@ export const TimelineProjectCard = ({
                           <Button
                             variant="outline"
                             size="sm"
+                            inert={isPreview}
                             onClick={handleOpenScorePdfPreview}
                             leftIcon={<Eye size={11} aria-hidden="true" />}
-                            className="border-ethereal-sage/50 text-ethereal-sage hover:bg-ethereal-sage/20"
+                            className={cn(
+                              "border-ethereal-sage/50 text-ethereal-sage hover:bg-ethereal-sage/20",
+                              isPreview && "opacity-55",
+                            )}
                           >
                             {t(
                               "schedule.card.view_score_pdf",

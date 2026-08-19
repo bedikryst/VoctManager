@@ -6,9 +6,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaterialsService } from "./materials.service";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import {
   PERSONAL_READMODEL_KEYS,
+  PREVIEW_QUERY_OPTIONS,
+  previewQueryKey,
   RECONCILING_REFETCH,
 } from "@/shared/api/queryPolicy";
 import type {
@@ -19,12 +22,25 @@ import type {
 
 export const materialsKeys = {
   dashboard: PERSONAL_READMODEL_KEYS.materialsDashboard,
+  /**
+   * A manager reading a member's songbook. The key above carries no artist
+   * segment at all — it is the caller's own tree — so a preview MUST NOT reuse
+   * it: one cache cannot hold two people's programmes.
+   */
+  preview: (artistId: string) =>
+    previewQueryKey("materials", "dashboard", artistId),
 };
 
-export const useArtistMaterialsDashboard = (enabled = true) =>
-  useQuery({
-    queryKey: materialsKeys.dashboard,
-    queryFn: MaterialsService.getArtistMaterialsDashboard,
+export const useArtistMaterialsDashboard = (enabled = true) => {
+  const { isPreview, artist } = useArtistPreview();
+  const previewId = isPreview ? (artist?.id ?? null) : null;
+
+  return useQuery({
+    queryKey: previewId
+      ? materialsKeys.preview(previewId)
+      : materialsKeys.dashboard,
+    queryFn: () =>
+      MaterialsService.getArtistMaterialsDashboard(previewId ?? undefined),
     enabled,
     // Personal read-model joined server-side from the chorister's participations
     // and castings — both of which a manager changes from another session. Must
@@ -32,7 +48,9 @@ export const useArtistMaterialsDashboard = (enabled = true) =>
     // ages out, or a newly-assigned divisi piece stays hidden.
     ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
   });
+};
 
 interface ReadinessVariables {
   participationId: string;

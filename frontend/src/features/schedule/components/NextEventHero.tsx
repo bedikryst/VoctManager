@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 
 import type { AttendanceStatus, ProgramItem, Project, Rehearsal } from "@/shared/types";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -135,6 +136,12 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const now = useNow();
   const countdown = useCountdownLabel(event.date_time, now);
   const readiness = useProjectReadiness(event.project_id, true);
+  // Both documents below are fetched as the CALLER: the day sheet is written
+  // per audience by the server (a manager would get their own production copy,
+  // not the singer's), and the score carries the caller's watermark. In a
+  // preview they stay on screen — that they exist is the answer — and refuse to
+  // open, rather than opening the wrong person's document under the right name.
+  const { isPreview } = useArtistPreview();
   const [scoreOpen, setScoreOpen] = useState(false);
   const [daySheetOpen, setDaySheetOpen] = useState(false);
 
@@ -291,7 +298,13 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             )}
           </Text>
         )}
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div
+          inert={isPreview}
+          className={cn(
+            "flex shrink-0 flex-wrap items-center gap-2",
+            isPreview && "opacity-55",
+          )}
+        >
           {/* The day sheet leads: it is the only one of these written for this
               singer, and the only one that answers "where do I stand, and
               when". */}
@@ -386,6 +399,9 @@ const RehearsalHero = ({
   const now = useNow();
   const countdown = useCountdownLabel(event.date_time, now);
   const isLive = isRehearsalLive(event, now);
+  // See TimelineRehearsalCard: a manager may write anybody's attendance, so a
+  // live RSVP here would record the singer's answer for real.
+  const { isPreview } = useArtistPreview();
   const [isPitchPipeOpen, setIsPitchPipeOpen] = useState(false);
 
   const {
@@ -485,7 +501,13 @@ const RehearsalHero = ({
         {!reportingMode && (
           <>
           {canRsvp && (
-            <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <div
+              inert={isPreview}
+              className={cn(
+                "mt-4 flex flex-col gap-2 sm:flex-row",
+                isPreview && "opacity-55",
+              )}
+            >
               {currentMaskedStatus !== "PRESENT" && (
                 <Button
                   variant="primary"
@@ -585,7 +607,13 @@ const RehearsalHero = ({
               {t("schedule.hero.program_loading", "Wczytywanie repertuaru...")}
             </Text>
           ) : programItems.length > 0 ? (
-            <div className="flex max-h-[50dvh] flex-col gap-1.5 overflow-y-auto overscroll-contain no-scrollbar">
+            <div
+              inert={isPreview}
+              className={cn(
+                "flex max-h-[50dvh] flex-col gap-1.5 overflow-y-auto overscroll-contain no-scrollbar",
+                isPreview && "opacity-55",
+              )}
+            >
               {[...programItems]
                 .sort((a: ProgramItem, b: ProgramItem) => a.order - b.order)
                 .map((item: ProgramItem) => (

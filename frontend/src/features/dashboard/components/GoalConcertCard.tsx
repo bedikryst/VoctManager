@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight, CalendarClock, Target } from "lucide-react";
 
 import type { Project } from "@/shared/types";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -34,6 +35,7 @@ export const GoalConcertCard = ({
   const { t } = useTranslation();
   const project = event.rawObj as Project;
   const readiness = useProjectReadiness(event.project_id, true);
+  const { isPreview } = useArtistPreview();
 
   const days = daysUntil(event.date_time);
   const countdown =
@@ -79,6 +81,18 @@ export const GoalConcertCard = ({
 
         {readiness.hasData ? (
           <ReadinessRing readiness={readiness} to="/panel/materials" />
+        ) : isPreview ? (
+          // The singer's way into their songbook; from a preview it would open
+          // the manager's own.
+          <span
+            inert
+            className="inline-flex items-center gap-2 self-start rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster px-3.5 py-2.5 opacity-55 shadow-glass-ethereal"
+          >
+            <Text size="sm" weight="semibold">
+              {t("dashboard.artist.goal.open_songbook", "Otwórz Śpiewnik")}
+            </Text>
+            <ArrowRight size={13} aria-hidden="true" className="text-ethereal-graphite/40" />
+          </span>
         ) : (
           <Link
             to="/panel/materials"

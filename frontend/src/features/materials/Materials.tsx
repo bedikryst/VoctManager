@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Archive, CalendarClock, ListChecks, Music, Search } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { useMaterialsData } from "./hooks/useMaterialsData";
 import { ProjectMaterialGroup } from "./components/ProjectMaterialGroup";
 
@@ -23,6 +24,10 @@ type MaterialsView = "upcoming" | "archive";
 export const Materials = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // "Do przećwiczenia" narrows by the singer's own readiness, and a preview is
+  // not given it — the filter would keep every piece and quietly claim none is
+  // practised. A control with nothing to control does not belong on the screen.
+  const { isPreview } = useArtistPreview();
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [view, setView] = useState<MaterialsView>("upcoming");
   const [onlyUnpracticed, setOnlyUnpracticed] = useState<boolean>(false);
@@ -134,7 +139,7 @@ export const Materials = (): React.JSX.Element => {
               ariaLabel={t("materials.dashboard.view_aria", "Widok materiałów")}
             />
 
-            {view === "upcoming" && (
+            {view === "upcoming" && !isPreview && (
               <button
                 type="button"
                 onClick={() => setOnlyUnpracticed((prev) => !prev)}

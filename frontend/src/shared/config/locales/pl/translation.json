@@ -832,7 +832,9 @@
       "sight_reading": "A Vista",
       "sight_reading_title": "Czytanie a vista: {{level}}/5",
       "unverified": "Brak weryfikacji",
-      "voice_range": "Skala Głosu"
+      "voice_range": "Skala Głosu",
+      "preview_title": "Zobacz, co widzi ta osoba",
+      "preview_aria": "Zobacz, co widzi {{name}}"
     },
     "dashboard": {
       "activate_desc": "Artysta odzyska możliwość logowania się do platformy i będzie widoczny w obsadzie nowych projektów.",
@@ -2613,7 +2615,9 @@
       "archived_badge": "Archiwum",
       "conducting_badge": "Prowadzisz",
       "event": "Wydarzenie:",
-      "readiness_caption": "{{ready}} z {{total}} partii gotowych"
+      "readiness_caption": "{{ready}} z {{total}} partii gotowych",
+      "readiness_withheld": "Gotowość ukryta",
+      "readiness_withheld_hint": "Gotowość partii to prywatna notatka chórzysty — nie pokazujemy jej nikomu innemu."
     },
     "readiness": {
       "group_label": "Twoja gotowość",
@@ -4381,7 +4385,8 @@
       "cta": "Ćwicz w Śpiewniku",
       "ready_cta": "Powtórz w Śpiewniku",
       "ready_title": "Partie gotowe",
-      "title": "Gotowość partii"
+      "title": "Gotowość partii",
+      "withheld": "Ukryta — widzi ją tylko chórzysta"
     },
     "rehearsal": {
       "action": {
@@ -4909,6 +4914,25 @@
       "sent": "Dziękuję — zgłoszenie do mnie dotarło.",
       "queued": "Zapisane. Wyślemy je, gdy wróci połączenie.",
       "failed": "Nie udało się wysłać zgłoszenia. Spróbuj jeszcze raz."
+    }
+  },
+  "artist_preview": {
+    "eyebrow": "Podgląd chórzysty",
+    "title": "Co widzi {{name}}",
+    "subtitle": "Dokładnie te dane serwer wysyła na urządzenie tej osoby. Z tego ekranu niczego nie zapiszesz.",
+    "read_only_badge": "Tylko podgląd",
+    "back_to_roster": "Baza Artystów",
+    "loading": "Otwieram widok chórzysty...",
+    "refused": {
+      "title": "Nie ma czego pokazać",
+      "fallback": "Nie udało się otworzyć widoku tej osoby."
+    },
+    "tabs": {
+      "aria_label": "Powierzchnie chórzysty",
+      "desk": "Pulpit",
+      "schedule": "Harmonogram",
+      "materials": "Materiały",
+      "card": "Kartoteka"
     }
   }
 }

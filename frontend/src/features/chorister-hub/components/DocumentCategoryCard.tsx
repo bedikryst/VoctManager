@@ -23,6 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
@@ -82,17 +83,30 @@ const DocumentRow = ({
 }: DocumentRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const isPdf = doc.mime_type === "application/pdf";
+  // A preview answers WHICH documents the member's shelf carries — the row is
+  // the answer. Opening or downloading one is the manager's own act, on the
+  // manager's own device, and belongs to their surfaces rather than to a screen
+  // that only looks.
+  const { isPreview } = useArtistPreview();
   return (
     <GlassCard
       variant="light"
       padding="none"
       isHoverable={false}
-      className="group/file p-4 cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30 transition-colors"
+      className={cn(
+        "group/file p-4 transition-colors",
+        isPreview
+          ? "opacity-70"
+          : "cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30",
+      )}
       contentClassName="flex-row items-stretch justify-between"
-      onClick={() =>
-        isPdf
-          ? onPreview(doc)
-          : window.open(doc.file_url, "_blank", "noopener,noreferrer")
+      onClick={
+        isPreview
+          ? undefined
+          : () =>
+              isPdf
+                ? onPreview(doc)
+                : window.open(doc.file_url, "_blank", "noopener,noreferrer")
       }
     >
       <div className="flex items-start gap-4 overflow-hidden pr-4 flex-1 min-w-0">
@@ -121,7 +135,13 @@ const DocumentRow = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 self-center shrink-0">
+      <div
+        inert={isPreview}
+        className={cn(
+          "flex items-center gap-1 self-center shrink-0",
+          isPreview && "opacity-55",
+        )}
+      >
         {isPdf && (
           <Button
             variant="ghost"

@@ -822,7 +822,9 @@
       "sight_reading": "Déchiffrage",
       "sight_reading_title": "Déchiffrage : {{level}}/5",
       "unverified": "Non vérifié",
-      "voice_range": "Étendue vocale"
+      "voice_range": "Étendue vocale",
+      "preview_title": "Voir ce que voit cette personne",
+      "preview_aria": "Voir ce que voit {{name}}"
     },
     "dashboard": {
       "activate_desc": "L'artiste retrouvera l'accès à la plateforme et redeviendra disponible pour les nouvelles distributions.",
@@ -2603,7 +2605,9 @@
       "archived_badge": "Archives",
       "conducting_badge": "Vous dirigez",
       "event": "Événement :",
-      "readiness_caption": "{{ready}} parties prêtes sur {{total}}"
+      "readiness_caption": "{{ready}} parties prêtes sur {{total}}",
+      "readiness_withheld": "Préparation masquée",
+      "readiness_withheld_hint": "La préparation des parties est la note privée du choriste — nous ne la montrons à personne d'autre."
     },
     "readiness": {
       "group_label": "Votre préparation",
@@ -4351,7 +4355,8 @@
       "cta": "Travailler dans le Recueil",
       "ready_cta": "Réviser dans le Recueil",
       "ready_title": "Parties prêtes",
-      "title": "Préparation des parties"
+      "title": "Préparation des parties",
+      "withheld": "Masquée — seul le choriste la voit"
     },
     "rehearsal": {
       "action": {
@@ -4877,6 +4882,25 @@
       "sent": "Merci — votre signalement m'est bien parvenu.",
       "queued": "Enregistré. Il partira dès le retour de la connexion.",
       "failed": "Le signalement n'a pas pu être envoyé. Réessayez."
+    }
+  },
+  "artist_preview": {
+    "eyebrow": "Aperçu du choriste",
+    "title": "Ce que voit {{name}}",
+    "subtitle": "Ce sont exactement les données que le serveur envoie sur l'appareil de cette personne. Rien ne peut être enregistré depuis cet écran.",
+    "read_only_badge": "Consultation seule",
+    "back_to_roster": "Base artistes",
+    "loading": "Ouverture de la vue du choriste...",
+    "refused": {
+      "title": "Rien à montrer",
+      "fallback": "Impossible d'ouvrir la vue de cette personne."
+    },
+    "tabs": {
+      "aria_label": "Surfaces du choriste",
+      "desk": "Accueil",
+      "schedule": "Calendrier",
+      "materials": "Matériel",
+      "card": "Carte"
     }
   }
 }

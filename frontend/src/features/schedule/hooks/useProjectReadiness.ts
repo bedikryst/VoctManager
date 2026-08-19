@@ -16,6 +16,13 @@ export interface ProjectReadiness {
   pct: number;
   isLoading: boolean;
   hasData: boolean;
+  /**
+   * The programme exists but its readiness was withheld by the server — a
+   * manager previewing a member's view. Callers must say so rather than draw
+   * the ring at 0/N: nought would report "knows nothing" about a person who may
+   * well know every note.
+   */
+  isWithheld: boolean;
 }
 
 export const useProjectReadiness = (
@@ -32,6 +39,11 @@ export const useProjectReadiness = (
     const ready =
       item?.program.filter((pi) => pi.piece.my_readiness === "READY").length ??
       0;
+    // Withheld arrives as null on every piece at once (the query drops the
+    // prefetch entirely), so one null is the whole programme's answer.
+    const isWithheld =
+      total > 0 &&
+      (item?.program.every((pi) => pi.piece.my_readiness === null) ?? false);
 
     return {
       ready,
@@ -39,6 +51,7 @@ export const useProjectReadiness = (
       pct: total > 0 ? Math.round((ready / total) * 100) : 0,
       isLoading: enabled && isLoading,
       hasData: total > 0,
+      isWithheld,
     };
   }, [data, projectId, isLoading, enabled]);
 };

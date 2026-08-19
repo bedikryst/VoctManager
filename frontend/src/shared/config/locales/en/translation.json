@@ -822,7 +822,9 @@
       "sight_reading": "Sight-reading",
       "sight_reading_title": "Sight-reading: {{level}}/5",
       "unverified": "Not verified",
-      "voice_range": "Voice Range"
+      "voice_range": "Voice Range",
+      "preview_title": "See what this person sees",
+      "preview_aria": "See what {{name}} sees"
     },
     "dashboard": {
       "activate_desc": "The artist will regain access to the platform and become available in castings for new projects.",
@@ -2603,7 +2605,9 @@
       "archived_badge": "Archive",
       "conducting_badge": "You conduct",
       "event": "Event:",
-      "readiness_caption": "{{ready}} of {{total}} parts ready"
+      "readiness_caption": "{{ready}} of {{total}} parts ready",
+      "readiness_withheld": "Readiness hidden",
+      "readiness_withheld_hint": "Part readiness is the singer's private note — we show it to nobody else."
     },
     "readiness": {
       "group_label": "Your readiness",
@@ -4350,7 +4354,8 @@
       "cta": "Practice in the Songbook",
       "ready_cta": "Review in the Songbook",
       "ready_title": "Parts ready",
-      "title": "Part readiness"
+      "title": "Part readiness",
+      "withheld": "Hidden — only the singer sees it"
     },
     "rehearsal": {
       "action": {
@@ -4876,6 +4881,25 @@
       "sent": "Thank you — your report reached me.",
       "queued": "Saved. It will be sent as soon as you are back online.",
       "failed": "The report could not be sent. Please try again."
+    }
+  },
+  "artist_preview": {
+    "eyebrow": "Member preview",
+    "title": "What {{name}} sees",
+    "subtitle": "This is exactly what the server sends to that person's device. Nothing can be saved from this screen.",
+    "read_only_badge": "View only",
+    "back_to_roster": "Artist Database",
+    "loading": "Opening the member's view...",
+    "refused": {
+      "title": "Nothing to show",
+      "fallback": "This person's view could not be opened."
+    },
+    "tabs": {
+      "aria_label": "Member surfaces",
+      "desk": "Home",
+      "schedule": "Schedule",
+      "materials": "Materials",
+      "card": "Card"
     }
   }
 }

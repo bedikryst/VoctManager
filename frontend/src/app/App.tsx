@@ -105,6 +105,11 @@ const Rehearsals = lazyWithPreload(
 const ArtistManagement = lazyWithPreload(
   () => import("@pages/panel/ArtistsPage"),
 );
+// Deliberately NOT preloaded with the rest of the manager tree: it pulls in all
+// four artist surfaces at once, and it is opened from one row, occasionally.
+const ArtistPreviewPage = lazyWithPreload(
+  () => import("@features/artist-preview/ArtistPreviewPage"),
+);
 const ProjectDashboard = lazyWithPreload(() =>
   import("@features/projects/ProjectDashboard").then((m) => ({
     default: m.ProjectDashboard,
@@ -312,6 +317,10 @@ export const router = createBrowserRouter(
             <Route path="contracts" element={<Contracts />} />
             <Route path="rehearsals" element={<Rehearsals />} />
             <Route path="artists" element={<ArtistManagement />} />
+            <Route
+              path="artists/:artistId/preview"
+              element={<ArtistPreviewPage />}
+            />
             <Route path="projects" element={<ProjectDashboard />} />
             <Route path="projects/new" element={<ProjectNewPage />} />
             <Route path="projects/:id" element={<ProjectHubLayout />}>

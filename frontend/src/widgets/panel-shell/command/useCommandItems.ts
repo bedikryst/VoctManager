@@ -124,9 +124,12 @@ export const useCommandItems = (
   // Deliberately WITHOUT `RECONCILING_REFETCH` — the palette is a reader mounted
   // for the whole session, and forcing a refetch belongs to the page that owns
   // the read-model.
+  // The arrow is load-bearing: React Query calls `queryFn` with its own context
+  // object, which would land in the service's preview-artist parameter and ask
+  // the server for somebody named `[object Object]`.
   const { data: myMaterials } = useQuery<MaterialsDashboardItem[]>({
     queryKey: materialsKeys.dashboard,
-    queryFn: MaterialsService.getArtistMaterialsDashboard,
+    queryFn: () => MaterialsService.getArtistMaterialsDashboard(),
     enabled: isOpen && isArtist(user),
     staleTime: DATA_STALE_TIME,
   });

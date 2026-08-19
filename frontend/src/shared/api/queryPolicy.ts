@@ -61,6 +61,47 @@ export const SESSION_STATIC_DICTIONARY = {
 } as const;
 
 /**
+ * Root of every cache holding SOMEBODY ELSE'S view — the manager-side preview
+ * of a member's artist surfaces (`?artist=<id>` on the five read-models).
+ *
+ * It is a root of its own rather than a suffix under `PERSONAL_READMODEL_KEYS`,
+ * for two reasons that are both load-bearing. `useUpsertScheduleAttendance`
+ * patches optimistically by PREFIX over `["schedule","dashboard"]`, so a preview
+ * nested under that prefix would be silently rewritten by the manager's own RSVP
+ * made somewhere else entirely — the preview would then show a rehearsal answer
+ * that belongs to the wrong person. And a distinct root makes "never persist
+ * this" a one-line predicate instead of a per-query audit.
+ */
+export const PREVIEW_QUERY_ROOT = "preview";
+
+/** Cache key for one preview read. Always rooted, always keyed by the member. */
+export const previewQueryKey = (
+  ...segments: readonly (string | number)[]
+): readonly string[] =>
+  [PREVIEW_QUERY_ROOT, ...segments.map(String)] as const;
+
+/**
+ * Freshness and retention for a preview read. Spread into every one of them —
+ * one constant is the only way this stays true of all five.
+ *
+ * `persist: false` keeps another person's data out of localStorage: the panel
+ * dehydrates its whole cache for 24h of offline paint, and that store lives on
+ * the manager's device. `gcTime` is short for the same reason — once the manager
+ * leaves the preview there is no case for keeping the member's timeline in
+ * memory for the rest of the day. And `retry: false` because every refusal this
+ * can meet (403, 404, 409) is final and each attempt writes an audit line.
+ */
+export const PREVIEW_QUERY_OPTIONS = {
+  meta: { persist: false },
+  gcTime: 5 * 60 * 1000,
+  staleTime: 0,
+  retry: false,
+  refetchOnMount: "always",
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const;
+
+/**
  * Personal, server-joined read-models that several features write into
  * indirectly. They live in their own feature namespaces (materials / schedule),
  * but project-side mutations (casting, participation, rehearsals) change what

@@ -12,9 +12,20 @@ import type {
 } from "../types/materials.dto";
 
 export const MaterialsService = {
-  getArtistMaterialsDashboard: async (): Promise<MaterialsDashboardItem[]> => {
+  /**
+   * `previewArtistId` asks for a member's songbook instead of the caller's — a
+   * manager answering "does Kasia already see the score for Sunday". The server
+   * gates it and withholds that member's practice readiness (`my_readiness`
+   * comes back null), which they were promised nobody else can see. Must be
+   * called through an arrow: React Query hands the query function its own
+   * context object as the first argument.
+   */
+  getArtistMaterialsDashboard: async (
+    previewArtistId?: string,
+  ): Promise<MaterialsDashboardItem[]> => {
     const response = await api.get<MaterialsDashboardItem[]>(
       "/api/participations/materials-dashboard/",
+      previewArtistId ? { params: { artist: previewArtistId } } : undefined,
     );
     return response.data;
   },

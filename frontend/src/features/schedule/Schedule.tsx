@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../../app/providers/AuthProvider";
+import { useArtistPreview } from "../../app/providers/ArtistPreviewProvider";
 import { useScheduleData } from "./hooks/useScheduleData";
 import { NextEventHero } from "./components/NextEventHero";
 import { TimelineProjectCard } from "./components/TimelineProjectCard";
@@ -40,6 +41,10 @@ const TABS = [
 export default function Schedule(): React.JSX.Element {
   const { t } = useTranslation();
   const { user } = useAuth();
+  // Inside a preview the timeline belongs to the member being looked at — the
+  // id only drives the query gate and the absence-range write, both of which
+  // must name them and not the manager reading over their shoulder.
+  const { isPreview, artist: previewArtist } = useArtistPreview();
   const now = useNow(60_000);
   const {
     isLoading,
@@ -55,7 +60,9 @@ export default function Schedule(): React.JSX.Element {
     handleAbsenceSubmit,
     absenceRange,
     artistId,
-  } = useScheduleData(user?.artist_profile_id ?? undefined);
+  } = useScheduleData(
+    (isPreview ? previewArtist?.id : user?.artist_profile_id) ?? undefined,
+  );
 
   const [activeDayKey, setActiveDayKey] = useState<string | null>(null);
 
@@ -88,7 +95,20 @@ export default function Schedule(): React.JSX.Element {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  const subscribeLink = (
+  // The subscription lives in the reader's own settings, and a preview reader is
+  // not the person this calendar belongs to — the link stays as evidence that
+  // the singer has it, and goes nowhere.
+  const subscribeLink = isPreview ? (
+    <span
+      inert
+      className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster px-2.5 py-1.5 opacity-55 shadow-glass-ethereal"
+    >
+      <CalendarPlus size={12} className="text-ethereal-gold" aria-hidden="true" />
+      <Eyebrow color="default">
+        {t("schedule.dashboard.subscribe_ics", "Subskrybuj kalendarz")}
+      </Eyebrow>
+    </span>
+  ) : (
     <Link
       to="/panel/settings/calendar"
       className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster px-2.5 py-1.5 shadow-glass-ethereal transition-all hover:border-ethereal-gold/40 hover:text-ethereal-ink active:scale-95"

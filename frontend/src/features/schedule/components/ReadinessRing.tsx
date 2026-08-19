@@ -3,13 +3,17 @@
  * @description Compact "your part-readiness for this programme" badge — a sage
  * progress ring + count, linking the schedule to the Songbook where the work
  * actually happens. Renders nothing until there is a programme to be ready for.
+ *
+ * Withheld readiness (a manager previewing a member's view) states itself in
+ * words and keeps the slot: the ring cannot be drawn at nought, because the
+ * server declined to answer and nought would answer for it.
  * @module features/schedule/components/ReadinessRing
  */
 
 import React from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, EyeOff } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
@@ -30,12 +34,47 @@ export const ReadinessRing = ({
   surface = "light",
 }: ReadinessRingProps): React.JSX.Element | null => {
   const { t } = useTranslation();
-  const { ready, total, pct, hasData } = readiness;
+  const { ready, total, pct, hasData, isWithheld } = readiness;
 
   if (!hasData) return null;
 
   const isDark = surface === "dark";
   const complete = ready === total;
+
+  if (isWithheld) {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-3 rounded-2xl border border-dashed px-3 py-2",
+          isDark
+            ? "border-ethereal-incense/30 bg-ethereal-incense/5"
+            : "border-ethereal-incense/25 bg-ethereal-parchment/40",
+        )}
+      >
+        <span
+          className={cn(
+            "flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-full border border-dashed",
+            isDark
+              ? "border-ethereal-incense/40 text-ethereal-parchment/70"
+              : "border-ethereal-incense/35 text-ethereal-graphite/60",
+          )}
+        >
+          <EyeOff size={15} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="block">
+            {t("schedule.readiness.title", "Gotowość partii")}
+          </Eyebrow>
+          <Text size="sm" color={isDark ? "parchment-muted" : "muted"}>
+            {t(
+              "schedule.readiness.withheld",
+              "Ukryta — widzi ją tylko chórzysta",
+            )}
+          </Text>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Link

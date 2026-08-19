@@ -2,9 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { projectKeys } from "@/features/projects/api/project.queries";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { isLikelyOfflineError } from "@/shared/offline/offlineClient";
 import {
   PERSONAL_READMODEL_KEYS,
+  PREVIEW_QUERY_OPTIONS,
+  previewQueryKey,
   RECONCILING_REFETCH,
 } from "@/shared/api/queryPolicy";
 import { ScheduleService } from "./schedule.service";
@@ -20,6 +23,9 @@ export const scheduleKeys = {
   dashboard: {
     byArtist: (artistId: string | number) =>
       [...PERSONAL_READMODEL_KEYS.scheduleDashboard, String(artistId)] as const,
+    /** A manager reading a member's timeline — never under the prefix above. */
+    preview: (artistId: string) =>
+      previewQueryKey("schedule", "dashboard", artistId),
   },
 };
 
@@ -29,20 +35,31 @@ const SCHEDULE_DASHBOARD_PREFIX = PERSONAL_READMODEL_KEYS.scheduleDashboard;
 /**
  * The artist's personal schedule in one server-joined call — replaces the
  * former four-query `useScheduleContextData` + client-side O(n·m) join.
+ *
+ * Inside a preview the same hook answers about the member being looked at, from
+ * a cache root of its own. The switch lives here rather than at the call sites
+ * so the timeline, the home hero and the readiness ring cannot disagree about
+ * whose schedule they are drawing.
  */
-export const useScheduleDashboard = (artistId?: string | number) =>
-  useQuery({
-    queryKey: scheduleKeys.dashboard.byArtist(
-      artistId ?? ANONYMOUS_ARTIST_QUERY_ID,
-    ),
-    queryFn: ScheduleService.getScheduleDashboard,
-    enabled: !!artistId,
+export const useScheduleDashboard = (artistId?: string | number) => {
+  const { isPreview, artist } = useArtistPreview();
+  const previewId = isPreview ? (artist?.id ?? null) : null;
+
+  return useQuery({
+    queryKey: previewId
+      ? scheduleKeys.dashboard.preview(previewId)
+      : scheduleKeys.dashboard.byArtist(artistId ?? ANONYMOUS_ARTIST_QUERY_ID),
+    queryFn: () =>
+      ScheduleService.getScheduleDashboard(previewId ?? undefined),
+    enabled: previewId ? true : !!artistId,
     // Personal read-model driven by the artist's participations and the
     // project's rehearsals — both changed from the manager's session. Reconcile
     // on the artist's next mount/focus so a new rehearsal or assignment lands.
     ...RECONCILING_REFETCH,
     staleTime: 1000 * 60 * 5,
+    ...(previewId ? PREVIEW_QUERY_OPTIONS : {}),
   });
+};
 
 export const useScheduleProgramItems = (
   projectId: string | number,

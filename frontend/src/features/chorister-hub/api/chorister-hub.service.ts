@@ -11,9 +11,21 @@ import type {
 
 const API_BASE = '/api/documents';
 
+/**
+ * `?artist=<id>` on the three read endpoints below asks what a member's card
+ * looks like, for a manager. The server gates it in one place
+ * (`core/preview.py`) and refuses rather than falling back to the caller's own
+ * answer. Every one of these must be called through an arrow — React Query
+ * hands the query function its own context object as the first argument.
+ */
+const previewParams = (previewArtistId?: string) =>
+  previewArtistId ? { params: { artist: previewArtistId } } : undefined;
+
 export const ChoristerHubService = {
-  getCategories: (): Promise<DocumentCategoryDTO[]> =>
-    api.get<DocumentCategoryDTO[]>(`${API_BASE}/categories/`).then((r) => r.data),
+  getCategories: (previewArtistId?: string): Promise<DocumentCategoryDTO[]> =>
+    api
+      .get<DocumentCategoryDTO[]>(`${API_BASE}/categories/`, previewParams(previewArtistId))
+      .then((r) => r.data),
 
   createCategory: (dto: DocumentCategoryCreateDTO): Promise<DocumentCategoryDTO> =>
     api.post<DocumentCategoryDTO>(`${API_BASE}/categories/`, dto).then((r) => r.data),
@@ -36,11 +48,15 @@ export const ChoristerHubService = {
       .delete(`${API_BASE}/categories/${categoryId}/documents/${documentId}/`)
       .then(() => undefined),
 
-  getArtistMetrics: (): Promise<ArtistIdentityMetricsDTO> =>
-    api.get<ArtistIdentityMetricsDTO>(`${API_BASE}/artist-metrics/`).then((r) => r.data),
+  getArtistMetrics: (previewArtistId?: string): Promise<ArtistIdentityMetricsDTO> =>
+    api
+      .get<ArtistIdentityMetricsDTO>(`${API_BASE}/artist-metrics/`, previewParams(previewArtistId))
+      .then((r) => r.data),
 
-  getMyEnsemble: (): Promise<MyEnsembleDTO> =>
-    api.get<MyEnsembleDTO>(`${API_BASE}/my-ensemble/`).then((r) => r.data),
+  getMyEnsemble: (previewArtistId?: string): Promise<MyEnsembleDTO> =>
+    api
+      .get<MyEnsembleDTO>(`${API_BASE}/my-ensemble/`, previewParams(previewArtistId))
+      .then((r) => r.data),
 
   fetchDocumentBlob: (documentId: string): Promise<Blob> =>
     api
