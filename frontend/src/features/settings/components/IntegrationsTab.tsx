@@ -5,11 +5,14 @@
  * with copy, and the token reset escape hatch. The quick-subscribe row spares
  * choristers the "paste a URL into calendar settings" ritual entirely.
  *
- * The Apple link carries `webcals://`, not `webcal://`: the plain scheme is by
- * definition cleartext (it resolves to `http://`, and this host answers port 80
- * with nothing but a 301), so iOS Calendar met it with "the connection is not
- * secure, do you want to continue subscribing?" and then failed validation
- * anyway. Google keeps the cleartext form, which its fetcher documents.
+ * On iPhone the address, not the button, is the route worth taking: `webcal://`
+ * is by definition the cleartext scheme (it resolves to `http://`, and this host
+ * answers port 80 with nothing but a 301), so iOS greets the tap with "the
+ * connection is not secure" and then polls over that hop for as long as the
+ * subscription lives — carrying the member's calendar token in the clear each
+ * time. Pasting the https address into Calendar's own "add subscription" never
+ * leaves TLS. The button stays for macOS, Outlook and Android, where the same
+ * link is frictionless.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/IntegrationsTab
  */
@@ -60,18 +63,14 @@ export const IntegrationsTab = () => {
   const calendarUrl = user?.profile?.calendar_token
     ? `${backendUrl}/api/calendar/${user.profile.calendar_token}/feed.ics`
     : "";
+  // `webcal://` and nothing else. iOS registers no `webcals://` handler — Safari
+  // answers a link carrying it with "the address is invalid" and never reaches
+  // Calendar. (An earlier probe against an iCloud host appeared to prove the
+  // opposite; Apple's own domain opens Apple's own app whatever the scheme, so
+  // the probe measured the host, not the scheme.) The tap therefore still goes
+  // through the cleartext hop this scheme is defined as, which is why the iPhone
+  // route below is the address rather than this button.
   const webcalUrl = calendarUrl.replace(/^https?:\/\//, "webcal://");
-  // `webcals://` is the TLS half of the scheme, and iOS Calendar registers it
-  // (verified on iOS 26) alongside Outlook and Thunderbird, which need it
-  // outright against a TLS-only host. It is what keeps the subscription off the
-  // cleartext hop that makes plain `webcal://` open with an insecure-connection
-  // warning here. A dev feed served over http has no TLS to point at, so it
-  // keeps the cleartext scheme rather than advertising one that cannot connect.
-  const appleUrl = calendarUrl.startsWith("https://")
-    ? calendarUrl.replace(/^https:\/\//, "webcals://")
-    : webcalUrl;
-  // Google's fetcher resolves the cleartext form correctly and this is its
-  // documented shape — left alone rather than traded for an unverified one.
   const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
 
   const handleCopy = async () => {
@@ -138,7 +137,7 @@ export const IntegrationsTab = () => {
                   </a>
                 </Button>
                 <Button asChild variant="secondary" className="sm:shrink-0">
-                  <a href={appleUrl}>
+                  <a href={webcalUrl}>
                     <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                     {t(
                       "settings.integrations.quick_apple",
@@ -198,7 +197,7 @@ export const IntegrationsTab = () => {
                 <Text size="sm" color="muted" className="leading-relaxed">
                   {t(
                     "settings.integrations.ios_desc",
-                    "Jeśli Kalendarz ostrzeże o niezabezpieczonym połączeniu albo odmówi subskrypcji, dodaj kalendarz powyższym adresem. To ta sama subskrypcja na żywo, tylko po połączeniu szyfrowanym.",
+                    "Na iPhonie użyj tego adresu zamiast przycisku powyżej — przycisk prowadzi przez połączenie nieszyfrowane, przed którym iPhone ostrzega. To ta sama subskrypcja na żywo.",
                   )}
                 </Text>
                 <ol className="list-decimal space-y-1 pl-4">

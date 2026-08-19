@@ -4552,7 +4552,7 @@
       "calendar_url_label": "Twój prywatny adres kalendarza",
       "copied": "Skopiowano",
       "copy_link": "Kopiuj link",
-      "ios_desc": "Jeśli Kalendarz ostrzeże o niezabezpieczonym połączeniu albo odmówi subskrypcji, dodaj kalendarz powyższym adresem. To ta sama subskrypcja na żywo, tylko po połączeniu szyfrowanym.",
+      "ios_desc": "Na iPhonie użyj tego adresu zamiast przycisku powyżej — przycisk prowadzi przez połączenie nieszyfrowane, przed którym iPhone ostrzega. To ta sama subskrypcja na żywo.",
       "ios_legacy": "Starszy iPhone: Ustawienia → Kalendarz → Konta → Dodaj konto → Inne → Dodaj subskrybowany kalendarz.",
       "ios_step_copy": "Skopiuj adres powyżej.",
       "ios_step_path": "Kalendarz → Kalendarze → Dodaj kalendarz → Dodaj kalendarz subskrypcji.",

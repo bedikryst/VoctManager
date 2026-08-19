@@ -4520,7 +4520,7 @@
       "calendar_url_label": "Votre adresse de calendrier privée",
       "copied": "Copié",
       "copy_link": "Copier le lien",
-      "ios_desc": "Si Calendrier signale une connexion non sécurisée ou refuse l'abonnement, ajoutez le calendrier avec l'adresse ci-dessus. C'est le même abonnement en direct, sur une connexion chiffrée.",
+      "ios_desc": "Sur iPhone, utilisez cette adresse plutôt que le bouton ci-dessus : le bouton passe par une connexion non chiffrée, ce dont l'iPhone vous avertit. C'est le même abonnement en direct.",
       "ios_legacy": "iPhone plus ancien : Réglages → Calendrier → Comptes → Ajouter un compte → Autre → Ajouter un calendrier avec abonnement.",
       "ios_step_copy": "Copiez l'adresse ci-dessus.",
       "ios_step_path": "Calendrier → Calendriers → Ajouter un calendrier → Ajouter un calendrier d'abonnement.",

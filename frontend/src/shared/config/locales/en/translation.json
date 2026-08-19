@@ -4519,7 +4519,7 @@
       "calendar_url_label": "Your private calendar address",
       "copied": "Copied",
       "copy_link": "Copy Link",
-      "ios_desc": "If Calendar warns about an insecure connection or refuses the subscription, add the calendar with the address above. It is the same live subscription, over an encrypted connection.",
+      "ios_desc": "On iPhone use this address rather than the button above — the button goes through an unencrypted connection, which iPhone warns about. It is the same live subscription.",
       "ios_legacy": "Older iPhone: Settings → Calendar → Accounts → Add Account → Other → Add Subscribed Calendar.",
       "ios_step_copy": "Copy the address above.",
       "ios_step_path": "Calendar → Calendars → Add Calendar → Add Subscription Calendar.",
