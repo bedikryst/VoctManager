@@ -819,6 +819,75 @@ class CollaboratorPiiExposureTests(APITestCase):
         self.assertEqual(resp.status_code, 403)
 
 
+class CollaboratorBlankEmailTests(APITestCase):
+    """
+    Most external crew are reachable by phone only, so "no e-mail" has to be
+    storable any number of times — while two people sharing a real address stays
+    a duplicate worth rejecting. The form sends '' for an untouched field, which
+    the database and DRF's constraint-derived UniqueValidator both read as a
+    value; these pin the whole path from that '' down to the index.
+    """
+
+    def setUp(self) -> None:
+        from core.constants import AppRole
+        from core.models import UserProfile
+
+        User = get_user_model()
+        self.manager = User.objects.create_user(
+            username="mgr-blank-mail", email="mgr-blank-mail@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.client.force_authenticate(user=self.manager)
+
+    def _create(self, **overrides: object):
+        payload: dict[str, object] = {
+            "first_name": "Crew",
+            "last_name": "Member",
+            "email": "",
+            "phone_number": "",
+            "company_name": "",
+            "specialty": "OTHER",
+        }
+        payload.update(overrides)
+        return self.client.post("/api/collaborators/", payload, format="json")
+
+    def test_two_collaborators_without_email_can_coexist(self) -> None:
+        from .models import Collaborator
+
+        first = self._create(last_name="Driver")
+        second = self._create(last_name="Stagehand")
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201, second.data)
+        # Blank is folded into NULL, so the column holds one spelling of "absent".
+        self.assertEqual(Collaborator.objects.filter(email__isnull=True).count(), 2)
+
+    def test_duplicate_real_email_is_still_rejected(self) -> None:
+        self.assertEqual(self._create(email="foh@external.example").status_code, 201)
+        clash = self._create(last_name="Impostor", email="foh@external.example")
+        self.assertEqual(clash.status_code, 400)
+        self.assertIn("email", clash.data["errors"])
+
+    def test_clearing_an_email_does_not_collide_with_a_contactless_row(self) -> None:
+        from .models import Collaborator
+
+        self._create(last_name="Driver")
+        addressed = self._create(last_name="Engineer", email="foh@external.example")
+        resp = self.client.patch(
+            f"/api/collaborators/{addressed.data['id']}/", {"email": ""}, format="json"
+        )
+        self.assertEqual(resp.status_code, 200, resp.data)
+        self.assertIsNone(Collaborator.objects.get(last_name="Engineer").email)
+
+    def test_index_tolerates_blank_written_outside_the_serializer(self) -> None:
+        # Admin and management commands write '' straight through; the partial
+        # index must not turn that into an IntegrityError.
+        from .models import Collaborator
+
+        Collaborator.objects.create(first_name="A", last_name="Roadie", email="")
+        Collaborator.objects.create(first_name="B", last_name="Roadie", email="")
+        self.assertEqual(Collaborator.objects.filter(email="").count(), 2)
+
+
 def _pdf_upload(name: str = "score.pdf") -> SimpleUploadedFile:
     return SimpleUploadedFile(name, b"%PDF-1.4\n1 0 obj<<>>endobj\n%%EOF", content_type="application/pdf")
 
