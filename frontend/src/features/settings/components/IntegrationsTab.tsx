@@ -4,6 +4,13 @@
  * (Google render intent + webcal:// for Apple/Outlook), the raw private URL
  * with copy, and the token reset escape hatch. The quick-subscribe row spares
  * choristers the "paste a URL into calendar settings" ritual entirely.
+ *
+ * `webcal://` is by definition the cleartext scheme — the URI resolves to
+ * `http://`, and this host answers port 80 with nothing but a 301. iOS Calendar
+ * therefore greets the one-tap link with "the connection is not secure, do you
+ * want to continue subscribing?" and then often fails validation anyway, which
+ * is where a member gives up. The https address below is the same subscription
+ * over TLS, so the panel spells out the native route that never leaves it.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/IntegrationsTab
  */
@@ -17,6 +24,7 @@ import {
   Copy,
   Info,
   RefreshCw,
+  Smartphone,
 } from "lucide-react";
 
 import { GlassCard } from "@ui/composites/GlassCard";
@@ -166,6 +174,52 @@ export const IntegrationsTab = () => {
               </Button>
             </div>
           </div>
+
+          {calendarUrl && (
+            <div className="mt-6 flex items-start gap-3">
+              <Smartphone
+                className="mt-0.5 h-5 w-5 shrink-0 text-ethereal-sage"
+                aria-hidden="true"
+              />
+              <div className="space-y-2">
+                <Eyebrow color="sage">
+                  {t("settings.integrations.ios_title", "iPhone i iPad")}
+                </Eyebrow>
+                <Text size="sm" color="muted" className="leading-relaxed">
+                  {t(
+                    "settings.integrations.ios_desc",
+                    "Jeśli Kalendarz ostrzeże o niezabezpieczonym połączeniu albo odmówi subskrypcji, dodaj kalendarz powyższym adresem. To ta sama subskrypcja na żywo, tylko po połączeniu szyfrowanym.",
+                  )}
+                </Text>
+                <ol className="list-decimal space-y-1 pl-4">
+                  <Text as="li" size="sm" color="muted">
+                    {t(
+                      "settings.integrations.ios_step_copy",
+                      "Skopiuj adres powyżej.",
+                    )}
+                  </Text>
+                  <Text as="li" size="sm" color="muted">
+                    {t(
+                      "settings.integrations.ios_step_path",
+                      "Kalendarz → Kalendarze → Dodaj kalendarz → Dodaj kalendarz subskrypcji.",
+                    )}
+                  </Text>
+                  <Text as="li" size="sm" color="muted">
+                    {t(
+                      "settings.integrations.ios_step_paste",
+                      "Wklej adres i zatwierdź subskrypcję.",
+                    )}
+                  </Text>
+                </ol>
+                <Text size="sm" color="muted" className="leading-relaxed">
+                  {t(
+                    "settings.integrations.ios_legacy",
+                    "Starszy iPhone: Ustawienia → Kalendarz → Konta → Dodaj konto → Inne → Dodaj subskrybowany kalendarz.",
+                  )}
+                </Text>
+              </div>
+            </div>
+          )}
         </GlassCard>
 
         {/* ── Reset token ───────────────────────────────── */}
