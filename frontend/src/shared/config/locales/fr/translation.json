@@ -4342,8 +4342,14 @@
       "load_more": "Afficher les plus anciens"
     },
     "pitch_pipe": {
+      "blocked": "Le navigateur a coupé le son — touchez la note à nouveau et vérifiez le volume du téléphone.",
+      "custom_label": "Fréquence libre",
+      "custom_play": "Jouer la fréquence",
+      "custom_range": "Indiquez une fréquence entre {{min}} et {{max}} Hz.",
+      "custom_stop": "Couper le ton",
       "hint": "Touchez une note pour entendre le ton. Touchez à nouveau pour couper.",
-      "title": "Diapason"
+      "title": "Diapason",
+      "unsupported": "Ce navigateur ne peut pas jouer le ton."
     },
     "readiness": {
       "cta": "Travailler dans le Recueil",

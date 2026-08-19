@@ -4372,8 +4372,14 @@
       "load_more": "Pokaż starsze"
     },
     "pitch_pipe": {
+      "blocked": "Przeglądarka wyciszyła dźwięk — dotknij nuty jeszcze raz i sprawdź głośność telefonu.",
+      "custom_label": "Własna częstotliwość",
+      "custom_play": "Zagraj częstotliwość",
+      "custom_range": "Podaj częstotliwość od {{min}} do {{max}} Hz.",
+      "custom_stop": "Wycisz ton",
       "hint": "Dotknij nutę, aby usłyszeć ton. Dotknij ponownie, aby wyciszyć.",
-      "title": "Kamerton"
+      "title": "Kamerton",
+      "unsupported": "Ta przeglądarka nie odtworzy tonu."
     },
     "readiness": {
       "cta": "Ćwicz w Śpiewniku",

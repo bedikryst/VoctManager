@@ -15,6 +15,11 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  openToneContext,
+  releaseToneSession,
+} from "@/shared/lib/audio/toneContext";
+
 const FUNDAMENTAL_HZ = 440; // the orchestra's A — the one honest pitch we own
 const FUNDAMENTAL_PEAK = 0.16;
 
@@ -66,6 +71,9 @@ const buildImpulse = (ctx: AudioContext, seconds: number): AudioBuffer => {
 export const useWelcomeTone = (): WelcomeTone => {
   const contextRef = useRef<AudioContext | null>(null);
   const impulseRef = useRef<AudioBuffer | null>(null);
+  // A convolver refuses a buffer rendered at another context's sample rate, so
+  // the impulse is bound to the context it was built for.
+  const impulseContextRef = useRef<AudioContext | null>(null);
   const voiceRef = useRef<ActiveVoice | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
@@ -75,6 +83,8 @@ export const useWelcomeTone = (): WelcomeTone => {
     voiceRef.current = null;
     setIsPlaying(false);
     if (!ctx || !voice) return;
+    // Only a voice this hook actually opened may hand the session back.
+    releaseToneSession();
 
     const now = ctx.currentTime;
     voice.envelope.gain.cancelScheduledValues(now);
@@ -89,18 +99,20 @@ export const useWelcomeTone = (): WelcomeTone => {
       return;
     }
 
-    try {
-      contextRef.current ??= new AudioContext();
-    } catch {
-      return; // No Web Audio — the moment stays purely visual.
-    }
-    const ctx = contextRef.current;
-    void ctx.resume();
+    // Opened inside the gesture — the only moment iOS lets us resume the shared
+    // context and take the playback audio session.
+    const ctx = openToneContext();
+    if (!ctx) return; // No Web Audio — the moment stays purely visual.
+    contextRef.current = ctx;
 
     // ── envelope → (dry + nave tail) → out ──
     const envelope = ctx.createGain();
     envelope.gain.value = 0;
 
+    if (impulseContextRef.current !== ctx) {
+      impulseRef.current = null;
+      impulseContextRef.current = ctx;
+    }
     impulseRef.current ??= buildImpulse(ctx, REVERB_SECONDS);
     const reverb = ctx.createConvolver();
     reverb.buffer = impulseRef.current;
@@ -151,15 +163,16 @@ export const useWelcomeTone = (): WelcomeTone => {
 
   useEffect(
     () => () => {
-      // Unmount: silence and release the device handle.
+      // Unmount: silence and hand the audio session back. The context itself is
+      // shared and stays alive on purpose (see toneContext).
       const voice = voiceRef.current;
       const ctx = contextRef.current;
       voiceRef.current = null;
       if (voice && ctx) {
         voice.envelope.gain.cancelScheduledValues(ctx.currentTime);
         voice.sustained.forEach((osc) => osc.stop());
+        releaseToneSession();
       }
-      void ctx?.close();
       contextRef.current = null;
     },
     [],

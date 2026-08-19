@@ -4341,8 +4341,14 @@
       "load_more": "Show older"
     },
     "pitch_pipe": {
+      "blocked": "The browser muted the sound — tap the note again and check the phone's volume.",
+      "custom_label": "Custom frequency",
+      "custom_play": "Play the frequency",
+      "custom_range": "Enter a frequency between {{min}} and {{max}} Hz.",
+      "custom_stop": "Mute the tone",
       "hint": "Tap a note to hear the pitch. Tap again to mute.",
-      "title": "Pitch pipe"
+      "title": "Pitch pipe",
+      "unsupported": "This browser cannot play the tone."
     },
     "readiness": {
       "cta": "Practice in the Songbook",

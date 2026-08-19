@@ -2,14 +2,19 @@
  * @file pitchTones.ts
  * @description Tiny Web Audio sequencer behind "Podaj dźwięki": plays the
  * piece's starting pitches top-voice-first as a soft arpeggio, the way a
- * conductor reads them off a pitch pipe before the choir starts. One lazily
- * created module-level AudioContext (resumed inside the triggering tap, so iOS
- * unlocks it); every tone is a sine oscillator with a gentle attack/release
- * envelope. Framework-agnostic — React consumes the returned handle.
+ * conductor reads them off a pitch pipe before the choir starts. Runs on the
+ * panel's shared `toneContext`, opened inside the triggering tap so iOS both
+ * unlocks it and puts it on the playback audio session; every tone is a sine
+ * oscillator with a gentle attack/release envelope. Framework-agnostic — React
+ * consumes the returned handle.
  * @module features/materials/player
  * @architecture Enterprise SaaS 2026
  */
 
+import {
+  openToneContext,
+  releaseToneSession,
+} from "@/shared/lib/audio/toneContext";
 import { noteFrequency } from "@/shared/ui/instruments/PitchPipe";
 
 export interface PitchToneNote {
@@ -31,14 +36,6 @@ const TONE_GAIN = 0.22;
 const ATTACK_S = 0.04;
 const RELEASE_S = 0.25;
 
-let sharedContext: AudioContext | null = null;
-
-const ensureContext = (): AudioContext => {
-  sharedContext ??= new AudioContext();
-  void sharedContext.resume();
-  return sharedContext;
-};
-
 /**
  * Schedule the given pitches as a sequential arpeggio (index order = playback
  * order). `onEnded` fires when the last tone has faded — or immediately after
@@ -48,12 +45,12 @@ export const playPitchSequence = (
   notes: ReadonlyArray<PitchToneNote>,
   onEnded?: () => void,
 ): PitchSequenceHandle => {
-  if (notes.length === 0) {
+  const ctx = notes.length > 0 ? openToneContext() : null;
+  if (!ctx) {
     onEnded?.();
     return { stop: () => undefined };
   }
 
-  const ctx = ensureContext();
   const startAt = ctx.currentTime + 0.03;
   const voices: { osc: OscillatorNode; gain: GainNode }[] = [];
 
@@ -82,6 +79,8 @@ export const playPitchSequence = (
   const finish = (): void => {
     if (finished) return;
     finished = true;
+    // Nothing is sounding any more — give the device's audio session back.
+    releaseToneSession();
     onEnded?.();
   };
   const timer = window.setTimeout(finish, totalMs);
