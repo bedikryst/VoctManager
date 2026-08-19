@@ -30,7 +30,6 @@ import {
 import {
   ProjectService,
   type LiturgicalSlotVocabulary,
-  type ProjectReadinessSummaryEntry,
 } from "./project.service";
 import { projectKeys } from "./project.query-keys";
 import {
@@ -340,18 +339,4 @@ export const useProjectAttendances = (projectId: string | undefined) =>
         }
       : getDisabledListQueryConfig<Attendance>()),
     select: selectAttendances,
-  });
-
-export const useProjectReadinessSummary = (projectId: string | undefined) =>
-  useSuspenseQuery({
-    queryKey: projectKeys.readiness.byProject(
-      projectId ?? PENDING_PROJECT_QUERY_ID,
-    ),
-    ...(projectId
-      ? {
-          queryFn: () => ProjectService.getReadinessSummary(projectId),
-          ...RECONCILING_REFETCH,
-          staleTime: FAST_CHANGING_STALE_TIME,
-        }
-      : getDisabledListQueryConfig<ProjectReadinessSummaryEntry>()),
   });

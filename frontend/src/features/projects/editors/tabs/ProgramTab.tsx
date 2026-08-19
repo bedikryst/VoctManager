@@ -48,7 +48,6 @@ import type { SelectOption } from "@/shared/ui/primitives/Select";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import type { ProjectEventKind } from "../../constants/projectDomain";
 import { useProgramTab } from "../hooks/useProgramTab";
-import { useProjectReadinessSummary } from "../../api/project.read.queries";
 import { buildPieceMeta } from "../../lib/pieceLabels";
 import { DurationCell } from "./components/DurationCell";
 import { PickerRow } from "./components/PickerRow";
@@ -131,18 +130,6 @@ export const ProgramTab = ({
           }))
         : undefined,
     [slotOptions],
-  );
-
-  const { data: readinessSummary } = useProjectReadinessSummary(projectId);
-  const readinessByPiece = React.useMemo(
-    () =>
-      new Map(
-        (readinessSummary ?? []).map((entry) => [
-          String(entry.piece_id),
-          entry,
-        ]),
-      ),
-    [readinessSummary],
   );
 
   const pieceById = React.useMemo(
@@ -311,7 +298,6 @@ export const ProgramTab = ({
                       position={index + 1}
                       meta={buildPieceMeta(piece)}
                       durationSeconds={piece?.estimated_duration}
-                      readiness={readinessByPiece.get(pieceId)}
                       slotOptions={slotSelectOptions}
                       onChangeSlot={handleChangeSlot}
                       editionOptions={editionChoice?.options}

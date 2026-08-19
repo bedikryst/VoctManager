@@ -447,8 +447,9 @@ export default function PiecePage(): React.JSX.Element {
                   <PitchPipe suggestedTonic={suggestedTonic} />
                 </div>
 
-                {/* readiness self-report — singer-only; a conductor has no
-                    participation to report against */}
+                {/* readiness self-report — singer-only, and private to them:
+                    a conductor has no participation to report against, and no
+                    surface anywhere reads these rows back as a roll-call */}
                 {canReportReadiness && (
                   <div className={tabVisibility("practice")}>
                     <SectionLabel icon={<User size={13} />}>
@@ -462,7 +463,7 @@ export default function PiecePage(): React.JSX.Element {
                     <Text size="xs" color="muted" className="mt-2 px-1">
                       {t(
                         "materials.piece_page.readiness_hint",
-                        "Dyrygent widzi zbiorczą gotowość zespołu i planuje pracę na próbach.",
+                        "Twoja prywatna notatka — nikt poza Tobą jej nie widzi. Zaznaczaj, co masz już przećwiczone.",
                       )}
                     </Text>
                   </div>

@@ -641,8 +641,9 @@ class ProjectPieceCasting(models.Model):
 class PieceReadiness(models.Model):
     """
     Artist self-reported practice readiness for a single piece within a project.
-    Powers the chorister's Songbook checklist and the conductor's pre-rehearsal
-    readiness heatmap. One row per (participation, piece); upserted by the artist.
+    Powers the chorister's own Songbook checklist and the progress ring on their
+    dashboard — nothing manager-facing reads it. One row per (participation,
+    piece); written only by the artist it describes.
     """
 
     class Status(models.TextChoices):

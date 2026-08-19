@@ -1683,7 +1683,14 @@ class ParticipationService:
         return participation
 
 class PieceReadinessService:
-    """Practice-readiness self reports (chorister Songbook checklist)."""
+    """
+    Practice-readiness self reports (chorister Songbook checklist).
+
+    First-person only, by design: rows are written by the singer they describe
+    and read back into that singer's own surfaces. There is deliberately no
+    project-wide aggregate — a roll-call of who has yet to learn their part
+    turns a practice note into a performance report.
+    """
 
     @staticmethod
     def upsert_readiness(participation: Participation, dto: PieceReadinessUpdateDTO) -> PieceReadiness:
@@ -1697,56 +1704,6 @@ class PieceReadinessService:
             defaults={'status': dto.status},
         )
         return entry
-
-    @staticmethod
-    def get_project_readiness_summary(project: Project) -> list[dict[str, Any]]:
-        """
-        Conductor-facing aggregate: per program piece, how many cast singers are
-        ready / practising / untouched. Castings without a readiness row count
-        as NOT_STARTED.
-        """
-        program_items = list(
-            project.program_items.select_related('piece').order_by('order')
-        )
-        piece_ids = [item.piece_id for item in program_items]
-
-        castings = ProjectPieceCasting.objects.filter(
-            piece_id__in=piece_ids,
-            participation__project=project,
-            participation__is_deleted=False,
-        ).exclude(participation__status=Participation.Status.DECLINED)
-
-        cast_totals: dict[UUID, int] = {}
-        for casting in castings:
-            cast_totals[casting.piece_id] = cast_totals.get(casting.piece_id, 0) + 1
-
-        readiness_rows = PieceReadiness.objects.filter(
-            participation__project=project,
-            participation__is_deleted=False,
-            piece_id__in=piece_ids,
-        ).values('piece_id', 'status')
-
-        counts: dict[UUID, dict[str, int]] = {}
-        for row in readiness_rows:
-            bucket = counts.setdefault(row['piece_id'], {})
-            bucket[row['status']] = bucket.get(row['status'], 0) + 1
-
-        summary: list[dict[str, Any]] = []
-        for item in program_items:
-            bucket = counts.get(item.piece_id, {})
-            ready = bucket.get(PieceReadiness.Status.READY, 0)
-            in_progress = bucket.get(PieceReadiness.Status.IN_PROGRESS, 0)
-            total = cast_totals.get(item.piece_id, 0)
-            summary.append({
-                'piece_id': str(item.piece_id),
-                'piece_title': item.piece.title,
-                'order': item.order,
-                'total_cast': total,
-                'ready': ready,
-                'in_progress': in_progress,
-                'not_started': max(total - ready - in_progress, 0),
-            })
-        return summary
 
 
 class CastingAndCrewService:

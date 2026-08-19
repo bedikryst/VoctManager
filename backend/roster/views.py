@@ -874,15 +874,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @action(detail=True, methods=['get'], url_path='readiness-summary', permission_classes=[IsManager])
-    def readiness_summary(self, request, pk=None) -> Response:
-        """
-        Conductor pre-rehearsal heatmap: per program piece, counts of cast
-        singers who reported READY / IN_PROGRESS, with the remainder NOT_STARTED.
-        """
-        project = self.get_object()
-        return Response(PieceReadinessService.get_project_readiness_summary(project))
-
     @staticmethod
     def _call_sheet_querysets(project: Project):
         """Shared, fully-prefetched querysets feeding the concert-day sheet.
@@ -1203,11 +1194,15 @@ class ParticipationViewSet(viewsets.ModelViewSet):
     def readiness(self, request, pk=None) -> Response:
         """
         Artist self-report: upserts practice readiness for one piece of this
-        participation. Managers may set readiness on any participation.
+        participation.
+
+        Strictly first-person — a manager is refused on somebody else's seat
+        just like anyone else. Practice readiness is the singer's own working
+        note, so nobody else may assert what a singer knows.
         """
         participation = self.get_object()
 
-        if not user_is_manager(request.user) and participation.artist.user_id != request.user.id:
+        if participation.artist.user_id != request.user.id:
             return Response(
                 {"detail": "You do not have permission to modify readiness for this participation."},
                 status=status.HTTP_403_FORBIDDEN,

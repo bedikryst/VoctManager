@@ -1,8 +1,7 @@
 /**
  * @file SetlistRow.tsx
- * @description One piece in the running order: its position, what it is, how
- * long it runs, and — only where the ensemble has actually started work — how
- * far they have got with it. Where the event is an order of service the row
+ * @description One piece in the running order: its position, what it is and how
+ * long it runs. Where the event is an order of service the row
  * also carries its place in the rite: the label the singer reads, and the
  * picker that sets it. Where the piece exists in more than one edition it
  * carries the arrangement this concert sings from, for the same reason: both
@@ -24,7 +23,6 @@ import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Select, type SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
-import type { ProjectReadinessSummaryEntry } from "../../../api/project.service";
 import type { ProgramTabItem } from "../../types";
 import { DurationCell } from "./DurationCell";
 
@@ -34,7 +32,6 @@ interface SetlistRowProps {
   readonly position: number;
   readonly meta: string | null;
   readonly durationSeconds?: number | null;
-  readonly readiness?: ProjectReadinessSummaryEntry;
   /**
    * The order of the rite, for an event that has one. Empty for a concert —
    * where a "place in the liturgy" column would be a column of blanks on every
@@ -61,70 +58,12 @@ interface SetlistRowProps {
 const ACTION_CLASS =
   "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip transition-colors pointer-coarse:h-9 pointer-coarse:w-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40";
 
-/**
- * How much of the cast has reported "I know my part" (sage) against "still
- * practising" (gold), from the chorister self-reports in the Songbook.
- * It renders only once somebody has reported something: before that every row
- * would read `0/12 zna partię`, which is the resting state of a young
- * production stated in the loudest slot the row has, on every row at once.
- */
-function ReadinessLine({
-  readiness,
-}: {
-  readiness: ProjectReadinessSummaryEntry;
-}): React.JSX.Element | null {
-  const { t } = useTranslation();
-
-  const started = readiness.ready + readiness.in_progress;
-  if (readiness.total_cast === 0 || started === 0) return null;
-
-  const readyPct = (readiness.ready / readiness.total_cast) * 100;
-  const practisingPct = (readiness.in_progress / readiness.total_cast) * 100;
-
-  return (
-    <span
-      className="mt-1 flex items-center gap-2"
-      title={t(
-        "projects.program.readiness.tooltip",
-        "Gotowość zespołu — zna partię: {{ready}}, ćwiczy: {{practising}}, nie zaczęło: {{untouched}}",
-        {
-          ready: readiness.ready,
-          practising: readiness.in_progress,
-          untouched: readiness.not_started,
-        },
-      )}
-    >
-      <span className="flex h-1 w-20 overflow-hidden rounded-full bg-ethereal-ink/8">
-        <span
-          className="h-full bg-ethereal-sage"
-          style={{ width: `${readyPct}%` }}
-        />
-        <span
-          className="h-full bg-ethereal-gold/70"
-          style={{ width: `${practisingPct}%` }}
-        />
-      </span>
-      <Caption as="span" color="muted">
-        {t(
-          "projects.program.readiness.count",
-          "{{ready}}/{{total}} zna partię",
-          {
-            ready: readiness.ready,
-            total: readiness.total_cast,
-          },
-        )}
-      </Caption>
-    </span>
-  );
-}
-
 export function SetlistRow({
   item,
   sortableId,
   position,
   meta,
   durationSeconds,
-  readiness,
   slotOptions,
   onChangeSlot,
   editionOptions,
@@ -233,7 +172,6 @@ export function SetlistRow({
               {meta}
             </Caption>
           )}
-          {readiness && <ReadinessLine readiness={readiness} />}
           {slotOptions && onChangeSlot && (
             <div className="mt-1.5 max-w-60">
               <Select

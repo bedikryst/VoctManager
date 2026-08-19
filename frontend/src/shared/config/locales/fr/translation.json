@@ -2574,7 +2574,7 @@
       "not_found_desc": "Cette pièce n'est plus dans votre carnet, ou le lien n'est plus à jour.",
       "not_found_title": "Pièce introuvable",
       "pitch_section": "Diapason",
-      "readiness_hint": "Le chef voit la préparation globale de l'ensemble et organise les répétitions en conséquence.",
+      "readiness_hint": "Votre note personnelle — personne d'autre ne la voit. Cochez ce que vous avez déjà travaillé.",
       "readiness_section": "Votre préparation",
       "reference_section": "Enregistrements de référence",
       "score_section": "Partition",
@@ -3793,10 +3793,6 @@
       "fulfilled": "Couvert",
       "music_time_min": "min de musique",
       "no_reqs": "Aucune exigence",
-      "readiness": {
-        "count": "{{ready}}/{{total}} maîtrisent leur partie",
-        "tooltip": "Préparation de l'ensemble — maîtrisent : {{ready}}, en travail : {{practising}}, pas commencé : {{untouched}}"
-      },
       "search": {
         "placeholder": "Rechercher une pièce ou un compositeur..."
       },

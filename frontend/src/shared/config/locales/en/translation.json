@@ -2574,7 +2574,7 @@
       "not_found_desc": "This piece is no longer in your songbook, or the link is out of date.",
       "not_found_title": "Piece not found",
       "pitch_section": "Pitch pipe",
-      "readiness_hint": "The conductor sees the ensemble's combined readiness and plans rehearsals around it.",
+      "readiness_hint": "Your own private note — nobody else sees it. Mark off what you have already practised.",
       "readiness_section": "Your readiness",
       "reference_section": "Reference recordings",
       "score_section": "Score",
@@ -3792,10 +3792,6 @@
       "fulfilled": "Fulfilled",
       "music_time_min": "min of music",
       "no_reqs": "No requirements",
-      "readiness": {
-        "count": "{{ready}}/{{total}} know their part",
-        "tooltip": "Ensemble readiness — know their part: {{ready}}, practising: {{practising}}, not started: {{untouched}}"
-      },
       "search": {
         "placeholder": "Search piece or composer..."
       },

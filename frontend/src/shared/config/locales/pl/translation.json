@@ -2584,7 +2584,7 @@
       "not_found_desc": "Ten utwór nie jest już dostępny w Twoim śpiewniku lub link jest nieaktualny.",
       "not_found_title": "Nie znaleziono utworu",
       "pitch_section": "Kamerton",
-      "readiness_hint": "Dyrygent widzi zbiorczą gotowość zespołu i planuje pracę na próbach.",
+      "readiness_hint": "Twoja prywatna notatka — nikt poza Tobą jej nie widzi. Zaznaczaj, co masz już przećwiczone.",
       "readiness_section": "Twoja gotowość",
       "reference_section": "Nagrania referencyjne",
       "score_section": "Nuty",
@@ -3810,10 +3810,6 @@
       "fulfilled": "Obsadzony",
       "music_time_min": "min muzyki",
       "no_reqs": "Brak wymagań",
-      "readiness": {
-        "count": "{{ready}}/{{total}} zna partię",
-        "tooltip": "Gotowość zespołu — zna partię: {{ready}}, ćwiczy: {{practising}}, nie zaczęło: {{untouched}}"
-      },
       "search": {
         "placeholder": "Szukaj utworu lub kompozytora..."
       },
