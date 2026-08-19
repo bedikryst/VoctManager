@@ -22,6 +22,7 @@ import { CommandPaletteProvider } from "./command/CommandPaletteProvider";
 import { EtherealBackground } from "@/shared/ui/kinematics/EtherealBackground";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { usePushDeviceSync } from "@/features/notifications/hooks/usePushDeviceSync";
+import { usePushLiveRefresh } from "@/features/notifications/hooks/usePushLiveRefresh";
 import { ProjectInvitationToasts } from "@/features/notifications/components/ProjectInvitationToasts";
 import { CustomAdminMessageToast } from "@/features/notifications/components/CustomAdminMessageToast";
 import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
@@ -74,6 +75,9 @@ export const DashboardLayout = ({
   // than in the settings tab, because a member whose device row went inactive
   // has no symptom that would send them there.
   usePushDeviceSync();
+  // A push lands before the polled queries notice: reconcile the caches it
+  // speaks for, so the banner and the panel never disagree.
+  usePushLiveRefresh();
   const canPreloadArtistRoutes = isArtist(user);
   const canPreloadManagerRoutes = isManager(user);
   // The chorister's first-run welcome is a full-screen moment that owns the

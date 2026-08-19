@@ -63,5 +63,20 @@ export interface CacheDoneMessage {
 
 export type OfflineSwReply = CacheProgressMessage | CacheDoneMessage;
 
+// ── worker → app (broadcast to every open window) ───────────────────────────
+
+/**
+ * A push arrived. The worker sees server-side change before any polled query
+ * does, so it tells the open app to reconcile instead of leaving the reader with
+ * a notification about content the panel still cannot show.
+ */
+export interface PushReceivedBroadcast {
+  type: "VOCT_PUSH_RECEIVED";
+  /** `NotificationType` from the push payload, e.g. "MESSAGE_RECEIVED". */
+  notificationType: string;
+}
+
+export type SwBroadcast = PushReceivedBroadcast;
+
 export const cacheNameForKind = (kind: OfflineAssetKind): string =>
   kind === "audio" ? AUDIO_CACHE : SCORE_CACHE;

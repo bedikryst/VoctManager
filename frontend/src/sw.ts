@@ -37,6 +37,7 @@ import {
   type OfflineAsset,
   type OfflineSwRequest,
   type OfflineSwReply,
+  type SwBroadcast,
 } from "@/shared/offline/swProtocol";
 
 declare let self: ServiceWorkerGlobalScope;
@@ -276,8 +277,30 @@ self.addEventListener("push", (event) => {
     },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Showing the banner is only half the delivery: an app already open in front
+  // of the reader must reconcile now, not on its next poll tick — otherwise the
+  // notification announces a message the panel still refuses to show.
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      broadcast({
+        type: "VOCT_PUSH_RECEIVED",
+        notificationType: payload.type ?? "GENERIC",
+      }),
+    ]),
+  );
 });
+
+/** Fan a worker-side event out to every open window of this origin. */
+async function broadcast(message: SwBroadcast): Promise<void> {
+  const clients = await self.clients.matchAll({
+    type: "window",
+    includeUncontrolled: true,
+  });
+  for (const client of clients) {
+    client.postMessage(message);
+  }
+}
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();

@@ -1,7 +1,8 @@
 /**
  * @file messages.queries.ts
- * @description TanStack Query hooks for the messaging domain. 30s polling mirrors
- * the notifications inbox (push does not yet invalidate the RQ cache). The reply
+ * @description TanStack Query hooks for the messaging domain. The inbox polls at
+ * 30s like the notifications inbox; an OPEN conversation polls faster and never
+ * treats its cache as fresh (see CONVERSATION_POLLING_INTERVAL). The reply
  * mutation applies an optimistic message bubble, rolling back on error.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/api
@@ -10,6 +11,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import i18n from "@/shared/config/i18n";
 import { toastApiError } from "@/shared/api/errors";
+import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 
 import { ChannelService, MessagingService } from "./messages.service";
 import type {
@@ -25,6 +27,27 @@ import type {
 } from "../types/messages.dto";
 
 const POLLING_INTERVAL = 1000 * 30;
+
+/**
+ * An open conversation is read as live, so it polls faster than the inbox — and,
+ * more importantly, it carries no freshness window at all (`staleTime: 0` +
+ * {@link RECONCILING_REFETCH}). On a phone the poll timer is the ONE refresh path
+ * the platform suspends: the app is frozen while it sits in the background, and
+ * every attempt to "refresh" by leaving the thread and re-entering it restarts
+ * the interval from zero. With a positive staleTime inherited from the client
+ * default, remount / focus / reconnect all decline to refetch, so the reply that
+ * just fired a push notification stays invisible until the reader writes
+ * something themselves (a mutation invalidates unconditionally). Freshness here
+ * is decided per event, never per clock.
+ */
+const CONVERSATION_POLLING_INTERVAL = 1000 * 10;
+
+/** Freshness contract shared by the thread and channel conversation panes. */
+const CONVERSATION_FRESHNESS = {
+  staleTime: 0,
+  refetchInterval: CONVERSATION_POLLING_INTERVAL,
+  ...RECONCILING_REFETCH,
+} as const;
 
 export const messagingKeys = {
   all: ["messaging"] as const,
@@ -50,8 +73,7 @@ export const useThread = (id: string | undefined) =>
     queryKey: messagingKeys.thread(id ?? "none"),
     queryFn: () => MessagingService.get(id as string),
     enabled: !!id,
-    refetchInterval: POLLING_INTERVAL,
-    refetchOnWindowFocus: true,
+    ...CONVERSATION_FRESHNESS,
   });
 
 export const useUnreadThreadCount = (enabled = true) =>
@@ -183,8 +205,7 @@ export const useChannel = (id: string | undefined) =>
     queryKey: channelKeys.detail(id ?? "none"),
     queryFn: () => ChannelService.get(id as string),
     enabled: !!id,
-    refetchInterval: POLLING_INTERVAL,
-    refetchOnWindowFocus: true,
+    ...CONVERSATION_FRESHNESS,
   });
 
 interface ChannelOptimisticContext {
