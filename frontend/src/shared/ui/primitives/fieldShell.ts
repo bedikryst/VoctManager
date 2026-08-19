@@ -14,12 +14,35 @@
 
 import { cva, type VariantProps } from "class-variance-authority";
 
+/**
+ * The type scale a control that TAKES TYPED TEXT is allowed to use — `<input>`,
+ * `<textarea>`, `<select>`. Never under 16px on a touch device.
+ *
+ * iOS magnifies the whole page the instant focus lands in a field whose
+ * font-size is below 16px, and a home-screen (standalone) app does NOT zoom back
+ * out on blur the way a Safari tab does: the member is left with the app scaled
+ * 16/14 = 1.14x, spilling off both edges, until they pinch it back by hand. The
+ * compact 12/14px scale therefore returns only behind `fine-pointer:`, where no
+ * such magnification exists.
+ *
+ * Written as whole literal class strings, not composed at runtime: Tailwind
+ * scans source text, so a size assembled from fragments generates no CSS.
+ * A control the user cannot type into — Select's button trigger, DateTimeField's
+ * button — is exempt and keeps its own scale.
+ */
+export const FIELD_TEXT_SCALE = {
+  sm: "text-base fine-pointer:text-sm",
+  xs: "text-base fine-pointer:text-xs",
+  /** The two search fields, drawn a half-step under the body scale. */
+  search: "text-base fine-pointer:text-[15px]",
+} as const;
+
 export const fieldShellVariants = cva(
   // `placeholder:` is inert on the controls that are not inputs (a button has no
   // `::placeholder`); it lives here anyway so the one field that does have a
   // placeholder cannot state its colour twice. Select's own placeholder is a
   // Radix data-attribute and stays with its layout.
-  "w-full rounded-control text-sm text-ethereal-ink placeholder:text-ethereal-incense transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50",
+  `w-full rounded-control ${FIELD_TEXT_SCALE.sm} text-ethereal-ink placeholder:text-ethereal-incense transition-all duration-300 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:opacity-50`,
   {
     variants: {
       variant: {

@@ -34,6 +34,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 import { Select } from "@/shared/ui/primitives/Select";
+import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { PITCH_NOTES, parseMusicalKeyTonic } from "@/shared/ui/instruments/PitchPipe";
 
 import { SectionLabel } from "../components/SectionLabel";
@@ -244,7 +245,10 @@ export const RehearsalDock = ({
                       }
                       placeholder={t("materials.rehearsal_dock.voice_placeholder", "Głos")}
                       aria-label={t("materials.rehearsal_dock.voice_placeholder", "Głos")}
-                      className="h-8 w-16 rounded-lg border border-white/15 bg-white/5 px-2 text-xs text-ethereal-marble outline-none placeholder:text-ethereal-marble/30 focus:border-ethereal-gold/50"
+                      className={cn(
+                        "h-8 w-16 rounded-lg border border-white/15 bg-white/5 px-2 text-ethereal-marble outline-none placeholder:text-ethereal-marble/30 focus:border-ethereal-gold/50",
+                        FIELD_TEXT_SCALE.xs,
+                      )}
                     />
                     <Select
                       variant="dark"

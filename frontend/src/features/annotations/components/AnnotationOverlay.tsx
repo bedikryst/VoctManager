@@ -18,7 +18,10 @@ import { Lock, MessageSquare, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
+import {
+  FIELD_TEXT_SCALE,
+  fieldShellVariants,
+} from "@/shared/ui/primitives/fieldShell";
 import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
 
 import {
@@ -757,7 +760,8 @@ const NoteCard = ({
         rows={2}
         className={cn(
           fieldShellVariants({ variant: "solid" }),
-          "resize-none p-2 text-xs",
+          "resize-none p-2",
+          FIELD_TEXT_SCALE.xs,
         )}
         placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
       />

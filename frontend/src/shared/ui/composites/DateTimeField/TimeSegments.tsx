@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
+import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import {
   formatClock,
   parseClock,
@@ -195,7 +196,9 @@ export const TimeSegments = ({
 
   const segmentClassName = cn(
     "bg-transparent text-center tabular-nums text-ethereal-ink caret-ethereal-gold focus:outline-none disabled:cursor-not-allowed",
-    isRoller ? "w-12 text-2xl font-medium" : "w-9 text-sm font-medium",
+    isRoller
+      ? "w-12 text-2xl font-medium"
+      : `w-9 ${FIELD_TEXT_SCALE.sm} font-medium`,
   );
 
   const chevronClassName =
@@ -280,7 +283,8 @@ export const TimeSegments = ({
         aria-hidden="true"
         className={cn(
           "text-ethereal-graphite/50",
-          isRoller ? "pb-0.5 text-xl" : "text-sm",
+          // Tracks the digits either side of it, including their touch size.
+          isRoller ? "pb-0.5 text-xl" : FIELD_TEXT_SCALE.sm,
         )}
       >
         :

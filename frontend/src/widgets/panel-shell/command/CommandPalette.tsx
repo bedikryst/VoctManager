@@ -26,6 +26,7 @@ import { cn } from "@/shared/lib/utils";
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { Caption, Eyebrow, Label } from "@/shared/ui/primitives/typography";
+import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
@@ -322,7 +323,10 @@ export const CommandPalette = ({
                   "dashboard.layout.command.placeholder",
                   "Szukaj lub przejdź do…",
                 )}
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-ethereal-ink outline-none placeholder:text-ethereal-incense/80"
+                className={cn(
+                  "min-w-0 flex-1 bg-transparent text-ethereal-ink outline-none placeholder:text-ethereal-incense/80",
+                  FIELD_TEXT_SCALE.search,
+                )}
               />
               <button
                 type="button"

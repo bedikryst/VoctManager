@@ -20,6 +20,7 @@ import type { CastMember } from "../../hooks/useMicroCasting";
 import { cn } from "@/shared/lib/utils";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 
 interface CastMemberChipProps {
   readonly member: CastMember;
@@ -195,7 +196,10 @@ export const CastMemberChip = React.memo(function CastMemberChip({
                 "projects.micro_cast.artist.note_placeholder",
                 "np. góra",
               )}
-              className="w-full rounded-chip border border-ethereal-gold/40 bg-ethereal-alabaster px-1.5 py-0.5 text-xs text-ethereal-ink outline-none placeholder:text-ethereal-incense focus:border-ethereal-gold/70"
+              className={cn(
+                "w-full rounded-chip border border-ethereal-gold/40 bg-ethereal-alabaster px-1.5 py-0.5 text-ethereal-ink outline-none placeholder:text-ethereal-incense focus:border-ethereal-gold/70",
+                FIELD_TEXT_SCALE.xs,
+              )}
             />
           ) : (
             casting?.notes && (

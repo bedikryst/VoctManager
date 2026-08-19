@@ -23,7 +23,10 @@ import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
 import { parseApiError, resolveErrorCopy } from "@/shared/api/errors";
-import { fieldShellVariants } from "@/shared/ui/primitives/fieldShell";
+import {
+  FIELD_TEXT_SCALE,
+  fieldShellVariants,
+} from "@/shared/ui/primitives/fieldShell";
 import { Caption, Text } from "@/shared/ui/primitives/typography";
 
 type InlineEditableValue = string | number | null;
@@ -233,7 +236,7 @@ export const InlineEditable = ({
           "w-auto rounded-chip px-1.5 py-0.5",
           variant === "title" && "font-semibold text-base",
           variant === "display" && "font-serif font-semibold text-2xl tracking-tight",
-          variant === "subtle" && "text-xs",
+          variant === "subtle" && FIELD_TEXT_SCALE.xs,
           className,
         )}
         style={{ width: `${Math.max(draft.length + 2, 8)}ch` }}
