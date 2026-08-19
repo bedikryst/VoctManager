@@ -38,6 +38,7 @@ import {
 
 import type { AttendanceStatus, ProgramItem, Project, Rehearsal } from "@/shared/types";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { Button } from "@/shared/ui/primitives/Button";
@@ -302,7 +303,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           inert={isPreview}
           className={cn(
             "flex shrink-0 flex-wrap items-center gap-2",
-            isPreview && "opacity-55",
+            isPreview && INERT_SURFACE,
           )}
         >
           {/* The day sheet leads: it is the only one of these written for this
@@ -505,7 +506,7 @@ const RehearsalHero = ({
               inert={isPreview}
               className={cn(
                 "mt-4 flex flex-col gap-2 sm:flex-row",
-                isPreview && "opacity-55",
+                isPreview && INERT_SURFACE,
               )}
             >
               {currentMaskedStatus !== "PRESENT" && (
@@ -611,7 +612,7 @@ const RehearsalHero = ({
               inert={isPreview}
               className={cn(
                 "flex max-h-[50dvh] flex-col gap-1.5 overflow-y-auto overscroll-contain no-scrollbar",
-                isPreview && "opacity-55",
+                isPreview && INERT_SURFACE,
               )}
             >
               {[...programItems]

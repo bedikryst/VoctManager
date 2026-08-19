@@ -15,6 +15,8 @@ import { ArrowRight, CalendarClock, Target } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { cn } from "@/shared/lib/utils";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
@@ -86,7 +88,10 @@ export const GoalConcertCard = ({
           // the manager's own.
           <span
             inert
-            className="inline-flex items-center gap-2 self-start rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster px-3.5 py-2.5 opacity-55 shadow-glass-ethereal"
+            className={cn(
+              "inline-flex items-center gap-2 self-start rounded-control border border-ethereal-incense/20 bg-ethereal-alabaster px-3.5 py-2.5 shadow-glass-ethereal",
+              INERT_SURFACE,
+            )}
           >
             <Text size="sm" weight="semibold">
               {t("dashboard.artist.goal.open_songbook", "Otwórz Śpiewnik")}

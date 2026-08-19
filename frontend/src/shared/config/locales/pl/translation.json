@@ -4919,7 +4919,7 @@
   "artist_preview": {
     "eyebrow": "Podgląd chórzysty",
     "title": "Co widzi {{name}}",
-    "subtitle": "Dokładnie te dane serwer wysyła na urządzenie tej osoby. Z tego ekranu niczego nie zapiszesz.",
+    "subtitle": "Ten sam widok, który serwer wysyła na urządzenie tej osoby. Z tego ekranu niczego nie zapiszesz.",
     "read_only_badge": "Tylko podgląd",
     "back_to_roster": "Baza Artystów",
     "loading": "Otwieram widok chórzysty...",
@@ -4933,6 +4933,35 @@
       "schedule": "Harmonogram",
       "materials": "Materiały",
       "card": "Kartoteka"
+    },
+    "boundaries": {
+      "trigger": "Co jest ukryte",
+      "sheet_title": "Co jest ukryte",
+      "sheet_subtitle": "Po obu stronach tego ekranu",
+      "from_member": {
+        "title": "Czego nie widzi chórzysta",
+        "lead": "Ty masz to w panelu — na ich urządzeniu tego nie ma",
+        "money": "Żadnych kwot — łącznie z własną stawką. Honorarium dociera do człowieka umową, nie aplikacją.",
+        "budgets": "Budżetów, umów i PDF-ów umów.",
+        "drafts": "Projektów w przygotowaniu — dopóki projekt jest szkicem, nie ma go w ich kalendarzu ani prób do niego.",
+        "announcements": "Ogłoszeń przed publikacją — szkic to cisza.",
+        "absences": "Kto jeszcze był nieobecny — karta próby podaje liczbę, nigdy nazwiska.",
+        "capabilities": "Danych warsztatowych: czytania a vista i skali głosu.",
+        "contacts": "Kontaktu do innych śpiewaków — w katalogu zespołu jest imię, nazwisko, awatar i głos.",
+        "documents": "Dokumentów z kategorii nieudostępnionych chórzystom.",
+        "archive": "Archiwum utworów — widzą program swoich koncertów, nigdy katalogu.",
+        "after_concert": "Nut i nagrań po koncercie — materiały zamykają się dla projektów zakończonych i odwołanych.",
+        "protected": "Wydań chronionych licencją — nieznana licencja też jest traktowana jak chroniona.",
+        "manager_panel": "Całego panelu menedżera: artystów, obecności, archiwum, logistyki, ekipy i projektów."
+      },
+      "from_you": {
+        "title": "Czego nie zobaczysz tutaj",
+        "lead": "Świadomie — to należy wyłącznie do tej osoby",
+        "readiness": "Gotowości partii — obiecaliśmy chórzyście, że tej notatki nie widzi nikt poza nim. Podgląd pokazuje w jej miejscu „ukryta”.",
+        "messages": "Wiadomości 1:1 — rozmowy są prywatne, także przed menedżerem. Dlatego nie ma tu zakładki Wiadomości.",
+        "notifications": "Skrzynki powiadomień — licznik należy do konta, które ją czyta.",
+        "controls": "Żadnego przycisku nie da się tu nacisnąć: obecność, dokumenty i pobieranie offline zostają na ekranie, ale nie działają."
+      }
     }
   }
 }

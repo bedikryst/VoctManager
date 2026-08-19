@@ -13,6 +13,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
@@ -278,7 +279,7 @@ export const TimelineProjectCard = ({
                   {/* The server writes this sheet for whoever asks for it, so a
                       manager previewing would open their own production copy
                       under the singer's name. Present, and inert. */}
-                  <div inert={isPreview} className={cn(isPreview && "opacity-55")}>
+                  <div inert={isPreview} className={cn(isPreview && INERT_SURFACE)}>
                     <Eyebrow
                       color="parchment-muted"
                       className="mb-1.5 flex items-center gap-1.5"
@@ -428,7 +429,7 @@ export const TimelineProjectCard = ({
                             leftIcon={<Eye size={11} aria-hidden="true" />}
                             className={cn(
                               "border-ethereal-sage/50 text-ethereal-sage hover:bg-ethereal-sage/20",
-                              isPreview && "opacity-55",
+                              isPreview && INERT_SURFACE,
                             )}
                           >
                             {t(

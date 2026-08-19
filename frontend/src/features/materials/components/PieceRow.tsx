@@ -12,6 +12,7 @@ import { ChevronRight, FileText, Lock, Play, Square } from "lucide-react";
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { isManager } from "@/shared/auth/rbac";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { ScoreStandModal } from "@/features/annotations";
@@ -184,7 +185,7 @@ export const PieceRow = ({
           inert={isPreview}
           className={cn(
             "flex gap-2 border-t border-ethereal-marble/60 bg-ethereal-parchment/25 px-3.5 py-2.5 sm:px-4",
-            isPreview && "opacity-55",
+            isPreview && INERT_SURFACE,
           )}
         >
           {primaryPdf && (

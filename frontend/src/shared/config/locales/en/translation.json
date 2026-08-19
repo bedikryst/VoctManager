@@ -4886,7 +4886,7 @@
   "artist_preview": {
     "eyebrow": "Member preview",
     "title": "What {{name}} sees",
-    "subtitle": "This is exactly what the server sends to that person's device. Nothing can be saved from this screen.",
+    "subtitle": "The same view the server sends to that person's device. Nothing can be saved from this screen.",
     "read_only_badge": "View only",
     "back_to_roster": "Artist Database",
     "loading": "Opening the member's view...",
@@ -4900,6 +4900,35 @@
       "schedule": "Schedule",
       "materials": "Materials",
       "card": "Card"
+    },
+    "boundaries": {
+      "trigger": "What is hidden",
+      "sheet_title": "What is hidden",
+      "sheet_subtitle": "On both sides of this screen",
+      "from_member": {
+        "title": "What the member does not see",
+        "lead": "You have it in the panel — it is not on their device",
+        "money": "No amounts at all, their own fee included. A figure reaches a person through a contract, not through the app.",
+        "budgets": "Budgets, contracts and contract PDFs.",
+        "drafts": "Projects still in preparation — while a project is a draft, neither it nor its rehearsals are in their calendar.",
+        "announcements": "Announcements before publication — a draft is silence.",
+        "absences": "Who else was away — the rehearsal card carries a count, never the names.",
+        "capabilities": "Capability data: sight-reading and vocal range.",
+        "contacts": "Other singers' contact details — the ensemble directory carries a name, an avatar and a voice.",
+        "documents": "Documents in categories not shared with choristers.",
+        "archive": "The piece archive — they see the programme of their own concerts, never the catalogue.",
+        "after_concert": "Scores and tracks after the concert — materials close for completed and cancelled projects.",
+        "protected": "Protected editions — an unknown licence is treated as protected too.",
+        "manager_panel": "The whole manager panel: artists, attendance, archive, logistics, crew and projects."
+      },
+      "from_you": {
+        "title": "What you will not see here",
+        "lead": "Deliberately — it belongs to that person alone",
+        "readiness": "Practice readiness — the singer was promised nobody else sees that note. The preview says “hidden” in its place.",
+        "messages": "Their 1:1 messages — conversations are private, from managers too. That is why there is no Messages tab here.",
+        "notifications": "Their notifications inbox — the count belongs to the account reading it.",
+        "controls": "No button here can be pressed: attendance, documents and offline download stay on screen and do nothing."
+      }
     }
   }
 }

@@ -13,6 +13,7 @@ import { Check, CloudDownload, Loader2, RotateCw, Trash2, TriangleAlert } from "
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
 import {
   downloadProjectForOffline,
@@ -82,7 +83,10 @@ export const OfflineDownloadControl = ({
     return (
       <span
         inert
-        className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-2.5 py-1.5 text-ethereal-graphite opacity-55 shadow-glass-solid"
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-lg border border-ethereal-marble bg-ethereal-alabaster px-2.5 py-1.5 text-ethereal-graphite shadow-glass-solid",
+          INERT_SURFACE,
+        )}
       >
         <CloudDownload size={13} className="text-ethereal-gold" aria-hidden="true" />
         <Eyebrow color="inherit">

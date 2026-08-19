@@ -11,6 +11,8 @@ import { useTranslation } from "react-i18next";
 
 import { useAuth } from "../../app/providers/AuthProvider";
 import { useArtistPreview } from "../../app/providers/ArtistPreviewProvider";
+import { cn } from "@/shared/lib/utils";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { useScheduleData } from "./hooks/useScheduleData";
 import { NextEventHero } from "./components/NextEventHero";
 import { TimelineProjectCard } from "./components/TimelineProjectCard";
@@ -101,7 +103,10 @@ export default function Schedule(): React.JSX.Element {
   const subscribeLink = isPreview ? (
     <span
       inert
-      className="inline-flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster px-2.5 py-1.5 opacity-55 shadow-glass-ethereal"
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg border border-ethereal-incense/20 bg-ethereal-alabaster px-2.5 py-1.5 shadow-glass-ethereal",
+        INERT_SURFACE,
+      )}
     >
       <CalendarPlus size={12} className="text-ethereal-gold" aria-hidden="true" />
       <Eyebrow color="default">

@@ -27,8 +27,8 @@
  * @module features/artist-preview/ArtistPreviewPage
  */
 
-import React, { Suspense, useMemo, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import React, { Suspense, useMemo } from "react";
+import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { BookMarked, CalendarClock, LayoutDashboard, Music2 } from "lucide-react";
@@ -54,7 +54,11 @@ import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { PreviewIdentityBar } from "./components/PreviewIdentityBar";
 import { PreviewRefusal } from "./components/PreviewRefusal";
 
-type PreviewTab = "desk" | "schedule" | "materials" | "card";
+const PREVIEW_TABS = ["desk", "schedule", "materials", "card"] as const;
+type PreviewTab = (typeof PREVIEW_TABS)[number];
+
+const isPreviewTab = (value: string | null): value is PreviewTab =>
+  value !== null && (PREVIEW_TABS as readonly string[]).includes(value);
 
 export default function ArtistPreviewPage(): React.JSX.Element {
   const { artistId } = useParams<{ artistId: string }>();
@@ -132,7 +136,19 @@ const ArtistPreviewShell = ({
   artist: PreviewArtistIdentity;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<PreviewTab>("desk");
+  // The tab rides in the URL so the answer is quotable: a conductor asking
+  // about the songbook gets a link to the songbook, and a reload lands back on
+  // the surface being discussed. `replace` keeps the four tabs out of the
+  // history stack — Back belongs to the roster the manager came from.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab: PreviewTab = isPreviewTab(tabParam) ? tabParam : "desk";
+
+  const handleTabChange = (next: PreviewTab): void => {
+    const params = new URLSearchParams(searchParams);
+    params.set("tab", next);
+    setSearchParams(params, { replace: true });
+  };
 
   // The gate. Its key and its query function are the Pulpit's own, so this is
   // not a second request — it is the first one, asked early enough to answer
@@ -186,7 +202,7 @@ const ArtistPreviewShell = ({
               )}
               items={tabs}
               value={tab}
-              onChange={setTab}
+              onChange={handleTabChange}
             />
 
             {/* The artist surfaces, verbatim. Each brings its own page

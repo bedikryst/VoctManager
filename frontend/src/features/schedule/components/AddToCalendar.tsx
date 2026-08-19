@@ -12,6 +12,7 @@ import { CalendarPlus, ExternalLink, Download } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import {
@@ -74,7 +75,7 @@ export const AddToCalendar = ({
     const darkBtn =
       "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20";
     return (
-      <div inert={isPreview} className={cn(isPreview && "opacity-55")}>
+      <div inert={isPreview} className={cn(isPreview && INERT_SURFACE)}>
         <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="mb-1.5 flex items-center gap-1.5">
           <CalendarPlus size={12} aria-hidden="true" />
           {t("schedule.calendar.menu_label", "Zapisz wydarzenie")}
@@ -122,7 +123,7 @@ export const AddToCalendar = ({
         size="sm"
         inert
         leftIcon={<CalendarPlus size={13} aria-hidden="true" />}
-        className={cn(triggerClasses, "opacity-55")}
+        className={cn(triggerClasses, INERT_SURFACE)}
       >
         {t("schedule.calendar.add", "Dodaj do kalendarza")}
       </Button>

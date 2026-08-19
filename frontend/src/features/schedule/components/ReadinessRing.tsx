@@ -7,6 +7,11 @@
  * Withheld readiness (a manager previewing a member's view) states itself in
  * words and keeps the slot: the ring cannot be drawn at nought, because the
  * server declined to answer and nought would answer for it.
+ *
+ * The ring is also a door into the Songbook, which is why it reads the preview
+ * itself: a member who CONDUCTS a project is served their own (empty) readiness
+ * rather than a withheld one, so that one row would otherwise keep a live link
+ * and drop the manager into their own songbook from inside somebody's view.
  * @module features/schedule/components/ReadinessRing
  */
 
@@ -15,9 +20,11 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowRight, EyeOff } from "lucide-react";
 
+import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { cn } from "@/shared/lib/utils";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import type { ProjectReadiness } from "../hooks/useProjectReadiness";
 
 interface ReadinessRingProps {
@@ -34,6 +41,7 @@ export const ReadinessRing = ({
   surface = "light",
 }: ReadinessRingProps): React.JSX.Element | null => {
   const { t } = useTranslation();
+  const { isPreview } = useArtistPreview();
   const { ready, total, pct, hasData, isWithheld } = readiness;
 
   if (!hasData) return null;
@@ -76,16 +84,21 @@ export const ReadinessRing = ({
     );
   }
 
-  return (
-    <Link
-      to={to}
-      className={cn(
-        "group inline-flex items-center gap-3 rounded-2xl border px-3 py-2 transition-all active:scale-[0.99]",
-        isDark
-          ? "border-ethereal-incense/30 bg-ethereal-incense/10 hover:border-ethereal-sage/50"
-          : "border-ethereal-incense/15 bg-ethereal-alabaster shadow-glass-ethereal hover:border-ethereal-sage/40",
-      )}
-    >
+  const shellClasses = cn(
+    "group inline-flex items-center gap-3 rounded-2xl border px-3 py-2 transition-all",
+    isDark
+      ? "border-ethereal-incense/30 bg-ethereal-incense/10"
+      : "border-ethereal-incense/15 bg-ethereal-alabaster shadow-glass-ethereal",
+    isPreview
+      ? INERT_SURFACE
+      : cn(
+          "active:scale-[0.99]",
+          isDark ? "hover:border-ethereal-sage/50" : "hover:border-ethereal-sage/40",
+        ),
+  );
+
+  const body = (
+    <>
       <CompletionRing value={pct} tone={complete ? "sage" : "gold"} size={38} strokeWidth={3.5}>
         <span
           className={cn(
@@ -119,6 +132,20 @@ export const ReadinessRing = ({
           />
         </Text>
       </div>
+    </>
+  );
+
+  if (isPreview) {
+    return (
+      <span inert className={shellClasses}>
+        {body}
+      </span>
+    );
+  }
+
+  return (
+    <Link to={to} className={shellClasses}>
+      {body}
     </Link>
   );
 };

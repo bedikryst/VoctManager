@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
@@ -96,7 +97,7 @@ const DocumentRow = ({
       className={cn(
         "group/file p-4 transition-colors",
         isPreview
-          ? "opacity-70"
+          ? INERT_SURFACE
           : "cursor-pointer active:scale-[0.99] hover:bg-ethereal-parchment/30",
       )}
       contentClassName="flex-row items-stretch justify-between"
@@ -135,13 +136,9 @@ const DocumentRow = ({
         </div>
       </div>
 
-      <div
-        inert={isPreview}
-        className={cn(
-          "flex items-center gap-1 self-center shrink-0",
-          isPreview && "opacity-55",
-        )}
-      >
+      {/* No second dimming here: the card above already carries it, and two
+          coats of 55% sink the row below the one beside it. */}
+      <div inert={isPreview} className="flex items-center gap-1 self-center shrink-0">
         {isPdf && (
           <Button
             variant="ghost"

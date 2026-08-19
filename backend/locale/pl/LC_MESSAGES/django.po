@@ -4507,3 +4507,19 @@ msgstr "Nie masz przypisanych prób do tego wydarzenia."
 #: templates/projects/call_sheet_pdf.html
 msgid "The programme for this event has not been written out yet."
 msgstr "Program tego wydarzenia nie jest jeszcze rozpisany."
+
+#: core/preview.py:34
+msgid "This member has no account yet, so there is nothing to preview."
+msgstr "Ta osoba nie ma jeszcze konta, więc nie ma czego pokazać."
+
+#: core/preview.py:69
+msgid "Only a manager may look at another member's view."
+msgstr "Tylko menedżer może zobaczyć widok innej osoby."
+
+#: core/preview.py:79 core/preview.py:83
+msgid "No such member."
+msgstr "Nie ma takiej osoby."
+
+#: core/preview.py:86
+msgid "This member is archived, so they have no current view."
+msgstr "Ta osoba jest zarchiwizowana, więc nie ma już aktualnego widoku."

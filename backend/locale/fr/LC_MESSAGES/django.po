@@ -4530,3 +4530,20 @@ msgstr "Aucune répétition ne vous est assignée pour cet événement."
 #: templates/projects/call_sheet_pdf.html
 msgid "The programme for this event has not been written out yet."
 msgstr "Le programme de cet événement n’a pas encore été établi."
+
+#: core/preview.py:34
+msgid "This member has no account yet, so there is nothing to preview."
+msgstr ""
+"Cette personne n'a pas encore de compte, il n'y a donc rien à prévisualiser."
+
+#: core/preview.py:69
+msgid "Only a manager may look at another member's view."
+msgstr "Seul un manager peut consulter la vue d'une autre personne."
+
+#: core/preview.py:79 core/preview.py:83
+msgid "No such member."
+msgstr "Membre introuvable."
+
+#: core/preview.py:86
+msgid "This member is archived, so they have no current view."
+msgstr "Cette personne est archivée : elle n'a plus de vue actuelle."

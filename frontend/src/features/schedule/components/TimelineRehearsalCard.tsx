@@ -24,6 +24,7 @@ import { useTimelineRehearsalCard } from "../hooks/useTimelineRehearsalCard";
 import { AbsenceReportForm } from "./AbsenceReportForm";
 import { AddToCalendar } from "./AddToCalendar";
 import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { Button } from "@/shared/ui/primitives/Button";
 import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
@@ -281,7 +282,7 @@ export const TimelineRehearsalCard = ({
             inert={isPreview}
             className={cn(
               "flex flex-col gap-2 px-4 pb-4 pt-0 sm:hidden",
-              isPreview && "opacity-55",
+              isPreview && INERT_SURFACE,
             )}
           >
             <RehearsalActions
@@ -378,7 +379,7 @@ export const TimelineRehearsalCard = ({
                     {/* A jump out of the preview would land the manager in
                         their OWN songbook under the singer's header. */}
                     {isPreview ? (
-                      <Button variant="secondary" size="sm" inert className="opacity-55">
+                      <Button variant="secondary" size="sm" inert className={INERT_SURFACE}>
                         {t("schedule.rehearsal.details.materials_button", "Materiały")}
                         <ArrowRight size={13} aria-hidden="true" />
                       </Button>
@@ -406,7 +407,7 @@ export const TimelineRehearsalCard = ({
                   inert={isPreview}
                   className={cn(
                     "hidden sm:flex gap-2 px-6 pb-5 pt-0 justify-end border-t border-ethereal-incense/10",
-                    isPreview && "opacity-55",
+                    isPreview && INERT_SURFACE,
                   )}
                 >
                   <RehearsalActions

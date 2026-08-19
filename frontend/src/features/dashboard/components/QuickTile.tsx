@@ -15,6 +15,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
+import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 
 export type QuickAccent = "gold" | "sage" | "incense" | "amethyst";
 
@@ -99,17 +100,20 @@ export const QuickTile = ({
   const body = <TileBody Icon={Icon} accent={accent} label={label} hint={hint} />;
   const { isPreview } = useArtistPreview();
 
+  // Inside a preview the whole row is the singer's toolkit, and the answer being
+  // given is that they HAVE it. Following a tile would drop the manager into
+  // their own surface under the preview's header; opening the sheet-launching
+  // one would work, which is worse in its own way — three dead tiles beside one
+  // live one reads as three broken tiles. The row goes inert together.
+  if (isPreview) {
+    return (
+      <span inert className={cn(TILE_BASE, INERT_SURFACE, className)}>
+        {body}
+      </span>
+    );
+  }
+
   if (to) {
-    // Inside a preview these four tiles are the singer's routes into their own
-    // surfaces; following one would drop the manager into THEIRS, under the
-    // preview's header. The tile keeps its place and stops being a door.
-    if (isPreview) {
-      return (
-        <span inert className={cn(TILE_BASE, "opacity-55", className)}>
-          {body}
-        </span>
-      );
-    }
     return (
       <Link to={to} className={cn(TILE_BASE, className)}>
         {body}

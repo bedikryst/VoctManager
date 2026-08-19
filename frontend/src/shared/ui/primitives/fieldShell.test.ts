@@ -120,6 +120,15 @@ interface Delta {
 
 const NO_CHANGE: Delta = { removed: [], added: [] };
 
+/**
+ * Two declared changes stack when both touch the same rendered surface — the
+ * unification's own edits and the touch text scale that landed on top of them.
+ */
+const merge = (...deltas: readonly Delta[]): Delta => ({
+  removed: deltas.flatMap((d) => [...d.removed]).sort(),
+  added: deltas.flatMap((d) => [...d.added]).sort(),
+});
+
 const classSet = (classes: string): Set<string> =>
   new Set(classes.split(/\s+/).filter(Boolean));
 
@@ -154,6 +163,17 @@ const DECIDED = {
     removed: [],
     added: ["focus:bg-ethereal-marble"],
   } as Delta,
+  /**
+   * 2026-08: a control that takes typed text is never under 16px on a touch
+   * device — iOS magnifies the page on focus and a home-screen app does not
+   * zoom back out on blur. The compact scale returns behind `fine-pointer:`,
+   * where no such magnification exists. `FIELD_TEXT_SCALE` owns the recipe;
+   * this entry is the surface change it cost, on every variant at once.
+   */
+  touchTextScale: {
+    removed: ["text-sm"],
+    added: ["fine-pointer:text-sm", "text-base"],
+  } as Delta,
 } as const;
 
 /* ------------------------------------------------------------------ *
@@ -162,10 +182,13 @@ const DECIDED = {
 
 describe("Input — surface after folding onto fieldShell", () => {
   it.each(["glass", "dark", "ghost"] as const)(
-    "%s is unchanged apart from the dropped blur",
+    "%s is unchanged apart from the dropped blur and the touch text scale",
     (variant) => {
       expect(delta(legacyInput(variant, false), inputFieldClasses({ variant }))).toEqual(
-        variant === "glass" ? DECIDED.blurDropped : NO_CHANGE,
+        merge(
+          DECIDED.touchTextScale,
+          variant === "glass" ? DECIDED.blurDropped : NO_CHANGE,
+        ),
       );
     },
   );
@@ -176,22 +199,22 @@ describe("Input — surface after folding onto fieldShell", () => {
         legacyInput("glass", false, { hasLeftIcon: true, hasRightElement: true }),
         inputFieldClasses({ hasLeftIcon: true, hasRightElement: true }),
       ),
-    ).toEqual(DECIDED.blurDropped);
+    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.blurDropped));
   });
 
   it("tints the errored field exactly as before", () => {
     expect(delta(legacyInput("glass", true), inputFieldClasses({ hasError: true }))).toEqual(
-      DECIDED.blurDropped,
+      merge(DECIDED.touchTextScale, DECIDED.blurDropped),
     );
     expect(delta(legacyInput("ghost", true), inputFieldClasses({ variant: "ghost", hasError: true }))).toEqual(
-      NO_CHANGE,
+      DECIDED.touchTextScale,
     );
   });
 
   it("stops repainting the value on the dark field's error state", () => {
     expect(
       delta(legacyInput("dark", true), inputFieldClasses({ variant: "dark", hasError: true })),
-    ).toEqual(DECIDED.darkErrorKeepsItsText);
+    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.darkErrorKeepsItsText));
   });
 });
 
@@ -204,7 +227,7 @@ describe("Textarea — surface after folding onto fieldShell", () => {
           ? DECIDED.solidHoverGained
           : NO_CHANGE;
     expect(delta(legacyTextarea(variant, false), textareaFieldClasses({ variant }))).toEqual(
-      expected,
+      merge(DECIDED.touchTextScale, expected),
     );
   });
 
@@ -215,7 +238,7 @@ describe("Textarea — surface after folding onto fieldShell", () => {
   it("tints the errored field exactly as before", () => {
     expect(
       delta(legacyTextarea("glass", true), textareaFieldClasses({ hasError: true })),
-    ).toEqual(DECIDED.blurDropped);
+    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.blurDropped));
   });
 });
 
@@ -227,34 +250,40 @@ describe("fieldShell — what the other three controls inherit", () => {
   const INERT_ERROR = "placeholder:text-ethereal-crimson/70";
 
   it("gives the glass field a focus fill, as Input always had", () => {
-    expect(delta(legacyShell("glass", false), cn(fieldShellVariants({})))).toEqual({
-      removed: [],
-      added: [...DECIDED.focusFillGained.added, INERT].sort(),
-    });
+    expect(delta(legacyShell("glass", false), cn(fieldShellVariants({})))).toEqual(
+      merge(DECIDED.touchTextScale, {
+        removed: [],
+        added: [...DECIDED.focusFillGained.added, INERT],
+      }),
+    );
   });
 
   it("adopts the ghost hover and focus fills that had live callers", () => {
     expect(
       delta(legacyShell("ghost", false), cn(fieldShellVariants({ variant: "ghost" }))),
-    ).toEqual({
-      removed: ["focus:bg-ethereal-marble", "hover:bg-ethereal-incense/10"],
-      added: [INERT, "focus:bg-ethereal-marble/80", "hover:bg-ethereal-parchment/40"].sort(),
-    });
+    ).toEqual(
+      merge(DECIDED.touchTextScale, {
+        removed: ["focus:bg-ethereal-marble", "hover:bg-ethereal-incense/10"],
+        added: [INERT, "focus:bg-ethereal-marble/80", "hover:bg-ethereal-parchment/40"],
+      }),
+    );
   });
 
   it("leaves the chosen value ink when the field is in error", () => {
     expect(
       delta(legacyShell("glass", true), cn(fieldShellVariants({ hasError: true }))),
-    ).toEqual({
-      removed: ["text-ethereal-crimson"],
-      added: ["focus:bg-ethereal-marble", INERT_ERROR, "text-ethereal-ink"].sort(),
-    });
+    ).toEqual(
+      merge(DECIDED.touchTextScale, {
+        removed: ["text-ethereal-crimson"],
+        added: ["focus:bg-ethereal-marble", INERT_ERROR, "text-ethereal-ink"],
+      }),
+    );
   });
 
   it("carries the dark field untouched", () => {
     expect(
       delta(legacyShell("dark", false), cn(fieldShellVariants({ variant: "dark" }))),
-    ).toEqual({ removed: [], added: [INERT] });
+    ).toEqual(merge(DECIDED.touchTextScale, { removed: [], added: [INERT] }));
   });
 });
 

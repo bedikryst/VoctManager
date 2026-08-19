@@ -142,11 +142,20 @@ const OFFLINE_API_READS = new Set([
   "/api/participations/schedule-dashboard/",
   "/api/participations/materials-dashboard/",
 ]);
+// `?artist=` on those two paths is a manager reading SOMEBODY ELSE'S view
+// (`core/preview.py`). Two reasons it must never enter this cache: it is another
+// person's timeline sitting on the manager's device for thirty days, and — since
+// Workbox keys entries by full URL — a handful of previews would evict the
+// manager's own snapshots out of a 16-entry cache, quietly taking their offline
+// safety net with them. The React Query persister opts out through
+// `meta: { persist: false }`; this is the same decision one layer down.
+const PREVIEW_QUERY_PARAM = "artist";
 registerRoute(
   ({ url, request }) =>
     isSameOrigin(url) &&
     request.method === "GET" &&
-    OFFLINE_API_READS.has(url.pathname),
+    OFFLINE_API_READS.has(url.pathname) &&
+    !url.searchParams.has(PREVIEW_QUERY_PARAM),
   new NetworkFirst({
     cacheName: API_CACHE,
     networkTimeoutSeconds: 4,

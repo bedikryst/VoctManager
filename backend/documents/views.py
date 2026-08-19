@@ -49,12 +49,15 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
     permission_classes = [IsManagerOrReadOnly]
 
     def list(self, request: Request) -> Response:
-        # `?artist=` asks what a member's knowledge base looks like. Which member
-        # does not change the answer — the shelf is filtered by role, not by
-        # person — but the parameter still resolves through the one gate, so an
-        # artist cannot reach the manager's shelf by naming somebody.
-        preview = resolve_preview_target(request)
-        if user_is_manager(request.user) and not preview.is_preview:
+        # The shelf is filtered by the ROLE OF THE PERSON WHOSE VIEW THIS IS —
+        # normally the caller, and the named member under `?artist=`. Reading the
+        # role off the target rather than the caller is what makes a preview of a
+        # member who happens to hold the manager role show their real shelf
+        # instead of a chorister's, and it collapses to the previous behaviour
+        # everywhere else. The gate still runs first, so an artist cannot reach
+        # the manager's shelf by naming somebody.
+        target = resolve_preview_target(request)
+        if user_is_manager(target.user):
             categories = DocumentService.get_all_categories_for_manager()
         else:
             categories = DocumentService.get_artist_visible_categories()

@@ -4887,7 +4887,7 @@
   "artist_preview": {
     "eyebrow": "Aperçu du choriste",
     "title": "Ce que voit {{name}}",
-    "subtitle": "Ce sont exactement les données que le serveur envoie sur l'appareil de cette personne. Rien ne peut être enregistré depuis cet écran.",
+    "subtitle": "La vue que le serveur envoie sur l'appareil de cette personne. Rien ne peut être enregistré depuis cet écran.",
     "read_only_badge": "Consultation seule",
     "back_to_roster": "Base artistes",
     "loading": "Ouverture de la vue du choriste...",
@@ -4901,6 +4901,35 @@
       "schedule": "Calendrier",
       "materials": "Matériel",
       "card": "Carte"
+    },
+    "boundaries": {
+      "trigger": "Ce qui est masqué",
+      "sheet_title": "Ce qui est masqué",
+      "sheet_subtitle": "Des deux côtés de cet écran",
+      "from_member": {
+        "title": "Ce que le choriste ne voit pas",
+        "lead": "Vous l'avez dans le panneau — ce n'est pas sur leur appareil",
+        "money": "Aucun montant, pas même son propre cachet. Un montant parvient à une personne par un contrat, pas par l'application.",
+        "budgets": "Les budgets, les contrats et leurs PDF.",
+        "drafts": "Les projets en préparation — tant qu'un projet est un brouillon, ni lui ni ses répétitions ne figurent à leur calendrier.",
+        "announcements": "Les annonces avant publication — un brouillon, c'est le silence.",
+        "absences": "Qui d'autre était absent — la fiche de répétition donne un nombre, jamais les noms.",
+        "capabilities": "Les données de travail : déchiffrage et étendue vocale.",
+        "contacts": "Les coordonnées des autres chanteurs — l'annuaire porte un nom, un avatar et une voix.",
+        "documents": "Les documents des catégories non partagées avec les choristes.",
+        "archive": "L'archive des œuvres — ils voient le programme de leurs concerts, jamais le catalogue.",
+        "after_concert": "Les partitions et les pistes après le concert — le matériel se ferme pour les projets terminés et annulés.",
+        "protected": "Les éditions protégées — une licence inconnue est traitée comme protégée.",
+        "manager_panel": "Tout le panneau du manager : artistes, présences, archives, logistique, équipe et projets."
+      },
+      "from_you": {
+        "title": "Ce que vous ne verrez pas ici",
+        "lead": "Délibérément — cela n'appartient qu'à cette personne",
+        "readiness": "La préparation des parties — nous avons promis au choriste que personne d'autre ne voit cette note. L'aperçu affiche « masquée » à sa place.",
+        "messages": "Ses messages 1:1 — les conversations sont privées, y compris pour un manager. C'est pourquoi il n'y a pas d'onglet Messages ici.",
+        "notifications": "Sa boîte de notifications — le compteur appartient au compte qui la lit.",
+        "controls": "Aucun bouton n'est actionnable ici : présence, documents et téléchargement hors ligne restent affichés et ne font rien."
+      }
     }
   }
 }

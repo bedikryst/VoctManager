@@ -23,6 +23,8 @@ import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import type { PreviewArtistIdentity } from "@/app/providers/ArtistPreviewProvider";
 
+import { PreviewBoundaries } from "./PreviewBoundaries";
+
 interface PreviewIdentityBarProps {
   artist: PreviewArtistIdentity;
 }
@@ -54,17 +56,25 @@ export const PreviewIdentityBar = ({
             })}
           </Heading>
           <Text size="sm" color="muted" className="mt-1 block">
+            {/* Not "exactly these data": practice readiness is deliberately
+                withheld from a preview, so a claim of exactness would be false
+                in the one place a manager is most likely to check. The sheet
+                next to this line is where the exceptions are named. */}
             {t(
               "artist_preview.subtitle",
-              "Dokładnie te dane serwer wysyła na urządzenie tej osoby. Z tego ekranu niczego nie zapiszesz.",
+              "Ten sam widok, który serwer wysyła na urządzenie tej osoby. Z tego ekranu niczego nie zapiszesz.",
             )}
           </Text>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Badge variant="neutral" icon={<Eye size={11} aria-hidden="true" />}>
             {t("artist_preview.read_only_badge", "Tylko podgląd")}
           </Badge>
+          {/* The two lists live one tap from the name they are about — the
+              question "can they see the fees?" is asked while looking at this
+              person, not from a settings page. */}
+          <PreviewBoundaries />
           <Button
             variant="outline"
             size="sm"
