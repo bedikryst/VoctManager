@@ -22,6 +22,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { EyeOff, Lock, ShieldCheck } from "lucide-react";
 
+import { cn } from "@/shared/lib/utils";
 import { BottomSheet } from "@/shared/ui/composites/BottomSheet";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Heading, Text } from "@/shared/ui/primitives/typography";
@@ -47,14 +48,16 @@ const BoundaryList = ({
   icon,
   title,
   lead,
+  className,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   lead: string;
+  className?: string;
   children: React.ReactNode;
 }): React.JSX.Element => (
-  <section className="min-w-0">
+  <section className={cn("min-w-0", className)}>
     <div className="mb-2 flex items-center gap-2">
       <span
         aria-hidden="true"
@@ -99,7 +102,11 @@ export const PreviewBoundaries = (): React.JSX.Element => {
           "Po obu stronach tego ekranu",
         )}
       >
-        <div className="grid gap-7 pb-2 sm:grid-cols-2 sm:gap-8">
+        {/* One column, not two. The sheet is 672px at its widest, which splits
+            into columns too narrow for sentences this long, and the two lists
+            are 12 items against 4 — side by side they would read as one list
+            and a stub. Stacked, each line keeps a comfortable measure. */}
+        <div className="flex flex-col gap-6 pb-2">
           <BoundaryList
             icon={<Lock size={14} />}
             title={t(
@@ -108,7 +115,7 @@ export const PreviewBoundaries = (): React.JSX.Element => {
             )}
             lead={t(
               "artist_preview.boundaries.from_member.lead",
-              "Ty masz to w panelu — na ich urządzeniu tego nie ma",
+              "Ty masz to w panelu — na ekranie tej osoby tego nie ma",
             )}
           >
             <BoundaryItem>
@@ -186,6 +193,7 @@ export const PreviewBoundaries = (): React.JSX.Element => {
           </BoundaryList>
 
           <BoundaryList
+            className="border-t border-ethereal-incense/15 pt-6"
             icon={<ShieldCheck size={14} />}
             title={t(
               "artist_preview.boundaries.from_you.title",

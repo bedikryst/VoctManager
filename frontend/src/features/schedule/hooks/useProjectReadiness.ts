@@ -9,6 +9,7 @@
 import { useMemo } from "react";
 
 import { useArtistMaterialsDashboard } from "@/features/materials/api/materials.queries";
+import { isReadinessWithheld } from "@/features/materials/lib/readiness";
 
 export interface ProjectReadiness {
   ready: number;
@@ -39,19 +40,13 @@ export const useProjectReadiness = (
     const ready =
       item?.program.filter((pi) => pi.piece.my_readiness === "READY").length ??
       0;
-    // Withheld arrives as null on every piece at once (the query drops the
-    // prefetch entirely), so one null is the whole programme's answer.
-    const isWithheld =
-      total > 0 &&
-      (item?.program.every((pi) => pi.piece.my_readiness === null) ?? false);
-
     return {
       ready,
       total,
       pct: total > 0 ? Math.round((ready / total) * 100) : 0,
       isLoading: enabled && isLoading,
       hasData: total > 0,
-      isWithheld,
+      isWithheld: isReadinessWithheld(item?.program ?? []),
     };
   }, [data, projectId, isLoading, enabled]);
 };

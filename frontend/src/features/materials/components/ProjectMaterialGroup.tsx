@@ -8,6 +8,7 @@ import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceRow } from "./PieceRow";
 import { OfflineDownloadControl } from "./OfflineDownloadControl";
+import { isReadinessWithheld } from "../lib/readiness";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface ProjectMaterialGroupProps {
@@ -27,12 +28,10 @@ export const ProjectMaterialGroup = ({
   const readyPct = total > 0 ? Math.round((ready / total) * 100) : 0;
   const ringTone =
     readyPct === 100 ? "sage" : readyPct > 0 ? "gold" : "graphite";
-  // The server withholds a member's practice self-report from a preview, and
-  // sends null rather than NOT_STARTED so the two cannot be confused. The ring
-  // and its caption have to go with it — 0/N here would read as "has not
-  // touched a single piece", which is a claim nobody made.
-  const isReadinessWithheld =
-    total > 0 && group.program.every((item) => item.piece.my_readiness === null);
+  // The ring and its caption follow the withholding — 0/N here would read as
+  // "has not touched a single piece", which is a claim nobody made. The rule
+  // itself lives in one place, shared with `useProjectReadiness`.
+  const readinessWithheld = isReadinessWithheld(group.program);
 
   return (
     <div className={`space-y-4 ${isArchived ? "opacity-70" : "opacity-100"}`}>
@@ -104,7 +103,7 @@ export const ProjectMaterialGroup = ({
           total > 0 && (
             <div className="shrink-0 flex items-center gap-2.5">
               <OfflineDownloadControl group={group} />
-              {isReadinessWithheld ? (
+              {readinessWithheld ? (
                 <Badge
                   variant="neutral"
                   icon={<EyeOff size={11} aria-hidden="true" />}
