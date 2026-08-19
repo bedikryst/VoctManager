@@ -6,13 +6,13 @@
 ![React 19](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)
 ![Celery](https://img.shields.io/badge/Celery-37814A?logo=celery&logoColor=white)
-![Anthropic](https://img.shields.io/badge/Claude_Sonnet_4.6-D97757?logo=anthropic&logoColor=white)
+![Anthropic](https://img.shields.io/badge/Claude_Sonnet_5_+_Opus_5-D97757?logo=anthropic&logoColor=white)
 
 An ERP for a professional vocal ensemble, and the AI pipeline that catalogues its sheet music.
 
 I co-founded a foundation around **VoctEnsemble**. Its artistic director was doing a lot of work by hand that software should have been doing for him: who sings which part, contracts, assembling a singers' score book before every concert, and typing metadata off PDF scores one field at a time. So I built this.
 
-One person, 711 commits, first one 26 February 2026.
+One person, 832 commits, first one 26 February 2026.
 
 **Public site:** [voctensemble.com](https://voctensemble.com) · **Status:** deployed and running, adoption still in progress ([details](#where-this-actually-stands))
 
@@ -24,18 +24,19 @@ One person, 711 commits, first one 26 February 2026.
 
 ## The score pipeline
 
-Upload a PDF score. A few minutes later the archive holds a catalogued work: composer resolved to a canonical ID, movements split out, the sung text transcribed, IPA aligned line by line, singing translations, and a programme note in the ensemble's language. The conductor reads it over, fixes what's wrong, approves. An afternoon of typing becomes a few minutes of checking.
+Upload a PDF score. A few minutes later the archive holds a catalogued work: composer resolved to a canonical ID, movements split out, the sung text transcribed, IPA aligned line by line, singing translations. The conductor reads it over, fixes what's wrong, approves — and only then is the programme note written, from the corrected record rather than the model's first guess. An afternoon of typing becomes a few minutes of checking.
 
 ```
 upload PDF
   → Celery chain starts, browser subscribes to Server-Sent Events
-  → one consolidated Sonnet call reads the whole document by vision
+  → one consolidated Sonnet 5 call reads the whole document by vision
     (text layer and scans both; the key inferred from the key signature,
      composer split from arranger, movements, sung text, IPA, translations)
   → composer + work resolved against MusicBrainz (MBID) and Wikidata (QID)
   → Spotify / YouTube looked up for reference recordings
   → every field stamped with provenance, persisted
   → conductor reviews, corrects, approves → published
+  → programme note written by Opus 5, on demand, from the reviewed record
 ```
 
 ### Three things I'd point at
@@ -52,7 +53,7 @@ upload PDF
 
 `retry(3)` on everything would have been half a day's less work. It also turns a capacity blip into a retry storm and a truncation into three identical bills.
 
-**Three spend ceilings, enforced at the task boundary.** Per-run, a lifetime cap per edition that never resets, and an org-wide daily budget that trips a circuit breaker. Defaults are $1.00, $5.00 and $20.00. Re-uploading a PDF that's already been processed hits a SHA-256 check and skips the model entirely. An ingest ends up costing **$0.11–0.22**. The PDF goes up as a native `document` block with `cache_control: ephemeral`, so if a truncation forces an escalation, the second attempt reads it back at cache rates instead of paying full input again.
+**Three spend ceilings, enforced at the task boundary.** Per-run, a lifetime cap per edition that never resets, and an org-wide daily budget that trips a circuit breaker. Defaults are $1.50, $7.50 and $20.00. Re-uploading a PDF that's already been processed hits a SHA-256 check and skips the model entirely. An ingest costs **$0.04–0.20**, and the spread inside that range is the sung language rather than the model: a wholly-Polish score returns no IPA and no translation, so it comes in at a fifth of a bilingual one. The PDF goes up as a native `document` block with `cache_control: ephemeral`, so if a truncation forces an escalation, the second attempt reads it back at cache rates instead of paying full input again.
 
 <img src="docs/assets/score-compiler-upload.png" width="620" alt="Upload screen streaming live pipeline progress over Server-Sent Events"/>
 
@@ -63,6 +64,10 @@ upload PDF
 Including the ones where the decision was not to build something. The rest are listed under [Out of scope](#out-of-scope).
 
 **Two frontends.** The panel is a React SPA. The public site is a separate Astro app. That split came out of applying for Google Ad Grants: the audit wanted crawlable content and the SPA shell served crawlers an empty div. Astro emits static HTML and hydrates React only where there's real state: the donation flow, the audio gate, the sticky header. Two builds, one backend, one deploy. It's more moving parts than I wanted, and I'd make the same call again.
+
+**Two model tiers, and a version bump that wasn't one.** The document read is Sonnet 5. The programme note — the only text here an audience reads verbatim, printed in a concert programme — is Opus 5, for about a cent more per note. Crossing a model generation turned out to be more than swapping a constant. On the previous Sonnet an absent `thinking` key meant thinking was off; on Sonnet 5 it means adaptive thinking is on, so a bare swap would have silently re-enabled it on the one call that disables it deliberately and made it share that call's output budget. And the provenance map fell back to the Opus tier on an unrecognised model id, which would have labelled every Sonnet-produced field "Opus" in the review cockpit while the stored `model_version` said otherwise — a quiet lie in exactly the screen built to stop the conductor guessing.
+
+**The programme note left the ingestion chain.** It used to run eagerly at the end of the pipeline, which meant audience-facing prose was written from the model's *un-reviewed* identity — a wrong composer or epoch baked straight into the text a listener reads. It is now a separate on-demand task, dispatched from the review cockpit or on approval, with the corrected metadata and the sung text as its context.
 
 **Liveness and readiness are different questions.** `/api/health/` touches nothing and backs the Docker healthcheck. `/api/health/ready/` hits Postgres and Redis and returns 503 if it can't serve. Keeping them separate matters more than it looks: restart a container because Postgres is slow and you get a container that comes back equally degraded, then `depends_on` cascades the restart into Celery. The Redis half is a write-then-read rather than a `PING`. A Redis sitting at `maxmemory` under `noeviction` will answer `PING` perfectly while refusing every write, and I'd rather find that out from a probe than from a lost task.
 
@@ -84,13 +89,15 @@ I'm leaving this section in because it's the most useful thing the project has t
 
 **The first ingestion pipeline was a chain of small model calls.** Identity in one call, movements in another, then lyrics, then translations. Each call only saw its own slice, so the model kept falling back on what it knew instead of what was printed — for a well-known hymn it would produce the canonical text rather than the words actually on the page, which is exactly wrong for an archive. Consolidating into one call that reads the whole document fixed the accuracy problem and cut the bill at the same time. I should have seen it coming from first principles. I didn't.
 
+**I built the measurement harness and then didn't feed it for two months.** The golden-set evaluator shipped with the v2 pipeline in June and had no golden set until August, which means every quality claim I'd made about this pipeline until then — including the ones that justified the rewrite — rested on spot-checking. When the model upgrade finally forced the issue, the measurement contradicted the reasoning I'd upgraded on: I'd argued for Sonnet 5 on its higher-resolution vision for scanned scores, and the archive turned out to be almost entirely born-digital, where that lever does nothing. It stayed anyway, on a reason I hadn't given: 31% cheaper and 2.6× faster at identical accuracy, because it reached the same answer in 39% fewer output tokens and output is where the bill lives. The set also scored 100% on every configuration including the old model, so it can't rank anything yet — which is why the cheaper effort setting that matched it everywhere still didn't get promoted. A test everything passes isn't evidence.
+
 **I under-tested the dull paths.** Test coverage grew around the AI pipeline first, because that's where the interesting failures lived. Contracts, attendance, settlements got covered late. Those are where the actual bugs came from.
 
 ---
 
 ## How this was built, and where the AI stops
 
-I use Claude Code every day. A project this size doesn't get built by one person in five months without it, and the git history says so plainly: some commits are co-authored.
+I use Claude Code every day. A project this size doesn't get built by one person in six months without it, and the git history says so plainly: some commits are co-authored.
 
 What it didn't do: split the frontend after the Ad Grants audit came back. Decide that retry policy should key off billing rather than status codes. Decide that Prometheus, a Postgres replica and a Redis cluster all stay out on a single-droplet, single-maintainer deployment. Decide that the watermark carries a singer's name and never their email, because these pages get printed and left on a music stand where anyone can read them.
 
@@ -122,7 +129,7 @@ Architecture, cost, priorities, and what stays out are mine. Those are the parts
 
 **Public site** — Astro 6 with React islands, hand-authored CSS, self-hosted variable fonts (no third-party font CDN, so no user-IP leakage), native View Transitions.
 
-**Documents & AI** — WeasyPrint, pypdf, pypdfium2, Anthropic SDK (vision over native PDF, structured outputs, prompt caching, adaptive thinking).
+**Documents & AI** — WeasyPrint, pypdf, pypdfium2, Anthropic SDK pinned to an exact version, because the pipeline leans on version-sensitive defaults: vision over native PDF, structured outputs, prompt caching, adaptive thinking.
 
 **Infrastructure** — Docker Compose with dev/prod parity, Nginx, Gunicorn/Uvicorn, GitHub Actions, Sentry.
 
@@ -130,7 +137,7 @@ Architecture, cost, priorities, and what stays out are mine. Those are the parts
 
 ## Quality and operations
 
-**Tests.** Around 676 on the backend, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. The frontend has 83, and the small number is the decision rather than the state of it: a component harness plus twelve tests pointed only at the writes that can't be taken back — publishing a project mails the whole choir, and RSVP, attendance marking and account activation each change state on someone else's behalf. The rest of the panel is still verified by `tsc`, a build and a look at the screen. A coverage percentage over 569 source files would have measured something else.
+**Tests.** 939 on the backend, across roster, archive, payments, messaging, notifications, documents and core. Contract generation, the score-package cockpit, licensed-score protection and the provenance pipeline are covered. Alongside them sits a golden-set evaluator — a management command that runs real scores through the live pipeline and scores per-field accuracy, cost and wall time against hand-written expectations, which is how a model upgrade gets decided here rather than argued. The frontend has 111, and the small number is the decision rather than the state of it: a component harness plus twelve tests pointed only at the writes that can't be taken back — publishing a project mails the whole choir, and RSVP, attendance marking and account activation each change state on someone else's behalf. The rest of the panel is still verified by `tsc`, a build and a look at the screen. A coverage percentage over 604 source files would have measured something else.
 
 **CI.** Ruff, mypy in strict mode, and the full suite against PostgreSQL 16 on every push and pull request.
 
@@ -152,6 +159,7 @@ Written down so they don't come back as bug reports.
 
 ### Open
 
+- [ ] Grow the golden set to cases that actually separate one model configuration from another
 - [ ] Burn the shared annotation layer into the score book at assembly time
 - [ ] Fernet at-rest encryption for contract and financial fields, plus an immutable mutation log
 - [ ] Frontend CI and Playwright end-to-end coverage
@@ -182,19 +190,22 @@ graph TD
     Celery -->|WeasyPrint / pypdf| Files[Documents · score books]
     Celery -->|Resend · Firebase| Notify[Email · web push]
 
-    Celery -->|native-PDF vision| Claude[Claude Sonnet 4.6]
+    Celery -->|native-PDF vision| Claude[Claude Sonnet 5]
     Claude -->|tool-orchestrated lookups| Ext[MusicBrainz · Wikidata<br/>Spotify · YouTube]
     Ext -.->|cached| Redis
     Claude -->|provenance-stamped| DB
+
+    Celery -->|programme note, after review| Opus[Claude Opus 5]
+    Opus -->|provenance-stamped| DB
 
     classDef default fill:#1f2937,stroke:#4b5563,color:#f3f4f6;
     classDef db fill:#059669,stroke:#047857,color:#ffffff;
     classDef ai fill:#D97757,stroke:#b85c3e,color:#ffffff;
     class DB,Redis db;
-    class Claude,Ext ai;
+    class Claude,Ext,Opus ai;
 ```
 
-The Celery ingestion chain: `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → generate_program_note → lookup_spotify → lookup_youtube → finalize_edition`. Progress streams from an async ASGI endpoint at `GET /api/archive/editions/<id>/events/`, so production runs under `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
+The Celery ingestion chain: `prepare_document → analyze_score → resolve_composer_and_piece → persist_analysis → lookup_spotify → lookup_youtube → finalize_edition`. `generate_program_note` is deliberately outside it and runs as its own task after review. Progress streams from an async ASGI endpoint at `GET /api/archive/editions/<id>/events/`, so production runs under `gunicorn config.asgi -k uvicorn.workers.UvicornWorker`.
 
 Deep dive on the pipeline: [`docs/archive-ai-ingestion-pipeline.md`](docs/archive-ai-ingestion-pipeline.md).
 
