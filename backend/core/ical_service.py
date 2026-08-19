@@ -11,6 +11,12 @@ from roster.domain.day_timeline import format_time_window, localize
 from roster.domain.event_kind import event_moment_label
 from roster.models import Participation, Project, Rehearsal
 
+# The label a member reads in their phone's calendar list, between "Work" and
+# "Birthdays" — so it is the ensemble's name, not the product's. Deliberately
+# untranslated: a proper noun, and a member reading the panel in French still
+# sings in this choir.
+CALENDAR_NAME = "VoctEnsemble"
+
 
 class ICalGeneratorService:
     """
@@ -170,6 +176,9 @@ class ICalGeneratorService:
             return dt.astimezone(UTC).strftime('%Y%m%dT%H%M%SZ')
 
         now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
+        # No calendar name here on purpose: an invite attached to an e-mail is
+        # dropped into a calendar the reader already has. Naming it would offer
+        # some clients a whole new subscribed calendar per message.
         lines = [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
@@ -244,16 +253,34 @@ class ICalGeneratorService:
         return '\n'.join(lines)
 
     @classmethod
-    def _build_ics(cls, projects, rehearsals) -> str:
-        lines = [
+    def _calendar_preamble(cls) -> list[str]:
+        """The VCALENDAR header both feeds share.
+
+        It used to be typed out twice and the copies disagreed: the empty feed
+        carried no name at all, so a member with nothing scheduled yet — or an
+        account with no artist profile behind it — got a calendar labelled with
+        the entire subscription URL, token included, sitting in their phone's
+        calendar list.
+
+        `NAME` is the RFC 7986 property; `X-WR-CALNAME` is the older X-property
+        that Apple, Google and Outlook actually read. Both are emitted because
+        neither alone covers the clients members use.
+        """
+        name = cls._escape_ics_text(CALENDAR_NAME)
+        return [
             "BEGIN:VCALENDAR",
             "VERSION:2.0",
             "PRODID:-//VoctManager Enterprise//EN",
             "CALSCALE:GREGORIAN",
             "METHOD:PUBLISH",
-            "X-WR-CALNAME:VoctManager Schedule",
+            f"NAME:{name}",
+            f"X-WR-CALNAME:{name}",
             "X-WR-TIMEZONE:UTC",
         ]
+
+    @classmethod
+    def _build_ics(cls, projects, rehearsals) -> str:
+        lines = cls._calendar_preamble()
 
         now_utc = timezone.now().strftime('%Y%m%dT%H%M%SZ')
 
@@ -310,9 +337,6 @@ class ICalGeneratorService:
 
     @classmethod
     def _generate_empty_ics(cls) -> str:
-        return cls._render([
-            "BEGIN:VCALENDAR",
-            "VERSION:2.0",
-            "PRODID:-//VoctManager Enterprise//EN",
-            "END:VCALENDAR"
-        ])
+        """A calendar with no events is still a calendar the member sees named
+        in their list, so it carries the same identity as a full one."""
+        return cls._render([*cls._calendar_preamble(), "END:VCALENDAR"])

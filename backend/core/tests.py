@@ -1527,6 +1527,23 @@ class CalendarFeedTests(TestCase):
         """
         return ICalGeneratorService.generate_user_feed(self.user).replace("\r\n ", "")
 
+    def test_a_calendar_with_nothing_in_it_is_still_named(self) -> None:
+        """An account with no artist profile behind it reaches the empty feed.
+
+        That feed used to carry no name, and clients fall back to labelling the
+        calendar with the subscription URL — token and all — in the member's
+        calendar list.
+        """
+        nobody = get_user_model().objects.create_user(
+            username="ics-nobody", email="ics-nobody@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=nobody, role=AppRole.MANAGER, language="pl")
+
+        feed = ICalGeneratorService.generate_user_feed(nobody)
+
+        self.assertIn("X-WR-CALNAME:VoctEnsemble", feed)
+        self.assertIn("NAME:VoctEnsemble", feed)
+
     def test_no_content_line_exceeds_the_octet_ceiling(self) -> None:
         project = self._project("Wcielenie", self.Project.Status.ACTIVE)
         project.entrance_note = "Wejście od zakrystii, drzwi po lewej stronie prezbiterium"
