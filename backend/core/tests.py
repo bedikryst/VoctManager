@@ -1527,6 +1527,47 @@ class CalendarFeedTests(TestCase):
         """
         return ICalGeneratorService.generate_user_feed(self.user).replace("\r\n ", "")
 
+    def test_the_endpoint_answers_a_client_that_asks_for_a_calendar(self) -> None:
+        """Apple's calendar client sends `Accept: text/calendar` and nothing else.
+
+        Against DRF's default renderers that header matches neither JSON nor the
+        browsable HTML, so content negotiation refused the request with 406
+        before the view ran — for weeks, while Google's `*/*` sailed through and
+        made the endpoint look healthy.
+        """
+        # Throttle counters live in the shared cache and survive between tests
+        # in a run, so a suite-wide sweep would otherwise answer 429 here.
+        cache.clear()
+        project = self._project("Requiem", self.Project.Status.ACTIVE)
+        self._seat(project)
+        url = f"/api/calendar/{self.user.profile.calendar_token}/feed.ics"
+
+        for accept in (
+            "text/calendar",
+            "text/calendar, text/x-vcalendar",
+            "*/*",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        ):
+            with self.subTest(accept=accept):
+                response = self.client.get(url, headers={"accept": accept})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(
+                    response["Content-Type"], "text/calendar; charset=utf-8"
+                )
+                self.assertIn("BEGIN:VCALENDAR", response.content.decode("utf-8"))
+
+    def test_a_reset_token_is_answered_by_the_status_code_alone(self) -> None:
+        response = self.client.get(
+            "/api/calendar/2a5f4a1e-0000-4000-8000-000000000000/feed.ics",
+            headers={"accept": "text/calendar"},
+        )
+
+        self.assertEqual(response.status_code, 404)
+        # The renderer above would otherwise stamp a Python repr of DRF's detail
+        # dict with this feed's own content type.
+        self.assertNotIn(b"ErrorDetail", response.content)
+
     def test_a_calendar_with_nothing_in_it_is_still_named(self) -> None:
         """An account with no artist profile behind it reaches the empty feed.
 

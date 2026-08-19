@@ -14,7 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from pydantic import ValidationError
-from rest_framework import generics, status, views
+from rest_framework import generics, renderers, status, views
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -548,19 +548,50 @@ class AvatarView(views.APIView):
         return self._profile_response(profile, request)
 
 
+class ICalendarRenderer(renderers.BaseRenderer):
+    """Content negotiation for a URL that has exactly one representation.
+
+    DRF offers a view's declared renderers against the request's `Accept`, and
+    the defaults are JSON and the browsable HTML. A calendar client that asks
+    for precisely what it wants — Apple's sends `Accept: text/calendar` with no
+    wildcard — matches neither and is refused with 406 in `initial()`, before
+    the view body ever runs. Google's fetcher sends `*/*`, matched JSON and
+    worked, which is why the endpoint looked healthy from every side except the
+    one that was failing.
+    """
+    media_type = 'text/calendar'
+    format = 'ics'
+    charset = 'utf-8'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        if isinstance(data, bytes):
+            return data
+        return str(data).encode(self.charset)
+
+
 class CalendarFeedView(views.APIView):
     """
     GET /api/v1/calendar/<calendar_token>/feed.ics
     Public but unguessable endpoint generating a live RFC 5545 compliant iCalendar feed.
     """
     permission_classes = (AllowAny,)
-    authentication_classes = () 
+    authentication_classes = ()
+    renderer_classes = (ICalendarRenderer,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = 'calendar_feed'
 
     @extend_schema(responses={200: str})
     def get(self, request, token, *args, **kwargs):
-        profile = get_object_or_404(UserProfile, calendar_token=token)
+        profile = UserProfile.objects.filter(calendar_token=token).first()
+        if profile is None:
+            # Deliberately not `get_object_or_404`: DRF would render its error
+            # document through the renderer above, stamping a Python repr of the
+            # detail dict with this feed's own content type. A reset token is
+            # answered by the status code alone.
+            return HttpResponse(status=404)
+
         ics_content = ICalGeneratorService.generate_user_feed(profile.user)
-        
+
         response = HttpResponse(ics_content, content_type='text/calendar; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="voctmanager_schedule.ics"'
         response['Cache-Control'] = 'no-cache, no-store, must-revalidate'

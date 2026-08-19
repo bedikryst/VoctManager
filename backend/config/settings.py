@@ -204,6 +204,13 @@ REST_FRAMEWORK = {
         # per hit, so the abuse surface is bombing a victim. Capped tight, but
         # loose enough for a legitimate retry or shared NAT.
         'password_reset': '5/hour',
+        # The subscribed .ics is anonymous to DRF (it authenticates by token in
+        # the path), so it inherited the 10/minute anon budget it shares with
+        # every other public endpoint. Calendar clients poll unattended and
+        # retry, and a whole choir behind one venue's Wi-Fi is one IP — that cap
+        # turns into a subscription the phone reports as broken. Per-IP, sized
+        # for an ensemble's worth of phones refreshing on their own cadence.
+        'calendar_feed': '600/hour',
         # Scoped limits for the public, unauthenticated payments endpoints.
         # 'donation_initiate' both writes a row and calls the gateway per hit;
         # kept generous enough for shared NAT (e.g. concert-venue Wi-Fi).
