@@ -1518,7 +1518,32 @@ class CalendarFeedTests(TestCase):
         )
 
     def _feed(self) -> str:
-        return ICalGeneratorService.generate_user_feed(self.user)
+        """Unfolded, because these tests are about what a subscriber reads.
+
+        The wire format breaks every content line at 75 octets (RFC 5545 §3.1),
+        which lands mid-word and mid-phone-number. Asserting against the raw
+        text would be asserting where the fold falls; `test_no_content_line
+        _exceeds_the_octet_ceiling` is the one place that reads the wire itself.
+        """
+        return ICalGeneratorService.generate_user_feed(self.user).replace("\r\n ", "")
+
+    def test_no_content_line_exceeds_the_octet_ceiling(self) -> None:
+        project = self._project("Wcielenie", self.Project.Status.ACTIVE)
+        project.entrance_note = "Wejście od zakrystii, drzwi po lewej stronie prezbiterium"
+        project.parking_note = "Parking przy plebanii, wjazd od ul. Rakowieckiej; miejsc mało"
+        project.dress_code_female = "Czarna długa suknia, czarne buty na płaskim obcasie"
+        project.save()
+        self._seat(project)
+
+        wire = ICalGeneratorService.generate_user_feed(self.user)
+
+        # A filled Polish day card runs past 500 octets on one DESCRIPTION line.
+        for line in wire.split("\r\n"):
+            self.assertLessEqual(len(line.encode("utf-8")), 75, line)
+        # The cut may never land inside a multi-byte character: the diacritics
+        # have to survive unfolding intact.
+        self.assertIn("prezbiterium", wire.replace("\r\n ", ""))
+        self.assertIn("miejsc mało", wire.replace("\r\n ", ""))
 
     def test_a_draft_concert_never_reaches_the_calendar(self) -> None:
         live = self._project("Requiem", self.Project.Status.ACTIVE)
@@ -1647,7 +1672,8 @@ class CalendarFeedConductorTests(TestCase):
         )
 
     def _feed(self) -> str:
-        return ICalGeneratorService.generate_user_feed(self.user)
+        """Unfolded — see the note on the same helper in `CalendarFeedTests`."""
+        return ICalGeneratorService.generate_user_feed(self.user).replace("\r\n ", "")
 
     def test_the_podium_reaches_the_calendar_with_every_rehearsal(self) -> None:
         project = self._podium("Requiem", self.Project.Status.ACTIVE)

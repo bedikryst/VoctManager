@@ -33,6 +33,40 @@ class ICalGeneratorService:
         text = text.replace('\n', '\\n')
         return text
 
+    @staticmethod
+    def _fold(line: str) -> str:
+        """Splits one content line to the 75-octet ceiling of RFC 5545 §3.1.
+
+        The limit is counted in octets, not characters, and the continuation
+        marker (CRLF + one space) is part of the following line's budget. A
+        Polish day card blows through it easily — a filled DESCRIPTION reaches
+        ~550 octets — and the strict end of the parser spectrum, which is where
+        Apple sits, is entitled to reject that.
+
+        The cut must land on a UTF-8 lead byte: slicing `ł` or `ę` down the
+        middle would hand the client a broken sequence, which is a worse feed
+        than a long line.
+        """
+        raw = line.encode('utf-8')
+        if len(raw) <= 75:
+            return line
+
+        chunks: list[str] = []
+        start, budget = 0, 75
+        while start < len(raw):
+            end = min(start + budget, len(raw))
+            while end < len(raw) and (raw[end] & 0xC0) == 0x80:
+                end -= 1
+            chunks.append(raw[start:end].decode('utf-8'))
+            start, budget = end, 74  # the leading space costs one octet
+        return "\r\n ".join(chunks)
+
+    @classmethod
+    def _render(cls, lines: Sequence[str]) -> str:
+        """The one exit from this service: fold every content line, then join
+        with the CRLF that RFC 5545 requires."""
+        return "\r\n".join(cls._fold(line) for line in lines)
+
     @classmethod
     def generate_user_feed(cls, user) -> str:
         """
@@ -156,7 +190,7 @@ class ICalGeneratorService:
                 "END:VEVENT",
             ])
         lines.append("END:VCALENDAR")
-        return "\r\n".join(lines)
+        return cls._render(lines)
 
     @staticmethod
     def _project_description(project: Project) -> str:
@@ -272,14 +306,13 @@ class ICalGeneratorService:
             ])
 
         lines.append("END:VCALENDAR")
-        # RFC 5545 strictly requires CRLF (\r\n) line endings
-        return "\r\n".join(lines)
+        return cls._render(lines)
 
-    @staticmethod
-    def _generate_empty_ics() -> str:
-        return "\r\n".join([
-            "BEGIN:VCALENDAR", 
-            "VERSION:2.0", 
-            "PRODID:-//VoctManager Enterprise//EN", 
+    @classmethod
+    def _generate_empty_ics(cls) -> str:
+        return cls._render([
+            "BEGIN:VCALENDAR",
+            "VERSION:2.0",
+            "PRODID:-//VoctManager Enterprise//EN",
             "END:VCALENDAR"
         ])

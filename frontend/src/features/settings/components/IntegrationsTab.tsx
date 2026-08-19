@@ -5,12 +5,11 @@
  * with copy, and the token reset escape hatch. The quick-subscribe row spares
  * choristers the "paste a URL into calendar settings" ritual entirely.
  *
- * `webcal://` is by definition the cleartext scheme — the URI resolves to
- * `http://`, and this host answers port 80 with nothing but a 301. iOS Calendar
- * therefore greets the one-tap link with "the connection is not secure, do you
- * want to continue subscribing?" and then often fails validation anyway, which
- * is where a member gives up. The https address below is the same subscription
- * over TLS, so the panel spells out the native route that never leaves it.
+ * The Apple link carries `webcals://`, not `webcal://`: the plain scheme is by
+ * definition cleartext (it resolves to `http://`, and this host answers port 80
+ * with nothing but a 301), so iOS Calendar met it with "the connection is not
+ * secure, do you want to continue subscribing?" and then failed validation
+ * anyway. Google keeps the cleartext form, which its fetcher documents.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/IntegrationsTab
  */
@@ -62,6 +61,17 @@ export const IntegrationsTab = () => {
     ? `${backendUrl}/api/calendar/${user.profile.calendar_token}/feed.ics`
     : "";
   const webcalUrl = calendarUrl.replace(/^https?:\/\//, "webcal://");
+  // `webcals://` is the TLS half of the scheme, and iOS Calendar registers it
+  // (verified on iOS 26) alongside Outlook and Thunderbird, which need it
+  // outright against a TLS-only host. It is what keeps the subscription off the
+  // cleartext hop that makes plain `webcal://` open with an insecure-connection
+  // warning here. A dev feed served over http has no TLS to point at, so it
+  // keeps the cleartext scheme rather than advertising one that cannot connect.
+  const appleUrl = calendarUrl.startsWith("https://")
+    ? calendarUrl.replace(/^https:\/\//, "webcals://")
+    : webcalUrl;
+  // Google's fetcher resolves the cleartext form correctly and this is its
+  // documented shape — left alone rather than traded for an unverified one.
   const googleUrl = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcalUrl)}`;
 
   const handleCopy = async () => {
@@ -128,7 +138,7 @@ export const IntegrationsTab = () => {
                   </a>
                 </Button>
                 <Button asChild variant="secondary" className="sm:shrink-0">
-                  <a href={webcalUrl}>
+                  <a href={appleUrl}>
                     <CalendarPlus className="h-4 w-4" aria-hidden="true" />
                     {t(
                       "settings.integrations.quick_apple",
