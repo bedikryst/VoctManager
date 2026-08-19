@@ -17,6 +17,7 @@ from rest_framework.response import Response
 
 from core.constants import AppRole
 from core.permissions import IsManagerOrReadOnly, user_is_manager
+from core.preview import resolve_preview_target
 
 from .dtos import DocumentCategoryCreateDTO, DocumentCategoryUpdateDTO, DocumentCreateDTO
 from .file_detection import FileTypeDetectionUnavailableError, detect_mime_from_buffer
@@ -48,7 +49,12 @@ class DocumentCategoryViewSet(viewsets.ViewSet):
     permission_classes = [IsManagerOrReadOnly]
 
     def list(self, request: Request) -> Response:
-        if user_is_manager(request.user):
+        # `?artist=` asks what a member's knowledge base looks like. Which member
+        # does not change the answer — the shelf is filtered by role, not by
+        # person — but the parameter still resolves through the one gate, so an
+        # artist cannot reach the manager's shelf by naming somebody.
+        preview = resolve_preview_target(request)
+        if user_is_manager(request.user) and not preview.is_preview:
             categories = DocumentService.get_all_categories_for_manager()
         else:
             categories = DocumentService.get_artist_visible_categories()
@@ -189,11 +195,14 @@ class ArtistMetricsAPIView(views.APIView):
     """
     Returns aggregated performance history for the currently authenticated artist.
     Returns zeroed metrics for users without a linked artist profile (e.g. pure managers).
+
+    A manager may ask for a member's figures with ``?artist=<id>``.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        artist_profile = getattr(request.user, 'artist_profile', None)
+        target = resolve_preview_target(request)
+        artist_profile = getattr(target.user, 'artist_profile', None)
 
         if artist_profile is None:
             return Response(ArtistMetricsService.get_empty_metrics().model_dump(mode="json"))
@@ -208,9 +217,13 @@ class MyEnsembleAPIView(views.APIView):
     Ensemble directory for the authenticated chorister: active singers grouped by
     stable voice type, plus the caller's own standing. Whitelisted output — never
     exposes the conductor's private capability data (sight-reading, vocal range).
+
+    A manager may ask for a member's directory with ``?artist=<id>``; "me" and
+    every `is_me` flag then resolve to that member, which is the whole point.
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        ensemble = EnsembleDirectoryService.get_ensemble(request.user, request=request)
+        target = resolve_preview_target(request)
+        ensemble = EnsembleDirectoryService.get_ensemble(target.user, request=request)
         return Response(ensemble.model_dump(mode="json"))

@@ -43,6 +43,7 @@ from archive.score_protection import (
 from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
+from core.preview import resolve_preview_target
 from core.request_utils import client_payload, request_user
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.models import PendingAnnouncement
@@ -1129,16 +1130,23 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         each resolved in a fixed number of SQL queries via pre-fetched to_attr
         lists. Both slices share the row shape; conductor rows carry
         `is_conducting: true` and a null participation.
+
+        A manager may ask for a member's tree with ``?artist=<id>`` — the same
+        rows that member is served, minus their practice readiness, which they
+        were promised nobody else can see.
         """
-        user = request_user(request)
-        ctx = {'request': request}
+        target = resolve_preview_target(request)
+        readiness_visible = not target.is_preview
+        ctx = {'request': request, 'readiness_visible': readiness_visible}
         sung = ParticipationMaterialsSerializer(
-            get_artist_materials_queryset(user),
+            get_artist_materials_queryset(
+                target.user, include_readiness=readiness_visible
+            ),
             many=True,
             context=ctx,
         ).data
         conducted = ConductedProjectMaterialsSerializer(
-            get_conductor_materials_projects(user),
+            get_conductor_materials_projects(target.user),
             many=True,
             context=ctx,
         ).data
@@ -1152,9 +1160,11 @@ class ParticipationViewSet(viewsets.ModelViewSet):
         their own participation id and (for rehearsals) their attendance. The
         server owns the join so the client never re-joins four collections.
         Returns a flat, discriminated list of {type: PROJECT|REHEARSAL, ...}.
+
+        A manager may ask for a member's timeline with ``?artist=<id>``.
         """
         projects_qs, rehearsals_qs, participation_by_project = get_artist_schedule(
-            request_user(request)
+            resolve_preview_target(request).user
         )
         ctx = {'request': request}
 

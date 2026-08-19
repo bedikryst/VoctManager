@@ -210,7 +210,11 @@ class PieceMaterialsSerializer(serializers.Serializer):
     Required context keys:
       project_id        uuid.UUID  — slices scope_castings to this project only
       my_piece_castings list       — this artist's own castings (from participation)
-      my_readiness_map  dict       — piece_id → readiness status (this artist)
+      my_readiness_map  dict | None — piece_id → readiness status (this artist);
+                        None withholds it, emitting `my_readiness: null` for every
+                        piece. Null and NOT_STARTED are different answers: the
+                        first says nobody but the singer may know, the second says
+                        the singer has not started.
       artist_id         uuid.UUID  — propagated to CastingSnippetSerializer for is_me
       request           Request    — propagated to TrackSnippetSerializer for media URLs
       bound_edition_id  uuid.UUID | None — the arrangement this concert sings, set
@@ -222,7 +226,7 @@ class PieceMaterialsSerializer(serializers.Serializer):
     def to_representation(self, piece: Piece) -> dict[str, Any]:
         project_id: uuid.UUID = self.context['project_id']
         my_piece_castings: list[ProjectPieceCasting] = self.context['my_piece_castings']
-        my_readiness_map: dict[uuid.UUID, str] = self.context.get('my_readiness_map', {})
+        my_readiness_map: dict[uuid.UUID, str] | None = self.context.get('my_readiness_map', {})
         bound_edition_id: uuid.UUID | None = self.context.get('bound_edition_id')
         child_context: dict[str, Any] = {
             'artist_id': self.context.get('artist_id'),
@@ -290,7 +294,11 @@ class PieceMaterialsSerializer(serializers.Serializer):
                 my_casting,
                 context=child_context,
             ).data if my_casting else None,
-            'my_readiness': my_readiness_map.get(piece.pk, PieceReadiness.Status.NOT_STARTED),
+            'my_readiness': (
+                None
+                if my_readiness_map is None
+                else my_readiness_map.get(piece.pk, PieceReadiness.Status.NOT_STARTED)
+            ),
         }
 
 
@@ -333,9 +341,22 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
     Consumes the pre-fetched QuerySet produced by get_artist_materials_queryset().
     Builds the full data tree in Python using to_attr lists — zero additional DB queries.
 
+    Optional context:
+      readiness_visible bool — False emits `my_readiness: null` throughout, for a
+                        manager previewing this tree. Pair it with
+                        ``get_artist_materials_queryset(..., include_readiness=False)``
+                        so the rows are never fetched in the first place.
+
+    Carries no money. Contracts and settlement are a manager-side module, and a
+    singer is told what they owe the music, never what the choir owes them — the
+    figure reaches a person through a contract, not through the songbook. The
+    same rule already governs `ParticipationBasicSerializer`, which excludes
+    `fee` for every non-manager caller; this tree simply had to stop being the
+    exception.
+
     Output shape:
       [{
-        participation_id, participation_status, fee,
+        participation_id, participation_status, is_conducting,
         project: { id, title, date_time, status, location },
         program: [{ order, is_encore, piece: { ..., tracks, castings, my_casting } }]
       }]
@@ -347,10 +368,19 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
         my_readiness_entries: list[PieceReadiness] = getattr(participation, 'my_readiness_entries', [])
         ordered_program: list[ProgramItem] = getattr(project, 'ordered_program', [])
 
+        # Withheld reads as null, never as an empty map: an absent prefetch would
+        # otherwise render as "has not started a single piece", which is a claim
+        # about the singer rather than a refusal to make one.
+        readiness_visible: bool = self.context.get('readiness_visible', True)
+
         piece_context: dict[str, Any] = {
             'project_id': project.pk,
             'my_piece_castings': my_piece_castings,
-            'my_readiness_map': {entry.piece_id: entry.status for entry in my_readiness_entries},
+            'my_readiness_map': (
+                {entry.piece_id: entry.status for entry in my_readiness_entries}
+                if readiness_visible
+                else None
+            ),
             'artist_id': participation.artist_id,
             'request': self.context.get('request'),
             'liturgy': _liturgy_map(ordered_program),
@@ -377,7 +407,6 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
             # This row belongs to a singer's own casting, not the podium — the
             # conductor's rows come through ConductedProjectMaterialsSerializer.
             'is_conducting': False,
-            'fee': str(participation.fee) if participation.fee is not None else None,
             'project': {
                 'id': str(project.id),
                 'title': project.title,
@@ -442,7 +471,6 @@ class ConductedProjectMaterialsSerializer(serializers.Serializer):
             'participation_id': None,
             'participation_status': None,
             'is_conducting': True,
-            'fee': None,
             'project': {
                 'id': str(project.id),
                 'title': project.title,

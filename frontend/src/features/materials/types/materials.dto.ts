@@ -171,7 +171,6 @@ export interface MaterialsDashboardItem {
   participation_status: string | null;
   /** True when this project is one the user conducts, not one they sing in. */
   is_conducting: boolean;
-  fee: string | null;
   project: MaterialsProject;
   program: MaterialsProgramItem[];
 }

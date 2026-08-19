@@ -143,7 +143,9 @@ def _materials_program_items_prefetch(
     )
 
 
-def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
+def get_artist_materials_queryset(
+    user: User, *, include_readiness: bool = True
+) -> QuerySet[Participation]:
     """
     CQRS Read Model for the Artist Materials Dashboard.
 
@@ -151,9 +153,16 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
     a bounded scope from the user's participations and issuing all subsequent
     fetches as IN-clauses or prefetch batches — no per-row round-trips.
 
+    ``include_readiness=False`` drops the practice-readiness prefetch entirely, so
+    those rows never leave the database. The songbook promises the singer that
+    their readiness marks are private to them; a manager previewing this same tree
+    is served by not fetching them, rather than by a serializer remembering to
+    drop them afterwards.
+
     Returned QuerySet attributes set by this function:
       participation.my_piece_castings   → list[ProjectPieceCasting] (this artist only)
-      participation.my_readiness_entries → list[PieceReadiness] (this artist only)
+      participation.my_readiness_entries → list[PieceReadiness] (this artist only;
+                                          absent when include_readiness is False)
       participation.project.ordered_program → list[ProgramItem]
       program_item.piece.prefetched_tracks  → list[Track]
       program_item.piece.scope_castings     → list[ProjectPieceCasting] (all, across artist's projects)
@@ -179,11 +188,7 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
 
     program_items_qs: QuerySet[ProgramItem] = _materials_program_items_prefetch(project_ids)
 
-    return base_qs.select_related(
-        'artist',
-        'project__conductor',
-        'project__location',
-    ).prefetch_related(
+    prefetches: list[Prefetch] = [
         Prefetch(
             'project__program_items',
             queryset=program_items_qs,
@@ -194,12 +199,21 @@ def get_artist_materials_queryset(user: User) -> QuerySet[Participation]:
             queryset=my_castings_qs,
             to_attr='my_piece_castings',
         ),
-        Prefetch(
-            'piece_readiness',
-            queryset=PieceReadiness.objects.all(),
-            to_attr='my_readiness_entries',
-        ),
-    )
+    ]
+    if include_readiness:
+        prefetches.append(
+            Prefetch(
+                'piece_readiness',
+                queryset=PieceReadiness.objects.all(),
+                to_attr='my_readiness_entries',
+            )
+        )
+
+    return base_qs.select_related(
+        'artist',
+        'project__conductor',
+        'project__location',
+    ).prefetch_related(*prefetches)
 
 
 def get_conductor_materials_projects(user: User) -> QuerySet[Project]:
