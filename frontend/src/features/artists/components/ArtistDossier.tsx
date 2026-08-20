@@ -247,9 +247,12 @@ const StatsSection = ({ stats }: { stats: ArtistDossierStats }) => {
           <Eyebrow color="muted">
             {t("artists.dossier.most_sung_lines", "Najczęściej śpiewane głosy")}
           </Eyebrow>
+          {/* Keyed by name, not code: the tally folds by what the part is
+              CALLED, so one code can head two rows — "Tenor" on the unison
+              pieces, "Tenor 1" on the divided ones. */}
           <div className="flex flex-wrap gap-1.5">
             {stats.top_voice_lines.slice(0, 6).map((line) => (
-              <Badge key={line.voice_line} variant="brand">
+              <Badge key={line.label} variant="brand">
                 {line.label}
                 <span className="ml-1 text-ethereal-graphite/60">×{line.count}</span>
               </Badge>

@@ -18,9 +18,11 @@ export const PieceDivisiRoster = ({
 
   const divisiGroups = castings.reduce<Record<string, MaterialsCasting[]>>(
     (acc, c) => {
+      // The server names the line inside this piece's arrangement — an
+      // undivided family drops its index there. Nothing on the client may
+      // re-derive it from the code: the code always carries the number.
       const label =
         c.voice_line_display ||
-        (c.voice_line ? t(`dashboard.layout.roles.${c.voice_line}`) : null) ||
         c.voice_line ||
         t("materials.piece.other_voice", "Inne");
       if (!acc[label]) acc[label] = [];

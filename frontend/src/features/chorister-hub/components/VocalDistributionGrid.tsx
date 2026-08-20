@@ -66,16 +66,18 @@ export const VocalDistributionGrid = ({
         const barWidth = maxCount > 0 ? Math.round((entry.count / maxCount) * 100) : 0;
 
         return (
-          <div key={entry.voice_line} className="flex items-center gap-3">
-            {/* Fixed width so every bar starts on the same x — a chart needs its
-                keys to align, which is the one thing the chip does not own. The
-                padding goes with it: `TUTTI` is the longest code and has to fit
-                the same box as `S1`. */}
+          <div key={entry.voice_line_display} className="flex items-center gap-3">
+            {/* The key carries the part's NAME as the singer read it on the
+                piece — a family that was undivided there has no index, and a
+                bare code would put one back. Fixed width so every bar starts on
+                the same x; the rare long name (Perkusja wokalna / Beatbox)
+                truncates to its tooltip rather than shifting the chart. */}
             <Badge
               variant={ACCENT_BADGE[accentOf(entry.voice_line)]}
-              className="w-14 shrink-0 justify-center px-0"
+              className="block w-20 shrink-0 truncate px-2 text-center sm:w-28"
+              title={entry.voice_line_display}
             >
-              {entry.voice_line}
+              {entry.voice_line_display}
             </Badge>
 
             <div className="flex-1 relative h-2 bg-ethereal-marble/40 rounded-full overflow-hidden">
@@ -85,14 +87,13 @@ export const VocalDistributionGrid = ({
               />
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 w-16 sm:w-32">
-              <Text size="xs" weight="semibold" className="text-ethereal-ink tabular-nums">
-                {entry.count}×
-              </Text>
-              <Text size="xs" color="muted" className="hidden truncate sm:block">
-                {entry.voice_line_display}
-              </Text>
-            </div>
+            <Text
+              size="xs"
+              weight="semibold"
+              className="w-8 shrink-0 text-right text-ethereal-ink tabular-nums"
+            >
+              {entry.count}×
+            </Text>
           </div>
         );
       })}

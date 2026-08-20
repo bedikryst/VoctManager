@@ -70,6 +70,11 @@ export interface DocumentUploadDTO {
 }
 
 export interface VocalLineEntry {
+  /**
+   * A representative code for the tally, which is folded by NAME — never print
+   * it. The code always carries its divisi index, and the name is what the
+   * singer actually read on the piece.
+   */
   voice_line: string;
   voice_line_display: string;
   count: number;
@@ -113,7 +118,9 @@ export interface SectionMemberDTO {
 }
 
 export interface PieceVoiceSectionDTO {
+  /** The stored code — for grouping and section colour, never for display. */
   voice_line: string;
+  /** The part as this concert's arrangement names it: what goes on screen. */
   voice_line_display: string;
   /** True when the caller themselves sings this voice line in this piece. */
   is_mine: boolean;

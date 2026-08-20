@@ -992,11 +992,22 @@ class DocumentGenerator:
         order_by_piece = {item.piece_id: item.order for item in program_items}
         title_by_piece = {item.piece_id: item.piece.title for item in program_items}
 
+        # The same scope the programme block and the casting table use, so the
+        # singer's own list of parts cannot call a line "Tenor 1" two pages
+        # after the piece it belongs to called it "Tenor".
+        castings_by_piece = DocumentGenerator._map_castings_by_piece(casting_list)
+        labels_by_piece = {
+            item.piece_id: _item_line_labels(item, castings_by_piece[item.piece_id])
+            for item in program_items
+        }
+
         assignments = [
             {
                 'order': order_by_piece.get(casting.piece_id),
                 'title': title_by_piece.get(casting.piece_id, _('Programme item')),
-                'voice_line': casting.get_voice_line_display(),
+                'voice_line': labels_by_piece.get(casting.piece_id, {}).get(
+                    casting.voice_line
+                ) or casting.get_voice_line_display(),
                 'gives_pitch': casting.gives_pitch,
                 'notes': casting.notes.strip() if casting.notes else '',
             }

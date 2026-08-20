@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Any
 from django.db.models import Count, Prefetch, Q
 from django.utils import timezone
 
-from core.constants import VoiceLine
+from core.voice_labels import plain_voice_line_label
 from roster.models import (
     Attendance,
     Participation,
@@ -25,13 +25,10 @@ from roster.models import (
     ProjectPieceCasting,
     Rehearsal,
 )
+from roster.queries.voice_naming import project_voice_labels
 
 if TYPE_CHECKING:
     from roster.models import Artist
-
-VOICE_LINE_LABELS: dict[str, str] = {
-    str(value): str(label) for value, label in VoiceLine.choices
-}
 
 
 def get_artist_dossier(artist: Artist) -> dict[str, Any]:
@@ -118,20 +115,38 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
         .count()
     )
 
+    # A seat is named inside the concert it was taken in, so the record reads
+    # the same as the call sheet that singer was handed. Resolved for the whole
+    # history at once — see [roster.queries.voice_naming].
+    labels_by_pair = project_voice_labels(
+        (participation.project_id, casting.piece_id)
+        for participation in participations
+        for casting in getattr(participation, "pf_castings", [])
+    )
+
+    # Tallied by NAME, not by code: ten evenings on the sole tenor line of ten
+    # unison pieces are ten evenings of "Tenor", and folding them by code would
+    # split that history across rows the singer never read anywhere.
     line_counter: dict[str, int] = {}
+    line_codes: dict[str, str] = {}
     projects: list[dict[str, Any]] = []
     for participation in participations:
         castings = getattr(participation, "pf_castings", [])
         casting_payload = []
         for casting in castings:
-            line_counter[casting.voice_line] = line_counter.get(casting.voice_line, 0) + 1
+            piece_labels = labels_by_pair.get(
+                (participation.project_id, casting.piece_id), {}
+            )
+            label = piece_labels.get(casting.voice_line) or plain_voice_line_label(
+                casting.voice_line
+            )
+            line_counter[label] = line_counter.get(label, 0) + 1
+            line_codes.setdefault(label, casting.voice_line)
             casting_payload.append(
                 {
                     "piece_title": casting.piece.title,
                     "voice_line": casting.voice_line,
-                    "voice_line_label": VOICE_LINE_LABELS.get(
-                        casting.voice_line, casting.voice_line
-                    ),
+                    "voice_line_label": label,
                     "gives_pitch": casting.gives_pitch,
                 }
             )
@@ -148,11 +163,11 @@ def get_artist_dossier(artist: Artist) -> dict[str, Any]:
 
     top_voice_lines = [
         {
-            "voice_line": line,
-            "label": VOICE_LINE_LABELS.get(line, line),
+            "voice_line": line_codes[label],
+            "label": label,
             "count": count,
         }
-        for line, count in sorted(
+        for label, count in sorted(
             line_counter.items(), key=lambda item: item[1], reverse=True
         )
     ]

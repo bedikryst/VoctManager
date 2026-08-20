@@ -44,13 +44,16 @@ const VoiceRow = ({ section }: { section: PieceVoiceSectionDTO }): React.JSX.Ele
         section.is_mine && "bg-ethereal-gold/8",
       )}
     >
+      {/* The part as this piece names it: a family with one line here has no
+          number, so the chorister never reads a division the score never made.
+          The colour still keys off the code — the family is what it tints. */}
       <span
         className={cn(
-          "inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-1.5 font-mono text-[11px] font-bold",
+          "inline-flex h-6 min-w-9 items-center justify-center rounded-md border px-1.5 text-[11px] font-bold",
           accent,
         )}
       >
-        {section.voice_line}
+        {section.voice_line_display || section.voice_line}
       </span>
       {section.is_mine && (
         <Eyebrow as="span" color="gold" className="shrink-0">

@@ -14,8 +14,7 @@ from django.utils.functional import Promise
 if TYPE_CHECKING:
     from rest_framework.request import Request
 
-from archive.models import PieceVoiceRequirement
-from archive.services.voice_scope import voice_labels, voice_labels_for_pieces
+from archive.services.voice_scope import voice_labels_for_pieces
 from core.constants import AppRole, VoiceLine
 
 from .dtos import (
@@ -447,36 +446,9 @@ class EnsembleDirectoryService:
         whether a tenor line is "Tenor" or "Tenor 1", and the same piece sung
         elsewhere from another edition may legitimately read differently.
         """
-        from roster.models import ProgramItem
-        from roster.score_package_config import resolve_item_edition
+        from roster.queries.voice_naming import project_voice_labels
 
-        if not pieces:
-            return {}
-        project_ids = {project_id for project_id, _ in pieces}
-        bound_edition: dict[tuple, UUID | None] = {}
-        for item in (
-            ProgramItem.objects
-            .filter(project_id__in=project_ids)
-            .select_related('piece')
-            .prefetch_related('piece__editions')
-        ):
-            edition = resolve_item_edition(item)
-            bound_edition[(item.project_id, item.piece_id)] = edition.pk if edition else None
-
-        requirements: dict[UUID, list] = {}
-        for requirement in PieceVoiceRequirement.objects.filter(
-            piece_id__in={piece_id for _, piece_id in pieces},
-        ):
-            requirements.setdefault(requirement.piece_id, []).append(requirement)
-
-        return {
-            key: voice_labels(
-                requirements.get(key[1], []),
-                bound_edition.get(key),
-                extra_codes=data['voices'].keys(),
-            )
-            for key, data in pieces.items()
-        }
+        return project_voice_labels(pieces.keys())
 
     @classmethod
     def _build_concerts(

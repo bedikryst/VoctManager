@@ -397,12 +397,49 @@ class ArtistDossierQueryTests(TestCase):
         self.assertEqual(stats["rehearsals_invited"], 1)
         self.assertEqual(stats["top_voice_lines"][0]["voice_line"], "T1")
         self.assertEqual(stats["top_voice_lines"][0]["count"], 2)
-        self.assertEqual(stats["top_voice_lines"][0]["label"], "Tenor 1")
+        # Nobody else sings tenor on this piece, so the family is undivided and
+        # the index goes — the record must not promise a "Tenor 2".
+        self.assertEqual(stats["top_voice_lines"][0]["label"], "Tenor")
         self.assertEqual(len(dossier["projects"]), 3)
         # History is ordered newest-first by project date; each carries its castings.
         self.assertEqual(dossier["projects"][0]["title"], "Future Gala")
         past_entry = next(p for p in dossier["projects"] if p["title"] == "Past Concert")
-        self.assertEqual(past_entry["castings"][0]["voice_line_label"], "Tenor 1")
+        self.assertEqual(past_entry["castings"][0]["voice_line_label"], "Tenor")
+
+    def test_dossier_keeps_index_where_the_piece_is_actually_divided(self):
+        """A second tenor line on the same piece makes "Tenor 1" true again."""
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from archive.models import Piece, PieceVoiceRequirement
+
+        from .models import Artist, Participation, Project, ProjectPieceCasting
+        from .queries import get_artist_dossier
+
+        artist = Artist.objects.create(
+            first_name="Adam", last_name="Tenorowy", email="adam@example.com", voice_type="TEN"
+        )
+        project = Project.objects.create(
+            title="Divided", date_time=timezone.now() - timedelta(days=3),
+            status=Project.Status.COMPLETED,
+        )
+        participation = Participation.objects.create(
+            artist=artist, project=project, status=Participation.Status.CONFIRMED
+        )
+        piece = Piece.objects.create(title="Miserere")
+        PieceVoiceRequirement.objects.create(piece=piece, voice_line="T1", quantity=2)
+        PieceVoiceRequirement.objects.create(piece=piece, voice_line="T2", quantity=2)
+        ProjectPieceCasting.objects.create(
+            participation=participation, piece=piece, voice_line="T1"
+        )
+
+        dossier = get_artist_dossier(artist)
+
+        self.assertEqual(
+            dossier["projects"][0]["castings"][0]["voice_line_label"], "Tenor 1"
+        )
+        self.assertEqual(dossier["stats"]["top_voice_lines"][0]["label"], "Tenor 1")
 
     def test_dossier_reports_earnings_excluding_declined(self):
         from datetime import timedelta
@@ -5064,6 +5101,36 @@ class ConcertDaySheetTests(APITestCase):
         card1 = next(c for c in ctx["program_cards"] if c["order"] == 1)
         self.assertIsNotNone(card1["you"])
         self.assertTrue(card1["you"]["gives_pitch"])
+
+    def test_your_own_part_is_named_once_across_the_whole_sheet(self) -> None:
+        """The assignment table and the programme card are pages apart in the
+        same document; nothing but the arrangement may decide what they call a
+        part. Nobody divides the altos here, so neither prints "Alt 1"."""
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+
+        self.assertEqual(
+            [a["voice_line"] for a in ctx["personal"]["assignments"]],
+            ["Alt", "Alt"],
+        )
+        card1 = next(c for c in ctx["program_cards"] if c["order"] == 1)
+        self.assertEqual(card1["you"]["voice_line"], "Alt")
+
+    def test_your_own_part_keeps_its_index_on_the_divided_piece_only(self) -> None:
+        """Naming is per piece, so one sheet can legitimately say both."""
+        from archive.models import PieceVoiceRequirement
+        from core.constants import VoiceLine
+
+        for line in (VoiceLine.ALTO_1, VoiceLine.ALTO_2):
+            PieceVoiceRequirement.objects.create(
+                piece=self.piece1, voice_line=line, quantity=2
+            )
+
+        ctx = self._build_context(Audience.CHORISTER, self.singer_part)
+        by_title = {
+            a["title"]: a["voice_line"] for a in ctx["personal"]["assignments"]
+        }
+        self.assertEqual(by_title["Dixit Dominus"], "Alt 1")
+        self.assertEqual(by_title["Magnificat"], "Alt")
 
     def test_singer_sheet_never_leaks_crew_pii(self) -> None:
         ctx = self._build_context(Audience.CHORISTER, self.singer_part)
