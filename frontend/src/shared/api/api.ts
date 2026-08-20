@@ -126,12 +126,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
+        // Deliberately the bare `axios`, not `api`: the rotation call must not
+        // re-enter this interceptor. That also means the instance-level CSRF
+        // names below do not apply, so restate them — Django reads `csrftoken`
+        // and `X-CSRFToken`, never Axios' `XSRF-TOKEN` defaults.
         await axios.post(
           `${import.meta.env.VITE_API_URL || ""}/api/token/refresh/`,
           {},
           {
             withCredentials: true,
             withXSRFToken: true,
+            xsrfCookieName: "csrftoken",
+            xsrfHeaderName: "X-CSRFToken",
           },
         );
 

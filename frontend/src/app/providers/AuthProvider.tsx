@@ -86,8 +86,15 @@ export interface AuthContextType {
  */
 export const AuthContext = createContext<AuthContextType | null>(null);
 
-const silentAuthCheckConfig: AuthRequestConfig = {
-  skipAuthRefresh: true,
+/**
+ * Identity probes must stay silent (no hard redirect to /login — the router
+ * decides what an unauthenticated visitor sees) but they must NOT opt out of the
+ * token refresh. This is the only request that establishes the session on a cold
+ * start, and the access cookie lives 15 minutes against a 7-day refresh cookie:
+ * skipping the refresh here would sign out every member whose app was closed
+ * longer than the access window, with a valid refresh token still in the jar.
+ */
+const sessionProbeConfig: AuthRequestConfig = {
   skipAuthRedirect: true,
 };
 
@@ -95,7 +102,7 @@ const fetchArtistSelf = async (): Promise<ArtistSelfResponse | null> => {
   try {
     const response = await api.get<ArtistSelfResponse>(
       "/api/artists/me/",
-      silentAuthCheckConfig,
+      sessionProbeConfig,
     );
 
     return response.status === 204 || !response.data ? null : response.data;
@@ -114,7 +121,7 @@ const fetchArtistSelf = async (): Promise<ArtistSelfResponse | null> => {
 
 const buildAuthUser = async (): Promise<AuthUser> => {
   const [identityResponse, artistResponse] = await Promise.all([
-    api.get<UserIdentityResponse>("/api/users/me/", silentAuthCheckConfig),
+    api.get<UserIdentityResponse>("/api/users/me/", sessionProbeConfig),
     fetchArtistSelf(),
   ]);
 
