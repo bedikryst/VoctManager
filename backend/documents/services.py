@@ -410,7 +410,10 @@ class EnsembleDirectoryService:
 
         vl_order = {value: idx for idx, (value, _) in enumerate(VoiceLine.choices)}
 
-        # project_id → {title, date} and (project_id, piece_id) → {piece_title, voice_line → {artist_id → artist}}
+        # project_id → {title, date} and (project_id, piece_id) → {piece_title, voice_line → {artist_id → participation}}
+        # The PARTICIPATION is kept rather than the artist alone: the section is
+        # read in the order the conductor arranged it for that concert, and that
+        # order lives on the seat, not on the person.
         projects: dict = {}
         pieces: dict = {}
         for casting in all_castings:
@@ -424,7 +427,7 @@ class EnsembleDirectoryService:
             )
             bucket = pieces.setdefault(key, {'title': casting.piece.title, 'voices': {}})
             members = bucket['voices'].setdefault(casting.voice_line, {})
-            members.setdefault(casting.participation.artist_id, casting.participation.artist)
+            members.setdefault(casting.participation.artist_id, casting.participation)
 
         concerts = cls._build_concerts(
             user_artist_id=me_artist.id,
@@ -463,6 +466,10 @@ class EnsembleDirectoryService:
         labels: dict[tuple, dict[str, str]],
         request: "Request | None",
     ) -> tuple[ConcertRosterDTO, ...]:
+        # Deferred like every other roster import in this module — documents and
+        # roster import each other at module scope.
+        from roster.cast_order import participation_sort_key
+
         by_project: dict = {}
         for (project_id, piece_id), data in pieces.items():
             mine_lines = my_voice_lines.get((project_id, piece_id), set())
@@ -474,14 +481,16 @@ class EnsembleDirectoryService:
                     is_mine=voice_line in mine_lines,
                     members=tuple(
                         SectionMemberDTO(
-                            artist_id=artist.id,
-                            first_name=artist.first_name,
-                            last_name=artist.last_name,
-                            avatar_thumb_url=cls._avatar_thumb_url(artist, request),
-                            is_me=(artist.id == user_artist_id),
+                            artist_id=participation.artist.id,
+                            first_name=participation.artist.first_name,
+                            last_name=participation.artist.last_name,
+                            avatar_thumb_url=cls._avatar_thumb_url(
+                                participation.artist, request
+                            ),
+                            is_me=(participation.artist.id == user_artist_id),
                         )
-                        for artist in sorted(
-                            members.values(), key=lambda a: (a.last_name.lower(), a.first_name.lower())
+                        for participation in sorted(
+                            members.values(), key=participation_sort_key
                         )
                     ),
                 )

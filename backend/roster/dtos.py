@@ -236,6 +236,48 @@ class ParticipationStatusUpdateDTO(EnterpriseBaseDTO):
         return _require_choice(value, PARTICIPATION_STATUS_VALUES, "status")
 
 
+class CastOrderRowDTO(EnterpriseBaseDTO):
+    """One singer's place in the section the conductor just arranged."""
+
+    participation: UUID
+    section_rank: int = Field(..., ge=0)
+
+
+class CastOrderDTO(EnterpriseBaseDTO):
+    """A rearranged voice section, sent whole.
+
+    Reordering is not a per-singer edit: moving one name moves every name under
+    it, so a drag that arrived as forty PATCHes would be forty requests, forty
+    chances to half-succeed, and an order nobody could reconstruct from the ones
+    that landed. The client sends the section as it now reads and the server
+    writes it in one transaction.
+
+    Only the rows named here are touched — sections nobody rearranged keep
+    whatever they had, including nothing at all.
+    """
+
+    project: UUID
+    order: tuple[CastOrderRowDTO, ...] = Field(default_factory=tuple)
+
+    @field_validator("order", mode="before")
+    @classmethod
+    def normalize_order(cls, value: object) -> object:
+        if value is None:
+            return ()
+        if isinstance(value, list | tuple):
+            return tuple(value)
+        return value
+
+    @model_validator(mode="after")
+    def reject_repeated_participations(self) -> Self:
+        seen: set[UUID] = set()
+        for row in self.order:
+            if row.participation in seen:
+                raise ValueError("order must name each participation at most once.")
+            seen.add(row.participation)
+        return self
+
+
 class PieceReadinessUpdateDTO(EnterpriseBaseDTO):
     """Data contract for an artist's practice-readiness self report on one piece."""
 

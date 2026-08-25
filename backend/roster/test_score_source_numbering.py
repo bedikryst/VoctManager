@@ -15,6 +15,7 @@ from io import BytesIO
 
 from django.test import SimpleTestCase
 from pypdf import PdfReader, PdfWriter
+from pypdf.generic import NameObject, NumberObject
 
 from roster.infrastructure.score_package_builder import (
     A4_HEIGHT_PT,
@@ -263,3 +264,68 @@ class PlacementTests(SimpleTestCase):
         reader = reader_for([[("7", 540.0, 34.0)]])
         page = _place(reader.pages[0], fit=True, reserve=FOLIO_RESERVE_PT, masks=None)
         self.assertNotIn("1 1 1 rg", page.get_contents().get_data().decode("latin-1"))
+
+
+def _baked(pages: list[list[tuple[str, float, float]]], rotation: int) -> PdfReader:
+    """The same edition as ``reader_for``, saved with ``/Rotate`` and then baked
+    the way ``_read_edition_pdf`` bakes it — before anything measures anything."""
+    reader = PdfReader(BytesIO(build_pdf(pages)))
+    writer = PdfWriter()
+    for page in reader.pages:
+        page[NameObject("/Rotate")] = NumberObject(rotation)
+        writer.add_page(page)
+    buffer = BytesIO()
+    writer.write(buffer)
+    baked = PdfReader(BytesIO(buffer.getvalue()))
+    for page in baked.pages:
+        if page.rotation:
+            page.transfer_rotation_to_content()
+    return baked
+
+
+def _glyph_position(page) -> tuple[float, float]:
+    """Where a page's single text run actually sits, read back out of the page
+    itself. Independent of every number this module computes — which is the whole
+    point: it is the only way to say "the white box is over the NUMBER" rather
+    than "over where we believe the number to be"."""
+    found: list[tuple[float, float]] = []
+
+    def visitor(text: str, cm, tm, _font_dict, _font_size) -> None:
+        if not text.strip():
+            return
+        found.append((
+            tm[4] * cm[0] + tm[5] * cm[2] + cm[4],
+            tm[4] * cm[1] + tm[5] * cm[3] + cm[5],
+        ))
+
+    page.extract_text(visitor_text=visitor)
+    return found[0]
+
+
+class RotatedKnockoutTests(SimpleTestCase):
+    """D2, closed on the host: an edition whose pages carry ``/Rotate`` used to be
+    measured in one coordinate space and placed in another, so the white box
+    landed over the engraving. These bind a rotated page for real and check the
+    painted rectangle against the glyph's own position on the finished sheet."""
+
+    def test_knockout_covers_the_number_whatever_the_page_rotation(self) -> None:
+        pages = [[(str(n + 1), 540.0, 34.0)] for n in range(4)]
+        for rotation in (0, 90, 180, 270):
+            with self.subTest(rotation=rotation):
+                edition = _baked(pages, rotation)
+                masks = detect_source_folios(edition, [0])
+                self.assertIn(0, masks, "the folio must still be found once baked")
+                placed = _place(
+                    edition.pages[0], fit=True,
+                    reserve=FOLIO_RESERVE_PT, masks=masks[0],
+                )
+                glyph_x, glyph_y = _glyph_position(placed)
+                stream = placed.get_contents().get_data().decode("latin-1")
+                rect = [
+                    line for line in stream.splitlines() if line.rstrip().endswith(" re")
+                ][-1].split()
+                left, bottom, width, height = (float(v) for v in rect[:4])
+                self.assertLess(left, glyph_x)
+                self.assertGreater(left + width, glyph_x)
+                self.assertLess(bottom, glyph_y)
+                self.assertGreater(bottom + height, glyph_y)

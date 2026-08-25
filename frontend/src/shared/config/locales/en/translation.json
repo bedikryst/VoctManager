@@ -6,6 +6,7 @@
     "collapse_tools": "Collapse tools",
     "draw_on_tablet": "Drawing is available on a tablet",
     "ink_color": "Ink colour",
+    "ink_reserved": "Red is reserved for the conductor.",
     "markup": "Markup",
     "open_tools": "Annotation tools",
     "redo": "Redo",
@@ -3095,6 +3096,10 @@
     "sequence": "séquence"
   },
   "projects": {
+    "score_marks": {
+      "toggle": "My markings",
+      "toggle_hint": "Draws your own notes onto this copy. Nobody else sees them."
+    },
     "score_package": {
       "title": "Score book",
       "settings": "Settings",
@@ -3130,6 +3135,8 @@
       "generate": "Assemble score",
       "download": "Download",
       "download_stale": "Download anyway",
+      "conductor_copy": "Conductor's copy",
+      "conductor_copy_suffix": "conductor",
       "stale_hint": "This score does not include your latest changes. Rebuild it to apply them.",
       "preview_book": "Preview",
       "preview_book_full": "Score preview",
@@ -3341,11 +3348,14 @@
         "aria": "Section lead: {{name}}"
       },
       "search_placeholder": "Search artist...",
+      "order": {
+        "drag_aria": "Drag to reorder: {{name}}"
+      },
       "seat": {
         "aria": "Line-up seat: {{name}}",
         "clear": "From voice type",
-        "hint": "The line-up seat says which line a singer takes when a piece's divisi is filled automatically — and it orders this list. Star whoever leads the section.",
-        "placeholder": "From voice type"
+        "hint": "Drag to arrange a section — the divisi board, the songbook and every printout read it the same way. The line-up seat only says which line a singer takes when a piece's divisi is filled automatically. Star whoever leads the section.",
+        "placeholder": "—"
       },
       "sections": {
         "assigned": "Project Cast",

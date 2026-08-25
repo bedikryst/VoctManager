@@ -19,6 +19,7 @@ from archive.score_protection import can_export as edition_can_export
 from archive.score_protection import user_is_manager
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
 from core.voice_labels import collapse_voice_labels
+from roster.cast_order import casting_sort_key
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.models import Participation, PieceReadiness, ProgramItem, Project, ProjectPieceCasting
 from roster.score_package_config import resolve_item_edition
@@ -235,7 +236,15 @@ class PieceMaterialsSerializer(serializers.Serializer):
         }
 
         scope_castings: list[ProjectPieceCasting] = getattr(piece, 'scope_castings', [])
-        project_castings = [c for c in scope_castings if c.participation.project_id == project_id]
+        # Sorted here rather than in the prefetch: musical order is not the order
+        # the codes sort in ('A1' before 'S1'), and the order inside a line is the
+        # conductor's, which no SQL clause expresses. Unsorted, the singer's
+        # divisi tab listed the lines themselves in whatever order the rows came
+        # back in.
+        project_castings = sorted(
+            (c for c in scope_castings if c.participation.project_id == project_id),
+            key=casting_sort_key,
+        )
         my_casting: ProjectPieceCasting | None = next(
             (c for c in my_piece_castings if c.piece_id == piece.pk), None
         )

@@ -244,6 +244,13 @@ export interface Participation extends BaseModel {
    * a job taken for one programme, not a rank carried between them.
    */
   is_section_leader?: boolean;
+  /**
+   * Where the conductor put this singer inside their voice section for this
+   * project. Missing or null = the section has never been arranged, and the list
+   * falls back to seat and surname. Written only through the cast-order
+   * endpoint, which sends a whole section at once.
+   */
+  section_rank?: number | null;
   fee?: string | number | null;
   // Settlement state — mutated only through the dedicated `payment` action.
   is_paid?: boolean;

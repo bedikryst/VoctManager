@@ -6,6 +6,7 @@
     "collapse_tools": "Zwiń narzędzia",
     "draw_on_tablet": "Rysowanie dostępne na tablecie",
     "ink_color": "Kolor",
+    "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",
     "markup": "Adnotacje",
     "open_tools": "Narzędzia adnotacji",
     "redo": "Ponów",
@@ -3113,6 +3114,10 @@
     "sequence": "Sekwencja"
   },
   "projects": {
+    "score_marks": {
+      "toggle": "Moje oznaczenia",
+      "toggle_hint": "Dorysowuje Twoje własne notatki do tego egzemplarza. Nikt inny ich nie zobaczy."
+    },
     "score_package": {
       "title": "Książka nutowa",
       "settings": "Ustawienia",
@@ -3148,6 +3153,8 @@
       "generate": "Złóż partyturę",
       "download": "Pobierz",
       "download_stale": "Pobierz mimo to",
+      "conductor_copy": "Egzemplarz dyrygencki",
+      "conductor_copy_suffix": "dyrygencka",
       "stale_hint": "Ta partytura nie zawiera ostatnich zmian. Złóż ją ponownie, aby je uwzględnić.",
       "preview_book": "Podgląd",
       "preview_book_full": "Podgląd partytury",
@@ -3359,11 +3366,14 @@
         "aria": "Prowadzenie sekcji: {{name}}"
       },
       "search_placeholder": "Szukaj artysty...",
+      "order": {
+        "drag_aria": "Przeciągnij, aby zmienić kolejność: {{name}}"
+      },
       "seat": {
         "aria": "Miejsce w składzie: {{name}}",
         "clear": "Z typu głosu",
-        "hint": "Miejsce w składzie mówi, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi — i porządkuje tę listę. Gwiazdką oznacz osobę prowadzącą sekcję.",
-        "placeholder": "Z typu głosu"
+        "hint": "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie mówi tylko, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
+        "placeholder": "—"
       },
       "sections": {
         "assigned": "Obsada projektu",

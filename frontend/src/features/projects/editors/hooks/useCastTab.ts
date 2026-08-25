@@ -13,6 +13,7 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
+import { arrayMove } from "@dnd-kit/sortable";
 
 import { toastApiError } from "@/shared/api/errors";
 import { foldDiacritics } from "@/shared/lib/text";
@@ -30,9 +31,11 @@ import {
   useProjectArtistsDictionary,
   useProjectParticipations,
   useProjectVoiceLinesDictionary,
+  useSaveCastOrder,
   useUpdateParticipation,
 } from "../../api/project.queries";
 import { LINE_UP_SEATS } from "../../lib/autoCast";
+import { byCastOrder } from "../../lib/castOrder";
 import { VOICE_TYPE_ORDER, voiceTypeRank } from "../../lib/voiceFamilies";
 import type { CastTabMobileView } from "../types";
 
@@ -62,6 +65,12 @@ export interface CastEntry extends RosterFacts {
   readonly seat: VoiceLine | "";
   /** Leads their section here, which is why they head it in the list. */
   readonly isSectionLeader: boolean;
+  /**
+   * Where the conductor put them inside their section; `null` until the section
+   * is arranged for the first time. It is not shown as a number — the position
+   * in the list IS the number — but it is what the list sorts by.
+   */
+  readonly sectionRank: number | null;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
 }
@@ -110,6 +119,16 @@ export interface UseCastTabResult {
     participationId: string,
     isSectionLeader: boolean,
   ) => Promise<void>;
+  /**
+   * Moves one singer within their own voice section and writes the whole
+   * section. Both ids must belong to the same section — a soprano dropped on
+   * the tenors is a gesture with no meaning, and this refuses it rather than
+   * inventing one.
+   */
+  moveInSection: (
+    activeParticipationId: string,
+    overParticipationId: string,
+  ) => Promise<void>;
   /** Any write is in flight — what the autosave pill reports. */
   isSaving: boolean;
   searchQuery: string;
@@ -130,20 +149,9 @@ const rangeOf = (artist?: Artist): string | null => {
 };
 
 /**
- * Where an unseated singer sorts among the seated ones: after all of them.
- * `LINE_UP_SEATS` gives every real seat its score-order index, and `""` is not
- * in that list — so the miss has to be sent to the end rather than to -1, which
- * would file everyone with no seat above Sopran 1.
- */
-const seatRank = (seat: VoiceLine | ""): number => {
-  const index = LINE_UP_SEATS.indexOf(seat as VoiceLine);
-  return index === -1 ? LINE_UP_SEATS.length : index;
-};
-
-/**
  * Score order (soprano down to bass), then surname — how a roster is read.
- * The pool has no seats and no leaders to order by, so this is the whole rule
- * on that side; the cast refines it with `byLeaderThenSeatThenName`.
+ * The pool has nothing to arrange and no seats to read, so this is the whole
+ * rule on that side; the cast is sorted by the shared `byCastOrder`.
  */
 const byVoiceThenName = <TEntry extends RosterFacts>(
   left: TEntry,
@@ -152,32 +160,6 @@ const byVoiceThenName = <TEntry extends RosterFacts>(
   const rankDelta =
     voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
   if (rankDelta !== 0) return rankDelta;
-  return left.displayName.localeCompare(right.displayName, "pl");
-};
-
-/**
- * The cast in the order a conductor reads it: voice family, then the person
- * leading that family, then the line-up from the top down, then surname.
- *
- * This is what makes Sopran 1 precede Sopran 2 inside the sopranos, which
- * alphabetical order cannot express. It needs no toggle between "alphabetical"
- * and "by voice position" because the two collapse into one another: a seat is
- * optional and blank on most projects, so when nobody has been seated every
- * singer ranks the same and the surname decides — the list is alphabetical
- * exactly when there is no line-up to read it by.
- */
-const byLeaderThenSeatThenName = (left: CastEntry, right: CastEntry): number => {
-  const rankDelta =
-    voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
-  if (rankDelta !== 0) return rankDelta;
-
-  if (left.isSectionLeader !== right.isSectionLeader) {
-    return left.isSectionLeader ? -1 : 1;
-  }
-
-  const seatDelta = seatRank(left.seat) - seatRank(right.seat);
-  if (seatDelta !== 0) return seatDelta;
-
   return left.displayName.localeCompare(right.displayName, "pl");
 };
 
@@ -219,6 +201,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
   const createParticipationMutation = useCreateParticipation(projectId);
   const updateParticipationMutation = useUpdateParticipation(projectId);
   const deleteParticipationMutation = useDeleteParticipation(projectId);
+  const saveCastOrderMutation = useSaveCastOrder(projectId);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -264,10 +247,11 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           status: participation.status,
           seat: participation.default_voice_line ?? "",
           isSectionLeader: participation.is_section_leader ?? false,
+          sectionRank: participation.section_rank ?? null,
           isUnresolved: !artist,
         };
       })
-      .sort(byLeaderThenSeatThenName);
+      .sort(byCastOrder);
   }, [artistById, participations, t]);
 
   /** Everyone castable and not yet cast — the search is scoped to this list. */
@@ -397,6 +381,43 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     }
   };
 
+  const moveInSection = async (
+    activeParticipationId: string,
+    overParticipationId: string,
+  ): Promise<void> => {
+    const section = castSections.find((candidate) =>
+      candidate.entries.some(
+        (entry) => entry.participationId === activeParticipationId,
+      ),
+    );
+    if (!section) return;
+
+    const from = section.entries.findIndex(
+      (entry) => entry.participationId === activeParticipationId,
+    );
+    const to = section.entries.findIndex(
+      (entry) => entry.participationId === overParticipationId,
+    );
+    if (from === -1 || to === -1 || from === to) return;
+
+    // The whole section goes up, densely renumbered from the top. Sending only
+    // the rows that moved would leave the section describing itself with a mix
+    // of old and new numbers, and nothing on screen would say which is which.
+    const ordered = arrayMove([...section.entries], from, to);
+
+    try {
+      await saveCastOrderMutation.mutateAsync({
+        project: projectId,
+        order: ordered.map((entry, index) => ({
+          participation: entry.participationId,
+          section_rank: index,
+        })),
+      });
+    } catch {
+      // The mutation has already toasted and rolled the section back.
+    }
+  };
+
   const addToCast = async (artistId: string): Promise<void> => {
     setProcessingId(artistId);
 
@@ -464,7 +485,11 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     seatOptions,
     setSeat,
     setSectionLeader,
-    isSaving: processingId !== null || updateParticipationMutation.isPending,
+    moveInSection,
+    isSaving:
+      processingId !== null ||
+      updateParticipationMutation.isPending ||
+      saveCastOrderMutation.isPending,
     searchQuery,
     setSearchQuery,
     processingId,

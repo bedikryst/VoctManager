@@ -17,6 +17,7 @@ from uuid import UUID
 
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -61,6 +62,7 @@ from .dtos import (
     AttendanceRangeDTO,
     AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
+    CastOrderRowDTO,
     PieceCastingRowDTO,
     PieceReadinessUpdateDTO,
     ProjectBulkFeeDTO,
@@ -1114,6 +1116,19 @@ class ProjectManagementService:
                 # 2B. CREATE PATH
                 participation = Participation.objects.create(**validated_data)
 
+            # 2C. The section this singer walks into is usually the one they left
+            # last time, so their place in it travels with them. Without this the
+            # conductor re-arranges forty people at the start of every project,
+            # which he would do twice and then stop — and every list in the app
+            # would quietly fall back to alphabetical for good.
+            if participation.section_rank is None:
+                inherited = ProjectManagementService._last_known_section_rank(
+                    participation
+                )
+                if inherited is not None:
+                    participation.section_rank = inherited
+                    participation.save(update_fields=['section_rank'])
+
             # 3. Undo a removal that was never announced. Taking someone off a cast
             # is queued (see delete_participation), so a mis-click put back before
             # the conductor publishes must leave no trace — the singer is not told
@@ -1133,7 +1148,66 @@ class ProjectManagementService:
             )
 
         return participation
-    
+
+    @staticmethod
+    def _last_known_section_rank(participation: Participation) -> int | None:
+        """The place this singer held the last time anyone arranged their section.
+
+        A rank is a score, not a slot, so carrying one across projects needs no
+        renumbering: the cast it lands in sorts by the same comparison, and two
+        singers who arrive holding the same number simply fall through to the
+        tie-breakers under it. The first drag makes the section dense again.
+        """
+        return (
+            Participation.objects
+            .filter(artist_id=participation.artist_id, section_rank__isnull=False)
+            .exclude(pk=participation.pk)
+            # Undated projects are drafts and plans; they say less about where
+            # this singer stands than the last concert that actually happened.
+            .order_by(F('project__date_time').desc(nulls_last=True), '-created_at')
+            .values_list('section_rank', flat=True)
+            .first()
+        )
+
+    @staticmethod
+    def reorder_cast(
+        project: Project, rows: Sequence[CastOrderRowDTO]
+    ) -> list[Participation]:
+        """Write one rearranged voice section, whole.
+
+        Deliberately silent: a singer moved from third to second place in the
+        sopranos has had nothing about their engagement changed, and a
+        notification saying otherwise would be noise on the one screen the
+        conductor fiddles with most. ``bulk_update`` also keeps this off the
+        participation-update path, which exists to re-ask people about things
+        that actually concern them.
+        """
+        if not rows:
+            return []
+
+        by_id = {
+            participation.id: participation
+            for participation in Participation.objects.filter(
+                project=project, is_deleted=False
+            ).select_related('artist')
+        }
+        missing = [row for row in rows if row.participation not in by_id]
+        if missing:
+            raise ParticipationException(
+                _("Cannot order an artist who is not a participant of this project.")
+            )
+
+        ordered: list[Participation] = []
+        for row in rows:
+            participation = by_id[row.participation]
+            participation.section_rank = row.section_rank
+            ordered.append(participation)
+
+        with transaction.atomic():
+            Participation.objects.bulk_update(ordered, ['section_rank'])
+
+        return ordered
+
     @staticmethod
     def update_project_bulk_fee(dto: ProjectBulkFeeDTO) -> int:
         if dto.new_fee < 0:

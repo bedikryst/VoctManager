@@ -4,7 +4,10 @@
     licence, the personal watermark (present for protected + chorister, absent
     for public-domain or manager), the append-only access log with stable
     per-recipient copy numbering, and proof that watermarking left the score-book
-    distribution signal (mark_distributed) untouched. WeasyPrint is absent on the
+    distribution signal (mark_distributed) untouched. Since Stage 4 it also covers
+    the other thing composed per recipient: the reader's own ``personal`` marks at
+    download, which compose BEFORE the watermark and may never leak another
+    reader's layer. WeasyPrint is absent on the
     host, so the serve tests patch ``roster.views.stamp_pdf`` and the one real
     stamp test patches the overlay renderer — the merge/placement contract is
     still exercised on pure pypdf.
@@ -17,16 +20,23 @@ from __future__ import annotations
 import tempfile
 from datetime import datetime
 from io import BytesIO
+from typing import ClassVar
 from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from pypdf import PdfReader, PdfWriter
 from rest_framework.test import APIRequestFactory, APITestCase
 
 from archive.models import (
+    CONDUCTOR_ANNOTATION_LAYER,
+    PERSONAL_ANNOTATION_LAYER,
+    SHARED_ANNOTATION_LAYER,
+    Annotation,
+    AnnotationType,
     Composer,
     Piece,
     ScoreAccessLog,
@@ -40,7 +50,7 @@ from archive.score_protection import (
 )
 from core.constants import AppRole
 from core.models import UserProfile
-from roster.infrastructure import score_watermark
+from roster.infrastructure import score_markings, score_watermark
 from roster.models import (
     Artist,
     Participation,
@@ -368,6 +378,182 @@ class BinderServeTests(_ServeBase):
             ScorePackage.objects.get(project=self.project).build_version, 1
         )
         self.assertNotEqual(self._body(first), self._body(second))
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class ReaderMarksServeTests(_ServeBase):
+    """Stage 4: `?marks=1` composes the reader's OWN pencil onto the stored book
+    at download time. Nothing is written back, nobody else's layer is readable
+    through it, and the licence watermark still has the last word on the bytes."""
+
+    _BOX: ClassVar[list[float]] = [14.0, 20.0, 560.0, 800.0]
+
+    def _prepare(self, *, protected: bool = False, mapped: bool = True) -> None:
+        self.edition.license_type = (
+            ScoreLicenseType.LICENSED_COPIES if protected else ScoreLicenseType.PUBLIC_DOMAIN
+        )
+        self.edition.save()
+        package = ScorePackageService.get_or_create(self.project)
+        package.status = ScorePackage.Status.READY
+        package.build_version = 1
+        package.generated_at = timezone.now()
+        package.page_map = [
+            {"phys": 0, "kind": "front"},
+            {"phys": 1, "kind": "music", "edition": str(self.edition.pk),
+             "src_page": 1, "box": list(self._BOX)},
+            {"phys": 2, "kind": "music", "edition": str(self.edition.pk),
+             "src_page": 2, "box": list(self._BOX)},
+        ] if mapped else []
+        package.save()
+        self.project.score_pdf.save("book.pdf", ContentFile(_pdf_bytes(3)), save=True)
+
+    def _mark(self, user, *, page: int = 1, layer: str = PERSONAL_ANNOTATION_LAYER):
+        return Annotation.objects.create(
+            edition=self.edition, page_number=page,
+            annotation_type=AnnotationType.FREEHAND,
+            payload={"paths": [[[0.2, 0.3], [0.6, 0.35]]], "width": 0.004},
+            color="#1F2933", layer_name=layer, created_by=user,
+        )
+
+    def _serve(self, url: str) -> tuple[bytes, list[str]]:
+        """Fetch the binder with the overlay renderer stubbed, returning the body
+        and whatever markup the markings layer asked to draw."""
+        captured: list[str] = []
+
+        def _capture(html: str) -> bytes:
+            captured.append(html)
+            # One sheet per overlay page, as the real renderer produces — the
+            # merge refuses a count that does not match the plan.
+            return _pdf_bytes(max(1, html.count('class="pg"')))
+
+        with mock.patch.object(score_markings, "_render_pdf", side_effect=_capture):
+            response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        return self._body(response), captured
+
+    @property
+    def marks_url(self) -> str:
+        return f"/api/projects/{self.project.pk}/score_marks/"
+
+    def test_switch_off_composes_nothing(self) -> None:
+        self._prepare()
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        body, captured = self._serve(self.binder_url)
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
+
+    def test_switch_on_draws_the_readers_own_marks(self) -> None:
+        self._prepare()
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        body, captured = self._serve(f"{self.binder_url}?marks=1")
+        self.assertEqual(len(captured), 1)
+        self.assertIn("<path", captured[0])
+        self.assertNotEqual(body, _pdf_bytes(3))
+
+    def test_nobody_elses_pencil_is_readable_through_the_switch(self) -> None:
+        self._prepare()
+        self._mark(self.singer2_user)                       # another singer's own layer
+        self._mark(self.manager, layer=SHARED_ANNOTATION_LAYER)  # already in the book
+        self.client.force_authenticate(self.singer_user)
+        _, captured = self._serve(f"{self.binder_url}?marks=1")
+        self.assertEqual(captured, [])
+
+    def test_marks_are_composed_before_the_licence_watermark(self) -> None:
+        self._prepare(protected=True)
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        stamped: list[bytes] = []
+
+        def _stamp(raw: bytes, _footer: str) -> bytes:
+            stamped.append(raw)
+            return b"%PDF-STAMPED"
+
+        with mock.patch("roster.views.stamp_pdf", side_effect=_stamp):
+            body, captured = self._serve(f"{self.binder_url}?marks=1")
+
+        self.assertEqual(body, b"%PDF-STAMPED")
+        self.assertEqual(len(captured), 1)
+        # The watermark had the marked book in its hands, not the stored one.
+        self.assertNotEqual(stamped[0], _pdf_bytes(3))
+
+    def test_a_new_mark_is_not_served_from_the_previous_copy(self) -> None:
+        self._prepare()
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        first, _ = self._serve(f"{self.binder_url}?marks=1")
+        self._mark(self.singer_user, page=2)
+        second, captured = self._serve(f"{self.binder_url}?marks=1")
+        self.assertEqual(captured[0].count('class="pg"'), 2)
+        self.assertNotEqual(first, second)
+
+    def test_availability_counts_only_marks_that_would_land(self) -> None:
+        self._prepare()
+        self.client.force_authenticate(self.singer_user)
+        self.assertEqual(
+            self.client.get(self.marks_url).json(), {"available": False, "count": 0}
+        )
+        self._mark(self.singer_user, page=1)
+        self._mark(self.singer_user, page=7)  # outside the pages the book binds
+        self.assertEqual(
+            self.client.get(self.marks_url).json(), {"available": True, "count": 1}
+        )
+
+    def test_the_conductors_copy_carries_his_own_cue_layer(self) -> None:
+        self._prepare()
+        self._mark(self.manager, layer=CONDUCTOR_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.manager)
+        _, captured = self._serve(f"{self.binder_url}?marks=conductor")
+        self.assertEqual(len(captured), 1)
+        self.assertIn("<path", captured[0])
+        # It must not be mistakable for the file the choir gets.
+        with mock.patch.object(score_markings, "_render_pdf",
+                               side_effect=lambda html: _pdf_bytes(1)):
+            response = self.client.get(f"{self.binder_url}?marks=conductor")
+        self.assertIn("_dyrygencka.pdf", response["Content-Disposition"])
+        # A manager preview is still not distribution.
+        self.assertIsNone(ScorePackage.objects.get(project=self.project).distributed_at)
+
+    def test_a_singer_cannot_ask_for_the_conductors_layer(self) -> None:
+        self._prepare()
+        self._mark(self.manager, layer=CONDUCTOR_ANNOTATION_LAYER)
+        self.client.force_authenticate(self.singer_user)
+        # Refused outright rather than downgraded: a copy that silently lacks
+        # what was asked for is worse than an error.
+        self.assertEqual(
+            self.client.get(f"{self.binder_url}?marks=conductor").status_code, 403
+        )
+
+    def test_an_unknown_layer_is_a_bad_request(self) -> None:
+        self._prepare()
+        self.client.force_authenticate(self.manager)
+        self.assertEqual(
+            self.client.get(f"{self.binder_url}?marks=everyones").status_code, 400
+        )
+
+    def test_a_refused_request_leaves_no_trace_behind_it(self) -> None:
+        # The ask is read before anything is recorded: a 403 must not stamp the
+        # book as distributed, nor log a download that never happened.
+        self._prepare()
+        self.client.force_authenticate(self.singer_user)
+        self.assertEqual(
+            self.client.get(f"{self.binder_url}?marks=conductor").status_code, 403
+        )
+        self.assertIsNone(ScorePackage.objects.get(project=self.project).distributed_at)
+        self.assertFalse(ScoreAccessLog.objects.filter(project=self.project).exists())
+
+    def test_a_hand_uploaded_book_offers_no_switch_and_draws_nothing(self) -> None:
+        # No page map means no way to know where a mark belongs on the sheet.
+        self._prepare(mapped=False)
+        self._mark(self.singer_user)
+        self.client.force_authenticate(self.singer_user)
+        self.assertEqual(
+            self.client.get(self.marks_url).json(), {"available": False, "count": 0}
+        )
+        body, captured = self._serve(f"{self.binder_url}?marks=1")
+        self.assertEqual(captured, [])
+        self.assertEqual(body, _pdf_bytes(3))
 
 
 # ---------------------------------------------------------------------------

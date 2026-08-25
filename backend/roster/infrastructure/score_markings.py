@@ -33,6 +33,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from html import escape
 from io import BytesIO
+from math import ceil
 from typing import Any
 
 from pypdf import PdfReader, PdfWriter
@@ -69,6 +70,11 @@ _FALLBACK_INK = "#1F2933"
 # whatever the screen showed.
 _MIN_PEN_PT = 0.5
 _MIN_UNDERLINE_PT = 0.7
+# ...and a ceiling for the underline alone. The band's width on screen says how
+# much was swept, not how loud the marking is, so a bold sweep must not print a
+# bar heavier than the engraving. Applied BEFORE the layer weight, so a
+# conductor's underline still prints heavier than a reader's on the same passage.
+_MAX_UNDERLINE_PT = 2.0
 
 # An inline note's font size as a fraction of the placed page width (mirrors the
 # editor's on-screen ratio), clamped to what is legible but not overbearing.
@@ -82,6 +88,19 @@ _PIN_SIZE_FACTOR = 0.8
 # with `text-align: center` rather than a percentage transform: it centres the
 # mark on its point in every renderer, with nothing to measure first.
 _ANCHOR_WIDTH_PT = 240.0
+# The anchor box carries no font of its own (`font-size: 0; line-height: 0`), so
+# its line box is exactly as tall as the chip inside it and the chip's top edge
+# lands on the box's top edge. That is what lets the vertical centring be
+# ARITHMETIC — `top = y - height/2` — instead of a guess about where a strut's
+# baseline falls. Every number below therefore has to match the CSS in
+# `_overlay_html`; they are one decision written twice.
+_CHIP_MAX_WIDTH_PT = 200.0   # .note max-width — where a long comment wraps
+_CHIP_LINE_HEIGHT = 1.15     # .note line-height
+_CHIP_FRAME_PT = 1.8         # .note padding (0.5pt) + border (0.4pt), both edges
+# Gentium Plus averages a little under half an em per character in running text.
+# Only a comment long enough to wrap uses this, and the worst case is half a line
+# of drift on a mark that is an aside anyway.
+_AVG_ADVANCE_EM = 0.5
 
 
 @dataclass(frozen=True)
@@ -219,7 +238,8 @@ def _render_highlight(mark: PrintMark, box: PlacedBox) -> str:
     not through the noteheads."""
     fill, alpha = _ink(mark.color)
     band = _stroke_width(mark.payload, box, 0.021)
-    width = max(_MIN_UNDERLINE_PT, band * 0.16 * (_HEAVY_FACTOR if mark.heavy else 1.0))
+    hairline = min(_MAX_UNDERLINE_PT, max(_MIN_UNDERLINE_PT, band * 0.16))
+    width = hairline * (_HEAVY_FACTOR if mark.heavy else 1.0)
     out: list[str] = []
     for path in mark.payload.get("paths") or []:
         d = _smooth_path(_points(path, box), dy=band / 2)
@@ -275,12 +295,28 @@ def _render_svg_stamp(mark: PrintMark, box: PlacedBox) -> str:
     )
 
 
-def _anchor_html(left: float, top: float, body: str) -> str:
-    """Centre a chip on a point using ordinary block layout."""
+def _anchor_html(anchor: tuple[float, float], height: float, body: str) -> str:
+    """Place a chip of known height centred on its point.
+
+    The editor anchors a note or a stamp by its CENTRE (``translate(-50%, -50%)``
+    on screen), so print has to do the same or a mark drawn between two staves
+    prints across the notes. Horizontally that is ``text-align: center`` in a
+    fixed-width box; vertically it is this subtraction, which is why every chip
+    has to be able to state its own height.
+    """
     return (
-        f'<div class="an" style="left:{left - _ANCHOR_WIDTH_PT / 2:.2f}pt;'
-        f'top:{top:.2f}pt">{body}</div>'
+        f'<div class="an" style="left:{anchor[0] - _ANCHOR_WIDTH_PT / 2:.2f}pt;'
+        f'top:{anchor[1] - height / 2:.2f}pt">{body}</div>'
     )
+
+
+def _note_chip_height(text: str, size: float) -> float:
+    """How tall the note chip will print, derived from the CSS above rather than
+    measured: a single-line chip — nearly every one — is exact, and a comment long
+    enough to wrap is estimated from the average advance width."""
+    per_line = max(1.0, _CHIP_MAX_WIDTH_PT / (size * _AVG_ADVANCE_EM))
+    lines = max(1, ceil(len(text) / per_line))
+    return lines * _CHIP_LINE_HEIGHT * size + _CHIP_FRAME_PT
 
 
 def _render_text_stamp(mark: PrintMark, box: PlacedBox) -> str:
@@ -295,10 +331,10 @@ def _render_text_stamp(mark: PrintMark, box: PlacedBox) -> str:
     weight = "700" if mark.heavy else "400"
     chip = (
         f'<span class="dyn" style="font-size:{size:.2f}pt;color:{fill};'
-        f'opacity:{alpha:.3f};font-weight:{weight};'
-        f'margin-top:{-size * 0.62:.2f}pt">{escape(stamp.glyph)}</span>'
+        f'opacity:{alpha:.3f};font-weight:{weight}">{escape(stamp.glyph)}</span>'
     )
-    return _anchor_html(anchor[0], anchor[1], chip)
+    # `.dyn` has line-height 1, so the glyph's box is exactly one em tall.
+    return _anchor_html(anchor, size, chip)
 
 
 def _render_comment(mark: PrintMark, box: PlacedBox) -> str:
@@ -316,10 +352,9 @@ def _render_comment(mark: PrintMark, box: PlacedBox) -> str:
     weight = "700" if mark.heavy else "600"
     chip = (
         f'<span class="note" style="font-size:{size:.2f}pt;color:{fill};'
-        f'opacity:{alpha:.3f};font-weight:{weight};'
-        f'margin-top:{-size * 0.7:.2f}pt">{escape(text)}</span>'
+        f'opacity:{alpha:.3f};font-weight:{weight}">{escape(text)}</span>'
     )
-    return _anchor_html(anchor[0], anchor[1], chip)
+    return _anchor_html(anchor, _note_chip_height(text, size), chip)
 
 
 def _render_page(marks: Sequence[tuple[PrintMark, PlacedBox]]) -> str:
@@ -355,9 +390,14 @@ def _overlay_html(pages: Sequence[Sequence[tuple[PrintMark, PlacedBox]]]) -> str
         ".pg { position: relative; width: 210mm; height: 297mm; }"
         ".pg:not(:first-child) { break-before: page; }"
         ".ink { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; }"
-        f".an {{ position: absolute; width: {_ANCHOR_WIDTH_PT}pt; text-align: center; }}"
-        f".note {{ font-family: {BOOK_FONT_STACK}; line-height: 1.15;"
-        " display: inline-block; padding: 0.5pt 2pt; background: #ffffff;"
+        # No font of its own: an empty strut would push the chip below its point
+        # by the anchor box's own ascent, which is what `_anchor_html` relies on
+        # not happening.
+        f".an {{ position: absolute; width: {_ANCHOR_WIDTH_PT}pt; text-align: center;"
+        " font-size: 0; line-height: 0; }"
+        f".note {{ font-family: {BOOK_FONT_STACK}; line-height: {_CHIP_LINE_HEIGHT};"
+        f" display: inline-block; max-width: {_CHIP_MAX_WIDTH_PT}pt;"
+        " padding: 0.5pt 2pt; background: #ffffff;"
         " border: 0.4pt solid rgba(0,0,0,0.25); border-radius: 2pt; }"
         f".dyn {{ font-family: {BOOK_FONT_STACK}; font-style: italic;"
         " line-height: 1; display: inline-block; }"
@@ -415,6 +455,16 @@ def merge_overlay(
     if not planned:
         return 0
     sheets = render_overlay_pages(planned)
+    if len(sheets) != len(planned):
+        # The overlay is matched to the book by ORDER, so a renderer that emitted
+        # a stray sheet would land every mark after it on the wrong page. A book
+        # missing its markings is a re-run; a book with the conductor's cue over
+        # the wrong bar is a rehearsal going wrong.
+        logger.error(
+            "score_markings.overlay_page_mismatch sheets=%s planned=%s",
+            len(sheets), len(planned),
+        )
+        return 0
     total = len(writer.pages)
     merged = 0
     for (phys, _), sheet in zip(planned, sheets, strict=False):

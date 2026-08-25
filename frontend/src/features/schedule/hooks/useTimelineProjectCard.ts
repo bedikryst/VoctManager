@@ -12,7 +12,7 @@
 import { useState, useCallback } from "react";
 
 import { ScheduleService } from "../api/schedule.service";
-import { ProjectService } from "@/features/projects/api/project.service";
+import { useScoreMarks } from "@/features/projects/api/project.score-marks";
 import {
   useSchedulePieceCastings,
   useScheduleProgramItems,
@@ -42,10 +42,10 @@ export const useTimelineProjectCard = (
     [projectId],
   );
 
-  const fetchScorePdfBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(String(projectId)),
-    [projectId],
-  );
+  // The binder can be composed with the reader's own marks on it; the control
+  // owns both the switch and the fetcher, so the two can never disagree about
+  // which copy is on screen.
+  const scoreMarks = useScoreMarks(projectId, isScorePdfPreviewOpen);
 
   const handleOpenDaySheetPreview = useCallback(
     (event: React.MouseEvent) => {
@@ -85,7 +85,7 @@ export const useTimelineProjectCard = (
     handleOpenDaySheetPreview,
     handleCloseDaySheetPreview,
     isScorePdfPreviewOpen,
-    fetchScorePdfBlob,
+    scoreMarks,
     handleOpenScorePdfPreview,
     handleCloseScorePdfPreview,
   };

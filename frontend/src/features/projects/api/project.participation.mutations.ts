@@ -21,6 +21,7 @@ import {
 } from "./project.query-utils";
 import { buildOptimisticParticipation } from "./project.optimistic";
 import type {
+  CastOrderDTO,
   ParticipationCreateDTO,
   ParticipationUpdateDTO,
   ProjectBulkFeeDTO,
@@ -158,6 +159,66 @@ export const useUpdateParticipation = (projectId: string) => {
       // Participation = ensemble membership, which drives both the chorister's
       // Materials program and their personal Schedule. Reconcile those personal
       // read-models (cross-session propagation rides their focus-refetch).
+      invalidatePersonalReadModels(queryClient);
+    },
+  });
+};
+
+/**
+ * One voice section, in the order the conductor just dragged it into.
+ *
+ * Optimistic on purpose: the list the user is looking at IS the order they just
+ * built, so waiting for the round-trip would make every drag snap back to the
+ * old order for as long as the network takes. The rollback restores the whole
+ * section, not the one row that moved — a rank is only meaningful next to its
+ * neighbours.
+ */
+export const useSaveCastOrder = (projectId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CastOrderDTO) => ProjectService.saveCastOrder(data),
+    onMutate: async (data) => {
+      const queryKey = projectKeys.participations.byProject(projectId);
+
+      await queryClient.cancelQueries({ queryKey });
+
+      const previousParticipations =
+        queryClient.getQueryData<Participation[]>(queryKey);
+
+      const rankById = new Map(
+        data.order.map((row) => [row.participation, row.section_rank]),
+      );
+
+      queryClient.setQueryData<Participation[]>(
+        queryKey,
+        (currentParticipations = []) =>
+          currentParticipations.map((participation) => {
+            const rank = rankById.get(String(participation.id));
+            return rank === undefined
+              ? participation
+              : { ...participation, section_rank: rank };
+          }),
+      );
+
+      return { previousParticipations };
+    },
+    onError: (error, _variables, context) => {
+      toastApiError(error);
+      if (context?.previousParticipations) {
+        queryClient.setQueryData(
+          projectKeys.participations.byProject(projectId),
+          context.previousParticipations,
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: projectKeys.participations.byProject(projectId),
+      });
+      // The arrangement is what the songbook and the divisi list read the cast
+      // in, so a manager who also sings in this project must not keep seeing the
+      // order they just replaced.
       invalidatePersonalReadModels(queryClient);
     },
   });

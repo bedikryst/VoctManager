@@ -15,6 +15,7 @@ import uuid
 from collections import defaultdict
 from dataclasses import asdict
 from decimal import Decimal, InvalidOperation
+from typing import Any
 
 from celery.result import AsyncResult
 from django.core.cache import cache
@@ -30,10 +31,19 @@ from pydantic import ValidationError
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import APIException, PermissionDenied
+from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
-from archive.models import Piece, PieceVoiceRequirement, Recording, ScoreEdition, Track
+from archive.models import (
+    CONDUCTOR_ANNOTATION_LAYER,
+    PERSONAL_ANNOTATION_LAYER,
+    Piece,
+    PieceVoiceRequirement,
+    Recording,
+    ScoreEdition,
+    Track,
+)
 from archive.score_protection import (
     build_watermark_footer,
     copy_holder_name,
@@ -44,10 +54,11 @@ from core.constants import VoiceLine
 from core.exceptions import format_pydantic_validation_errors, make_error_response
 from core.permissions import IsManager, IsManagerOrReadOnly, user_is_manager
 from core.preview import resolve_preview_target
-from core.request_utils import client_payload, request_user
+from core.request_utils import client_payload, request_user, truthy_flag
 from notifications.announcement_queue import AnnouncementQueue
 from notifications.models import PendingAnnouncement
 
+from .cast_order import participation_sort_key
 from .dashboard_serializers import (
     ConductedProjectMaterialsSerializer,
     ParticipationMaterialsSerializer,
@@ -63,6 +74,7 @@ from .dtos import (
     AttendanceRangeDTO,
     AttendanceRangeWindowDTO,
     AttendanceRecordDTO,
+    CastOrderDTO,
     ParticipationStatusUpdateDTO,
     PieceCastingBoardDTO,
     PieceCastingBoardsDTO,
@@ -86,6 +98,7 @@ from .infrastructure.document_generator import (
     DocumentKind,
     DocumentRenderDependencyError,
 )
+from .infrastructure.score_markings import apply_markings, plan_markings
 from .infrastructure.score_watermark import stamp_pdf
 
 # Models & Exceptions
@@ -111,6 +124,11 @@ from .queries import (
 )
 from .queries.materials_queries import CLOSED_PROJECT_STATUSES
 from .score_package_config import resolve_item_edition
+from .score_package_markings import (
+    READER_MARK_LAYERS,
+    ReaderMarks,
+    reader_marks_for_book,
+)
 from .score_package_service import ScorePackageItemError, ScorePackageService
 
 # Serializers
@@ -177,6 +195,44 @@ def _watermarked_pdf(raw: bytes, *, cache_key: str, footer_text: str) -> bytes:
     if len(stamped) <= _WATERMARK_CACHE_MAX_BYTES:
         cache.set(cache_key, stamped, _WATERMARK_CACHE_TTL_SECONDS)
     return stamped
+
+
+def _requested_mark_layers(raw: object, *, is_manager: bool) -> list[str]:
+    """Which mark layers a download asked for.
+
+    ``?marks=1`` is the singer's switch and means their own pencil; a layer may
+    also be named outright (``?marks=conductor,personal``), which is how the
+    conductor's copy is fetched. Asking for a manager-only layer without being
+    one is refused rather than quietly downgraded: a copy that silently lacks the
+    cues it was asked for is worse than an error.
+    """
+    text = str(raw or "").strip().lower()
+    if not text:
+        return []
+    if truthy_flag(text):
+        return [PERSONAL_ANNOTATION_LAYER]
+    layers = [part.strip() for part in text.split(',') if part.strip()]
+    unknown = [layer for layer in layers if layer not in READER_MARK_LAYERS]
+    if unknown:
+        raise DRFValidationError({"marks": f"Unknown marking layer: {unknown[0]}."})
+    if not is_manager and any(READER_MARK_LAYERS[layer] for layer in layers):
+        raise PermissionDenied("That marking layer is not yours to download.")
+    return layers
+
+
+def _marked_pdf(
+    raw: bytes, *, cache_key: str, page_map: list[Any], marks: ReaderMarks,
+) -> bytes:
+    """Return ``raw`` with this reader's own marks drawn on it, memoised the same
+    way and for the same reason as the watermark: composing costs a render, and a
+    book is opened far more often than it is drawn on."""
+    cached = cache.get(cache_key)
+    if isinstance(cached, bytes):
+        return cached
+    composed = apply_markings(raw, page_map, marks.by_source)
+    if len(composed) <= _WATERMARK_CACHE_MAX_BYTES:
+        cache.set(cache_key, composed, _WATERMARK_CACHE_TTL_SECONDS)
+    return composed
 
 
 def _pdf_bytes_response(data: bytes, *, filename: str) -> FileResponse:
@@ -576,6 +632,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """
         Manages the project score PDF.
         GET  — All authenticated users who have access to this project.
+               ``?marks=1`` composes the caller's own marks onto the copy served;
+               ``?marks=conductor[,personal]`` is the manager-only conductor's
+               copy. Either way nothing is written back: the stored book is one
+               file, and everything per-recipient happens on the way out.
         POST — Managers only. Multipart upload with field name 'score_pdf'.
         DELETE — Managers only. Clears the stored file.
         """
@@ -584,10 +644,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
 
         if request.method == 'GET':
+            is_manager = user_is_manager(request.user)
             # Choristers lose access to the concert score once the project is
             # completed or cancelled — the score is the conductor's property and
             # is not retained on personal devices via the app after the event.
-            if not user_is_manager(request.user) and project.status in _CLOSED_PROJECT_STATUSES:
+            if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
                 return Response(
                     {"detail": "Score access for this project has closed."},
                     status=status.HTTP_403_FORBIDDEN,
@@ -597,8 +658,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "This project has no score PDF."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+            # Read what was asked for BEFORE anything is recorded: a request that
+            # is going to be refused must not leave a distribution stamp or an
+            # access-log row behind it.
+            layers = _requested_mark_layers(
+                request.query_params.get('marks'), is_manager=is_manager,
+            )
 
-            is_manager = user_is_manager(request.user)
             # A singer downloading the book is the moment it "leaves the building";
             # flag it so the conductor's cockpit warns before a rebuild silently
             # replaces what is already in their folders. Managers previewing it do
@@ -615,18 +681,33 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # replaced by hand (a manual upload deliberately leaves the build version
             # alone, since it describes a generated build). The watermark cache is
             # keyed on the latter — see below.
-            build_version, generated_at = (
+            build_version, generated_at, page_map = (
                 ScorePackage.objects.filter(project=project)
-                .values_list('build_version', 'generated_at')
+                .values_list('build_version', 'generated_at', 'page_map')
                 .first()
-            ) or (None, None)
+            ) or (None, None, [])
             decision = record_binder_access(
                 request.user, project,
                 build_version=build_version, protected=protected, is_manager=is_manager,
             )
-            filename = f"Score_{project.title.replace(' ', '_')}.pdf"
+            # The ink composed for this download and never stored. It rides on top
+            # of whatever the book already carries (the conductor's shared layer is
+            # baked in at build time), which is why it is a second overlay rather
+            # than a choice between two.
+            marks = (
+                reader_marks_for_book(page_map or [], request.user, layers)
+                if layers
+                else ReaderMarks(by_source={}, fingerprint="0")
+            )
+            # The conductor's copy is not the choir's book and must never be
+            # mistaken for it once it is a file in somebody's downloads folder.
+            suffix = (
+                "_dyrygencka" if CONDUCTOR_ANNOTATION_LAYER in layers else ""
+            )
+            filename = f"Score_{project.title.replace(' ', '_')}{suffix}.pdf"
+            marks_stamp = f"{generated_at.timestamp() if generated_at else 0}"
 
-            if not decision.watermark:
+            if not decision.watermark and not marks:
                 try:
                     file_handle = project.score_pdf.open('rb')
                 except OSError:
@@ -642,7 +723,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 response['Access-Control-Expose-Headers'] = 'Content-Disposition'
                 return response
 
-            # Protected + chorister: stamp the personal watermark before serving.
+            # Anything composed per recipient — marks, watermark or both — is read
+            # into memory rather than streamed off disk.
             try:
                 with project.score_pdf.open('rb') as handle:
                     raw = handle.read()
@@ -651,6 +733,27 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     {"detail": "Score PDF file not found on the server."},
                     status=status.HTTP_404_NOT_FOUND,
                 )
+
+            if marks:
+                try:
+                    raw = _marked_pdf(
+                        raw,
+                        cache_key=(
+                            f"score_marks:binder:{project.pk}:{marks_stamp}:"
+                            f"{request.user.pk}:{marks.fingerprint}"
+                        ),
+                        page_map=page_map or [],
+                        marks=marks,
+                    )
+                except DocumentRenderDependencyError:
+                    # Serving the clean book under a switch that says "with my
+                    # marks" would be a quiet lie about what is on the page.
+                    raise PdfRenderUnavailable() from None
+
+            if not decision.watermark:
+                return _pdf_bytes_response(raw, filename=filename)
+
+            # Protected + chorister: stamp the personal watermark before serving.
             footer = build_watermark_footer(
                 copy_number=decision.copy_number,
                 holder_name=copy_holder_name(request.user),
@@ -661,10 +764,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # hand-uploaded replacement keeps the version, so a version-keyed entry
             # would serve the PREVIOUS book — stamped with this reader's name, and
             # looking entirely authoritative — for the rest of the TTL.
-            file_stamp = generated_at.timestamp() if generated_at else 0
+            # The reader's own marks are part of the bytes being stamped, so their
+            # fingerprint is part of the identity of the stamped result too.
             cache_key = (
-                f"score_wm:binder:{project.pk}:{build_version}:{file_stamp}:"
-                f"{request.user.pk}:{decision.copy_number}"
+                f"score_wm:binder:{project.pk}:{build_version}:{marks_stamp}:"
+                f"{marks.fingerprint}:{request.user.pk}:{decision.copy_number}"
             )
             try:
                 stamped = _watermarked_pdf(raw, cache_key=cache_key, footer_text=footer)
@@ -714,6 +818,40 @@ class ProjectViewSet(viewsets.ModelViewSet):
         ScorePackageService.mark_manual_upload(project)
 
         return Response(self.get_serializer(project).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='score_marks',
+            permission_classes=[permissions.IsAuthenticated])
+    def score_marks(self, request, pk=None) -> Response:
+        """
+        Whether the marks this caller could ask for exist on the stored book, and
+        how many of them would actually land. ``?layers=`` names the layers
+        (default: the caller's own); asking for a manager-only layer follows the
+        same rule as downloading it.
+
+        Every control that offers marked ink is offered on the strength of this
+        and nothing else. A hand-uploaded book has no page map, so no mark can be
+        placed on it at all; marks that all sit on trimmed-away pages would make
+        an identical file. Both must read as "no control" rather than as one that
+        quietly does nothing.
+        """
+        project = self.get_object()
+        is_manager = user_is_manager(request.user)
+        layers = _requested_mark_layers(
+            request.query_params.get('layers') or '1', is_manager=is_manager,
+        )
+        if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
+            return Response({"available": False, "count": 0})
+        if not project.score_pdf:
+            return Response({"available": False, "count": 0})
+        page_map = (
+            ScorePackage.objects.filter(project=project)
+            .values_list('page_map', flat=True)
+            .first()
+        ) or []
+        marks = reader_marks_for_book(page_map, request.user, layers)
+        planned = plan_markings(page_map, marks.by_source)
+        count = sum(len(page_marks) for _, page_marks in planned)
+        return Response({"available": count > 0, "count": count})
 
     @action(detail=True, methods=['get', 'post'], url_path='score_package', permission_classes=[IsManager])
     def score_package(self, request, pk=None) -> Response:
@@ -1092,7 +1230,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], permission_classes=[IsManager])
     def export_dtp(self, request, pk=None) -> HttpResponse:
         project = self.get_object()
-        participations = Participation.objects.filter(project=project, is_deleted=False).select_related('artist').order_by('artist__last_name')
+        # Ordered in Python, not in SQL: the printed cast reads in the order the
+        # conductor arranged each section, which no ORDER BY expresses — see
+        # [roster.cast_order]. The generator groups by voice and keeps what it is
+        # given.
+        participations = sorted(
+            Participation.objects
+            .filter(project=project, is_deleted=False)
+            .select_related('artist'),
+            key=participation_sort_key,
+        )
         content = DocumentGenerator.generate_dtp_export_text(project, participations)
         response = HttpResponse(content, content_type='text/plain; charset=utf-8')
         response['Content-Disposition'] = f'attachment; filename="Sklad_DTP_{project.title.replace(" ", "_")}.txt"'
@@ -1129,6 +1276,32 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance) -> None:
         ProjectManagementService.delete_participation(instance)
+
+    @action(detail=False, methods=['put'], url_path='order', permission_classes=[IsManager])
+    def order(self, request) -> Response:
+        """One voice section, in the order the conductor just gave it.
+
+        Separate from the PATCH above because it is a different kind of edit:
+        that one re-asks a singer about their engagement, this one only decides
+        who is read before whom. It writes the whole section in one transaction
+        and tells nobody — a name that moved up one place is not news.
+        """
+        try:
+            dto = CastOrderDTO(**client_payload(request.data))
+        except ValidationError as e:
+            return make_error_response(
+                request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                error_code="validation_error",
+                detail="The submitted data is invalid.",
+                validation_errors=format_pydantic_validation_errors(e),
+            )
+
+        project = get_object_or_404(Project, pk=dto.project)
+        ordered = ProjectManagementService.reorder_cast(project, dto.order)
+        return Response(
+            self.get_serializer(ordered, many=True).data, status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['get'], url_path='materials-dashboard')
     def materials_dashboard(self, request) -> Response:

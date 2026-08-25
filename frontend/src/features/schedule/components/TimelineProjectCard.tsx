@@ -28,6 +28,7 @@ import { GlassCard } from "@/shared/ui/composites/GlassCard";
 import { Heading, Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
 import { useTimelineProjectCard } from "../hooks/useTimelineProjectCard";
 import { useProjectReadiness } from "../hooks/useProjectReadiness";
 import { ReadinessRing } from "./ReadinessRing";
@@ -83,7 +84,7 @@ export const TimelineProjectCard = ({
     handleOpenDaySheetPreview,
     handleCloseDaySheetPreview,
     isScorePdfPreviewOpen,
-    fetchScorePdfBlob,
+    scoreMarks,
     handleOpenScorePdfPreview,
     handleCloseScorePdfPreview,
   } = useTimelineProjectCard(proj.id, isExpanded);
@@ -795,8 +796,16 @@ export const TimelineProjectCard = ({
           title={t("schedule.card.score_pdf_modal_title", "Partytura")}
           subtitle={proj.title}
           fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
-          fetchBlob={fetchScorePdfBlob}
-          docKey={`score-${proj.id}-${proj.updated_at ?? ""}`}
+          fetchBlob={scoreMarks.fetchBlob}
+          docKey={`score-${proj.id}-${proj.updated_at ?? ""}${scoreMarks.docKeySuffix}`}
+          toolbarSlot={
+            scoreMarks.available ? (
+              <ScoreMarksToggle
+                enabled={scoreMarks.enabled}
+                onChange={scoreMarks.setEnabled}
+              />
+            ) : undefined
+          }
           fullView={{
             type: "project-score",
             id: proj.id,

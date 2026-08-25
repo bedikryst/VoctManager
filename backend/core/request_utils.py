@@ -24,6 +24,13 @@ def request_user(request: Request) -> "User":
     return cast("User", request.user)
 
 
+def truthy_flag(value: object) -> bool:
+    """Parse a query-param / body flag ('1', 'true', 'yes', 'on') into a bool.
+    Anything else — including an absent param — is False, so a flag can only ever
+    be switched on deliberately."""
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
 def client_payload(
     source: object, *, only: Collection[str] | None = None
 ) -> dict[str, Any]:

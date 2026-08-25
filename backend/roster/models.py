@@ -626,6 +626,28 @@ class Participation(EnterpriseBaseModel):
         verbose_name=_("Section Leader"),
         help_text=_("Leads their voice section in this project. Listed first within it."),
     )
+    # Where this singer stands inside their voice section, as the conductor
+    # arranged it for this project. A SCORE, not a slot: one integer per singer
+    # projects onto any subset of the cast, so a divisi line holding half the
+    # sopranos reads in the order the section was given without that order being
+    # stored a second time per piece.
+    #
+    # Null means nobody has arranged this section yet. Those rows fall to the end
+    # and settle among themselves exactly as they did before the field existed —
+    # leader, then seat, then surname — so an untouched project looks untouched.
+    # The rank therefore outranks both: a singer dragged above the marked leader
+    # has to stay there, or the gesture would silently do nothing.
+    #
+    # Ranks are dense within a section because that is how they are written (the
+    # whole section goes up at once), but nothing depends on it: they are only
+    # ever compared, never counted, and a collision inherited from an earlier
+    # project simply falls through to the tie-breakers below it.
+    section_rank = models.PositiveIntegerField(
+        null=True, blank=True,
+        verbose_name=_("Order in Section"),
+        help_text=_("Position within this project's voice section. "
+                    "Blank = this section has not been arranged."),
+    )
     fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
     is_paid = models.BooleanField(
         default=False,

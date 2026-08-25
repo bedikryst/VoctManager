@@ -1,23 +1,33 @@
 # Score book remediation — audit, repairs, and the markings feature
 
-Status: **STAGES 1-3 BUILT** (2026-08-25) · Stages 4-5 + §7 READY TO IMPLEMENT · Backend-heavy
+Status: **STAGES 1-5 AND §7 BUILT** (2026-08-25) · Backend-heavy
 (`backend/roster/infrastructure/`, `backend/roster/score_package_*.py`), moderate frontend
-surface (cockpit panel + annotation toolbar), one new serve-time path.
+surface (cockpit panel + annotation toolbar + the score viewer's toolbar), one serve-time path
+that now composes two things instead of one.
 
 Stage 1 shipped D1-D8 plus the concurrency guard. **Re-audited against the source on 2026-08-25**
 (not against this file's own claims): every one of D1-D8 is present in the code as described,
 and its 155 tests are green. Stage 1's code and migration 0044 are committed (`421c5d2`).
 
-Stages 2-3 then shipped the page map and the conductor's markings in the book: 40 new tests in
-`roster.test_score_markings` (195 green across the four score suites, 691 across `roster` +
-`archive`), ruff + mypy clean, frontend typecheck + build clean.
+Stages 2-3 then shipped the page map and the conductor's markings in the book (committed in
+`c4e0e64`). Stages 4-5 and §7 followed: the reader's own marks at download, the conductor's
+copy, and the ink palette with its reservation. 727 tests green across `roster` + `archive`,
+ruff + mypy clean, frontend typecheck + lint + build clean.
 
-**Two migrations need applying** (`make migrate`) — `0044_score_package_build_started_at` and
-`0047_scorepackage_include_markings_scorepackage_page_map`. The host has no Postgres, so both
-were validated on the sqlite test DB only.
+**Three migrations need applying** (`make migrate`) — `roster.0044_score_package_build_started_at`,
+`roster.0047_scorepackage_include_markings_scorepackage_page_map` and
+`archive.0027_alter_annotation_color`. The host has no Postgres, so all three were validated on
+the sqlite test DB only.
 
-**Still outstanding, and it needs a container:** every NEEDS RENDER CHECK item below, now
-including the markings overlay itself. Nothing here has been through a real WeasyPrint render.
+### What the overlay has and has not met
+
+The markings overlay HAS now been through a real WeasyPrint: the owner built a book with
+`include_markings` on and sent the rendered page. Freehand strokes, the highlighter's underline
+translation and a text chip all drew, on the right page, at the right bar. That render is also
+where two defects showed up, both since fixed (see §4).
+
+The two remaining NEEDS RENDER CHECK items are D2's knockout and D6's Mass preview. **D2 is now
+closed without a renderer** — see below. D6's is a visual check that still needs a container.
 
 Audited artifact: the concert score-book generator ("książka nutowa") and its Mass variant —
 the whole chain `builder → layout → config → readiness → service → views → watermark →
@@ -151,7 +161,14 @@ to every content stream, which is not free and not wanted). `_place_on_a4` keeps
 it stays correct as a standalone helper; on an already-baked page it costs one integer check.
 
 **Verification.** A test binding a `/Rotate 90` page and asserting the placement transform is
-derived from the same box the detector measured. NEEDS RENDER CHECK for the visual.
+derived from the same box the detector measured.
+
+**Closed on the host, no renderer needed** (`RotatedKnockoutTests`, 2026-08-25). The visual check
+turned out to be reducible to an arithmetic one: bind a page carrying a real folio glyph at 0°,
+90°, 180° and 270°, then read the glyph's position back **off the finished sheet** with a pypdf
+text visitor (`tm × cm`, so both the rotation bake and the placement transform are in it) and
+assert the painted rectangle brackets it. That is the actual claim — "the white box is over the
+NUMBER" — rather than "over where we believe the number to be", and it needs no eyes.
 
 ---
 
@@ -366,14 +383,40 @@ light down. And the cockpit row speaks only when something would *silently not p
 `wrong_edition` or `partial` — instead of showing a four-state light on every item, which is that
 row's own documented rule ("a label on every row would bury the one piece that needs the eye").
 
-**NEEDS RENDER CHECK.** Nothing below has met a real WeasyPrint: that its SVG renderer draws the
-stroked paths and the fermata's arc as expected, that the anchored text chips land centred on their
-points, and — the print-canon test — that the underline and the ×1.4 weight actually read as two
-distinct hands on a monochrome printout.
+### What the first real render showed (2026-08-25)
+
+A book built with the toggle on, against a live edition carrying a freehand stroke, a highlighter
+sweep and an inline note. **The overlay works**: the SVG paths draw, the chip's text draws with its
+Polish diacritics intact, and both land on the page and in the bar the editor showed them in. Two
+things were wrong, and one thing was right but unrecognisable:
+
+* **The chip printed ~7pt low.** "Centred by plain block layout" was not: the anchor box inherited
+  a 12pt font from the body, and its strut — not the chip — decided where the first line box sat,
+  so the negative `margin-top` was compensating for a number it did not know. The box now carries
+  `font-size: 0; line-height: 0`, which makes the chip's top edge land on the box's top edge, and
+  the vertical centring became arithmetic: `top = y − height/2`, with the height derived from the
+  same constants the CSS uses. Single-line chips are exact; a comment long enough to wrap is
+  estimated from the average advance, worst case half a line.
+* **A bold sweep printed a bar, not a hairline.** `band × 0.16` is right at medium and too heavy at
+  the top of the range. Capped at 2pt **before** the layer weight, so a conductor's underline still
+  prints heavier than a reader's on the same passage.
+* **The highlighter looked absent.** It was not: it printed as the underline this feature always
+  intended, in full-strength ink rather than the screen's translucent band, and it reads as another
+  pen stroke unless you know to look for it. Working as designed — the cockpit even says so in its
+  own helper text — but worth stating plainly, because "the highlighter doesn't draw" is what it
+  looks like the first time.
+
+Also hardened while in there: `merge_overlay` now refuses to draw at all if the renderer hands back
+a different number of sheets than the plan asked for. The overlay is matched to the book by order,
+so one stray sheet would put every later mark on the wrong page; a book missing its markings is a
+re-run, a book with a cue over the wrong bar is a rehearsal going wrong.
+
+**Still NEEDS RENDER CHECK:** the print-canon test — that the underline and the ×1.4 weight read as
+two distinct hands on a *monochrome* printout. That needs paper, not a container.
 
 ---
 
-## 5. Stage 4 — the reader's own marks at download (`personal`, serve time) · NEXT
+## 5. Stage 4 — the reader's own marks at download (`personal`, serve time) · **BUILT**
 
 The machinery already exists and is tested: `apply_markings(pdf_bytes, page_map, marks)` takes the
 stored book and returns it with ink on it, returning the input untouched when there is nothing to
@@ -395,17 +438,48 @@ is the point. Three surfaces reach the binder — `NextEventHero`, `TimelineProj
 `project-score` full view in `DocumentViewerPage` — all through the shared `PdfViewerModal`, which
 is why this is its own stage rather than a tail on Stage 3.
 
+### What shipped
+
+* **`?marks=`** on `ProjectViewSet.score_pdf` GET. `1` means the caller's own pencil; a layer may
+  also be named outright, which is what Stage 5 uses. Composition happens **before** the licence
+  watermark, and the unwatermarked branch now reads bytes instead of streaming the handle — but
+  only when there is something to compose, so a plain download is still a stream off disk.
+* **Two caches, two identities.** The composed bytes are memoised under the reader's markings
+  fingerprint (count + newest `updated_at`), and that fingerprint is also part of the *watermark*
+  cache key, because the marks are part of the bytes being stamped. A pencil mark made a second
+  ago cannot be served from a copy composed a minute ago.
+* **`GET score_marks/`** answers whether a control should exist at all: it counts only the marks
+  that would actually LAND (`plan_markings` over the stored page map). A hand-uploaded book (no
+  page map) and a reader whose marks all sit on trimmed pages both return `available: false`, so
+  neither gets a switch that hands back an identical file.
+* **`useScoreMarks`** owns the switch, the availability query and the blob fetcher together, and
+  hands back a `docKeySuffix` — the composed book is different bytes at the same URL, so without
+  it the viewer would keep showing the copy it cached before the switch was thrown. All three
+  surfaces wire the same control; the toggle rides in the viewer's existing `toolbarSlot`.
+* **Per-viewer, not a preference.** The switch resets on close. Remembering "on" would quietly
+  make every casual open — checking a page number on a train — pay for a render.
+* If WeasyPrint is unavailable the marked download **fails** (503) rather than falling back to the
+  clean book: serving unmarked bytes under a switch that says "with my marks" is a quiet lie.
+
 ---
 
-## 6. Stage 5 — the conductor's copy
+## 6. Stage 5 — the conductor's copy · **BUILT**
 
-A manager-only export: the book plus the `conductor` layer (and, if he wants, his own `personal`).
-A button, not a config field: it is unversioned, never counts as distribution, and must never be
-confusable with what the choir receives.
+A manager-only export: the book plus the `conductor` layer. A button in the cockpit, not a config
+field — it is unversioned, never counts as distribution (a manager download never did), and names
+itself `…_dyrygencka.pdf`, because once it is a file in a downloads folder nothing else says it is
+not the choir's book.
+
+It is the same serve path as Stage 4 with a different layer named (`?marks=conductor`, and
+`conductor,personal` if he wants his own pencil too), so the watermark ordering, the cache identity
+and the page-map placement are implemented once. A non-manager naming that layer is **refused**,
+not silently downgraded: a copy that quietly lacks the cues it was asked for is worse than an
+error. The button appears only where he actually has cues — `score_marks/?layers=conductor` — since
+otherwise it would produce the choir's book under a name claiming otherwise.
 
 ---
 
-## 7. Annotation-system hardening (runs alongside Stages 3-5)
+## 7. Annotation-system hardening (runs alongside Stages 3-5) · **BUILT**
 
 **The conductor's colour is reserved.** Today `ANNOTATION_COLORS[0]` is crimson `#DC2626` and it
 is the default for *everyone*, including choristers, and `AnnotationSerializer` does not validate
@@ -429,6 +503,23 @@ server-side print overlay needs the same vocabulary. Either derive both from one
 duplicate with a parity test on the ids — an undetected divergence prints nothing where a symbol
 was expected.
 
+### What shipped
+
+* `archive/annotation_palette.py` — the five inks and their reservation, mirrored by
+  `frontend/src/features/annotations/lib/palette.ts` with a parity test over both values and flags
+  (`archive.test_annotation_palette`). A swatch offered on screen and refused by the server is a
+  mark a chorister cannot make and is never told why.
+* **The rule is split where the knowledge is.** `AnnotationSerializer.validate_color` enforces
+  "this is a palette ink" (a fact about the data) and normalises the casing;
+  `AnnotationViewSet._assert_can_write` enforces "this ink is not yours" (a fact about the
+  requester), beside the layer gate it belongs with.
+* The model default moved from `#FFD700FF` — a colour outside the palette, and therefore
+  unvalidatable — to graphite (`archive.0027`). An unnamed ink must never be an authority one.
+* Existing rows are untouched, and only a patch that RECOLOURS is judged, so the owner of a mark
+  written in a retired ink can still move or erase it.
+* Toolbar: a chorister sees four swatches, starts in graphite, and is told once — in the ink panel,
+  where the missing swatch is — that red belongs to the conductor.
+
 ---
 
 ## 8. Rejected
@@ -444,9 +535,13 @@ was expected.
 
 ## 9. Still open
 
-* **Every NEEDS RENDER CHECK item, now three:** D2's knockout placement on a rotated edition, D6's
-  Mass entry preview, and the whole Stage 3 markings overlay (see §4). All need a container.
-* **Stage 4, Stage 5 and §7** (the palette hardening) are untouched.
+* **D6's Mass entry preview** is the last item whose only proof is a rendered page, and it needs a
+  container. (D2 is closed on the host; the markings overlay met a real WeasyPrint — see §4.)
+* **The print-canon test on paper:** that a conductor's underline and a singer's read as two hands
+  on a monochrome printout. Nothing in code can answer that one.
+* **The reader's switch is not offered on `ScoreStandModal`** (the annotating view). It would be
+  redundant there — that surface already draws the live layers on screen — but if the score stand
+  ever gains a "print what I see" affordance, this is where it hangs.
 * **The cockpit's `section_effective` / `role_prefix_effective` follow the reader's language while
   the card follows the book's.** D7 fixes the artifacts; the read model still resolves under
   `Accept-Language`. Doing it properly means splitting `build_program_presentation` into a

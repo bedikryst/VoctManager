@@ -27,7 +27,7 @@ template can only concatenate the two.
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from enum import StrEnum
 from typing import Any
 from urllib.parse import quote_plus, urljoin
@@ -41,10 +41,15 @@ from django.utils.translation import gettext as _
 from django.utils.translation import ngettext, pgettext
 
 from archive.services.voice_scope import requirements_for_edition, tracks_for_edition
-from core.constants import VoiceLine
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels
 from logistics.address import address_parts
+from roster.cast_order import (
+    VOICE_LINE_ORDER,
+    VOICE_TYPE_ORDER,
+    casting_sort_key,
+    participation_sort_key,
+)
 from roster.domain.day_timeline import (
     CallWindow,
     CallWindowProblem,
@@ -77,8 +82,6 @@ from roster.models import (
     VoiceType,
 )
 from roster.score_package_config import resolve_item_edition
-
-_VOICE_LINE_ORDER = {value: idx for idx, value in enumerate(VoiceLine.values)}
 
 
 def _item_line_labels(
@@ -153,18 +156,6 @@ _COVERAGE_COLUMNS: tuple[tuple[str, str], ...] = (
 # Printed on a Polish sheet for a Polish ensemble, the country is the one part
 # of an address that never tells the reader anything.
 _IMPLIED_COUNTRIES = frozenset({'poland', 'polska'})
-# Keyed by VoiceType (a str-valued TextChoices), so the keys double as plain strings
-# for ordering lookups by the serialized voice-type value.
-_VOICE_TYPE_ORDER: dict[str, int] = {
-    VoiceType.SOPRANO: 0,
-    VoiceType.MEZZO: 1,
-    VoiceType.ALTO: 2,
-    VoiceType.COUNTERTENOR: 3,
-    VoiceType.TENOR: 4,
-    VoiceType.BARITONE: 5,
-    VoiceType.BASS: 6,
-    VoiceType.CONDUCTOR: 7,
-}
 # The day's two fixed points, named for the printed sheet. Placing them is the
 # domain's job (``day_timeline``); only the wording belongs to the document.
 # Msgids under the ``call sheet`` context — the same ones the masthead band
@@ -531,7 +522,9 @@ class DocumentGenerator:
             yield f'{idx};{title};{composer_name};{arranger_name};;{encore}\n'
 
     @staticmethod
-    def generate_dtp_export_text(project: Project, participations: QuerySet[Participation]) -> str:
+    def generate_dtp_export_text(
+        project: Project, participations: Sequence[Participation]
+    ) -> str:
         """Generates a cleanly formatted text artifact tailored for Graphic Design (DTP).
 
         The section names are the copy that will be typeset into a Polish
@@ -1021,13 +1014,21 @@ class DocumentGenerator:
         ]
         assignments.sort(key=lambda entry: (entry['order'] is None, entry['order'] or 0))
 
-        section_mates = sorted(
+        # In the order the section stands, not in the order the alphabet does:
+        # the singer holding this sheet finds their neighbours where they will
+        # actually be standing.
+        section_mates = [
             f'{p.artist.first_name} {p.artist.last_name}'
-            for p in participation_list
-            if p.id != recipient.id
-            and p.status == Participation.Status.CONFIRMED
-            and p.artist.voice_type == artist.voice_type
-        )
+            for p in sorted(
+                (
+                    p for p in participation_list
+                    if p.id != recipient.id
+                    and p.status == Participation.Status.CONFIRMED
+                    and p.artist.voice_type == artist.voice_type
+                ),
+                key=participation_sort_key,
+            )
+        ]
         section_size = len(section_mates) + 1
 
         return {
@@ -1370,13 +1371,13 @@ class DocumentGenerator:
         # arrangements' lines, which describes no performance.
         tracks = sorted(
             tracks_for_edition(getattr(piece, 'prefetched_tracks', []), bound_edition_id),
-            key=lambda track: _VOICE_LINE_ORDER.get(track.voice_part, 999),
+            key=lambda track: VOICE_LINE_ORDER.get(track.voice_part, 999),
         )
         voice_requirements = sorted(
             requirements_for_edition(
                 getattr(piece, 'prefetched_voice_requirements', []), bound_edition_id,
             ),
-            key=lambda requirement: _VOICE_LINE_ORDER.get(requirement.voice_line, 999),
+            key=lambda requirement: VOICE_LINE_ORDER.get(requirement.voice_line, 999),
         )
         # The per-piece "Nuty PDF" link points at the access-gated edition download
         # view (watermarked + logged per recipient), never the raw /media file —
@@ -1496,14 +1497,10 @@ class DocumentGenerator:
     ) -> dict[str, Any]:
         line_labels = _item_line_labels(item, piece_castings)
         grouped_castings: dict[str, list[ProjectPieceCasting]] = defaultdict(list)
-        for casting in sorted(
-            piece_castings,
-            key=lambda entry: (
-                _VOICE_LINE_ORDER.get(entry.voice_line, 999),
-                entry.participation.artist.last_name,
-                entry.participation.artist.first_name,
-            ),
-        ):
+        # Musical order for the lines, and inside each of them the order the
+        # conductor arranged the section in — the same one the divisi board
+        # shows him, so the printed page and the screen cannot disagree.
+        for casting in sorted(piece_castings, key=casting_sort_key):
             label = line_labels.get(casting.voice_line, casting.get_voice_line_display())
             grouped_castings[label].append(casting)
 
@@ -1602,21 +1599,10 @@ class DocumentGenerator:
         grouped: dict[str, list[str]] = defaultdict(list)
         labels: dict[str, str] = {}
 
-        # The same order the casting tab lists the cast in, and for the same
-        # reason: whoever leads a section heads it, the line-up reads from the
-        # top down, and a surname decides only where neither applies — which is
-        # every project that has not been seated, so those print alphabetically
-        # exactly as they always did.
-        for participation in sorted(
-            participations,
-            key=lambda entry: (
-                _VOICE_TYPE_ORDER.get(entry.artist.voice_type, 999),
-                not entry.is_section_leader,
-                _VOICE_LINE_ORDER.get(entry.default_voice_line, 999),
-                entry.artist.last_name,
-                entry.artist.first_name,
-            ),
-        ):
+        # The order the conductor arranged the cast in — see [roster.cast_order],
+        # which every surface listing these people sorts by. A section nobody has
+        # arranged still prints alphabetically, exactly as it always did.
+        for participation in sorted(participations, key=participation_sort_key):
             voice_type = participation.artist.voice_type
             labels[voice_type] = participation.artist.get_voice_type_display()
             grouped[voice_type].append(
@@ -1626,7 +1612,7 @@ class DocumentGenerator:
         ordered_sections = []
         for voice_type, members in sorted(
             grouped.items(),
-            key=lambda entry: _VOICE_TYPE_ORDER.get(entry[0], 999),
+            key=lambda entry: VOICE_TYPE_ORDER.get(entry[0], 999),
         ):
             ordered_sections.append(
                 {
@@ -1709,11 +1695,7 @@ class DocumentGenerator:
             count = len(pending_participations)
             by_voice: dict[str, list[str]] = defaultdict(list)
             for participation in sorted(
-                pending_participations,
-                key=lambda entry: (
-                    _VOICE_TYPE_ORDER.get(entry.artist.voice_type, 999),
-                    entry.artist.last_name,
-                ),
+                pending_participations, key=participation_sort_key
             ):
                 by_voice[participation.artist.get_voice_type_display()].append(
                     f'{participation.artist.first_name} {participation.artist.last_name}'

@@ -25,6 +25,7 @@ import type {
 import type {
   AttendanceCreateDTO,
   AttendanceUpdateDTO,
+  CastOrderDTO,
   CrewAssignmentCreateDTO,
   CrewAssignmentUpdateDTO,
   ParticipationCreateDTO,
@@ -364,6 +365,17 @@ export interface ScorePackageItemPatch {
   hide_source_page_numbers: boolean | null;
 }
 
+/**
+ * Whether the reader has marks of their own that the stored book could carry.
+ * `count` is how many would actually land: marks on pages the book trimmed away
+ * are none of the reader's business to chase, but they must not raise a switch
+ * that would hand back an identical file.
+ */
+export interface ScoreMarksAvailability {
+  available: boolean;
+  count: number;
+}
+
 /** Build state + readiness of a project's auto-assembled concert score book. */
 export interface ScorePackageState {
   status: ScorePackageStatus;
@@ -549,10 +561,42 @@ export const ProjectService = {
     return response.data as Blob;
   },
 
-  fetchScorePdfBlob: async (projectId: string): Promise<Blob> => {
+  /**
+   * The concert binder. `marks` asks the server to compose ink onto it for this
+   * download only — `true` for the caller's own pencil, or named layers for the
+   * conductor's copy (`["conductor"]`), which is manager-only. Either way the
+   * stored book is untouched: what differs is the copy, not the file.
+   */
+  fetchScorePdfBlob: async (
+    projectId: string,
+    marks: boolean | readonly string[] = false,
+  ): Promise<Blob> => {
+    const requested = Array.isArray(marks)
+      ? marks.join(",")
+      : marks === true
+        ? "1"
+        : null;
     const response = await api.get(
       `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,
-      { responseType: "blob" },
+      {
+        responseType: "blob",
+        params: requested ? { marks: requested } : undefined,
+      },
+    );
+    return response.data;
+  },
+
+  /**
+   * Whether the caller has marks of their own that this book could carry, and
+   * how many would land. Drives whether the download switch is offered at all.
+   */
+  getScoreMarksAvailability: async (
+    projectId: string | number,
+    layers?: readonly string[],
+  ): Promise<ScoreMarksAvailability> => {
+    const response = await api.get<ScoreMarksAvailability>(
+      `${PROJECTS_BASE_URL}${projectId}/score_marks/`,
+      layers?.length ? { params: { layers: layers.join(",") } } : undefined,
     );
     return response.data;
   },
@@ -679,6 +723,15 @@ export const ProjectService = {
   ): Promise<Participation> => {
     const response = await api.patch<Participation>(
       `${PARTICIPATIONS_BASE_URL}${id}/`,
+      data,
+    );
+    return response.data;
+  },
+
+  /** Writes one rearranged voice section; resolves with the rows it touched. */
+  saveCastOrder: async (data: CastOrderDTO): Promise<Participation[]> => {
+    const response = await api.put<Participation[]>(
+      `${PARTICIPATIONS_BASE_URL}order/`,
       data,
     );
     return response.data;

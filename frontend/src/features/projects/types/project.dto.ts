@@ -62,6 +62,16 @@ export interface ParticipationCreateDTO {
 
 export type ParticipationUpdateDTO = Partial<ParticipationCreateDTO>;
 
+/**
+ * A voice section in the order the conductor just gave it. Sent whole, because
+ * moving one name moves every name under it — and written silently: a singer who
+ * changed places has had nothing about their engagement changed.
+ */
+export interface CastOrderDTO {
+  project: string;
+  order: readonly { participation: string; section_rank: number }[];
+}
+
 export interface CrewAssignmentCreateDTO {
   collaborator: string;
   project: string;

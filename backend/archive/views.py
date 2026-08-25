@@ -30,10 +30,11 @@ from rest_framework.response import Response
 
 from core.exceptions import make_error_response
 from core.permissions import IsManager, user_is_manager
-from core.request_utils import request_user
+from core.request_utils import request_user, truthy_flag
 from roster.queries import artist_live_piece_ids
 
 from . import services
+from .annotation_palette import is_reserved_ink
 from .models import (
     CONDUCTOR_ANNOTATION_LAYER,
     PERSONAL_ANNOTATION_LAYER,
@@ -78,9 +79,8 @@ from .tasks import live_preview_cache_key
 logger = logging.getLogger(__name__)
 
 
-def _truthy(value: object) -> bool:
-    """Parse a query-param / body flag ('1', 'true', 'yes') into a bool."""
-    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+# Thin module-local alias; the flag parser itself is shared with roster's views.
+_truthy = truthy_flag
 
 
 class ComposerViewSet(viewsets.ModelViewSet):
@@ -857,17 +857,24 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         layer_name: str,
         edition: ScoreEdition,
         instance: Annotation | None = None,
+        color: str | None = None,
     ) -> None:
         """
         Non-managers may only touch their OWN marks on the 'personal' layer, and
         only on editions they still have live access to. Managers pass freely —
         other users' personal marks are already unreachable via get_queryset.
+
+        The palette's reserved ink is gated here too, for the same reason and by
+        the same rule: crimson is how the page says "the conductor wrote this",
+        and one book can now carry both hands at once.
         """
         if self._is_manager():
             return
         user = request_user(self.request)
         if layer_name != PERSONAL_ANNOTATION_LAYER:
             raise PermissionDenied('Only personal-layer annotations may be written.')
+        if color is not None and is_reserved_ink(color):
+            raise PermissionDenied('That ink is reserved for the conductor.')
         if instance is not None and instance.created_by_id != user.id:
             raise PermissionDenied('You may only modify your own annotations.')
         if edition.piece_id not in set(artist_live_piece_ids(user)):
@@ -876,16 +883,24 @@ class AnnotationViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer) -> None:
         edition = serializer.validated_data['edition']
         layer = serializer.validated_data.get('layer_name') or CONDUCTOR_ANNOTATION_LAYER
-        self._assert_can_write(layer_name=layer, edition=edition)
+        self._assert_can_write(
+            layer_name=layer, edition=edition,
+            color=serializer.validated_data.get('color'),
+        )
         serializer.save(created_by=request_user(self.request))
 
     def perform_update(self, serializer) -> None:
         instance = serializer.instance
         # Validate against the TARGET layer so a patch can't smuggle a personal
-        # mark onto 'shared' (or a chorister edit onto a shared mark).
+        # mark onto 'shared' (or a chorister edit onto a shared mark). Colour is
+        # read the same way: only a patch that RECOLOURS is judged, so a mark
+        # that predates the palette can still be moved or erased by its owner.
         layer = serializer.validated_data.get('layer_name', instance.layer_name)
         edition = serializer.validated_data.get('edition', instance.edition)
-        self._assert_can_write(layer_name=layer, edition=edition, instance=instance)
+        self._assert_can_write(
+            layer_name=layer, edition=edition, instance=instance,
+            color=serializer.validated_data.get('color'),
+        )
         serializer.save()
 
     def perform_destroy(self, instance: Annotation) -> None:

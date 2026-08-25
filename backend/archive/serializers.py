@@ -31,6 +31,7 @@ from rest_framework import serializers
 
 from core.voice_labels import voice_line_label
 
+from .annotation_palette import normalize_ink
 from .dtos import PieceWriteDTO, VoiceRequirementDTO
 from .models import (
     PERSONAL_ANNOTATION_LAYER,
@@ -409,12 +410,26 @@ class AnnotationSerializer(serializers.ModelSerializer):
     write: coordinates are clamped to the normalized page box, sizes are bounded,
     and the cleaned object is what gets persisted — the DB never holds a shape
     the frontend type-guards would silently discard.
+
+    `color` is checked against the palette here, because that is a fact about the
+    data. WHO may write a reserved ink is a fact about the requester, so that
+    half lives beside the layer gate in ``AnnotationViewSet._assert_can_write``.
     """
     class Meta:
         model = Annotation
         fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
                   'color', 'layer_name', 'created_by', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+
+    def validate_color(self, value: str) -> str:
+        """Only the palette's inks, in the palette's own casing. Anything else
+        used to persist verbatim — nine characters of whatever the client sent —
+        and a colour nothing can render is a mark that prints as a surprise.
+        Rows written before this rule are left exactly as they are."""
+        normalized = normalize_ink(value)
+        if not normalized:
+            raise serializers.ValidationError(_('Unsupported marking colour.'))
+        return normalized
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         # On PATCH either field may be absent; resolve the effective pair so the

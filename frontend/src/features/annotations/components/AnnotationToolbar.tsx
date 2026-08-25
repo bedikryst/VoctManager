@@ -32,11 +32,11 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
+import { Caption } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 
 import {
-  ANNOTATION_COLORS,
   MARK_SCALE_ORDER,
   type AnnotationTool,
   type AnnotationToolState,
@@ -143,6 +143,7 @@ export const AnnotationToolbar = ({
   setTool,
   color,
   setColor,
+  inks,
   size,
   setSize,
   textScale,
@@ -397,24 +398,36 @@ export const AnnotationToolbar = ({
           )}
 
           {showInk && (
-            <div className="flex items-center gap-1.5">
-              {ANNOTATION_COLORS.map((swatch) => (
-                <button
-                  key={swatch}
-                  type="button"
-                  onClick={() => setColor(swatch)}
-                  aria-label={t("annotations.ink_color", "Kolor")}
-                  aria-pressed={color === swatch}
-                  title={t("annotations.ink_color", "Kolor")}
-                  className={cn(
-                    "h-6 w-6 rounded-full transition-transform hover:scale-110",
-                    color === swatch
-                      ? "ring-2 ring-white ring-offset-1 ring-offset-ethereal-ink"
-                      : "ring-1 ring-white/30",
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-1.5">
+                {inks.map(({ value }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setColor(value)}
+                    aria-label={t("annotations.ink_color", "Kolor")}
+                    aria-pressed={color === value}
+                    title={t("annotations.ink_color", "Kolor")}
+                    className={cn(
+                      "h-6 w-6 rounded-full transition-transform hover:scale-110",
+                      color === value
+                        ? "ring-2 ring-white ring-offset-1 ring-offset-ethereal-ink"
+                        : "ring-1 ring-white/30",
+                    )}
+                    style={{ backgroundColor: value }}
+                  />
+                ))}
+              </div>
+              {/* Said once, where the missing swatch is — the palette is short
+                  enough that its absence would otherwise read as a bug. */}
+              {mode === "personal" && (
+                <Caption color="marble-muted">
+                  {t(
+                    "annotations.ink_reserved",
+                    "Czerwony jest zarezerwowany dla dyrygenta.",
                   )}
-                  style={{ backgroundColor: swatch }}
-                />
-              ))}
+                </Caption>
+              )}
             </div>
           )}
 

@@ -7,6 +7,8 @@
  * draft is dirty is gated behind a confirmation.
  * The pool stays pinned beside the board rather than under it, so a long piece
  * can be scrolled while the people to place remain a short drag away.
+ * Both the pool and every voice line read in the order the Cast tab arranged
+ * each section — the board shows the choir as it stands, not as it was dragged.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/MicroCastingTab
  */
@@ -38,10 +40,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import type { Project } from "@/shared/types";
+import type { PieceCasting, Project } from "@/shared/types";
 
 import { useMicroCasting, type CastMember } from "../hooks/useMicroCasting";
 import { PROJECT_STATUS } from "../../constants/projectDomain";
+import { byCastOrder } from "../../lib/castOrder";
 import {
   VOICE_FAMILY_ORDER,
   voiceFamilyOf,
@@ -288,8 +291,8 @@ export const MicroCastingTab = ({
       "Głos nieokreślony",
     );
 
-    // `members` already arrives in roster order, so a sequential walk is the
-    // whole grouping.
+    // `members` already arrives in the order the Cast tab arranged it, so a
+    // sequential walk is the whole grouping.
     return visible.reduce<PoolGroup[]>((groups, member) => {
       const key = member.voiceType ?? "UNKNOWN";
       const last = groups[groups.length - 1];
@@ -326,8 +329,25 @@ export const MicroCastingTab = ({
     ROLE: t("projects.micro_cast.voices.special", "Linie specjalne"),
   };
 
-  const castingsFor = (voiceLine: string) =>
-    localCastings.filter((casting) => casting.voice_line === voiceLine);
+  /**
+   * One voice line's seats, read top to bottom in the order the Cast tab
+   * arranged the section — the same order the singers see in their songbook and
+   * on the printed sheet. Without it a line listed people in the order they were
+   * dragged onto it, which is the order of the conductor's afternoon rather than
+   * anything about the choir.
+   *
+   * A seat whose member is missing keeps its place: `DivisiBucket` drops those
+   * rows, and sorting them to the end here would only move a hole around.
+   */
+  const castingsFor = (voiceLine: string): PieceCasting[] =>
+    localCastings
+      .filter((casting) => casting.voice_line === voiceLine)
+      .sort((left, right) => {
+        const leftMember = memberMap.get(String(left.participation));
+        const rightMember = memberMap.get(String(right.participation));
+        if (!leftMember || !rightMember) return 0;
+        return byCastOrder(leftMember, rightMember);
+      });
 
   const pendingMetrics: React.ReactNode[] = [];
   if (pendingCounts.creates > 0) {

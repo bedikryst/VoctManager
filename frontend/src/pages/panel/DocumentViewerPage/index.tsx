@@ -21,6 +21,8 @@ import { PdfViewer } from "@/shared/ui/composites/PdfViewer";
 import { StatePanel } from "@/shared/ui/composites/StatePanel";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { ProjectService } from "@/features/projects/api/project.service";
+import { useScoreMarks } from "@/features/projects/api/project.score-marks";
+import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
 import { ScheduleService } from "@/features/schedule/api/schedule.service";
 import { ChoristerHubService } from "@/features/chorister-hub/api/chorister-hub.service";
 
@@ -191,6 +193,12 @@ const DocumentViewerPage = (): React.JSX.Element => {
     return resolveDocument(docType, decodedId, hint, t);
   }, [decodedId, docType, hint, t]);
 
+  // The concert binder is the one document here a reader can ask to have their
+  // own marks drawn onto. It takes over the fetcher, because the switch and the
+  // bytes on screen have to be the same decision.
+  const isScore = docType === "project-score";
+  const scoreMarks = useScoreMarks(decodedId, isScore);
+
   const canGoBack = location.key !== "default";
 
   const handleBack = useCallback(() => {
@@ -218,7 +226,7 @@ const DocumentViewerPage = (): React.JSX.Element => {
     );
   }
 
-  const docKey = `${docType}/${decodedId}`;
+  const docKey = `${docType}/${decodedId}${isScore ? scoreMarks.docKeySuffix : ""}`;
 
   return (
     <PageTransition>
@@ -255,12 +263,20 @@ const DocumentViewerPage = (): React.JSX.Element => {
         </div>
 
         <PdfViewer
-          fetchBlob={resolved.fetchBlob}
+          fetchBlob={isScore ? scoreMarks.fetchBlob : resolved.fetchBlob}
           docKey={docKey}
           volatile={resolved.volatile}
           title={resolved.title}
           subtitle={resolved.subtitle}
           fileName={resolved.fileName}
+          toolbarSlot={
+            isScore && scoreMarks.available ? (
+              <ScoreMarksToggle
+                enabled={scoreMarks.enabled}
+                onChange={scoreMarks.setEnabled}
+              />
+            ) : undefined
+          }
           className="flex-1"
         />
       </div>

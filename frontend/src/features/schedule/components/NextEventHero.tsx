@@ -46,7 +46,8 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
-import { ProjectService } from "@/features/projects/api/project.service";
+import { useScoreMarks } from "@/features/projects/api/project.score-marks";
+import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
@@ -159,10 +160,9 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const showOnSite = hasOnSiteFacts(proj);
   const showDayPlan = hasConcertDayPlan(dayEntries);
-  const fetchScoreBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(String(proj.id)),
-    [proj.id],
-  );
+  // The binder can carry this reader's own pencil, composed at download time.
+  // The switch only appears where there is something of theirs to draw.
+  const scoreMarks = useScoreMarks(proj.id, scoreOpen && !isPreview);
   // Written for this reader by the server — their voice, their casting, in
   // their language. It belongs on the spotlight rather than three taps down in
   // the event sheet, because the morning of the concert is when it is opened.
@@ -370,8 +370,16 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         title={t("schedule.card.score_pdf_modal_title", "Partytura")}
         subtitle={proj.title}
         fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
-        fetchBlob={fetchScoreBlob}
-        docKey={`score-hero-${proj.id}-${proj.updated_at ?? ""}`}
+        fetchBlob={scoreMarks.fetchBlob}
+        docKey={`score-hero-${proj.id}-${proj.updated_at ?? ""}${scoreMarks.docKeySuffix}`}
+        toolbarSlot={
+          scoreMarks.available ? (
+            <ScoreMarksToggle
+              enabled={scoreMarks.enabled}
+              onChange={scoreMarks.setEnabled}
+            />
+          ) : undefined
+        }
         fullView={{
           type: "project-score",
           id: proj.id,

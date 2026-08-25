@@ -8,10 +8,11 @@
  * @module features/annotations/lib
  */
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { AnnotationLayer, NoteDisplay } from "../types/annotations.dto";
 import { DEFAULT_STAMP } from "./stamps";
+import { defaultInk, inksFor, type AnnotationInk } from "./palette";
 
 export type AnnotationTool =
   | "pointer"
@@ -49,14 +50,6 @@ export const scaleToPreset = (scale: number | undefined): MarkScale => {
   );
 };
 
-/** Ink palette — crimson cue, ledger blue, breath green, gilt accent, ink. */
-export const ANNOTATION_COLORS = [
-  "#DC2626",
-  "#2563EB",
-  "#15803D",
-  "#B45309",
-  "#1F2933",
-] as const;
 
 /** Per-tool stroke width as a fraction of page width (so it scales with zoom). */
 const PEN_WIDTHS: Record<StrokeSize, number> = {
@@ -83,6 +76,9 @@ export interface AnnotationToolState {
   setTool: (tool: AnnotationTool) => void;
   color: string;
   setColor: (color: string) => void;
+  /** The swatches this writer may use — the conductor's cue ink is not among a
+   *  chorister's. */
+  inks: readonly AnnotationInk[];
   size: StrokeSize;
   setSize: (size: StrokeSize) => void;
   textScale: MarkScale;
@@ -101,9 +97,11 @@ export interface AnnotationToolState {
 
 export const useAnnotationTools = (
   initialLayer: AnnotationLayer = "shared",
+  isManager = true,
 ): AnnotationToolState => {
   const [tool, setTool] = useState<AnnotationTool>("pointer");
-  const [color, setColor] = useState<string>(ANNOTATION_COLORS[0]);
+  const [color, setColor] = useState<string>(() => defaultInk(isManager));
+  const inks = useMemo(() => inksFor(isManager), [isManager]);
   const [size, setSize] = useState<StrokeSize>("medium");
   const [textScale, setTextScale] = useState<MarkScale>("m");
   const [stampScale, setStampScale] = useState<MarkScale>("m");
@@ -128,6 +126,7 @@ export const useAnnotationTools = (
     setTool,
     color,
     setColor,
+    inks,
     size,
     setSize,
     textScale,

@@ -44,7 +44,7 @@ import {
   useSavePieceCastingBoards,
 } from "../../api/project.queries";
 import { scopedRequirements } from "@/features/archive/constants/divisiScope";
-import { voiceTypeRank } from "../../lib/voiceFamilies";
+import { byCastOrder } from "../../lib/castOrder";
 import { autoCastPiece, type AutoCastResult } from "../../lib/autoCast";
 import type { PieceBoardDTO } from "../../types/project.dto";
 
@@ -63,6 +63,14 @@ export interface CastMember {
   readonly voiceLabel: string;
   /** Their seat in this concert's line-up; `null` when none was recorded. */
   readonly seat: VoiceLine | null;
+  /** Leads their voice section in this project. */
+  readonly isSectionLeader: boolean;
+  /**
+   * Where the conductor arranged them inside their section, on the Cast tab.
+   * The board shows no number for it — a voice line is read top to bottom, and
+   * the position IS the statement — but every bucket sorts by it.
+   */
+  readonly sectionRank: number | null;
   readonly status: ParticipationStatus;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
@@ -108,7 +116,7 @@ export interface UseMicroCastingResult {
   selectedRequirements: VoiceRequirement[];
   localCastings: PieceCasting[];
   activeDragId: string | null;
-  /** Everyone on the project, in roster order (voice type, then name). */
+  /** Everyone on the project, in the order the Cast tab arranged them. */
   members: CastMember[];
   memberMap: Map<string, CastMember>;
   pieceProgress: Record<string, PieceProgress>;
@@ -230,16 +238,13 @@ export const useMicroCasting = (projectId: string): UseMicroCastingResult => {
               )
             : (participation.artist_voice_type_display ?? ""),
           seat: participation.default_voice_line || null,
+          isSectionLeader: participation.is_section_leader ?? false,
+          sectionRank: participation.section_rank ?? null,
           status: participation.status,
           isUnresolved: !artist,
         };
       })
-      .sort((left, right) => {
-        const rankDelta =
-          voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
-        if (rankDelta !== 0) return rankDelta;
-        return left.displayName.localeCompare(right.displayName);
-      });
+      .sort(byCastOrder);
   }, [artistDictionary, projectParticipations, t]);
 
   const memberMap = useMemo(

@@ -6,6 +6,7 @@
     "collapse_tools": "Réduire les outils",
     "draw_on_tablet": "Le dessin est disponible sur tablette",
     "ink_color": "Couleur",
+    "ink_reserved": "Le rouge est réservé au chef de chœur.",
     "markup": "Annotation",
     "open_tools": "Outils d'annotation",
     "redo": "Rétablir",
@@ -3096,6 +3097,10 @@
     "sequence": "Séquence"
   },
   "projects": {
+    "score_marks": {
+      "toggle": "Mes annotations",
+      "toggle_hint": "Ajoute vos propres notes sur cet exemplaire. Personne d'autre ne les voit."
+    },
     "score_package": {
       "title": "Recueil de partitions",
       "settings": "Réglages",
@@ -3131,6 +3136,8 @@
       "generate": "Assembler la partition",
       "download": "Télécharger",
       "download_stale": "Télécharger quand même",
+      "conductor_copy": "Exemplaire du chef",
+      "conductor_copy_suffix": "chef",
       "stale_hint": "Cette partition n'inclut pas vos dernières modifications. Régénérez-la pour les appliquer.",
       "preview_book": "Aperçu",
       "preview_book_full": "Aperçu de la partition",
@@ -3342,11 +3349,14 @@
         "aria": "Direction du pupitre : {{name}}"
       },
       "search_placeholder": "Rechercher un artiste...",
+      "order": {
+        "drag_aria": "Faire glisser pour réordonner : {{name}}"
+      },
       "seat": {
         "aria": "Place dans l'effectif : {{name}}",
         "clear": "D'après le type de voix",
-        "hint": "La place dans l'effectif indique la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement — et elle ordonne cette liste. L'étoile désigne qui dirige le pupitre.",
-        "placeholder": "D'après le type de voix"
+        "hint": "L'ordre du pupitre se règle en faisant glisser — le divisi, le recueil et les impressions le lisent de la même façon. La place dans l'effectif indique seulement la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement. L'étoile désigne qui dirige le pupitre.",
+        "placeholder": "—"
       },
       "sections": {
         "assigned": "Distribution du projet",

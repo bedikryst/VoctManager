@@ -596,7 +596,9 @@ class Annotation(EnterpriseBaseModel):
         ),
         verbose_name=_("Payload"),
     )
-    color = models.CharField(max_length=9, default='#FFD700FF', verbose_name=_("Color (RGBA Hex)"))
+    # The palette's unreserved end (see archive/annotation_palette.py). A mark
+    # written without naming a colour must never land in the conductor's ink.
+    color = models.CharField(max_length=9, default='#1F2933', verbose_name=_("Color (RGBA Hex)"))
     layer_name = models.CharField(
         max_length=80, default='conductor',
         help_text=_(

@@ -64,7 +64,10 @@ export const useScoreAnnotator = ({
   mode,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
-  const tools = useAnnotationTools(isConductor ? "shared" : "personal");
+  const tools = useAnnotationTools(
+    isConductor ? "shared" : "personal",
+    isConductor,
+  );
   const canDrawViewport = useCanDraw();
   const { data: annotations = [] } = useScoreAnnotations(editionId);
 

@@ -19,7 +19,7 @@ from unittest import mock
 
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
-from pypdf import PdfWriter
+from pypdf import PdfReader, PdfWriter
 
 from archive.models import (
     PERSONAL_ANNOTATION_LAYER,
@@ -77,6 +77,11 @@ def _pdf_bytes(pages: int) -> bytes:
     return buffer.getvalue()
 
 
+def _blank_sheets(pages: int) -> list:
+    """Stand-ins for what the overlay renderer hands back."""
+    return list(PdfReader(BytesIO(_pdf_bytes(pages))).pages)
+
+
 @override_settings(MEDIA_ROOT=_MEDIA)
 class _Base(TestCase):
     def setUp(self) -> None:
@@ -121,7 +126,9 @@ class _Base(TestCase):
 
         def _capture(html: str) -> bytes:
             captured.append(html)
-            return _pdf_bytes(1)
+            # One sheet per overlay page, as the real renderer produces — the
+            # merge refuses a count that does not match the plan.
+            return _pdf_bytes(max(1, html.count('class="pg"')))
 
         with (
             mock.patch.object(builder, "_render_pdf", side_effect=lambda html: _pdf_bytes(1)),
@@ -355,6 +362,59 @@ class PrintTranslationTests(SimpleTestCase):
                                       "#1F2933", True))
         self.assertIn(">mf<", markup)
 
+    def test_a_bold_sweep_still_prints_a_hairline(self) -> None:
+        import re
+
+        # The band's width says how much was swept, not how loud the marking is.
+        # Uncapped, the boldest highlighter printed a bar heavier than the staff
+        # lines it was meant to sit under.
+        markup = self._page(PrintMark(
+            annotation_type="HL",
+            payload={"paths": [[[0.2, 0.5], [0.6, 0.5]]], "width": 0.032},
+            color="#B45309", heavy=True,
+        ))
+        stroke = re.search(r'stroke-width="([0-9.]+)"', markup)
+        assert stroke is not None
+        self.assertAlmostEqual(
+            float(stroke.group(1)),
+            score_markings._MAX_UNDERLINE_PT * score_markings._HEAVY_FACTOR,
+            places=2,
+        )
+
+    def test_a_chip_is_centred_on_the_point_it_was_dropped_on(self) -> None:
+        import re
+
+        # The editor anchors a note by its CENTRE. A chip that printed from its
+        # top-left — or that inherited a strut from the box holding it — would
+        # sit a couple of millimetres low, which on a stave is the difference
+        # between "between the systems" and "across the notes".
+        text = "Ciszej!"
+        markup = self._page(PrintMark(
+            "CM", {"x": 0.42, "y": 0.31, "text": text, "display": "inline"},
+            "#1F2933", False,
+        ))
+        left = float(re.search(r"left:(-?[0-9.]+)pt", markup).group(1))  # type: ignore[union-attr]
+        top = float(re.search(r"top:(-?[0-9.]+)pt", markup).group(1))  # type: ignore[union-attr]
+        size = float(re.search(r"font-size:([0-9.]+)pt", markup).group(1))  # type: ignore[union-attr]
+        x, y = normalized_to_sheet(_BOX, 0.42, 0.31)
+        self.assertAlmostEqual(left + score_markings._ANCHOR_WIDTH_PT / 2, x, places=1)
+        self.assertAlmostEqual(
+            top + score_markings._note_chip_height(text, size) / 2, y, places=1
+        )
+        # The height is arithmetic, so nothing may depend on a negative margin.
+        self.assertNotIn("margin-top", markup)
+
+    def test_the_anchor_box_carries_no_font_of_its_own(self) -> None:
+        # `_anchor_html` subtracts half the chip's height and nothing else, which
+        # is only true while the box's own line box is empty.
+        html = score_markings._overlay_html([[(
+            PrintMark("CM", {"x": 0.5, "y": 0.5, "text": "x", "display": "pin"},
+                      "#1F2933", False),
+            _BOX,
+        )]])
+        self.assertIn("font-size: 0", html)
+        self.assertIn("line-height: 0", html)
+
 
 class OverlayAssemblyTests(_Base):
     def test_shared_markings_are_printed_onto_the_page_that_holds_them(self) -> None:
@@ -400,6 +460,38 @@ class OverlayAssemblyTests(_Base):
         self.package.include_markings = True
         self.package.save()
         self.assertEqual(self._build_capturing()[1], [])
+
+
+class OverlayRegistrationTests(SimpleTestCase):
+    """The overlay is matched to the book by ORDER alone, so a sheet count that
+    does not match the plan means every mark after the discrepancy would land on
+    the wrong page."""
+
+    def _plan(self, pages: int) -> list:
+        mark = PrintMark("FH", {"paths": [[[0.1, 0.1], [0.2, 0.2]]]}, "#DC2626", True)
+        return [(phys, [(mark, _BOX)]) for phys in range(pages)]
+
+    def _writer(self, pages: int) -> PdfWriter:
+        writer = PdfWriter()
+        for _ in range(pages):
+            writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
+        return writer
+
+    def test_a_short_render_draws_nothing_rather_than_shifted_ink(self) -> None:
+        with mock.patch.object(
+            score_markings, "render_overlay_pages",
+            return_value=_blank_sheets(2),
+        ):
+            merged = score_markings.merge_overlay(self._writer(3), self._plan(3))
+        self.assertEqual(merged, 0)
+
+    def test_a_matching_render_lands_on_every_planned_page(self) -> None:
+        with mock.patch.object(
+            score_markings, "render_overlay_pages",
+            return_value=_blank_sheets(3),
+        ):
+            merged = score_markings.merge_overlay(self._writer(3), self._plan(3))
+        self.assertEqual(merged, 3)
 
 
 class AnnotationGroupingTests(_Base):

@@ -3,7 +3,11 @@
  * @description Who sings this project: the cast on the left, the roster still
  * available on the right. It is the same two-pane transfer board as the Program
  * tab and now shares its row language, its picker and its search placement —
- * the two used to read as two different products doing one job.
+ * the two used to read as two different products doing one job, and the setlist
+ * is also where the drag-to-arrange gesture comes from.
+ * Dragging a row arranges the singer's own voice section, and that arrangement
+ * is what every other surface reads the cast in: the divisi board, the singer's
+ * songbook, the call sheet and the DTP export.
  * Every write is immediate; the shared `AutosaveStatus` pill confirms it.
  * @architecture Enterprise SaaS 2026
  * @module features/projects/editors/tabs/CastTab
@@ -12,8 +16,30 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { motion } from "framer-motion";
-import { Search, Star, Trash2, UserCheck, Users } from "lucide-react";
+import {
+  GripVertical,
+  Search,
+  Star,
+  Trash2,
+  UserCheck,
+  Users,
+} from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
@@ -62,6 +88,8 @@ const buildSingerMeta = (
 
 interface CastRowProps {
   readonly entry: CastEntry;
+  /** Their place in this section, counted from the top of it. */
+  readonly position: number;
   /**
    * Whether an answer is worth printing. Before publication nobody has been
    * asked, so "Zaproszony" on all forty rows states the resting case in the
@@ -77,6 +105,7 @@ interface CastRowProps {
 
 function CastRow({
   entry,
+  position,
   showAnswerState,
   isBusy,
   seatOptions,
@@ -86,6 +115,14 @@ function CastRow({
 }: CastRowProps): React.JSX.Element {
   const { t } = useTranslation();
   const meta = buildSingerMeta(entry, t);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: entry.participationId });
 
   const isDeclined = entry.status === "DEC";
   const isAwaiting = showAnswerState && entry.status === "INV";
@@ -108,110 +145,165 @@ function CastRow({
     { name: entry.displayName },
   );
 
+  const dragLabel = t(
+    "projects.cast.order.drag_aria",
+    "Przeciągnij, aby zmienić kolejność: {{name}}",
+    { name: entry.displayName },
+  );
+
   return (
-    <motion.li
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={cn(
-        "group/cast flex items-center gap-3 px-5 py-2.5 transition-colors",
-        isDeclined ? "bg-ethereal-crimson/4" : "hover:bg-ethereal-ink/3",
-        isBusy && "opacity-50",
-      )}
+    <li
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : undefined,
+      }}
+      className={cn("relative", isDragging && "z-10")}
     >
-      <span className="flex min-w-0 flex-1 flex-col">
-        <span className="flex min-w-0 items-center gap-2">
-          <Text
-            as="span"
-            size="sm"
-            weight="medium"
-            truncate
-            color={
-              isDeclined ? "crimson" : entry.isUnresolved ? "muted" : "graphite"
-            }
-            className={entry.isUnresolved ? "italic" : undefined}
-          >
-            {entry.displayName}
-          </Text>
-          {isDeclined && (
-            <Badge variant="danger" className="shrink-0">
-              {t("projects.cast.card.declined", "Odmowa")}
-            </Badge>
+      {/* Same construction as the setlist row next door, and for the same
+          reason: the lift belongs to an inner surface, because the list's
+          `divide-y` writes border-top through a higher-specificity selector and
+          a border declared on the <li> comes out gold on three sides. */}
+      <div
+        className={cn(
+          "group/cast flex items-center gap-3 px-5 py-2.5 transition-colors",
+          isDragging
+            ? "rounded-control border border-ethereal-gold/45 bg-ethereal-marble shadow-glass-ethereal"
+            : isDeclined
+              ? "bg-ethereal-crimson/4"
+              : "hover:bg-ethereal-ink/3",
+          isBusy && "opacity-50",
+        )}
+      >
+        {/* The grip is the only drag surface, so a name stays selectable and the
+            seat picker beside it still takes a click. */}
+        <span
+          {...attributes}
+          {...listeners}
+          title={dragLabel}
+          aria-label={dragLabel}
+          className={cn(
+            "-my-1 -ml-1.5 flex min-h-8 min-w-6 shrink-0 cursor-grab select-none items-center justify-center rounded-chip text-ethereal-graphite/30 transition-colors",
+            "hover:bg-ethereal-gold/10 hover:text-ethereal-gold active:cursor-grabbing",
+            "pointer-coarse:min-h-11 pointer-coarse:min-w-9",
           )}
-          {isAwaiting && (
-            <Badge variant="outline" className="shrink-0">
-              {t("projects.cast.card.pending", "Czeka")}
-            </Badge>
+        >
+          <GripVertical size={14} aria-hidden="true" />
+        </span>
+
+        {/* Where they stand in this section. Quiet on purpose: forty of these
+            run down the column, and the number is a position, not a name. */}
+        <Text
+          as="span"
+          size="xs"
+          weight="bold"
+          className="w-5 shrink-0 tabular-nums text-ethereal-graphite/40"
+        >
+          {String(position).padStart(2, "0")}
+        </Text>
+
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center gap-2">
+            <Text
+              as="span"
+              size="sm"
+              weight="medium"
+              truncate
+              color={
+                isDeclined
+                  ? "crimson"
+                  : entry.isUnresolved
+                    ? "muted"
+                    : "graphite"
+              }
+              className={entry.isUnresolved ? "italic" : undefined}
+            >
+              {entry.displayName}
+            </Text>
+            {isDeclined && (
+              <Badge variant="danger" className="shrink-0">
+                {t("projects.cast.card.declined", "Odmowa")}
+              </Badge>
+            )}
+            {isAwaiting && (
+              <Badge variant="outline" className="shrink-0">
+                {t("projects.cast.card.pending", "Czeka")}
+              </Badge>
+            )}
+          </span>
+          {meta && (
+            <Caption as="span" color="muted" className="truncate">
+              {meta}
+            </Caption>
           )}
         </span>
-        {meta && (
-          <Caption as="span" color="muted" className="truncate">
-            {meta}
-          </Caption>
-        )}
-      </span>
 
-      {/* Their standing place in this concert. Empty is a real answer — the
-          automatic fill then reads it from their voice type, which is all an
-          undivided family ever needs. */}
-      <div className="w-28 shrink-0 sm:w-36">
-        <Select
-          size="sm"
-          options={seatOptions}
-          value={entry.seat}
-          onValueChange={onSeatChange}
+        {/* Which LINE they take when a piece is cast from the line-up — an input
+            to the automatic fill, not a position in the list, which is why it
+            says nothing when empty: the fill then reads the line off their voice
+            type, and forty rows repeating that would only bury the seats
+            somebody actually chose. */}
+        <div className="w-28 shrink-0 sm:w-36">
+          <Select
+            size="sm"
+            options={seatOptions}
+            value={entry.seat}
+            onValueChange={onSeatChange}
+            disabled={isBusy || isDeclined}
+            placeholder={t("projects.cast.seat.placeholder", "—")}
+            clearLabel={t("projects.cast.seat.clear", "Z typu głosu")}
+            ariaLabel={t(
+              "projects.cast.seat.aria",
+              "Miejsce w składzie: {{name}}",
+              { name: entry.displayName },
+            )}
+          />
+        </div>
+
+        {/* Marker and control in one: the filled star says who leads the section
+            and pressing it is how that is set. A separate badge would state the
+            same fact twice on the one row that is already the busiest here. */}
+        <button
+          type="button"
+          onClick={onToggleLeader}
           disabled={isBusy || isDeclined}
-          placeholder={t("projects.cast.seat.placeholder", "Z typu głosu")}
-          clearLabel={t("projects.cast.seat.clear", "Z typu głosu")}
-          ariaLabel={t(
-            "projects.cast.seat.aria",
-            "Miejsce w składzie: {{name}}",
-            { name: entry.displayName },
+          aria-pressed={entry.isSectionLeader}
+          title={leaderLabel}
+          aria-label={leaderLabel}
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+            "pointer-coarse:h-9 pointer-coarse:w-9",
+            entry.isSectionLeader
+              ? "text-ethereal-gold"
+              : "text-ethereal-graphite/25 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
           )}
-        />
+        >
+          <Star
+            size={14}
+            aria-hidden="true"
+            fill={entry.isSectionLeader ? "currentColor" : "none"}
+          />
+        </button>
+
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={isBusy}
+          title={removeLabel}
+          aria-label={removeLabel}
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip text-ethereal-graphite/35 transition-colors",
+            "hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+            "pointer-coarse:h-9 pointer-coarse:w-9",
+          )}
+        >
+          <Trash2 size={14} aria-hidden="true" />
+        </button>
       </div>
-
-      {/* Marker and control in one: the filled star says who leads the section
-          and pressing it is how that is set. A separate badge would state the
-          same fact twice on the one row that is already the busiest here. */}
-      <button
-        type="button"
-        onClick={onToggleLeader}
-        disabled={isBusy || isDeclined}
-        aria-pressed={entry.isSectionLeader}
-        title={leaderLabel}
-        aria-label={leaderLabel}
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-          "pointer-coarse:h-9 pointer-coarse:w-9",
-          entry.isSectionLeader
-            ? "text-ethereal-gold"
-            : "text-ethereal-graphite/25 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
-        )}
-      >
-        <Star
-          size={14}
-          aria-hidden="true"
-          fill={entry.isSectionLeader ? "currentColor" : "none"}
-        />
-      </button>
-
-      <button
-        type="button"
-        onClick={onRemove}
-        disabled={isBusy}
-        title={removeLabel}
-        aria-label={removeLabel}
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip text-ethereal-graphite/35 transition-colors",
-          "hover:bg-ethereal-crimson/10 hover:text-ethereal-crimson",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
-          "pointer-coarse:h-9 pointer-coarse:w-9",
-        )}
-      >
-        <Trash2 size={14} aria-hidden="true" />
-      </button>
-    </motion.li>
+    </li>
   );
 }
 
@@ -265,6 +357,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     seatOptions,
     setSeat,
     setSectionLeader,
+    moveInSection,
     isSaving,
     searchQuery,
     setSearchQuery,
@@ -277,6 +370,22 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
 
   const showAnswerState = project.status !== PROJECT_STATUS.DRAFT;
   const isSearching = searchQuery.trim().length > 0;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // One context over every section, one sortable list per section: dropping a
+  // soprano among the tenors is a gesture with no meaning, and `moveInSection`
+  // refuses it by finding no target rather than by guessing one.
+  const handleDragEnd = (event: DragEndEvent): void => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    void moveInSection(String(active.id), String(over.id));
+  };
 
   if (isLoading) {
     return (
@@ -328,13 +437,13 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           toolbar={
             castCount > 0 ? (
               <div className="pb-3">
-                {/* Both controls in one sentence, because both are quiet: the
-                    seat now also decides the order of this list, and the star
-                    is the only thing on the row that does not name itself. */}
+                {/* Three quiet controls in one sentence, in the order the row
+                    reads: what the drag does, what the picker is for, what the
+                    star means. None of them names itself on the row. */}
                 <Caption color="muted">
                   {t(
                     "projects.cast.seat.hint",
-                    "Miejsce w składzie mówi, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi — i porządkuje tę listę. Gwiazdką oznacz osobę prowadzącą sekcję.",
+                    "Kolejność w sekcji ustawiasz przeciąganiem — tak samo czytają ją divisi, śpiewnik i wydruki. Miejsce w składzie mówi tylko, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi. Gwiazdką oznacz osobę prowadzącą sekcję.",
                   )}
                 </Caption>
               </div>
@@ -347,40 +456,52 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           }
         >
           {castCount > 0 ? (
-            castSections.map((section) => (
-              <section key={section.key}>
-                <ListGroupHeader
-                  label={section.label}
-                  count={section.entries.length}
-                />
-                <ul className="divide-y divide-hairline">
-                  {section.entries.map((entry) => (
-                    <CastRow
-                      key={entry.participationId}
-                      entry={entry}
-                      showAnswerState={showAnswerState}
-                      isBusy={processingId === entry.artistId}
-                      seatOptions={seatOptions}
-                      onSeatChange={(seat) =>
-                        void setSeat(entry.participationId, seat)
-                      }
-                      onToggleLeader={() =>
-                        void setSectionLeader(
-                          entry.participationId,
-                          !entry.isSectionLeader,
-                        )
-                      }
-                      onRemove={() =>
-                        void removeFromCast(
-                          entry.artistId,
-                          entry.participationId,
-                        )
-                      }
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              {castSections.map((section) => (
+                <section key={section.key}>
+                  <ListGroupHeader
+                    label={section.label}
+                    count={section.entries.length}
+                  />
+                  <SortableContext
+                    items={section.entries.map((entry) => entry.participationId)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <ul className="divide-y divide-hairline">
+                      {section.entries.map((entry, index) => (
+                        <CastRow
+                          key={entry.participationId}
+                          entry={entry}
+                          position={index + 1}
+                          showAnswerState={showAnswerState}
+                          isBusy={processingId === entry.artistId}
+                          seatOptions={seatOptions}
+                          onSeatChange={(seat) =>
+                            void setSeat(entry.participationId, seat)
+                          }
+                          onToggleLeader={() =>
+                            void setSectionLeader(
+                              entry.participationId,
+                              !entry.isSectionLeader,
+                            )
+                          }
+                          onRemove={() =>
+                            void removeFromCast(
+                              entry.artistId,
+                              entry.participationId,
+                            )
+                          }
+                        />
+                      ))}
+                    </ul>
+                  </SortableContext>
+                </section>
+              ))}
+            </DndContext>
           ) : (
             <StatePanel
               variant="inline"

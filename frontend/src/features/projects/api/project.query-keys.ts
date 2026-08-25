@@ -87,6 +87,12 @@ export const projectKeys = {
   scorePackage: {
     byProject: (projectId: string | number) =>
       ["scorePackage", { project: String(projectId) }] as const,
+    /** Whether the CALLER has marks the book could carry — a per-reader answer,
+     *  which is why it is never shared with the cockpit's build state. The layer
+     *  is part of the key: "my pencil" and "the conductor's cues" are two
+     *  different questions with two different answers. */
+    myMarks: (projectId: string | number, layers = "personal") =>
+      ["scorePackage", "myMarks", { project: String(projectId), layers }] as const,
     thumbnails: (
       projectId: string | number,
       itemId: string,

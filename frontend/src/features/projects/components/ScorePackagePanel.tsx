@@ -22,6 +22,7 @@ import {
   Download,
   FileText,
   ListOrdered,
+  PencilLine,
   Users,
 } from "lucide-react";
 
@@ -52,6 +53,10 @@ import {
   useUpdateScorePackageConfig,
   useUpdateScorePackageItem,
 } from "../api/project.score-package";
+import {
+  CONDUCTOR_MARK_LAYERS,
+  useConductorMarksAvailable,
+} from "../api/project.score-marks";
 import { CardElementPills } from "./CardElementPills";
 import { ScoreManualUploadRail } from "./ScoreManualUploadRail";
 import { ScorePackageItemRow } from "./ScorePackageItemRow";
@@ -176,6 +181,9 @@ export function ScorePackagePanel({
   const nothingToBind = state ? state.bindable_pieces === 0 : true;
   const hasProgram = (state?.total_pieces ?? 0) > 0;
   const hasBook = state?.status === "RDY" && state.has_pdf;
+  // His own cue layer — never printed into the choir's book, only into a copy
+  // he pulls for the music desk.
+  const hasConductorMarks = useConductorMarksAvailable(projectId, Boolean(hasBook));
 
   // CTA escalation: once a current book exists, rebuilding is optional, so quiet
   // it and let Download carry the gold. Rebuild escalates back to primary only
@@ -199,13 +207,20 @@ export function ScorePackagePanel({
 
   // The gated fetch can legitimately refuse (a closed project, a renderer that
   // cannot stamp a protected book). Unhandled, that reads as a dead button.
-  const handleDownload = async (): Promise<void> => {
+  const handleDownload = async (
+    marks: boolean | readonly string[] = false,
+  ): Promise<void> => {
     try {
-      const blob = await ProjectService.fetchScorePdfBlob(projectId);
+      const blob = await ProjectService.fetchScorePdfBlob(projectId, marks);
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}.pdf`;
+      // The conductor's copy names itself, because once it is a file in a
+      // downloads folder nothing else says it is not the choir's book.
+      const suffix = Array.isArray(marks)
+        ? `_${t("projects.score_package.conductor_copy_suffix", "dyrygencka")}`
+        : "";
+      anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}${suffix}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -406,6 +421,24 @@ export function ScorePackagePanel({
                         ? t("projects.score_package.download_stale", "Pobierz mimo to")
                         : t("projects.score_package.download", "Pobierz")}
                     </Button>
+                    {/* Offered only where the conductor has cues of his own:
+                        otherwise it is the choir's book under a name that
+                        claims to be something else. */}
+                    {hasConductorMarks && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        leftIcon={<PencilLine size={14} aria-hidden="true" />}
+                        onClick={() => {
+                          void handleDownload(CONDUCTOR_MARK_LAYERS);
+                        }}
+                      >
+                        {t(
+                          "projects.score_package.conductor_copy",
+                          "Egzemplarz dyrygencki",
+                        )}
+                      </Button>
+                    )}
                   </>
                 )}
               </div>
