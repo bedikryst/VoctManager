@@ -1729,6 +1729,11 @@ class RehearsalViewSet(viewsets.ModelViewSet):
         return {
             "project_id": validated_data["project"].id,
             "date_time": validated_data["date_time"],
+            # Absent means "nobody timed it", which is the DTO's own default —
+            # but it has to be copied across explicitly: this payload is built by
+            # hand, so a field the serializer accepts and this dict never names
+            # is a field the client can write to and never read back.
+            "duration_minutes": validated_data.get("duration_minutes"),
             "timezone": validated_data["timezone"],
             "location_id": validated_data.get("location").id if validated_data.get("location") else None,
             "focus": validated_data.get("focus", ""),
@@ -1741,6 +1746,12 @@ class RehearsalViewSet(viewsets.ModelViewSet):
 
         if "date_time" in validated_data:
             payload["date_time"] = validated_data["date_time"]
+
+        # Presence-gated, because null is a real value here: sending the key is
+        # how a conductor withdraws an end they can no longer promise, while a
+        # patch that never mentions it must leave the length alone.
+        if "duration_minutes" in validated_data:
+            payload["duration_minutes"] = validated_data["duration_minutes"]
 
         if "timezone" in validated_data:
             payload["timezone"] = validated_data["timezone"]

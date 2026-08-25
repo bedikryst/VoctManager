@@ -140,7 +140,11 @@ export const RehearsalPulseBar = React.memo(
             {countdownLabel(startMs, nowMs, t)}
           </Badge>
 
-          <Heading as="p" size="lg" weight="bold" truncate className="mt-2 leading-tight">
+          {/* The spotlight's subject, and the serif carries it: Cormorant needs
+              roughly a step and a half on the sans to read at the same weight,
+              so a title set at the sans's own step comes out quieter than the
+              metadata line under it. */}
+          <Heading as="p" size="2xl" weight="bold" truncate className="mt-2 leading-tight">
             {next.project.title}
           </Heading>
 
@@ -170,7 +174,7 @@ export const RehearsalPulseBar = React.memo(
           </div>
 
           {next.rehearsal.focus && (
-            <Text size="sm" color="graphite" className="mt-2 line-clamp-1 font-serif italic">
+            <Text size="md" color="graphite" className="mt-2 line-clamp-1 font-serif italic">
               {next.rehearsal.focus}
             </Text>
           )}

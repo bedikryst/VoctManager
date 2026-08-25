@@ -2128,6 +2128,104 @@ class TuttiRehearsalIsAStandingCallTests(APITestCase):
         self.assertEqual(dossier["stats"]["rehearsals_invited"], 1)
 
 
+class RehearsalEndTimeSurvivesTheWritePathTests(APITestCase):
+    """The closing hour a conductor enters has to come back out of the API.
+
+    The view builds its DTO payload by hand, field by field, so the write path
+    is where a column can exist end-to-end — model, service, notification diff,
+    calendar export — and still never be written: the editor sent
+    ``duration_minutes``, the serializer accepted it, and the hand-built dict
+    dropped it on the floor. Every surface then correctly said nothing, because
+    ``end_date_time`` really was null. These tests pin the three cases the
+    editor produces: an end entered, an end withdrawn, and a patch about
+    something else entirely, which must leave the length alone.
+    """
+
+    def setUp(self) -> None:
+        User = get_user_model()
+        self.maestro_user = User.objects.create_user(
+            username="dur-cond", email="durcond@test.pl", password="pw123456"
+        )
+        UserProfile.objects.create(user=self.maestro_user, role=AppRole.MANAGER)
+        self.project = Project.objects.create(
+            title="Vespers", date_time=timezone.now() + timedelta(days=60),
+            status=Project.Status.ACTIVE,
+        )
+        self.client.force_authenticate(user=self.maestro_user)
+
+    def test_a_rehearsal_booked_with_a_length_reports_its_end(self) -> None:
+        response = self.client.post(
+            "/api/rehearsals/",
+            {
+                "project_id": str(self.project.id),
+                "date_time": "2026-09-10T18:00:00+02:00",
+                "duration_minutes": 180,
+                "timezone": "Europe/Warsaw",
+                "invited_participations": [],
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["duration_minutes"], 180)
+        self.assertIsNotNone(response.data["end_date_time"])
+        rehearsal = Rehearsal.objects.get(id=response.data["id"])
+        self.assertEqual(rehearsal.duration_minutes, 180)
+
+    def test_a_length_added_later_is_stored(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project, date_time=timezone.now() + timedelta(days=30)
+        )
+
+        response = self.client.patch(
+            f"/api/rehearsals/{rehearsal.id}/",
+            {"duration_minutes": 150},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        rehearsal.refresh_from_db()
+        self.assertEqual(rehearsal.duration_minutes, 150)
+        self.assertEqual(
+            rehearsal.end_date_time, rehearsal.date_time + timedelta(minutes=150)
+        )
+
+    def test_an_end_can_be_withdrawn(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project,
+            date_time=timezone.now() + timedelta(days=30),
+            duration_minutes=120,
+        )
+
+        response = self.client.patch(
+            f"/api/rehearsals/{rehearsal.id}/",
+            {"duration_minutes": None},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        rehearsal.refresh_from_db()
+        self.assertIsNone(rehearsal.duration_minutes)
+        self.assertIsNone(rehearsal.end_date_time)
+
+    def test_a_patch_about_something_else_keeps_the_length(self) -> None:
+        rehearsal = Rehearsal.objects.create(
+            project=self.project,
+            date_time=timezone.now() + timedelta(days=30),
+            duration_minutes=120,
+        )
+
+        response = self.client.patch(
+            f"/api/rehearsals/{rehearsal.id}/",
+            {"focus": "Kyrie"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        rehearsal.refresh_from_db()
+        self.assertEqual(rehearsal.duration_minutes, 120)
+
+
 class ProjectUpdateNotificationEmitterTests(TestCase):
     """A project update surfaces only human-readable field changes to the cast.
     The run-sheet is a structured JSON list, so its diff must arrive as a

@@ -208,8 +208,12 @@ export const RehearsalInspector = ({
         <Text size="lg" weight="semibold" className="block capitalize leading-tight">
           {dateLabel}
         </Text>
+        {/* The serif runs a size ABOVE the sans it sits under, never level with
+            it: Cormorant's x-height is ~0.39em against the sans's ~0.55, so a
+            subtitle set at the body step comes out reading smaller than the
+            metadata below it. */}
         {focus && (
-          <Text size="sm" color="graphite" className="mt-1 block font-serif italic">
+          <Text size="md" color="graphite" className="mt-1 block font-serif italic">
             {focus}
           </Text>
         )}
@@ -235,20 +239,24 @@ export const RehearsalInspector = ({
         {/* Progress + composition */}
         {invitedCount > 0 && (
           <div className="mt-5">
+            {/* Both halves are a label over a figure, and `Eyebrow`, `Text` and
+                `Metric` all render inline spans — so the column is what puts the
+                label ABOVE its figure. Without it they set on one line and the
+                rate reads as one word with its own caption. */}
             <div className="mb-2 flex items-end justify-between gap-3">
-              <div>
+              <div className="flex flex-col gap-0.5">
                 <Eyebrow color="muted">
                   {t("rehearsals.inspector.recorded", "Oznaczono")}
                 </Eyebrow>
-                <Text size="sm" weight="semibold" className="block tabular-nums">
+                <Text size="md" weight="semibold" className="leading-none tabular-nums">
                   {stats.marked} / {stats.total}
                 </Text>
               </div>
-              <div className="text-right">
+              <div className="flex flex-col items-end gap-0.5">
                 <Eyebrow color="muted">{t("rehearsals.stats.rate", "Frekwencja")}</Eyebrow>
                 {/* Measured over what is written down: before the first tap this
                     is no rate at all, not a 0% the conductor has to explain. */}
-                <Metric size="xl" className={cn("leading-none", RATE_TONE_TEXT[rateTone])}>
+                <Metric size="3xl" className={cn("leading-none", RATE_TONE_TEXT[rateTone])}>
                   {stats.rate === null ? "—" : `${stats.rate}%`}
                 </Metric>
               </div>
