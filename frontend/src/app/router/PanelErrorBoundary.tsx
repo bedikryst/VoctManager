@@ -6,9 +6,10 @@
  * recoverable card. Because it sits *inside* the shell (around the `<Outlet>`),
  * it catches the fault before it can bubble to the router's full-screen boundary.
  *
- * Recovery is two-tiered: "retry" re-mounts the subtree in place, and any route
- * change auto-clears the error (via `resetKey`) so navigating away always works
- * even if a retry can't.
+ * Recovery is three-tiered: "retry" re-mounts the subtree in place; a superseded
+ * build takes `onReload` instead, because re-mounting only re-runs the dynamic
+ * import that has no file left to fetch; and any route change auto-clears the
+ * error (via `resetKey`) so navigating away always works even if neither can.
  * @module app/router/PanelErrorBoundary
  * @architecture Enterprise SaaS 2026
  */
@@ -17,6 +18,7 @@ import React from "react";
 
 import { ErrorScreen } from "@/shared/ui/feedback/ErrorScreen";
 import { isStaleChunkError, describeError } from "@/shared/lib/errors";
+import { reloadOntoLatestBuild } from "@/shared/pwa/appUpdateController";
 import { useFeedbackStore } from "@/app/store/useFeedbackStore";
 
 interface Props {
@@ -68,6 +70,7 @@ export class PanelErrorBoundary extends React.Component<Props, State> {
       <ErrorScreen
         tone="panel"
         isStale={isStaleChunkError(error)}
+        onReload={reloadOntoLatestBuild}
         onRetry={this.retry}
         onReport={this.report(error)}
         detail={describeError(error)}

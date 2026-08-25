@@ -48,8 +48,15 @@ function lazyWithPreload<TComponent extends RouteComponent>(
 ): PreloadableRoute<TComponent> {
   let modulePromise: Promise<RouteModule<TComponent>> | undefined;
 
+  // A REJECTED promise must not be memoised. React.lazy re-reads this on every
+  // mount, so caching the failure makes a chunk that lost a tunnel, a flaky
+  // hotspot or a mid-deploy request unloadable for the rest of the page's life —
+  // and every "try again" a guaranteed no-op against a decision made once.
   const load = () => {
-    modulePromise ??= factory();
+    modulePromise ??= factory().catch((error: unknown) => {
+      modulePromise = undefined;
+      throw error;
+    });
     return modulePromise;
   };
 

@@ -41,10 +41,22 @@ export interface ClearOfflineRequest {
   type: "VOCT_CLEAR_OFFLINE";
 }
 
+/**
+ * Release a worker parked in `waiting`. The worker does NOT call `skipWaiting()`
+ * on install any more: a new build that seizes an open tab swaps the precache
+ * under a bundle already running, and the old chunks it still needs are then
+ * gone from both the cache and the server. So the app thread owns the moment of
+ * the handover — it sends this immediately before reloading onto the new build.
+ */
+export interface SkipWaitingRequest {
+  type: "VOCT_SKIP_WAITING";
+}
+
 export type OfflineSwRequest =
   | CacheAssetsRequest
   | EvictAssetsRequest
-  | ClearOfflineRequest;
+  | ClearOfflineRequest
+  | SkipWaitingRequest;
 
 // ── worker → app (over the request's MessageChannel port) ───────────────────
 

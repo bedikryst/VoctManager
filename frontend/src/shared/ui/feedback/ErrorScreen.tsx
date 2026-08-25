@@ -34,7 +34,12 @@ export interface ErrorScreenProps {
   isStale?: boolean;
   /** Primary recovery (default: hard reload). */
   onReload?: () => void;
-  /** Re-mount the failed subtree without a full reload (panel tone). */
+  /**
+   * Re-mount the failed subtree without a full reload (panel tone). Deliberately
+   * NOT used when `isStale`: a superseded build cannot be recovered by mounting
+   * the same failed dynamic import again — only a reload onto the new build can,
+   * which is what the button then says and must actually do.
+   */
   onRetry?: () => void;
   /** Escape hatch back to the panel home (default: hard nav to /panel). */
   onHome?: () => void;
@@ -177,7 +182,7 @@ export function ErrorScreen({
           <Button
             variant="primary"
             size="touch"
-            onClick={onRetry ?? handleReload}
+            onClick={isStale ? handleReload : (onRetry ?? handleReload)}
             leftIcon={<RefreshCw size={14} strokeWidth={2} />}
             className="w-full sm:w-auto"
           >

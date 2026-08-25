@@ -4131,6 +4131,12 @@
       "where_ipad": "in the top bar, next to the address,",
       "where_iphone": "by the address bar,",
       "where_other": "in the address bar,"
+    },
+    "update": {
+      "action": "Refresh",
+      "dismiss": "Dismiss",
+      "subtitle": "Refresh when you're done — we'll load the latest version.",
+      "title": "A new release"
     }
   },
   "rehearsals": {

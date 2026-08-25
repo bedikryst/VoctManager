@@ -4158,6 +4158,12 @@
       "where_ipad": "na górnym pasku, obok adresu,",
       "where_iphone": "przy pasku adresu,",
       "where_other": "w pasku adresu,"
+    },
+    "update": {
+      "action": "Odśwież",
+      "dismiss": "Zamknij",
+      "subtitle": "Odśwież, gdy skończysz — wczytamy najnowszą wersję.",
+      "title": "Nowa odsłona"
     }
   },
   "rehearsals": {

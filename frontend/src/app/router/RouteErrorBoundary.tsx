@@ -5,7 +5,8 @@
  * notification-cache crash this app shipped before — bubbles here instead of to
  * the framework's raw developer error page. Renders the Ethereal fault surface
  * full-screen and reframes a stale-deploy chunk failure as "reload for the new
- * version".
+ * version" — with a reload that releases the waiting worker first, since a bare
+ * `location.reload()` is answered from the precache that just failed.
  * @module app/router/RouteErrorBoundary
  * @architecture Enterprise SaaS 2026
  */
@@ -15,6 +16,7 @@ import { useRouteError, isRouteErrorResponse } from "react-router-dom";
 
 import { ErrorScreen } from "@/shared/ui/feedback/ErrorScreen";
 import { isStaleChunkError, describeError } from "@/shared/lib/errors";
+import { reloadOntoLatestBuild } from "@/shared/pwa/appUpdateController";
 
 export default function RouteErrorBoundary(): React.JSX.Element {
   const error = useRouteError();
@@ -34,6 +36,7 @@ export default function RouteErrorBoundary(): React.JSX.Element {
     <ErrorScreen
       tone="fullscreen"
       isStale={stale}
+      onReload={reloadOntoLatestBuild}
       detail={describeError(error)}
     />
   );

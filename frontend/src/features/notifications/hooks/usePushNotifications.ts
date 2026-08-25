@@ -17,6 +17,7 @@ import {
   useSendTestPush,
 } from "@/features/notifications/api/devices";
 import { isAppleTouchDevice, isStandaloneDisplay } from "@/shared/pwa/platform";
+import { getServiceWorkerRegistration } from "@/shared/offline/offlineClient";
 import {
   forgetPushDeviceSync,
   markPushDeviceSynced,
@@ -190,7 +191,11 @@ export const usePushNotifications = (): UsePushNotificationsReturn => {
         return false;
       }
 
-      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      const registration = await getServiceWorkerRegistration();
+      if (!registration) {
+        toast.error(tt("subscribe_failed"));
+        return false;
+      }
       await navigator.serviceWorker.ready;
 
       const existing = await registration.pushManager.getSubscription();

@@ -29,6 +29,7 @@ import { FeedbackDock } from "@/features/feedback/components/FeedbackDock";
 import { useBottomBarHeight } from "@/shared/lib/dom/useBottomBarSlot";
 import { useOfflineSync } from "@/shared/offline/useOfflineSync";
 import { OfflineStatusBadge } from "@/shared/offline/OfflineStatusBadge";
+import { AppUpdatePrompt } from "@/shared/pwa/AppUpdatePrompt";
 import { InstallAppPrompt } from "@/shared/pwa/InstallAppPrompt";
 
 export interface DashboardRoutePreloader {
@@ -237,6 +238,9 @@ export const DashboardLayout = ({
         style={{ "--dock-bar-h": `${dockBarHeight}px` } as React.CSSProperties}
       >
         <OfflineStatusBadge {...offlineSync} />
+        {/* Above the install ask: this one is about the app the member is using
+            right now, and it appears only in the minutes after a deploy. */}
+        <AppUpdatePrompt />
         {/* The chorister's full-screen welcome owns the install ask while it's on
             screen — the ambient pill stays quiet until the member has crossed the
             threshold, then resumes its own cadence. One install nudge at a time. */}

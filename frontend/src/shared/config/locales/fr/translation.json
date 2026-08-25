@@ -4132,6 +4132,12 @@
       "where_ipad": "dans la barre supérieure, à côté de l’adresse,",
       "where_iphone": "près de la barre d’adresse,",
       "where_other": "dans la barre d’adresse,"
+    },
+    "update": {
+      "action": "Actualiser",
+      "dismiss": "Fermer",
+      "subtitle": "Actualisez quand vous aurez terminé — nous chargerons la dernière version.",
+      "title": "Une nouvelle version"
     }
   },
   "rehearsals": {

@@ -10,6 +10,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import api from "@/shared/api/api";
+import { armAppUpdateWatch } from "@/shared/pwa/appUpdateController";
 import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import type { MaterialsDashboardGroup } from "@/features/materials/types/materials.dto";
 import {
@@ -27,19 +28,38 @@ export const isServiceWorkerSupported = (): boolean =>
   typeof navigator !== "undefined" && "serviceWorker" in navigator;
 
 /**
- * Registers the SW on app load so offline works regardless of push consent.
- * Idempotent — the push controller calling register() again is a no-op.
+ * Registers the SW (idempotently — same URL and scope resolve to the existing
+ * registration) and arms the build-handover watch on it. THE single registration
+ * path: push used to call `register()` with its own copy of the URL, which was
+ * harmless but meant a second literal that could drift, and left the update
+ * watch depending on which caller happened to run first.
  */
-export const registerOfflineServiceWorker = async (): Promise<void> => {
-  if (!isServiceWorkerSupported() || !window.isSecureContext) return;
+const ensureRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
+  if (!isServiceWorkerSupported() || !window.isSecureContext) return null;
   try {
-    await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+    const registration = await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+    armAppUpdateWatch(registration);
+    return registration;
   } catch (error) {
     // A failed SW registration must never break app boot — offline degrades,
     // the online app is unaffected.
     console.error("[offline] Service worker registration failed:", error);
+    return null;
   }
 };
+
+/** Registers the SW on app load so offline works regardless of push consent. */
+export const registerOfflineServiceWorker = async (): Promise<void> => {
+  await ensureRegistration();
+};
+
+/**
+ * The registration, for callers that need the object itself (push subscribes
+ * against `registration.pushManager`). Resolves to null wherever service workers
+ * are unavailable — every caller must handle that rather than assume.
+ */
+export const getServiceWorkerRegistration =
+  async (): Promise<ServiceWorkerRegistration | null> => ensureRegistration();
 
 const getActiveWorker = async (): Promise<ServiceWorker | null> => {
   if (!isServiceWorkerSupported()) return null;

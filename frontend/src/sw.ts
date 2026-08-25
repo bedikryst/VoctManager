@@ -10,6 +10,9 @@
  *     dashboard reads, and exposes a message channel the app uses to explicitly
  *     download a whole concert's materials for the train/metro.
  *
+ * A new build parks in `waiting` rather than seizing tabs that are still running
+ * the old one; the app thread drives the swap (see the activate listener).
+ *
  * Runs outside the main thread; no DOM access.
  * @architecture Enterprise SaaS 2026
  * @module notifications/infrastructure/sw
@@ -187,7 +190,19 @@ if (import.meta.env.PROD) {
   );
 }
 
-self.addEventListener("install", () => self.skipWaiting());
+// NO `skipWaiting()` on install. A build that activates while an old tab is
+// still running seizes the shared precache: the entries the running bundle's
+// lazy chunks resolve from are dropped on activate, the deploy has already
+// removed the same files from the server, and the next route the member opens
+// dies on a failed dynamic import. That is the crash this app was manufacturing
+// for itself on every deploy. A new build now parks in `waiting` — the old tab
+// keeps the cache it booted with — and takes over either on the next cold start
+// (no client left holding the old worker) or when the app explicitly asks, via
+// VOCT_SKIP_WAITING, immediately before reloading onto it.
+//
+// `clients.claim()` stays, and is load-bearing for that handover: it makes the
+// freshly activated worker adopt the open tab, which is what fires
+// `controllerchange` in the app and tells it the reload is now safe to make.
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
 // ── explicit offline download (app-driven) ───────────────────────────────────
@@ -204,6 +219,10 @@ self.addEventListener("message", (event) => {
     event.waitUntil(evictAssets(data.urls));
   } else if (data.type === "VOCT_CLEAR_OFFLINE") {
     event.waitUntil(Promise.all(OFFLINE_CACHES.map((name) => caches.delete(name))));
+  } else if (data.type === "VOCT_SKIP_WAITING") {
+    // The app has decided this is a safe moment to swap builds and is about to
+    // reload onto this worker. See the activate/install note above.
+    void self.skipWaiting();
   }
 });
 
