@@ -479,8 +479,13 @@ const RehearsalHero = ({
         </Heading>
 
         <div className="mt-3 flex flex-wrap items-center gap-3">
+          {/* The whole span, not just the downbeat: this card is the surface the
+              singer plans the evening from, and on the day it is the ONLY one —
+              the feed hands its next event here and renders everything after it,
+              so a missing end here is a missing end everywhere. */}
           <DualTimeDisplay
             value={event.date_time}
+            endValue={event.ends_at}
             timeZone={reh.timezone}
             icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
             containerClassName="flex items-center gap-1.5"

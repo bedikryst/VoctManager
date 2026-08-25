@@ -115,6 +115,7 @@ export const RehearsalsWidget = ({
                             local time under the event time. */}
                         <DualTimeDisplay
                           value={rehearsal.date_time}
+                          endValue={rehearsal.end_date_time}
                           timeZone={rehearsal.timezone}
                           orientation="row"
                           spacing="compact"

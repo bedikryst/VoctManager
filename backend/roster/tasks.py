@@ -26,6 +26,7 @@ from notifications.time_metadata import build_event_time_metadata
 from .infrastructure.document_generator import DocumentGenerator
 from .models import (
     DEFAULT_EVENT_TIMEZONE,
+    FALLBACK_EVENT_DURATION_MINUTES,
     CrewAssignment,
     Participation,
     Project,
@@ -34,9 +35,10 @@ from .models import (
 
 logger = logging.getLogger(__name__)
 
-# Duration assumptions for the calendar attachment when no explicit end exists.
-_REHEARSAL_DURATION = timedelta(hours=3)
-_CONCERT_DURATION = timedelta(hours=4)
+# A concert stores no end, so its calendar attachment reserves the same block
+# every other calendar surface does — see FALLBACK_EVENT_DURATION_MINUTES, which
+# is where that assumption is allowed to live.
+_CONCERT_DURATION = timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
 
 
 def _safe_segment(value: str) -> str:
@@ -135,6 +137,11 @@ def generate_score_package_task(self, package_id: str):
 # ──────────────────────────────────────────────────────────────────────────── #
 
 def _dispatch_rehearsal_reminders(now) -> int:
+    # Imported inside the function for the reason given in
+    # `dispatch_announcement_nudges`: services.py pulls in the whole roster
+    # service layer, and this module is loaded by every Celery worker at startup.
+    from .services import rehearsal_ics_payload, rehearsal_notification_context
+
     lead = timedelta(hours=getattr(settings, "REHEARSAL_REMINDER_LEAD_HOURS", 24))
     # Drafts are filtered here rather than after the claim below, so a rehearsal whose
     # project is published later is still reminded — skipping it must not burn its
@@ -170,28 +177,15 @@ def _dispatch_rehearsal_reminders(now) -> int:
         if not recipient_ids:
             continue
 
-        location_name = reh.location.name if reh.location else ""
-        event_time_metadata = build_event_time_metadata(
-            reh.date_time,
-            reh.timezone,
-            fallback_timezone=DEFAULT_EVENT_TIMEZONE,
-        )
+        # The same two builders the scheduling and change announcements use, so
+        # the reminder — the message most singers actually plan the evening from —
+        # states the end the conductor entered instead of a block invented here.
         metadata = {
             "project_name": reh.project.title,
             "project_id": str(reh.project_id),
             "rehearsal_id": str(reh.id),
-            **event_time_metadata,
-            "location": location_name,
-            "focus": reh.focus or "",
-            "ics": {
-                "kind": "rehearsal",
-                "uid": f"rehearsal_{reh.id}@voctensemble.com",
-                "start": reh.date_time.isoformat(),
-                "end": (reh.date_time + _REHEARSAL_DURATION).isoformat(),
-                "project_name": reh.project.title,
-                "location": location_name,
-                "focus": reh.focus or "",
-            },
+            **rehearsal_notification_context(reh),
+            "ics": rehearsal_ics_payload(reh),
         }
         send_bulk_notifications_task.delay(
             recipient_ids=recipient_ids,

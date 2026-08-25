@@ -196,3 +196,21 @@ def display_event_end(metadata: Mapping[str, Any]) -> str:
     when it begins and the reader needs nothing else.
     """
     return _display_moment(metadata, "ends_at", ("ends_at_display",), ())
+
+
+def display_event_end_clock(metadata: Mapping[str, Any]) -> str:
+    """The closing hour alone ("21:00"), read in the event's own timezone.
+
+    For a line that has already named the day — one rehearsal inside a schedule
+    block — where a second full moment would double the length to repeat a date
+    the reader just read. Empty when nobody timed the session.
+    """
+    parsed = _parse_iso_datetime(metadata.get("ends_at"))
+    if parsed is None:
+        return ""
+
+    timezone_name = metadata.get("timezone")
+    if timezone_name:
+        with contextlib.suppress(TypeError, ValueError, ZoneInfoNotFoundError):
+            parsed = parsed.astimezone(ZoneInfo(str(timezone_name)))
+    return date_format(parsed, "H:i")

@@ -67,6 +67,10 @@ class InvitationRehearsalMetadata(EnterpriseBaseDTO):
     rehearsal_id: UUID
     starts_at: str = ""
     starts_at_display: str = ""
+    # Empty for a session nobody has timed; the line then names the opening hour
+    # alone rather than a range to an end that was never entered.
+    ends_at: str = ""
+    ends_at_display: str = ""
     timezone: str = ""
     location: str = ""
     focus: str = ""

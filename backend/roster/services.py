@@ -1258,7 +1258,7 @@ class ManagerNotificationHelper:
                 metadata=metadata
             )
 
-def _rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
+def rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     """Lightweight calendar payload carried in notification metadata so the email
     layer can attach a localized 'add to calendar' .ics. Push ignores it.
 
@@ -1282,7 +1282,7 @@ def _rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     }
 
 
-def _rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
+def rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
     """Compact rehearsal facts reused by push, email, and in-app surfaces."""
     return {
         **build_event_time_metadata(
@@ -1316,9 +1316,9 @@ class RehearsalOperationsService:
                 rehearsal_id=rehearsal.id,
                 project_id=rehearsal.project_id,
                 project_name=rehearsal.project.title,
-                **_rehearsal_notification_context(rehearsal),
+                **rehearsal_notification_context(rehearsal),
             ).model_dump(mode="json")
-            metadata["ics"] = _rehearsal_ics_payload(rehearsal)
+            metadata["ics"] = rehearsal_ics_payload(rehearsal)
 
             # No recipients are resolved here: a sectional's audience is read off
             # the rehearsal when the queue is published, so singers invited to it
@@ -1387,10 +1387,10 @@ class RehearsalOperationsService:
                     rehearsal_id=rehearsal.id,
                     project_id=rehearsal.project_id,
                     project_name=rehearsal.project.title,
-                    **_rehearsal_notification_context(rehearsal),
+                    **rehearsal_notification_context(rehearsal),
                     changes=changes,
                 ).model_dump(mode="json")
-                metadata["ics"] = _rehearsal_ics_payload(rehearsal)
+                metadata["ics"] = rehearsal_ics_payload(rehearsal)
 
                 # WARNING is the baseline; a move of `date_time` is escalated per
                 # row by the queue, which owns that rule for every field diff.
@@ -1418,7 +1418,7 @@ class RehearsalOperationsService:
         recipient_ids = NotificationRecipientPolicy.in_conversation(qs)
         project = rehearsal.project
         project_name = project.title
-        metadata_context = _rehearsal_notification_context(rehearsal)
+        metadata_context = rehearsal_notification_context(rehearsal)
 
         # A rehearsal that was scheduled but never announced is cancelled in
         # silence — nobody was told it existed, so its removal is not news. Either

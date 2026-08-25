@@ -56,6 +56,26 @@ interface RehearsalRailProps {
  * crimson used to mark every past session with a gap, which put the panel's
  * alarm colour on ordinary paperwork and left nothing louder for a real fault.
  */
+/**
+ * The row's clock face: `18:00` alone, or the whole span where somebody timed
+ * the session. Both ends are read in the venue's clock — the rail is a dense
+ * navigator, so the reader's own zone stays on the inspector beside it.
+ * An en dash with no spaces, the typographic form of a span of clock time.
+ */
+const clockFace = (rehearsal: Rehearsal): string => {
+  const clock = (value: string): string =>
+    formatLocalizedTime(
+      value,
+      { hour: "2-digit", minute: "2-digit" },
+      undefined,
+      rehearsal.timezone,
+    );
+
+  return rehearsal.end_date_time
+    ? `${clock(rehearsal.date_time)}–${clock(rehearsal.end_date_time)}`
+    : clock(rehearsal.date_time);
+};
+
 const ringToneFor = (tally: AttendanceTally): "gold" | "sage" | "graphite" => {
   if (tally.total === 0) return "graphite";
   return tally.completion >= 100 ? "sage" : "gold";
@@ -114,13 +134,8 @@ const RehearsalRow = ({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <Text as="span" size="sm" weight="semibold" className="tabular-nums">
-            {formatLocalizedTime(
-              rehearsal.date_time,
-              { hour: "2-digit", minute: "2-digit" },
-              undefined,
-              rehearsal.timezone,
-            )}
+          <Text as="span" size="sm" weight="semibold" className="whitespace-nowrap tabular-nums">
+            {clockFace(rehearsal)}
           </Text>
           {live && (
             <Badge variant="warning" pulse>

@@ -76,6 +76,7 @@ def _rehearsal_payload(rehearsal: Rehearsal) -> InvitationRehearsalMetadata:
             rehearsal.date_time,
             rehearsal.timezone,
             fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+            end=rehearsal.end_date_time,
         ),
         location=rehearsal.location.name if rehearsal.location else "",
         focus=rehearsal.focus or "",

@@ -40,7 +40,11 @@ from .models import (
     NotificationLevel,
     NotificationType,
 )
-from .time_metadata import display_event_end, display_event_time
+from .time_metadata import (
+    display_event_end,
+    display_event_end_clock,
+    display_event_time,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -517,6 +521,11 @@ def _rehearsal_detail_rows(
 # Per-type composers                                                          #
 # --------------------------------------------------------------------------- #
 
+# Unspaced en dash: the typographic form for a span of clock time, and the same
+# separator the panel sets a rehearsal's hours with.
+_CLOCK_RANGE_DASH = "–"  # noqa: RUF001
+
+
 def _invitation_rehearsal_lines(entries: Any) -> list[str]:
     """One line per rehearsal: its moment, its venue, and — only when it is not
     obligatory — that it is optional. Marking the exception rather than the rule
@@ -530,7 +539,15 @@ def _invitation_rehearsal_lines(entries: Any) -> list[str]:
     for entry in entries or ():
         if not isinstance(entry, dict):
             continue
-        parts = (display_event_time(entry), entry.get("location"), entry.get("focus"))
+        # The whole span where the session was timed ("...at 19:00-21:00", set
+        # with an en dash). The end is a fact a singer weighs an invitation
+        # against, and this block is where they weigh it — but the line stays
+        # silent about a session nobody has timed.
+        when = display_event_time(entry)
+        closing = display_event_end_clock(entry)
+        if when and closing:
+            when = f"{when}{_CLOCK_RANGE_DASH}{closing}"
+        parts = (when, entry.get("location"), entry.get("focus"))
         line = " · ".join(str(part).strip() for part in parts if part and str(part).strip())
         if not line:
             continue
