@@ -25,14 +25,21 @@ const ACTIVE_STATUSES: ReadonlySet<ScorePackageState["status"]> = new Set([
   "BLDG",
 ]);
 
-/** Read the build state, polling every 2.5s while an assembly is queued or building. */
+/**
+ * Read the build state, polling every 2.5s while an assembly is queued or running.
+ * A build the server has given up on stops the poll: nothing is going to change,
+ * and the panel offers a restart instead.
+ */
 export const useScorePackageState = (projectId: string, enabled = true) =>
   useQuery({
     queryKey: projectKeys.scorePackage.byProject(projectId),
     queryFn: () => ProjectService.getScorePackageState(projectId),
     enabled: Boolean(projectId) && enabled,
-    refetchInterval: (query) =>
-      ACTIVE_STATUSES.has(query.state.data?.status ?? "IDLE") ? 2500 : false,
+    refetchInterval: (query) => {
+      const state = query.state.data;
+      if (!state || state.build_stalled) return false;
+      return ACTIVE_STATUSES.has(state.status) ? 2500 : false;
+    },
   });
 
 /**
@@ -68,6 +75,11 @@ export const useGenerateScorePackage = (projectId: string) => {
         projectKeys.scorePackage.byProject(projectId),
         state,
       );
+    },
+    // Without this a refused queue attempt is silent: the button settles back and
+    // the book simply never appears, with nothing said about why.
+    onError: (error) => {
+      toastApiError(error);
     },
   });
 };

@@ -25,6 +25,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { toastApiError } from "@/shared/api/errors";
 import { cn } from "@/shared/lib/utils";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PdfViewerModal } from "@/shared/ui/composites/PdfViewerModal";
@@ -167,7 +168,10 @@ export function ScorePackagePanel({
     prevStatus.current = state?.status;
   }, [state?.status, projectId, queryClient]);
 
-  const isBuilding = state?.status === "QUED" || state?.status === "BLDG";
+  // A build the server has written off is NOT busy: leaving it "busy" would keep
+  // the only control that can rescue it disabled forever.
+  const isStalled = state?.build_stalled ?? false;
+  const isBuilding = (state?.status === "QUED" || state?.status === "BLDG") && !isStalled;
   const busy = isBuilding || generate.isPending;
   const nothingToBind = state ? state.bindable_pieces === 0 : true;
   const hasProgram = (state?.total_pieces ?? 0) > 0;
@@ -176,7 +180,7 @@ export function ScorePackagePanel({
   // CTA escalation: once a current book exists, rebuilding is optional, so quiet
   // it and let Download carry the gold. Rebuild escalates back to primary only
   // when there is no book yet, the inputs drifted (stale), or a build is running.
-  const rebuildIsPrimary = !state?.has_pdf || !!state?.is_stale || busy;
+  const rebuildIsPrimary = !state?.has_pdf || !!state?.is_stale || busy || isStalled;
 
   // Elapsed seconds while a build runs, so "Składanie…" reads as live progress.
   const [elapsed, setElapsed] = useState(0);
@@ -193,16 +197,22 @@ export function ScorePackagePanel({
     return () => window.clearInterval(id);
   }, [busy]);
 
+  // The gated fetch can legitimately refuse (a closed project, a renderer that
+  // cannot stamp a protected book). Unhandled, that reads as a dead button.
   const handleDownload = async (): Promise<void> => {
-    const blob = await ProjectService.fetchScorePdfBlob(projectId);
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}.pdf`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = await ProjectService.fetchScorePdfBlob(projectId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `${sanitizeFilename(projectTitle ?? "partytura")}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toastApiError(error);
+    }
   };
 
   const densityItems: ReadonlyArray<SegmentedTabItem<DensityId>> = [
@@ -227,6 +237,9 @@ export function ScorePackagePanel({
   // Book state resolved to one headline word + tone for the hero.
   const status: { word: string; tone: StatusTone } = (() => {
     if (busy) return { word: buildStatusLabel, tone: "gold" };
+    // A named problem, so it carries the alarm colour — and, unlike "stale", it
+    // cannot be waited out.
+    if (isStalled) return { word: t("projects.score_package.stalled", "Składanie przerwane"), tone: "crimson" };
     if (state?.status === "FAIL") return { word: t("projects.score_package.failed", "Błąd składania"), tone: "crimson" };
     if (hasBook && state) {
       if (state.is_manual_upload) return { word: t("projects.score_package.manual.badge", "Wgrana ręcznie"), tone: "graphite" };
@@ -433,6 +446,16 @@ export function ScorePackagePanel({
               </Caption>
             )}
 
+            {isStalled && (
+              <Caption color="crimson" className="flex items-start gap-1.5">
+                <AlertTriangle size={13} aria-hidden="true" className="mt-0.5 shrink-0" />
+                {t(
+                  "projects.score_package.stalled_hint",
+                  "Poprzednie składanie nie dobiegło końca — serwer je przerwał. Uruchom je ponownie; nic nie zostało utracone.",
+                )}
+              </Caption>
+            )}
+
             {state.status === "FAIL" && state.error && (
               <Caption color="crimson">{state.error}</Caption>
             )}
@@ -580,21 +603,41 @@ export function ScorePackagePanel({
                         active={config.duplex_mode}
                         onChange={(v) => setField("duplex_mode", v)}
                       />
+                      {/* Covering the publisher's folio only makes sense while the
+                          book prints one of its own — the server enforces that, so
+                          the pill states the same effective value rather than a
+                          setting the book will ignore. */}
                       <TogglePill
                         subtle
                         label={t(
                           "projects.score_package.structure.hide_source_numbers",
                           "Ukryj numery wydań",
                         )}
-                        active={config.hide_source_page_numbers}
+                        active={
+                          config.hide_source_page_numbers && config.include_page_numbers
+                        }
+                        disabled={!config.include_page_numbers}
+                        title={
+                          config.include_page_numbers
+                            ? undefined
+                            : t(
+                                "projects.score_package.structure.hide_source_numbers_locked",
+                                "Wymaga własnej numeracji książki.",
+                              )
+                        }
                         onChange={(v) => setField("hide_source_page_numbers", v)}
                       />
                     </div>
                     <Caption color="muted">
-                      {t(
-                        "projects.score_package.structure.hide_source_numbers_hint",
-                        "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
-                      )}
+                      {config.include_page_numbers
+                        ? t(
+                            "projects.score_package.structure.hide_source_numbers_hint",
+                            "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
+                          )
+                        : t(
+                            "projects.score_package.structure.hide_source_numbers_locked_hint",
+                            "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych.",
+                          )}
                     </Caption>
                   </div>
                 </div>

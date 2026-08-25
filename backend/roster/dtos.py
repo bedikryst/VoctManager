@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, mo
 
 from core.constants import VoiceLine
 
+from .domain.day_timeline import MINUTES_PER_DAY
 from .models import Attendance, Participation, PieceReadiness, Project, VoiceType
 
 SUPPORTED_LANGUAGE_CODES = frozenset({"en", "pl", "fr"})
@@ -521,6 +522,10 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
     """Data contract for scheduling a new rehearsal."""
     project_id: UUID
     date_time: datetime
+    # How long the session runs. Optional because a date can be fixed before the
+    # conductor knows how much of the evening they need; null then means "not
+    # timed", never "assume the usual" — no surface derives an end from silence.
+    duration_minutes: int | None = Field(None, ge=5, le=MINUTES_PER_DAY)
     timezone: str = 'Europe/Warsaw'
     location_id: UUID | None = None
     focus: str = Field(default='', max_length=255)
@@ -540,6 +545,9 @@ class RehearsalCreateDTO(EnterpriseBaseDTO):
 class RehearsalUpdateDTO(EnterpriseBaseDTO):
     """Data contract for updating an existing rehearsal."""
     date_time: datetime | None = None
+    # Null is a real value here, unlike on the required fields below: clearing
+    # the length is how a conductor withdraws an end they can no longer promise.
+    duration_minutes: int | None = Field(None, ge=5, le=MINUTES_PER_DAY)
     timezone: str | None = None
     location_id: UUID | None = None
     focus: str | None = Field(None, max_length=255)

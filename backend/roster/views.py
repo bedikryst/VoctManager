@@ -610,11 +610,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # watermarked whenever ANY bound edition is protected — protecting the
             # single editions without protecting the book they compose is worthless.
             protected = ScorePackageService.uses_protected_edition(project)
-            build_version = (
+            # `build_version` scopes the audit trail and the copy numbering;
+            # `generated_at` identifies the BYTES, and only it moves when the book is
+            # replaced by hand (a manual upload deliberately leaves the build version
+            # alone, since it describes a generated build). The watermark cache is
+            # keyed on the latter — see below.
+            build_version, generated_at = (
                 ScorePackage.objects.filter(project=project)
-                .values_list('build_version', flat=True)
+                .values_list('build_version', 'generated_at')
                 .first()
-            )
+            ) or (None, None)
             decision = record_binder_access(
                 request.user, project,
                 build_version=build_version, protected=protected, is_manager=is_manager,
@@ -652,8 +657,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 context_label=project.title,
                 when=timezone.now(),
             )
+            # Keyed on when the file was produced, not on the build version: a
+            # hand-uploaded replacement keeps the version, so a version-keyed entry
+            # would serve the PREVIOUS book — stamped with this reader's name, and
+            # looking entirely authoritative — for the rest of the TTL.
+            file_stamp = generated_at.timestamp() if generated_at else 0
             cache_key = (
-                f"score_wm:binder:{project.pk}:{build_version}:"
+                f"score_wm:binder:{project.pk}:{build_version}:{file_stamp}:"
                 f"{request.user.pk}:{decision.copy_number}"
             )
             try:

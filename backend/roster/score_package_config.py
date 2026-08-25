@@ -67,7 +67,16 @@ def resolve_card_config(item: ProgramItem, package: ScorePackage) -> ResolvedCar
 def resolve_source_numbering(item: ProgramItem, package: ScorePackage) -> bool:
     """Whether this item's bound edition has its own printed page numbers covered,
     so the book carries only its continuous folio. Per-item pin wins; null inherits
-    the package setting — same override shape as ``card_enabled``."""
+    the package setting — same override shape as ``card_enabled``.
+
+    Covering the publisher's folio is only ever justified BECAUSE the book stamps
+    its own, so an unnumbered book never knocks one out: erasing the only numbering
+    on the sheet would leave the reader with no page numbers at all. The gate lives
+    here rather than in the builder so the printed result, the cockpit's effective
+    value and the readiness engine cannot drift apart.
+    """
+    if not package.include_page_numbers:
+        return False
     if item.hide_source_page_numbers is None:
         return package.hide_source_page_numbers
     return bool(item.hide_source_page_numbers)

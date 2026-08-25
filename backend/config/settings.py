@@ -573,3 +573,10 @@ NOTIFICATIONS_SMS_ENABLED = False
 # non-Polish org can rebrand without a code change.
 SCORE_BOOK_ENSEMBLE_NAME = env('SCORE_BOOK_ENSEMBLE_NAME', default='VoctEnsemble')
 SCORE_BOOK_LANG = env('SCORE_BOOK_LANG', default='pl')
+
+# How long a queued/running assembly may go without finishing before it is treated
+# as abandoned and may be started again. A real build takes tens of seconds; this
+# window only has to be long enough that it can never fire on a live one, because
+# a worker killed mid-build leaves no other trace and would otherwise pin the
+# package in 'building' with no way back for the conductor.
+SCORE_PACKAGE_BUILD_TIMEOUT_MINUTES = env.int('SCORE_PACKAGE_BUILD_TIMEOUT_MINUTES', default=15)

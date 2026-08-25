@@ -3120,6 +3120,8 @@
         "upload": "Importer un PDF"
       },
       "failed": "Erreur d'assemblage",
+      "stalled": "Assemblage interrompu",
+      "stalled_hint": "L'assemblage précédent n'est jamais arrivé à son terme — le serveur l'a abandonné. Relancez-le ; rien n'a été perdu.",
       "building": "Assemblage…",
       "queued": "En file d'attente…",
       "building_elapsed": "{{label}} ({{s}}s)",
@@ -3155,7 +3157,9 @@
         "a4": "Normaliser en A4",
         "duplex": "Impression recto-verso",
         "hide_source_numbers": "Masquer les numéros des éditions",
-        "hide_source_numbers_hint": "Recouvre la numérotation que les éditions impriment elles-mêmes, pour que le livret ne porte que la sienne. Un scan sans couche de texte reste intact."
+        "hide_source_numbers_hint": "Recouvre la numérotation que les éditions impriment elles-mêmes, pour que le livret ne porte que la sienne. Un scan sans couche de texte reste intact.",
+        "hide_source_numbers_locked": "Exige la numérotation propre au livret.",
+        "hide_source_numbers_locked_hint": "Sans numérotation propre, le livret conserve celle de l'éditeur — sinon l'impression n'en aurait aucune."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3854,8 +3858,12 @@
       },
       "form": {
         "date_time": "Date et heure *",
+        "end_time": "Fin de la répétition",
         "focus": "Plan de répétition / répertoire",
         "focus_placeholder": "ex. Requiem, mvts 1–3",
+        "length_h": "{{hours}} h",
+        "length_hm": "{{hours}} h {{minutes}} min",
+        "length_m": "{{minutes}} min",
         "location": "Salle de répétition *",
         "location_placeholder": "Choisir une salle",
         "mandatory": "Présence obligatoire",

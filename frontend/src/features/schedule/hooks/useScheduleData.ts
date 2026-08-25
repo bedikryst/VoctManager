@@ -78,6 +78,7 @@ export const useScheduleData = (artistId?: string | number) => {
           type: "REHEARSAL",
           rawObj: reh,
           date_time: new Date(reh.date_time),
+          ends_at: reh.end_date_time ? new Date(reh.end_date_time) : null,
           // No "Próba:" prefix here — the PRÓBA badge already says it. The
           // rehearsal label is re-added only for the calendar export.
           title: item.project_title || t("schedule.event.generic_event", "Wydarzenie"),

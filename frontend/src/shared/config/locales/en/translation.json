@@ -3119,6 +3119,8 @@
         "upload": "Upload PDF"
       },
       "failed": "Assembly error",
+      "stalled": "Assembly interrupted",
+      "stalled_hint": "The previous assembly never finished — the server gave up on it. Start it again; nothing was lost.",
       "building": "Assembling…",
       "queued": "Queued…",
       "building_elapsed": "{{label}} ({{s}}s)",
@@ -3154,7 +3156,9 @@
         "a4": "Normalise to A4",
         "duplex": "Double-sided print",
         "hide_source_numbers": "Hide editions' numbers",
-        "hide_source_numbers_hint": "Covers the page numbers the editions print themselves, so the book carries only its own. A scan without a text layer is left untouched."
+        "hide_source_numbers_hint": "Covers the page numbers the editions print themselves, so the book carries only its own. A scan without a text layer is left untouched.",
+        "hide_source_numbers_locked": "Requires the book's own numbering.",
+        "hide_source_numbers_locked_hint": "Without its own numbering the book keeps the publisher's — otherwise the printout would have none at all."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3853,8 +3857,12 @@
       },
       "form": {
         "date_time": "Date and time *",
+        "end_time": "Rehearsal ends",
         "focus": "Rehearsal plan / repertoire",
         "focus_placeholder": "e.g. Requiem, mvts 1–3",
+        "length_h": "{{hours}} h",
+        "length_hm": "{{hours}} h {{minutes}} min",
+        "length_m": "{{minutes}} min",
         "location": "Rehearsal room *",
         "location_placeholder": "Choose a room",
         "mandatory": "Attendance mandatory",

@@ -9,16 +9,37 @@
 export interface CalendarEventInput {
   title: string;
   start: Date;
-  /** Optional explicit end; defaults to start + DEFAULT_DURATION_MS. */
+  /**
+   * Explicit end where the event stores one (a timed rehearsal). Without it the
+   * entry falls back to `fallbackDurationMinutes` — a reservation, not a claim.
+   */
   end?: Date;
+  /**
+   * Block to reserve when `end` is unknown. Pass the value matching the kind of
+   * event (see `FALLBACK_DURATION_MINUTES`); the default suits a rehearsal.
+   */
+  fallbackDurationMinutes?: number;
   description?: string;
   location?: string;
   /** Stable identifier for the VEVENT UID (e.g. the timeline event id). */
   uid: string;
 }
 
-// Neither rehearsals nor projects carry an end time, so assume a sensible block.
-const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
+/**
+ * How long an entry reserves when nothing stored says. A calendar cannot render
+ * an event of unknown length — an ICS with no end shows as a zero-length mark —
+ * so a block is assumed here and NOWHERE else: no in-app surface derives an end.
+ *
+ * These mirror `FALLBACK_REHEARSAL_DURATION_MINUTES` / `FALLBACK_EVENT_DURATION_MINUTES`
+ * in `roster/models.py`. The season feed and this button export the same evening,
+ * and they used to reserve two hours and three for it.
+ */
+export const FALLBACK_DURATION_MINUTES = {
+  rehearsal: 120,
+  event: 240,
+} as const;
+
+const MS_PER_MINUTE = 60 * 1000;
 
 const pad = (value: number): string => String(value).padStart(2, "0");
 
@@ -28,7 +49,12 @@ const toUtcStamp = (date: Date): string =>
   `T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}Z`;
 
 const resolveEnd = (event: CalendarEventInput): Date =>
-  event.end ?? new Date(event.start.getTime() + DEFAULT_DURATION_MS);
+  event.end ??
+  new Date(
+    event.start.getTime() +
+      (event.fallbackDurationMinutes ?? FALLBACK_DURATION_MINUTES.rehearsal) *
+        MS_PER_MINUTE,
+  );
 
 /** Escapes text per RFC 5545 (backslash, comma, semicolon, newline). */
 const escapeIcsText = (value: string): string =>

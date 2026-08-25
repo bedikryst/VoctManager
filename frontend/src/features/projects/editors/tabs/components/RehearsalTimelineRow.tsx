@@ -140,6 +140,7 @@ export const RehearsalTimelineRow = ({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <DualTimeDisplay
               value={entry.at}
+              endValue={rehearsal.end_date_time}
               timeZone={entry.timezone}
               orientation="row"
               spacing="compact"

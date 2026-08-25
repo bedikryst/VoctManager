@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import tempfile
 import uuid
+from datetime import timedelta
 from io import BytesIO
 from unittest import mock, skipUnless
 
@@ -22,7 +23,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone, translation
 from pypdf import PdfWriter
+from pypdf.generic import NameObject, NumberObject
 
 from archive.models import (
     Composer,
@@ -54,6 +57,7 @@ from roster.score_package_config import (
     resolve_card_config,
     resolve_item_edition,
     resolve_item_translation,
+    resolve_source_numbering,
     sanitize_card_elements,
     suggested_page_start,
     translation_applicable,
@@ -70,7 +74,11 @@ from roster.score_package_readiness import (
     READY,
     compute_program_readiness,
 )
-from roster.score_package_service import ScorePackageItemError, ScorePackageService
+from roster.score_package_service import (
+    ScorePackageItemError,
+    ScorePackageService,
+    build_is_abandoned,
+)
 
 _MEDIA = tempfile.mkdtemp(prefix="vm_score_pkg_test_")
 
@@ -86,6 +94,17 @@ def _pdf_bytes(pages: int) -> bytes:
     writer = PdfWriter()
     for _ in range(pages):
         writer.add_blank_page(width=595, height=842)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+def _rotated_pdf_bytes(pages: int, rotation: int = 90) -> bytes:
+    """A portrait sheet stored with /Rotate — how a landscape scan usually arrives."""
+    writer = PdfWriter()
+    for _ in range(pages):
+        page = writer.add_blank_page(width=595, height=842)
+        page[NameObject("/Rotate")] = NumberObject(rotation)
     buffer = BytesIO()
     writer.write(buffer)
     return buffer.getvalue()
@@ -1093,3 +1112,262 @@ class ThumbnailServiceTests(_Base):
         self.assertFalse(manifest["available"])
         self.assertEqual(manifest["edition_id"], str(edition.pk))
         self.assertEqual(manifest["thumbnails"], [])
+
+
+class SourceNumberingGateTests(_Base):
+    """Covering an edition's own folio is only ever justified because the book
+    stamps one of its own — so an unnumbered book must not erase the last
+    numbering on the sheet and leave the reader with none."""
+
+    def test_numbered_book_covers_by_default(self) -> None:
+        self.package.include_page_numbers = True
+        self.package.hide_source_page_numbers = True
+        self.assertTrue(resolve_source_numbering(self.item, self.package))
+
+    def test_unnumbered_book_never_covers(self) -> None:
+        self.package.include_page_numbers = False
+        self.package.hide_source_page_numbers = True
+        self.assertFalse(resolve_source_numbering(self.item, self.package))
+
+    def test_gate_outranks_a_per_item_pin(self) -> None:
+        self.package.include_page_numbers = False
+        self.item.hide_source_page_numbers = True
+        self.assertFalse(resolve_source_numbering(self.item, self.package))
+
+    def test_cockpit_effective_value_follows_the_gate(self) -> None:
+        self.package.include_page_numbers = False
+        self.package.save()
+        state = ScorePackageService.compute_state(self.project)
+        self.assertFalse(state["items"][0]["hide_source_page_numbers_effective"])
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class RotatedSourcePageTests(_Base):
+    """A rotated page is baked at READ time, so the folio detector and the binder
+    measure it in one coordinate space. Baking later flips the box between those
+    two steps (595x842 becomes 842x595) and every knockout computed from the old
+    box lands over the engraving instead of over the number."""
+
+    def _add_rotated_edition(self, *, pages: int = 3) -> ScoreEdition:
+        edition = ScoreEdition.objects.create(
+            piece=self.piece, original_filename="rot.pdf",
+            page_count=pages, is_default=True, sha256="c" * 64,
+        )
+        edition.pdf_file.save(
+            "rot.pdf", ContentFile(_rotated_pdf_bytes(pages)), save=True,
+        )
+        return edition
+
+    def test_reader_hands_out_pages_with_rotation_already_baked(self) -> None:
+        from roster.infrastructure.score_package_builder import _read_edition_pdf
+
+        reader = _read_edition_pdf(self._add_rotated_edition())
+        for page in reader.pages:
+            self.assertEqual(page.rotation, 0)
+            # A portrait sheet saved with /Rotate 90 presents as landscape.
+            self.assertAlmostEqual(float(page.mediabox.width), 842.0, places=0)
+            self.assertAlmostEqual(float(page.mediabox.height), 595.0, places=0)
+
+    def test_page_box_does_not_move_between_detection_and_placement(self) -> None:
+        from roster.infrastructure.score_package_builder import (
+            _place_on_a4,
+            _read_edition_pdf,
+        )
+
+        page = _read_edition_pdf(self._add_rotated_edition()).pages[0]
+        # What the folio detector would measure…
+        measured = (float(page.mediabox.width), float(page.mediabox.height))
+        _place_on_a4(PdfWriter(), page, fit=True)
+        # …must still be what the binder placed against.
+        self.assertEqual(
+            measured, (float(page.mediabox.width), float(page.mediabox.height))
+        )
+
+    def test_unrotated_pages_are_left_untouched(self) -> None:
+        from roster.infrastructure.score_package_builder import _read_edition_pdf
+
+        reader = _read_edition_pdf(self._add_edition(pages=2))
+        for page in reader.pages:
+            self.assertEqual(page.rotation, 0)
+            self.assertAlmostEqual(float(page.mediabox.width), 595.0, places=0)
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class BuildLifecycleTests(_Base):
+    """A build must always end somewhere, and an attempt nobody is working on any
+    more must be startable again — otherwise the conductor's only control stays
+    disabled over a corpse."""
+
+    def _fake_result(self, pages: int = 2):
+        from roster.infrastructure.score_package_builder import BuildResult
+
+        return BuildResult(pdf_bytes=_pdf_bytes(pages), page_count=pages, bound_pieces=1)
+
+    def test_storage_failure_ends_in_failed(self) -> None:
+        self._add_edition(pages=2)
+        with (
+            mock.patch(
+                "roster.score_package_service.build_score_package",
+                return_value=self._fake_result(),
+            ),
+            mock.patch(
+                "roster.score_package_service.ContentFile",
+                side_effect=OSError("no space left on device"),
+            ),
+        ):
+            ScorePackageService.run_build(str(self.package.pk))
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.status, ScorePackage.Status.FAILED)
+        self.assertTrue(self.package.error)
+
+    def test_queueing_stamps_the_attempt(self) -> None:
+        ScorePackageService.request_generation(self.project)
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.status, ScorePackage.Status.QUEUED)
+        self.assertIsNotNone(self.package.build_started_at)
+
+    def test_a_live_build_is_not_restarted(self) -> None:
+        self.package.status = ScorePackage.Status.BUILDING
+        self.package.build_started_at = timezone.now()
+        self.package.save()
+        started = self.package.build_started_at
+        ScorePackageService.request_generation(self.project)
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.status, ScorePackage.Status.BUILDING)
+        self.assertEqual(self.package.build_started_at, started)
+        self.assertFalse(ScorePackageService.compute_state(self.project)["build_stalled"])
+
+    def test_an_abandoned_build_is_requeued(self) -> None:
+        self.package.status = ScorePackage.Status.BUILDING
+        self.package.build_started_at = timezone.now() - timedelta(hours=3)
+        self.package.save()
+        self.assertTrue(ScorePackageService.compute_state(self.project)["build_stalled"])
+        ScorePackageService.request_generation(self.project)
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.status, ScorePackage.Status.QUEUED)
+        self.assertFalse(build_is_abandoned(self.package))
+
+    def test_an_in_flight_row_without_a_stamp_is_reclaimable(self) -> None:
+        # Rows that predate the field must not be permanently unbuildable.
+        self.package.status = ScorePackage.Status.QUEUED
+        self.package.build_started_at = None
+        self.package.save()
+        self.assertTrue(build_is_abandoned(self.package))
+
+    def test_terminal_states_are_never_stalled(self) -> None:
+        for status in (
+            ScorePackage.Status.IDLE,
+            ScorePackage.Status.READY,
+            ScorePackage.Status.FAILED,
+        ):
+            self.package.status = status
+            self.package.build_started_at = timezone.now() - timedelta(days=1)
+            self.assertFalse(build_is_abandoned(self.package), status)
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class HashSnapshotTests(_Base):
+    """The hash answers 'which state of the repertoire is this PDF made of'. It is
+    taken before the assembly, so an edit landing while the build runs leaves the
+    finished book honestly stale instead of stamping the new state on old pages."""
+
+    def test_edit_during_the_build_leaves_the_book_stale(self) -> None:
+        self._add_edition(pages=2)
+        latecomer = Piece.objects.create(title="Dopisany w trakcie składania")
+
+        def _build_while_the_conductor_keeps_working(project, package):
+            ProgramItem.objects.create(project=project, piece=latecomer, order=2)
+            from roster.infrastructure.score_package_builder import BuildResult
+
+            return BuildResult(pdf_bytes=_pdf_bytes(2), page_count=2, bound_pieces=1)
+
+        with mock.patch(
+            "roster.score_package_service.build_score_package",
+            side_effect=_build_while_the_conductor_keeps_working,
+        ):
+            ScorePackageService.run_build(str(self.package.pk))
+
+        state = ScorePackageService.compute_state(self.project)
+        self.assertEqual(state["status"], ScorePackage.Status.READY)
+        self.assertTrue(state["is_stale"])
+
+    def test_an_undisturbed_build_is_current(self) -> None:
+        self._add_edition(pages=2)
+        from roster.infrastructure.score_package_builder import BuildResult
+
+        with mock.patch(
+            "roster.score_package_service.build_score_package",
+            return_value=BuildResult(pdf_bytes=_pdf_bytes(2), page_count=2, bound_pieces=1),
+        ):
+            ScorePackageService.run_build(str(self.package.pk))
+        self.assertFalse(ScorePackageService.compute_state(self.project)["is_stale"])
+
+
+@override_settings(MEDIA_ROOT=_MEDIA)
+class PreviewFidelityTests(_Base):
+    """The card preview's whole promise is that it does not lie: same density, same
+    language as the press run."""
+
+    def _preview(self):
+        from roster.infrastructure import score_package_builder as builder
+
+        with mock.patch.object(
+            builder, "_render_cards", return_value=_pdf_bytes(1)
+        ) as render:
+            builder.render_item_card_preview(self.project, self.package, self.item)
+        return render.call_args.kwargs["section_header"]
+
+    def test_concert_previews_a_frontispiece(self) -> None:
+        self._add_edition(pages=2)
+        self.package.density_mode = ScorePackage.Density.CONCERT
+        self.assertIsNone(self._preview())
+
+    def test_mass_previews_the_consolidated_entry(self) -> None:
+        from roster.infrastructure.score_package_builder import TEXTS_SECTION_HEADER
+
+        self._add_edition(pages=2)
+        self.package.density_mode = ScorePackage.Density.MASS
+        self.assertEqual(self._preview(), TEXTS_SECTION_HEADER)
+
+    def test_a_placeholder_keeps_its_divider_in_mass(self) -> None:
+        # No edition: the book prints a divider page in either density, and that
+        # divider IS the frontispiece.
+        self.package.density_mode = ScorePackage.Density.MASS
+        self.assertIsNone(self._preview())
+
+    def test_preview_renders_in_the_book_language_not_the_readers(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self._add_edition(pages=2)
+        seen: list[str | None] = []
+
+        def _capture(cards, section_header=None):
+            seen.append(translation.get_language())
+            return _pdf_bytes(1)
+
+        with (
+            translation.override("fr"),
+            mock.patch.object(builder, "_render_cards", side_effect=_capture),
+        ):
+            builder.render_item_card_preview(self.project, self.package, self.item)
+        self.assertEqual(seen, ["pl"])
+
+    def test_assembly_renders_in_the_book_language_not_the_readers(self) -> None:
+        from roster.infrastructure import score_package_builder as builder
+
+        self._add_edition(pages=2)
+        self.package.include_page_numbers = False
+        self.package.save()
+        seen: list[str | None] = []
+
+        def _capture(html, base_url=None):
+            seen.append(translation.get_language())
+            return _pdf_bytes(1)
+
+        with (
+            translation.override("fr"),
+            mock.patch.object(builder, "_render_pdf", side_effect=_capture),
+        ):
+            builder.build_score_package(self.project, self.package)
+        self.assertTrue(seen)
+        self.assertEqual(set(seen), {"pl"})

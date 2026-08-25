@@ -250,6 +250,14 @@ export interface Participation extends BaseModel {
 export interface Rehearsal extends BaseModel {
   project: string;
   date_time: string;
+  /** How long the session runs. Null = nobody timed it; no surface states an end. */
+  duration_minutes?: number | null;
+  /**
+   * When it ends, derived server-side from the duration. Read this rather than
+   * adding minutes locally — the panel and the calendar export must never be
+   * able to disagree about the same evening.
+   */
+  end_date_time?: string | null;
   timezone: string;
   location?: LocationSnippet | null;
   focus?: string;

@@ -4273,6 +4273,34 @@ msgstr "Au"
 msgid "Rehearsals covered"
 msgstr "Nombre de répétitions"
 
+msgid "Duration (minutes)"
+msgstr "Durée (minutes)"
+
+msgid ""
+"How long the session runs. Stored as a length rather than a closing instant "
+"so it survives a move of the start and a DST boundary; null means nobody has "
+"timed it and no surface may state an end."
+msgstr ""
+"Durée de la répétition. Stockée comme une longueur plutôt qu'une heure de "
+"fin, afin de survivre à un décalage du début et au changement d'heure ; une "
+"valeur nulle signifie que personne ne l'a chronométrée et qu'aucun écran ne "
+"peut annoncer une fin."
+
+msgid "Ends"
+msgstr "Fin"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "%(hours)d h %(minutes)d min"
+msgstr "%(hours)d h %(minutes)d min"
+
+msgid "%(hours)d h"
+msgstr "%(hours)d h"
+
+msgid "%(minutes)d min"
+msgstr "%(minutes)d min"
+
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 "below — approve or decline them in the panel."

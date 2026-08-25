@@ -27,6 +27,8 @@ import { cn } from "@/shared/lib/utils";
 export interface AdminNextRehearsalDto {
   id?: string | number;
   date_time: string;
+  /** Server-derived close of the session; absent on one nobody has timed. */
+  end_date_time?: string | null;
   timezone: string;
   location?: {
     id: string;
@@ -116,6 +118,7 @@ export function NextRehearsalAlert({
                 <div className="shrink-0 mt-1">
                   <DualTimeDisplay
                     value={rehearsal.date_time}
+                    endValue={rehearsal.end_date_time}
                     timeZone={rehearsal.timezone}
                     typography={"sans"}
                     color={"muted"}

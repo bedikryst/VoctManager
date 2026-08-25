@@ -86,6 +86,7 @@ from .exceptions import (
 from .invitations import build_invitation_context, build_invitation_metadata
 from .models import (
     DEFAULT_EVENT_TIMEZONE,
+    FALLBACK_REHEARSAL_DURATION_MINUTES,
     Artist,
     Attendance,
     CrewAssignment,
@@ -1185,13 +1186,22 @@ class ManagerNotificationHelper:
 
 def _rehearsal_ics_payload(rehearsal: Rehearsal) -> dict:
     """Lightweight calendar payload carried in notification metadata so the email
-    layer can attach a localized 'add to calendar' .ics. Push ignores it."""
+    layer can attach a localized 'add to calendar' .ics. Push ignores it.
+
+    The only place a rehearsal's end may be assumed, and only because the reader
+    is a calendar: an untimed session still has to reserve a block, or the
+    evening renders as a zero-length mark. The message copy beside it stays
+    silent about the end instead.
+    """
     location_name = rehearsal.location.name if rehearsal.location else ""
+    end = rehearsal.end_date_time or (
+        rehearsal.date_time + timedelta(minutes=FALLBACK_REHEARSAL_DURATION_MINUTES)
+    )
     return {
         "kind": "rehearsal",
         "uid": f"rehearsal_{rehearsal.id}@voctensemble.com",
         "start": rehearsal.date_time.isoformat(),
-        "end": (rehearsal.date_time + timedelta(hours=3)).isoformat(),
+        "end": end.isoformat(),
         "project_name": rehearsal.project.title,
         "location": location_name,
         "focus": rehearsal.focus or "",
@@ -1205,6 +1215,7 @@ def _rehearsal_notification_context(rehearsal: Rehearsal) -> dict[str, str]:
             rehearsal.date_time,
             rehearsal.timezone,
             fallback_timezone=DEFAULT_EVENT_TIMEZONE,
+            end=rehearsal.end_date_time,
         ),
         "location": rehearsal.location.name if rehearsal.location else "",
         "focus": rehearsal.focus or "",
@@ -1254,6 +1265,10 @@ class RehearsalOperationsService:
     # so it becomes a self-describing state change instead.
     _REHEARSAL_CHANGE_KEYS: ClassVar[dict[str, str]] = {
         "date_time": "date_time", "location_id": "location", "focus": "focus",
+        # Carried as a raw minute count, not a rendered "2 godz. 30 min": the
+        # diff is stored once and read by recipients in three languages, so the
+        # number is the language-neutral form and the composer spells it out.
+        "duration_minutes": "duration",
     }
 
     @staticmethod

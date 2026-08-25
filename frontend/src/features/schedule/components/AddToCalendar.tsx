@@ -24,6 +24,7 @@ import {
 } from "@/shared/ui/composites/DropdownMenu";
 import {
   buildGoogleCalendarUrl,
+  FALLBACK_DURATION_MINUTES,
   downloadIcs,
   type CalendarEventInput,
 } from "@/shared/lib/calendar/calendarLinks";
@@ -63,6 +64,14 @@ export const AddToCalendar = ({
   const input: CalendarEventInput = {
     title: calendarTitle,
     start: event.date_time,
+    // The conductor's own end where there is one; otherwise the block matching
+    // this kind of event, so the button and the season feed reserve the same
+    // evening — they used to disagree by an hour on every rehearsal.
+    end: event.ends_at ?? undefined,
+    fallbackDurationMinutes:
+      event.type === "REHEARSAL"
+        ? FALLBACK_DURATION_MINUTES.rehearsal
+        : FALLBACK_DURATION_MINUTES.event,
     description: event.focus || event.description || undefined,
     location: event.location?.name,
     uid: event.id,

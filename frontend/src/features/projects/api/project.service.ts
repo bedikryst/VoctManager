@@ -342,6 +342,12 @@ export interface ScorePackageItemPatch {
 export interface ScorePackageState {
   status: ScorePackageStatus;
   status_display: string;
+  /**
+   * Queued or building, but past the point where anyone could still be working on
+   * it — a worker died, or the job was never picked up. Distinct from `status`
+   * alone: the cockpit must stop spinning and hand the conductor his button back.
+   */
+  build_stalled: boolean;
   is_stale: boolean;
   has_pdf: boolean;
   page_count: number | null;

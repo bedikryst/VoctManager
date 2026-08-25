@@ -41,6 +41,7 @@ import { AutosaveStatus } from "@/shared/ui/composites/AutosaveStatus";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
   DateTimeField,
+  TimeField,
   type CalendarMarker,
 } from "@/shared/ui/composites/DateTimeField";
 import { Select } from "@/shared/ui/primitives/Select";
@@ -54,7 +55,10 @@ import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 /** Weeknight rehearsals are the house pattern; the picker only proposes it. */
 const REHEARSAL_DEFAULT_TIME = "18:00";
+/** How long a session usually runs — proposed to the first keystroke, never stored. */
+const REHEARSAL_DEFAULT_LENGTH_MINUTES = 120;
 const DEFAULT_TIMEZONE = "Europe/Warsaw";
+const MINUTES_PER_DAY = 24 * 60;
 
 interface RehearsalsTabProps {
   projectId: string;
@@ -180,6 +184,60 @@ export const RehearsalsTab = ({
     { id: "T", label: t("projects.rehearsals.voices.tenors", "Tenory") },
     { id: "B", label: t("projects.rehearsals.voices.basses", "Basy") },
   ];
+
+  /**
+   * How long the session as entered actually runs, stated under the closing
+   * hour. It is the one reading the form cannot show directly: a conductor
+   * types "22:30" and the useful fact is that this is four and a half hours —
+   * and that an end before the start means tomorrow morning, not an error.
+   */
+  const lengthLabel = useMemo<string | null>(() => {
+    const startClock = formData.date_time.slice(11, 16);
+    if (!startClock || !formData.end_time) return null;
+
+    const toMinutes = (clock: string): number | null => {
+      const [hours, minutes] = clock.split(":");
+      if (minutes === undefined) return null;
+      const total = Number(hours) * 60 + Number(minutes);
+      return Number.isFinite(total) ? total : null;
+    };
+
+    const start = toMinutes(startClock);
+    const end = toMinutes(formData.end_time);
+    if (start === null || end === null) return null;
+
+    const span = end - start > 0 ? end - start : end - start + MINUTES_PER_DAY;
+    const hours = Math.floor(span / 60);
+    const minutes = span % 60;
+
+    if (hours === 0) {
+      return t("projects.rehearsals.form.length_m", "{{minutes}} min", {
+        minutes,
+      });
+    }
+
+    return minutes === 0
+      ? t("projects.rehearsals.form.length_h", "{{hours}} godz.", { hours })
+      : t(
+          "projects.rehearsals.form.length_hm",
+          "{{hours}} godz. {{minutes}} min",
+          { hours, minutes },
+        );
+  }, [formData.date_time, formData.end_time, t]);
+
+  /** Two hours on from the start, offered to a first keystroke on an empty field. */
+  const endTimeFallback = useMemo<string | undefined>(() => {
+    const startClock = formData.date_time.slice(11, 16);
+    const [hours, minutes] = startClock.split(":");
+    if (minutes === undefined) return undefined;
+
+    const total = Number(hours) * 60 + Number(minutes);
+    if (!Number.isFinite(total)) return undefined;
+
+    const shifted =
+      (total + REHEARSAL_DEFAULT_LENGTH_MINUTES) % MINUTES_PER_DAY;
+    return `${String(Math.floor(shifted / 60)).padStart(2, "0")}:${String(shifted % 60).padStart(2, "0")}`;
+  }, [formData.date_time]);
 
   const nextUpcomingKey = upcomingTimeline.find(
     (entry) => entry.rehearsal !== null,
@@ -315,6 +373,26 @@ export const RehearsalsTab = ({
               markers={calendarMarkers}
               defaultTime={REHEARSAL_DEFAULT_TIME}
             />
+
+            {/* The fact a singer plans the rest of their evening around, and the
+                one this form never asked for — which is why no surface, and no
+                calendar export, could state it. Optional: a date can be fixed
+                before the conductor knows how much of the evening they need,
+                and an empty field stays empty rather than assuming two hours. */}
+            <div className="flex flex-col gap-1.5">
+              <TimeField
+                label={t("projects.rehearsals.form.end_time", "Koniec próby")}
+                value={formData.end_time}
+                onChange={(end_time) => setFormData({ ...formData, end_time })}
+                disabled={isSubmitting}
+                fallback={endTimeFallback}
+              />
+              {lengthLabel && (
+                <Caption color="muted" className="ml-1">
+                  {lengthLabel}
+                </Caption>
+              )}
+            </div>
 
             <Select
               label={t("projects.rehearsals.form.location", "Sala próby *")}

@@ -359,6 +359,7 @@ def _change_field_label(field_key: str) -> str:
         "conductor": _("Conductor"),
         "dress_code": _("Dress code"),
         "focus": _("Focus"),
+        "duration": _("Duration"),
         "is_mandatory": _("Attendance"),  # legacy rows; new rows use now_mandatory/now_optional
         "now_mandatory": _("Now mandatory"),
         "now_optional": _("Now optional"),
@@ -384,6 +385,26 @@ def _boolean_label(value: str) -> str:
     return {"True": _("Yes"), "False": _("No")}.get(value, value)
 
 
+def _duration_label(value: str) -> str:
+    """A stored minute count spelled out ("2 h 30 min").
+
+    The diff carries the number because it is written once and read in three
+    languages; this is where it becomes words. The whole-hour case drops the
+    minutes rather than printing "2 h 0 min", and an unparsable value passes
+    through so a malformed row never renders blank.
+    """
+    try:
+        minutes = int(value)
+    except (TypeError, ValueError):
+        return value
+    hours, remainder = divmod(minutes, 60)
+    if hours and remainder:
+        return _("%(hours)d h %(minutes)d min") % {"hours": hours, "minutes": remainder}
+    if hours:
+        return _("%(hours)d h") % {"hours": hours}
+    return _("%(minutes)d min") % {"minutes": remainder}
+
+
 def _change_value(field_key: str, value: Any, scope: Iterable[str] = ()) -> Any:
     """Localizes a change value where the field carries a language-neutral code
     (voice line, project status, boolean flag); passes pre-formatted display values
@@ -399,6 +420,8 @@ def _change_value(field_key: str, value: Any, scope: Iterable[str] = ()) -> Any:
         return _event_kind_label(str(value))
     if field_key == "gives_pitch":
         return _boolean_label(str(value))
+    if field_key == "duration":
+        return _duration_label(str(value))
     return value
 
 
@@ -464,11 +487,25 @@ def _facts(*parts: Any) -> str:
 # never open a sentence: keep it after a noun, a dash, or inside a fact list.
 
 
-def _rehearsal_detail_rows(project: str, when: Any = None, venue: Any = None, focus: Any = None) -> list[DetailRow]:
-    """Current rehearsal facts rendered as email detail rows."""
+def _rehearsal_detail_rows(
+    project: str,
+    when: Any = None,
+    venue: Any = None,
+    focus: Any = None,
+    ends: Any = None,
+) -> list[DetailRow]:
+    """Current rehearsal facts rendered as email detail rows.
+
+    The closing hour gets a row of its own rather than being folded into "When":
+    a singer plans the rest of their evening around it, and it is absent on every
+    session nobody has timed — a merged range would have to invent one to stay a
+    single line.
+    """
     rows: list[DetailRow] = [_row(_("Project"), project)]
     if when:
         rows.append(_row(_("When"), when))
+    if ends:
+        rows.append(_row(_("Ends"), ends))
     if venue:
         rows.append(_row(_("Where"), venue))
     if focus:
@@ -873,7 +910,7 @@ def _compose_rehearsal_scheduled(ctx: MessageContext) -> MessageContent:
     if focus:
         body = _("%(facts)s. Focus: %(focus)s.") % {"facts": body, "focus": focus} if body \
             else _("Focus: %(focus)s.") % {"focus": focus}
-    details = _rehearsal_detail_rows(project, when, venue, focus)
+    details = _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,
@@ -910,7 +947,9 @@ def _compose_rehearsal_updated(ctx: MessageContext) -> MessageContent:
     summary = _summarize_changes(m.get("changes"))
     body = _facts(project, summary) if summary else _facts(project, venue)
     details = list(_change_rows(m.get("changes")))
-    details.extend(_rehearsal_detail_rows(project, when, venue, focus))
+    details.extend(
+        _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
+    )
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level or NotificationLevel.WARNING,
@@ -978,7 +1017,7 @@ def _compose_rehearsal_reminder(ctx: MessageContext) -> MessageContent:
     if focus:
         body = _("%(facts)s. Focus: %(focus)s.") % {"facts": body, "focus": focus} if body \
             else _("Focus: %(focus)s.") % {"focus": focus}
-    details = _rehearsal_detail_rows(project, when, venue, focus)
+    details = _rehearsal_detail_rows(project, when, venue, focus, display_event_end(m))
     return MessageContent(
         notification_type=ctx.notification_type,
         level=ctx.level,

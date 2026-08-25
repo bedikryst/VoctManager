@@ -9,7 +9,13 @@ from django.utils.translation import override
 
 from roster.domain.day_timeline import format_time_window, localize
 from roster.domain.event_kind import event_moment_label
-from roster.models import Participation, Project, Rehearsal
+from roster.models import (
+    FALLBACK_EVENT_DURATION_MINUTES,
+    FALLBACK_REHEARSAL_DURATION_MINUTES,
+    Participation,
+    Project,
+    Rehearsal,
+)
 
 # The label a member reads in their phone's calendar list, between "Work" and
 # "Birthdays" — so it is the ensemble's name, not the product's. Deliberately
@@ -286,8 +292,13 @@ class ICalGeneratorService:
 
         for reh in rehearsals:
             start_time = reh.date_time
-            end_time = start_time + timedelta(hours=3)
-            
+            # The conductor's own end where there is one. The fallback is a
+            # calendar necessity, not a claim: a VEVENT with no end renders as a
+            # zero-length mark, so an untimed session still reserves a block.
+            end_time = reh.end_date_time or (
+                start_time + timedelta(minutes=FALLBACK_REHEARSAL_DURATION_MINUTES)
+            )
+
             title = cls._escape_ics_text(f"[{_('Rehearsal')}] {reh.project.title}")
             location = cls._escape_ics_text(reh.location.name if reh.location else "")
             # Escaped once, on the assembled text. Escaping a part and then the
@@ -312,8 +323,11 @@ class ICalGeneratorService:
 
         for proj in projects:
             start_time = proj.call_time if proj.call_time else proj.date_time
-            end_time = proj.date_time + timedelta(hours=4)
-            
+            # A concert's end is nowhere stored — not even the run sheet has to
+            # reach past the downbeat — so this block is the same calendar-only
+            # reservation the rehearsals get, from the same table of constants.
+            end_time = proj.date_time + timedelta(minutes=FALLBACK_EVENT_DURATION_MINUTES)
+
             title = cls._escape_ics_text(
                 f"[{event_moment_label(proj.event_kind)}] {proj.title}"
             )

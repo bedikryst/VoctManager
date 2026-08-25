@@ -3137,6 +3137,8 @@
         "upload": "Wgraj PDF"
       },
       "failed": "Błąd składania",
+      "stalled": "Składanie przerwane",
+      "stalled_hint": "Poprzednie składanie nie dobiegło końca — serwer je przerwał. Uruchom je ponownie; nic nie zostało utracone.",
       "building": "Składanie…",
       "queued": "W kolejce…",
       "building_elapsed": "{{label}} ({{s}}s)",
@@ -3172,7 +3174,9 @@
         "a4": "Normalizuj do A4",
         "duplex": "Druk dwustronny",
         "hide_source_numbers": "Ukryj numery wydań",
-        "hide_source_numbers_hint": "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian."
+        "hide_source_numbers_hint": "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
+        "hide_source_numbers_locked": "Wymaga własnej numeracji książki.",
+        "hide_source_numbers_locked_hint": "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych."
       },
       "pages": "{{n}} stron",
       "readiness_state": {
@@ -3871,8 +3875,12 @@
       },
       "form": {
         "date_time": "Data i godzina *",
+        "end_time": "Koniec próby",
         "focus": "Plan próby / repertuar",
         "focus_placeholder": "np. Requiem cz. 1–3",
+        "length_h": "{{hours}} godz.",
+        "length_hm": "{{hours}} godz. {{minutes}} min",
+        "length_m": "{{minutes}} min",
         "location": "Sala próby *",
         "location_placeholder": "Wybierz salę",
         "mandatory": "Obecność obowiązkowa",

@@ -343,6 +343,32 @@ class BinderServeTests(_ServeBase):
         log = ScoreAccessLog.objects.get(project=self.project, user=self.manager)
         self.assertFalse(log.was_watermarked)
 
+    def test_replacing_the_book_by_hand_invalidates_the_stamped_cache(self) -> None:
+        """A hand-uploaded replacement deliberately keeps the build version, so the
+        watermark cache cannot be keyed on it: the recipient would keep receiving
+        the PREVIOUS book, stamped with their own name and looking authoritative,
+        until the TTL ran out."""
+        self._prepare_binder(protected=True)
+        self.client.force_authenticate(self.singer_user)
+
+        # Both books open with the same PDF header, so the stub keys on the size —
+        # what matters is that the SECOND serve stamped different source bytes.
+        with mock.patch(
+            "roster.views.stamp_pdf",
+            side_effect=lambda raw, footer: b"STAMPED:" + str(len(raw)).encode(),
+        ):
+            first = self.client.get(self.binder_url)
+            # The conductor swaps the file; the build version stays where it was.
+            self.project.score_pdf.delete(save=False)
+            self.project.score_pdf.save("book2.pdf", ContentFile(_pdf_bytes(5)), save=True)
+            ScorePackageService.mark_manual_upload(self.project)
+            second = self.client.get(self.binder_url)
+
+        self.assertEqual(
+            ScorePackage.objects.get(project=self.project).build_version, 1
+        )
+        self.assertNotEqual(self._body(first), self._body(second))
+
 
 # ---------------------------------------------------------------------------
 # Cockpit read model + edition DTO

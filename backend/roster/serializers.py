@@ -346,6 +346,10 @@ class RehearsalSerializer(serializers.ModelSerializer):
     """
     absent_count = serializers.IntegerField(read_only=True, default=0)
     location = LocationSnippetSerializer(read_only=True)
+    # Derived here rather than in each client: the length is what is stored, and
+    # a panel that added minutes to the start on its own would be a second place
+    # able to disagree with the calendar export about when the evening ends.
+    end_date_time = serializers.DateTimeField(read_only=True)
     project_id = serializers.PrimaryKeyRelatedField(
         source='project',
         queryset=Project.objects.all(),
@@ -370,6 +374,8 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'project',
             'project_id',
             'date_time',
+            'duration_minutes',
+            'end_date_time',
             'timezone',
             'location',
             'location_id',
@@ -385,6 +391,7 @@ class RehearsalSerializer(serializers.ModelSerializer):
             'is_deleted',
             'project',
             'location',
+            'end_date_time',
             'absent_count',
         )
 

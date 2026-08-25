@@ -136,6 +136,12 @@ export interface DualTimeDisplayProps extends VariantProps<
   typeof containerVariants
 > {
   value: Date | string | number | null | undefined;
+  /**
+   * Closing moment, where the event has one. Rendered as `18:00–21:00` in both
+   * clocks rather than as a second component, so a caller cannot end up showing
+   * the start in the venue's zone and the end in the reader's.
+   */
+  endValue?: Date | string | number | null;
   timeZone?: string;
   label?: React.ReactNode;
   icon?: React.ReactNode;
@@ -154,8 +160,15 @@ export interface DualTimeDisplayProps extends VariantProps<
   primaryTimeClassName?: string;
 }
 
+/**
+ * An en dash with no spaces, the typographic form for a span of clock time.
+ * Non-breaking on both sides so `18:00–21:00` can never wrap mid-range.
+ */
+const RANGE_SEPARATOR = "–";
+
 export const DualTimeDisplay = ({
   value,
+  endValue,
   timeZone,
   label,
   icon,
@@ -221,6 +234,31 @@ export const DualTimeDisplay = ({
     ...(hasDiffTz && { timeZoneName: "short" }),
   };
 
+  /**
+   * One clock reading, or the whole span where the event has an end. The zone
+   * name is dropped from the opening hour of a range — both ends are read in
+   * the same clock, and stating it twice turns a time into a sentence.
+   */
+  const renderRange = (
+    zone: string,
+    options: Intl.DateTimeFormatOptions,
+  ): string => {
+    const end = endValue
+      ? formatLocalizedTime(endValue, options, undefined, zone)
+      : null;
+
+    if (!end) {
+      return formatLocalizedTime(value, options, undefined, zone);
+    }
+
+    const openingOptions: Intl.DateTimeFormatOptions = {
+      hour: options.hour,
+      minute: options.minute,
+    };
+
+    return `${formatLocalizedTime(value, openingOptions, undefined, zone)}${RANGE_SEPARATOR}${end}`;
+  };
+
   // Resolve defaults based on variant if not explicitly provided
   const resolvedColor = color || (variant === "dark" ? "dark" : "default");
 
@@ -273,12 +311,7 @@ export const DualTimeDisplay = ({
           dateTime={isoDateString}
           className="whitespace-nowrap tabular-nums"
         >
-          {formatLocalizedTime(
-            value,
-            primaryTimeOptions,
-            undefined,
-            eventTimezone,
-          )}
+          {renderRange(eventTimezone, primaryTimeOptions)}
         </time>
       </div>
 
@@ -300,12 +333,7 @@ export const DualTimeDisplay = ({
               {t("common.time.localAria", "Twój czas lokalny to:")}
             </span>
             <span className="tabular-nums">
-              {formatLocalizedTime(
-                value,
-                localTimeOptions,
-                undefined,
-                userTimezone,
-              )}
+              {renderRange(userTimezone, localTimeOptions)}
             </span>
             {/* An annotation never outweighs the datum: this used to be set at
                 12px beside a 9px time. It rides one step under whatever the row

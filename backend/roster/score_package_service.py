@@ -15,8 +15,10 @@ import base64
 import hashlib
 import json
 import logging
+from datetime import timedelta
 from typing import Any
 
+from django.conf import settings
 from django.core.cache import cache
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -74,6 +76,29 @@ CONFIGURABLE_FIELDS: frozenset[str] = frozenset({
 })
 
 _IN_FLIGHT_STATUSES = frozenset({ScorePackage.Status.QUEUED, ScorePackage.Status.BUILDING})
+
+
+def _build_timeout() -> timedelta:
+    """How long an in-flight build may go quiet before it counts as abandoned."""
+    return timedelta(minutes=getattr(settings, "SCORE_PACKAGE_BUILD_TIMEOUT_MINUTES", 15))
+
+
+def build_is_abandoned(package: ScorePackage) -> bool:
+    """Whether an in-flight package is a corpse rather than a running build.
+
+    A build has no heartbeat: a killed worker, an OOM or a broker that never
+    delivered the task all look exactly like "still working" forever, and the
+    conductor's only control is disabled while that lasts. ``build_started_at`` is
+    stamped at queue time and refreshed when a worker picks the job up, so a
+    package still in flight long past the timeout is one nobody is working on and
+    may be started again. A row from before the field existed has no timestamp —
+    treat it as abandoned rather than leave it permanently unbuildable.
+    """
+    if package.status not in _IN_FLIGHT_STATUSES:
+        return False
+    if package.build_started_at is None:
+        return True
+    return timezone.now() - package.build_started_at > _build_timeout()
 
 # Page-trim thumbnails. An edition's PDF is immutable once ingested, so its content
 # hash is a perfect cache key — each edition is rasterised at most once and reused
@@ -348,6 +373,10 @@ class ScorePackageService:
         return {
             "status": package.status,
             "status_display": package.get_status_display().strip(),
+            # An in-flight build nobody is working on any more. The cockpit needs
+            # this as a distinct signal from "building": it re-enables the CTA and
+            # stops the poll instead of spinning on a corpse.
+            "build_stalled": build_is_abandoned(package),
             "is_stale": is_stale,
             "has_pdf": bool(project.score_pdf),
             "page_count": package.page_count,
@@ -423,19 +452,31 @@ class ScorePackageService:
     def request_generation(project: Project, config_patch: dict[str, Any] | None = None) -> ScorePackage:
         """
         Persist any config changes, mark the package QUEUED, and dispatch the
-        build after commit. A build already in flight is left untouched.
+        build after commit.
+
+        A build genuinely in flight is left untouched; one abandoned past the
+        timeout is re-queued, because the alternative is a conductor staring at
+        "Składanie…" with a disabled button and no way back. The row is locked for
+        the decision so two simultaneous presses cannot both dispatch.
         """
         package = ScorePackageService.get_or_create(project)
+        # Re-read under a row lock: the in-flight check below is a read-then-write,
+        # and two conductors pressing "Złóż" at the same moment would otherwise both
+        # see IDLE and start two builds racing over one score_pdf.
+        package = ScorePackage.objects.select_for_update().get(pk=package.pk)
         changed = ScorePackageService._apply_config(package, config_patch or {})
 
-        if package.status in _IN_FLIGHT_STATUSES:
+        if package.status in _IN_FLIGHT_STATUSES and not build_is_abandoned(package):
             if changed:
                 package.save(update_fields=[*changed, "updated_at"])
             return package
 
         package.status = ScorePackage.Status.QUEUED
+        package.build_started_at = timezone.now()
         package.error = ""
-        package.save(update_fields=[*changed, "status", "error", "updated_at"])
+        package.save(
+            update_fields=[*changed, "status", "build_started_at", "error", "updated_at"]
+        )
 
         from roster.tasks import generate_score_package_task
 
@@ -658,8 +699,17 @@ class ScorePackageService:
         project = package.project
 
         package.status = ScorePackage.Status.BUILDING
+        package.build_started_at = timezone.now()
         package.error = ""
-        package.save(update_fields=["status", "error", "updated_at"])
+        package.save(update_fields=["status", "build_started_at", "error", "updated_at"])
+
+        # Snapshot the inputs BEFORE assembling. The hash answers "which state of
+        # the repertoire is this PDF made of", and the assembly takes tens of
+        # seconds — long enough for the conductor to keep editing page ranges while
+        # it runs. Hashing afterwards would record those edits against a book that
+        # predates them: a stale book wearing a fresh stamp. Hashing first makes the
+        # book correctly read "Program zmieniony" instead, which is the truth.
+        source_hash = ScorePackageService.compute_source_hash(project, package)
 
         try:
             result = build_score_package(project, package)
@@ -677,13 +727,23 @@ class ScorePackageService:
             ScorePackageService._fail(package, "Nieoczekiwany błąd podczas składania partytury.")
             return
 
-        if project.score_pdf:
-            project.score_pdf.delete(save=False)
-        project.score_pdf.save(_safe_filename(project.title), ContentFile(result.pdf_bytes), save=False)
-        project.save(update_fields=["score_pdf", "updated_at"])
+        # Storing the result is as fallible as producing it (full disk, unwritable
+        # media mount, a dropped connection) and it sits outside the guard above —
+        # so without this the package would be left BUILDING for good.
+        try:
+            if project.score_pdf:
+                project.score_pdf.delete(save=False)
+            project.score_pdf.save(
+                _safe_filename(project.title), ContentFile(result.pdf_bytes), save=False
+            )
+            project.save(update_fields=["score_pdf", "updated_at"])
+        except Exception:
+            logger.exception("score_package.store_failed package=%s project=%s", package_id, project.pk)
+            ScorePackageService._fail(package, "Nie udało się zapisać złożonej partytury na serwerze.")
+            return
 
         package.status = ScorePackage.Status.READY
-        package.source_hash = ScorePackageService.compute_source_hash(project, package)
+        package.source_hash = source_hash
         package.page_count = result.page_count
         package.generated_at = timezone.now()
         # A fresh build is a new version that no singer has yet — stamp it and reset
@@ -764,4 +824,4 @@ class ScorePackageService:
         ])
 
 
-__all__ = ["ScorePackageItemError", "ScorePackageService"]
+__all__ = ["ScorePackageItemError", "ScorePackageService", "build_is_abandoned"]

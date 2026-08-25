@@ -7,11 +7,16 @@
 Database models for HR and Logistics entities.
 """
 import uuid
+from datetime import datetime, timedelta
 from typing import Any
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import FileExtensionValidator
+from django.core.validators import (
+    FileExtensionValidator,
+    MaxValueValidator,
+    MinValueValidator,
+)
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -19,9 +24,21 @@ from django.utils.translation import pgettext_lazy
 
 from core.constants import VoiceLine
 from core.models import EnterpriseBaseModel
+from roster.domain.day_timeline import MINUTES_PER_DAY
 from roster.domain.liturgy import SLOT_CHOICES
 
 DEFAULT_EVENT_TIMEZONE = 'Europe/Warsaw'
+
+# How long a calendar entry reserves for a rehearsal nobody has timed yet.
+#
+# It exists for ONE reader: a calendar client. An .ics VEVENT without an end is
+# rendered by Google and Apple as a zero-length mark, so a subscribed member
+# would see the evening vanish from their week. Every in-app surface asks
+# ``Rehearsal.end_date_time`` instead and simply says nothing when it is unset —
+# a stated end must be one somebody entered, never one derived here.
+FALLBACK_REHEARSAL_DURATION_MINUTES = 120
+# The same reservation for a concert, whose end is likewise never stored.
+FALLBACK_EVENT_DURATION_MINUTES = 240
 
 
 def validate_pdf_file_size(value) -> None:
@@ -507,6 +524,14 @@ class ScorePackage(EnterpriseBaseModel):
     )
     page_count = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Page Count"))
     generated_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Generated At"))
+    build_started_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the current build attempt was queued, refreshed when a worker "
+                    "actually picks it up. A build has no other heartbeat, so this is what "
+                    "lets an attempt abandoned by a dead worker (or never dispatched at all) "
+                    "be reclaimed instead of pinning the package in 'building' forever."),
+        verbose_name=_("Build Started At"),
+    )
 
     # --- Distribution trail. Singers download the finished book through the gated
     #     `score_pdf` action; once they have it, a rebuild silently replaces what is
@@ -693,6 +718,17 @@ class Rehearsal(EnterpriseBaseModel):
         related_name='rehearsals',
         help_text=_("Specific location for this rehearsal. Overrides project default if needed.")
     )
+    duration_minutes = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(5), MaxValueValidator(MINUTES_PER_DAY)],
+        verbose_name=_("Duration (minutes)"),
+        help_text=_(
+            "How long the session runs. Stored as a length rather than a closing "
+            "instant so it survives a move of the start and a DST boundary; "
+            "null means nobody has timed it and no surface may state an end."
+        ),
+    )
     focus = models.CharField(max_length=200, blank=True, verbose_name=_("Rehearsal Focus"))
     is_mandatory = models.BooleanField(default=True, verbose_name=_("Is Mandatory"))
     reminder_sent_at = models.DateTimeField(
@@ -710,6 +746,20 @@ class Rehearsal(EnterpriseBaseModel):
         indexes = [
             models.Index(fields=['project', 'date_time']),
         ]
+
+    @property
+    def end_date_time(self) -> datetime | None:
+        """When the session ends, or ``None`` when its length was never entered.
+
+        The single reader of ``duration_minutes``: every surface that shows or
+        exports an end asks this, so none of them can invent one. Added to the
+        stored instant rather than to a wall clock — the result is the same
+        physical moment on both sides of a DST boundary, and crossing midnight
+        needs no special case.
+        """
+        if self.duration_minutes is None:
+            return None
+        return self.date_time + timedelta(minutes=self.duration_minutes)
 
     def __str__(self):
         return f"Rehearsal: {self.date_time.strftime('%d.%m %H:%M')}"

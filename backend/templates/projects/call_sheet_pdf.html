@@ -659,12 +659,12 @@
             {% endcomment %}
             <div class="tiny muted" style="margin-bottom:5pt;">{% if all_rehearsals_mandatory %}{% translate "All rehearsals are mandatory." %}{% else %}{% translate "No mark = a mandatory rehearsal." %}{% endif %}{% if rehearsals_done_note %} {{ rehearsals_done_note }}{% endif %}</div>
             <table class="grid">
-                <thead><tr><th style="width:56pt;">{% translate "Date" context "call sheet" %}</th><th style="width:40pt;">{% translate "Time" context "call sheet" %}</th>{% if not all_rehearsals_mandatory %}<th style="width:66pt;">{% translate "Type" context "call sheet" %}</th>{% endif %}{% if not is_chorister %}<th style="width:80pt;">{% translate "Who" context "call sheet" %}</th>{% endif %}<th>{% translate "Focus" context "call sheet" %}</th><th>{% translate "Venue" context "call sheet" %}</th></tr></thead>
+                <thead><tr><th style="width:56pt;">{% translate "Date" context "call sheet" %}</th><th style="width:{% if any_rehearsal_end %}64{% else %}40{% endif %}pt;">{% translate "Time" context "call sheet" %}</th>{% if not all_rehearsals_mandatory %}<th style="width:66pt;">{% translate "Type" context "call sheet" %}</th>{% endif %}{% if not is_chorister %}<th style="width:80pt;">{% translate "Who" context "call sheet" %}</th>{% endif %}<th>{% translate "Focus" context "call sheet" %}</th><th>{% translate "Venue" context "call sheet" %}</th></tr></thead>
                 <tbody>
                     {% for r in rehearsal_items %}
                     <tr>
                         <td class="t-time">{{ r.date_label }}</td>
-                        <td class="t-time">{{ r.time_label }}</td>
+                        <td class="t-time">{{ r.time_label }}{% if r.end_time_label %}–{{ r.end_time_label }}{% endif %}</td>
                         {% if not all_rehearsals_mandatory %}<td>{% if not r.is_mandatory %}<span class="pill ghost">{% translate "Optional" context "call sheet" %}</span>{% endif %}</td>{% endif %}
                         {% if not is_chorister %}<td>{{ r.scope_label }}</td>{% endif %}
                         <td>{% if r.focus %}{{ r.focus }}{% else %}{% translate "To be confirmed" context "call sheet" %}{% endif %}</td>

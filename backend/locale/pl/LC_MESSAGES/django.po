@@ -4252,6 +4252,33 @@ msgstr "Do"
 msgid "Rehearsals covered"
 msgstr "Liczba prób"
 
+msgid "Duration (minutes)"
+msgstr "Czas trwania (minuty)"
+
+msgid ""
+"How long the session runs. Stored as a length rather than a closing instant "
+"so it survives a move of the start and a DST boundary; null means nobody has "
+"timed it and no surface may state an end."
+msgstr ""
+"Ile trwa próba. Zapisywane jako długość, a nie godzina zakończenia, dzięki "
+"czemu przetrwa przesunięcie początku i zmianę czasu; brak wartości oznacza, "
+"że nikt nie określił długości i żaden ekran nie może podać końca."
+
+msgid "Ends"
+msgstr "Koniec"
+
+msgid "Duration"
+msgstr "Czas trwania"
+
+msgid "%(hours)d h %(minutes)d min"
+msgstr "%(hours)d godz. %(minutes)d min"
+
+msgid "%(hours)d h"
+msgstr "%(hours)d godz."
+
+msgid "%(minutes)d min"
+msgstr "%(minutes)d min"
+
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 "below — approve or decline them in the panel."

@@ -46,9 +46,16 @@ class FieldChangeMetadata(EnterpriseBaseDTO):
 
 
 class EventMomentMetadata(EnterpriseBaseDTO):
-    """Canonical event moment. `starts_at` is ISO-8601; display text is fallback-only."""
+    """Canonical event moment. `starts_at` is ISO-8601; display text is fallback-only.
+
+    The closing moment is present only where one was entered — an unset end is
+    an absent key, not an empty string, because "runs until 21:00" and "nobody
+    timed this" are different facts and the copy states them differently.
+    """
     starts_at: str | None = None
     starts_at_display: str | None = None
+    ends_at: str | None = None
+    ends_at_display: str | None = None
     timezone: str | None = None
 
 

@@ -55,14 +55,27 @@ def build_event_time_metadata(
     timezone_name: str | None,
     *,
     fallback_timezone: str,
+    end: datetime | None = None,
 ) -> dict[str, str]:
-    """Build the canonical event moment payload used by notification metadata."""
+    """Build the canonical event moment payload used by notification metadata.
+
+    ``end`` is carried only where one was actually entered. An absent closing
+    moment leaves both keys off the payload entirely rather than writing an
+    empty string, so a composer can tell "runs until 21:00" apart from "nobody
+    said how long this runs" without consulting the model.
+    """
     resolved_timezone = normalize_timezone_name(timezone_name, fallback_timezone)
-    return {
+    payload = {
         "starts_at": value.isoformat(),
         "starts_at_display": format_event_time(value, resolved_timezone, fallback_timezone),
         "timezone": resolved_timezone,
     }
+    if end is not None:
+        payload["ends_at"] = end.isoformat()
+        payload["ends_at_display"] = format_event_time(
+            end, resolved_timezone, fallback_timezone
+        )
+    return payload
 
 
 def _parse_iso_datetime(value: Any) -> datetime | None:

@@ -760,6 +760,10 @@ class DocumentGenerator:
         all_rehearsals_mandatory = bool(rehearsal_items) and all(
             item['is_mandatory'] for item in rehearsal_items
         )
+        # Widens the time column only when there is a range to print. A sheet
+        # whose sessions are all untimed keeps the narrow gutter and gives the
+        # width back to the focus column, which is the one that runs out.
+        any_rehearsal_end = any(item['end_time_label'] for item in rehearsal_items)
 
         # The day as one axis. The sheet used to print the raw run sheet beside
         # a header built from the project's datetimes, so a stale "12:00 Start"
@@ -894,6 +898,7 @@ class DocumentGenerator:
                 else ''
             ),
             'all_rehearsals_mandatory': all_rehearsals_mandatory,
+            'any_rehearsal_end': any_rehearsal_end,
             'program_cards': program_cards,
             'casting_sections': [
                 DocumentGenerator._build_casting_section(item, piece_castings_map.get(item.piece_id, []))
@@ -1548,6 +1553,7 @@ class DocumentGenerator:
             rehearsal.location.timezone if rehearsal.location else project.timezone
         )
         local_datetime = localize(rehearsal.date_time, rehearsal_timezone)
+        local_end = localize(rehearsal.end_date_time, rehearsal_timezone)
         invited_participations = list(rehearsal.invited_participations.all())
         invited_ids = {participation.id for participation in invited_participations}
         is_whole_ensemble = not invited_participations
@@ -1569,6 +1575,10 @@ class DocumentGenerator:
             'date_time': local_datetime,
             'date_label': DocumentGenerator._format_date(local_datetime),
             'time_label': DocumentGenerator._format_time(local_datetime),
+            # Empty for a session nobody has timed. The sheet then prints the
+            # opening hour alone rather than a dash to a fabricated end — the
+            # same silence every other surface keeps about an unset duration.
+            'end_time_label': local_end.strftime('%H:%M') if local_end else '',
             'timezone': rehearsal_timezone,
             'focus': rehearsal.focus,
             'is_mandatory': rehearsal.is_mandatory,

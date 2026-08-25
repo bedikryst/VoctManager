@@ -156,6 +156,7 @@ export const RehearsalPulseBar = React.memo(
             </Caption>
             <DualTimeDisplay
               value={next.rehearsal.date_time}
+              endValue={next.rehearsal.end_date_time}
               timeZone={next.rehearsal.timezone}
               icon={<Clock size={11} className="text-ethereal-gold/70" aria-hidden="true" />}
               containerClassName="flex items-center gap-1.5"

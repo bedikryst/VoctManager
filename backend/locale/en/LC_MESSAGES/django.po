@@ -3088,6 +3088,30 @@ msgstr ""
 msgid "Rehearsals covered"
 msgstr ""
 
+msgid "Duration (minutes)"
+msgstr ""
+
+msgid ""
+"How long the session runs. Stored as a length rather than a closing instant "
+"so it survives a move of the start and a DST boundary; null means nobody has "
+"timed it and no surface may state an end."
+msgstr ""
+
+msgid "Ends"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "%(hours)d h %(minutes)d min"
+msgstr ""
+
+msgid "%(hours)d h"
+msgstr ""
+
+msgid "%(minutes)d min"
+msgstr ""
+
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 "below — approve or decline them in the panel."

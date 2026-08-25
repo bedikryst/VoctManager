@@ -246,8 +246,12 @@ export const TimelineRehearsalCard = ({
 
             {/* meta */}
             <div className="flex flex-wrap items-center gap-3 mt-0.5">
+              {/* Start AND end: after the date itself, when they get to leave is
+                  the fact a singer plans the evening around — and the one this
+                  card could not state at all until rehearsals carried a length. */}
               <DualTimeDisplay
                 value={event.date_time}
+                endValue={event.ends_at}
                 timeZone={tz}
                 icon={<Clock size={13} className="text-ethereal-gold" aria-hidden="true" />}
                 containerClassName="flex items-center gap-1.5"

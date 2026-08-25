@@ -109,6 +109,52 @@ const toZonedInputString = (
   }
 };
 
+const MINUTES_PER_DAY = 24 * 60;
+
+/** Minutes since midnight for a `HH:mm` field value; null when incomplete. */
+const parseClockMinutes = (time: string): number | null => {
+  const [hours, minutes] = time.split(":");
+  if (minutes === undefined) return null;
+
+  const total = Number(hours) * 60 + Number(minutes);
+  return Number.isFinite(total) && total >= 0 && total < MINUTES_PER_DAY
+    ? total
+    : null;
+};
+
+const toClockTime = (minutes: number): string => {
+  const wrapped = ((minutes % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
+  return `${String(Math.floor(wrapped / 60)).padStart(2, "0")}:${String(wrapped % 60).padStart(2, "0")}`;
+};
+
+/**
+ * The two conversions between what the conductor types (a closing hour) and
+ * what the API stores (a length). An end at or before the start is read as the
+ * next morning rather than rejected — a rehearsal running to 00:30 is entered
+ * as "00:30", and demanding a second date for it would be the wrong question.
+ */
+const durationFromEndTime = (
+  startWallClock: string,
+  endTime: string,
+): number | null => {
+  const start = parseClockMinutes(startWallClock.slice(11, 16));
+  const end = parseClockMinutes(endTime);
+  if (start === null || end === null) return null;
+
+  const span = end - start;
+  return span > 0 ? span : span + MINUTES_PER_DAY;
+};
+
+const endTimeFromDuration = (
+  startWallClock: string,
+  durationMinutes: number | null | undefined,
+): string => {
+  const start = parseClockMinutes(startWallClock.slice(11, 16));
+  if (start === null || !durationMinutes) return "";
+
+  return toClockTime(start + durationMinutes);
+};
+
 const getLocationId = (location: Rehearsal["location"]): string => {
   if (!location) {
     return "";
@@ -155,6 +201,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
 
   const [formData, setFormData] = useState<RehearsalFormData>({
     date_time: "",
+    end_time: "",
     timezone: project?.timezone || "Europe/Warsaw",
     location_id: "",
     focus: "",
@@ -287,6 +334,7 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
     setEditingRehearsalId(null);
     setFormData({
       date_time: "",
+      end_time: "",
       timezone: project?.timezone || "Europe/Warsaw",
       location_id: "",
       focus: "",
@@ -307,9 +355,18 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
         project?.timezone ||
         "Europe/Warsaw";
 
+      const startWallClock = toZonedInputString(
+        rehearsal.date_time,
+        rehearsalTimezone,
+      );
+
       setEditingRehearsalId(String(rehearsal.id));
       setFormData({
-        date_time: toZonedInputString(rehearsal.date_time, rehearsalTimezone),
+        date_time: startWallClock,
+        end_time: endTimeFromDuration(
+          startWallClock,
+          rehearsal.duration_minutes,
+        ),
         timezone: rehearsalTimezone,
         location_id: locationId,
         focus: rehearsal.focus || "",
@@ -381,6 +438,11 @@ export const useRehearsalsTab = (projectId: string): UseRehearsalsTabResult => {
 
       const payload = {
         date_time: absoluteDateTime,
+        // Null clears an end that no longer holds; the API reads it as "not
+        // timed" and every surface then says nothing rather than guessing.
+        duration_minutes: formData.end_time
+          ? durationFromEndTime(formData.date_time, formData.end_time)
+          : null,
         timezone: formData.timezone,
         location_id: formData.location_id,
         focus: formData.focus,

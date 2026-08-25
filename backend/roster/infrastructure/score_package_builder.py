@@ -7,11 +7,12 @@
     (MASS density). Phase 3 (build cockpit): per-item edition selection, source
     page-range trimming, per-item card element/override resolution, and a
     placeholder divider for repertoire that still lacks engraved music. Phase 4
-    (one numbering): the strip the book's folio occupies is kept free of source
-    content, and each edition's own printed page numbers are covered where they
-    can be proven (see score_source_numbering) — so a page never shows the book's
-    folio and the publisher's stacked together. All deterministic WeasyPrint +
-    pypdf — no AI, and nothing drawn over the engraving but a publisher's folio.
+    (one numbering): on a numbered book the strip the folio occupies is kept free
+    of source content, and each edition's own printed page numbers are covered
+    where they can be proven (see score_source_numbering) — so a page never shows
+    the book's folio and the publisher's stacked together. All deterministic
+    WeasyPrint + pypdf — no AI, and nothing drawn over the engraving but a
+    publisher's folio.
 @architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_package_builder
 """
@@ -19,12 +20,15 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from io import BytesIO
 from itertools import zip_longest
 
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.utils import translation
 from pypdf import PdfReader, PdfWriter, Transformation
 
 from archive.models import Piece, ScoreEdition
@@ -75,6 +79,21 @@ def _ensemble_name() -> str:
 def _doc_lang() -> str:
     """Document language for print hyphenation + template chrome, from settings."""
     return getattr(settings, "SCORE_BOOK_LANG", "pl")
+
+
+@contextmanager
+def _book_language() -> Iterator[None]:
+    """Render inside the BOOK's language rather than the reader's.
+
+    The liturgical section and role labels are lazy gettext strings, resolved
+    wherever they are finally coerced to text. In the Celery worker that is the
+    project default; in the cockpit's live card preview it is the requesting
+    manager's Accept-Language, because LocaleMiddleware is active. Without this,
+    a francophone manager previews "À la communion:" on a card the press will
+    print as "Na Komunię:" — the preview's whole promise is that it does not lie.
+    """
+    with translation.override(_doc_lang()):
+        yield
 
 
 class ScorePackageBuildError(RuntimeError):
@@ -212,10 +231,26 @@ def _text_scale(rows: list[dict[str, list[str]]], two_cols: bool) -> str:
 
 
 def _read_edition_pdf(edition: ScoreEdition) -> PdfReader:
-    """Load an edition's PDF fully into memory (storage-agnostic) as a reader."""
+    """Load an edition's PDF fully into memory (storage-agnostic) as a reader, with
+    any ``/Rotate`` already baked into the page content.
+
+    The bake happens HERE, before anything measures anything, because two readers
+    of the same page must agree on its coordinate space: the folio detector takes
+    glyph boxes off the page box, and the binder derives its placement transform
+    off the same box. Baking later — at placement time — flips a rotated page's box
+    (595x842 becomes 842x595) between those two steps, so every knockout computed
+    for it would land somewhere over the engraving instead of over the number.
+
+    Only rotated pages are touched: a no-op bake still prepends a transformation to
+    the content stream of every page, which buys nothing.
+    """
     with edition.pdf_file.open("rb") as handle:
         data = handle.read()
-    return PdfReader(BytesIO(data))
+    reader = PdfReader(BytesIO(data))
+    for page in reader.pages:
+        if page.rotation:
+            page.transfer_rotation_to_content()
+    return reader
 
 
 def _page_window(total: int, start: int | None, end: int | None) -> tuple[int, int]:
@@ -549,8 +584,12 @@ def _place_on_a4(
     numbers) to knock out once the page is placed.
     """
     # Bake any /Rotate into the content so the visual orientation is preserved
-    # before we read the box and transform it.
-    source_page.transfer_rotation_to_content()
+    # before we read the box and transform it. Pages arriving from
+    # ``_read_edition_pdf`` are already baked (they must be, so the folio masks are
+    # measured in this same space); the guard keeps this helper correct on its own
+    # for any other caller, at the cost of one integer check.
+    if source_page.rotation:
+        source_page.transfer_rotation_to_content()
     box = source_page.mediabox
     src_w = float(box.width)
     src_h = float(box.height)
@@ -623,7 +662,17 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
     frontispiece per piece (CONCERT) or a placeholder for missing music → render
     front matter + (MASS) consolidated texts → bind trimmed editions onto A4 →
     stamp continuous page numbers → add the PDF outline. Pure CPU, no AI.
+
+    The whole assembly runs in the book's own language: nothing printed on a page
+    may depend on who asked for the build.
     """
+    with _book_language():
+        return _assemble_book(project, package)
+
+
+def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
+    """The assembly itself. Called only through ``build_score_package``, which
+    pins the document language around it."""
     plan = _resolve_program(project)
     if not plan:
         raise ScorePackageBuildError("Program koncertu jest pusty — nie ma z czego złożyć partytury.")
@@ -792,9 +841,15 @@ def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
 
 
 def render_item_card_preview(project: Project, package: ScorePackage, item: ProgramItem) -> bytes:
-    """Render just one program item's frontispiece/placeholder card to a PDF — the
-    cockpit's live "preview this card" affordance. Uses the same context builder as
-    the full assembly, so what the conductor sees is what the book gets."""
+    """Render just one program item's card to a PDF — the cockpit's live "preview
+    this card" affordance. Uses the same context builder, the same density and the
+    same language as the full assembly, so what the conductor sees is what the book
+    gets."""
+    with _book_language():
+        return _render_item_card(project, package, item)
+
+
+def _render_item_card(project: Project, package: ScorePackage, item: ProgramItem) -> bytes:
     piece = item.piece
     edition = resolve_item_edition(item)
     planned = PlannedItem(
@@ -828,7 +883,18 @@ def render_item_card_preview(project: Project, package: ScorePackage, item: Prog
         page_label="",
         presentation=presentations[item.pk],
     )
-    return _render_cards([context], section_header=None)
+    # Mass density prints no frontispiece for a bound piece — its text flows into
+    # the consolidated "Teksty i tłumaczenia" section — so previewing one as a
+    # full page would show a card the book will never contain. A placeholder keeps
+    # the frontispiece in either density: the divider IS what Mass prints for a
+    # piece whose music has not arrived.
+    mass_entry = (
+        package.density_mode == ScorePackage.Density.MASS and not planned.is_placeholder
+    )
+    return _render_cards(
+        [context],
+        section_header=TEXTS_SECTION_HEADER if mass_entry else None,
+    )
 
 
 __all__ = [

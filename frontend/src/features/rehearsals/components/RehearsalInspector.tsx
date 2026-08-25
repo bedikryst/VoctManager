@@ -217,6 +217,7 @@ export const RehearsalInspector = ({
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <DualTimeDisplay
             value={rehearsal.date_time}
+            endValue={rehearsal.end_date_time}
             timeZone={rehearsal.timezone}
             className="border-none bg-transparent p-0"
             typography="sans"

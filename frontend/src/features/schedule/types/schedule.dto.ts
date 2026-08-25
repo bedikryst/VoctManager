@@ -16,6 +16,12 @@ export interface TimelineEvent {
   type: "REHEARSAL" | "PROJECT";
   rawObj: Project | EnrichedRehearsal;
   date_time: Date;
+  /**
+   * When it ends, for the events that know. Only a rehearsal carries a stored
+   * length; a concert has none, and the absence is what stops the calendar
+   * export from booking a block nobody promised.
+   */
+  ends_at?: Date | null;
   title: string;
   location: LocationSnippet | null | undefined;
   focus?: string | null;

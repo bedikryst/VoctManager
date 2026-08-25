@@ -44,6 +44,13 @@ export interface ProjectFormData {
 
 export interface RehearsalFormData {
   date_time: string;
+  /**
+   * The closing hour as `HH:mm` in the rehearsal's own zone — what a conductor
+   * actually decides ("do dwudziestej pierwszej"). The API stores a length; the
+   * conversion happens on submit, which is also what lets an end past midnight
+   * be entered as the hour it is rather than as a second date.
+   */
+  end_time: string;
   timezone: string;
   location_id: string;
   focus: string;
