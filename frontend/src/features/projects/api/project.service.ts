@@ -224,6 +224,9 @@ export interface ScorePackageConfig {
    *  element vocabulary on both surfaces. */
   card_default_elements: CardElement[];
   translation_language: string;
+  /** Print the conductor's `shared` markings onto the music. Only that layer —
+   *  a reader's own pencil marks are composed at download, never baked in. */
+  include_markings: boolean;
 }
 
 /** Toggleable element of a per-piece frontispiece card. */
@@ -275,6 +278,28 @@ export interface ScorePackageItemReadiness {
   elements: Record<CardElement, ElementStatus>;
 }
 
+/**
+ * How this piece's conductor markings fare in the book. `wrong_edition` is the
+ * one that needs shouting about: the marks exist, but on an edition this item no
+ * longer binds, so pinning another one silently discarded every cue.
+ */
+export type MarkingsStatus =
+  | "off"
+  | "none"
+  | "ready"
+  | "partial"
+  | "wrong_edition";
+
+export interface ScorePackageItemMarkings {
+  status: MarkingsStatus;
+  /** Marks that land inside the bound page range — the ones that print. */
+  printed: number;
+  /** Marks the page trim drops. */
+  outside_range: number;
+  /** Marks sitting on a different edition of the same piece. */
+  other_edition: number;
+}
+
 /** One program item as rendered in the build cockpit, with its overrides. */
 export interface ScorePackageItem {
   id: string;
@@ -319,6 +344,7 @@ export interface ScorePackageItem {
   hide_source_page_numbers: boolean | null;
   hide_source_page_numbers_effective: boolean;
   readiness: ScorePackageItemReadiness;
+  markings: ScorePackageItemMarkings;
 }
 
 /** Mutable per-item overrides accepted by the cockpit PATCH endpoint. */

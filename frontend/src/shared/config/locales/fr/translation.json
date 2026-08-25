@@ -3159,7 +3159,9 @@
         "hide_source_numbers": "Masquer les numéros des éditions",
         "hide_source_numbers_hint": "Recouvre la numérotation que les éditions impriment elles-mêmes, pour que le livret ne porte que la sienne. Un scan sans couche de texte reste intact.",
         "hide_source_numbers_locked": "Exige la numérotation propre au livret.",
-        "hide_source_numbers_locked_hint": "Sans numérotation propre, le livret conserve celle de l'éditeur — sinon l'impression n'en aurait aucune."
+        "hide_source_numbers_locked_hint": "Sans numérotation propre, le livret conserve celle de l'éditeur — sinon l'impression n'en aurait aucune.",
+        "markings": "Imprimer mes annotations",
+        "markings_hint": "Imprime votre couche « pour le chœur » sur la musique. Le surligneur devient un soulignement : en noir et blanc, une bande pleine noierait les notes. Les notes privées des choristes restent les leurs."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3188,6 +3190,8 @@
         "no_pdf_short": "sans partition",
         "over_copies": "L'effectif ({{cast}}) dépasse le nombre d'exemplaires sous licence possédés ({{copies}}). Assurez-vous d'avoir assez de copies ou une licence supplémentaire.",
         "over_copies_short": "exemplaires insuffisants",
+        "markings_outside_range": "Une partie de vos annotations ({{n}}) tombe hors des pages reliées — elles ne seront pas imprimées.",
+        "markings_wrong_edition": "Vos annotations ({{n}}) portent sur une autre édition de cette œuvre. L'édition reliée n'en a aucune : le recueil sortira sans elles.",
         "full_range": "tout",
         "range": "p. {{from}}–{{to}}",
         "edition": "Édition",

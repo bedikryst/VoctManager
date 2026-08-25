@@ -82,6 +82,47 @@ def resolve_source_numbering(item: ProgramItem, package: ScorePackage) -> bool:
     return bool(item.hide_source_page_numbers)
 
 
+def resolve_page_window(total: int, start: int | None, end: int | None) -> tuple[int, int]:
+    """Clamp a 1-based ``[start, end]`` page request to a valid window of a
+    ``total``-page source, returning the inclusive 1-based bounds. Blank bounds
+    mean the natural edge (page 1 / the last page).
+
+    Which source pages an item actually binds decides more than pagination: a
+    marking on a page outside this window is not printed, so the binder and
+    anything reasoning about markings must derive the window the same way.
+    """
+    if total <= 0:
+        return 1, 0
+    first = max(1, min(start or 1, total))
+    last = max(first, min(end or total, total))
+    return first, last
+
+
+#: Stand-in upper bound for an edition whose page count was never recorded.
+#: Far past any real engraving, so the window is effectively "whatever the
+#: conductor's own trim allows" rather than "nothing".
+UNKNOWN_PAGE_LIMIT: int = 10_000
+
+
+def resolve_item_page_window(item: ProgramItem, edition: ScoreEdition | None) -> tuple[int, int]:
+    """The 1-based inclusive source-page window an item binds, from stored data
+    only — no PDF is opened, so this is safe on a read path.
+
+    An edition with no recorded page count is bounded by the item's own trim
+    values alone: treating "unknown length" as zero pages would claim the book
+    binds nothing, and everything reasoning about the window (which markings
+    print, which fall outside) would then be confidently wrong.
+    """
+    if edition is None:
+        return 1, 0
+    total = edition.page_count or 0
+    return resolve_page_window(
+        total if total > 0 else UNKNOWN_PAGE_LIMIT,
+        item.pdf_page_start,
+        item.pdf_page_end,
+    )
+
+
 def sanitize_card_elements(value: object) -> list[str] | None:
     """Coerce a client-supplied card-element list to the canonical subset,
     preserving the canonical order. ``None``/invalid input yields ``None``
@@ -249,6 +290,7 @@ def suggested_page_start(piece: Piece) -> int | None:
 
 __all__ = [
     "CARD_ELEMENTS",
+    "UNKNOWN_PAGE_LIMIT",
     "ResolvedCardConfig",
     "active_editions",
     "composer_label",
@@ -258,7 +300,9 @@ __all__ = [
     "pinnable_translations",
     "resolve_card_config",
     "resolve_item_edition",
+    "resolve_item_page_window",
     "resolve_item_translation",
+    "resolve_page_window",
     "resolve_source_numbering",
     "sanitize_card_elements",
     "select_edition",

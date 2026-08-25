@@ -508,6 +508,14 @@ class ScorePackage(EnterpriseBaseModel):
         help_text=_("ISO 639-1 code of the translation/programme-note language shown on the cards."),
         verbose_name=_("Card Language"),
     )
+    include_markings = models.BooleanField(
+        default=False,
+        help_text=_("Print the conductor's 'shared' markings onto the music pages. Only that "
+                    "layer: it is his message to the whole choir. A reader's own 'personal' "
+                    "pencil marks are never baked in here — they are composed per download, "
+                    "and nobody may switch on marks they are not allowed to see."),
+        verbose_name=_("Include Conductor's Markings"),
+    )
 
     # --- Async build state ---
     status = models.CharField(
@@ -523,6 +531,18 @@ class ScorePackage(EnterpriseBaseModel):
         verbose_name=_("Source Hash"),
     )
     page_count = models.PositiveIntegerField(null=True, blank=True, verbose_name=_("Page Count"))
+    page_map = models.JSONField(
+        default=list, blank=True,
+        help_text=_("What each page of the stored book physically is: one row per page, in "
+                    "order, carrying its kind, printed folio, the program item / edition / "
+                    "source page it came from, and — for music — the box the source page was "
+                    "placed into, in A4 points. The binder trims, scales and re-centres every "
+                    "source page, so this is the ONLY record of where a given spot on an "
+                    "edition ended up in the book; without it nothing can be drawn onto the "
+                    "finished PDF at a musically correct position. Written by the generator "
+                    "only, and cleared whenever the file it describes is replaced or removed."),
+        verbose_name=_("Page Map"),
+    )
     generated_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Generated At"))
     build_started_at = models.DateTimeField(
         null=True, blank=True,

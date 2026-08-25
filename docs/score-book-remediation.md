@@ -1,15 +1,23 @@
 # Score book remediation — audit, repairs, and the markings feature
 
-Status: **STAGE 1 BUILT** (2026-08-25) · Stages 2-5 READY TO IMPLEMENT · Backend-heavy
+Status: **STAGES 1-3 BUILT** (2026-08-25) · Stages 4-5 + §7 READY TO IMPLEMENT · Backend-heavy
 (`backend/roster/infrastructure/`, `backend/roster/score_package_*.py`), moderate frontend
 surface (cockpit panel + annotation toolbar), one new serve-time path.
 
-Stage 1 shipped D1-D8 plus the concurrency guard, with 21 new tests (155 green across
-`test_score_package_cockpit`, `test_score_protection`, `test_score_source_numbering`), ruff +
-mypy clean, frontend typecheck + lint clean. Migration `roster/0044_score_package_build_started_at`
-**still needs applying** (`make migrate`); the host has no Postgres, so it was validated on the
-sqlite test DB. The two NEEDS RENDER CHECK items below are still outstanding — they need a
-container.
+Stage 1 shipped D1-D8 plus the concurrency guard. **Re-audited against the source on 2026-08-25**
+(not against this file's own claims): every one of D1-D8 is present in the code as described,
+and its 155 tests are green. Stage 1's code and migration 0044 are committed (`421c5d2`).
+
+Stages 2-3 then shipped the page map and the conductor's markings in the book: 40 new tests in
+`roster.test_score_markings` (195 green across the four score suites, 691 across `roster` +
+`archive`), ruff + mypy clean, frontend typecheck + build clean.
+
+**Two migrations need applying** (`make migrate`) — `0044_score_package_build_started_at` and
+`0047_scorepackage_include_markings_scorepackage_page_map`. The host has no Postgres, so both
+were validated on the sqlite test DB only.
+
+**Still outstanding, and it needs a container:** every NEEDS RENDER CHECK item below, now
+including the markings overlay itself. Nothing here has been through a real WeasyPrint render.
 
 Audited artifact: the concert score-book generator ("książka nutowa") and its Mass variant —
 the whole chain `builder → layout → config → readiness → service → views → watermark →
@@ -275,8 +283,10 @@ this changes only the request-time path, which is exactly where the lie is.
 | D8 | `onError` on the generate mutation; `handleDownload` surfaces its reason | — |
 | bonus | `request_generation` takes a row lock, so two simultaneous presses cannot both dispatch | covered by the D3 lifecycle tests |
 
-**Outstanding for Stage 1:** apply migration 0044, and confirm in the container the two
-NEEDS RENDER CHECK items (D2's knockout placement on a rotated edition, D6's Mass entry preview).
+**Outstanding for Stage 1:** confirm in the container the two NEEDS RENDER CHECK items (D2's
+knockout placement on a rotated edition, D6's Mass entry preview). The code and migration 0044 are
+committed; whether 0044 is *applied* on a given environment is a `make migrate` question, and this
+file cannot answer it.
 
 ### Also found, deliberately deferred out of Stage 1
 
@@ -290,58 +300,100 @@ NEEDS RENDER CHECK items (D2's knockout placement on a rotated edition, D6's Mas
 
 ---
 
-## 3. Stage 2 — the page map (prerequisite, no user-visible change)
+## 3. Stage 2 — the page map · **BUILT**
 
 Annotations are stored against `(edition, page_number)` in normalized 0..1 coordinates. The book
 trims pages, scales and re-centres them onto A4, and interleaves cards. The transform that maps
-one to the other (`scale`, `tx`, `ty`) is computed inside the builder and thrown away.
+one to the other was computed inside the builder and thrown away.
 
-**Persist it.** `ScorePackage.page_map` (JSON), written on every successful build:
+**Now persisted.** `ScorePackage.page_map` (JSON), written on every successful build, one row per
+page of the stored PDF, in order:
 
 ```
-[{ phys: 0, kind: "front"|"card"|"music"|"spacer", folio: 1|null,
-   item_id: "…", edition_id: "…", source_page: 3,
-   scale: 0.94, tx: 14.0, ty: 42.5 }, …]
+{ phys: 12, kind: "front"|"pad"|"spacer"|"card"|"music", folio: 7|null,
+  item: "…", edition: "…", src_page: 3, box: [x, y, w, h] }
 ```
 
-A few hundred rows for a large book. It is what makes serve-time composition possible **and**
-honest: the overlay is placed against the geometry the stored PDF actually has, not against a plan
-re-derived from data that may have moved since.
+**Deviation from the original spec, deliberate:** the row stores the *placed box* — where the
+source page landed on the sheet, in A4 points from the bottom-left — instead of `scale/tx/ty`.
+The box is what every consumer actually needs (`scale` is just `w / src_w`), and crucially it
+carries the source page's *size* implicitly, so an overlay can position a mark without reopening
+the edition PDF to measure it. `roster/score_page_map.py` owns the vocabulary and is PDF-free, so
+the service and any read path can import it without dragging in pypdf; it is also now the SSOT for
+the A4 dimensions the builder used to define itself.
+
+The map dies with the file it describes: `mark_manual_upload` and `mark_score_cleared` both empty
+it. A hand-uploaded book has different geometry, and drawing marks onto it at positions measured
+from the generated one would put ink in arbitrary places.
 
 It pays for itself beyond markings: "this book page is this piece", per-page provenance, and a
 future incremental rebuild of one changed item.
 
 ---
 
-## 4. Stage 3 — the conductor's markings in the book (`shared`, build time)
+## 4. Stage 3 — the conductor's markings in the book (`shared`, build time) · **BUILT**
 
-One toggle in the cockpit's "Struktura książki" tier: **"Wpisz moje oznaczenia w książkę"**.
+`ScorePackage.include_markings`, one pill in the cockpit's "Struktura książki" tier
+("Wpisz moje oznaczenia"). Off by default.
 
-* Rendering: one overlay document for the whole book (same trick as the numbering overlay), pages
-  merged onto the body. Coordinates come from the page map.
-* **Staleness must cover it.** `_item_signature` gains a markings fingerprint — count plus
-  `max(updated_at)` of `shared` annotations on the bound edition **within the trimmed page
-  window**. Draw a new mark and the book reads "Program zmieniony", as it should.
-* **Readiness gains an element.** Per item: 🟢 markings present and inside the bound range ·
-  🟡 some fall outside the trim (they will silently not print) · ⚪ none ·
-  **alarm** when the pinned edition is not the annotated one — pinning a different edition
-  discards every mark, and today nothing says so.
-* **Print, not screen.** Highlighter is `mixBlendMode: multiply` at 0.42 opacity; on a mono
-  printer that is grey mush over the noteheads. In the print path a highlight becomes an outline
-  or an underline, never a fill. Verify on a monochrome printout (print canon).
+* **Renderer:** `roster/infrastructure/score_markings.py`. One WeasyPrint document for the whole
+  book, and only pages that actually carry marks become sheets — a 200-page book with three marked
+  bars renders three. Strokes and geometric stamps go into a page-sized SVG in A4 points; text
+  (dynamics, note chips) is positioned HTML above it, centred by plain block layout rather than a
+  percentage transform, so nothing depends on renderer-specific transform support.
+* **Selection is the page map's job, not the query's.** The build fetches every `shared` mark on a
+  bound edition and lets the map decide what lands, because the map holds a row only for a source
+  page the book really contains. The trim window is therefore implemented once.
+* **Staleness covers it.** `_item_signature` carries a markings fingerprint and the config hash
+  carries the toggle. Only marks that *print* are in the fingerprint: a mark outside the trim
+  changes nothing about the book, so it must not flag a current book as stale. With the toggle off
+  the fingerprint is empty — drawing must not age a book that was never going to carry the drawing.
+* **Print translation** (`score_markings` docstring is the canon):
+  * A highlighter band becomes an **underline** — the same gesture, dropped by half the band width
+    and stroked as a hairline. A filled band over noteheads is grey mush on a mono printer.
+  * A **pinned** comment prints its text too, in a smaller chip. Paper has no tap target; a pin
+    that printed only a dot would say nothing.
+  * The conductor's ink prints **heavier** (×1.4) than a personal mark, so the layers stay
+    separable with no toner colours.
+* **Stamp catalogue mirrored** in `archive/annotation_stamps.py`, with a parity test that reads the
+  ids straight out of `stamps.tsx`. A symbol the editor can place but the printer cannot draw
+  prints nothing where a mark was expected.
+
+**Deviation from the original spec, deliberate:** markings are **not** a card element. They say
+nothing about the frontispiece, so they live in a sibling `markings` object on the item read model
+(`status` / `printed` / `outside_range` / `other_edition`) and can never drag the card's roll-up
+light down. And the cockpit row speaks only when something would *silently not print* —
+`wrong_edition` or `partial` — instead of showing a four-state light on every item, which is that
+row's own documented rule ("a label on every row would bury the one piece that needs the eye").
+
+**NEEDS RENDER CHECK.** Nothing below has met a real WeasyPrint: that its SVG renderer draws the
+stroked paths and the fermata's arc as expected, that the anchored text chips land centred on their
+points, and — the print-canon test — that the underline and the ×1.4 weight actually read as two
+distinct hands on a monochrome printout.
 
 ---
 
-## 5. Stage 4 — the reader's own marks at download (`personal`, serve time)
+## 5. Stage 4 — the reader's own marks at download (`personal`, serve time) · NEXT
+
+The machinery already exists and is tested: `apply_markings(pdf_bytes, page_map, marks)` takes the
+stored book and returns it with ink on it, returning the input untouched when there is nothing to
+draw. What is left is the wiring.
 
 `ProjectViewSet.score_pdf` GET gains `?marks=1`. When set, the served bytes are the stored book
 plus that user's `personal` overlay — composed **before** the licence watermark, cached under a
 key that includes the user's markings fingerprint so a new pencil mark invalidates it. Everything
 else about the path (protection decision, copy number, audit row, `mark_distributed`) is unchanged.
+Note the unwatermarked branch currently streams the file handle straight through; with `?marks=1`
+it has to read bytes and go through `_pdf_bytes_response` like the stamped branch does.
+
+An empty `page_map` (a hand-uploaded book) means no mark can be placed. The switch must not be
+offered there rather than silently doing nothing.
 
 Frontend: one switch where a singer opens or downloads the score. Default off. The switch appears
 regardless of whether the book already carries the conductor's markings — the two compose, which
-is the point.
+is the point. Three surfaces reach the binder — `NextEventHero`, `TimelineProjectCard` and the
+`project-score` full view in `DocumentViewerPage` — all through the shared `PdfViewerModal`, which
+is why this is its own stage rather than a tail on Stage 3.
 
 ---
 
@@ -392,6 +444,9 @@ was expected.
 
 ## 9. Still open
 
+* **Every NEEDS RENDER CHECK item, now three:** D2's knockout placement on a rotated edition, D6's
+  Mass entry preview, and the whole Stage 3 markings overlay (see §4). All need a container.
+* **Stage 4, Stage 5 and §7** (the palette hardening) are untouched.
 * **The cockpit's `section_effective` / `role_prefix_effective` follow the reader's language while
   the card follows the book's.** D7 fixes the artifacts; the read model still resolves under
   `Accept-Language`. Doing it properly means splitting `build_program_presentation` into a

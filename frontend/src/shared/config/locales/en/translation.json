@@ -3158,7 +3158,9 @@
         "hide_source_numbers": "Hide editions' numbers",
         "hide_source_numbers_hint": "Covers the page numbers the editions print themselves, so the book carries only its own. A scan without a text layer is left untouched.",
         "hide_source_numbers_locked": "Requires the book's own numbering.",
-        "hide_source_numbers_locked_hint": "Without its own numbering the book keeps the publisher's — otherwise the printout would have none at all."
+        "hide_source_numbers_locked_hint": "Without its own numbering the book keeps the publisher's — otherwise the printout would have none at all.",
+        "markings": "Print my markings",
+        "markings_hint": "Prints your “for the choir” layer onto the music. A highlighter becomes an underline — on a mono printout a filled band would swamp the notes. Singers' private notes stay their own."
       },
       "pages": "{{n}} pages",
       "readiness_state": {
@@ -3187,6 +3189,8 @@
         "no_pdf_short": "no score",
         "over_copies": "The cast ({{cast}}) exceeds the licensed copies owned ({{copies}}). Make sure you have enough copies or an extra licence.",
         "over_copies_short": "short of copies",
+        "markings_outside_range": "Some of your markings ({{n}}) fall outside the bound pages and will not print.",
+        "markings_wrong_edition": "Your markings ({{n}}) are on a different edition of this piece. The bound edition carries none, so the book will come out without them.",
         "full_range": "all",
         "range": "p. {{from}}–{{to}}",
         "edition": "Edition",

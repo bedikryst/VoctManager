@@ -196,6 +196,26 @@ export function ScorePackageItemRow({
     "za mało egzemplarzy",
   );
 
+  // Markings speak up only when something of the conductor's would silently NOT
+  // print. A piece with no marks, or with all of them landing, needs no line —
+  // this row deliberately stays quiet unless it wants the eye.
+  // The count rides in parentheses, never in a declined slot: Polish would need
+  // three different endings for it and i18next would try to pluralize the key.
+  const markingsWarning =
+    item.markings.status === "wrong_edition"
+      ? t(
+          "projects.score_package.item.markings_wrong_edition",
+          "Twoje oznaczenia ({{n}}) są na innym wydaniu tego utworu. Oprawione wydanie nie ma żadnych, więc książka wyjdzie bez nich.",
+          { n: item.markings.other_edition },
+        )
+      : item.markings.status === "partial"
+        ? t(
+            "projects.score_package.item.markings_outside_range",
+            "Część Twoich oznaczeń ({{n}}) wypada poza oprawionymi stronami — nie trafi do druku.",
+            { n: item.markings.outside_range },
+          )
+        : null;
+
   return (
     <div className="rounded-nested border border-hairline-strong bg-ethereal-alabaster/40">
       {/* Header — what binds, then how confident the card data is. Nothing else:
@@ -294,8 +314,19 @@ export function ScorePackageItemRow({
           turned the open row into three cards inside a card. */}
       {open && (
         <div className="flex flex-col divide-y divide-hairline border-t border-hairline-strong">
-          {(!item.has_pdf || item.copies_shortfall || needsArchiveFix) && (
+          {(!item.has_pdf || item.copies_shortfall || needsArchiveFix || markingsWarning) && (
             <div className="flex flex-col gap-2 px-3.5 py-3">
+              {markingsWarning && (
+                <Caption color="muted" className="flex items-start gap-1.5">
+                  <PencilLine
+                    size={13}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-ethereal-gold"
+                  />
+                  {markingsWarning}
+                </Caption>
+              )}
+
               {!item.has_pdf && (
                 <Caption color="muted" className="flex items-start gap-1.5">
                   <FileWarning size={13} aria-hidden="true" className="mt-0.5 shrink-0" />

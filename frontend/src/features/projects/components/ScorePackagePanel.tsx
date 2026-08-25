@@ -627,6 +627,15 @@ export function ScorePackagePanel({
                         }
                         onChange={(v) => setField("hide_source_page_numbers", v)}
                       />
+                      <TogglePill
+                        subtle
+                        label={t(
+                          "projects.score_package.structure.markings",
+                          "Wpisz moje oznaczenia",
+                        )}
+                        active={config.include_markings}
+                        onChange={(v) => setField("include_markings", v)}
+                      />
                     </div>
                     <Caption color="muted">
                       {config.include_page_numbers
@@ -638,6 +647,12 @@ export function ScorePackagePanel({
                             "projects.score_package.structure.hide_source_numbers_locked_hint",
                             "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych.",
                           )}
+                    </Caption>
+                    <Caption color="muted">
+                      {t(
+                        "projects.score_package.structure.markings_hint",
+                        "Drukuje Twoje oznaczenia z warstwy „dla chóru” na nutach. Zakreślacz wychodzi jako podkreślenie — na wydruku czarno-białym wypełnienie zalałoby nuty. Prywatne notatki śpiewaków zostają ich własne.",
+                      )}
                     </Caption>
                   </div>
                 </div>

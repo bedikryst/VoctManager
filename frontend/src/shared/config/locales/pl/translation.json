@@ -3176,7 +3176,9 @@
         "hide_source_numbers": "Ukryj numery wydań",
         "hide_source_numbers_hint": "Zakrywa numerację, którą wydania drukują same, żeby w książce została tylko jej własna. Skan bez warstwy tekstowej zostaje bez zmian.",
         "hide_source_numbers_locked": "Wymaga własnej numeracji książki.",
-        "hide_source_numbers_locked_hint": "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych."
+        "hide_source_numbers_locked_hint": "Bez własnej numeracji książka zostawia numery wydawcy — inaczej wydruk nie miałby żadnych.",
+        "markings": "Wpisz moje oznaczenia",
+        "markings_hint": "Drukuje Twoje oznaczenia z warstwy „dla chóru” na nutach. Zakreślacz wychodzi jako podkreślenie — na czarno-białym wydruku wypełnienie zalałoby nuty. Prywatne notatki śpiewaków zostają ich własne."
       },
       "pages": "{{n}} stron",
       "readiness_state": {
@@ -3205,6 +3207,8 @@
         "no_pdf_short": "brak nut",
         "over_copies": "Obsada ({{cast}}) przewyższa liczbę posiadanych egzemplarzy licencji ({{copies}}). Upewnij się, że masz dość kopii lub dodatkową licencję.",
         "over_copies_short": "za mało egzemplarzy",
+        "markings_outside_range": "Część Twoich oznaczeń ({{n}}) wypada poza oprawionymi stronami — nie trafi do druku.",
+        "markings_wrong_edition": "Twoje oznaczenia ({{n}}) są na innym wydaniu tego utworu. Oprawione wydanie nie ma żadnych, więc książka wyjdzie bez nich.",
         "full_range": "całość",
         "range": "s. {{from}}–{{to}}",
         "edition": "Wydanie",

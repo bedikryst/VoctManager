@@ -10,9 +10,11 @@
     (one numbering): on a numbered book the strip the folio occupies is kept free
     of source content, and each edition's own printed page numbers are covered
     where they can be proven (see score_source_numbering) — so a page never shows
-    the book's folio and the publisher's stacked together. All deterministic
-    WeasyPrint + pypdf — no AI, and nothing drawn over the engraving but a
-    publisher's folio.
+    the book's folio and the publisher's stacked together. Phase 5 (page map):
+    every emitted page is recorded with what it is and, for music, the box the
+    source page was placed into, so a position on an edition can still be found
+    in the finished book (see score_page_map). All deterministic WeasyPrint +
+    pypdf — no AI, and nothing drawn over the engraving but a publisher's folio.
 @architecture Enterprise SaaS 2026
 @module roster/infrastructure/score_package_builder
 """
@@ -31,13 +33,18 @@ from django.template.loader import render_to_string
 from django.utils import translation
 from pypdf import PdfReader, PdfWriter, Transformation
 
-from archive.models import Piece, ScoreEdition
+from archive.models import SHARED_ANNOTATION_LAYER, Annotation, Piece, ScoreEdition
 from roster.domain.liturgy import ProgramItemPresentation, build_program_presentation
 from roster.infrastructure.document_generator import (
     DocumentRenderDependencyError,
     _render_pdf,
 )
 from roster.infrastructure.print_fonts import BOOK_FONT_STACK, font_face_css
+from roster.infrastructure.score_markings import (
+    marks_from_annotations,
+    merge_overlay,
+    plan_markings,
+)
 from roster.infrastructure.score_source_numbering import FolioBox, detect_source_folios
 from roster.models import ProgramItem, Project, ScorePackage
 from roster.score_package_config import (
@@ -47,16 +54,26 @@ from roster.score_package_config import (
     resolve_card_config,
     resolve_item_edition,
     resolve_item_translation,
+    resolve_page_window,
     resolve_source_numbering,
     select_program_note,
 )
 from roster.score_package_layout import BodyPage, plan_body_layout
+from roster.score_page_map import (
+    A4_HEIGHT_PT,
+    A4_WIDTH_PT,
+    KIND_CARD,
+    KIND_FRONT,
+    KIND_MUSIC,
+    KIND_PAD,
+    KIND_SPACER,
+    PageKind,
+    PageMapRow,
+    PlacedBox,
+)
 
 logger = logging.getLogger(__name__)
 
-# A4 in PDF points (1pt = 1/72"). 210mm x 297mm.
-A4_WIDTH_PT: float = 595.2756
-A4_HEIGHT_PT: float = 841.8898
 # Safe inner margin when fitting a source page onto the A4 sheet, so nothing is
 # clipped at the print edge. The engraving keeps its own musical margins inside this.
 BODY_MARGIN_PT: float = 14.0
@@ -135,6 +152,8 @@ class BuildResult:
     page_count: int
     bound_pieces: int
     skipped_titles: list[str] = field(default_factory=list)
+    # One row per page of ``pdf_bytes``, in order — see roster.score_page_map.
+    page_map: list[PageMapRow] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -254,13 +273,9 @@ def _read_edition_pdf(edition: ScoreEdition) -> PdfReader:
 
 
 def _page_window(total: int, start: int | None, end: int | None) -> tuple[int, int]:
-    """Clamp a 1-based [start, end] request to a valid window of a `total`-page
-    source, returning (0-based start index, page count). Blank bounds mean the
-    natural edge (page 1 / last page)."""
-    first = start or 1
-    last = end or total
-    first = max(1, min(first, total))
-    last = max(first, min(last, total))
+    """The item's trim window as (0-based start index, page count) — the shape
+    pypdf slicing wants, over the bounds resolved by the config SSOT."""
+    first, last = resolve_page_window(total, start, end)
     return first - 1, last - first + 1
 
 
@@ -566,7 +581,7 @@ def _place_on_a4(
     *,
     bottom_reserve_pt: float = 0.0,
     masks: list[FolioBox] | None = None,
-) -> None:
+) -> PlacedBox | None:
     """
     Add one body page as a fresh A4 sheet with the source centred on it.
 
@@ -582,6 +597,11 @@ def _place_on_a4(
     music off the top to buy that millimetre would be the worse trade.
     ``masks`` are boxes in the SOURCE page's coordinates (the edition's own page
     numbers) to knock out once the page is placed.
+
+    Returns the box the source page actually occupies on the sheet. Everything
+    that later wants to draw at a musical position — a marking overlay, a future
+    per-page provenance stamp — needs exactly that rectangle and nothing else:
+    a spot at (u, v) of the source page lands at (x + u·w, y + (1-v)·h).
     """
     # Bake any /Rotate into the content so the visual orientation is preserved
     # before we read the box and transform it. Pages arriving from
@@ -594,9 +614,10 @@ def _place_on_a4(
     src_w = float(box.width)
     src_h = float(box.height)
     if src_w <= 0 or src_h <= 0:
-        # Degenerate page — drop a blank A4 rather than crash.
+        # Degenerate page — drop a blank A4 rather than crash. It carries no
+        # source geometry, so nothing may be positioned against it either.
         writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
-        return
+        return None
 
     # The box the source is fitted into: the safe margin on three sides, plus any
     # reserved folio strip at the bottom.
@@ -624,6 +645,15 @@ def _place_on_a4(
             )
             for mask in masks
         ])
+    # The placed box in destination points. Derived from the same box the
+    # transform was built from, so it survives a mediabox whose origin is not
+    # at (0,0) exactly as the merge does.
+    return (
+        float(box.left) * scale + tx,
+        float(box.bottom) * scale + ty,
+        src_w * scale,
+        src_h * scale,
+    )
 
 
 def _append_pages(writer: PdfWriter, blob: bytes) -> int:
@@ -652,6 +682,40 @@ def _add_outline(writer: PdfWriter, package: ScorePackage, body_start: int, plan
         if planned.is_placeholder:
             label = f"{label} (brak nut)"
         writer.add_outline_item(label, absolute_index)
+
+
+def _stamp_shared_markings(
+    writer: PdfWriter,
+    page_map: list[PageMapRow],
+    plan: list[PlannedItem],
+    project: Project,
+) -> None:
+    """Print the conductor's ``shared`` markings onto the assembled body.
+
+    Every shared mark on a bound edition is fetched; the page map then decides
+    what actually lands, since it holds a row only for a source page the book
+    really contains. That is deliberate — the trim window lives in one place and
+    the query does not get to re-implement it.
+    """
+    edition_ids = {p.edition.pk for p in plan if p.edition is not None}
+    if not edition_ids:
+        return
+    annotations = (
+        Annotation.objects
+        .filter(
+            edition_id__in=edition_ids,
+            layer_name=SHARED_ANNOTATION_LAYER,
+            is_deleted=False,
+        )
+        .order_by("created_at")
+    )
+    planned = plan_markings(page_map, marks_from_annotations(annotations))
+    if not planned:
+        return
+    merged = merge_overlay(writer, planned)
+    logger.info(
+        "score_package.markings_printed project=%s pages=%s", project.pk, merged
+    )
 
 
 def build_score_package(project: Project, package: ScorePackage) -> BuildResult:
@@ -778,16 +842,29 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
             texts_bytes = _render_cards(contexts, section_header=TEXTS_SECTION_HEADER)
 
     writer = PdfWriter()
+    # The page map is recorded as pages are emitted, never re-derived afterwards:
+    # it must describe THIS pdf, and a second pass over live data could describe a
+    # different one. See roster.score_page_map.
+    page_map: list[PageMapRow] = []
+
+    def _map(kind: PageKind, **fields: object) -> None:
+        row = PageMapRow(phys=len(page_map), kind=kind)
+        row.update(fields)  # type: ignore[typeddict-item]
+        page_map.append(row)
+
     front_count = 0
     for blob in (front_bytes, texts_bytes):
         if blob is not None:
             front_count += _append_pages(writer, blob)
+    for _ in range(front_count):
+        _map(KIND_FRONT)
 
     # In duplex mode the music body must open on a recto; pad the front matter to an
     # even physical page count so body page 1 is a right-hand page.
     front_pad = (front_count % 2) if duplex else 0
     for _ in range(front_pad):
         writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
+        _map(KIND_PAD)
     body_start = front_count + front_pad
 
     # 4) Music body — optional recto-start blank, then card/placeholder (verbatim
@@ -797,19 +874,40 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
     #    be overprinted by (or clipped through) an edition's own furniture.
     bottom_reserve = FOLIO_RESERVE_PT if package.include_page_numbers else 0.0
     body_count = 0
+
+    def _folio_at(body_index: int) -> int | None:
+        """The printed folio the planner assigned to this body page."""
+        if 0 <= body_index < len(layout.pages):
+            return layout.pages[body_index].folio
+        return None
+
     for planned in plan:
+        item_id = str(planned.item.pk)
         if planned.leading_blank:
             writer.add_blank_page(width=A4_WIDTH_PT, height=A4_HEIGHT_PT)
+            _map(KIND_SPACER, folio=None, item=item_id)
             body_count += 1
         if planned.card_bytes is not None:
-            body_count += _append_pages(writer, planned.card_bytes)
+            for _ in range(_append_pages(writer, planned.card_bytes)):
+                _map(KIND_CARD, folio=_folio_at(body_count), item=item_id)
+                body_count += 1
         if planned.reader is not None:
             end = planned.start_index + planned.bound_page_count
             for offset, source_page in enumerate(planned.reader.pages[planned.start_index:end]):
-                _place_on_a4(
+                placed = _place_on_a4(
                     writer, source_page, fit=package.normalize_to_a4,
                     bottom_reserve_pt=bottom_reserve,
                     masks=planned.source_masks.get(planned.start_index + offset),
+                )
+                _map(
+                    KIND_MUSIC,
+                    folio=_folio_at(body_count),
+                    item=item_id,
+                    edition=str(planned.edition.pk) if planned.edition else None,
+                    # 1-based within the edition, so it lines up with what the
+                    # annotation editor stores as ``page_number``.
+                    src_page=planned.start_index + offset + 1,
+                    box=list(placed) if placed else None,
                 )
                 body_count += 1
 
@@ -825,6 +923,14 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
         for offset, overlay_page in enumerate(overlay_pages[:body_count]):
             writer.pages[body_start + offset].merge_page(overlay_page)
 
+    # 5b) The conductor's markings for the choir, drawn onto the music they were
+    #     made on. Only the 'shared' layer: it is the one addressed to everyone
+    #     holding this book. A mark on a page the programme trimmed away has no
+    #     row in the page map and therefore nowhere to land — the readiness
+    #     engine is what tells the conductor, so it is never a silent loss.
+    if package.include_markings:
+        _stamp_shared_markings(writer, page_map, plan, project)
+
     # 6) Navigable outline (anchors at physical offsets, past any front pad).
     if package.include_bookmarks:
         _add_outline(writer, package, body_start, plan)
@@ -837,6 +943,7 @@ def _assemble_book(project: Project, package: ScorePackage) -> BuildResult:
         page_count=body_start + body_count,
         bound_pieces=sum(1 for p in plan if not p.is_placeholder),
         skipped_titles=[p.title for p in plan if p.is_placeholder],
+        page_map=page_map,
     )
 
 

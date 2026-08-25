@@ -56,6 +56,11 @@ from roster.score_package_config import (
     sanitize_card_elements,
     suggested_page_start,
 )
+from roster.score_package_markings import (
+    ItemMarkings,
+    compute_program_markings,
+    markings_status,
+)
 from roster.score_package_readiness import compute_program_readiness
 
 logger = logging.getLogger(__name__)
@@ -73,6 +78,7 @@ CONFIGURABLE_FIELDS: frozenset[str] = frozenset({
     "include_cards",
     "card_default_elements",
     "translation_language",
+    "include_markings",
 })
 
 _IN_FLIGHT_STATUSES = frozenset({ScorePackage.Status.QUEUED, ScorePackage.Status.BUILDING})
@@ -161,7 +167,11 @@ class ScorePackageService:
         )
 
     @staticmethod
-    def _item_signature(item: ProgramItem, package: ScorePackage) -> dict[str, Any]:
+    def _item_signature(
+        item: ProgramItem,
+        package: ScorePackage,
+        markings_fingerprint: str,
+    ) -> dict[str, Any]:
         """Everything about one program item that affects the assembled output."""
         piece = item.piece
         edition = resolve_item_edition(item)
@@ -190,6 +200,9 @@ class ScorePackageService:
             "performers": item.performers,
             "hide_source_numbers": item.hide_source_page_numbers,
             "content_ts": max(timestamps).isoformat(),
+            # Empty while the book does not print markings — drawing on a score
+            # must not age a book that was never going to carry the drawing.
+            "markings": markings_fingerprint,
         }
 
     @staticmethod
@@ -197,6 +210,7 @@ class ScorePackageService:
         project: Project,
         package: ScorePackage,
         items: list[ProgramItem] | None = None,
+        markings: dict[Any, ItemMarkings] | None = None,
     ) -> str:
         """
         Stable SHA-256 over everything that affects the output: the ordered
@@ -204,13 +218,23 @@ class ScorePackageService:
         overrides) plus the layout settings and the title-page facts. Reads the DB
         only (uses the edition's stored ``sha256``/``page_count``), never a PDF.
 
-        ``items`` may be passed to reuse an already-fetched, prefetched queryset
-        (the cockpit read does this so the programme is loaded once, not twice).
+        ``items`` and ``markings`` may be passed to reuse work the caller has
+        already done (the cockpit read does this so the programme and the
+        markings census are each loaded once, not twice).
         """
         if items is None:
             items = list(ScorePackageService._ordered_items(project))
+        # One census for the whole programme; skipped entirely when the book does
+        # not print markings, so an unused feature costs no query.
+        if markings is None:
+            markings = (
+                compute_program_markings(items) if package.include_markings else {}
+            )
         repertoire = [
-            ScorePackageService._item_signature(item, package)
+            ScorePackageService._item_signature(
+                item, package,
+                markings[item.pk].fingerprint() if item.pk in markings else "",
+            )
             for item in items
         ]
         payload = {
@@ -227,6 +251,7 @@ class ScorePackageService:
                 "cards": package.include_cards,
                 "card_els": sorted(package.card_default_elements or []),
                 "lang": package.translation_language,
+                "markings": package.include_markings,
             },
             "project_title": project.title,
             "date": project.date_time.isoformat() if project.date_time else None,
@@ -268,6 +293,7 @@ class ScorePackageService:
         readiness: dict[str, Any],
         cast_size: int,
         presentation: ProgramItemPresentation,
+        markings: ItemMarkings,
     ) -> dict[str, Any]:
         """Cockpit read model for one program item.
 
@@ -340,6 +366,15 @@ class ScorePackageService:
             "hide_source_page_numbers": item.hide_source_page_numbers,
             "hide_source_page_numbers_effective": resolve_source_numbering(item, package),
             "readiness": readiness,
+            # The conductor's own markings on this piece. Deliberately NOT a card
+            # element: it says nothing about the frontispiece, and it must never
+            # drag the card's roll-up light down with it.
+            "markings": {
+                "status": markings_status(markings, package.include_markings),
+                "printed": markings.inside,
+                "outside_range": markings.outside,
+                "other_edition": markings.elsewhere,
+            },
         }
 
     @staticmethod
@@ -348,14 +383,18 @@ class ScorePackageService:
         per-item build rows with their readiness."""
         package = ScorePackageService.get_or_create(project)
         items = list(ScorePackageService._ordered_items(project))
-        live_hash = ScorePackageService.compute_source_hash(project, package, items=items)
+        markings = compute_program_markings(items) if package.include_markings else {}
+        live_hash = ScorePackageService.compute_source_hash(
+            project, package, items=items, markings=markings
+        )
         readiness = compute_program_readiness(project, items, package)
         # Ensemble size drives the "more singers than licensed copies" warning.
         cast_size = project.participations.filter(is_deleted=False).count()
         presentations = build_program_presentation(items)
         serialized_items = [
             ScorePackageService._serialize_item(
-                item, package, readiness[item.pk], cast_size, presentation
+                item, package, readiness[item.pk], cast_size, presentation,
+                markings.get(item.pk, ItemMarkings()),
             )
             for item, presentation in zip(items, presentations, strict=True)
         ]
@@ -408,6 +447,7 @@ class ScorePackageService:
                 "include_cards": package.include_cards,
                 "card_default_elements": list(package.card_default_elements or []),
                 "translation_language": package.translation_language,
+                "include_markings": package.include_markings,
             },
             "items": serialized_items,
         }
@@ -745,6 +785,7 @@ class ScorePackageService:
         package.status = ScorePackage.Status.READY
         package.source_hash = source_hash
         package.page_count = result.page_count
+        package.page_map = result.page_map
         package.generated_at = timezone.now()
         # A fresh build is a new version that no singer has yet — stamp it and reset
         # the distribution flag, so the "already in their folders" warning re-arms
@@ -755,7 +796,7 @@ class ScorePackageService:
         package.error = ""
         package.save(
             update_fields=[
-                "status", "source_hash", "page_count", "generated_at",
+                "status", "source_hash", "page_count", "page_map", "generated_at",
                 "build_version", "distributed_at", "is_manual_upload", "error", "updated_at",
             ]
         )
@@ -792,17 +833,22 @@ class ScorePackageService:
         the book reads READY + manual, never as a stale generated version. Clears
         the source hash (a hand file is never 'stale' against the repertoire) and
         resets distribution (a new file the singers do not have yet).
+
+        The page map goes too: it describes the geometry of a file that no longer
+        exists, and keeping it would let markings be drawn onto a hand-made book
+        at positions measured from the generated one.
         """
         package = ScorePackageService.get_or_create(project)
         package.status = ScorePackage.Status.READY
         package.is_manual_upload = True
         package.source_hash = ""
         package.page_count = None
+        package.page_map = []
         package.generated_at = timezone.now()
         package.distributed_at = None
         package.error = ""
         package.save(update_fields=[
-            "status", "is_manual_upload", "source_hash", "page_count",
+            "status", "is_manual_upload", "source_hash", "page_count", "page_map",
             "generated_at", "distributed_at", "error", "updated_at",
         ])
 
@@ -815,11 +861,12 @@ class ScorePackageService:
         package.is_manual_upload = False
         package.source_hash = ""
         package.page_count = None
+        package.page_map = []
         package.generated_at = None
         package.distributed_at = None
         package.error = ""
         package.save(update_fields=[
-            "status", "is_manual_upload", "source_hash", "page_count",
+            "status", "is_manual_upload", "source_hash", "page_count", "page_map",
             "generated_at", "distributed_at", "error", "updated_at",
         ])
 
