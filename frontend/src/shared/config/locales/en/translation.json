@@ -3075,6 +3075,28 @@
       "sync_now": "Sync now",
       "syncing": "Syncing…"
     },
+    "prep": {
+      "eyebrow": "With no signal",
+      "title": "Get ready for rehearsal",
+      "title_ready": "It is all on your phone",
+      "scope": "{{concerts}} upcoming · {{pieces}} pieces · {{tracks}} recordings · scores with markings",
+      "explain": "What exactly gets saved?",
+      "action": "Save offline",
+      "refresh": "Refresh",
+      "busy": "Saving… {{done}}/{{total}}",
+      "ready": "All set. You can go out of range.",
+      "partial": "Some materials downloaded — check your connection and try again.",
+      "sheet_title": "The songbook with no signal",
+      "sheet_subtitle": "What lands on your phone, and what happens to your notes",
+      "fact_assets_title": "Scores and every voice",
+      "fact_assets_body": "From each upcoming concert: the scores plus recordings of every voice — not only yours, because the mixer and the “without my voice” mode need the whole choir.",
+      "fact_marks_title": "The conductor's markings",
+      "fact_marks_body": "They travel with the scores, so in a church with no signal you see them exactly as you do at home. Anything he adds later appears on your next connection.",
+      "fact_private_title": "Your own notes",
+      "fact_private_body": "You can write on the scores with no connection — they are kept on your device and send themselves once the network returns, even after you close the app. Only you can see them; not the conductor, not anyone else.",
+      "fact_space_title": "It takes room",
+      "fact_space_body": "Recordings run to hundreds of megabytes. Only concerts still ahead of you are saved; finished ones can be removed in the Songbook, at the concert heading."
+    },
     "download": {
       "action": "Save offline",
       "empty": "No materials to save offline.",

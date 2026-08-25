@@ -17,12 +17,10 @@ import { useArtistPreview } from "@/app/providers/ArtistPreviewProvider";
 import { INERT_SURFACE } from "@/shared/ui/primitives/inertSurface";
 import { useOfflineStore } from "@/app/store/useOfflineStore";
 import {
-  downloadProjectForOffline,
   isServiceWorkerSupported,
   removeProjectFromOffline,
 } from "@/shared/offline/offlineClient";
-import { prefetchEditionAnnotations } from "@/features/annotations";
-import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
+import { downloadGroupWithMarks } from "../lib/offlinePrep";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface OfflineDownloadControlProps {
@@ -46,16 +44,7 @@ export const OfflineDownloadControl = ({
 
   const handleDownload = useCallback(async () => {
     try {
-      const outcome = await downloadProjectForOffline(group);
-      // The marks travel with the music: a downloaded score with the conductor's
-      // cues missing is the failure this button exists to prevent. Warmed after
-      // the assets, so the bytes that matter most are cached first.
-      await prefetchEditionAnnotations(
-        queryClient,
-        group.program.flatMap((item) =>
-          getPiecePdfLinks(item.piece).slice(0, 1).map((pdf) => pdf.id),
-        ),
-      );
+      const outcome = await downloadGroupWithMarks(group, queryClient);
       if (outcome.cached === 0) {
         toast.error(
           t("offline.download.empty", "Brak materiałów do pobrania na offline."),

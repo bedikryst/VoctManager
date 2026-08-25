@@ -3093,6 +3093,28 @@
       "sync_now": "Synchronizuj teraz",
       "syncing": "Synchronizacja…"
     },
+    "prep": {
+      "eyebrow": "Bez internetu",
+      "title": "Przygotuj się na próbę",
+      "title_ready": "Masz wszystko na swoim telefonie",
+      "scope": "{{concerts}} nadchodzące · {{pieces}} utworów · {{tracks}} nagrań · nuty z oznaczeniami",
+      "explain": "Co dokładnie się pobierze?",
+      "action": "Pobierz na offline",
+      "refresh": "Odśwież",
+      "busy": "Pobieram… {{done}}/{{total}}",
+      "ready": "Wszystko gotowe. Możesz wyjść poza zasięg.",
+      "partial": "Pobrano część materiałów — sprawdź połączenie i spróbuj ponownie.",
+      "sheet_title": "Śpiewnik bez internetu",
+      "sheet_subtitle": "Co ląduje na telefonie i co się dzieje z Twoimi notatkami",
+      "fact_assets_title": "Nuty i wszystkie głosy",
+      "fact_assets_body": "Z każdego nadchodzącego koncertu: partytury oraz nagrania wszystkich głosów — nie tylko Twojego, bo mikser i tryb „bez mojego głosu” potrzebują całego chóru.",
+      "fact_marks_title": "Oznaczenia dyrygenta",
+      "fact_marks_body": "Pobierają się razem z nutami, więc w kościele bez zasięgu widzisz je tak samo jak w domu. Nowe dopiski dyrygenta pojawią się przy najbliższym połączeniu.",
+      "fact_private_title": "Twoje własne notatki",
+      "fact_private_body": "Możesz pisać na nutach bez internetu — zapisują się na urządzeniu i wyślą się same, gdy sieć wróci, nawet po zamknięciu aplikacji. Widzisz je wyłącznie Ty; nie widzi ich dyrygent ani nikt inny.",
+      "fact_space_title": "Zajmuje miejsce",
+      "fact_space_body": "Nagrania to setki megabajtów. Pobierane są tylko koncerty, które masz jeszcze przed sobą; zakończone możesz usunąć w Śpiewniku, przy nagłówku koncertu."
+    },
     "download": {
       "action": "Pobierz na offline",
       "empty": "Brak materiałów do pobrania na offline.",

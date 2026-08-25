@@ -22,6 +22,7 @@ import { formatLocalizedDate } from "@/shared/lib/time/intl";
 
 import { NextEventHero } from "@/features/schedule/components/NextEventHero";
 import { MyAttendancePanel } from "@/features/schedule/components/MyAttendancePanel";
+import { OfflineReadyCard } from "@/features/materials/components/OfflineReadyCard";
 
 import { GoalConcertCard } from "./components/GoalConcertCard";
 import { ArtistQuickTools } from "./components/ArtistQuickTools";
@@ -124,6 +125,10 @@ export default function ArtistDashboard(): React.JSX.Element {
         {attendanceStats.rate !== null && (
           <MyAttendancePanel stats={attendanceStats} />
         )}
+
+        {/* Below the "what now" block and above the toolkit: preparing for no
+            signal is a thing you do BEFORE leaving, not a tool you reach for. */}
+        <OfflineReadyCard />
 
         <ArtistQuickTools />
       </div>
