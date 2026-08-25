@@ -4102,7 +4102,7 @@
       "leave_title": "The cast doesn't know yet",
       "leave_desc_one": "{{count}} change is waiting in the announcement queue. It is saved in full — only the message to the cast is missing.",
       "leave_desc_other": "{{count}} changes are waiting in the announcement queue. They are saved in full — only the message to the cast is missing.",
-      "leave_review": "Review and send",
+      "leave_review": "Review changes",
       "leave_later": "Later"
     },
     "timezone_field": {

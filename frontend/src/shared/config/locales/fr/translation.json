@@ -4103,7 +4103,7 @@
       "leave_title": "Les choristes ne le savent pas encore",
       "leave_desc_one": "{{count}} modification attend dans la file d'annonces. Elle est enregistrée — seul le message à la distribution manque.",
       "leave_desc_other": "{{count}} modifications attendent dans la file d'annonces. Elles sont enregistrées — seul le message à la distribution manque.",
-      "leave_review": "Relire et envoyer",
+      "leave_review": "Relire les modifications",
       "leave_later": "Plus tard"
     },
     "timezone_field": {

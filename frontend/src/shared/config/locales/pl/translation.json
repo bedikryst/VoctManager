@@ -4129,7 +4129,7 @@
       "leave_desc_one": "{{count}} zmiana czeka w kolejce ogłoszeń. Zapisana jest w komplecie — brakuje tylko wiadomości do obsady.",
       "leave_desc_few": "{{count}} zmiany czekają w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
       "leave_desc_many": "{{count}} zmian czeka w kolejce ogłoszeń. Zapisane są w komplecie — brakuje tylko wiadomości do obsady.",
-      "leave_review": "Przejrzyj i wyślij",
+      "leave_review": "Przejrzyj zmiany",
       "leave_later": "Później"
     },
     "timezone_field": {
