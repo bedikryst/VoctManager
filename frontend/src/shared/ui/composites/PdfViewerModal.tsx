@@ -3,15 +3,15 @@
  * @description Full-bleed dialog shell wrapping the headless PdfViewer primitive.
  * Owns Radix Dialog semantics (focus trap, overlay, ARIA, exit animations) but
  * spends no vertical space on chrome: it fills the viewport edge-to-edge and
- * floats only a subtle title label and a round close button — styled to match
- * the viewer's utility pill — so the document gets the whole screen. The "Open
- * full view" link to the deep-linkable DocumentViewerPage rides alongside close
- * when callers provide a typed docType + docId.
+ * floats only a self-retiring title label and a round close button — styled to
+ * match the viewer's utility pill — so the document gets the whole screen. The
+ * "Open full view" link to the deep-linkable DocumentViewerPage rides alongside
+ * close when callers provide a typed docType + docId.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewerModal
  */
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, X } from "lucide-react";
@@ -40,6 +40,13 @@ type CloseWatcherHandle = {
 type CloseWatcherWindow = Window & {
   CloseWatcher?: new () => CloseWatcherHandle;
 };
+
+/**
+ * How long the title label stays on screen. It answers "which document is
+ * this?" on open and then retires — the top edge belongs to the viewer's own
+ * tools (annotation bar on the left, utility pill on the right).
+ */
+const TITLE_DWELL_MS = 4000;
 
 export interface PdfViewerModalProps {
   isOpen: boolean;
@@ -99,10 +106,19 @@ export const PdfViewerModal = ({
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [isTitleShown, setIsTitleShown] = useState(true);
 
   const handleFullViewClick = useCallback(() => {
     onClose();
   }, [onClose]);
+
+  // Re-announce whenever a different document is put on the stand.
+  useEffect(() => {
+    if (!isOpen) return;
+    setIsTitleShown(true);
+    const timer = window.setTimeout(() => setIsTitleShown(false), TITLE_DWELL_MS);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, docKey, title]);
 
   // Android/iOS hardware-back gesture — close via CloseWatcher when available.
   useEffect(() => {
@@ -197,9 +213,19 @@ export const PdfViewerModal = ({
                 />
 
                 {/* Subtle floating title — top-centre, non-interactive, desktop
-                    only (the top edge is busy with tools on a phone). Kept in the
-                    DOM on every size so the dialog keeps its accessible name. */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden justify-center px-24 pt-[calc(env(safe-area-inset-top)+0.85rem)] sm:flex">
+                    only (the top edge is busy with tools on a phone). Fades out
+                    after its dwell so it stops covering the annotation trigger.
+                    Never unmounted (on any size, at any opacity) so the dialog
+                    keeps the accessible name Radix reads from Dialog.Title. The
+                    side padding clears the annotation bar on the left and the
+                    utility pill on the right — a tablet-width viewport is
+                    narrow enough that a centred max-w-md pill would otherwise
+                    reach under them. */}
+                <motion.div
+                  animate={{ opacity: isTitleShown ? 1 : 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden justify-center px-44 pt-[calc(env(safe-area-inset-top)+0.85rem)] sm:flex"
+                >
                   <div className="min-w-0 max-w-md rounded-full border border-white/10 bg-ethereal-ink/55 px-4 py-1.5 text-center shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
                     <Dialog.Title asChild>
                       <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
@@ -218,7 +244,7 @@ export const PdfViewerModal = ({
                       </Dialog.Description>
                     )}
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Floating close (+ optional full-view), styled to match the
                     viewer's utility pill. The reserveTopRight prop drops that
