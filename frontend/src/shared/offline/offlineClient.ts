@@ -226,6 +226,10 @@ const replayWrite = async (write: QueuedWrite): Promise<void> => {
  * failure (still offline — keep the rest); drops writes the server rejects
  * (4xx/5xx) so a poison entry can't wedge the queue forever. Reconciles the
  * affected caches afterwards.
+ *
+ * Order is load-bearing for score markings: a mark's create must reach the
+ * server before the edit or erase that follows it, and a clear must land after
+ * everything it is meant to wipe. Never parallelise this loop.
  */
 export const flushOfflineQueue = async (
   queryClient: QueryClient,
@@ -254,6 +258,10 @@ export const flushOfflineQueue = async (
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["materials", "dashboard"] }),
       queryClient.invalidateQueries({ queryKey: ["schedule", "dashboard"] }),
+      // Score markings: the queue was the page's source of truth while it held
+      // them, so the moment it lets go the server's answer has to be re-read —
+      // otherwise the marks blink out between the flush and the next refetch.
+      queryClient.invalidateQueries({ queryKey: ["annotations"] }),
     ]);
   }
 

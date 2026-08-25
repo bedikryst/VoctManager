@@ -12,4 +12,5 @@ export type {
 } from "./useScoreAnnotator";
 export { ScoreStandModal } from "./components/ScoreStandModal";
 export type { ScoreStandModalProps } from "./components/ScoreStandModal";
+export { prefetchEditionAnnotations } from "./api/annotations.prefetch";
 export type { ScoreAnnotation } from "./types/annotations.dto";

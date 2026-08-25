@@ -77,6 +77,18 @@ export interface ScoreAnnotation {
   updated_at: string;
 }
 
+/**
+ * What the score stand polls while it is open: how many marks this reader may
+ * see on the edition, and the newest touch among them. Either moving means the
+ * page is out of date — a mark drawn, edited, erased or wiped, by the conductor
+ * mid-rehearsal or by this reader on another device.
+ */
+export interface MarkFingerprint {
+  count: number;
+  /** ISO timestamp, or null when the edition carries no marks at all. */
+  latest: string | null;
+}
+
 /** Create payload — `edition` is injected by the mutation layer. */
 export interface NewAnnotation {
   edition: string;

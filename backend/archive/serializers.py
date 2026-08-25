@@ -415,11 +415,21 @@ class AnnotationSerializer(serializers.ModelSerializer):
     data. WHO may write a reserved ink is a fact about the requester, so that
     half lives beside the layer gate in ``AnnotationViewSet._assert_can_write``.
     """
+    #: Writable on create so a mark drawn WITHOUT SIGNAL owns its identity from
+    #: the first stroke: the reader can then edit or erase it while still offline,
+    #: and the replayed POST is idempotent (a reply lost on a dying connection
+    #: must not leave two copies of the same pencil line). Declared explicitly —
+    #: a ModelSerializer-built pk would carry a UniqueValidator that turns the
+    #: replay into a 400; the replay is resolved in
+    #: ``AnnotationViewSet.perform_create`` instead, which can tell "mine again"
+    #: from "somebody else's id".
+    id = serializers.UUIDField(required=False)
+
     class Meta:
         model = Annotation
         fields = ['id', 'edition', 'page_number', 'annotation_type', 'payload',
                   'color', 'layer_name', 'created_by', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
 
     def validate_color(self, value: str) -> str:
         """Only the palette's inks, in the palette's own casing. Anything else
@@ -432,6 +442,11 @@ class AnnotationSerializer(serializers.ModelSerializer):
         return normalized
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        # `id` is an offline-create affordance only. On an edit it is noise at
+        # best and a request to move a row onto another row's key at worst, so
+        # an existing mark keeps the key it was born with.
+        if self.instance is not None:
+            attrs.pop('id', None)
         # On PATCH either field may be absent; resolve the effective pair so the
         # payload is always validated against the type it will be stored under.
         touches_shape = 'payload' in attrs or 'annotation_type' in attrs

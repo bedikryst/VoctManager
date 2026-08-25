@@ -11,24 +11,40 @@
  */
 
 import api from "@/shared/api/api";
+import { ANNOTATIONS_ENDPOINT } from "../lib/pendingMarks";
 import type {
   AnnotationPatch,
+  MarkFingerprint,
   NewAnnotation,
   ScoreAnnotation,
 } from "../types/annotations.dto";
 
 export const AnnotationsService = {
   list: async (editionId: string): Promise<ScoreAnnotation[]> => {
-    const response = await api.get<ScoreAnnotation[]>(
-      "/api/archive/annotations/",
+    const response = await api.get<ScoreAnnotation[]>(ANNOTATIONS_ENDPOINT, {
+      params: { edition: editionId },
+    });
+    return response.data;
+  },
+
+  /**
+   * Count + newest touch of everything this reader may see on one edition —
+   * about sixty bytes, so an open score stand can keep up with the rehearsal
+   * without moving the whole markup every twenty seconds.
+   */
+  fingerprint: async (editionId: string): Promise<MarkFingerprint> => {
+    const response = await api.get<MarkFingerprint>(
+      `${ANNOTATIONS_ENDPOINT}fingerprint/`,
       { params: { edition: editionId } },
     );
     return response.data;
   },
 
-  create: async (payload: NewAnnotation): Promise<ScoreAnnotation> => {
+  create: async (
+    payload: NewAnnotation & { id?: string },
+  ): Promise<ScoreAnnotation> => {
     const response = await api.post<ScoreAnnotation>(
-      "/api/archive/annotations/",
+      ANNOTATIONS_ENDPOINT,
       payload,
     );
     return response.data;
@@ -39,19 +55,19 @@ export const AnnotationsService = {
     patch: AnnotationPatch,
   ): Promise<ScoreAnnotation> => {
     const response = await api.patch<ScoreAnnotation>(
-      `/api/archive/annotations/${id}/`,
+      `${ANNOTATIONS_ENDPOINT}${id}/`,
       patch,
     );
     return response.data;
   },
 
   remove: async (id: string): Promise<void> => {
-    await api.delete(`/api/archive/annotations/${id}/`);
+    await api.delete(`${ANNOTATIONS_ENDPOINT}${id}/`);
   },
 
   clear: async (editionId: string): Promise<{ deleted: number }> => {
     const response = await api.post<{ deleted: number }>(
-      "/api/archive/annotations/clear/",
+      `${ANNOTATIONS_ENDPOINT}clear/`,
       { edition: editionId },
     );
     return response.data;

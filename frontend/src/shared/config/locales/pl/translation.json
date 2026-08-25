@@ -8,6 +8,44 @@
     "ink_color": "Kolor",
     "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",
     "markup": "Adnotacje",
+    "pending_hint": "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
+    "incoming": {
+      "line_one": "Dyrygent dopisał oznaczenie · s. {{page}}",
+      "line_few": "Dyrygent dopisał {{count}} oznaczenia · s. {{page}}",
+      "line_many": "Dyrygent dopisał {{count}} oznaczeń · s. {{page}}",
+      "line_other": "Dyrygent dopisał {{count}} oznaczeń · s. {{page}}"
+    },
+    "guide": {
+      "open": "Jak działają adnotacje",
+      "personal": {
+        "title": "Twoje ślady na nutach",
+        "lede": "Krótko o tym, co się dzieje z tym, co tu zapiszesz.",
+        "private_title": "Tylko Twoje",
+        "private_body": "Wszystko, co tu napiszesz, widzisz wyłącznie Ty. Nie widzi tego dyrygent ani nikt inny w chórze.",
+        "shared_title": "Oznaczenia dyrygenta",
+        "shared_body": "Czerwone oznaczenia pochodzą od dyrygenta. Możesz je ukryć w panelu warstw, ale nie możesz ich zmienić ani skasować. Jeśli dopisze coś w trakcie próby, pojawią się same.",
+        "persist_title": "Zostają na stałe",
+        "persist_body": "Twoje ślady trzymają się utworu, nie tego jednego otwarcia. Znajdziesz je zawsze w Materiałach, przy tych samych nutach.",
+        "book_title": "W książce nutowej",
+        "book_body": "Pobierając partyturę koncertu możesz włączyć „Moje oznaczenia” — wtedy zostaną dorysowane na Twoim egzemplarzu. Egzemplarz jest składany osobno dla Ciebie; nikt inny ich tam nie zobaczy.",
+        "offline_title": "Działa bez internetu",
+        "offline_body": "Możesz pisać bez zasięgu. Zmiany czekają na urządzeniu i wyślą się same, gdy sieć wróci — nawet jeśli w międzyczasie zamkniesz aplikację."
+      },
+      "conductor": {
+        "title": "Dwie warstwy oznaczeń",
+        "lede": "Co dociera do chóru, a co zostaje przy Tobie.",
+        "shared_title": "Warstwa „Chór”",
+        "shared_body": "To, co napiszesz na tej warstwie, trafia do każdego chórzysty obsadzonego w projekcie z tym utworem. U nich jest tylko do odczytu.",
+        "private_title": "Warstwa „Prywatne”",
+        "private_body": "Twoje własne wskazówki. Nie widzi ich nikt poza Tobą. Przełącznik przy narzędziach decyduje, na którą warstwę piszesz.",
+        "theirs_title": "Ich notatki są zamknięte",
+        "theirs_body": "Ślady, które chórzyści robią na swoich nutach, są prywatne również przed Tobą — nie zobaczysz ich tutaj ani nigdzie indziej w panelu.",
+        "book_title": "Druk książki nutowej",
+        "book_body": "Oznaczenia z warstwy „Chór” drukują się w książce nutowej, gdy w kokpicie jest włączona ich obsługa. Rysunek poza oprawionym zakresem stron nie wejdzie do druku — kokpit to sygnalizuje.",
+        "offline_title": "Przygotowanie bez sieci",
+        "offline_body": "Możesz przygotować oznaczenia bez zasięgu. Czekają na urządzeniu i wysyłają się same po powrocie sieci — również po zamknięciu aplikacji."
+      }
+    },
     "open_tools": "Narzędzia adnotacji",
     "redo": "Ponów",
     "undo": "Cofnij",

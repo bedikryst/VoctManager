@@ -19,7 +19,7 @@ import uuid
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
@@ -887,7 +887,24 @@ class AnnotationViewSet(viewsets.ModelViewSet):
             layer_name=layer, edition=edition,
             color=serializer.validated_data.get('color'),
         )
-        serializer.save(created_by=request_user(self.request))
+        user = request_user(self.request)
+        # A client-chosen key means this POST may be a REPLAY: the mark was drawn
+        # with no signal, the queued write went out on reconnect, and this is
+        # either its first arrival or its second (the first reply died in the
+        # tunnel). Answer the second with the row that already exists rather than
+        # a duplicate pencil line. Soft-deleted rows count as existing — the
+        # queue replays the erase right behind this create, and resurrecting the
+        # mark here would leave the reader's page one stroke ahead of their
+        # intent. `all_objects` is what sees them.
+        supplied_id = serializer.validated_data.get('id')
+        if supplied_id is not None:
+            existing = Annotation.all_objects.filter(pk=supplied_id).first()
+            if existing is not None:
+                if existing.created_by_id != user.id:
+                    raise PermissionDenied('That annotation id is already taken.')
+                serializer.instance = existing
+                return
+        serializer.save(created_by=user)
 
     def perform_update(self, serializer) -> None:
         instance = serializer.instance
@@ -911,6 +928,52 @@ class AnnotationViewSet(viewsets.ModelViewSet):
         )
         # Inherit EnterpriseBaseModel soft-delete (sets is_deleted=True).
         instance.delete()
+
+    @action(detail=False, methods=['get'], url_path='fingerprint')
+    def fingerprint(self, request):
+        """
+        Two numbers that change whenever anything this reader may see on one
+        edition changes: how many marks there are, and the newest touch among
+        them. Query params: {edition}.
+
+        This exists so an OPEN score stand can keep up with the rehearsal it is
+        sitting in without paying for it. Polling the list itself would move the
+        whole markup — freehand strokes are hundreds of points each — over a
+        church basement's signal every twenty seconds; polling this moves about
+        sixty bytes, and the list is refetched only on the tick where the pair
+        actually moved.
+
+        The scope is `get_queryset`'s, so the fingerprint answers the question
+        "did MY view change" — another singer's private pencil marks are as
+        invisible here as they are in the list.
+
+        A soft delete leaves the row out of the count, and every write bumps
+        `updated_at`, so the pair moves on create, edit, erase and clear alike.
+        """
+        edition_id = request.query_params.get('edition')
+        if not edition_id:
+            return Response(
+                {'detail': 'edition is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            uuid.UUID(str(edition_id))
+        except (ValueError, TypeError):
+            return Response(
+                {'detail': 'edition must be a valid id.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        stats = self.get_queryset().filter(edition_id=edition_id).aggregate(
+            count=Count('id'), latest=Max('updated_at'),
+        )
+        latest = stats['latest']
+        return Response(
+            {
+                'count': stats['count'],
+                'latest': latest.isoformat() if latest else None,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=False, methods=['post'], url_path='clear')
     def clear(self, request):

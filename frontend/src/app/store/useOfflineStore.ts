@@ -8,8 +8,9 @@
  *  1. Download manifests — which concerts the chorister explicitly pulled down
  *     for offline practice, and exactly which asset URLs back them (for precise
  *     eviction). Live download progress is kept here too, but ephemerally.
- *  2. The write queue — readiness taps, attendance RSVPs and feedback reports
- *     made while offline, replayed in order once the network returns.
+ *  2. The write queue — readiness taps, attendance RSVPs, feedback reports and
+ *     score markings made while offline, replayed in order once the network
+ *     returns.
  *
  * @architecture Enterprise SaaS 2026
  * @module store/useOfflineStore
@@ -43,13 +44,17 @@ export interface OfflineDownloadProgress {
   failed: number;
 }
 
-export type OfflineWriteKind = "readiness" | "attendance" | "feedback";
+export type OfflineWriteKind =
+  | "readiness"
+  | "attendance"
+  | "feedback"
+  | "annotation";
 
 /** A deferred mutation captured while offline, replayed verbatim on reconnect. */
 export interface QueuedWrite {
   id: string;
   kind: OfflineWriteKind;
-  method: "PUT" | "PATCH" | "POST";
+  method: "PUT" | "PATCH" | "POST" | "DELETE";
   url: string;
   body: unknown;
   /** Repeated writes to the same target collapse to the latest intent. */
@@ -57,6 +62,14 @@ export interface QueuedWrite {
   /** Human label for the sync indicator ("Gotowość: Ave Maria"). */
   label: string;
   createdAt: number;
+  /**
+   * Domain-shaped echo of the write, for a feature that must SHOW the queue's
+   * effect before the server has seen it. A readiness tap can wait — the score
+   * markings cannot: a pencil line drawn with no signal has to stay on the page,
+   * and the page is redrawn from the server's answer. Opaque to the store; each
+   * feature owns the shape it writes here and the code that reads it back.
+   */
+  meta?: unknown;
 }
 
 interface OfflineState {

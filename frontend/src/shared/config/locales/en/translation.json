@@ -8,6 +8,44 @@
     "ink_color": "Ink colour",
     "ink_reserved": "Red is reserved for the conductor.",
     "markup": "Markup",
+    "pending_hint": "Saved on this device. It will send itself once you are back online.",
+    "incoming": {
+      "line_one": "The conductor added a marking · p. {{page}}",
+      "line_few": "The conductor added {{count}} markings · p. {{page}}",
+      "line_many": "The conductor added {{count}} markings · p. {{page}}",
+      "line_other": "The conductor added {{count}} markings · p. {{page}}"
+    },
+    "guide": {
+      "open": "How markings work",
+      "personal": {
+        "title": "Your own marks",
+        "lede": "Briefly: what happens to whatever you write here.",
+        "private_title": "Yours alone",
+        "private_body": "Everything you write here is visible to you and nobody else. Not the conductor, not anyone in the choir.",
+        "shared_title": "The conductor's markings",
+        "shared_body": "Red markings come from the conductor. You can hide them in the layers panel, but you cannot change or erase them. Anything he adds during a rehearsal appears on its own.",
+        "persist_title": "They stay",
+        "persist_body": "Your marks belong to the piece, not to this one opening. You will always find them in Materials, on the same score.",
+        "book_title": "In the score book",
+        "book_body": "When you download the concert score you can switch on “My markings” — they are then drawn onto your copy. The copy is composed for you alone; nobody else sees them there.",
+        "offline_title": "Works with no signal",
+        "offline_body": "You can write with no connection. Changes wait on your device and send themselves once the network returns — even if you close the app in the meantime."
+      },
+      "conductor": {
+        "title": "Two layers of markings",
+        "lede": "What reaches the choir, and what stays with you.",
+        "shared_title": "The “Choir” layer",
+        "shared_body": "Whatever you write on this layer reaches every chorister cast in a project that programs this piece. On their side it is read-only.",
+        "private_title": "The “Private” layer",
+        "private_body": "Your own cues. Nobody else can see them. The toggle beside the tools decides which layer you are writing on.",
+        "theirs_title": "Their notes are closed",
+        "theirs_body": "The marks choristers make on their own scores are private from you too — you will not see them here or anywhere else in the panel.",
+        "book_title": "Printing the score book",
+        "book_body": "Markings from the “Choir” layer print in the score book when the build has them switched on. A mark outside the bound page range will not print — the cockpit flags that.",
+        "offline_title": "Preparing with no signal",
+        "offline_body": "You can prepare markings with no connection. They wait on your device and send themselves once the network returns — including after you close the app."
+      }
+    },
     "open_tools": "Annotation tools",
     "redo": "Redo",
     "undo": "Undo",

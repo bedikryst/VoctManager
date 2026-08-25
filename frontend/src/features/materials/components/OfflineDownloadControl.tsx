@@ -1,11 +1,12 @@
 /**
  * @file OfflineDownloadControl.tsx
  * @description Per-concert "download for offline practice" affordance. Pulls
- * every voice track + score into the managed caches so the chorister can rehearse
+ * every voice track, score and score marking down so the chorister can rehearse
  * on the train with no signal — the reliable counterpart to passive streaming.
  * Lives in the Songbook project header.
  */
 import React, { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Check, CloudDownload, Loader2, RotateCw, Trash2, TriangleAlert } from "lucide-react";
@@ -20,6 +21,8 @@ import {
   isServiceWorkerSupported,
   removeProjectFromOffline,
 } from "@/shared/offline/offlineClient";
+import { prefetchEditionAnnotations } from "@/features/annotations";
+import { getPiecePdfLinks } from "@/features/archive/constants/piecePdfs";
 import type { MaterialsDashboardGroup } from "../types/materials.dto";
 
 interface OfflineDownloadControlProps {
@@ -31,6 +34,7 @@ export const OfflineDownloadControl = ({
 }: OfflineDownloadControlProps): React.JSX.Element | null => {
   const { t } = useTranslation();
   const { isPreview } = useArtistPreview();
+  const queryClient = useQueryClient();
   const projectId = group.project.id;
   const manifest = useOfflineStore((state) => state.manifests[projectId]);
   const progress = useOfflineStore((state) => state.progress[projectId]);
@@ -43,6 +47,15 @@ export const OfflineDownloadControl = ({
   const handleDownload = useCallback(async () => {
     try {
       const outcome = await downloadProjectForOffline(group);
+      // The marks travel with the music: a downloaded score with the conductor's
+      // cues missing is the failure this button exists to prevent. Warmed after
+      // the assets, so the bytes that matter most are cached first.
+      await prefetchEditionAnnotations(
+        queryClient,
+        group.program.flatMap((item) =>
+          getPiecePdfLinks(item.piece).slice(0, 1).map((pdf) => pdf.id),
+        ),
+      );
       if (outcome.cached === 0) {
         toast.error(
           t("offline.download.empty", "Brak materiałów do pobrania na offline."),
@@ -64,7 +77,7 @@ export const OfflineDownloadControl = ({
         t("offline.download.unavailable", "Tryb offline jest niedostępny na tym urządzeniu."),
       );
     }
-  }, [group, projectId, clearProgress, t]);
+  }, [group, projectId, clearProgress, queryClient, t]);
 
   const handleEvict = useCallback(async () => {
     await removeProjectFromOffline(projectId);

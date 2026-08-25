@@ -3,10 +3,11 @@
  * @description Markup toolbar, injected into the PDF viewer's floating control
  * pill: undo/redo, the tool set (pen · highlighter · note · stamp · eraser),
  * contextual stroke weight + ink colour, the note display mode, the musical
- * stamp palette and the write layer. In conductor mode the layer toggles
- * between shared/private; in personal mode every mark lands on the user's own
- * private layer (a static chip says so). Drawing tools are gated to
- * tablet-width and up; notes, stamps, eraser + browse stay on every screen.
+ * stamp palette, the write layer, and the "how does this work" panel. In
+ * conductor mode the layer toggles between shared/private; in personal mode
+ * every mark lands on the user's own private layer (a static chip says so).
+ * Drawing tools are gated to tablet-width and up; notes, stamps, eraser + browse
+ * stay on every screen.
  * @module features/annotations/components
  */
 
@@ -14,8 +15,10 @@ import React, { useEffect, useState } from "react";
 import {
   Check,
   ChevronLeft,
+  CloudOff,
   Eraser,
   Highlighter,
+  HelpCircle,
   Lock,
   MessageSquarePlus,
   MousePointer2,
@@ -52,11 +55,18 @@ interface AnnotationToolbarProps extends AnnotationToolState {
   annotationCount: number;
   /** How many of the visible marks THIS user may wipe (gates the trash). */
   clearableCount: number;
+  /**
+   * Markup writes this device is still holding for the network. Shown, because
+   * the alternative is a reader who has no way to tell "saved" from "saved
+   * somewhere I cannot see" and stops trusting the pencil.
+   */
+  pendingCount: number;
   canUndo: boolean;
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
   onClearAll: () => void;
+  onOpenGuide: () => void;
 }
 
 interface ToolDef {
@@ -159,11 +169,13 @@ export const AnnotationToolbar = ({
   canDraw,
   annotationCount,
   clearableCount,
+  pendingCount,
   canUndo,
   canRedo,
   onUndo,
   onRedo,
   onClearAll,
+  onOpenGuide,
 }: AnnotationToolbarProps): React.JSX.Element => {
   const { t } = useTranslation();
   const showInk =
@@ -199,6 +211,22 @@ export const AnnotationToolbar = ({
 
   const visibleTools = TOOLS.filter((toolDef) => canDraw || !toolDef.drawOnly);
 
+  // The bar opens collapsed, so the waiting-to-sync sign has to survive here
+  // too — this is the state a reader is actually in when they close the score
+  // in a basement and wonder whether their pencil marks made it.
+  const pendingPill = pendingCount > 0 && (
+    <span
+      title={t(
+        "annotations.pending_hint",
+        "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
+      )}
+      className="flex items-center gap-1 rounded-full bg-ethereal-gold/20 px-2 py-1 text-[10px] font-semibold text-ethereal-gold"
+    >
+      <CloudOff size={11} aria-hidden="true" />
+      {pendingCount}
+    </span>
+  );
+
   if (!expanded) {
     return (
       <button
@@ -219,6 +247,7 @@ export const AnnotationToolbar = ({
             {annotationCount}
           </span>
         )}
+        {pendingPill}
       </button>
     );
   }
@@ -334,6 +363,19 @@ export const AnnotationToolbar = ({
             </span>
           </span>
         )}
+
+        {pendingPill && <span className="ml-1">{pendingPill}</span>}
+
+        <ToolSeparator />
+        <button
+          type="button"
+          onClick={onOpenGuide}
+          aria-label={t("annotations.guide.open", "Jak działają adnotacje")}
+          title={t("annotations.guide.open", "Jak działają adnotacje")}
+          className={cn(pillButton, "hover:bg-white/10")}
+        >
+          <HelpCircle size={16} aria-hidden="true" />
+        </button>
 
         {clearableCount > 0 && (
           <>

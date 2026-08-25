@@ -8,6 +8,44 @@
     "ink_color": "Couleur",
     "ink_reserved": "Le rouge est réservé au chef de chœur.",
     "markup": "Annotation",
+    "pending_hint": "Enregistré sur cet appareil. L'envoi se fera seul dès le retour du réseau.",
+    "incoming": {
+      "line_one": "Le chef a ajouté une annotation · p. {{page}}",
+      "line_few": "Le chef a ajouté {{count}} annotations · p. {{page}}",
+      "line_many": "Le chef a ajouté {{count}} annotations · p. {{page}}",
+      "line_other": "Le chef a ajouté {{count}} annotations · p. {{page}}"
+    },
+    "guide": {
+      "open": "Comment fonctionnent les annotations",
+      "personal": {
+        "title": "Vos propres traces",
+        "lede": "En bref : ce qu'il advient de ce que vous écrivez ici.",
+        "private_title": "À vous seul",
+        "private_body": "Tout ce que vous écrivez ici n'est visible que par vous. Ni le chef de chœur, ni personne d'autre dans le chœur.",
+        "shared_title": "Les annotations du chef",
+        "shared_body": "Les annotations rouges viennent du chef de chœur. Vous pouvez les masquer dans le panneau des calques, mais ni les modifier ni les effacer. Ce qu'il ajoute pendant une répétition apparaît tout seul.",
+        "persist_title": "Elles restent",
+        "persist_body": "Vos traces appartiennent à l'œuvre, pas à cette seule ouverture. Vous les retrouverez toujours dans Matériaux, sur la même partition.",
+        "book_title": "Dans le recueil de partitions",
+        "book_body": "En téléchargeant la partition du concert, vous pouvez activer « Mes annotations » — elles sont alors dessinées sur votre exemplaire. L'exemplaire est composé pour vous seul ; personne d'autre ne les y verra.",
+        "offline_title": "Fonctionne sans réseau",
+        "offline_body": "Vous pouvez écrire sans connexion. Les modifications attendent sur votre appareil et s'envoient seules au retour du réseau — même si vous fermez l'application entre-temps."
+      },
+      "conductor": {
+        "title": "Deux calques d'annotations",
+        "lede": "Ce qui parvient au chœur, et ce qui reste chez vous.",
+        "shared_title": "Le calque « Chœur »",
+        "shared_body": "Ce que vous écrivez sur ce calque parvient à chaque choriste distribué dans un projet qui programme cette œuvre. Chez eux, c'est en lecture seule.",
+        "private_title": "Le calque « Privé »",
+        "private_body": "Vos propres indications. Personne d'autre ne les voit. Le sélecteur près des outils décide du calque sur lequel vous écrivez.",
+        "theirs_title": "Leurs notes sont fermées",
+        "theirs_body": "Les traces que les choristes font sur leurs partitions vous sont privées également — vous ne les verrez ni ici ni ailleurs dans le panneau.",
+        "book_title": "Impression du recueil",
+        "book_body": "Les annotations du calque « Chœur » s'impriment dans le recueil lorsque la compilation les active. Un tracé hors de la plage de pages reliée ne s'imprimera pas — le cockpit le signale.",
+        "offline_title": "Préparer sans réseau",
+        "offline_body": "Vous pouvez préparer vos annotations sans connexion. Elles attendent sur l'appareil et s'envoient seules au retour du réseau — y compris après la fermeture de l'application."
+      }
+    },
     "open_tools": "Outils d'annotation",
     "redo": "Rétablir",
     "undo": "Annuler",
