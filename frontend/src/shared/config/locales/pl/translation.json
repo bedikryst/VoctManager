@@ -3351,11 +3351,14 @@
         "available": "Baza",
         "switch_aria": "Przełącz listę obsady"
       },
+      "leader": {
+        "aria": "Prowadzenie sekcji: {{name}}"
+      },
       "search_placeholder": "Szukaj artysty...",
       "seat": {
         "aria": "Miejsce w składzie: {{name}}",
         "clear": "Z typu głosu",
-        "hint": "Miejsce w składzie mówi, na którą linię trafi śpiewak, gdy divisi utworu uzupełniasz automatycznie.",
+        "hint": "Miejsce w składzie mówi, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi — i porządkuje tę listę. Gwiazdką oznacz osobę prowadzącą sekcję.",
         "placeholder": "Z typu głosu"
       },
       "sections": {

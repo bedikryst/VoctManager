@@ -3112,6 +3112,12 @@ msgstr ""
 msgid "%(minutes)d min"
 msgstr ""
 
+msgid "Section Leader"
+msgstr ""
+
+msgid "Leads their voice section in this project. Listed first within it."
+msgstr ""
+
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 "below — approve or decline them in the panel."

@@ -592,6 +592,20 @@ class Participation(EnterpriseBaseModel):
         help_text=_("Voice line this singer takes when a piece's casting is filled "
                     "from the line-up. Blank = derived from their voice type."),
     )
+    # Who the rest of the section follows in THIS concert. On the participation
+    # for the same reason the seat is: leading is a job somebody takes for one
+    # programme, not a rank they carry between them, and the soprano who leads a
+    # Requiem may sing an inner line in the next piece the choir opens.
+    #
+    # Deliberately not unique per section. A manager marking a new leader before
+    # unmarking the old one is mid-edit, not in error, and a database that
+    # refuses the write turns a checkbox into a puzzle; two marked leaders read
+    # as exactly what was recorded, on screen, where it can be fixed.
+    is_section_leader = models.BooleanField(
+        default=False,
+        verbose_name=_("Section Leader"),
+        help_text=_("Leads their voice section in this project. Listed first within it."),
+    )
     fee = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True, verbose_name=_("Fee"))
     is_paid = models.BooleanField(
         default=False,

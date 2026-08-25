@@ -1602,10 +1602,17 @@ class DocumentGenerator:
         grouped: dict[str, list[str]] = defaultdict(list)
         labels: dict[str, str] = {}
 
+        # The same order the casting tab lists the cast in, and for the same
+        # reason: whoever leads a section heads it, the line-up reads from the
+        # top down, and a surname decides only where neither applies — which is
+        # every project that has not been seated, so those print alphabetically
+        # exactly as they always did.
         for participation in sorted(
             participations,
             key=lambda entry: (
                 _VOICE_TYPE_ORDER.get(entry.artist.voice_type, 999),
+                not entry.is_section_leader,
+                _VOICE_LINE_ORDER.get(entry.default_voice_line, 999),
                 entry.artist.last_name,
                 entry.artist.first_name,
             ),

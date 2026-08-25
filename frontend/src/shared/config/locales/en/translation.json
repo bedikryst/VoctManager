@@ -3333,11 +3333,14 @@
         "available": "Database",
         "switch_aria": "Switch cast list"
       },
+      "leader": {
+        "aria": "Section lead: {{name}}"
+      },
       "search_placeholder": "Search artist...",
       "seat": {
         "aria": "Line-up seat: {{name}}",
         "clear": "From voice type",
-        "hint": "The line-up seat says which line a singer takes when a piece's divisi is filled automatically.",
+        "hint": "The line-up seat says which line a singer takes when a piece's divisi is filled automatically — and it orders this list. Star whoever leads the section.",
         "placeholder": "From voice type"
       },
       "sections": {

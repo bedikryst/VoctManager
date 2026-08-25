@@ -13,7 +13,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { motion } from "framer-motion";
-import { Search, Trash2, UserCheck, Users } from "lucide-react";
+import { Search, Star, Trash2, UserCheck, Users } from "lucide-react";
 
 import type { Project } from "@/shared/types";
 import { cn } from "@/shared/lib/utils";
@@ -71,6 +71,7 @@ interface CastRowProps {
   readonly isBusy: boolean;
   readonly seatOptions: readonly SelectOption[];
   readonly onSeatChange: (seat: string) => void;
+  readonly onToggleLeader: () => void;
   readonly onRemove: () => void;
 }
 
@@ -80,6 +81,7 @@ function CastRow({
   isBusy,
   seatOptions,
   onSeatChange,
+  onToggleLeader,
   onRemove,
 }: CastRowProps): React.JSX.Element {
   const { t } = useTranslation();
@@ -94,6 +96,16 @@ function CastRow({
     {
       name: entry.displayName,
     },
+  );
+
+  /* Named for the job, not for the person doing it: Polish inflects "lider" by
+     gender and the roster does not record one, so "liderka" on a man's row (or
+     the reverse) is a mistake the copy would make on its own. The verbal noun
+     sidesteps it, and `aria-pressed` carries the on/off state. */
+  const leaderLabel = t(
+    "projects.cast.leader.aria",
+    "Prowadzenie sekcji: {{name}}",
+    { name: entry.displayName },
   );
 
   return (
@@ -157,6 +169,32 @@ function CastRow({
           )}
         />
       </div>
+
+      {/* Marker and control in one: the filled star says who leads the section
+          and pressing it is how that is set. A separate badge would state the
+          same fact twice on the one row that is already the busiest here. */}
+      <button
+        type="button"
+        onClick={onToggleLeader}
+        disabled={isBusy || isDeclined}
+        aria-pressed={entry.isSectionLeader}
+        title={leaderLabel}
+        aria-label={leaderLabel}
+        className={cn(
+          "flex h-7 w-7 shrink-0 items-center justify-center rounded-chip transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
+          "pointer-coarse:h-9 pointer-coarse:w-9",
+          entry.isSectionLeader
+            ? "text-ethereal-gold"
+            : "text-ethereal-graphite/25 hover:bg-ethereal-gold/10 hover:text-ethereal-gold",
+        )}
+      >
+        <Star
+          size={14}
+          aria-hidden="true"
+          fill={entry.isSectionLeader ? "currentColor" : "none"}
+        />
+      </button>
 
       <button
         type="button"
@@ -226,6 +264,7 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
     castBalance,
     seatOptions,
     setSeat,
+    setSectionLeader,
     isSaving,
     searchQuery,
     setSearchQuery,
@@ -289,10 +328,13 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
           toolbar={
             castCount > 0 ? (
               <div className="pb-3">
+                {/* Both controls in one sentence, because both are quiet: the
+                    seat now also decides the order of this list, and the star
+                    is the only thing on the row that does not name itself. */}
                 <Caption color="muted">
                   {t(
                     "projects.cast.seat.hint",
-                    "Miejsce w składzie mówi, na którą linię trafi śpiewak, gdy divisi utworu uzupełniasz automatycznie.",
+                    "Miejsce w składzie mówi, na którą linię trafi śpiewak przy automatycznym uzupełnianiu divisi — i porządkuje tę listę. Gwiazdką oznacz osobę prowadzącą sekcję.",
                   )}
                 </Caption>
               </div>
@@ -321,6 +363,12 @@ export const CastTab = ({ project }: CastTabProps): React.JSX.Element => {
                       seatOptions={seatOptions}
                       onSeatChange={(seat) =>
                         void setSeat(entry.participationId, seat)
+                      }
+                      onToggleLeader={() =>
+                        void setSectionLeader(
+                          entry.participationId,
+                          !entry.isSectionLeader,
+                        )
                       }
                       onRemove={() =>
                         void removeFromCast(

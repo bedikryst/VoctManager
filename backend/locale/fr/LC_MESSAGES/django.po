@@ -4301,6 +4301,13 @@ msgstr "%(hours)d h"
 msgid "%(minutes)d min"
 msgstr "%(minutes)d min"
 
+msgid "Section Leader"
+msgstr "Direction du pupitre"
+
+msgid "Leads their voice section in this project. Listed first within it."
+msgstr ""
+"Dirige son pupitre sur ce projet. Apparaît en tête de la liste de ce pupitre."
+
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
 "below — approve or decline them in the panel."

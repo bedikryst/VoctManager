@@ -56,6 +56,8 @@ export interface ParticipationCreateDTO {
   fee?: string | number | null;
   /** This singer's seat in the concert's line-up; `""` clears it. */
   default_voice_line?: VoiceLine | "";
+  /** Leads their voice section here, which heads them in every cast listing. */
+  is_section_leader?: boolean;
 }
 
 export type ParticipationUpdateDTO = Partial<ParticipationCreateDTO>;

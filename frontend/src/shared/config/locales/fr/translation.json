@@ -3334,11 +3334,14 @@
         "available": "Base",
         "switch_aria": "Changer de liste"
       },
+      "leader": {
+        "aria": "Direction du pupitre : {{name}}"
+      },
       "search_placeholder": "Rechercher un artiste...",
       "seat": {
         "aria": "Place dans l'effectif : {{name}}",
         "clear": "D'après le type de voix",
-        "hint": "La place dans l'effectif indique la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement.",
+        "hint": "La place dans l'effectif indique la ligne qu'un chanteur prend lorsque le divisi d'une pièce est rempli automatiquement — et elle ordonne cette liste. L'étoile désigne qui dirige le pupitre.",
         "placeholder": "D'après le type de voix"
       },
       "sections": {

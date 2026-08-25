@@ -238,6 +238,12 @@ export interface Participation extends BaseModel {
    * what.
    */
   default_voice_line?: VoiceLine | "";
+  /**
+   * Leads their voice section in this project, which puts them at the head of
+   * it wherever the cast is listed. Per project, like the seat above: leading is
+   * a job taken for one programme, not a rank carried between them.
+   */
+  is_section_leader?: boolean;
   fee?: string | number | null;
   // Settlement state — mutated only through the dedicated `payment` action.
   is_paid?: boolean;

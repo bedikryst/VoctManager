@@ -60,6 +60,8 @@ export interface CastEntry extends RosterFacts {
    * reads as "derive it from their voice type".
    */
   readonly seat: VoiceLine | "";
+  /** Leads their section here, which is why they head it in the list. */
+  readonly isSectionLeader: boolean;
   /** No roster record behind this participation — identity is a fallback. */
   readonly isUnresolved: boolean;
 }
@@ -99,6 +101,15 @@ export interface UseCastTabResult {
   /** The line-up's vocabulary, in score order, for the per-singer seat picker. */
   seatOptions: readonly SelectOption[];
   setSeat: (participationId: string, seat: string) => Promise<void>;
+  /**
+   * Marks or unmarks who leads a section. Not exclusive per section — see the
+   * model's own note: refusing a second leader would turn a mid-edit into a
+   * dead end, and two marks read as what was actually recorded.
+   */
+  setSectionLeader: (
+    participationId: string,
+    isSectionLeader: boolean,
+  ) => Promise<void>;
   /** Any write is in flight — what the autosave pill reports. */
   isSaving: boolean;
   searchQuery: string;
@@ -118,7 +129,22 @@ const rangeOf = (artist?: Artist): string | null => {
   return `${artist?.vocal_range_bottom || "?"}–${artist?.vocal_range_top || "?"}`;
 };
 
-/** Score order (soprano down to bass), then surname — how a roster is read. */
+/**
+ * Where an unseated singer sorts among the seated ones: after all of them.
+ * `LINE_UP_SEATS` gives every real seat its score-order index, and `""` is not
+ * in that list — so the miss has to be sent to the end rather than to -1, which
+ * would file everyone with no seat above Sopran 1.
+ */
+const seatRank = (seat: VoiceLine | ""): number => {
+  const index = LINE_UP_SEATS.indexOf(seat as VoiceLine);
+  return index === -1 ? LINE_UP_SEATS.length : index;
+};
+
+/**
+ * Score order (soprano down to bass), then surname — how a roster is read.
+ * The pool has no seats and no leaders to order by, so this is the whole rule
+ * on that side; the cast refines it with `byLeaderThenSeatThenName`.
+ */
 const byVoiceThenName = <TEntry extends RosterFacts>(
   left: TEntry,
   right: TEntry,
@@ -126,6 +152,32 @@ const byVoiceThenName = <TEntry extends RosterFacts>(
   const rankDelta =
     voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
   if (rankDelta !== 0) return rankDelta;
+  return left.displayName.localeCompare(right.displayName, "pl");
+};
+
+/**
+ * The cast in the order a conductor reads it: voice family, then the person
+ * leading that family, then the line-up from the top down, then surname.
+ *
+ * This is what makes Sopran 1 precede Sopran 2 inside the sopranos, which
+ * alphabetical order cannot express. It needs no toggle between "alphabetical"
+ * and "by voice position" because the two collapse into one another: a seat is
+ * optional and blank on most projects, so when nobody has been seated every
+ * singer ranks the same and the surname decides — the list is alphabetical
+ * exactly when there is no line-up to read it by.
+ */
+const byLeaderThenSeatThenName = (left: CastEntry, right: CastEntry): number => {
+  const rankDelta =
+    voiceTypeRank(left.voiceType) - voiceTypeRank(right.voiceType);
+  if (rankDelta !== 0) return rankDelta;
+
+  if (left.isSectionLeader !== right.isSectionLeader) {
+    return left.isSectionLeader ? -1 : 1;
+  }
+
+  const seatDelta = seatRank(left.seat) - seatRank(right.seat);
+  if (seatDelta !== 0) return seatDelta;
+
   return left.displayName.localeCompare(right.displayName, "pl");
 };
 
@@ -211,10 +263,11 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
           sightReading: artist?.sight_reading_skill ?? null,
           status: participation.status,
           seat: participation.default_voice_line ?? "",
+          isSectionLeader: participation.is_section_leader ?? false,
           isUnresolved: !artist,
         };
       })
-      .sort(byVoiceThenName);
+      .sort(byLeaderThenSeatThenName);
   }, [artistById, participations, t]);
 
   /** Everyone castable and not yet cast — the search is scoped to this list. */
@@ -325,6 +378,25 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     }
   };
 
+  const setSectionLeader = async (
+    participationId: string,
+    isSectionLeader: boolean,
+  ): Promise<void> => {
+    try {
+      await updateParticipationMutation.mutateAsync({
+        id: participationId,
+        data: { is_section_leader: isSectionLeader },
+      });
+    } catch (error) {
+      toastApiError(error, t, {
+        fallbackDescription: t(
+          "common.errors.database_error",
+          "Wystąpił problem z połączeniem z bazą danych.",
+        ),
+      });
+    }
+  };
+
   const addToCast = async (artistId: string): Promise<void> => {
     setProcessingId(artistId);
 
@@ -391,6 +463,7 @@ export const useCastTab = (projectId: string): UseCastTabResult => {
     castBalance,
     seatOptions,
     setSeat,
+    setSectionLeader,
     isSaving: processingId !== null || updateParticipationMutation.isPending,
     searchQuery,
     setSearchQuery,
