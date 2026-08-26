@@ -80,6 +80,21 @@
       "pages": "Oznaczone strony",
       "title": "Adnotacje"
     },
+    "phrases": {
+      "clearer": "wyraźniej",
+      "consonants": "spółgłoski",
+      "count": "licz!",
+      "endings": "końcówki",
+      "entry": "wejście",
+      "lighter": "lżej",
+      "longer": "dłużej",
+      "no_slowing": "nie zwalniać",
+      "practise": "ćwiczyć",
+      "shorter": "krócej",
+      "softly": "miękko",
+      "together": "razem"
+    },
+    "quick_phrases": "Szybkie frazy",
     "scale": {
       "stamp": "Rozmiar symbolu",
       "text": "Rozmiar tekstu"
@@ -89,19 +104,44 @@
       "fine": "Cienka",
       "medium": "Średnia"
     },
+    "stamp_groups": {
+      "articulation": "Artykulacja",
+      "breath": "Oddech",
+      "cues": "Wskazówki",
+      "dynamics": "Dynamika",
+      "label": "Grupy symboli",
+      "navigation": "Nawigacja",
+      "tempo": "Tempo"
+    },
     "stamps": {
+      "accel": "Accelerando",
       "accent": "Akcent",
+      "atempo": "A tempo",
       "breath": "Oddech",
       "caesura": "Cezura",
+      "coda": "Coda",
       "cresc": "Crescendo",
+      "cutoff": "Odcięcie",
+      "dc": "Da capo (od początku)",
       "dim": "Diminuendo",
+      "ds": "Dal segno (od znaku)",
       "f": "Dynamika f",
       "fermata": "Fermata",
       "ff": "Dynamika ff",
+      "gp": "Generalpauza",
+      "lower": "Za wysoko — obniż",
+      "marcato": "Marcato",
       "mf": "Dynamika mf",
       "mp": "Dynamika mp",
+      "nobreath": "Bez oddechu",
       "p": "Dynamika p",
       "pp": "Dynamika pp",
+      "raise": "Za nisko — podnieś",
+      "rit": "Ritardando",
+      "segno": "Segno (znak)",
+      "staccato": "Staccato",
+      "subito": "Subito (nagle)",
+      "tenuto": "Tenuto",
       "watch": "Patrz na dyrygenta"
     },
     "tools": {

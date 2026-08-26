@@ -80,6 +80,21 @@
       "pages": "Marked pages",
       "title": "Annotations"
     },
+    "phrases": {
+      "clearer": "clearer",
+      "consonants": "consonants",
+      "count": "count!",
+      "endings": "word endings",
+      "entry": "entry",
+      "lighter": "lighter",
+      "longer": "longer",
+      "no_slowing": "don't slow down",
+      "practise": "practise",
+      "shorter": "shorter",
+      "softly": "softly",
+      "together": "together"
+    },
+    "quick_phrases": "Quick phrases",
     "scale": {
       "stamp": "Symbol size",
       "text": "Text size"
@@ -89,19 +104,44 @@
       "fine": "Fine",
       "medium": "Medium"
     },
+    "stamp_groups": {
+      "articulation": "Articulation",
+      "breath": "Breath",
+      "cues": "Cues",
+      "dynamics": "Dynamics",
+      "label": "Symbol groups",
+      "navigation": "Navigation",
+      "tempo": "Tempo"
+    },
     "stamps": {
+      "accel": "Accelerando",
       "accent": "Accent",
+      "atempo": "A tempo",
       "breath": "Breath mark",
       "caesura": "Caesura",
+      "coda": "Coda",
       "cresc": "Crescendo",
+      "cutoff": "Cut-off",
+      "dc": "Da capo (from the top)",
       "dim": "Diminuendo",
+      "ds": "Dal segno (from the sign)",
       "f": "Dynamic f",
       "fermata": "Fermata",
       "ff": "Dynamic ff",
+      "gp": "General pause",
+      "lower": "Sharp — bring it down",
+      "marcato": "Marcato",
       "mf": "Dynamic mf",
       "mp": "Dynamic mp",
+      "nobreath": "No breath",
       "p": "Dynamic p",
       "pp": "Dynamic pp",
+      "raise": "Flat — lift it",
+      "rit": "Ritardando",
+      "segno": "Segno (the sign)",
+      "staccato": "Staccato",
+      "subito": "Subito (suddenly)",
+      "tenuto": "Tenuto",
       "watch": "Watch the conductor"
     },
     "tools": {

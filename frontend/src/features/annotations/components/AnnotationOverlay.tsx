@@ -21,7 +21,7 @@
  * @module features/annotations/components
  */
 
-import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Lock, MessageSquare, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -62,6 +62,7 @@ import {
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
 import { placeNoteCard } from "../lib/noteCardPlacement";
+import { appendPhrase, pickRecentPhrases, QUICK_PHRASES } from "../lib/quickPhrases";
 
 interface AnnotationOverlayProps {
   geometry: PdfPageGeometry;
@@ -210,6 +211,20 @@ export const AnnotationOverlay = ({
    */
   const arranging = browsing || placing || stamping;
   const marksInteractive = arranging || erasing;
+
+  // Words this writer would otherwise type again tonight: their own short notes
+  // on this edition (newest first), then the standing presets. The history is
+  // derived from marks already in memory — no request, and it narrows itself to
+  // the music in hand.
+  const quickPhrases = useMemo(() => {
+    const presets = QUICK_PHRASES.map((phrase) => t(phrase.key, phrase.fallback));
+    const own = annotations
+      .filter(isComment)
+      .filter((a) => canModify(a))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+      .map((a) => a.payload.text);
+    return [...pickRecentPhrases(own, presets), ...presets];
+  }, [annotations, canModify, t]);
 
   // The note whose composer is open. It is taken OFF the page while it is being
   // written, because the card draws the same note live at the same anchor — two
@@ -754,6 +769,7 @@ export const AnnotationOverlay = ({
           height={height}
           anchor={pendingNote}
           color={color}
+          phrases={quickPhrases}
           initialText=""
           initialDisplay={noteDisplay}
           initialScale={textScale}
@@ -785,6 +801,7 @@ export const AnnotationOverlay = ({
               height={height}
               anchor={{ x: payload.x, y: payload.y }}
               color={editingNote.color}
+              phrases={quickPhrases}
               initialText={payload.text}
               initialDisplay={payload.display === "inline" ? "inline" : "pin"}
               initialScale={clampMarkScale(payload.scale)}
@@ -815,6 +832,8 @@ interface NoteCardProps {
   anchor: { x: number; y: number };
   /** Ink the note will carry — the live preview is drawn in it. */
   color: string;
+  /** One-tap words, recent-first; each appends to what is already written. */
+  phrases: readonly string[];
   initialText: string;
   initialDisplay: NoteDisplay;
   /** Starting font-size multiplier (1 = medium). */
@@ -839,6 +858,7 @@ const NoteCard = ({
   height,
   anchor,
   color,
+  phrases,
   initialText,
   initialDisplay,
   initialScale,
@@ -971,6 +991,39 @@ const NoteCard = ({
           )}
           placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
         />
+
+        {/* The words this writer repeats all evening. On a tablet the keyboard
+            is the real cost of a note — it covers the music while it is open —
+            so every chip here is a tap instead of a word. */}
+        {phrases.length > 0 && (
+          <div
+            className="no-scrollbar mt-2 flex gap-1 overflow-x-auto"
+            role="group"
+            aria-label={t("annotations.quick_phrases", "Szybkie frazy")}
+          >
+            {phrases.map((phrase) => (
+              <button
+                key={phrase}
+                type="button"
+                onClick={() => {
+                  const next = appendPhrase(text, phrase);
+                  setText(next);
+                  const element = textRef.current;
+                  if (!element) return;
+                  element.focus();
+                  // After the value lands, so typing continues where the phrase
+                  // ended rather than wherever the caret happened to sit.
+                  requestAnimationFrame(() =>
+                    element.setSelectionRange(next.length, next.length),
+                  );
+                }}
+                className="shrink-0 rounded-full bg-ethereal-marble/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-marble"
+              >
+                {phrase}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Inline vs pin display picker. */}
         <div className="mt-2 flex items-center gap-1">

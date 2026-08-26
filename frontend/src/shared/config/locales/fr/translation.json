@@ -80,6 +80,21 @@
       "pages": "Pages annotées",
       "title": "Annotations"
     },
+    "phrases": {
+      "clearer": "plus net",
+      "consonants": "consonnes",
+      "count": "compte !",
+      "endings": "fins de mots",
+      "entry": "entrée",
+      "lighter": "plus léger",
+      "longer": "plus long",
+      "no_slowing": "ne pas ralentir",
+      "practise": "à travailler",
+      "shorter": "plus court",
+      "softly": "en douceur",
+      "together": "ensemble"
+    },
+    "quick_phrases": "Phrases rapides",
     "scale": {
       "stamp": "Taille du symbole",
       "text": "Taille du texte"
@@ -89,19 +104,44 @@
       "fine": "Fin",
       "medium": "Moyen"
     },
+    "stamp_groups": {
+      "articulation": "Articulation",
+      "breath": "Respiration",
+      "cues": "Indications",
+      "dynamics": "Nuances",
+      "label": "Groupes de symboles",
+      "navigation": "Navigation",
+      "tempo": "Tempo"
+    },
     "stamps": {
+      "accel": "Accelerando",
       "accent": "Accent",
+      "atempo": "A tempo",
       "breath": "Respiration",
       "caesura": "Césure",
+      "coda": "Coda",
       "cresc": "Crescendo",
+      "cutoff": "Coupure",
+      "dc": "Da capo (au début)",
       "dim": "Diminuendo",
+      "ds": "Dal segno (au signe)",
       "f": "Nuance f",
       "fermata": "Point d'orgue",
       "ff": "Nuance ff",
+      "gp": "Pause générale",
+      "lower": "Trop haut — baisser",
+      "marcato": "Marcato",
       "mf": "Nuance mf",
       "mp": "Nuance mp",
+      "nobreath": "Sans respiration",
       "p": "Nuance p",
       "pp": "Nuance pp",
+      "raise": "Trop bas — monter",
+      "rit": "Ritardando",
+      "segno": "Segno (le signe)",
+      "staccato": "Staccato",
+      "subito": "Subito (soudain)",
+      "tenuto": "Tenuto",
       "watch": "Regarder le chef"
     },
     "tools": {

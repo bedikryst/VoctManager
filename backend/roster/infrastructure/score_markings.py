@@ -279,16 +279,21 @@ def _render_svg_stamp(mark: PrintMark, box: PlacedBox) -> str:
     factor = width_pt / view_width
     left = anchor[0] - width_pt / 2
     top = anchor[1] - (width_pt * stamp.aspect) / 2
-    pen = 2.0 * (_HEAVY_FACTOR if mark.heavy else 1.0)
+    weight = _HEAVY_FACTOR if mark.heavy else 1.0
+    pen = 2.0 * weight
     body = "".join(
         f'<path d="{escape(d)}" fill="none" stroke="{fill}" stroke-width="{pen:.2f}"'
         f' stroke-linecap="round" stroke-linejoin="round"/>'
         for d in stamp.paths
     )
-    if stamp.dot:
-        body += (
-            f'<circle cx="{stamp.dot[0]}" cy="{stamp.dot[1]}" r="{stamp.dot[2]}" fill="{fill}"/>'
-        )
+    # The dots take the layer's weight too. A staccato is ENTIRELY a dot, so
+    # leaving them at nominal radius would be the one stamp where a conductor's
+    # ink and a singer's print identically — and on a mono print that difference
+    # is the only thing telling them apart.
+    body += "".join(
+        f'<circle cx="{dot[0]}" cy="{dot[1]}" r="{dot[2] * weight:.2f}" fill="{fill}"/>'
+        for dot in stamp.dots
+    )
     return (
         f'<g opacity="{alpha:.3f}" transform="translate({left:.2f} {top:.2f})'
         f' scale({factor:.4f})">{body}</g>'

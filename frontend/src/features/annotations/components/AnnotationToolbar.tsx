@@ -3,8 +3,8 @@
  * @description Markup toolbar, injected into the PDF viewer's floating control
  * pill: undo/redo, the tool set (pen · highlighter · note · stamp · eraser),
  * contextual stroke weight + ink colour, what draws (stylus or finger), the note
- * display mode, the musical stamp palette, the write layer, and the "how does
- * this work" panel. In conductor mode the layer toggles between shared/private;
+ * display mode, the musical stamp palette (one group at a time — the catalogue
+ * outgrew a flat grid), the write layer, and the "how does this work" panel. In conductor mode the layer toggles between shared/private;
  * in personal mode every mark lands on the user's own private layer (a static
  * chip says so). Drawing tools appear once the page is rendered large enough to
  * write on (see useCanDraw); notes, stamps, eraser + browse stay on every screen.
@@ -53,7 +53,7 @@ import {
   type AnnotationToolState,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
-import { STAMPS, StampGlyph } from "../lib/stamps";
+import { groupOfStamp, STAMP_GROUPS, stampsInGroup, StampGlyph } from "../lib/stamps";
 
 interface AnnotationToolbarProps extends AnnotationToolState {
   /** conductor → shared/conductor layer toggle; personal → fixed private layer. */
@@ -206,6 +206,7 @@ export const AnnotationToolbar = ({
   const showStampSize = tool === "stamp";
   // Whether the active tool has any contextual options to drop below the pill.
   const hasPanel = showSize || showInk || showNoteMode || showStamps;
+  const activeStampGroup = groupOfStamp(stamp);
 
   const isImmersive = usePdfImmersive();
 
@@ -603,23 +604,59 @@ export const AnnotationToolbar = ({
           )}
 
           {showStamps && (
-            <div className="grid grid-cols-5 gap-1">
-              {STAMPS.map((def) => (
-                <button
-                  key={def.id}
-                  type="button"
-                  onClick={() => setStamp(def.id)}
-                  aria-label={t(def.labelKey, def.fallback)}
-                  aria-pressed={stamp === def.id}
-                  title={t(def.labelKey, def.fallback)}
-                  className={cn(
-                    "flex h-9 items-center justify-center rounded-xl transition-colors",
-                    stamp === def.id ? "bg-white/20" : "hover:bg-white/10",
-                  )}
-                >
-                  <StampGlyph symbol={def.id} color="#F4F1EA" size={def.kind === "text" ? 15 : 22} />
-                </button>
-              ))}
+            // Thirty symbols in one grid stopped fitting a phone, so the
+            // palette shows ONE group at a time. The open group is derived from
+            // the armed stamp rather than held separately — that way the symbol
+            // in hand is always the one lit up on screen — and picking a group
+            // arms its first symbol, so a tab is never a dead end.
+            <div className="flex flex-col gap-1.5">
+              <div
+                className="no-scrollbar flex gap-1 overflow-x-auto"
+                role="group"
+                aria-label={t("annotations.stamp_groups.label", "Grupy symboli")}
+              >
+                {STAMP_GROUPS.map(({ group, labelKey, fallback }) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => {
+                      const first = stampsInGroup(group)[0];
+                      if (first) setStamp(first.id);
+                    }}
+                    aria-pressed={activeStampGroup === group}
+                    className={cn(
+                      "h-8 shrink-0 rounded-full px-2.5 text-xs font-medium transition-colors",
+                      activeStampGroup === group
+                        ? "bg-white/20 text-white"
+                        : "text-ethereal-marble hover:bg-white/10",
+                    )}
+                  >
+                    {t(labelKey, fallback)}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-5 gap-1">
+                {stampsInGroup(activeStampGroup).map((def) => (
+                  <button
+                    key={def.id}
+                    type="button"
+                    onClick={() => setStamp(def.id)}
+                    aria-label={t(def.labelKey, def.fallback)}
+                    aria-pressed={stamp === def.id}
+                    title={t(def.labelKey, def.fallback)}
+                    className={cn(
+                      "flex h-9 items-center justify-center rounded-xl transition-colors",
+                      stamp === def.id ? "bg-white/20" : "hover:bg-white/10",
+                    )}
+                  >
+                    <StampGlyph
+                      symbol={def.id}
+                      color="#F4F1EA"
+                      size={def.kind === "text" ? 15 : 22}
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

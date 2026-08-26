@@ -665,6 +665,10 @@ class StampParityTests(SimpleTestCase):
             / "frontend" / "src" / "features" / "annotations" / "lib" / "stamps.tsx"
         )
         source = tsx.read_text(encoding="utf-8")
-        ids = set(re.findall(r'id:\s*"([a-z]+)"', source))
-        ids |= set(re.findall(r'dynamic\("([a-z]+)"\)', source))
+        # Three shapes a stamp id takes over there: a literal in a definition,
+        # and the two factory helpers (dynamics, tempo words). The palette's
+        # GROUP ids are deliberately keyed `group:`, so they stay out of this.
+        ids = set(re.findall(r'id:\s*"([a-z_]+)"', source))
+        ids |= set(re.findall(r'dynamic\("([a-z_]+)"\)', source))
+        ids |= set(re.findall(r'word\("([a-z_]+)"', source))
         self.assertEqual(ids, {stamp.id for stamp in STAMPS})
