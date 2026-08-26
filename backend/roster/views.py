@@ -130,6 +130,7 @@ from .score_package_markings import (
     reader_marks_for_book,
 )
 from .score_package_service import ScorePackageItemError, ScorePackageService
+from .score_page_map import book_frames, book_item_spans
 
 # Serializers
 from .serializers import (
@@ -852,6 +853,72 @@ class ProjectViewSet(viewsets.ModelViewSet):
         planned = plan_markings(page_map, marks.by_source)
         count = sum(len(page_marks) for _, page_marks in planned)
         return Response({"available": count > 0, "count": count})
+
+    @action(detail=True, methods=['get'], url_path='score_map',
+            permission_classes=[permissions.IsAuthenticated])
+    def score_map(self, request, pk=None) -> Response:
+        """
+        What each page of the concert book actually is — the bridge that lets the
+        binder be read with a pencil in hand.
+
+        The book is a re-typeset object: it trims, scales and re-centres pages
+        out of several editions onto A4, and nothing about that transform
+        survives in the finished PDF. Markings, though, belong to the EDITION and
+        are stored normalized against its page, which is what keeps one mark the
+        same mark whether the singer opened the piece on its own or found it in
+        the binder. This read model is the only thing that can put the two
+        together on screen: page N of the book shows edition E's page P inside
+        rectangle B.
+
+        A hand-uploaded book has no map at all (see `mark_manual_upload`), and
+        neither does one that has never been generated. Both answer
+        ``available: false`` with empty lists — a book without a pencil, which is
+        what it was before, rather than an error.
+        """
+        project = self.get_object()
+        is_manager = user_is_manager(request.user)
+        empty = {"available": False, "pages": [], "items": []}
+        # Same lifecycle gate as the file itself: once the concert is over the
+        # singer's access to the binder closes, and a map of a book they may not
+        # open would only describe someone else's property.
+        if not is_manager and project.status in _CLOSED_PROJECT_STATUSES:
+            return Response(empty)
+        if not project.score_pdf:
+            return Response(empty)
+
+        page_map = (
+            ScorePackage.objects.filter(project=project)
+            .values_list('page_map', flat=True)
+            .first()
+        ) or []
+        frames = book_frames(page_map)
+        if not frames:
+            return Response(empty)
+
+        spans = {span["item"]: span for span in book_item_spans(page_map)}
+        # Titles come from the live programme, spans from the map: a piece
+        # renamed since the build keeps its pages and gains its new name, and a
+        # piece dropped from the programme since the build has no row here at
+        # all — its pages are still bound, they simply answer to nothing.
+        items = [
+            {
+                "id": str(item.pk),
+                "order": item.order,
+                "title": item.piece.title,
+                "composer": item.piece.composer.last_name if item.piece.composer else "",
+                "is_encore": item.is_encore,
+                "first_page": spans[str(item.pk)]["first_page"],
+                "last_page": spans[str(item.pk)]["last_page"],
+            }
+            for item in (
+                ProgramItem.objects
+                .filter(project=project)
+                .select_related('piece__composer')
+                .order_by('order')
+            )
+            if str(item.pk) in spans
+        ]
+        return Response({"available": True, "pages": frames, "items": items})
 
     @action(detail=True, methods=['get', 'post'], url_path='score_package', permission_classes=[IsManager])
     def score_package(self, request, pk=None) -> Response:

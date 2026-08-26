@@ -6,8 +6,8 @@
  * display mode, the musical stamp palette, the write layer, and the "how does
  * this work" panel. In conductor mode the layer toggles between shared/private;
  * in personal mode every mark lands on the user's own private layer (a static
- * chip says so). Drawing tools are gated to tablet-width and up; notes, stamps,
- * eraser + browse stay on every screen.
+ * chip says so). Drawing tools appear once the page is rendered large enough to
+ * write on (see useCanDraw); notes, stamps, eraser + browse stay on every screen.
  *
  * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
  * no place to discover that the pencil was armed all along. Whether it opens
@@ -32,16 +32,16 @@ import {
   Redo2,
   SquarePen,
   Stamp,
-  TabletSmartphone,
   Trash2,
   Undo2,
   Users,
   UserCog,
+  ZoomIn,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { Caption } from "@/shared/ui/primitives/typography";
+import { Caption, Eyebrow } from "@/shared/ui/primitives/typography";
 import { Divider } from "@/shared/ui/primitives/Divider";
 import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 
@@ -344,11 +344,14 @@ export const AnnotationToolbar = ({
         ))}
 
         {!canDraw && (
-          <span
-            className="ml-1 flex items-center gap-1 rounded-full bg-white/5 px-2 py-1 text-[10px] text-ethereal-marble/70"
-            title={t("annotations.draw_on_tablet", "Rysowanie dostępne na tablecie")}
-          >
-            <TabletSmartphone size={12} aria-hidden="true" />
+          // The reason, spelled out: the pencil is one zoom — or one change of
+          // fit — away, and a tooltip cannot be reached on the touch screens
+          // this actually appears on.
+          <span className="ml-1 flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-ethereal-marble/70">
+            <ZoomIn size={12} aria-hidden="true" className="shrink-0" />
+            <Eyebrow color="parchment-muted">
+              {t("annotations.draw_needs_room", "Powiększ, by pisać")}
+            </Eyebrow>
           </span>
         )}
 

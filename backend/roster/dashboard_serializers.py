@@ -424,6 +424,12 @@ class ParticipationMaterialsSerializer(serializers.Serializer):
                 'status_display': project.get_status_display(),
                 'event_kind': project.event_kind,
                 'location': location_data,
+                # The songbook is where a singer goes for music, so it has to
+                # know whether this concert has a bound book at all. Follows the
+                # same lifecycle gate as the pieces below it — a closed concert
+                # offers no book, exactly as its score_pdf endpoint refuses one.
+                'has_score_pdf': bool(project.score_pdf)
+                and not piece_context['materials_locked'],
             },
             'program': ProgramItemMaterialsSerializer(
                 ordered_program,
@@ -488,6 +494,8 @@ class ConductedProjectMaterialsSerializer(serializers.Serializer):
                 'status_display': project.get_status_display(),
                 'event_kind': project.event_kind,
                 'location': location_data,
+                'has_score_pdf': bool(project.score_pdf)
+                and not piece_context['materials_locked'],
             },
             'program': ProgramItemMaterialsSerializer(
                 ordered_program,

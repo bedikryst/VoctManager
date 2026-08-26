@@ -36,6 +36,7 @@ import {
 import { useAnnotationTools } from "./lib/useAnnotationTools";
 import { useAnnotationHistory } from "./lib/useAnnotationHistory";
 import { useCanDraw } from "./lib/useCanDraw";
+import { bookPageFor, type ScoreBook } from "./lib/scoreBook";
 import type {
   AnnotationPatch,
   NewAnnotation,
@@ -45,7 +46,11 @@ import type {
 export type ScoreAnnotatorMode = "conductor" | "personal";
 
 export interface UseScoreAnnotatorOptions {
-  /** Edition whose markings to load; null disables fetching (viewer closed). */
+  /**
+   * Edition whose markings to load; null disables fetching (viewer closed).
+   * Ignored in book mode, where the edition is whichever one the page in front
+   * of the reader was bound from.
+   */
   editionId: string | null;
   /**
    * conductor → managers: draw on the shared/conductor layers, clear wipes both.
@@ -53,6 +58,13 @@ export interface UseScoreAnnotatorOptions {
    *             the conductor's shared markings are visible but read-only.
    */
   mode: ScoreAnnotatorMode;
+  /**
+   * The concert binder's map. Present → the document on screen is the book, and
+   * each page is one edition's page placed inside a rectangle. Writes still land
+   * on the EDITION, which is what makes a mark drawn in the binder the same mark
+   * when the piece is later opened on its own.
+   */
+  book?: ScoreBook | null;
 }
 
 export interface ScoreAnnotatorBindings {
@@ -61,6 +73,8 @@ export interface ScoreAnnotatorBindings {
   overlaySlot: React.ReactNode;
   onPageApiChange: (api: PdfPageApi) => void;
   annotationCount: number;
+  /** The live page handle, for chrome outside the annotator (a programme bar). */
+  pageApi: PdfPageApi;
 }
 
 /** Tools that need a stylus/precision surface — coerced away on phones. */
@@ -75,14 +89,13 @@ interface IncomingMarks {
 export const useScoreAnnotator = ({
   editionId,
   mode,
+  book = null,
 }: UseScoreAnnotatorOptions): ScoreAnnotatorBindings => {
   const isConductor = mode === "conductor";
   const tools = useAnnotationTools(
     isConductor ? "shared" : "personal",
     isConductor,
   );
-  const canDrawViewport = useCanDraw();
-
   // Which of the VISIBLE marks this user may erase / edit. The server already
   // scopes reads (a chorister receives shared + own personal; a manager never
   // receives other users' personal), so layer membership is enough here.
@@ -99,30 +112,47 @@ export const useScoreAnnotator = ({
     [isConductor],
   );
 
-  const { annotations, pendingCount } = useScoreAnnotations(editionId, {
-    isCleared,
-    // The stand is on screen exactly when an edition is loaded — which is also
-    // the only time a singer can be looking at a page the conductor is writing on.
-    live: !!editionId,
-  });
-
-  const { create, update, remove, clear, draftAnnotation } =
-    useAnnotationMutations(editionId, { isCleared });
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [pageApi, setPageApi] = useState<PdfPageApi>({
     currentPage: 1,
     numPages: null,
     goToPage: () => {},
+    turnPage: () => {},
+    pageWidth: null,
   });
 
-  // Freehand drawing is offered only from tablet width up; notes, stamps,
-  // eraser + browse stay everywhere.
-  const canDraw = canDrawViewport;
+  /**
+   * Whose markings are in play. A single edition answers this once; the binder
+   * answers it per page, because the reader turning from the Kyrie to the
+   * Gloria has walked from one publisher's engraving into another's. Front
+   * matter — title page, table of contents, a divider card — belongs to no
+   * edition, and there the stand is simply a reader with no pencil.
+   */
+  const activeEditionId = book
+    ? (book.frames.get(pageApi.currentPage)?.edition ?? null)
+    : editionId;
+
+  const { annotations, pendingCount } = useScoreAnnotations(activeEditionId, {
+    isCleared,
+    // The stand is on screen exactly when an edition is loaded — which is also
+    // the only time a singer can be looking at a page the conductor is writing on.
+    live: !!activeEditionId,
+  });
+
+  const { create, update, remove, clear, draftAnnotation } =
+    useAnnotationMutations(activeEditionId, { isCleared });
+
+  // Freehand needs a page large enough for a stroke to mean something — which
+  // the reader can reach by zooming or by switching the fit, on any device.
+  // Notes, stamps, eraser and browse stay everywhere.
+  const canDraw = useCanDraw({
+    pageWidth: pageApi.pageWidth,
+    stylusSeen: tools.stylusSeen,
+  });
 
   const history = useAnnotationHistory({
-    editionId,
+    editionId: activeEditionId,
     // Undoing an erase writes a NEW mark rather than reviving the old key: the
     // server treats a known id as a replay and hands back the row it already
     // has — soft-deleted included — which is exactly what keeps a queued
@@ -139,11 +169,13 @@ export const useScoreAnnotator = ({
   const { recordCreate, recordDelete, recordClear, recordUpdate, undo, redo } =
     history;
 
-  // Reset transient editor state when a different score opens.
+  // Reset transient editor state when a different score opens — in the binder
+  // that is also a page turn into the next piece, which is right: a note
+  // selected in the Kyrie is not a note selected in the Gloria.
   useEffect(() => {
     setSelectedId(null);
     setGuideOpen(false);
-  }, [editionId]);
+  }, [activeEditionId]);
 
   const handleCreate = useCallback(
     (partial: Omit<NewAnnotation, "edition">) => {
@@ -181,14 +213,14 @@ export const useScoreAnnotator = ({
   );
 
   const handleClearAll = useCallback(() => {
-    if (!editionId) return;
+    if (!activeEditionId) return;
     // Snapshot only what the server will actually wipe, so undo never
     // duplicates marks that survived the clear.
     const snapshot = annotations.filter(isCleared);
     if (snapshot.length === 0) return;
     clear.mutateAsync().catch(() => {});
     recordClear(snapshot);
-  }, [annotations, clear, editionId, isCleared, recordClear]);
+  }, [activeEditionId, annotations, clear, isCleared, recordClear]);
 
   const handleSelectNote = useCallback(
     (id: string) => {
@@ -199,18 +231,37 @@ export const useScoreAnnotator = ({
     [tools],
   );
 
-  const incoming = useIncomingMarks(annotations, editionId, mode);
+  /**
+   * The page a marking is ON, in the document actually open. A mark records the
+   * edition's page and nothing else, so in the binder every offer to go to one
+   * — the index, the "the conductor just wrote this" notice — has to be
+   * translated, and its page number has to be RELABELLED too: telling a singer
+   * looking at book page 37 that their note is on page 2 is worse than saying
+   * nothing.
+   */
+  const displayPage = useCallback(
+    (sourcePage: number): number => {
+      if (!book || !activeEditionId) return sourcePage;
+      return (
+        bookPageFor(book, activeEditionId, sourcePage, pageApi.currentPage) ??
+        sourcePage
+      );
+    },
+    [activeEditionId, book, pageApi.currentPage],
+  );
+
+  const incoming = useIncomingMarks(annotations, activeEditionId, mode);
 
   const handleGoToIncoming = useCallback(() => {
-    if (incoming.marks) pageApi.goToPage(incoming.marks.page);
+    if (incoming.marks) pageApi.goToPage(displayPage(incoming.marks.page));
     incoming.dismiss();
-  }, [incoming, pageApi]);
+  }, [displayPage, incoming, pageApi]);
 
   // Keyboard: undo / redo, ignoring text inputs. Only while a score is open —
   // otherwise a stray Ctrl+Z anywhere in the app would replay annotation
   // history against a closed viewer.
   useEffect(() => {
-    if (!editionId) return;
+    if (!activeEditionId) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey)) return;
       const target = event.target as HTMLElement | null;
@@ -231,7 +282,7 @@ export const useScoreAnnotator = ({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [editionId, undo, redo]);
+  }, [activeEditionId, undo, redo]);
 
   const {
     tool,
@@ -246,38 +297,83 @@ export const useScoreAnnotator = ({
     fingerDraw,
   } = tools;
 
-  // Coerce precision tools back to browse on a phone-sized viewport.
+  // Coerce precision tools back to browse while the page is too small to write
+  // on — a pen held over a thumbnail would only produce marks nobody can place.
   const effectiveTool = useMemo(() => {
-    if (!canDrawViewport && PRECISION_TOOLS.has(tool)) return "pointer" as const;
+    if (!canDraw && PRECISION_TOOLS.has(tool)) return "pointer" as const;
     return tool;
-  }, [canDrawViewport, tool]);
+  }, [canDraw, tool]);
+
+  // Read through a ref: the overlay only needs it at the moment a finger lifts,
+  // and rebuilding the whole drawing surface every time the page number moves
+  // would throw away a stroke in progress.
+  const turnPageRef = useRef(pageApi.turnPage);
+  turnPageRef.current = pageApi.turnPage;
+  const turnPage = useCallback((delta: 1 | -1) => turnPageRef.current(delta), []);
 
   const renderPageOverlay = useCallback(
-    (geometry: PdfPageGeometry) => (
-      <AnnotationOverlay
-        geometry={geometry}
-        annotations={annotations}
-        visibleLayers={visibleLayers}
-        tool={effectiveTool}
-        color={color}
-        size={size}
-        textScale={textScale}
-        stampScale={stampScale}
-        noteDisplay={noteDisplay}
-        stamp={stamp}
-        layer={layer}
-        fingerDraw={fingerDraw}
-        canEdit
-        canModify={canModify}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        onCreate={handleCreate}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-      />
-    ),
+    (geometry: PdfPageGeometry) => {
+      // In the binder the drawing surface is not the page — it is the rectangle
+      // the edition's page was placed in. Inset to that box and the overlay's
+      // own 0..1 normalization is once again the EDITION's frame, which is the
+      // frame every stored mark was measured in. No mark is transformed;
+      // the surface is simply put where the music is.
+      const frame = book ? book.frames.get(geometry.pageNumber) : null;
+      if (book && !frame) return null; // front matter, a divider card: nothing to write on
+      // A page turn moves the page before the new edition's marks have arrived.
+      // Drawing the old piece's marks on the new piece's page for that one beat
+      // would put ink on the wrong bar.
+      if (frame && frame.edition !== activeEditionId) return null;
+
+      const [left, top, width, height] = frame?.box ?? [0, 0, 1, 1];
+      const surface = (
+        <AnnotationOverlay
+          geometry={{
+            pageNumber: frame?.src_page ?? geometry.pageNumber,
+            width: geometry.width * width,
+            height: geometry.height * height,
+            scale: geometry.scale,
+          }}
+          annotations={annotations}
+          visibleLayers={visibleLayers}
+          tool={effectiveTool}
+          onTurnPage={turnPage}
+          color={color}
+          size={size}
+          textScale={textScale}
+          stampScale={stampScale}
+          noteDisplay={noteDisplay}
+          stamp={stamp}
+          layer={layer}
+          fingerDraw={fingerDraw}
+          canEdit
+          canModify={canModify}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+        />
+      );
+      if (!frame) return surface;
+      return (
+        <div
+          className="absolute"
+          style={{
+            left: `${left * 100}%`,
+            top: `${top * 100}%`,
+            width: `${width * 100}%`,
+            height: `${height * 100}%`,
+          }}
+        >
+          {surface}
+        </div>
+      );
+    },
     [
+      activeEditionId,
       annotations,
+      book,
       visibleLayers,
       effectiveTool,
       color,
@@ -290,6 +386,7 @@ export const useScoreAnnotator = ({
       fingerDraw,
       canModify,
       selectedId,
+      turnPage,
       handleCreate,
       handleUpdate,
       handleDelete,
@@ -304,6 +401,7 @@ export const useScoreAnnotator = ({
         annotations={annotations}
         currentPage={pageApi.currentPage}
         goToPage={pageApi.goToPage}
+        displayPage={displayPage}
         visibleLayers={visibleLayers}
         toggleLayerVisibility={tools.toggleLayerVisibility}
         mode={mode}
@@ -311,7 +409,7 @@ export const useScoreAnnotator = ({
       />
       <IncomingMarksNotice
         count={incoming.marks?.count ?? 0}
-        page={incoming.marks?.page ?? 1}
+        page={displayPage(incoming.marks?.page ?? 1)}
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}
       />
@@ -324,7 +422,10 @@ export const useScoreAnnotator = ({
   );
 
   return {
-    toolbarSlot: editionId ? (
+    // No edition under the current page means no pencil: on the binder's title
+    // page or a divider card there is nothing a mark could belong to, and a
+    // toolbar offering to draw there would be offering to lose the drawing.
+    toolbarSlot: activeEditionId ? (
       <AnnotationToolbar
         {...tools}
         mode={mode}
@@ -344,6 +445,7 @@ export const useScoreAnnotator = ({
     overlaySlot,
     onPageApiChange,
     annotationCount: annotations.length,
+    pageApi,
   };
 };
 

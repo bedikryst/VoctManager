@@ -4,7 +4,7 @@
     "clear_confirm": "Sure?",
     "comment_placeholder": "Note for this spot…",
     "collapse_tools": "Collapse tools",
-    "draw_on_tablet": "Drawing is available on a tablet",
+    "draw_needs_room": "Zoom in to write",
     "ink_color": "Ink colour",
     "ink_reserved": "Red is reserved for the conductor.",
     "input": {
@@ -3134,6 +3134,11 @@
     "download": "Download",
     "error_403": "You do not have permission to view this document.",
     "error_generic": "The document could not be loaded.",
+    "fit_auto": "Auto",
+    "fit_half": "Half page",
+    "fit_label": "Page fit",
+    "fit_page": "Whole page",
+    "fit_screen_width": "Screen width",
     "fit_width": "Fit page",
     "immersive_enter": "Performance mode",
     "immersive_hint": "Edges turn pages · centre exits",
@@ -4324,6 +4329,15 @@
       "ready": "Approved"
     }
   },
+  "score_book": {
+    "encore": "Encore",
+    "front_matter": "Front of the book",
+    "open_cta": "Open the concert book",
+    "piece_next": "Next piece",
+    "piece_prev": "Previous piece",
+    "programme": "Concert programme",
+    "title": "Score book"
+  },
   "schedule": {
     "attendance": {
       "absent": "Absences",
@@ -4368,8 +4382,8 @@
         "dressing_room": "Dressing room",
         "contact": "On-site contact"
       },
-      "score_pdf_label": "Score / Program",
-      "score_pdf_modal_title": "Score",
+      "score_pdf_label": "Score book",
+      "score_pdf_modal_title": "Score book",
       "tabs_aria": "Event sections",
       "tab": {
         "logistics": "Logistics",
@@ -4422,7 +4436,7 @@
       },
       "next_rehearsal": "Next rehearsal",
       "prepare_cta": "Songbook",
-      "score_cta": "Score",
+      "score_cta": "Score book",
       "program_loading": "Loading repertoire...",
       "rehearsal_mode": "Rehearsal mode",
       "tonight_program": "Project repertoire",

@@ -4,7 +4,7 @@
     "clear_confirm": "Na pewno?",
     "comment_placeholder": "Notatka do tego miejsca…",
     "collapse_tools": "Zwiń narzędzia",
-    "draw_on_tablet": "Rysowanie dostępne na tablecie",
+    "draw_needs_room": "Powiększ, by pisać",
     "ink_color": "Kolor",
     "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",
     "input": {
@@ -3152,6 +3152,11 @@
     "download": "Pobierz",
     "error_403": "Nie masz uprawnień do wyświetlenia tego dokumentu.",
     "error_generic": "Nie udało się załadować dokumentu.",
+    "fit_auto": "Auto",
+    "fit_half": "Pół strony",
+    "fit_label": "Dopasowanie strony",
+    "fit_page": "Cała strona",
+    "fit_screen_width": "Szerokość ekranu",
     "fit_width": "Dopasuj",
     "immersive_enter": "Tryb występu",
     "immersive_hint": "Boki ekranu = strona · środek = wyjście",
@@ -4355,6 +4360,15 @@
       "ready": "Zatwierdzone"
     }
   },
+  "score_book": {
+    "encore": "Bis",
+    "front_matter": "Początek książki",
+    "open_cta": "Otwórz książkę koncertu",
+    "piece_next": "Następny utwór",
+    "piece_prev": "Poprzedni utwór",
+    "programme": "Program koncertu",
+    "title": "Książka nutowa"
+  },
   "schedule": {
     "attendance": {
       "absent": "Nieobecności",
@@ -4399,8 +4413,8 @@
         "dressing_room": "Garderoba",
         "contact": "Kontakt na miejscu"
       },
-      "score_pdf_label": "Partytura / Program",
-      "score_pdf_modal_title": "Partytura",
+      "score_pdf_label": "Książka nutowa",
+      "score_pdf_modal_title": "Książka nutowa",
       "tabs_aria": "Sekcje wydarzenia",
       "tab": {
         "logistics": "Logistyka",
@@ -4453,7 +4467,7 @@
       },
       "next_rehearsal": "Najbliższa próba",
       "prepare_cta": "Śpiewnik",
-      "score_cta": "Partytura",
+      "score_cta": "Książka nutowa",
       "program_loading": "Wczytywanie repertuaru...",
       "rehearsal_mode": "Tryb próby",
       "tonight_program": "Repertuar projektu",

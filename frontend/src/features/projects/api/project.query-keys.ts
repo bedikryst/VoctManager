@@ -93,6 +93,9 @@ export const projectKeys = {
      *  different questions with two different answers. */
     myMarks: (projectId: string | number, layers = "personal") =>
       ["scorePackage", "myMarks", { project: String(projectId), layers }] as const,
+    /** What each page of the assembled book is — the bridge to its editions. */
+    map: (projectId: string | number) =>
+      ["scorePackage", "map", { project: String(projectId) }] as const,
     thumbnails: (
       projectId: string | number,
       itemId: string,

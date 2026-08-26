@@ -82,6 +82,8 @@ export interface PdfViewerModalProps {
    * viewer; defaults to `true`. Set `false` for a protected, in-app-only score.
    */
   canExport?: boolean;
+  /** Which reading habit remembers the fit — see `PdfViewerProps.fitScope`. */
+  fitScope?: string;
   onClose: () => void;
 }
 
@@ -102,6 +104,7 @@ export const PdfViewerModal = ({
   overlaySlot,
   onPageApiChange,
   canExport = true,
+  fitScope,
   onClose,
 }: PdfViewerModalProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -209,6 +212,7 @@ export const PdfViewerModal = ({
                   onPageApiChange={onPageApiChange}
                   reserveTopRight
                   canExport={canExport}
+                  fitScope={fitScope}
                   className="flex-1"
                 />
 

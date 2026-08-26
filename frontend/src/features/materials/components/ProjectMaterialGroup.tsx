@@ -1,9 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
+import { Archive, BookOpen, Briefcase, CalendarDays, EyeOff, Wand2 } from "lucide-react";
 
+import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
 import { CompletionRing } from "@/shared/ui/composites/CompletionRing";
 import { Badge } from "@/shared/ui/primitives/Badge";
+import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import { PieceRow } from "./PieceRow";
@@ -19,6 +21,7 @@ export const ProjectMaterialGroup = ({
   group,
 }: ProjectMaterialGroupProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const [isBookOpen, setBookOpen] = useState(false);
   const isArchived = group.project.status === "DONE";
 
   const total = group.program.length;
@@ -137,6 +140,30 @@ export const ProjectMaterialGroup = ({
           )
         )}
       </div>
+
+      {/* The whole concert in binding order, with the pencil in it. It leads the
+          pieces because that is what a singer picks up on the way to a
+          rehearsal — the rows below are for working on one piece at a time. */}
+      {group.project.has_score_pdf && (
+        <>
+          <Button
+            variant="secondary"
+            size="touch"
+            leftIcon={<BookOpen size={14} aria-hidden="true" />}
+            onClick={() => setBookOpen(true)}
+            className="w-full sm:w-auto"
+          >
+            {t("score_book.open_cta", "Otwórz książkę koncertu")}
+          </Button>
+          <ProjectScoreBook
+            projectId={group.project.id}
+            projectTitle={group.project.title}
+            isOpen={isBookOpen}
+            mode={group.isConducting ? "conductor" : "personal"}
+            onClose={() => setBookOpen(false)}
+          />
+        </>
+      )}
 
       <div className="flex flex-col gap-3">
         {group.program.map((item) => (

@@ -169,6 +169,11 @@ export interface MaterialsProject {
   status: string;
   status_display: string;
   location: MaterialsLocation | null;
+  /**
+   * A bound concert book exists AND is still the singer's to read — the server
+   * closes access once the concert is over, so this is already false there.
+   */
+  has_score_pdf: boolean;
 }
 
 export interface MaterialsDashboardItem {

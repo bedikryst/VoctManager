@@ -1,15 +1,25 @@
+/**
+ * @file usePdfState.ts
+ * @description Geometry of the reading surface: viewport measurement, page
+ * aspect and the fit maths that decides how large a page is drawn.
+ *
+ * The rule the rest of the viewer leans on: `renderedPageWidth` is the BASE
+ * width for a fit; `zoom` multiplies it. Fitting the whole page to the shorter
+ * side — the only behaviour this hook used to have — is correct for an upright
+ * tablet and wasteful everywhere else, so the fit is a mode, and `auto` picks
+ * it from the measured box rather than from a device guess.
+ * @module shared/ui/composites/PdfViewer
+ * @architecture Enterprise SaaS 2026
+ */
+
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   DEFAULT_ZOOM,
   COMPACT_VIEWPORT_THRESHOLD,
-  MOBILE_MIN_PAGE_WIDTH,
-  DESKTOP_MIN_PAGE_WIDTH,
-  DESKTOP_PAGE_WIDTH_CAP,
   DEFAULT_PAGE_ASPECT,
-  FIT_VERTICAL_RESERVE_MOBILE,
-  FIT_VERTICAL_RESERVE_DESKTOP,
-  FIT_VERTICAL_RESERVE_IMMERSIVE,
 } from "../constants";
+import { resolvePageFit } from "../fit";
+import type { FitMode } from "../types";
 
 interface UsePdfStateArgs {
   /**
@@ -18,9 +28,36 @@ interface UsePdfStateArgs {
    * floating controls is dead space, and the comfort cap on width is a cage.
    */
   immersive?: boolean;
+  /**
+   * Bucket the remembered fit is stored under. The choice describes a reading
+   * posture — score on a stand vs. sheet in the hand — so it must not travel
+   * between kinds of document (see `PdfViewerProps.fitScope`).
+   */
+  fitScope?: string;
 }
 
-export const usePdfState = ({ immersive = false }: UsePdfStateArgs = {}) => {
+const FIT_STORAGE_PREFIX = "voct.pdf.fit_mode";
+
+const isFitMode = (value: string | null): value is FitMode =>
+  value === "auto" || value === "page" || value === "width" || value === "half";
+
+const fitStorageKey = (scope: string): string => `${FIT_STORAGE_PREFIX}:${scope}`;
+
+/** The fit a reader last chose on this device — it describes their eyes, not the document. */
+const readStoredFit = (scope: string): FitMode => {
+  if (typeof window === "undefined") return "auto";
+  try {
+    const stored = window.localStorage.getItem(fitStorageKey(scope));
+    return isFitMode(stored) ? stored : "auto";
+  } catch {
+    return "auto";
+  }
+};
+
+export const usePdfState = ({
+  immersive = false,
+  fitScope = "document",
+}: UsePdfStateArgs = {}) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -28,38 +65,34 @@ export const usePdfState = ({ immersive = false }: UsePdfStateArgs = {}) => {
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
   const [viewportWidth, setViewportWidth] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
-  // Page height / width, so zoom = 1 shows the WHOLE page (a score on a stand),
-  // not a width-filled slice you have to scroll. Seeded with A4 so the first
-  // paint is already near-fit, then corrected from the real page.
+  // Page height / width. Seeded with A4 so the first paint is already near-fit,
+  // then corrected from the real page.
   const [pageAspect, setPageAspect] = useState(DEFAULT_PAGE_ASPECT);
+  const [fitMode, setFitModeState] = useState<FitMode>(() => readStoredFit(fitScope));
+
+  const setFitMode = useCallback((next: FitMode) => {
+    setFitModeState(next);
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(fitStorageKey(fitScope), next);
+    } catch {
+      // Private mode / storage disabled: the choice still holds for the session.
+    }
+  }, [fitScope]);
 
   const isCompactViewport = viewportWidth > 0 && viewportWidth < COMPACT_VIEWPORT_THRESHOLD;
 
-  const renderedPageWidth = useMemo(() => {
-    if (viewportWidth <= 0) return undefined;
-    const horizontalPadding = immersive ? 0 : isCompactViewport ? 16 : 72;
-    const availableWidth = Math.max(0, viewportWidth - horizontalPadding);
-    const fitWidth =
-      immersive || isCompactViewport
-        ? availableWidth
-        : Math.min(availableWidth, DESKTOP_PAGE_WIDTH_CAP);
-    // Also cap by the width whose full page height clears the viewport (minus
-    // floating chrome) — so at zoom 1 the entire page is on screen at once.
-    let targetWidth = fitWidth;
-    if (viewportHeight > 0 && pageAspect > 0) {
-      const verticalReserve = immersive
-        ? FIT_VERTICAL_RESERVE_IMMERSIVE
-        : isCompactViewport
-          ? FIT_VERTICAL_RESERVE_MOBILE
-          : FIT_VERTICAL_RESERVE_DESKTOP;
-      const availableHeight = Math.max(0, viewportHeight - verticalReserve);
-      targetWidth = Math.min(fitWidth, availableHeight / pageAspect);
-    }
-    return Math.max(
-      isCompactViewport ? MOBILE_MIN_PAGE_WIDTH : DESKTOP_MIN_PAGE_WIDTH,
-      Math.floor(targetWidth)
-    );
-  }, [immersive, isCompactViewport, viewportWidth, viewportHeight, pageAspect]);
+  const { renderedPageWidth, resolvedFit } = useMemo(
+    () =>
+      resolvePageFit({
+        viewportWidth,
+        viewportHeight,
+        pageAspect,
+        immersive,
+        fitMode,
+      }),
+    [fitMode, immersive, viewportWidth, viewportHeight, pageAspect],
+  );
 
   const devicePixelRatio = useMemo(() => {
     if (typeof window === "undefined") return 1;
@@ -107,6 +140,9 @@ export const usePdfState = ({ immersive = false }: UsePdfStateArgs = {}) => {
     setCurrentPage,
     zoom,
     setZoom,
+    fitMode,
+    setFitMode,
+    resolvedFit,
     renderedPageWidth,
     isCompactViewport,
     devicePixelRatio,

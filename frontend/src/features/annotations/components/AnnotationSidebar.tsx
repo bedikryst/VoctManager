@@ -35,7 +35,14 @@ import type { LayerVisibility } from "../lib/useAnnotationTools";
 interface AnnotationSidebarProps {
   annotations: ScoreAnnotation[];
   currentPage: number;
-  goToPage: (page: number) => void;
+  /** `focusY` is the mark's own normalized y, so the jump lands ON it. */
+  goToPage: (page: number, focusY?: number) => void;
+  /**
+   * A mark stores the page of its EDITION. In the concert binder that is not
+   * the page the reader is looking at, so both the number shown and the page
+   * jumped to come through here. Identity for a single edition.
+   */
+  displayPage?: (sourcePage: number) => number;
   visibleLayers: LayerVisibility;
   toggleLayerVisibility: (layer: AnnotationLayer) => void;
   /** Decides which layer rows make sense: choir/private vs conductor/mine. */
@@ -54,6 +61,7 @@ export const AnnotationSidebar = ({
   annotations,
   currentPage,
   goToPage,
+  displayPage = (page) => page,
   visibleLayers,
   toggleLayerVisibility,
   mode,
@@ -77,10 +85,11 @@ export const AnnotationSidebar = ({
   const annotatedPages = useMemo(() => {
     const counts = new Map<number, number>();
     for (const a of annotations) {
-      counts.set(a.page_number, (counts.get(a.page_number) ?? 0) + 1);
+      const page = displayPage(a.page_number);
+      counts.set(page, (counts.get(page) ?? 0) + 1);
     }
     return [...counts.entries()].sort((a, b) => a[0] - b[0]);
-  }, [annotations]);
+  }, [annotations, displayPage]);
 
   const layerCounts = useMemo(() => {
     const counts = { shared: 0, conductor: 0, personal: 0 };
@@ -201,7 +210,11 @@ export const AnnotationSidebar = ({
                           <button
                             type="button"
                             onClick={() => {
-                              goToPage(note.page_number);
+                              // The note's own y, not just its page: on a fit
+                              // that shows half a page at a time, "go to page 7"
+                              // can land a screen above the thing that was
+                              // clicked.
+                              goToPage(displayPage(note.page_number), payload.y);
                               onSelectNote(note.id, note.page_number);
                             }}
                             className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10"
@@ -217,7 +230,7 @@ export const AnnotationSidebar = ({
                               </span>
                               <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ethereal-marble/50">
                                 {t("annotations.panel.page", "s. {{page}}", {
-                                  page: note.page_number,
+                                  page: displayPage(note.page_number),
                                 })}
                                 {layerOf(note) !== "shared" && (
                                   <Lock size={9} aria-hidden="true" />

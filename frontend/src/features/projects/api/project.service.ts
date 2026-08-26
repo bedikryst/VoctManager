@@ -376,6 +376,44 @@ export interface ScoreMarksAvailability {
   count: number;
 }
 
+/**
+ * One page of the assembled book, told in the terms the screen needs: which
+ * edition page it shows, and inside which rectangle of the sheet. `box` is
+ * `[left, top, width, height]` as fractions of the whole page, measured from
+ * its top-left — so it survives any zoom, and a marking stored normalized
+ * against the edition lands exactly where it was drawn.
+ */
+export interface ScoreBookFrame {
+  /** 1-based page of the book PDF. */
+  page: number;
+  edition: string;
+  /** 1-based page within that edition — what `Annotation.page_number` counts. */
+  src_page: number;
+  box: [number, number, number, number];
+}
+
+/** One programme item's stretch of the book, its opening card included. */
+export interface ScoreBookItem {
+  id: string;
+  order: number;
+  title: string;
+  composer: string;
+  is_encore: boolean;
+  first_page: number;
+  last_page: number;
+}
+
+/**
+ * The binder's map. `available: false` is the ordinary answer for a book that
+ * was uploaded by hand rather than assembled — it has no map, so it has no
+ * pencil either, and the reader simply gets the book they had before.
+ */
+export interface ScoreBookMap {
+  available: boolean;
+  pages: ScoreBookFrame[];
+  items: ScoreBookItem[];
+}
+
 /** Build state + readiness of a project's auto-assembled concert score book. */
 export interface ScorePackageState {
   status: ScorePackageStatus;
@@ -597,6 +635,17 @@ export const ProjectService = {
     const response = await api.get<ScoreMarksAvailability>(
       `${PROJECTS_BASE_URL}${projectId}/score_marks/`,
       layers?.length ? { params: { layers: layers.join(",") } } : undefined,
+    );
+    return response.data;
+  },
+
+  /**
+   * What each page of the book is. Cheap, cacheable and completely
+   * reader-independent — it describes the file, not the person holding it.
+   */
+  getScoreMap: async (projectId: string | number): Promise<ScoreBookMap> => {
+    const response = await api.get<ScoreBookMap>(
+      `${PROJECTS_BASE_URL}${projectId}/score_map/`,
     );
     return response.data;
   },

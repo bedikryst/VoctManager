@@ -35,6 +35,18 @@ export interface PdfPageGeometry {
 }
 
 /**
+ * How the page is sized against the viewport.
+ * - `page` — the whole page on screen at once (a score on a stand).
+ * - `width` — fill the width, read down; the page overflows and scrolls.
+ * - `half` — half a page fills the screen, so the music renders at nearly
+ *   double the size; a turn advances by a half.
+ * `auto` resolves between `page` and `half` from the actual geometry, because
+ * the same device answers differently upright and on its side.
+ */
+export type FitMode = "auto" | "page" | "width" | "half";
+export type ResolvedFitMode = Exclude<FitMode, "auto">;
+
+/**
  * Imperative page handle surfaced to callers that render an `overlaySlot`
  * needing to drive navigation (e.g. an annotation index that jumps to the page
  * a comment lives on). Re-emitted whenever the page or page-count changes.
@@ -42,7 +54,26 @@ export interface PdfPageGeometry {
 export interface PdfPageApi {
   currentPage: number;
   numPages: number | null;
-  goToPage: (page: number) => void;
+  /**
+   * Open a page. `focusY` (0..1 from the page's top, the same frame markings
+   * are stored in) parks the scroll on that spot instead of the page's top —
+   * without it a jump to a mark in the unseen half of a page lands above it.
+   */
+  goToPage: (page: number, focusY?: number) => void;
+  /**
+   * One reader's turn, which is a screenful wherever the page overflows and a
+   * page where it does not. Surfaced because an overlay that owns every touch
+   * (an armed pen) would otherwise leave the reader with no way to turn at all.
+   */
+  turnPage: (delta: 1 | -1) => void;
+  /**
+   * Rendered width of the page in CSS pixels, zoom included — null until the
+   * first page box is measured (only measured for callers that draw an
+   * overlay). It is the honest answer to "is there room to write here", which
+   * a viewport width cannot give: the same phone renders a 311px page upright
+   * and a 622px one on its side.
+   */
+  pageWidth: number | null;
 }
 
 export interface PdfViewerProps {
@@ -96,5 +127,13 @@ export interface PdfViewerProps {
    * controls are never affected.
    */
   canExport?: boolean;
+  /**
+   * Which reading habit the remembered fit belongs to. A score is read off a
+   * stand at arm's length, where a whole system has to be visible at once; a
+   * call sheet is read in the hand. Carrying one choice into the other is how a
+   * singer opens the day sheet and finds it halved. Free-form, so a surface
+   * with its own reading posture can claim a bucket of its own.
+   */
+  fitScope?: string;
   className?: string;
 }

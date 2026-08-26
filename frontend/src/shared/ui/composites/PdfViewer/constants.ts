@@ -8,6 +8,30 @@ export const DESKTOP_MIN_PAGE_WIDTH = 320;
 export const DESKTOP_PAGE_WIDTH_CAP = 1080;
 /** A4 portrait (height / width) — the fit-to-page guess until the real page loads. */
 export const DEFAULT_PAGE_ASPECT = 1.414;
+
+/**
+ * Fitting the WHOLE page to the shorter side is right for a tablet held
+ * upright and wrong everywhere else: a portrait A4 dropped into a landscape
+ * screen answers to the height, so it uses barely a third of the width and the
+ * music ends up half the size the device could show. These govern the way out.
+ */
+/**
+ * Fraction of the page height that must be on screen in half-page mode. Half a
+ * page fits at nearly double the width, which is the whole point of the mode.
+ */
+export const HALF_PAGE_FRACTION = 0.5;
+/**
+ * How much bigger half-page has to render before `auto` picks it over the whole
+ * page. Below this the reader would be turning twice as often for nothing.
+ */
+export const AUTO_HALF_GAIN_RATIO = 1.15;
+/**
+ * Slice of the previous screen kept when a turn scrolls a page that overflows —
+ * a system split across the fold must not vanish between two halves.
+ */
+export const FIT_SCROLL_OVERLAP_PX = 28;
+/** Scroll distance below which the viewport counts as parked at an edge. */
+export const SCROLL_EDGE_TOLERANCE_PX = 4;
 /** Vertical space kept for floating chrome so a fit-to-page render clears the nav. */
 export const FIT_VERTICAL_RESERVE_MOBILE = 0;
 export const FIT_VERTICAL_RESERVE_DESKTOP = -50;

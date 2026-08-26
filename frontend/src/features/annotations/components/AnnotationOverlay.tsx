@@ -26,7 +26,10 @@ import {
   FIELD_TEXT_SCALE,
   fieldShellVariants,
 } from "@/shared/ui/primitives/fieldShell";
-import type { PdfPageGeometry } from "@/shared/ui/composites/PdfViewer";
+import {
+  TAP_ZONE_FRACTION as PDF_TAP_ZONE_FRACTION,
+  type PdfPageGeometry,
+} from "@/shared/ui/composites/PdfViewer";
 
 import {
   isComment,
@@ -71,6 +74,13 @@ interface AnnotationOverlayProps {
   layer: AnnotationLayer;
   /** True → a bare finger draws; false → the finger pans and only a stylus draws. */
   fingerDraw: boolean;
+  /**
+   * Turn the score by one reader's turn. This surface swallows every touch
+   * while a pen is armed, so without it a reader holding the pencil has no way
+   * to move on at all — and in performance mode there is no bottom bar to fall
+   * back to.
+   */
+  onTurnPage: (delta: 1 | -1) => void;
   canEdit: boolean;
   /** May THIS user erase / edit the given mark? (chorister → personal only). */
   canModify: (annotation: ScoreAnnotation) => boolean;
@@ -124,6 +134,7 @@ export const AnnotationOverlay = ({
   stamp,
   layer,
   fingerDraw,
+  onTurnPage,
   canEdit,
   canModify,
   selectedId,
@@ -138,9 +149,13 @@ export const AnnotationOverlay = ({
   const [stroke, setStroke] = useState<NormPoint[] | null>(null);
   const [pendingNote, setPendingNote] = useState<{ x: number; y: number } | null>(null);
 
-  // Finger-pan session while a pen tool is armed (stylus-first routing).
+  // Finger-pan session while a pen tool is armed (stylus-first routing). The
+  // start point rides along so a pan that never moved can still be read as the
+  // tap it was — see `handlePointerUp`.
   const panRef = useRef<{
     pointerId: number;
+    startX: number;
+    startY: number;
     lastX: number;
     lastY: number;
     viewport: HTMLElement;
@@ -210,6 +225,8 @@ export const AnnotationOverlay = ({
             event.currentTarget.setPointerCapture(event.pointerId);
             panRef.current = {
               pointerId: event.pointerId,
+              startX: event.clientX,
+              startY: event.clientY,
               lastX: event.clientX,
               lastY: event.clientY,
               viewport,
@@ -268,6 +285,21 @@ export const AnnotationOverlay = ({
       const pan = panRef.current;
       if (pan && pan.pointerId === event.pointerId) {
         panRef.current = null;
+        // A finger that pressed and lifted without travelling did not pan — it
+        // tapped. In the edge zones that is the score's page turn, which this
+        // surface would otherwise swallow whole (it is gesture-exempt, so the
+        // viewer never sees the touch), leaving a reader with the pencil in
+        // hand stranded on one page.
+        const travelled = Math.hypot(
+          event.clientX - pan.startX,
+          event.clientY - pan.startY,
+        );
+        if (travelled <= TOUCH_SLOP_PX) {
+          const rect = pan.viewport.getBoundingClientRect();
+          const relX = (event.clientX - rect.left) / Math.max(rect.width, 1);
+          if (relX <= PDF_TAP_ZONE_FRACTION) onTurnPage(-1);
+          else if (relX >= 1 - PDF_TAP_ZONE_FRACTION) onTurnPage(1);
+        }
         return;
       }
       const tap = tapRef.current;
@@ -316,7 +348,7 @@ export const AnnotationOverlay = ({
       }
       setStroke(null);
     },
-    [drawing, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, pageNumber, color, layer, toNorm],
+    [drawing, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, onTurnPage, pageNumber, color, layer, toNorm],
   );
 
   const handlePointerCancel = useCallback(() => {

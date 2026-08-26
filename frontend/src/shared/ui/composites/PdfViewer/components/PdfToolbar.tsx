@@ -53,15 +53,19 @@ export const PdfToolbar = ({
         {/* Single flex-row child: GlassCard's inner wrapper is flex-col, so the
             buttons must share one row container or they stack vertically. */}
         <div className="flex items-center gap-1">
+          {/* Spelled out, not a lone glyph: readers were pinch-zooming their way
+              through concerts without ever learning this mode existed, and an
+              unlabelled expand arrow reads as "zoom", which they already had. */}
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             onClick={onEnterImmersive}
+            leftIcon={<Maximize2 size={16} aria-hidden="true" />}
             aria-label={t("pdf_viewer.immersive_enter", "Performance mode")}
             title={t("pdf_viewer.immersive_enter", "Performance mode")}
-            className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+            className="h-9 gap-2 rounded-full px-3 text-ethereal-marble hover:bg-white/10 hover:text-white"
           >
-            <Maximize2 size={16} aria-hidden="true" />
+            {t("pdf_viewer.immersive_enter", "Performance mode")}
           </Button>
 
           {/* Export controls are withheld for a protected score (in-app only). */}

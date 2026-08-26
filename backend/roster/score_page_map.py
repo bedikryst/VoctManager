@@ -39,6 +39,35 @@ KIND_MUSIC: PageKind = "music"      # one bound source page of an edition
 PlacedBox = tuple[float, float, float, float]
 
 
+class BookPageFrame(TypedDict):
+    """One page of the book, told to a screen rather than to a printer.
+
+    ``page`` is 1-based (what a reader and a PDF viewer both call page one),
+    and ``box`` is the placed source page as fractions of the sheet with the
+    origin at its TOP-LEFT — the frame CSS lays out in. Together they say: draw
+    this edition's page ``src_page`` inside that rectangle, and everything
+    stored against the edition falls where it belongs with no further maths.
+    """
+
+    page: int
+    edition: str
+    src_page: int
+    box: list[float]
+
+
+class BookItemSpan(TypedDict):
+    """Where one programme item lives in the book, front card included.
+
+    Spans are what "next piece" means. They cover every page the item owns —
+    its divider card and the recto-spacer before it as well as its music — so
+    jumping to a piece opens on its title, the way opening a binder does.
+    """
+
+    item: str
+    first_page: int
+    last_page: int
+
+
 class PageMapRow(TypedDict, total=False):
     """One page of the assembled book.
 
@@ -105,6 +134,70 @@ def music_pages(page_map: list[Any]) -> list[PageMapRow]:
     return rows
 
 
+def book_frames(page_map: list[Any]) -> list[BookPageFrame]:
+    """The screen-side projection of the map: which book page shows which
+    edition page, and inside what rectangle.
+
+    This is the same fact the print overlay uses, said in the other medium's
+    units — points from the bottom-left become fractions from the top-left,
+    because that is what a browser lays out in and because a fraction survives
+    the page being rendered at any zoom.
+    """
+    frames: list[BookPageFrame] = []
+    for row in music_pages(page_map):
+        box = row["box"]
+        edition = row["edition"]
+        src_page = row["src_page"]
+        if box is None or edition is None or src_page is None:
+            continue
+        x, y, width, height = box
+        frames.append(BookPageFrame(
+            page=row["phys"] + 1,
+            edition=edition,
+            src_page=src_page,
+            box=[
+                x / A4_WIDTH_PT,
+                (A4_HEIGHT_PT - (y + height)) / A4_HEIGHT_PT,
+                width / A4_WIDTH_PT,
+                height / A4_HEIGHT_PT,
+            ],
+        ))
+    return frames
+
+
+def book_item_spans(page_map: list[Any]) -> list[BookItemSpan]:
+    """Each programme item's page range in the book, in binding order.
+
+    Every kind of page counts, not only music: an item's divider card is part
+    of the item, and a reader asking for the next piece wants to arrive at its
+    title. Front matter carries no item and therefore no span.
+    """
+    bounds: dict[str, list[int]] = {}
+    order: list[str] = []
+    for raw in page_map or []:
+        if not isinstance(raw, dict):
+            continue
+        item = raw.get("item")
+        if not item:
+            continue
+        try:
+            page = int(raw["phys"]) + 1
+        except (KeyError, TypeError, ValueError):
+            continue
+        key = str(item)
+        span = bounds.get(key)
+        if span is None:
+            bounds[key] = [page, page]
+            order.append(key)
+        else:
+            span[0] = min(span[0], page)
+            span[1] = max(span[1], page)
+    return [
+        BookItemSpan(item=key, first_page=bounds[key][0], last_page=bounds[key][1])
+        for key in order
+    ]
+
+
 __all__ = [
     "A4_HEIGHT_PT",
     "A4_WIDTH_PT",
@@ -113,9 +206,13 @@ __all__ = [
     "KIND_MUSIC",
     "KIND_PAD",
     "KIND_SPACER",
+    "BookItemSpan",
+    "BookPageFrame",
     "PageKind",
     "PageMapRow",
     "PlacedBox",
+    "book_frames",
+    "book_item_spans",
     "music_pages",
     "normalized_to_sheet",
 ]

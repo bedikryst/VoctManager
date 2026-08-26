@@ -15,7 +15,7 @@ import { BookMarked, PanelLeftOpen, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import { Text } from "@/shared/ui/primitives/typography";
+import { Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
 import type { PdfOutlineEntry } from "../hooks/usePdfOutline";
 
@@ -117,9 +117,19 @@ export const PdfOutlineDrawer = ({
             transition={{ duration: 0.2 }}
             onClick={() => setOpen(true)}
             aria-label={t("pdf_viewer.outline_open", "Pokaż spis treści")}
-            className="pointer-events-auto flex flex-col items-center gap-1 rounded-r-2xl border border-l-0 border-white/10 bg-ethereal-ink/80 px-2 py-3 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-ethereal-ink"
+            className="pointer-events-auto flex flex-col items-center gap-2 rounded-r-2xl border border-l-0 border-white/10 bg-ethereal-ink/80 px-2 py-3 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-ethereal-ink"
           >
             <PanelLeftOpen size={16} aria-hidden="true" />
+            {/* Named, not just drawn. On the concert book this tab is the
+                programme, and a bare glyph on the screen edge is the one piece
+                of navigation readers reported as missing while looking at it. */}
+            <Eyebrow
+              color="parchment-muted"
+              className="[writing-mode:vertical-rl]"
+              aria-hidden="true"
+            >
+              {t("pdf_viewer.outline_title", "Spis treści")}
+            </Eyebrow>
           </motion.button>
         )}
       </AnimatePresence>

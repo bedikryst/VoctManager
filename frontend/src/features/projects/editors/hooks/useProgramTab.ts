@@ -466,7 +466,7 @@ export const useProgramTab = (
     setIsSaving(true);
 
     const toastId = toast.loading(
-      t("projects.program.toast.saving_order", "Zapisywanie nowego układy..."),
+      t("projects.program.toast.saving_order", "Zapisywanie nowego układu..."),
     );
 
     const persistOrders = async (

@@ -36,6 +36,8 @@ import {
   DEFAULT_ZOOM,
   SWIPE_EDGE_TOLERANCE_PX,
   PREFETCH_MAX_ZOOM,
+  FIT_SCROLL_OVERLAP_PX,
+  SCROLL_EDGE_TOLERANCE_PX,
 } from "./constants";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
 import { PdfToolbar } from "./components/PdfToolbar";
@@ -56,6 +58,14 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 const CHIP_HINT_DURATION_MS = 3200;
 const CHIP_PAGE_DURATION_MS = 1200;
 
+/**
+ * Where the page about to be shown must be parked. `bottom` is what turning
+ * BACK through a page too tall for one screen needs, or the reader arrives at
+ * music they have already sung; `focus` is a jump to a known spot on the page
+ * (a marking), which would otherwise land above the thing it was aimed at.
+ */
+type PendingPark = { mode: "top" } | { mode: "bottom" } | { mode: "focus"; y: number };
+
 export const PdfViewer = ({
   fetchBlob,
   docKey,
@@ -70,6 +80,7 @@ export const PdfViewer = ({
   onPageApiChange,
   reserveTopRight = false,
   canExport = true,
+  fitScope,
   className,
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
@@ -98,11 +109,14 @@ export const PdfViewer = ({
     setCurrentPage,
     zoom,
     setZoom,
+    fitMode,
+    setFitMode,
+    resolvedFit,
     renderedPageWidth,
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
-  } = usePdfState({ immersive: isImmersive });
+  } = usePdfState({ immersive: isImmersive, fitScope });
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -169,14 +183,75 @@ export const PdfViewer = ({
     emitEvent({ type: "load_error", reason, message });
   }, [emitEvent]);
 
-  const changePage = useCallback((nextPage: number) => {
+  const pendingParkRef = useRef<PendingPark>({ mode: "top" });
+
+  /** Consume the parking instruction against the page that is on screen NOW. */
+  const parkViewport = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    const park = pendingParkRef.current;
+    pendingParkRef.current = { mode: "top" };
+    const maxScroll = Math.max(viewport.scrollHeight - viewport.clientHeight, 0);
+    let top = 0;
+    if (park.mode === "bottom") {
+      top = maxScroll;
+    } else if (park.mode === "focus") {
+      const page = pageBoxRef.current?.getBoundingClientRect();
+      const frame = viewport.getBoundingClientRect();
+      const pageTop = page ? viewport.scrollTop + page.top - frame.top : 0;
+      const centred = pageTop + park.y * (page?.height ?? 0) - viewport.clientHeight / 2;
+      top = clampValue(centred, 0, maxScroll);
+    }
+    viewport.scrollTo({ top, left: 0 });
+  }, [viewportRef]);
+
+  const changePage = useCallback((nextPage: number, focusY?: number) => {
     if (!numPages) return;
     const clamped = clampValue(nextPage, 1, numPages);
+    if (focusY !== undefined) pendingParkRef.current = { mode: "focus", y: focusY };
     if (currentPage !== clamped) {
       emitEvent({ type: "page_change", from: currentPage, to: clamped });
       setCurrentPage(clamped);
+      return;
     }
-  }, [emitEvent, numPages, currentPage, setCurrentPage]);
+    // Already here: no render will follow to consume the instruction, but a
+    // mark halfway down a page taller than the screen still has to be brought
+    // into view.
+    if (focusY !== undefined) parkViewport();
+  }, [emitEvent, numPages, currentPage, setCurrentPage, parkViewport]);
+
+  /**
+   * A reader's turn — which is not always a page. Whether a screenful or a page
+   * is the unit is MEASURED, never inferred from the fit: a whole-page fit
+   * overflows too, once the reader zooms or where the minimum page width
+   * outgrows a short box, and turning past the rest of the page there would
+   * turn past music.
+   */
+  const turnPage = useCallback((delta: 1 | -1) => {
+    const viewport = viewportRef.current;
+    if (viewport) {
+      const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+      const canScroll =
+        delta === 1
+          ? viewport.scrollTop < maxScroll - SCROLL_EDGE_TOLERANCE_PX
+          : viewport.scrollTop > SCROLL_EDGE_TOLERANCE_PX;
+      if (canScroll) {
+        const step = Math.max(viewport.clientHeight - FIT_SCROLL_OVERLAP_PX, 1);
+        viewport.scrollTo({
+          top: viewport.scrollTop + delta * step,
+          left: viewport.scrollLeft,
+        });
+        return;
+      }
+    }
+    // Only a turn that lands somewhere may leave a parking instruction behind —
+    // otherwise a refused turn at the last page would silently steer the NEXT
+    // navigation (an outline jump, a page typed in) to the wrong edge.
+    const target = currentPage + delta;
+    if (numPages === null || target < 1 || target > numPages) return;
+    pendingParkRef.current = { mode: delta === 1 ? "top" : "bottom" };
+    changePage(target);
+  }, [changePage, currentPage, numPages, viewportRef]);
 
   const changeZoom = useCallback((delta: number) => {
     const next = clampValue(Number((zoom + delta).toFixed(2)), MIN_ZOOM, MAX_ZOOM);
@@ -287,10 +362,33 @@ export const PdfViewer = ({
     prefetchNeighbors: zoom <= PREFETCH_MAX_ZOOM,
   });
 
-  // Page turn shows the top of the new page, like turning paper.
+  // A turned page opens at its top edge, like turning paper — unless the turn
+  // that brought us here asked for somewhere else.
   useEffect(() => {
+    parkViewport();
+  }, [stablePage, parkViewport]);
+
+  // A new fit is a new statement of how big the music should be, so it becomes
+  // the baseline: a zoom calibrated for the old fit (or the other orientation)
+  // would leave the page hanging off the side of the screen, and a kept scroll
+  // offset would open the score mid-stave. Guarded on an actual change — the
+  // setter is stable, but reacting to `zoom` here would undo every zoom.
+  const previousFitRef = useRef(resolvedFit);
+  const previousImmersiveRef = useRef(isImmersive);
+  useEffect(() => {
+    const fitChanged = previousFitRef.current !== resolvedFit;
+    const immersiveChanged = previousImmersiveRef.current !== isImmersive;
+    previousFitRef.current = resolvedFit;
+    previousImmersiveRef.current = isImmersive;
+    // Performance mode re-fits by itself — no chrome to clear, no comfort cap —
+    // so an `auto` that tips page↔half on the way in or out is a side effect of
+    // pressing a button, not a new statement about size. Wiping a magnification
+    // the singer set for this stand, mid-concert, on a stray centre tap, is not
+    // something to do to them.
+    if (!fitChanged || immersiveChanged) return;
+    setZoom(DEFAULT_ZOOM);
     viewportRef.current?.scrollTo({ top: 0, left: 0 });
-  }, [stablePage, viewportRef]);
+  }, [resolvedFit, isImmersive, setZoom, viewportRef]);
 
   // Page-position feedback while chrome is hidden.
   const immersiveRef = useRef(isImmersive);
@@ -303,8 +401,8 @@ export const PdfViewer = ({
   }, [stablePage, showChip]);
 
   const handlePageDelta = useCallback((delta: 1 | -1) => {
-    changePage(currentPage + delta);
-  }, [changePage, currentPage]);
+    turnPage(delta);
+  }, [turnPage]);
 
   const handleCenterTap = useCallback(() => {
     if (isImmersive) exitImmersive();
@@ -327,27 +425,52 @@ export const PdfViewer = ({
     }
   }, [emitEvent, setZoom, viewportRef]);
 
-  // Does the page ACTUALLY overflow sideways? Measured, not inferred from the
-  // zoom number: a portrait page zoomed on a landscape screen still fits, and
-  // handing the browser `pan-x` there would eat the swipe that turns the page.
-  // Observed on both boxes, because the canvas settles at its new size a beat
-  // after the zoom state changes.
+  // Does the page ACTUALLY overflow? Measured, not inferred from the zoom
+  // number or the fit: a portrait page zoomed on a landscape screen still fits
+  // sideways, and handing the browser `pan-x` there would eat the swipe that
+  // turns the page. The vertical edges ride along because the page controls
+  // must not read "last page, nothing further" while half a page is still
+  // below the fold. Observed on both boxes, because the canvas settles at its
+  // new size a beat after the zoom state changes.
   const [isPannableX, setIsPannableX] = useState(false);
+  const [scrollEdges, setScrollEdges] = useState({ atTop: true, atBottom: true });
   useEffect(() => {
     const viewport = viewportRef.current;
     const page = pageBoxRef.current;
     if (!viewport) return;
-    const measure = () =>
+    const measure = () => {
       setIsPannableX(
         viewport.scrollWidth - viewport.clientWidth > SWIPE_EDGE_TOLERANCE_PX,
       );
+      const maxScroll = viewport.scrollHeight - viewport.clientHeight;
+      const next = {
+        atTop: viewport.scrollTop <= SCROLL_EDGE_TOLERANCE_PX,
+        atBottom: viewport.scrollTop >= maxScroll - SCROLL_EDGE_TOLERANCE_PX,
+      };
+      setScrollEdges((current) =>
+        current.atTop === next.atTop && current.atBottom === next.atBottom
+          ? current
+          : next,
+      );
+    };
     measure();
-    if (!page || typeof ResizeObserver === "undefined") return;
+    viewport.addEventListener("scroll", measure, { passive: true });
+    if (!page || typeof ResizeObserver === "undefined") {
+      return () => viewport.removeEventListener("scroll", measure);
+    }
     const observer = new ResizeObserver(measure);
     observer.observe(page);
     observer.observe(viewport);
-    return () => observer.disconnect();
+    return () => {
+      viewport.removeEventListener("scroll", measure);
+      observer.disconnect();
+    };
   }, [viewportRef, blobUrl, stablePage, renderedPageWidth]);
+
+  // Whether a turn has anywhere to go — a page away OR a screenful away.
+  const canTurnBack = currentPage > 1 || !scrollEdges.atTop;
+  const canTurnForward =
+    (numPages !== null && currentPage < numPages) || !scrollEdges.atBottom;
 
   useViewerGestures({
     viewportRef,
@@ -395,12 +518,12 @@ export const PdfViewer = ({
     // factory profiles emit arrows, PageUp/PageDown or Space.
     if (["ArrowLeft", "ArrowUp", "PageUp"].includes(event.key) || (isSpace && event.shiftKey)) {
       event.preventDefault();
-      changePage(currentPage - 1);
+      turnPage(-1);
       return;
     }
     if (["ArrowRight", "ArrowDown", "PageDown"].includes(event.key) || (isSpace && !event.shiftKey)) {
       event.preventDefault();
-      changePage(currentPage + 1);
+      turnPage(1);
       return;
     }
     if (event.key === "Home") { event.preventDefault(); changePage(1); return; }
@@ -408,16 +531,24 @@ export const PdfViewer = ({
     if (event.key === "-" || event.key === "_") { event.preventDefault(); changeZoom(-ZOOM_STEP); return; }
     if (event.key === "+" || event.key === "=") { event.preventDefault(); changeZoom(ZOOM_STEP); return; }
     if (event.key === "0") { event.preventDefault(); resetZoom(); }
-  }, [blobUrl, isFetchError, isImmersive, exitImmersive, changePage, currentPage, numPages, changeZoom, resetZoom]);
+  }, [blobUrl, isFetchError, isImmersive, exitImmersive, changePage, turnPage, numPages, changeZoom, resetZoom]);
 
   useEffect(() => {
     if (docKey) emitEvent({ type: "open", docKey });
   }, [docKey, emitEvent]);
 
-  // Surface the live page handle so an overlaySlot can drive navigation.
+  // Surface the live page handle so an overlaySlot can drive navigation — and
+  // the rendered page width, which is what tells a writing tool whether there
+  // is room to write at all.
   useEffect(() => {
-    onPageApiChange?.({ currentPage, numPages, goToPage: changePage });
-  }, [onPageApiChange, currentPage, numPages, changePage]);
+    onPageApiChange?.({
+      currentPage,
+      numPages,
+      goToPage: changePage,
+      turnPage,
+      pageWidth: pageBox?.width ?? null,
+    });
+  }, [onPageApiChange, currentPage, numPages, changePage, turnPage, pageBox]);
 
   useEffect(() => {
     // Guard against a non-Blob slipping through (e.g. a persisted cache entry
@@ -442,9 +573,18 @@ export const PdfViewer = ({
     if (!el || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0]?.contentRect;
-      if (rect && rect.width > 0 && rect.height > 0) {
-        setPageBox({ width: rect.width, height: rect.height });
-      }
+      if (!rect || rect.width <= 0 || rect.height <= 0) return;
+      // Same box, same object: this effect re-subscribes whenever the overlay
+      // is rebuilt, and every fresh observer fires once on attach. Handing back
+      // a new object for an unchanged box would push that pulse through the
+      // page API and the toolbar for nothing.
+      setPageBox((current) =>
+        current &&
+        Math.abs(current.width - rect.width) < 0.5 &&
+        Math.abs(current.height - rect.height) < 0.5
+          ? current
+          : { width: rect.width, height: rect.height },
+      );
     });
     observer.observe(el);
     return () => observer.disconnect();
@@ -633,7 +773,12 @@ export const PdfViewer = ({
           minZoom={MIN_ZOOM}
           maxZoom={MAX_ZOOM}
           zoomStep={ZOOM_STEP}
-          onPageChange={changePage}
+          fitMode={fitMode}
+          resolvedFit={resolvedFit}
+          onFitModeChange={setFitMode}
+          canTurnBack={canTurnBack}
+          canTurnForward={canTurnForward}
+          onTurn={turnPage}
           onZoomChange={changeZoom}
           onResetZoom={resetZoom}
         />

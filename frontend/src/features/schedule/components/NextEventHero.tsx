@@ -46,8 +46,7 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Eyebrow, Heading, Text } from "@/shared/ui/primitives/typography";
 import { DualTimeDisplay } from "@/widgets/utility/DualTimeDisplay";
 import { LocationPreview } from "@/features/logistics/components/LocationPreview";
-import { useScoreMarks } from "@/features/projects/api/project.score-marks";
-import { ScoreMarksToggle } from "@/features/projects/components/ScoreMarksToggle";
+import { ProjectScoreBook } from "@/features/projects/components/ProjectScoreBook";
 import { PitchPipe } from "@/shared/ui/instruments/PitchPipe";
 import { cn } from "@/shared/lib/utils";
 import { useNow } from "@/shared/lib/dom/useNow";
@@ -160,9 +159,6 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
   const dayEntries = useMemo(() => buildProjectDayTimeline(proj), [proj]);
   const showOnSite = hasOnSiteFacts(proj);
   const showDayPlan = hasConcertDayPlan(dayEntries);
-  // The binder can carry this reader's own pencil, composed at download time.
-  // The switch only appears where there is something of theirs to draw.
-  const scoreMarks = useScoreMarks(proj.id, scoreOpen && !isPreview);
   // Written for this reader by the server — their voice, their casting, in
   // their language. It belongs on the spotlight rather than three taps down in
   // the event sheet, because the morning of the concert is when it is opened.
@@ -328,7 +324,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
               leftIcon={<BookOpen size={14} aria-hidden="true" />}
               onClick={() => setScoreOpen(true)}
             >
-              {t("schedule.hero.score_cta", "Partytura")}
+              {t("schedule.hero.score_cta", "Książka nutowa")}
             </Button>
           )}
           <AddToCalendar event={event} tone="dark" />
@@ -364,31 +360,12 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
       onClose={() => setDaySheetOpen(false)}
     />
 
-    {proj.score_pdf && (
-      <PdfViewerModal
+    {proj.score_pdf && !isPreview && (
+      <ProjectScoreBook
+        projectId={proj.id}
+        projectTitle={proj.title}
         isOpen={scoreOpen}
-        title={t("schedule.card.score_pdf_modal_title", "Partytura")}
-        subtitle={proj.title}
-        fileName={`Score_${proj.title.replace(/\s+/g, "_")}.pdf`}
-        fetchBlob={scoreMarks.fetchBlob}
-        docKey={`score-hero-${proj.id}-${proj.updated_at ?? ""}${scoreMarks.docKeySuffix}`}
-        toolbarSlot={
-          scoreMarks.available ? (
-            <ScoreMarksToggle
-              enabled={scoreMarks.enabled}
-              onChange={scoreMarks.setEnabled}
-            />
-          ) : undefined
-        }
-        fullView={{
-          type: "project-score",
-          id: proj.id,
-          hint: {
-            title: t("schedule.card.score_pdf_modal_title", "Partytura"),
-            subtitle: proj.title,
-            fileName: `Score_${proj.title.replace(/\s+/g, "_")}.pdf`,
-          },
-        }}
+        version={proj.updated_at ?? ""}
         onClose={() => setScoreOpen(false)}
       />
     )}

@@ -4,7 +4,7 @@
     "clear_confirm": "Sûr ?",
     "comment_placeholder": "Note pour cet endroit…",
     "collapse_tools": "Réduire les outils",
-    "draw_on_tablet": "Le dessin est disponible sur tablette",
+    "draw_needs_room": "Agrandir pour écrire",
     "ink_color": "Couleur",
     "ink_reserved": "Le rouge est réservé au chef de chœur.",
     "input": {
@@ -3135,6 +3135,11 @@
     "download": "Télécharger",
     "error_403": "Vous n'avez pas la permission de voir ce document.",
     "error_generic": "Le document n'a pas pu être chargé.",
+    "fit_auto": "Auto",
+    "fit_half": "Demi-page",
+    "fit_label": "Ajustement de la page",
+    "fit_page": "Page entière",
+    "fit_screen_width": "Largeur de l'écran",
     "fit_width": "Ajuster",
     "immersive_enter": "Mode concert",
     "immersive_hint": "Les bords tournent la page · le centre quitte",
@@ -4325,6 +4330,15 @@
       "ready": "Approuvé"
     }
   },
+  "score_book": {
+    "encore": "Bis",
+    "front_matter": "Début du recueil",
+    "open_cta": "Ouvrir le recueil du concert",
+    "piece_next": "Pièce suivante",
+    "piece_prev": "Pièce précédente",
+    "programme": "Programme du concert",
+    "title": "Recueil de partitions"
+  },
   "schedule": {
     "attendance": {
       "absent": "Absences",
@@ -4369,8 +4383,8 @@
         "dressing_room": "Loge",
         "contact": "Contact sur place"
       },
-      "score_pdf_label": "Partition / Programme",
-      "score_pdf_modal_title": "Partition",
+      "score_pdf_label": "Recueil de partitions",
+      "score_pdf_modal_title": "Recueil de partitions",
       "tabs_aria": "Sections de l’événement",
       "tab": {
         "logistics": "Logistique",
@@ -4423,7 +4437,7 @@
       },
       "next_rehearsal": "Prochaine répétition",
       "prepare_cta": "Recueil",
-      "score_cta": "Partition",
+      "score_cta": "Recueil",
       "program_loading": "Chargement du répertoire...",
       "rehearsal_mode": "Mode répétition",
       "tonight_program": "Répertoire du projet",
