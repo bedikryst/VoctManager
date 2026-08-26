@@ -40,6 +40,14 @@ export const OFFLINE_CACHES = [AUDIO_CACHE, SCORE_CACHE, API_CACHE] as const;
  */
 export const BINDER_STAMP_PARAM = "v";
 
+/**
+ * Asks the server to compose the reader's own ink into the file. Such a copy is
+ * never kept: the marks it carries are a snapshot of a live, editable layer, and
+ * a stored one would go on showing the rehearsal before last. Named here so the
+ * worker can refuse it by rule rather than by anyone remembering to.
+ */
+export const BINDER_MARKS_PARAM = "marks";
+
 const BINDER_PDF_PATH = /^\/api\/projects\/[^/]+\/score_pdf\/$/;
 const BINDER_MAP_PATH = /^\/api\/projects\/[^/]+\/score_map\/$/;
 

@@ -8,7 +8,10 @@
 import type { AxiosResponse } from "axios";
 
 import api from "@/shared/api/api";
-import { BINDER_STAMP_PARAM } from "@/shared/offline/swProtocol";
+import {
+  BINDER_MARKS_PARAM,
+  BINDER_STAMP_PARAM,
+} from "@/shared/offline/swProtocol";
 import type {
   Artist,
   Attendance,
@@ -653,7 +656,7 @@ export const ProjectService = {
         : null;
     const response = await api.get(scoreBookPdfUrl(projectId, stamp), {
       responseType: "blob",
-      params: requested ? { marks: requested } : undefined,
+      params: requested ? { [BINDER_MARKS_PARAM]: requested } : undefined,
     });
     return response.data;
   },

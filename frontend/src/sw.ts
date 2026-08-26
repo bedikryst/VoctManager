@@ -35,6 +35,7 @@ import {
   AUDIO_CACHE,
   SCORE_CACHE,
   API_CACHE,
+  BINDER_MARKS_PARAM,
   BINDER_STAMP_PARAM,
   OFFLINE_CACHES,
   cacheNameForKind,
@@ -141,16 +142,18 @@ registerRoute(
   }),
 );
 
-// The concert binder — but ONLY the stamped URL (see `BINDER_STAMP_PARAM`). The
-// stamp names the bytes, so a cache hit can never be the wrong build; a request
-// without it (a manager's preview, a copy asked for with marks composed in) is
-// a one-off and stays on the network, where a CacheFirst entry under a stable
-// URL would quietly outlive the book it holds.
+// The concert binder — but ONLY the stamped, uncomposed URL. The stamp names the
+// bytes, so a cache hit can never be the wrong build; a request without it (a
+// manager's preview) is a one-off and stays on the network, where a CacheFirst
+// entry under a stable URL would quietly outlive the book it holds. A copy with
+// marks composed in is refused a second time here, by rule: it is a snapshot of
+// a layer the reader goes on editing.
 registerRoute(
   ({ url }) =>
     isSameOrigin(url) &&
     isBinderPdfPath(url.pathname) &&
-    url.searchParams.has(BINDER_STAMP_PARAM),
+    url.searchParams.has(BINDER_STAMP_PARAM) &&
+    !url.searchParams.has(BINDER_MARKS_PARAM),
   new CacheFirst({
     cacheName: SCORE_CACHE,
     plugins: [
