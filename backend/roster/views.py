@@ -14,6 +14,7 @@ import os
 import uuid
 from collections import defaultdict
 from dataclasses import asdict
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -196,6 +197,20 @@ def _watermarked_pdf(raw: bytes, *, cache_key: str, footer_text: str) -> bytes:
     if len(stamped) <= _WATERMARK_CACHE_MAX_BYTES:
         cache.set(cache_key, stamped, _WATERMARK_CACHE_TTL_SECONDS)
     return stamped
+
+
+def _binder_bytes_stamp(generated_at: datetime | None) -> str:
+    """Identity of the stored book's BYTES, as a short opaque string.
+
+    ``build_version`` describes a *generated* build and deliberately stands still
+    when a manager replaces the book by hand, so only the timestamp moves on
+    every route that can change the file. Anything that keys a copy of those
+    bytes — a memoised watermark, a service-worker cache entry on a singer's
+    phone — has to key on this, or it will keep serving the previous book under
+    the current book's name. Empty means "unknown", which every caller must read
+    as "do not keep a copy".
+    """
+    return f"{generated_at.timestamp()}" if generated_at else ""
 
 
 def _requested_mark_layers(raw: object, *, is_manager: bool) -> list[str]:
@@ -678,10 +693,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             # single editions without protecting the book they compose is worthless.
             protected = ScorePackageService.uses_protected_edition(project)
             # `build_version` scopes the audit trail and the copy numbering;
-            # `generated_at` identifies the BYTES, and only it moves when the book is
-            # replaced by hand (a manual upload deliberately leaves the build version
-            # alone, since it describes a generated build). The watermark cache is
-            # keyed on the latter — see below.
+            # `generated_at` identifies the BYTES (see `_binder_bytes_stamp`). The
+            # watermark cache is keyed on the latter — see below.
             build_version, generated_at, page_map = (
                 ScorePackage.objects.filter(project=project)
                 .values_list('build_version', 'generated_at', 'page_map')
@@ -706,7 +719,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 "_dyrygencka" if CONDUCTOR_ANNOTATION_LAYER in layers else ""
             )
             filename = f"Score_{project.title.replace(' ', '_')}{suffix}.pdf"
-            marks_stamp = f"{generated_at.timestamp() if generated_at else 0}"
+            marks_stamp = _binder_bytes_stamp(generated_at)
 
             if not decision.watermark and not marks:
                 try:
@@ -874,10 +887,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
         neither does one that has never been generated. Both answer
         ``available: false`` with empty lists — a book without a pencil, which is
         what it was before, rather than an error.
+
+        `stamp` rides along even when there is no map, because it is about the
+        FILE and not about the pencil: it is what the reader's device puts on the
+        request for the bytes, so that a downloaded book can be recognised on
+        disk and a rebuilt one can never be mistaken for it. Map and bytes are
+        therefore fetched under one identity — the two can never end up
+        describing different builds of the same concert.
         """
         project = self.get_object()
         is_manager = user_is_manager(request.user)
-        empty = {"available": False, "pages": [], "items": []}
+        empty: dict[str, Any] = {
+            "available": False, "pages": [], "items": [], "stamp": "",
+        }
         # Same lifecycle gate as the file itself: once the concert is over the
         # singer's access to the binder closes, and a map of a book they may not
         # open would only describe someone else's property.
@@ -886,14 +908,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not project.score_pdf:
             return Response(empty)
 
-        page_map = (
+        page_map, generated_at = (
             ScorePackage.objects.filter(project=project)
-            .values_list('page_map', flat=True)
+            .values_list('page_map', 'generated_at')
             .first()
-        ) or []
+        ) or ([], None)
+        page_map = page_map or []
+        stamp = _binder_bytes_stamp(generated_at)
         frames = book_frames(page_map)
         if not frames:
-            return Response(empty)
+            return Response({**empty, "stamp": stamp})
 
         spans = {span["item"]: span for span in book_item_spans(page_map)}
         # Titles come from the live programme, spans from the map: a piece
@@ -918,7 +942,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
             if str(item.pk) in spans
         ]
-        return Response({"available": True, "pages": frames, "items": items})
+        return Response(
+            {"available": True, "pages": frames, "items": items, "stamp": stamp},
+        )
 
     @action(detail=True, methods=['get', 'post'], url_path='score_package', permission_classes=[IsManager])
     def score_package(self, request, pk=None) -> Response:

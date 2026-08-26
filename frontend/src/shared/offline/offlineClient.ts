@@ -75,9 +75,14 @@ const getActiveWorker = async (): Promise<ServiceWorker | null> => {
  * Flattens a concert into its downloadable practice assets: every voice track
  * (blend/minus-mine need the whole choir, not just my line) plus the primary
  * score edition of each piece. Deduplicated by URL.
+ *
+ * `extra` is whatever the caller had to resolve over the network first — today
+ * the concert binder, whose URL is only knowable once the server has said which
+ * build this device is taking (see `offlinePrep`).
  */
 export const collectProjectAssets = (
   group: MaterialsDashboardGroup,
+  extra: readonly OfflineAsset[] = [],
 ): OfflineAsset[] => {
   const seen = new Set<string>();
   const assets: OfflineAsset[] = [];
@@ -94,6 +99,7 @@ export const collectProjectAssets = (
     const primaryScore = getPiecePdfLinks(item.piece)[0];
     if (primaryScore) push(primaryScore.url, "score");
   }
+  for (const asset of extra) push(asset.url, asset.kind);
 
   return assets;
 };
@@ -110,15 +116,30 @@ interface DownloadOutcome {
  */
 export const downloadProjectForOffline = async (
   group: MaterialsDashboardGroup,
+  extra: readonly OfflineAsset[] = [],
 ): Promise<DownloadOutcome> => {
   const worker = await getActiveWorker();
   if (!worker) throw new Error("offline-unavailable");
 
-  const assets = collectProjectAssets(group);
+  const assets = collectProjectAssets(group, extra);
   const projectId = group.project.id;
   const store = useOfflineStore.getState();
+  // What this device held a moment ago, so the parts of it that are no longer
+  // part of the concert can be dropped. The binder makes this matter: it is
+  // stored under a URL that names its build, so without this every rebuild
+  // would leave its predecessor — the single largest file here — on the phone
+  // for a month.
+  const previousUrls = store.manifests[projectId]?.assetUrls ?? [];
+  const dropSuperseded = (kept: readonly string[]): void => {
+    const keep = new Set(kept);
+    const stale = previousUrls.filter((url) => !keep.has(url));
+    if (stale.length > 0) {
+      worker.postMessage({ type: "VOCT_EVICT_ASSETS", urls: stale });
+    }
+  };
 
   if (assets.length === 0) {
+    dropSuperseded([]);
     store.setProgress(projectId, {
       status: "ready",
       done: 0,
@@ -173,10 +194,14 @@ export const downloadProjectForOffline = async (
         failed: message.failed,
       });
       if (message.cached > 0) {
+        const urls = assets.map((asset) => asset.url);
+        // Only once something new is actually on the device: a download that
+        // failed outright must not take the copy they already had with it.
+        dropSuperseded(urls);
         current.saveManifest({
           projectId,
           title: group.project.title,
-          assetUrls: assets.map((asset) => asset.url),
+          assetUrls: urls,
           assetCount: message.cached,
           failed: message.failed,
           cachedAt: Date.now(),

@@ -1,9 +1,15 @@
 /**
  * @file OfflineDownloadControl.tsx
- * @description Per-concert "download for offline practice" affordance. Pulls
- * every voice track, score and score marking down so the chorister can rehearse
- * on the train with no signal — the reliable counterpart to passive streaming.
- * Lives in the Songbook project header.
+ * @description Per-concert "download for offline practice" affordance. Pulls the
+ * concert book, every voice track, every score and their markings down so the
+ * chorister can rehearse on the train with no signal — the reliable counterpart
+ * to passive streaming. Lives in the Songbook project header.
+ *
+ * Deliberately ONE control, not "concert" and "concert + book": the book is what
+ * a singer reads from at the rehearsal this is meant for, so a download without
+ * it is the half-download this feature exists to prevent. Next to hundreds of
+ * megabytes of voice recordings, the binder's PDF is a rounding error — the
+ * choice it would offer is not a real one.
  */
 import React, { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";

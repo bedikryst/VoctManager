@@ -39,7 +39,9 @@ interface ProjectScoreBookProps {
   /**
    * Identity of the stored BYTES. A book regenerated under the same name is a
    * different document, so the caller passes whatever it knows moves with it
-   * (`updated_at`, a build version).
+   * (`updated_at`, a build version). The map's own stamp supersedes it wherever
+   * the server has one; this remains the fallback for a book with no package
+   * row behind it.
    */
   readonly version?: string;
   /**
@@ -60,7 +62,7 @@ export const ProjectScoreBook = ({
 }: ProjectScoreBookProps): React.JSX.Element => {
   const { t } = useTranslation();
 
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: projectKeys.scorePackage.map(projectId),
     queryFn: () => ProjectService.getScoreMap(projectId),
     // Only while the book is on screen: a songbook listing four concerts must
@@ -81,20 +83,26 @@ export const ProjectScoreBook = ({
   const title = t("score_book.title", "Książka nutowa");
   const fileName = `Score_${projectTitle.replace(/\s+/g, "_")}.pdf`;
 
-  // The clean binder, never the server-composed one: the marks are drawn live
-  // on top of it here, and asking for a copy with them baked in would print
-  // every one of them twice.
+  const stamp = data?.stamp ?? "";
+  // The map answers first, and only then are the bytes asked for. Not an
+  // ordering whim: the map carries the stamp that names the build, and a phone
+  // with no signal can only find its stored copy of the book by that name. The
+  // wait ends whether the map arrives or fails — an error just means an
+  // unstamped request, which is the behaviour that existed before.
   const fetchBlob = useCallback(
-    () => ProjectService.fetchScorePdfBlob(projectId),
-    [projectId],
+    // The clean binder, never the server-composed one: the marks are drawn live
+    // on top of it here, and asking for a copy with them baked in would print
+    // every one of them twice.
+    () => ProjectService.fetchScorePdfBlob(projectId, false, stamp),
+    [projectId, stamp],
   );
 
   return (
     <ScoreBookModal
       isOpen={isOpen}
       book={book}
-      fetchBlob={fetchBlob}
-      docKey={`score-book-${projectId}-${version}`}
+      fetchBlob={isPending ? null : fetchBlob}
+      docKey={`score-book-${projectId}-${stamp || version}`}
       title={title}
       subtitle={projectTitle}
       fileName={fileName}

@@ -17,6 +17,38 @@ export const API_CACHE = "voct-api-v1";
 /** Every offline-managed cache, so a full wipe (logout) can clear them all. */
 export const OFFLINE_CACHES = [AUDIO_CACHE, SCORE_CACHE, API_CACHE] as const;
 
+/**
+ * The concert binder's two URLs, and the rule that makes the book cacheable at
+ * all. Kept here rather than in the projects feature because the worker has to
+ * recognise them without importing feature code.
+ *
+ * A binder is composed PER RECIPIENT — the singer's name is stamped into the
+ * footer of a protected book — and it is expensive to produce (WeasyPrint front
+ * matter, then pypdf assembly, then the stamp). So it must be fetched once and
+ * read from disk after that, which means the copy on disk has to name the bytes
+ * it holds: `?v=<stamp>` does, and a request without it is deliberately NOT
+ * cached. Two consequences worth stating plainly:
+ *
+ *  - the stamp is the book's `generated_at`, not its `build_version` — a
+ *    hand-uploaded replacement keeps the version and moves only the timestamp,
+ *    so a version-keyed copy would serve the previous book indefinitely;
+ *  - the page map travels under the same fetch, so map and bytes can never
+ *    disagree about which build the reader is holding.
+ *
+ * The cached copy carries someone's name, which is why it lives in a managed
+ * cache that logout wipes (`OFFLINE_CACHES`) and never in a shared one.
+ */
+export const BINDER_STAMP_PARAM = "v";
+
+const BINDER_PDF_PATH = /^\/api\/projects\/[^/]+\/score_pdf\/$/;
+const BINDER_MAP_PATH = /^\/api\/projects\/[^/]+\/score_map\/$/;
+
+export const isBinderPdfPath = (pathname: string): boolean =>
+  BINDER_PDF_PATH.test(pathname);
+
+export const isBinderMapPath = (pathname: string): boolean =>
+  BINDER_MAP_PATH.test(pathname);
+
 /** Which managed cache an explicit-download asset belongs in. */
 export type OfflineAssetKind = "audio" | "score";
 

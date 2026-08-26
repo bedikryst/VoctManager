@@ -24,6 +24,7 @@ from io import BytesIO
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.test import SimpleTestCase, TestCase, override_settings
+from django.utils import timezone
 from pypdf import PdfWriter
 from rest_framework.test import APITestCase
 
@@ -185,6 +186,28 @@ class ScoreMapEndpointTests(APITestCase):
         self.assertFalse(data["available"])
         self.assertEqual(data["pages"], [])
         self.assertEqual(data["items"], [])
+        # No map is not the same as no file: the book is still readable and still
+        # worth keeping on a phone, so it still has to be nameable.
+        self.assertTrue(data["stamp"])
+
+    def test_stamp_follows_the_bytes_not_the_build_version(self) -> None:
+        self.package.build_version = 4
+        self.package.generated_at = timezone.now()
+        self.package.save(update_fields=["build_version", "generated_at"])
+        before = self.client.get(self.url).json()["stamp"]
+        self.assertTrue(before)
+
+        # A hand-uploaded replacement leaves the build version alone by design.
+        # Anything keyed on the version would go on serving the previous book.
+        ScorePackageService.mark_manual_upload(self.project)
+        self.package.refresh_from_db()
+        self.assertEqual(self.package.build_version, 4)
+        self.assertNotEqual(self.client.get(self.url).json()["stamp"], before)
+
+    def test_no_book_no_stamp(self) -> None:
+        self.project.score_pdf.delete(save=True)
+        # Empty is the instruction "keep no copy" — there is nothing to keep.
+        self.assertEqual(self.client.get(self.url).json()["stamp"], "")
 
     def test_a_piece_dropped_from_the_programme_leaves_no_row(self) -> None:
         # Its pages are still bound; nothing in the app claims otherwise.

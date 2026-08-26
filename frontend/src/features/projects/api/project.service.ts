@@ -8,6 +8,7 @@
 import type { AxiosResponse } from "axios";
 
 import api from "@/shared/api/api";
+import { BINDER_STAMP_PARAM } from "@/shared/offline/swProtocol";
 import type {
   Artist,
   Attendance,
@@ -412,7 +413,39 @@ export interface ScoreBookMap {
   available: boolean;
   pages: ScoreBookFrame[];
   items: ScoreBookItem[];
+  /**
+   * Names the stored file's BYTES. Present even when there is no map (a
+   * hand-uploaded book is still a book), empty only when there is nothing to
+   * read. It is what makes an offline copy findable — see `scoreBookPdfUrl`.
+   */
+  stamp: string;
 }
+
+/**
+ * Where the binder's map lives. Named here rather than inlined because the
+ * service worker keeps the last answer under this exact path — it is what lets
+ * a downloaded book still know which edition page each of its pages shows once
+ * the phone is out of signal and the query snapshot has expired.
+ */
+export const scoreBookMapUrl = (projectId: string | number): string =>
+  `${PROJECTS_BASE_URL}${projectId}/score_map/`;
+
+/**
+ * Where the binder's bytes live. With a `stamp` the URL names the build it
+ * expects, which is the whole basis of keeping the book offline: the device may
+ * answer such a request from disk, because a rebuilt book asks under a
+ * different name and can never be served in its place. Without one the request
+ * is a one-off that always goes to the server (see `BINDER_STAMP_PARAM`).
+ */
+export const scoreBookPdfUrl = (
+  projectId: string | number,
+  stamp = "",
+): string => {
+  const base = `${PROJECTS_BASE_URL}${projectId}/score_pdf/`;
+  return stamp
+    ? `${base}?${BINDER_STAMP_PARAM}=${encodeURIComponent(stamp)}`
+    : base;
+};
 
 /** Build state + readiness of a project's auto-assembled concert score book. */
 export interface ScorePackageState {
@@ -604,23 +637,24 @@ export const ProjectService = {
    * download only — `true` for the caller's own pencil, or named layers for the
    * conductor's copy (`["conductor"]`), which is manager-only. Either way the
    * stored book is untouched: what differs is the copy, not the file.
+   *
+   * `stamp` (from `getScoreMap`) makes the request name the bytes it expects,
+   * which is the only form the service worker will keep on the device.
    */
   fetchScorePdfBlob: async (
     projectId: string,
     marks: boolean | readonly string[] = false,
+    stamp = "",
   ): Promise<Blob> => {
     const requested = Array.isArray(marks)
       ? marks.join(",")
       : marks === true
         ? "1"
         : null;
-    const response = await api.get(
-      `${PROJECTS_BASE_URL}${projectId}/score_pdf/`,
-      {
-        responseType: "blob",
-        params: requested ? { marks: requested } : undefined,
-      },
-    );
+    const response = await api.get(scoreBookPdfUrl(projectId, stamp), {
+      responseType: "blob",
+      params: requested ? { marks: requested } : undefined,
+    });
     return response.data;
   },
 
@@ -644,9 +678,7 @@ export const ProjectService = {
    * reader-independent — it describes the file, not the person holding it.
    */
   getScoreMap: async (projectId: string | number): Promise<ScoreBookMap> => {
-    const response = await api.get<ScoreBookMap>(
-      `${PROJECTS_BASE_URL}${projectId}/score_map/`,
-    );
+    const response = await api.get<ScoreBookMap>(scoreBookMapUrl(projectId));
     return response.data;
   },
 

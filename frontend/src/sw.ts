@@ -35,8 +35,11 @@ import {
   AUDIO_CACHE,
   SCORE_CACHE,
   API_CACHE,
+  BINDER_STAMP_PARAM,
   OFFLINE_CACHES,
   cacheNameForKind,
+  isBinderMapPath,
+  isBinderPdfPath,
   type OfflineAsset,
   type OfflineSwRequest,
   type OfflineSwReply,
@@ -135,6 +138,47 @@ registerRoute(
         purgeOnQuotaError: true,
       }),
     ],
+  }),
+);
+
+// The concert binder — but ONLY the stamped URL (see `BINDER_STAMP_PARAM`). The
+// stamp names the bytes, so a cache hit can never be the wrong build; a request
+// without it (a manager's preview, a copy asked for with marks composed in) is
+// a one-off and stays on the network, where a CacheFirst entry under a stable
+// URL would quietly outlive the book it holds.
+registerRoute(
+  ({ url }) =>
+    isSameOrigin(url) &&
+    isBinderPdfPath(url.pathname) &&
+    url.searchParams.has(BINDER_STAMP_PARAM),
+  new CacheFirst({
+    cacheName: SCORE_CACHE,
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [200] }),
+      new ExpirationPlugin({
+        maxEntries: 120,
+        maxAgeSeconds: THIRTY_DAYS_S,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
+
+// The binder's page map — what each page of the book shows, which is what puts
+// the pencil in it. NetworkFirst, not CacheFirst: online it must follow a piece
+// renamed since the build, offline it is the difference between a book with
+// markings and a flat PDF. It rides in the score cache beside the bytes it
+// describes so one wipe takes the whole binder. The React Query snapshot covers
+// the same ground but expires after a day; this does not.
+registerRoute(
+  ({ url, request }) =>
+    isSameOrigin(url) &&
+    request.method === "GET" &&
+    isBinderMapPath(url.pathname),
+  new NetworkFirst({
+    cacheName: SCORE_CACHE,
+    networkTimeoutSeconds: 4,
+    plugins: [new CacheableResponsePlugin({ statuses: [200] })],
   }),
 );
 
