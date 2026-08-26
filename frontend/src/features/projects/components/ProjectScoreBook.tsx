@@ -17,7 +17,7 @@
  * @module features/projects/components
  */
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
@@ -81,16 +81,29 @@ export const ProjectScoreBook = ({
   const title = t("score_book.title", "Książka nutowa");
   const fileName = `Score_${projectTitle.replace(/\s+/g, "_")}.pdf`;
 
+  // The clean binder, never the server-composed one: the marks are drawn live
+  // on top of it here, and asking for a copy with them baked in would print
+  // every one of them twice.
+  const fetchBlob = useCallback(
+    () => ProjectService.fetchScorePdfBlob(projectId),
+    [projectId],
+  );
+
   return (
     <ScoreBookModal
       isOpen={isOpen}
       book={book}
-      fetchBlob={() => ProjectService.fetchScorePdfBlob(projectId)}
+      fetchBlob={fetchBlob}
       docKey={`score-book-${projectId}-${version}`}
       title={title}
       subtitle={projectTitle}
       fileName={fileName}
       mode={mode}
+      fullView={{
+        type: "project-score",
+        id: projectId,
+        hint: { title, subtitle: projectTitle, fileName },
+      }}
       onClose={onClose}
     />
   );

@@ -44,6 +44,12 @@ export interface ScoreBookModalProps {
   readonly mode: ScoreAnnotatorMode;
   /** Whether the binder may leave the app; false → in-app only. */
   readonly canExport?: boolean;
+  /**
+   * Deep link to the full document viewer — the surface that hands out a copy
+   * to keep or to print, with the reader's marks composed into the file. Typed
+   * off the shell it is forwarded to, so this stays free of a route import.
+   */
+  readonly fullView?: React.ComponentProps<typeof PdfViewerModal>["fullView"];
   readonly onClose: () => void;
 }
 
@@ -57,6 +63,7 @@ export const ScoreBookModal = ({
   fileName,
   mode,
   canExport = true,
+  fullView,
   onClose,
 }: ScoreBookModalProps): React.JSX.Element => {
   const hasMap = !!book && book.frames.size > 0;
@@ -91,6 +98,7 @@ export const ScoreBookModal = ({
         ) : undefined
       }
       onPageApiChange={hasMap ? annotator.onPageApiChange : undefined}
+      fullView={fullView}
       canExport={canExport}
       fitScope="score"
       onClose={onClose}

@@ -410,6 +410,7 @@ export const useScoreAnnotator = ({
       <IncomingMarksNotice
         count={incoming.marks?.count ?? 0}
         page={displayPage(incoming.marks?.page ?? 1)}
+        lifted={!!book}
         onGoToPage={handleGoToIncoming}
         onDismiss={incoming.dismiss}
       />

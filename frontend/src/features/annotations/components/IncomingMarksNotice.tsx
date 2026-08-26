@@ -15,6 +15,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { PencilLine, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
+import { cn } from "@/shared/lib/utils";
 import { Text } from "@/shared/ui/primitives/typography";
 
 /** Long enough to read mid-phrase, short enough to stop being furniture. */
@@ -24,6 +25,8 @@ interface IncomingMarksNoticeProps {
   /** 0 keeps the notice off screen entirely. */
   count: number;
   page: number;
+  /** The concert binder floats its programme bar on this same centre line. */
+  lifted?: boolean;
   onGoToPage: () => void;
   onDismiss: () => void;
 }
@@ -31,6 +34,7 @@ interface IncomingMarksNoticeProps {
 export const IncomingMarksNotice = ({
   count,
   page,
+  lifted = false,
   onGoToPage,
   onDismiss,
 }: IncomingMarksNoticeProps): React.JSX.Element => {
@@ -46,8 +50,14 @@ export const IncomingMarksNotice = ({
 
   return (
     // Lifted clear of the viewer's own transient chip (bottom-8, z-30), which
-    // occupies the same centre line and would otherwise land on top of this.
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center pb-20">
+    // occupies the same centre line and would otherwise land on top of this —
+    // and clear of the programme bar too, wherever that is on screen.
+    <div
+      className={cn(
+        "pointer-events-none absolute inset-x-0 bottom-0 z-10 flex justify-center",
+        lifted ? "pb-40 sm:pb-44" : "pb-20",
+      )}
+    >
       <AnimatePresence>
         {count > 0 && (
           <motion.div
