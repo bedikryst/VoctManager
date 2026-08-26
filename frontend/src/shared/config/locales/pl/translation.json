@@ -7,6 +7,13 @@
     "draw_on_tablet": "Rysowanie dostępne na tablecie",
     "ink_color": "Kolor",
     "ink_reserved": "Czerwony jest zarezerwowany dla dyrygenta.",
+    "input": {
+      "group": "Czym rysujesz",
+      "stylus": "Rysik",
+      "finger": "Palec",
+      "stylus_hint": "Rysuje tylko rysik. Palcem przewijasz nuty.",
+      "finger_hint": "Palec rysuje. Nuty przewijasz dwoma palcami."
+    },
     "markup": "Adnotacje",
     "pending_hint": "Zapisane na tym urządzeniu. Wyślą się same, gdy wróci internet.",
     "incoming": {
@@ -74,12 +81,8 @@
       "title": "Adnotacje"
     },
     "scale": {
-      "l": "Duży",
-      "m": "Średni",
-      "s": "Mały",
       "stamp": "Rozmiar symbolu",
-      "text": "Rozmiar tekstu",
-      "xl": "Bardzo duży"
+      "text": "Rozmiar tekstu"
     },
     "size": {
       "bold": "Gruba",
@@ -3151,7 +3154,7 @@
     "error_generic": "Nie udało się załadować dokumentu.",
     "fit_width": "Dopasuj",
     "immersive_enter": "Tryb występu",
-    "immersive_hint": "Dotknij środka ekranu, aby wyjść",
+    "immersive_hint": "Boki ekranu = strona · środek = wyjście",
     "jump_to_page": "Przejdź do strony",
     "next_page": "Następna strona",
     "open_browser": "Otwórz",

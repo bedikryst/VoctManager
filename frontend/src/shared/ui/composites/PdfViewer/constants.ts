@@ -11,6 +11,12 @@ export const DEFAULT_PAGE_ASPECT = 1.414;
 /** Vertical space kept for floating chrome so a fit-to-page render clears the nav. */
 export const FIT_VERTICAL_RESERVE_MOBILE = 0;
 export const FIT_VERTICAL_RESERVE_DESKTOP = -50;
+/**
+ * Performance mode floats no chrome at all, so the page is entitled to the
+ * whole box — reserving anything there is what leaves a stand-mounted tablet
+ * reading a postage stamp inside a black frame.
+ */
+export const FIT_VERTICAL_RESERVE_IMMERSIVE = 0;
 
 // Gesture tuning — instrument-grade ergonomics for a score on a music stand.
 /** Width of the edge tap-to-turn zones, as a fraction of the viewport. */
@@ -21,8 +27,12 @@ export const SWIPE_MIN_DISTANCE_PX = 64;
 export const SWIPE_MAX_DURATION_MS = 700;
 /** Horizontal delta must dominate vertical by this ratio to read as a swipe. */
 export const SWIPE_AXIS_RATIO = 1.8;
-/** Above this zoom the page overflows horizontally and drags pan, not turn. */
-export const PANNABLE_ZOOM_THRESHOLD = 1.02;
+/**
+ * Horizontal slack (px) below which the page counts as "fits on screen": there
+ * is nothing to pan, so a swipe can only have meant a page turn. A genuinely
+ * wider-than-screen page turns from its scroll edge instead.
+ */
+export const SWIPE_EDGE_TOLERANCE_PX = 4;
 /** Beyond this zoom neighbour prefetch is off — canvases get memory-heavy. */
 export const PREFETCH_MAX_ZOOM = 1.5;
 export const WHEEL_ZOOM_SENSITIVITY = 0.0022;

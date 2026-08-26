@@ -8,9 +8,19 @@ import {
   DEFAULT_PAGE_ASPECT,
   FIT_VERTICAL_RESERVE_MOBILE,
   FIT_VERTICAL_RESERVE_DESKTOP,
+  FIT_VERTICAL_RESERVE_IMMERSIVE,
 } from "../constants";
 
-export const usePdfState = () => {
+interface UsePdfStateArgs {
+  /**
+   * Performance mode: no toolbar, no bottom nav, no dialog chrome. The page
+   * then answers to the screen alone — every inset the fit maths keeps for
+   * floating controls is dead space, and the comfort cap on width is a cage.
+   */
+  immersive?: boolean;
+}
+
+export const usePdfState = ({ immersive = false }: UsePdfStateArgs = {}) => {
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -27,18 +37,21 @@ export const usePdfState = () => {
 
   const renderedPageWidth = useMemo(() => {
     if (viewportWidth <= 0) return undefined;
-    const horizontalPadding = isCompactViewport ? 16 : 72;
+    const horizontalPadding = immersive ? 0 : isCompactViewport ? 16 : 72;
     const availableWidth = Math.max(0, viewportWidth - horizontalPadding);
-    const fitWidth = isCompactViewport
-      ? availableWidth
-      : Math.min(availableWidth, DESKTOP_PAGE_WIDTH_CAP);
+    const fitWidth =
+      immersive || isCompactViewport
+        ? availableWidth
+        : Math.min(availableWidth, DESKTOP_PAGE_WIDTH_CAP);
     // Also cap by the width whose full page height clears the viewport (minus
     // floating chrome) — so at zoom 1 the entire page is on screen at once.
     let targetWidth = fitWidth;
     if (viewportHeight > 0 && pageAspect > 0) {
-      const verticalReserve = isCompactViewport
-        ? FIT_VERTICAL_RESERVE_MOBILE
-        : FIT_VERTICAL_RESERVE_DESKTOP;
+      const verticalReserve = immersive
+        ? FIT_VERTICAL_RESERVE_IMMERSIVE
+        : isCompactViewport
+          ? FIT_VERTICAL_RESERVE_MOBILE
+          : FIT_VERTICAL_RESERVE_DESKTOP;
       const availableHeight = Math.max(0, viewportHeight - verticalReserve);
       targetWidth = Math.min(fitWidth, availableHeight / pageAspect);
     }
@@ -46,7 +59,7 @@ export const usePdfState = () => {
       isCompactViewport ? MOBILE_MIN_PAGE_WIDTH : DESKTOP_MIN_PAGE_WIDTH,
       Math.floor(targetWidth)
     );
-  }, [isCompactViewport, viewportWidth, viewportHeight, pageAspect]);
+  }, [immersive, isCompactViewport, viewportWidth, viewportHeight, pageAspect]);
 
   const devicePixelRatio = useMemo(() => {
     if (typeof window === "undefined") return 1;

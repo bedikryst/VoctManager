@@ -7,6 +7,13 @@
     "draw_on_tablet": "Drawing is available on a tablet",
     "ink_color": "Ink colour",
     "ink_reserved": "Red is reserved for the conductor.",
+    "input": {
+      "group": "What draws",
+      "stylus": "Stylus",
+      "finger": "Finger",
+      "stylus_hint": "Only the stylus draws. Your finger scrolls the score.",
+      "finger_hint": "Your finger draws. Two fingers scroll the score."
+    },
     "markup": "Markup",
     "pending_hint": "Saved on this device. It will send itself once you are back online.",
     "incoming": {
@@ -74,12 +81,8 @@
       "title": "Annotations"
     },
     "scale": {
-      "l": "Large",
-      "m": "Medium",
-      "s": "Small",
       "stamp": "Symbol size",
-      "text": "Text size",
-      "xl": "Extra large"
+      "text": "Text size"
     },
     "size": {
       "bold": "Bold",
@@ -3131,9 +3134,9 @@
     "download": "Download",
     "error_403": "You do not have permission to view this document.",
     "error_generic": "The document could not be loaded.",
-    "fit_width": "Fit width",
+    "fit_width": "Fit page",
     "immersive_enter": "Performance mode",
-    "immersive_hint": "Tap the centre of the screen to exit",
+    "immersive_hint": "Edges turn pages · centre exits",
     "jump_to_page": "Jump to page",
     "next_page": "Next page",
     "open_browser": "Open",

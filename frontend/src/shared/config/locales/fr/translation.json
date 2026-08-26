@@ -7,6 +7,13 @@
     "draw_on_tablet": "Le dessin est disponible sur tablette",
     "ink_color": "Couleur",
     "ink_reserved": "Le rouge est réservé au chef de chœur.",
+    "input": {
+      "group": "Ce qui dessine",
+      "stylus": "Stylet",
+      "finger": "Doigt",
+      "stylus_hint": "Seul le stylet dessine. Le doigt fait défiler la partition.",
+      "finger_hint": "Le doigt dessine. Deux doigts font défiler la partition."
+    },
     "markup": "Annotation",
     "pending_hint": "Enregistré sur cet appareil. L'envoi se fera seul dès le retour du réseau.",
     "incoming": {
@@ -74,12 +81,8 @@
       "title": "Annotations"
     },
     "scale": {
-      "l": "Grand",
-      "m": "Moyen",
-      "s": "Petit",
       "stamp": "Taille du symbole",
-      "text": "Taille du texte",
-      "xl": "Très grand"
+      "text": "Taille du texte"
     },
     "size": {
       "bold": "Épais",
@@ -3134,7 +3137,7 @@
     "error_generic": "Le document n'a pas pu être chargé.",
     "fit_width": "Ajuster",
     "immersive_enter": "Mode concert",
-    "immersive_hint": "Touchez le centre de l'écran pour quitter",
+    "immersive_hint": "Les bords tournent la page · le centre quitte",
     "jump_to_page": "Aller à la page",
     "next_page": "Page suivante",
     "open_browser": "Ouvrir",

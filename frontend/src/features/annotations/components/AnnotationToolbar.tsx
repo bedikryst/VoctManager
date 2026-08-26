@@ -2,12 +2,16 @@
  * @file AnnotationToolbar.tsx
  * @description Markup toolbar, injected into the PDF viewer's floating control
  * pill: undo/redo, the tool set (pen · highlighter · note · stamp · eraser),
- * contextual stroke weight + ink colour, the note display mode, the musical
- * stamp palette, the write layer, and the "how does this work" panel. In
- * conductor mode the layer toggles between shared/private; in personal mode
- * every mark lands on the user's own private layer (a static chip says so).
- * Drawing tools are gated to tablet-width and up; notes, stamps, eraser + browse
- * stay on every screen.
+ * contextual stroke weight + ink colour, what draws (stylus or finger), the note
+ * display mode, the musical stamp palette, the write layer, and the "how does
+ * this work" panel. In conductor mode the layer toggles between shared/private;
+ * in personal mode every mark lands on the user's own private layer (a static
+ * chip says so). Drawing tools are gated to tablet-width and up; notes, stamps,
+ * eraser + browse stay on every screen.
+ *
+ * Collapsed, the bar is a trigger that NAMES the tool in hand — a rehearsal is
+ * no place to discover that the pencil was armed all along. Whether it opens
+ * collapsed is remembered per device, for the same reason.
  * @module features/annotations/components
  */
 
@@ -17,12 +21,14 @@ import {
   ChevronLeft,
   CloudOff,
   Eraser,
+  Hand,
   Highlighter,
   HelpCircle,
   Lock,
   MessageSquarePlus,
   MousePointer2,
   PenLine,
+  PenTool,
   Redo2,
   SquarePen,
   Stamp,
@@ -40,10 +46,11 @@ import { Divider } from "@/shared/ui/primitives/Divider";
 import { usePdfImmersive } from "@/shared/ui/composites/PdfViewer";
 
 import {
-  MARK_SCALE_ORDER,
+  MARK_SCALE_MAX,
+  MARK_SCALE_MIN,
+  MARK_SCALE_STEP,
   type AnnotationTool,
   type AnnotationToolState,
-  type MarkScale,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { STAMPS, StampGlyph } from "../lib/stamps";
@@ -92,43 +99,52 @@ const SIZES: ReadonlyArray<{ id: StrokeSize; dot: number; labelKey: string; fall
   { id: "bold", dot: 12, labelKey: "annotations.size.bold", fallback: "Bold" },
 ];
 
-/** Growing-dot size steps for placed marks (text notes + stamps). */
-const SCALE_DOTS: Record<MarkScale, number> = { s: 5, m: 8, l: 12, xl: 16 };
-
-/** Row of size presets, shared by the note and stamp option panels. */
-const ScaleRow = ({
+/**
+ * Continuous size control, shared by the note and stamp panels. The sample to
+ * its left grows with the value, so the size is chosen by looking at a mark
+ * rather than by decoding a number.
+ */
+const ScaleSlider = ({
   value,
   onChange,
-  groupLabel,
+  label,
+  sample,
 }: {
-  value: MarkScale;
-  onChange: (scale: MarkScale) => void;
-  groupLabel: string;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center gap-1" role="group" aria-label={groupLabel}>
-      {MARK_SCALE_ORDER.map((step) => (
-        <button
-          key={step}
-          type="button"
-          onClick={() => onChange(step)}
-          aria-label={t(`annotations.scale.${step}`, step)}
-          aria-pressed={value === step}
-          title={t(`annotations.scale.${step}`, step)}
-          className={cn(
-            "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
-            value === step ? "bg-white/20" : "hover:bg-white/10",
-          )}
-        >
-          <span
-            className="rounded-full bg-ethereal-marble"
-            style={{ width: SCALE_DOTS[step], height: SCALE_DOTS[step] }}
-          />
-        </button>
-      ))}
-    </div>
-  );
+  value: number;
+  onChange: (scale: number) => void;
+  label: string;
+  sample: React.ReactNode;
+}): React.JSX.Element => (
+  <div className="flex items-center gap-2">
+    <span
+      aria-hidden="true"
+      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-ethereal-marble"
+    >
+      {sample}
+    </span>
+    <input
+      type="range"
+      min={MARK_SCALE_MIN}
+      max={MARK_SCALE_MAX}
+      step={MARK_SCALE_STEP}
+      value={value}
+      onChange={(event) => onChange(Number(event.target.value))}
+      aria-label={label}
+      title={label}
+      className="w-36 accent-ethereal-gold"
+    />
+  </div>
+);
+
+const EXPANDED_STORAGE_KEY = "voct.annotations.toolbar_open";
+
+const readExpanded = (): boolean => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(EXPANDED_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
 };
 
 const pillButton =
@@ -151,6 +167,8 @@ export const AnnotationToolbar = ({
   mode,
   tool,
   setTool,
+  fingerDraw,
+  setFingerDraw,
   color,
   setColor,
   inks,
@@ -191,13 +209,23 @@ export const AnnotationToolbar = ({
 
   const isImmersive = usePdfImmersive();
 
-  // Always opens as a single clean trigger — the score is the star; markup is
-  // one tap away. (Prevents the wide tool bar from crowding the top edge, and
-  // keeps a clean stage in immersive.)
-  const [expanded, setExpanded] = useState(false);
-  // If it was opened then the viewer went immersive, clear the stage.
+  // Opens as a single clean trigger — the score is the star; markup is one tap
+  // away. A reader who works with the bar open gets it back open next time:
+  // re-opening it every score is a tax paid mid-rehearsal.
+  const [expanded, setExpanded] = useState<boolean>(readExpanded);
+  const changeExpanded = (next: boolean): void => {
+    setExpanded(next);
+    try {
+      window.localStorage.setItem(EXPANDED_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Private-mode / storage-disabled: the bar still works for the session.
+    }
+  };
+  // If it was opened then the viewer went immersive, clear the stage — without
+  // recording it, so leaving performance mode restores the reader's own choice.
   useEffect(() => {
     if (isImmersive) setExpanded(false);
+    else setExpanded(readExpanded());
   }, [isImmersive]);
 
   // Two-tap confirm (avoids a modal-inside-the-PDF-modal); auto-resets so a
@@ -228,19 +256,26 @@ export const AnnotationToolbar = ({
   );
 
   if (!expanded) {
+    // The armed tool names itself on the trigger: "Pióro" on the pill is the
+    // difference between reaching for the stylus and hunting for an icon.
+    const armed = visibleTools.find(({ id }) => id === tool && id !== "pointer");
+    const TriggerIcon = armed?.icon ?? SquarePen;
     return (
       <button
         type="button"
-        onClick={() => setExpanded(true)}
+        onClick={() => changeExpanded(true)}
         aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
         className={cn(
           barChrome,
-          "h-11 gap-1.5 px-3.5 text-ethereal-marble transition-colors hover:bg-ethereal-ink/85",
+          "h-11 gap-1.5 px-3.5 transition-colors hover:bg-ethereal-ink/85",
+          armed ? "text-white ring-1 ring-ethereal-gold/60" : "text-ethereal-marble",
         )}
       >
-        <SquarePen size={17} aria-hidden="true" />
+        <TriggerIcon size={17} aria-hidden="true" />
         <span className="text-sm font-medium">
-          {t("annotations.markup", "Adnotacje")}
+          {armed
+            ? t(armed.labelKey, armed.fallback)
+            : t("annotations.markup", "Adnotacje")}
         </span>
         {annotationCount > 0 && (
           <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-ethereal-ink">
@@ -260,7 +295,7 @@ export const AnnotationToolbar = ({
       <div className={cn(barChrome, "no-scrollbar max-w-full gap-0.5 overflow-x-auto p-1.5")}>
         <button
           type="button"
-          onClick={() => setExpanded(false)}
+          onClick={() => changeExpanded(false)}
           aria-label={t("annotations.collapse_tools", "Zwiń narzędzia")}
           title={t("annotations.collapse_tools", "Zwiń narzędzia")}
           className={cn(pillButton, "hover:bg-white/10")}
@@ -415,6 +450,47 @@ export const AnnotationToolbar = ({
             "no-scrollbar flex max-w-[calc(100vw-9rem)] flex-col gap-3 overflow-x-auto sm:max-w-[calc(100vw-13rem)]",
           )}
         >
+          {/* What draws. Auto-set from the device (a stylus turns palm rejection
+              on by itself), but always overridable — a reader whose "stylus"
+              is a rubber-tipped stick reports as a finger and would otherwise
+              be left with a pencil that draws nothing. */}
+          {showSize && (
+            <div
+              className="flex items-center gap-1"
+              role="group"
+              aria-label={t("annotations.input.group", "Czym rysujesz")}
+            >
+              {([false, true] as const).map((asFinger) => (
+                <button
+                  key={String(asFinger)}
+                  type="button"
+                  onClick={() => setFingerDraw(asFinger)}
+                  aria-pressed={fingerDraw === asFinger}
+                  title={
+                    asFinger
+                      ? t("annotations.input.finger_hint", "Palec rysuje. Nuty przewijasz dwoma palcami.")
+                      : t("annotations.input.stylus_hint", "Rysuje tylko rysik. Palcem przewijasz nuty.")
+                  }
+                  className={cn(
+                    "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                    fingerDraw === asFinger
+                      ? "bg-white/20 text-white"
+                      : "text-ethereal-marble hover:bg-white/10",
+                  )}
+                >
+                  {asFinger ? (
+                    <Hand size={14} aria-hidden="true" />
+                  ) : (
+                    <PenTool size={14} aria-hidden="true" />
+                  )}
+                  {asFinger
+                    ? t("annotations.input.finger", "Palec")
+                    : t("annotations.input.stylus", "Rysik")}
+                </button>
+              ))}
+            </div>
+          )}
+
           {showSize && (
             <div className="flex items-center gap-1">
               {SIZES.map(({ id, dot, labelKey, fallback }) => (
@@ -497,18 +573,29 @@ export const AnnotationToolbar = ({
           )}
 
           {showTextSize && (
-            <ScaleRow
+            <ScaleSlider
               value={textScale}
               onChange={setTextScale}
-              groupLabel={t("annotations.scale.text", "Rozmiar tekstu")}
+              label={t("annotations.scale.text", "Rozmiar tekstu")}
+              sample={
+                <span
+                  className="font-semibold leading-none"
+                  style={{ fontSize: 8 + textScale * 8 }}
+                >
+                  Aa
+                </span>
+              }
             />
           )}
 
           {showStampSize && (
-            <ScaleRow
+            <ScaleSlider
               value={stampScale}
               onChange={setStampScale}
-              groupLabel={t("annotations.scale.stamp", "Rozmiar symbolu")}
+              label={t("annotations.scale.stamp", "Rozmiar symbolu")}
+              sample={
+                <StampGlyph symbol={stamp} color="#F4F1EA" size={10 + stampScale * 8} />
+              }
             />
           )}
 

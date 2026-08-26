@@ -233,8 +233,18 @@ export const useScoreAnnotator = ({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [editionId, undo, redo]);
 
-  const { tool, color, size, textScale, stampScale, noteDisplay, stamp, layer, visibleLayers } =
-    tools;
+  const {
+    tool,
+    color,
+    size,
+    textScale,
+    stampScale,
+    noteDisplay,
+    stamp,
+    layer,
+    visibleLayers,
+    fingerDraw,
+  } = tools;
 
   // Coerce precision tools back to browse on a phone-sized viewport.
   const effectiveTool = useMemo(() => {
@@ -256,6 +266,7 @@ export const useScoreAnnotator = ({
         noteDisplay={noteDisplay}
         stamp={stamp}
         layer={layer}
+        fingerDraw={fingerDraw}
         canEdit
         canModify={canModify}
         selectedId={selectedId}
@@ -276,6 +287,7 @@ export const useScoreAnnotator = ({
       noteDisplay,
       stamp,
       layer,
+      fingerDraw,
       canModify,
       selectedId,
       handleCreate,

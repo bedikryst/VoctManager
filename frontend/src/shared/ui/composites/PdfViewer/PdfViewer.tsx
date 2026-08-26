@@ -4,8 +4,9 @@
  * page window (current ± neighbours) so page turns swap two ready canvases
  * instead of flashing a loader; adds edge-tap/swipe/pedal-key navigation,
  * pinch and ctrl+wheel zoom with a live CSS preview, a screen wake lock and an
- * immersive performance mode (fullscreen, chrome hidden). Annotation features
- * mount through the toolbarSlot / renderPageOverlay / overlaySlot seams.
+ * immersive performance mode (fullscreen, chrome hidden, page filling the
+ * screen edge to edge). Annotation features mount through the toolbarSlot /
+ * renderPageOverlay / overlaySlot seams.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/composites/PdfViewer
  */
@@ -33,7 +34,7 @@ import {
   MIN_ZOOM,
   MAX_ZOOM,
   DEFAULT_ZOOM,
-  PANNABLE_ZOOM_THRESHOLD,
+  SWIPE_EDGE_TOLERANCE_PX,
   PREFETCH_MAX_ZOOM,
 } from "./constants";
 import { clampValue, buildPdfFileName, classifyLoadError, createDownloadAnchor } from "./utils";
@@ -73,6 +74,22 @@ export const PdfViewer = ({
 }: PdfViewerProps): React.JSX.Element => {
   const { t } = useTranslation();
 
+  const rootRef = useRef<HTMLDivElement | null>(null);
+
+  const emitEvent = useCallback(
+    (event: PdfViewerEvent) => onEvent?.(event),
+    [onEvent],
+  );
+
+  const handleImmersiveChange = useCallback((active: boolean) => {
+    emitEvent({ type: "immersive_change", active });
+  }, [emitEvent]);
+
+  // Resolved before the page geometry, because performance mode changes what
+  // "fit the page" means — no chrome to clear, no comfort cap on width.
+  const { isImmersive, enter: enterImmersive, exit: exitImmersive } =
+    useImmersiveMode(rootRef, handleImmersiveChange);
+
   const {
     viewportRef,
     numPages,
@@ -85,13 +102,12 @@ export const PdfViewer = ({
     isCompactViewport,
     devicePixelRatio,
     reportPageAspect,
-  } = usePdfState();
+  } = usePdfState({ immersive: isImmersive });
 
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
 
@@ -140,11 +156,6 @@ export const PdfViewer = ({
       return false;
     }
   }, [resolvedFileName]);
-
-  const emitEvent = useCallback(
-    (event: PdfViewerEvent) => onEvent?.(event),
-    [onEvent],
-  );
 
   const resolveViewerErrorMessage = useCallback((reason: LoadErrorReason): string => {
     return reason === "permission_denied"
@@ -252,17 +263,10 @@ export const PdfViewer = ({
     if (chipTimerRef.current) window.clearTimeout(chipTimerRef.current);
   }, []);
 
-  const handleImmersiveChange = useCallback((active: boolean) => {
-    emitEvent({ type: "immersive_change", active });
-  }, [emitEvent]);
-
-  const { isImmersive, enter: enterImmersive, exit: exitImmersive } =
-    useImmersiveMode(rootRef, handleImmersiveChange);
-
   const handleEnterImmersive = useCallback(() => {
     enterImmersive();
     showChip(
-      t("pdf_viewer.immersive_hint", "Tap the centre of the screen to exit"),
+      t("pdf_viewer.immersive_hint", "Edges turn pages · centre exits"),
       CHIP_HINT_DURATION_MS,
     );
   }, [enterImmersive, showChip, t]);
@@ -323,13 +327,32 @@ export const PdfViewer = ({
     }
   }, [emitEvent, setZoom, viewportRef]);
 
-  const isPannableX = zoom > PANNABLE_ZOOM_THRESHOLD;
+  // Does the page ACTUALLY overflow sideways? Measured, not inferred from the
+  // zoom number: a portrait page zoomed on a landscape screen still fits, and
+  // handing the browser `pan-x` there would eat the swipe that turns the page.
+  // Observed on both boxes, because the canvas settles at its new size a beat
+  // after the zoom state changes.
+  const [isPannableX, setIsPannableX] = useState(false);
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const page = pageBoxRef.current;
+    if (!viewport) return;
+    const measure = () =>
+      setIsPannableX(
+        viewport.scrollWidth - viewport.clientWidth > SWIPE_EDGE_TOLERANCE_PX,
+      );
+    measure();
+    if (!page || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(page);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [viewportRef, blobUrl, stablePage, renderedPageWidth]);
 
   useViewerGestures({
     viewportRef,
     pinchTargetRef: pageBoxRef,
     enabled: showPdfChrome,
-    swipeEnabled: !isPannableX,
     zoom,
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
@@ -471,7 +494,12 @@ export const PdfViewer = ({
           // data-pdf-viewport marks the scroll container for overlay content
           // that re-implements panning (e.g. finger-pan while a pen tool draws).
           data-pdf-viewport
-          className="ethereal-scroll h-full overflow-auto overscroll-contain px-2 pb-8 pt-4 sm:px-6 sm:pb-32 sm:pt-6"
+          className={cn(
+            "ethereal-scroll h-full overflow-auto overscroll-contain",
+            // Performance mode floats nothing over the page, so every inset
+            // here is black frame the reader has to squint past.
+            isImmersive ? "p-0" : "px-2 pb-8 pt-4 sm:px-6 sm:pb-32 sm:pt-6",
+          )}
           style={{ touchAction: isPannableX ? "pan-x pan-y" : "pan-y" }}
         >
           {/* items-center vertically centres a page that fits (mobile letterbox
@@ -537,7 +565,13 @@ export const PdfViewer = ({
                           loading={isVisible
                             ? <div className="flex min-h-[12rem] items-center justify-center py-8"><EtherealLoader /></div>
                             : null}
-                          className={cn("overflow-hidden rounded-surface bg-white shadow-glass-ethereal", isCompactViewport && "rounded-nested")}
+                          // Edge-to-edge in performance mode: a rounded corner
+                          // over a full-bleed page would clip actual music.
+                          className={cn(
+                            "overflow-hidden bg-white",
+                            !isImmersive && "rounded-surface shadow-glass-ethereal",
+                            !isImmersive && isCompactViewport && "rounded-nested",
+                          )}
                         />
                       </div>
                     );
@@ -549,7 +583,11 @@ export const PdfViewer = ({
                     // swallowed by native text selection. In browse mode the
                     // surface is pointer-events:none, so text selection still
                     // passes through to the layer below.
-                    <div className="pointer-events-none absolute inset-0 z-10" data-pdf-gesture-exempt>
+                    <div
+                      className="pointer-events-none absolute inset-0 z-10"
+                      data-pdf-gesture-exempt
+                      data-pdf-pinch-through
+                    >
                       {renderPageOverlay({
                         pageNumber: stablePage,
                         width: pageBox.width,

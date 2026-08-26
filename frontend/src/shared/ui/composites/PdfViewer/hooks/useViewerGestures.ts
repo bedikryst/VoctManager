@@ -7,7 +7,8 @@
  * listeners (non-passive where the browser must be pre-empted) and reads all
  * mutable state through a latest-args ref so handlers bind once per mount.
  * Anything interactive opts out via `data-pdf-gesture-exempt` (or by being a
- * native control) — in draw mode the annotation surface therefore always wins.
+ * native control) — in draw mode the annotation surface therefore wins every
+ * single touch, while `data-pdf-pinch-through` lets two-finger zoom past it.
  * @module shared/ui/composites/PdfViewer
  * @architecture Enterprise SaaS 2026
  */
@@ -21,6 +22,7 @@ import {
   SWIPE_MIN_DISTANCE_PX,
   SWIPE_MAX_DURATION_MS,
   SWIPE_AXIS_RATIO,
+  SWIPE_EDGE_TOLERANCE_PX,
   WHEEL_ZOOM_SENSITIVITY,
   WHEEL_COMMIT_DELAY_MS,
   PINCH_TAP_SUPPRESS_MS,
@@ -35,8 +37,6 @@ interface UseViewerGesturesArgs {
   /** Element receiving the live pinch/wheel CSS-transform preview. */
   pinchTargetRef: RefObject<HTMLDivElement | null>;
   enabled: boolean;
-  /** Horizontal drags pan the zoomed page instead of turning it. */
-  swipeEnabled: boolean;
   zoom: number;
   minZoom: number;
   maxZoom: number;
@@ -72,12 +72,27 @@ interface WheelSession {
   timer: number;
 }
 
+const EXEMPT_SELECTOR =
+  "button, a, input, textarea, select, [contenteditable='true'], [data-pdf-gesture-exempt]";
+
 const isGestureExemptTarget = (target: EventTarget | null): boolean => {
   const element = target instanceof Element ? target : null;
   if (!element) return true;
-  return !!element.closest(
-    "button, a, input, textarea, select, [contenteditable='true'], [data-pdf-gesture-exempt]",
-  );
+  return !!element.closest(EXEMPT_SELECTOR);
+};
+
+/**
+ * Two fingers are never a stroke. A surface that owns single touches (the
+ * annotation overlay) can therefore mark itself `data-pdf-pinch-through` and
+ * still let the reader zoom the score under an armed pen — without it, arming
+ * the pencil silently costs you pinch zoom over the whole page.
+ */
+const blocksPinch = (target: EventTarget | null): boolean => {
+  const element = target instanceof Element ? target : null;
+  if (!element) return true;
+  const exempt = element.closest(EXEMPT_SELECTOR);
+  if (!exempt) return false;
+  return !exempt.hasAttribute("data-pdf-pinch-through");
 };
 
 const hasActiveTextSelection = (): boolean => {
@@ -121,6 +136,20 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
       element.style.willChange = "transform";
     };
 
+    /**
+     * May a horizontal swipe turn the page, or is it panning a zoomed score?
+     * Decided from what is actually on screen, never from the zoom number: a
+     * portrait page zoomed on a landscape tablet still fits side to side, and
+     * a reader who can neither pan nor turn is simply stuck.
+     */
+    const canTurnBySwipe = (delta: 1 | -1): boolean => {
+      const maxScroll = viewport.scrollWidth - viewport.clientWidth;
+      if (maxScroll <= SWIPE_EDGE_TOLERANCE_PX) return true;
+      return delta === 1
+        ? viewport.scrollLeft >= maxScroll - SWIPE_EDGE_TOLERANCE_PX
+        : viewport.scrollLeft <= SWIPE_EDGE_TOLERANCE_PX;
+    };
+
     const viewportFocal = (clientX: number, clientY: number): { x: number; y: number } => {
       const rect = viewport.getBoundingClientRect();
       return { x: clientX - rect.left, y: clientY - rect.top };
@@ -155,7 +184,7 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
       if (performance.now() < suppressTapUntil) return;
       if (candidate.exempt) return;
 
-      const { onPageDelta, onCenterTap, swipeEnabled } = argsRef.current;
+      const { onPageDelta, onCenterTap } = argsRef.current;
       const elapsed = performance.now() - candidate.startedAt;
       const dx = event.clientX - candidate.x;
       const dy = event.clientY - candidate.y;
@@ -173,13 +202,13 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
       }
 
       if (
-        swipeEnabled &&
         candidate.pointerType === "touch" &&
         elapsed <= SWIPE_MAX_DURATION_MS &&
         Math.abs(dx) >= SWIPE_MIN_DISTANCE_PX &&
         Math.abs(dx) >= SWIPE_AXIS_RATIO * Math.abs(dy)
       ) {
-        onPageDelta(dx < 0 ? 1 : -1, "swipe");
+        const delta: 1 | -1 = dx < 0 ? 1 : -1;
+        if (canTurnBySwipe(delta)) onPageDelta(delta, "swipe");
       }
     };
 
@@ -189,8 +218,7 @@ export const useViewerGestures = (args: UseViewerGesturesArgs): void => {
 
     const handleTouchStart = (event: TouchEvent): void => {
       if (event.touches.length !== 2) return;
-      // The annotation drawing surface owns its own touches.
-      if (isGestureExemptTarget(event.target)) return;
+      if (blocksPinch(event.target)) return;
       event.preventDefault();
       tap = null;
       if (wheel) {

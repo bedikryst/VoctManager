@@ -5,9 +5,13 @@
  * notes and — when editing is allowed — captures pen / highlighter / note /
  * stamp / eraser input and inline note editing. All coordinates are normalized
  * (0..1) to the page box so a marking holds its musical position across zoom
- * and devices. Input is stylus-first: while a pen tool is armed, a finger PANS
- * the score (manual scroll of the viewer viewport) and only pen/mouse draw;
- * note + stamp placement is tap-detected so panning stays possible on touch.
+ * and devices. Input routing follows `fingerDraw`: on a stylus device the
+ * finger PANS the score (manual scroll of the viewer viewport) and only
+ * pen/mouse draw — palm rejection; on a device with no stylus the finger draws,
+ * because reserving it for panning would leave the pencil unable to write at
+ * all. Two fingers are never a stroke: a second touch abandons the line in
+ * progress and hands the gesture to the viewer's pinch zoom. Note + stamp
+ * placement is tap-detected so panning stays possible on touch.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
  * @module features/annotations/components
@@ -39,13 +43,13 @@ import {
   type StampPayload,
 } from "../types/annotations.dto";
 import {
-  MARK_SCALE_FACTORS,
-  MARK_SCALE_ORDER,
-  scaleToPreset,
+  clampMarkScale,
+  MARK_SCALE_MAX,
+  MARK_SCALE_MIN,
+  MARK_SCALE_STEP,
   strokeFraction,
   type AnnotationTool,
   type LayerVisibility,
-  type MarkScale,
   type StrokeSize,
 } from "../lib/useAnnotationTools";
 import { getStampDef, StampGlyph } from "../lib/stamps";
@@ -58,13 +62,15 @@ interface AnnotationOverlayProps {
   tool: AnnotationTool;
   color: string;
   size: StrokeSize;
-  /** Size preset applied to newly placed text notes. */
-  textScale: MarkScale;
-  /** Size preset applied to newly placed musical stamps. */
-  stampScale: MarkScale;
+  /** Size multiplier applied to newly placed text notes. */
+  textScale: number;
+  /** Size multiplier applied to newly placed musical stamps. */
+  stampScale: number;
   noteDisplay: NoteDisplay;
   stamp: string;
   layer: AnnotationLayer;
+  /** True → a bare finger draws; false → the finger pans and only a stylus draws. */
+  fingerDraw: boolean;
   canEdit: boolean;
   /** May THIS user erase / edit the given mark? (chorister → personal only). */
   canModify: (annotation: ScoreAnnotation) => boolean;
@@ -79,8 +85,21 @@ const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
 
 const HIGHLIGHT_OPACITY = 0.42;
 const ERASER_HIT_WIDTH = 16;
-/** Finger drift beyond this many px turns a would-be placement tap into a pan. */
-const TAP_SLOP_PX = 6;
+/** Pointer drift beyond this many px stops being a tap and becomes a drag/pan. */
+const MOUSE_SLOP_PX = 6;
+/**
+ * A finger is not a mouse. A tap on a tablet wanders ten-odd pixels before it
+ * lifts, and reading that wander as a drag is what made tapping a note nudge it
+ * instead of opening it — the single biggest reason the text tool felt stiff.
+ */
+const TOUCH_SLOP_PX = 14;
+
+const slopFor = (pointerType: string): number =>
+  pointerType === "mouse" ? MOUSE_SLOP_PX : TOUCH_SLOP_PX;
+
+/** Marks the wrappers around placed marks, so the surface below never treats a
+ *  press on an existing mark as a request to place a new one. */
+const MARK_ATTR = "data-annotation-mark";
 
 const inlineFontSize = (pageWidth: number): number =>
   Math.min(22, Math.max(11, pageWidth * 0.026));
@@ -104,6 +123,7 @@ export const AnnotationOverlay = ({
   noteDisplay,
   stamp,
   layer,
+  fingerDraw,
   canEdit,
   canModify,
   selectedId,
@@ -127,7 +147,21 @@ export const AnnotationOverlay = ({
   } | null>(null);
   // Tap candidate for note/stamp placement (placement happens on pointerUP so
   // a drag can still pan the score instead of dropping a mark).
-  const tapRef = useRef<{ pointerId: number; x: number; y: number; moved: boolean } | null>(null);
+  const tapRef = useRef<{
+    pointerId: number;
+    x: number;
+    y: number;
+    slop: number;
+    moved: boolean;
+  } | null>(null);
+  // The pointer currently laying down ink, so a second finger can abandon it.
+  const strokePointerRef = useRef<number | null>(null);
+
+  const releaseStroke = useCallback((element: Element, pointerId: number) => {
+    strokePointerRef.current = null;
+    setStroke(null);
+    if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
+  }, []);
 
   const pageAnnotations = annotations.filter(
     (a) => a.page_number === pageNumber && visibleLayers[layerOf(a)],
@@ -148,14 +182,28 @@ export const AnnotationOverlay = ({
   const erasing = canEdit && tool === "eraser";
   const browsing = tool === "pointer";
   const surfaceInteractive = drawing || placing || stamping;
-  const marksInteractive = browsing || erasing;
+  /**
+   * Modes in which an EXISTING mark answers to a touch — tap to open, drag to
+   * move. The note tool belongs here: with the pencil for words in hand, a tap
+   * on a note you just wrote plainly means "fix that one", and dropping a
+   * second note on top of the first is never what was asked for.
+   */
+  const arranging = browsing || placing || stamping;
+  const marksInteractive = arranging || erasing;
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       if (drawing) {
-        if (event.pointerType === "touch") {
-          // Stylus-first: the finger pans (manually scrolling the viewer
-          // viewport, since touch-action is "none" here) — only pen/mouse draw.
+        // A second pointer means a pinch is starting, not a line: drop the
+        // stroke so the viewer's zoom gesture takes the page cleanly.
+        const active = strokePointerRef.current;
+        if (active !== null && active !== event.pointerId) {
+          releaseStroke(event.currentTarget, active);
+          return;
+        }
+        if (event.pointerType === "touch" && !fingerDraw) {
+          // Palm rejection: the finger pans (manually scrolling the viewer
+          // viewport, since touch-action is "none" here) — only the stylus draws.
           const viewport =
             surfaceRef.current?.closest<HTMLElement>("[data-pdf-viewport]");
           if (viewport) {
@@ -170,17 +218,21 @@ export const AnnotationOverlay = ({
           return;
         }
         event.currentTarget.setPointerCapture(event.pointerId);
+        strokePointerRef.current = event.pointerId;
         setStroke([toNorm(event.clientX, event.clientY)]);
       } else if (placing || stamping) {
+        // A press that started on an existing mark belongs to that mark.
+        if ((event.target as Element | null)?.closest?.(`[${MARK_ATTR}]`)) return;
         tapRef.current = {
           pointerId: event.pointerId,
           x: event.clientX,
           y: event.clientY,
+          slop: slopFor(event.pointerType),
           moved: false,
         };
       }
     },
-    [drawing, placing, stamping, toNorm],
+    [drawing, fingerDraw, placing, releaseStroke, stamping, toNorm],
   );
 
   const handlePointerMove = useCallback(
@@ -195,12 +247,13 @@ export const AnnotationOverlay = ({
       }
       const tap = tapRef.current;
       if (tap && tap.pointerId === event.pointerId) {
-        if (Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > TAP_SLOP_PX) {
+        if (Math.hypot(event.clientX - tap.x, event.clientY - tap.y) > tap.slop) {
           tap.moved = true;
         }
         return;
       }
       if (!drawing || !stroke) return;
+      if (strokePointerRef.current !== event.pointerId) return;
       const next = toNorm(event.clientX, event.clientY);
       const last = stroke[stroke.length - 1];
       // Skip sub-threshold jitter to keep payloads lean.
@@ -221,12 +274,20 @@ export const AnnotationOverlay = ({
       if (tap && tap.pointerId === event.pointerId) {
         tapRef.current = null;
         if (!tap.moved) {
+          // An open composer (or a selected mark) owns the next tap on the
+          // page: it closes, nothing is placed. Placing on that same tap would
+          // drop a mark under the card the writer was still using.
+          if (pendingNote || selectedId) {
+            setPendingNote(null);
+            onSelect(null);
+            return;
+          }
           const [x, y] = toNorm(event.clientX, event.clientY);
           if (stamping) {
             onCreate({
               page_number: pageNumber,
               annotation_type: "ST",
-              payload: { x, y, symbol: stamp, scale: MARK_SCALE_FACTORS[stampScale] },
+              payload: { x, y, symbol: stamp, scale: stampScale },
               color,
               layer_name: layer,
             });
@@ -238,6 +299,8 @@ export const AnnotationOverlay = ({
         return;
       }
       if (!drawing || !stroke) return;
+      if (strokePointerRef.current !== event.pointerId) return;
+      strokePointerRef.current = null;
       if (stroke.length > 1) {
         const isHl = tool === "highlighter";
         onCreate({
@@ -253,12 +316,13 @@ export const AnnotationOverlay = ({
       }
       setStroke(null);
     },
-    [drawing, stroke, tool, size, stamping, placing, stamp, stampScale, onCreate, onSelect, pageNumber, color, layer, toNorm],
+    [drawing, stroke, tool, size, stamping, placing, pendingNote, selectedId, stamp, stampScale, onCreate, onSelect, pageNumber, color, layer, toNorm],
   );
 
   const handlePointerCancel = useCallback(() => {
     panRef.current = null;
     tapRef.current = null;
+    strokePointerRef.current = null;
     setStroke(null);
   }, []);
 
@@ -288,6 +352,7 @@ export const AnnotationOverlay = ({
     pointerId: number;
     startX: number;
     startY: number;
+    slop: number;
     payload: StampPayload | CommentPayload;
   } | null>(null);
   const [dragOffset, setDragOffset] = useState<{ id: string; dx: number; dy: number } | null>(null);
@@ -304,19 +369,20 @@ export const AnnotationOverlay = ({
       // Reset on every marker press (incl. read-only ones) so a stale suppress
       // from an earlier drag can never swallow the next tap.
       suppressClickRef.current = false;
-      if (!browsing || !canModify(annotation) || event.button > 0) return;
+      if (!arranging || !canModify(annotation) || event.button > 0) return;
       event.stopPropagation();
       dragRef.current = {
         id: annotation.id,
         pointerId: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
+        slop: slopFor(event.pointerType),
         payload,
       };
       setDragOffset({ id: annotation.id, dx: 0, dy: 0 });
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [browsing, canModify],
+    [arranging, canModify],
   );
 
   const moveMarkerDrag = useCallback((event: React.PointerEvent<HTMLButtonElement>) => {
@@ -324,7 +390,7 @@ export const AnnotationOverlay = ({
     if (!drag || drag.pointerId !== event.pointerId) return;
     const dx = event.clientX - drag.startX;
     const dy = event.clientY - drag.startY;
-    if (Math.hypot(dx, dy) > TAP_SLOP_PX) suppressClickRef.current = true;
+    if (Math.hypot(dx, dy) > drag.slop) suppressClickRef.current = true;
     setDragOffset({ id: drag.id, dx, dy });
   }, []);
 
@@ -336,7 +402,7 @@ export const AnnotationOverlay = ({
       setDragOffset(null);
       const dx = event.clientX - drag.startX;
       const dy = event.clientY - drag.startY;
-      if (Math.hypot(dx, dy) <= TAP_SLOP_PX) return; // a tap — leave it to the click
+      if (Math.hypot(dx, dy) <= drag.slop) return; // a tap — leave it to the click
       const rect = surfaceRef.current?.getBoundingClientRect();
       if (!rect || rect.width === 0 || rect.height === 0) return;
       const x = clamp01(drag.payload.x + dx / rect.width);
@@ -412,7 +478,7 @@ export const AnnotationOverlay = ({
       if (canModify(a)) onDelete(a.id);
       return;
     }
-    if (browsing) onSelect(selectedId === a.id ? null : a.id);
+    if (arranging) onSelect(selectedId === a.id ? null : a.id);
   };
 
   return (
@@ -477,11 +543,12 @@ export const AnnotationOverlay = ({
         const def = getStampDef(payload.symbol);
         if (!def) return null;
         const erasable = erasing && canModify(a);
-        const draggable = browsing && canModify(a);
+        const draggable = arranging && canModify(a);
         const offset = dragOffset?.id === a.id ? dragOffset : null;
         return (
           <div
             key={a.id}
+            data-annotation-mark
             className="absolute"
             style={{
               left: payload.x * width,
@@ -512,7 +579,7 @@ export const AnnotationOverlay = ({
               <StampGlyph
                 symbol={payload.symbol}
                 color={a.color}
-                size={def.sizeFraction * width * (payload.scale ?? 1)}
+                size={def.sizeFraction * width * clampMarkScale(payload.scale)}
               />
             </button>
           </div>
@@ -525,7 +592,7 @@ export const AnnotationOverlay = ({
         const inline = payload.display === "inline";
         const isPrivate = layerOf(a) !== "shared";
         const modifiable = canModify(a);
-        const draggable = browsing && modifiable;
+        const draggable = arranging && modifiable;
         const offset = dragOffset?.id === a.id ? dragOffset : null;
         const left = payload.x * width;
         const top = payload.y * height;
@@ -545,6 +612,7 @@ export const AnnotationOverlay = ({
         return (
           <div
             key={a.id}
+            data-annotation-mark
             className="absolute"
             style={{
               left,
@@ -571,7 +639,7 @@ export const AnnotationOverlay = ({
                 style={{
                   color: a.color,
                   backgroundColor: "rgba(255,255,255,0.82)",
-                  fontSize: inlineFontSize(width) * (payload.scale ?? 1),
+                  fontSize: inlineFontSize(width) * clampMarkScale(payload.scale),
                   cursor: draggable
                     ? offset
                       ? "grabbing"
@@ -580,7 +648,7 @@ export const AnnotationOverlay = ({
                       ? modifiable
                         ? "pointer"
                         : "default"
-                      : browsing
+                      : arranging
                         ? "text"
                         : "default",
                 }}
@@ -639,7 +707,7 @@ export const AnnotationOverlay = ({
           anchor={pendingNote}
           initialText=""
           initialDisplay={noteDisplay}
-          initialScale={MARK_SCALE_FACTORS[textScale]}
+          initialScale={textScale}
           showDelete={false}
           onSubmit={(text, display, scale) => {
             onCreate({
@@ -656,7 +724,7 @@ export const AnnotationOverlay = ({
       )}
 
       {/* Edit composer for a selected note the user is allowed to modify. */}
-      {canEdit && browsing &&
+      {canEdit && arranging && !pendingNote &&
         (() => {
           const selected = pageAnnotations.find(
             (a) => a.id === selectedId && isComment(a) && canModify(a),
@@ -670,7 +738,7 @@ export const AnnotationOverlay = ({
               anchor={{ x: payload.x, y: payload.y }}
               initialText={payload.text}
               initialDisplay={payload.display === "inline" ? "inline" : "pin"}
-              initialScale={payload.scale ?? 1}
+              initialScale={clampMarkScale(payload.scale)}
               showDelete
               onSubmit={(text, display, scale) => {
                 onUpdate(
@@ -721,26 +789,24 @@ const NoteCard = ({
   const { t } = useTranslation();
   const [text, setText] = useState(initialText);
   const [display, setDisplay] = useState<NoteDisplay>(initialDisplay);
-  const [scalePreset, setScalePreset] = useState<MarkScale>(() =>
-    scaleToPreset(initialScale),
-  );
+  const [scale, setScale] = useState<number>(() => clampMarkScale(initialScale));
 
   const submit = () => {
     const trimmed = text.trim();
-    if (trimmed) onSubmit(trimmed, display, MARK_SCALE_FACTORS[scalePreset]);
+    if (trimmed) onSubmit(trimmed, display, scale);
   };
 
   return (
     <div
       className="absolute z-20 w-60 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-2.5 shadow-glass-ethereal"
       style={{
-        // The 260px-wide card (±130 half + margin) can't be kept inside a
-        // narrower page — the min/max bounds cross and shove it off-screen — so
-        // just centre it there. Same guard on the vertical clamp for short pages.
+        // The 240px-wide card (±120 half) can't be kept inside a narrower page
+        // — the min/max bounds cross and shove it off-screen — so just centre it
+        // there. Same guard on the vertical clamp for short pages.
         left:
-          width <= 260
+          width <= 240
             ? width / 2
-            : Math.min(Math.max(anchor.x * width, 130), width - 130),
+            : Math.min(Math.max(anchor.x * width, 120), width - 120),
         top: Math.max(8, Math.min(anchor.y * height + 16, height - 150)),
         pointerEvents: "auto",
       }}
@@ -787,31 +853,31 @@ const NoteCard = ({
         ))}
       </div>
 
-      {/* Text size — only meaningful for on-score (inline) text. */}
+      {/* Text size — only meaningful for on-score (inline) text. The sample
+          above the slider is drawn at the size the mark will actually have on
+          this page, so the choice is made by eye and not by trying four
+          presets against a stave. */}
       {display === "inline" && (
-        <div
-          className="mt-2 flex items-center gap-1"
-          role="group"
-          aria-label={t("annotations.scale.text", "Rozmiar tekstu")}
-        >
-          {MARK_SCALE_ORDER.map((step) => (
-            <button
-              key={step}
-              type="button"
-              onClick={() => setScalePreset(step)}
-              aria-pressed={scalePreset === step}
-              aria-label={t(`annotations.scale.${step}`, step)}
-              title={t(`annotations.scale.${step}`, step)}
-              className={cn(
-                "flex h-8 flex-1 items-center justify-center rounded-md font-semibold leading-none text-ethereal-ink transition-colors",
-                scalePreset === step
-                  ? "bg-ethereal-ink text-white"
-                  : "bg-ethereal-marble/60 hover:bg-ethereal-marble",
-              )}
+        <div className="mt-2">
+          <div className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-ethereal-marble/40 px-2">
+            <span
+              aria-hidden="true"
+              className="truncate font-semibold leading-none text-ethereal-ink"
+              style={{ fontSize: inlineFontSize(width) * scale }}
             >
-              <span style={{ fontSize: 9 + MARK_SCALE_FACTORS[step] * 6 }}>A</span>
-            </button>
-          ))}
+              {text.trim() || "Aa"}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={MARK_SCALE_MIN}
+            max={MARK_SCALE_MAX}
+            step={MARK_SCALE_STEP}
+            value={scale}
+            onChange={(event) => setScale(Number(event.target.value))}
+            aria-label={t("annotations.scale.text", "Rozmiar tekstu")}
+            className="mt-1.5 w-full accent-ethereal-ink"
+          />
         </div>
       )}
 
