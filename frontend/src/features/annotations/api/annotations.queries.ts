@@ -8,7 +8,10 @@
  * is composed as `server rows ⊕ pending queue` — so a mark drawn in a basement
  * survives a refetch, a reload, and being closed on the train. Ids are minted
  * client-side, which is what lets an unsent mark still be edited and erased, and
- * what makes the replayed POST idempotent.
+ * what makes the replayed POST idempotent. A mark that DID reach the server is
+ * read back once as the reader leaves the score, so the copy the service worker
+ * keeps — the one still on the device after the persisted snapshot has aged out
+ * — carries their own hand and not just the conductor's.
  *
  * **An open stand keeps up with the rehearsal.** While the viewer is open the
  * cheap fingerprint endpoint is polled, and the full list is refetched only on
@@ -76,6 +79,48 @@ interface AnnotationsOptions {
 
 const ALL_CLEARED = () => true;
 
+/**
+ * Editions this device has written to since the server last answered a full list
+ * for them.
+ *
+ * The copy of the markings that survives a week without signal is the service
+ * worker's, and only a real list GET writes it — an optimistic patch does not,
+ * and neither does a POST that succeeds. While the stand is open the fingerprint
+ * poll closes that gap on its next tick, but the reader who marks a bar and
+ * shuts the score gets no tick: their own pencil would then be missing from the
+ * copy on disk, which is the failure this whole layer exists to prevent, and the
+ * silent one. So the edition is remembered here and read back once when they
+ * leave it. Module-level because the write and the leaving happen in two
+ * different hooks over the same edition.
+ */
+const unsyncedEditions = new Set<string>();
+
+/**
+ * Reads one edition's markings back from the network when the reader leaves it,
+ * if this device wrote to it. Skipped with no signal — a write that failed is in
+ * the durable queue already, and one that succeeded can wait for the next close
+ * rather than spend a doomed request here.
+ */
+const useDurableMarkCatchUp = (editionId: string | null): void => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!editionId) return;
+    return () => {
+      if (!unsyncedEditions.has(editionId)) return;
+      if (typeof navigator !== "undefined" && !navigator.onLine) return;
+      unsyncedEditions.delete(editionId);
+      void queryClient
+        .fetchQuery({
+          queryKey: annotationKeys.byEdition(editionId),
+          queryFn: () => AnnotationsService.list(editionId),
+          staleTime: 0,
+        })
+        .catch(() => {});
+    };
+  }, [editionId, queryClient]);
+};
+
 export interface ScoreMarks {
   /** Server rows redrawn through everything still waiting in the queue. */
   annotations: ScoreAnnotation[];
@@ -102,6 +147,7 @@ export const useScoreAnnotations = (
   });
 
   useMarkFingerprintWatch(editionId, options?.live ?? false);
+  useDurableMarkCatchUp(editionId);
 
   const pending = useMemo(
     () => pendingMarkEntries(queue, editionId),
@@ -215,6 +261,15 @@ export const useAnnotationMutations = (
     [editionId],
   );
 
+  /**
+   * The server's list for this edition has moved, and only this device knows —
+   * the cache was patched in place rather than re-read. Owed a read-back before
+   * the reader walks away from it (see `useDurableMarkCatchUp`).
+   */
+  const noteWrite = useCallback(() => {
+    if (editionId) unsyncedEditions.add(editionId);
+  }, [editionId]);
+
   const create = useMutation({
     mutationKey: annotationKeys.all,
     mutationFn: (annotation: ScoreAnnotation) =>
@@ -243,6 +298,7 @@ export const useAnnotationMutations = (
       queryClient.setQueryData<ScoreAnnotation[]>(key, (current) =>
         (current ?? []).map((row) => (row.id === annotation.id ? created : row)),
       );
+      noteWrite();
     },
   });
 
@@ -275,6 +331,7 @@ export const useAnnotationMutations = (
       queryClient.setQueryData<ScoreAnnotation[]>(key, (current) =>
         (current ?? []).map((row) => (row.id === updated.id ? updated : row)),
       );
+      noteWrite();
     },
   });
 
@@ -299,6 +356,7 @@ export const useAnnotationMutations = (
         );
       }
     },
+    onSuccess: noteWrite,
   });
 
   const clear = useMutation({
@@ -319,6 +377,7 @@ export const useAnnotationMutations = (
         enqueue(collapseClear(editionId), "Wyczyszczone oznaczenia");
       }
     },
+    onSuccess: noteWrite,
   });
 
   /** Mint the identity a new mark will keep on every device, forever. */

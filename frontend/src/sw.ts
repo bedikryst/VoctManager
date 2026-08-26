@@ -6,9 +6,10 @@
  *  1. Web Push — renders structured payloads (title, body, level, deep-link URL,
  *     quick-actions), routes notification clicks, recovers from VAPID rotation.
  *  2. Real offline — precaches the app shell so the PWA *boots* without network,
- *     runtime-caches practice audio (range-served), score PDFs and the personal
- *     dashboard reads, and exposes a message channel the app uses to explicitly
- *     download a whole concert's materials for the train/metro.
+ *     runtime-caches practice audio (range-served), score PDFs, the markings
+ *     drawn on them and the personal dashboard reads, and exposes a message
+ *     channel the app uses to explicitly download a whole concert's materials
+ *     for the train/metro.
  *
  * A new build parks in `waiting` rather than seizing tabs that are still running
  * the old one; the app thread drives the swap (see the activate listener).
@@ -32,6 +33,7 @@ import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { RangeRequestsPlugin } from "workbox-range-requests";
 
 import {
+  ANNOTATION_EDITION_PARAM,
   AUDIO_CACHE,
   SCORE_CACHE,
   API_CACHE,
@@ -39,6 +41,7 @@ import {
   BINDER_STAMP_PARAM,
   OFFLINE_CACHES,
   cacheNameForKind,
+  isAnnotationListPath,
   isBinderMapPath,
   isBinderPdfPath,
   type OfflineAsset,
@@ -100,6 +103,24 @@ const isSameOrigin = (url: URL): boolean => url.origin === self.location.origin;
 
 const THIRTY_DAYS_S = 60 * 60 * 24 * 30;
 
+/**
+ * How every stored API answer is looked up again. Cache Storage honours `Vary`
+ * by default, and Django varies these responses on `Accept-Language`
+ * (LocaleMiddleware) — so a member who switches the panel's language turns their
+ * whole downloaded concert into a miss, at exactly the moment there is no
+ * network to replace it. The same trap arms itself for `Vary: Cookie` the day
+ * anything touches the session: the auth cookie rotates, and every copy on the
+ * device silently stops matching.
+ *
+ * Nothing kept here varies by a request header. These bodies are composed per
+ * RECIPIENT — the binder carries the reader's name, the markings are their own
+ * layer — and the cache is per device and wiped at logout, which is what keeps
+ * one person's copy from ever answering another's request. The one thing given
+ * up is that a reader who changes language keeps front matter in the old one
+ * until the next online fetch, which is a better answer than an empty stand.
+ */
+const OFFLINE_MATCH: CacheQueryOptions = { ignoreVary: true };
+
 // Practice audio (raw /media/audio_tracks/…). CacheFirst + RangeRequests so the
 // <audio> element's `Range:` requests are sliced out of the FULL body that the
 // explicit "download for offline" flow stored — passive streaming yields 206s
@@ -131,6 +152,7 @@ registerRoute(
     url.pathname.endsWith("/download/"),
   new CacheFirst({
     cacheName: SCORE_CACHE,
+    matchOptions: OFFLINE_MATCH,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({
@@ -156,6 +178,7 @@ registerRoute(
     !url.searchParams.has(BINDER_MARKS_PARAM),
   new CacheFirst({
     cacheName: SCORE_CACHE,
+    matchOptions: OFFLINE_MATCH,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({
@@ -181,6 +204,35 @@ registerRoute(
   new NetworkFirst({
     cacheName: SCORE_CACHE,
     networkTimeoutSeconds: 4,
+    matchOptions: OFFLINE_MATCH,
+    plugins: [new CacheableResponsePlugin({ statuses: [200] })],
+  }),
+);
+
+// The markings on one edition — what makes a downloaded score this singer's
+// copy rather than a clean print. NetworkFirst for the same reason as the map:
+// online the conductor's newest cue must win, offline the last answer is the
+// difference between a marked score and blank paper. It rides in the score cache
+// beside the pages it is drawn on, so one wipe takes the whole score, and it is
+// scoped to ONE edition — the unfiltered list is every mark this reader may see
+// in the archive, which no offline surface asks for.
+//
+// No ExpirationPlugin, and not an oversight: workbox's expiration model is keyed
+// by CACHE, not by route, so a budget declared here would be spent on the
+// binder's megabytes as readily as on these few kilobytes. These entries are
+// small, they are wiped at logout with everything else the reader's name is on,
+// and the one thing that must not happen to them is being trimmed away by a
+// neighbour's quota.
+registerRoute(
+  ({ url, request }) =>
+    isSameOrigin(url) &&
+    request.method === "GET" &&
+    isAnnotationListPath(url.pathname) &&
+    url.searchParams.has(ANNOTATION_EDITION_PARAM),
+  new NetworkFirst({
+    cacheName: SCORE_CACHE,
+    networkTimeoutSeconds: 4,
+    matchOptions: OFFLINE_MATCH,
     plugins: [new CacheableResponsePlugin({ statuses: [200] })],
   }),
 );
@@ -209,6 +261,7 @@ registerRoute(
   new NetworkFirst({
     cacheName: API_CACHE,
     networkTimeoutSeconds: 4,
+    matchOptions: OFFLINE_MATCH,
     plugins: [
       new CacheableResponsePlugin({ statuses: [200] }),
       new ExpirationPlugin({ maxEntries: 16, maxAgeSeconds: THIRTY_DAYS_S }),

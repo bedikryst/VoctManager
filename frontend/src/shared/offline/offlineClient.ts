@@ -286,6 +286,7 @@ export const flushOfflineQueue = async (
 
   let flushed = 0;
   let rejected = 0;
+  let letGoOfMarks = false;
 
   for (const write of [...queue]) {
     try {
@@ -297,17 +298,31 @@ export const flushOfflineQueue = async (
       dequeueWrite(write.id); // server rejected it — don't retry forever
       rejected += 1;
     }
+    if (write.kind === "annotation") letGoOfMarks = true;
   }
 
   if (flushed > 0 || rejected > 0) {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["materials", "dashboard"] }),
       queryClient.invalidateQueries({ queryKey: ["schedule", "dashboard"] }),
-      // Score markings: the queue was the page's source of truth while it held
-      // them, so the moment it lets go the server's answer has to be re-read —
-      // otherwise the marks blink out between the flush and the next refetch.
-      queryClient.invalidateQueries({ queryKey: ["annotations"] }),
     ]);
+  }
+
+  // Score markings: the queue was the page's source of truth while it held them,
+  // so the moment it lets go the server's answer has to be re-read — otherwise
+  // the marks blink out between the flush and the next refetch.
+  //
+  // `refetchType: "all"`, because the reader is usually nowhere near the score
+  // when signal comes back. Marking a closed stand stale only defers the read to
+  // its next mount, which may well be the next rehearsal in the same basement —
+  // by then the queue is empty and both the snapshot and the worker's copy would
+  // predate the marks that just landed. This runs on a connection that has just
+  // proved itself, over a handful of small lists.
+  if (letGoOfMarks) {
+    await queryClient.invalidateQueries({
+      queryKey: ["annotations"],
+      refetchType: "all",
+    });
   }
 
   return {

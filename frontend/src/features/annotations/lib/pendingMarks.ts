@@ -20,6 +20,7 @@
  */
 
 import type { QueuedWrite } from "@/app/store/useOfflineStore";
+import { ANNOTATIONS_PATH } from "@/shared/offline/swProtocol";
 
 import type {
   AnnotationPatch,
@@ -27,7 +28,13 @@ import type {
   ScoreAnnotation,
 } from "../types/annotations.dto";
 
-export const ANNOTATIONS_ENDPOINT = "/api/archive/annotations/";
+/**
+ * The literal lives in the worker's protocol module because the service worker
+ * routes the offline copy of the markings on the same path and cannot import
+ * feature code. One string, so a queued write and the route that keeps its
+ * answer readable offline can never describe different endpoints.
+ */
+export const ANNOTATIONS_ENDPOINT = ANNOTATIONS_PATH;
 
 /** Every queued markup write, in the shape the page needs to draw it. */
 export type PendingMarkOp =

@@ -6,8 +6,11 @@
  * but the marks are JSON on a different path — so a singer who downloaded a
  * programme and never happened to OPEN a given piece online arrived at rehearsal
  * with clean paper and no cue on it, which is the one thing the download was
- * supposed to prevent. Warming the query cache fixes that: the persister
- * dehydrates it to localStorage, and the stand paints from there with no network.
+ * supposed to prevent. Reading each edition's marks here fixes that, and the
+ * read lands in two places at once: the query cache paints instantly from the
+ * persister's snapshot, and the service worker keeps the response itself — which
+ * is the half that is still there on the third day, once the snapshot has aged
+ * out (`ANNOTATIONS_PATH` in `shared/offline/swProtocol`).
  *
  * Deliberately forgiving — a piece whose marks fail to load must never fail the
  * concert's download; the score and the audio are the larger promise.
@@ -34,6 +37,12 @@ export const prefetchEditionAnnotations = async (
           .prefetchQuery({
             queryKey: annotationKeys.byEdition(editionId),
             queryFn: () => AnnotationsService.list(editionId),
+            // The trip to the network IS the download. `prefetchQuery` honours
+            // the client's five-minute default, so a score the singer happened
+            // to open just before tapping "download" would be considered fresh,
+            // the request skipped — and the copy the worker keeps on disk never
+            // written. A deliberate act must not depend on cache luck.
+            staleTime: 0,
           })
           .catch(() => {}),
       ),

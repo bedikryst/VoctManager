@@ -48,6 +48,40 @@ export const BINDER_STAMP_PARAM = "v";
  */
 export const BINDER_MARKS_PARAM = "marks";
 
+/**
+ * One score edition's markings — the JSON the stand actually draws from, and the
+ * only part of an offline score that is somebody's own work rather than a copy
+ * of the archive.
+ *
+ * Kept for the same reason as the book itself, but against a different clock.
+ * The query cache is dehydrated to localStorage for 24h, so a singer who took a
+ * concert on Sunday opened Wednesday's rehearsal to clean paper: the book was
+ * still on the device, the conductor's cues and their own pencil were not, and
+ * nothing on the page said so. Cache Storage has no such expiry.
+ *
+ * The list is role-scoped SERVER-side (the shared layer plus this reader's own
+ * personal marks), so a stored answer is that one reader's — it belongs in a
+ * cache logout wipes (`OFFLINE_CACHES`) and never in a shared one.
+ */
+export const ANNOTATIONS_PATH = "/api/archive/annotations/";
+
+/**
+ * Which edition the stand is asking about, and a condition of keeping the copy:
+ * without it the endpoint answers with every mark this reader may see anywhere
+ * in the archive — a heavier answer, and not the question any offline surface
+ * asks.
+ */
+export const ANNOTATION_EDITION_PARAM = "edition";
+
+/**
+ * Exact match, deliberately. `fingerprint/` — the twenty-second poll that asks
+ * whether the page has moved — and `clear/` sit one segment below, and a stored
+ * answer to either is worse than none: the first would swear nothing has changed
+ * for as long as the entry lives, and the second is a write.
+ */
+export const isAnnotationListPath = (pathname: string): boolean =>
+  pathname === ANNOTATIONS_PATH;
+
 const BINDER_PDF_PATH = /^\/api\/projects\/[^/]+\/score_pdf\/$/;
 const BINDER_MAP_PATH = /^\/api\/projects\/[^/]+\/score_map\/$/;
 
