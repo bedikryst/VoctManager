@@ -14,10 +14,14 @@
  * placement is tap-detected so panning stays possible on touch.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
+ * The note composer draws the note being written ON the page, at its anchor, in
+ * its real ink and size, and places its card on whichever side of that anchor
+ * leaves it visible — a card sitting on the bar it annotates is a card written
+ * blind.
  * @module features/annotations/components
  */
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Lock, MessageSquare, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -57,6 +61,7 @@ import {
 } from "../lib/useAnnotationTools";
 import { getStampDef, StampGlyph } from "../lib/stamps";
 import { buildSmoothPath } from "../lib/smoothing";
+import { placeNoteCard } from "../lib/noteCardPlacement";
 
 interface AnnotationOverlayProps {
   geometry: PdfPageGeometry;
@@ -205,6 +210,16 @@ export const AnnotationOverlay = ({
    */
   const arranging = browsing || placing || stamping;
   const marksInteractive = arranging || erasing;
+
+  // The note whose composer is open. It is taken OFF the page while it is being
+  // written, because the card draws the same note live at the same anchor — two
+  // copies of one comment on one spot is the reader seeing double.
+  const editingNote =
+    canEdit && arranging && !pendingNote
+      ? pageAnnotations.find(
+          (a) => a.id === selectedId && isComment(a) && canModify(a),
+        )
+      : undefined;
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -620,6 +635,7 @@ export const AnnotationOverlay = ({
 
       {/* Notes: inline text drawn on the page, or clickable pins. */}
       {pageAnnotations.filter(isComment).map((a) => {
+        if (a.id === editingNote?.id) return null;
         const payload = a.payload as CommentPayload;
         const inline = payload.display === "inline";
         const isPrivate = layerOf(a) !== "shared";
@@ -737,6 +753,7 @@ export const AnnotationOverlay = ({
           width={width}
           height={height}
           anchor={pendingNote}
+          color={color}
           initialText=""
           initialDisplay={noteDisplay}
           initialScale={textScale}
@@ -756,32 +773,32 @@ export const AnnotationOverlay = ({
       )}
 
       {/* Edit composer for a selected note the user is allowed to modify. */}
-      {canEdit && arranging && !pendingNote &&
+      {editingNote &&
         (() => {
-          const selected = pageAnnotations.find(
-            (a) => a.id === selectedId && isComment(a) && canModify(a),
-          );
-          if (!selected) return null;
-          const payload = selected.payload as CommentPayload;
+          const payload = editingNote.payload as CommentPayload;
           return (
             <NoteCard
+              // Selecting another note while this one is open must hand the
+              // card a fresh draft, not the previous note's words.
+              key={editingNote.id}
               width={width}
               height={height}
               anchor={{ x: payload.x, y: payload.y }}
+              color={editingNote.color}
               initialText={payload.text}
               initialDisplay={payload.display === "inline" ? "inline" : "pin"}
               initialScale={clampMarkScale(payload.scale)}
               showDelete
               onSubmit={(text, display, scale) => {
                 onUpdate(
-                  selected.id,
+                  editingNote.id,
                   { payload: { x: payload.x, y: payload.y, text, display, scale } },
                   { payload },
                 );
                 onSelect(null);
               }}
               onDelete={() => {
-                onDelete(selected.id);
+                onDelete(editingNote.id);
                 onSelect(null);
               }}
               onCancel={() => onSelect(null)}
@@ -796,6 +813,8 @@ interface NoteCardProps {
   width: number;
   height: number;
   anchor: { x: number; y: number };
+  /** Ink the note will carry — the live preview is drawn in it. */
+  color: string;
   initialText: string;
   initialDisplay: NoteDisplay;
   /** Starting font-size multiplier (1 = medium). */
@@ -806,10 +825,20 @@ interface NoteCardProps {
   onDelete?: () => void;
 }
 
+/** Card box, in page-box pixels. Width is fixed so the placement maths and the
+ *  rendered element cannot disagree; height is measured, never assumed. */
+const NOTE_CARD_WIDTH = 240;
+/** Only until the first measurement lands — one layout pass, before paint. */
+const NOTE_CARD_ESTIMATED_HEIGHT = 220;
+/** Beyond this the composer scrolls: a card taller than this stops being a
+ *  lens on one bar and starts being the page. */
+const NOTE_TEXT_MAX_HEIGHT = 156;
+
 const NoteCard = ({
   width,
   height,
   anchor,
+  color,
   initialText,
   initialDisplay,
   initialScale,
@@ -823,83 +852,150 @@ const NoteCard = ({
   const [display, setDisplay] = useState<NoteDisplay>(initialDisplay);
   const [scale, setScale] = useState<number>(() => clampMarkScale(initialScale));
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const textRef = useRef<HTMLTextAreaElement | null>(null);
+  const [cardHeight, setCardHeight] = useState(NOTE_CARD_ESTIMATED_HEIGHT);
+
+  // The card grows and shrinks with the text and with which controls the chosen
+  // display mode needs, and its placement depends on how tall it IS — so it is
+  // measured rather than guessed. Layout effect + ResizeObserver: the correction
+  // lands before paint, so the card never appears in the wrong place first.
+  useLayoutEffect(() => {
+    const element = cardRef.current;
+    if (!element) return;
+    const measure = (): void =>
+      setCardHeight((current) =>
+        Math.abs(current - element.offsetHeight) < 1 ? current : element.offsetHeight,
+      );
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  // Grow with the note. Two rows is the floor (`rows`), the cap above is the
+  // ceiling; in between, a conductor writing three lines sees three lines.
+  useLayoutEffect(() => {
+    const element = textRef.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${Math.min(element.scrollHeight, NOTE_TEXT_MAX_HEIGHT)}px`;
+  }, [text]);
+
   const submit = () => {
     const trimmed = text.trim();
     if (trimmed) onSubmit(trimmed, display, scale);
   };
 
-  return (
-    <div
-      className="absolute z-20 w-60 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-2.5 shadow-glass-ethereal"
-      style={{
-        // The 240px-wide card (±120 half) can't be kept inside a narrower page
-        // — the min/max bounds cross and shove it off-screen — so just centre it
-        // there. Same guard on the vertical clamp for short pages.
-        left:
-          width <= 240
-            ? width / 2
-            : Math.min(Math.max(anchor.x * width, 120), width - 120),
-        top: Math.max(8, Math.min(anchor.y * height + 16, height - 150)),
-        pointerEvents: "auto",
-      }}
-      onPointerDown={(event) => event.stopPropagation()}
-    >
-      <textarea
-        autoFocus
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) {
-            event.preventDefault();
-            submit();
-          }
-          if (event.key === "Escape") onCancel();
-        }}
-        rows={2}
-        className={cn(
-          fieldShellVariants({ variant: "solid" }),
-          "resize-none p-2",
-          FIELD_TEXT_SCALE.xs,
-        )}
-        placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
-      />
+  const inline = display === "inline";
+  const markFontSize = inlineFontSize(width) * scale;
+  // Clear the MARK, not just the point under the finger: the live preview is
+  // centred on the anchor, so half of it counts as the anchor too.
+  const gap = inline ? markFontSize * 0.9 + 12 : 26;
+  const placement = placeNoteCard({
+    anchor,
+    pageWidth: width,
+    pageHeight: height,
+    cardWidth: NOTE_CARD_WIDTH,
+    cardHeight,
+    gap,
+  });
 
-      {/* Inline vs pin display picker. */}
-      <div className="mt-2 flex items-center gap-1">
-        {(["inline", "pin"] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => setDisplay(mode)}
-            className={cn(
-              "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
-              display === mode
-                ? "bg-ethereal-ink text-white"
-                : "bg-ethereal-marble/60 text-ethereal-graphite hover:bg-ethereal-marble",
-            )}
+  return (
+    <>
+      {/* The note as it will sit on the score: real ink, real size, real spot.
+          This is why the card carries no sample strip of its own — a preview in
+          the card is a second answer to a question the page already answers. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute z-20"
+        style={{
+          left: anchor.x * width,
+          top: anchor.y * height,
+          transform: "translate(-50%, -50%)",
+          maxWidth: inline ? width * 0.5 : undefined,
+        }}
+      >
+        {inline ? (
+          <span
+            className="block rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1 ring-black/10"
+            style={{
+              color,
+              backgroundColor: "rgba(255,255,255,0.82)",
+              fontSize: markFontSize,
+              // Nothing typed yet: the sample says how big, not what.
+              opacity: text.trim() ? 1 : 0.55,
+            }}
           >
-            {mode === "inline"
-              ? t("annotations.note.inline", "Na nucie")
-              : t("annotations.note.pin", "Pinezka")}
-          </button>
-        ))}
+            {text.trim() || "Aa"}
+          </span>
+        ) : (
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white/80"
+            style={{ backgroundColor: color }}
+          >
+            <MessageSquare size={14} aria-hidden="true" />
+          </span>
+        )}
       </div>
 
-      {/* Text size — only meaningful for on-score (inline) text. The sample
-          above the slider is drawn at the size the mark will actually have on
-          this page, so the choice is made by eye and not by trying four
-          presets against a stave. */}
-      {display === "inline" && (
-        <div className="mt-2">
-          <div className="flex h-9 items-center justify-center overflow-hidden rounded-md bg-ethereal-marble/40 px-2">
-            <span
-              aria-hidden="true"
-              className="truncate font-semibold leading-none text-ethereal-ink"
-              style={{ fontSize: inlineFontSize(width) * scale }}
+      <div
+        ref={cardRef}
+        className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-2.5 shadow-glass-ethereal"
+        style={{
+          width: NOTE_CARD_WIDTH,
+          left: placement.left,
+          top: placement.top,
+          pointerEvents: "auto",
+        }}
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <textarea
+          ref={textRef}
+          autoFocus
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              submit();
+            }
+            if (event.key === "Escape") onCancel();
+          }}
+          rows={2}
+          className={cn(
+            fieldShellVariants({ variant: "solid" }),
+            "resize-none p-2",
+            FIELD_TEXT_SCALE.xs,
+          )}
+          placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
+        />
+
+        {/* Inline vs pin display picker. */}
+        <div className="mt-2 flex items-center gap-1">
+          {(["inline", "pin"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setDisplay(mode)}
+              className={cn(
+                "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
+                display === mode
+                  ? "bg-ethereal-ink text-white"
+                  : "bg-ethereal-marble/60 text-ethereal-graphite hover:bg-ethereal-marble",
+              )}
             >
-              {text.trim() || "Aa"}
-            </span>
-          </div>
+              {mode === "inline"
+                ? t("annotations.note.inline", "Na nucie")
+                : t("annotations.note.pin", "Pinezka")}
+            </button>
+          ))}
+        </div>
+
+        {/* Text size — only meaningful for on-score (inline) text; the preview
+            it drives is the mark itself, up on the page. */}
+        {inline && (
           <input
             type="range"
             min={MARK_SCALE_MIN}
@@ -908,43 +1004,43 @@ const NoteCard = ({
             value={scale}
             onChange={(event) => setScale(Number(event.target.value))}
             aria-label={t("annotations.scale.text", "Rozmiar tekstu")}
-            className="mt-1.5 w-full accent-ethereal-ink"
+            className="mt-2 w-full accent-ethereal-ink"
           />
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center justify-between gap-2">
-        {showDelete && onDelete ? (
-          <button
-            type="button"
-            onClick={onDelete}
-            className="rounded-md p-1 text-ethereal-graphite hover:text-ethereal-crimson"
-            aria-label={t("annotations.note.delete", "Usuń notatkę")}
-          >
-            <Trash2 size={15} aria-hidden="true" />
-          </button>
-        ) : (
-          <span />
         )}
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md p-1 text-ethereal-ink/50 hover:text-ethereal-ink"
-            aria-label={t("common.actions.cancel", "Anuluj")}
-          >
-            <X size={15} aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            onClick={submit}
-            disabled={!text.trim()}
-            className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
-          >
-            {t("common.ok", "OK")}
-          </button>
+
+        <div className="mt-2 flex items-center justify-between gap-2">
+          {showDelete && onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="rounded-md p-1 text-ethereal-graphite hover:text-ethereal-crimson"
+              aria-label={t("annotations.note.delete", "Usuń notatkę")}
+            >
+              <Trash2 size={15} aria-hidden="true" />
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-md p-1 text-ethereal-ink/50 hover:text-ethereal-ink"
+              aria-label={t("common.actions.cancel", "Anuluj")}
+            >
+              <X size={15} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={submit}
+              disabled={!text.trim()}
+              className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+            >
+              {t("common.ok", "OK")}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
