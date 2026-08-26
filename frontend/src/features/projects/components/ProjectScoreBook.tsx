@@ -21,12 +21,12 @@ import React, { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { ScoreBookModal } from "@/features/annotations/components/ScoreBookModal";
 import {
   buildScoreBook,
   EMPTY_SCORE_BOOK,
+  ScoreBookModal,
   type ScoreBook,
-} from "@/features/annotations/lib/scoreBook";
+} from "@/features/annotations";
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 
 import { projectKeys } from "../api/project.query-keys";
