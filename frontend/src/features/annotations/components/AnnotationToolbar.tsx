@@ -25,7 +25,6 @@ import {
   Highlighter,
   HelpCircle,
   Lock,
-  MessageSquarePlus,
   MousePointer2,
   PenLine,
   PenTool,
@@ -33,6 +32,7 @@ import {
   SquarePen,
   Stamp,
   Trash2,
+  Type,
   Undo2,
   Users,
   UserCog,
@@ -88,7 +88,8 @@ const TOOLS: ReadonlyArray<ToolDef> = [
   { id: "pointer", icon: MousePointer2, labelKey: "annotations.tools.pointer", fallback: "Browse", drawOnly: false },
   { id: "pen", icon: PenLine, labelKey: "annotations.tools.pen", fallback: "Pen", drawOnly: true },
   { id: "highlighter", icon: Highlighter, labelKey: "annotations.tools.highlighter", fallback: "Highlighter", drawOnly: true },
-  { id: "note", icon: MessageSquarePlus, labelKey: "annotations.tools.note", fallback: "Note", drawOnly: false },
+  // A speech bubble says "comment thread". This tool writes a WORD on paper.
+  { id: "note", icon: Type, labelKey: "annotations.tools.note", fallback: "Note", drawOnly: false },
   { id: "stamp", icon: Stamp, labelKey: "annotations.tools.stamp", fallback: "Symbol", drawOnly: false },
   { id: "eraser", icon: Eraser, labelKey: "annotations.tools.eraser", fallback: "Erase", drawOnly: false },
 ];

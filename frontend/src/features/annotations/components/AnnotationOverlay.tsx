@@ -14,22 +14,20 @@
  * placement is tap-detected so panning stays possible on touch.
  * Which existing marks may be erased/edited is decided by the `canModify`
  * predicate — a chorister touches only their personal layer.
- * The note composer draws the note being written ON the page, at its anchor, in
- * its real ink and size, and places its card on whichever side of that anchor
- * leaves it visible — a card sitting on the bar it annotates is a card written
- * blind.
+ * A note is TYPED where it will be read — as the mark itself on the stave, or
+ * in the bubble a pin opens — so the card beside it carries only controls
+ * (phrases, display mode, size, save). That card takes whichever side of the
+ * anchor leaves the writing visible: a card sitting on the bar it annotates is
+ * a card written blind.
  * @module features/annotations/components
  */
 
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Lock, MessageSquare, Trash2, X } from "lucide-react";
+import { Lock, Pin, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { cn } from "@/shared/lib/utils";
-import {
-  FIELD_TEXT_SCALE,
-  fieldShellVariants,
-} from "@/shared/ui/primitives/fieldShell";
+import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import {
   TAP_ZONE_FRACTION as PDF_TAP_ZONE_FRACTION,
   type PdfPageGeometry,
@@ -741,7 +739,7 @@ export const AnnotationOverlay = ({
                   cursor: draggable ? (offset ? "grabbing" : "grab") : undefined,
                 }}
               >
-                <MessageSquare size={14} aria-hidden="true" />
+                <Pin size={14} aria-hidden="true" />
                 {isPrivate && (
                   <Lock
                     size={9}
@@ -830,7 +828,7 @@ interface NoteCardProps {
   width: number;
   height: number;
   anchor: { x: number; y: number };
-  /** Ink the note will carry — the live preview is drawn in it. */
+  /** Ink the note will carry — the mark being written is drawn in it. */
   color: string;
   /** One-tap words, recent-first; each appends to what is already written. */
   phrases: readonly string[];
@@ -848,10 +846,134 @@ interface NoteCardProps {
  *  rendered element cannot disagree; height is measured, never assumed. */
 const NOTE_CARD_WIDTH = 240;
 /** Only until the first measurement lands — one layout pass, before paint. */
-const NOTE_CARD_ESTIMATED_HEIGHT = 220;
-/** Beyond this the composer scrolls: a card taller than this stops being a
- *  lens on one bar and starts being the page. */
-const NOTE_TEXT_MAX_HEIGHT = 156;
+const NOTE_CARD_ESTIMATED_HEIGHT = 170;
+/** Half the pin marker (h-7), i.e. how far a pin's own ink reaches upward. */
+const PIN_RADIUS = 14;
+/** Air between the mark being written and the controls card. */
+const CARD_CLEARANCE = 10;
+/** Width of a pin's editable bubble, held between these bounds. */
+const PIN_BUBBLE_MIN = 140;
+const PIN_BUBBLE_MAX = 210;
+
+/** Live height of an element, so the placement maths never runs on a guess. */
+const useMeasuredHeight = (
+  ref: React.RefObject<HTMLElement | null>,
+  fallback: number,
+): number => {
+  const [measured, setMeasured] = useState(fallback);
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = (): void =>
+      setMeasured((current) =>
+        Math.abs(current - element.offsetHeight) < 1 ? current : element.offsetHeight,
+      );
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return measured;
+};
+
+/** Take focus and put the caret after the last character. */
+const focusAtEnd = (element: HTMLElement): void => {
+  element.focus();
+  const selection = window.getSelection();
+  if (!selection) return;
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
+interface AnchoredEditorProps {
+  elementRef: React.RefObject<HTMLDivElement | null>;
+  /** Read ONCE, when this editor mounts — see the seeding note below. */
+  seedText: string;
+  label: string;
+  onInput: (text: string) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+/**
+ * The words themselves, edited where they will be read — as the mark on the
+ * stave, or in the bubble a pin opens. There is no text field in the card,
+ * because a field in a card asks the writer to imagine the result; this shows
+ * it, in the ink and at the size it will have on the page.
+ *
+ * Uncontrolled by design: React must never re-render the node a caret is
+ * sitting in. It is seeded once on mount and reports upward on every input;
+ * the card writes back into it only when a phrase chip is tapped.
+ *
+ * The seed is captured at mount and never re-read, which is what makes
+ * switching display mode safe: that swaps one editor for another, and re-
+ * seeding from the note's ORIGINAL text would silently discard everything
+ * written since the composer opened.
+ */
+const AnchoredEditor = ({
+  elementRef,
+  seedText,
+  label,
+  onInput,
+  onSubmit,
+  onCancel,
+  className,
+  style,
+}: AnchoredEditorProps): React.JSX.Element => {
+  const seed = useRef(seedText);
+  useLayoutEffect(() => {
+    const element = elementRef.current;
+    if (!element) return;
+    element.innerText = seed.current;
+    focusAtEnd(element);
+  }, [elementRef]);
+
+  return (
+    <div
+      ref={elementRef}
+      contentEditable
+      role="textbox"
+      aria-multiline="true"
+      aria-label={label}
+      spellCheck={false}
+      // A mark is a word, not a sentence: a keyboard capitalising "razem" would
+      // make typed notes disagree with the phrase chips beside them.
+      autoCapitalize="none"
+      className={className}
+      style={style}
+      onInput={(event) => onInput(event.currentTarget.innerText)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          onSubmit();
+        }
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+      }}
+      onPaste={(event) => {
+        // A marking is plain text; pasted markup would drag foreign type onto
+        // the score. `insertText` keeps the browser's own undo stack intact.
+        event.preventDefault();
+        document.execCommand(
+          "insertText",
+          false,
+          event.clipboardData.getData("text/plain"),
+        );
+      }}
+      // The surface below reads a tap as "close the composer" — writing into
+      // the mark is not that.
+      onPointerDown={(event) => event.stopPropagation()}
+    />
+  );
+};
 
 const NoteCard = ({
   width,
@@ -873,90 +995,107 @@ const NoteCard = ({
   const [scale, setScale] = useState<number>(() => clampMarkScale(initialScale));
 
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const textRef = useRef<HTMLTextAreaElement | null>(null);
-  const [cardHeight, setCardHeight] = useState(NOTE_CARD_ESTIMATED_HEIGHT);
+  const markRef = useRef<HTMLDivElement | null>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
 
-  // The card grows and shrinks with the text and with which controls the chosen
-  // display mode needs, and its placement depends on how tall it IS — so it is
-  // measured rather than guessed. Layout effect + ResizeObserver: the correction
-  // lands before paint, so the card never appears in the wrong place first.
-  useLayoutEffect(() => {
-    const element = cardRef.current;
-    if (!element) return;
-    const measure = (): void =>
-      setCardHeight((current) =>
-        Math.abs(current - element.offsetHeight) < 1 ? current : element.offsetHeight,
-      );
-    measure();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  const inline = display === "inline";
+  const markFontSize = inlineFontSize(width) * scale;
 
-  // Grow with the note. Two rows is the floor (`rows`), the cap above is the
-  // ceiling; in between, a conductor writing three lines sees three lines.
-  useLayoutEffect(() => {
-    const element = textRef.current;
-    if (!element) return;
-    element.style.height = "auto";
-    element.style.height = `${Math.min(element.scrollHeight, NOTE_TEXT_MAX_HEIGHT)}px`;
-  }, [text]);
+  const cardHeight = useMeasuredHeight(cardRef, NOTE_CARD_ESTIMATED_HEIGHT);
+  const markHeight = useMeasuredHeight(markRef, inline ? markFontSize * 1.7 : 96);
 
   const submit = () => {
     const trimmed = text.trim();
     if (trimmed) onSubmit(trimmed, display, scale);
   };
 
-  const inline = display === "inline";
-  const markFontSize = inlineFontSize(width) * scale;
-  // Clear the MARK, not just the point under the finger: the live preview is
-  // centred on the anchor, so half of it counts as the anchor too.
-  const gap = inline ? markFontSize * 0.9 + 12 : 26;
+  // How far the mark being written reaches from its anchor. An inline note is
+  // centred on it; a pin sits ON it and hangs its bubble underneath, so the
+  // card may come close from above and must stand clear from below.
+  const gapAbove =
+    (inline ? markHeight / 2 : PIN_RADIUS) + CARD_CLEARANCE;
+  const gapBelow =
+    (inline ? markHeight / 2 : markHeight - PIN_RADIUS) + CARD_CLEARANCE;
   const placement = placeNoteCard({
     anchor,
     pageWidth: width,
     pageHeight: height,
     cardWidth: NOTE_CARD_WIDTH,
     cardHeight,
-    gap,
+    gapAbove,
+    gapBelow,
   });
+
+  const label = t("annotations.note.text_label", "Treść notatki");
+  /** Write a phrase into the mark and hand the caret back after it. */
+  const takePhrase = (phrase: string): void => {
+    const next = appendPhrase(text, phrase);
+    setText(next);
+    const element = editorRef.current;
+    if (!element) return;
+    element.innerText = next;
+    focusAtEnd(element);
+  };
 
   return (
     <>
-      {/* The note as it will sit on the score: real ink, real size, real spot.
-          This is why the card carries no sample strip of its own — a preview in
-          the card is a second answer to a question the page already answers. */}
+      {/* The mark itself, live at its anchor. */}
       <div
-        aria-hidden="true"
-        className="pointer-events-none absolute z-20"
+        ref={markRef}
+        className="absolute z-20"
         style={{
           left: anchor.x * width,
-          top: anchor.y * height,
-          transform: "translate(-50%, -50%)",
+          top: inline ? anchor.y * height : anchor.y * height - PIN_RADIUS,
+          transform: inline ? "translate(-50%, -50%)" : "translateX(-50%)",
+          width: inline
+            ? undefined
+            : Math.min(PIN_BUBBLE_MAX, Math.max(PIN_BUBBLE_MIN, width * 0.4)),
           maxWidth: inline ? width * 0.5 : undefined,
+          pointerEvents: "auto",
         }}
       >
         {inline ? (
-          <span
-            className="block rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm ring-1 ring-black/10"
+          <AnchoredEditor
+            elementRef={editorRef}
+            seedText={text}
+            label={label}
+            onInput={setText}
+            onSubmit={submit}
+            onCancel={onCancel}
+            className="min-w-14 rounded-md px-1.5 py-0.5 text-center font-semibold leading-snug shadow-sm outline-none ring-1 ring-black/10 focus:ring-2 focus:ring-ethereal-gold"
             style={{
               color,
-              backgroundColor: "rgba(255,255,255,0.82)",
+              backgroundColor: "rgba(255,255,255,0.92)",
+              // The mark's TRUE size — that is the whole point of writing here.
+              // Below ~16px iOS magnifies the page on focus and a standalone
+              // app does not zoom back out; the trade is deliberate.
               fontSize: markFontSize,
-              // Nothing typed yet: the sample says how big, not what.
-              opacity: text.trim() ? 1 : 0.55,
             }}
-          >
-            {text.trim() || "Aa"}
-          </span>
+          />
         ) : (
-          <span
-            className="flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white/80"
-            style={{ backgroundColor: color }}
-          >
-            <MessageSquare size={14} aria-hidden="true" />
-          </span>
+          <div className="flex flex-col items-center">
+            <span
+              aria-hidden="true"
+              className="flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md ring-2 ring-white/80"
+              style={{ backgroundColor: color }}
+            >
+              <Pin size={14} aria-hidden="true" />
+            </span>
+            {/* A pin shows nothing on the page, so its words are written where
+                a reader will open them: in the bubble under the pin. */}
+            <AnchoredEditor
+              elementRef={editorRef}
+              seedText={text}
+              label={label}
+              onInput={setText}
+              onSubmit={submit}
+              onCancel={onCancel}
+              className={cn(
+                "mt-1.5 w-full rounded-nested border border-hairline-strong bg-white px-2.5 py-2 leading-relaxed text-ethereal-ink shadow-glass-ethereal outline-none focus:border-ethereal-gold",
+                FIELD_TEXT_SCALE.xs,
+              )}
+            />
+          </div>
         )}
       </div>
 
@@ -971,57 +1110,34 @@ const NoteCard = ({
         }}
         onPointerDown={(event) => event.stopPropagation()}
       >
-        <textarea
-          ref={textRef}
-          autoFocus
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              submit();
-            }
-            if (event.key === "Escape") onCancel();
-          }}
-          rows={2}
-          className={cn(
-            fieldShellVariants({ variant: "solid" }),
-            "resize-none p-2",
-            FIELD_TEXT_SCALE.xs,
-          )}
-          placeholder={t("annotations.comment_placeholder", "Note for this spot…")}
-        />
-
         {/* The words this writer repeats all evening. On a tablet the keyboard
             is the real cost of a note — it covers the music while it is open —
-            so every chip here is a tap instead of a word. */}
+            so every chip here is a tap instead of a word. Two rows, flowing
+            sideways: the strip is longer than the card, and the fade at its
+            edge is the only sign a reader gets that it goes on. */}
         {phrases.length > 0 && (
-          <div
-            className="no-scrollbar mt-2 flex gap-1 overflow-x-auto"
-            role="group"
-            aria-label={t("annotations.quick_phrases", "Szybkie frazy")}
-          >
-            {phrases.map((phrase) => (
-              <button
-                key={phrase}
-                type="button"
-                onClick={() => {
-                  const next = appendPhrase(text, phrase);
-                  setText(next);
-                  const element = textRef.current;
-                  if (!element) return;
-                  element.focus();
-                  // After the value lands, so typing continues where the phrase
-                  // ended rather than wherever the caret happened to sit.
-                  requestAnimationFrame(() =>
-                    element.setSelectionRange(next.length, next.length),
-                  );
-                }}
-                className="shrink-0 rounded-full bg-ethereal-marble/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-marble"
-              >
-                {phrase}
-              </button>
-            ))}
+          <div className="relative">
+            <div
+              className="no-scrollbar grid auto-cols-max grid-flow-col grid-rows-2 gap-1 overflow-x-auto"
+              role="group"
+              aria-label={t("annotations.quick_phrases", "Szybkie frazy")}
+            >
+              {phrases.map((phrase) => (
+                <button
+                  key={phrase}
+                  type="button"
+                  onClick={() => takePhrase(phrase)}
+                  className="rounded-full bg-ethereal-marble/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-marble"
+                >
+                  {phrase}
+                </button>
+              ))}
+            </div>
+            {/* Over a strip that fits, this paints white on white and vanishes. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-l from-white to-transparent"
+            />
           </div>
         )}
 
@@ -1046,8 +1162,8 @@ const NoteCard = ({
           ))}
         </div>
 
-        {/* Text size — only meaningful for on-score (inline) text; the preview
-            it drives is the mark itself, up on the page. */}
+        {/* Text size — only meaningful for on-score (inline) text; what it
+            drives is the mark itself, up on the page. */}
         {inline && (
           <input
             type="range"

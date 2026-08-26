@@ -23,11 +23,13 @@ export interface NoteCardPlacementInput {
   cardWidth: number;
   cardHeight: number;
   /**
-   * Clearance between the anchor and the card's near edge. Callers pass half
-   * the height of the mark drawn at the anchor plus a margin, so the card
-   * clears the live preview and not merely the point under the finger.
+   * How far the editable mark's own ink reaches above and below the anchor,
+   * plus air. The two differ because the mark is not always centred on its
+   * anchor: a pin sits ON it and hangs its text underneath, so the card may
+   * come much closer from above than from below.
    */
-  gap: number;
+  gapAbove: number;
+  gapBelow: number;
 }
 
 export interface NoteCardPlacement {
@@ -45,7 +47,8 @@ export const placeNoteCard = ({
   pageHeight,
   cardWidth,
   cardHeight,
-  gap,
+  gapAbove,
+  gapBelow,
 }: NoteCardPlacementInput): NoteCardPlacement => {
   const anchorX = anchor.x * pageWidth;
   const anchorY = anchor.y * pageHeight;
@@ -58,8 +61,8 @@ export const placeNoteCard = ({
       ? pageWidth / 2
       : Math.min(Math.max(anchorX, half), pageWidth - half);
 
-  const belowTop = anchorY + gap;
-  const aboveTop = anchorY - gap - cardHeight;
+  const belowTop = anchorY + gapBelow;
+  const aboveTop = anchorY - gapAbove - cardHeight;
   const fitsBelow = belowTop + cardHeight <= pageHeight - EDGE_MARGIN;
   const fitsAbove = aboveTop >= EDGE_MARGIN;
 

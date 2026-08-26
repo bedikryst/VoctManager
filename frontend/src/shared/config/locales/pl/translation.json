@@ -2,7 +2,6 @@
   "annotations": {
     "clear_all": "Usuń wszystkie adnotacje",
     "clear_confirm": "Na pewno?",
-    "comment_placeholder": "Notatka do tego miejsca…",
     "collapse_tools": "Zwiń narzędzia",
     "draw_needs_room": "Powiększ, by pisać",
     "ink_color": "Kolor",
@@ -68,7 +67,8 @@
     "note": {
       "delete": "Usuń notatkę",
       "inline": "Na nucie",
-      "pin": "Pinezka"
+      "pin": "Pinezka",
+      "text_label": "Treść notatki"
     },
     "panel": {
       "layers": "Widoczność warstw",

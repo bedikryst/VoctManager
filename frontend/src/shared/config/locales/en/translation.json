@@ -2,7 +2,6 @@
   "annotations": {
     "clear_all": "Clear all annotations",
     "clear_confirm": "Sure?",
-    "comment_placeholder": "Note for this spot…",
     "collapse_tools": "Collapse tools",
     "draw_needs_room": "Zoom in to write",
     "ink_color": "Ink colour",
@@ -68,7 +67,8 @@
     "note": {
       "delete": "Delete note",
       "inline": "On score",
-      "pin": "Pin"
+      "pin": "Pin",
+      "text_label": "Note text"
     },
     "panel": {
       "layers": "Layer visibility",

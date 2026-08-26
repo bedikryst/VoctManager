@@ -2,7 +2,6 @@
   "annotations": {
     "clear_all": "Effacer toutes les annotations",
     "clear_confirm": "Sûr ?",
-    "comment_placeholder": "Note pour cet endroit…",
     "collapse_tools": "Réduire les outils",
     "draw_needs_room": "Agrandir pour écrire",
     "ink_color": "Couleur",
@@ -68,7 +67,8 @@
     "note": {
       "delete": "Supprimer la note",
       "inline": "Sur la partition",
-      "pin": "Épingle"
+      "pin": "Épingle",
+      "text_label": "Texte de la note"
     },
     "panel": {
       "layers": "Visibilité des calques",
