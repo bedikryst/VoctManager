@@ -66,9 +66,10 @@
       italic `latin-ext` file is load-bearing for a name like "Małgorzato",
       on the largest piece of type on the screen.
 
-      EN and FR draw nothing from either `latin-ext`, so those two locales are
-      scheduled ~58 KB they will not use; that is the deliberate trade for the
-      primary locale rendering in one pass. The `crossorigin` attribute is not
+      EN and FR draw nothing from any `latin-ext` file — French accents and the
+      œ ligature all sit inside Latin-1, i.e. inside `latin` — so those two
+      locales are scheduled ~92 KB they will not use; that is the deliberate
+      trade for the primary locale rendering in one pass. `crossorigin` is not
       optional on any of these — a preload whose CORS mode differs from the
       @font-face fetch is downloaded twice and warms nothing.
     -->

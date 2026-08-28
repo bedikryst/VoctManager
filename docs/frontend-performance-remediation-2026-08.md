@@ -1,6 +1,6 @@
 # Frontend performance — audit and remediation (2026-08)
 
-Status: **open** — stages 1–5 shipped 2026-08-28, stage 6 part-shipped (6.1 in, 6.2/6.4/6.5 out) ·
+Status: **open** — stages 1–5 shipped 2026-08-28, stage 6 part-shipped (6.1–6.4 in, 6.5 open) ·
 Audited 2026-08-28 · Surface: `frontend/` (panel PWA only; `web/` is out of scope).
 
 Reported symptom: the panel "feels heavy", most visibly on a phone — the entrance of the
@@ -326,10 +326,10 @@ shown wrong:
 | # | Defect | Fix |
 |---|---|---|
 | 6.1 | The admin dashboard nests **four** opacity animations: shell route transition (`DashboardLayout.tsx`, 0.22 s, `opacity 0` + `y 6`) → `DashboardHome` stage (0.40 s, `opacity 0`) → `PageTransition` (0.50 s, `opacity 0` + `y 8`) → the bento items. Text is fully readable ~2.0 s after the route change | **Done 2026-08-28** — collapsed to `PageTransition` alone, then inked. See below |
-| 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | Rebase, or retire it — its only remaining consumer is `BASE_TRANSITION` in `ExportContractButton` |
+| 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | **Done 2026-08-28** — retired, not rebased. See below |
 | 6.3 | Five dead variants in `motion-presets.ts` | **Done 2026-08-28**, ahead of this stage: they encoded the *old* law (`opacity: 0` + travel) and sat next to the new `INK` register contradicting it. `MENU_PANEL_VARIANTS`, `STAGGERED_REVEAL_VARIANTS`, `FADE_UP_VARIANTS`, `etherealFadeInVariants`, `SLOW_TRANSITION` are gone |
-| 6.4 | `index.html` preloads both Plex Sans subsets (with a good reason recorded in its comment) but **no Cormorant subset beyond `latin`**. Headings, `Metric`, `Emphasis` and `Unit` are all serif, and Polish needs `CormorantGaramond-Variable.latin-ext`; `Emphasis`/`Unit` need the italic file. With `font-display: swap` that is a second reflow landing on exactly the Spotlight card | Preload the Cormorant subsets the panel actually draws with, or give the fallback matching metrics so the swap does not shift |
-| 6.5 | 71 surviving `transition-all` (the property-animating footgun the 2026-06 sweep left behind on small elements) and 22 `animate-pulse` | Opportunistic; only where a hot list or a hover surface is involved |
+| 6.4 | `index.html` preloads both Plex Sans subsets (with a good reason recorded in its comment) but **no Cormorant subset beyond `latin`**. Headings, `Metric`, `Emphasis` and `Unit` are all serif, and Polish needs `CormorantGaramond-Variable.latin-ext`; `Emphasis`/`Unit` need the italic file. With `font-display: swap` that is a second reflow landing on exactly the Spotlight card | **Done 2026-08-28** — all four Cormorant subsets preloaded. See below |
+| 6.5 | 75 `transition-all` (the property-animating footgun the 2026-06 sweep left behind on small elements) and 22 `animate-pulse` | **Partly done**; the count is not the cost — see the re-framing below |
 
 **Shipped early, because neither needed the chain collapsed** (both are unconditionally correct
 under rules 1–2 and neither adds a ramp):
@@ -388,6 +388,95 @@ reads worst.
 developer's: the dashboard's text is legible in the first painted frame after a route change,
 and the feel is right. The half-ink bento tiles shipped earlier in this stage should now be
 visible for the first time — they were sitting under `PageTransition`'s `0 → 1` ramp.
+
+### 6.2 as built — retired, and the scale went with it
+
+Rebasing was the wrong half of the choice. `DURATION` was a three-rung scale whose names had
+stopped describing it: `slow` (1.2 s) had **zero** consumers, `base` (0.8 s) had exactly one and
+only transitively, and any honest rebase of `base` into the perceptual budget would have put it
+*below* `fast` (0.4 s) — a scale reading fast → base → slow in descending order of duration. So
+`base`, `slow` and `BASE_TRANSITION` are gone and `DURATION` is one rung, documented for what it
+actually is: a **disclosure** budget (settings sections, strength meter, save footer), not a
+baseline. `EASE.spring` and `EASE.linear` went the same way in the same pass — both dead, both
+sitting in the registry implying the panel had an overlay-menu register and a linear one.
+
+`ExportContractButton` — the one consumer — moved onto the ink law rather than onto a shorter
+`Transition`. Its four states each entered from `opacity: 0` with `y`/`scale`/`x` travel, which
+is rule 1 and rule 2 broken in a button that is only relabelling itself. It is now half-ink to
+full, no travel, and the two halves of the `mode="wait"` swap are costed separately: 0.12 s out,
+0.26 s in. That is the detail worth keeping — **`mode="wait"` runs the halves in series**, so a
+single shared duration is billed to one click twice, which is how 0.8 s was really 1.6 s.
+
+### 6.4 as built — the choice is scheduling, not bytes
+
+The audit's framing needs one correction and one enlargement.
+
+**The correction: `vite.config.ts` precaches `fonts/*.woff2` wholesale.** All ten files land on
+the first visit whatever the preload list says, and every visit after that is served from the
+install with no network at all. So the cost of preloading a subset is not its weight — it is
+zero in steady state — and the defect is purely one of ordering. Without a preload the
+@font-face rules are inert until React renders a glyph that needs them, which puts the font
+request *behind* the entry chunk's download, parse and first render. That serial chain is what
+the reported symptom is; preloading collapses it to parallel. It also means the "is this subset
+worth its 34 KB" question that gates a normal preload decision **does not apply here**, and all
+four Cormorant faces are preloaded.
+
+**The enlargement: this is not a Spotlight-card defect, it is panel-wide.** `PageHeader` renders
+its `titleHighlight` through `<Emphasis>` — serif *italic* — on thirteen pages, so the italic
+file is a first-paint face nearly everywhere, not a dashboard oddity. And the italic `latin-ext`
+subset is genuinely drawn, not a gamble: the existing highlights include `aranżerzy`,
+`Zespołem`, `Śpiewnik.` and `Obecności`, and on the dashboard the highlight is **the member's
+own first name in the vocative**, which is precisely where Polish diacritics turn up. A reflow
+there hits the largest type on the screen.
+
+**Considered and rejected:** metric-matched fallback faces (`size-adjust` / `ascent-override` on
+a `local()` serif). It is the standard no-CLS recipe and it costs nothing, but it leans on a
+local face being present — Times New Roman on Windows, Times on macOS, and on Android *neither*,
+where the serif fallback is Noto Serif at quite different metrics. Android phones are the device
+class this whole file is about. `font-display: optional` was rejected for the same visit it would
+help: it would render a first-ever session's `Śpiewnik.` in the fallback for the page's whole
+life, and that session is a chorister's first impression of the panel.
+
+### 6.5 re-framed — the count is not the cost
+
+`transition-all` has drifted **up** since the audit (71 → 75), which is worth knowing on its own:
+new code is still adding them, so a one-time sweep would not hold without a lint rule. But
+counting them overstates the cost and points at the wrong files. `transition-all` is a
+correctness footgun — it animates properties nobody intended — and on the panel's two highest-
+leverage instances (`Button`'s base `cva`, `fieldShell`'s field string) an explicit property list
+would name `box-shadow` anyway, because the hover variants really do change it. Rewriting them
+buys hygiene, not frames.
+
+What actually costs frames, in descending order:
+
+1. **Infinite animations on filtered or shadowed elements.** `EtherealLoader` pulsed a `blur-xl`
+   halo — an opacity animation repainting a filtered layer, running during the one moment the
+   main thread has nothing to spare (a route chunk downloading and parsing). **Fixed
+   2026-08-28:** the halo is a static glow, the `ping` ring keeps the beat, and `ping` is
+   transform + opacity, which composites. This is stage 1's `EtherealBackground` finding applied
+   to the component stage 1 did not reach.
+2. **`animate-pulse` on a shadowed dot inside a list row**, where the instance count scales with
+   the list: `TimelineProjectCard.tsx:705` (`shadow-glass-ethereal`), `PieceDivisiRoster.tsx:60`
+   (`shadow-glass-solid`), and the three logistics rows behind `imminence.pulse`. Each instance
+   repaints its own shadow every frame for as long as the list is on screen. **Open** — the fix
+   is a judgement call about whether the dot still reads as "live" without the beat.
+3. **`box-shadow` on hover**, which the 2026-06 sweep fixed once and `Button`'s variants have
+   since reintroduced. The real fix is an opacity-crossfaded pseudo-element, which is a visible-
+   risk refactor across every button in the panel and is **not** opportunistic work.
+
+Skeleton `animate-pulse` (`ProjectOverviewPage`, `EditionThumbnailStrip`, `ArtifactCard`,
+`AppTab`, `InstallQrCode`) is left alone deliberately: flat blocks, no filter, no shadow, and
+short-lived.
+
+**Found while counting, unrelated to performance:** `widgets/utility/UserLocalClock.tsx` is
+referenced by nothing — not imported anywhere, no barrel. It costs no bundle bytes (Rollup never
+sees it) so it is not a finding for this file, but it is dead and it carries a `transition-all
+duration-1000` and an `animate-pulse` that would be findings if it were mounted.
+
+**Exit for 6.2/6.4 — automated half met** (typecheck · lint · build). The developer's half: the
+Spotlight name and every `PageHeader` highlight should now set in Cormorant italic in the first
+painted frame of a cold first visit, with no second reflow; and the export button's four states
+should read as quick rather than stately.
 
 ---
 
