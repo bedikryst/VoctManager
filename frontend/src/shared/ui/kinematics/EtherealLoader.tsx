@@ -36,8 +36,12 @@ export function EtherealLoader({
       aria-busy="true"
     >
       <div className="relative flex items-center justify-center">
-        {/* Ethereal Breathing Animation */}
-        <div className="absolute w-24 h-24 bg-ethereal-gold/10 rounded-full blur-xl animate-pulse" />
+        {/* The ring carries the beat and the halo behind it is a STATIC glow.
+            Pulsing a blurred layer repaints the filtered result every frame, and
+            this component's whole job is to hold the screen while a route chunk
+            is downloading and parsing — the one moment the main thread has
+            nothing to spare. `ping` is transform + opacity and composites. */}
+        <div className="absolute w-24 h-24 bg-ethereal-gold/10 rounded-full blur-xl" />
         <div className="absolute w-12 h-12 border border-ethereal-gold/30 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
         <div className="w-2 h-2 bg-ethereal-gold rounded-full shadow-[0_0_10px_rgba(194,168,120,0.8)]" />
       </div>

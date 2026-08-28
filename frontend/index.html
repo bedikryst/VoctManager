@@ -49,18 +49,55 @@
       so the browser only downloads what the page actually renders.
       Mirrors the Astro public site strategy for a consistent typographic stack.
 
-      BOTH Plex Sans subsets are preloaded, not just `latin`: the panel is
-      Polish-first, and ą/ć/ę/ł/ń/ś/ź/ż all live in `latin-ext`. Preloading only
-      `latin` left every Polish screen discovering its own diacritics one round
-      trip late — the swap-in was visible as a second reflow. EN and FR fit
-      inside `latin`, so those two locales pay 24 KB they will not draw with;
-      that is the deliberate trade for the primary locale rendering in one pass.
+      EVERY subset the panel sets text in is preloaded — both Plex Sans faces and
+      all four Cormorant faces — because at this point the choice is one of
+      SCHEDULING, not of bytes: `vite.config.ts` precaches `fonts/*.woff2`
+      wholesale, so a first visit pulls all ten files whatever this list says.
+      What a missing preload buys is latency. The @font-face rules below are
+      inert until React renders a glyph that needs them, which puts the request
+      behind the entry chunk's download, parse and first render — and lands the
+      `swap` as a reflow of text the user has already started reading.
+
+      Cormorant is the display face and all four of its subsets are on the FIRST
+      screen. `Heading` and `Metric` are upright; `Emphasis` and `Unit` are
+      italic, and `PageHeader` sets every page's `titleHighlight` through
+      `Emphasis`. The dashboard passes the member's own first name in the
+      vocative there, which is exactly where Polish diacritics turn up — so the
+      italic `latin-ext` file is load-bearing for a name like "Małgorzato",
+      on the largest piece of type on the screen.
+
+      EN and FR draw nothing from either `latin-ext`, so those two locales are
+      scheduled ~58 KB they will not use; that is the deliberate trade for the
+      primary locale rendering in one pass. The `crossorigin` attribute is not
+      optional on any of these — a preload whose CORS mode differs from the
+      @font-face fetch is downloaded twice and warms nothing.
     -->
     <link
       rel="preload"
       as="font"
       type="font/woff2"
       href="/fonts/CormorantGaramond-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Variable.latin-ext.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Italic-Variable.latin.woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      href="/fonts/CormorantGaramond-Italic-Variable.latin-ext.woff2"
       crossorigin
     />
     <link

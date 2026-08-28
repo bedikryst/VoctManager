@@ -6,16 +6,36 @@
  */
 
 import React from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Transition } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { AlertCircle, Download, Sparkles } from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
-import { BASE_TRANSITION } from "@/shared/ui/kinematics/motion-presets";
+import { INK } from "@/shared/ui/kinematics/motion-presets";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Text } from "@/shared/ui/primitives/typography";
 import { useExportProject } from "@/features/contracts/hooks/useExportProject";
+
+/**
+ * A status swap, not a surface entrance, so the ink register's own duration is
+ * the wrong unit: `mode="wait"` runs the halves in series and would bill one
+ * click for both. The departure is the half nobody reads and is cut short; the
+ * arrival keeps the law's half-ink start, so no state opens from a hole.
+ *
+ * Neither half travels. Four `y`/`scale`/`x` offsets promote a button that is
+ * only relabelling itself to its own composited layer, which is the cost the
+ * register exists to refuse.
+ */
+const STATE_EXIT: Transition = { duration: 0.12, ease: INK.ease };
+const STATE_ENTER: Transition = { duration: 0.26, ease: INK.ease };
+
+const stateSwap = {
+  initial: { opacity: INK.half },
+  animate: { opacity: 1 },
+  exit: { opacity: 0, transition: STATE_EXIT },
+  transition: STATE_ENTER,
+};
 
 interface ExportContractButtonProps {
   projectId: string | number;
@@ -37,14 +57,7 @@ export const ExportContractButton = ({
     <div className={cn("w-full", className)}>
       <AnimatePresence mode="wait" initial={false}>
         {status === "idle" && (
-          <motion.div
-            key="idle"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={BASE_TRANSITION}
-            className="w-full"
-          >
+          <motion.div key="idle" {...stateSwap} className="w-full">
             <Button
               variant="primary"
               fullWidth
@@ -57,14 +70,7 @@ export const ExportContractButton = ({
         )}
 
         {status === "processing" && (
-          <motion.div
-            key="processing"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={BASE_TRANSITION}
-            className="w-full"
-          >
+          <motion.div key="processing" {...stateSwap} className="w-full">
             <div className="flex w-full flex-col gap-3">
               <Badge variant="glass" icon={<Sparkles size={12} />}>
                 {t(
@@ -82,10 +88,7 @@ export const ExportContractButton = ({
         {status === "success" && downloadUrl && (
           <motion.div
             key="success"
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={BASE_TRANSITION}
+            {...stateSwap}
             className="flex w-full flex-col gap-3"
           >
             <Badge variant="success" icon={<Sparkles size={12} />}>
@@ -114,10 +117,7 @@ export const ExportContractButton = ({
         {status === "error" && (
           <motion.div
             key="error"
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 8 }}
-            transition={BASE_TRANSITION}
+            {...stateSwap}
             className="flex w-full flex-col gap-3"
           >
             <div className="rounded-[1.25rem] border border-ethereal-crimson/15 bg-ethereal-crimson/5 p-4">

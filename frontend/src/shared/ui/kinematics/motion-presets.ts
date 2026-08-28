@@ -5,13 +5,11 @@
  * @module shared/ui/kinematics/motion-presets
  */
 
-import type { Variants, Transition } from "framer-motion";
+import type { Variants } from "framer-motion";
 
 // --- Mathematical Curves (Bezier) ---
 export const EASE = {
   buttery: [0.16, 1, 0.3, 1] as const, // Ethereal smooth deceleration (Scroll & Reveals)
-  spring: [0.76, 0, 0.24, 1] as const, // Cinematic snappy translation (Overlay Menus)
-  linear: [0, 0, 1, 1] as const,
 } as const;
 
 /**
@@ -49,18 +47,20 @@ export const INK = {
   ease: [0.34, 0.62, 0.28, 1] as const,
 } as const;
 
-// --- Time Constants (Seconds) ---
+/**
+ * The panel's one shared duration (seconds), and it is a DISCLOSURE budget:
+ * settings sections opening, a strength meter growing, a save footer arriving —
+ * places where the reveal is itself the content and the eye follows it out.
+ *
+ * It is not a general baseline, and there is deliberately nothing longer here.
+ * A route entrance is `INK.in` above. Anything smaller than a disclosure is a
+ * micro-interaction, belongs to the component that owns it, and belongs inside
+ * the 0.2–0.3 s perceptual budget for UI motion — which every rung past this
+ * one would have sat outside of.
+ */
 export const DURATION = {
   fast: 0.4,
-  base: 0.8,
-  slow: 1.2,
 } as const;
-
-// --- Shared Transitions ---
-export const BASE_TRANSITION: Transition = {
-  duration: DURATION.base,
-  ease: EASE.buttery,
-};
 
 /**
  * The container orchestrates and NOTHING ELSE — deliberately no opacity of its
