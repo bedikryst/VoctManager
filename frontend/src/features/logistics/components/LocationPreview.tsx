@@ -257,14 +257,13 @@ export const LocationPreview = ({
                 ref={popoverRef}
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
-                initial={{
-                  opacity: 0,
-                  y: -10,
-                  scale: 0.95,
-                  filter: "blur(4px)",
-                }}
-                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-                exit={{ opacity: 0, y: -5, scale: 0.95, filter: "blur(4px)" }}
+                // No blur keyframe: this popover already carries a heavy
+                // `backdrop-blur-[32px]`, and animating a `filter` on top of
+                // that re-rasterises both the surface and its backdrop on every
+                // frame — over a live Google map.
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -5, scale: 0.95 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                 className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
                 style={popoverStyle}

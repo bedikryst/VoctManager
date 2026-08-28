@@ -6,8 +6,9 @@
  * tail. The active tab is marked by a single gold lozenge that **slides** between
  * tabs (shared `layoutId`) — a Material-3-class indicator that reads instantly.
  *
- * Always mounted (the sheet overlays it), so its backdrop-filter is computed
- * once and never re-rasterised.
+ * Always mounted (the sheet overlays it) and deliberately carries NO
+ * `backdrop-filter`: a fixed bar with one re-samples whatever scrolls beneath it
+ * on every frame, and at 94% opacity there was nothing left to see through.
  *
  * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
@@ -65,7 +66,7 @@ export const MobileNavTrigger = ({
       transition={BAR_TRANSITION}
       className={cn(
         "fixed inset-x-0 bottom-0 z-nav-dock fine-pointer:hidden",
-        "border-t border-glass-border bg-ethereal-alabaster/94 backdrop-blur-md",
+        "border-t border-glass-border bg-ethereal-alabaster/94",
         "shadow-[0_-10px_30px_-14px_rgba(22,20,18,0.22)]",
       )}
     >

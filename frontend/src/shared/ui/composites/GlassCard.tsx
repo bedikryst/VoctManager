@@ -35,12 +35,14 @@ const glassCardVariants = cva(
     variants: {
       // backdrop-filter is kept ONLY where a card floats over real CONTENT
       // (`surface` — e.g. the PDF toolbar over a document). The in-flow tiles
-      // (`ethereal`, `dark`) sit over the near-empty ambient background, so a
-      // live blur re-samples ~nothing every frame while you scroll — pure cost,
-      // no visible effect — and is dropped. `dark` is 90% opaque anyway, so its
-      // blur was invisible. Floating overlays that genuinely need frosting
-      // (command palette, bottom sheet, dropdown) carry their own backdrop-blur
-      // at their own call sites, where it is transient rather than scrolled-over.
+      // (`ethereal`, `dark`, `light`) sit over the near-empty ambient background,
+      // so a live blur re-samples ~nothing every frame while you scroll — pure
+      // cost, no visible effect — and is dropped. `dark` is 90% opaque anyway,
+      // and `light` rides on ~28 surfaces (every settings card, most dashboard
+      // tiles), which made it the most-repeated instance of the same mistake.
+      // Floating overlays that genuinely need frosting (command palette, bottom
+      // sheet, dropdown) carry their own backdrop-blur at their own call sites,
+      // where it is transient rather than scrolled-over.
       variant: {
         ethereal:
           "bg-glass-surface border border-glass-border shadow-glass-ethereal",
@@ -52,7 +54,7 @@ const glassCardVariants = cva(
         outline:
           "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-glass-outline-hover",
         light:
-          "bg-glass-surface/50 backdrop-blur-[4px] border border-glass-border shadow-glass-ethereal",
+          "bg-glass-surface/50 border border-glass-border shadow-glass-ethereal",
       },
       isHoverable: {
         // Gold border, no translate-lift: the locked design-language decision

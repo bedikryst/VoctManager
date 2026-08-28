@@ -34,6 +34,7 @@ import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import { onActivate } from "@/shared/lib/dom/a11y";
+import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useFocusTrap } from "@/shared/lib/dom/useFocusTrap";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
 import { useNavigationAura } from "../hooks/useNavigationAura";
@@ -79,6 +80,10 @@ export const MobileNavSheet = ({
   const [query, setQuery] = useState("");
 
   useFocusTrap(containerRef, true);
+  // Held for the sheet's whole presence, exit animation included: AnimatePresence
+  // keeps this component mounted until the slide-out ends, so the lock's release
+  // — a full-document relayout — lands after the motion instead of inside it.
+  useBodyScrollLock(true);
 
   const { favorites } = useProjectQuickAccess();
   const favoriteSet = new Set(favorites);
@@ -208,7 +213,12 @@ export const MobileNavSheet = ({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={SCRIM_TRANSITION}
-        className="fixed inset-0 z-nav-sheet bg-ethereal-ink/45 backdrop-blur-[4px] fine-pointer:hidden"
+        // A veil, not a frosted pane. `backdrop-filter` here would be re-applied
+        // to the ENTIRE viewport on every frame of this opacity fade — and the
+        // backdrop is the ambient field, whose two 110/120px-blurred blobs and
+        // noise overlay all have to be flattened first. Behind an ink veil this
+        // dense the blur was never legible; the density carries the separation.
+        className="fixed inset-0 z-nav-sheet bg-ethereal-ink/55 fine-pointer:hidden"
         onClick={onClose}
         aria-hidden="true"
       />

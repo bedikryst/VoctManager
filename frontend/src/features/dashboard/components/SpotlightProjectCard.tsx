@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 
 import {
   ArtifactCard,
+  ARTIFACT_SLOT_REVEAL,
   type ArtifactMetric,
 } from "@/shared/ui/composites/ArtifactCard";
 import { Badge } from "@/shared/ui/primitives/Badge";
@@ -36,18 +37,6 @@ export interface SpotlightProjectCardProps {
   };
   stats?: ProjectStatsDto;
 }
-
-const EtherealEasing = [0.16, 1, 0.3, 1] as const;
-
-const fadeUpVariant = {
-  hidden: { opacity: 0, y: 15, filter: "blur(8px)" },
-  visible: {
-    opacity: 1,
-    y: 0,
-    filter: "blur(0px)",
-    transition: { duration: 1.2, ease: EtherealEasing, delay: 0.4 },
-  },
-};
 
 export function SpotlightProjectCard({
   project,
@@ -126,18 +115,21 @@ export function SpotlightProjectCard({
 
   const MetadataSlot = (
     <>
-      <motion.div variants={fadeUpVariant} className="flex items-center gap-2">
+      <motion.div
+        variants={ARTIFACT_SLOT_REVEAL}
+        className="flex items-center gap-2"
+      >
         <Calendar size={13} strokeWidth={1.5} className="shrink-0 opacity-70" />
         <Eyebrow color="default" weight="medium">
           {formattedDate}
         </Eyebrow>
       </motion.div>
       <motion.div
-        variants={fadeUpVariant}
+        variants={ARTIFACT_SLOT_REVEAL}
         className="h-[2px] w-[2px] rounded-full bg-ethereal-incense/40"
       />
       <motion.div
-        variants={fadeUpVariant}
+        variants={ARTIFACT_SLOT_REVEAL}
         className="pointer-events-auto relative z-50"
       >
         <LocationPreview

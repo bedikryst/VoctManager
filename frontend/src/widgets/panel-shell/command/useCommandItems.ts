@@ -134,7 +134,11 @@ export const useCommandItems = (
     staleTime: DATA_STALE_TIME,
   });
 
-  return useMemo<CommandItemsResult>(() => {
+  // Sources → rows. Deliberately independent of `query`: folding diacritics over
+  // every project, every artist and the entire piece archive is the expensive
+  // half of this hook, and it produces the same rows no matter what is typed.
+  // Folded once here, the query pass below is string matching and nothing else.
+  const sources = useMemo(() => {
     const projectList = projects ?? [];
     const artistList = artists ?? [];
 
@@ -281,6 +285,37 @@ export const useCommandItems = (
           }),
         );
 
+    return {
+      actionItems,
+      navItems,
+      projectItems,
+      projectById,
+      artistItems,
+      pieceItems,
+    };
+  }, [
+    aura.navGroups,
+    artists,
+    i18n.language,
+    isManager,
+    location.pathname,
+    myMaterials,
+    pieces,
+    projects,
+    t,
+  ]);
+
+  // Rows → sections. The only query-dependent work in the hook.
+  return useMemo<CommandItemsResult>(() => {
+    const {
+      actionItems,
+      navItems,
+      projectItems,
+      projectById,
+      artistItems,
+      pieceItems,
+    } = sources;
+
     const tokens = foldSearchText(query).split(/\s+/).filter(Boolean);
     const sections: CommandSection[] = [];
 
@@ -372,18 +407,5 @@ export const useCommandItems = (
 
     const flatItems = sections.flatMap((section) => [...section.items]);
     return { sections, flatItems };
-  }, [
-    aura.navGroups,
-    artists,
-    favorites,
-    i18n.language,
-    isManager,
-    location.pathname,
-    myMaterials,
-    pieces,
-    projects,
-    query,
-    recents,
-    t,
-  ]);
+  }, [favorites, query, recents, sources]);
 };

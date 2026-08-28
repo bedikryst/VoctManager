@@ -2,9 +2,12 @@
  * @file VocalClefShadow.tsx
  * @description A subtle, historically resonant C-clef (alto/tenor) watermark
  * for the Ethereal UI. Callers may pass `className` to retune placement, tone
- * or opacity (merged via cn/twMerge, so the override wins). It participates in a
- * parent framer-motion hidden/visible orchestration when one is present (e.g.
- * the EtherealBackground intro draw-in), and renders settled when standalone.
+ * or opacity (merged via cn/twMerge, so the override wins). Its softening blur
+ * is a static class, so the mark reads the same whether or not it animates; the
+ * hidden/visible variants add only a fade and a swell, and fire only where a
+ * parent supplies that orchestration by NAME (e.g. the EtherealBackground intro
+ * draw-in). A parent animating with plain objects — the welcome moment — leaves
+ * the mark at rest, which is the intent there.
  * @architecture Enterprise SaaS 2026
  * @module shared/ui/kinematics/VocalClefShadow
  */
@@ -21,18 +24,21 @@ interface VocalClefShadowProps {
 export const VocalClefShadow = React.memo(
   ({ className }: VocalClefShadowProps): React.JSX.Element => (
     <motion.div
+      // The softening blur is a STATIC class, never a keyframe. Its settled
+      // value is the only one that was ever seen; animating toward it made a
+      // viewport-scale, blend-composited layer re-rasterise through a gaussian
+      // kernel on every frame of a ten-second intro, during app boot.
       className={cn(
-        "absolute left-[1%] top-1/2 z-1 -translate-y-1/2 text-ethereal-ink/5 mix-blend-overlay",
+        "absolute left-[1%] top-1/2 z-1 -translate-y-1/2 blur-[5px] text-ethereal-ink/5 mix-blend-overlay",
         className,
       )}
       // Animates only when a parent supplies a hidden/visible orchestration
       // (e.g. the EtherealBackground intro); standalone it renders settled.
       variants={{
-        hidden: { opacity: 0, scale: 0.95, filter: "blur(8px)" },
+        hidden: { opacity: 0, scale: 0.95 },
         visible: {
           opacity: 1,
           scale: 1.2,
-          filter: "blur(5px)",
           transition: { duration: 10, ease: [0.16, 1, 0.3, 1], delay: 0 },
         },
       }}

@@ -6,8 +6,11 @@
  * `AnimatePresence mode="wait"`, so the sheet could not appear until the bar
  * finished its exit spring — a visible open delay. Decoupling them removes it:
  * the sheet slides up immediately and simply covers the static bar.)
- * Owns shell-level concerns: scroll lock, close-watcher (Esc / Android back),
- * haptics on state transitions.
+ * Owns shell-level concerns: close-watcher (Esc / Android back) and haptics on
+ * state transitions. The scroll lock deliberately does NOT live here: driven off
+ * `isOpen` it released the moment the flag flipped, forcing a full-document
+ * relayout while the sheet was still ~220ms into its exit. It belongs to the
+ * sheet, whose AnimatePresence lifetime already spans that exit exactly.
  * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/mobile
  */
@@ -18,7 +21,6 @@ import { AnimatePresence } from "framer-motion";
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { MobileNavSheet } from "./MobileNavSheet";
 import { MobileNavTrigger } from "./MobileNavTrigger";
-import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
 import { useCloseWatcher } from "@/shared/lib/dom/useCloseWatcher";
 import { hapticsService } from "@/shared/lib/hardware/hapticsService";
 import type { AuthUser } from "@/shared/auth/auth.types";
@@ -34,8 +36,6 @@ export const MobileNavigation = ({
 }: MobileNavigationProps): React.JSX.Element => {
   const [isOpen, setIsOpen] = useState(false);
   const aura = useNavigationAura(user);
-
-  useBodyScrollLock(isOpen);
 
   const handleOpen = useCallback(() => {
     setIsOpen(true);

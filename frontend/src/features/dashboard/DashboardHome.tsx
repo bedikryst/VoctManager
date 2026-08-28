@@ -25,9 +25,12 @@ export default function DashboardHome(): React.JSX.Element {
       {isLoading ? (
         <motion.div
           key="sacral-loader"
-          initial={{ opacity: 0, filter: "blur(12px)" }}
-          animate={{ opacity: 1, filter: "blur(0px)" }}
-          exit={{ opacity: 0, filter: "blur(8px)", scale: 0.98 }}
+          // Opacity and scale only: a blur keyframe would rasterise this layer
+          // through a gaussian kernel every frame, on the one screen whose whole
+          // job is to be cheap while the app is still working.
+          initial={{ opacity: 0, scale: 1.02 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.7, ease: "easeInOut" }}
           className="absolute inset-0 flex items-center justify-center z-50"
         >

@@ -36,9 +36,12 @@ export function MetricBlock({
 }: MetricBlockProps): React.JSX.Element {
   const isGold = accentColor === "gold";
 
+  // No `backdrop-filter` in glass mode. The only thing behind a metric stratum
+  // is its own card's soft gradient bloom, so a blur here re-samples a gradient
+  // — nothing to see, paid on every scroll frame of a permanently mounted tile.
   const glassClasses =
     interactiveMode === "glass"
-      ? "p-5 md:p-6 lg:p-8 transition-colors duration-700 group-hover:bg-white/40 backdrop-blur-sm "
+      ? "p-5 md:p-6 lg:p-8 transition-colors duration-700 group-hover:bg-white/40"
       : "group flex cursor-default flex-col gap-1";
 
   return (
