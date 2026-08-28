@@ -36,12 +36,13 @@ export function EtherealLoader({
       aria-busy="true"
     >
       <div className="relative flex items-center justify-center">
-        {/* The ring carries the beat and the halo behind it is a STATIC glow.
-            Pulsing a blurred layer repaints the filtered result every frame, and
-            this component's whole job is to hold the screen while a route chunk
-            is downloading and parsing — the one moment the main thread has
-            nothing to spare. `ping` is transform + opacity and composites. */}
-        <div className="absolute w-24 h-24 bg-ethereal-gold/10 rounded-full blur-xl" />
+        {/* Both marks animate opacity and transform ONLY, which is what keeps
+            them affordable on the one screen that is up while a route chunk is
+            still downloading and parsing. The halo's blur is static: the layer
+            is rasterized once and the keyframes vary its alpha, so the filter is
+            never recomputed. Animating the blur RADIUS here would be stage 1's
+            defect — that is the line, not the pulse itself. */}
+        <div className="absolute w-24 h-24 bg-ethereal-gold/10 rounded-full blur-xl animate-pulse" />
         <div className="absolute w-12 h-12 border border-ethereal-gold/30 rounded-full animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
         <div className="w-2 h-2 bg-ethereal-gold rounded-full shadow-[0_0_10px_rgba(194,168,120,0.8)]" />
       </div>

@@ -1,6 +1,8 @@
 # Frontend performance — audit and remediation (2026-08)
 
-Status: **open** — stages 1–5 shipped 2026-08-28, stage 6 part-shipped (6.1–6.4 in, 6.5 open) ·
+Status: **open** — stages 1–5 shipped 2026-08-28, stage 6 shipped 2026-08-29 (6.1–6.4 in, 6.5
+closed as not-worth-doing). What remains open is measurement, not work: two device recordings
+(stage 2's menu, stage 5's idle-with-data) and the two flat routes noted under 6.1 ·
 Audited 2026-08-28 · Surface: `frontend/` (panel PWA only; `web/` is out of scope).
 
 Reported symptom: the panel "feels heavy", most visibly on a phone — the entrance of the
@@ -329,7 +331,7 @@ shown wrong:
 | 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | **Done 2026-08-28** — retired, not rebased. See below |
 | 6.3 | Five dead variants in `motion-presets.ts` | **Done 2026-08-28**, ahead of this stage: they encoded the *old* law (`opacity: 0` + travel) and sat next to the new `INK` register contradicting it. `MENU_PANEL_VARIANTS`, `STAGGERED_REVEAL_VARIANTS`, `FADE_UP_VARIANTS`, `etherealFadeInVariants`, `SLOW_TRANSITION` are gone |
 | 6.4 | `index.html` preloads both Plex Sans subsets (with a good reason recorded in its comment) but **no Cormorant subset beyond `latin`**. Headings, `Metric`, `Emphasis` and `Unit` are all serif, and Polish needs `CormorantGaramond-Variable.latin-ext`; `Emphasis`/`Unit` need the italic file. With `font-display: swap` that is a second reflow landing on exactly the Spotlight card | **Done 2026-08-28** — all four Cormorant subsets preloaded. See below |
-| 6.5 | 75 `transition-all` (the property-animating footgun the 2026-06 sweep left behind on small elements) and 22 `animate-pulse` | **Partly done**; the count is not the cost — see the re-framing below |
+| 6.5 | 75 `transition-all` (the property-animating footgun the 2026-06 sweep left behind on small elements) and 22 `animate-pulse` | **Closed 2026-08-29 as not-worth-doing.** Both counts were measured and neither buys a frame — see below. Do not re-open on the count alone |
 
 **Shipped early, because neither needed the chain collapsed** (both are unconditionally correct
 under rules 1–2 and neither adds a ramp):
@@ -437,43 +439,52 @@ class this whole file is about. `font-display: optional` was rejected for the sa
 help: it would render a first-ever session's `Śpiewnik.` in the fallback for the page's whole
 life, and that session is a chorister's first impression of the panel.
 
-### 6.5 re-framed — the count is not the cost
+### 6.5 closed — both counts were symptoms of nothing
 
-`transition-all` has drifted **up** since the audit (71 → 75), which is worth knowing on its own:
-new code is still adding them, so a one-time sweep would not hold without a lint rule. But
-counting them overstates the cost and points at the wrong files. `transition-all` is a
-correctness footgun — it animates properties nobody intended — and on the panel's two highest-
-leverage instances (`Button`'s base `cva`, `fieldShell`'s field string) an explicit property list
-would name `box-shadow` anyway, because the hover variants really do change it. Rewriting them
-buys hygiene, not frames.
+The row counted occurrences and inferred cost from the count. Measured, neither number survives,
+and this section exists so the next pass does not re-derive the same two dead ends from the same
+two greps.
 
-What actually costs frames, in descending order:
+**`transition-all` (75) is hygiene, not frames.** It is only expensive when it animates something
+expensive, and the property that makes it so is a *layout* property — a state change that alters
+width, height, padding, margin or gap turns every frame into a reflow. Grepping every
+`transition-all` line in `src/` for a `hover:` / `group-hover:` / `focus:` / `data-[…]` variant
+that changes one of those returns **exactly one hit**, and it is in a file nothing imports (see
+below). Every other instance moves only colour, `box-shadow`, `transform` or `opacity` — the
+properties an explicit `transition-[…]` list would have to name anyway. So a 75-site rewrite
+would buy no frames while putting a silent snap-instead-of-ease regression in 75 places the
+developer would have to re-verify by eye. It stays a correctness footgun worth avoiding in new
+code, and nothing more; the drift since the audit (71 → 75) is real but is a code-review matter,
+not a performance one.
 
-1. **Infinite animations on filtered or shadowed elements.** `EtherealLoader` pulsed a `blur-xl`
-   halo — an opacity animation repainting a filtered layer, running during the one moment the
-   main thread has nothing to spare (a route chunk downloading and parsing). **Fixed
-   2026-08-28:** the halo is a static glow, the `ping` ring keeps the beat, and `ping` is
-   transform + opacity, which composites. This is stage 1's `EtherealBackground` finding applied
-   to the component stage 1 did not reach.
-2. **`animate-pulse` on a shadowed dot inside a list row**, where the instance count scales with
-   the list: `TimelineProjectCard.tsx:705` (`shadow-glass-ethereal`), `PieceDivisiRoster.tsx:60`
-   (`shadow-glass-solid`), and the three logistics rows behind `imminence.pulse`. Each instance
-   repaints its own shadow every frame for as long as the list is on screen. **Open** — the fix
-   is a judgement call about whether the dot still reads as "live" without the beat.
-3. **`box-shadow` on hover**, which the 2026-06 sweep fixed once and `Button`'s variants have
-   since reintroduced. The real fix is an opacity-crossfaded pseudo-element, which is a visible-
-   risk refactor across every button in the panel and is **not** opportunistic work.
+**`animate-pulse` (22) does not repaint.** Tailwind's `pulse` is pure `opacity` keyframes, which
+Chrome runs on the compositor: the element is promoted once and only its layer alpha varies per
+frame. That holds even when the element carries `blur-xl` or a `shadow-glass-*` — the filter and
+the shadow are baked into the layer's raster once, not recomputed. **The audit's stage 1 finding
+is a different animal and must not be generalised into this one:** stage 1 was about animating
+the blur *radius*, where every frame really is a fresh filter pass. Animating the opacity *of* an
+already-blurred element is not that. Conflating the two is how this row got written, and it is
+how it nearly cost the panel its loader.
 
-Skeleton `animate-pulse` (`ProjectOverviewPage`, `EditionThumbnailStrip`, `ArtifactCard`,
-`AppTab`, `InstallQrCode`) is left alone deliberately: flat blocks, no filter, no shadow, and
-short-lived.
+Consequently `EtherealLoader`'s halo keeps its pulse, and so do the "live" dots in the list rows
+(`TimelineProjectCard`, `PieceDivisiRoster`, the three logistics rows behind `imminence.pulse`),
+the skeletons, and the map pins. **Settled 2026-08-29, on the developer's call and on the
+measurement together — the pulses stay.**
 
-**Found while counting, unrelated to performance:** `widgets/utility/UserLocalClock.tsx` is
-referenced by nothing — not imported anywhere, no barrel. It costs no bundle bytes (Rollup never
-sees it) so it is not a finding for this file, but it is dead and it carries a `transition-all
-duration-1000` and an `animate-pulse` that would be findings if it were mounted.
+**`box-shadow` on hover** was the third candidate and is also declined. The 2026-06 sweep fixed
+it on *cards*, where the paint area is large; `Button`'s variants animate it over a control a few
+hundred pixels square, for 300 ms, once per hover, on a pointer device the panel's phone users do
+not have. The fix — an opacity-crossfaded pseudo-element behind every button — is a visible-risk
+refactor of the panel's most-used primitive, bought for a cost nobody can measure.
 
-**Exit for 6.2/6.4 — automated half met** (typecheck · lint · build). The developer's half: the
+**Deleted, and it is the one thing 6.5 produced:** `widgets/utility/UserLocalClock.tsx` was
+imported by nothing — no call site, no barrel, no lazy reference — so it never entered the bundle
+and cost no bytes. It was also the sole `transition-all` in the codebase that animated a layout
+property (`max-w-0 → group-hover:max-w-[4rem]` under `transition-all duration-[800ms]`), i.e. the
+single genuine instance of the defect this row was written about existed only in dead code.
+`DualTimeDisplay`, its neighbour in `widgets/utility/`, is used in nine places and stays.
+
+**Exit for 6.2/6.4 — automated half met** (typecheck · lint · 168/168 · build). The developer's half: the
 Spotlight name and every `PageHeader` highlight should now set in Cormorant italic in the first
 painted frame of a cold first visit, with no second reflow; and the export button's four states
 should read as quick rather than stately.
@@ -495,6 +506,16 @@ should read as quick rather than stately.
 - **The panel borrows the site's entrance LAW, not its ceremony** (stage 6). Half-ink and
   no-travel transfer, and pay for themselves in paint. The ink press and the counted two-tempo
   ladder do not — the reasons are recorded in stage 6 and are not a matter of taste to revisit.
+- **A compositor-driven opacity animation is not a repaint** (settled 2026-08-29, stage 6.5).
+  Pure `opacity` or `transform` keyframes promote the element once and vary its layer alpha, so a
+  static `blur` or `box-shadow` underneath them is rasterized once and not recomputed. Stage 1's
+  finding was an animated blur *radius*, which is the opposite case. Do not read stage 1 as a
+  licence to strip `animate-pulse`: the panel's pulses are cheap and they stay.
+- **Font preloads here are a scheduling decision, not a weight decision** (settled 2026-08-29,
+  stage 6.4). `vite.config.ts` precaches `fonts/*.woff2` wholesale, so every subset is fetched on
+  the first visit regardless and served from the install thereafter. The only thing a preload
+  changes is whether the request waits for the entry chunk to parse. Weigh new font files by
+  whether the panel draws with them, never by their KB.
 - **`globPatterns` names files, never bare extensions.** `public/` is a drop box; an extension
   glob enrols whatever lands there into every user's install, which is how ~6 MB of a dead
   landing page ended up in the precache (stage 3).
