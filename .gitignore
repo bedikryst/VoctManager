@@ -69,6 +69,12 @@ frontend/public/samples/
 # them despite the broad public/*.png media ignore above.
 !frontend/public/icons/
 !frontend/public/icons/*.png
+# Same case: the collapsed desktop sidebar draws this mark (DesktopSidebar.tsx).
+# Ignored, it existed only on the author's disk — `npm run dev` on a fresh clone
+# showed a broken image, and the deployed panel only rendered a mark because
+# nginx serves `*.png` marketing-first (infra/nginx/prod.conf) and the Astro site
+# ships a file of the same name. The panel must not depend on that coincidence.
+!frontend/public/logo_gold.png
 voct_data/
 backend/celerybeat-schedule
 

@@ -19,6 +19,8 @@ import { Text } from "@/shared/ui/primitives/typography";
 
 import type { LocationFormValues } from "../types/logistics.dto";
 
+import { MapsProvider } from "./MapsProvider";
+
 interface LocationAutocompleteProps {
   onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
   placeholder?: string;
@@ -28,7 +30,7 @@ interface LocationAutocompleteProps {
 const isNodeTarget = (value: EventTarget | null): value is Node =>
   value instanceof Node;
 
-export const LocationAutocomplete = ({
+const AutocompleteField = ({
   onLocationSelect,
   placeholder,
   label,
@@ -176,3 +178,20 @@ export const LocationAutocomplete = ({
     </div>
   );
 };
+
+/**
+ * Carries its own SDK gate like the two map surfaces — it hooks `places` at its
+ * top level, so the provider encloses the field rather than sitting inside it.
+ *
+ * NOTE: no call site imports this today; `LocationMapPicker` is what the location
+ * editor mounts. It is kept as the search-only surface for a caller that wants
+ * Places without a map, and it is gated so that caller costs nothing until it
+ * renders.
+ */
+export const LocationAutocomplete = (
+  props: LocationAutocompleteProps,
+): React.JSX.Element => (
+  <MapsProvider>
+    <AutocompleteField {...props} />
+  </MapsProvider>
+);

@@ -66,12 +66,24 @@ export default defineConfig(({ mode }) => {
       manifest: false,
       injectManifest: {
         // Precache the full app shell so the PWA boots with zero network — the
-        // foundation real offline stands on. The pdf.worker chunk is large but
-        // essential (offline score viewer), so lift the per-file cap to 5 MB.
+        // foundation real offline stands on.
+        //
+        // The patterns name WHAT THE APP SHIPS, never `**/*.ext`: `public/` is a
+        // drop box, and a bare extension glob silently enrolls whatever lands
+        // there into every user's install. It had — ~6 MB of stray marketing
+        // PNG/WebP from the pre-`web/` landing page, two thirds of a 10 MB
+        // precache, none of it referenced by a single line of `src/`.
+        //
+        // `.mjs` is load-bearing: react-pdf's worker emits as `pdf.worker.min-*.mjs`
+        // and the old `{js,…}` list never matched it, so the offline score viewer —
+        // the one thing the 5 MB per-file cap below was raised for — was the one
+        // asset missing from the install.
         globPatterns: [
-          "**/*.{js,css,html,wasm}",
-          "**/*.{woff,woff2}",
-          "**/*.{svg,png,webp,ico}",
+          "index.html",
+          "assets/**/*.{js,mjs,css,wasm}",
+          "fonts/*.woff2",
+          "icons/*.png",
+          "logo_gold.png",
         ],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
@@ -116,7 +128,7 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             "react-core": ["react", "react-dom", "react-router-dom"],
-            motion: ["framer-motion", "lenis"],
+            motion: ["framer-motion"],
             "data-query": ["@tanstack/react-query", "axios"],
             forms: ["react-hook-form", "@hookform/resolvers", "zod"],
             i18n: [

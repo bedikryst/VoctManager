@@ -210,10 +210,12 @@
     <meta name="twitter:title" content="VoctEnsemble" />
 
     <!--
-      Google Maps API is NOT loaded here. It is only used inside the authenticated
-      panel (features/logistics/*), so <APIProvider> from @vis.gl/react-google-maps
-      mounts the script on demand when a panel route renders. This keeps ~350 kB of
-      Maps JS out of the initial panel shell.
+      Google Maps API is NOT loaded here, and no panel route loads it either. The
+      SDK is mounted by the four logistics surfaces that actually draw a map, via
+      features/logistics/components/MapsProvider — so ~350-500 kB of third-party
+      JS (plus the `places` and `geocoding` libraries) arrives on the first venue
+      popover or map screen, never on a session start. A route-level provider was
+      the previous shape and cost every dashboard load the full download.
     -->
   </head>
   <body class="antialiased overflow-x-hidden theme-panel">

@@ -18,7 +18,6 @@ import {
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
-import { APIProvider } from "@vis.gl/react-google-maps";
 
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
@@ -227,8 +226,12 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
  *  - Only `/panel/*` lazy chunks resolve against the inner boundary that
  *    renders <EtherealLoader />.
  *
- * Google Maps APIProvider is scoped inside <ProtectedRoute>, so the Maps SDK
- * ships only to authenticated panel surfaces that use logistics maps.
+ * NO Google Maps provider lives on this route tree, deliberately. It used to
+ * wrap <ProtectedRoute>, which loaded the Maps SDK for every authenticated
+ * surface including a phone dashboard with no map on it. The SDK is now gated by
+ * its consumers (features/logistics/components/MapsProvider) — do not reinstate
+ * a provider here to fix a "map not loading" report; the fix is a consumer that
+ * forgot its own gate.
  */
 function RootLayout(): React.JSX.Element {
   const location = useLocation();
@@ -296,18 +299,7 @@ export const router = createBrowserRouter(
       />
       <Route path="/legal" element={<Navigate to="/legal/terms" replace />} />
 
-      <Route
-        element={
-          <APIProvider
-            apiKey={import.meta.env.VITE_GOOGLE_MAPS_FRONTEND_KEY || ""}
-            solutionChannel="GMP_visgl_reactgooglemaps_v1_0"
-            version="weekly"
-            libraries={["places", "geocoding"]}
-          >
-            <ProtectedRoute />
-          </APIProvider>
-        }
-      >
+      <Route element={<ProtectedRoute />}>
         <Route
           path="/panel"
           element={

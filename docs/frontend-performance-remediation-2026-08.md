@@ -1,6 +1,6 @@
 # Frontend performance — audit and remediation (2026-08)
 
-Status: **open** — stages 1 and 2 shipped 2026-08-28, stages 3–6 outstanding ·
+Status: **open** — stages 1–4 shipped 2026-08-28, stages 5–6 outstanding ·
 Audited 2026-08-28 · Surface: `frontend/` (panel PWA only; `web/` is out of scope).
 
 Reported symptom: the panel "feels heavy", most visibly on a phone — the entrance of the
@@ -28,17 +28,23 @@ The developer verifies every visual change in their own browser; `npm run typech
 
 Taken so later passes can tell movement from noise. All raw unless marked gzip.
 
-| Metric | Value |
-|---|---|
-| Eager boot payload (entry + modulepreload + CSS) | 816 KB raw · **339 KB gzip** |
-| Largest eager chunk — `index` | 384 KB raw (was 326 KB after the 2026-06 pass) |
-| `motion` (framer-motion) | 124 KB raw · 40 KB gzip |
-| `index.css` | 215 KB raw · 26 KB gzip |
-| Active locale bundle (lazy, 1 of 3) | 178–203 KB raw |
-| **Service-worker precache** | **170 entries · 10 057 KiB** |
-| …of which unreferenced marketing images | ~6 MB |
-| `frontend/public/` on disk | ~44 MB (21.6 MB mp4 · 14.3 MB jpg · 11.8 MB mp3) |
-| Google Maps SDK fetched on every `/panel/*` route | ~350–500 KB, third-party origin |
+| Metric | Before | After stages 3–4 |
+|---|---|---|
+| Eager boot payload (entry + modulepreload + CSS) | 339 KB gzip | **326 KB gzip** |
+| Largest eager chunk — `index` | 384 KB raw | 394 KB raw |
+| `motion` (framer-motion) | 124 KB raw · 40 KB gzip | unchanged |
+| `index.css` | 215 KB raw · 26 KB gzip | unchanged |
+| Active locale bundle (lazy, 1 of 3) | 178–203 KB raw | unchanged |
+| **Service-worker precache** | **170 entries · 10 057 KiB** | **160 entries · 5 216 KiB** |
+| …of which unreferenced marketing images | ~6 MB | 0 |
+| `frontend/public/` on disk | ~44 MB | **472 KB** |
+| Google Maps SDK on a dashboard load | ~350–500 KB, third-party | **not fetched** |
+| `@vis.gl` wrapper in the dashboard chunk | 38 KB raw · 12.5 KB gzip | **not in it** |
+
+The eager-payload row is the one to read carefully: the old raw figure (816 KB) is not
+reproducible and was probably taken over a partial file list — the gzip number is the
+comparable one. Stage 4's win is mostly invisible to it, because what left the boot path was a
+third-party script the bundler never counted.
 
 Two numbers are **not** measured yet and gate stage 5:
 
@@ -114,49 +120,88 @@ not restore the `backdrop-filter`, which is the entire cost being removed here.
 
 ---
 
-## Stage 3 — dead weight in `public/`
+## Stage 3 — dead weight in `public/` — **SHIPPED 2026-08-28**
 
-**Why:** one `rm`, no code, the largest single number in the audit. Zero risk once the
-zero-reference claim is re-verified at execution time.
+**Why:** one `rm`, no code, the largest single number in the audit.
 
-`frontend/public/` holds ~44 MB of assets from the pre-`web/` landing page — videos, session
-photos, audio samples, 2 MB PNG logos. **Nothing in `frontend/src` references any of them**
-(verified by filename grep, which also catches `/foo.png` string literals). They are not merely
-inert: `vite.config.ts`'s `globPatterns` include `**/*.{svg,png,webp,ico}`, so every PNG and
-WebP among them is precached by the service worker — ~6 MB of the 10 MB install.
+`frontend/public/` held ~44 MB of assets from the pre-`web/` landing page — videos, session
+photos, audio samples, 2 MB PNG logos. `vite.config.ts`'s `globPatterns` included
+`**/*.{svg,png,webp,ico}`, so every PNG and WebP among them was precached by the service
+worker — ~6 MB of the 10 MB install, confirmed against the built `sw.js`.
 
-| # | Action |
-|---|---|
-| 3.1 | Re-verify zero references (grep `src/`, `index.html`, `public/manifest.webmanifest`, and `web/` in case anything was shared), then delete. Keep `icons/`, `fonts/`, `manifest.webmanifest`, and anything the manifest or `index.html` names |
-| 3.2 | Narrow `globPatterns` so the precache lists what the app ships, not whatever lands in `public/` — a future stray asset should not silently join the install |
-| 3.3 | Delete the dead Lenis CSS block in `panel.css`, drop `lenis` from `manualChunks` in `vite.config.ts`, and uninstall the package. It has zero imports in `src/` |
+| # | Action | Outcome |
+|---|---|---|
+| 3.1 | Re-verify zero references, then delete | Done — with one correction below |
+| 3.2 | Narrow `globPatterns` to what the app ships | Done — and it uncovered a real offline defect |
+| 3.3 | Delete the dead Lenis CSS block, drop `lenis` from `manualChunks`, uninstall | Done |
 
-**Exit:** `precache N entries (…KiB)` in the build log is ≈ 4 MB; `du` on `frontend/public/`
-is under 1 MB; `grep -r lenis frontend/src` is empty.
+**The audit's zero-reference claim was wrong in one place.** `DesktopSidebar.tsx:153` draws
+`/logo_gold.png` — the collapsed sidebar's brand mark. Worse, that file was **gitignored**, so
+it existed only on the author's disk: `npm run dev` on a fresh clone showed a broken image, and
+production rendered a mark only because `infra/nginx/prod.conf` serves `*.png` marketing-first
+and the Astro site ships a file of the same name. It is now tracked via a `.gitignore` negation
+next to the PWA icons, and the panel no longer depends on that coincidence.
+
+**The `globPatterns` narrowing found the inverse defect.** The old list matched `**/*.js` but
+never `.mjs`, and react-pdf's worker emits as `pdf.worker.min-*.mjs` — so the one asset the 5 MB
+per-file cap was raised for was the one asset missing from the install, and the offline score
+viewer had nothing to run. It is precached now. That is why the precache lands at 5.2 MB rather
+than the ≈4 MB this stage predicted: ~6 MB of images left and ~1.1 MB of worker arrived.
+
+**The bulk was untracked, so `git` cannot restore it.** The ~44 MB of media is gitignored —
+`git status` was clean with all of it on disk — which also means it was never in a clone, never
+in the Docker context, and never in a *production* precache. The 10 MB install was the local
+build's. Rather than `rm`, the media was moved to
+`C:\Users\kryst\Moje aplikacje\VoctManager-attic-2026-08-28\` — some of it is session
+photography with no second copy in `web/src/assets/`. **Delete that folder by hand once you have
+looked at it.** The two `samples/*.mp3` (11.8 MB) and `vite.svg` *were* tracked and were removed
+with `git rm`; those are recoverable from history.
+
+**Exit — met.** `du frontend/public` = 472 KB; precache 160 entries · 5 216 KiB;
+`grep -r lenis frontend/src` is empty.
 
 ---
 
-## Stage 4 — Google Maps off the boot path
+## Stage 4 — Google Maps off the boot path — **SHIPPED 2026-08-28**
 
-**Why:** the largest network + main-thread win, and the one that needs actual care with routing.
+**Why:** the largest network + main-thread win, and the one that needed actual care with routing.
 
-`App.tsx` mounts `<APIProvider>` as the route element wrapping `<ProtectedRoute />`, i.e. the
-whole `/panel/*` tree. `APIProvider` injects the Google Maps JS API as soon as it mounts, so
-every panel surface — the dashboard on a phone included — downloads and executes ~350–500 KB of
-third-party JS plus the `places` and `geocoding` libraries. The comment in `index.html` claims
-the SDK loads "on demand when a panel route renders"; it does, for every panel route.
+`App.tsx` mounted `<APIProvider>` as the route element wrapping `<ProtectedRoute />`, i.e. the
+whole `/panel/*` tree, and `APIProvider` injects the Google Maps JS API as soon as it mounts. The
+comment in `index.html` claimed the SDK loaded "on demand when a panel route renders"; it did,
+for every panel route.
 
-No map is even on screen on the dashboard: `LocationPreview` renders a `<Map>` only inside its
-portalled popover, which most sessions never open.
+| # | Action | Outcome |
+|---|---|---|
+| 4.1 | Establish who genuinely needs the SDK | Three live consumers, not four — `LocationAutocomplete` has **no importers**; the location editor mounts `LocationMapPicker` instead. It is kept (search-without-a-map is a real shape) and gated like the rest, but it costs nothing today |
+| 4.2 | Replace the route-level provider with one mounted on demand | `features/logistics/components/MapsProvider.tsx` |
+| 4.3 | Correct the stale claims in `index.html` and `RootLayout` | Done |
 
-| # | Action |
-|---|---|
-| 4.1 | Establish who genuinely needs the SDK: `LocationPreview` (popover), `LocationsAtlas`, `LocationMapPicker`, `LocationAutocomplete` |
-| 4.2 | Replace the blanket route-level provider with a provider mounted on demand — the honest shape is a small `MapsProvider` that the four consumers opt into, so the SDK arrives when a map is actually about to render, not when a session starts |
-| 4.3 | Correct the stale claims in the `index.html` comment and in `App.tsx`'s `RootLayout` docblock |
+**Shape of `MapsProvider`.** Two constraints decided it. First, `useMap(id)` reads a registry
+held by the *nearest* `APIProvider`, so two providers in one tree would split it and a map
+registered under one would be invisible to a hook reading the other — hence a presence context:
+`MapsProvider` yields to an enclosing provider instead of nesting a second. Second, a consumer
+that calls `useMap` / `useMapsLibrary` at its own top level cannot host the provider inside its
+own body — the hooks would sit above it. So `LocationsAtlas`, `LocationMapPicker` and
+`LocationAutocomplete` each became a thin exported wrapper over a private surface component.
+Call sites did not change.
 
-**Exit:** a fresh dashboard load on a phone issues **no** request to `maps.googleapis.com`;
-opening a location popover still shows a working map.
+**`LocationPreview` needed more than a gate.** The chip is on the dashboard, the schedule, every
+rehearsal row and project card, and a static import of `@vis.gl` from there put the 38 KB (12.5 KB
+gzip) wrapper into the dashboard's own chunk for a popover most sessions never open. The map body
+moved to `VenueMiniMap.tsx` behind `lazy()` + `Suspense fallback={null}`, so the wrapper *and* the
+SDK both arrive on the first hover over a venue that has coordinates.
+
+**Exit — automated half met.** The dashboard chunk no longer references the maps chunk (verified
+against the built assets), and `App.tsx` no longer imports `@vis.gl` at all. The device half —
+a fresh dashboard load issuing no request to `maps.googleapis.com`, and a location popover still
+showing a working map — is the developer's to confirm in the browser's network panel.
+
+**Needs the developer's eye:** the venue popover's map now appears one lazy chunk later than the
+popover's frame. On a warm connection this is imperceptible; on a cold one the 128px map tile is
+briefly empty (its frame, address and both exits are drawn from the first frame). If that reads
+as broken rather than as loading, the fix is a still placeholder inside the `Suspense` fallback —
+not moving the import back up.
 
 ---
 
@@ -183,20 +228,76 @@ recurring long task attributable to `setItem`.
 
 ---
 
-## Stage 6 — entrance chain, fonts, leftovers
+## Stage 6 — the entrance chain, under the ink law
 
 **Why last:** each item is small, and several are judgement calls about feel that are better
 made once the frames underneath them are cheap.
 
+**The frame changed on 2026-08-28.** The stage used to say "keep one of the four fades and
+shorten the rest", which is a taste argument with no principle under it. The principle already
+exists, written down and field-tested on the marketing site (`web/src/styles/tokens.css`,
+`registers.css`, `nave-menu.css`), and the panel should adopt it because it is *simultaneously*
+the brand tie and the cheaper frame:
+
+1. **Nothing enters from `opacity: 0`.** A surface waits at `--half-ink` (0.44) and is inked to
+   full. The site's reason is that a hole which then fills itself in reads as generated. The
+   panel's is that reason plus a harder one: a dashboard invisible for its first second is a
+   dashboard unusable for a second.
+2. **Nothing travels.** An entrance built from `y` / `scale` promotes every participant to its
+   own composited layer for the length of the animation. Opacity on an already-painted element
+   is the cheapest arrival there is.
+3. **One ramp per surface.** Two nested ink ramps multiply — 0.44² ≈ 0.19, 0.44³ ≈ 0.09 — which
+   is the hole again, only harder to find. `nave-menu.css` states this as its first ladder rule
+   ("the veil closes first"), and it is the precondition the panel currently fails.
+
+Rule 3 is why this is one stage and not a sweep: **applying half-ink to a nested chain makes it
+worse.** The chain has to be collapsed first.
+
+Deliberately **not** taken from the site, and this is settled unless the reasoning below is
+shown wrong:
+
+- **The ink press** (`font-variation-settings` from `--wght-press` to `--wght-rest`). Animating
+  a weight axis moves advance widths, i.e. relayouts text. The site spends that on four words on
+  an opaque card. The panel's serif carries `Metric` — numeric columns whose whole job is not to
+  shift — and this is a stage about making frames cheaper.
+- **The two-tempo counted ladder.** It exists because the nave card is an *index* of five
+  destinations, each with a line a ribbon can stand on. A bento grid is a **field**: its tiles are
+  read as one surface, and stretching nine of them into a countable sequence buys a second of
+  staggering for nothing.
+
 | # | Defect | Fix |
 |---|---|---|
-| 6.1 | The admin dashboard nests **four** opacity animations: shell route transition (0.22 s) → `DashboardHome` stage (0.40 s) → `PageTransition` (0.50 s) → Spotlight (0.40 s delay + 1.20 s). Text is fully readable ~2.0 s after the route change, and three overlapping fades are three compositor layers multiplying their alpha | Keep one. `PageTransition` is redundant inside the panel — the shell already transitions routes — and `DashboardHome`'s stage fade duplicates it again. Audit all 23 `PageTransition` call sites for the same double-wrap |
-| 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | Rebase, or retire the constant with the dead variants below |
-| 6.3 | `MENU_PANEL_VARIANTS`, `STAGGERED_REVEAL_VARIANTS`, `FADE_UP_VARIANTS`, `etherealFadeInVariants`, `SLOW_TRANSITION` in `motion-presets.ts` have no importers | Delete |
+| 6.1 | The admin dashboard nests **four** opacity animations: shell route transition (`DashboardLayout.tsx`, 0.22 s, `opacity 0` + `y 6`) → `DashboardHome` stage (0.40 s, `opacity 0`) → `PageTransition` (0.50 s, `opacity 0` + `y 8`) → the bento items. Text is fully readable ~2.0 s after the route change | **Collapse to one, then ink it.** The shell owns route changes; `PageTransition` restates that inside the panel and `DashboardHome`'s stage restates it again. The order matters: collapse first (rule 3), *then* move the survivor to half-ink. `PageTransition` is one file governing 23 call sites — changing its variant changes every panel surface at once, which is the point and also the risk |
+| 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | Rebase, or retire it — its only remaining consumer is `BASE_TRANSITION` in `ExportContractButton` |
+| 6.3 | Five dead variants in `motion-presets.ts` | **Done 2026-08-28**, ahead of this stage: they encoded the *old* law (`opacity: 0` + travel) and sat next to the new `INK` register contradicting it. `MENU_PANEL_VARIANTS`, `STAGGERED_REVEAL_VARIANTS`, `FADE_UP_VARIANTS`, `etherealFadeInVariants`, `SLOW_TRANSITION` are gone |
 | 6.4 | `index.html` preloads both Plex Sans subsets (with a good reason recorded in its comment) but **no Cormorant subset beyond `latin`**. Headings, `Metric`, `Emphasis` and `Unit` are all serif, and Polish needs `CormorantGaramond-Variable.latin-ext`; `Emphasis`/`Unit` need the italic file. With `font-display: swap` that is a second reflow landing on exactly the Spotlight card | Preload the Cormorant subsets the panel actually draws with, or give the fallback matching metrics so the swap does not shift |
 | 6.5 | 71 surviving `transition-all` (the property-animating footgun the 2026-06 sweep left behind on small elements) and 22 `animate-pulse` | Opportunistic; only where a hot list or a hover surface is involved |
 
-**Exit:** no judgement — this stage is done when the developer says the feel is right.
+**Shipped early, because neither needed the chain collapsed** (both are unconditionally correct
+under rules 1–2 and neither adds a ramp):
+
+- `motion-presets.ts` now declares the `INK` register — `half` is the site's `--half-ink`
+  verbatim so the two surfaces half-light at one strength; `in` is 0.42 s, deliberately not the
+  site's 0.9 s, which is a scroll budget where the panel's is a navigation one (the site's own
+  nave menu makes the same local cut, to 0.36 s).
+- `BENTO_ITEM_VARIANTS` moved to the law: `0.44 → 1`, no `y`, no `scale`. That is 6–9 composited
+  layers per dashboard not created.
+- `BENTO_CONTAINER_VARIANTS` **stopped fading**. It ran `opacity 0 → 1` while every child ran its
+  own ramp inside it — rule 3's defect, inside a single component, independent of the rest of the
+  chain. Framer propagates `staggerChildren` from a variant that animates nothing, so
+  orchestration costs no second ramp. `delayChildren: 0.1` went with it.
+
+The stagger stayed at 0.05 s — below the ~0.12 s where adjacent onsets stop fusing, i.e. an
+honest wash rather than a counted sequence. That is the field/index distinction above, and it is
+also the cheap choice; raising it would lengthen the entrance in a stage about shortening it.
+
+**Needs the developer's eye:** dashboard tiles now start visible at 44 % and settle, instead of
+arriving from nothing with a rise. **Under the un-collapsed chain (6.1) you will barely see it** —
+`PageTransition` still multiplies a `0 → 1` ramp over the top. That is the evidence for doing 6.1
+before judging the feel, not after.
+
+**Exit:** the dashboard's text is legible in the first painted frame after a route change, and
+the developer says the feel is right.
 
 ---
 
@@ -212,6 +313,12 @@ made once the frames underneath them are cheap.
   Stage 2 changes *when* it releases, not whether.
 - **Offline-first is not negotiable in stage 5.** The persister exists so a chorister with no
   signal opens to data, not a spinner. Any narrowing must keep that true.
+- **The panel borrows the site's entrance LAW, not its ceremony** (stage 6). Half-ink and
+  no-travel transfer, and pay for themselves in paint. The ink press and the counted two-tempo
+  ladder do not — the reasons are recorded in stage 6 and are not a matter of taste to revisit.
+- **`globPatterns` names files, never bare extensions.** `public/` is a drop box; an extension
+  glob enrols whatever lands there into every user's install, which is how ~6 MB of a dead
+  landing page ended up in the precache (stage 3).
 - **Not re-audited:** backend query efficiency (2026-06: `select_related`/`prefetch` widespread,
   CQRS read-models, dashboard serializer reads only prefetched lists — it was already clean), and
   React re-render volume (2026-06 established the panel is paint-bound, not render-bound).

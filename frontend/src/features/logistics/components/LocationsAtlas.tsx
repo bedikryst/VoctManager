@@ -37,6 +37,7 @@ import type { LocationDto } from "../types/logistics.dto";
 
 import { MapAtmosphere } from "./MapAtmosphere";
 import { MapPinShell } from "./MapPinShell";
+import { MapsProvider } from "./MapsProvider";
 
 const ATLAS_MAP_ID = "VOCTMANAGER_LOGISTICS_ATLAS";
 const DEFAULT_CENTER: google.maps.LatLngLiteral = { lat: 50.0, lng: 14.0 };
@@ -290,7 +291,7 @@ const AtlasLegend = ({
   );
 };
 
-export const LocationsAtlas = ({
+const AtlasSurface = ({
   locations,
   venueActivity,
   activeLocationId,
@@ -448,3 +449,16 @@ export const LocationsAtlas = ({
     </motion.div>
   );
 };
+
+/**
+ * The atlas carries its own SDK gate: it hooks `useMap` at its top level, so the
+ * provider has to enclose the whole surface rather than sit inside it. Mounting
+ * this component is what fetches Google Maps — nothing above it does.
+ */
+export const LocationsAtlas = (
+  props: LocationsAtlasProps,
+): React.JSX.Element => (
+  <MapsProvider>
+    <AtlasSurface {...props} />
+  </MapsProvider>
+);

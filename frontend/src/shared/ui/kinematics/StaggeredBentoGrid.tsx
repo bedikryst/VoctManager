@@ -11,7 +11,8 @@
  * raw string, so the two workspaces that wanted a column both wrote `!flex` to
  * get out of it and a third re-declared the variants privately rather than try.
  * The variants themselves live in `motion-presets` so one timing governs every
- * dashboard.
+ * dashboard — and they follow the INK register there: a tile waits at half-ink
+ * and is inked to full, never entering from nothing and never travelling.
  * @module shared/ui/kinematics/StaggeredBentoGrid
  */
 

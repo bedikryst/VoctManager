@@ -42,6 +42,7 @@ import type { LocationFormValues } from "../types/logistics.dto";
 
 import { MapAtmosphere } from "./MapAtmosphere";
 import { MapPinShell } from "./MapPinShell";
+import { MapsProvider } from "./MapsProvider";
 
 interface LocationMapPickerProps {
   onLocationSelect: (locationData: Partial<LocationFormValues>) => void;
@@ -70,7 +71,7 @@ const PICKER_MAP_ID = "VOCTMANAGER_PICKER_MAP";
 
 const formatCoord = (value: number): string => value.toFixed(6);
 
-export const LocationMapPicker = ({
+const MapPickerSurface = ({
   onLocationSelect,
   initialPosition,
   initialName,
@@ -575,3 +576,16 @@ export const LocationMapPicker = ({
     </div>
   );
 };
+
+/**
+ * The picker hooks `useMap`, `places` and `geocoding` at its top level, so the
+ * SDK gate encloses the whole surface. It mounts inside the location editor,
+ * which is the moment the manager actually asked for a map.
+ */
+export const LocationMapPicker = (
+  props: LocationMapPickerProps,
+): React.JSX.Element => (
+  <MapsProvider>
+    <MapPickerSurface {...props} />
+  </MapsProvider>
+);

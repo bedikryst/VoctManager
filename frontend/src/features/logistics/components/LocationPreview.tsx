@@ -12,12 +12,11 @@
  * @module features/logistics/components/LocationPreview
  */
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { Suspense, lazy, useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { MapPin, Navigation, ExternalLink } from "lucide-react";
-import { Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useLocationResolver } from "../hooks/useLocationResolver";
 import type {
   LocationDto,
@@ -28,6 +27,10 @@ import { Heading, Text, Eyebrow, Caption } from "@/shared/ui/primitives/typograp
 import { cn } from "@/shared/lib/utils";
 import { getLocationCategoryOption } from "../constants/locationCategories";
 import { buildDirectionsUrl, buildPlaceUrl } from "../lib/mapsLinks";
+
+const VenueMiniMap = lazy(() =>
+  import("./VenueMiniMap").then((m) => ({ default: m.VenueMiniMap })),
+);
 
 interface LocationPreviewProps {
   locationRef: LocationReference | null | undefined;
@@ -273,36 +276,22 @@ export const LocationPreview = ({
                 <div className="relative z-0 h-32 w-full overflow-hidden rounded-nested">
                   {hasCoordinates ? (
                     <div className="group relative h-full w-full grayscale-[0.2] transition-all duration-700 hover:grayscale-0">
-                      <Map
-                        defaultZoom={15}
-                        defaultCenter={{
-                          lat: normalizedLocation?.latitude ?? 0,
-                          lng: normalizedLocation?.longitude ?? 0,
-                        }}
-                        disableDefaultUI={true}
-                        gestureHandling="none"
-                        mapId={
-                          import.meta.env.VITE_GOOGLE_MAP_ID || "DEMO_MAP_ID"
-                        }
-                        id={`PREVIEW_${normalizedLocation?.id ?? "UNKNOWN"}`}
-                        className="h-full w-full"
-                      >
-                        <AdvancedMarker
-                          position={{
-                            lat: normalizedLocation?.latitude ?? 0,
-                            lng: normalizedLocation?.longitude ?? 0,
-                          }}
-                        >
-                          <div className="group flex flex-col items-center gap-0.5">
-                            <MapPin
-                              className="text-ethereal-gold transition-transform duration-700 group-hover:-translate-y-1"
-                              size={24}
-                              strokeWidth={1.5}
-                            />
-                            <div className="h-1 w-1.5 rounded-full bg-ethereal-ink/40 blur-[2px]" />
-                          </div>
-                        </AdvancedMarker>
-                      </Map>
+                      {/* Google Maps enters HERE and nowhere earlier. This chip is
+                          on the dashboard, the schedule, every rehearsal row and
+                          project card; the map behind it exists only inside this
+                          portalled popover, and only for a venue that has
+                          coordinates. Both the wrapper chunk and the SDK arrive
+                          on the first hover that satisfies both — hence `lazy`,
+                          not just a gated provider. `fallback={null}`: the frame
+                          is already drawn, and a spinner inside a 128px tile that
+                          resolves in one round trip is worse than the tile. */}
+                      <Suspense fallback={null}>
+                        <VenueMiniMap
+                          locationId={normalizedLocation.id}
+                          latitude={normalizedLocation.latitude ?? 0}
+                          longitude={normalizedLocation.longitude ?? 0}
+                        />
+                      </Suspense>
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ethereal-ink/20 to-transparent mix-blend-multiply" />
                     </div>
                   ) : (
