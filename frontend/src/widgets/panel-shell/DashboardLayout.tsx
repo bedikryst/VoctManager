@@ -1,15 +1,15 @@
 /**
  * @file DashboardLayout.tsx
  * @description Master shell for the VoctManager Dashboard.
- * Implements the Persistent App Shell pattern. Delegates background kinetics
- * to isolated persistent layers and orchestrates content-only transitions.
+ * Implements the Persistent App Shell pattern. Delegates background kinetics to
+ * isolated persistent layers, and the entrance of a route to the page itself
+ * (`PageTransition`) — the shell decides only WHEN a route is a new mount.
  * @architecture Enterprise SaaS 2026
  * @module widgets/panel-shell/DashboardLayout
  */
 
 import React, { Suspense, useEffect } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -93,8 +93,8 @@ export const DashboardLayout = ({
   // settings sections, the messages inbox where the route only picks which
   // conversation the right pane shows) into a single transition key, so moving
   // between them keeps the page mounted — header, nav and loaded data persist
-  // instead of the whole shell exiting + re-animating.
-  // Every other route keeps its full-path key and transitions normally.
+  // instead of the whole page being torn down and re-entering.
+  // Every other route keeps its full-path key and remounts normally.
   const collapsedHubMatch =
     /^(\/panel\/projects\/[^/]+|\/panel\/settings|\/panel\/messages)/.exec(
       location.pathname,
@@ -203,18 +203,29 @@ export const DashboardLayout = ({
         <div className="relative mx-auto flex h-full w-full max-w-[1500px] flex-col">
           <PanelErrorBoundary resetKey={location.pathname}>
             <Suspense fallback={<DashboardRouteFallback />}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={transitionKey}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex-1 flex flex-col w-full h-full"
-                >
-                  {outlet}
-                </motion.div>
-              </AnimatePresence>
+              {/* The key is the remount boundary and NOTHING ELSE — see the
+                  `transitionKey` note above for which routes share one.
+
+                  The shell used to fade and lift this subtree on every route
+                  change, which made it the outermost of a nested chain: each
+                  page then ran `PageTransition` inside it, and the dashboard a
+                  third ramp inside that. Nested opacity ramps multiply, so the
+                  entrance the law wants (half-ink to full, one ramp per
+                  surface) was unreadable underneath them. The page owns its own
+                  arrival now; the shell owns only the swap.
+
+                  It was also the wrong owner on the path that matters most:
+                  this sat INSIDE `Suspense` with `initial={false}`, so a route
+                  whose chunk had not been fetched — the first load of the
+                  dashboard, every time — remounted the presence wrapper and
+                  skipped the animation entirely. `PageTransition` lives inside
+                  the page, so it runs cold and warm alike. */}
+              <div
+                key={transitionKey}
+                className="flex-1 flex flex-col w-full h-full"
+              >
+                {outlet}
+              </div>
             </Suspense>
           </PanelErrorBoundary>
         </div>

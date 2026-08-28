@@ -1,6 +1,6 @@
 # Frontend performance — audit and remediation (2026-08)
 
-Status: **open** — stages 1–4 shipped 2026-08-28, stages 5–6 outstanding ·
+Status: **open** — stages 1–5 shipped 2026-08-28, stage 6 part-shipped (6.1 in, 6.2/6.4/6.5 out) ·
 Audited 2026-08-28 · Surface: `frontend/` (panel PWA only; `web/` is out of scope).
 
 Reported symptom: the panel "feels heavy", most visibly on a phone — the entrance of the
@@ -46,14 +46,29 @@ reproducible and was probably taken over a partial file list — the gzip number
 comparable one. Stage 4's win is mostly invisible to it, because what left the boot path was a
 third-party script the bundler never counted.
 
-Two numbers are **not** measured yet and gate stage 5:
+**The stage-5 gate, measured 2026-08-28: 320 KB.** A manager's dehydrated cache,
+warm, read off `localStorage.getItem('voctmanager-query-cache')`. That is above the 300 KB
+line the stage set for itself, so it ran — see stage 5.
+
+Still not measured: a 3-second Performance recording of "open menu → close menu" on a real
+phone (stage 2's exit), and the idle-with-data recording that closes stage 5's exit.
+
+The snapshot now lives in IndexedDB, so the successor to that one-liner is:
 
 ```js
-// in the console, after the admin dashboard has settled
-(localStorage.getItem('voctmanager-query-cache')?.length / 1024).toFixed(0) + ' KB'
+// top queries by weight, against the new store
+indexedDB.open('voctmanager-query-cache').onsuccess = (e) => {
+  e.target.result.transaction('snapshots').objectStore('snapshots').get('client')
+    .onsuccess = (r) => {
+      const c = JSON.parse(r.target.result);
+      console.log((r.target.result.length / 1024).toFixed(0) + ' KB total');
+      console.table(c.clientState.queries
+        .map((q) => ({ key: JSON.stringify(q.queryKey),
+                       kb: +(JSON.stringify(q).length / 1024).toFixed(1) }))
+        .sort((a, b) => b.kb - a.kb).slice(0, 12));
+    };
+};
 ```
-
-and a 3-second Performance recording of "open menu → close menu" on a real phone.
 
 ---
 

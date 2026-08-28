@@ -265,8 +265,12 @@ export const AuthProvider = ({
       queryClient.clear();
       // Drop every offline trace too — query snapshot, downloaded scores/audio
       // and any queued writes — so nothing leaks to the next user on a shared
-      // device.
-      clearPersistedQueryCache();
+      // device. The snapshot lives in IndexedDB, whose delete only becomes
+      // durable when its transaction commits: awaited, because the navigation
+      // below would otherwise be free to tear the page down mid-transaction.
+      // A failure must still land the user on /login — a stuck logout leaves
+      // them signed in, which is the worse of the two outcomes.
+      await clearPersistedQueryCache().catch(() => undefined);
       void clearAllOffline();
       window.location.href = "/login";
     }

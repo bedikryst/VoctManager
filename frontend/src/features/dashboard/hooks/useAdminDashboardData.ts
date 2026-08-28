@@ -7,7 +7,7 @@
  */
 
 import { useMemo } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { rehearsalKeys } from "@/features/rehearsals/api/rehearsals.queries";
 import { projectKeys } from "@/features/projects/api/project.queries";
@@ -59,6 +59,9 @@ export interface EnrichedRehearsal extends Rehearsal {
 export const useAdminDashboardData = () => {
   const { t } = useTranslation();
 
+  // Everything the dashboard actually LAYS OUT: the spotlight, the pipeline,
+  // the roster balance, the next-rehearsal alert. The screen cannot be drawn
+  // without these, so their pending state is the one that gates it.
   const { isLoading, isError, refetch, data } = useQueries({
     queries: [
       {
@@ -76,11 +79,6 @@ export const useAdminDashboardData = () => {
         queryFn: ArtistService.getAll,
         staleTime: WORKSPACE_STALE_TIME,
       },
-      {
-        queryKey: archiveKeys.pieces.all,
-        queryFn: ArchiveService.getPieces,
-        staleTime: WORKSPACE_STALE_TIME,
-      },
     ],
     combine: (results) => ({
       isLoading: results.some((q) => q.isPending || q.isLoading),
@@ -94,16 +92,35 @@ export const useAdminDashboardData = () => {
         projects: results[0].data ?? [],
         rehearsals: results[1].data ?? [],
         artists: results[2].data ?? [],
-        pieces: results[3].data ?? [],
       },
     }),
+  });
+
+  // The archive, deliberately OUTSIDE that gate. It is the heaviest list the
+  // panel serves — every piece with its tracks, movements, translations,
+  // recordings, notes and editions — and the dashboard reads exactly one thing
+  // off it: how many there are. Blocking the first paint on it made the whole
+  // console wait on a payload that fills a single metric, which then arrives on
+  // its own and reads as `null` until it does.
+  // A restored offline snapshot settles this before the first render, so the
+  // count is normally there in the opening frame; the placeholder is what a
+  // genuinely cold archive fetch looks like. A failure leaves the metric blank
+  // rather than replacing the console with an error — one number is not the
+  // screen.
+  const {
+    data: pieces = EMPTY_PIECES,
+    isPending: isArchivePending,
+    refetch: refetchPieces,
+  } = useQuery({
+    queryKey: archiveKeys.pieces.all,
+    queryFn: ArchiveService.getPieces,
+    staleTime: WORKSPACE_STALE_TIME,
   });
 
   const {
     projects = EMPTY_PROJECTS,
     rehearsals = EMPTY_REHEARSALS,
     artists = EMPTY_ARTISTS,
-    pieces = EMPTY_PIECES,
   } = data;
 
   // 1. TELEMETRY AGGREGATION
@@ -114,7 +131,7 @@ export const useAdminDashboardData = () => {
         p.status === PROJECT_STATUS.DRAFT,
     ).length;
 
-    const totalPieces = pieces.length;
+    const totalPieces = isArchivePending ? null : pieces.length;
     const activeArtistsList = artists.filter((a) => a.is_active);
 
     const S = activeArtistsList.filter((a) =>
@@ -145,7 +162,7 @@ export const useAdminDashboardData = () => {
     };
 
     return { activeProjects, totalPieces, satb };
-  }, [projects, pieces, artists]);
+  }, [projects, pieces, artists, isArchivePending]);
 
   // 2. INVITATION STATUS AGGREGATION (non-archived projects only). `projectCount`
   // is the denominator those three figures are summed over — the strip needs it
@@ -319,7 +336,12 @@ export const useAdminDashboardData = () => {
   return {
     isLoading,
     isError,
-    refetch,
+    // The retry button reaches the archive too, even though its failure never
+    // raises `isError` — otherwise a blank metric would have no way back.
+    refetch: () => {
+      refetch();
+      void refetchPieces();
+    },
     adminStats,
     invitationStats,
     pipelineProjects,

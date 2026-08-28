@@ -36,9 +36,11 @@ export const EASE = {
  *
  * THE LAW HAS A PRECONDITION: one ramp per surface. Two nested ink ramps
  * MULTIPLY (0.44² ≈ 0.19, 0.44³ ≈ 0.09), which is the hole again, only harder to
- * find. Before putting this register on a new surface, check what already fades
- * above it — see stage 6 of `docs/frontend-performance-remediation-2026-08.md`,
- * where the panel's remaining nested chains are listed.
+ * find. The panel's chain was collapsed to satisfy it: `PageTransition` is the
+ * single route-level ramp, the shell above it only remounts on its route key,
+ * and `DashboardHome` between them animates nothing. Before putting this
+ * register on a new surface, check what already fades above it — and if you are
+ * reaching for a fade at route level, you are reaching for the one that exists.
  */
 export const INK = {
   half: 0.44,

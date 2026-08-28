@@ -32,7 +32,12 @@ export interface VoiceStatsDto {
 }
 
 export interface AdminTelemetryStatsDto {
-  totalPieces: number;
+  /**
+   * `null` while the archive is still in flight. The dashboard no longer waits
+   * on that list to paint, so this is the one figure on the card that can
+   * arrive after its own label — it holds a rule rather than a wrong zero.
+   */
+  totalPieces: number | null;
   activeProjects: number;
   satb: VoiceStatsDto;
 }
@@ -59,7 +64,7 @@ export function TelemetryWidget({
   const { t } = useTranslation();
 
   const stats = adminStats ?? {
-    totalPieces: 0,
+    totalPieces: null,
     activeProjects: 0,
     satb: { S: 0, MEZ: 0, A: 0, CT: 0, T: 0, BAR: 0, B: 0, Total: 0 },
   };
@@ -95,7 +100,7 @@ export function TelemetryWidget({
         <div className="grid grid-cols-2 gap-2 xl:gap-8 relative">
           <MetricBlock
             label={t("dashboard.admin.kpi_pieces", "Repertuar Sakralny")}
-            value={stats.totalPieces}
+            value={stats.totalPieces ?? "—"}
           />
 
           <div className="relative pl-8">

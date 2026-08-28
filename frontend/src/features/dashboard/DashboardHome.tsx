@@ -1,14 +1,17 @@
 /**
  * @file DashboardHome.tsx
- * @description Dashboard View Router.
- * Enhanced with Framer Motion for cinematic, staggered entry (The Choir Effect).
+ * @description Dashboard view router — picks the manager console or the
+ * chorister dashboard once the session is known, and does nothing else. The
+ * entrance belongs to whichever of the two it hands over to: both open with
+ * `PageTransition`, which under the ink law is the single ramp this surface is
+ * allowed. A fade of its own here would sit directly above that one and
+ * multiply with it.
  * @architecture Enterprise SaaS 2026
  * @module features/dashboard/DashboardHome
  */
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 
@@ -20,36 +23,23 @@ export default function DashboardHome(): React.JSX.Element {
   const { user, isLoading } = useAuth();
   const { t } = useTranslation();
 
+  // The loader is cut, not faded, on both edges: it is the thing being waited
+  // out, and animating its departure only postpones the screen behind it. The
+  // dashboard that replaces it starts at half-ink rather than at nothing, so
+  // there is no hole between the two.
+  if (isLoading) {
+    return (
+      <div className="absolute inset-0 z-50 flex items-center justify-center">
+        <EtherealLoader
+          message={t("dashboard.shared.authorizing", "Synchronizing...")}
+        />
+      </div>
+    );
+  }
+
   return (
-    <AnimatePresence mode="wait">
-      {isLoading ? (
-        <motion.div
-          key="sacral-loader"
-          // Opacity and scale only: a blur keyframe would rasterise this layer
-          // through a gaussian kernel every frame, on the one screen whose whole
-          // job is to be cheap while the app is still working.
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.7, ease: "easeInOut" }}
-          className="absolute inset-0 flex items-center justify-center z-50"
-        >
-          <EtherealLoader
-            message={t("dashboard.shared.authorizing", "Synchronizing...")}
-          />
-        </motion.div>
-      ) : (
-        <motion.div
-          key="dashboard-stage"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
-          className="flex flex-col w-full min-h-screen"
-        >
-          {isManager(user) ? <AdminDashboard /> : <ArtistDashboard />}
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="flex w-full min-h-screen flex-col">
+      {isManager(user) ? <AdminDashboard /> : <ArtistDashboard />}
+    </div>
   );
 }
