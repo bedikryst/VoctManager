@@ -1,21 +1,24 @@
 /**
  * @file ChannelView.tsx
  * @description Active project-channel pane: header (project, member count, per-user push
- * toggle), pinned-announcements banner, day-grouped group message stream (sender avatar
- * per row, manager pin/unpin), and a composer everyone can post to. Marks read on open.
- * Async by design — no presence/typing.
+ * toggle), pinned-announcements banner, day-grouped group message stream, and a composer
+ * everyone can post to. Marks read on open. Async by design — no presence/typing.
+ *
+ * The stream renders the same `MessageBubble` a 1:1 thread does. It used to draw
+ * a private row — full width, bordered, an avatar on every message, `is_mine`
+ * distinguished only by fill — so one object had two shapes inside one feature.
+ * What a group genuinely adds is the sender, and that is drawn once per run of
+ * consecutive messages rather than on all twelve.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Bell, BellOff, Pin, PinOff, Send } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, Pin, PinOff } from "lucide-react";
 
 import { Avatar } from "@/shared/ui/composites/Avatar";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
-import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Button } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
 import {
@@ -25,9 +28,22 @@ import {
   usePostChannelMessage,
   useSetChannelPush,
 } from "../api/messages.queries";
-import { clockStamp, dayLabel, groupMessagesByDay, isOptimisticId } from "../lib/time";
+import { startsSenderRun } from "../lib/messageRuns";
+import { dayLabel, groupMessagesByDay, isOptimisticId } from "../lib/time";
+import { useStickyScroll } from "../lib/useStickyScroll";
 import type { ChannelMessageDTO, UserBrief } from "../types/messages.dto";
+import { ConversationLoading } from "./ConversationLoading";
+import { MessageBubble } from "./MessageBubble";
+import { MessageComposer } from "./MessageComposer";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
+
+/**
+ * A secondary per-message edit: 28px on a pointer, 36px under a thumb — the
+ * density rule for a row control. Quiet at rest and never hidden behind hover,
+ * which on touch would be no control at all.
+ */
+const PIN_BUTTON_CLASS =
+  "flex h-9 w-9 shrink-0 items-center justify-center rounded-control text-ethereal-graphite/30 transition-colors hover:text-ethereal-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 disabled:opacity-40 fine-pointer:h-7 fine-pointer:w-7";
 
 interface ChannelViewProps {
   channelId: string;
@@ -35,71 +51,6 @@ interface ChannelViewProps {
   me: UserBrief;
   onBack?: () => void;
 }
-
-interface ChannelRowProps {
-  message: ChannelMessageDTO;
-  isManager: boolean;
-  onTogglePin: (message: ChannelMessageDTO) => void;
-  pinPending: boolean;
-}
-
-const ChannelRow: React.FC<ChannelRowProps> = ({ message, isManager, onTogglePin, pinPending }) => {
-  const { t } = useTranslation();
-  const pending = message.is_mine && isOptimisticId(message.id);
-
-  return (
-    <div className="flex items-start gap-2">
-      <Avatar
-        size="xs"
-        src={message.sender?.avatar_url}
-        name={message.sender?.name}
-        className="mt-0.5"
-      />
-      <div
-        className={cn(
-          // Same radius as a thread bubble — one object, one corner.
-          "group/row flex min-w-0 flex-1 flex-col rounded-nested border px-4 py-2.5",
-          message.is_mine
-            ? "bg-ethereal-gold/10 border-ethereal-gold/20"
-            : "bg-ethereal-alabaster/60 border-hairline",
-          pending && "opacity-70",
-        )}
-      >
-        <div className="flex items-center gap-2">
-          <Label size="xs" color="muted" weight="semibold" className="flex-1 truncate">
-            {message.sender?.name ?? t("messages.channel.unknown_sender", "—")}
-          </Label>
-          {message.is_pinned && <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />}
-          <Label size="xs" color="muted" className="shrink-0 tabular-nums opacity-60">
-            {pending ? t("messages.bubble.sending", "wysyłanie…") : clockStamp(message.created_at)}
-          </Label>
-          {isManager && !pending && (
-            <button
-              type="button"
-              onClick={() => onTogglePin(message)}
-              disabled={pinPending}
-              className="shrink-0 text-ethereal-graphite/40 opacity-60 transition-opacity hover:text-ethereal-gold group-hover/row:opacity-100 sm:opacity-0"
-              title={
-                message.is_pinned
-                  ? t("messages.channel.unpin", "Odepnij")
-                  : t("messages.channel.pin", "Przypnij")
-              }
-            >
-              {message.is_pinned ? <PinOff size={13} /> : <Pin size={13} />}
-            </button>
-          )}
-        </div>
-        <Text
-          size="sm"
-          color="graphite"
-          className="break-words whitespace-pre-line leading-relaxed"
-        >
-          {message.body}
-        </Text>
-      </div>
-    </div>
-  );
-};
 
 export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, me, onBack }) => {
   const { t } = useTranslation();
@@ -109,45 +60,66 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   const setPush = useSetChannelPush(channelId);
   const pinMessage = usePinChannelMessage(channelId);
 
-  const [body, setBody] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [body, setBody] = React.useState("");
+  const stream = useStickyScroll(channel?.messages.length ?? 0);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (channel?.unread) {
       markRead.mutate(channelId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channel?.id, channel?.unread, channelId]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [channel?.messages.length]);
-
   const handleSend = () => {
     const trimmed = body.trim();
     if (!trimmed) return;
     setBody("");
+    stream.pinToBottom();
     postMessage.mutate(trimmed);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   if (isLoading || !channel) {
-    return <EtherealLoader fullHeight={false} message={t("messages.channel.loading", "Ładowanie kanału…")} />;
+    return (
+      <ConversationLoading
+        message={t("messages.channel.loading", "Ładowanie kanału…")}
+        onBack={onBack}
+      />
+    );
   }
 
   const pinned = channel.messages.filter((m) => m.is_pinned);
   const groups = groupMessagesByDay(channel.messages);
 
+  const renderPinToggle = (message: ChannelMessageDTO): React.ReactNode => {
+    if (!isManager || isOptimisticId(message.id)) return undefined;
+    return (
+      <button
+        type="button"
+        onClick={() =>
+          pinMessage.mutate({ messageId: message.id, pinned: !message.is_pinned })
+        }
+        disabled={pinMessage.isPending}
+        className={PIN_BUTTON_CLASS}
+        title={
+          message.is_pinned
+            ? t("messages.channel.unpin", "Odepnij")
+            : t("messages.channel.pin", "Przypnij")
+        }
+        aria-label={
+          message.is_pinned
+            ? t("messages.channel.unpin", "Odepnij")
+            : t("messages.channel.pin", "Przypnij")
+        }
+      >
+        {message.is_pinned ? <PinOff size={14} /> : <Pin size={14} />}
+      </button>
+    );
+  };
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-hairline-strong px-5 py-4">
+      <div className="flex shrink-0 items-center gap-3 border-b border-hairline-strong px-3 py-3 sm:px-5 sm:py-4">
         {onBack && (
           <Button
             variant="icon"
@@ -165,7 +137,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
           <Heading as="h3" size="lg" color="graphite" className="truncate">
             {channel.project_name}
           </Heading>
-          <Label size="xs" color="muted" weight="medium">
+          <Label size="xs" color="muted" weight="medium" className="truncate">
             {t("messages.channel.members", "{{count}} uczestników", {
               count: channel.member_count,
             })}
@@ -197,7 +169,7 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
 
       {/* Pinned banner */}
       {pinned.length > 0 && (
-        <div className="border-b border-ethereal-gold/20 bg-ethereal-gold/6 px-5 py-3">
+        <div className="shrink-0 border-b border-ethereal-gold/20 bg-ethereal-gold/6 px-3 py-2.5 sm:px-5 sm:py-3">
           <div className="mb-1 flex items-center gap-1.5">
             <Pin size={12} className="text-ethereal-gold" aria-hidden="true" />
             <Label size="xs" color="muted" weight="semibold">
@@ -215,49 +187,33 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
       )}
 
       {/* Stream */}
-      <div ref={scrollRef} className="flex flex-1 flex-col gap-2 overflow-y-auto px-5 py-4 no-scrollbar">
+      <div
+        ref={stream.ref}
+        onScroll={stream.onScroll}
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-3 no-scrollbar sm:px-5 sm:py-4"
+      >
         {groups.map((group) => (
           <React.Fragment key={group.key}>
             <DayDivider label={dayLabel(group.iso, t)} />
-            {group.items.map((message) => (
-              <ChannelRow
+            {group.items.map((message, index) => (
+              <MessageBubble
                 key={message.id}
                 message={message}
-                isManager={isManager}
-                onTogglePin={(m) => pinMessage.mutate({ messageId: m.id, pinned: !m.is_pinned })}
-                pinPending={pinMessage.isPending}
+                group={{ startsRun: startsSenderRun(group.items, index) }}
+                isPinned={message.is_pinned}
+                action={renderPinToggle(message)}
               />
             ))}
           </React.Fragment>
         ))}
       </div>
 
-      {/* Composer */}
-      <div className="border-t border-hairline-strong p-3">
-        <div className="flex items-end gap-2">
-          {/* min-w-0 defeats the textarea's intrinsic `cols` width, which would
-              otherwise keep the composer wider than a phone. */}
-          <div className="min-w-0 flex-1">
-            <Textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={2}
-              placeholder={t("messages.channel.composer", "Napisz do kanału…")}
-              aria-label={t("messages.channel.composer", "Napisz do kanału…")}
-            />
-          </div>
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={!body.trim()}
-            leftIcon={<Send size={14} />}
-            className="mb-1"
-          >
-            {t("messages.channel.send", "Wyślij")}
-          </Button>
-        </div>
-      </div>
+      <MessageComposer
+        value={body}
+        onChange={setBody}
+        onSend={handleSend}
+        placeholder={t("messages.channel.composer", "Napisz do kanału…")}
+      />
     </div>
   );
 };

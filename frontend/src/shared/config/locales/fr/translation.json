@@ -2748,7 +2748,6 @@
       "pinned": "Épinglé",
       "push_off": "Push désactivé",
       "push_on": "Push activé",
-      "send": "Envoyer",
       "toggle_push": "Notifications push",
       "unknown_sender": "—",
       "unpin": "Désépingler"
@@ -2827,20 +2826,21 @@
       "channels": "Canaux de projet",
       "threads": "Fils"
     },
+    "send": "Envoyer",
     "send_failed": "Échec de l'envoi du message.",
     "status": {
       "archived": "Archivé",
       "resolved": "Fermé"
     },
     "thread": {
+      "actions": "Actions du fil",
       "claim": "Prendre en charge",
       "composer": "Écrire un message…",
       "loading": "Chargement de la conversation…",
       "release": "Vers la file",
       "reopen": "Rouvrir",
       "resolve": "Fermer",
-      "resolved_hint": "Fil fermé — envoyer une réponse le rouvrira.",
-      "send": "Envoyer"
+      "resolved_hint": "Fil fermé — envoyer une réponse le rouvrira."
     },
     "time": {
       "minutes_one": "{{count}} min",

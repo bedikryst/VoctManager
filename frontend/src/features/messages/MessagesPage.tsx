@@ -3,7 +3,13 @@
  * @description Two-pane messaging console. Left inbox: search + triage filter over two
  * sections — project channels (group) and 1:1 threads; right pane shows the selected
  * conversation, or the conductor's briefing deck (Skrzynka dyrygenta) when idle.
- * Responsive: single-pane with back navigation on phones. Entry point for both roles.
+ * Entry point for both roles.
+ *
+ * Two chassis, not one responsive layout. On `md+` the panes share a
+ * viewport-locked row. On a phone an open conversation leaves the page entirely
+ * and becomes `ConversationSurface` — a page header announcing "Wiadomości /
+ * + NOWA" over the conversation you are reading is the chrome that made this
+ * screen feel crowded, and the card it sat in cost another 45% of the width.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/MessagesPage
  */
@@ -23,6 +29,7 @@ import { Input } from "@/shared/ui/primitives/Input";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { foldDiacritics } from "@/shared/lib/text";
+import { useMediaQuery } from "@/shared/lib/dom/useMediaQuery";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager as resolveIsManager } from "@/shared/auth/rbac";
 
@@ -32,10 +39,14 @@ import { ThreadView } from "./components/ThreadView";
 import { ChannelList } from "./components/ChannelList";
 import { ChannelView } from "./components/ChannelView";
 import { ConductorDeck } from "./components/ConductorDeck";
+import { ConversationSurface } from "./components/ConversationSurface";
 import { NewThreadModal } from "./components/NewThreadModal";
 import type { ChannelSummary, ThreadSummary, UserBrief } from "./types/messages.dto";
 
 type TriageFilter = "all" | "unread" | "unassigned" | "mine" | "resolved";
+
+/** The width at which the two panes fit side by side — the `md:` classes below. */
+const TWO_PANE_QUERY = "(min-width: 768px)";
 
 /**
  * Filters whose size is WORK the reader has to do, so the figure earns its place on
@@ -57,6 +68,7 @@ const MessagesPage: React.FC = () => {
   const { user } = useAuth();
 
   const isManager = resolveIsManager(user);
+  const isTwoPane = useMediaQuery(TWO_PANE_QUERY);
   const { data: threads = [], isLoading: threadsLoading } = useThreads();
   const { data: channels = [], isLoading: channelsLoading } = useChannels();
   const [isComposerOpen, setComposerOpen] = useState(false);
@@ -75,6 +87,8 @@ const MessagesPage: React.FC = () => {
   );
 
   const hasSelection = !!(threadId || channelId);
+  /** The conversation owns the whole screen: a phone with one open. */
+  const isImmersive = hasSelection && !isTwoPane;
   const isLoading = threadsLoading || channelsLoading;
   const isNarrowed = query.trim().length > 0 || filter !== "all";
 
@@ -153,7 +167,10 @@ const MessagesPage: React.FC = () => {
 
   const selectThread = (id: string) => navigate(`/panel/messages/${id}`);
   const selectChannel = (id: string) => navigate(`/panel/messages/channel/${id}`);
-  const clearSelection = () => navigate("/panel/messages");
+  // `replace`, not push: leaving a conversation by the in-app arrow used to
+  // stack [list, thread, list], so the hardware back button re-opened the
+  // conversation the member had just closed.
+  const clearSelection = () => navigate("/panel/messages", { replace: true });
   const handleCreated = (id: string) => navigate(`/panel/messages/${id}`);
   const handleAnnounced = (id: string) => navigate(`/panel/messages/channel/${id}`);
 
@@ -164,11 +181,38 @@ const MessagesPage: React.FC = () => {
 
   const nothingToShow = !showChannels && visibleThreads.length === 0;
 
+  // Built once and mounted in exactly ONE chassis: rendering it in the hidden
+  // pane as well would put a second live conversation behind the surface —
+  // two polls, and two components racing to mark the same thread read.
+  const conversation = channelId ? (
+    <ChannelView
+      key={channelId}
+      channelId={channelId}
+      isManager={isManager}
+      me={me}
+      onBack={clearSelection}
+    />
+  ) : threadId ? (
+    <ThreadView
+      key={threadId}
+      threadId={threadId}
+      isManager={isManager}
+      me={me}
+      onBack={clearSelection}
+    />
+  ) : null;
+
   return (
-    <div className="mx-auto flex w-full max-w-300 flex-col">
+    // Bound to the viewport minus <main>'s own chrome — its vertical padding
+    // (~3rem) plus, on touch, the mobile nav dock (--nav-dock-h, 0 on a fine
+    // pointer). Everything above the panes lives INSIDE this box, so the header's
+    // height is subtracted by flexbox instead of guessed: the constant it
+    // replaces (13rem) was ~70px short on a phone and ~90px long on a desktop.
+    <div className="mx-auto flex h-[calc(100dvh-var(--nav-dock-h)-3rem)] w-full max-w-300 flex-col">
       <PageHeader
         roleText={t("messages.eyebrow", "Komunikacja")}
         title={t("messages.title", "Wiadomości")}
+        className={cn("shrink-0", isImmersive && "hidden")}
         rightContent={
           <Button
             type="button"
@@ -181,7 +225,7 @@ const MessagesPage: React.FC = () => {
         }
       />
 
-      <div className="flex h-[calc(100dvh-13rem)] min-h-115 gap-4">
+      <div className={cn("flex min-h-0 flex-1 gap-4", isImmersive && "hidden")}>
         {/* Inbox */}
         <GlassCard
           variant="ethereal"
@@ -193,7 +237,7 @@ const MessagesPage: React.FC = () => {
           )}
         >
           {/* Inbox toolbar */}
-          <div className="flex flex-col gap-2.5 border-b border-hairline-strong p-3">
+          <div className="flex shrink-0 flex-col gap-2.5 border-b border-hairline-strong p-3">
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -201,13 +245,17 @@ const MessagesPage: React.FC = () => {
               placeholder={t("messages.search", "Szukaj rozmowy…")}
               aria-label={t("messages.search", "Szukaj rozmowy…")}
             />
+            {/* Wrapping belongs to the desktop's fixed 340px column, which is what
+                it was added for. On a phone the manager's five segments became
+                three rows — ~118px of a card that has to hold the whole inbox —
+                and one thumb-scrollable row is the standard there anyway. */}
             <SegmentedTabs
               items={filterItems}
               value={filter}
               onChange={setFilter}
               ariaLabel={t("messages.filter.aria", "Filtruj rozmowy")}
               className="text-xs"
-              wrap
+              wrap={isTwoPane}
             />
           </div>
 
@@ -261,52 +309,36 @@ const MessagesPage: React.FC = () => {
           )}
         </GlassCard>
 
-        {/* Conversation / briefing deck */}
+        {/* Conversation / briefing deck — the desktop chassis. */}
         <GlassCard
           variant="ethereal"
           isHoverable={false}
           padding="none"
           className={cn(
             // min-w-0: without it the pane's width follows its own min-content
-            // (header actions, composer) and on a phone the card grows past the
-            // viewport instead of the conversation adapting to it.
+            // (header actions, composer) and the card grows past the row instead
+            // of the conversation adapting to it.
             "h-full min-w-0 flex-1 overflow-hidden",
             hasSelection ? "flex" : "hidden md:flex",
           )}
         >
-          {/* Keyed per conversation: only this pane re-instantiates on selection,
-              so the draft in the composer and the scroll position never bleed
-              from one conversation into the next. */}
-          {channelId ? (
-            <ChannelView
-              key={channelId}
-              channelId={channelId}
-              isManager={isManager}
-              me={me}
-              onBack={clearSelection}
-            />
-          ) : threadId ? (
-            <ThreadView
-              key={threadId}
-              threadId={threadId}
-              isManager={isManager}
-              me={me}
-              onBack={clearSelection}
-            />
-          ) : isLoading ? (
-            <EtherealLoader fullHeight={false} />
-          ) : (
-            <ConductorDeck
-              threads={threads}
-              channels={channels}
-              isManager={isManager}
-              me={me}
-              onSelectThread={selectThread}
-              onSelectChannel={selectChannel}
-            />
-          )}
+          {isImmersive ? null : (conversation ??
+            (isLoading ? (
+              <EtherealLoader fullHeight={false} />
+            ) : (
+              <ConductorDeck
+                threads={threads}
+                channels={channels}
+                isManager={isManager}
+                me={me}
+                onSelectThread={selectThread}
+                onSelectChannel={selectChannel}
+              />
+            )))}
         </GlassCard>
       </div>
+
+      {isImmersive && <ConversationSurface>{conversation}</ConversationSurface>}
 
       <NewThreadModal
         isOpen={isComposerOpen}

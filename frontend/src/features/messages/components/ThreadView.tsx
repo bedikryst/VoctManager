@@ -1,22 +1,38 @@
 /**
  * @file ThreadView.tsx
- * @description Active conversation pane: header (counterpart avatar) + triage
- * (managers), day-grouped scrolling message history, and a composer with optimistic
- * send. Marks the thread read on open. Async by design — no presence/typing indicators.
+ * @description Active 1:1 conversation: header (counterpart + a triage menu for
+ * managers), day-grouped scrolling history, and a composer with optimistic send.
+ * Marks the thread read on open. Async by design — no presence/typing indicators.
+ *
+ * It fills whatever chassis it is handed and knows about neither: a `GlassCard`
+ * pane on a desktop, `ConversationSurface` on a phone. Both give it a bounded
+ * height, so the stream is the only band that scrolls.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Hand, FolderOpen, RotateCcw, Send, Undo2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  Hand,
+  FolderOpen,
+  MoreVertical,
+  RotateCcw,
+  Undo2,
+} from "lucide-react";
 
 import { Avatar } from "@/shared/ui/composites/Avatar";
-import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
-import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
+import { Heading, Label } from "@/shared/ui/primitives/typography";
 import { Badge } from "@/shared/ui/primitives/Badge";
-import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
   useMarkThreadRead,
@@ -25,17 +41,14 @@ import {
   useUpdateThread,
 } from "../api/messages.queries";
 import { useProjectsLite } from "../api/projects.lite";
+import { hasSeveralCounterparts, startsSenderRun } from "../lib/messageRuns";
 import { dayLabel, groupMessagesByDay } from "../lib/time";
+import { useStickyScroll } from "../lib/useStickyScroll";
 import type { UserBrief } from "../types/messages.dto";
+import { ConversationLoading } from "./ConversationLoading";
 import { MessageBubble } from "./MessageBubble";
+import { MessageComposer } from "./MessageComposer";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
-
-/**
- * Triage actions collapse to icon-only below `sm`: a phone-width pane cannot
- * carry two labelled buttons beside the counterpart's name, and the labels
- * survive as the accessible name + tooltip.
- */
-const TRIAGE_ACTION_CLASS = "gap-0 px-3 sm:gap-2 sm:px-5";
 
 interface ThreadViewProps {
   threadId: string;
@@ -57,38 +70,34 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const postMessage = usePostMessage(threadId, me);
   const { data: projects = [] } = useProjectsLite(thread?.context_type === "PROJECT");
 
-  const [body, setBody] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [body, setBody] = React.useState("");
+  const stream = useStickyScroll(thread?.messages.length ?? 0);
 
   // Mark read once whenever the thread surfaces as unread.
-  useEffect(() => {
+  React.useEffect(() => {
     if (thread?.unread) {
       markRead.mutate(threadId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread?.id, thread?.unread, threadId]);
 
-  // Keep the latest message in view.
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [thread?.messages.length]);
-
   const handleSend = () => {
     const trimmed = body.trim();
     if (!trimmed) return;
     setBody("");
+    // The reader may have scrolled back through the history before replying;
+    // their own message is the one thing that always has to land in view.
+    stream.pinToBottom();
     postMessage.mutate(trimmed);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   if (isLoading || !thread) {
-    return <EtherealLoader fullHeight={false} message={t("messages.thread.loading", "Ładowanie rozmowy…")} />;
+    return (
+      <ConversationLoading
+        message={t("messages.thread.loading", "Ładowanie rozmowy…")}
+        onBack={onBack}
+      />
+    );
   }
 
   const counterpart = isManager ? thread.artist : thread.assignee;
@@ -96,6 +105,10 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   const isResolved = thread.status === "RESOLVED";
   const ownedByMe = thread.assignee?.id === me.id;
   const groups = groupMessagesByDay(thread.messages);
+  // A thread left in the management queue can be answered by several conductors,
+  // and then "who wrote this" is a real question the header cannot answer — so it
+  // borrows the channel's identity treatment. With one counterpart it stays off.
+  const namesSenders = hasSeveralCounterparts(thread.messages);
   const claimLabel = t("messages.thread.claim", "Przejmij");
   const releaseLabel = t("messages.thread.release", "Do kolejki");
   const statusLabel = isResolved
@@ -113,9 +126,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       : null;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-hairline-strong px-5 py-4">
+      <div className="flex shrink-0 items-center gap-3 border-b border-hairline-strong px-3 py-3 sm:px-5 sm:py-4">
         {onBack && (
           <Button
             variant="icon"
@@ -138,8 +151,10 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           <Heading as="h3" size="lg" color="graphite" className="truncate">
             {thread.subject}
           </Heading>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <Label size="xs" color="muted" weight="medium">
+          {/* One line, and it stays one: wrapping put the counterpart's name on a
+              second row the moment a project chip or a narrow phone joined it. */}
+          <div className="flex min-w-0 items-center gap-x-2 overflow-hidden">
+            <Label size="xs" color="muted" weight="medium" className="truncate">
               {counterpartName}
             </Label>
             {/* One chip for one fact. Only a manager can open the project, so the
@@ -149,7 +164,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
                 <Link
                   to={`/panel/projects/${projectContext.id}`}
                   title={t("messages.context.view_project", "Otwórz projekt")}
-                  className="min-w-0 max-w-full"
+                  className="min-w-0"
                 >
                   <Badge
                     casing="natural"
@@ -173,103 +188,93 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
           </div>
         </div>
 
+        {/* Triage is two or three occasional actions on a conversation, which is
+            what an overflow menu is for. As labelled buttons they were ~100px of
+            the ~230px the name beside them had to live in. */}
         {isManager && (
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            {!ownedByMe && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button
-                variant="ghost"
+                variant="icon"
+                size="icon"
                 type="button"
-                onClick={() => updateThread.mutate({ assignee_id: me.id })}
-                disabled={updateThread.isPending}
-                leftIcon={<Hand size={14} />}
-                aria-label={claimLabel}
-                title={claimLabel}
-                className={TRIAGE_ACTION_CLASS}
+                className="shrink-0"
+                aria-label={t("messages.thread.actions", "Akcje wątku")}
+                title={t("messages.thread.actions", "Akcje wątku")}
               >
-                <span className="hidden sm:inline">{claimLabel}</span>
+                <MoreVertical size={18} />
               </Button>
-            )}
-            {ownedByMe && (
-              <Button
-                variant="ghost"
-                type="button"
-                onClick={() => updateThread.mutate({ assignee_id: null })}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {ownedByMe ? (
+                <DropdownMenuItem
+                  icon={<Undo2 size={15} />}
+                  disabled={updateThread.isPending}
+                  onSelect={() => updateThread.mutate({ assignee_id: null })}
+                >
+                  {releaseLabel}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  icon={<Hand size={15} />}
+                  disabled={updateThread.isPending}
+                  onSelect={() => updateThread.mutate({ assignee_id: me.id })}
+                >
+                  {claimLabel}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem
+                icon={isResolved ? <RotateCcw size={15} /> : <Check size={15} />}
                 disabled={updateThread.isPending}
-                leftIcon={<Undo2 size={14} />}
-                aria-label={releaseLabel}
-                title={releaseLabel}
-                className={TRIAGE_ACTION_CLASS}
+                onSelect={() =>
+                  updateThread.mutate({ status: isResolved ? "OPEN" : "RESOLVED" })
+                }
               >
-                <span className="hidden sm:inline">{releaseLabel}</span>
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              type="button"
-              onClick={() =>
-                updateThread.mutate({ status: isResolved ? "OPEN" : "RESOLVED" })
-              }
-              disabled={updateThread.isPending}
-              leftIcon={isResolved ? <RotateCcw size={14} /> : <Check size={14} />}
-              aria-label={statusLabel}
-              title={statusLabel}
-              className={TRIAGE_ACTION_CLASS}
-            >
-              <span className="hidden sm:inline">{statusLabel}</span>
-            </Button>
-          </div>
+                {statusLabel}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
 
       {/* Messages */}
       <div
-        ref={scrollRef}
-        className="flex flex-1 flex-col gap-2.5 overflow-y-auto px-5 py-4 no-scrollbar"
+        ref={stream.ref}
+        onScroll={stream.onScroll}
+        className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-3 py-3 no-scrollbar sm:px-5 sm:py-4"
       >
         {groups.map((group) => (
           <React.Fragment key={group.key}>
             <DayDivider label={dayLabel(group.iso, t)} />
-            {group.items.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+            {group.items.map((message, index) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                group={
+                  namesSenders
+                    ? { startsRun: startsSenderRun(group.items, index) }
+                    : undefined
+                }
+              />
             ))}
           </React.Fragment>
         ))}
       </div>
 
-      {/* Composer */}
-      <div className="border-t border-hairline-strong p-3">
-        {isResolved && (
-          <Text size="xs" color="muted" className="mb-2 px-1">
-            {t(
-              "messages.thread.resolved_hint",
-              "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
-            )}
-          </Text>
-        )}
-        <div className="flex items-end gap-2">
-          {/* min-w-0 defeats the textarea's intrinsic `cols` width, which would
-              otherwise keep the composer wider than a phone. */}
-          <div className="min-w-0 flex-1">
-            <Textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={2}
-              placeholder={t("messages.thread.composer", "Napisz wiadomość…")}
-              aria-label={t("messages.thread.composer", "Napisz wiadomość…")}
-            />
-          </div>
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={!body.trim()}
-            leftIcon={<Send size={14} />}
-            className="mb-1"
-          >
-            {t("messages.thread.send", "Wyślij")}
-          </Button>
-        </div>
-      </div>
+      <MessageComposer
+        value={body}
+        onChange={setBody}
+        onSend={handleSend}
+        placeholder={t("messages.thread.composer", "Napisz wiadomość…")}
+        hint={
+          isResolved
+            ? t(
+                "messages.thread.resolved_hint",
+                "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
+              )
+            : undefined
+        }
+      />
     </div>
   );
 };

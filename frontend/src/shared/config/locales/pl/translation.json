@@ -2758,7 +2758,6 @@
       "pinned": "Przypięte",
       "push_off": "Push wyłączony",
       "push_on": "Push włączony",
-      "send": "Wyślij",
       "toggle_push": "Powiadomienia push",
       "unknown_sender": "—",
       "unpin": "Odepnij"
@@ -2837,20 +2836,21 @@
       "channels": "Kanały projektów",
       "threads": "Wątki"
     },
+    "send": "Wyślij",
     "send_failed": "Nie udało się wysłać wiadomości.",
     "status": {
       "archived": "Archiwum",
       "resolved": "Zamknięte"
     },
     "thread": {
+      "actions": "Akcje wątku",
       "claim": "Przejmij",
       "composer": "Napisz wiadomość…",
       "loading": "Ładowanie rozmowy…",
       "release": "Do kolejki",
       "reopen": "Otwórz ponownie",
       "resolve": "Zamknij",
-      "resolved_hint": "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie.",
-      "send": "Wyślij"
+      "resolved_hint": "Wątek zamknięty — wysłanie odpowiedzi otworzy go ponownie."
     },
     "time": {
       "minutes_one": "{{count}} min",

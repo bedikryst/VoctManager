@@ -3,9 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icons/icon-192.png" />
+    <!-- `interactive-widget=resizes-content` makes the on-screen keyboard shrink
+         the LAYOUT viewport, so `dvh` boxes and bottom-anchored composers stay
+         above it without script. Chrome/Android honours it; iOS does not, and is
+         handled by `useKeyboardInset`. -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
     />
     <title>VoctManager | Panel</title>
     <meta name="robots" content="noindex,nofollow" />

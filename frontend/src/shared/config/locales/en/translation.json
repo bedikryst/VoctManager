@@ -2748,7 +2748,6 @@
       "pinned": "Pinned",
       "push_off": "Push off",
       "push_on": "Push on",
-      "send": "Send",
       "toggle_push": "Push notifications",
       "unknown_sender": "—",
       "unpin": "Unpin"
@@ -2827,20 +2826,21 @@
       "channels": "Project channels",
       "threads": "Threads"
     },
+    "send": "Send",
     "send_failed": "Could not send the message.",
     "status": {
       "archived": "Archived",
       "resolved": "Closed"
     },
     "thread": {
+      "actions": "Thread actions",
       "claim": "Claim",
       "composer": "Write a message…",
       "loading": "Loading conversation…",
       "release": "To queue",
       "reopen": "Reopen",
       "resolve": "Close",
-      "resolved_hint": "Thread closed — sending a reply will reopen it.",
-      "send": "Send"
+      "resolved_hint": "Thread closed — sending a reply will reopen it."
     },
     "time": {
       "minutes_one": "{{count}} min",
