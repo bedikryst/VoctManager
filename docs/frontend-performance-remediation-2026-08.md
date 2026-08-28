@@ -220,26 +220,69 @@ not moving the import back up.
 
 ---
 
-## Stage 5 — the synchronous query persister
+## Stage 5 — the synchronous query persister — **SHIPPED 2026-08-28**
 
-**Why:** likely the largest remaining main-thread cost, but it is the one finding that is
-**inferred, not measured** — do not rewrite anything before the number is in.
+**Why:** the largest remaining main-thread cost. It was the one finding in this file that was
+inferred rather than measured, and the measurement came back at **320 KB** — above the 300 KB
+line, so it ran as written.
 
-`queryPersistence.ts` uses `createSyncStoragePersister` over `window.localStorage` with
-`throttleTime: 2000`. Whenever the cache is dirty, the entire React Query cache is
-`JSON.stringify`d and written **synchronously on the main thread**, at most every 2 s. For a
-manager that cache holds all projects, all artists, the whole piece archive, rehearsals and the
-materials read-models. Blobs are already excluded (`shouldDehydrateQuery` in `main.tsx`);
-nothing else is.
+`queryPersistence.ts` used `createSyncStoragePersister` over `window.localStorage` with
+`throttleTime: 2000`. Whenever the cache was dirty, the entire React Query cache was
+`JSON.stringify`d and written **synchronously on the main thread**, at most every 2 s, for as
+long as a session stayed active. For a manager that cache holds all projects, all artists, the
+whole piece archive, rehearsals and the materials read-models.
 
-| # | Action |
-|---|---|
-| 5.1 | Measure first — the console snippet at the top of this file, on a real manager account with a warm cache. Under ~150 KB this stage is not worth doing; over ~300 KB it is the top priority in the file |
-| 5.2 | If it is large: move to an async persister (IndexedDB) so the write leaves the main thread, and/or narrow `shouldDehydrateQuery` to the queries that carry real offline value. Offline-first for choristers on the way to rehearsal is the requirement the persister exists for (`docs/` + the file's own docblock) — do not weaken it for managers' bulk collections without saying so |
-| 5.3 | Independently: the admin dashboard blocks its first paint on `ArchiveService.getPieces()` (`useAdminDashboardData.ts`) purely to render `pieces.length`. Either serve the count from the backend or move that query outside the `isLoading` gate |
+| # | Action | Outcome |
+|---|---|---|
+| 5.1 | Measure first | **320 KB**, manager account, warm |
+| 5.2 | Async persister and/or narrow `shouldDehydrateQuery` | Async persister only — see below |
+| 5.3 | The admin dashboard blocks first paint on `ArchiveService.getPieces()` purely to render `pieces.length` | Query moved outside the `isLoading` gate |
 
-**Exit:** a 3-second Performance recording of idle-with-data on the dashboard shows no
-recurring long task attributable to `setItem`.
+**Only the store moved; nothing was narrowed.** `createAsyncStoragePersister` over a ~60-line
+IndexedDB adapter in the same file. The write is what costs — `localStorage.setItem` of a 320 KB
+string is synchronous disk I/O on the main thread — and an IndexedDB write resolves off it. The
+`JSON.stringify` stays, single-digit ms at this size, and serialization stays JSON deliberately:
+letting structured clone carry the object would make the restored shape differ from what the
+sync persister produced (a `Date` surviving a reload as a `Date`), and nothing downstream should
+have to learn that.
+
+Narrowing was **not** done, and should not be done blind. Every narrowing trades away offline
+coverage, which is the one thing this file calls non-negotiable, whereas the store move trades
+nothing. If the idle recording still shows a long task, run the per-query breakdown snippet at
+the top of this file first and cut the named heavy keys via `meta: { persist: false }` — the
+opt-out mechanism `shouldDehydrateQuery` already honours, and which puts each decision at the
+query that owns it instead of in a central blacklist.
+
+Three details the adapter carries:
+- **It degrades to localStorage, not to nothing.** A browser that refuses IndexedDB (some
+  private windows, storage switched off) gets exactly the behaviour this file had before —
+  its offline snapshot, at the old cost.
+- **It reads the legacy localStorage key once.** A PWA can boot its updated shell from the
+  service worker with no signal, so the release that moves the store must not be the release
+  that hands a chorister an empty panel. The old snapshot answers the restore until the first
+  IndexedDB write, which then clears it.
+- **`clearPersistedQueryCache` is now awaited by logout.** An IndexedDB delete is durable only
+  when its transaction commits, and the hard navigation to `/login` was previously free to tear
+  the page down mid-flight. On a shared device that is the invariant that matters. A failure
+  still lands the user on `/login` — a stuck logout leaves them signed in, which is worse.
+
+**5.3 in detail.** The archive is the heaviest list the panel serves (every piece with its
+tracks, movements, translations, recordings, notes and editions), and the dashboard reads
+exactly one thing off it: how many there are. It is now a separate `useQuery` whose pending
+state does not feed `isLoading`. `AdminTelemetryStatsDto.totalPieces` became `number | null`
+and the metric renders `—` until the count lands, rather than a wrong `0`. With a restored
+snapshot it is there in the opening frame, so the placeholder is what a genuinely cold archive
+fetch looks like. An archive failure no longer raises `isError` either — one number is not the
+screen — but the retry button still reaches it, or a blank metric would have no way back.
+
+**Exit — automated half met** (typecheck · lint · 168/168 · build). The device half — a
+3-second Performance recording of idle-with-data on the dashboard showing no recurring long
+task attributable to `setItem` — is the developer's to confirm.
+
+**Needs the developer's eye:** the first load after this deploy restores from the legacy
+localStorage snapshot and then migrates; the one after that reads IndexedDB. If a cold manager
+dashboard ever shows `—` where the repertoire count belongs and it does not resolve, the
+archive fetch failed — that is now visible rather than fatal, which is the intended trade.
 
 ---
 
@@ -282,7 +325,7 @@ shown wrong:
 
 | # | Defect | Fix |
 |---|---|---|
-| 6.1 | The admin dashboard nests **four** opacity animations: shell route transition (`DashboardLayout.tsx`, 0.22 s, `opacity 0` + `y 6`) → `DashboardHome` stage (0.40 s, `opacity 0`) → `PageTransition` (0.50 s, `opacity 0` + `y 8`) → the bento items. Text is fully readable ~2.0 s after the route change | **Collapse to one, then ink it.** The shell owns route changes; `PageTransition` restates that inside the panel and `DashboardHome`'s stage restates it again. The order matters: collapse first (rule 3), *then* move the survivor to half-ink. `PageTransition` is one file governing 23 call sites — changing its variant changes every panel surface at once, which is the point and also the risk |
+| 6.1 | The admin dashboard nests **four** opacity animations: shell route transition (`DashboardLayout.tsx`, 0.22 s, `opacity 0` + `y 6`) → `DashboardHome` stage (0.40 s, `opacity 0`) → `PageTransition` (0.50 s, `opacity 0` + `y 8`) → the bento items. Text is fully readable ~2.0 s after the route change | **Done 2026-08-28** — collapsed to `PageTransition` alone, then inked. See below |
 | 6.2 | `DURATION.base = 0.8 s` presents itself as the panel's baseline transition. It is outside the perceptual budget for UI motion (0.2–0.3 s) | Rebase, or retire it — its only remaining consumer is `BASE_TRANSITION` in `ExportContractButton` |
 | 6.3 | Five dead variants in `motion-presets.ts` | **Done 2026-08-28**, ahead of this stage: they encoded the *old* law (`opacity: 0` + travel) and sat next to the new `INK` register contradicting it. `MENU_PANEL_VARIANTS`, `STAGGERED_REVEAL_VARIANTS`, `FADE_UP_VARIANTS`, `etherealFadeInVariants`, `SLOW_TRANSITION` are gone |
 | 6.4 | `index.html` preloads both Plex Sans subsets (with a good reason recorded in its comment) but **no Cormorant subset beyond `latin`**. Headings, `Metric`, `Emphasis` and `Unit` are all serif, and Polish needs `CormorantGaramond-Variable.latin-ext`; `Emphasis`/`Unit` need the italic file. With `font-display: swap` that is a second reflow landing on exactly the Spotlight card | Preload the Cormorant subsets the panel actually draws with, or give the fallback matching metrics so the swap does not shift |
@@ -306,13 +349,45 @@ The stagger stayed at 0.05 s — below the ~0.12 s where adjacent onsets stop fu
 honest wash rather than a counted sequence. That is the field/index distinction above, and it is
 also the cheap choice; raising it would lengthen the entrance in a stage about shortening it.
 
-**Needs the developer's eye:** dashboard tiles now start visible at 44 % and settle, instead of
-arriving from nothing with a rise. **Under the un-collapsed chain (6.1) you will barely see it** —
-`PageTransition` still multiplies a `0 → 1` ramp over the top. That is the evidence for doing 6.1
-before judging the feel, not after.
+### 6.1 as built — the survivor is `PageTransition`
 
-**Exit:** the dashboard's text is legible in the first painted frame after a route change, and
-the developer says the feel is right.
+**The audit undercounted one thing and overcounted another.** The chain was never uniformly four
+deep, because the shell's `AnimatePresence` sat **inside** `Suspense` with `initial={false}`: a
+route whose chunk had not been fetched — the first load of the dashboard, every time — replaced
+that whole subtree with the fallback, and remounted the presence wrapper afterwards with its
+initial animation suppressed. So the shell ramp ran on warm navigation and **not** on the cold
+path that the symptom is about. The one ramp that ran in both cases was `PageTransition`, which
+lives inside the page and is therefore below Suspense. That is why it is the survivor rather
+than the shell, which on paper is the better owner.
+
+- **`DashboardLayout`** — the `motion.div` and its `AnimatePresence` are gone; a plain
+  `<div key={transitionKey}>` remains. The key was always the remount boundary and is now only
+  that. `framer-motion` left the shell's import list entirely.
+- **`DashboardHome`** — no longer animates at all. It is a two-way router between the manager
+  console and the chorister dashboard, and both open with `PageTransition`; its own stage fade
+  sat directly above that one. The `EtherealLoader` is now cut on both edges rather than faded:
+  it is the thing being waited out, and animating its departure only postponed the screen behind
+  it. Under rule 1 there is no hole where the crossfade used to be, because what replaces it
+  starts at half-ink.
+- **`PageTransition`** — `opacity: INK.half → 1`, `INK.in` (0.42 s), `INK.ease`, no `y`, and no
+  `exit`. The exit variant was dead configuration even before this: no call site is wrapped in an
+  `AnimatePresence` (all 22 files that use both have theirs *inside*), so it never ran.
+
+**Two panel routes now enter flat**, because they never used `PageTransition` and were relying on
+the shell's ramp: `/panel/messages` (`MessagesPage`) and the archive piece-card routes
+(`archive-management/:id`, `/edit`, `/review`). Adding the wrapper is two lines each, but it also
+adds `window.scrollTo(0, 0)` on mount, which is wrong for a surface that owns its own scroll
+containers — `MessagesPage` most of all. Left flat deliberately; revisit only if the inconsistency
+reads.
+
+**Also changed by this, deliberately:** `AuthShell` — login, activation, password reset — now
+enters at half-ink like everything else. It is the same law, and the auth zone is where a hole
+reads worst.
+
+**Exit — automated half met** (typecheck · lint · 168/168 · build). The other half is the
+developer's: the dashboard's text is legible in the first painted frame after a route change,
+and the feel is right. The half-ink bento tiles shipped earlier in this stage should now be
+visible for the first time — they were sitting under `PageTransition`'s `0 → 1` ramp.
 
 ---
 
