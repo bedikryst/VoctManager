@@ -2399,7 +2399,9 @@
       "concert_hall": "Salle de concert",
       "hotel": "Hôtel",
       "other": "Autre",
+      "parking": "Parking",
       "rehearsal_room": "Salle de répétition",
+      "restaurant": "Restaurant",
       "transit": "Station / Gare",
       "workspace": "Espace privé"
     },
@@ -2409,7 +2411,9 @@
       "concert_hall": "Salles de concert",
       "hotel": "Hôtels",
       "other": "Autres",
+      "parking": "Parkings",
       "rehearsal_room": "Salles de répétition",
+      "restaurant": "Restaurants",
       "transit": "Stations et gares",
       "workspace": "Espaces privés"
     },
@@ -2419,7 +2423,9 @@
       "concert_hall": "Philharmonies, opéras et scènes de concert.",
       "hotel": "Hébergement de l'ensemble et des artistes invités.",
       "other": "Lieux hors des groupes standards.",
+      "parking": "Lieux de stationnement et points de prise en charge du car.",
       "rehearsal_room": "Studios acoustiques et salles de préparation.",
+      "restaurant": "Lieux de repas de l'ensemble un jour de déplacement.",
       "transit": "Gares ferroviaires, routières et hubs de correspondance.",
       "workspace": "Bureaux de l'équipe, studios et coulisses de production."
     },
@@ -2785,6 +2791,15 @@
       "project": "Projet",
       "view_project": "Ouvrir le projet"
     },
+    "conversation": {
+      "actions": "Options de la conversation",
+      "load_failed": "Impossible de charger la conversation",
+      "load_failed_desc": "Vérifiez votre connexion et réessayez.",
+      "older": "Messages précédents",
+      "older_failed": "Impossible de charger les messages précédents.",
+      "older_loading": "Chargement…",
+      "retry": "Réessayer"
+    },
     "deck": {
       "channels": "Canaux de projet",
       "channels_census": "{{visible}} sur {{total}}",
@@ -2832,8 +2847,13 @@
       "archived": "Archivé",
       "resolved": "Fermé"
     },
+    "text_size": {
+      "default": "Standard",
+      "label": "Taille du texte",
+      "large": "Plus grand",
+      "largest": "Le plus grand"
+    },
     "thread": {
-      "actions": "Actions du fil",
       "claim": "Prendre en charge",
       "composer": "Écrire un message…",
       "loading": "Chargement de la conversation…",
@@ -3604,6 +3624,9 @@
       },
       "run_sheet": {
         "description": "Description (optionnelle)",
+        "place": "Lieu de cette étape",
+        "place_default": "Lieu de l'événement",
+        "place_new": "Ajouter un nouveau lieu",
         "time": "Heure",
         "title": "Nom de l'étape"
       },

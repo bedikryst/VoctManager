@@ -2399,7 +2399,9 @@
       "concert_hall": "Concert Hall",
       "hotel": "Hotel",
       "other": "Other",
+      "parking": "Car Park",
       "rehearsal_room": "Rehearsal Room",
+      "restaurant": "Restaurant",
       "transit": "Station / Transit",
       "workspace": "Private Space"
     },
@@ -2409,7 +2411,9 @@
       "concert_hall": "Concert Halls",
       "hotel": "Hotels",
       "other": "Other",
+      "parking": "Car Parks",
       "rehearsal_room": "Rehearsal Rooms",
+      "restaurant": "Restaurants",
       "transit": "Stations & Transit",
       "workspace": "Private Spaces"
     },
@@ -2419,7 +2423,9 @@
       "concert_hall": "Philharmonics, opera houses, and concert stages.",
       "hotel": "Lodging for the ensemble and guest artists.",
       "other": "Locations outside the standard groups.",
+      "parking": "Where the coach waits and where it picks people up.",
       "rehearsal_room": "Acoustic studios and preparation rooms.",
+      "restaurant": "Where the ensemble eats on a travel day.",
       "transit": "Train stations, coach terminals, and transfer hubs.",
       "workspace": "Team offices, studios, and production back-of-house."
     },
@@ -2785,6 +2791,15 @@
       "project": "Project",
       "view_project": "Open project"
     },
+    "conversation": {
+      "actions": "Conversation options",
+      "load_failed": "Could not load the conversation",
+      "load_failed_desc": "Check your connection and try again.",
+      "older": "Earlier messages",
+      "older_failed": "Could not load the earlier messages.",
+      "older_loading": "Loading…",
+      "retry": "Try again"
+    },
     "deck": {
       "channels": "Project channels",
       "channels_census": "{{visible}} of {{total}}",
@@ -2832,8 +2847,13 @@
       "archived": "Archived",
       "resolved": "Closed"
     },
+    "text_size": {
+      "default": "Standard",
+      "label": "Text size",
+      "large": "Larger",
+      "largest": "Largest"
+    },
     "thread": {
-      "actions": "Thread actions",
       "claim": "Claim",
       "composer": "Write a message…",
       "loading": "Loading conversation…",
@@ -3603,6 +3623,9 @@
       },
       "run_sheet": {
         "description": "Description (optional)",
+        "place": "Where this item happens",
+        "place_default": "Event venue",
+        "place_new": "Add a new venue",
         "time": "Time",
         "title": "Item name"
       },

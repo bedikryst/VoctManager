@@ -2409,7 +2409,9 @@
       "concert_hall": "Sala Koncertowa",
       "hotel": "Hotel",
       "other": "Inne",
+      "parking": "Parking",
       "rehearsal_room": "Sala Prób",
+      "restaurant": "Restauracja",
       "transit": "Stacja / Dworzec",
       "workspace": "Prywatna Przestrzeń"
     },
@@ -2419,7 +2421,9 @@
       "concert_hall": "Sale Koncertowe",
       "hotel": "Hotele",
       "other": "Pozostałe",
+      "parking": "Parkingi",
       "rehearsal_room": "Sale Prób",
+      "restaurant": "Restauracje",
       "transit": "Dworce i Stacje",
       "workspace": "Prywatne Przestrzenie"
     },
@@ -2429,7 +2433,9 @@
       "concert_hall": "Filharmonie, opery i sceny koncertowe.",
       "hotel": "Zakwaterowanie zespołu i artystów gościnnych.",
       "other": "Lokacje spoza standardowych grup.",
+      "parking": "Miejsca postoju i punkty odbioru autokaru.",
       "rehearsal_room": "Studia akustyczne i sale przygotowań.",
+      "restaurant": "Miejsca posiłków zespołu w dniu wyjazdu.",
       "transit": "Stacje kolejowe, autobusowe i węzły transferowe.",
       "workspace": "Biura zespołu, studia i zaplecze produkcyjne."
     },
@@ -2795,6 +2801,15 @@
       "project": "Projekt",
       "view_project": "Otwórz projekt"
     },
+    "conversation": {
+      "actions": "Opcje rozmowy",
+      "load_failed": "Nie udało się wczytać rozmowy",
+      "load_failed_desc": "Sprawdź połączenie i spróbuj ponownie.",
+      "older": "Wcześniejsze wiadomości",
+      "older_failed": "Nie udało się wczytać wcześniejszych wiadomości.",
+      "older_loading": "Wczytuję…",
+      "retry": "Spróbuj ponownie"
+    },
     "deck": {
       "channels": "Kanały projektów",
       "channels_census": "{{visible}} z {{total}}",
@@ -2842,8 +2857,13 @@
       "archived": "Archiwum",
       "resolved": "Zamknięte"
     },
+    "text_size": {
+      "default": "Standardowy",
+      "label": "Rozmiar tekstu",
+      "large": "Większy",
+      "largest": "Największy"
+    },
     "thread": {
-      "actions": "Akcje wątku",
       "claim": "Przejmij",
       "composer": "Napisz wiadomość…",
       "loading": "Ładowanie rozmowy…",
@@ -3621,6 +3641,9 @@
       },
       "run_sheet": {
         "description": "Opis (opcjonalny)",
+        "place": "Miejsce tego punktu",
+        "place_default": "Miejsce wydarzenia",
+        "place_new": "Dodaj nowe miejsce",
         "time": "Godzina",
         "title": "Nazwa punktu"
       },
