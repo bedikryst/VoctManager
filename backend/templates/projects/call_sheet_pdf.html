@@ -635,7 +635,14 @@
                     <tr{% if item.is_anchor %} class="anchor"{% endif %}>
                         <td class="t-time">{{ item.time|default:"—" }}</td>
                         <td class="t-title">{{ item.title }}</td>
-                        <td>{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% endif %}{% if item.description %}{{ item.description }}{% endif %}{% if item.location %}{% if item.description %} · {% endif %}<span class="muted">{{ item.location }}</span>{% endif %}</td>
+                        {% comment %}
+                            The venue leads the cell and breaks its own line: it is
+                            set only on a point that sends the reader somewhere OTHER
+                            than the concert address, so on the rare row that has one
+                            it is the fact the row exists for. The note and the
+                            description follow on one running line, as before.
+                        {% endcomment %}
+                        <td>{% if item.venue_name %}<span style="font-weight:700;">{{ item.venue_name }}</span>{% if item.venue_address %} <span class="muted">{{ item.venue_address }}</span>{% endif %}{% if item.venue_map_url %} · <a href="{{ item.venue_map_url }}">{% translate "map" context "call sheet" %}</a>{% endif %}<br>{% endif %}{% if item.day_note %}<span class="muted">{{ item.day_note }}</span>{% endif %}{% if item.description %}{{ item.description }}{% endif %}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

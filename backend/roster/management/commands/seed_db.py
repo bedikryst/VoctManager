@@ -11,8 +11,9 @@ re-running it tops up missing rows instead of duplicating.
 What it seeds, across every bounded context that exists today:
 
   • logistics  — Locations covering every category (halls, church, studio,
-                 rehearsal room, hotel, station, airport, private workspace),
-                 including one retired venue
+                 rehearsal room, hotel, station, airport, coach parking,
+                 roadside restaurant, private workspace), including one
+                 retired venue
   • core/IAM   — superuser, production manager and a crew account; per-user
                  UserProfiles (RBAC, salutation + vocative, sizes, digest
                  windows, consent stamps, generated avatars)
@@ -226,6 +227,16 @@ LOCATIONS: dict[str, LocationSpec] = {
         "Lotnisko Chopina", LocationCategory.AIRPORT,
         "Żwirki i Wigury 1, 00-906 Warszawa", Decimal("52.165700"), Decimal("20.967200"),
         "Odprawa grupowa 2,5 h przed odlotem. Nuty wyłącznie w bagażu podręcznym.",
+    ),
+    "coach_parking": LocationSpec(
+        "Parking autokarowy — Plac Defilad", LocationCategory.PARKING,
+        "Plac Defilad 1, 00-901 Warszawa", Decimal("52.231800"), Decimal("21.005900"),
+        "Zbiórka przy wjeździe od Marszałkowskiej. Autokar stoi maks. 20 minut.",
+    ),
+    "roadside_lunch": LocationSpec(
+        "Zajazd Pod Kasztanami", LocationCategory.RESTAURANT,
+        "Warszawska 88, 26-600 Radom", Decimal("51.402100"), Decimal("21.147000"),
+        "Obiad w drodze do Krakowa. Menu ustalone z wyprzedzeniem, 45 minut postoju.",
     ),
     "workspace": LocationSpec(
         "Pracownia dyrygenta", LocationCategory.WORKSPACE,
@@ -1434,7 +1445,12 @@ class Command(BaseCommand):
                     "dress_code_male": "Frak, biała muszka",
                     "dress_code_female": "Czarna suknia chóralna",
                     "spotify_playlist_url": "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
-                    "run_sheet": self._run_sheet(call_time, when),
+                    # The out-of-town date is the one whose day leaves the concert
+                    # address, so it is the only one seeded with points that carry
+                    # a venue of their own.
+                    "run_sheet": self._run_sheet(
+                        call_time, when, away=spec.location == "krakow"
+                    ),
                     # The upcoming-event reminder is a one-shot claim; only a concert
                     # already inside the reminder window can carry the stamp.
                     "reminder_sent_at": (self.now - timedelta(days=1)) if is_soon else None,
@@ -1445,18 +1461,47 @@ class Command(BaseCommand):
                 self._populate_project(project, spec, when)
         return projects
 
-    @staticmethod
-    def _run_sheet(call_time: datetime, start: datetime) -> list[dict[str, str]]:
+    def _run_sheet(
+        self, call_time: datetime, start: datetime, away: bool = False
+    ) -> list[dict[str, str]]:
+        """The concert day as the panel itself writes it.
+
+        A room inside the venue is a description, not a place: a point's
+        ``location_id`` is for the rows that actually leave the concert address —
+        the coach, the lunch stop — and seeding a room there would teach the
+        wrong shape to whoever reads this next.
+        """
         def fmt(value: datetime) -> str:
             return value.strftime("%H:%M")
 
+        travel: list[dict[str, str]] = []
+        if away:
+            travel = [
+                {
+                    "time": fmt(call_time - timedelta(hours=6)),
+                    "title": "Wyjazd autokaru",
+                    "description": "Bagaż i nuty do luku przed odjazdem.",
+                    "location_id": str(self.locations["coach_parking"].id),
+                },
+                {
+                    "time": fmt(call_time - timedelta(hours=3, minutes=30)),
+                    "title": "Obiad w drodze",
+                    "description": "45 minut postoju.",
+                    "location_id": str(self.locations["roadside_lunch"].id),
+                },
+            ]
+
         return [
-            {"time": fmt(call_time), "task": "Przyjazd i przygotowanie", "location": "Garderoby"},
-            {"time": fmt(call_time + timedelta(minutes=30)), "task": "Próba akustyczna", "location": "Scena"},
-            {"time": fmt(call_time + timedelta(hours=1, minutes=30)), "task": "Rozśpiewanie",
-             "location": "Sala prób"},
-            {"time": fmt(call_time + timedelta(hours=2)), "task": "Catering", "location": "Foyer"},
-            {"time": fmt(start), "task": "POCZĄTEK KONCERTU", "location": "Scena"},
+            *travel,
+            {"time": fmt(call_time), "title": "Przyjazd i przygotowanie",
+             "description": "Garderoby"},
+            {"time": fmt(call_time + timedelta(minutes=30)), "title": "Próba akustyczna",
+             "description": "Scena"},
+            {"time": fmt(call_time + timedelta(hours=1, minutes=30)), "title": "Rozśpiewanie",
+             "description": "Sala prób"},
+            {"time": fmt(call_time + timedelta(hours=2)), "title": "Catering",
+             "description": "Foyer"},
+            {"time": fmt(start), "title": "POCZĄTEK KONCERTU", "description": "Scena"},
         ]
 
     def _populate_project(self, project: Project, spec: ProjectSpec, when: datetime) -> None:

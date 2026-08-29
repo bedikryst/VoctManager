@@ -277,7 +277,11 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
                   dots outside its own padding box, and an overflow there would
                   clip them. */}
               <div className="max-h-[50dvh] overflow-y-auto overscroll-contain no-scrollbar">
-                <ConcertDayPlan entries={dayEntries} eventKind={proj.event_kind} />
+                <ConcertDayPlan
+                  entries={dayEntries}
+                  eventKind={proj.event_kind}
+                  eventLocationId={proj.location?.id ?? null}
+                />
               </div>
             </div>
           )}

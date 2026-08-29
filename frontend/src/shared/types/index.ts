@@ -129,6 +129,17 @@ export interface RunSheetItem {
   description?: string;
   activity?: string;
   details?: string;
+  /**
+   * Where this point of the day happens, when that is somewhere OTHER than the
+   * event's own venue — the coach departure, the lunch stop on the way. Empty
+   * is not "unknown": a run-sheet point has always meant the event's venue, and
+   * every surface reads it that way.
+   *
+   * A saved `Location` rather than typed text, because the answer a singer needs
+   * at a car park at 6:40 is a route, and only a stored venue carries the address
+   * and coordinates one can be built from.
+   */
+  location_id?: string | null;
 }
 
 /**
@@ -318,6 +329,12 @@ export interface CrewAssignment {
 // DOMAIN ENTITIES: LOGISTICS
 // ==========================================
 
+/**
+ * What a place permanently IS — never the part it plays on one given day. The
+ * same car park is a meeting point in June and plain parking in September, and
+ * the run-sheet row pointing at it is what names that role, which is why there
+ * is no MEETING_POINT here.
+ */
 export type LocationCategory =
   | "CONCERT_HALL"
   | "CHURCH"
@@ -325,6 +342,8 @@ export type LocationCategory =
   | "HOTEL"
   | "AIRPORT"
   | "TRANSIT_STATION"
+  | "RESTAURANT"
+  | "PARKING"
   | "WORKSPACE"
   | "OTHER";
 

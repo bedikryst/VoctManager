@@ -6,6 +6,11 @@
  * the spotlight and the event sheet, because a singer who reads the day twice
  * has to be reading it once.
  *
+ * A row names a venue only when the point happens somewhere OTHER than the
+ * event's — the coach departure, the lunch stop on the way — and then it is a
+ * chip that opens the map, because that row exists precisely to send the reader
+ * to an address the card's own venue line does not give them.
+ *
  * The caller keeps the heading, the empty state and any height cap: this owns the
  * drawing of the day and nothing around it.
  * @module features/schedule/components/ConcertDayPlan
@@ -16,6 +21,8 @@ import { useTranslation } from "react-i18next";
 
 import { Text, Eyebrow } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { LocationPreview } from "@/features/logistics/components/LocationPreview";
+import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
 import {
   isDayWindow,
   type DayTimelineEntry,
@@ -40,13 +47,21 @@ interface ConcertDayPlanProps {
   entries: readonly DayTimelineEntry[];
   /** Names the downbeat row — a Mass says "Msza", not "Koncert". */
   eventKind: ProjectEventKind | undefined;
+  /**
+   * The event's own venue. A point that sits there says nothing about place —
+   * the card already names the venue, and repeating it on every row buries the
+   * one row that sends the reader somewhere else.
+   */
+  eventLocationId?: string | null;
 }
 
 export const ConcertDayPlan = ({
   entries,
   eventKind,
+  eventLocationId,
 }: ConcertDayPlanProps): React.JSX.Element => {
   const { t } = useTranslation();
+  const { resolveLocation } = useLocationResolver();
 
   return (
     // The dots hang outside this box's padding — a caller capping the height
@@ -54,6 +69,17 @@ export const ConcertDayPlan = ({
     <div className="relative ml-2 space-y-4 border-l border-ethereal-incense/20 pl-5">
       {entries.map((entry, index) => {
         const isPoint = entry.kind === "point";
+        // Only a point can carry a place of its own, and only when it is not the
+        // event's. An id the dictionary cannot resolve — a venue archived after
+        // the day was planned — draws nothing rather than a chip reading
+        // "unknown": the row's title and hour still stand on their own.
+        const pointVenue =
+          entry.kind === "point" &&
+          entry.item.location_id &&
+          entry.item.location_id !== eventLocationId
+            ? resolveLocation(entry.item.location_id)
+            : null;
+
         // A fixed moment is named here, in the reader's language; a typed point
         // carries whatever the producer wrote, which may be nothing at all.
         let rowTitle: string;
@@ -124,6 +150,18 @@ export const ConcertDayPlan = ({
                 >
                   {entry.item.description}
                 </Text>
+              )}
+              {pointVenue && (
+                // Its own line, because it is the reason this row is not at the
+                // venue: a tap opens the map and the route from wherever the
+                // singer is standing.
+                <div className="mt-2 flex">
+                  <LocationPreview
+                    locationRef={pointVenue}
+                    variant="badge"
+                    className="max-w-full border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-parchment"
+                  />
+                </div>
               )}
             </div>
           </div>

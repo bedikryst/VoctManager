@@ -20,6 +20,7 @@ import { AnimatePresence } from "framer-motion";
 
 import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { RunSheetItem } from "@/shared/types";
+import type { SelectOption } from "@/shared/ui/primitives/Select";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 import {
   isDayWindow,
@@ -34,6 +35,8 @@ import { RunSheetRow } from "./RunSheetRow";
 
 interface DayTimelineProps {
   readonly entries: readonly DayTimelineEntry[];
+  /** Saved venues a point can be sent to; owned by the tab that queries them. */
+  readonly locationOptions: readonly SelectOption[];
   readonly onUpdate: (
     id: string,
     field: keyof RunSheetItem,
@@ -41,6 +44,8 @@ interface DayTimelineProps {
   ) => void;
   readonly onCommitOrder: () => void;
   readonly onRemove: (id: string) => void;
+  /** Opens the venue editor for one row; the new venue lands in its picker. */
+  readonly onCreatePlace: (id: string) => void;
   /** `yyyy-MM-dd` of the concert, for dating an anchor that falls elsewhere. */
   readonly concertDate: string | null;
   /** Same shape, for the call time — the only anchor that can move days. */
@@ -52,9 +57,11 @@ interface DayTimelineProps {
 
 export const DayTimeline = ({
   entries,
+  locationOptions,
   onUpdate,
   onCommitOrder,
   onRemove,
+  onCreatePlace,
   concertDate,
   callDate,
   eventKind,
@@ -70,9 +77,11 @@ export const DayTimeline = ({
               <RunSheetRow
                 key={String(entry.item.id)}
                 item={entry.item}
+                locationOptions={locationOptions}
                 onUpdate={onUpdate}
                 onCommitOrder={onCommitOrder}
                 onRemove={onRemove}
+                onCreatePlace={onCreatePlace}
               />
             );
           }

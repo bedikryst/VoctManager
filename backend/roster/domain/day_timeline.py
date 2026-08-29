@@ -40,7 +40,11 @@ MINUTES_PER_DAY = 24 * 60
 # Run-sheet titles arrive under whichever key the editor used at the time; the
 # field has never been validated, so every shape it has shipped with still reads.
 _TITLE_KEYS = ('title', 'label', 'task', 'activity', 'name')
-_DESCRIPTION_KEYS = ('description', 'notes', 'details')
+# ``location`` is the same mechanism, one concept later: rows once carried a
+# free-text place ("Scena", "Foyer") that no editor ever offered, and a room
+# inside the venue is what a description says. A point's actual venue is
+# ``location_id``, which is a saved record and not text at all.
+_DESCRIPTION_KEYS = ('description', 'notes', 'details', 'location')
 
 
 class CallWindowProblem(StrEnum):
@@ -93,12 +97,22 @@ class RunSheetPoint:
     be parsed, the raw string when it could not, and empty when the row has none
     — the field is edited live, so a half-typed row is a normal state, not a
     fault.
+
+    ``location_id`` is a saved ``logistics.Location``, set only when the point
+    happens somewhere OTHER than the event's venue — the coach departure, the
+    lunch stop on the way. A stored venue rather than typed text because the
+    answer a singer needs at a car park at 6:40 is a route, and only a venue
+    carries the address one can be built from. Empty is not "unknown": a
+    run-sheet point has always meant the event's own venue, and every surface
+    reads it that way. Anything finer than a venue — a room, a door — is the
+    description's job; a second free-text place field only splits one thought
+    across two boxes.
     """
 
     time: str
     title: str
     description: str
-    location: str
+    location_id: str
 
 
 @dataclass(frozen=True)
@@ -241,7 +255,7 @@ def normalize_run_sheet(run_sheet: Any) -> list[RunSheetPoint]:
                 time=format_clock(minutes) if minutes is not None else raw_time,
                 title=title,
                 description=description,
-                location=str(item.get('location') or '').strip(),
+                location_id=str(item.get('location_id') or '').strip(),
             )
         )
     points.sort(key=lambda point: clock_sort_key(point.time))

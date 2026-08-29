@@ -70,12 +70,16 @@ class DayCardNamingTests(SimpleTestCase):
 
     def test_downbeat_row_is_named_for_the_kind(self) -> None:
         with translation.override("pl"):
-            rows = DocumentGenerator._build_timeline_rows(self._timeline(), "WEDDING")
+            rows = DocumentGenerator._build_timeline_rows(
+                self._timeline(), Project(event_kind=Project.EventKind.WEDDING)
+            )
         self.assertEqual([row["title"] for row in rows], ["Zbiórka", "Początek Mszy ślubnej"])
 
     def test_a_concert_still_says_concert(self) -> None:
         with translation.override("pl"):
-            rows = DocumentGenerator._build_timeline_rows(self._timeline(), "CONCERT")
+            rows = DocumentGenerator._build_timeline_rows(
+                self._timeline(), Project(event_kind=Project.EventKind.CONCERT)
+            )
         self.assertEqual(rows[1]["title"], "Początek koncertu")
 
     def test_masthead_and_timeline_use_one_wording(self) -> None:
@@ -89,7 +93,7 @@ class DayCardNamingTests(SimpleTestCase):
             facts = DocumentGenerator._build_masthead_facts(
                 window, self._timeline(), project, is_report=False
             )
-            rows = DocumentGenerator._build_timeline_rows(self._timeline(), "MASS")
+            rows = DocumentGenerator._build_timeline_rows(self._timeline(), project)
         self.assertEqual(facts[2]["label"], "Początek Mszy")
         self.assertEqual(rows[1]["title"], facts[2]["label"])
 

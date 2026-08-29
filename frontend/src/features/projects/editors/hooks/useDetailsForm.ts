@@ -77,6 +77,9 @@ const normalizeRunSheetItem = (
   time: typeof item.time === "string" ? item.time : "",
   title: typeof item.title === "string" ? item.title : "",
   description: typeof item.description === "string" ? item.description : "",
+  // Empty means the event's own venue, so the cleared picker stores "" rather
+  // than dropping the key — the two have to look the same to the dirty check.
+  location_id: typeof item.location_id === "string" ? item.location_id : "",
 });
 
 const sortRunSheetByTime = (items: readonly RunSheetItem[]): RunSheetItem[] =>
@@ -92,6 +95,7 @@ const toComparableRunSheet = (
       time: item.time || "",
       title: item.title || "",
       description: item.description || "",
+      location_id: item.location_id || "",
     })),
   );
 
@@ -256,6 +260,7 @@ export const useDetailsForm = (
           }),
           title: "",
           description: "",
+          location_id: "",
         },
       ]),
     );
@@ -321,10 +326,14 @@ export const useDetailsForm = (
     );
 
     try {
+      // Rebuilt key by key rather than spread: the row also carries a client-side
+      // id the stored JSON has no use for. Anything a row is meant to keep has to
+      // be listed HERE or it is dropped on save without a word.
       const sanitizedRunSheet = sortRunSheetByTime(runSheet).map((item) => ({
         time: item.time || "",
         title: item.title || "",
         description: item.description || "",
+        location_id: item.location_id || "",
       }));
 
       const safeDateTimeStr =

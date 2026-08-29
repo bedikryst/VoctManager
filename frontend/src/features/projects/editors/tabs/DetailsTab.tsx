@@ -14,7 +14,7 @@
  * @module features/projects/editors/tabs/DetailsTab
  */
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Clock,
@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 
 import { useLocations } from "@/features/logistics/api/logistics.queries";
+import { LocationEditorPanel } from "@/features/logistics/components/LocationEditorPanel";
+import type { LocationDto } from "@/features/logistics/types/logistics.dto";
 import type { Project } from "@/shared/types";
 import {
   PROJECT_EVENT_KIND,
@@ -91,6 +93,23 @@ export const DetailsTab = ({
 
   const { data: locationsData } = useLocations();
   const { data: artists } = useProjectArtistsDictionary();
+
+  /**
+   * The run-sheet row waiting for a venue that does not exist yet. Held here
+   * rather than in the row so the editor opens once, over the whole tab: the
+   * alternative — sending the producer to the logistics module — costs them
+   * every unsaved field on this form.
+   */
+  const [placeDraftRowId, setPlaceDraftRowId] = useState<string | null>(null);
+
+  const handleCreatedPlace = useCallback(
+    (created: LocationDto): void => {
+      if (placeDraftRowId) {
+        handleUpdateRunSheetItem(placeDraftRowId, "location_id", created.id);
+      }
+    },
+    [placeDraftRowId, handleUpdateRunSheetItem],
+  );
 
   const locationOptions = useMemo<SelectOption[]>(
     () =>
@@ -534,9 +553,11 @@ export const DetailsTab = ({
               {hasDayPlan ? (
                 <DayTimeline
                   entries={timelineEntries}
+                  locationOptions={locationOptions}
                   onUpdate={handleUpdateRunSheetItem}
                   onCommitOrder={handleCommitRunSheetOrder}
                   onRemove={handleRemoveRunSheetItem}
+                  onCreatePlace={setPlaceDraftRowId}
                   callDate={readInputDate(formData.call_time)}
                   concertDate={readInputDate(formData.date_time)}
                   eventKind={formData.event_kind}
@@ -727,6 +748,15 @@ export const DetailsTab = ({
           </SectionCard>
         </div>
       </form>
+
+      {/* Portalled, so it lies over this tab instead of navigating away from a
+          form that has not been saved. */}
+      <LocationEditorPanel
+        isOpen={placeDraftRowId !== null}
+        onClose={() => setPlaceDraftRowId(null)}
+        location={null}
+        onCreated={handleCreatedPlace}
+      />
     </div>
   );
 };

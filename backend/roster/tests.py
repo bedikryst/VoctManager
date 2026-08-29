@@ -5536,6 +5536,66 @@ class ConcertDaySheetTests(APITestCase):
         self.assertEqual([row["is_anchor"] for row in rows], [True, False, False, False, True])
         self.assertIn("Początek koncertu", self._render(Audience.PRODUCTION, None))
 
+    def _run_sheet_row(self, title: str) -> dict:
+        rows = self._build_context(Audience.PRODUCTION, None)["day_timeline"]
+        return next(row for row in rows if row["title"] == title)
+
+    def test_a_point_elsewhere_prints_its_own_venue(self) -> None:
+        """The whole reason the field exists: the coach leaves from a car park
+        nobody can find from the concert address."""
+        from logistics.models import Location
+
+        car_park = Location.objects.create(
+            name="Parking pod Wawelem", category="PARKING",
+            formatted_address="Powiśle 6, Kraków", timezone="Europe/Warsaw",
+        )
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "07:00", "title": "Wyjazd autokaru", "location_id": str(car_park.id)},
+        ]
+        self.project.save(update_fields=["run_sheet"])
+
+        row = self._run_sheet_row("Wyjazd autokaru")
+        self.assertEqual(row["venue_name"], "Parking pod Wawelem")
+        self.assertIn("Powiśle 6", row["venue_address"])
+        self.assertTrue(row["venue_map_url"])
+
+    def test_a_point_at_the_event_venue_says_nothing_about_place(self) -> None:
+        """A run-sheet point has always meant the event's venue. Naming it on
+        every row would repeat one church twenty times and bury the one row that
+        sends the reader somewhere else."""
+        from logistics.models import Location
+
+        venue = Location.objects.create(
+            name="Kościół św. Anny", category="CHURCH",
+            formatted_address="Grodzka 1, Kraków", timezone="Europe/Warsaw",
+        )
+        self.project.location = venue
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "17:00", "title": "Otwarcie kościoła", "location_id": str(venue.id)},
+        ]
+        self.project.save(update_fields=["run_sheet", "location"])
+
+        self.assertEqual(self._run_sheet_row("Otwarcie kościoła")["venue_name"], "")
+
+    def test_an_unresolvable_place_leaves_the_row_standing(self) -> None:
+        """`location_id` lives in unvalidated JSON and carries no referential
+        integrity. A venue archived after the day was planned — or a value that
+        was never a UUID — must cost the row its chip, never the document."""
+        self._pin_concert_day()
+        self.project.run_sheet = [
+            *self.project.run_sheet,
+            {"time": "07:00", "title": "Zbiórka pod szkołą", "location_id": "not-a-uuid"},
+            {"time": "07:30", "title": "Postój", "location_id": str(uuid.uuid4())},
+        ]
+        self.project.save(update_fields=["run_sheet"])
+
+        self.assertEqual(self._run_sheet_row("Zbiórka pod szkołą")["venue_name"], "")
+        self.assertEqual(self._run_sheet_row("Postój")["venue_name"], "")
+
     def test_day_card_masthead_closes_the_day_from_the_timeline(self) -> None:
         """The fourth cell is the last planned moment, taken from the merged
         axis; the report keeps the venue there, because its reader is at a desk
@@ -6255,7 +6315,7 @@ class DayTimelineContractTests(SimpleTestCase):
                         time=point.get("time", ""),
                         title=point["title"],
                         description="",
-                        location="",
+                        location_id="",
                     )
                     for point in case["points"]
                 ]

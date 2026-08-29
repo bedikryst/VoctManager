@@ -26,6 +26,7 @@ template can only concatenate the two.
 
 from __future__ import annotations
 
+import uuid
 from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from enum import StrEnum
@@ -44,6 +45,7 @@ from archive.services.voice_scope import requirements_for_edition, tracks_for_ed
 from core.greetings import apply_vocative_rule
 from core.voice_labels import collapse_voice_labels
 from logistics.address import address_parts
+from logistics.models import Location
 from roster.cast_order import (
     VOICE_LINE_ORDER,
     VOICE_TYPE_ORDER,
@@ -855,9 +857,7 @@ class DocumentGenerator:
             ),
             'dress_code_entries': dress_code_entries,
             'preparation_assets': preparation_assets,
-            'day_timeline': DocumentGenerator._build_timeline_rows(
-                timeline, project.event_kind
-            ),
+            'day_timeline': DocumentGenerator._build_timeline_rows(timeline, project),
             # With no points of its own the merged axis is just the two anchors,
             # which the masthead already states — the section says so in words
             # instead of restating them as a two-row table.
@@ -1233,7 +1233,7 @@ class DocumentGenerator:
                         if end is not None
                         else ''
                     ),
-                    location='',
+                    location_id='',
                 )
             )
         return moments
@@ -1848,28 +1848,77 @@ class DocumentGenerator:
         return mapping
 
     @staticmethod
+    def _resolve_point_venues(
+        timeline: Sequence[TimelineEntry],
+    ) -> dict[str, Location]:
+        """The venues the day's points send the reader to, in one query.
+
+        ``location_id`` lives inside an unvalidated JSON field, so it carries no
+        referential integrity: an id that is not a UUID, or one whose venue has
+        since been deleted, simply resolves to nothing and the row prints without
+        a place. A dangling reference must never take a call sheet down.
+        """
+        ids: list[uuid.UUID] = []
+        for entry in timeline:
+            raw = entry.point.location_id if entry.point is not None else ''
+            if not raw:
+                continue
+            try:
+                ids.append(uuid.UUID(raw))
+            except ValueError:
+                continue
+        if not ids:
+            return {}
+        return {
+            str(pk): location
+            for pk, location in Location.objects.in_bulk(ids).items()
+        }
+
+    @staticmethod
     def _build_timeline_rows(
-        timeline: list[TimelineEntry], event_kind: str
+        timeline: list[TimelineEntry], project: Project
     ) -> list[dict[str, Any]]:
         """The merged day, flattened for the template.
 
         Anchors print in the heavier voice and carry their date when they fall
         on another calendar day — an anchor hour on its own reads as concert-day
         wherever it appears, the run sheet included.
+
+        A point's own venue prints only when it is somewhere OTHER than the
+        event's: a run-sheet point has always meant the event's venue by default,
+        so naming it on every row would repeat the same church twenty times and
+        bury the one row — the coach departure, the lunch stop — that sends the
+        reader somewhere else.
         """
+        venues = DocumentGenerator._resolve_point_venues(timeline)
+        event_venue_id = str(project.location_id) if project.location_id else ''
+
         rows: list[dict[str, Any]] = []
         for entry in timeline:
             point = entry.point
+            venue = (
+                venues.get(point.location_id)
+                if point is not None and point.location_id != event_venue_id
+                else None
+            )
             rows.append(
                 {
                     'time': entry.time,
                     'title': (
                         point.title
                         if point is not None
-                        else DocumentGenerator._anchor_label(entry.kind, event_kind)
+                        else DocumentGenerator._anchor_label(
+                            entry.kind, project.event_kind
+                        )
                     ),
                     'description': point.description if point is not None else '',
-                    'location': point.location if point is not None else '',
+                    'venue_name': venue.name if venue is not None else '',
+                    'venue_address': (
+                        DocumentGenerator._format_address(venue.formatted_address)
+                        if venue is not None
+                        else ''
+                    ),
+                    'venue_map_url': DocumentGenerator._build_map_url(venue),
                     'is_anchor': entry.is_anchor,
                     'day_note': (
                         DocumentGenerator._day_offset_note(entry.day_offset)

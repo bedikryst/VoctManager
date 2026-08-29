@@ -14,8 +14,9 @@
 
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Clock, ClipboardList } from "lucide-react";
+import { Clock, ClipboardList, MapPin } from "lucide-react";
 
+import { useLocationResolver } from "@/features/logistics/hooks/useLocationResolver";
 import type { Project } from "@/shared/types";
 import { Button } from "@/shared/ui/primitives/Button";
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
@@ -46,8 +47,25 @@ export function RunSheetWidget({
   onOpenDayCard,
 }: RunSheetWidgetProps): React.JSX.Element {
   const { t } = useTranslation();
+  const { resolveLocation } = useLocationResolver();
 
   const entries = useMemo(() => buildProjectDayTimeline(project), [project]);
+
+  const eventLocationId = project.location?.id ?? null;
+
+  /**
+   * The venue a point sends people to, named only when it is not the event's own
+   * — this card is a summary, and a place repeated on every row says nothing.
+   * Plain text, never the map chip the singer's surfaces use: the whole card is
+   * one activation target (`onActivate`), and a control inside it would swallow
+   * the tap that opens the editor.
+   */
+  const venueName = (locationId?: string | null): string => {
+    if (!locationId || locationId === eventLocationId) {
+      return "";
+    }
+    return resolveLocation(locationId)?.name ?? "";
+  };
 
   // The anchors frame the day; they are not a plan. A project with a call time
   // and a downbeat and nothing between them has an empty run sheet, and says so.
@@ -83,6 +101,8 @@ export function RunSheetWidget({
         <ul className="relative ml-1 space-y-4 border-l border-hairline-strong pl-5">
           {entries.slice(0, DISPLAY_LIMIT).map((entry, index) => {
             if (entry.kind === "point") {
+              const place = venueName(entry.item.location_id);
+
               return (
                 <li key={entry.item.id || `point-${index}`} className="relative">
                   <span
@@ -106,6 +126,12 @@ export function RunSheetWidget({
                       <Text as="span" size="sm" weight="medium">
                         {entry.item.title}
                       </Text>
+                    )}
+                    {place && (
+                      <Caption color="muted" className="inline-flex items-center gap-1">
+                        <MapPin size={11} aria-hidden="true" />
+                        {place}
+                      </Caption>
                     )}
                   </div>
                   {entry.item.description && (

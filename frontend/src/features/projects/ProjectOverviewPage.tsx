@@ -98,11 +98,17 @@ export default function ProjectOverviewPage(): React.JSX.Element {
             </Suspense>
           </StaggeredBentoItem>
           <StaggeredBentoItem>
-            <RunSheetWidget
-              project={project}
-              onEdit={go("details")}
-              onOpenDayCard={openDayCard}
-            />
+            {/* Boundary like its siblings': the day plan names the venue a point
+                sends people to, so it reads the locations dictionary and
+                suspends on a cold cache. Without one here that fallback would
+                land on the nearest ancestor and blank the whole page. */}
+            <Suspense fallback={<WidgetSkeleton />}>
+              <RunSheetWidget
+                project={project}
+                onEdit={go("details")}
+                onOpenDayCard={openDayCard}
+              />
+            </Suspense>
           </StaggeredBentoItem>
         </StaggeredBentoContainer>
 

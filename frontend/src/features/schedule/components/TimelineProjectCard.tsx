@@ -444,6 +444,7 @@ export const TimelineProjectCard = ({
                         <ConcertDayPlan
                           entries={dayEntries}
                           eventKind={proj.event_kind}
+                          eventLocationId={proj.location?.id ?? null}
                         />
                       ) : (
                         <Text
