@@ -282,10 +282,13 @@ that is a good default, not an answer for everyone.
 1. **Reading size is writing size.** The composer scales with the bubbles. Stage 4's rule —
    never read a message smaller than you were allowed to type it — is the whole reason this
    feature has a type scale of its own.
-2. **Three steps, not a slider.** The useful range is ~14–20 px; a slider on a 390 px screen
-   spends a drag target inside a scrolling stream on six distinguishable positions. (This
-   points the opposite way to the annotations pen, where a slider replaced four steps — pen
-   width is a continuous physical quantity, type size is a scale.)
+2. **Three steps, not a slider, with the default in the MIDDLE.** 14 / 16 / 18 px on touch,
+   12 / 14 / 16 with a mouse. A slider on a 390 px screen spends a drag target inside a
+   scrolling stream on six distinguishable positions. (This points the opposite way to the
+   annotations pen, where a slider replaced four steps — pen width is a continuous physical
+   quantity, type size is a scale.) The steps first shipped as 16 / 18 / 20, i.e. the default
+   AT THE FLOOR, and the reader who finds 16 px too large — the developer, on their own
+   phone — had no move to make. A scale that only corrects upwards is half a control.
 3. **Set where the problem is felt**, i.e. the conversation's own `⋯` menu — which means that
    menu stops being manager-only in `ThreadView` and gains an equivalent in `ChannelView`.
    Not app settings: you adjust reading size while reading. The menu holds a radio group and
@@ -307,10 +310,15 @@ Three things came out differently from the proposal above, each for a reason wor
   `text-[length:calc(1rem_+_var(…))] fine-pointer:text-[length:calc(0.875rem_+_var(…))]`.
   An absolute `--message-text` would have had to carry the touch/pointer split in JS, where
   stage 4 deliberately put it in CSS. As an offset, the split stays a fact about the device and
-  the step stays a choice about the reader; an unset variable renders exactly stage 4's
-  default; and the touch size never drops below 16 px at any step, which is what keeps iOS
-  from magnifying the page when the composer takes focus (`FIELD_TEXT_SCALE` in
-  `fieldShell.ts` says why).
+  the step stays a choice about the reader, and an unset variable renders exactly stage 4's
+  default.
+- **The 16 px iOS floor lives on the COMPOSER, not on the scale.** iOS magnifies the page when
+  a focused field is under 16 px and, in a standalone PWA, never zooms back out
+  (`FIELD_TEXT_SCALE` in `fieldShell.ts` says why). While the smallest step was the default,
+  the floor and the scale were the same thing; once the scale reaches below the default they
+  part, so `MESSAGE_COMPOSER_TEXT` is `MESSAGE_BODY_TEXT` with `max(0px, …)` around the step
+  on the touch branch alone. "Reading size is writing size" survives in the direction it was
+  written for — nobody reads a message smaller than they were allowed to type it.
 - **The store is external (`useSyncExternalStore`), not a hook's state.** `MessageComposer`
   measures its own height and has to re-measure when the scale moves; a prop whose only job is
   to say "re-measure" is a prop the next call site forgets. `useStickyScroll` gained a second
@@ -326,6 +334,39 @@ variants. Replacing the field shell's `text-base` in the composer therefore dele
 line-height too, and a `leading-normal` written BEFORE the size class in the same `cn()` is
 deleted by it in turn. The leading has to be unitless (so it follows the step) and has to come
 after the size.
+
+---
+
+## Verification of stages 7–9
+
+Run at 390 × 844 with a coarse pointer, against fixtures (140 messages, `has_older` true,
+a 46-character project name) since the API windowing is the thing under test and a stubbed
+one answers `?before=` and `?since=` exactly as the real one does. Both defects below were
+invisible to typecheck, lint and the suites, and neither was in the code the stages changed.
+
+**Green as specified.** "Wcześniejsze wiadomości" holds the reader's line to within 1 px
+(the message being read sat at y=173, and at y=172 after 50 messages landed above it);
+`useStickyScroll.anchorTop` measures distance-from-the-END, so nothing that changes height
+above the reader can move them. The reading size moves the bubbles and the composer together,
+the menu stays open on a pick, each entry is drawn at the size it sets, the reader keeps their
+place at the newest message across the reflow, and the choice survives a reload.
+
+**Defect 1 — the channel header spent its width on a monogram.** At 390 px the project name
+had 146 px of a 390 px row: back arrow 36 + avatar 48 + bell 44 + `⋯` 44 + four gaps + padding
+left that and no more, so "Koncert Bożonarodzeniowy w Bazylice św. Krzyża" read as "Koncert
+Bożonarod…". The avatar is a monogram GENERATED FROM the string standing next to it — unlike
+a thread's, which is a person's face — so on the phone surface it was 60 px spent restating
+the one line the header exists for. `hidden md:inline-flex`: gone exactly where
+`ConversationSurface` is mounted, kept in the desktop pane. The title goes 146 → 206 px.
+
+**Defect 2 — the composer measured itself at the size the reader had just left.** The field
+sets its own height from `scrollHeight` in a layout effect, but `fieldShellVariants` carries
+`transition-all duration-300`, so the new font-size arrived over 300 ms while the measurement
+was taken at commit: raising the reading size left the composer at its old height (50 px
+against a 54 px line box) until the next keystroke, and lowering it left the field 6 px too
+tall. Fixed where the scale is already overridden, not in the shared shell — the composer
+narrows its own `transition-property` to what the shell actually animates plus the height it
+sets itself, so the type metrics land instantly and the effect reads the truth.
 
 ---
 
