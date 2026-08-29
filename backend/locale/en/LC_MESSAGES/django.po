@@ -3211,3 +3211,11 @@ msgstr ""
 #: templates/projects/call_sheet_pdf.html
 msgid "The programme for this event has not been written out yet."
 msgstr ""
+
+#: logistics/models.py:21
+msgid "Restaurant"
+msgstr ""
+
+#: logistics/models.py:22
+msgid "Car park"
+msgstr ""

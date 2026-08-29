@@ -5,16 +5,28 @@
 import { z } from "zod";
 import type { LocationCategory } from "@/shared/types";
 
-const LocationCategoryEnum = z.enum([
-  "CONCERT_HALL",
-  "CHURCH",
-  "REHEARSAL_ROOM",
-  "HOTEL",
-  "AIRPORT",
-  "TRANSIT_STATION",
-  "WORKSPACE",
-  "OTHER",
-]);
+/**
+ * The category union as a runtime tuple, exhaustively. The `satisfies` is the
+ * point: this list used to be typed out by hand, so adding a category to
+ * `LocationCategory` left the create form silently rejecting the very value its
+ * own dropdown offered. Now a missing key is a compile error.
+ */
+const LOCATION_CATEGORY_KEYS = {
+  CONCERT_HALL: true,
+  CHURCH: true,
+  REHEARSAL_ROOM: true,
+  HOTEL: true,
+  AIRPORT: true,
+  TRANSIT_STATION: true,
+  RESTAURANT: true,
+  PARKING: true,
+  WORKSPACE: true,
+  OTHER: true,
+} satisfies Record<LocationCategory, true>;
+
+const LocationCategoryEnum = z.enum(
+  Object.keys(LOCATION_CATEGORY_KEYS) as [LocationCategory, ...LocationCategory[]],
+);
 
 export const locationFormSchema = z.object({
   name: z.string().min(1, "logistics.validation.name_required"),

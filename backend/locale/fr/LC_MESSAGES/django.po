@@ -4582,3 +4582,11 @@ msgstr "Membre introuvable."
 #: core/preview.py:86
 msgid "This member is archived, so they have no current view."
 msgstr "Cette personne est archivée : elle n'a plus de vue actuelle."
+
+#: logistics/models.py:21
+msgid "Restaurant"
+msgstr "Restaurant"
+
+#: logistics/models.py:22
+msgid "Car park"
+msgstr "Parking"

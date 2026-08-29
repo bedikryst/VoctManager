@@ -4558,3 +4558,11 @@ msgstr "Nie ma takiej osoby."
 #: core/preview.py:86
 msgid "This member is archived, so they have no current view."
 msgstr "Ta osoba jest zarchiwizowana, więc nie ma już aktualnego widoku."
+
+#: logistics/models.py:21
+msgid "Restaurant"
+msgstr "Restauracja"
+
+#: logistics/models.py:22
+msgid "Car park"
+msgstr "Parking"

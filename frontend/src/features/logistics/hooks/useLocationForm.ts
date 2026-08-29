@@ -29,6 +29,13 @@ export const useLocationForm = (
   location: LocationDto | null,
   isOpen: boolean,
   onClose: () => void,
+  /**
+   * Hands the freshly created venue back to whoever opened the editor to fill a
+   * field — the run-sheet row that needed a lunch stop. Without it the producer
+   * saves a venue and then has to go find it in a dropdown they were already in.
+   * Never fires on an edit: nothing is waiting for a record that already existed.
+   */
+  onCreated?: (created: LocationDto) => void,
 ) => {
   const { t } = useTranslation();
   const createMutation = useCreateLocation();
@@ -90,10 +97,11 @@ export const useLocationForm = (
           id: toastId,
         });
       } else {
-        await createMutation.mutateAsync(data);
+        const created = await createMutation.mutateAsync(data);
         toast.success(t("logistics.toast.create_success", "Dodano!"), {
           id: toastId,
         });
+        onCreated?.(created);
       }
       onClose();
     } catch (error) {

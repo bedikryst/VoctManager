@@ -37,6 +37,8 @@ interface LocationEditorPanelProps {
   isOpen: boolean;
   onClose: () => void;
   location: LocationDto | null;
+  /** Fires with the new venue when this opened to fill a field elsewhere. */
+  onCreated?: (created: LocationDto) => void;
 }
 
 const FORM_ID = "logistics-location-editor-form";
@@ -48,13 +50,14 @@ export function LocationEditorPanel({
   isOpen,
   onClose,
   location,
+  onCreated,
 }: LocationEditorPanelProps): React.ReactPortal | null {
   const { t } = useTranslation();
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
 
   const { form, handleGooglePlaceSelect, isDirty, isSubmitting, onSubmit } =
-    useLocationForm(location, isOpen, onClose);
+    useLocationForm(location, isOpen, onClose, onCreated);
 
   useEffect(() => {
     setMounted(true);

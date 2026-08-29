@@ -4,11 +4,11 @@
  * Centralises i18n keys, lucide icons, and the shared accent so every
  * downstream surface (rows, chips, filters, atlas pins) speaks the same dialect.
  *
- * Eight categories, five accents — deliberately. The accent says what KIND of
- * place this is (a stage, a sanctuary, our own rooms, a transfer point, a bed);
- * the icon says which one. Chasing eight distinct colours is what put a hotel
- * in `ethereal-crimson`, so every hotel pin on the atlas wore the colour this
- * product reserves for something being wrong.
+ * Ten categories, five accents — deliberately. The accent says what KIND of
+ * place this is (a stage, a sanctuary, our own rooms, a transfer point, a place
+ * that hosts us); the icon says which one. Chasing a distinct colour per
+ * category is what put a hotel in `ethereal-crimson`, so every hotel pin on the
+ * atlas wore the colour this product reserves for something being wrong.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/constants/locationCategories
  */
@@ -19,11 +19,13 @@ import {
   Briefcase,
   Building2,
   Church,
+  CircleParking,
   Hotel,
   MapPin,
   Music,
   Plane,
   TrainFront,
+  UtensilsCrossed,
 } from "lucide-react";
 
 import type { LocationCategory } from "@/shared/types";
@@ -120,6 +122,28 @@ const LOCATION_CATEGORY_DEFINITIONS: LocationCategoryDefinition[] = [
     descriptionKey: "logistics.category_descriptions.transit",
     defaultDescription: "Stacje kolejowe, autobusowe i węzły transferowe.",
     icon: TrainFront,
+    accent: "graphite",
+  },
+  {
+    value: "RESTAURANT",
+    labelKey: "logistics.categories.restaurant",
+    defaultLabel: "Restauracja",
+    pluralKey: "logistics.categories_plural.restaurant",
+    defaultPlural: "Restauracje",
+    descriptionKey: "logistics.category_descriptions.restaurant",
+    defaultDescription: "Miejsca posiłków zespołu w dniu wyjazdu.",
+    icon: UtensilsCrossed,
+    accent: "incense",
+  },
+  {
+    value: "PARKING",
+    labelKey: "logistics.categories.parking",
+    defaultLabel: "Parking",
+    pluralKey: "logistics.categories_plural.parking",
+    defaultPlural: "Parkingi",
+    descriptionKey: "logistics.category_descriptions.parking",
+    defaultDescription: "Miejsca postoju i punkty odbioru autokaru.",
+    icon: CircleParking,
     accent: "graphite",
   },
   {

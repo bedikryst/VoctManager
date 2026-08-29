@@ -7,6 +7,11 @@ from django.utils.translation import gettext_lazy as _
 class LocationCategory(models.TextChoices):
     """
     Defines the standard categories for global choir logistics.
+
+    A category names what a place permanently IS, never the part it plays on one
+    given day: the same car park is a meeting point in June and plain parking in
+    September, and the run-sheet row that points at it is what names that role.
+    That is why there is no MEETING_POINT here.
     """
     CONCERT_HALL = "CONCERT_HALL", _("Concert Hall")
     CHURCH = "CHURCH", _("Church")
@@ -14,6 +19,8 @@ class LocationCategory(models.TextChoices):
     HOTEL = "HOTEL", _("Hotel")
     AIRPORT = "AIRPORT", _("Airport")
     TRANSIT_STATION = "TRANSIT_STATION", _("Transit Station")
+    RESTAURANT = "RESTAURANT", _("Restaurant")
+    PARKING = "PARKING", _("Car park")
     WORKSPACE = "WORKSPACE", _("Private Workspace")
     OTHER = "OTHER", _("Other")
 
