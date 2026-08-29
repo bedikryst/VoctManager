@@ -210,6 +210,7 @@ const MessagesPage: React.FC = () => {
     // replaces (13rem) was ~70px short on a phone and ~90px long on a desktop.
     <div className="mx-auto flex h-[calc(100dvh-var(--nav-dock-h)-3rem)] w-full max-w-300 flex-col">
       <PageHeader
+        size="compact"
         roleText={t("messages.eyebrow", "Komunikacja")}
         title={t("messages.title", "Wiadomości")}
         className={cn("shrink-0", isImmersive && "hidden")}

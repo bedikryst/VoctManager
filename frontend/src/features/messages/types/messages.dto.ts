@@ -46,8 +46,34 @@ export interface ThreadSummary {
   snippet: string;
 }
 
+/**
+ * What the server says about the window it just sent. `has_older` drives the
+ * "earlier messages" affordance; `reset` is the answer to a poll that had
+ * fallen too far behind to be given a delta — the client must drop what it
+ * holds rather than append, or the conversation gains a hole in its middle.
+ */
+export interface MessageWindowMeta {
+  has_older: boolean;
+  reset: boolean;
+}
+
+/** The `GET …/messages/?before=` payload: one window and nothing else. */
+export interface MessageWindow<T> {
+  messages: T[];
+  messages_page: MessageWindowMeta;
+}
+
+/** Cursors a client may put on a conversation read. Mutually exclusive in practice. */
+export interface MessageWindowParams {
+  /** Walk backwards from this message id (the oldest one the client holds). */
+  before?: string;
+  /** Only what arrived after this instant — the poll path. */
+  since?: string;
+}
+
 export type ThreadDetail = Omit<ThreadSummary, "snippet"> & {
   messages: MessageDTO[];
+  messages_page: MessageWindowMeta;
 };
 
 export interface CreateThreadPayload {
@@ -107,4 +133,11 @@ export interface ChannelSummary {
 export type ChannelDetail = Omit<ChannelSummary, "snippet"> & {
   my_push_enabled: boolean;
   messages: ChannelMessageDTO[];
+  messages_page: MessageWindowMeta;
+  /**
+   * Every pinned announcement, whatever window it was written in. An
+   * announcement from March is precisely what the banner exists for, and it
+   * stopped being reachable from `messages` when `messages` became a tail.
+   */
+  pinned_messages: ChannelMessageDTO[];
 };

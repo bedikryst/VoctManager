@@ -1,8 +1,9 @@
 /**
  * @file ChannelView.tsx
  * @description Active project-channel pane: header (project, member count, per-user push
- * toggle), pinned-announcements banner, day-grouped group message stream, and a composer
- * everyone can post to. Marks read on open. Async by design — no presence/typing.
+ * toggle, overflow menu), pinned-announcements banner, day-grouped group message stream,
+ * and a composer everyone can post to. Marks read on open. Async by design — no
+ * presence/typing.
  *
  * The stream renders the same `MessageBubble` a 1:1 thread does. It used to draw
  * a private row — full width, bordered, an avatar on every message, `is_mine`
@@ -15,26 +16,35 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Bell, BellOff, Pin, PinOff } from "lucide-react";
+import { ArrowLeft, Bell, BellOff, MoreVertical, Pin, PinOff } from "lucide-react";
 
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/shared/ui/composites/DropdownMenu";
 import { Heading, Text, Label } from "@/shared/ui/primitives/typography";
 import { Button } from "@/shared/ui/primitives/Button";
 import { cn } from "@/shared/lib/utils";
 import {
   useChannel,
   useMarkChannelRead,
+  useOlderChannelMessages,
   usePinChannelMessage,
   usePostChannelMessage,
   useSetChannelPush,
 } from "../api/messages.queries";
 import { startsSenderRun } from "../lib/messageRuns";
+import { useMessageTextStep, useMessageTextStyle } from "../lib/messageTextScale";
 import { dayLabel, groupMessagesByDay, isOptimisticId } from "../lib/time";
 import { useStickyScroll } from "../lib/useStickyScroll";
 import type { ChannelMessageDTO, UserBrief } from "../types/messages.dto";
-import { ConversationLoading } from "./ConversationLoading";
+import { ConversationGate } from "./ConversationGate";
+import { EarlierMessages } from "./EarlierMessages";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
+import { MessageTextSizeControl } from "./MessageTextSizeControl";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
 
 /**
@@ -54,14 +64,17 @@ interface ChannelViewProps {
 
 export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, me, onBack }) => {
   const { t } = useTranslation();
-  const { data: channel, isLoading } = useChannel(channelId);
+  const { data: channel, isError, refetch } = useChannel(channelId);
   const markRead = useMarkChannelRead();
   const postMessage = usePostChannelMessage(channelId, me);
   const setPush = useSetChannelPush(channelId);
   const pinMessage = usePinChannelMessage(channelId);
+  const olderMessages = useOlderChannelMessages(channelId);
 
   const [body, setBody] = React.useState("");
-  const stream = useStickyScroll(channel?.messages.length ?? 0);
+  const textStep = useMessageTextStep();
+  const textStyle = useMessageTextStyle();
+  const stream = useStickyScroll(channel?.messages.length ?? 0, textStep);
 
   React.useEffect(() => {
     if (channel?.unread) {
@@ -78,17 +91,30 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
     postMessage.mutate(trimmed);
   };
 
-  if (isLoading || !channel) {
+  const handleLoadOlder = () => {
+    const oldest = channel?.messages[0];
+    if (!oldest || olderMessages.isPending) return;
+    olderMessages.mutate(oldest.id, { onSuccess: stream.anchorTop });
+  };
+
+  // Only the empty hand opens the gate: a failed poll over a stream already on
+  // screen leaves the stream, because the interval will try again by itself.
+  if (!channel) {
     return (
-      <ConversationLoading
-        message={t("messages.channel.loading", "Ładowanie kanału…")}
+      <ConversationGate
+        status={isError ? "failed" : "checking"}
+        loadingMessage={t("messages.channel.loading", "Ładowanie kanału…")}
+        onRetry={() => void refetch()}
         onBack={onBack}
       />
     );
   }
 
-  const pinned = channel.messages.filter((m) => m.is_pinned);
+  // Served as its own list: an announcement pinned in March is what the banner
+  // is for, and the stream now carries only the window around the newest message.
+  const pinned = channel.pinned_messages;
   const groups = groupMessagesByDay(channel.messages);
+  const menuLabel = t("messages.conversation.actions", "Opcje rozmowy");
 
   const renderPinToggle = (message: ChannelMessageDTO): React.ReactNode => {
     if (!isManager || isOptimisticId(message.id)) return undefined;
@@ -117,7 +143,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    // The reading size is scoped to the conversation and set on its root, so
+    // the bubbles and the composer inside it move together and nothing else does.
+    <div className="flex h-full min-h-0 flex-col" style={textStyle}>
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-hairline-strong px-3 py-3 sm:px-5 sm:py-4">
         {onBack && (
@@ -165,6 +193,27 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
         >
           {channel.my_push_enabled ? <Bell size={16} /> : <BellOff size={16} />}
         </Button>
+
+        {/* The thread's overflow menu, minus the triage a channel has none of.
+            A channel is the longer read of the two, so the reading size has to
+            be reachable from inside it as well. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="icon"
+              size="icon"
+              type="button"
+              className="shrink-0"
+              aria-label={menuLabel}
+              title={menuLabel}
+            >
+              <MoreVertical size={18} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <MessageTextSizeControl />
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Pinned banner */}
@@ -192,6 +241,9 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
         onScroll={stream.onScroll}
         className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-3 py-3 no-scrollbar sm:px-5 sm:py-4"
       >
+        {channel.messages_page.has_older && (
+          <EarlierMessages isLoading={olderMessages.isPending} onLoad={handleLoadOlder} />
+        )}
         {groups.map((group) => (
           <React.Fragment key={group.key}>
             <DayDivider label={dayLabel(group.iso, t)} />

@@ -1,8 +1,9 @@
 /**
  * @file ThreadView.tsx
- * @description Active 1:1 conversation: header (counterpart + a triage menu for
- * managers), day-grouped scrolling history, and a composer with optimistic send.
- * Marks the thread read on open. Async by design — no presence/typing indicators.
+ * @description Active 1:1 conversation: header (counterpart + an overflow menu
+ * carrying the reading size, and triage on top of it for managers), day-grouped
+ * scrolling history, and a composer with optimistic send. Marks the thread read
+ * on open. Async by design — no presence/typing indicators.
  *
  * It fills whatever chassis it is handed and knows about neither: a `GlassCard`
  * pane on a desktop, `ConversationSurface` on a phone. Both give it a bounded
@@ -29,6 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/composites/DropdownMenu";
 import { Heading, Label } from "@/shared/ui/primitives/typography";
@@ -36,18 +38,22 @@ import { Badge } from "@/shared/ui/primitives/Badge";
 import { Button } from "@/shared/ui/primitives/Button";
 import {
   useMarkThreadRead,
+  useOlderThreadMessages,
   usePostMessage,
   useThread,
   useUpdateThread,
 } from "../api/messages.queries";
 import { useProjectsLite } from "../api/projects.lite";
 import { hasSeveralCounterparts, startsSenderRun } from "../lib/messageRuns";
+import { useMessageTextStep, useMessageTextStyle } from "../lib/messageTextScale";
 import { dayLabel, groupMessagesByDay } from "../lib/time";
 import { useStickyScroll } from "../lib/useStickyScroll";
 import type { UserBrief } from "../types/messages.dto";
-import { ConversationLoading } from "./ConversationLoading";
+import { ConversationGate } from "./ConversationGate";
+import { EarlierMessages } from "./EarlierMessages";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer } from "./MessageComposer";
+import { MessageTextSizeControl } from "./MessageTextSizeControl";
 import { DayDivider } from "@/shared/ui/composites/DayDivider";
 
 interface ThreadViewProps {
@@ -64,14 +70,17 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   onBack,
 }) => {
   const { t } = useTranslation();
-  const { data: thread, isLoading } = useThread(threadId);
+  const { data: thread, isError, refetch } = useThread(threadId);
   const markRead = useMarkThreadRead();
   const updateThread = useUpdateThread(threadId);
   const postMessage = usePostMessage(threadId, me);
+  const olderMessages = useOlderThreadMessages(threadId);
   const { data: projects = [] } = useProjectsLite(thread?.context_type === "PROJECT");
 
   const [body, setBody] = React.useState("");
-  const stream = useStickyScroll(thread?.messages.length ?? 0);
+  const textStep = useMessageTextStep();
+  const textStyle = useMessageTextStyle();
+  const stream = useStickyScroll(thread?.messages.length ?? 0, textStep);
 
   // Mark read once whenever the thread surfaces as unread.
   React.useEffect(() => {
@@ -91,10 +100,24 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
     postMessage.mutate(trimmed);
   };
 
-  if (isLoading || !thread) {
+  const handleLoadOlder = () => {
+    const oldest = thread?.messages[0];
+    if (!oldest || olderMessages.isPending) return;
+    // Measured on the way in, applied on the way out: the callback lands before
+    // React commits the prepend, which is what makes the anchor exact.
+    olderMessages.mutate(oldest.id, { onSuccess: stream.anchorTop });
+  };
+
+  // The gate is for having NOTHING to show. A poll that fails over a history
+  // already on screen is not an error state — the messages in hand are still
+  // true, the interval retries on its own, and replacing them with an alarm
+  // would make a lift ride cost the reader their conversation.
+  if (!thread) {
     return (
-      <ConversationLoading
-        message={t("messages.thread.loading", "Ładowanie rozmowy…")}
+      <ConversationGate
+        status={isError ? "failed" : "checking"}
+        loadingMessage={t("messages.thread.loading", "Ładowanie rozmowy…")}
+        onRetry={() => void refetch()}
         onBack={onBack}
       />
     );
@@ -109,6 +132,7 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
   // and then "who wrote this" is a real question the header cannot answer — so it
   // borrows the channel's identity treatment. With one counterpart it stays off.
   const namesSenders = hasSeveralCounterparts(thread.messages);
+  const menuLabel = t("messages.conversation.actions", "Opcje rozmowy");
   const claimLabel = t("messages.thread.claim", "Przejmij");
   const releaseLabel = t("messages.thread.release", "Do kolejki");
   const statusLabel = isResolved
@@ -126,7 +150,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
       : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    // The reading size is scoped to the conversation and set on its root, so
+    // the bubbles and the composer inside it move together and nothing else does.
+    <div className="flex h-full min-h-0 flex-col" style={textStyle}>
       {/* Header */}
       <div className="flex shrink-0 items-center gap-3 border-b border-hairline-strong px-3 py-3 sm:px-5 sm:py-4">
         {onBack && (
@@ -190,51 +216,57 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
 
         {/* Triage is two or three occasional actions on a conversation, which is
             what an overflow menu is for. As labelled buttons they were ~100px of
-            the ~230px the name beside them had to live in. */}
-        {isManager && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="icon"
-                size="icon"
-                type="button"
-                className="shrink-0"
-                aria-label={t("messages.thread.actions", "Akcje wątku")}
-                title={t("messages.thread.actions", "Akcje wątku")}
-              >
-                <MoreVertical size={18} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {ownedByMe ? (
+            the ~230px the name beside them had to live in. The menu is no longer
+            manager-only: the reading size below it is everybody's, and it is set
+            here because that is where the reader feels it. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="icon"
+              size="icon"
+              type="button"
+              className="shrink-0"
+              aria-label={menuLabel}
+              title={menuLabel}
+            >
+              <MoreVertical size={18} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {isManager && (
+              <>
+                {ownedByMe ? (
+                  <DropdownMenuItem
+                    icon={<Undo2 size={15} />}
+                    disabled={updateThread.isPending}
+                    onSelect={() => updateThread.mutate({ assignee_id: null })}
+                  >
+                    {releaseLabel}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    icon={<Hand size={15} />}
+                    disabled={updateThread.isPending}
+                    onSelect={() => updateThread.mutate({ assignee_id: me.id })}
+                  >
+                    {claimLabel}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
-                  icon={<Undo2 size={15} />}
+                  icon={isResolved ? <RotateCcw size={15} /> : <Check size={15} />}
                   disabled={updateThread.isPending}
-                  onSelect={() => updateThread.mutate({ assignee_id: null })}
+                  onSelect={() =>
+                    updateThread.mutate({ status: isResolved ? "OPEN" : "RESOLVED" })
+                  }
                 >
-                  {releaseLabel}
+                  {statusLabel}
                 </DropdownMenuItem>
-              ) : (
-                <DropdownMenuItem
-                  icon={<Hand size={15} />}
-                  disabled={updateThread.isPending}
-                  onSelect={() => updateThread.mutate({ assignee_id: me.id })}
-                >
-                  {claimLabel}
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                icon={isResolved ? <RotateCcw size={15} /> : <Check size={15} />}
-                disabled={updateThread.isPending}
-                onSelect={() =>
-                  updateThread.mutate({ status: isResolved ? "OPEN" : "RESOLVED" })
-                }
-              >
-                {statusLabel}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <MessageTextSizeControl />
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Messages */}
@@ -243,6 +275,9 @@ export const ThreadView: React.FC<ThreadViewProps> = ({
         onScroll={stream.onScroll}
         className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-3 py-3 no-scrollbar sm:px-5 sm:py-4"
       >
+        {thread.messages_page.has_older && (
+          <EarlierMessages isLoading={olderMessages.isPending} onLoad={handleLoadOlder} />
+        )}
         {groups.map((group) => (
           <React.Fragment key={group.key}>
             <DayDivider label={dayLabel(group.iso, t)} />

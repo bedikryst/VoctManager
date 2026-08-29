@@ -4,19 +4,26 @@
              sees own threads; a manager sees only threads they own plus the shared
              unassigned queue — assignee gates visibility), thread/message creation
              delegated to MessagingService, and lightweight triage (assignee/status)
-             for managers. List is unpaginated to mirror the notifications inbox and
-             the 30s frontend polling model.
+             for managers. The inbox lists are unpaginated to mirror the notifications
+             inbox and the 30s frontend polling model; a CONVERSATION is windowed
+             (see selectors.paginate_messages), because that one is polled every 10s
+             and its history only grows.
 @architecture Enterprise SaaS 2026
 @module messaging/views
 """
 import logging
+from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from django.contrib.auth import get_user_model
-from django.db.models import Count, F, OuterRef, Prefetch, Q, QuerySet, Subquery
+from django.db.models import Count, F, OuterRef, Q, QuerySet, Subquery
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -36,7 +43,7 @@ from .models import (
     ThreadReadState,
     ThreadStatus,
 )
-from .selectors import user_brief
+from .selectors import paginate_messages, user_brief
 from .serializers import (
     ChannelDetailSerializer,
     ChannelListSerializer,
@@ -50,11 +57,39 @@ from .serializers import (
     ThreadDetailSerializer,
     ThreadListSerializer,
     ThreadUpdateSerializer,
+    message_page_meta,
 )
 from .services import ChannelService, MessagingService
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
+
+
+def _window_params(request: Request) -> tuple[UUID | None, datetime | None]:
+    """
+    The cursor pair off the query string: ``before`` (a message id to walk back
+    from) and ``since`` (the moment a poll already knows about). Both are values
+    this API itself handed the client, so a malformed one is a client bug and
+    answers 400 rather than quietly serving the whole history instead.
+    """
+    before: UUID | None = None
+    since: datetime | None = None
+
+    raw_before = request.query_params.get('before')
+    if raw_before:
+        try:
+            before = UUID(raw_before)
+        except ValueError:
+            raise ValidationError({'before': "Invalid message id."}) from None
+
+    raw_since = request.query_params.get('since')
+    if raw_since:
+        parsed = parse_datetime(raw_since)
+        if parsed is None:
+            raise ValidationError({'since': "Invalid timestamp."})
+        since = parsed if timezone.is_aware(parsed) else timezone.make_aware(parsed, UTC)
+
+    return before, since
 
 
 
@@ -112,6 +147,25 @@ class ThreadViewSet(viewsets.GenericViewSet):
         ).values_list('thread_id', 'last_read_at')
         return dict(states)
 
+    def _messages_of(self, thread: Thread) -> QuerySet[Message]:
+        return Message.objects.filter(thread=thread).select_related('sender', 'sender__artist_profile')
+
+    def _detail_context(
+        self,
+        request: Request,
+        thread: Thread,
+        *,
+        read_map: dict | None = None,
+        before: UUID | None = None,
+        since: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Everything ThreadDetailSerializer reads: the viewer's read pointer and one window."""
+        return {
+            'request': request,
+            'read_map': self._read_map(request, [thread.id]) if read_map is None else read_map,
+            'message_page': paginate_messages(self._messages_of(thread), before=before, since=since),
+        }
+
     # ------------------------------------------------------------------ #
     # Collection                                                         #
     # ------------------------------------------------------------------ #
@@ -128,15 +182,12 @@ class ThreadViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     def retrieve(self, request: Request, pk: str | None = None) -> Response:
-        qs = self.get_queryset().select_related('artist', 'assignee', 'assignee__artist_profile').prefetch_related(
-            Prefetch(
-                'messages',
-                queryset=Message.objects.select_related('sender', 'sender__artist_profile').order_by('created_at'),
-            )
-        )
+        qs = self.get_queryset().select_related('artist', 'assignee', 'assignee__artist_profile')
         thread = get_object_or_404(qs, pk=pk)
-        read_map = self._read_map(request, [thread.id])
-        serializer = ThreadDetailSerializer(thread, context={'request': request, 'read_map': read_map})
+        before, since = _window_params(request)
+        serializer = ThreadDetailSerializer(
+            thread, context=self._detail_context(request, thread, before=before, since=since)
+        )
         return Response(serializer.data)
 
     @staticmethod
@@ -220,7 +271,9 @@ class ThreadViewSet(viewsets.GenericViewSet):
             )
             read_map = {existing.id: existing.last_message_at}
             return Response(
-                ThreadDetailSerializer(existing, context={'request': request, 'read_map': read_map}).data,
+                ThreadDetailSerializer(
+                    existing, context=self._detail_context(request, existing, read_map=read_map)
+                ).data,
                 status=status.HTTP_200_OK,
             )
 
@@ -235,7 +288,9 @@ class ThreadViewSet(viewsets.GenericViewSet):
         )
         thread = MessagingService.create_thread(dto)
         read_map = {thread.id: thread.last_message_at}
-        serializer_out = ThreadDetailSerializer(thread, context={'request': request, 'read_map': read_map})
+        serializer_out = ThreadDetailSerializer(
+            thread, context=self._detail_context(request, thread, read_map=read_map)
+        )
         return Response(serializer_out.data, status=status.HTTP_201_CREATED)
 
     def partial_update(self, request: Request, pk: str | None = None) -> Response:
@@ -262,17 +317,26 @@ class ThreadViewSet(viewsets.GenericViewSet):
             update_fields.append('updated_at')
             thread.save(update_fields=update_fields)
 
-        read_map = self._read_map(request, [thread.id])
-        return Response(ThreadDetailSerializer(thread, context={'request': request, 'read_map': read_map}).data)
+        return Response(ThreadDetailSerializer(thread, context=self._detail_context(request, thread)).data)
 
     # ------------------------------------------------------------------ #
     # Member actions                                                     #
     # ------------------------------------------------------------------ #
 
-    @action(detail=True, methods=['post'], url_path='messages')
-    def post_message(self, request: Request, pk: str | None = None) -> Response:
+    @action(detail=True, methods=['get', 'post'], url_path='messages')
+    def messages(self, request: Request, pk: str | None = None) -> Response:
+        """GET reads one window of the history (``?before=``); POST appends to it."""
         user = request_user(request)
         thread = get_object_or_404(self.get_queryset(), pk=pk)
+
+        if request.method == 'GET':
+            before, since = _window_params(request)
+            page = paginate_messages(self._messages_of(thread), before=before, since=since)
+            return Response({
+                'messages': MessageSerializer(page.items, many=True, context={'request': request}).data,
+                'messages_page': message_page_meta(page),
+            })
+
         serializer = MessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = MessagingService.post_message(
@@ -372,25 +436,38 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         is_member = ChannelMembership.objects.filter(channel=channel, user_id=user.id).exists()
         return channel if is_member else None
 
-    def _detail_response(self, request: Request, channel: ProjectChannel) -> Response:
+    @staticmethod
+    def _messages_of(channel: ProjectChannel) -> QuerySet[ChannelMessage]:
+        return ChannelMessage.objects.filter(channel=channel).select_related(
+            'sender', 'sender__artist_profile'
+        )
+
+    def _detail_response(
+        self,
+        request: Request,
+        channel: ProjectChannel,
+        *,
+        before: UUID | None = None,
+        since: datetime | None = None,
+    ) -> Response:
         hydrated = (
             ProjectChannel.objects.select_related('project')
             .annotate(member_count=Count('memberships', filter=Q(memberships__is_deleted=False), distinct=True))
-            .prefetch_related(
-                Prefetch(
-                    'messages',
-                    queryset=ChannelMessage.objects.select_related('sender', 'sender__artist_profile').order_by('created_at'),
-                )
-            )
             .get(pk=channel.pk)
         )
         membership = ChannelMembership.objects.filter(
             channel=hydrated, user_id=request_user(request).id
         ).first()
+        messages = self._messages_of(hydrated)
         ctx = {
             'request': request,
             'read_map': {hydrated.id: membership.last_read_at if membership else None},
             'my_push_enabled': bool(membership and membership.push_enabled),
+            'message_page': paginate_messages(messages, before=before, since=since),
+            # Pins are the banner's whole content and are few by construction, so
+            # they travel in full — they are the part of a channel that is meant
+            # to outlive the window it was written in.
+            'pinned': list(messages.filter(is_pinned=True).order_by('created_at')),
         }
         return Response(ChannelDetailSerializer(hydrated, context=ctx).data)
 
@@ -412,13 +489,26 @@ class ProjectChannelViewSet(viewsets.GenericViewSet):
         channel = self._get_accessible(request, pk)
         if channel is None:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        return self._detail_response(request, channel)
+        before, since = _window_params(request)
+        return self._detail_response(request, channel, before=before, since=since)
 
-    @action(detail=True, methods=['post'], url_path='messages')
-    def post_message(self, request: Request, pk: str | None = None) -> Response:
+    @action(detail=True, methods=['get', 'post'], url_path='messages')
+    def messages(self, request: Request, pk: str | None = None) -> Response:
+        """GET reads one window of the stream (``?before=``); POST appends to it."""
         channel = self._get_accessible(request, pk)
         if channel is None:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'GET':
+            before, since = _window_params(request)
+            page = paginate_messages(self._messages_of(channel), before=before, since=since)
+            return Response({
+                'messages': ChannelMessageSerializer(
+                    page.items, many=True, context={'request': request}
+                ).data,
+                'messages_page': message_page_meta(page),
+            })
+
         serializer = ChannelMessageCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         message = ChannelService.post_message(

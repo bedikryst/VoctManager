@@ -13,6 +13,8 @@ import type {
   ChannelSummary,
   CreateThreadPayload,
   MessageDTO,
+  MessageWindow,
+  MessageWindowParams,
   PostMessagePayload,
   ThreadDetail,
   ThreadListParams,
@@ -31,8 +33,20 @@ export const MessagingService = {
     return response.data;
   },
 
-  get: async (id: string): Promise<ThreadDetail> => {
-    const response = await api.get<ThreadDetail>(`${BASE_URL}${id}/`);
+  get: async (id: string, params?: MessageWindowParams): Promise<ThreadDetail> => {
+    const response = await api.get<ThreadDetail>(`${BASE_URL}${id}/`, { params });
+    return response.data;
+  },
+
+  /** One window of history on its own — the "earlier messages" path. */
+  messageWindow: async (
+    id: string,
+    params: MessageWindowParams,
+  ): Promise<MessageWindow<MessageDTO>> => {
+    const response = await api.get<MessageWindow<MessageDTO>>(
+      `${BASE_URL}${id}/messages/`,
+      { params },
+    );
     return response.data;
   },
 
@@ -83,8 +97,19 @@ export const ChannelService = {
     return response.data;
   },
 
-  get: async (id: string): Promise<ChannelDetail> => {
-    const response = await api.get<ChannelDetail>(`${CHANNELS_URL}${id}/`);
+  get: async (id: string, params?: MessageWindowParams): Promise<ChannelDetail> => {
+    const response = await api.get<ChannelDetail>(`${CHANNELS_URL}${id}/`, { params });
+    return response.data;
+  },
+
+  messageWindow: async (
+    id: string,
+    params: MessageWindowParams,
+  ): Promise<MessageWindow<ChannelMessageDTO>> => {
+    const response = await api.get<MessageWindow<ChannelMessageDTO>>(
+      `${CHANNELS_URL}${id}/messages/`,
+      { params },
+    );
     return response.data;
   },
 

@@ -43,8 +43,14 @@ const IDB_KEY = "client";
  *
  * NOT bumped for the 2026-08 move to IndexedDB: the payload's shape is
  * unchanged, and a bump would discard the legacy snapshot this store migrates.
+ *
+ * 2026-08-windowed-conversations: a thread/channel detail gained `messages_page`
+ * and `pinned_messages`, and its `messages` became one window of a history the
+ * client now accumulates itself. A restored pre-window snapshot paints before
+ * any fetch can correct it, so the channel banner would read `pinned_messages`
+ * off an object that has none.
  */
-export const QUERY_CACHE_BUSTER = "2026-06-infinite-notifications";
+export const QUERY_CACHE_BUSTER = "2026-08-windowed-conversations";
 
 export const QUERY_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 

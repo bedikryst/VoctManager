@@ -12,7 +12,7 @@
  * @module features/messages/lib/useStickyScroll
  */
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 
 /**
  * How close to the end still counts as "reading the newest". Generous enough to
@@ -28,16 +28,32 @@ export interface StickyScroll {
   readonly onScroll: () => void;
   /** Re-arm after an act of the reader's own (sending) that must land in view. */
   readonly pinToBottom: () => void;
+  /**
+   * Call in the same tick as a prepend of older history, BEFORE React commits
+   * it: the line being read is held in place while the page grows above it.
+   * Safari implements no scroll anchoring of its own, so this is the only thing
+   * standing between "earlier messages" and the reader losing their place.
+   */
+  readonly anchorTop: () => void;
 }
 
 /**
  * @param messageCount changes whenever the stream gains a message — the moment a
  *   decision about scrolling has to be made.
+ * @param layoutRevision changes whenever what is ALREADY rendered gets taller or
+ *   shorter without gaining a message — the reading size. The browser keeps
+ *   `scrollTop` through such a reflow, so a reader sitting at the newest message
+ *   is quietly left behind it unless the same decision is made again.
  */
-export const useStickyScroll = (messageCount: number): StickyScroll => {
+export const useStickyScroll = (
+  messageCount: number,
+  layoutRevision?: string | number,
+): StickyScroll => {
   const ref = useRef<HTMLDivElement>(null);
   // Opens pinned: a conversation is entered at its newest message.
   const isPinned = useRef(true);
+  /** Distance from the reader's position to the end, measured before a prepend. */
+  const anchor = useRef<number | null>(null);
 
   const onScroll = useCallback(() => {
     const element = ref.current;
@@ -51,11 +67,26 @@ export const useStickyScroll = (messageCount: number): StickyScroll => {
     isPinned.current = true;
   }, []);
 
-  useEffect(() => {
-    if (!isPinned.current) return;
+  const anchorTop = useCallback(() => {
     const element = ref.current;
-    element?.scrollTo({ top: element.scrollHeight });
-  }, [messageCount]);
+    if (!element) return;
+    anchor.current = element.scrollHeight - element.scrollTop;
+  }, []);
 
-  return { ref, onScroll, pinToBottom };
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const held = anchor.current;
+    if (held !== null) {
+      // Older history landed above the reader — restore the distance to the end
+      // and stop: a prepend is never a reason to jump to the newest message.
+      anchor.current = null;
+      element.scrollTop = element.scrollHeight - held;
+      return;
+    }
+    if (!isPinned.current) return;
+    element.scrollTo({ top: element.scrollHeight });
+  }, [messageCount, layoutRevision]);
+
+  return { ref, onScroll, pinToBottom, anchorTop };
 };

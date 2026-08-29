@@ -1,9 +1,11 @@
 # Wiadomości — audit and remediation (2026-08)
 
-Status: **open** — audited 2026-08-29; stages 1–6 shipped the same day, `typecheck` + `build`
-green, **not yet verified on a real phone**. Stage 7 (backend) is not started, and one item is
-parked under Rejected (the compact `PageHeader`). · Surface: `frontend/src/features/messages/`
-plus two shell seams (`index.html` viewport meta, `shared/lib/dom/`).
+Status: **closed pending verification** — audited 2026-08-29; all nine stages shipped that day
+and stages 1–6 are **confirmed working on the developer's own phone**. Stages 7–9 are green on
+typecheck, lint, build and the test suites, and await the same phone. · Surface:
+`frontend/src/features/messages/` plus four shell seams (`index.html` viewport meta,
+`shared/lib/dom/`, `shared/ui/composites/PageHeader.tsx`,
+`shared/ui/composites/DropdownMenu.tsx`) and `backend/messaging/`.
 
 Reported symptom, from the developer's own phone: "za dużo, jak się wejdzie w wiadomość",
 "kontenery zabierają szerokość", and — named as the worst of the three — "nie mieści się na
@@ -11,9 +13,9 @@ jednym ekranie".
 
 ## How to read this file
 
-Seven stages. Stages 1–2 are one unit (the chassis and the keyboard it has to yield to);
-3–6 are independent and can be taken in any order; 7 is backend and can wait indefinitely.
-A stage is done when its **Exit** line is true.
+Nine stages. Stages 1–2 are one unit (the chassis and the keyboard it has to yield to);
+3–6 are independent and can be taken in any order; 7–8 were found while building those and
+9 answers what stage 4's fixed 16 px could not. A stage is done when its **Exit** line is true.
 
 The developer verifies every visual change in their own browser. `npm run typecheck` +
 `npm run build` green is the automated bar (see `CLAUDE.md`).
@@ -211,12 +213,13 @@ inbox, not the conversation.
 - **A full-screen loader has to carry its own exit.** `ThreadView` / `ChannelView` returned a
   bare `EtherealLoader` while the history was in flight. In a pane beside an inbox that is
   fine; owning the whole screen it is a screen with no way out — and the same branch also
-  catches the *failed* query (`isLoading || !thread`), so a dead request holds it forever.
-  `ConversationLoading` renders the back band above the loader, from the markup the loaded
-  header uses, so the chrome does not jump when the data lands.
-  **Still open:** that branch conflates "loading" with "failed". A conversation whose fetch
-  errors should say so and offer a retry, not spin. `checking` is its own state — the design
-  system's own rule, and this is the same defect it names on the activation screen.
+  caught the *failed* query (`isLoading || !thread`), so a dead request held it forever.
+  `ConversationGate` renders the back band above either state, from the markup the loaded
+  header uses, so the chrome does not jump when the data lands. **Closed** by the same
+  component: `checking` and `failed` are now separate branches, the second a `StatePanel`
+  with `refetch`. The gate opens on `!thread` — having NOTHING — and not on `isError`: a
+  conversation polls every 10s from a phone in a lift, and a failed poll over a history
+  already on screen must leave the history alone.
 - **Dropping the per-bubble sender name is only safe when there is one other person.** A 1:1
   thread left in the management queue can be answered by several conductors, and a
   `counterpart` of `null` renders as "Zarząd" — so the header names nobody and the bubbles
@@ -224,24 +227,113 @@ inbox, not the conversation.
   `hasSeveralCounterparts` decides whether a thread borrows the channel's identity treatment,
   `startsSenderRun` decides which message inside a run carries it.
 
-## Stage 7 — backend (not started)
+## Stage 7 — the payload
 
-`ThreadDetailSerializer` and `ChannelDetailSerializer` return the **entire** message list, and
-`CONVERSATION_FRESHNESS` refetches it every 10 s. A project channel accumulates across a
-season, so this is a monotonically growing payload on a phone's mobile data, re-fetched six
-times a minute while the conversation is open. Wants a `?before=` page plus an incremental
-`?since=` poll, and an infinite query on the client. Nothing in stages 1–6 depends on it.
+**Why.** `ThreadDetailSerializer` and `ChannelDetailSerializer` returned the **entire** message
+list and `CONVERSATION_FRESHNESS` refetched it every 10 s: a monotonically growing payload on a
+phone's mobile data, six times a minute, for as long as the conversation stayed open.
+
+1. `selectors.paginate_messages` windows a conversation three ways — the tail (50), one page
+   walked back from `?before=<message id>`, or the delta after `?since=<instant>`. A delta
+   longer than a page is refused and answered with the tail plus `reset: true`, because
+   appending it would leave a hole in the middle of the conversation.
+2. The detail serializers take that window from the view's context and never read the
+   `messages` relation; `GET …/messages/?before=` serves a window on its own (the same route
+   the reply POSTs to).
+3. `pinned_messages` becomes its own field. An announcement pinned in March is exactly what
+   the channel banner is for, and it stopped being reachable from `messages` the moment
+   `messages` became a tail.
+4. **The cache — not the last response — now holds the conversation.** `lib/conversationWindow`
+   folds every window into what the client has: the poll asks with the newest CONFIRMED
+   message's stamp, ids are keyed with the server's copy winning, order comes from parsed
+   instants (an ISO stamp either side of a DST change does not sort lexically), and an
+   optimistic send is carried through untouched and always last — a poll landing mid-flight
+   must not make the reader's own text blink out. Its rollback is by id, never by restoring a
+   snapshot that a poll may already have overtaken.
+5. `QUERY_CACHE_BUSTER` is bumped: a restored pre-window snapshot paints before any fetch can
+   correct it, and the banner would read `pinned_messages` off an object that has none.
+6. "Wcześniejsze wiadomości" is a button, not a fetch-on-scroll — inside a portalled surface
+   the reader cannot reach the top of a day without triggering a request they did not ask for.
+   `useStickyScroll.anchorTop` holds their line in place while the page grows above it; Safari
+   implements no scroll anchoring of its own.
+
+**Exit.** An open conversation transfers a handful of rows per poll instead of its whole
+history, and older history is reachable without losing the reader's place.
+`backend/messaging` tests + `lib/conversationWindow.test.ts` cover the windowing arithmetic.
+
+## Stage 8 — the compact page header
+
+A `size="compact"` variant on the shared `PageHeader`: below `md` the title and its one action
+share a row, the eyebrow and its rule step aside (the nav dock's active tab already names the
+section), and the title drops one step of the scale. From `md` up it IS `standard` — a page
+must not read as two different pages across a breakpoint. Additive and opt-in; the other ~20
+callers are untouched. ~155 px of a 844 px phone becomes ~45 px.
+
+**Exit.** The inbox header is one row under a thumb and unchanged on a desktop.
+
+## Stage 9 — reading size
+
+**Why.** In a standalone PWA there is no browser chrome, so no page zoom and no `aA` menu, and
+iOS Dynamic Type does not reach web content. On the one screen in the panel that is pure
+prose, the member has no way at all to make the text bigger. Stage 4 set it at 16 px on touch;
+that is a good default, not an answer for everyone.
+
+1. **Reading size is writing size.** The composer scales with the bubbles. Stage 4's rule —
+   never read a message smaller than you were allowed to type it — is the whole reason this
+   feature has a type scale of its own.
+2. **Three steps, not a slider.** The useful range is ~14–20 px; a slider on a 390 px screen
+   spends a drag target inside a scrolling stream on six distinguishable positions. (This
+   points the opposite way to the annotations pen, where a slider replaced four steps — pen
+   width is a continuous physical quantity, type size is a scale.)
+3. **Set where the problem is felt**, i.e. the conversation's own `⋯` menu — which means that
+   menu stops being manager-only in `ThreadView` and gains an equivalent in `ChannelView`.
+   Not app settings: you adjust reading size while reading. The menu holds a radio group and
+   **stays open** on a pick (`DropdownMenuRadioItem keepOpen`) — a size is chosen by
+   comparing — and each entry is drawn at the size it sets.
+4. **Mechanism**: `lib/messageTextScale.ts` — one custom property on the conversation root,
+   persisted per device. Per device and not per account on purpose: it answers a screen and an
+   eye, and the same person wants 14 px on a laptop and 18 px on a phone.
+5. **Scope is the conversation only.** Scaling `html { font-size }` would move every
+   viewport-locked box in the panel, which is a shell-wide change bought for one screen.
+
+**Exit.** A member can raise the conversation's type in three steps from inside it, the
+composer follows, and the choice survives a reload on that device.
+
+Three things came out differently from the proposal above, each for a reason worth keeping:
+
+- **The variable carries the STEP, not the size.** `--message-text-step` is an offset
+  (`0px / 2px / 4px`) and `MESSAGE_BODY_TEXT` stays a pair:
+  `text-[length:calc(1rem_+_var(…))] fine-pointer:text-[length:calc(0.875rem_+_var(…))]`.
+  An absolute `--message-text` would have had to carry the touch/pointer split in JS, where
+  stage 4 deliberately put it in CSS. As an offset, the split stays a fact about the device and
+  the step stays a choice about the reader; an unset variable renders exactly stage 4's
+  default; and the touch size never drops below 16 px at any step, which is what keeps iOS
+  from magnifying the page when the composer takes focus (`FIELD_TEXT_SCALE` in
+  `fieldShell.ts` says why).
+- **The store is external (`useSyncExternalStore`), not a hook's state.** `MessageComposer`
+  measures its own height and has to re-measure when the scale moves; a prop whose only job is
+  to say "re-measure" is a prop the next call site forgets. `useStickyScroll` gained a second
+  argument for the same reason — the browser keeps `scrollTop` through a reflow, so a reader
+  sitting at the newest message is quietly left behind it unless the pin decision is made again.
+- **`messages.thread.actions` became `messages.conversation.actions`** ("Opcje rozmowy"). The
+  trigger is no longer a manager's triage button a chorister never sees; it is the one overflow
+  menu a conversation has, and a channel mounts it too.
+
+**The trap, for whoever writes the next `text-[length:…]`.** tailwind-merge resolves a
+font-size as owning the line-height — `Typography.tsx` already says so about cva's compound
+variants. Replacing the field shell's `text-base` in the composer therefore deleted its
+line-height too, and a `leading-normal` written BEFORE the size class in the same `cn()` is
+deleted by it in turn. The leading has to be unitless (so it follows the step) and has to come
+after the size.
 
 ---
 
 ## Rejected
 
-- **A hand-rolled compact page header for the inbox.** The mobile `PageHeader` is ~155 px
-  (21% of the screen) for a title the nav dock's active tab already states, because
-  `rightContent` drops to its own row below `md`. The fix is a `size="compact"` variant on the
-  shared `PageHeader` — additive, opt-in, no effect on the other ~20 callers — not a private
-  copy in `features/messages`. Left open deliberately; it is the smallest remaining win and
-  the one with blast radius outside this feature.
+- **An infinite query on the client for the windowed history.** It would have rebuilt the
+  optimistic send, the sticky scroll and the persister contract around `{ pages, pageParams }`
+  to express one cursor the cache already holds. Folding each window into a flat cached list
+  (stage 7.4) keeps every component that reads `messages` untouched.
 - **Hiding the nav dock from the shell on the messages route.** The portal already covers it
   and needs no new shell rule. A route-aware dock is a shell-wide mechanism bought for one
   screen.

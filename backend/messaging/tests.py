@@ -9,9 +9,11 @@
 @architecture Enterprise SaaS 2026
 @module messaging/tests
 """
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework.test import APITestCase
 
 from core.constants import AppRole
@@ -28,6 +30,7 @@ from .models import (
     Thread,
     ThreadStatus,
 )
+from .selectors import MESSAGE_PAGE_SIZE
 
 User = get_user_model()
 
@@ -310,6 +313,113 @@ class MessagingFlowTests(APITestCase):
         self.assertTrue(Thread.all_objects.filter(id=thread_id).exists())
 
 
+class ConversationWindowTests(APITestCase):
+    """
+    The conversation endpoint hands out ONE window of a history, not the history:
+    it is polled every 10s and a thread accumulates across a season.
+    """
+
+    def setUp(self) -> None:
+        self.manager = User.objects.create_user(username="wm", email="wm@test.pl", password="pw123456")
+        UserProfile.objects.create(user=self.manager, role=AppRole.MANAGER)
+        self.artist_user = User.objects.create_user(username="wa", email="wa@test.pl", password="pw123456")
+        UserProfile.objects.create(user=self.artist_user, role=AppRole.ARTIST)
+        self.artist = Artist.objects.create(
+            user=self.artist_user, first_name="Wit", last_name="Nowak",
+            email="wa@test.pl", voice_type=VoiceType.BASS,
+        )
+        self.thread = Thread.objects.create(
+            artist=self.artist, subject="Długa rozmowa", assignee=self.manager
+        )
+        self.client.force_authenticate(user=self.artist_user)
+
+    def _seed(self, count: int) -> list[Message]:
+        """`created_at` is auto_now_add, so the spacing is stamped on afterwards."""
+        base = timezone.now() - timedelta(minutes=count + 1)
+        seeded = []
+        for index in range(count):
+            message = Message.objects.create(
+                thread=self.thread, sender=self.artist_user, body=f"m{index}"
+            )
+            Message.objects.filter(pk=message.pk).update(created_at=base + timedelta(minutes=index))
+            message.refresh_from_db()
+            seeded.append(message)
+        return seeded
+
+    def _detail(self, **params) -> dict:
+        response = self.client.get(f"{THREADS}{self.thread.id}/", params)
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def test_detail_serves_the_tail_window(self) -> None:
+        seeded = self._seed(MESSAGE_PAGE_SIZE + 10)
+        body = self._detail()
+        self.assertEqual(len(body["messages"]), MESSAGE_PAGE_SIZE)
+        self.assertEqual(body["messages"][-1]["id"], str(seeded[-1].id))
+        self.assertEqual(body["messages"][0]["id"], str(seeded[10].id))
+        self.assertTrue(body["messages_page"]["has_older"])
+        self.assertFalse(body["messages_page"]["reset"])
+
+    def test_short_conversation_reports_nothing_older(self) -> None:
+        self._seed(3)
+        body = self._detail()
+        self.assertEqual(len(body["messages"]), 3)
+        self.assertFalse(body["messages_page"]["has_older"])
+
+    def test_before_cursor_walks_back_from_a_held_message(self) -> None:
+        seeded = self._seed(MESSAGE_PAGE_SIZE + 10)
+        response = self.client.get(
+            f"{THREADS}{self.thread.id}/messages/", {"before": str(seeded[10].id)}
+        )
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual([m["id"] for m in body["messages"]], [str(m.id) for m in seeded[:10]])
+        self.assertFalse(body["messages_page"]["has_older"])
+
+    def test_unknown_before_cursor_answers_an_empty_window(self) -> None:
+        self._seed(3)
+        response = self.client.get(
+            f"{THREADS}{self.thread.id}/messages/",
+            {"before": "00000000-0000-0000-0000-000000000000"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["messages"], [])
+
+    def test_since_carries_only_the_delta(self) -> None:
+        seeded = self._seed(5)
+        body = self._detail(since=seeded[2].created_at.isoformat())
+        self.assertEqual([m["id"] for m in body["messages"]], [str(seeded[3].id), str(seeded[4].id)])
+        self.assertFalse(body["messages_page"]["reset"])
+
+    def test_since_with_nothing_new_carries_no_messages(self) -> None:
+        seeded = self._seed(5)
+        body = self._detail(since=seeded[-1].created_at.isoformat())
+        self.assertEqual(body["messages"], [])
+        # The head still travels: unread and triage state are what the poll is also for.
+        self.assertEqual(body["subject"], "Długa rozmowa")
+
+    def test_a_poll_too_far_behind_is_told_to_start_over(self) -> None:
+        seeded = self._seed(MESSAGE_PAGE_SIZE + 10)
+        body = self._detail(since=seeded[0].created_at.isoformat())
+        self.assertTrue(body["messages_page"]["reset"])
+        self.assertEqual(len(body["messages"]), MESSAGE_PAGE_SIZE)
+        self.assertEqual(body["messages"][-1]["id"], str(seeded[-1].id))
+
+    def test_malformed_cursors_are_rejected(self) -> None:
+        self._seed(2)
+        self.assertEqual(self.client.get(f"{THREADS}{self.thread.id}/", {"since": "wczoraj"}).status_code, 400)
+        self.assertEqual(self.client.get(f"{THREADS}{self.thread.id}/", {"before": "nie-uuid"}).status_code, 400)
+
+    def test_posting_a_reply_still_answers_with_the_message(self) -> None:
+        self._seed(2)
+        with patch(EMIT), self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(
+                f"{THREADS}{self.thread.id}/messages/", {"body": "odpowiedź"}, format="json"
+            )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["body"], "odpowiedź")
+
+
 CHANNELS = "/api/messaging/channels/"
 PUSH = "messaging.services.send_push_notification_task.delay"
 
@@ -415,6 +525,32 @@ class ProjectChannelTests(APITestCase):
         resp = self.client.patch(f"{CHANNELS}{channel.id}/membership/", {"push_enabled": True}, format="json")
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(ChannelMembership.objects.get(channel=channel, user=self.artist_user).push_enabled)
+
+    # -- windowing --------------------------------------------------------- #
+
+    def test_pinned_announcement_outlives_the_window_it_was_written_in(self) -> None:
+        """The banner is exactly the case a tail-shaped payload would break."""
+        self._confirm(self.artist)
+        channel = ProjectChannel.objects.get(project=self.project)
+        base = timezone.now() - timedelta(days=30)
+        seeded = []
+        for index in range(MESSAGE_PAGE_SIZE + 5):
+            message = ChannelMessage.objects.create(
+                channel=channel, sender=self.artist_user, body=f"c{index}"
+            )
+            ChannelMessage.objects.filter(pk=message.pk).update(
+                created_at=base + timedelta(minutes=index)
+            )
+            seeded.append(message)
+        ChannelMessage.objects.filter(pk=seeded[0].pk).update(is_pinned=True)
+
+        self.client.force_authenticate(user=self.artist_user)
+        body = self.client.get(f"{CHANNELS}{channel.id}/").json()
+
+        self.assertEqual(len(body["messages"]), MESSAGE_PAGE_SIZE)
+        self.assertNotIn(str(seeded[0].id), [m["id"] for m in body["messages"]])
+        self.assertEqual([m["id"] for m in body["pinned_messages"]], [str(seeded[0].id)])
+        self.assertTrue(body["messages_page"]["has_older"])
 
     # -- GDPR -------------------------------------------------------------- #
 

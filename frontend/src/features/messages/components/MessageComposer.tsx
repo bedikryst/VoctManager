@@ -9,6 +9,9 @@
  * a phone it is a grab target in the corner of the one control that matters.
  * And Enter sends only where there is a keyboard to press it on — on touch the
  * return key writes a second paragraph, which is the only way to write one.
+ *
+ * It wears the conversation's own type scale rather than the form shell's: the
+ * reading size the member picked is the size they write at too.
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
@@ -20,10 +23,13 @@ import { Send } from "lucide-react";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Text } from "@/shared/ui/primitives/typography";
+import { cn } from "@/shared/lib/utils";
 import { useIsFinePointer } from "@/shared/lib/dom/useMediaQuery";
+import { MESSAGE_BODY_TEXT, useMessageTextStep } from "../lib/messageTextScale";
 
 /**
- * Roughly six lines at the touch scale. Past that the composer would be eating
+ * A share of the screen, not a line count: about six lines at the default touch
+ * size and fewer as the reader raises it. Past this the composer would be eating
  * the conversation it is a reply to; the field scrolls inside itself instead.
  */
 const MAX_FIELD_HEIGHT_PX = 168;
@@ -47,6 +53,9 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
   const { t } = useTranslation();
   const isFinePointer = useIsFinePointer();
   const fieldRef = useRef<HTMLTextAreaElement>(null);
+  // Not read, only depended on: a taller type scale rewraps what is already
+  // typed, and a height measured at the old size is wrong from that instant on.
+  const textStep = useMessageTextStep();
 
   // Measured, not counted: the height depends on the wrapped line count, which
   // only the browser knows. Reset to `auto` first or `scrollHeight` can never
@@ -62,7 +71,7 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
       field.scrollHeight + borderHeight,
       MAX_FIELD_HEIGHT_PX,
     )}px`;
-  }, [value]);
+  }, [value, textStep]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (!isFinePointer) return;
@@ -94,7 +103,17 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             rows={1}
             placeholder={placeholder}
             aria-label={placeholder}
-            className="resize-none overflow-y-auto"
+            // The shell's own scale is replaced, not overlaid: reading size IS
+            // writing size, so the field grows with the bubbles above it. That
+            // replacement takes the shell's line-height with it — tailwind-merge
+            // resolves a font-size as owning one — so the leading is restated
+            // here, unitless so it follows the step, and AFTER the size or the
+            // same rule would delete it too.
+            className={cn(
+              "resize-none overflow-y-auto",
+              MESSAGE_BODY_TEXT,
+              "leading-normal",
+            )}
           />
         </div>
         {isFinePointer ? (

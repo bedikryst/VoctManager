@@ -19,9 +19,14 @@ from .models import (
     ThreadContextType,
     ThreadStatus,
 )
-from .selectors import avatar_thumb_url, user_brief, viewer_last_read
+from .selectors import MessagePage, avatar_thumb_url, user_brief, viewer_last_read
 
 _SNIPPET_LEN = 140
+
+
+def message_page_meta(page: MessagePage[Any]) -> dict[str, bool]:
+    """The two facts a client needs about the window it was just handed."""
+    return {'has_older': page.has_older, 'reset': page.reset}
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -89,12 +94,31 @@ class ThreadListSerializer(_ThreadBaseSerializer):
 
 
 class ThreadDetailSerializer(_ThreadBaseSerializer):
-    """Full conversation with its ordered messages."""
-    messages = MessageSerializer(many=True, read_only=True)
+    """
+    Conversation head plus ONE WINDOW of its history.
+
+    The window is built by the view and handed over in ``context['message_page']``
+    — never read off the ``messages`` relation. This endpoint is polled every 10s
+    for as long as a conversation is open, and a thread accumulates across a
+    season: served whole, the payload grows without bound on the one connection
+    least able to carry it.
+    """
+    messages = serializers.SerializerMethodField()
+    messages_page = serializers.SerializerMethodField()
 
     class Meta(_ThreadBaseSerializer.Meta):
-        fields = [*_ThreadBaseSerializer.Meta.fields, 'messages']
+        fields = [*_ThreadBaseSerializer.Meta.fields, 'messages', 'messages_page']
         read_only_fields = fields
+
+    def _page(self) -> MessagePage[Message]:
+        page: MessagePage[Message] = self.context['message_page']
+        return page
+
+    def get_messages(self, obj: Thread) -> Any:
+        return MessageSerializer(self._page().items, many=True, context=self.context).data
+
+    def get_messages_page(self, obj: Thread) -> dict[str, bool]:
+        return message_page_meta(self._page())
 
 
 class ThreadCreateSerializer(serializers.Serializer):
@@ -186,13 +210,38 @@ class ChannelListSerializer(_ChannelBaseSerializer):
 
 
 class ChannelDetailSerializer(_ChannelBaseSerializer):
-    """Full channel with ordered messages + the viewer's own push opt-in state."""
-    messages = ChannelMessageSerializer(many=True, read_only=True)
+    """
+    Channel head, one window of its stream, and the viewer's push opt-in.
+
+    ``pinned_messages`` is its own field for the same reason the window exists: an
+    announcement pinned in March is what the banner is FOR, and it stopped being
+    reachable from the tail the moment the tail stopped being the whole channel.
+    """
+    messages = serializers.SerializerMethodField()
+    messages_page = serializers.SerializerMethodField()
+    pinned_messages = serializers.SerializerMethodField()
     my_push_enabled = serializers.SerializerMethodField()
 
     class Meta(_ChannelBaseSerializer.Meta):
-        fields = [*_ChannelBaseSerializer.Meta.fields, 'my_push_enabled', 'messages']
+        fields = [
+            *_ChannelBaseSerializer.Meta.fields,
+            'my_push_enabled', 'messages', 'messages_page', 'pinned_messages',
+        ]
         read_only_fields = fields
+
+    def _page(self) -> MessagePage[ChannelMessage]:
+        page: MessagePage[ChannelMessage] = self.context['message_page']
+        return page
+
+    def get_messages(self, obj: ProjectChannel) -> Any:
+        return ChannelMessageSerializer(self._page().items, many=True, context=self.context).data
+
+    def get_messages_page(self, obj: ProjectChannel) -> dict[str, bool]:
+        return message_page_meta(self._page())
+
+    def get_pinned_messages(self, obj: ProjectChannel) -> Any:
+        pinned = self.context.get('pinned') or []
+        return ChannelMessageSerializer(pinned, many=True, context=self.context).data
 
     def get_my_push_enabled(self, obj: ProjectChannel) -> bool:
         return bool(self.context.get('my_push_enabled', False))

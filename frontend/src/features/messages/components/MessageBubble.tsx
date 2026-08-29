@@ -22,19 +22,9 @@ import { Clock, Pin } from "lucide-react";
 import { Avatar } from "@/shared/ui/composites/Avatar";
 import { Text, Label } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
+import { MESSAGE_BODY_TEXT } from "../lib/messageTextScale";
 import { clockStamp, isOptimisticId } from "../lib/time";
 import type { MessageDTO } from "../types/messages.dto";
-
-/**
- * The type scale a message BODY uses, and the only one it may use. 16px on
- * touch, the panel's dense 14px behind `fine-pointer:` — the same shape as
- * `FIELD_TEXT_SCALE` and for a related reason: the composer that produced this
- * text is 16px on a phone, so anything smaller here means reading a message at a
- * size you were not allowed to write it at. It rides over `Text`'s own default
- * rather than replacing it, so losing the class falls back to 14px, not to the
- * 12px this feature shipped with.
- */
-export const MESSAGE_BODY_TEXT = "text-base fine-pointer:text-sm";
 
 /** Matches `Avatar size="xs"`, so a continuation lines up with the run it joins. */
 const GUTTER_CLASS = "h-7 w-7 shrink-0";
