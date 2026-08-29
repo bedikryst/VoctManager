@@ -1,8 +1,9 @@
 # Wiadomości — audit and remediation (2026-08)
 
-Status: **closed pending verification** — audited 2026-08-29; all nine stages shipped that day
-and stages 1–6 are **confirmed working on the developer's own phone**. Stages 7–9 are green on
-typecheck, lint, build and the test suites, and await the same phone. · Surface:
+Status: **closed** — audited 2026-08-29; all nine stages shipped that day. Stages 1–6 were
+confirmed on the developer's own phone; stages 7–9 were verified at 390 × 844 with a coarse
+pointer against stubbed fixtures (see *Verification of stages 7–9* at the end), which found and
+fixed two defects. · Surface:
 `frontend/src/features/messages/` plus four shell seams (`index.html` viewport meta,
 `shared/lib/dom/`, `shared/ui/composites/PageHeader.tsx`,
 `shared/ui/composites/DropdownMenu.tsx`) and `backend/messaging/`.

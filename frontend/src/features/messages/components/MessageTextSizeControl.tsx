@@ -33,9 +33,9 @@ export const MessageTextSizeControl: React.FC = () => {
   const step = useMessageTextStep();
 
   const labels: Record<MessageTextStepId, string> = {
+    small: t("messages.text_size.small", "Mniejszy"),
     default: t("messages.text_size.default", "Standardowy"),
     large: t("messages.text_size.large", "Większy"),
-    largest: t("messages.text_size.largest", "Największy"),
   };
 
   return (

@@ -160,7 +160,18 @@ export const ChannelView: React.FC<ChannelViewProps> = ({ channelId, isManager, 
             <ArrowLeft size={18} />
           </Button>
         )}
-        <Avatar size="md" shape="rounded" tone="neutral" name={channel.project_name} />
+        {/* A monogram of the project name, standing next to the project name: on
+            the phone surface it spends 60px of a 390px header on nothing the
+            line beside it does not already say, and the name is what tells the
+            reader which conversation they are in. It earns its place in the
+            desktop pane, where the width is not the scarce thing. */}
+        <Avatar
+          size="md"
+          shape="rounded"
+          tone="neutral"
+          name={channel.project_name}
+          className="hidden md:inline-flex"
+        />
         <div className="min-w-0 flex-1">
           <Heading as="h3" size="lg" color="graphite" className="truncate">
             {channel.project_name}

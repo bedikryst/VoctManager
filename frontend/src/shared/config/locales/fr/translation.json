@@ -2851,7 +2851,7 @@
       "default": "Standard",
       "label": "Taille du texte",
       "large": "Plus grand",
-      "largest": "Le plus grand"
+      "small": "Plus petit"
     },
     "thread": {
       "claim": "Prendre en charge",

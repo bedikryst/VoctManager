@@ -23,7 +23,7 @@ import { useMemo, useSyncExternalStore, type CSSProperties } from "react";
 
 const STORAGE_KEY = "voct.messages.textStep";
 
-export type MessageTextStepId = "default" | "large" | "largest";
+export type MessageTextStepId = "small" | "default" | "large";
 
 export interface MessageTextStep {
   readonly id: MessageTextStepId;
@@ -39,28 +39,45 @@ export interface MessageTextStep {
   readonly sample: string;
 }
 
-/** 16 / 18 / 20 px on touch, 14 / 16 / 18 with a mouse. */
+/**
+ * 14 / 16 / 18 px on touch, 12 / 14 / 16 with a mouse. The default sits in the
+ * MIDDLE: a scale whose resting point is its floor can only ever be corrected in
+ * one direction, and the reader who finds 16px too large was the one with no
+ * move to make.
+ */
 export const MESSAGE_TEXT_STEPS: readonly MessageTextStep[] = [
+  { id: "small", offset: "-2px", sample: "text-sm fine-pointer:text-xs" },
   { id: "default", offset: "0px", sample: "text-base fine-pointer:text-sm" },
   { id: "large", offset: "2px", sample: "text-lg fine-pointer:text-base" },
-  { id: "largest", offset: "4px", sample: "text-xl fine-pointer:text-lg" },
 ];
 
 /**
- * The type scale a message BODY uses, and the only one it may use — the composer
- * draws from it too, because a member must never read a message at a size they
- * were not allowed to type it at. 16px on touch, the panel's dense 14px behind
- * `fine-pointer:`, each raised by the reader's own step.
+ * The type scale a message BODY uses, and the only one it may use. 16px on
+ * touch, the panel's dense 14px behind `fine-pointer:`, each moved by the
+ * reader's own step.
  *
  * The base stays in CSS instead of being computed into the variable: the
  * touch/pointer split is a fact about the device and the step is a choice about
  * the reader, and only the second one belongs in a store. An unset variable
  * falls back to `0px`, so a bubble the store never reaches still renders at
- * exactly the default — and the touch floor stays at 16px at every step, which
- * is what keeps iOS from magnifying the page when the composer takes focus.
+ * exactly the default.
  */
 export const MESSAGE_BODY_TEXT =
   "text-[length:calc(1rem_+_var(--message-text-step,0px))] fine-pointer:text-[length:calc(0.875rem_+_var(--message-text-step,0px))]";
+
+/**
+ * What the COMPOSER writes at: the reading size, except that on touch it never
+ * goes below 16px. Reading size is still writing size in the direction that
+ * matters — the rule this feature exists for is that nobody reads a message
+ * smaller than they were allowed to type it — but iOS magnifies the whole page
+ * when a focused field is under 16px, and in a standalone PWA it never zooms
+ * back out (`FIELD_TEXT_SCALE` in `fieldShell.ts` says why). So the floor is a
+ * fact about the device, like the touch/pointer split beside it, and it belongs
+ * in the same CSS expression rather than in the store: the smallest step makes
+ * the conversation smaller and leaves the one line the reader types at rest.
+ */
+export const MESSAGE_COMPOSER_TEXT =
+  "text-[length:calc(1rem_+_max(0px,var(--message-text-step,0px)))] fine-pointer:text-[length:calc(0.875rem_+_var(--message-text-step,0px))]";
 
 export const isMessageTextStep = (value: unknown): value is MessageTextStepId =>
   MESSAGE_TEXT_STEPS.some((step) => step.id === value);

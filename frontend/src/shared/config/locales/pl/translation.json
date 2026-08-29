@@ -2861,7 +2861,7 @@
       "default": "Standardowy",
       "label": "Rozmiar tekstu",
       "large": "Większy",
-      "largest": "Największy"
+      "small": "Mniejszy"
     },
     "thread": {
       "claim": "Przejmij",

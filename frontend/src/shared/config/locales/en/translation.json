@@ -2851,7 +2851,7 @@
       "default": "Standard",
       "label": "Text size",
       "large": "Larger",
-      "largest": "Largest"
+      "small": "Smaller"
     },
     "thread": {
       "claim": "Claim",

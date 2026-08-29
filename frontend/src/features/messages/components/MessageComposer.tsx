@@ -11,7 +11,8 @@
  * return key writes a second paragraph, which is the only way to write one.
  *
  * It wears the conversation's own type scale rather than the form shell's: the
- * reading size the member picked is the size they write at too.
+ * reading size the member picked is the size they write at too, held at 16px on
+ * touch however small they set the reading (see `MESSAGE_COMPOSER_TEXT`).
  * @architecture Enterprise SaaS 2026
  * @module features/messages/components
  */
@@ -25,7 +26,7 @@ import { Textarea } from "@/shared/ui/primitives/Textarea";
 import { Text } from "@/shared/ui/primitives/typography";
 import { cn } from "@/shared/lib/utils";
 import { useIsFinePointer } from "@/shared/lib/dom/useMediaQuery";
-import { MESSAGE_BODY_TEXT, useMessageTextStep } from "../lib/messageTextScale";
+import { MESSAGE_COMPOSER_TEXT, useMessageTextStep } from "../lib/messageTextScale";
 
 /**
  * A share of the screen, not a line count: about six lines at the default touch
@@ -109,9 +110,17 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
             // resolves a font-size as owning one — so the leading is restated
             // here, unitless so it follows the step, and AFTER the size or the
             // same rule would delete it too.
+            //
+            // The transition is narrowed for the same reason the size is
+            // replaced: the shell animates `all`, and a field that measures
+            // itself cannot have its own type metrics arrive 300ms late — the
+            // layout effect below would read the size the reader just left. The
+            // listed properties are what the shell actually animates, plus the
+            // height this composer sets itself.
             className={cn(
               "resize-none overflow-y-auto",
-              MESSAGE_BODY_TEXT,
+              "transition-[height,color,background-color,border-color,box-shadow,opacity]",
+              MESSAGE_COMPOSER_TEXT,
               "leading-normal",
             )}
           />
