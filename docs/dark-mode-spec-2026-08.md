@@ -111,6 +111,13 @@ Two consequences for this spec, and they must not be quietly conflated:
 2. The light-theme accent contrast is **out of scope here** and belongs in its own pass. Noted so
    the next reader does not discover it as a dark-mode regression.
 
+The same pass owns one more finding, from the other side of the accent — **what is written ON
+gold**. `Checkbox`'s tick is `text-white` on the gold fill: **2.29**, below even the 3.0 an icon
+wants, and theme-invariant (both halves hold their hue), so dark mode neither causes it nor fixes
+it. It was left alone in Stage 3 for exactly that reason. Note that the primary button's label,
+which *was* a dark-mode defect, now reads `text-surface-inverse` at 8.0 — so if this finding is
+ever taken up, the answer is already in the palette.
+
 ### 1.3 Why the token swap actually works (verified, not assumed)
 
 Read out of `dist/assets/index-*.css`:
@@ -320,6 +327,24 @@ silently deleted by `cn()` at runtime, with no error and the class still present
 Why `surface-inverse` *rises* on dark rather than staying `#161412`: on a `#14120F` ground an
 island at `#161412` is invisible. Its job is "distinct from the page", not "black".
 
+**As built (Stage 3), three things the table did not say:**
+
+- `surface-inverse` has a **second role the inventory missed: ink on a gold fill.** An accent
+  holds its hue through the swap, so whatever is written on it has to hold its darkness alongside
+  — and every neutral the panel had for that job (`ink`, `graphite`) is a rung that inverts
+  underneath it. This is the token that fixes the primary button (§8, Stage 2's note), and it is
+  the same fix for the segmented tab's active pill, its count chip, and the calendar's chosen day.
+- **A `@theme` colour with no call site does not reach the stylesheet.** Tailwind tree-shakes it,
+  so `--color-line-on-inverse` shipped its `[data-theme="dark"]` half (hand-written CSS, never
+  shaken) against a `:root` half that had been dropped — the §10 parity failure, inverted. Caught
+  on the built sheet, fixed by giving the token its first consumer in the same commit
+  (`GlassCard variant="surface"`'s rim). Worth knowing for the parity test: it must read
+  `panel.css` as text, never the compiled output.
+- **A scrim is not a surface** and does not belong to any of the three. It is the absence of
+  light — black on both themes — so `ConfirmModal` and `BottomSheet` carry a literal `bg-black/4x`
+  and go on §10's allowlist. `bg-ethereal-ink/45` had put it one rung off black on light and
+  inverted it into a *white* veil on dark, brighter than the sheet standing on it.
+
 ### 3.2 The inventory
 
 Grouped by why they are dark, because each group has one decision, not one per file.
@@ -348,6 +373,28 @@ hairline and drops the fill. Decide once, apply to all five.
 → Do these **first**: fixing the primitive fixes most of its call sites. `accents.ts` is already
 correct by construction — `ACCENT_MARKER` reads `var(--color-ethereal-*)`, so Google Maps pins
 follow the theme with no code change.
+
+*Settled in Stage 3.* The group split three ways, and the split is the reusable part:
+
+- **Broken and self-contained** — the surface and the ink on it live in the same file, so both
+  move at once: `Button` (primary label; the `white/4x` fills on `secondary`/`outline` are a
+  brighter *rung*, so they became `marble`), `SegmentedTabs` (active pill + count chip),
+  `CalendarGrid` (chosen day + its marker dot), `Badge` (`glass`: fill, rim and the white bevel in
+  its arbitrary shadow, which took `var(--glass-highlight)` / `var(--glass-shade)`), `MetricBlock`
+  (hover fill), `Divider` (`solid-dark` → `bg-ink-on-inverse/15`; the alpha is load-bearing on a
+  busy toolbar and stays where the eye put it), and the two scrims.
+- **Correct already** — `GlassCard`'s four in-flow variants, `Checkbox`, `Select`, and every
+  ladder colour in `Typography`. The ladder did exactly what §1.1 said it would. `Typography`
+  gained `ink-on-inverse` / `ink-on-inverse-muted` (unused until Stage 4 renames the 83
+  `color="marble"` sites off the rung).
+- **Deferred, and not for the reason the inventory gave** — `GlassCard`'s `dark` and `surface`
+  variants are the FILL of the islands in groups A/B/C, and their ink is in those files. Flipping
+  a fill here alone leaves the PDF chrome dark-on-dark: strictly worse than the inside-out state
+  it replaces, which is at least readable. They move in Stage 4 (`surface`) and Stage 6 (`dark`).
+  **`variant="dark"` is shared by `RehearsalDock` (group B) and `NextEventHero` /
+  `TimelineProjectCard` (group C)** — so part of Stage 4 is blocked on the §9 decision, which the
+  staging assumed it was not. `fieldShell`'s own `dark` variant and `Select`'s dark chevron are
+  the same case and travel with them.
 
 **E · One-off `white` / `black`** (~25 files) — `AuthBrand`, `AuthCredential`, `ActivationNave`,
 `PasswordRequirements`, `LegalModals`, `LegalPage`, `WelcomeMoment`, `SeasonSetupConcierge`,
@@ -566,10 +613,22 @@ button's label is unreadable** — `Button.tsx:24` is `bg-ethereal-gold text-eth
 graphite is a rung, so the label flips to `#A8A199` on gold: contrast 3.98 → **1.10**. It is the
 loudest thing on the first dark screen and it is group D, first item of Stage 3.
 
-**Stage 3 — the primitives** (group D). `GlassCard`, `Button`, `Badge`, `Divider`, `Typography`,
-`Checkbox`, `MetricBlock`, `CalendarGrid`, `SegmentedTabs`, `Select` + the three inverse tokens
-and their `tailwindMerge.ts` entries. *Exit:* `fieldShell.test.ts` and `InlineEditable.test.ts`
-still green; a form, a modal and a bottom sheet read correctly in both themes.
+**Stage 3 — the primitives. DONE (2026-08-31).** The three inverse tokens, their `tailwindMerge.ts`
+entries (under `theme.color`) and the group-D split recorded in §3.2. Eleven files.
+`fieldShell.test.ts` and `InlineEditable.test.ts` are green **untouched** — the shell needed no
+change at all, so there is no new `DECIDED` entry to read.
+
+*Verified against the compiled sheet:* `text-surface-inverse` resolves to
+`color:var(--color-surface-inverse)` and the alpha modifiers to `color-mix(… var(--color-*) N%…)`,
+so all three tokens flip with the attribute. Both halves of each token are emitted (see §3.1 on
+what happens when they are not).
+
+*Left standing on purpose, and both are one grep:* **solid gold carrying a rung as its ink**
+survives in six places outside group D — `attendanceMeta.tsx:49` and `PitchPipe.tsx:345`
+(`text-ethereal-graphite`, i.e. the button's own 1.10), `RehearsalDock` ×2 and `AnnotationSidebar`
+/ `AnnotationToolbar` (`text-ethereal-ink` on `gold/90`). They are Stage 4/5 files; the token they
+need already exists. A `gold/10`-style wash is NOT this defect — there the ink reads against the
+composited surface, not against the accent.
 
 **Stage 4 — the score & document chrome** (groups A + B, 21 files). The largest group and the
 most mechanical. *Exit:* the score viewer, annotation toolbar and player dock are identical in
@@ -614,7 +673,10 @@ surfaces state their hierarchy the same way in both themes.
 - **Literal-colour guard**, as an npm script rather than an eslint plugin (cheap, and it is a
   grep either way):
   `rg -n '(bg|text|border|ring|fill|stroke|divide)-(white|black)' frontend/src` with an
-  allowlist file. Wire it into `npm run lint`.
+  allowlist file. Wire it into `npm run lint`. Allowlist so far, each a colour that is correct in
+  both themes rather than an unconverted one: the QR card's quiet zone (§6), the PDF page canvas
+  (§6), the two modal scrims (§3.1), `Checkbox`'s tick and `Badge`'s pulse sweep — a specular
+  highlight on an accent fill, the same exception the primary button's shadow already carries.
 - **`theme-color` parity**: `THEME_COLOR` in `shared/theme/themeController.ts` and the media-keyed
   pair in `index.html` both hard-code `--color-ethereal-canvas` per theme — a meta cannot read a
   CSS variable. Change the ground and all three move together, or a seam opens along the top edge
