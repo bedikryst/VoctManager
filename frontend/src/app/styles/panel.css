@@ -61,23 +61,49 @@
   --color-glass-surface: rgba(243, 243, 243, 0.62);
   --color-glass-border: rgba(194, 168, 120, 0.28);
 
+  /* Shadow colours are inlined at BUILD time — Tailwind resolves `--shadow-*`
+     into `--tw-shadow: … var(--tw-shadow-color, #ffffffe6) …`, so re-declaring
+     a `--shadow-*` token under a theme selector does nothing, silently. The
+     route that does work (verified against the compiled sheet): write the
+     colour as a `var()`, which Tailwind passes through unresolved into the
+     fallback slot; `--tw-shadow` is `syntax:"*"`, so it substitutes on the
+     element and follows whatever the theme declares. Any themed shadow colour
+     must therefore be a variable here, never a literal.
+
+     WHICH colours are themed is a question about what each layer paints ON, and
+     it sorts the layers below into three groups rather than two:
+
+     · Cast onto the PAGE — themed, because the ground flips underneath. These
+       become `--glass-highlight` (the light on a surface's top edge) and the
+       `--glass-shade` rungs, all declared in :root below. There are three shade
+       rungs and not one because a single alpha cannot carry rest, hover and a
+       control that stands proud of the page: .14 / .22 / .45 is the ramp the
+       panel already had, and flattening it would cost the card its hover lift
+       and the primary button its footing.
+     · Painted on the BUTTON'S OWN gold fill — not themed. Gold is an accent and
+       holds its hue in both themes, so a white specular line along its top edge
+       and an ink line along its bottom are correct on either ground. Literal on
+       purpose; these two are the exception the rule above allows for.
+     · A gold GLOW — an accent, not a shadow. `outline-hover` and the primary
+       button's hover cast are the surface saying "gold"; it says it the same
+       way on a dark ground, so both stay literal too. */
   --shadow-glass-ethereal:
-    inset 0 1px 1px rgba(255, 255, 255, 0.9),
-    0 1px 2px rgba(22, 20, 18, 0.04),
-    0 10px 36px -18px rgba(120, 104, 82, 0.14);
+    inset 0 1px 1px var(--glass-highlight),
+    0 1px 2px var(--glass-contact),
+    0 10px 36px -18px var(--glass-shade);
   --shadow-glass-ethereal-hover:
-    inset 0 1px 1px rgba(255, 255, 255, 1),
-    0 2px 4px rgba(22, 20, 18, 0.05),
-    0 18px 38px -18px rgba(120, 104, 82, 0.22);
+    inset 0 1px 1px var(--glass-highlight),
+    0 2px 4px var(--glass-contact),
+    0 18px 38px -18px var(--glass-shade-lifted);
   --shadow-glass-solid:
-    0 1px 2px rgba(22, 20, 18, 0.05),
-    0 10px 24px -12px rgba(120, 104, 82, 0.16);
+    0 1px 2px var(--glass-contact),
+    0 10px 24px -12px var(--glass-shade);
   --shadow-glass-outline-hover: 0 4px 16px rgba(194, 168, 120, 0.1);
 
   --shadow-button-primary:
     inset 0 1px 0 rgba(255, 255, 255, 0.45),
     inset 0 -1px 0 rgba(22, 20, 18, 0.14),
-    0 6px 16px -4px rgba(120, 104, 82, 0.45);
+    0 6px 16px -4px var(--glass-shade-strong);
   --shadow-button-primary-hover:
     inset 0 1px 0 rgba(255, 255, 255, 0.6),
     inset 0 -1px 0 rgba(22, 20, 18, 0.16),
@@ -146,6 +172,25 @@
   :root {
     color-scheme: light;
 
+    /* The colours inside every `--shadow-*` token that paints against the page
+       ground, split out here so a theme can re-declare them (the @theme block
+       says why they cannot live there). Not @theme values: they name no utility
+       and are not in the `--shadow-*` namespace.
+
+       Five, and each names a job rather than a place in a scale:
+        · highlight — the light striking a glass surface's top edge (inset)
+        · contact   — the tight line where a surface meets the page
+        · shade     — the ambient cast, at rest
+        · …-lifted  — the same cast when the surface is raised (hover)
+        · …-strong  — under a control that stands proud of the page. Tighter
+                      blur than the others, so it needs more alpha to read at
+                      the same weight; that is why it is not simply `lifted`. */
+    --glass-highlight: rgba(255, 255, 255, 0.9);
+    --glass-contact: rgba(22, 20, 18, 0.05);
+    --glass-shade: rgba(120, 104, 82, 0.14);
+    --glass-shade-lifted: rgba(120, 104, 82, 0.22);
+    --glass-shade-strong: rgba(120, 104, 82, 0.45);
+
     /* Real height of the fixed mobile nav dock (icon + label rows + its own
        safe-area pad). The single source of truth for "how much space the dock
        eats at the bottom edge", consumed by content padding (pb-nav-dock) and
@@ -165,6 +210,95 @@
       --bottom-dock-gap: 2.5rem;
       --floating-dock-gap: 2.5rem;
     }
+  }
+
+  /* ==========================================
+     THE DARK THEME
+     One rule governs everything below: THE SIX LADDER RUNGS FLIP, THE FIVE
+     ACCENTS HOLD THEIR HUE.
+
+     A rung's name declares a POSITION, not a lightness — `marble` means *the
+     brightest surface*, and on a dark ground the brightest surface is #2A2521.
+     Read that way, re-declaring the six inverts every call site in the panel
+     without touching one of them, alpha washes included: `bg-ethereal-ink/5` is
+     a 5% darkening on light and a 5% lightening here, which is the correct
+     idiom on both. The accents behave oppositely — gold, sage and incense
+     already clear AA against this ground unchanged (8.2 / 6.4 / 6.2 on the
+     canvas), and that they survive the inversion untouched is the reason dark
+     mode here is the same design on a different ground rather than a second
+     one. Only amethyst and crimson need a value at all.
+
+     Two conditions this block depends on, both load-bearing:
+      · The palette must stay in `@theme`, never `@theme inline` — `inline`
+        bakes each value into the compiled utility and silently disables the
+        whole mechanism.
+      · Alpha modifiers (`/60`) reach these values through `color-mix`, with a
+        light-theme hex as the pre-`color-mix` fallback. On a browser without
+        `color-mix` (Chrome <111, Safari <16.2, Firefox <113) the washes would
+        render in light-theme colour on a dark ground. The panel already floors
+        at iOS 16.4 for install, so this sits inside the supported range — but
+        that floor is now doing work it was not doing before.
+
+     No `@media (prefers-color-scheme: dark)` anywhere. The OS preference is
+     read once, in JS, and resolved into this attribute (shared/theme/); a media
+     block as well would let "system" and an explicit override fight in the
+     cascade, with the winner decided by source order rather than by intent.
+     `@layer base` outranks @theme's `:root` on layer order alone, so none of
+     this needs !important or a heavier selector.
+     ========================================== */
+  [data-theme="dark"] {
+    /* Not cosmetic: this is what makes the UA paint its OWN surfaces dark —
+       form controls, the scrollbar gutter, the autofill wash, the caret. */
+    color-scheme: dark;
+
+    /* The ladder. Adjacent-surface contrast is held at 1.06–1.09 against the
+       light theme's 1.10, so panels keep separating by value the way they do
+       today. Never a pure #000 ground: it kills the warm cast the brand runs
+       on, and on OLED it smears on scroll. */
+    --color-ethereal-marble: #2a2521;
+    --color-ethereal-alabaster: #221e1a;
+    --color-ethereal-parchment: #1b1815;
+    --color-ethereal-canvas: #14120f;
+    --color-ethereal-graphite: #a8a199;
+    --color-ethereal-ink: #f3f0ea;
+
+    /* The two accents that cannot hold. Amethyst is lifted just clear of AA on
+       the card (4.25 → 6.00); crimson takes the value of `crimson-light`, so
+       ON DARK THE ALARM COLOUR IS THE LIGHTER HALF OF THE PAIR THE PALETTE
+       ALREADY SHIPS — no new hue enters the brand. Do not tune either of these
+       "to match the light theme": light's accents fail AA today (a real defect,
+       tracked separately), and matching them means dragging these back below
+       the line on purpose. */
+    --color-ethereal-amethyst: #a695b8;
+    --color-ethereal-crimson: #d6a19f;
+    --color-ethereal-crimson-light: #eab5b1;
+
+    /* A dark hairline is not the light one inverted at the same alpha: light
+       ink on a dark ground reads weaker than dark ink on a light one, so both
+       steps gain a few points (.08/.14 against .06/.10). */
+    --color-hairline: rgba(243, 240, 234, 0.08);
+    --color-hairline-strong: rgba(243, 240, 234, 0.14);
+
+    /* Glass keeps its 62% and its gold rim; only the tint behind it flips, to
+       marble — the rung a floating surface has always sat on. The rim loses a
+       little alpha because gold reads louder against a dark ground. */
+    --color-glass-surface: rgba(42, 37, 33, 0.62);
+    --color-glass-border: rgba(194, 168, 120, 0.22);
+
+    /* Shadow colours (see the @theme block for why they are variables). The
+       highlight collapses from a bevel to a whisper: 90% white on a #221E1A
+       card is a chalk line, not a light source. The shades all go black —
+       a warm-brown cast on a near-black ground composites LIGHTER than the
+       ground and reads as a glow, which is the opposite of what a cast shadow
+       says. Their ramp compresses on the way (.35/.45/.55/.60 against
+       .05/.14/.22/.45): the ground is already dark enough that alpha stops
+       buying separation past ~.45, and on this theme it is the geometry that
+       carries the difference between resting and raised. */
+    --glass-highlight: rgba(255, 255, 255, 0.05);
+    --glass-contact: rgba(0, 0, 0, 0.35);
+    --glass-shade: rgba(0, 0, 0, 0.45);
+    --glass-shade-lifted: rgba(0, 0, 0, 0.55);
+    --glass-shade-strong: rgba(0, 0, 0, 0.6);
   }
 
   body.theme-panel {

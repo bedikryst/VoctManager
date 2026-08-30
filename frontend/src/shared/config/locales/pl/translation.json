@@ -4689,6 +4689,13 @@
         "title": "Udostępnij aplikację"
       },
       "subtitle": "Zainstaluj VoctManager na urządzeniu — pełny ekran, błyskawiczny dostęp i ćwiczenia offline. Działa na telefonie, tablecie i komputerze.",
+      "theme": {
+        "dark": "Ciemny",
+        "light": "Jasny",
+        "subtitle": "Ustawienie dotyczy tego urządzenia. Nie przenosi się na inne — na telefonie i na komputerze możesz mieć różny.",
+        "system": "Jak w systemie",
+        "title": "Wygląd"
+      },
       "title": "Aplikacja"
     },
     "avatar": {

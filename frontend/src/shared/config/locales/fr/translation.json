@@ -4657,6 +4657,13 @@
         "title": "Partager l'application"
       },
       "subtitle": "Installez VoctManager sur votre appareil — plein écran, accès instantané et répétition hors ligne. Sur téléphone, tablette et ordinateur.",
+      "theme": {
+        "dark": "Sombre",
+        "light": "Clair",
+        "subtitle": "Ce réglage ne concerne que cet appareil ; votre téléphone et votre ordinateur peuvent différer.",
+        "system": "Comme le système",
+        "title": "Apparence"
+      },
       "title": "Application"
     },
     "avatar": {

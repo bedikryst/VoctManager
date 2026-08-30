@@ -4656,6 +4656,13 @@
         "title": "Share the app"
       },
       "subtitle": "Install VoctManager on your device — full screen, instant access and offline practice. Works on phone, tablet and desktop.",
+      "theme": {
+        "dark": "Dark",
+        "light": "Light",
+        "subtitle": "Applies to this device only; your phone and your computer can differ.",
+        "system": "Match system",
+        "title": "Appearance"
+      },
       "title": "App"
     },
     "avatar": {

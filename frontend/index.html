@@ -33,13 +33,51 @@
     </script>
 
     <!--
+      The theme, resolved during parse — before the stylesheet paints anything.
+      The app bundle is lazy, so by the time React (or even the entry chunk)
+      evaluates, the ground has already been painted in whatever the CSS
+      defaults to; without this attribute every dark start opens with a cream
+      flash. Same class of reason as the install buffer above.
+
+      Kept in lockstep with shared/theme/themeController.ts, which owns the
+      attribute from boot onwards: same key, same media query, same rule (an
+      unrecognised stored value falls back to following the OS). `try/catch`
+      because a locked-down browser throws on localStorage, and a throw here
+      would abandon the page unstyled.
+    -->
+    <script>
+      (function () {
+        var pref = "system";
+        try {
+          pref = localStorage.getItem("voct.theme") || "system";
+        } catch (e) {}
+        var dark =
+          pref === "dark" ||
+          (pref !== "light" &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.setAttribute(
+          "data-theme",
+          dark ? "dark" : "light",
+        );
+      })();
+    </script>
+
+    <!--
       Installable PWA. Static manifest in /public (no plugin HTML injection, so
-      the install criteria are auditable here). theme-color tracks the light
-      panel chrome; the dark variant matches the splash/icon backdrop (#060607).
+      the install criteria are auditable here).
+
+      These two metas are only the PRE-BOOT default: they are keyed on the OS,
+      which is wrong for a member who forces light inside a dark-mode phone. The
+      theme controller prepends an un-keyed `theme-color` meta once it resolves,
+      and the first matching meta in tree order wins. Both values mirror
+      `--color-ethereal-canvas` per theme — a theme-color that drifts from the
+      ground is a visible seam along the top edge on installed iOS. The
+      manifest's own `background_color` is a different surface (the one-second
+      splash) and stays at #060607.
     -->
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#f6f5f2" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#060607" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#EBE5D9" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14120F" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />

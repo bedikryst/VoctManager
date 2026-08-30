@@ -1,11 +1,12 @@
 /**
  * @file AppTab.tsx
- * @description "Aplikacja" settings pane: a deterministic, always-available home
- * for installing VoctManager to the device — independent of the ambient nudge
- * card, which is best-effort by nature. Resolves every platform case (installed
- * / one-tap Chromium / the four Apple routes to the home screen / other
- * browsers) and lets users hand the app to the ensemble via link, native share
- * sheet, or a scannable QR.
+ * @description "Aplikacja" settings pane — everything scoped to the DEVICE
+ * rather than the account. Primarily a deterministic, always-available home for
+ * installing VoctManager here, independent of the ambient nudge card which is
+ * best-effort by nature: it resolves every platform case (installed / one-tap
+ * Chromium / the four Apple routes to the home screen / other browsers). It
+ * also carries the appearance (light/dark) switch and lets users hand the app
+ * to the ensemble via link, native share sheet, or a scannable QR.
  * @architecture Enterprise SaaS 2026
  * @module features/settings/components/AppTab
  */
@@ -23,6 +24,7 @@ import {
   Share2,
   Smartphone,
   SquarePlus,
+  SunMoon,
   WifiOff,
   Zap,
   type LucideIcon,
@@ -30,10 +32,12 @@ import {
 
 import { GlassCard } from "@ui/composites/GlassCard";
 import { SectionHeader } from "@ui/composites/SectionHeader";
+import { SegmentedTabs } from "@ui/composites/SegmentedTabs";
 import { Button } from "@ui/primitives/Button";
 import { Text, Caption } from "@ui/primitives/typography";
 import type { AppleInstallGuide } from "@/shared/pwa/platform";
 import { useInstallPrompt } from "@/shared/pwa/useInstallPrompt";
+import { useTheme } from "@/shared/theme/useTheme";
 
 const InstallQrCode = lazy(() =>
   import("./InstallQrCode").then((m) => ({ default: m.InstallQrCode })),
@@ -206,7 +210,20 @@ export const AppTab = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { canPrompt, isIOS, appleGuide, isInstalled, promptInstall } =
     useInstallPrompt();
+  const { preference, setPreference } = useTheme();
   const [justCopied, setJustCopied] = useState(false);
+
+  // No segment icons here, on purpose: "Jak w systemie" plus an icon overflows
+  // the track on a 360px phone, and the control's fallback is a hidden
+  // horizontal scroll — an invisible third state. The words carry it.
+  const themeOptions = useMemo(
+    () => [
+      { id: "system" as const, label: t("settings.app.theme.system") },
+      { id: "light" as const, label: t("settings.app.theme.light") },
+      { id: "dark" as const, label: t("settings.app.theme.dark") },
+    ],
+    [t],
+  );
 
   // start_url of the installable app (the manifest scope entry point). Sharing
   // root "/" would land on the public marketing site, not the app.
@@ -340,6 +357,26 @@ export const AppTab = (): React.JSX.Element => {
             />
           </div>
         )}
+      </GlassCard>
+
+      {/* ── APPEARANCE ──────────────────────────────── */}
+      {/* Lives on this tab, not on "Ogólne": that one is account-scoped
+          (language, timezone) and would imply the choice follows the member to
+          every device — which is exactly what the subtitle has to deny. */}
+      <GlassCard variant="light" isHoverable={false}>
+        <SectionHeader
+          title={t("settings.app.theme.title")}
+          icon={<SunMoon className="h-5 w-5" />}
+        />
+        <Text color="muted" className="mb-5 mt-1">
+          {t("settings.app.theme.subtitle")}
+        </Text>
+        <SegmentedTabs
+          items={themeOptions}
+          value={preference}
+          onChange={setPreference}
+          ariaLabel={t("settings.app.theme.title")}
+        />
       </GlassCard>
 
       {/* ── SHARE ───────────────────────────────────── */}

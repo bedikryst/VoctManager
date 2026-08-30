@@ -8,17 +8,17 @@
  * @module core/App
  */
 
-import React, { Suspense, lazy, useEffect } from "react";
+import React, { Suspense, lazy } from "react";
 import {
   createBrowserRouter,
   createRoutesFromElements,
   Route,
   Outlet,
-  useLocation,
   Navigate,
 } from "react-router-dom";
 import { Toaster } from "sonner";
 
+import { useTheme } from "@/shared/theme/useTheme";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import RouteErrorBoundary from "./router/RouteErrorBoundary";
@@ -213,8 +213,10 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
 
 /**
  * Root layout for the data router. Hosts the app-wide CSRF provider, the
- * outer (null) Suspense boundary, the toast portal and the panel body-class
- * effect, then yields to the matched route via `<Outlet>`. Migrated off the
+ * outer (null) Suspense boundary and the toast portal, then yields to the
+ * matched route via `<Outlet>`. The panel's body classes are static and come
+ * from `index.html` + `body.theme-panel` in `panel.css`; nothing here restates
+ * them. Migrated off the
  * declarative `<BrowserRouter>` so feature routes can use `useBlocker`
  * (e.g. the Project Hub's unsaved-changes guard) — unavailable in declarative
  * routers.
@@ -234,29 +236,23 @@ const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
  * forgot its own gate.
  */
 function RootLayout(): React.JSX.Element {
-  const location = useLocation();
-
-  useEffect(() => {
-    document.body.classList.add(
-      "theme-panel",
-      "bg-ethereal-snow",
-      "text-ethereal-ink",
-      "selection:bg-ethereal-gold/20",
-    );
-    document.body.classList.remove(
-      "theme-marketing",
-      "page-o-nas",
-      "page-kontakt",
-      "page-koncerty",
-    );
-  }, [location.pathname]);
+  // sonner paints its own skin and would otherwise pick it from the OS, which
+  // is the wrong source once the member can force a theme per device. The
+  // controller has already resolved `system` away, so hand it the literal.
+  const { resolved } = useTheme();
 
   return (
     <CSRFProvider>
       <Suspense fallback={null}>
         <Outlet />
       </Suspense>
-      <Toaster position="top-right" richColors closeButton duration={4000} />
+      <Toaster
+        position="top-right"
+        theme={resolved}
+        richColors
+        closeButton
+        duration={4000}
+      />
     </CSRFProvider>
   );
 }
