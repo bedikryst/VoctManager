@@ -1,7 +1,7 @@
 # Dark mode — specification (2026-08)
 
-Status: **proposed, nothing implemented** · Audited 2026-08-30 · Surface: `frontend/` (panel PWA
-only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
+Status: **Stages 0–3 shipped; Stage 4 is next** · Audited 2026-08-30 · Surface: `frontend/` (panel
+PWA only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
 scope — see §7.
 
 ## The finding first
@@ -151,15 +151,23 @@ because that white inset is the panel's glass bevel — left alone on a dark gro
 bright top edge on every one of ~130 cards and the whole surface reads as a light card someone
 tinted.
 
-Fix, in preference order:
+Fix: **mechanism A — settled, verified 2026-08-30 (Stage 0).** Keep the `@theme --shadow-*`
+tokens and write their colours as `var(--glass-highlight)` / `var(--glass-shade)`, re-declared per
+theme. Tailwind passes the `var()` through unresolved into the fallback slot:
 
-- **A** — keep the `@theme --shadow-*` tokens but write their colours as `var(--glass-highlight)`
-  / `var(--glass-shade)` and re-declare *those* per theme. Whether Tailwind's colour extraction
-  passes a `var()` through into `var(--tw-shadow-color, …)` is unverified — **spike it first**
-  (§8, Stage 0); it is ten minutes of work and decides the shape of the rest.
-- **B** — if A fails: move the four glass shadows out of `@theme` into hand-written `@utility`
-  blocks (`box-shadow: …` directly), and move them in `tailwindMerge.ts` from `theme.shadow` to
-  a named entry under `classGroups.shadow`. Call sites do not change.
+```css
+/* --shadow-glass-ethereal: inset 0 1px 1px var(--glass-highlight), … */
+.shadow-glass-ethereal { --tw-shadow: inset 0 1px 1px var(--tw-shadow-color,var(--glass-highlight)), … }
+```
+
+and `@property --tw-shadow` is `syntax:"*"`, an unresolved token stream — so the substitution
+happens on the element and inherits whatever `[data-theme="dark"]` declares. Declare the two new
+variables in the `:root` base block (not `@theme`: they are not a `--shadow-*` namespace value and
+generate no utility).
+
+*Rejected, no longer needed:* **B** — moving the four glass shadows out of `@theme` into
+hand-written `@utility` blocks and re-filing them in `tailwindMerge.ts` from `theme.shadow` to a
+named `classGroups.shadow` entry. Recorded so it is not re-proposed.
 
 The 53 arbitrary `shadow-[…]` values are unreachable by either and are hand work (§4).
 
@@ -228,10 +236,34 @@ dark, the alarm colour is the lighter of the existing pair.** No new hue is intr
 | `--color-glass-surface` | `rgba(243,243,243,.62)` | `rgba(42,37,33,.62)` |
 | `--color-glass-border` | `rgba(194,168,120,.28)` | `rgba(194,168,120,.22)` |
 | `--glass-highlight` *(new, §1.4)* | `rgba(255,255,255,.9)` | `rgba(255,255,255,.05)` |
+| `--glass-contact` *(new, Stage 2)* | `rgba(22,20,18,.05)` | `rgba(0,0,0,.35)` |
 | `--glass-shade` *(new)* | `rgba(120,104,82,.14)` | `rgba(0,0,0,.45)` |
+| `--glass-shade-lifted` *(new, Stage 2)* | `rgba(120,104,82,.22)` | `rgba(0,0,0,.55)` |
+| `--glass-shade-strong` *(new, Stage 2)* | `rgba(120,104,82,.45)` | `rgba(0,0,0,.6)` |
 
 A dark hairline is not the light one inverted at the same alpha — light needs more alpha to read
 against a dark ground, hence .08/.14 against .06/.10.
+
+**The shadow mapping, as settled in Stage 2.** Two variables were not enough, and the reason is
+that "themed" is a question about what a layer paints *on*, not what colour it happens to be:
+
+- Layers cast onto the **page** are themed — three shade rungs plus the highlight. The rungs exist
+  because one alpha cannot carry rest, hover and a control standing proud of the page; `.14 / .22
+  / .45` is the ramp the panel already had, and flattening it costs the card its hover lift and
+  the primary button its footing. `--glass-contact` is the fourth: the tight `0 1px 2px` line,
+  ink rather than warm, which §1.4 counted ("four ink inner lines") without naming.
+- Layers painting on the **primary button's own gold fill** are *not* themed and stay literal —
+  gold is an accent and holds, so a white specular line on its top edge and an ink line on its
+  bottom are correct on either ground. These are the exception to the "never a literal" rule
+  written above the `@theme` shadow block, and the block names them.
+- A **gold glow** is an accent, not a shadow: `--shadow-glass-outline-hover` and the primary
+  button's hover cast say "gold", and say it the same way on dark. Literal.
+
+Dark compresses the shade ramp (`.35/.45/.55/.60` against `.05/.14/.22/.45`): black over a
+`#14120F` ground stops buying separation past ~`.45`, so on this theme it is the geometry that
+distinguishes resting from raised. The light theme moves by three alpha points in total
+(contact `.04→.05`, glass-solid drop `.16→.14`, hover highlight `1→.9`) — all sub-2 % and all
+deliberate collapses.
 
 **`bg-noise` blend mode.** `GlassCard` and `PdfViewer` composite the grain with
 `mix-blend-color-burn`; burn against a near-black ground crushes to nothing. `EtherealBackground`
@@ -331,10 +363,11 @@ a scanner needs a light quiet zone (§6).
 
 ### 3.3 Dead code found on the way
 
-- `App.tsx:242` adds `bg-ethereal-snow` to `document.body`. **`ethereal-snow` is not a token** —
-  it compiles to nothing. The same effect (`bg`, `text`, `selection`) is already declared by
-  `body.theme-panel` in `panel.css:170`. The whole `classList.add` block is redundant; delete it
-  rather than porting it. It also re-runs on every `location.pathname` change.
+- ~~`App.tsx:242` adds `bg-ethereal-snow` to `document.body`.~~ **Deleted in Stage 1.**
+  `ethereal-snow` was not a token — it compiled to nothing — and the same effect (`bg`, `text`,
+  `selection`) is declared by `body.theme-panel` in `panel.css`. The `classList.remove` half named
+  four marketing classes (`theme-marketing`, `page-o-nas`, …) that exist nowhere in `frontend/`;
+  they belong to the Astro document. The whole effect re-ran on every `location.pathname` change.
 - 2 stock-palette classes (`text-emerald-200`, `bg-emerald-500/20`) — delete, use `sage`.
 
 ---
@@ -378,18 +411,27 @@ must happen during parse, in an inline script in `index.html` — beside the exi
 ```html
 <script>
   (function () {
+    var pref = "system";
     try {
-      var p = localStorage.getItem("voct.theme") || "system";
-      var dark = p === "dark" || (p === "system" &&
-        matchMedia("(prefers-color-scheme: dark)").matches);
-      if (dark) document.documentElement.setAttribute("data-theme", "dark");
+      pref = localStorage.getItem("voct.theme") || "system";
     } catch (e) {}
+    var dark =
+      pref === "dark" ||
+      (pref !== "light" &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
   })();
 </script>
 ```
 
 `try/catch` because a locked-down browser throws on `localStorage` access, and a throw here
-leaves the page unstyled.
+leaves the page unstyled — so only the read is guarded, and the stamp happens either way.
+
+Two details as built (2026-08-30): the attribute is stamped **explicitly on both themes**, not
+only on dark. `data-theme="light"` costs one selector nothing and makes the DOM say whether the
+theme was resolved or the script never ran. And an unrecognised stored value falls back to
+following the OS in both the snippet and the controller (`pref !== "light"`, `isPreference()`) —
+the two resolutions have to agree exactly or the boot stamp and the first React render disagree.
 
 The React side owns three jobs and nothing else: write the preference, re-stamp the attribute,
 and keep a `matchMedia` listener alive while the preference is `system` (the OS can flip while
@@ -413,9 +455,18 @@ pre-boot default.
 Also: the light value `#f6f5f2` does not match `--color-ethereal-canvas` (`#EBE5D9`) — a
 pre-existing seam at the top of the screen on installed iOS. Fix it in the same pass.
 
+As built: the controller inserts its meta **immediately before** the media pair rather than at the
+top of `<head>` — the UA takes the first matching meta in tree order, so that is enough to win,
+and `<meta charset>` stays the first child. Both HTML values were repointed at the canvas per
+theme (`#EBE5D9` / `#14120F`), and `THEME_COLOR` in `themeController.ts` mirrors them; the pair
+now has to be kept in step with `--color-ethereal-canvas`, which §10 should check.
+
 `manifest.webmanifest` is static and cannot follow a runtime preference. Leave
 `theme_color` at the light value and `background_color` at `#060607`; the splash is a one-second
-surface and not worth a second manifest.
+surface and not worth a second manifest. Its `theme_color` carried the same stale `#f6f5f2` and
+was corrected to `#EBE5D9` alongside the metas — the seam it opens is the installed Android window
+chrome rather than the iOS status bar, but it is the same defect. Already-installed devices pick
+it up on the next manifest refresh, not immediately.
 
 ### 5.4 The UI
 
@@ -475,18 +526,45 @@ light". Polish is primary and must read natively.
 
 Each stage is shippable on its own and touches files no other stage touches.
 
-**Stage 0 — the shadow spike.** Ten minutes. Rewrite one `@theme --shadow-*` colour as
-`var(--glass-highlight)`, build, and read the compiled rule. Decide mechanism A or B (§1.4).
-*Exit:* the mechanism is chosen and written into `panel.css`'s own comment.
+**Stage 0 — the shadow spike. DONE (2026-08-30).** Mechanism **A** holds (§1.4); the constraint
+is written into `panel.css` above the `--shadow-*` block. The conversion of the six shadow tokens
+to `var(--glass-highlight)` / `var(--glass-shade)` belongs to Stage 2, where the dark values that
+justify it are declared — the light theme's own literals map onto more than two colours (four
+white highlights, four ink inner lines, six warm drops), so collapsing them is a palette decision,
+not a mechanical rewrite.
 
-**Stage 1 — the switch, on the light theme only.** `data-theme` attribute, the inline boot
-script, `shared/theme/`, the `AppTab` control, the i18n keys, `theme-color` from JS, the sonner
-`theme` prop. `[data-theme="dark"]` declares nothing yet, so switching to dark changes nothing
-visible. *Exit:* the preference survives a reload and a cold PWA start; no flash on either.
+**Stage 1 — the switch, on the light theme only. DONE (2026-08-30).** `data-theme` attribute, the
+inline boot script, `shared/theme/{themeController,useTheme}.ts`, the `AppTab` control, the i18n
+keys, `theme-color` from JS, the sonner `theme` prop. `[data-theme="dark"]` declares nothing yet.
+Two things do respond to the toggle already and are expected to until Stage 2: the browser-chrome
+colour (it points at the eventual dark ground) and sonner's own skin.
 
-**Stage 2 — the ladder.** The six rungs, two accents, hairlines, glass, `color-scheme`, and the
-shadow mechanism from Stage 0. The panel goes dark and the inverse islands are inverted-wrong.
-*Exit:* the ground, cards, hairlines and body text are right on the dashboard and one list page.
+Also swept, being dead in the same function: the `document.body.classList` block in `App.tsx`
+(§3.3) — with it, `useLocation`/`useEffect` there.
+
+*Exit met:* the stylesheet `<link>` is emitted at the END of `<head>`, ~250 lines after the boot
+script, so the attribute is on `<html>` before the CSS is fetched; `index.html` is precached, so
+a cold PWA start replays the same parse. Final visual check is the developer's.
+
+**Stage 2 — the ladder. DONE (2026-08-30).** The six rungs, two accents, hairlines, glass,
+`color-scheme`, and the shadow mechanism from Stage 0 — one `[data-theme="dark"]` block in
+`panel.css`, 19 declarations, no call site touched. The shadow mapping settled at five variables,
+not two (§2.3).
+
+*Verified against the compiled sheet:* `@layer base` is emitted after `@layer theme`, so the block
+outranks `@theme`'s `:root` on layer order alone — no `!important`, no heavier selector. Every
+`var()` reaches the utility unresolved (`--tw-shadow: … var(--tw-shadow-color,var(--glass-shade))`),
+and the alpha washes compile to `color-mix(in oklab, var(--color-ethereal-*) N%, transparent)` with
+the light hex as the pre-`color-mix` fallback — §1.3's browser floor, now load-bearing.
+
+*Exit is the developer's:* the ground, cards, hairlines and body text on the dashboard and one list
+page. The palette is a starting point to be judged on the render (§2); if a rung moves, the three
+inverse tokens in §3.1 move with it, since two of them are rungs.
+
+Expected and NOT a Stage 2 defect: every inverse island is inside out (§3), and **the primary
+button's label is unreadable** — `Button.tsx:24` is `bg-ethereal-gold text-ethereal-graphite`, and
+graphite is a rung, so the label flips to `#A8A199` on gold: contrast 3.98 → **1.10**. It is the
+loudest thing on the first dark screen and it is group D, first item of Stage 3.
 
 **Stage 3 — the primitives** (group D). `GlassCard`, `Button`, `Badge`, `Divider`, `Typography`,
 `Checkbox`, `MetricBlock`, `CalendarGrid`, `SegmentedTabs`, `Select` + the three inverse tokens
@@ -537,6 +615,11 @@ surfaces state their hierarchy the same way in both themes.
   grep either way):
   `rg -n '(bg|text|border|ring|fill|stroke|divide)-(white|black)' frontend/src` with an
   allowlist file. Wire it into `npm run lint`.
+- **`theme-color` parity**: `THEME_COLOR` in `shared/theme/themeController.ts` and the media-keyed
+  pair in `index.html` both hard-code `--color-ethereal-canvas` per theme — a meta cannot read a
+  CSS variable. Change the ground and all three move together, or a seam opens along the top edge
+  of an installed iOS app. Cheapest home for this is the §10 token-parity test, which already
+  parses `panel.css` as text.
 - **Contrast**: re-run the ratio table (§1.1/§2) after any palette tweak. Target AA 4.5 for text
   and 3.0 for icons/marks on **both** the ground and the card — the card is always the tighter of
   the two and is the one to check.
