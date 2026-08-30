@@ -72,6 +72,13 @@ export const typographyVariants = cva("transition-colors duration-500", {
       "incense-muted": "text-ethereal-incense/60",
       graphite: "text-ethereal-graphite",
       "marble-muted": "text-ethereal-marble/60",
+      // Ink for a surface that is dark in BOTH themes — score chrome, the
+      // player dock, a sheet that keeps its ink fill. `marble` reads as that
+      // today only because the ladder happens to put the brightest rung there;
+      // on a dark ground it becomes #2A2521 and the island goes ink-on-ink.
+      // These two are the same role stated so it survives the swap.
+      "ink-on-inverse": "text-ink-on-inverse",
+      "ink-on-inverse-muted": "text-ink-on-inverse/60",
       "parchment-muted": "text-ethereal-parchment/60",
       crimson: "text-ethereal-crimson",
       "crimson-light": "text-ethereal-crimson-light",

@@ -20,12 +20,24 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // The label sits on GOLD, and gold holds its hue through the theme
+        // swap — so the label has to hold its darkness with it. Both neutrals
+        // it used to name are ladder rungs and invert underneath it: graphite
+        // landed at 1.10 on the gold fill, ink at 1.90. `surface-inverse` is
+        // the dark-in-both-themes token, and it lands at 8.0 / 6.6. The one
+        // side effect on the light theme is deliberate: the resting label
+        // deepens from graphite to ink, which is where the hover state already
+        // took it and clears AA (3.98 → 8.0) on the panel's loudest control.
         primary:
-          "bg-ethereal-gold text-ethereal-graphite border border-ethereal-gold/30 shadow-button-primary hover:shadow-button-primary-hover hover:bg-ethereal-gold/90 hover:border-ethereal-ink/20 hover:text-ethereal-ink",
+          "bg-ethereal-gold text-surface-inverse border border-ethereal-gold/30 shadow-button-primary hover:shadow-button-primary-hover hover:bg-ethereal-gold/90 hover:border-ethereal-ink/20",
+        // `marble` rather than white: the fill means "a step brighter than the
+        // card under me", which is a rung, not a colour. On light the two are
+        // within one value step of each other; on dark it lifts off the card
+        // instead of punching a white hole in it.
         secondary:
-          "bg-white/50 backdrop-blur-md border border-ethereal-incense/20 text-ethereal-ink shadow-sm hover:border-ethereal-gold/50 hover:bg-white/80 hover:text-ethereal-gold",
+          "bg-ethereal-marble/50 backdrop-blur-md border border-ethereal-incense/20 text-ethereal-ink shadow-sm hover:border-ethereal-gold/50 hover:bg-ethereal-marble/80 hover:text-ethereal-gold",
         outline:
-          "bg-transparent text-ethereal-graphite border border-ethereal-incense/30 hover:border-ethereal-gold hover:text-ethereal-ink hover:bg-white/40",
+          "bg-transparent text-ethereal-graphite border border-ethereal-incense/30 hover:border-ethereal-gold hover:text-ethereal-ink hover:bg-ethereal-marble/40",
         ghost:
           "bg-transparent text-ethereal-graphite hover:text-ethereal-ink hover:bg-ethereal-incense/10 shadow-none",
         destructive:

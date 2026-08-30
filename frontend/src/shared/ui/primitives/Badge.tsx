@@ -46,8 +46,12 @@ const badgeVariants = cva(
           "bg-ethereal-ink/5 text-ethereal-ink border-ethereal-incense/30 backdrop-blur-sm",
         outline:
           "bg-transparent text-ethereal-graphite border-ethereal-incense/30",
+        // The frosted chip. Every part of it says "one step brighter than the
+        // card I sit on", so every part of it is a rung or a glass variable —
+        // the literal white fill and the literal white bevel both stated that
+        // in a way that only holds on a cream ground.
         glass:
-          "bg-white/45 backdrop-blur-[8px] text-ethereal-ink border-white/80 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9),0_2px_8px_rgba(166,146,121,0.05)]",
+          "bg-ethereal-marble/45 backdrop-blur-[8px] text-ethereal-ink border-ethereal-marble/80 shadow-[inset_0_1px_1px_var(--glass-highlight),0_2px_8px_var(--glass-shade)]",
       },
     },
     defaultVariants: {

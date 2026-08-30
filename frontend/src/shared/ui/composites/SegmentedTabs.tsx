@@ -102,7 +102,7 @@ export function SegmentedTabs<TId extends string>({
                     wrap ? "grow basis-24" : "flex-1 shrink-0 sm:flex-none",
                   ),
               isActive
-                ? "bg-ethereal-gold text-ethereal-ink shadow-sm"
+                ? "bg-ethereal-gold text-surface-inverse shadow-sm"
                 : isDark
                   ? "text-ethereal-parchment/70 hover:bg-white/8 hover:text-ethereal-parchment"
                   : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
@@ -118,8 +118,12 @@ export function SegmentedTabs<TId extends string>({
               <span
                 className={cn(
                   "rounded-chip px-1.5 py-0.5 text-overline-sm font-semibold tabular-nums",
+                  // The active count rides the gold pill, so it reads against
+                  // an accent rather than against the page: both its wash and
+                  // its figure stay on the inverse surface, which does not
+                  // invert underneath the fill the way the ink rung does.
                   isActive
-                    ? "bg-ethereal-ink/10 text-ethereal-ink"
+                    ? "bg-surface-inverse/10 text-surface-inverse"
                     : "bg-ethereal-ink/5 text-ethereal-graphite/70",
                 )}
               >

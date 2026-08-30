@@ -100,7 +100,11 @@ export const ConfirmModal = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-ethereal-ink/40 backdrop-blur-sm"
+            // A scrim is the absence of light, not a surface: it is black on
+            // both themes, which is why it is the rare literal here. `ink` put
+            // it one rung from black on the light theme and inverted it into a
+            // white veil on the dark one.
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={!isLoading ? onCancel : undefined}
             aria-hidden="true"
           />

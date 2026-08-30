@@ -311,7 +311,7 @@ export const CalendarGrid = ({
                         "relative flex items-center justify-center rounded-full text-sm tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                         isTouch ? "size-11" : "size-9",
                         isSelected
-                          ? "bg-ethereal-gold font-semibold text-ethereal-ink shadow-button-primary"
+                          ? "bg-ethereal-gold font-semibold text-surface-inverse shadow-button-primary"
                           : "hover:bg-ethereal-parchment/70",
                         !isSelected && isOutside && "text-ethereal-graphite/35",
                         !isSelected && !isOutside && "text-ethereal-graphite",
@@ -328,8 +328,12 @@ export const CalendarGrid = ({
                         <span
                           className={cn(
                             "absolute bottom-1 size-1 rounded-full",
+                            // On the chosen day the dot sits on the gold fill,
+                            // not on the popover — so it takes the same inverse
+                            // ink as the figure above it rather than the ink
+                            // rung, which inverts with the theme.
                             isSelected
-                              ? "bg-ethereal-ink/50"
+                              ? "bg-surface-inverse/50"
                               : MARKER_TONE[marker.tone],
                           )}
                           aria-hidden="true"

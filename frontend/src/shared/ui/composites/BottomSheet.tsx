@@ -98,7 +98,10 @@ export const BottomSheet = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-ethereal-ink/45 backdrop-blur-sm"
+            // Black, not the ink rung — see `ConfirmModal`. A scrim that
+            // inverts with the ladder stops being a scrim: on the dark theme
+            // the sheet would sit on a veil brighter than itself.
+            className="absolute inset-0 bg-black/45 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
           />

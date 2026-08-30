@@ -41,7 +41,7 @@ export function MetricBlock({
   // — nothing to see, paid on every scroll frame of a permanently mounted tile.
   const glassClasses =
     interactiveMode === "glass"
-      ? "p-5 md:p-6 lg:p-8 transition-colors duration-700 group-hover:bg-white/40"
+      ? "p-5 md:p-6 lg:p-8 transition-colors duration-700 group-hover:bg-ethereal-marble/40"
       : "group flex cursor-default flex-col gap-1";
 
   return (

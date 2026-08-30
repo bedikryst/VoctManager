@@ -40,6 +40,32 @@
   --color-ethereal-crimson: #a95e59;
   --color-ethereal-crimson-light: #d6a19f;
 
+  /* The three roles that do NOT ride the ladder. `ink` and `marble` are rungs,
+     but the panel also spends them as MATERIALS: `ink` is the surface of every
+     deliberately-dark island (score chrome, the player dock, the scrim behind a
+     modal) and `marble` is the light written on it. Those call sites mean "dark
+     surface" and "light on it" in BOTH themes, so a rung swap turns them inside
+     out — the PDF bar becomes a white slab carrying invisible white icons.
+     Hence one semantic pair plus the rule drawn across it:
+
+      · surface-inverse — the island itself, and the ink on a GOLD fill: an
+        accent holds its hue through the swap, so whatever is written on it has
+        to hold its darkness alongside. `text-ethereal-ink` on gold is the one
+        idiom the ladder cannot carry.
+      · ink-on-inverse  — what is written on that island.
+      · line-on-inverse — its hairline.
+
+     On dark, `surface-inverse` RISES to the top rung rather than staying
+     #161412: an island's job is to be distinct from the page, and #161412 on a
+     #14120F ground is distinct from nothing.
+
+     All three are mirrored in `shared/lib/tailwindMerge.ts`. A colour token
+     missing from that ledger is read as an unknown value and can be dropped by
+     `cn()` at runtime with no error and nothing missing from the built CSS. */
+  --color-surface-inverse: #161412;
+  --color-ink-on-inverse: #fbfaf7;
+  --color-line-on-inverse: rgba(255, 255, 255, 0.1);
+
   /* Hairlines. Every 1px rule inside an in-flow surface — card headers, list
      dividers, form section splits — comes from these two and nothing else.
      `strong` is for structural splits that must survive a busy background
@@ -272,6 +298,15 @@
     --color-ethereal-amethyst: #a695b8;
     --color-ethereal-crimson: #d6a19f;
     --color-ethereal-crimson-light: #eab5b1;
+
+    /* The inverse pair is the one place a "dark surface" has to stay dark while
+       the ladder inverts around it. The surface rises to the top rung so it
+       still separates from a #14120F page; the ink follows the ladder's own
+       statement colour, and the hairline loses two points because white reads
+       louder here than it does on #161412. */
+    --color-surface-inverse: #2a2521;
+    --color-ink-on-inverse: #f3f0ea;
+    --color-line-on-inverse: rgba(255, 255, 255, 0.08);
 
     /* A dark hairline is not the light one inverted at the same alpha: light
        ink on a dark ground reads weaker than dark ink on a light one, so both

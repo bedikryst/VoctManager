@@ -17,7 +17,11 @@ const dividerVariants = cva("shrink-0 pointer-events-none", {
       // invisible on `ethereal-ink/70`, which is why both dark bars had drawn
       // their own — one of them under a private component called `Divider`,
       // shadowing this file's export in its own module.
-      "solid-dark": "bg-white/15",
+      // The alpha stays where the eye put it: `line-on-inverse` is the rim of
+      // an island, and a rule ACROSS one has to survive a busy toolbar. Only
+      // the colour moves — to the ink of the island it is drawn on, which is
+      // within a point of white in either theme.
+      "solid-dark": "bg-ink-on-inverse/15",
       "gradient-right":
         "bg-gradient-to-r from-ethereal-incense/20 to-transparent",
       "gradient-bottom":
