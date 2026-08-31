@@ -238,7 +238,7 @@ export const NewThreadModal: React.FC<NewThreadModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/40 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/40 backdrop-blur-sm"
             onClick={handleClose}
           />
           <motion.div

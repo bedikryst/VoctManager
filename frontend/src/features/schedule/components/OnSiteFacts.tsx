@@ -97,7 +97,7 @@ export const OnSiteFacts = ({
       {facts.length > 0 && (
         <div className="space-y-1.5">
           {facts.map((fact) => (
-            <Text key={fact.id} as="p" size="sm" color="white">
+            <Text key={fact.id} as="p" size="sm" color="ink-on-inverse">
               <Text as="span" color="parchment-muted" className="mr-2">
                 {fact.label}
               </Text>
@@ -119,7 +119,7 @@ export const OnSiteFacts = ({
             {t("schedule.card.onsite.contact", "Kontakt na miejscu")}
           </Eyebrow>
           {contactName && (
-            <Text as="p" size="sm" color="white" className="mb-2">
+            <Text as="p" size="sm" color="ink-on-inverse" className="mb-2">
               {contactName}
             </Text>
           )}

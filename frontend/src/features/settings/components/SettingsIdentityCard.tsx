@@ -67,7 +67,7 @@ export const SettingsIdentityCard = ({
             aria-label={t("settings.avatar.edit_aria", "Zmień zdjęcie profilowe")}
           >
             <Avatar src={avatarUrl} name={fullName || user.email} size="md" />
-            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-ethereal-ink/45 text-ethereal-marble opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-ink-on-inverse opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100">
               <Camera size={16} aria-hidden="true" />
             </span>
           </button>

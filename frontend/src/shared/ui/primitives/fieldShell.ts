@@ -49,8 +49,14 @@ export const fieldShellVariants = cva(
         // No backdrop-blur: the fill is 90% opaque, so a blur behind it buys
         // nothing but a compositing layer per field — the same call `GlassCard`
         // made for its default surface.
+        // The inset is `--glass-contact`, not a literal: it is the line where
+        // the field's floor meets its rim, and 6% of ink over a dark fill is
+        // nothing at all — the most repeated surface in the panel would lose
+        // its sunken read on the dark theme. Arbitrary shadow colours are
+        // inlined at build time, so a variable is the only thing a theme can
+        // reach here (panel.css says why).
         glass:
-          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
+          "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_var(--glass-contact)] hover:border-ethereal-gold/55 focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
         solid:
           "bg-ethereal-marble border border-hairline-strong shadow-glass-solid hover:border-ethereal-gold/40 focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
         // For a field sitting ON a dark island — the practice dock, the viewer

@@ -268,10 +268,12 @@ export const LocationPreview = ({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -5, scale: 0.95 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                // The bevel is light cast onto the page and follows the theme;
-                // the warm 64px cast is the incense accent saying "floating",
-                // and an accent holds its hue, so it stays literal.
-                className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-ethereal-marble/70 p-1.5 shadow-[inset_0_1px_1px_var(--glass-highlight),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
+                // Both halves of the shadow are cast onto the page, so both
+                // follow the theme. The 64px drop being WARM did not make it an
+                // accent: the light theme's shadows are all warm, and on a
+                // near-black ground a warm cast composites lighter than what it
+                // falls on and reads as a glow — the opposite of what it says.
+                className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-ethereal-marble/70 p-1.5 shadow-[inset_0_1px_1px_var(--glass-highlight),0_24px_64px_var(--glass-shade-lifted)] backdrop-blur-[32px]"
                 style={popoverStyle}
                 onClick={openPlaceOnMaps}
               >

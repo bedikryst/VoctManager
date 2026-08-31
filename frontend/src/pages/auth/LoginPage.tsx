@@ -113,7 +113,7 @@ export default function LoginPage(): React.JSX.Element {
             padding="lg"
             glow
             isHoverable={false}
-            className="shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_2px_6px_-2px_rgba(22,20,18,0.08),0_30px_64px_-22px_rgba(120,104,82,0.5)]"
+            className="shadow-[inset_0_1px_1px_var(--glass-highlight),0_2px_6px_-2px_var(--glass-contact),0_30px_64px_-22px_var(--glass-shade-strong)]"
           >
             <Heading as="h1" size="2xl" color="default" className="mb-7">
               {t("auth.login.welcome")}

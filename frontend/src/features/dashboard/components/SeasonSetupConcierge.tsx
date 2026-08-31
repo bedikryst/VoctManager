@@ -115,7 +115,7 @@ const SeasonStepCard = ({
         ring,
       )}
     >
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-ethereal-incense/25 bg-white/50">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-ethereal-incense/25 bg-ethereal-marble/50">
         <Icon size={18} strokeWidth={2} className={tint} aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ export const SeasonSetupConcierge = ({
                 "group mt-5 inline-flex items-center gap-2.5 rounded-full border px-4 py-2 transition-colors",
                 isPlaying
                   ? "border-ethereal-gold/60 bg-ethereal-gold/10"
-                  : "border-ethereal-incense/25 bg-white/40 hover:border-ethereal-gold/45 hover:bg-ethereal-gold/8",
+                  : "border-ethereal-incense/25 bg-ethereal-marble/40 hover:border-ethereal-gold/45 hover:bg-ethereal-gold/8",
               )}
             >
               <Volume2

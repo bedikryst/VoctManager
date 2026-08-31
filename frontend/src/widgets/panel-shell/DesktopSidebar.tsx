@@ -136,7 +136,7 @@ export const DesktopSidebar = ({
             : "inset(0px calc(100% - 88px) 0px 0px round 2.5rem)",
           boxShadow: isExpanded
             ? "0 24px 64px -12px rgba(194, 168, 120, 0.15), 0 0 0 1px rgba(194, 168, 120, 0.25)"
-            : "0 8px 32px rgba(166, 146, 121, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.3)",
+            : "0 8px 32px var(--glass-shade), 0 0 0 1px var(--glass-highlight)",
         }}
         transition={KINETIC_TRANSITION}
         onMouseEnter={handleMouseEnter}
@@ -329,7 +329,7 @@ export const DesktopSidebar = ({
                                     className="transition-all duration-300"
                                   />
                                   {link.to === "/panel/messages" && (
-                                    <UnreadMessagesBadge className="right-2.5 top-1.5 ring-white/60" />
+                                    <UnreadMessagesBadge className="right-2.5 top-1.5 ring-ethereal-marble/60" />
                                   )}
                                 </div>
                                 <motion.div
@@ -371,9 +371,14 @@ export const DesktopSidebar = ({
               className="opacity-50"
             />
 
+            {/* The plate names the sidebar's own rung, which is what it always
+                painted: white over #FBFAF7 was a no-op, and the identity block
+                reads from its contents and the divider above it, not from a
+                fill. Stating the rung keeps it a no-op on both themes instead
+                of turning into a visible lift on the dark one. */}
             <div
               style={{ width: isExpanded ? "100%" : "56px" }}
-              className="relative flex h-12 overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition-[width] duration-300 ease-out"
+              className="relative flex h-12 overflow-hidden rounded-2xl border border-ethereal-marble/10 bg-ethereal-marble/5 transition-[width] duration-300 ease-out"
             >
               <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center shrink-0">
                 {avatarUrl ? (

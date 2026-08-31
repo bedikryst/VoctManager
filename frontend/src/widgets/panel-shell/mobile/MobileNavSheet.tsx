@@ -218,7 +218,7 @@ export const MobileNavSheet = ({
         // backdrop is the ambient field, whose two 110/120px-blurred blobs and
         // noise overlay all have to be flattened first. Behind an ink veil this
         // dense the blur was never legible; the density carries the separation.
-        className="fixed inset-0 z-nav-sheet bg-ethereal-ink/55 fine-pointer:hidden"
+        className="fixed inset-0 z-nav-sheet bg-black/55 fine-pointer:hidden"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -235,7 +235,7 @@ export const MobileNavSheet = ({
           "fixed inset-x-0 bottom-0 z-nav-sheet flex max-h-[88dvh] flex-col",
           "overflow-hidden rounded-t-[26px] border-t border-glass-border",
           "bg-ethereal-alabaster outline-none",
-          "shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.18)]",
+          "shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)]",
           "fine-pointer:hidden",
         )}
         style={{ y, contain: "paint" }}

@@ -67,7 +67,7 @@ export const MobileNavTrigger = ({
       className={cn(
         "fixed inset-x-0 bottom-0 z-nav-dock fine-pointer:hidden",
         "border-t border-glass-border bg-ethereal-alabaster/94",
-        "shadow-[0_-10px_30px_-14px_rgba(22,20,18,0.22)]",
+        "shadow-[0_-10px_30px_-14px_var(--glass-shade-lifted)]",
       )}
     >
       <div className="mx-auto flex max-w-md items-stretch gap-0.5 px-2 pt-1 pb-[max(env(safe-area-inset-bottom),0.5rem)]">

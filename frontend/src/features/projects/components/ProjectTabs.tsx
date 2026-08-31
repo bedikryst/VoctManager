@@ -118,7 +118,7 @@ export const ProjectTabs = ({
             cn(
               "relative inline-flex shrink-0 items-center gap-1.5 rounded-control px-3.5 py-2 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
               isActive
-                ? "bg-ethereal-marble text-ethereal-ink shadow-[0_1px_3px_rgba(0,0,0,0.07),0_1px_1px_rgba(194,168,120,0.14)]"
+                ? "bg-ethereal-marble text-ethereal-ink shadow-[0_1px_3px_var(--glass-contact),0_1px_1px_rgba(194,168,120,0.14)]"
                 : "text-ethereal-graphite/65 hover:bg-ethereal-marble/60 hover:text-ethereal-ink",
             )
           }

@@ -198,7 +198,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
           as="h2"
           size="3xl"
           weight="bold"
-          color="white"
+          color="ink-on-inverse"
           className="mt-3 text-2xl leading-tight sm:text-3xl"
         >
           {event.title}
@@ -242,7 +242,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             </Eyebrow>
             <div className="space-y-0.5">
               {proj.dress_code_female && (
-                <Text size="sm" color="white">
+                <Text size="sm" color="ink-on-inverse">
                   <Text as="span" color="parchment-muted" className="mr-2">
                     {t("schedule.card.dress_code_women", "Panie:")}
                   </Text>
@@ -250,7 +250,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
                 </Text>
               )}
               {proj.dress_code_male && (
-                <Text size="sm" color="white">
+                <Text size="sm" color="ink-on-inverse">
                   <Text as="span" color="parchment-muted" className="mr-2">
                     {t("schedule.card.dress_code_men", "Panowie:")}
                   </Text>

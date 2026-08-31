@@ -119,7 +119,7 @@ export const ConcertDayPlan = ({
             </Eyebrow>
             <div className="rounded-xl border border-ethereal-incense/20 bg-ethereal-incense/10 p-3.5 transition-colors hover:bg-ethereal-incense/20">
               {rowTitle ? (
-                <Text weight="bold" color="white">
+                <Text weight="bold" color="ink-on-inverse">
                   {rowTitle}
                 </Text>
               ) : (

@@ -52,7 +52,7 @@ export const EditionUploadDrawer = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/20 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/20 backdrop-blur-sm"
             aria-hidden="true"
           />
           {/* Focus-trap layer, not the toast layer: a drawer sitting on z-toast

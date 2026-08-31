@@ -432,7 +432,7 @@ export default function ArchiveComposersPage(): React.JSX.Element {
                         >
                           {isTarget && (
                             <span
-                              className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-ethereal-gold text-white"
+                              className="absolute right-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-ethereal-gold text-ink-on-inverse"
                               aria-hidden="true"
                             >
                               <CheckCircle2 size={12} strokeWidth={2.5} />

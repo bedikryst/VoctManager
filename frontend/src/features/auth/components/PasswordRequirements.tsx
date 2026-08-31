@@ -61,7 +61,7 @@ export const PasswordRequirements = ({
   const meetsMatch = confirmPassword.length > 0 && password === confirmPassword;
 
   return (
-    <ul className="space-y-2 rounded-nested border border-hairline-strong bg-white/30 p-4">
+    <ul className="space-y-2 rounded-nested border border-hairline-strong bg-ethereal-marble/30 p-4">
       <Row met={meetsLength} label={t("auth.requirements.length")} />
       <Row met={meetsMatch} label={t("auth.requirements.match")} />
     </ul>

@@ -114,7 +114,7 @@ export function LocationEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/35 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/35 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -155,7 +155,7 @@ export function LocationEditorPanel({
               <form
                 id={FORM_ID}
                 onSubmit={onSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] backdrop-blur-xl md:p-8"
               >
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">
@@ -330,7 +330,7 @@ export function LocationEditorPanel({
                   </div>
                 </section>
 
-                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/90 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:-mb-8 md:p-6">
+                <div className="sticky bottom-0 -mx-6 -mb-6 mt-auto rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/90 p-4 shadow-[0_-10px_30px_var(--glass-contact)] backdrop-blur-xl md:-mx-8 md:-mb-8 md:p-6">
                   <Button
                     type="submit"
                     variant="primary"

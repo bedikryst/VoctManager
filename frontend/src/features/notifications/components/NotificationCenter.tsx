@@ -327,7 +327,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
       animate={{ scale: 1, opacity: 1 }}
       exit={{ scale: 0, opacity: 0 }}
       className={cn(
-        "absolute flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-ethereal-gold px-1 text-[10px] font-bold leading-none text-white shadow-[0_0_10px_rgba(194,168,120,0.5)] ring-2 ring-ethereal-alabaster",
+        "absolute flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-ethereal-gold px-1 text-[10px] font-bold leading-none text-ink-on-inverse shadow-[0_0_10px_rgba(194,168,120,0.5)] ring-2 ring-ethereal-alabaster",
         variant === "tab" ? "-right-2 -top-1" : "right-1.5 top-1",
       )}
     >
@@ -395,7 +395,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   "fixed inset-0 z-focus-trap",
                   isFinePointer
                     ? "bg-ethereal-ink/10"
-                    : "bg-ethereal-ink/45 backdrop-blur-[3px]",
+                    : "bg-black/45 backdrop-blur-[3px]",
                 )}
               />
             )}
@@ -413,7 +413,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   exit={{ opacity: 0, x: -16, scale: 0.98 }}
                   transition={DRAWER_SPRING}
                   style={{ originX: 0, originY: 0.5 }}
-                  className="fixed bottom-4 left-4 top-4 z-focus-trap flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-surface border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_rgba(22,20,18,0.4)] outline-none"
+                  className="fixed bottom-4 left-4 top-4 z-focus-trap flex w-[384px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-surface border border-ethereal-gold/20 bg-ethereal-alabaster shadow-[0_28px_70px_-20px_var(--glass-shade-strong)] outline-none"
                 >
                   {header}
                   <div className="mx-3 h-px shrink-0 bg-hairline-strong" />
@@ -437,7 +437,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   dragConstraints={{ top: 0, bottom: 0 }}
                   dragElastic={0.05}
                   onDragEnd={handleDragEnd}
-                  className="fixed inset-x-0 bottom-0 z-focus-trap flex max-h-[85dvh] flex-col overflow-hidden rounded-t-surface border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_rgba(22,20,18,0.2)] outline-none"
+                  className="fixed inset-x-0 bottom-0 z-focus-trap flex max-h-[85dvh] flex-col overflow-hidden rounded-t-surface border-t border-glass-border bg-ethereal-alabaster shadow-[0_-12px_40px_-8px_var(--glass-shade-lifted)] outline-none"
                 >
                   <div
                     className="flex w-full shrink-0 cursor-grab justify-center py-3 touch-none active:cursor-grabbing"

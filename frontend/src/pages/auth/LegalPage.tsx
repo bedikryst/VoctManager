@@ -33,6 +33,10 @@ export default function LegalPage(): React.JSX.Element {
       : t("auth.legal.terms.title");
 
   return (
+    // `print:bg-white` is a literal on purpose, and dark mode made it load-
+    // bearing rather than decorative: paper has no theme, so the printable
+    // document has to leave the ladder at the printer the same way the score's
+    // page canvas does. A token here would print a member's dark card stock.
     <div className="min-h-screen bg-ethereal-alabaster print:bg-white">
       <div className="mx-auto w-full max-w-3xl px-6 py-12 print:max-w-none print:px-0 print:py-0">
         {/* Chrome — hidden on paper */}

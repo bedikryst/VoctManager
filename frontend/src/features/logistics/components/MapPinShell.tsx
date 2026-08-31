@@ -1,10 +1,15 @@
 /**
  * @file MapPinShell.tsx
  * @description The single source of truth for a venue pin's physical chrome —
- * the coloured halo, the floating marble disc, and the ground shadow that grounds
+ * the coloured halo, the floating light disc, and the ground shadow that grounds
  * it on the tiles. Both the global atlas markers and the editor's draggable
  * picker pin render through this shell so every map in the product drops pins
  * with the same weight, bob, and light. Colour + contents are caller-driven.
+ *
+ * The disc and its cast hold their values through a theme swap rather than
+ * riding the ladder: the Google raster is a light map in both themes (the dark
+ * one is deferred to its own stage), so a pin that inverted with the panel would
+ * turn into a dark disc casting a pale halo over tiles that never moved.
  * @architecture Enterprise SaaS 2026
  * @module features/logistics/components/MapPinShell
  */
@@ -55,7 +60,7 @@ export const MapPinShell = ({
     />
     <div
       className={cn(
-        "relative flex h-9 w-9 items-center justify-center rounded-full border-2 bg-ethereal-marble shadow-[0_8px_18px_rgba(22,20,18,0.25)] transition-transform duration-500 group-hover:-translate-y-1",
+        "relative flex h-9 w-9 items-center justify-center rounded-full border-2 bg-ink-on-inverse shadow-[0_8px_18px_rgba(22,20,18,0.25)] transition-transform duration-500 group-hover:-translate-y-1",
         active &&
           "-translate-y-1 scale-110 ring-2 ring-ethereal-gold ring-offset-2 ring-offset-transparent",
         dragging && "-translate-y-2 scale-110",
@@ -68,8 +73,8 @@ export const MapPinShell = ({
     <span
       aria-hidden="true"
       className={cn(
-        "mt-0.5 h-1 w-1.5 rounded-full bg-ethereal-ink/40 blur-[2px] transition-all duration-500",
-        (active || dragging) && "h-1 w-2 bg-ethereal-ink/30",
+        "mt-0.5 h-1 w-1.5 rounded-full bg-black/40 blur-[2px] transition-all duration-500",
+        (active || dragging) && "h-1 w-2 bg-black/30",
       )}
     />
   </div>

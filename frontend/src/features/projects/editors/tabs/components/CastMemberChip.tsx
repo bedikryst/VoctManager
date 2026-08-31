@@ -111,7 +111,7 @@ export const CastMemberChip = React.memo(function CastMemberChip({
       >
         {pending && !isOverlay && (
           <span
-            className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-ethereal-gold shadow-[0_0_0_2px_rgba(255,255,255,0.6)]"
+            className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-ethereal-gold ring-2 ring-ethereal-marble/60"
             aria-label={t(
               "projects.micro_cast.artist.pending_label",
               "Niezapisane",

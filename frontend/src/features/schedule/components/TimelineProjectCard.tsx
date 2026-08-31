@@ -170,7 +170,7 @@ export const TimelineProjectCard = ({
               as="span"
               size="2xl"
               weight="black"
-              color="white"
+              color="ink-on-inverse"
               className="leading-none my-0.5"
             >
               {formatLocalizedDate(
@@ -198,7 +198,7 @@ export const TimelineProjectCard = ({
               as="h3"
               size="2xl"
               weight="bold"
-              color="white"
+              color="ink-on-inverse"
               className="mb-2.5 leading-tight"
             >
               {event.title}
@@ -336,7 +336,7 @@ export const TimelineProjectCard = ({
                             <Text
                               as="p"
                               size="sm"
-                              color="white"
+                              color="ink-on-inverse"
                               className="mb-1.5"
                             >
                               <Text
@@ -350,7 +350,7 @@ export const TimelineProjectCard = ({
                             </Text>
                           )}
                           {proj.dress_code_male && (
-                            <Text as="p" size="sm" color="white">
+                            <Text as="p" size="sm" color="ink-on-inverse">
                               <Text
                                 as="span"
                                 color="parchment-muted"
@@ -368,7 +368,7 @@ export const TimelineProjectCard = ({
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Text
                             size="base"
-                            color="white"
+                            color="ink-on-inverse"
                             className="leading-relaxed whitespace-pre-wrap font-serif"
                           >
                             {proj.description}
@@ -569,7 +569,7 @@ export const TimelineProjectCard = ({
                                       )}
                                       <Text
                                         weight="bold"
-                                        color="white"
+                                        color="ink-on-inverse"
                                         size="md"
                                         className="truncate"
                                       >
@@ -687,7 +687,7 @@ export const TimelineProjectCard = ({
                                                             size="sm"
                                                             color={
                                                               isMe
-                                                                ? "white"
+                                                                ? "ink-on-inverse"
                                                                 : "parchment"
                                                             }
                                                             weight={

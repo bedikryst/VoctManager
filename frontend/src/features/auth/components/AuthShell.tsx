@@ -41,14 +41,14 @@ export const AuthShell = ({
           brightest at the wordmark, fading down across the card, so the eye is
           drawn down the vertical axis instead of floating on a flat wash. */}
       <div
-        className="pointer-events-none absolute left-1/2 top-0 z-0 h-[960px] w-[760px] -translate-x-1/2 -translate-y-[20%] rounded-[50%] bg-[radial-gradient(50%_50%_at_50%_30%,rgba(255,250,238,0.95)_0%,rgba(255,250,238,0.4)_42%,transparent_70%)] blur-2xl"
+        className="pointer-events-none absolute left-1/2 top-0 z-0 h-[960px] w-[760px] -translate-x-1/2 -translate-y-[20%] rounded-[50%] bg-[radial-gradient(50%_50%_at_50%_30%,var(--aura-shaft)_0%,var(--aura-shaft-soft)_42%,transparent_70%)] blur-2xl"
         aria-hidden="true"
       />
 
       {/* Chiaroscuro vignette — let the edges recede so the lit centre and the
           card read with real depth instead of floating on a flat field. */}
       <div
-        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(120%_110%_at_50%_38%,transparent_52%,rgba(46,38,26,0.14)_100%)]"
+        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(120%_110%_at_50%_38%,transparent_52%,var(--aura-vignette-deep)_100%)]"
         aria-hidden="true"
       />
 

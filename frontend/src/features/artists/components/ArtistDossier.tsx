@@ -379,7 +379,7 @@ export const ArtistDossier = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/30 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/30 backdrop-blur-sm"
             aria-hidden="true"
           />
 

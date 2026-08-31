@@ -34,7 +34,7 @@ export const OfflineStatusBadge = ({
           className="pointer-events-none flex w-full justify-center px-4"
         >
           <div
-            className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-ethereal-ink/90 px-3.5 py-2 shadow-glass-ethereal backdrop-blur-xl"
+            className="pointer-events-auto flex items-center gap-2 rounded-full border border-line-on-inverse bg-surface-inverse/90 px-3.5 py-2 shadow-glass-ethereal backdrop-blur-xl"
             role="status"
             aria-live="polite"
           >
@@ -46,7 +46,7 @@ export const OfflineStatusBadge = ({
               <CloudOff size={14} className="text-ethereal-gold" aria-hidden="true" />
             )}
 
-            <Eyebrow color="parchment">
+            <Eyebrow color="ink-on-inverse">
               {!isOnline
                 ? hasPending
                   ? t("offline.badge.offline_pending", "Offline · {{count}} do synchronizacji", {
@@ -65,7 +65,7 @@ export const OfflineStatusBadge = ({
                 type="button"
                 onClick={syncNow}
                 aria-label={t("offline.badge.sync_now", "Synchronizuj teraz")}
-                className="ml-0.5 rounded-full p-1 text-ethereal-marble transition-colors hover:text-white"
+                className="ml-0.5 rounded-full p-1 text-ink-on-inverse/70 transition-colors hover:text-ink-on-inverse"
               >
                 <RefreshCw size={13} aria-hidden="true" />
               </button>

@@ -51,7 +51,7 @@ export const VenueMiniMap = ({
             size={24}
             strokeWidth={1.5}
           />
-          <div className="h-1 w-1.5 rounded-full bg-ethereal-ink/40 blur-[2px]" />
+          <div className="h-1 w-1.5 rounded-full bg-black/40 blur-[2px]" />
         </div>
       </AdvancedMarker>
     </Map>

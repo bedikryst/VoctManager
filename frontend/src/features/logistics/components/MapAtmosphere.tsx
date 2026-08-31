@@ -25,11 +25,16 @@ export const MapAtmosphere = ({
     aria-hidden="true"
     className={cn("pointer-events-none absolute inset-0 z-[5]", className)}
   >
+    {/* Every value here is pinned to the LIGHT map underneath, not to the
+        panel's theme: the Google raster is a vector `mapId` styled in the cloud
+        console and stays light until the dark map gets its own stage. A ladder
+        token in this file would darken the sheen over tiles that never moved. */}
+
     {/* Inner vignette — grounds the tiles into the glass frame. */}
     <div className="absolute inset-0 shadow-[inset_0_0_60px_rgba(22,20,18,0.10),inset_0_1px_2px_rgba(255,255,255,0.5)]" />
     {/* Parchment warmth bleeding from the corners only. */}
     <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_-10%,transparent_55%,rgba(194,168,120,0.10)_100%)]" />
     {/* Top sheen — a thin breath of light along the upper edge. */}
-    <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-ethereal-marble/25 to-transparent" />
+    <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-ink-on-inverse/25 to-transparent" />
   </div>
 );

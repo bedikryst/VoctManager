@@ -64,10 +64,12 @@ const WelcomeScene = ({
         exit fade, not a haze over it. */}
     <div className="absolute inset-0 bg-linear-to-b from-ethereal-marble via-ethereal-alabaster to-ethereal-parchment" />
 
-    {/* Shaft of light — a warm beam entering at the top centre, white at its
-        core with a golden fringe. It swells while the kamerton rings. */}
+    {/* Shaft of light — a warm beam entering at the top centre, light at its
+        core with a golden fringe. It swells while the kamerton rings. The core
+        is `--aura-shaft` because a beam is a fraction of itself on a dark
+        ground; the fringe stays a gold literal, because an accent holds. */}
     <motion.div
-      className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-12%,rgba(253,253,250,0.95)_0%,rgba(194,168,120,0.14)_46%,transparent_72%)]"
+      className="absolute inset-0 bg-[radial-gradient(ellipse_90%_65%_at_50%_-12%,var(--aura-shaft)_0%,rgba(194,168,120,0.14)_46%,transparent_72%)]"
       initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: isToneRinging ? 1 : 0.7 }}
       transition={{ duration: 1.4, ease: EASE.buttery }}
@@ -118,7 +120,7 @@ const WelcomeScene = ({
 
     {/* Oculus vignette + film grain — the chiaroscuro of a lit interior,
         grain held at the app-wide whisper (NOT a dirty film over the scene). */}
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_40%,rgba(22,20,18,0.08)_100%)]" />
+    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_40%,var(--aura-vignette)_100%)]" />
     <div className="absolute inset-0 bg-noise opacity-[0.03] mix-blend-overlay" />
   </div>
 );
@@ -299,7 +301,7 @@ export const WelcomeMoment = ({
                     "group relative grid h-32 w-32 place-items-center rounded-full border transition-[transform,background-color,border-color] duration-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/40",
                     isPlaying
                       ? "scale-105 border-ethereal-gold/60 bg-ethereal-gold/15 shadow-glass-ethereal-hover"
-                      : "border-ethereal-incense/30 bg-white/60 shadow-glass-ethereal hover:scale-105 hover:border-ethereal-gold/50 hover:bg-ethereal-gold/8 active:scale-100",
+                      : "border-ethereal-incense/30 bg-ethereal-marble/60 shadow-glass-ethereal hover:scale-105 hover:border-ethereal-gold/50 hover:bg-ethereal-gold/8 active:scale-100",
                   )}
                 >
                   {/* The pitch made visible: the letter of the tone itself. */}
@@ -335,7 +337,7 @@ export const WelcomeMoment = ({
                   in the overlay's own language; full details stay one tap away in
                   the panel afterwards. ── */}
               {invitation.current && (
-                <div className="mt-8 w-full max-w-md rounded-surface border border-ethereal-gold/30 bg-white/55 p-4 text-left shadow-glass-ethereal">
+                <div className="mt-8 w-full max-w-md rounded-surface border border-ethereal-gold/30 bg-ethereal-marble/55 p-4 text-left shadow-glass-ethereal">
                   <div className="flex items-center gap-2">
                     <Eyebrow color="gold">
                       {t(
@@ -443,7 +445,7 @@ export const WelcomeMoment = ({
                   <button
                     type="button"
                     onClick={() => void promptInstall()}
-                    className="inline-flex items-center gap-2 rounded-full border border-ethereal-incense/25 bg-white/40 px-4 py-2 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/45 hover:text-ethereal-ink"
+                    className="inline-flex items-center gap-2 rounded-full border border-ethereal-incense/25 bg-ethereal-marble/40 px-4 py-2 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/45 hover:text-ethereal-ink"
                   >
                     <Download size={14} strokeWidth={2} className="text-ethereal-gold" aria-hidden="true" />
                     {t("dashboard.artist.welcome.install_cta", "Zainstaluj aplikację")}
@@ -452,7 +454,7 @@ export const WelcomeMoment = ({
                 <Link
                   to="/panel/settings"
                   onClick={dismiss}
-                  className="group inline-flex items-center gap-2 rounded-full border border-dashed border-ethereal-incense/30 bg-white/25 px-4 py-2 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink"
+                  className="group inline-flex items-center gap-2 rounded-full border border-dashed border-ethereal-incense/30 bg-ethereal-marble/25 px-4 py-2 text-xs font-semibold text-ethereal-graphite transition-colors hover:border-ethereal-gold/40 hover:text-ethereal-ink"
                 >
                   <Settings size={14} strokeWidth={1.75} className="text-ethereal-graphite/55 group-hover:text-ethereal-gold" aria-hidden="true" />
                   {t("dashboard.artist.welcome.settings_cta", "Dokończ konfigurację")}

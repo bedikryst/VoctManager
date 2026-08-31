@@ -462,7 +462,7 @@ const MapPickerSurface = ({
         </Button>
       </div>
 
-      <div className="relative h-[360px] w-full overflow-hidden rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/40 shadow-[inset_0_1px_2px_rgba(22,20,18,0.04)]">
+      <div className="relative h-[360px] w-full overflow-hidden rounded-nested border border-ethereal-incense/20 bg-ethereal-alabaster/40 shadow-[inset_0_1px_2px_var(--glass-contact)]">
         {!isReady && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-ethereal-alabaster/60 backdrop-blur-sm">
             <Loader2

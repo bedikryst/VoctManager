@@ -1,6 +1,6 @@
 # Dark mode — specification (2026-08)
 
-Status: **Stages 0–4 shipped; Stage 5 is next** · Audited 2026-08-30 · Surface: `frontend/` (panel
+Status: **Stages 0–5 shipped; Stage 6 needs §9.1 first** · Audited 2026-08-30 · Surface: `frontend/` (panel
 PWA only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
 scope — see §7.
 
@@ -421,6 +421,23 @@ raised tile on a dark island (→ `bg-ink-on-inverse/10`). Read the surrounding 
 no rule that decides it from the class alone. **`AppTab`'s QR card stays literal `bg-white`** —
 a scanner needs a light quiet zone (§6).
 
+*Settled in Stage 5.* Every light-card tile took `marble` — the rung Stage 3 already chose for
+`Button`'s own `white/4x` fills. Three things the list did not say:
+
+- **A third destination the two-way split missed: a light MARK on an accent that holds.** A tick
+  on gold, a count on a gold disc, a label on a sage button — the ink there is not a tile on
+  anything, it is the other half of Stage 4's rule, and `ink-on-inverse` renders `#FBFAF7` on
+  light, i.e. exactly what the literal did. That is what `Typography`'s `color="white"` variant
+  had been for, alongside a second and unrelated job (ink on a premium dark card), which is why
+  the variant is gone and its 18 call sites now name one role or the other.
+- **`LegalPage`'s `print:bg-white` is paper**, not an unconverted literal — the printable document
+  leaves the ladder at the printer exactly as the score's canvas does, and dark mode makes the
+  rule load-bearing rather than decorative. On the §10 allowlist.
+- **The Google raster is a second paper.** `MapPinShell`, `MapAtmosphere`, `VenueMiniMap` and the
+  atlas's pin badge paint directly on tiles that stay light in both themes (§6 defers the dark
+  map), so their neutrals hold — a ladder token there inverts the pin into a dark disc casting a
+  pale halo over a map that never moved. Same exception as the score, one surface further out.
+
 ### 3.3 Dead code found on the way
 
 - ~~`App.tsx:242` adds `bg-ethereal-snow` to `document.body`.~~ **Deleted in Stage 1.**
@@ -444,6 +461,37 @@ that no token swap reaches. Named ones to handle:
   dark-correct, leave it.
 - The rest: sweep with `rg -o 'shadow-\[[^]]+\]'` and decide per site. Most are a drop shadow
   under a floating element and want `--glass-shade`.
+
+**Done in Stage 5.** The sweep sorted every one of them by *what the layer paints on*, the same
+question §2.3 asked of the theme shadows, and it answered itself in four groups:
+
+| what it is | how many | verdict |
+|---|---|---|
+| black cast inside a `surface-inverse` island (score chrome, dock, annotations) | 19 | literal — already dark-correct on both grounds |
+| gold glow, gold rim, gold focus cast | 11 | literal — an accent says "gold" the same way on either ground (§2.3) |
+| ink or warm cast onto the PAGE, and the white bevels on glass | 19 | `--glass-contact` / `--glass-shade{,-lifted,-strong}` / `--glass-highlight` |
+| painted on the light Google map | 2 | literal — see §3.2 E's third note |
+
+Two of those need their reasoning on the record:
+
+- **The five aura variables.** The four ambient fields (`EtherealBackground`, `ErrorScreen`'s
+  distilled copy, `WelcomeMoment`'s ceremony, `AuthShell`) are two jobs at two strengths each:
+  `--aura-light` / `--aura-shaft` (+`-soft`) for daylight entering the nave, `--aura-vignette`
+  (+`-deep`, the auth screen's) for the edges receding. The hues hold and the alphas move an order
+  of magnitude, because light entering a dark nave is a fraction of the light entering a bright
+  one. The vignette additionally stops being ink on dark: the ink rung has flipped to near-white
+  and would paint a halo around the edges rather than let them recede.
+- **"Warm" did not mean "accent".** `LocationPreview`'s 64px `rgba(166,146,121,.25)` cast reads as
+  an incense statement and is not one — every shadow in the light theme is warm, including
+  `--glass-shade` itself. Stage 4 had parked it as literal-on-purpose on a misreading of §2.3,
+  whose exception is the *gold glow*, a hue the surface is deliberately wearing. A cast that is
+  warm only because the light theme's casts are warm composites LIGHTER than a near-black ground
+  and reads as a glow, which is the opposite of what a shadow says. The test: does the surface
+  mean to say "gold", or does it just mean "raised"?
+
+Also converted, being the same defect one layer down: **`fieldShell`'s `glass` inset**, the most
+repeated surface in the panel. 6% of ink over a dark fill is nothing, so every field in the app
+would have lost its sunken read; `fieldShell.test.ts` carries the change as a `DECIDED` entry.
 
 ---
 
@@ -695,9 +743,51 @@ and the page canvas still white.
 drop shadow and `LocationPreview`'s warm 64px cast (§4 / Stage 5 — an accent-coloured cast is
 literal on purpose, §2.3).
 
-**Stage 5 — the one-offs** (group E + §4 arbitrary values). Route-by-route sweep; smaller than
-listed, since Stage 4 took the washes that sat inside its own islands. *Exit:* a grep for
-`-white`/`-black` outside the allowlist comes back empty.
+**Stage 5 — the one-offs. DONE (2026-08-31).** Group E + §4's arbitrary values, swept route by
+route. 43 `white`/`black` literals in 20 files, 40 arbitrary shadows and gradients, and the
+`Typography` variant that was one of them wearing a name. *Exit met:* the grep returns the
+allowlist and nothing else.
+
+*Three findings, and the first is the one that generalises:*
+
+- **The route-by-route walk crossed a defect class the inventory never counted: the scrims.**
+  §3.1 settled the rule in Stage 3 — a scrim is the absence of light, black on both themes — and
+  Stage 3 applied it to the two primitives it happened to be editing. There were **twenty-one**,
+  and the other fifteen were still `bg-ethereal-ink/3x…/55`: every editor slide-over, every modal
+  in projects, messages, archive, notifications and chorister-hub, the mobile nav sheet, the
+  command palette, and the veil that carries the camera glyph over an avatar. All of them would
+  have inverted into a white sheet BRIGHTER than the dialog standing on it, and no grep in this
+  spec would ever have found them — the exit criterion looks for `white`/`black`, and these were
+  written in `ink`. Swept here, one token each. **The lesson: an inventory built from literals
+  cannot see a defect written in tokens.**
+- **`Typography`'s `color="white"` was two roles sharing a literal**, which is why neither the
+  group-C nor the group-E entry claimed it. Its 18 call sites split into ink on a hue-holding
+  accent (a count on gold, a label on sage → `ink-on-inverse`, which renders the same `#FBFAF7`
+  the literal did) and ink on a premium dark card (→ `ink-on-inverse`, naming today's role; the
+  fill is Stage 6's and, under §9's recommendation (a), the ink does not move again).
+- **Ink and its ground move together, in both directions.** `AuthCredential`'s dark tone kept its
+  `parchment-muted` ink deliberately: its island is `GlassCard variant="dark"`, still unconverted,
+  and a rung is *accidentally readable* against a fill that has flipped to near-white, where the
+  inverse token would be invisible. Stage 3 made this call for fills; it holds for ink as well.
+  Only the literal moved, to `line-on-inverse`, which is near-white either way.
+
+*Verified against the compiled sheet:* all five `--aura-*` are emitted in both blocks and reach
+their gradients unresolved (`background-image:linear-gradient(180deg,var(--aura-light) 0%,…)`);
+every converted arbitrary shadow lands in the fallback slot
+(`--tw-shadow:0 28px 70px -20px var(--tw-shadow-color,var(--glass-shade-strong))`); every new
+utility resolves to `var(--color-*)` or a `color-mix`. 182 vitest tests, `typecheck`, `lint` and
+`build` green.
+
+*Exit is the developer's:* a modal and a slide-over in dark (the scrims), the dashboard's welcome
+ceremony, the auth screen, and the logistics atlas — the map is the one surface deliberately left
+light under a dark panel, and §9.3 is the decision about that.
+
+*Deliberately left, and both are look-and-decide rather than analysis:* the `mix-blend-multiply`
+glows in `EtherealBackground` / `WelcomeMoment` crush to nothing over a near-black ground, exactly
+as §9.2's `color-burn` grain does — same question, same answer needed, so they belong to the same
+look; and `NotificationsTab`'s hand-rolled tooltip keeps a full ladder inversion
+(`bg-ethereal-ink` / `text-ethereal-marble`), which is correct but makes it the one tooltip in the
+panel that does not match the `Tooltip` primitive's parchment.
 
 **Stage 6 — the premium dark surfaces** (group C). Needs the §9 decision first. *Exit:* the five
 surfaces state their hierarchy the same way in both themes.
@@ -735,15 +825,29 @@ surfaces state their hierarchy the same way in both themes.
 - **Literal-colour guard**, as an npm script rather than an eslint plugin (cheap, and it is a
   grep either way):
   `rg -n '(bg|text|border|ring|fill|stroke|divide)-(white|black)' frontend/src` with an
-  allowlist file. Wire it into `npm run lint`. Allowlist so far, each a colour that is correct in
-  both themes rather than an unconverted one: the QR card's quiet zone (§6), the PDF page canvas
-  (§6), **four** modal scrims (§3.1 — `ConfirmModal`, `BottomSheet`, plus `PdfViewerModal` and
-  `AnnotationGuide` from Stage 4), `Checkbox`'s tick and `Badge`'s pulse sweep — a specular
-  highlight on an accent fill, the same exception the primary button's shadow already carries —
-  and `AnnotationOverlay`'s **paper-side** literals: the lock badge's disc, the inline mark's
-  `ring-black/10` and the pin's `text-white` / `ring-white/80` over a fixed annotation ink. Those
-  last are on the score, which is white in both themes, so they are the same exception as the
-  canvas they sit on rather than a fifth category.
+  allowlist file. Wire it into `npm run lint`. Allowlist as it stands after Stage 5 — 18 hits in
+  8 files, each a colour that is correct in both themes rather than an unconverted one:
+  - the QR card's quiet zone and the PDF page canvas (§6);
+  - **`LegalPage`'s `print:bg-white`** — paper has no theme (§7), and this is the one printable
+    route in the panel;
+  - **every modal scrim.** Stage 5 found fifteen more written in `ink` rather than a literal and
+    converted them, so the rule now has one shape across the panel: a full-viewport veil is
+    `bg-black/2x…/8x`. Only the four the spec had already named appear in this grep
+    (`ConfirmModal`, `BottomSheet`, `PdfViewerModal`, `AnnotationGuide`) plus `LegalModals`,
+    `DocumentUploadModal` and `CategoryFormModal`; the rest were never `white`/`black` classes;
+  - `Checkbox`'s tick and `Badge`'s pulse sweep — a specular mark on an accent fill, the same
+    exception the primary button's shadow carries. Note the seam Stage 5 left here on purpose:
+    the two hand-rolled checkboxes in chorister-hub took `text-ink-on-inverse` (identical pixels,
+    `#FBFAF7` on gold) while `Checkbox` itself stayed literal because the allowlist named it. If
+    §1.2's white-on-gold finding is ever taken up, `Checkbox` is where it starts;
+  - `AnnotationOverlay`'s **paper-side** literals: the lock badge's disc, the inline mark's
+    `ring-black/10` and the pin's `text-white` / `ring-white/80` over a fixed annotation ink.
+    Those are on the score, which is white in both themes, so they are the same exception as the
+    canvas they sit on rather than a separate category.
+
+  Two things the guard cannot see, both proved by Stage 5 and worth a second grep in the same
+  script: a scrim written as `bg-ethereal-ink/4x`, and an arbitrary `shadow-[…]`/gradient carrying
+  a raw `rgba()`. Both are unconverted literals wearing a token's clothes.
 - **`theme-color` parity**: `THEME_COLOR` in `shared/theme/themeController.ts` and the media-keyed
   pair in `index.html` both hard-code `--color-ethereal-canvas` per theme — a meta cannot read a
   CSS variable. Change the ground and all three move together, or a seam opens along the top edge

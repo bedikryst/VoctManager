@@ -52,7 +52,7 @@ const Benefit = ({
   icon: LucideIcon;
   label: string;
 }): React.JSX.Element => (
-  <div className="flex items-center gap-2.5 rounded-control border border-hairline-strong bg-white/40 px-3 py-2.5">
+  <div className="flex items-center gap-2.5 rounded-control border border-hairline-strong bg-ethereal-marble/40 px-3 py-2.5">
     <Icon
       className="h-4 w-4 shrink-0 text-ethereal-gold"
       strokeWidth={1.5}
@@ -102,7 +102,7 @@ const AppleInstallCard = ({
 
   if (guide === "in-app") {
     return (
-      <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+      <div className="space-y-3 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4">
         <Text weight="medium">
           {t("settings.app.in_app.title", "Otwórz stronę w Safari")}
         </Text>
@@ -132,7 +132,7 @@ const AppleInstallCard = ({
 
   if (guide === "other-browser") {
     return (
-      <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+      <div className="space-y-3 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4">
         <Text weight="medium">
           {t("settings.app.apple_other.title", "Dodaj do ekranu początkowego")}
         </Text>
@@ -167,7 +167,7 @@ const AppleInstallCard = ({
   }
 
   return (
-    <div className="space-y-3 rounded-nested border border-hairline-strong bg-white/40 p-4">
+    <div className="space-y-3 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4">
       <Text weight="medium">
         {t("settings.app.ios.title", "Dodaj do ekranu początkowego")}
       </Text>
@@ -328,7 +328,7 @@ export const AppTab = (): React.JSX.Element => {
         ) : isIOS && appleGuide !== null ? (
           <AppleInstallCard guide={appleGuide} />
         ) : (
-          <div className="space-y-2 rounded-nested border border-hairline-strong bg-white/40 p-4">
+          <div className="space-y-2 rounded-nested border border-hairline-strong bg-ethereal-marble/40 p-4">
             <Text weight="medium">
               {t("settings.app.other.title", "Instalacja w tej przeglądarce")}
             </Text>
@@ -394,7 +394,7 @@ export const AppTab = (): React.JSX.Element => {
 
         <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
           <div className="min-w-0 space-y-3">
-            <div className="flex items-center gap-2 rounded-control border border-hairline-strong bg-white/50 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-control border border-hairline-strong bg-ethereal-marble/50 px-3 py-2.5">
               <Link2
                 size={15}
                 className="shrink-0 text-ethereal-graphite/50"

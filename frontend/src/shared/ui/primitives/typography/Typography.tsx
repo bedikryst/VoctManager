@@ -73,10 +73,12 @@ export const typographyVariants = cva("transition-colors duration-500", {
       graphite: "text-ethereal-graphite",
       "marble-muted": "text-ethereal-marble/60",
       // Ink for a surface that is dark in BOTH themes — score chrome, the
-      // player dock, a sheet that keeps its ink fill. `marble` reads as that
-      // today only because the ladder happens to put the brightest rung there;
-      // on a dark ground it becomes #2A2521 and the island goes ink-on-ink.
-      // These two are the same role stated so it survives the swap.
+      // player dock, a sheet that keeps its ink fill — and for one written ON a
+      // hue-holding accent (gold, sage) that wants a LIGHT mark. `marble` reads
+      // as the first today only because the ladder happens to put the brightest
+      // rung there; on a dark ground it becomes #2A2521 and the island goes
+      // ink-on-ink. `white` used to be the second, and was the same role said
+      // with a literal, which no theme can reach.
       "ink-on-inverse": "text-ink-on-inverse",
       "ink-on-inverse-muted": "text-ink-on-inverse/60",
       "parchment-muted": "text-ethereal-parchment/60",
@@ -85,7 +87,6 @@ export const typographyVariants = cva("transition-colors duration-500", {
       alabaster: "text-ethereal-alabaster",
       parchment: "text-ethereal-parchment",
       marble: "text-ethereal-marble",
-      white: "text-white",
       inherit: "text-inherit",
     },
     align: {

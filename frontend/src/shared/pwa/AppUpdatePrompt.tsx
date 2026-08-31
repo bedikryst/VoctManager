@@ -35,7 +35,7 @@ export const AppUpdatePrompt = (): React.JSX.Element => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-none flex w-full justify-center px-4"
         >
-          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-white/10 bg-ethereal-ink/95 p-3 shadow-glass-ethereal backdrop-blur-xl">
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-line-on-inverse bg-surface-inverse/95 p-3 shadow-glass-ethereal backdrop-blur-xl">
             <span
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-ethereal-gold/30 bg-ethereal-gold/10"
               aria-hidden="true"
@@ -44,10 +44,10 @@ export const AppUpdatePrompt = (): React.JSX.Element => {
             </span>
 
             <div className="min-w-0 flex-1">
-              <Eyebrow color="parchment" className="block truncate">
+              <Eyebrow color="ink-on-inverse" className="block truncate">
                 {t("pwa.update.title", "Nowa odsłona")}
               </Eyebrow>
-              <Text color="parchment-muted" className="mt-0.5 text-xs leading-snug">
+              <Text color="ink-on-inverse-muted" className="mt-0.5 text-xs leading-snug">
                 {t(
                   "pwa.update.subtitle",
                   "Odśwież, gdy skończysz — wczytamy najnowszą wersję.",
@@ -70,7 +70,7 @@ export const AppUpdatePrompt = (): React.JSX.Element => {
               type="button"
               onClick={dismiss}
               aria-label={t("pwa.update.dismiss", "Zamknij")}
-              className="shrink-0 self-start rounded-full p-1 text-ethereal-marble/70 transition-colors hover:text-white"
+              className="shrink-0 self-start rounded-full p-1 text-ink-on-inverse/70 transition-colors hover:text-ink-on-inverse"
             >
               <X size={16} aria-hidden="true" />
             </button>

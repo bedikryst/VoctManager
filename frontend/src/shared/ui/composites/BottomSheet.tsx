@@ -157,7 +157,7 @@ export const BottomSheet = ({
                       id={titleId}
                       size="xl"
                       weight="bold"
-                      color={isDark ? "white" : "default"}
+                      color={isDark ? "ink-on-inverse" : "default"}
                       className="min-w-0 leading-tight"
                     >
                       {title}

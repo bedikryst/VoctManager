@@ -227,7 +227,7 @@ const VenueMarker = ({
         badge={
           upcomingCount > 1 ? (
             <span
-              className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ethereal-ink px-1 text-[9px] font-bold text-ethereal-marble"
+              className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-surface-inverse px-1 text-[9px] font-bold text-ink-on-inverse"
               aria-hidden="true"
             >
               {upcomingCount}

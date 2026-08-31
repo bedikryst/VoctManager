@@ -28,8 +28,11 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
       aria-hidden="true"
     >
       {/* LAYER 1 — Light from above: a warm wash entering at the top, like
-          daylight falling into a nave. Fades out before the content zone. */}
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(253,253,250,0.55)_0%,rgba(253,253,250,0)_44%)]" />
+          daylight falling into a nave. Fades out before the content zone.
+          The colour is a variable, not a literal: this is the largest painted
+          surface in the panel and an arbitrary value is baked into the compiled
+          class, so a theme can reach it no other way (--aura-* in panel.css). */}
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--aura-light)_0%,transparent_44%)]" />
 
       {/* LAYER 2 — Warm chiaroscuro glows. Multiply over the deeper canvas reads
           as soft incense-light pooling, warming the top-left and the otherwise-
@@ -92,7 +95,7 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
 
       {/* LAYER 5 — Oculus vignette: subtle darkening toward the edges for the
           chiaroscuro of a sacred interior. Keeps the eye on the lit centre. */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_44%,rgba(22,20,18,0.05)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_-10%,transparent_44%,var(--aura-vignette)_100%)]" />
 
       {/* LAYER 6 — Film grain for atmosphere and to break up gradient banding. */}
       <div className="absolute inset-0 bg-noise opacity-[0.02] mix-blend-overlay" />

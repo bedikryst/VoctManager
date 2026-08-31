@@ -120,7 +120,7 @@ export const PieceRow = ({
           )}
           aria-hidden="true"
         >
-          <Heading size="lg" weight="medium" color={isArchived ? "white" : "default"}>
+          <Heading size="lg" weight="medium" color={isArchived ? "ink-on-inverse" : "default"}>
             {String(order)}
           </Heading>
         </div>
@@ -131,7 +131,7 @@ export const PieceRow = ({
             <Heading
               size="lg"
               weight="medium"
-              color={isArchived ? "white" : "default"}
+              color={isArchived ? "ink-on-inverse" : "default"}
               truncate
               className="leading-snug"
             >
@@ -229,7 +229,7 @@ export const PieceRow = ({
               ) : (
                 <Play size={13} className="text-ethereal-sage" aria-hidden="true" />
               )}
-              <Eyebrow color={isThisPiecePlaying ? "white" : "default"}>
+              <Eyebrow color={isThisPiecePlaying ? "ink-on-inverse" : "default"}>
                 {isThisPiecePlaying
                   ? t("materials.row.pause", "Pauza")
                   : t("materials.row.listen", "Odtwórz")}

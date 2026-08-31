@@ -174,7 +174,7 @@ const RosterGroup = ({
           {rows.length}
         </Text>
       </div>
-      <ul className={cn("rounded-b-nested border border-t-0 bg-white/40 px-4", c.bodyBorder)}>
+      <ul className={cn("rounded-b-nested border border-t-0 bg-ethereal-marble/40 px-4", c.bodyBorder)}>
         {rows.map((row) => (
           <RosterRow key={row.id} row={row} />
         ))}

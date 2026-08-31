@@ -34,7 +34,7 @@ export const UnreadMessagesBadge: React.FC<UnreadMessagesBadgeProps> = ({
     >
       <Label
         size="xs"
-        color="white"
+        color="ink-on-inverse"
         weight="bold"
         className="text-[9px] leading-none"
       >

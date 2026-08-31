@@ -46,7 +46,7 @@ import { cn } from "@/shared/lib/utils";
 
 /** The elevated warm float the login card sits on — the threshold's one shadow. */
 const CARD_SHADOW =
-  "shadow-[inset_0_1px_1px_rgba(255,255,255,0.95),0_2px_6px_-2px_rgba(22,20,18,0.08),0_30px_64px_-22px_rgba(120,104,82,0.5)]";
+  "shadow-[inset_0_1px_1px_var(--glass-highlight),0_2px_6px_-2px_var(--glass-contact),0_30px_64px_-22px_var(--glass-shade-strong)]";
 
 export default function ActivatePage(): React.JSX.Element {
   const { t } = useTranslation();

@@ -178,6 +178,16 @@ const DECIDED = {
     removed: ["text-ethereal-alabaster"],
     added: ["text-ink-on-inverse"],
   } as Delta,
+  /**
+   * 2026-08 (dark mode, stage 5): the glass field's sunken line was an ink
+   * literal, and an arbitrary shadow colour is inlined at build time — so no
+   * theme could reach it and 6% of ink over a dark fill reads as nothing. It
+   * now names the same job the rest of the panel's contact lines name.
+   */
+  glassInsetThemed: {
+    removed: ["shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)]"],
+    added: ["shadow-[inset_0_1px_2px_var(--glass-contact)]"],
+  } as Delta,
   /** The field's focus fill, previously only on `Input`/`Textarea`. */
   focusFillGained: {
     removed: [],
@@ -208,6 +218,7 @@ describe("Input — surface after folding onto fieldShell", () => {
         merge(
           DECIDED.touchTextScale,
           variant === "glass" ? DECIDED.blurDropped : NO_CHANGE,
+          variant === "glass" ? DECIDED.glassInsetThemed : NO_CHANGE,
           ...(variant === "dark"
             ? [DECIDED.darkIslandFill, DECIDED.darkIslandFocusFill, DECIDED.darkIslandInk]
             : []),
@@ -222,12 +233,14 @@ describe("Input — surface after folding onto fieldShell", () => {
         legacyInput("glass", false, { hasLeftIcon: true, hasRightElement: true }),
         inputFieldClasses({ hasLeftIcon: true, hasRightElement: true }),
       ),
-    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.blurDropped));
+    ).toEqual(
+      merge(DECIDED.touchTextScale, DECIDED.blurDropped, DECIDED.glassInsetThemed),
+    );
   });
 
   it("tints the errored field exactly as before", () => {
     expect(delta(legacyInput("glass", true), inputFieldClasses({ hasError: true }))).toEqual(
-      merge(DECIDED.touchTextScale, DECIDED.blurDropped),
+      merge(DECIDED.touchTextScale, DECIDED.blurDropped, DECIDED.glassInsetThemed),
     );
     expect(delta(legacyInput("ghost", true), inputFieldClasses({ variant: "ghost", hasError: true }))).toEqual(
       DECIDED.touchTextScale,
@@ -253,7 +266,7 @@ describe("Textarea — surface after folding onto fieldShell", () => {
   it.each(["glass", "solid", "ghost"] as const)("%s", (variant) => {
     const expected =
       variant === "glass"
-        ? DECIDED.blurDropped
+        ? merge(DECIDED.blurDropped, DECIDED.glassInsetThemed)
         : variant === "solid"
           ? DECIDED.solidHoverGained
           : NO_CHANGE;
@@ -269,7 +282,9 @@ describe("Textarea — surface after folding onto fieldShell", () => {
   it("tints the errored field exactly as before", () => {
     expect(
       delta(legacyTextarea("glass", true), textareaFieldClasses({ hasError: true })),
-    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.blurDropped));
+    ).toEqual(
+      merge(DECIDED.touchTextScale, DECIDED.blurDropped, DECIDED.glassInsetThemed),
+    );
   });
 });
 
@@ -282,7 +297,7 @@ describe("fieldShell — what the other three controls inherit", () => {
 
   it("gives the glass field a focus fill, as Input always had", () => {
     expect(delta(legacyShell("glass", false), cn(fieldShellVariants({})))).toEqual(
-      merge(DECIDED.touchTextScale, {
+      merge(DECIDED.touchTextScale, DECIDED.glassInsetThemed, {
         removed: [],
         added: [...DECIDED.focusFillGained.added, INERT],
       }),
@@ -304,7 +319,7 @@ describe("fieldShell — what the other three controls inherit", () => {
     expect(
       delta(legacyShell("glass", true), cn(fieldShellVariants({ hasError: true }))),
     ).toEqual(
-      merge(DECIDED.touchTextScale, {
+      merge(DECIDED.touchTextScale, DECIDED.glassInsetThemed, {
         removed: ["text-ethereal-crimson"],
         added: ["focus:bg-ethereal-marble", INERT_ERROR, "text-ethereal-ink"],
       }),

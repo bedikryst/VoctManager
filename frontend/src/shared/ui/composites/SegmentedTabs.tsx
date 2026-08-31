@@ -104,7 +104,7 @@ export function SegmentedTabs<TId extends string>({
               isActive
                 ? "bg-ethereal-gold text-surface-inverse shadow-sm"
                 : isDark
-                  ? "text-ethereal-parchment/70 hover:bg-white/8 hover:text-ethereal-parchment"
+                  ? "text-ethereal-parchment/70 hover:bg-ink-on-inverse/8 hover:text-ethereal-parchment"
                   : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
             )}
           >

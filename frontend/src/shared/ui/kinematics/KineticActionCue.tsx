@@ -26,9 +26,9 @@ export const KineticActionCue: React.FC<KineticActionCueProps> = ({
   return (
     <div
       className={cn(
-        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ethereal-incense/20 bg-white/5 text-ethereal-graphite shadow-sm backdrop-blur-sm transition-all duration-500",
-        "group-hover/alert:border-ethereal-gold/40 group-hover/alert:bg-white/30 group-hover/alert:text-ethereal-ink",
-        "group-hover/card:border-ethereal-gold/40 group-hover/card:bg-white/30 group-hover/card:text-ethereal-ink",
+        "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-ethereal-incense/20 bg-ethereal-marble/5 text-ethereal-graphite shadow-sm backdrop-blur-sm transition-all duration-500",
+        "group-hover/alert:border-ethereal-gold/40 group-hover/alert:bg-ethereal-marble/30 group-hover/alert:text-ethereal-ink",
+        "group-hover/card:border-ethereal-gold/40 group-hover/card:bg-ethereal-marble/30 group-hover/card:text-ethereal-ink",
         className,
       )}
       aria-hidden="true"

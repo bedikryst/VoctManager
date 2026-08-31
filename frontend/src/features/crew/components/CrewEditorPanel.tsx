@@ -103,7 +103,7 @@ export function CrewEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/35 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/35 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -141,7 +141,7 @@ export function CrewEditorPanel({
             <div className="relative flex-1 overflow-y-auto px-6 py-6 md:px-8 md:py-8">
               <form
                 onSubmit={handleSubmit}
-                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)] backdrop-blur-xl md:p-8"
+                className="flex min-h-full flex-col gap-7 rounded-surface border border-ethereal-incense/15 bg-ethereal-marble/65 p-6 shadow-[inset_0_1px_0_var(--glass-highlight)] backdrop-blur-xl md:p-8"
               >
                 <section className="space-y-5">
                   <div className="flex items-center gap-3">

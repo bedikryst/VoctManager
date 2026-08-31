@@ -76,7 +76,7 @@ export const ArtistEmptyState = (): React.JSX.Element => {
           transition={{ delay: 0.4, duration: 0.8 }}
           className="relative z-10 flex flex-col items-center"
         >
-          <div className="p-5 rounded-full bg-ethereal-marble/40 border border-white/60 shadow-glass-ethereal mb-6 transition-transform duration-700 group-hover:-translate-y-2 group-hover:scale-105">
+          <div className="p-5 rounded-full bg-ethereal-marble/40 border border-ethereal-marble/60 shadow-glass-ethereal mb-6 transition-transform duration-700 group-hover:-translate-y-2 group-hover:scale-105">
             <Feather
               size={32}
               className="text-ethereal-gold/70 stroke-[1.2px]"

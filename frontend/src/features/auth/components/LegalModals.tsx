@@ -64,7 +64,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-ethereal-ink/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -87,7 +87,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
               aria-labelledby={titleId}
             >
               {/* Header */}
-              <div className="flex items-center justify-between gap-4 border-b border-hairline bg-white/5 p-6">
+              <div className="flex items-center justify-between gap-4 border-b border-hairline bg-ethereal-marble/5 p-6">
                 <div>
                   <Heading id={titleId} size="3xl" weight="medium" color="default">
                     {type === "privacy"
@@ -123,12 +123,12 @@ export const LegalModal: React.FC<LegalModalProps> = ({
 
               {/* Content Area */}
               {/* No `space-y` here — the document owns its own vertical rhythm. */}
-              <div className="custom-scrollbar pointer-events-auto min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white/40 p-6 touch-pan-y">
+              <div className="custom-scrollbar pointer-events-auto min-h-0 flex-1 overflow-y-auto overscroll-contain bg-ethereal-marble/40 p-6 touch-pan-y">
                 {type === "privacy" ? <PrivacyContent /> : <TermsContent />}
               </div>
 
               {/* Footer */}
-              <div className="flex justify-end border-t border-hairline bg-white/50 p-4">
+              <div className="flex justify-end border-t border-hairline bg-ethereal-marble/50 p-4">
                 <Button variant="primary" onClick={onClose}>
                   {t("auth.legal.common.close_button")}
                 </Button>

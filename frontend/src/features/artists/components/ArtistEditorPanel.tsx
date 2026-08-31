@@ -137,7 +137,7 @@ export default function ArtistEditorPanel({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleCloseRequest}
-            className="fixed inset-0 z-focus-trap bg-ethereal-ink/30 backdrop-blur-sm"
+            className="fixed inset-0 z-focus-trap bg-black/30 backdrop-blur-sm"
             aria-hidden="true"
           />
 
@@ -479,7 +479,7 @@ export default function ArtistEditorPanel({
                   )}
                 </div>
 
-                <div className="sticky bottom-0 left-0 right-0 z-40 -mx-6 -mb-8 mt-8 rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 shadow-[0_-10px_30px_rgba(22,20,18,0.05)] backdrop-blur-xl md:-mx-8 md:p-6">
+                <div className="sticky bottom-0 left-0 right-0 z-40 -mx-6 -mb-8 mt-8 rounded-b-surface border-t border-hairline-strong bg-ethereal-alabaster/85 p-4 shadow-[0_-10px_30px_var(--glass-contact)] backdrop-blur-xl md:-mx-8 md:p-6">
                   <Button
                     type="submit"
                     variant="primary"

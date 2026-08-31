@@ -182,7 +182,7 @@ export const CategoryFormModal = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-focus-trap flex items-center justify-center p-4 bg-ethereal-ink/30 backdrop-blur-sm"
+          className="fixed inset-0 z-focus-trap flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
@@ -329,8 +329,8 @@ export const CategoryFormModal = ({
                                   className={cn(
                                     "w-5 h-5 rounded flex items-center justify-center border transition-colors shrink-0",
                                     checked
-                                      ? "bg-ethereal-gold border-ethereal-gold text-white"
-                                      : "border-ethereal-incense/40 bg-white",
+                                      ? "bg-ethereal-gold border-ethereal-gold text-ink-on-inverse"
+                                      : "border-ethereal-incense/40 bg-ethereal-marble",
                                   )}
                                 >
                                   {checked && (

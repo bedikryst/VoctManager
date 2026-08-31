@@ -283,7 +283,7 @@ export const CommandPalette = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={SCRIM_TRANSITION}
-            className="absolute inset-0 bg-ethereal-ink/35 backdrop-blur-[6px]"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[6px]"
             onClick={onClose}
             aria-hidden="true"
           />
@@ -301,7 +301,7 @@ export const CommandPalette = ({
             className={cn(
               "relative z-10 flex max-h-[68vh] w-full max-w-[620px] flex-col overflow-hidden",
               "rounded-[22px] border border-glass-border bg-ethereal-alabaster/96 backdrop-blur-ethereal",
-              "shadow-[0_32px_80px_-24px_rgba(22,20,18,0.4),0_0_0_1px_rgba(194,168,120,0.18)]",
+              "shadow-[0_32px_80px_-24px_var(--glass-shade-strong),0_0_0_1px_rgba(194,168,120,0.18)]",
             )}
           >
             <div className="flex shrink-0 items-center gap-3 px-4 py-3.5">

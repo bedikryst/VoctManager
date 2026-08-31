@@ -217,6 +217,30 @@
     --glass-shade-lifted: rgba(120, 104, 82, 0.22);
     --glass-shade-strong: rgba(120, 104, 82, 0.45);
 
+    /* "Nawa światła" — the ambient field the whole panel is painted on, and the
+       one surface no token could reach: it is drawn with arbitrary gradients,
+       whose colour literals are baked into the compiled class. Two jobs, each
+       at the two strengths the panel actually uses:
+
+        · light / shaft — daylight entering at the top of the nave. `light` is
+          the atmosphere behind the app shell and the fault screen; `shaft` is
+          the same light where it IS the subject (the welcome ceremony, the auth
+          screen), with `-soft` as that beam's outer falloff.
+        · vignette / -deep — the edges receding so the lit centre reads. `deep`
+          belongs to the auth screen, which is one card on an empty field and
+          leans on the frame twice as hard as a page full of content does.
+
+       Variables rather than literals for the same reason the shadows are: light
+       entering a dark nave is a fraction of the light entering a bright one, and
+       a 6% ink vignette that shapes a cream ground does nothing at all against a
+       near-black one. The alphas move a long way between the themes; the warm
+       hues do not, because light is light on both. */
+    --aura-light: rgba(253, 253, 250, 0.55);
+    --aura-shaft: rgba(255, 250, 238, 0.95);
+    --aura-shaft-soft: rgba(255, 250, 238, 0.4);
+    --aura-vignette: rgba(22, 20, 18, 0.06);
+    --aura-vignette-deep: rgba(46, 38, 26, 0.14);
+
     /* Real height of the fixed mobile nav dock (icon + label rows + its own
        safe-area pad). The single source of truth for "how much space the dock
        eats at the bottom edge", consumed by content padding (pb-nav-dock) and
@@ -334,6 +358,18 @@
     --glass-shade: rgba(0, 0, 0, 0.45);
     --glass-shade-lifted: rgba(0, 0, 0, 0.55);
     --glass-shade-strong: rgba(0, 0, 0, 0.6);
+
+    /* The nave at night. The light keeps its warm hue and loses an order of
+       magnitude of strength — 55% of a near-white over #14120F is not "light
+       from above", it is a grey sheet over the top half of the app. The
+       vignette goes the other way and gains a lot: it also stops being ink,
+       because the ink rung has flipped to near-white and would paint a HALO
+       around the edges rather than letting them recede. */
+    --aura-light: rgba(253, 253, 250, 0.05);
+    --aura-shaft: rgba(255, 250, 238, 0.1);
+    --aura-shaft-soft: rgba(255, 250, 238, 0.05);
+    --aura-vignette: rgba(0, 0, 0, 0.45);
+    --aura-vignette-deep: rgba(0, 0, 0, 0.6);
   }
 
   body.theme-panel {

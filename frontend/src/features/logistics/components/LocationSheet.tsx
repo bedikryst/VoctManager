@@ -91,7 +91,7 @@ export const LocationSheet = ({
           transition={{ type: "spring", damping: 32, stiffness: 320 }}
           onDragEnd={handleDragEnd}
           style={{ height: `${SHEET_HEIGHT_RATIO * 100}dvh` }}
-          className="fixed inset-x-0 bottom-0 z-focus-trap flex flex-col rounded-t-3xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-[0_-18px_48px_rgba(22,20,18,0.22)] lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-focus-trap flex flex-col rounded-t-3xl border border-ethereal-incense/20 bg-ethereal-alabaster shadow-[0_-18px_48px_var(--glass-shade-lifted)] lg:hidden"
         >
           {/* Grab handle — the only drag-initiating zone, so the body scrolls. */}
           <div

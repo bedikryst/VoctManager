@@ -41,7 +41,7 @@ const AppleInstructions = ({
 
   const hintLine = (icon: React.JSX.Element, text: string): React.JSX.Element => (
     <Text
-      color="marble-muted"
+      color="ink-on-inverse-muted"
       className="mt-1 flex items-start gap-1.5 text-[11px] leading-snug"
     >
       <span className="mt-px shrink-0">{icon}</span>
@@ -52,7 +52,7 @@ const AppleInstructions = ({
   if (guide === "in-app") {
     return (
       <>
-        <Text color="parchment-muted" className="mt-1 text-xs leading-snug">
+        <Text color="ink-on-inverse-muted" className="mt-1 text-xs leading-snug">
           {t(
             "pwa.install.in_app",
             "Otwórz tę stronę w Safari — w okienku wbudowanym w inną aplikację instalacja jest niedostępna.",
@@ -76,7 +76,7 @@ const AppleInstructions = ({
   return (
     <>
       <Text
-        color="parchment-muted"
+        color="ink-on-inverse-muted"
         className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs leading-snug"
       >
         <span>{t("pwa.install.ios_step_1", "Dotknij ikony Udostępnij")}</span>
@@ -119,24 +119,24 @@ export const InstallAppPrompt = (): React.JSX.Element => {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="pointer-events-none flex w-full justify-center px-4"
         >
-          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-white/10 bg-ethereal-ink/95 p-3 shadow-glass-ethereal backdrop-blur-xl">
+          <div className="pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-2xl border border-line-on-inverse bg-surface-inverse/95 p-3 shadow-glass-ethereal backdrop-blur-xl">
             <img
               src="/icons/icon-192.png"
               alt=""
               width={48}
               height={48}
-              className="h-12 w-12 shrink-0 rounded-xl border border-white/10"
+              className="h-12 w-12 shrink-0 rounded-xl border border-line-on-inverse"
             />
 
             <div className="min-w-0 flex-1">
-              <Eyebrow color="parchment" className="block truncate">
+              <Eyebrow color="ink-on-inverse" className="block truncate">
                 {t("pwa.install.title", "Zainstaluj VoctManager")}
               </Eyebrow>
 
               {platform === "ios" && appleGuide !== null ? (
                 <AppleInstructions guide={appleGuide} />
               ) : (
-                <Text color="parchment-muted" className="mt-0.5 text-xs leading-snug">
+                <Text color="ink-on-inverse-muted" className="mt-0.5 text-xs leading-snug">
                   {t("pwa.install.subtitle", "Pełny ekran i ćwiczenia offline.")}
                 </Text>
               )}
@@ -163,7 +163,7 @@ export const InstallAppPrompt = (): React.JSX.Element => {
               type="button"
               onClick={dismiss}
               aria-label={t("pwa.install.dismiss", "Zamknij")}
-              className="shrink-0 self-start rounded-full p-1 text-ethereal-marble/70 transition-colors hover:text-white"
+              className="shrink-0 self-start rounded-full p-1 text-ink-on-inverse/70 transition-colors hover:text-ink-on-inverse"
             >
               <X size={16} aria-hidden="true" />
             </button>
