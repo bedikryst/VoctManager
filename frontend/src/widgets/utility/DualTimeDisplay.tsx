@@ -58,8 +58,8 @@ const primaryTimeVariants = cva("flex items-baseline gap-2", {
       muted: "text-ethereal-graphite/60",
       gold: "text-ethereal-gold",
       incense: "text-ethereal-incense/60",
-      dark: "text-ethereal-parchment",
-      "dark-muted": "text-ethereal-parchment/70",
+      dark: "text-ink-on-inverse",
+      "dark-muted": "text-ink-on-inverse/70",
     },
     size: {
       xs: "text-[10px]",
@@ -108,7 +108,7 @@ const localTimeVariants = cva(
     variants: {
       variant: {
         default: "text-ethereal-graphite/60",
-        dark: "text-ethereal-parchment/70",
+        dark: "text-ink-on-inverse/70",
       },
       local: {
         quiet: "text-[10px]",
@@ -122,7 +122,7 @@ const localTimeVariants = cva(
     compoundVariants: [
       { variant: "default", local: "paired", class: "text-ethereal-graphite" },
       { variant: "default", divider: true, class: "border-ethereal-graphite/20" },
-      { variant: "dark", divider: true, class: "border-ethereal-parchment/30" },
+      { variant: "dark", divider: true, class: "border-ink-on-inverse/30" },
     ],
     defaultVariants: {
       variant: "default",
@@ -300,7 +300,7 @@ export const DualTimeDisplay = ({
           <Eyebrow
             as="span"
             size="overline-sm"
-            color={variant === "dark" ? "parchment-muted" : "muted"}
+            color={variant === "dark" ? "ink-on-inverse-muted" : "muted"}
             className="mr-1 self-center"
           >
             {label}
@@ -342,7 +342,7 @@ export const DualTimeDisplay = ({
               className={cn(
                 "font-sans text-[9px] font-medium lowercase tracking-normal",
                 variant === "dark"
-                  ? "text-ethereal-parchment/50"
+                  ? "text-ink-on-inverse/50"
                   : "text-ethereal-graphite/45",
               )}
             >

@@ -45,8 +45,11 @@ interface SegmentedTabsProps<TId extends string> {
    */
   iconOnly?: boolean;
   /**
-   * `dark` is the same control on an ink surface — the concert sheet, and any
-   * other `BottomSheet tone="dark"`. It exists so a dark surface does not have
+   * `dark` is the same control on an inverse surface — the concert sheet, and
+   * any other `BottomSheet tone="dark"`. Its track is a wash of that surface's
+   * own fill rather than a rung, so it stays sunken into the island on both
+   * themes instead of inverting out of it.
+   * It exists so a dark surface does not have
    * to type its own track: the one that did also gave each segment a DIFFERENT
    * active colour (gold for one tab, sage for the next), which spends the
    * accent scale on saying something the label already says.
@@ -72,7 +75,7 @@ export function SegmentedTabs<TId extends string>({
       className={cn(
         "flex w-full max-w-full gap-1 rounded-control border p-1",
         isDark
-          ? "border-ethereal-incense/20 bg-ethereal-ink/40"
+          ? "border-ethereal-incense/20 bg-surface-inverse/40"
           : "border-hairline-strong bg-ethereal-alabaster/70",
         iconOnly
           ? "inline-flex w-auto"
@@ -104,7 +107,7 @@ export function SegmentedTabs<TId extends string>({
               isActive
                 ? "bg-ethereal-gold text-surface-inverse shadow-sm"
                 : isDark
-                  ? "text-ethereal-parchment/70 hover:bg-ink-on-inverse/8 hover:text-ethereal-parchment"
+                  ? "text-ink-on-inverse/70 hover:bg-ink-on-inverse/8 hover:text-ink-on-inverse"
                   : "text-ethereal-graphite hover:bg-ethereal-ink/4 hover:text-ethereal-ink",
             )}
           >

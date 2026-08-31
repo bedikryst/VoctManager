@@ -17,8 +17,12 @@ import { EASE } from "@/shared/ui/kinematics/motion-presets";
 interface AuthBrandProps {
   /** Optional supporting line rendered beneath the wordmark. */
   readonly tagline?: string;
-  /** "ink" for light card grounds, "marble" for the dark nave rail. */
-  readonly tone?: "ink" | "marble";
+  /**
+   * "ink" for light card grounds, "on-inverse" for the nave rail — a plate that
+   * is dark under both themes, so its wordmark names the inverse ink rather
+   * than the ladder's brightest rung, which follows the page instead.
+   */
+  readonly tone?: "ink" | "on-inverse";
   readonly align?: "center" | "left";
   readonly size?: "lg" | "xl";
   readonly className?: string;
@@ -61,7 +65,7 @@ export const AuthBrand = ({
           weight="medium"
           className={cn(
             "relative leading-none",
-            tone === "ink" ? "text-ethereal-ink" : "text-ethereal-marble",
+            tone === "ink" ? "text-ethereal-ink" : "text-ink-on-inverse",
           )}
         >
           Voct
@@ -71,7 +75,7 @@ export const AuthBrand = ({
 
       {tagline && (
         <Eyebrow
-          color={tone === "ink" ? "muted" : "parchment-muted"}
+          color={tone === "ink" ? "muted" : "ink-on-inverse-muted"}
           className="relative mt-3"
         >
           {tagline}

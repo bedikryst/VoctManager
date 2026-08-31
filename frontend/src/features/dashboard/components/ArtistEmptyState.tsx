@@ -31,7 +31,7 @@ const RESONANCE_RINGS: ReadonlyArray<BreathRing> = [
 ];
 
 const ResonanceWaves = (): React.JSX.Element => (
-  <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none mix-blend-multiply">
+  <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none blend-multiply-light">
     {RESONANCE_RINGS.map((ring) => {
       const style: CSSProperties & Record<string, string> = {
         width: `${ring.size}px`,

@@ -41,8 +41,8 @@ export const EtherealBackground = React.memo((): React.JSX.Element => {
           mix-blended blob) yet forced the compositor to re-blend two huge layers
           against the backdrop every frame, forever — pure invisible cost. As a
           fixed background it now composites once. */}
-      <div className="absolute -left-[6%] -top-[8%] h-[42vw] w-[42vw] rounded-full bg-ethereal-gold/20 opacity-20 mix-blend-multiply blur-[110px]" />
-      <div className="absolute -bottom-[20%] -right-[6%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 opacity-[0.15] mix-blend-multiply blur-[120px]" />
+      <div className="absolute -left-[6%] -top-[8%] h-[42vw] w-[42vw] rounded-full bg-ethereal-gold/20 opacity-20 mix-blend-multiply blur-[110px] light-ground-film" />
+      <div className="absolute -bottom-[20%] -right-[6%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 opacity-[0.15] mix-blend-multiply blur-[120px] light-ground-film" />
 
       {/* LAYER 3 — The kinematic stave: a diagonal musical staff laid across the
           field, oversized so it spans the whole viewport. Plays a slow,

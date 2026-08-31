@@ -71,22 +71,20 @@ export const typographyVariants = cva("transition-colors duration-500", {
       incense: "text-ethereal-incense",
       "incense-muted": "text-ethereal-incense/60",
       graphite: "text-ethereal-graphite",
-      "marble-muted": "text-ethereal-marble/60",
       // Ink for a surface that is dark in BOTH themes — score chrome, the
-      // player dock, a sheet that keeps its ink fill — and for one written ON a
-      // hue-holding accent (gold, sage) that wants a LIGHT mark. `marble` reads
-      // as the first today only because the ladder happens to put the brightest
-      // rung there; on a dark ground it becomes #2A2521 and the island goes
-      // ink-on-ink. `white` used to be the second, and was the same role said
-      // with a literal, which no theme can reach.
+      // player dock, the premium island — and for one written ON a hue-holding
+      // accent (gold, sage) that wants a LIGHT mark. There is no rung-named
+      // light ink beside these on purpose: `marble` / `parchment` / `alabaster`
+      // stood here for the same two jobs and read correctly only because the
+      // ladder happened to put the brightest rungs at the top. On a dark ground
+      // they invert with the page while the island does not, and the surface
+      // goes ink-on-ink. Every one of them has been renamed to this pair; if a
+      // new call site wants light ink, the question to answer is what its
+      // GROUND does, not which rung looks right today.
       "ink-on-inverse": "text-ink-on-inverse",
       "ink-on-inverse-muted": "text-ink-on-inverse/60",
-      "parchment-muted": "text-ethereal-parchment/60",
       crimson: "text-ethereal-crimson",
       "crimson-light": "text-ethereal-crimson-light",
-      alabaster: "text-ethereal-alabaster",
-      parchment: "text-ethereal-parchment",
-      marble: "text-ethereal-marble",
       inherit: "text-inherit",
     },
     align: {

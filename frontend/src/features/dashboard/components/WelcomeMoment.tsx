@@ -77,8 +77,8 @@ const WelcomeScene = ({
 
     {/* Incense-light glows — gold pooling top-left, amethyst lower-right,
         the EtherealBackground pair a shade warmer for the ceremony. */}
-    <div className="absolute -left-[8%] -top-[10%] h-[46vw] w-[46vw] rounded-full bg-ethereal-gold/25 opacity-30 mix-blend-multiply blur-[110px]" />
-    <div className="absolute -bottom-[22%] -right-[8%] h-[50vw] w-[50vw] rounded-full bg-ethereal-amethyst/20 opacity-20 mix-blend-multiply blur-[120px]" />
+    <div className="absolute -left-[8%] -top-[10%] h-[46vw] w-[46vw] rounded-full bg-ethereal-gold/25 opacity-30 mix-blend-multiply blur-[110px] light-ground-film" />
+    <div className="absolute -bottom-[22%] -right-[8%] h-[50vw] w-[50vw] rounded-full bg-ethereal-amethyst/20 opacity-20 mix-blend-multiply blur-[120px] light-ground-film" />
 
     {/* The stave — the score the singer steps into, drawing itself in once. */}
     <div className="absolute inset-0 flex items-center justify-center">

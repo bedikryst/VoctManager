@@ -136,9 +136,12 @@ export const TimelineProjectCard = ({
         isHoverable={false}
         className={cn(
           "overflow-hidden transition-all duration-300",
+          // The card's own rim is the gold hairline the premium island states
+          // itself with; expanding it turns the hairline up rather than
+          // swapping it for a different hue.
           isExpanded
-            ? "border-ethereal-incense/30"
-            : "hover:border-ethereal-incense/20",
+            ? "border-ethereal-gold/55"
+            : "hover:border-ethereal-gold/55",
         )}
       >
         {/* ── hero header ──────────────────────────────────────────── */}
@@ -154,11 +157,11 @@ export const TimelineProjectCard = ({
             aria-label={t("schedule.card.open_detail", "Otwórz szczegóły: {{title}}", {
               title: event.title,
             })}
-            className="absolute inset-0 z-[1] cursor-pointer rounded-2xl transition-colors hover:bg-ethereal-marble/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+            className="absolute inset-0 z-[1] cursor-pointer rounded-2xl transition-colors hover:bg-ink-on-inverse/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
           />
           {/* date box */}
           <div className="shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl border flex flex-col items-center justify-center shadow-glass-ethereal bg-ethereal-incense/20 border-ethereal-incense/40 backdrop-blur-md">
-            <Eyebrow as="span" color="parchment">
+            <Eyebrow as="span" color="ink-on-inverse">
               {formatLocalizedDate(
                 event.date_time,
                 { month: "short" },
@@ -213,7 +216,7 @@ export const TimelineProjectCard = ({
                   label={t("schedule.card.call_time", "Zbiórka: ")}
                   icon={<Clock size={11} aria-hidden="true" />}
                   variant="dark"
-                  containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/30 text-ethereal-parchment border border-ethereal-incense/50"
+                  containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/30 text-ink-on-inverse border border-ethereal-incense/50"
                   primaryTimeClassName="flex items-center gap-1.5 font-medium"
                   divider
                 />
@@ -227,7 +230,7 @@ export const TimelineProjectCard = ({
                   locationRef={event.location}
                   fallback={t("schedule.card.no_location", "Brak lok.")}
                   variant="badge"
-                  className="max-w-full text-ethereal-parchment/80 border-ethereal-incense/30 bg-ethereal-incense/10"
+                  className="max-w-full text-ink-on-inverse/80 border-ethereal-incense/30 bg-ethereal-incense/10"
                 />
               </span>
             </div>
@@ -235,7 +238,7 @@ export const TimelineProjectCard = ({
 
           {/* open-detail affordance (decorative — the stretched button owns
               the interaction); top-anchored beside the date box */}
-          <div className="shrink-0 self-start mt-1 p-1.5 bg-ethereal-incense/20 border border-ethereal-incense/30 rounded-full text-ethereal-parchment/80 transition-colors">
+          <div className="shrink-0 self-start mt-1 p-1.5 bg-ethereal-incense/20 border border-ethereal-incense/30 rounded-full text-ink-on-inverse/80 transition-colors">
             <ChevronRight size={18} aria-hidden="true" />
           </div>
         </div>
@@ -281,7 +284,7 @@ export const TimelineProjectCard = ({
                       under the singer's name. Present, and inert. */}
                   <div inert={isPreview} className={cn(isPreview && INERT_SURFACE)}>
                     <Eyebrow
-                      color="parchment-muted"
+                      color="ink-on-inverse-muted"
                       className="mb-1.5 flex items-center gap-1.5"
                     >
                       <FileText size={12} aria-hidden="true" />
@@ -302,8 +305,8 @@ export const TimelineProjectCard = ({
                     </Button>
                     <Text
                       size="xs"
-                      color="parchment-muted"
-                      className="mt-1.5 block text-ethereal-parchment/60"
+                      color="ink-on-inverse-muted"
+                      className="mt-1.5 block text-ink-on-inverse/60"
                     >
                       {t(
                         "schedule.day_sheet.hint",
@@ -323,7 +326,7 @@ export const TimelineProjectCard = ({
                       {hasDressCode && (
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4">
                           <Eyebrow
-                            color="parchment"
+                            color="ink-on-inverse"
                             className="mb-3 flex items-center gap-2"
                           >
                             <Shirt size={13} aria-hidden="true" />
@@ -341,7 +344,7 @@ export const TimelineProjectCard = ({
                             >
                               <Text
                                 as="span"
-                                color="parchment-muted"
+                                color="ink-on-inverse-muted"
                                 className="mr-2"
                               >
                                 {t("schedule.card.dress_code_women", "Panie:")}
@@ -353,7 +356,7 @@ export const TimelineProjectCard = ({
                             <Text as="p" size="sm" color="ink-on-inverse">
                               <Text
                                 as="span"
-                                color="parchment-muted"
+                                color="ink-on-inverse-muted"
                                 className="mr-2"
                               >
                                 {t("schedule.card.dress_code_men", "Panowie:")}
@@ -381,7 +384,7 @@ export const TimelineProjectCard = ({
                       {!proj.description && !hasOnsiteBlock && !hasDressCode && (
                         <Text
                           size="sm"
-                          color="parchment-muted"
+                          color="ink-on-inverse-muted"
                           className="italic px-2"
                         >
                           {t(
@@ -394,7 +397,7 @@ export const TimelineProjectCard = ({
 
                     {/* run sheet */}
                     <div>
-                      <Eyebrow color="parchment" className="mb-3 block">
+                      <Eyebrow color="ink-on-inverse" className="mb-3 block">
                         {t(
                           "schedule.card.run_sheet_title",
                           "Harmonogram Dnia",
@@ -412,8 +415,8 @@ export const TimelineProjectCard = ({
                             />
                             <Text
                               size="sm"
-                              color="parchment-muted"
-                              className="text-ethereal-parchment/70"
+                              color="ink-on-inverse-muted"
+                              className="text-ink-on-inverse/70"
                             >
                               {t(
                                 "schedule.card.score_pdf_label",
@@ -449,7 +452,7 @@ export const TimelineProjectCard = ({
                       ) : (
                         <Text
                           size="sm"
-                          color="parchment-muted"
+                          color="ink-on-inverse-muted"
                           className="italic px-2"
                         >
                           {t(
@@ -480,12 +483,12 @@ export const TimelineProjectCard = ({
                         <div className="bg-ethereal-incense/10 border border-ethereal-incense/20 rounded-2xl p-4 flex items-center justify-center gap-2 text-center">
                           <Music
                             size={16}
-                            className="text-ethereal-parchment/40 shrink-0"
+                            className="text-ink-on-inverse/40 shrink-0"
                             aria-hidden="true"
                           />
                           <Text
                             size="sm"
-                            color="parchment-muted"
+                            color="ink-on-inverse-muted"
                             className="italic"
                           >
                             {t(
@@ -577,8 +580,8 @@ export const TimelineProjectCard = ({
                                       </Text>
                                       <Text
                                         size="sm"
-                                        color="parchment-muted"
-                                        className="flex items-center gap-1.5 mt-0.5 text-ethereal-parchment/70"
+                                        color="ink-on-inverse-muted"
+                                        className="flex items-center gap-1.5 mt-0.5 text-ink-on-inverse/70"
                                       >
                                         <Users size={11} aria-hidden="true" />
                                         {isPieceExpanded
@@ -605,7 +608,7 @@ export const TimelineProjectCard = ({
                                       className={
                                         isPieceExpanded
                                           ? "text-ethereal-sage"
-                                          : "text-ethereal-parchment/60"
+                                          : "text-ink-on-inverse/60"
                                       }
                                       aria-hidden="true"
                                     />
@@ -619,7 +622,7 @@ export const TimelineProjectCard = ({
                                       animate={{ height: "auto" }}
                                       exit={{ height: 0 }}
                                       transition={{ duration: 0.22 }}
-                                      className="overflow-hidden bg-ethereal-ink/60 border-t border-ethereal-incense/20"
+                                      className="overflow-hidden bg-surface-inverse/60 border-t border-ethereal-incense/20"
                                     >
                                       <div className="p-4">
                                         {isCastingsLoading ? (
@@ -685,11 +688,7 @@ export const TimelineProjectCard = ({
                                                           <Text
                                                             as="span"
                                                             size="sm"
-                                                            color={
-                                                              isMe
-                                                                ? "ink-on-inverse"
-                                                                : "parchment"
-                                                            }
+                                                            color="ink-on-inverse"
                                                             weight={
                                                               isMe
                                                                 ? "bold"
@@ -698,7 +697,7 @@ export const TimelineProjectCard = ({
                                                             className={cn(
                                                               "flex items-center gap-1.5",
                                                               !isMe &&
-                                                                "text-ethereal-parchment/90",
+                                                                "text-ink-on-inverse/90",
                                                             )}
                                                           >
                                                             {isMe && (
@@ -734,7 +733,7 @@ export const TimelineProjectCard = ({
                                         ) : (
                                           <Text
                                             size="sm"
-                                            color="parchment-muted"
+                                            color="ink-on-inverse-muted"
                                             className="italic text-center py-3"
                                           >
                                             {t(
@@ -753,7 +752,7 @@ export const TimelineProjectCard = ({
                       ) : (
                         <Text
                           size="sm"
-                          color="parchment-muted"
+                          color="ink-on-inverse-muted"
                           className="text-center py-6 italic"
                         >
                           {t(

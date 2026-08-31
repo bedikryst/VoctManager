@@ -210,7 +210,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             timeZone={proj.timezone}
             icon={<Clock size={11} aria-hidden="true" />}
             variant="dark"
-            containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/20 text-ethereal-parchment border border-ethereal-incense/40"
+            containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-incense/20 text-ink-on-inverse border border-ethereal-incense/40"
             primaryTimeClassName="flex items-center gap-1.5 font-medium"
             divider
           />
@@ -221,7 +221,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
               label={t("schedule.card.call_time", "Zbiórka: ")}
               icon={<Clock size={11} aria-hidden="true" />}
               variant="dark"
-              containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-gold/20 text-ethereal-parchment border border-ethereal-gold/40"
+              containerClassName="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ethereal-gold/20 text-ink-on-inverse border border-ethereal-gold/40"
               primaryTimeClassName="flex items-center gap-1.5 font-medium"
               divider
             />
@@ -230,20 +230,20 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
             locationRef={event.location}
             fallback={t("schedule.card.no_location", "Brak lok.")}
             variant="badge"
-            className="text-ethereal-parchment/80 border-ethereal-incense/30 bg-ethereal-incense/10"
+            className="text-ink-on-inverse/80 border-ethereal-incense/30 bg-ethereal-incense/10"
           />
         </div>
 
         {(proj.dress_code_female || proj.dress_code_male) && (
           <div className="mt-4 rounded-2xl border border-ethereal-incense/20 bg-ethereal-incense/10 p-3.5">
-            <Eyebrow color="parchment" className="mb-1.5 flex items-center gap-1.5">
+            <Eyebrow color="ink-on-inverse" className="mb-1.5 flex items-center gap-1.5">
               <Shirt size={12} aria-hidden="true" />
               {t("schedule.card.dress_code_title", "Szczegóły ubioru")}
             </Eyebrow>
             <div className="space-y-0.5">
               {proj.dress_code_female && (
                 <Text size="sm" color="ink-on-inverse">
-                  <Text as="span" color="parchment-muted" className="mr-2">
+                  <Text as="span" color="ink-on-inverse-muted" className="mr-2">
                     {t("schedule.card.dress_code_women", "Panie:")}
                   </Text>
                   {proj.dress_code_female}
@@ -251,7 +251,7 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
               )}
               {proj.dress_code_male && (
                 <Text size="sm" color="ink-on-inverse">
-                  <Text as="span" color="parchment-muted" className="mr-2">
+                  <Text as="span" color="ink-on-inverse-muted" className="mr-2">
                     {t("schedule.card.dress_code_men", "Panowie:")}
                   </Text>
                   {proj.dress_code_male}
@@ -264,11 +264,11 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
 
       {/* ── concert day: the card opens the day it is about ──────────── */}
       {isConcertDay && (showOnSite || showDayPlan) && (
-        <div className="grid gap-5 border-t border-ethereal-incense/15 bg-ethereal-ink/20 p-4 sm:grid-cols-2 sm:p-6">
+        <div className="grid gap-5 border-t border-ethereal-incense/15 bg-surface-inverse/20 p-4 sm:grid-cols-2 sm:p-6">
           {showOnSite && <OnSiteFacts project={proj} />}
           {showDayPlan && (
             <div className="min-w-0">
-              <Eyebrow color="parchment" className="mb-3 block">
+              <Eyebrow color="ink-on-inverse" className="mb-3 block">
                 {t("schedule.card.run_sheet_title", "Harmonogram Dnia")}
               </Eyebrow>
               {/* Capped like the rehearsal programme below: a long day must not
@@ -288,11 +288,11 @@ const ProjectHero = ({ event }: { event: TimelineEvent }): React.JSX.Element => 
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ethereal-incense/15 bg-ethereal-ink/30 px-5 py-3 sm:px-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ethereal-incense/15 bg-surface-inverse/30 px-5 py-3 sm:px-6">
         {readiness.hasData ? (
           <ReadinessRing readiness={readiness} to="/panel/materials" surface="dark" />
         ) : (
-          <Text size="xs" color="parchment-muted" className="max-w-xs text-ethereal-parchment/70">
+          <Text size="xs" color="ink-on-inverse-muted" className="max-w-xs text-ink-on-inverse/70">
             {t(
               "schedule.hero.day_hint",
               "Karta dnia zbiera wszystko o tym dniu: zbiórkę, przebieg i Twoją obsadę.",

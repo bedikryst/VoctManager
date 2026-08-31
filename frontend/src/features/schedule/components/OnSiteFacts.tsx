@@ -89,7 +89,7 @@ export const OnSiteFacts = ({
         className,
       )}
     >
-      <Eyebrow color="parchment" className="mb-3 flex items-center gap-2">
+      <Eyebrow color="ink-on-inverse" className="mb-3 flex items-center gap-2">
         <DoorOpen size={13} aria-hidden="true" />
         {t("schedule.card.onsite.title", "Na miejscu")}
       </Eyebrow>
@@ -98,7 +98,7 @@ export const OnSiteFacts = ({
         <div className="space-y-1.5">
           {facts.map((fact) => (
             <Text key={fact.id} as="p" size="sm" color="ink-on-inverse">
-              <Text as="span" color="parchment-muted" className="mr-2">
+              <Text as="span" color="ink-on-inverse-muted" className="mr-2">
                 {fact.label}
               </Text>
               {fact.value}
@@ -115,7 +115,7 @@ export const OnSiteFacts = ({
         >
           {/* Unnamed, the role IS the name: a line reading "Kontakt na miejscu"
               under a label saying the same thing states one fact twice. */}
-          <Eyebrow color="parchment-muted" className="mb-1.5">
+          <Eyebrow color="ink-on-inverse-muted" className="mb-1.5">
             {t("schedule.card.onsite.contact", "Kontakt na miejscu")}
           </Eyebrow>
           {contactName && (
@@ -129,7 +129,7 @@ export const OnSiteFacts = ({
               size="touch"
               asChild
               leftIcon={<Phone size={13} aria-hidden="true" />}
-              className="w-full border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20 sm:w-auto"
+              className="w-full border-ethereal-incense/40 bg-ethereal-incense/10 text-ink-on-inverse hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20 sm:w-auto"
             >
               <a href={`tel:${contactPhone.replace(/\s+/g, "")}`}>
                 {contactPhone}

@@ -63,17 +63,17 @@ export const ReadinessRing = ({
           className={cn(
             "flex h-9.5 w-9.5 shrink-0 items-center justify-center rounded-full border border-dashed",
             isDark
-              ? "border-ethereal-incense/40 text-ethereal-parchment/70"
+              ? "border-ethereal-incense/40 text-ink-on-inverse/70"
               : "border-ethereal-incense/35 text-ethereal-graphite/60",
           )}
         >
           <EyeOff size={15} aria-hidden="true" />
         </span>
         <div className="min-w-0">
-          <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="block">
+          <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="block">
             {t("schedule.readiness.title", "Gotowość partii")}
           </Eyebrow>
-          <Text size="sm" color={isDark ? "parchment-muted" : "muted"}>
+          <Text size="sm" color={isDark ? "ink-on-inverse-muted" : "muted"}>
             {t(
               "schedule.readiness.withheld",
               "Ukryta — widzi ją tylko chórzysta",
@@ -103,7 +103,7 @@ export const ReadinessRing = ({
         <span
           className={cn(
             "text-[11px] font-bold tabular-nums",
-            isDark ? "text-ethereal-parchment" : "text-ethereal-ink",
+            isDark ? "text-ink-on-inverse" : "text-ethereal-ink",
           )}
         >
           {ready}/{total}
@@ -111,7 +111,7 @@ export const ReadinessRing = ({
       </CompletionRing>
 
       <div className="min-w-0">
-        <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="block">
+        <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="block">
           {complete
             ? t("schedule.readiness.ready_title", "Partie gotowe")
             : t("schedule.readiness.title", "Gotowość partii")}
@@ -119,7 +119,7 @@ export const ReadinessRing = ({
         <Text
           size="sm"
           weight="semibold"
-          color={isDark ? "parchment" : "default"}
+          color={isDark ? "ink-on-inverse" : "default"}
           className="flex items-center gap-1"
         >
           {complete

@@ -32,7 +32,13 @@ export interface BottomSheetProps {
   subtitle?: string;
   /** A chip/badge rendered inline in the header (e.g. countdown, status). */
   headerBadge?: React.ReactNode;
-  /** Surface tone — `dark` keeps the concert's premium dark aesthetic. */
+  /**
+   * Surface tone. `dark` is the concert's premium island continued into the
+   * sheet it opens: the inverse surface with a gold rim, dark under a light
+   * theme and a raised rung under a dark one. On dark it lands close to the
+   * ordinary sheet — the ground leaves no room for more — so the rim is what
+   * still tells the two apart.
+   */
   tone?: "light" | "dark";
   children: React.ReactNode;
   /** Sticky footer (primary actions) pinned above the safe-area inset. */
@@ -124,7 +130,7 @@ export const BottomSheet = ({
               "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border shadow-glass-solid",
               "sm:max-h-[85vh] sm:max-w-2xl sm:rounded-surface",
               isDark
-                ? "border-ethereal-incense/20 bg-ethereal-ink/95 text-ethereal-marble backdrop-blur-ethereal"
+                ? "border-ethereal-gold/35 bg-surface-inverse/95 text-ink-on-inverse backdrop-blur-ethereal"
                 : "border-ethereal-incense/15 bg-ethereal-alabaster text-ethereal-ink",
               className,
             )}
@@ -138,7 +144,7 @@ export const BottomSheet = ({
                 <span
                   className={cn(
                     "h-1.5 w-11 rounded-full",
-                    isDark ? "bg-ethereal-marble/25" : "bg-ethereal-graphite/20",
+                    isDark ? "bg-ink-on-inverse/25" : "bg-ethereal-graphite/20",
                   )}
                   aria-hidden="true"
                 />
@@ -147,7 +153,7 @@ export const BottomSheet = ({
               <div className="flex items-start justify-between gap-3 px-5 pb-3 pt-3 sm:px-6 sm:pt-5">
                 <div className="min-w-0 flex-1">
                   {subtitle && (
-                    <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="mb-1 block truncate">
+                    <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="mb-1 block truncate">
                       {subtitle}
                     </Eyebrow>
                   )}
@@ -174,7 +180,7 @@ export const BottomSheet = ({
                   className={cn(
                     "flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors",
                     isDark
-                      ? "border-ethereal-incense/25 text-ethereal-marble/70 hover:bg-ethereal-incense/15 hover:text-ethereal-marble"
+                      ? "border-ethereal-incense/25 text-ink-on-inverse/70 hover:bg-ethereal-incense/15 hover:text-ink-on-inverse"
                       : "border-ethereal-incense/20 text-ethereal-graphite/70 hover:bg-ethereal-ink/[0.04] hover:text-ethereal-ink",
                   )}
                 >
@@ -199,7 +205,7 @@ export const BottomSheet = ({
                   "shrink-0 border-t px-5 pt-3 sm:px-6",
                   "pb-[max(env(safe-area-inset-bottom),0.85rem)]",
                   isDark
-                    ? "border-ethereal-incense/15 bg-ethereal-ink/60"
+                    ? "border-ethereal-incense/15 bg-surface-inverse/60"
                     : "border-ethereal-incense/10 bg-ethereal-alabaster/80",
                 )}
               >

@@ -10,10 +10,10 @@
  * its own border: a bordered plate inside it would be a box inside a box, so
  * there the block sits under a hairline instead of in a well of its own.
  *
- * The dark tone's ink is still a ladder rung (`parchment-muted`), deliberately:
- * it belongs to the nave rail's fill, which is `GlassCard variant="dark"` and
- * has not been converted yet. Ink and ground move together or the rail reads
- * worse than it does now — see the dark-mode spec, §3.2 D.
+ * The dark tone's ink names the inverse surface rather than a ladder rung,
+ * because the rail it sits on — `GlassCard variant="dark"` — is dark under both
+ * themes. Ink and ground move together; a rung here would follow the page
+ * instead of the plate and go near-black on the dark theme.
  * @architecture Enterprise SaaS 2026
  * @module features/auth/components/AuthCredential
  */
@@ -51,7 +51,7 @@ export const AuthCredential = ({
     )}
   >
     <Eyebrow
-      color={tone === "dark" ? "parchment-muted" : "muted"}
+      color={tone === "dark" ? "ink-on-inverse-muted" : "muted"}
       as="p"
       className="mb-2.5"
     >
@@ -68,7 +68,7 @@ export const AuthCredential = ({
     {hint && (
       <Text
         size="xs"
-        color={tone === "dark" ? "parchment-muted" : "graphite"}
+        color={tone === "dark" ? "ink-on-inverse-muted" : "graphite"}
         className="mt-2.5 leading-6"
       >
         {hint}

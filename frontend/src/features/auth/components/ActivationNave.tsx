@@ -44,9 +44,9 @@ export const ActivationNave = ({
       contentClassName="justify-between gap-8 lg:gap-12"
     >
       <div>
-        <AuthBrand tone="marble" align="left" size="lg" className="mb-9" />
+        <AuthBrand tone="on-inverse" align="left" size="lg" className="mb-9" />
 
-        <Eyebrow color="parchment-muted" as="p" className="mb-3">
+        <Eyebrow color="ink-on-inverse-muted" as="p" className="mb-3">
           {t("auth.activate.badge")}
         </Eyebrow>
 
@@ -55,7 +55,7 @@ export const ActivationNave = ({
             one-line greeting would set `Krzysztofie` in whatever gutter the
             column happened to leave. `tight`, not `none` — Polish diacritics
             ride high enough to touch the line below at a leading of 1. */}
-        <Heading as="h1" size="5xl" color="marble" className="leading-tight">
+        <Heading as="h1" size="5xl" color="ink-on-inverse" className="leading-tight">
           {inviteeName ? (
             <>
               {t("auth.activate.greeting_word")},{" "}
@@ -75,7 +75,7 @@ export const ActivationNave = ({
 
         <Text
           size="base"
-          color="parchment-muted"
+          color="ink-on-inverse-muted"
           className="mt-6 max-w-md leading-7"
         >
           {t("auth.activate.description")}

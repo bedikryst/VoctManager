@@ -524,6 +524,31 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
+/* A film whose whole content is the DARKENING it performs: the `color-burn`
+   grain on a card, the `multiply` glow blobs behind the nave. Both need
+   something bright underneath to subtract from, and over a #14120F ground
+   there is nothing left — they composite to their own invisibility while
+   still costing a full-surface blend on every paint. Dropping the layer says
+   that once, where a reader looking at the JSX can see it.
+   Not for a layer that carries colour of its own — see `blend-multiply-light`. */
+@utility light-ground-film {
+  [data-theme="dark"] & {
+    display: none;
+  }
+}
+
+/* The other half: a layer that DOES carry its own marks — accent rings, a
+   drawn figure — and only borrows multiply to sit into a bright ground. The
+   marks are wanted on both themes, so on dark the blend steps aside instead of
+   erasing them. */
+@utility blend-multiply-light {
+  mix-blend-mode: multiply;
+
+  [data-theme="dark"] & {
+    mix-blend-mode: normal;
+  }
+}
+
 /* Compositor-only breathing pulse for ambient ring layers.
    Transform + opacity only — runs on the GPU without forcing layout/paint. */
 @keyframes ethereal-breath-pulse {

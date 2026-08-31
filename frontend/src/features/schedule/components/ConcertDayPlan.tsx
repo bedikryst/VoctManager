@@ -105,7 +105,7 @@ export const ConcertDayPlan = ({
               className={cn(
                 "absolute -left-6 top-1.5 h-2.5 w-2.5 rounded-full shadow-glass-solid transition-transform group-hover/run:scale-125",
                 isPoint
-                  ? "border-2 border-ethereal-gold bg-ethereal-ink"
+                  ? "border-2 border-ethereal-gold bg-surface-inverse"
                   : "bg-ethereal-gold",
               )}
               aria-hidden="true"
@@ -125,8 +125,8 @@ export const ConcertDayPlan = ({
               ) : (
                 <Text
                   weight="medium"
-                  color="parchment-muted"
-                  className="italic text-ethereal-parchment/50"
+                  color="ink-on-inverse-muted"
+                  className="italic text-ink-on-inverse/50"
                 >
                   {t("schedule.card.run_sheet_untitled", "Punkt harmonogramu")}
                 </Text>
@@ -134,8 +134,8 @@ export const ConcertDayPlan = ({
               {isDayWindow(entry) && entry.endTime && (
                 <Text
                   size="sm"
-                  color="parchment-muted"
-                  className="mt-1 leading-relaxed text-ethereal-parchment/80"
+                  color="ink-on-inverse-muted"
+                  className="mt-1 leading-relaxed text-ink-on-inverse/80"
                 >
                   {t(DAY_WINDOW_UNTIL.labelKey, DAY_WINDOW_UNTIL.fallbackLabel, {
                     time: entry.endTime,
@@ -145,8 +145,8 @@ export const ConcertDayPlan = ({
               {isPoint && entry.item.description && (
                 <Text
                   size="sm"
-                  color="parchment-muted"
-                  className="mt-1 leading-relaxed text-ethereal-parchment/80"
+                  color="ink-on-inverse-muted"
+                  className="mt-1 leading-relaxed text-ink-on-inverse/80"
                 >
                   {entry.item.description}
                 </Text>
@@ -159,7 +159,7 @@ export const ConcertDayPlan = ({
                   <LocationPreview
                     locationRef={pointVenue}
                     variant="badge"
-                    className="max-w-full border-ethereal-gold/30 bg-ethereal-gold/10 text-ethereal-parchment"
+                    className="max-w-full border-ethereal-gold/30 bg-ethereal-gold/10 text-ink-on-inverse"
                   />
                 </div>
               )}

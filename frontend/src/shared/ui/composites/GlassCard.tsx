@@ -55,7 +55,18 @@ const glassCardVariants = cva(
           "bg-surface-inverse/40 backdrop-blur-xl border border-line-on-inverse shadow-glass-ethereal",
         solid:
           "bg-ethereal-alabaster border border-hairline shadow-glass-solid",
-        dark: "bg-ethereal-ink/90 border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",
+        // The premium island: the concert hero, the timeline card, the
+        // activation nave. Its claim is "distinct and elevated", and on a dark
+        // ground elevation can only mean toward the light — so the fill is the
+        // inverse surface, which rises to the top rung there instead of being a
+        // second black. What it CANNOT keep is its volume: 14.6 against the
+        // light page, 1.2 against the dark one, because no fill on a #14120F
+        // ground buys more than that in either direction. The gold rim carries
+        // what the value no longer can, which is also why it is gold here and
+        // incense on the ordinary card. The 90% is load-bearing: the inner
+        // bands are washes of this same fill, and they only read against a
+        // surface that lets a little of the page through.
+        dark: "bg-surface-inverse/90 border border-ethereal-gold/35 text-ink-on-inverse shadow-glass-solid",
         outline:
           "bg-transparent border border-ethereal-incense/30 hover:border-ethereal-gold hover:shadow-glass-outline-hover",
         light:
@@ -242,7 +253,7 @@ const GlassCardInner = <C extends ElementType = "div">(
 
       {withNoise && (
         <div
-          className="pointer-events-none absolute inset-0 -z-10 bg-noise opacity-[0.03] mix-blend-color-burn"
+          className="pointer-events-none absolute inset-0 -z-10 bg-noise opacity-[0.03] mix-blend-color-burn light-ground-film"
           aria-hidden="true"
         />
       )}

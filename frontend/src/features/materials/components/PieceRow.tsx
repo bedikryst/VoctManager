@@ -93,7 +93,7 @@ export const PieceRow = ({
   return (
     <>
     <GlassCard
-      variant={isArchived ? "dark" : "ethereal"}
+      variant="ethereal"
       padding="none"
       isHoverable={false}
       onClick={isNavigable ? () => navigate(piecePath) : undefined}
@@ -102,8 +102,14 @@ export const PieceRow = ({
       className={cn(
         "overflow-hidden transition-all duration-300",
         isNavigable && "cursor-pointer",
+        // Retired, not elevated. An archived row used to borrow the premium
+        // island's dark fill, which said "this is the important one" about the
+        // one piece that is out of the programme — and on a dark ground would
+        // have made it the brightest row in the list. It sinks a rung instead
+        // and drops its cast, which is what "still here, no longer in play"
+        // looks like on either theme.
         isArchived
-          ? "opacity-75"
+          ? "border-hairline bg-ethereal-parchment/70 opacity-75 shadow-none"
           : isNavigable &&
               "hover:border-ethereal-gold/40 hover:shadow-glass-ethereal-hover active:scale-[0.995]",
         isThisPieceLoaded && !isArchived && "border-ethereal-sage/40",
@@ -115,12 +121,12 @@ export const PieceRow = ({
           className={cn(
             "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-glass-solid",
             isArchived
-              ? "border-ethereal-incense/30 bg-ethereal-incense/10 text-ethereal-parchment"
+              ? "border-hairline bg-ethereal-marble/50"
               : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-ink",
           )}
           aria-hidden="true"
         >
-          <Heading size="lg" weight="medium" color={isArchived ? "ink-on-inverse" : "default"}>
+          <Heading size="lg" weight="medium" color={isArchived ? "graphite" : "default"}>
             {String(order)}
           </Heading>
         </div>
@@ -131,7 +137,7 @@ export const PieceRow = ({
             <Heading
               size="lg"
               weight="medium"
-              color={isArchived ? "ink-on-inverse" : "default"}
+              color={isArchived ? "graphite" : "default"}
               truncate
               className="leading-snug"
             >
@@ -148,10 +154,7 @@ export const PieceRow = ({
             )}
           </div>
           <div className="mt-0.5 flex min-w-0 items-center gap-2">
-            <Eyebrow
-              color={isArchived ? "parchment" : "muted"}
-              className="block truncate"
-            >
+            <Eyebrow color="muted" className="block truncate">
               {composerName}
             </Eyebrow>
             {piece.my_casting && (
@@ -175,7 +178,7 @@ export const PieceRow = ({
         {isArchived ? (
           <Lock
             size={15}
-            className="shrink-0 text-ethereal-parchment/50"
+            className="shrink-0 text-ethereal-graphite/45"
             aria-hidden="true"
           />
         ) : (

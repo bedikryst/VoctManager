@@ -82,10 +82,10 @@ export const AddToCalendar = ({
 
   if (layout === "inline") {
     const darkBtn =
-      "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20";
+      "border-ethereal-incense/40 bg-ethereal-incense/10 text-ink-on-inverse hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20";
     return (
       <div inert={isPreview} className={cn(isPreview && INERT_SURFACE)}>
-        <Eyebrow color={isDark ? "parchment-muted" : "muted"} className="mb-1.5 flex items-center gap-1.5">
+        <Eyebrow color={isDark ? "ink-on-inverse-muted" : "muted"} className="mb-1.5 flex items-center gap-1.5">
           <CalendarPlus size={12} aria-hidden="true" />
           {t("schedule.calendar.menu_label", "Zapisz wydarzenie")}
         </Eyebrow>
@@ -121,7 +121,7 @@ export const AddToCalendar = ({
 
   const triggerClasses = cn(
     tone === "dark" &&
-      "border-ethereal-incense/40 bg-ethereal-incense/10 text-ethereal-parchment hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20",
+      "border-ethereal-incense/40 bg-ethereal-incense/10 text-ink-on-inverse hover:border-ethereal-gold/50 hover:bg-ethereal-incense/20",
     triggerClassName,
   );
 

@@ -78,8 +78,8 @@ const FermataMark = ({ className }: { className?: string }): React.JSX.Element =
 const AmbientField = (): React.JSX.Element => (
   <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden bg-ethereal-canvas" aria-hidden="true">
     <div className="absolute inset-0 bg-[linear-gradient(180deg,var(--aura-light)_0%,transparent_46%)]" />
-    <div className="absolute -left-[8%] -top-[10%] h-[44vw] w-[44vw] rounded-full bg-ethereal-gold/20 opacity-25 mix-blend-multiply blur-[120px]" />
-    <div className="absolute -bottom-[22%] -right-[8%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 opacity-[0.16] mix-blend-multiply blur-[120px]" />
+    <div className="absolute -left-[8%] -top-[10%] h-[44vw] w-[44vw] rounded-full bg-ethereal-gold/20 opacity-25 mix-blend-multiply blur-[120px] light-ground-film" />
+    <div className="absolute -bottom-[22%] -right-[8%] h-[48vw] w-[48vw] rounded-full bg-ethereal-amethyst/15 opacity-[0.16] mix-blend-multiply blur-[120px] light-ground-film" />
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="flex h-[260vh] w-[260vw] -rotate-[8deg] flex-col justify-center">
         {[0, 1, 2, 3, 4].map((line) => (

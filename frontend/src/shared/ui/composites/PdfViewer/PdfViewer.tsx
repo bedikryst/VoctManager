@@ -596,7 +596,7 @@ export const PdfViewer = ({
       ref={rootRef}
       className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
     >
-      <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn light-ground-film" aria-hidden="true" />
 
       {showPdfChrome && !isImmersive && (
         <PdfToolbar
