@@ -10,7 +10,8 @@
     "typecheck": "tsc -b --noEmit",
     "build": "tsc -b --noEmit && vite build",
     "build:analyze": "tsc -b --noEmit && vite build --mode analyze",
-    "lint": "eslint .",
+    "lint": "eslint . && node scripts/check-literal-colours.mjs",
+    "lint:colours": "node scripts/check-literal-colours.mjs",
     "lint:i18n": "eslint --config eslint.i18n-audit.config.js \"src/**/*.tsx\"",
     "preview": "vite preview",
     "extract-i18n": "i18next-cli extract"

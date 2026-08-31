@@ -393,8 +393,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 aria-hidden="true"
                 className={cn(
                   "fixed inset-0 z-focus-trap",
+                  // Both veils are black — a scrim is the absence of light, not
+                  // a rung. Desktop gets a tenth of one because the panel there
+                  // is a dropdown beside its trigger rather than a sheet over
+                  // the whole screen.
                   isFinePointer
-                    ? "bg-ethereal-ink/10"
+                    ? "bg-black/10"
                     : "bg-black/45 backdrop-blur-[3px]",
                 )}
               />

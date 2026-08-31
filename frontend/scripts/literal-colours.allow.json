@@ -1,0 +1,64 @@
+{
+  "_readme": [
+    "Colours that are correct as literals because they are correct on BOTH themes.",
+    "Read by scripts/check-literal-colours.mjs; see that file for the rules that",
+    "pass without an entry here (a full-viewport veil is black by canon, a",
+    "rgba(0,0,0,x) cast lands inside a surface-inverse island, a gold or incense",
+    "literal is an accent and an accent holds its hue).",
+    "",
+    "Entries are matched by file plus the exact class, never by line number, so",
+    "moving code does not rot the list. An entry the code no longer contains",
+    "FAILS the check: this file is a record of live decisions, not an archive.",
+    "",
+    "Three families are in here and nothing else should be. Paper: the score",
+    "canvas, the printable route and the annotation marks that sit on them —",
+    "print and paper have no dark mode. The Google raster: a second paper one",
+    "surface further out, since the map stays light under a dark panel until it",
+    "gets its own map ID. And a specular mark on an accent fill, which holds its",
+    "hue through the swap and so keeps whatever is written on it."
+  ],
+  "files": {
+    "features/annotations/components/AnnotationOverlay.tsx": {
+      "reason": "Paper-side. The mark on the stave, its lock badge and the pin sit on a page that is white in both themes — the same exception as the canvas under them. The file's CONTROLS (note composer, phrase chips, read-only popover) ride the ladder and carry no literal.",
+      "allow": ["bg-white", "text-white", "ring-white", "ring-white/80", "ring-black/10"]
+    },
+    "features/settings/components/AppTab.tsx": {
+      "reason": "The install QR needs a light quiet zone or a scanner cannot read it.",
+      "allow": ["bg-white"]
+    },
+    "pages/auth/LegalPage.tsx": {
+      "reason": "`print:bg-white` — the one printable route in the panel. Paper leaves the ladder at the printer exactly as the score's canvas does.",
+      "allow": ["bg-white"]
+    },
+    "shared/ui/composites/PdfViewer/PdfViewer.tsx": {
+      "reason": "The page canvas. A score is paper and dark mode does not print on black.",
+      "allow": ["bg-white"]
+    },
+    "shared/ui/primitives/Badge.tsx": {
+      "reason": "The pulse sweep across an accent fill — a specular highlight on a hue that holds, not a surface.",
+      "allow": ["via-white/30"]
+    },
+    "shared/ui/primitives/Checkbox.tsx": {
+      "reason": "The tick on the gold fill. Theme-invariant, and known to read only 2.29 against that gold — a real contrast finding (spec §1.2) that dark mode neither causes nor fixes. If it is ever taken up, `surface-inverse` is the answer already in the palette.",
+      "allow": ["text-white"]
+    },
+    "features/logistics/components/MapPinShell.tsx": {
+      "reason": "Painted directly on Google's raster, which stays light in both themes. A ladder token here inverts the pin into a dark disc casting a pale halo over a map that never moved.",
+      "allow": [
+        "bg-black/40",
+        "bg-black/30",
+        "shadow-[0_8px_18px_rgba(22,20,18,0.25)]"
+      ]
+    },
+    "features/logistics/components/VenueMiniMap.tsx": {
+      "reason": "The pin's contact shadow on the same light raster.",
+      "allow": ["bg-black/40"]
+    },
+    "features/logistics/components/MapAtmosphere.tsx": {
+      "reason": "The frame drawn ON the map tiles: an ink vignette and a white inner bevel that belong to the raster's own light, not to the panel's ground.",
+      "allow": [
+        "shadow-[inset_0_0_60px_rgba(22,20,18,0.10),inset_0_1px_2px_rgba(255,255,255,0.5)]"
+      ]
+    }
+  }
+}

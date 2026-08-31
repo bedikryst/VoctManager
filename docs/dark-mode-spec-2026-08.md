@@ -1,6 +1,7 @@
 # Dark mode — specification (2026-08)
 
-Status: **Stages 0–5 shipped; Stage 6 needs §9.1 first** · Audited 2026-08-30 · Surface: `frontend/` (panel
+Status: **Stages 0–7 shipped; the dark map (§9.3) is the only thing left, and it has its own
+spec** · Audited 2026-08-30 · Surface: `frontend/` (panel
 PWA only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
 scope — see §7.
 
@@ -374,6 +375,43 @@ the ladder, and each needed exactly one line changed.
 distinguishes itself from anything. Either it becomes the *brightest* rung on dark (inverting its
 relationship to the page, which is what the concert sheet is actually saying) or it keeps a gold
 hairline and drops the fill. Decide once, apply to all five.
+
+*Settled in Stage 6 — **(a), plus the gold hairline (b) was going to carry.*** The measurement is
+what decided it, and it is worth keeping because it applies to any future "make this one stand
+out" on this theme:
+
+| | light | dark |
+|---|---|---|
+| premium card vs the page | **14.65** | (a) 1.23 · (b) 1.02–1.04 |
+| ordinary card vs the page | 1.10 | 1.13 |
+| premium vs ordinary card | 13× | **1.09** |
+
+On a `#14120F` ground no fill buys more than ~1.2 in *either* direction, so the choice was never
+"loud or quiet" — it was **slightly up or slightly down**. Up has somewhere to go; down runs into a
+floor two points below the page (§2.3 already said black stops buying separation past ~.45).
+So the fill takes `surface-inverse` and the emphasis the value can no longer carry moves to a gold
+rim — which is what (b) proposed to do *instead of* the fill, and works better alongside it.
+
+Three things the entry above did not have, all found by reading the surfaces:
+
+- **The ink moves under BOTH options, so it was never the tiebreaker.** Only the headlines were on
+  `ink-on-inverse` after Stage 5; the second plane — ~20 `color="parchment{,-muted}"` and ~25
+  `text-ethereal-parchment/*` in `className` — was still a rung, and a rung follows the PAGE.
+  `parchment` on dark is `#1B1815`: 1.17 against (a)'s card and 1.10 against (b)'s. Stage 5 wrote
+  the rule for fills (*ink and its ground move together*); it holds for ink as well, in both
+  directions.
+- **The scope is nine files, not five.** Four satellite components exist only to sit on these
+  islands and carry the same rung ink — `OnSiteFacts`, `ReadinessRing surface="dark"`,
+  `AddToCalendar tone="dark"`, `DualTimeDisplay variant="dark"` — plus `AuthCredential` and
+  `AuthBrand`, whose `tone="marble"` was the same defect wearing a rung's name (now `on-inverse`).
+- **`GlassCard variant="dark"` had FOUR call sites and three different claims.** §3.2 D counted
+  three and missed `PieceRow`'s `variant={isArchived ? "dark" : "ethereal"}` — the ternary the grep
+  for `variant="dark"` cannot see. More importantly the variant meant "premium" (hero, timeline),
+  "the nave" (activation) and **"retired"** (an archived piece), and (a) merges those into one rung:
+  the archived row would have become the *brightest* row in the songbook. It was written out of the
+  decision and sank onto the ladder instead (`parchment`, no cast), which is what "still here, no
+  longer in play" looks like on either theme. **A variant carrying more than one claim cannot be
+  renamed; it has to be split first.**
 
 **D · Primitives carrying both tones** (11) — `GlassCard` (`dark`/`surface` variants), `Button`,
 `Badge`, `Checkbox`, `Divider` (`solid-dark`), `Typography` (`marble-muted` colour),
@@ -789,10 +827,44 @@ look; and `NotificationsTab`'s hand-rolled tooltip keeps a full ladder inversion
 (`bg-ethereal-ink` / `text-ethereal-marble`), which is correct but makes it the one tooltip in the
 panel that does not match the `Tooltip` primitive's parchment.
 
-**Stage 6 — the premium dark surfaces** (group C). Needs the §9 decision first. *Exit:* the five
-surfaces state their hierarchy the same way in both themes.
+**Stage 6 — the premium dark surfaces. DONE (2026-08-31).** Group C on decision **(a) + the gold
+hairline** (§3.2 C, §9.1). Nine files plus the two primitives that own the fill (`GlassCard`'s
+`dark` variant, `BottomSheet`/`SegmentedTabs` `tone="dark"`), `PieceRow` written out of the
+decision, and §9.2's answer applied.
 
-**Stage 7 — guardrails.** §10.
+*Two things settled here that outlive the stage:*
+
+- **The fill stays translucent, and the 90% is load-bearing.** `bg-surface-inverse/90` rather than
+  a solid, because the inner bands are washes of that same fill (`/20`, `/30`, `/60`) and a wash of
+  an opaque surface over itself is invisible. At 90% the band still separates on light exactly as
+  it did, and on dark it separates the other way — the incense hairline is what actually draws the
+  edge on both, which is why the bands survive the swap at all.
+- **`Typography`'s rung-named light inks are gone**, the same way `color="white"` went in Stage 5
+  and for a sharper reason: `marble`, `marble-muted`, `parchment`, `parchment-muted` and
+  `alabaster` had zero call sites left once group C moved, and every one of them had been a trap —
+  a light ink that follows the page while the island it is written on does not. There is now no
+  rung-named light ink in the primitive; a call site that wants one has to answer what its GROUND
+  does.
+
+*Verified against the compiled sheet:* every new utility resolves through `var()`
+(`bg-surface-inverse/90` → `color-mix(in oklab,var(--color-surface-inverse) 90%,transparent)` with
+the light hex as the pre-`color-mix` fallback), and both new blend utilities emit their
+`[data-theme="dark"]` half (`[data-theme=dark] .light-ground-film{display:none}`). 189 vitest tests,
+`typecheck`, `lint` and `build` green.
+
+*Exit is the developer's:* the schedule's hero and timeline card in both themes, the concert sheet
+it opens, the activation screen, and an archived row in the songbook.
+
+**Stage 7 — guardrails. DONE (2026-08-31).** §10 as built: `themeParity.test.ts` (7 assertions) and
+`scripts/check-literal-colours.mjs` + its allowlist, wired into `npm run lint`.
+
+*The guard found two defects on its first run, which is the argument for having written it:*
+`NotificationCenter`'s desktop veil was still `bg-ethereal-ink/10` — a scrim in the one rung that
+inverts, i.e. Stage 5's defect surviving at low alpha in the one file where the geometry and the
+fill sit on different lines of the same `cn()`. And its own first rule was too broad: an inset
+`bg-ethereal-alabaster/60` over a map that has not loaded is the CARD's colour and follows the
+ladder correctly, so the veil rule narrowed to `ink` and `graphite` — the only two rungs that are
+dark on light and light on dark.
 
 **Deferred, own spec: the dark map.**
 
@@ -800,25 +872,45 @@ surfaces state their hierarchy the same way in both themes.
 
 ## 9. Decisions needed before Stage 6
 
-1. **What is a "premium dark card" on a dark ground?** The concert hero, the timeline project
-   card and the day plan currently say *"this is the important one"* by being darker than the
-   page. On dark that reads as a hole. Options: (a) it becomes the *brightest* rung — the
-   inversion is honest, since the card's real claim is "distinct and elevated"; (b) it keeps the
-   fill and states itself with a gold hairline plus the noise grain. **(a) is the recommendation**
-   — it is the same claim in the same grammar.
-2. **Does the noise grain survive on dark?** (§2.3) — a look-and-decide, not an analysis.
+1. ~~**What is a "premium dark card" on a dark ground?**~~ **Decided 2026-08-31: (a), and the gold
+   hairline from (b) alongside it.** The card takes `surface-inverse` and rises with the ground;
+   the emphasis its value can no longer carry moves to the rim. Reasoning, measurements and the
+   three findings the question did not anticipate are in §3.2 C.
+2. ~~**Does the noise grain survive on dark?**~~ **Decided 2026-08-31: no, and it is not missed.**
+   Looked at on the real dashboard — neither the `color-burn` grain nor the `multiply` glows were
+   visible. Both are films whose entire content is the darkening they perform, so they are dropped
+   on dark rather than left painting an invisible full-surface composite: `light-ground-film` in
+   `panel.css`, on the two grains (`GlassCard`, `PdfViewer`) and the six glow blobs
+   (`EtherealBackground`, `WelcomeMoment`, `ErrorScreen`).
+   The sweep turned up a third case the question had not named and it needed the opposite answer:
+   `ArtistEmptyState`'s resonance rings carry their own accent colour and only *borrow* multiply to
+   sit into a bright ground. Hiding them would leave an empty empty-state, so there the blend steps
+   aside instead (`blend-multiply-light`). **The distinction to reuse: does the layer HAVE marks, or
+   is it only the darkening?**
 3. **Is the dark map worth a second Cloud map ID?** Three call sites (`LocationsAtlas`,
    `LocationMapPicker`, `VenueMiniMap`). A light map inside a dark panel is the single loudest
-   seam dark mode will have.
+   seam dark mode will have. **Still open — the only thing left in this spec.**
 
 ---
 
 ## 10. Guardrails
 
+**Built in Stage 7.** Two files, both cheap, both run by `npm run lint` / `npm run test`:
+`src/shared/theme/themeParity.test.ts` and `scripts/check-literal-colours.mjs` with
+`scripts/literal-colours.allow.json`. What each of the bullets below became is noted under it.
+
 - **Token parity test** (vitest, `app/styles/panel.css` parsed as text): every custom property
   declared inside `[data-theme="dark"]` must exist in `@theme`/`:root`, and every ladder token
   listed in the test's own manifest must appear in both. Catches the classic "forgot one token"
   — which in this architecture shows up as one element still light, three routes away.
+
+  *As built, 7 assertions.* The manifest lists only what has to MOVE (26 tokens) — gold, sage and
+  incense are deliberately absent, because an accent holding its hue is the finding the palette
+  rests on and listing them would fail the day someone honours it. A third assertion catches the
+  case the spec did not name: a token **copied into the dark block unchanged**, which is the same
+  defect as one left out, wearing the shape of a decision. The dark block is brace-matched from its
+  own selector, so the `[data-theme="dark"] &` nested inside the two blend utilities is not mistaken
+  for it.
 - **`tailwindMerge.ts`**: the three inverse tokens go in the ledger in the same commit that
   creates them. A token missing there is deleted at runtime with no error (`panel.css` already
   carries the warning).
@@ -848,11 +940,38 @@ surfaces state their hierarchy the same way in both themes.
   Two things the guard cannot see, both proved by Stage 5 and worth a second grep in the same
   script: a scrim written as `bg-ethereal-ink/4x`, and an arbitrary `shadow-[…]`/gradient carrying
   a raw `rgba()`. Both are unconverted literals wearing a token's clothes.
+
+  *As built, four rules — and the shape of it is the part to keep.* **The rules encode the canon so
+  that correct code needs no allowlist entry**, which is what stops the list from growing into
+  something nobody reads: a full-viewport veil (`inset-0`) IS black; a cast written `rgba(0,0,0,…)`
+  lands inside a `surface-inverse` island, because a cast onto the PAGE is warm here and warm casts
+  became variables in Stage 5; a `rgba(194,168,120,…)` / `rgba(166,146,121,…)` literal is an accent
+  and an accent holds. That leaves **19 allowlisted classes in 9 files**, in three families — paper
+  (score canvas, printable route, the marks on them), the Google raster, and a specular mark on an
+  accent fill — plus **3 lines** for the bracket rule. Rule 3, the one the spec asked for, is the
+  only one that cannot be allowlisted at all: there is no correct case for a veil in `ink` or
+  `graphite`.
+
+  Four things learned building it, each worth more than the rule it produced:
+  - **A stale allowlist entry fails the check.** A list nobody prunes stops being a record of
+    decisions and becomes a list of things that used to be true.
+  - **The veil rule reads back to the enclosing `className`, not a window of lines.** A fixed
+    lookback broke the moment a comment was added between the geometry and the fill — which is
+    exactly the shape of the one file that was still wrong.
+  - **Surface rungs are NOT part of rule 3.** An inset `bg-ethereal-alabaster/60` over a map that
+    has not loaded is the card's own colour and follows the ladder correctly. Only `ink` and
+    `graphite` invert direction.
+  - **Tests are excluded from the scan.** `fieldShell.test.ts` asserts on the light theme's own
+    inset literal: it is quoting the stylesheet, not painting with it.
 - **`theme-color` parity**: `THEME_COLOR` in `shared/theme/themeController.ts` and the media-keyed
   pair in `index.html` both hard-code `--color-ethereal-canvas` per theme — a meta cannot read a
   CSS variable. Change the ground and all three move together, or a seam opens along the top edge
   of an installed iOS app. Cheapest home for this is the §10 token-parity test, which already
   parses `panel.css` as text.
+
+  *As built:* three assertions there, and the third is `manifest.webmanifest`'s `theme_color` —
+  static by nature, so it stays on the light ground, but it drifts the same way and opens the
+  installed Android window chrome instead of the iOS status bar.
 - **Contrast**: re-run the ratio table (§1.1/§2) after any palette tweak. Target AA 4.5 for text
   and 3.0 for icons/marks on **both** the ground and the card — the card is always the tighter of
   the two and is the one to check.
