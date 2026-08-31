@@ -32,6 +32,9 @@ import type { AuthUser } from "@/shared/auth/auth.types";
 import { Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { Avatar } from "@/shared/ui/composites/Avatar";
+import { SegmentedTabs } from "@/shared/ui/composites/SegmentedTabs";
+import { useTheme } from "@/shared/theme/useTheme";
+import type { ThemePreference } from "@/shared/theme/themeController";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import { onActivate } from "@/shared/lib/dom/a11y";
 import { useBodyScrollLock } from "@/shared/lib/dom/useBodyScrollLock";
@@ -90,6 +93,13 @@ export const MobileNavSheet = ({
   const { sections, flatItems } = useCommandItems(user, true, query);
   const isSearching = query.trim().length > 0;
 
+  const { preference, setPreference } = useTheme();
+  const themeOptions: readonly { id: ThemePreference; label: string }[] = [
+    { id: "system", label: aura.t("settings.app.theme.system", "Jak w systemie") },
+    { id: "light", label: aura.t("settings.app.theme.light", "Jasny") },
+    { id: "dark", label: aura.t("settings.app.theme.dark", "Ciemny") },
+  ];
+
   const handleDragEnd = (
     _: PointerEvent | MouseEvent | TouchEvent,
     info: PanInfo,
@@ -102,10 +112,18 @@ export const MobileNavSheet = ({
     }
   };
 
-  const go = (to: string) => {
+  // Mirrors the palette's own handler: a row may act in place instead of
+  // leading anywhere, and an acting row leaves the sheet open — the panel
+  // behind it is what the choice is being judged against.
+  const go = (item: CommandItem) => {
     hapticsService.playEtherealTick();
+    if (item.run) {
+      item.run();
+      return;
+    }
+    if (!item.to) return;
     onClose();
-    navigate(to);
+    navigate(item.to);
   };
 
   const renderRow = (item: CommandItem): React.JSX.Element => {
@@ -116,8 +134,8 @@ export const MobileNavSheet = ({
         key={item.id}
         role="button"
         tabIndex={0}
-        onClick={() => go(item.to)}
-        onKeyDown={onActivate(() => go(item.to))}
+        onClick={() => go(item)}
+        onKeyDown={onActivate(() => go(item))}
         className="group/row relative flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 outline-none transition-[background-color,transform] duration-200 hover:bg-ethereal-graphite/[0.04] focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
       >
         <span
@@ -395,6 +413,25 @@ export const MobileNavSheet = ({
         </nav>
 
         <div className="shrink-0 border-t border-ethereal-graphite/10 px-2 pt-1.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+          {/* The theme lives canonically in Settings → Aplikacja, with the
+              subtitle that explains it is per-device. It is repeated here
+              because this sheet is the phone's command surface and dark mode
+              is wanted on the phone — in a dim rehearsal room, mid-rehearsal,
+              three taps from where the member already is. Deliberately NOT in
+              the nav dock: that is a once-per-device preference and the dock's
+              slots are daily navigation. */}
+          <div className="mb-1.5 flex flex-col gap-1.5 px-1">
+            <Eyebrow color="muted">
+              {aura.t("settings.app.theme.title", "Wygląd")}
+            </Eyebrow>
+            <SegmentedTabs
+              items={themeOptions}
+              value={preference}
+              onChange={setPreference}
+              ariaLabel={aura.t("settings.app.theme.title", "Wygląd")}
+            />
+          </div>
+
           <button
             type="button"
             onClick={logout}

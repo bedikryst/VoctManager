@@ -2109,6 +2109,7 @@
         "placeholder": "Szukaj lub przejdź do…",
         "sections": {
           "actions": "Szybkie akcje",
+          "appearance": "Wygląd",
           "artists": "Artyści",
           "navigation": "Nawigacja",
           "pinned": "Przypięte",
@@ -4690,7 +4691,9 @@
       },
       "subtitle": "Zainstaluj VoctManager na urządzeniu — pełny ekran, błyskawiczny dostęp i ćwiczenia offline. Działa na telefonie, tablecie i komputerze.",
       "theme": {
+        "active": "Aktywny",
         "dark": "Ciemny",
+        "keywords": "motyw tryb ciemny jasny wygląd kolory noc dzień",
         "light": "Jasny",
         "subtitle": "Ustawienie dotyczy tego urządzenia. Nie przenosi się na inne — na telefonie i na komputerze możesz mieć różny.",
         "system": "Jak w systemie",

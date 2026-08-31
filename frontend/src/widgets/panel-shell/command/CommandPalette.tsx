@@ -108,11 +108,21 @@ export const CommandPalette = ({
     node?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, isOpen]);
 
+  // Takes the row, not its destination: a row may act in place instead of
+  // leading anywhere, and only the row knows which it is.
   const go = useCallback(
-    (to: string) => {
+    (item: CommandItem) => {
       hapticsService.playEtherealTick();
+      // An acting row leaves the palette open on purpose — see `run` on
+      // CommandItem. The appearance rows are the case: the panel behind the
+      // dialog is the only place the choice can actually be judged.
+      if (item.run) {
+        item.run();
+        return;
+      }
+      if (!item.to) return;
       onClose();
-      navigate(to);
+      navigate(item.to);
     },
     [navigate, onClose],
   );
@@ -134,7 +144,7 @@ export const CommandPalette = ({
       } else if (event.key === "Enter") {
         event.preventDefault();
         const item = flatItems[activeIndex];
-        if (item) go(item.to);
+        if (item) go(item);
       } else if (event.key === "Home") {
         event.preventDefault();
         setActiveIndex(0);
@@ -161,7 +171,7 @@ export const CommandPalette = ({
         tabIndex={-1}
         data-cmd-index={index}
         onMouseMove={() => setActiveIndex(index)}
-        onClick={() => go(item.to)}
+        onClick={() => go(item)}
         aria-label={item.label}
         className={cn(
           "group/cmd flex w-full cursor-pointer items-center gap-3 rounded-[12px] px-3 py-2.5 text-left transition-colors duration-150",

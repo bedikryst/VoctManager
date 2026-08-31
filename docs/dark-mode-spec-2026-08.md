@@ -687,6 +687,30 @@ i18n keys, all three locales (`shared/config/locales/{pl,en,fr}/translation.json
 The subtitle is doing real work: without it the first support question is "why is my laptop still
 light". Polish is primary and must read natively.
 
+**Two more entry points, added 2026-08-31 — and what was rejected matters more than what was
+built.** A permanent sun/moon in the nav dock or the sidebar rail was considered and declined: a
+theme is set about once per device, the default follows the OS and flips at dusk on its own, and
+those slots are daily navigation. The problem worth solving was never *access*, it was
+**discoverability of a feature that had just shipped** — so both additions cost zero permanent
+chrome.
+
+- **CommandPalette (⌘K), search-only.** Three rows, one per preference, that never appear in the
+  resting list — they answer the word that gets typed (`motyw`, `ciemny`, `theme`), via a
+  `settings.app.theme.keywords` alias string per locale, and stay out of the way of the navigation
+  the member uses daily. This is the first row in the palette that *acts* rather than navigates, so
+  `CommandItem` gained `run?: () => void` beside a now-optional `to`, and both `go()` handlers take
+  the item rather than its destination. An acting row **leaves the palette open** on purpose: the
+  panel behind the dialog is the only place a theme can actually be judged, and closing on select
+  would hide the thing being chosen.
+- **`MobileNavSheet` footer.** A `SegmentedTabs` above the log-out row — the browse path, since a
+  search-only row is only findable by someone who already knows the feature exists. The sheet is
+  the phone's command surface and the phone in a dim rehearsal room is the case dark mode was built
+  for; this puts it two taps from the dock without spending one of the dock's slots.
+
+The settings control stays canonical — it is the one that carries the subtitle explaining the
+per-device scope, and neither of the two above has room for that sentence. All three read the same
+`useTheme()` snapshot, so they cannot disagree.
+
 ---
 
 ## 6. Surfaces outside CSS

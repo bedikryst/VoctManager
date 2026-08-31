@@ -20,7 +20,15 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Music, User, type LucideIcon } from "lucide-react";
+import {
+  CalendarDays,
+  Monitor,
+  Moon,
+  Music,
+  Sun,
+  User,
+  type LucideIcon,
+} from "lucide-react";
 
 import type { AuthUser } from "@/shared/auth/auth.types";
 import { isArtist } from "@/shared/auth/rbac";
@@ -34,6 +42,9 @@ import { archiveKeys } from "@/features/archive/api/archive.queries";
 import { MaterialsService } from "@/features/materials/api/materials.service";
 import { materialsKeys } from "@/features/materials/api/materials.queries";
 import type { MaterialsDashboardItem } from "@/features/materials/types/materials.dto";
+
+import { useTheme } from "@/shared/theme/useTheme";
+import type { ThemePreference } from "@/shared/theme/themeController";
 
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { foldSearchText } from "../lib/navSearch";
@@ -57,7 +68,19 @@ export interface CommandItem {
    */
   readonly hintCasing?: "overline" | "natural";
   readonly icon: LucideIcon;
-  readonly to: string;
+  /**
+   * Where the row leads. A row carries either this or `run`, never neither and
+   * never both — the palette is a navigator first, and a row that acts instead
+   * is the exception that has to declare itself.
+   */
+  readonly to?: string;
+  /**
+   * Performs the row's effect in place rather than navigating, and leaves the
+   * palette OPEN. That is the point for a preference: the palette is the only
+   * surface where a theme can be judged against real content behind it, so
+   * closing on select would hide the thing being chosen.
+   */
+  readonly run?: () => void;
   readonly keywords: string;
   readonly isCurrent?: boolean;
   readonly projectId?: string;
@@ -79,6 +102,13 @@ const DATA_STALE_TIME = 1000 * 60 * 5;
 const SEARCH_RESULT_CAP = 6;
 const RECENT_DISPLAY_CAP = 5;
 
+/** The three preferences, in the order the settings control shows them. */
+const THEME_OPTIONS: readonly { id: ThemePreference; icon: LucideIcon }[] = [
+  { id: "system", icon: Monitor },
+  { id: "light", icon: Sun },
+  { id: "dark", icon: Moon },
+];
+
 export const useCommandItems = (
   user: AuthUser | null,
   isOpen: boolean,
@@ -89,6 +119,7 @@ export const useCommandItems = (
   const isManager = aura.isManagerUser;
   const location = useLocation();
   const { favorites, recents } = useProjectQuickAccess();
+  const { preference, setPreference } = useTheme();
 
   // Project + artist search is a manager affordance — a chorister may not read
   // either collection. Fetch only once the palette is opened.
@@ -305,6 +336,33 @@ export const useCommandItems = (
     t,
   ]);
 
+  // Appearance rows — their own memo rather than a sixth source, because they
+  // change with the preference and `sources` above is the expensive fold over
+  // every project, artist and piece. Folding the whole archive again because
+  // somebody switched to dark would be a real cost for no new rows.
+  //
+  // These are SEARCH-ONLY: they never appear in the empty palette. A theme is
+  // set about once per device, and the resting list is navigation the member
+  // uses daily — so the rows answer the word that is typed ("motyw", "ciemny",
+  // "theme") instead of standing in the way of the ones that are not.
+  const themeItems = useMemo<CommandItem[]>(() => {
+    const aliases = t("settings.app.theme.keywords");
+    const title = t("settings.app.theme.title");
+    return THEME_OPTIONS.map(({ id, icon }) => {
+      const label = t(`settings.app.theme.${id}`);
+      return {
+        id: `theme:${id}`,
+        kind: "action" as const,
+        label,
+        hint:
+          preference === id ? t("settings.app.theme.active") : undefined,
+        icon,
+        run: () => setPreference(id),
+        keywords: foldSearchText(`${label} ${title} ${aliases}`),
+      };
+    });
+  }, [preference, setPreference, t]);
+
   // Rows → sections. The only query-dependent work in the hook.
   return useMemo<CommandItemsResult>(() => {
     const {
@@ -403,9 +461,17 @@ export const useCommandItems = (
           items: actionMatches,
         });
       }
+      const themeMatches = themeItems.filter(matches);
+      if (themeMatches.length > 0) {
+        sections.push({
+          id: "appearance",
+          titleKey: "dashboard.layout.command.sections.appearance",
+          items: themeMatches,
+        });
+      }
     }
 
     const flatItems = sections.flatMap((section) => [...section.items]);
     return { sections, flatItems };
-  }, [favorites, query, recents, sources]);
+  }, [favorites, query, recents, sources, themeItems]);
 };
