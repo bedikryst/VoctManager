@@ -1,7 +1,9 @@
 # Dark mode — specification (2026-08)
 
-Status: **Stages 0–7 shipped; the dark map (§9.3) is the only thing left, and it has its own
-spec** · Audited 2026-08-30 · Surface: `frontend/` (panel
+Status: **Stages 0–7 shipped; the dark map (§9.3) is the only thing left in this spec** · Audited
+2026-08-30, §1.2 re-measured and half-shipped 2026-08-31 (the light theme's own contrast, which
+§7 hands to a separate pass — the accents turned out to be the smaller half of it) · Surface:
+`frontend/` (panel
 PWA only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
 scope — see §7.
 
@@ -118,6 +120,54 @@ wants, and theme-invariant (both halves hold their hue), so dark mode neither ca
 it. It was left alone in Stage 3 for exactly that reason. Note that the primary button's label,
 which *was* a dark-mode defect, now reads `text-surface-inverse` at 8.0 — so if this finding is
 ever taken up, the answer is already in the palette.
+
+**Taken up 2026-08-31, and the table above turns out to understate it.** Two of the three shipped;
+the third is a bigger question than the accents, and it is why the other accents did not.
+
+*Shipped.* `crimson` → `#92504B`: hue and saturation held to the unit, lightness alone moved 7.5
+points, **4.71 on the tightest surface** and no call site touched. It is the one accent the panel
+writes sentences in (`Button variant="destructive"` is crimson type on its own 8 % wash; `color=
+"crimson"` is 25 Text/Caption against 6 Eyebrows), and the only one that could be fixed **in
+place** — it failed by 0.8 of a step where the rest fail by a colour. And `Checkbox`'s tick →
+`text-surface-inverse`, 2.29 → 8.0, with the two hand-rolled ticks in chorister-hub following it
+off `ink-on-inverse`; its allowlist entry is gone, the decision being made.
+
+*The correction the measurement forced.* The surface that constrains a light-theme value is
+`parchment`, **not the card**. A dark accent gains contrast on a brighter ground, so here the
+ladder's dimmest rung is the tight one — the exact inverse of the dark theme, and the reverse of
+what §10's contrast bullet says. Read without the flip it picks a value half a step short: crimson
+reads 4.16 "nearly AA" on the card against a real 3.69 on parchment.
+
+*Why gold did not follow, and this is the finding.* Gold cannot be fixed in place — AA costs it 27
+points of lightness (`#796237`), which is bronze, and gold is a FILL (primary button, glass rim,
+selection) before it is ever type. So it needs a second token, and the second token is cheap: the
+whole of gold-as-prose is **48 call sites** (39 `Eyebrow`, 4 `Text`, 4 `Caption`, 1 `Heading`),
+all through one tone map. It was not spent, because the accents are not where this defect lives:
+
+| role | value | worst of the four surfaces | call sites |
+|---|---|---|---|
+| `color="muted"` | `graphite/60` | **2.86** | **516** |
+| `Eyebrow`'s own default | `incense/60` | **1.62** | ~90 of 371 |
+| gold as prose | `#C2A878` | 1.79 | 48 |
+| raw `text-ethereal-graphite/α` | 13 distinct alphas | 1.8–4.5 | 219 |
+
+The panel's **neutral secondary ink** is below AA in 516 places and its most repeated text element
+defaults to something *dimmer than gold*. Recolouring 39 Eyebrows to bronze beside 189 `muted`
+ones that are equally illegible would not fix a section header, it would make the inconsistency
+visible. Gold is not the centre of mass and is not where this starts.
+
+What §1.2 should be read as saying, then: the accents were the half that got measured, and they
+are the smaller half. The real question is **whether the secondary role gets a legibility floor at
+all** — technically one line in the tone map, but `graphite/60` has to reach `/85` to clear 4.5,
+which trades the panel's soft wash for near-solid graphite in 516 places at once. That is a
+decision about the panel's voice, not a bug fix, and it belongs to its own pass with the developer
+looking at the render.
+
+One more thing the sweep settled rather than found: **the icon half of the 289 is not a defect.**
+43 of the 283 raw `text-ethereal-gold` are explicitly `aria-hidden`, and the hypothesis that gold
+carries active-tab *labels* is false — in `ArchiveTabs`, `ProjectTabs`, `SettingsLayout`,
+`MobileNavSheet` and `CommandPalette` the gold is the icon only, `aria-hidden`, with the label in
+`ink`. A decorative icon beside its own label is outside 1.4.11 by the standard's own carve-out.
 
 ### 1.3 Why the token swap actually works (verified, not assumed)
 
@@ -664,7 +714,10 @@ light". Polish is primary and must read natively.
   this work and is not a dark-mode deliverable.
 - **`web/`** — the Astro marketing site has its own language (`.ai/07_marketing_public_site.md`)
   and shares no tokens with the panel.
-- **Light-theme accent contrast** (§1.2) — a real finding, a separate pass.
+- **Light-theme accent contrast** (§1.2) — the two fixable halves shipped 2026-08-31 (crimson, the
+  tick on gold). What is left is not an accent question at all: the panel's secondary ink
+  (`color="muted"`, 516 sites at 2.86) and `Eyebrow`'s default (1.62). That is a pass of its own,
+  and it is a decision about the panel's voice before it is a contrast fix — see §1.2.
 
 ---
 
@@ -973,6 +1026,12 @@ dark on light and light on dark.
   static by nature, so it stays on the light ground, but it drifts the same way and opens the
   installed Android window chrome instead of the iOS status bar.
 - **Contrast**: re-run the ratio table (§1.1/§2) after any palette tweak. Target AA 4.5 for text
-  and 3.0 for icons/marks on **both** the ground and the card — the card is always the tighter of
-  the two and is the one to check.
+  and 3.0 for icons/marks on **both** the ground and the card.
+
+  *Corrected 2026-08-31:* which of the two is tighter **flips with the theme**, and the original
+  wording ("the card is always the tighter") is the dark-theme half only. A light accent on a dark
+  ground loses contrast as the surface rises, so on dark the card is tight; a dark accent on a
+  light ground GAINS contrast as the surface rises, so on light the tight surfaces are the ladder's
+  dimmest rungs — `parchment` and `canvas`, not the card. Measuring a light value against the card
+  reads about half a step high, which is the difference between crimson's 4.16 and its real 3.69.
 - **`npm run typecheck` + `npm run build`** per stage; the developer verifies visually.
