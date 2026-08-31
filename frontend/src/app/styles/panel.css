@@ -37,7 +37,28 @@
   --color-ethereal-ink: #161412;
   --color-ethereal-graphite: #4a4744;
 
-  --color-ethereal-crimson: #a95e59;
+  /* The alarm, and the one accent held to the 4.5 a body of TEXT needs rather
+     than the 3.0 a mark does — it is the only one the panel writes sentences in
+     (`Button variant="destructive"` is crimson type on its own 8% wash, and
+     `color="crimson"` is 25 Text/Caption call sites against 6 Eyebrows).
+
+     Two things govern the value. Hue and saturation are held exactly — only
+     lightness moves — so the destructive button's wash, its border and every
+     crimson rim keep the dusty character the brand runs on. And the surface it
+     is measured against is `parchment`, NOT the card: a dark accent gains
+     contrast on a brighter ground, so on this theme the ladder's DIMMEST rung is
+     the tight one. That is the exact inverse of the dark theme, where the card
+     is the tight surface, and reading the guardrail (§10 of the dark-mode spec)
+     without that flip picks a value ~0.5 short. Against parchment this is 4.71.
+
+     The other four accents are deliberately NOT held here, and crimson is the
+     only one that COULD be: it failed by 0.8 of a step. Gold would have to drop
+     27 points of lightness to clear the same bar — that is bronze, not gold, and
+     gold is a FILL (the primary button, the glass rim, the selection) before it
+     is ever type. Sage and incense sit the same distance out. Those four stay
+     accents and are read as marks; where one of them carries prose, the prose
+     is the thing to move, not the hue. */
+  --color-ethereal-crimson: #92504b;
   --color-ethereal-crimson-light: #d6a19f;
 
   /* The three roles that do NOT ride the ladder. `ink` and `marble` are rungs,

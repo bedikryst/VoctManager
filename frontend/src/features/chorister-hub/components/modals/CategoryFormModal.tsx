@@ -329,7 +329,7 @@ export const CategoryFormModal = ({
                                   className={cn(
                                     "w-5 h-5 rounded flex items-center justify-center border transition-colors shrink-0",
                                     checked
-                                      ? "bg-ethereal-gold border-ethereal-gold text-ink-on-inverse"
+                                      ? "bg-ethereal-gold border-ethereal-gold text-surface-inverse"
                                       : "border-ethereal-incense/40 bg-ethereal-marble",
                                   )}
                                 >

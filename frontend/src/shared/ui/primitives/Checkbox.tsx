@@ -79,8 +79,13 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           disabled
             ? "cursor-not-allowed opacity-40"
             : "cursor-pointer",
+          // The tick is DARK on the gold fill, which is what everything written
+          // on gold in this panel is (`Button variant="primary"` took the same
+          // token for the same reason). Gold holds its hue through the theme
+          // swap, so a light mark on it is 2.2 in both themes and a dark one is
+          // 8.0 in both — the choice is a contrast decision, not a theme one.
           isChecked
-            ? "border-2 border-ethereal-gold bg-ethereal-gold text-white shadow-sm"
+            ? "border-2 border-ethereal-gold bg-ethereal-gold text-surface-inverse shadow-sm"
             : "border border-ethereal-incense/45 bg-ethereal-alabaster hover:border-ethereal-gold/50 hover:bg-ethereal-gold/5",
           className,
         )}
