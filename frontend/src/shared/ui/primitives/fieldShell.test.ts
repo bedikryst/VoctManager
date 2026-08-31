@@ -156,7 +156,27 @@ const DECIDED = {
   /** An error no longer repaints the value; on ink that was ink-on-ink. */
   darkErrorKeepsItsText: {
     removed: ["text-ethereal-ink"],
-    added: ["text-ethereal-alabaster"],
+    added: ["text-ink-on-inverse"],
+  } as Delta,
+  /**
+   * 2026-08 (dark mode, stage 4): the `dark` variant dresses an island that is
+   * dark in BOTH themes — the practice dock, the score chrome. Every neutral it
+   * named is a ladder rung that inverts underneath it, so the fill, the focus
+   * fill and the value each move to the token that does not. Three entries and
+   * not one, because an errored field keeps its own fill and shows only two of
+   * the three.
+   */
+  darkIslandFill: {
+    removed: ["bg-ethereal-ink/80"],
+    added: ["bg-surface-inverse/80"],
+  } as Delta,
+  darkIslandFocusFill: {
+    removed: ["focus:bg-ethereal-ink"],
+    added: ["focus:bg-surface-inverse"],
+  } as Delta,
+  darkIslandInk: {
+    removed: ["text-ethereal-alabaster"],
+    added: ["text-ink-on-inverse"],
   } as Delta,
   /** The field's focus fill, previously only on `Input`/`Textarea`. */
   focusFillGained: {
@@ -182,12 +202,15 @@ const DECIDED = {
 
 describe("Input — surface after folding onto fieldShell", () => {
   it.each(["glass", "dark", "ghost"] as const)(
-    "%s is unchanged apart from the dropped blur and the touch text scale",
+    "%s is unchanged apart from the dropped blur, the touch text scale and the inverse tokens",
     (variant) => {
       expect(delta(legacyInput(variant, false), inputFieldClasses({ variant }))).toEqual(
         merge(
           DECIDED.touchTextScale,
           variant === "glass" ? DECIDED.blurDropped : NO_CHANGE,
+          ...(variant === "dark"
+            ? [DECIDED.darkIslandFill, DECIDED.darkIslandFocusFill, DECIDED.darkIslandInk]
+            : []),
         ),
       );
     },
@@ -212,9 +235,17 @@ describe("Input — surface after folding onto fieldShell", () => {
   });
 
   it("stops repainting the value on the dark field's error state", () => {
+    // The crimson tint owns the fill here, so only the FOCUS fill shows the
+    // island's move to the inverse tokens.
     expect(
       delta(legacyInput("dark", true), inputFieldClasses({ variant: "dark", hasError: true })),
-    ).toEqual(merge(DECIDED.touchTextScale, DECIDED.darkErrorKeepsItsText));
+    ).toEqual(
+      merge(
+        DECIDED.touchTextScale,
+        DECIDED.darkErrorKeepsItsText,
+        DECIDED.darkIslandFocusFill,
+      ),
+    );
   });
 });
 
@@ -280,10 +311,18 @@ describe("fieldShell — what the other three controls inherit", () => {
     );
   });
 
-  it("carries the dark field untouched", () => {
+  it("carries the dark field on the inverse tokens and nothing else", () => {
     expect(
       delta(legacyShell("dark", false), cn(fieldShellVariants({ variant: "dark" }))),
-    ).toEqual(merge(DECIDED.touchTextScale, { removed: [], added: [INERT] }));
+    ).toEqual(
+      merge(
+        DECIDED.touchTextScale,
+        DECIDED.darkIslandFill,
+        DECIDED.darkIslandFocusFill,
+        DECIDED.darkIslandInk,
+        { removed: [], added: [INERT] },
+      ),
+    );
   });
 });
 

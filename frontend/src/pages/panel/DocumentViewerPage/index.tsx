@@ -147,7 +147,7 @@ const DocumentViewerErrorState = ({
   backLabel,
 }: DocumentViewerErrorStateProps): React.JSX.Element => (
   <PageTransition>
-    <div className="fixed inset-0 z-0 flex items-center justify-center bg-ethereal-ink px-6">
+    <div className="fixed inset-0 z-0 flex items-center justify-center bg-surface-inverse px-6">
       <StatePanel
         tone="danger"
         icon={<FileWarning size={28} aria-hidden="true" />}
@@ -230,8 +230,8 @@ const DocumentViewerPage = (): React.JSX.Element => {
 
   return (
     <PageTransition>
-      <div className="fixed inset-0 z-0 flex flex-col bg-ethereal-ink text-ethereal-marble">
-        <div className="relative z-10 flex shrink-0 items-center gap-4 border-b border-white/5 bg-white/[0.02] px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-6 sm:py-4">
+      <div className="fixed inset-0 z-0 flex flex-col bg-surface-inverse text-ink-on-inverse">
+        <div className="relative z-10 flex shrink-0 items-center gap-4 border-b border-line-on-inverse bg-ink-on-inverse/2 px-4 py-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur-xl sm:px-6 sm:py-4">
           <Button
             variant="ghost"
             size="icon"
@@ -241,7 +241,7 @@ const DocumentViewerPage = (): React.JSX.Element => {
                 ? t("document_viewer.back_aria", "Go back")
                 : t("document_viewer.back_to_app", "Back to dashboard")
             }
-            className="h-9 w-9 shrink-0 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
+            className="h-9 w-9 shrink-0 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
           >
             <ArrowLeft size={20} aria-hidden="true" />
           </Button>
@@ -250,12 +250,13 @@ const DocumentViewerPage = (): React.JSX.Element => {
             <Heading
               as="h1"
               size="sm"
-              className="truncate text-ethereal-marble"
+              color="ink-on-inverse"
+              className="truncate"
             >
               {resolved.title}
             </Heading>
             {resolved.subtitle ? (
-              <Text color="parchment-muted" className="truncate text-xs">
+              <Text color="ink-on-inverse-muted" className="truncate text-xs">
                 {resolved.subtitle}
               </Text>
             ) : null}

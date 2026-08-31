@@ -111,7 +111,7 @@ const DocumentRow = ({
       }
     >
       <div className="flex items-start gap-4 overflow-hidden pr-4 flex-1 min-w-0">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-ethereal-incense/20 bg-ethereal-alabaster text-ethereal-graphite group-hover/file:bg-ethereal-ink group-hover/file:text-white group-hover/file:border-transparent transition-colors shrink-0 shadow-sm">
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center border border-ethereal-incense/20 bg-ethereal-alabaster text-ethereal-graphite group-hover/file:bg-ethereal-ink group-hover/file:text-ethereal-marble group-hover/file:border-transparent transition-colors shrink-0 shadow-sm">
           <FileText size={16} aria-hidden="true" />
         </div>
         <div className="min-w-0 flex-1 pt-0.5">

@@ -52,9 +52,9 @@ export const PdfOutlineDrawer = ({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -40, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-surface border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
-            <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <header className="flex items-center justify-between border-b border-line-on-inverse px-4 py-3">
               <span className="flex items-center gap-2 text-sm font-semibold">
                 <BookMarked size={15} aria-hidden="true" />
                 {t("pdf_viewer.outline_title", "Spis treści")}
@@ -63,7 +63,7 @@ export const PdfOutlineDrawer = ({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={t("common.close_aria", "Zamknij")}
-                className="rounded-full p-1 text-ethereal-marble/70 hover:bg-white/10 hover:text-white"
+                className="rounded-full p-1 text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -82,7 +82,7 @@ export const PdfOutlineDrawer = ({
                       "flex w-full items-baseline gap-2 rounded-chip px-2 py-1.5 text-left transition-colors",
                       index === activeIndex
                         ? "bg-ethereal-gold/15 text-ethereal-gold"
-                        : "text-ethereal-marble hover:bg-white/10",
+                        : "text-ink-on-inverse hover:bg-ink-on-inverse/10",
                       entry.depth > 0 && "pl-6",
                     )}
                   >
@@ -96,7 +96,7 @@ export const PdfOutlineDrawer = ({
                     <Text
                       as="span"
                       size="xs"
-                      className="shrink-0 tabular-nums text-ethereal-marble/50"
+                      className="shrink-0 tabular-nums text-ink-on-inverse/50"
                     >
                       {t("pdf_viewer.outline_page", "s. {{page}}", {
                         page: entry.page,
@@ -117,14 +117,14 @@ export const PdfOutlineDrawer = ({
             transition={{ duration: 0.2 }}
             onClick={() => setOpen(true)}
             aria-label={t("pdf_viewer.outline_open", "Pokaż spis treści")}
-            className="pointer-events-auto flex flex-col items-center gap-2 rounded-r-2xl border border-l-0 border-white/10 bg-ethereal-ink/80 px-2 py-3 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-ethereal-ink"
+            className="pointer-events-auto flex flex-col items-center gap-2 rounded-r-2xl border border-l-0 border-line-on-inverse bg-surface-inverse/80 px-2 py-3 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-surface-inverse"
           >
             <PanelLeftOpen size={16} aria-hidden="true" />
             {/* Named, not just drawn. On the concert book this tab is the
                 programme, and a bare glyph on the screen edge is the one piece
                 of navigation readers reported as missing while looking at it. */}
             <Eyebrow
-              color="parchment-muted"
+              color="ink-on-inverse-muted"
               className="[writing-mode:vertical-rl]"
               aria-hidden="true"
             >

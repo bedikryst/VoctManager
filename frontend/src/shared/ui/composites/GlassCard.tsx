@@ -46,13 +46,13 @@ const glassCardVariants = cva(
       variant: {
         ethereal:
           "bg-glass-surface border border-glass-border shadow-glass-ethereal",
-        // The rim is the island's own hairline and holds in both themes; the
-        // FILL is still the ink rung and therefore still inverts. Both halves
-        // move to the inverse tokens in Stage 4, with the toolbar ink that
-        // reads against them — flipping the fill here alone would leave the PDF
-        // chrome dark-on-dark until that lands.
+        // The chrome that floats over a document: dark in BOTH themes, because
+        // it is read against a white page. Fill and rim are therefore the
+        // inverse tokens, not ladder rungs — a rung here would invert the bar
+        // into a white slab over white paper. Its only callers are the PDF
+        // toolbars, whose ink moved to `ink-on-inverse` in the same pass.
         surface:
-          "bg-ethereal-ink/40 backdrop-blur-xl border border-line-on-inverse shadow-glass-ethereal",
+          "bg-surface-inverse/40 backdrop-blur-xl border border-line-on-inverse shadow-glass-ethereal",
         solid:
           "bg-ethereal-alabaster border border-hairline shadow-glass-solid",
         dark: "bg-ethereal-ink/90 border border-ethereal-incense/20 text-ethereal-marble shadow-glass-solid",

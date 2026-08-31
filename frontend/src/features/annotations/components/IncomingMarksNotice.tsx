@@ -66,7 +66,7 @@ export const IncomingMarksNotice = ({
             exit={{ opacity: 0, y: 12 }}
             transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             role="status"
-            className="pointer-events-auto flex items-center gap-1 rounded-full border border-ethereal-gold/40 bg-ethereal-ink/85 py-1.5 pl-3.5 pr-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="pointer-events-auto flex items-center gap-1 rounded-full border border-ethereal-gold/40 bg-surface-inverse/85 py-1.5 pl-3.5 pr-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
             <PencilLine
               size={15}
@@ -76,11 +76,11 @@ export const IncomingMarksNotice = ({
             <button
               type="button"
               onClick={onGoToPage}
-              className="rounded-full px-1.5 py-1 transition-colors hover:bg-white/10"
+              className="rounded-full px-1.5 py-1 transition-colors hover:bg-ink-on-inverse/10"
             >
               {/* Counted, so the key carries every Polish plural form — there is
                   no honest single wording for "1 oznaczenie" and "5 oznaczeń". */}
-              <Text as="span" size="sm" color="marble" className="leading-none">
+              <Text as="span" size="sm" color="ink-on-inverse" className="leading-none">
                 {t("annotations.incoming.line", { count, page })}
               </Text>
             </button>
@@ -88,7 +88,7 @@ export const IncomingMarksNotice = ({
               type="button"
               onClick={onDismiss}
               aria-label={t("common.close_aria", "Zamknij")}
-              className="rounded-full p-1.5 text-ethereal-marble/60 transition-colors hover:bg-white/10 hover:text-ethereal-marble"
+              className="rounded-full p-1.5 text-ink-on-inverse/60 transition-colors hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
             >
               <X size={14} aria-hidden="true" />
             </button>

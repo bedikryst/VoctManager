@@ -168,7 +168,8 @@ export const AnnotationGuide = ({
           // The viewer hands its overlay slot out with pointer-events off, so
           // every layer that wants a click has to switch them back on — without
           // this the backdrop is scenery and the panel cannot be dismissed.
-          className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-ethereal-ink/70 p-4 backdrop-blur-md"
+          // A scrim, not a surface — black on both themes.
+          className="pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
           onClick={onClose}
         >
           <motion.div
@@ -179,16 +180,16 @@ export const AnnotationGuide = ({
             role="dialog"
             aria-modal="false"
             onClick={(event) => event.stopPropagation()}
-            className="no-scrollbar flex max-h-full w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-white/10 bg-ethereal-ink/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
+            className="no-scrollbar flex max-h-full w-full max-w-lg flex-col overflow-y-auto rounded-3xl border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
           >
-            <header className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4">
+            <header className="flex items-start justify-between gap-3 border-b border-line-on-inverse px-5 py-4">
               <div className="min-w-0">
-                <Heading as="h2" size="md" color="marble">
+                <Heading as="h2" size="md" color="ink-on-inverse">
                   {mode === "personal"
                     ? t("annotations.guide.personal.title", "Twoje ślady na nutach")
                     : t("annotations.guide.conductor.title", "Dwie warstwy oznaczeń")}
                 </Heading>
-                <Text as="p" size="sm" color="marble-muted" className="mt-1">
+                <Text as="p" size="sm" color="ink-on-inverse-muted" className="mt-1">
                   {mode === "personal"
                     ? t(
                         "annotations.guide.personal.lede",
@@ -204,7 +205,7 @@ export const AnnotationGuide = ({
                 type="button"
                 onClick={onClose}
                 aria-label={t("common.close_aria", "Zamknij")}
-                className="shrink-0 rounded-full p-1.5 text-ethereal-marble/70 transition-colors hover:bg-white/10 hover:text-white"
+                className="shrink-0 rounded-full p-1.5 text-ink-on-inverse/70 transition-colors hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
               >
                 <X size={18} aria-hidden="true" />
               </button>
@@ -217,16 +218,16 @@ export const AnnotationGuide = ({
                     className={
                       fact.accent
                         ? "mt-0.5 shrink-0 rounded-full bg-ethereal-gold/20 p-2 text-ethereal-gold"
-                        : "mt-0.5 shrink-0 rounded-full bg-white/5 p-2 text-ethereal-marble/70"
+                        : "mt-0.5 shrink-0 rounded-full bg-ink-on-inverse/5 p-2 text-ink-on-inverse/70"
                     }
                   >
                     <fact.icon size={16} aria-hidden="true" />
                   </span>
                   <div className="min-w-0">
-                    <Text as="p" weight="semibold" color="marble">
+                    <Text as="p" weight="semibold" color="ink-on-inverse">
                       {fact.title}
                     </Text>
-                    <Text as="p" size="sm" color="marble-muted" className="mt-0.5">
+                    <Text as="p" size="sm" color="ink-on-inverse-muted" className="mt-0.5">
                       {fact.body}
                     </Text>
                   </div>

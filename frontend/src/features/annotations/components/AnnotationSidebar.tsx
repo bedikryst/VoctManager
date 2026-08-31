@@ -107,9 +107,9 @@ export const AnnotationSidebar = ({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: 40, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+            className="pointer-events-auto m-3 flex max-h-[calc(100%-7rem)] w-72 flex-col overflow-hidden rounded-3xl border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl"
           >
-            <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+            <header className="flex items-center justify-between border-b border-line-on-inverse px-4 py-3">
               <Text as="span" weight="semibold" className="flex items-center gap-2">
                 <ListTree size={15} aria-hidden="true" />
                 {t("annotations.panel.title", "Adnotacje")}
@@ -118,7 +118,7 @@ export const AnnotationSidebar = ({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label={t("common.close_aria", "Zamknij")}
-                className="rounded-full p-1 text-ethereal-marble/70 hover:bg-white/10 hover:text-white"
+                className="rounded-full p-1 text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
               >
                 <X size={16} aria-hidden="true" />
               </button>
@@ -126,7 +126,7 @@ export const AnnotationSidebar = ({
 
             <div className="no-scrollbar flex-1 overflow-y-auto px-4 py-3">
               <section className="mb-4">
-                <Eyebrow as="p" color="marble-muted" className="mb-2">
+                <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
                   {t("annotations.panel.layers", "Widoczność warstw")}
                 </Eyebrow>
                 <div className="flex flex-col gap-1">
@@ -168,7 +168,7 @@ export const AnnotationSidebar = ({
 
               {annotatedPages.length > 0 && (
                 <section className="mb-4">
-                  <Eyebrow as="p" color="marble-muted" className="mb-2">
+                  <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
                     {t("annotations.panel.pages", "Oznaczone strony")}
                   </Eyebrow>
                   <div className="flex flex-wrap gap-1.5">
@@ -181,8 +181,8 @@ export const AnnotationSidebar = ({
                         className={cn(
                           "flex h-8 min-w-8 items-center justify-center gap-1 rounded-lg px-2 text-xs font-medium transition-colors",
                           page === currentPage
-                            ? "bg-ethereal-gold/90 text-ethereal-ink"
-                            : "bg-white/10 text-ethereal-marble hover:bg-white/20",
+                            ? "bg-ethereal-gold/90 text-surface-inverse"
+                            : "bg-ink-on-inverse/10 text-ink-on-inverse hover:bg-ink-on-inverse/20",
                         )}
                       >
                         {page}
@@ -194,11 +194,11 @@ export const AnnotationSidebar = ({
               )}
 
               <section>
-                <Eyebrow as="p" color="marble-muted" className="mb-2">
+                <Eyebrow as="p" color="ink-on-inverse-muted" className="mb-2">
                   {t("annotations.panel.notes", "Notatki")}
                 </Eyebrow>
                 {notes.length === 0 ? (
-                  <p className="text-xs text-ethereal-marble/50">
+                  <p className="text-xs text-ink-on-inverse/50">
                     {t("annotations.panel.no_notes", "Brak notatek tekstowych.")}
                   </p>
                 ) : (
@@ -217,7 +217,7 @@ export const AnnotationSidebar = ({
                               goToPage(displayPage(note.page_number), payload.y);
                               onSelectNote(note.id, note.page_number);
                             }}
-                            className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-white/10"
+                            className="flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-ink-on-inverse/10"
                           >
                             <span
                               className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
@@ -225,10 +225,10 @@ export const AnnotationSidebar = ({
                               aria-hidden="true"
                             />
                             <span className="min-w-0 flex-1">
-                              <span className="block truncate text-xs text-ethereal-marble">
+                              <span className="block truncate text-xs text-ink-on-inverse">
                                 {payload.text}
                               </span>
-                              <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ethereal-marble/50">
+                              <span className="mt-0.5 flex items-center gap-1 text-[10px] text-ink-on-inverse/50">
                                 {t("annotations.panel.page", "s. {{page}}", {
                                   page: displayPage(note.page_number),
                                 })}
@@ -256,11 +256,11 @@ export const AnnotationSidebar = ({
             transition={{ duration: 0.2 }}
             onClick={() => setOpen(true)}
             aria-label={t("annotations.panel.open", "Pokaż adnotacje")}
-            className="pointer-events-auto flex flex-col items-center gap-1 rounded-l-2xl border border-r-0 border-white/10 bg-ethereal-ink/80 px-2 py-3 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-ethereal-ink"
+            className="pointer-events-auto flex flex-col items-center gap-1 rounded-l-2xl border border-r-0 border-line-on-inverse bg-surface-inverse/80 px-2 py-3 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl hover:bg-surface-inverse"
           >
             <PanelRightOpen size={16} aria-hidden="true" />
             {annotations.length > 0 && (
-              <span className="rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-ethereal-ink">
+              <span className="rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
                 {annotations.length}
               </span>
             )}
@@ -292,7 +292,9 @@ const LayerToggle = ({
     aria-pressed={visible}
     className={cn(
       "flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs transition-colors",
-      visible ? "bg-white/10 text-ethereal-marble" : "text-ethereal-marble/40 hover:bg-white/5",
+      visible
+        ? "bg-ink-on-inverse/10 text-ink-on-inverse"
+        : "text-ink-on-inverse/40 hover:bg-ink-on-inverse/5",
     )}
   >
     <span className="flex items-center gap-1.5">

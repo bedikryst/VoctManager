@@ -119,7 +119,7 @@ const ScaleSlider = ({
   <div className="flex items-center gap-2">
     <span
       aria-hidden="true"
-      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-ethereal-marble"
+      className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden text-ink-on-inverse"
     >
       {sample}
     </span>
@@ -149,7 +149,7 @@ const readExpanded = (): boolean => {
 };
 
 const pillButton =
-  "flex h-9 w-9 items-center justify-center rounded-full text-ethereal-marble transition-colors";
+  "flex h-9 w-9 items-center justify-center rounded-full text-ink-on-inverse transition-colors";
 const ToolSeparator = () => (
   <Divider variant="solid-dark" orientation="vertical" className="mx-1 h-4" />
 );
@@ -158,11 +158,11 @@ const ToolSeparator = () => (
 // it a top-left slot with a capped width), so collapsed = a clean trigger and
 // expanded = a single-row bar, without a double-pill.
 const barChrome =
-  "pointer-events-auto flex items-center rounded-full border border-white/10 bg-ethereal-ink/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
+  "pointer-events-auto flex items-center rounded-full border border-line-on-inverse bg-surface-inverse/70 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 // The active tool's contextual options drop DOWN into this panel (same glass,
 // softer corners) instead of stretching the pill off the edge of a phone.
 const panelChrome =
-  "pointer-events-auto rounded-2xl border border-white/10 bg-ethereal-ink/70 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
+  "pointer-events-auto rounded-2xl border border-line-on-inverse bg-surface-inverse/70 p-2.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl";
 
 export const AnnotationToolbar = ({
   mode,
@@ -269,8 +269,8 @@ export const AnnotationToolbar = ({
         aria-label={t("annotations.open_tools", "Narzędzia adnotacji")}
         className={cn(
           barChrome,
-          "h-11 gap-1.5 px-3.5 transition-colors hover:bg-ethereal-ink/85",
-          armed ? "text-white ring-1 ring-ethereal-gold/60" : "text-ethereal-marble",
+          "h-11 gap-1.5 px-3.5 text-ink-on-inverse transition-colors hover:bg-surface-inverse/85",
+          armed && "ring-1 ring-ethereal-gold/60",
         )}
       >
         <TriggerIcon size={17} aria-hidden="true" />
@@ -280,7 +280,7 @@ export const AnnotationToolbar = ({
             : t("annotations.markup", "Adnotacje")}
         </span>
         {annotationCount > 0 && (
-          <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-ethereal-ink">
+          <span className="ml-0.5 rounded-full bg-ethereal-gold/90 px-1.5 text-[10px] font-semibold text-surface-inverse">
             {annotationCount}
           </span>
         )}
@@ -300,7 +300,7 @@ export const AnnotationToolbar = ({
           onClick={() => changeExpanded(false)}
           aria-label={t("annotations.collapse_tools", "Zwiń narzędzia")}
           title={t("annotations.collapse_tools", "Zwiń narzędzia")}
-          className={cn(pillButton, "hover:bg-white/10")}
+          className={cn(pillButton, "hover:bg-ink-on-inverse/10")}
         >
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
@@ -311,7 +311,7 @@ export const AnnotationToolbar = ({
           disabled={!canUndo}
           aria-label={t("annotations.undo", "Cofnij")}
           title={t("annotations.undo", "Cofnij")}
-          className={cn(pillButton, "hover:bg-white/10 disabled:opacity-30")}
+          className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
         >
           <Undo2 size={16} aria-hidden="true" />
         </button>
@@ -321,7 +321,7 @@ export const AnnotationToolbar = ({
           disabled={!canRedo}
           aria-label={t("annotations.redo", "Ponów")}
           title={t("annotations.redo", "Ponów")}
-          className={cn(pillButton, "hover:bg-white/10 disabled:opacity-30")}
+          className={cn(pillButton, "hover:bg-ink-on-inverse/10 disabled:opacity-30")}
         >
           <Redo2 size={16} aria-hidden="true" />
         </button>
@@ -338,7 +338,9 @@ export const AnnotationToolbar = ({
             title={t(labelKey, fallback)}
             className={cn(
               pillButton,
-              tool === id ? "bg-white/20 text-white" : "hover:bg-white/10",
+              tool === id
+                ? "bg-ink-on-inverse/20"
+                : "hover:bg-ink-on-inverse/10",
             )}
           >
             <Icon size={16} aria-hidden="true" />
@@ -349,9 +351,9 @@ export const AnnotationToolbar = ({
           // The reason, spelled out: the pencil is one zoom — or one change of
           // fit — away, and a tooltip cannot be reached on the touch screens
           // this actually appears on.
-          <span className="ml-1 flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1 text-ethereal-marble/70">
+          <span className="ml-1 flex items-center gap-1.5 rounded-full bg-ink-on-inverse/5 px-2.5 py-1 text-ink-on-inverse/70">
             <ZoomIn size={12} aria-hidden="true" className="shrink-0" />
-            <Eyebrow color="parchment-muted">
+            <Eyebrow color="ink-on-inverse-muted">
               {t("annotations.draw_needs_room", "Powiększ, by pisać")}
             </Eyebrow>
           </span>
@@ -375,8 +377,8 @@ export const AnnotationToolbar = ({
             className={cn(
               "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
               layer === "shared"
-                ? "bg-emerald-500/20 text-emerald-200"
-                : "bg-white/10 text-ethereal-marble",
+                ? "bg-ethereal-sage/20 text-ethereal-sage"
+                : "bg-ink-on-inverse/10 text-ink-on-inverse",
             )}
           >
             {layer === "shared" ? (
@@ -395,7 +397,7 @@ export const AnnotationToolbar = ({
           // a toggle that could suggest the choir might see these marks.
           <span
             title={t("annotations.layer.personal_hint", "Widoczne tylko dla Ciebie")}
-            className="flex h-9 items-center gap-1.5 rounded-full bg-white/10 px-3 text-xs font-medium text-ethereal-marble"
+            className="flex h-9 items-center gap-1.5 rounded-full bg-ink-on-inverse/10 px-3 text-xs font-medium text-ink-on-inverse"
           >
             <Lock size={12} aria-hidden="true" />
             <span className="hidden sm:inline">
@@ -412,7 +414,7 @@ export const AnnotationToolbar = ({
           onClick={onOpenGuide}
           aria-label={t("annotations.guide.open", "Jak działają adnotacje")}
           title={t("annotations.guide.open", "Jak działają adnotacje")}
-          className={cn(pillButton, "hover:bg-white/10")}
+          className={cn(pillButton, "hover:bg-ink-on-inverse/10")}
         >
           <HelpCircle size={16} aria-hidden="true" />
         </button>
@@ -427,7 +429,11 @@ export const AnnotationToolbar = ({
                   onClearAll();
                   setConfirmingClear(false);
                 }}
-                className="flex h-9 items-center gap-1.5 rounded-full bg-ethereal-crimson/90 px-3 text-xs font-medium text-white transition-colors hover:bg-ethereal-crimson"
+                // Crimson is the one accent that does NOT hold: on dark it takes
+                // the value of `crimson-light`. So the label on it follows the
+                // ladder — `marble` is the brightest rung on light and the
+                // darkest-but-one on dark, which is the right ink either way.
+                className="flex h-9 items-center gap-1.5 rounded-full bg-ethereal-crimson/90 px-3 text-xs font-medium text-ethereal-marble transition-colors hover:bg-ethereal-crimson"
               >
                 <Check size={14} aria-hidden="true" />
                 <span>{t("annotations.clear_confirm", "Na pewno?")}</span>
@@ -438,7 +444,7 @@ export const AnnotationToolbar = ({
                 onClick={() => setConfirmingClear(true)}
                 aria-label={t("annotations.clear_all", "Usuń wszystkie adnotacje")}
                 title={t("annotations.clear_all", "Usuń wszystkie adnotacje")}
-                className={cn(pillButton, "hover:bg-ethereal-crimson/30 hover:text-white")}
+                className={cn(pillButton, "hover:bg-ethereal-crimson/30")}
               >
                 <Trash2 size={16} aria-hidden="true" />
               </button>
@@ -478,9 +484,10 @@ export const AnnotationToolbar = ({
                   }
                   className={cn(
                     "flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors",
+                    "text-ink-on-inverse",
                     fingerDraw === asFinger
-                      ? "bg-white/20 text-white"
-                      : "text-ethereal-marble hover:bg-white/10",
+                      ? "bg-ink-on-inverse/20"
+                      : "hover:bg-ink-on-inverse/10",
                   )}
                 >
                   {asFinger ? (
@@ -508,11 +515,13 @@ export const AnnotationToolbar = ({
                   title={t(labelKey, fallback)}
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
-                    size === id ? "bg-white/20" : "hover:bg-white/10",
+                    size === id
+                      ? "bg-ink-on-inverse/20"
+                      : "hover:bg-ink-on-inverse/10",
                   )}
                 >
                   <span
-                    className="rounded-full bg-ethereal-marble"
+                    className="rounded-full bg-ink-on-inverse"
                     style={{ width: dot, height: dot }}
                   />
                 </button>
@@ -534,8 +543,8 @@ export const AnnotationToolbar = ({
                     className={cn(
                       "h-6 w-6 rounded-full transition-transform hover:scale-110",
                       color === value
-                        ? "ring-2 ring-white ring-offset-1 ring-offset-ethereal-ink"
-                        : "ring-1 ring-white/30",
+                        ? "ring-2 ring-ink-on-inverse ring-offset-1 ring-offset-surface-inverse"
+                        : "ring-1 ring-ink-on-inverse/30",
                     )}
                     style={{ backgroundColor: value }}
                   />
@@ -544,7 +553,7 @@ export const AnnotationToolbar = ({
               {/* Said once, where the missing swatch is — the palette is short
                   enough that its absence would otherwise read as a bug. */}
               {mode === "personal" && (
-                <Caption color="marble-muted">
+                <Caption color="ink-on-inverse-muted">
                   {t(
                     "annotations.ink_reserved",
                     "Czerwony jest zarezerwowany dla dyrygenta.",
@@ -564,9 +573,10 @@ export const AnnotationToolbar = ({
                   aria-pressed={noteDisplay === displayMode}
                   className={cn(
                     "h-9 rounded-full px-3 text-xs font-medium transition-colors",
+                    "text-ink-on-inverse",
                     noteDisplay === displayMode
-                      ? "bg-white/20 text-white"
-                      : "text-ethereal-marble hover:bg-white/10",
+                      ? "bg-ink-on-inverse/20"
+                      : "hover:bg-ink-on-inverse/10",
                   )}
                 >
                   {displayMode === "inline"
@@ -627,9 +637,10 @@ export const AnnotationToolbar = ({
                     aria-pressed={activeStampGroup === group}
                     className={cn(
                       "h-8 shrink-0 rounded-full px-2.5 text-xs font-medium transition-colors",
+                      "text-ink-on-inverse",
                       activeStampGroup === group
-                        ? "bg-white/20 text-white"
-                        : "text-ethereal-marble hover:bg-white/10",
+                        ? "bg-ink-on-inverse/20"
+                        : "hover:bg-ink-on-inverse/10",
                     )}
                   >
                     {t(labelKey, fallback)}
@@ -647,7 +658,9 @@ export const AnnotationToolbar = ({
                     title={t(def.labelKey, def.fallback)}
                     className={cn(
                       "flex h-9 items-center justify-center rounded-xl transition-colors",
-                      stamp === def.id ? "bg-white/20" : "hover:bg-white/10",
+                      stamp === def.id
+                        ? "bg-ink-on-inverse/20"
+                        : "hover:bg-ink-on-inverse/10",
                     )}
                   >
                     <StampGlyph

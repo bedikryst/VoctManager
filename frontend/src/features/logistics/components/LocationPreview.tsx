@@ -218,7 +218,7 @@ export const LocationPreview = ({
   // Variant Styles Architecture
   const anchorStyles =
     variant === "badge"
-      ? "rounded-chip border border-ethereal-incense/20 bg-white/5 px-2.5 py-1.5 backdrop-blur-md hover:border-ethereal-gold/40 hover:bg-white/10"
+      ? "rounded-chip border border-ethereal-incense/20 bg-ethereal-marble/5 px-2.5 py-1.5 backdrop-blur-md hover:border-ethereal-gold/40 hover:bg-ethereal-marble/10"
       : "bg-transparent p-0 hover:text-ethereal-gold transition-colors duration-500";
 
   return (
@@ -268,7 +268,10 @@ export const LocationPreview = ({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -5, scale: 0.95 }}
                 transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
-                className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-white/70 p-1.5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
+                // The bevel is light cast onto the page and follows the theme;
+                // the warm 64px cast is the incense accent saying "floating",
+                // and an accent holds its hue, so it stays literal.
+                className="z-focus-trap flex w-72 cursor-pointer flex-col overflow-hidden rounded-surface border border-ethereal-gold/80 bg-ethereal-marble/70 p-1.5 shadow-[inset_0_1px_1px_var(--glass-highlight),0_24px_64px_rgba(166,146,121,0.25)] backdrop-blur-[32px]"
                 style={popoverStyle}
                 onClick={openPlaceOnMaps}
               >
@@ -295,7 +298,7 @@ export const LocationPreview = ({
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ethereal-ink/20 to-transparent mix-blend-multiply" />
                     </div>
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-white/20">
+                    <div className="flex h-full w-full items-center justify-center bg-ethereal-marble/20">
                       <Eyebrow as="span" color="graphite" className="opacity-60">
                         {t("logistics.preview.no_map", "Brak współrzędnych")}
                       </Eyebrow>

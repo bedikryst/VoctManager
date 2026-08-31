@@ -1,6 +1,6 @@
 # Dark mode — specification (2026-08)
 
-Status: **Stages 0–3 shipped; Stage 4 is next** · Audited 2026-08-30 · Surface: `frontend/` (panel
+Status: **Stages 0–4 shipped; Stage 5 is next** · Audited 2026-08-30 · Surface: `frontend/` (panel
 PWA only). `web/` (Astro marketing site), the WeasyPrint PDFs and the e-mail templates are out of
 scope — see §7.
 
@@ -358,7 +358,15 @@ Grouped by why they are dark, because each group has one decision, not one per f
 paper, and dark mode does not print on black. Annotation inks (5 fixed hex, mirrored in
 `backend/archive/annotation_palette.py`) are marks on that paper and do not change either.
 
+*Corrected in Stage 4:* **only eleven of these eighteen are dark chrome.** `EditionThumbnailStrip`,
+`LocationPreview`, both `PieceRow`s, `PiecePage` and `DocumentCategoryCard` are ordinary light
+surfaces that the ladder flips correctly on its own; they are in the inventory because they *touch*
+the score, not because they are dark. Their real defects were a different and much smaller set —
+see the accent rule in Stage 4's entry. Read the surface, not the file list.
+
 **B · Player & docks** (3) — `MiniPlayerBar`, `RehearsalDock`, `VoiceMixerPanel`. Same rename.
+*Also corrected in Stage 4:* only `RehearsalDock` is dark. The other two are `alabaster` cards on
+the ladder, and each needed exactly one line changed.
 
 **C · The "premium dark" surfaces** (5) — `NextEventHero`, `TimelineProjectCard`,
 `ConcertDayPlan`, plus `BottomSheet tone="dark"` and `SegmentedTabs tone="dark"`.
@@ -391,10 +399,15 @@ follow the theme with no code change.
   variants are the FILL of the islands in groups A/B/C, and their ink is in those files. Flipping
   a fill here alone leaves the PDF chrome dark-on-dark: strictly worse than the inside-out state
   it replaces, which is at least readable. They move in Stage 4 (`surface`) and Stage 6 (`dark`).
-  **`variant="dark"` is shared by `RehearsalDock` (group B) and `NextEventHero` /
-  `TimelineProjectCard` (group C)** — so part of Stage 4 is blocked on the §9 decision, which the
-  staging assumed it was not. `fieldShell`'s own `dark` variant and `Select`'s dark chevron are
-  the same case and travel with them.
+  ~~**`variant="dark"` is shared by `RehearsalDock` (group B) and `NextEventHero` /
+  `TimelineProjectCard` (group C)** — so part of Stage 4 is blocked on the §9 decision.~~
+  **Wrong, and checked in Stage 4: `RehearsalDock` never uses `GlassCard` at all** — it hand-rolls
+  its own pill. `GlassCard variant="dark"` has three call sites and all of them are outside Stage 4
+  (`NextEventHero`, `TimelineProjectCard`, `ActivationNave`), so nothing in Stage 4 was blocked on
+  §9. What is shared is `fieldShell`'s own `dark` variant plus `Select`'s dark chevron — and those
+  have exactly two call sites in the whole tree, both of them `RehearsalDock`'s pitch selects, so
+  they travelled with it. `variant="surface"` likewise has only the two PDF toolbars.
+  The lesson generalises: **grep the variant before believing a coupling the inventory asserts.**
 
 **E · One-off `white` / `black`** (~25 files) — `AuthBrand`, `AuthCredential`, `ActivationNave`,
 `PasswordRequirements`, `LegalModals`, `LegalPage`, `WelcomeMoment`, `SeasonSetupConcierge`,
@@ -630,12 +643,61 @@ survives in six places outside group D — `attendanceMeta.tsx:49` and `PitchPip
 need already exists. A `gold/10`-style wash is NOT this defect — there the ink reads against the
 composited surface, not against the accent.
 
-**Stage 4 — the score & document chrome** (groups A + B, 21 files). The largest group and the
-most mechanical. *Exit:* the score viewer, annotation toolbar and player dock are identical in
-both themes, and the page canvas is still white.
+**Stage 4 — the score & document chrome. DONE (2026-08-31).** Groups A + B plus the primitives
+they own: `GlassCard variant="surface"`, `fieldShell`'s `dark` variant (with its `DECIDED` entries
+— three, one fact each, because an errored field shows only one of them), `Select`'s dark chevron
+and `SectionLabel tone="dark"`. Twelve of the twenty-one files are dark chrome and took the
+mechanical rename; the other nine are light surfaces the ladder already handled and needed one or
+two lines each. Nothing was blocked on §9 (see §3.2 D).
 
-**Stage 5 — the one-offs** (group E + §4 arbitrary values). Route-by-route sweep. *Exit:* a grep
-for `-white`/`-black` outside the allowlist returns only the QR card and the PDF canvas.
+*Three findings the inventory did not have, and they are the reusable part:*
+
+- **Ink on an accent splits by whether the accent holds.** §1.1's rule governs the fill; it does
+  not say what to write ON one, and the answer is not the same for all five. gold / sage / incense
+  hold their hue, so the ink on them must hold its value too — `surface-inverse` where it has to
+  stay dark (the gold count chips, the primary pill, the calendar's chosen day) and
+  `ink-on-inverse` where it has to stay light (the sage play buttons, "Otwórz partyturę"). But
+  **`crimson` FLIPS** to `crimson-light` on dark (§2.2), so ink on crimson has to flip with it —
+  which makes it a plain ladder rung. `AnnotationToolbar`'s "Na pewno?" is the one live case:
+  `marble` reads 5.4 on light and 5.8 on dark, where every inverse token fails one side or the
+  other. Stated as a rule: *the ink follows whatever its ground does.*
+- **§8's "six places" was eight.** `RehearsalDock` had five gold-ink sites, not two, and
+  `EditionThumbnailStrip` carries two more (`color="alabaster"` on a gold fill, which the grep for
+  `ink`/`graphite` missed). All are now `surface-inverse`. The grep to use next time is the FILL —
+  `bg-ethereal-gold` — not the ink.
+- **`AnnotationOverlay` is mostly not chrome, and had to be split.** The mark on the stave, its
+  lock badge and the pin are *paper-side*: they live on a page that is white in both themes, so
+  their literals (`bg-white`, `ring-black/10`, `rgba(255,255,255,.82)`) are correct as they stand
+  and their ink took `surface-inverse`. The note composer, its phrase chips and the read-only
+  popover are *controls*, so they ride the ladder like the rest of the chrome and go dark on dark —
+  which is also what makes them read as a panel over the score rather than a second sheet of paper.
+  Left alone, that file would have shipped a white card with invisible white text on it: the
+  loudest thing dark mode had left.
+
+*Also swept, being in the same files:* §3.3's two stock-palette classes (`text-emerald-200` /
+`bg-emerald-500/20` in `AnnotationToolbar`, now `sage`); the `bg-white/x` washes **inside** the
+dark islands, which are the same role as `bg-ink-on-inverse/x` and would otherwise have fallen
+between Stage 5's named-file list and §10's grep with nobody owning them; and the `hover:text-white`
+pairs that sat on a `marble` resting colour, i.e. were a no-op on both themes. Two more scrims
+joined §10's allowlist (`PdfViewerModal`, `AnnotationGuide`) — `bg-ethereal-ink/7x` there would
+have inverted into a white veil over the score.
+
+*Verified against the compiled sheet:* every new utility resolves to `var(--color-*)` and every
+alpha wash to `color-mix(in oklab, var(--color-*) N%, transparent)`, `ring-offset-surface-inverse`
+included — so the whole set flips with the attribute. 182 vitest tests, `typecheck`, `lint` and
+`build` green.
+
+*Exit is the developer's:* the score viewer, annotation toolbar and player dock in both themes,
+and the page canvas still white.
+
+*Deliberately left for later, all named elsewhere:* `PdfViewer`'s `mix-blend-color-burn` grain
+(§9.2 — a look-and-decide, and the viewer's ground barely moved), `MiniPlayerBar`'s arbitrary ink
+drop shadow and `LocationPreview`'s warm 64px cast (§4 / Stage 5 — an accent-coloured cast is
+literal on purpose, §2.3).
+
+**Stage 5 — the one-offs** (group E + §4 arbitrary values). Route-by-route sweep; smaller than
+listed, since Stage 4 took the washes that sat inside its own islands. *Exit:* a grep for
+`-white`/`-black` outside the allowlist comes back empty.
 
 **Stage 6 — the premium dark surfaces** (group C). Needs the §9 decision first. *Exit:* the five
 surfaces state their hierarchy the same way in both themes.
@@ -675,8 +737,13 @@ surfaces state their hierarchy the same way in both themes.
   `rg -n '(bg|text|border|ring|fill|stroke|divide)-(white|black)' frontend/src` with an
   allowlist file. Wire it into `npm run lint`. Allowlist so far, each a colour that is correct in
   both themes rather than an unconverted one: the QR card's quiet zone (§6), the PDF page canvas
-  (§6), the two modal scrims (§3.1), `Checkbox`'s tick and `Badge`'s pulse sweep — a specular
-  highlight on an accent fill, the same exception the primary button's shadow already carries.
+  (§6), **four** modal scrims (§3.1 — `ConfirmModal`, `BottomSheet`, plus `PdfViewerModal` and
+  `AnnotationGuide` from Stage 4), `Checkbox`'s tick and `Badge`'s pulse sweep — a specular
+  highlight on an accent fill, the same exception the primary button's shadow already carries —
+  and `AnnotationOverlay`'s **paper-side** literals: the lock badge's disc, the inline mark's
+  `ring-black/10` and the pin's `text-white` / `ring-white/80` over a fixed annotation ink. Those
+  last are on the score, which is white in both themes, so they are the same exception as the
+  canvas they sit on rather than a fifth category.
 - **`theme-color` parity**: `THEME_COLOR` in `shared/theme/themeController.ts` and the media-keyed
   pair in `index.html` both hard-code `--color-ethereal-canvas` per theme — a meta cannot read a
   CSS variable. Change the ground and all three move together, or a seam opens along the top edge

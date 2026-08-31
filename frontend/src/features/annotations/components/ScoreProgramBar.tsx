@@ -82,7 +82,7 @@ export const ScoreProgramBar = ({
     <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 flex justify-center px-4 sm:bottom-28">
       <div
         ref={anchorRef}
-        className="pointer-events-auto relative flex max-w-full items-center gap-1 rounded-full border border-white/10 bg-ethereal-ink/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md"
+        className="pointer-events-auto relative flex max-w-full items-center gap-1 rounded-full border border-line-on-inverse bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md"
         data-pdf-gesture-exempt
       >
         <Button
@@ -91,7 +91,7 @@ export const ScoreProgramBar = ({
           onClick={() => previousPage !== null && goToPage(previousPage)}
           disabled={previousPage === null}
           aria-label={t("score_book.piece_prev", "Poprzedni utwór")}
-          className="h-9 w-9 shrink-0 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-9 w-9 shrink-0 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ChevronLeft size={17} aria-hidden="true" />
         </Button>
@@ -101,8 +101,8 @@ export const ScoreProgramBar = ({
           onClick={() => setIsListOpen((open) => !open)}
           aria-expanded={isListOpen}
           className={cn(
-            "flex min-w-0 items-center gap-2 rounded-full px-3 py-1 transition-colors hover:bg-white/10",
-            isListOpen && "bg-white/15",
+            "flex min-w-0 items-center gap-2 rounded-full px-3 py-1 transition-colors hover:bg-ink-on-inverse/10",
+            isListOpen && "bg-ink-on-inverse/15",
           )}
         >
           <ListMusic
@@ -114,14 +114,14 @@ export const ScoreProgramBar = ({
             <Text
               as="span"
               size="xs"
-              className="block truncate font-medium text-ethereal-marble"
+              className="block truncate font-medium text-ink-on-inverse"
             >
               {current
                 ? current.title
                 : t("score_book.front_matter", "Początek książki")}
             </Text>
             {current && (
-              <Eyebrow as="span" color="parchment-muted" className="block truncate">
+              <Eyebrow as="span" color="ink-on-inverse-muted" className="block truncate">
                 {[current.composer, `${position}/${book.items.length}`]
                   .filter(Boolean)
                   .join(" · ")}
@@ -136,7 +136,7 @@ export const ScoreProgramBar = ({
           onClick={() => nextPage !== null && goToPage(nextPage)}
           disabled={nextPage === null}
           aria-label={t("score_book.piece_next", "Następny utwór")}
-          className="h-9 w-9 shrink-0 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-9 w-9 shrink-0 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ChevronRight size={17} aria-hidden="true" />
         </Button>
@@ -148,10 +148,10 @@ export const ScoreProgramBar = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 6 }}
               transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute bottom-full left-1/2 mb-3 flex max-h-[50vh] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-surface border border-white/10 bg-ethereal-ink/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+              className="absolute bottom-full left-1/2 mb-3 flex max-h-[50vh] w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
             >
-              <div className="shrink-0 border-b border-white/10 px-3 py-2">
-                <Eyebrow color="parchment-muted">
+              <div className="shrink-0 border-b border-line-on-inverse px-3 py-2">
+                <Eyebrow color="ink-on-inverse-muted">
                   {t("score_book.programme", "Program koncertu")}
                 </Eyebrow>
               </div>
@@ -171,12 +171,12 @@ export const ScoreProgramBar = ({
                           "flex w-full items-center gap-2.5 rounded-chip px-2.5 py-2 text-left transition-colors",
                           isActive
                             ? "bg-ethereal-gold/15 text-ethereal-gold"
-                            : "text-ethereal-marble hover:bg-white/10",
+                            : "text-ink-on-inverse hover:bg-ink-on-inverse/10",
                         )}
                       >
                         <Eyebrow
                           as="span"
-                          color={isActive ? "gold" : "parchment-muted"}
+                          color={isActive ? "gold" : "ink-on-inverse-muted"}
                           className="w-5 shrink-0 text-right lining-nums"
                         >
                           {index + 1}
@@ -192,7 +192,7 @@ export const ScoreProgramBar = ({
                           {item.composer && (
                             <Eyebrow
                               as="span"
-                              color="parchment-muted"
+                              color="ink-on-inverse-muted"
                               className="block truncate"
                             >
                               {item.composer}
@@ -200,13 +200,13 @@ export const ScoreProgramBar = ({
                           )}
                         </span>
                         {item.is_encore && (
-                          <Eyebrow as="span" color="parchment-muted" className="shrink-0">
+                          <Eyebrow as="span" color="ink-on-inverse-muted" className="shrink-0">
                             {t("score_book.encore", "Bis")}
                           </Eyebrow>
                         )}
                         <Eyebrow
                           as="span"
-                          color={isActive ? "gold" : "parchment-muted"}
+                          color={isActive ? "gold" : "ink-on-inverse-muted"}
                           className="shrink-0 lining-nums"
                         >
                           {t("pdf_viewer.outline_page", "s. {{page}}", {

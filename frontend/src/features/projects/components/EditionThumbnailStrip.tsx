@@ -110,10 +110,13 @@ export function EditionThumbnailStrip({
                     as="span"
                     size="xs"
                     weight="semibold"
-                    color="alabaster"
                     className={cn(
                       "absolute left-1 top-1 rounded px-1 py-0.5 leading-none",
-                      isStart ? "bg-ethereal-gold" : "bg-ethereal-ink/70",
+                      // Gold holds its hue, so its label holds its darkness; the
+                      // ink chip is a rung and its label rides the ladder with it.
+                      isStart
+                        ? "bg-ethereal-gold text-surface-inverse"
+                        : "bg-ethereal-ink/70 text-ethereal-alabaster",
                     )}
                   >
                     {isStart
@@ -123,7 +126,7 @@ export function EditionThumbnailStrip({
                 )}
                 {isSuggested && !isStart && (
                   <span
-                    className="absolute right-1 top-1 flex items-center gap-0.5 rounded bg-ethereal-gold/90 px-1 py-0.5 text-ethereal-alabaster"
+                    className="absolute right-1 top-1 flex items-center gap-0.5 rounded bg-ethereal-gold/90 px-1 py-0.5 text-surface-inverse"
                     title={t(
                       "projects.score_package.item.thumb_suggested",
                       "AI: tu zaczynają się nuty",

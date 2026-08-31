@@ -53,8 +53,11 @@ export const fieldShellVariants = cva(
           "bg-ethereal-marble/90 border border-ethereal-gold/35 shadow-[inset_0_1px_2px_rgba(22,20,18,0.06)] hover:border-ethereal-gold/55 focus:bg-ethereal-marble focus:border-ethereal-gold/70 focus:ring-ethereal-gold/20",
         solid:
           "bg-ethereal-marble border border-hairline-strong shadow-glass-solid hover:border-ethereal-gold/40 focus:border-ethereal-gold/50 focus:ring-ethereal-gold/20",
-        // For a field sitting ON ink — the practice dock, the viewer chrome.
-        dark: "bg-ethereal-ink/80 backdrop-blur-xl border border-ethereal-gold/20 text-ethereal-alabaster shadow-2xl hover:border-ethereal-gold/40 focus:bg-ethereal-ink focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20",
+        // For a field sitting ON a dark island — the practice dock, the viewer
+        // chrome. The island is dark in BOTH themes, so neither its fill nor
+        // the value typed into it may ride the ladder: `ink` and `alabaster`
+        // would swap places under it and leave the field white-on-white.
+        dark: "bg-surface-inverse/80 backdrop-blur-xl border border-ethereal-gold/20 text-ink-on-inverse shadow-2xl hover:border-ethereal-gold/40 focus:bg-surface-inverse focus:border-ethereal-gold/60 focus:ring-ethereal-gold/20",
         // The base turns the ring on for every variant; without a colour here it
         // would fall back to `currentColor` and draw a 2px ink halo round a
         // field whose whole point is to be almost invisible at rest. The

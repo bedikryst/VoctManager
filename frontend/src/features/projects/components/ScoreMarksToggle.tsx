@@ -50,14 +50,19 @@ export const ScoreMarksToggle = ({
         "shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors",
         "disabled:opacity-60",
         enabled
-          ? "border-ethereal-gold/50 bg-ethereal-gold/25 text-white"
-          : "border-white/10 bg-ethereal-ink/70 text-ethereal-marble hover:bg-ethereal-ink/85",
+          ? "border-ethereal-gold/50 bg-ethereal-gold/25 text-ink-on-inverse"
+          : "border-line-on-inverse bg-surface-inverse/70 text-ink-on-inverse hover:bg-surface-inverse/85",
       )}
     >
       {/* The icon inherits the pill's own colour; the label states its own,
           because `Text` would otherwise paint itself ink-dark on dark glass. */}
       <PencilLine size={16} aria-hidden="true" className="shrink-0" />
-      <Text as="span" size="sm" color="marble" className="whitespace-nowrap leading-none">
+      <Text
+        as="span"
+        size="sm"
+        color="ink-on-inverse"
+        className="whitespace-nowrap leading-none"
+      >
         {label}
       </Text>
     </button>

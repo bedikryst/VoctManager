@@ -132,7 +132,7 @@ export const PdfBottomNav = ({
   return (
     <div className="pointer-events-none absolute bottom-6 left-0 right-0 z-20 flex justify-center pb-[env(safe-area-inset-bottom)] sm:bottom-8">
       <div
-        className="pointer-events-auto flex items-center gap-1 rounded-full bg-ethereal-ink/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-white/10"
+        className="pointer-events-auto flex items-center gap-1 rounded-full bg-surface-inverse/90 p-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md border border-line-on-inverse"
         data-pdf-gesture-exempt
       >
         <Button
@@ -141,14 +141,18 @@ export const PdfBottomNav = ({
           onClick={() => onTurn(-1)}
           disabled={!canTurnBack}
           aria-label={t("pdf_viewer.prev_page", "Previous page")}
-          className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ChevronLeft size={18} aria-hidden="true" />
         </Button>
 
         <div className="flex min-w-[4rem] items-center justify-center px-1">
-          <Text className="text-xs font-medium tabular-nums tracking-wider text-ethereal-marble">
-            {currentPage} <span className="text-white/40">/ {numPages ?? "?"}</span>
+          <Text
+            color="ink-on-inverse"
+            className="text-xs font-medium tabular-nums tracking-wider"
+          >
+            {currentPage}{" "}
+            <span className="text-ink-on-inverse/40">/ {numPages ?? "?"}</span>
           </Text>
         </div>
 
@@ -158,7 +162,7 @@ export const PdfBottomNav = ({
           onClick={() => onTurn(1)}
           disabled={!canTurnForward}
           aria-label={t("pdf_viewer.next_page", "Next page")}
-          className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ChevronRight size={18} aria-hidden="true" />
         </Button>
@@ -171,17 +175,20 @@ export const PdfBottomNav = ({
           onClick={() => onZoomChange(-zoomStep)}
           disabled={zoom <= minZoom}
           aria-label={t("pdf_viewer.zoom_out", "Zoom out")}
-          className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ZoomOut size={18} aria-hidden="true" />
         </Button>
 
         <div
-          className="flex min-w-[4rem] cursor-pointer items-center justify-center px-1 transition-colors hover:text-white"
+          className="flex min-w-[4rem] cursor-pointer items-center justify-center px-1"
           onClick={onResetZoom}
           title={t("pdf_viewer.fit_width", "Fit width")}
         >
-          <Text className="text-xs font-medium tabular-nums tracking-wider text-ethereal-marble">
+          <Text
+            color="ink-on-inverse"
+            className="text-xs font-medium tabular-nums tracking-wider"
+          >
             {zoomPercentage}%
           </Text>
         </div>
@@ -192,7 +199,7 @@ export const PdfBottomNav = ({
           onClick={() => onZoomChange(zoomStep)}
           disabled={zoom >= maxZoom}
           aria-label={t("pdf_viewer.zoom_in", "Zoom in")}
-          className="h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10"
+          className="h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
         >
           <ZoomIn size={18} aria-hidden="true" />
         </Button>
@@ -208,8 +215,8 @@ export const PdfBottomNav = ({
             aria-expanded={isFitPanelOpen}
             title={t("pdf_viewer.fit_label", "Dopasowanie strony")}
             className={cn(
-              "h-10 w-10 rounded-full text-ethereal-marble hover:bg-white/10",
-              isFitPanelOpen && "bg-white/15 text-white",
+              "h-10 w-10 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10",
+              isFitPanelOpen && "bg-ink-on-inverse/15",
             )}
           >
             <FitIcon size={18} aria-hidden="true" />
@@ -222,10 +229,10 @@ export const PdfBottomNav = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 6 }}
                 transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-                className="absolute bottom-full right-0 mb-3 w-52 overflow-hidden rounded-surface border border-white/10 bg-ethereal-ink/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
+                className="absolute bottom-full right-0 mb-3 w-52 overflow-hidden rounded-surface border border-line-on-inverse bg-surface-inverse/95 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-xl"
               >
-                <div className="border-b border-white/10 px-3 py-2">
-                  <Eyebrow color="parchment-muted">
+                <div className="border-b border-line-on-inverse px-3 py-2">
+                  <Eyebrow color="ink-on-inverse-muted">
                     {t("pdf_viewer.fit_label", "Dopasowanie strony")}
                   </Eyebrow>
                 </div>
@@ -245,7 +252,7 @@ export const PdfBottomNav = ({
                             "flex w-full items-center gap-2.5 rounded-chip px-2.5 py-2 text-left transition-colors",
                             isActive
                               ? "bg-ethereal-gold/15 text-ethereal-gold"
-                              : "text-ethereal-marble hover:bg-white/10",
+                              : "text-ink-on-inverse hover:bg-ink-on-inverse/10",
                           )}
                         >
                           <Icon size={15} aria-hidden="true" className="shrink-0" />

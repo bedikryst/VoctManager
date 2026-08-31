@@ -594,7 +594,7 @@ export const PdfViewer = ({
     <PdfImmersiveProvider value={isImmersive}>
     <div
       ref={rootRef}
-      className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-ethereal-ink text-ethereal-marble", className)}
+      className={cn("relative flex min-h-0 h-full w-full flex-1 flex-col overflow-hidden bg-surface-inverse text-ink-on-inverse", className)}
     >
       <div className="pointer-events-none absolute inset-0 bg-noise opacity-[0.02] mix-blend-color-burn" aria-hidden="true" />
 
@@ -793,10 +793,13 @@ export const PdfViewer = ({
             animate={{ opacity: 1, x: "-50%", y: 0 }}
             exit={{ opacity: 0, x: "-50%" }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="pointer-events-none absolute bottom-8 left-1/2 z-30 rounded-full border border-white/10 bg-ethereal-ink/90 px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md"
+            className="pointer-events-none absolute bottom-8 left-1/2 z-30 rounded-full border border-line-on-inverse bg-surface-inverse/90 px-4 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-md"
             data-pdf-gesture-exempt
           >
-            <Text className="text-xs font-medium tabular-nums tracking-wider text-ethereal-marble">
+            <Text
+              color="ink-on-inverse"
+              className="text-xs font-medium tabular-nums tracking-wider"
+            >
               {chip.text}
             </Text>
           </motion.div>

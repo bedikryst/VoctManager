@@ -30,7 +30,7 @@ export const SectionLabel = ({
         {icon}
       </span>
     )}
-    <Eyebrow as="p" color={tone === "dark" ? "marble-muted" : "muted"}>
+    <Eyebrow as="p" color={tone === "dark" ? "ink-on-inverse-muted" : "muted"}>
       {children}
     </Eyebrow>
   </div>

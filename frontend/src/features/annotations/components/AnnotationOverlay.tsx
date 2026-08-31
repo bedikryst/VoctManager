@@ -718,7 +718,10 @@ export const AnnotationOverlay = ({
                 {isPrivate && (
                   <Lock
                     size={9}
-                    className="absolute -right-1 -top-1 rounded-full bg-white p-px text-ethereal-graphite shadow"
+                    // The badge sits ON the mark, which sits on paper — and the
+                    // page is white in both themes. Its glyph therefore holds
+                    // its darkness instead of riding the ladder.
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-px text-surface-inverse/70 shadow"
                     aria-hidden="true"
                   />
                 )}
@@ -743,7 +746,10 @@ export const AnnotationOverlay = ({
                 {isPrivate && (
                   <Lock
                     size={9}
-                    className="absolute -right-1 -top-1 rounded-full bg-white p-px text-ethereal-graphite shadow"
+                    // The badge sits ON the mark, which sits on paper — and the
+                    // page is white in both themes. Its glyph therefore holds
+                    // its darkness instead of riding the ladder.
+                    className="absolute -right-1 -top-1 rounded-full bg-white p-px text-surface-inverse/70 shadow"
                     aria-hidden="true"
                   />
                 )}
@@ -752,7 +758,7 @@ export const AnnotationOverlay = ({
 
             {/* Read-only preview popover for pin notes the user can't edit. */}
             {!modifiable && selectedId === a.id && !inline && (
-              <div className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal">
+              <div className="absolute left-1/2 top-9 z-10 w-48 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-3 text-xs leading-relaxed text-ethereal-ink shadow-glass-ethereal">
                 {payload.text}
               </div>
             )}
@@ -1091,7 +1097,7 @@ const NoteCard = ({
               onSubmit={submit}
               onCancel={onCancel}
               className={cn(
-                "mt-1.5 w-full rounded-nested border border-hairline-strong bg-white px-2.5 py-2 leading-relaxed text-ethereal-ink shadow-glass-ethereal outline-none focus:border-ethereal-gold",
+                "mt-1.5 w-full rounded-nested border border-hairline-strong bg-ethereal-marble px-2.5 py-2 leading-relaxed text-ethereal-ink shadow-glass-ethereal outline-none focus:border-ethereal-gold",
                 FIELD_TEXT_SCALE.xs,
               )}
             />
@@ -1101,7 +1107,11 @@ const NoteCard = ({
 
       <div
         ref={cardRef}
-        className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-white p-2.5 shadow-glass-ethereal"
+        // The card is CONTROLS, not the mark: it rides the ladder like the rest
+        // of the chrome, so on a dark theme it reads as a panel over the page
+        // rather than a second sheet of paper. Only the mark itself — drawn in
+        // the note's own ink, on the white page — stays paper-side.
+        className="absolute z-20 -translate-x-1/2 rounded-nested border border-hairline-strong bg-ethereal-marble p-2.5 shadow-glass-ethereal"
         style={{
           width: NOTE_CARD_WIDTH,
           left: placement.left,
@@ -1127,16 +1137,17 @@ const NoteCard = ({
                   key={phrase}
                   type="button"
                   onClick={() => takePhrase(phrase)}
-                  className="rounded-full bg-ethereal-marble/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-marble"
+                  className="rounded-full bg-ethereal-parchment/60 px-2 py-1 text-[11px] font-medium text-ethereal-graphite transition-colors hover:bg-ethereal-parchment"
                 >
                   {phrase}
                 </button>
               ))}
             </div>
-            {/* Over a strip that fits, this paints white on white and vanishes. */}
+            {/* Over a strip that fits, this paints the card on the card and
+                vanishes — so it has to be the card's own fill, not white. */}
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-l from-white to-transparent"
+              className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-linear-to-l from-ethereal-marble to-transparent"
             />
           </div>
         )}
@@ -1151,8 +1162,8 @@ const NoteCard = ({
               className={cn(
                 "flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors",
                 display === mode
-                  ? "bg-ethereal-ink text-white"
-                  : "bg-ethereal-marble/60 text-ethereal-graphite hover:bg-ethereal-marble",
+                  ? "bg-ethereal-ink text-ethereal-marble"
+                  : "bg-ethereal-parchment/60 text-ethereal-graphite hover:bg-ethereal-parchment",
               )}
             >
               {mode === "inline"
@@ -1203,7 +1214,7 @@ const NoteCard = ({
               type="button"
               onClick={submit}
               disabled={!text.trim()}
-              className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+              className="rounded-md bg-ethereal-ink px-3 py-1 text-xs font-medium text-ethereal-marble disabled:opacity-40"
             >
               {t("common.ok", "OK")}
             </button>

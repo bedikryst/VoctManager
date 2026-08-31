@@ -220,7 +220,7 @@ export const PieceRow = ({
               className={cn(
                 "flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 shadow-glass-solid transition-[transform,background-color] active:scale-95",
                 isThisPiecePlaying
-                  ? "border-ethereal-sage/80 bg-ethereal-sage text-white"
+                  ? "border-ethereal-sage/80 bg-ethereal-sage text-ink-on-inverse"
                   : "border-ethereal-marble bg-ethereal-alabaster hover:bg-ethereal-marble/50",
               )}
             >

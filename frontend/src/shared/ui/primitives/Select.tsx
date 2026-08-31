@@ -171,9 +171,10 @@ export const Select = ({
               strokeWidth={1.5}
               className={cn(
                 "shrink-0",
-                // Graphite disappears into ink; the dark field needs its own.
+                // Graphite disappears into the island; the dark field takes the
+                // ink of the island itself, which holds through the theme swap.
                 variant === "dark"
-                  ? "text-ethereal-alabaster/60"
+                  ? "text-ink-on-inverse/60"
                   : "text-ethereal-graphite/60",
               )}
               aria-hidden="true"

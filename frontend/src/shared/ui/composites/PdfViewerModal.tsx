@@ -153,7 +153,7 @@ export const PdfViewerModal = ({
       asChild
       variant="ghost"
       size="icon"
-      className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
+      className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
     >
       <Link
         to={resolvedFullViewHref}
@@ -177,7 +177,10 @@ export const PdfViewerModal = ({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="fixed inset-0 z-focus-trap bg-ethereal-ink/80 backdrop-blur-md"
+                // A scrim is the absence of light, not a surface: literal black
+                // on both themes, as on `ConfirmModal` / `BottomSheet`. An ink
+                // rung here would invert into a white veil over the score.
+                className="fixed inset-0 z-focus-trap bg-black/80 backdrop-blur-md"
               />
             </Dialog.Overlay>
 
@@ -196,7 +199,7 @@ export const PdfViewerModal = ({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.99 }}
                 transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed inset-0 z-focus-trap flex h-[100dvh] w-[100dvw] flex-col overflow-hidden bg-ethereal-ink outline-none"
+                className="fixed inset-0 z-focus-trap flex h-[100dvh] w-[100dvw] flex-col overflow-hidden bg-surface-inverse outline-none"
               >
                 <PdfViewer
                   fetchBlob={fetchBlob}
@@ -230,15 +233,15 @@ export const PdfViewerModal = ({
                   transition={{ duration: 0.4, ease: "easeOut" }}
                   className="pointer-events-none absolute inset-x-0 top-0 z-focus-trap hidden justify-center px-44 pt-[calc(env(safe-area-inset-top)+0.85rem)] sm:flex"
                 >
-                  <div className="min-w-0 max-w-md rounded-full border border-white/10 bg-ethereal-ink/55 px-4 py-1.5 text-center shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                  <div className="min-w-0 max-w-md rounded-full border border-line-on-inverse bg-surface-inverse/55 px-4 py-1.5 text-center shadow-[0_8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md">
                     <Dialog.Title asChild>
-                      <Heading as="h2" size="sm" className="truncate text-ethereal-marble">
+                      <Heading as="h2" size="sm" color="ink-on-inverse" className="truncate">
                         {title}
                       </Heading>
                     </Dialog.Title>
                     {subtitle ? (
                       <Dialog.Description asChild>
-                        <Text color="parchment-muted" className="truncate text-xs">
+                        <Text color="ink-on-inverse-muted" className="truncate text-xs">
                           {subtitle}
                         </Text>
                       </Dialog.Description>
@@ -271,7 +274,7 @@ export const PdfViewerModal = ({
                         size="icon"
                         onClick={onClose}
                         aria-label={t("common.close_aria", "Close")}
-                        className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10 hover:text-white"
+                        className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
                       >
                         <X size={18} aria-hidden="true" />
                       </Button>

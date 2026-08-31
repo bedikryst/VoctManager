@@ -63,7 +63,7 @@ export const PdfToolbar = ({
             leftIcon={<Maximize2 size={16} aria-hidden="true" />}
             aria-label={t("pdf_viewer.immersive_enter", "Performance mode")}
             title={t("pdf_viewer.immersive_enter", "Performance mode")}
-            className="h-9 gap-2 rounded-full px-3 text-ethereal-marble hover:bg-white/10 hover:text-white"
+            className="h-9 gap-2 rounded-full px-3 text-ink-on-inverse hover:bg-ink-on-inverse/10"
           >
             {t("pdf_viewer.immersive_enter", "Performance mode")}
           </Button>
@@ -75,7 +75,7 @@ export const PdfToolbar = ({
               size="icon"
               onClick={onOpenInBrowser}
               aria-label={t("pdf_viewer.open_browser", "Open in browser")}
-              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
             >
               <Globe size={16} aria-hidden="true" />
             </Button>
@@ -88,7 +88,7 @@ export const PdfToolbar = ({
               onClick={onShare}
               isLoading={isSharing}
               aria-label={t("pdf_viewer.share", "Share")}
-              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
             >
               {!isSharing && <Share2 size={16} aria-hidden="true" />}
             </Button>
@@ -101,7 +101,7 @@ export const PdfToolbar = ({
               onClick={onDownload}
               isLoading={isDownloading}
               aria-label={t("pdf_viewer.download", "Download")}
-              className="h-9 w-9 rounded-full text-ethereal-marble hover:bg-white/10"
+              className="h-9 w-9 rounded-full text-ink-on-inverse hover:bg-ink-on-inverse/10"
             >
               {!isDownloading && <Download size={16} aria-hidden="true" />}
             </Button>

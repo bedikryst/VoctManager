@@ -46,7 +46,7 @@ export const ATTENDANCE_STATUS_META: Record<
   LATE: {
     labelKey: "rehearsals.row.status_late",
     fallback: "Spóźnienie",
-    solid: "bg-ethereal-gold text-ethereal-graphite border-ethereal-gold",
+    solid: "bg-ethereal-gold text-surface-inverse border-ethereal-gold",
     dot: "bg-ethereal-gold",
     Icon: Clock3,
   },

@@ -342,7 +342,7 @@ export const PitchPipe = ({
               className={cn(
                 "flex min-h-11 items-center justify-center rounded-chip border text-sm font-semibold transition-all active:scale-95",
                 isActive
-                  ? "border-ethereal-gold bg-ethereal-gold text-ethereal-graphite shadow-button-primary"
+                  ? "border-ethereal-gold bg-ethereal-gold text-surface-inverse shadow-button-primary"
                   : isTonic
                     ? "border-ethereal-gold/40 bg-ethereal-gold/10 text-ethereal-gold"
                     : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-ink shadow-glass-solid hover:border-ethereal-gold/40",

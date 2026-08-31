@@ -171,7 +171,7 @@ export const VoiceMixerPanel = ({
             className={cn(
               "flex h-12 w-12 shrink-0 items-center justify-center rounded-full border shadow-glass-solid transition-all active:scale-95",
               isLoaded && snapshot.isPlaying
-                ? "border-ethereal-sage/80 bg-ethereal-sage text-white"
+                ? "border-ethereal-sage/80 bg-ethereal-sage text-ink-on-inverse"
                 : "border-ethereal-marble bg-ethereal-alabaster text-ethereal-ink hover:border-ethereal-sage/50",
             )}
           >

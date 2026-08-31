@@ -344,12 +344,15 @@ export default function PiecePage({
                     onClick={() => setOpenEdition(pdfLinks[0])}
                     className="flex items-center gap-3 rounded-xl bg-ethereal-sage px-4 py-3.5 shadow-glass-solid transition-all hover:bg-ethereal-sage/90 active:scale-[0.98]"
                   >
-                    <FileText size={16} className="text-white" aria-hidden="true" />
+                    {/* Sage holds its hue through the theme swap, so the label
+                        on it has to hold its lightness — a rung would invert
+                        underneath a fill that never moved. */}
+                    <FileText size={16} className="text-ink-on-inverse" aria-hidden="true" />
                     <div className="min-w-0 flex-1 text-left">
-                      <Eyebrow color="white" className="block truncate">
+                      <Eyebrow color="ink-on-inverse" className="block truncate">
                         {t("materials.piece.open_score", "Otwórz partyturę")}
                       </Eyebrow>
-                      <Text size="xs" color="parchment-muted" className="mt-0.5 block truncate">
+                      <Text size="xs" color="ink-on-inverse-muted" className="mt-0.5 block truncate">
                         {pdfLinks[0].label}
                       </Text>
                     </div>

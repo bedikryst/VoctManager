@@ -177,7 +177,7 @@ export const RehearsalDock = ({
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t("materials.rehearsal_dock.open_aria", "Otwórz instrumenty próby")}
-          className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-white/10 bg-ethereal-ink/70 px-3.5 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:bg-ethereal-ink/85"
+          className="pointer-events-auto flex h-11 items-center gap-1.5 rounded-full border border-line-on-inverse bg-surface-inverse/70 px-3.5 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-colors hover:bg-surface-inverse/85"
         >
           <Music4 size={17} aria-hidden="true" />
           <span className="text-sm font-medium">
@@ -191,8 +191,8 @@ export const RehearsalDock = ({
 
   return (
     <div className="pointer-events-none absolute bottom-20 left-3 z-10 sm:bottom-24 sm:left-6">
-      <div className="pointer-events-auto flex w-[19.5rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-3xl border border-white/10 bg-ethereal-ink/85 text-ethereal-marble shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-        <header className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="pointer-events-auto flex w-[19.5rem] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded-3xl border border-line-on-inverse bg-surface-inverse/85 text-ink-on-inverse shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+        <header className="flex items-center justify-between border-b border-line-on-inverse px-4 py-3">
           <Text as="span" weight="semibold" className="flex items-center gap-2">
             <Music4 size={15} aria-hidden="true" />
             {t("materials.rehearsal_dock.title", "Instrumenty próby")}
@@ -205,7 +205,7 @@ export const RehearsalDock = ({
               setEditing(false);
             }}
             aria-label={t("common.close_aria", "Zamknij")}
-            className="rounded-full p-1 text-ethereal-marble/70 hover:bg-white/10 hover:text-white"
+            className="rounded-full p-1 text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
           >
             <ChevronDown size={16} aria-hidden="true" />
           </button>
@@ -223,7 +223,7 @@ export const RehearsalDock = ({
                   type="button"
                   onClick={beginEdit}
                   aria-label={t("materials.rehearsal_dock.edit_pitches", "Edytuj dźwięki startowe")}
-                  className="rounded-full p-1 text-ethereal-marble/60 hover:bg-white/10 hover:text-white"
+                  className="rounded-full p-1 text-ink-on-inverse/60 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
                 >
                   <Pencil size={13} aria-hidden="true" />
                 </button>
@@ -246,7 +246,7 @@ export const RehearsalDock = ({
                       placeholder={t("materials.rehearsal_dock.voice_placeholder", "Głos")}
                       aria-label={t("materials.rehearsal_dock.voice_placeholder", "Głos")}
                       className={cn(
-                        "h-8 w-16 rounded-lg border border-white/15 bg-white/5 px-2 text-ethereal-marble outline-none placeholder:text-ethereal-marble/30 focus:border-ethereal-gold/50",
+                        "h-8 w-16 rounded-lg border border-ink-on-inverse/15 bg-ink-on-inverse/5 px-2 text-ink-on-inverse outline-none placeholder:text-ink-on-inverse/30 focus:border-ethereal-gold/50",
                         FIELD_TEXT_SCALE.xs,
                       )}
                     />
@@ -284,7 +284,7 @@ export const RehearsalDock = ({
                       type="button"
                       onClick={() => setDraft((d) => d.filter((_, i) => i !== index))}
                       aria-label={t("materials.rehearsal_dock.remove_voice", "Usuń głos")}
-                      className="rounded-full p-1 text-ethereal-marble/50 hover:text-ethereal-crimson"
+                      className="rounded-full p-1 text-ink-on-inverse/50 hover:text-ethereal-crimson"
                     >
                       <X size={14} aria-hidden="true" />
                     </button>
@@ -297,7 +297,7 @@ export const RehearsalDock = ({
                     onClick={() =>
                       setDraft((d) => [...d, { voice: "", note: 9, octave: 4 }])
                     }
-                    className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-ethereal-marble/70 hover:bg-white/10 hover:text-white"
+                    className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium text-ink-on-inverse/70 hover:bg-ink-on-inverse/10 hover:text-ink-on-inverse"
                   >
                     <Plus size={12} aria-hidden="true" />
                     {t("materials.rehearsal_dock.add_voice", "Dodaj głos")}
@@ -306,7 +306,7 @@ export const RehearsalDock = ({
                     <button
                       type="button"
                       onClick={() => setEditing(false)}
-                      className="rounded-full px-2.5 py-1 text-[11px] font-medium text-ethereal-marble/70 hover:bg-white/10"
+                      className="rounded-full px-2.5 py-1 text-[11px] font-medium text-ink-on-inverse/70 hover:bg-ink-on-inverse/10"
                     >
                       {t("common.actions.cancel", "Anuluj")}
                     </button>
@@ -314,7 +314,7 @@ export const RehearsalDock = ({
                       type="button"
                       onClick={saveDraft}
                       disabled={updatePitches.isPending}
-                      className="flex items-center gap-1 rounded-full bg-ethereal-gold/90 px-3 py-1 text-[11px] font-semibold text-ethereal-ink transition-colors hover:bg-ethereal-gold disabled:opacity-50"
+                      className="flex items-center gap-1 rounded-full bg-ethereal-gold/90 px-3 py-1 text-[11px] font-semibold text-surface-inverse transition-colors hover:bg-ethereal-gold disabled:opacity-50"
                     >
                       <Check size={12} aria-hidden="true" />
                       {t("common.actions.save", "Zapisz")}
@@ -336,8 +336,8 @@ export const RehearsalDock = ({
                       className={cn(
                         "flex h-8 items-center gap-1 rounded-lg border px-2 text-xs font-medium transition-colors",
                         playing === index
-                          ? "border-ethereal-gold bg-ethereal-gold text-ethereal-ink"
-                          : "border-white/15 bg-white/5 text-ethereal-marble hover:border-ethereal-gold/50",
+                          ? "border-ethereal-gold bg-ethereal-gold text-surface-inverse"
+                          : "border-ink-on-inverse/15 bg-ink-on-inverse/5 text-ink-on-inverse hover:border-ethereal-gold/50",
                       )}
                     >
                       <span className="opacity-70">{pitch.voice}</span>
@@ -351,8 +351,8 @@ export const RehearsalDock = ({
                   className={cn(
                     "flex h-9 w-full items-center justify-center gap-1.5 rounded-xl text-xs font-semibold transition-colors",
                     playing === "seq"
-                      ? "bg-white/15 text-white"
-                      : "bg-ethereal-gold/90 text-ethereal-ink hover:bg-ethereal-gold",
+                      ? "bg-ink-on-inverse/15 text-ink-on-inverse"
+                      : "bg-ethereal-gold/90 text-surface-inverse hover:bg-ethereal-gold",
                   )}
                 >
                   {playing === "seq" ? (
@@ -382,8 +382,8 @@ export const RehearsalDock = ({
                     className={cn(
                       "flex h-8 w-fit items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors",
                       playing === 0
-                        ? "border-ethereal-gold bg-ethereal-gold text-ethereal-ink"
-                        : "border-white/15 bg-white/5 text-ethereal-marble hover:border-ethereal-gold/50",
+                        ? "border-ethereal-gold bg-ethereal-gold text-surface-inverse"
+                        : "border-ink-on-inverse/15 bg-ink-on-inverse/5 text-ink-on-inverse hover:border-ethereal-gold/50",
                     )}
                   >
                     {t("materials.rehearsal_dock.tonic", "Tonika: {{note}}", {
@@ -395,13 +395,13 @@ export const RehearsalDock = ({
                   <button
                     type="button"
                     onClick={beginEdit}
-                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/20 text-xs font-medium text-ethereal-marble/70 transition-colors hover:border-ethereal-gold/50 hover:text-ethereal-marble"
+                    className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-ink-on-inverse/20 text-xs font-medium text-ink-on-inverse/70 transition-colors hover:border-ethereal-gold/50 hover:text-ink-on-inverse"
                   >
                     <Plus size={13} aria-hidden="true" />
                     {t("materials.rehearsal_dock.set_pitches", "Ustaw dźwięki startowe")}
                   </button>
                 ) : (
-                  <p className="text-xs text-ethereal-marble/50">
+                  <p className="text-xs text-ink-on-inverse/50">
                     {t("materials.rehearsal_dock.no_pitches", "Brak dźwięków startowych.")}
                   </p>
                 )}
@@ -419,7 +419,7 @@ export const RehearsalDock = ({
                 <button
                   type="button"
                   onClick={handleLoadAndPlay}
-                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-white/10 text-xs font-semibold text-ethereal-marble transition-colors hover:bg-white/15"
+                  className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-ink-on-inverse/10 text-xs font-semibold text-ink-on-inverse transition-colors hover:bg-ink-on-inverse/15"
                 >
                   <Headphones size={13} aria-hidden="true" />
                   {t("materials.rehearsal_dock.load_play", "Odtwórz nagrania")}
@@ -435,7 +435,7 @@ export const RehearsalDock = ({
                           ? t("materials.player.pause", "Pauza")
                           : t("materials.player.play", "Odtwarzaj")
                       }
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ethereal-gold/90 text-ethereal-ink transition-colors hover:bg-ethereal-gold"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ethereal-gold/90 text-surface-inverse transition-colors hover:bg-ethereal-gold"
                     >
                       {snapshot.isPlaying ? (
                         <Pause size={15} aria-hidden="true" />
@@ -453,7 +453,7 @@ export const RehearsalDock = ({
                       aria-label={t("materials.player.seek", "Przewiń")}
                       className="h-1 w-full accent-ethereal-gold"
                     />
-                    <span className="shrink-0 text-[10px] tabular-nums text-ethereal-marble/60">
+                    <span className="shrink-0 text-[10px] tabular-nums text-ink-on-inverse/60">
                       {formatPlayerTime(snapshot.position)} / {formatPlayerTime(snapshot.duration)}
                     </span>
                   </div>
@@ -481,7 +481,7 @@ export const RehearsalDock = ({
                             "flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border text-[10px] font-medium transition-colors",
                             active
                               ? "border-ethereal-gold/50 bg-ethereal-gold/15 text-ethereal-gold"
-                              : "border-white/10 bg-white/5 text-ethereal-marble/80 hover:border-white/25",
+                              : "border-line-on-inverse bg-ink-on-inverse/5 text-ink-on-inverse/80 hover:border-ink-on-inverse/25",
                             blocked && "opacity-40",
                           )}
                         >
