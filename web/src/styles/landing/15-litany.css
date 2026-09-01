@@ -1,0 +1,268 @@
+/**
+ * @file 15-litany.css
+ * @description The plate of names (components/landing/LitanySection) — movement I's inscription
+ *  over the night nave. Surfaces only; the composition's reasoning lives in the component header.
+ *
+ *  Three things this sheet must not be tempted into. The names are CINZEL AT RUBRIC SIZE and the
+ *  ceiling is the site's (base.css: never above ~16px — Cinzel as a headline face is the
+ *  movie-poster cliché, and it is a cliché at 40px on a dark photograph most of all). The plate
+ *  FLOWS, so an era that grows wraps one more line instead of needing a column grid re-fitted.
+ *  And the room stays the one that was already here: the first cut to night, the breath after the
+ *  manifest, and ONE pointer gesture — the readout, which replaced a cursor-tracked lamp rather
+ *  than joining it. Nothing in this file may add a second.
+ * @architecture Astro islands 2026
+ * @module app/styles/marketing-landing/litany
+ */
+
+  /* ── The room ─────────────────────────────────────────────────────────────────────────
+     Unchanged from the section that stood here: the interlude above is the threshold INTO this
+     ground, so the tonal cut belongs to the pair and cannot be tuned from one side. */
+  .litany {
+    position: relative;
+    min-height: 96svh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    padding: clamp(96px, 12vh, 160px) 0;
+    background: var(--dark);
+    color: var(--paper);
+    /* Veil above the section scrim (`::after`, z-auto) and below the plate (z1, and later in
+       DOM order, so it wins the tie). The nave is lit; the inscription over it is inked. */
+    --veil-z: 1;
+    /* Section-scale, so the veil's trigger fires with only a bottom strip of the photograph on
+       screen; the reader is not looking at the nave until roughly a second later. */
+    --veil-delay: 0.6s;
+    /* One hairline value for the bands, so the ruled state and the drawn rule cannot drift. */
+    --litany-line: rgba(244, 241, 233, 0.16);
+  }
+
+  /* Geometry + parallax owned by <BleedImage>; landing keeps only the sacred dimming. */
+  .litany .bleed img {
+    filter: saturate(0.72) contrast(1.08) brightness(0.64);
+  }
+
+  .litany::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 42%, transparent 0, rgba(8, 8, 7, 0.2) 26rem, rgba(8, 8, 7, 0.82) 70rem),
+      linear-gradient(180deg, rgba(8, 8, 7, 0.64), rgba(8, 8, 7, 0.18) 48%, rgba(8, 8, 7, 0.78));
+    pointer-events: none;
+  }
+
+  /* ── The plate ────────────────────────────────────────────────────────────────────────
+     Left-hung, not centred: an index hangs from a margin, and the bands' ruled heads need a
+     datum to start from. The measure is the one the quote before it kept. */
+  .litany-plate {
+    position: relative;
+    z-index: 1;
+    width: min(980px, calc(100% - 56px));
+  }
+
+  .litany-head {
+    margin-bottom: clamp(38px, 5vh, 62px);
+  }
+
+  /* No rubric above it any more: the head is one Latin word and the plate is what it introduces. */
+  .litany-title {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 300;
+    font-size: clamp(30px, 4vw, 52px);
+    line-height: 1.04;
+  }
+
+  /* ── A band ───────────────────────────────────────────────────────────────────────────
+     The hairline is the band's own top border — a rule the layout carries, not one invented to
+     have something to draw — and it is top-anchored, so the lead register draws it where the
+     trigger fired rather than a third of a screen below. */
+  .litany-band {
+    border-top: 1px solid var(--litany-line);
+    padding: clamp(16px, 2vh, 24px) 0 clamp(20px, 2.6vh, 32px);
+  }
+
+  html.voct-motion .litany-band.reveal-rule {
+    border-top-color: transparent;
+    --rule-ink: var(--litany-line);
+  }
+
+  /* Two voices on one line, the site's standing rubric shape: the era in the stone's own face,
+     its span as the gloss reading it aloud. Contrast is face, case and colour at once, which is
+     what keeps it legible where a size step alone would not be. */
+  .litany-band-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 14px;
+    margin-bottom: clamp(12px, 1.6vh, 18px);
+  }
+
+  .litany-era {
+    font-family: var(--capitalis);
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--candle);
+  }
+
+  .litany-span {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    color: rgba(244, 241, 233, 0.48);
+  }
+
+  /* Positioned so the band's readout hangs from the NAMES rather than from the band: the band's
+     box includes its head and its padding, and an answer measured from either of those would sit
+     at a different distance under a one-line era than under a three-line one. */
+  .litany-names {
+    position: relative;
+    margin: 0;
+  }
+
+  /* Inscriptional capitals. `text-transform` is doing real work rather than restating the face:
+     Cinzel HAS NO LOWERCASE and maps lowercase codepoints to SMALL capitals, so without it a
+     surname sets as caps-and-small-caps — the book-index register, correct on parchment and
+     wrong on a stone wall, and visibly wrong on the two-word names ("Vaughan Williams") where
+     two cap heights would meet mid-name. */
+  .litany-name {
+    font-family: var(--capitalis);
+    font-size: clamp(13px, 1.15vw, 15px);
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    line-height: 2.05;
+    text-transform: uppercase;
+    color: rgba(244, 241, 233, 0.87);
+  }
+
+  /* The interpunct binds the row the way an inscription's does. It is CSS rather than markup so
+     a name copies out of the page as a name; it is allowed to fall at a line end, because that
+     is what carries the eye across the wrap. */
+  .litany-name:not(:last-child)::after {
+    content: "·";
+    margin: 0 0.5em 0 0.62em;
+    color: rgba(198, 164, 91, 0.5);
+    letter-spacing: 0;
+  }
+
+  /* The name approached turns candle — the near end of the room's one pointer gesture, whose far
+     end is the readout below. Gold marks WHICH name, paper prints WHERE, so the accent is spent
+     once and on the thing under the pointer. Colour only: a weight or a tracking change here
+     re-flows forty-three names and the whole plate shifts under the cursor. */
+  @media (hover: hover) and (pointer: fine) {
+    /* The band's foot opens only where the readout exists, so a phone is not given sixteen pixels
+       of air per band for an answer it can never ask for. 36px holds 10px of lead, an 11px line
+       at 1.5 and ~9px of clearance before the next band's rule; below that the answer touches it. */
+    .litany-band {
+      padding-bottom: clamp(36px, 4vh, 46px);
+    }
+
+    .litany-name {
+      transition: color 0.3s var(--ease);
+    }
+
+    .litany-name:hover {
+      color: #e8cf90;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .litany-name {
+        transition: none;
+      }
+    }
+  }
+
+  /* ── The readout ──────────────────────────────────────────────────────────────────────
+     One slot PER BAND, hanging under that band's names and written by scripts/landing.ts from
+     the hovered name's `data-at`. A single slot in the plate's foot was the first shape and it
+     failed on distance rather than on construction: this plate is ~490px tall, so an answer in
+     its foot stands up to 415px under the name being pointed at, and an affordance that far from
+     its trigger is one the reader never discovers. Four slots keep one relation to every name.
+
+     It reserves nothing — `top: 100%` puts it in the band's own bottom padding — so the plate at
+     rest is the composition without it. It is an apparition, not a page: nothing enters from zero
+     on a surface the reader is already reading, and this one does not exist until the pointer
+     asks for it (styles/registers.css, rule 1).
+
+     `nowrap` is a guard with room to spare: the longest answer in the catalogue (Pärt, three
+     evenings) sets ~500px against a plate that is 585px at the narrowest measure a fine pointer
+     ever meets. A fourth evening on one name is the first thing that would test it, and the
+     answer then is a shorter line, never a truncation — a half-printed title names nothing. */
+  .litany-readout {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    white-space: nowrap;
+    color: rgba(244, 241, 233, 0.72);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.32s var(--ease);
+  }
+
+  .litany-readout.is-on {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .litany-readout {
+      transition: none;
+    }
+  }
+
+  /* Controls stay out of every register, so this link never half-inks. Candle measures ~8:1 on
+     this ground, which is the palette where the accent is a colour rather than a whisper. The
+     last band already opens its own foot for the readout on a fine pointer, so this margin is the
+     plate's closing space and nothing else has to be added to it. */
+  .litany-more {
+    margin: clamp(26px, 3.4vh, 40px) 0 0;
+  }
+
+  .litany-more-link {
+    font-family: var(--capitalis);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--candle);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(198, 164, 91, 0.32);
+    padding-bottom: 3px;
+    transition: border-color 0.4s var(--ease), color 0.4s var(--ease);
+  }
+
+  .litany-more-link:hover,
+  .litany-more-link:focus-visible {
+    color: #e8cf90;
+    border-bottom-color: rgba(232, 207, 144, 0.75);
+  }
+
+  /* ── Phone ────────────────────────────────────────────────────────────────────────────
+     The plate is the one object here that grows with the catalogue, and on a narrow measure an
+     era of twenty names wraps to six lines. So the room's floor stays a floor (min-height) and
+     the type steps down rather than the plate being clipped or scrolled. */
+  @media (max-width: 640px) {
+    .litany {
+      padding: clamp(72px, 10vh, 120px) 0;
+    }
+
+    .litany-plate {
+      width: calc(100% - 40px);
+    }
+
+    .litany-name {
+      font-size: 12.5px;
+      line-height: 1.95;
+      letter-spacing: 0.07em;
+    }
+
+    .litany-name:not(:last-child)::after {
+      margin: 0 0.38em 0 0.5em;
+    }
+  }

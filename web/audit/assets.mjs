@@ -39,7 +39,8 @@ const BRIGHT_PERCENTILE = 0.97;
 
 /** Below this many sRGB levels the lift is not findable on screen. The bar sits between the two
  *  hand measurements that bracket it: `.ensemble` at 27 does not clear (raising the alpha to
- *  ~0.78 is what it would take, which breaks a louder rule), `.image-rite` at 46 does. */
+ *  ~0.78 is what it would take, which breaks a louder rule), the night nave `.litany` stands on
+ *  (chor-spot) at 46 does. */
 const VISIBLE_DELTA = 35;
 
 const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);

@@ -1,0 +1,168 @@
+---
+/**
+ * @file LitanySection.astro
+ * @description The plate of names — the landing's one sight of the repertoire, set as an
+ *  inscription over the full-bleed night nave (<BleedImage>, parallax). Four ruled bands, one
+ *  per era of the `repertoire` catalogue, each flowing its composers' surnames across the
+ *  measure; the catalogue itself (forenames, dates, works) is one link away at
+ *  /koncerty#repertuar. Names come from lib/litany, never from markup.
+ *
+ *  THE ROOM IS THE OLD ONE and its three jobs are why it survived the section that used to
+ *  stand here: it is the page's first cut from parchment to night (the interlude above is the
+ *  threshold INTO it), it is a breath after the manifest, and it owns the page's one pointer
+ *  gesture. What changed is the tenant — a photograph and one sentence about light, where the
+ *  sentence said what the photograph already showed.
+ *
+ *  ONE POINTER MECHANIC, AND IT IS NOW THE READOUT. A cursor-tracked lamp stood here first and
+ *  is gone: it was built to rake an empty photograph, and once the plate arrived it was light
+ *  falling on stone beside forty-three names that could not answer. Approaching a name lights it
+ *  and prints, in a slot under its own band, the evenings it sounded at. The room still holds
+ *  exactly one gesture — anything else reacting to the pointer here would be a second mechanic
+ *  in one room, which is what the lamp was already becoming.
+ *
+ *  THE READOUT IS AN AFFORDANCE, NOT THE PLATE'S CONTENT. It is off on coarse pointers, so the
+ *  inscription is authored to read with nothing at all — the same contract the lamp kept, and
+ *  the reason it can be spent without loss. Proximity-to-viewport-centre was the obvious touch
+ *  substitute and does not survive the arithmetic: the names FLOW, so a line of them shares one
+ *  vertical centre and the choice within a line is arbitrary, which makes the slot change
+ *  roughly once per 24px of scroll with no relation to what the reader is reading. The Imagines
+ *  rail can print a static readout per panel because one panel fills the screen; a wall of
+ *  wrapped names has no such unit.
+ *
+ *  AND TAP IS SETTLED THE SAME WAY — it was the one remaining candidate and it is refused, so
+ *  that the paragraph above is not read as a brief. The blocking argument is not the 44px target
+ *  a 24px leading cannot hold; it is that THE GESTURE'S FEEDBACK IS UNDER THE FINGER. A hover
+ *  that lands on the wrong name corrects itself, because the gold is at the pointer; a tap that
+ *  lands on the wrong name of forty-three in a flowing wall covers the only signal that says
+ *  which one answered, and the answer prints in the band's foot, which the reader is not looking
+ *  at. A mis-tap here is silent and returns a confident wrong evening — the same failure mode as
+ *  proximity, arrived at by a different route. The reasoning is filed in
+ *  docs/web-landing-guardrails §2; touch is not short of this material either, and that is the
+ *  half of it worth keeping in mind: the register one screen down prints the same join
+ *  TRANSPOSED — every evening's full programme, composer by composer, in a native <details> —
+ *  so the readout is a fine pointer's shortcut across an index the page already publishes in the
+ *  form a phone can read.
+ *
+ *  NO NUMERALS IN THE READOUT. The register's I–V is a numbering the reader has not met yet —
+ *  it stands two movements below — and MovementSpine is printing `I · Lumen Christi` at the
+ *  right edge of this very screen. Two roman indices counting different things within one
+ *  viewport is exactly what cost the manifest its stanza numerals (guardrails §2).
+ *
+ *  ONE REGISTER NODE PER BAND, and that is arithmetic rather than taste: the landing paces
+ *  entrances through a shared 220ms onset queue (scripts/reveal.ts), so 43 sibling nodes would
+ *  saturate it, drop to the 70ms floor and run a ~3.3s tail — a screen and a half of scroll,
+ *  entering in the near-unison the queue exists to prevent. Four bands is 660ms. The names
+ *  inside carry no register; the band's ink covers them.
+ * @architecture Astro islands 2026
+ * @module components/landing/LitanySection
+ */
+import { getCollection } from "astro:content";
+import BleedImage from "../BleedImage.astro";
+import { bleedPair } from "../../lib/photos";
+import { PATHS } from "../../data/landing/paths";
+import { litanyBands } from "../../lib/litany";
+
+/** What the slot prints for a catalogued composer none of the register's programmes records —
+ *  five of the forty-three today (Josquin, Händel, Mozart, Frisina, Kusz), most likely sung at
+ *  the Bobola liturgy, whose `program` the collection does not carry. It is a positive statement
+ *  and true of every name here; read against the thirty-eight that name an evening it says
+ *  exactly what it means, which "no evening on record" would have to say by negation. */
+const IN_CATALOGUE = "W repertuarze";
+
+/** What the slot prints for one name. */
+const readout = (at: readonly string[]): string => (at.length > 0 ? at.join(" · ") : IN_CATALOGUE);
+
+const nave = bleedPair("chor-spot");
+const concerts = new Map((await getCollection("concerts")).map((entry) => [entry.id, entry.data] as const));
+// The readout may only name a night the page itself prints, so the evenings come from the
+// register's own entries rather than the collection — the same contract the Imagines band keeps,
+// and it is what keeps the Bobola liturgy out of a landing that deliberately does not number it
+// (docs/web-landing-guardrails §1).
+const evenings = PATHS.map((path) => ({
+  title: path.title,
+  composers: (concerts.get(path.concertId)?.program ?? []).map((item) => item.composer),
+}));
+const bands = litanyBands(await getCollection("repertoire"), evenings);
+---
+
+<section class="litany" id="litania" aria-labelledby="litania-head">
+  <BleedImage desktop={nave.desktop} mobile={nave.mobile} alt="" position="center 42%" />
+  {/* Two registers in one section, which is the point of having registers: the nave is LIT
+      (the veil lifts off the photograph) while the inscription over it is INKED. Sits above
+      the section scrim and below the plate — see --veil-z in the section's CSS. */}
+  <span class="reveal-light" aria-hidden="true"></span>
+
+  <div class="litany-plate">
+    {/* ONE VOICE, AND IT IS THE LATIN. The head used to name the room in Latin at rubric size and
+        then say the same thing in Polish at display size — "Repertorium" over "Kogo śpiewamy",
+        with four bands of composer surnames underneath already answering it. That is the page's
+        own tic in its purest form (docs/web-landing-guardrails §1: a model explains its metaphor
+        in the next sentence, an editor states it and stops), and a heading is the worst place to
+        spend it, because the names are the display element in this room. The word is transparent
+        in Polish, so nothing is lost by not translating it.
+
+        Serif rather than capitalis: Cinzel is capped at ~16px site-wide (base.css), so Latin at
+        display size can only be the book face. It carries the section's accessible name through
+        `aria-labelledby` instead of an `aria-label` repeating it a second time. */}
+    <div class="litany-head reveal">
+      <h2 class="litany-title" id="litania-head" lang="la">Repertorium</h2>
+    </div>
+
+    {/* The bands are wrapped so the readout's controller has one root to delegate from and one
+        edge to clear the slot on. It adds no box of its own and no register — the bands still
+        carry theirs. */}
+    <div class="litany-bands">
+      {
+        bands.map((band) => (
+          <div class="litany-band reveal reveal-rule">
+            <div class="litany-band-head">
+              <span class="litany-era">{band.title}</span>
+              <span class="litany-span">{band.span}</span>
+            </div>
+            {/* Flowing, never columned. An inscription wraps to its measure and binds its names
+                with interpuncts; columns would have to be re-fitted every time an era grows, and
+                the longest name in the catalogue ("Palestrina, Giovanni Pierluigi da" — 33
+                characters before it is reduced to a surname) already overruns a three-column
+                grid at this measure. */}
+            {/* `<wbr>` IS WHAT LETS THE ROW WRAP AT ALL, and without it Współczesność runs its
+                twenty names off the measure in one unbreakable line. Neither generated content
+                nor a margin is a break opportunity, so the interpunct — a `::after` with margins
+                — offers none, and Astro collapses the whitespace between siblings, so the markup
+                offers none either; the only names that ever wrapped were the two carrying a space
+                of their own ("Vaughan Williams"). A word space would work and is the wrong shape
+                twice: it widens the gap after every interpunct, and it breaks BEFORE the mark, so
+                a wrapped line would open on a dot. `<wbr>` has no width and stands after the
+                span, which puts the interpunct at the line end — where the sheet says it belongs,
+                carrying the eye across the wrap.
+
+                The readout rides in a `data-` attribute for the reason the interpunct is CSS: so
+                that a name copies out of the page as a name. */}
+            <p class="litany-names">
+              {band.names.map((name) => (
+                <span class="litany-name" data-at={readout(name.at)}>{name.surname}</span><wbr />
+              ))}
+              {/* THE SLOT BELONGS TO THE BAND, not to the plate, and that is a correction made
+                  from a screenshot. One slot in the plate's foot is what the spec asked for, and
+                  on a 490px plate it puts the answer up to 415px below the name the reader is
+                  pointing at — far enough that they never learn it is there. The Imagines foot
+                  works because that plate is 230px tall. Four slots print the answer in the same
+                  place relative to every name, which is the property that makes an affordance
+                  learnable. Absolute, so it reserves nothing and appears in air the band's own
+                  padding already carries. */}
+              <span class="litany-readout" aria-hidden="true"></span>
+            </p>
+          </div>
+        ))
+      }
+    </div>
+
+    {/* Controls stay out of every register: a half-ink link is a link you are not sure you
+        may follow. It names its destination and stops — "Pełny katalog: utwory i daty" itemised
+        what the reader would find there, which is the head's old fault in the foot's voice. */}
+    <p class="litany-more">
+      <a class="litany-more-link" href="/koncerty#repertuar">
+        Pełny repertuar →
+      </a>
+    </p>
+  </div>
+</section>

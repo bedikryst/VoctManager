@@ -87,6 +87,34 @@ it; the component had none). The section is a `.reveal-cue` now. **Anything whos
 moment must be triggered by arrival, not by bind** — and if a comment claims an observer drives
 something, grep for the class before trusting it.
 
+**The litany's readout stays a FINE-POINTER affordance. Both touch substitutes are dead, and the
+second one is the general rule.** The plate of names (`LitanySection`) lights the name under the
+pointer and prints, in that name's own band, the evenings it sounded at. It is off on
+`pointer: coarse`, which looks like an obvious gap on a mobile-first site and is not one.
+
+*Proximity to the viewport centre* fails on the plate's own geometry: the names **flow**, so a
+whole line of them shares one vertical centre and the choice within a line is arbitrary — the slot
+would change roughly once per 24px of scroll with no relation to what the reader is reading. The
+Imagines rail can print a static readout per panel because one panel fills the screen; a wall of
+wrapped names has no such unit.
+
+*Tap* fails on something worth carrying to every other hover mechanic on this site: **the
+gesture's feedback is under the finger.** The signal that says which name answered is the name
+turning gold, at the pointer. A hover landing on the wrong name of forty-three corrects itself
+instantly; a tap covers the only correction available, and the answer prints in the band's foot,
+which the reader is not looking at — so a mis-tap is silent and returns a *confident wrong
+evening*. The target arithmetic says the same thing more cheaply (12.5px names on a 24px leading
+give a ~15px inline box; opening it to 44px turns an inscription into a list), but the feedback
+argument is the one that generalises. **Before giving a hover mechanic a touch equivalent, ask
+where its feedback lands. If it lands at the pointer, the finger is standing on it.**
+
+And touch is not short of this material, which is what makes the refusal affordable rather than a
+loss: the register one screen below the plate prints the same join **transposed** — every
+evening's full programme, composer by composer, in a native `<details>` that needs no pointer at
+all. The readout is a fine pointer's shortcut across an index the page already publishes in the
+form a phone can read. (`/koncerty#repertuar` is the catalogue and prints works and dates, not
+evenings, so it is not the second home — the register on the landing is.)
+
 **The mark is a filled outline (`public/voct-mark.svg`), not centerline strokes — and a
 centerline wireframe of the V is a DIFFERENT OBJECT.** A real vector exists since 2026-07
 (the preloader rite masks it), but neither draw technique
@@ -867,6 +895,26 @@ draw *after* the rows it opens). One trigger line for every register is a correc
 Remediation is sequenced in `docs/web-reveal-remediation.md` — read that before retuning any
 timing here, and note its `Rejected` section (left→right on body copy, and line-by-line reveals)
 before proposing either.
+
+**The lead register makes every ruled node a CONTAINING BLOCK, and that reaches things which have
+nothing to do with motion.** `.reveal-rule` / `-v` carry `position: relative` so the drawn hairline
+has something to be absolute against (`registers.css`), which means any absolutely positioned child
+of a ruled element — a readout, a badge, a hanging note — resolves against THAT element and not
+against the wrapper it was authored for. The litany's readout was anchored to the plate's band
+wrapper, `top: 100%`, and printed itself over the next band's head instead, because each band is
+ruled. Nothing in the source says `position: relative`; it arrives with the register. Before
+positioning anything inside a section that inks and rules, check which of its ancestors wear a
+register, and anchor to a node that carries none.
+
+**A row of items joined by a CSS separator has nowhere to break.** Astro collapses the whitespace
+between siblings emitted from a `.map()`, and neither generated content nor a margin is a line-break
+opportunity — so a `::after { content: "·" }` binding a flowing list produces one unbreakable line
+that runs off the measure, and the only items that ever wrap are the ones carrying a space of their
+own. The litany's plate hit this the moment an era grew past the measure (twenty names in
+Współczesność), and it looks like a wrap bug when it is the absence of any point to wrap at. A word
+space fixes it in the wrong shape twice: it widens the gap after every separator, and it breaks
+BEFORE the mark, so the wrapped line opens on a dot. `<wbr>` after each item has no width and puts
+the separator at the line end, which is where a mark that carries the eye across a wrap belongs.
 
 **Ten of the rules in this section are now enforced at build time** (`web/audit/`, documented in
 `docs/web-register-audit.md`): the transition collision in both directions, a page rule pinning the

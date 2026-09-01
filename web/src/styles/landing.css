@@ -10,7 +10,7 @@
 
 @import "./landing/01-foundation.css"; /* header, tokens, preloader, chrome, threshold, brand glyph */
 @import "./landing/02-hero-sections.css"; /* hero, CTA links, section/support/intro primitives */
-@import "./landing/03-manifest-rite.css"; /* manifest + image-rite (light) */
+@import "./landing/03-manifest-rite.css"; /* manifest (the light sweep; filename predates the split) */
 @import "./landing/04-rooms-interludes.css"; /* director, ensemble, path, final-support (aether interludes live in AetherInterlude.astro) */
 @import "./landing/05-coda.css"; /* coda — "Ostatni takt": tetragram + fermata + finalis */
 @import "./landing/06-footer.css"; /* site footer — inscriptio finalis */
@@ -23,3 +23,4 @@
 @import "./landing/12-vox.css"; /* Vox — zobacz i usłysz (movement II) + video lightbox room */
 @import "./landing/13-spine.css"; /* movement spine — right-edge I·II·III orientation */
 @import "./landing/14-imagines.css"; /* Imagines — the plate of five frames (movement II) */
+@import "./landing/15-litany.css"; /* Litania — the plate of names over the night nave (movement I) */

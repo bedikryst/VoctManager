@@ -282,7 +282,9 @@
       width: max-content;
     }
 
-    .image-rite {
+    /* A floor, not a height: the plate of names grows with the catalogue and on this measure an
+       era of twenty wraps several lines, so the room follows its content past this. */
+    .litany {
       min-height: 78svh;
     }
 

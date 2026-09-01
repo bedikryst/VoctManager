@@ -33,7 +33,7 @@ import { Typo } from "./lib/Typo";
 // `closest()` on every scroll frame, so the condition is live — a plate that turns at 21:00
 // takes the chrome with it.
 const DARK_SELECTORS =
-  ".image-rite, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure, body[data-lumen='nox'] .site-footer";
+  ".litany, .ensemble, .director-dark, .final-support, .preloader, .vault, .regulamin, .gratitude, .failure, body[data-lumen='nox'] .site-footer";
 
 // How long a chosen silk is held before the page swap fires — one beat, so the gesture reads
 // before the crossfade (transitions.css) dissolves it. Shared by the desktop registrum's

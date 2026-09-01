@@ -70,7 +70,7 @@
        forced the label's first baseline down onto the numeral's baseline — the gloss sat
        ~24px too low. Top-align both, then nudge the label down by its own leading so its
        cap sits on the numeral's cap line (optical, not baseline). The numeral column is
-       capped so a wide value ("VII wieków") can't starve the gloss to a 4-line sliver. */
+       capped so a wide value (a four-digit year) can't starve the gloss to a 4-line sliver. */
     .fact {
       grid-template-columns: minmax(72px, max-content) 1fr;
       align-items: start;

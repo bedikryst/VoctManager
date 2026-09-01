@@ -12,14 +12,14 @@
 import { getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { bleedPair } from "../lib/photos";
+import { bleedPair, photo } from "../lib/photos";
 import { toRibbons } from "../lib/registrum";
 import "../styles/landing.css";
 
 import HeroSection from "../components/landing/HeroSection.astro";
 import ManifestSection from "../components/landing/ManifestSection.astro";
 import AetherInterlude from "../components/landing/AetherInterlude.astro";
-import ImageRiteSection from "../components/landing/ImageRiteSection.astro";
+import LitanySection from "../components/landing/LitanySection.astro";
 import EnsembleSection from "../components/landing/EnsembleSection.astro";
 import DirectorSection from "../components/landing/DirectorSection.astro";
 import ImaginesBand from "../components/landing/ImaginesBand.astro";
@@ -52,11 +52,12 @@ const ogImage = (
 // island cannot read the concerts collection itself (see lib/registrum).
 const ribbons = toRibbons(await getCollection("concerts"));
 
-// Poster for the concert reel (Vox moment + lightbox). EDITABLE: swap the source photo
-// when a real video still exists — bleedPair name only, the optimization stays.
-const voxPoster = (
-  await getImage({ src: bleedPair("chor-spot").desktop, width: 1600, format: "webp" })
-).src;
+// Poster for the concert reel (Vox moment + lightbox) — a still from the film itself, which is
+// what `concerts.yaml` already declares for it (`wcielenie.video.poster`). It used to reuse the
+// nave frame that now carries the litany, so one photograph stood twice on this page: once as a
+// wordless statement and once as the poster for a film it is not a frame of.
+const voxPoster = (await getImage({ src: photo("kd-wcielenie-5"), width: 1600, format: "webp" }))
+  .src;
 
 // TODO (when structured video metadata is approved — MODAL_VIDEO/VOX_VIDEO in
 // data/landing/video.ts): add a `video` VideoObject member here so Google can show a video
@@ -128,7 +129,7 @@ const jsonLd = {
           (13-spine.css), and a longer inscription pushes that breakpoint up. */}
       <section class="movement" id="ruch-i" data-movement="lumen" aria-label="I · Lumen Christi">
         <AetherInterlude variant="passage" roman="I" latin="Lumen Christi" />
-        <ImageRiteSection />
+        <LitanySection />
         <EnsembleSection />
         <DirectorSection />
       </section>

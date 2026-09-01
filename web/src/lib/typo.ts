@@ -6,8 +6,8 @@
  *
  *  Three layers:
  *   - COMMON (every locale): initials (`J. S. Bach`), a number and the thing it counts, digit
- *     groups of a thousand, year ranges, and the spaced dash — which is pinned to the word BEFORE
- *     it so a dash can never open a line.
+ *     groups of a thousand, year ranges, and the two spaced marks that CLOSE a field — the dash
+ *     and the interpunct — each pinned to the word before it, so neither can open a line.
  *   - PL: the Polish orphan rule ("sierotki" — a one-letter conjunction/preposition may not end a
  *     line) and the abbreviations that must stay with what they qualify ("św." / "Filipa",
  *     "art." / "6").
@@ -84,6 +84,12 @@ const COMMON: readonly Rule[] = [
   [/(\b\d{4})([–—])(?=\d{4}\b)/g, `$1$2${WJ}`],
   // A spaced dash belongs to the phrase it closes — it may never be the first thing on a line.
   [new RegExp(`(\\S)${SP}([—–])${SP}`, "g"), `$1${NBSP}$2 `],
+  // The interpunct is the site's own separator (eyebrows, fact tiles, datelines, credits) and it
+  // takes the dash's rule for the dash's reason: it closes the field before it, so a wrapped line
+  // may end on one and may never open on one. Both sides must already be spaced — `A·B` is a
+  // compound, not a separator — and the space after is re-emitted plain, which is what leaves the
+  // break opportunity where the wrap belongs.
+  [new RegExp(`(\\S)${SP}(·)${SP}`, "g"), `$1${NBSP}$2 `],
 ];
 
 /** One-letter Polish conjunctions/prepositions that must not orphan at a line end. */

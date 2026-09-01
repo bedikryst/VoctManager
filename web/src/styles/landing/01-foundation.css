@@ -1026,7 +1026,7 @@
     padding-bottom: 14px;
   }
 
-  /* Active glass — dark surface (image-rite, ensemble, final-support). */
+  /* Active glass — dark surface (litany, ensemble, final-support). */
   .chrome.is-active.is-on-dark::after {
     background-color: rgba(8, 8, 7, 0.5);
     backdrop-filter: blur(20px) saturate(1.3);

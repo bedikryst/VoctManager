@@ -226,7 +226,12 @@ const FACTS = [
   { num: "12", label: "głosów zwykle na scenie" },
   { num: String(PATHS.length), label: "Koncertów Duchowych w cyklu" },
   { num: String(totalWorks), label: `utworów w repertuarze · ${totalComposers} kompozytorów` },
-  { num: "7 wieków", label: "muzyki sakralnej · od XIV w." },
+  // Seven is the CATALOGUE's own arithmetic — its era spans run XV to XXI inclusive, which is
+  // seven. The oldest thing the ensemble sings is older: O Virgo Splendens comes from the XIV-c.
+  // Llibre Vermell, and it is printed with that date under TRADITIONAL, where it is a fact about
+  // one anonymous piece rather than a claim about the span. Pairing "seven" with "od XIV w." was
+  // the one reading that could not be true — XIV to XXI inclusive is eight.
+  { num: "7 wieków", label: "muzyki sakralnej · od XV w." },
   { num: "2024", label: "debiut · Kontemplacja Wcielenia" },
   { num: "Kraków", label: "siedziba · Fundacja VoctFoundation" },
 ] as const;
@@ -289,7 +294,7 @@ const jsonLd = {
           <em>Koncerty Duchowe.</em>
         </h1>
         <p class="press-hero-positioning">
-          Profesjonalny zespół wokalny — muzyka sakralna od XIV wieku po współczesność.
+          Profesjonalny zespół wokalny — muzyka sakralna od XV wieku po współczesność.
           Autorski cykl <em>Concerts Spirituels</em>, oprawy liturgii i ważnych uroczystości. Kraków.
         </p>
         <p class="press-hero-lede">
@@ -466,7 +471,11 @@ const jsonLd = {
     <section class="press-repertoire tone-light" id="repertuar" aria-label="Repertuar A-Z">
       <div class="press-section-head">
         <span class="press-eyebrow"><span class="lat">Repertorium</span> · Siedem wieków</span>
-        <h2>Repertuar od XIV w. do współczesności.</h2>
+        {/* The heading governs the A-Z list under it, which is the NAMED composers: XV to XXI,
+            i.e. the seven the eyebrow counts. The anonymous and traditional pieces stand in their
+            own block below, under their own head and with their own dates — that is where the
+            XIV-c. Llibre Vermell is printed, and it is why it does not enter this span. */}
+        <h2>Repertuar od XV w. do współczesności.</h2>
         <p class="press-section-lede">
           {totalComposers} kompozytorów · {totalWorks} utworów · alfabetycznie.
         </p>

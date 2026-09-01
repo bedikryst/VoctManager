@@ -234,7 +234,9 @@ const pl: AboutCopy = {
       "Interesuje nas świat: widzialny — przyroda i całe stworzenie — oraz ten niematerialny, którego szukamy i próbujemy zrozumieć. Muzyka sakralna jest w tej wędrówce dobrą towarzyszką.",
     p3Text:
       "Czerpie z geniuszu ludzkiego, z Biblii i z mądrości przodków, po którą kompozytorzy wciąż sięgają, by wyrazić na wskroś osobisty sposób to, co przeżywają i co ich najbardziej dotyka.",
-    moreLink: "Repertuar siedmiu wieków — od Llibre Vermell po współczesność →",
+    // Not "od Llibre Vermell": that manuscript is XIV-c. and the seven counted here are the
+    // catalogue's era spans, XV to XXI (src/content/repertoire.yaml). The two together said eight.
+    moreLink: "Repertuar siedmiu wieków — od renesansowej polifonii po współczesność →",
   },
   milestones: {
     aria: "Droga koncertów",
@@ -385,7 +387,7 @@ const en: AboutCopy = {
       "The world interests us: the visible one — nature and all creation — and the immaterial one we seek and try to understand. Sacred music is a good companion on that journey.",
     p3Text:
       "It draws on human genius, on the Bible and on the wisdom of our forebears — to which composers still reach in order to express, in a wholly personal way, what they live through and what touches them most.",
-    moreLink: "Seven centuries of repertoire — from the Llibre Vermell to the present day →",
+    moreLink: "Seven centuries of repertoire — from Renaissance polyphony to the present day →",
   },
   milestones: {
     aria: "The path of the concerts",
@@ -536,7 +538,7 @@ const fr: AboutCopy = {
       "Le monde nous intéresse : le visible — la nature et toute la création — et l'immatériel, que nous cherchons et tentons de comprendre. La musique sacrée est une bonne compagne sur ce chemin.",
     p3Text:
       "Elle puise dans le génie humain, dans la Bible et dans la sagesse des anciens, vers laquelle les compositeurs se tournent encore pour exprimer, de façon tout intime, ce qu'ils vivent et ce qui les touche le plus.",
-    moreLink: "Sept siècles de répertoire — du Llibre Vermell à aujourd'hui →",
+    moreLink: "Sept siècles de répertoire — de la polyphonie de la Renaissance à aujourd'hui →",
   },
   milestones: {
     aria: "Le chemin des concerts",

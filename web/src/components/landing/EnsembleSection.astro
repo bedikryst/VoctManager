@@ -6,20 +6,64 @@
  *  text ("Skąd się wzięliśmy?" — anachoreci, "z ciszy i kontemplacji", "ubóstwiamy
  *  heterofonię…"): keep it testimony, never rewrite it into brochure-speak. Fact tiles carry
  *  real, checkable numbers (roster count from Florent's "VE na stronę www" sheet — update
- *  when the roster changes; repertoire span = Llibre Vermell XIV w. → Caroline Shaw 2017).
- *  Dimming filter in landing.css (.ensemble-media .bleed img).
+ *  when the roster changes). Dimming filter in landing.css (.ensemble-media .bleed img).
+ *
+ *  THE LEDGER READS WHO · WHEN · WHERE, and the third leg is a constraint rather than a choice:
+ *  the plate of names stands directly above this section (LitanySection, index.astro), so any
+ *  tile stating the repertoire's span in words — "VII wieków · Llibre Vermell (XIV w.) · Caroline
+ *  Shaw (2017)" — restates in an abstraction what the plate one screen up has just shown in
+ *  names, Caroline Shaw included. Reach is the one axis of this ensemble the plate cannot say.
  * @architecture Astro islands 2026
  * @module components/landing/EnsembleSection
  */
+import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
+import { PATHS } from "../../data/landing/paths";
 
 const ensemble = bleedPair("chor-nawa");
 
+// The nights the five Koncerty Duchowe actually stood, and the places they stood in. Counted from
+// the register's own entries rather than from the collection, so the Bobola liturgy stays out — it
+// is a Mass, not an evening, and the landing does not number it (docs/web-landing-guardrails §1).
+// A programme that toured stood as many nights as it has `dates`; the place is the tail of a
+// venue line, which is why `dates[].venue` writes the town last even where a district comes
+// before it ("…, Mistrzejowice, Kraków" is Kraków, and must stay written that way round). Derived
+// rather than written down for the reason /press states over its own counts: a hand-kept number
+// rots at the next concert, silently.
+const concerts = new Map(
+  (await getCollection("concerts")).map((entry) => [entry.id, entry.data] as const),
+);
+const venues = PATHS.flatMap((path) => {
+  const concert = concerts.get(path.concertId);
+  const dates = concert?.dates ?? [];
+  return dates.length > 0 ? dates.map((date) => date.venue) : [concert?.venue ?? ""];
+});
+// In first-sung order, which is the order the register itself runs in — so the list reads as a
+// chronology rather than as a ranking of where the ensemble matters most.
+const places = [
+  ...new Set(venues.map((venue) => venue.split(",").at(-1)?.trim() ?? "").filter(Boolean)),
+];
+
+/**
+ * NAMED, NOT COUNTED, and the reason is that the count could not be said truthfully. "W pięciu
+ * miastach" stood here and is false by one: Niedzica is a village in gmina Łapsze Niżne, and
+ * Szczawnica is a town of seven thousand. The honest count word is "miejscowości" — the noun
+ * from an address form, and flat beside the two tiles it stands with. Naming them costs one line
+ * of label, cannot go stale the same way (a place either was sung in or was not), and the list
+ * is still derived, so a sixth town adds itself.
+ *
+ * It is also the better claim. This tile is the ledger's WHERE, and "five" says nothing about
+ * reach while Rybnik and Łódź beside Kraków say it exactly: the numeral counts the evenings, the
+ * names are the map.
+ *
+ * The one agreement left in the label is "wieczorów", the genitive plural Polish takes from five
+ * upward — it turns back into "wieczory" at twenty-two, which is the number to watch.
+ */
 const FACTS = [
   { num: "44", label: "śpiewaków we wspólnocie · na scenie dwanaście głosów" },
   { num: "2024", label: "debiut · Kontemplacja Wcielenia · Bazylika NSPJ" },
-  { num: "VII wieków", label: "Llibre Vermell (XIV w.) · Caroline Shaw (2017)" },
+  { num: String(venues.length), label: `wieczorów · ${places.join(" · ")}` },
 ] as const;
 ---
 

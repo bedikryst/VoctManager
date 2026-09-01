@@ -1,7 +1,17 @@
 # file: repertiore.yaml
-# Five-century repertoire catalog. Eras render in `order`; within an era, entries render in
+# Seven-century repertoire catalog. Eras render in `order`; within an era, entries render in
 # the order listed. `works` is a list of { title, year? } so the year keeps its own styling.
 # Note: titles/years are quoted because many contain commas (YAML flow-map separators).
+#
+# SEVEN IS THE COUNT OF THESE `span`s, XV to XXI inclusive, and every "siedem wieków" on the site
+# (/koncerty, /press, /o-nas, the landing plate) is that number. It is not the age of the oldest
+# thing sung: O Virgo Splendens comes from the XIV-c. Llibre Vermell, which sits under `tradycja`
+# — the one era whose span names no century, because an anonymous attribution has no dates to
+# span. So the XIV date belongs to that PIECE and is printed with it; the moment it is written
+# into the span claim as well ("siedem wieków, od XIV w."), the claim is false, since XIV to XXI
+# inclusive is eight. That pairing was live in three places and is the reason this note exists.
+# Note also that no WORK here is from the XV century — Josquin's own dates are, his piece is
+# "pocz. XVI w." — so the renaissance span is a claim about the composers, as era spans are.
 
 - id: renesans
   order: 1

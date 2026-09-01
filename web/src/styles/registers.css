@@ -185,7 +185,7 @@ html.voct-motion .reveal-rule-v:not(.is-in)::before {
    0.58 keeps the photograph legible underneath, the same promise half-ink makes for
    copy: the page is never blank, only unlit.
 
-   The veil is `inset: 0` on a host that is usually section-scale (`.image-rite` is
+   The veil is `inset: 0` on a host that is usually section-scale (`.litany` is
    96svh), so its top crosses the trigger when the SECTION's top does — the lift plays
    while the photograph is still arriving from below. That geometry is why this register
    needs a back-weighted curve and not merely a long duration: --veil-lift buys nothing

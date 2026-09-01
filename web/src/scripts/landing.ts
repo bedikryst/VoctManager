@@ -5,7 +5,8 @@
  *  CSS expressed via `animation-timeline` / `view-timeline` — neither of which runs in the
  *  target browser (native scroll-driven CSS is unsupported here; that was the parallax bug).
  *
- *  Owns: rite-glow (cursor spotlight), the path cards' exclusivity and phone follow-scroll,
+ *  Owns: the litany readout (which evenings the hovered name sounded at), the path cards'
+ *  exclusivity and phone follow-scroll,
  *  Lenis anchor smooth-scroll, the hero's variable-font breath on a single rAF scroll loop,
  *  the manifest light (one-shot `.is-lit` per line-group, `.is-spent` when its sweep is over —
  *  the sweep itself is a CSS transition),
@@ -72,37 +73,50 @@ const teardown = (): void => {
   }
 };
 
-// ── Rite glow: cursor-tracked spotlight on the image-rite section (desktop only) ────────────
-function setupRiteGlow(root: HTMLElement, reduce: boolean): void {
-  const rite = root.querySelector<HTMLElement>(".image-rite");
-  if (!rite || reduce || !finePointer()) return;
+// ── Litany readout: where the name under the pointer sounded ─────────────────────────────────
+// The plate of names owns the page's one pointer gesture, and this is its far end: the name
+// lights (CSS `:hover`) and the slot in that name's own band prints the evenings it was sung at
+// (components/landing/LitanySection). It replaced a cursor-tracked lamp rather than joining it —
+// the room holds one mechanic.
+//
+// Delegated, because the plate carries forty-three names and grows with the catalogue; every
+// answer is already in `data-at` at build time, so this only moves a string. Fine pointers only,
+// and there is no coarse-pointer branch to write: the inscription is authored to read with
+// nothing at all, both touch substitutes are refused on their own arithmetic (proximity and tap,
+// docs/web-landing-guardrails §2), and the register below the plate already publishes the same
+// join transposed, in a native `<details>` that needs none of this.
+function setupLitanyReadout(root: HTMLElement): void {
+  const bands = root.querySelector<HTMLElement>(".litany-bands");
+  if (!bands || !finePointer()) return;
 
-  let pending = false;
-  let lastX = 50;
-  let lastY = 50;
-  const apply = (): void => {
-    rite.style.setProperty("--glow-x", `${lastX}%`);
-    rite.style.setProperty("--glow-y", `${lastY}%`);
-    pending = false;
+  // One slot per band, so only one of the four is ever lit — the previous one is put out here
+  // rather than by clearing all of them, which would touch three untouched elements per move.
+  let lit: HTMLElement | null = null;
+  const clear = (): void => {
+    lit?.classList.remove("is-on");
+    lit = null;
   };
-  const onEnter = (): void => rite.classList.add("is-glowing");
-  const onLeave = (): void => rite.classList.remove("is-glowing");
-  const onMove = (event: PointerEvent): void => {
-    const rect = rite.getBoundingClientRect();
-    lastX = ((event.clientX - rect.left) / rect.width) * 100;
-    lastY = ((event.clientY - rect.top) / rect.height) * 100;
-    if (pending) return;
-    pending = true;
-    window.requestAnimationFrame(apply);
+  const onOver = (event: PointerEvent): void => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const name = target.closest<HTMLElement>(".litany-name");
+    // Crossing the leading between two lines, or the space after an interpunct, is not the reader
+    // leaving the plate — so the last answer stands until the pointer leaves the bands. Clearing
+    // on every gap would flicker the slot across a row the eye reads in one movement.
+    if (!name) return;
+    const slot = name.closest(".litany-names")?.querySelector<HTMLElement>(".litany-readout");
+    if (!slot) return;
+    if (slot !== lit) clear();
+    slot.textContent = name.dataset.at ?? "";
+    slot.classList.add("is-on");
+    lit = slot;
   };
 
-  rite.addEventListener("pointerenter", onEnter);
-  rite.addEventListener("pointerleave", onLeave);
-  rite.addEventListener("pointermove", onMove);
+  bands.addEventListener("pointerover", onOver);
+  bands.addEventListener("pointerleave", clear);
   cleanups.push(() => {
-    rite.removeEventListener("pointerenter", onEnter);
-    rite.removeEventListener("pointerleave", onLeave);
-    rite.removeEventListener("pointermove", onMove);
+    bands.removeEventListener("pointerover", onOver);
+    bands.removeEventListener("pointerleave", clear);
   });
 }
 
@@ -496,7 +510,7 @@ function bind(): void {
   if (!root) return;
   const reduce = reduceMotion();
   cleanups.push(setupReveal(root, { reduce, cadence: "queue" }));
-  setupRiteGlow(root, reduce);
+  setupLitanyReadout(root);
   setupSmoothDetails(root);
   setupLenisAnchors();
   setupHeroBreath(root, reduce);
