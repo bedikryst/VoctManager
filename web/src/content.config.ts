@@ -21,6 +21,19 @@ const milestoneI18n = z
   })
   .optional();
 
+/**
+ * A venue line ends with the place it stood in, and the landing's ledger reads that tail as a
+ * proper name: everything after the last comma, printed as-is beside the count of evenings
+ * (EnsembleSection's WHERE tile). So the tail must look like a place — an initial capital, then
+ * letters, spaces, dots and hyphens ("Kraków", "Nowy Sącz", "Bielsko-Biała"). It is the street
+ * and the building detail this rejects: "Bazylika NSPJ, ul. Kopernika 26, Kraków" is the order
+ * the tile needs, and the same address written the other way round puts "ul. Kopernika 26" on
+ * the landing under a numeral, silently and in a register that reads as a town.
+ */
+const PLACE_TAIL = /^\p{Lu}[\p{L}\s.-]*$/u;
+
+const placeTail = (venue: string): string => venue.split(",").at(-1)?.trim() ?? "";
+
 const concerts = defineCollection({
   loader: file("src/content/concerts.yaml"),
   schema: z.object({
@@ -345,6 +358,68 @@ const concerts = defineCollection({
         }),
       )
       .default([]),
+  })
+  /**
+   * The landing's WHERE tile is DERIVED — it counts the evenings the register's five concerts
+   * stood and names the places they stood in, so that a sixth concert adds itself instead of
+   * rotting a hand-kept number (EnsembleSection). Both halves of that derivation read this file
+   * and neither can tell a mistake from data, which is why they are guarded here rather than
+   * described in a comment the person editing the YAML never opens.
+   *
+   * The failure both rules prevent is the same one and it is silent: the tile still renders, the
+   * build still passes, and the page states something false about where this ensemble has sung.
+   * That is the class of drift `lib/litany` refuses by failing the build over an ambiguous
+   * surname, and this tile was the one derivation on the landing with no such floor.
+   */
+  .superRefine((concert, ctx) => {
+    // A per-date venue is ONE evening in ONE place by definition, so a slash there is a tour
+    // written into a single row — it would be counted once and named by its last city alone.
+    for (const [index, date] of concert.dates.entries()) {
+      if (date.venue.includes("/")) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dates", index, "venue"],
+          message:
+            `"${date.venue}" names more than one place. A dates[] row is one evening — give each` +
+            ` its own row, so the landing counts the evenings it actually stood.`,
+        });
+        continue;
+      }
+      const tail = placeTail(date.venue);
+      if (!PLACE_TAIL.test(tail)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["dates", index, "venue"],
+          message:
+            `"${date.venue}" must end with its town — the landing prints everything after the` +
+            ` last comma as a place name, and here that is "${tail}".`,
+        });
+      }
+    }
+
+    if (concert.venue === undefined || concert.dates.length > 0) return;
+    // With no dates[] the concert-level venue IS the evening, so a slash-joined line collapses a
+    // tour into one night: 9 Kart's own "Kraków / Łódź / Rybnik" would count once and name Rybnik.
+    if (concert.venue.includes("/")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["venue"],
+        message:
+          `"${concert.venue}" names more than one place, so this concert needs a dates[] row per` +
+          ` evening — without them the landing counts it as a single night in the last city.`,
+      });
+      return;
+    }
+    const tail = placeTail(concert.venue);
+    if (!PLACE_TAIL.test(tail)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["venue"],
+        message:
+          `"${concert.venue}" must end with its town — the landing prints everything after the` +
+          ` last comma as a place name, and here that is "${tail}".`,
+      });
+    }
   }),
 });
 

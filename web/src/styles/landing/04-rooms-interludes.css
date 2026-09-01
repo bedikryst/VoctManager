@@ -1,4 +1,4 @@
-  /* Dark Director — wnętrze chóru sequence (ImageRite -> Ensemble -> Director).
+  /* Dark Director — wnętrze chóru sequence (Litany -> Ensemble -> Director).
      The .section element is max-width-constrained, so we bleed the dark surface
      to viewport edges via an absolutely-positioned ::before. Text + portrait
      tones swap to the light-on-dark palette; the existing portrait gradient
@@ -262,12 +262,20 @@
     filter: saturate(0.72) contrast(1.06) brightness(0.62);
   }
 
+  /* THE OPENING STANDS WHERE THE TEXT IS NOT. This scrim used to centre its transparent hole at
+     `24% 50%` — which is the copy column, since the copy is left-hung and its measure ends around
+     42% of the viewport. So the photograph was at its most visible exactly under the testimony
+     (composite α ≈ 0.65 there) and at its most buried in the empty half beside it (α ≈ 0.92): the
+     nave read as backwards, lit where it was being written over and black where there was room to
+     look at it. Turning the circle onto the empty half inverts both at once — the copy settles on
+     a quiet, near-even ground and the ensemble in the right of the frame becomes something the
+     reader can actually see. One value; move it back toward the copy to soften. */
   .ensemble::after {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(circle at 24% 50%, transparent 0, rgba(8, 8, 7, 0.22) 22rem, rgba(8, 8, 7, 0.78) 56rem),
+      radial-gradient(circle at 72% 50%, transparent 0, rgba(8, 8, 7, 0.22) 22rem, rgba(8, 8, 7, 0.78) 56rem),
       linear-gradient(180deg, rgba(8, 8, 7, 0.5), rgba(8, 8, 7, 0.78));
   }
 

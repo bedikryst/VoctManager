@@ -115,6 +115,50 @@ all. The readout is a fine pointer's shortcut across an index the page already p
 form a phone can read. (`/koncerty#repertuar` is the catalogue and prints works and dates, not
 evenings, so it is not the second home — the register on the landing is.)
 
+**The ledger's WHERE tile NAMES its places and must not be "fixed" back into a count.** Beside two
+tiles that open on a numeral it looks like the odd one out, and the numeral it used to carry was
+false: "w pięciu miastach" counted Niedzica, a village in gmina Łapsze Niżne, and Szczawnica, a
+town of seven thousand. The honest count word is "miejscowości", which is the noun off an address
+form. Naming them costs one line and cannot go stale the same way — a place either was sung in or
+was not — and it is also the better claim, because this tile is the ledger's reach and "five" says
+nothing about reach while *Rybnik* and *Łódź* beside *Kraków* say it exactly. The numeral counts
+the evenings; the names are the map. (Watch one agreement: "wieczorów" is the genitive plural
+Polish takes from five up, and it turns back into "wieczory" at twenty-two.)
+
+**The litany plate does NOT get a blurred or deepened ground, and the reason is a measurement.**
+"The names are hard to read, frost the nave behind them" is the obvious first move and it treats a
+problem that is not there. Under the plate the photograph is already gone: the frame's median
+after the section's own filter chain (`saturate(.72) contrast(1.08) brightness(.64)`) is
+`rgb(2, 2, 2)`, the two scrim layers add another 0.23–0.37 of ink, and the names measure **10–13:1**
+against that — past AAA, with only the spotlight's top percentile dropping to ~4:1. Flooring the
+radial so the plate stands in a uniformly dark centre was tried on the numbers and buys about ONE
+point of ratio while costing the nave the section exists to cut to. A local backdrop is worse than
+useless here for reasons `registrum.css` already field-tested on the same material: a bounded card
+over the nave reads as a dropdown, a feathered mist becomes a blob, a maskless blur stack steps
+visibly on photographic content and cuts running text at its box edge — and mask + `backdrop-filter`
+on one element makes Chromium discard the blur outright, so the feathered version is not even
+buildable. `--halo` is not the answer either; `tabula.css` records what it is worth: *a breath of
+shadow that holds thin text over a picture WHEN THE HUSH IS BEHIND IT; on bare content it holds
+nothing.* **What actually fails at this size is the letterform.** Cinzel is Trajan-lineage with real
+stroke modulation, so at 13px its hairlines fall under a device pixel and the glyph thins to partial
+coverage — the same arithmetic that keeps the mark's vector out of icon sizes. The fix is the axis
+and the size (600, and the last step the ~16px ceiling allows), which is `base.css`'s own stated
+remedy for the rubric atom applied where the word count is forty-three. **Before darkening a ground
+under type, measure it: if it is already past 7:1, the complaint is about strokes.**
+
+**And the tile is DERIVED, so `concerts.yaml` carries two contracts that no reader can see.** The
+count is `dates[]` rows (falling back to the concert's own `venue`), and each place is *everything
+after the last comma* of a venue line — so a venue must end with its town even where a district
+comes first ("…, Mistrzejowice, Kraków"), and a tour must be written as one `dates` row per
+evening rather than as the slash-joined line two concerts already carry in `venue`
+("Bazylika NSPJ, Kraków / Archikatedra, Łódź / …", which resolves to one evening in Rybnik). Both
+failures are silent in the way that matters: the tile renders, the build passes, and the landing
+states something false about where this ensemble has sung. They are enforced in
+`content.config.ts` now — a `superRefine` on the concert, which is where a person editing the YAML
+gets the message — on the same principle `lib/litany` already applies to an ambiguous surname:
+**a derived claim on the landing gets a build-time floor, because a wrong answer here looks exactly
+like a right one.**
+
 **The mark is a filled outline (`public/voct-mark.svg`), not centerline strokes — and a
 centerline wireframe of the V is a DIFFERENT OBJECT.** A real vector exists since 2026-07
 (the preloader rite masks it), but neither draw technique

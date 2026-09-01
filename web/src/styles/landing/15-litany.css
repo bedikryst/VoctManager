@@ -36,7 +36,18 @@
     --litany-line: rgba(244, 241, 233, 0.16);
   }
 
-  /* Geometry + parallax owned by <BleedImage>; landing keeps only the sacred dimming. */
+  /* Geometry + parallax owned by <BleedImage>; landing keeps only the sacred dimming.
+
+     NOT MIRRORED, and the measurement is why that is worth stating. Across the plate's own band
+     this photograph carries its light on the LEFT — mean 29 against 16, peaking at 36% of the
+     measure — which is exactly where a left-hung plate always has type, while the right half is
+     near black. So the arithmetic asks for a flip, the flip was built, and it was rejected on
+     sight: the beam enters from the upper left and the nave recedes to the right, so mirroring
+     fights the perspective the photograph was taken with and the room stops reading as a nave.
+     The contrast case for it was weak anyway (the names measure past AAA either way, see below).
+     If it is ever tried again: use `scale`, not `transform` — `.bleed img.is-animated` drives Ken
+     Burns through a `transform` keyframe and an animation beats a normal declaration, so the flip
+     would evaporate the day someone passes `animate` here, silently and only in motion. */
   .litany .bleed img {
     filter: saturate(0.72) contrast(1.08) brightness(0.64);
   }
@@ -117,9 +128,18 @@
   /* Positioned so the band's readout hangs from the NAMES rather than from the band: the band's
      box includes its head and its padding, and an answer measured from either of those would sit
      at a different distance under a one-line era than under a three-line one. */
+  /* An inscription wants an EVEN RAG, which is the one place this plate overrides the site's
+     default: `base.css` gives every <p> `text-wrap: pretty`, tuned for prose, where the job is to
+     stop the last line orphaning. A band is not prose — it is one enumeration whose rows should
+     read as a block of equal measures, which is the same argument `03-manifest-rite.css` already
+     makes for the manifest's display type. Held to the wide measure on purpose: browsers cap
+     balancing at around six lines, and past the cap the declaration is simply dropped — which on
+     a phone, where the longest era runs six or seven rows, would spend `pretty` and get nothing
+     back. So the phone keeps prose's rule and the desktop takes the inscription's. */
   .litany-names {
     position: relative;
     margin: 0;
+    text-wrap: balance;
   }
 
   /* Inscriptional capitals. `text-transform` is doing real work rather than restating the face:
@@ -127,14 +147,35 @@
      surname sets as caps-and-small-caps — the book-index register, correct on parchment and
      wrong on a stone wall, and visibly wrong on the two-word names ("Vaughan Williams") where
      two cap heights would meet mid-name. */
+  /* THE STROKE IS THE LEGIBILITY HERE, NOT THE GROUND, and that is measured rather than felt.
+     Under this plate the nave is already black — the frame's median after the section's filter
+     chain is rgb(2, 2, 2), the scrim adds another 0.23–0.37, and the names measure 10–13:1
+     against it, which is past AAA. Only the spotlight's top percentile reaches 4:1. So nothing
+     that darkens or blurs the photograph buys legibility (guardrails §2); what fails at this size
+     is Cinzel itself. It is a Trajan-lineage face with real stroke modulation, so at 13px its
+     hairlines land under a device pixel and the letter thins to partial coverage — the same
+     arithmetic that keeps the mark's vector out of icon sizes. base.css states the remedy on the
+     rubric atom ("weight 500 rather than 400 because inscriptional capitals at 11px need the
+     extra stroke to hold on the dark ground"); the plate is that atom's job at four times the
+     word count, so it takes the next step up the axis. Cinzel is variable 400–900, so the weight
+     costs no second file.
+
+     THE SIZE IS NOT PART OF THE REMEDY, and that was tried. Taking the names to the ~16px
+     ceiling read as too large on the plate at once — forty-three capitals set near a display
+     size stop being an inscription and start being a list, which is the failure this room's whole
+     composition is built to avoid. The axis carries the stroke; the size stays where the room
+     wants it.
+
+     Leading is deliberately NOT part of this either. 2.05 is what keeps four to six wrapped rows
+     of interpunct-bound capitals from reading as a block, and it is the hover target's own height. */
   .litany-name {
     font-family: var(--capitalis);
     font-size: clamp(13px, 1.15vw, 15px);
-    font-weight: 500;
+    font-weight: 600;
     letter-spacing: 0.09em;
     line-height: 2.05;
     text-transform: uppercase;
-    color: rgba(244, 241, 233, 0.87);
+    color: rgba(244, 241, 233, 0.92);
   }
 
   /* The interpunct binds the row the way an inscription's does. It is CSS rather than markup so
@@ -254,6 +295,11 @@
 
     .litany-plate {
       width: calc(100% - 40px);
+    }
+
+    /* Past the balancer's line cap — see the note on .litany-names. */
+    .litany-names {
+      text-wrap: pretty;
     }
 
     .litany-name {
