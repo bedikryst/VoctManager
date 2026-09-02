@@ -256,6 +256,12 @@ This is a mechanical migration of the existing file plus the components that rea
 land **before** translation starts, not alongside it. **Shipped 2026-09-02 — see §6a for what it
 actually did and the two places it departs from this sketch.**
 
+**And one more departure, from C3 (§8, §6f):** the `en`/`fr` slots sketched above never get filled.
+A locale map in `concerts.yaml` is `pl`-only and the schema enforces it; the gloss's English and
+French live in `concerts.en.yaml` / `concerts.fr.yaml` under the same desk key. The rename's point
+survives intact — the map still marks "this is the vernacular of a foreign original, not a locale
+of the page" — it just holds one language.
+
 **The rule the file now states in its own header, and the one to hold the line on:** a locale map is
 what a *foreign original's vernacular* takes, and nothing else. `movements[].line` is not one — an
 earlier draft of this block showed it as a map, and it is ordinary Polish prose exactly like
@@ -720,13 +726,17 @@ still stands.
 - **The file is CRLF on a Windows checkout,** so a migration script that splits on `\n` matches
   nothing at all and reports a clean run over zero changes. Split on `/\r?\n/` and restore the
   ending on write.
+- **`apply-copy` re-wraps a folded block it edits.** Changing one word in a `>-` paragraph reflows
+  the lines below it, because the file's own wrapping is by hand and no emitter reproduces it (§6f).
+  The diff is therefore bigger than the edit, and reading it means reading the paragraph rather than
+  the changed line. Nothing else in the file moves — that is what the reconstruction proof asserts.
 
 ## §8 Open decisions
 
 - ~~**Notification shape.**~~ **Settled 2026-09-02 — one digest per editor per sitting, where a
   sitting ends at a 30-minute pause. Reasoning and mechanism in §6b.**
 - ~~**Where a translated PROSE value lives in the repository**~~ **Settled 2026-09-02 — (b), the
-  per-locale overlay.** `concerts.yaml` is Polish-only from here on; `concerts.en.yaml` and
+  per-locale overlay. Built in C3 (§6f); the corpus is Polish-only and three guards enforce it.** `concerts.yaml` is Polish-only from here on; `concerts.en.yaml` and
   `concerts.fr.yaml` hold every translated value under the desk's own dotted key. The consequence
   worth stating separately, because it is the strongest argument for the choice: `apply-copy`'s
   line-level path now only ever REPLACES a Polish scalar in place — it never inserts a key, never

@@ -23,35 +23,11 @@
  * @module copydesk/sync
  */
 
-import { execFileSync } from "node:child_process";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { pathToFileURL } from "node:url";
 
 import { apiBase, authenticate, credentials, postJson } from "./client.mjs";
 import { extractToFile } from "./index.mjs";
-
-const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
-
-/** Where the corpus lives, relative to `web/` — the only tree the guard cares about. */
-const CONTENT_DIR = "src/content";
-
-/**
- * @param {string[]} args
- * @returns {string}
- */
-function git(args) {
-  return execFileSync("git", args, { cwd: WEB_ROOT, encoding: "utf8" }).trim();
-}
-
-/**
- * The revision this payload was read from, and whether the corpus in it is committed.
- *
- * @returns {{ revision: string, dirty: boolean }}
- */
-function describeTree() {
-  const head = git(["rev-parse", "--short", "HEAD"]);
-  const dirty = git(["status", "--porcelain", "--", CONTENT_DIR]).length > 0;
-  return { revision: dirty ? `${head}-dirty` : head, dirty };
-}
+import { CONTENT_DIR, describeTree } from "./tree.mjs";
 
 /**
  * @param {object} args
