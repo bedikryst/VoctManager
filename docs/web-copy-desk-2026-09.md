@@ -280,7 +280,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | A | `concerts.yaml` locale-map migration (§5) + components that read it — **done, §6a** | the file can hold three locales at all |
 | B | backend: segment model, proposals API, `can_edit_site_copy`, notification — **done, §6b** | proposals can exist |
 | C1 | the key contract + extractor (read direction) + the hash-parity fixture — **done, §6d** | the corpus has stable ids |
-| C2 | the ingest seam: `import_copy_segments`, retirement, `applied_at` + segment stamp | the mirror can be refreshed |
+| C2 | the ingest seam: the extractor's door, retirement, `applied_at` + segment stamp — **done, §6e** | the mirror can be refreshed |
 | C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files | proposals can reach git |
 | D1 | panel: `/redakcja/*` shell + contents list | a way in |
 | D2 | the editor: reading-order column, locale switch, inline edit, autosave | the desk |
@@ -438,13 +438,14 @@ builds green and fails silently, and each would have been hit mid-pass by a sing
    558 of the desk's translation rows — could be proposed, reviewed and accepted with no slot in the
    repository to receive them. §5 deferred "how prose holds three locales" to stage G, but stage E
    *writes those very translations*: the real deadline is before C3, and it is now §8's decision.
-2. **Nothing ever stamps `CopySegment.source_hash`.** §6b puts the stamp at apply time and the apply
+2. **Nothing ever stamps `CopySegment.source_hash`.** **Closed in C2 — §6e.** §6b puts the stamp at apply time and the apply
    path did not exist, so today every translation row reports `source_known=False` in perpetuity and
    the stale state — §2 made mechanical, the entire reason the hash exists — never fires once.
    `apply-copy` must carry the accepted proposal's `source_hash` onto its segment in the same call
    that sets `applied_at`; `upsert_segments` must keep leaving that column out of its `defaults`
    (it does), or the next extractor run erases the provenance it just recorded.
-3. **There is no ingest seam, and no retirement.** `upsert_segments` is a Python classmethod, the
+3. **There is no ingest seam, and no retirement.** **Closed in C2 — §6e, which chose the endpoint.**
+   `upsert_segments` is a Python classmethod, the
    extractor is a node script reading YAML in `web/`, and Postgres publishes no host port — so
    something has to carry one to the other. **Recommended: a staff-only ingest endpoint**, so the
    whole loop is one command run from the repo (`npm run copy:sync` = extract, then POST), which is
@@ -546,6 +547,60 @@ moment either is edited. `viaDate` is a hand-written Polish abbreviation of the 
 because it is harmless: the via-rail will print "sty 2024" on the English page until it is derived
 from `date`/`dateLabel`. Both are recorded in the contract at the field they affect. Fix them where
 stage F forks the route, or earlier if a locale ships first.
+
+### §6e Stage C2 — what shipped (2026-09-02)
+
+Two staff-only endpoints and the client that closes the loop: `POST /api/copydesk/segments/ingest/`
+(reconcile the mirror, then retire), `POST /api/copydesk/proposals/applied/` (stamp `applied_at` and
+carry the provenance onto the segment), and `web/copydesk/sync.mjs` — `npm run copy:sync`, which is
+`copy:extract` plus the POST plus the guard.
+
+**Five decisions worth carrying.**
+
+- **The door is HTTP, not a management command** — §6c's recommendation, taken. Three reasons, and
+  the third is the one that settles it. The loop runs from a checkout on any machine, which is how
+  `apply-copy` must already reach the database, since Postgres publishes no host port. The rule that
+  the desk's API never writes the mirror is about the EDITOR-facing routes; this door is staff and
+  its payload is derived from git. And the alternative pipes ~300 kB of Polish prose through
+  `docker compose exec -T … < segments.json`: on this developer's Windows shell that is a recorded
+  way to lose UTF-8 silently (the same trap that once killed an `OPŁACONE` on a `¢`), and a mirror
+  corrupted that way looks like copy nobody wrote rather than like an error.
+- **The clean-tree guard is a client, and can only be one.** The server has no checkout to inspect,
+  so `copy:sync` refuses on a dirty `src/content/` (`--allow-dirty` overrides) and the payload
+  carries the revision it claims, which the ingest logs. What the server can offer is traceability,
+  not enforcement: when a mirror looks wrong the first question is which tree it was built from.
+- **The prune is narrowed to the scopes the payload carried, and it is a soft delete.** A payload is
+  the truth about the pages in it and says nothing about the others, so extracting one concert
+  leaves the other five standing. Retirement keeps the tombstone, and a key that comes back gets a
+  NEW row rather than reviving the old one — with positional keys (§6d), `program.3.note` returning
+  is not evidence that it is the same note, and handing its proposals to whatever now sits at
+  position 3 would attach an editor's comment about one work to another.
+- **A run that retires more than five keys says so, names them, and counts the proposals it
+  stranded.** Above the threshold the log line is a WARNING and `copy:sync` prints a block instead
+  of a line. It reports rather than refuses, deliberately: the extractor is the authority on what
+  the site holds, a run that blocked on its own reading would leave the mirror describing a page
+  that no longer exists, and the undo for a false alarm is `restore()`. The threshold is a smoke
+  alarm and not a proof — inserting into a three-item list trips nothing — which is why the message
+  names the keys: a shifted list is recognisable by eye, because the names share a prefix and run
+  consecutively.
+- **The apply stamp moves the segment's VALUE as well as its hash.** This is the one write into the
+  mirror that is not the extractor's, and it is narrow on purpose: the caller has just written that
+  exact string into the working tree, so the projection is being told what git now holds. Carrying
+  only the hash is not enough — when a Polish edit and the translations written against it are
+  applied in one patch, staleness is measured against the Polish the MIRROR holds, so the
+  translations would read stale the moment they became correct. With the value moving too, the seam
+  is consistent whichever order `apply-copy` and `copy:sync` run in. The other half of defect 2 is a
+  negative and now has a test of its own: `upsert_segments` still keeps `source_hash` out of its
+  `defaults`, and a test fails if it ever gains one, because the extractor knows nothing about
+  provenance and would erase the stamp on the next run.
+
+**Two smaller shapes, recorded because they are the sort of thing a later change quietly reverses.**
+Re-posting an applied batch is a skip, not an error — a script that wrote the files and lost the
+response has to be able to say so again — while an id that resolves to nothing stamps nothing at
+all and returns it, because the ids come from `/proposals/patch/` and one that does not exist means
+the script and the database disagree about what was written. And a row carrying a field the mirror
+cannot hold is a 400 that names its POSITION: `SegmentUpsertDTO` forbids extras (`paths` travels
+beside the rows, never inside them), and at ~1 300 rows an unlocated validation error is a hunt.
 
 ## §7 Traps
 

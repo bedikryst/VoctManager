@@ -9,7 +9,9 @@
 from django.urls import path
 
 from .views import (
+    CopyDeskAppliedView,
     CopyDeskContentsView,
+    CopyDeskIngestView,
     CopyDeskMarkSeenView,
     CopyDeskPatchView,
     CopyDeskProposalDetailView,
@@ -21,9 +23,12 @@ from .views import (
 urlpatterns = [
     path("contents/", CopyDeskContentsView.as_view(), name="copydesk-contents"),
     path("segments/", CopyDeskSegmentsView.as_view(), name="copydesk-segments"),
+    # The extractor's door. Staff only, and the one write into the git mirror.
+    path("segments/ingest/", CopyDeskIngestView.as_view(), name="copydesk-ingest"),
     path("proposals/", CopyDeskProposalsView.as_view(), name="copydesk-proposals"),
     # Ahead of the <uuid:pk> routes so neither is swallowed by a detail match.
     path("proposals/patch/", CopyDeskPatchView.as_view(), name="copydesk-patch"),
+    path("proposals/applied/", CopyDeskAppliedView.as_view(), name="copydesk-applied"),
     path(
         "proposals/<uuid:pk>/",
         CopyDeskProposalDetailView.as_view(),

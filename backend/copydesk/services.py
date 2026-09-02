@@ -20,12 +20,15 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from .dtos import (
+    ApplyStampResultDTO,
     ProposalDTO,
     ProposalReviewDTO,
     ProposalWriteDTO,
     ScopeSummaryDTO,
     SegmentDTO,
+    SegmentIngestResultDTO,
     SegmentUpsertDTO,
+    SkippedProposalDTO,
 )
 from .hashing import source_hash
 from .models import (
@@ -41,6 +44,22 @@ from .sanitizers import sanitize_html, sanitize_text
 
 logger = logging.getLogger(__name__)
 
+#: Above this many keys withdrawn in one run, the ingest raises its voice.
+#:
+#: A deliberate editorial deletion removes a field or two; a list that gained an
+#: entry re-keys everything below it, which is dozens. The threshold cannot tell
+#: those apart — it is a smoke alarm, not a proof — and it deliberately does not
+#: refuse: the extractor is the authority on what the site holds, and a run that
+#: blocked on its own reading would leave the mirror describing a page that no
+#: longer exists. Retirement is a soft delete, so the answer to a false alarm is
+#: `restore()`, not a rebuild.
+BULK_RETIREMENT_KEYS = 5
+
+#: How many key names one warning prints before it stops. Enough to recognise a
+#: shifted list by eye (the keys share a prefix and run consecutively), short
+#: enough that the line stays readable in a terminal and a log aggregator.
+_RETIREMENT_NAMES_IN_LOG = 20
+
 
 @dataclass
 class _ScopeCounts:
@@ -54,6 +73,15 @@ class _ScopeCounts:
     stale: int = 0
 
 
+@dataclass(frozen=True)
+class _Retirement:
+    """What one prune withdrew, before it becomes part of the ingest's report."""
+
+    keys: tuple[str, ...] = ()
+    rows: int = 0
+    orphaned_proposals: int = 0
+
+
 class SegmentNotFoundError(Exception):
     """The segment named by a proposal is not in the mirror (or was removed from the site)."""
 
@@ -64,6 +92,19 @@ class ProposalNotFoundError(Exception):
 
 class ProposalClosedError(Exception):
     """A settled proposal cannot be edited — a further change is a new proposal."""
+
+
+class UnknownProposalsError(Exception):
+    """The apply stamp named proposals the database does not have.
+
+    Not a race and not a permission: the ids come from the patch endpoint, so an
+    id that resolves to nothing means the script and the database disagree about
+    what was written. Nothing is stamped.
+    """
+
+    def __init__(self, ids: Sequence[UUID]) -> None:
+        super().__init__(", ".join(str(value) for value in ids))
+        self.ids = tuple(ids)
 
 
 def sanitize_for_kind(value: str, kind: str) -> str:
@@ -95,7 +136,9 @@ class CopyDeskService:
     # -- the mirror (stage C's extractor writes through here) ---------------- #
 
     @classmethod
-    def upsert_segments(cls, rows: Sequence[SegmentUpsertDTO]) -> dict[str, int]:
+    def upsert_segments(
+        cls, rows: Sequence[SegmentUpsertDTO], *, prune: bool = True
+    ) -> SegmentIngestResultDTO:
         """Reconcile the mirror with what the extractor read out of the repository.
 
         Idempotent by construction: a re-run over an unchanged repository writes
@@ -103,9 +146,25 @@ class CopyDeskService:
         true "first seen", which is what the new-since-last-visit state stands on
         — a reconciliation that recreated rows would flag the whole corpus as new
         every time the extractor ran.
+
+        `source_hash` is deliberately absent from `defaults` and must stay so.
+        That column is the provenance `mark_applied` records — the Polish a
+        PUBLISHED translation renders — and the extractor knows nothing about it.
+        Writing it here (even as `""`) would erase the stamp on the next run and
+        put the desk back where §6c's second defect found it: every translation
+        reporting `source_known=False` forever, with the stale state never firing
+        once.
+
+        A key the payload does not carry has left the site and is retired, but
+        only within the scopes the payload actually covers — see
+        `_retire_missing`. The whole reconciliation is one transaction: a mirror
+        half-refreshed and half-pruned describes no version of the repository.
         """
         created = 0
         updated = 0
+        seen: set[tuple[str, str]] = set()
+        scopes: set[str] = set()
+
         with transaction.atomic():
             for row in rows:
                 _segment, was_created = CopySegment.objects.update_or_create(
@@ -122,7 +181,109 @@ class CopyDeskService:
                 )
                 created += int(was_created)
                 updated += int(not was_created)
-        return {"created": created, "updated": updated}
+                seen.add((row.key, row.locale))
+                scopes.add(scope_from_key(row.key))
+
+            retirement = (
+                cls._retire_missing(scopes=scopes, seen=seen) if prune else _Retirement()
+            )
+
+        result = SegmentIngestResultDTO(
+            created=created,
+            updated=updated,
+            retired=retirement.rows,
+            retired_keys=retirement.keys,
+            orphaned_proposals=retirement.orphaned_proposals,
+            scopes=tuple(sorted(scopes)),
+            bulk_retirement=len(retirement.keys) > BULK_RETIREMENT_KEYS,
+        )
+        cls._report_ingest(result)
+        return result
+
+    @classmethod
+    def _retire_missing(
+        cls, *, scopes: set[str], seen: set[tuple[str, str]]
+    ) -> _Retirement:
+        """Withdraw the rows the extractor stopped emitting, within these scopes only.
+
+        The narrowing is the whole point. A payload is the truth about the pages
+        it contains and says nothing at all about the others, so a run over one
+        concert must leave the other five standing — the alternative is that
+        extracting a single page silently empties the desk.
+
+        Soft-deleted rather than erased, for two reasons. A field removed from
+        the site and later restored should not take its editorial history with
+        it; and a prune that turns out to have been a shifted list is undone by
+        `restore()` instead of by re-deriving what was lost. The returning key
+        gets a NEW row, because with positional keys (§6d) `program.3.note`
+        coming back is not evidence that it is the same note.
+        """
+        if not scopes:
+            return _Retirement()
+
+        stale_ids: list[UUID] = []
+        keys: set[str] = set()
+        for segment_id, key, locale in CopySegment.objects.filter(
+            scope__in=sorted(scopes)
+        ).values_list("id", "key", "locale"):
+            if (key, locale) in seen:
+                continue
+            stale_ids.append(segment_id)
+            keys.add(key)
+
+        if not stale_ids:
+            return _Retirement()
+
+        orphaned = CopyProposal.objects.filter(
+            segment_id__in=stale_ids, status__in=OPEN_STATUSES
+        ).count()
+        # `.delete()` on this manager's queryset is the soft delete (see
+        # `SoftDeleteQuerySet`), which is what keeps the tombstone and the
+        # proposals hanging off it.
+        CopySegment.objects.filter(id__in=stale_ids).delete()
+
+        return _Retirement(
+            keys=tuple(sorted(keys)),
+            rows=len(stale_ids),
+            orphaned_proposals=orphaned,
+        )
+
+    @staticmethod
+    def _report_ingest(result: SegmentIngestResultDTO) -> None:
+        """Say what the run did, and raise the volume when it withdrew a lot.
+
+        The response carries all of this to whoever ran the command; the log
+        exists for the case that matters most, which is nobody having read the
+        response. A bulk retirement is a WARNING because it is the signature of a
+        shifted list, and because at that point the number of proposals it
+        stranded is the fact worth stopping over.
+        """
+        if not result.retired:
+            logger.info(
+                "[CopyDesk] Ingest: %d created, %d updated across %d scope(s).",
+                result.created, result.updated, len(result.scopes),
+            )
+            return
+
+        names = list(result.retired_keys[:_RETIREMENT_NAMES_IN_LOG])
+        if len(result.retired_keys) > _RETIREMENT_NAMES_IN_LOG:
+            names.append(f"(+{len(result.retired_keys) - _RETIREMENT_NAMES_IN_LOG} more)")
+        report = logger.warning if result.bulk_retirement else logger.info
+        report(
+            "[CopyDesk] Ingest retired %d key(s) / %d row(s)%s in %s: %s%s",
+            len(result.retired_keys),
+            result.retired,
+            f", stranding {result.orphaned_proposals} open proposal(s)"
+            if result.orphaned_proposals
+            else "",
+            ", ".join(result.scopes),
+            ", ".join(names),
+            " — that many keys leaving at once is the signature of a shifted "
+            "list; check that no entry was INSERTED into a positionally keyed "
+            "list before accepting it."
+            if result.bulk_retirement
+            else "",
+        )
 
     # -- derived state ------------------------------------------------------- #
 
@@ -462,6 +623,87 @@ class CopyDeskService:
             getattr(reviewer, "id", None),
         )
         return proposal
+
+    @classmethod
+    def mark_applied(
+        cls, *, proposal_ids: Sequence[UUID], reviewer: User
+    ) -> ApplyStampResultDTO:
+        """Record that `apply-copy` has written these accepted values into the repo.
+
+        Two things happen together, and they have to: `applied_at` is stamped —
+        which is what takes the proposal out of the patch — and the proposal's
+        `source_hash` is carried onto its segment. That second half is §6c's
+        second defect. Without it nothing ever writes `CopySegment.source_hash`,
+        so every translation row reports "provenance unknown" in perpetuity and
+        the stale state — §2 made mechanical, the entire reason the hash exists —
+        never fires once.
+
+        This is the ONE write into the mirror that is not the extractor's, and it
+        is narrow on purpose: the caller has just written this exact string into
+        the working tree, so the projection is being told what git now holds
+        rather than the database being promoted to source of truth. The extractor
+        remains the authority and the next `copy:sync` confirms it (or corrects
+        it, if the file write did not land). The segment's VALUE moves for the
+        same reason — leaving it behind would mean a Polish edit and the
+        translations written against it were applied in one patch and the
+        translations still read as stale, because staleness is measured against
+        the Polish the mirror holds.
+
+        Applied oldest-decision-first, so that where two accepted proposals
+        compete for one segment the row that ends up in the mirror is the one the
+        apply script wrote last into the file.
+        """
+        ids = list(proposal_ids)
+        if not ids:
+            return ApplyStampResultDTO()
+
+        proposals = list(
+            CopyProposal.objects.filter(id__in=ids)
+            .select_related("segment")
+            .order_by("reviewed_at")
+        )
+        found = {proposal.id for proposal in proposals}
+        missing = [value for value in ids if value not in found]
+        if missing:
+            raise UnknownProposalsError(missing)
+
+        applied = 0
+        skipped: list[SkippedProposalDTO] = []
+        now = timezone.now()
+
+        with transaction.atomic():
+            for proposal in proposals:
+                if proposal.applied_at is not None:
+                    # A script that wrote the files and lost the response has to
+                    # be able to say so again without being told it is wrong.
+                    skipped.append(SkippedProposalDTO(id=proposal.id, reason="already_applied"))
+                    continue
+                if proposal.status != ProposalStatus.ACCEPTED:
+                    # A race: rejected between reading the patch and writing it.
+                    # Reported rather than raised, because the files are already
+                    # written and the `git diff` is the backstop.
+                    skipped.append(SkippedProposalDTO(id=proposal.id, reason="not_accepted"))
+                    continue
+
+                segment = proposal.segment
+                segment.value = proposal.value
+                # Blank on the Polish column by construction: a source renders
+                # nothing, so it has no provenance to record.
+                segment.source_hash = "" if segment.is_source else proposal.source_hash
+                segment.save(update_fields=["value", "source_hash", "updated_at"])
+
+                proposal.applied_at = now
+                # `updated_at` left alone deliberately, as in the digest's claim:
+                # the desk shows that column as when the EDITOR last worked on
+                # the segment, and applying is bookkeeping done by somebody else.
+                proposal.save(update_fields=["applied_at"])
+                applied += 1
+
+        logger.info(
+            "[CopyDesk] Applied %d proposal(s), skipped %d, by UID:%s",
+            applied, len(skipped), getattr(reviewer, "id", None),
+        )
+        return ApplyStampResultDTO(applied=applied, skipped=tuple(skipped))
 
     @classmethod
     def mark_seen(cls, *, user: User) -> None:

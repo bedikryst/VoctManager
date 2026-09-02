@@ -44,8 +44,14 @@ export async function readConcerts() {
   return parsed;
 }
 
-async function main() {
-  const { out, quiet } = parseArgs(process.argv.slice(2));
+/**
+ * Read the corpus, write the desk's view of it, and hand the payload back. Exported so that
+ * `copy:sync` runs the SAME extraction it then posts, rather than reading a file somebody may
+ * have generated from a different tree.
+ *
+ * @param {{ out?: string, quiet?: boolean }} [options]
+ */
+export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
   const { segments, paths, stats } = extractAll(await readConcerts());
 
   const payload = { source: SOURCE, stats, segments, paths };
@@ -57,6 +63,12 @@ async function main() {
       `  ${stats.concerts} concerts · ${stats.keys} keys · ${stats.rows} rows · ${stats.translated} already translated`,
     );
   }
+  return payload;
+}
+
+async function main() {
+  const { out, quiet } = parseArgs(process.argv.slice(2));
+  await extractToFile({ out, quiet });
 }
 
 // Compared as file URLs rather than as strings: on Windows `process.argv[1]` is a backslashed

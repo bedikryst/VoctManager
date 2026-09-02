@@ -12,6 +12,7 @@ import json
 from datetime import timedelta
 from pathlib import Path
 from unittest.mock import patch
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -36,7 +37,7 @@ from .hashing import normalize_for_hash, source_hash
 from .models import CopyProposal, CopySegment, ProposalStatus, SegmentKind, SiteLocale
 from .permissions import user_can_edit_site_copy, user_is_copy_reviewer
 from .sanitizers import sanitize_html, sanitize_text
-from .services import CopyDeskService, ProposalClosedError
+from .services import CopyDeskService, ProposalClosedError, UnknownProposalsError
 from .tasks import QUIET_PERIOD, dispatch_copy_proposal_digests
 
 User = get_user_model()
@@ -420,6 +421,16 @@ class ProposalLifecycleTests(TestCase):
         self.assertEqual(proposal.reviewed_by, self.reviewer)
 
 
+def upsert_row(key: str, value: str = "Treść", locale: str = SiteLocale.POLISH) -> SegmentUpsertDTO:
+    return SegmentUpsertDTO(
+        key=key,
+        locale=locale,
+        value=value,
+        scope_label="Kontemplacja Wcielenia",
+        label="Esencja",
+    )
+
+
 class MirrorTests(TestCase):
     """`CopySegment` is git's projection; the extractor must be able to re-run."""
 
@@ -435,8 +446,9 @@ class MirrorTests(TestCase):
         created_at = CopySegment.objects.get().created_at
         second = CopyDeskService.upsert_segments([row])
 
-        self.assertEqual(first["created"], 1)
-        self.assertEqual(second["created"], 0)
+        self.assertEqual(first.created, 1)
+        self.assertEqual(second.created, 0)
+        self.assertEqual(second.retired, 0)
         # If a re-run recreated rows, every segment would read as new on every
         # extraction and the "new since your last visit" state would be noise.
         self.assertEqual(CopySegment.objects.get().created_at, created_at)
@@ -450,6 +462,217 @@ class MirrorTests(TestCase):
             ),
         ])
         self.assertEqual(CopySegment.objects.get().scope, "concert.wcielenie")
+
+
+class RetirementTests(TestCase):
+    """A key the extractor stopped emitting has left the site — but only the
+    pages the payload actually described can say anything about that."""
+
+    def setUp(self):
+        CopyDeskService.upsert_segments([
+            upsert_row("concert.wcielenie.essence"),
+            upsert_row("concert.wcielenie.about"),
+            upsert_row("concert.pasja.essence"),
+            upsert_row("concert.pasja.about"),
+        ])
+
+    def test_prune_is_narrowed_to_the_scopes_the_payload_carried(self):
+        # A run over one concert must not retire the other five. Without the
+        # narrowing, extracting a single page empties the whole desk.
+        result = CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+
+        self.assertEqual(result.retired_keys, ("concert.wcielenie.about",))
+        self.assertEqual(result.scopes, ("concert.wcielenie",))
+        self.assertEqual(
+            set(CopySegment.objects.values_list("key", flat=True)),
+            {"concert.wcielenie.essence", "concert.pasja.essence", "concert.pasja.about"},
+        )
+
+    def test_a_retired_row_is_a_tombstone_not_an_erasure(self):
+        CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+        retired = CopySegment.all_objects.get(key="concert.wcielenie.about")
+        self.assertTrue(retired.is_deleted)
+
+    def test_a_returning_key_is_a_new_row_not_a_revival(self):
+        # Positional keys (§6d): `program.3.note` coming back is not evidence
+        # that it is the same note, so its history stays with the tombstone
+        # instead of being handed to whatever now sits at position 3.
+        CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+        result = CopyDeskService.upsert_segments([
+            upsert_row("concert.wcielenie.essence"),
+            upsert_row("concert.wcielenie.about"),
+        ])
+        self.assertEqual(result.created, 1)
+        self.assertEqual(CopySegment.all_objects.filter(key="concert.wcielenie.about").count(), 2)
+
+    def test_prune_can_be_switched_off_for_a_deliberately_partial_payload(self):
+        result = CopyDeskService.upsert_segments(
+            [upsert_row("concert.wcielenie.essence")], prune=False,
+        )
+        self.assertEqual(result.retired, 0)
+        self.assertEqual(CopySegment.objects.count(), 4)
+
+    def test_the_run_reports_the_open_proposals_it_stranded(self):
+        editor = make_user("florent@example.com", editor=True)
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(
+                segment_id=CopySegment.objects.get(key="concert.wcielenie.about").id,
+                value="Nowe",
+            ),
+            author=editor,
+        )
+        result = CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+        self.assertEqual(result.orphaned_proposals, 1)
+
+    def test_retiring_many_keys_at_once_says_so_instead_of_pruning_quietly(self):
+        # The signature of a shifted list: one entry inserted into a positionally
+        # keyed list re-keys every entry below it, and the extractor then emits
+        # none of the old keys. Reported, not refused — the extractor is the
+        # authority on what the site holds, and the prune is a soft delete.
+        CopyDeskService.upsert_segments([
+            upsert_row(f"concert.wcielenie.program.{index}.note") for index in range(8)
+        ], prune=False)
+
+        with self.assertLogs("copydesk.services", level="WARNING") as captured:
+            result = CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+
+        self.assertTrue(result.bulk_retirement)
+        self.assertEqual(len(result.retired_keys), 9)
+        self.assertIn("shifted", captured.output[0])
+        self.assertIn("concert.wcielenie.program.0.note", captured.output[0])
+
+    def test_an_ordinary_deletion_is_not_dressed_up_as_an_alarm(self):
+        result = CopyDeskService.upsert_segments([upsert_row("concert.wcielenie.essence")])
+        self.assertEqual(result.retired, 1)
+        self.assertFalse(result.bulk_retirement)
+
+
+class ApplyStampTests(TestCase):
+    """§6c's second defect: nothing ever wrote `CopySegment.source_hash`, so the
+    stale state — the entire reason the hash exists — never fired once."""
+
+    def setUp(self):
+        self.editor = make_user("florent@example.com", editor=True)
+        self.reviewer = make_user("dev@example.com", staff=True)
+        self.polish = make_segment("concert.wcielenie.essence", SiteLocale.POLISH, "Stara treść")
+        self.english = make_segment("concert.wcielenie.essence", SiteLocale.ENGLISH, "")
+
+    def _accept(self, segment, value):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=segment.id, value=value), author=self.editor,
+        )
+        return CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+
+    def _english_row(self):
+        return CopyDeskService.segments_for_scope(
+            scope="concert.wcielenie", user=self.editor, locales=[SiteLocale.ENGLISH],
+        )[0]
+
+    def test_apply_stamps_the_segment_with_the_polish_the_translation_renders(self):
+        self.assertFalse(self._english_row().source_known)
+
+        proposal = self._accept(self.english, "Old text")
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+
+        self.english.refresh_from_db()
+        self.assertEqual(self.english.source_hash, source_hash("Stara treść"))
+        row = self._english_row()
+        self.assertTrue(row.source_known)
+        self.assertFalse(row.is_stale)
+
+    def test_the_stale_state_fires_once_the_provenance_exists(self):
+        proposal = self._accept(self.english, "Old text")
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+
+        self.polish.value = "Nowa treść"
+        self.polish.save(update_fields=["value", "updated_at"])
+
+        self.assertTrue(self._english_row().is_stale)
+
+    def test_a_polish_edit_applied_with_its_translation_leaves_the_translation_fresh(self):
+        # The two halves of one patch. The translation was written against the
+        # Polish as it MEANS (the accepted proposal), so the mirror's Polish has
+        # to move in the same call — otherwise a translation that is correct by
+        # construction reads as stale until the next extraction.
+        polish_proposal = self._accept(self.polish, "Nowa treść")
+        english_proposal = self._accept(self.english, "New text")
+        CopyDeskService.mark_applied(
+            proposal_ids=[polish_proposal.id, english_proposal.id], reviewer=self.reviewer,
+        )
+
+        self.polish.refresh_from_db()
+        self.assertEqual(self.polish.value, "Nowa treść")
+        row = self._english_row()
+        self.assertEqual(row.value, "New text")
+        self.assertTrue(row.source_known)
+        self.assertFalse(row.is_stale)
+
+    def test_the_next_extractor_run_does_not_erase_the_provenance(self):
+        # `upsert_segments` must keep `source_hash` out of its `defaults`. If it
+        # ever writes that column, the stamp survives exactly until the next
+        # `copy:sync` and the desk is back where the defect found it.
+        proposal = self._accept(self.english, "Old text")
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+
+        CopyDeskService.upsert_segments([
+            upsert_row("concert.wcielenie.essence", "Stara treść"),
+            upsert_row("concert.wcielenie.essence", "Old text", locale=SiteLocale.ENGLISH),
+        ])
+
+        self.english.refresh_from_db()
+        self.assertEqual(self.english.source_hash, source_hash("Stara treść"))
+
+    def test_a_polish_row_is_given_no_provenance(self):
+        # A source renders nothing, so it goes stale against nothing.
+        proposal = self._accept(self.polish, "Nowa treść")
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+
+        self.polish.refresh_from_db()
+        self.assertEqual(self.polish.source_hash, "")
+
+    def test_applying_twice_is_a_skip_not_an_error(self):
+        # A script that wrote the files and lost the response has to be able to
+        # say so again.
+        proposal = self._accept(self.english, "Old text")
+        first = CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+        stamped = CopyProposal.objects.get(id=proposal.id).applied_at
+
+        second = CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+
+        self.assertEqual(first.applied, 1)
+        self.assertEqual(second.applied, 0)
+        self.assertEqual(second.skipped[0].reason, "already_applied")
+        self.assertEqual(CopyProposal.objects.get(id=proposal.id).applied_at, stamped)
+
+    def test_a_proposal_rejected_mid_flight_is_reported_rather_than_stamped(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.english.id, value="Old text"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.REJECTED),
+            reviewer=self.reviewer,
+        )
+        result = CopyDeskService.mark_applied(
+            proposal_ids=[proposal.id], reviewer=self.reviewer,
+        )
+        self.english.refresh_from_db()
+        self.assertEqual(result.applied, 0)
+        self.assertEqual(result.skipped[0].reason, "not_accepted")
+        self.assertEqual(self.english.source_hash, "")
+
+    def test_an_unknown_id_stamps_nothing_at_all(self):
+        proposal = self._accept(self.english, "Old text")
+        with self.assertRaises(UnknownProposalsError):
+            CopyDeskService.mark_applied(
+                proposal_ids=[proposal.id, uuid4()], reviewer=self.reviewer,
+            )
+        self.assertIsNone(CopyProposal.objects.get(id=proposal.id).applied_at)
 
 
 class NewSinceLastVisitTests(TestCase):
@@ -608,6 +831,90 @@ class ApiTests(TestCase):
                 "source_hash": "",
             }],
         )
+
+    def test_the_ingest_door_is_closed_to_an_editor(self):
+        # The rule the desk's API never writes the mirror holds for the routes an
+        # EDITOR can reach; this one is staff, with a payload derived from git.
+        self.api.force_authenticate(user=self.editor)
+        response = self.api.post(
+            reverse("copydesk-ingest"),
+            {"segments": [{"key": "page.kontakt.hero.lede", "locale": "pl", "value": "x"}]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_the_ingest_reconciles_and_reports_what_it_withdrew(self):
+        make_segment("page.kontakt.hero.body", SiteLocale.POLISH, "Druga", order=1)
+        self.api.force_authenticate(user=self.reviewer)
+        response = self.api.post(
+            reverse("copydesk-ingest"),
+            {
+                "revision": "cc5a5f0",
+                "segments": [{
+                    "key": "page.kontakt.hero.lede",
+                    "locale": "pl",
+                    "value": "Zapraszamy serdecznie",
+                    "label": "Lede",
+                }],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["updated"], 1)
+        self.assertEqual(response.data["retired_keys"], ["page.kontakt.hero.body"])
+        self.segment.refresh_from_db()
+        self.assertEqual(self.segment.value, "Zapraszamy serdecznie")
+
+    def test_a_row_with_a_field_the_mirror_cannot_hold_is_named_by_position(self):
+        # `extra="forbid"`: a misspelled field name has to be a 400 that says
+        # which row, not a column quietly dropped on the way in.
+        self.api.force_authenticate(user=self.reviewer)
+        response = self.api.post(
+            reverse("copydesk-ingest"),
+            {"segments": [
+                {"key": "page.kontakt.hero.lede", "locale": "pl", "value": "x"},
+                {"key": "page.kontakt.hero.body", "locale": "pl", "paths": ["hero", "body"]},
+            ]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Row 1", response.data["detail"])
+
+    def test_only_a_reviewer_may_stamp_an_applied_patch(self):
+        self.api.force_authenticate(user=self.editor)
+        response = self.api.post(
+            reverse("copydesk-applied"), {"proposal_ids": [str(uuid4())]}, format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_an_applied_proposal_leaves_the_patch(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value="Nowe"),
+            author=self.editor,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+        self.api.force_authenticate(user=self.reviewer)
+        applied = self.api.post(
+            reverse("copydesk-applied"), {"proposal_ids": [str(proposal.id)]}, format="json",
+        )
+        self.assertEqual(applied.status_code, 200)
+        self.assertEqual(applied.data["applied"], 1)
+
+        patch_response = self.api.get(reverse("copydesk-patch"))
+        self.assertEqual(patch_response.data["proposals"], [])
+
+    def test_an_unknown_proposal_id_is_a_400_that_names_it(self):
+        stray = uuid4()
+        self.api.force_authenticate(user=self.reviewer)
+        response = self.api.post(
+            reverse("copydesk-applied"), {"proposal_ids": [str(stray)]}, format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["unknown"], [str(stray)])
 
     def test_mark_seen_stamps_the_visit(self):
         self.api.force_authenticate(user=self.editor)

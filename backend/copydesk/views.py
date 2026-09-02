@@ -19,12 +19,14 @@ from rest_framework.response import Response
 
 from core.request_utils import request_user
 
-from .dtos import ProposalReviewDTO, ProposalWriteDTO
+from .dtos import ProposalReviewDTO, ProposalWriteDTO, SegmentUpsertDTO
 from .models import CopyProposal, ProposalStatus
 from .permissions import CanEditSiteCopy, IsCopyReviewer, user_is_copy_reviewer
 from .serializers import (
+    ProposalAppliedSerializer,
     ProposalReviewSerializer,
     ProposalWriteSerializer,
+    SegmentIngestSerializer,
     SegmentQuerySerializer,
 )
 from .services import (
@@ -32,6 +34,7 @@ from .services import (
     ProposalClosedError,
     ProposalNotFoundError,
     SegmentNotFoundError,
+    UnknownProposalsError,
 )
 
 logger = logging.getLogger(__name__)
@@ -197,6 +200,92 @@ class CopyDeskPatchView(views.APIView):
                 for proposal in proposals
             ],
         })
+
+
+class CopyDeskIngestView(views.APIView):
+    """POST — the extractor's door into the mirror. Staff only.
+
+    The seam §6c's third defect describes: `upsert_segments` is a Python
+    classmethod, the extractor is a node script reading YAML in `web/`, and
+    Postgres publishes no host port, so something has to carry one to the other.
+    An endpoint rather than a management command because the loop then runs from
+    the repository as one command (`npm run copy:sync`) on any machine with the
+    checkout, exactly as `apply-copy` must already reach the database; a command
+    fed over `docker compose exec -T` would couple the loop to a shell on the
+    server, and on the developer's own Windows checkout that pipe is a known way
+    to lose a UTF-8 payload silently.
+
+    It does not break the rule that the desk's API never writes the mirror. That
+    rule is about the EDITOR-facing routes — an editor's change is a proposal,
+    always. This door is staff-only and its payload is derived from git.
+
+    The "is the working tree clean" guard §6c asks for lives in the client, and
+    can only live there: the server has no checkout to inspect. What it can do is
+    record which revision the payload claimed, so a mirror that looks wrong can
+    be traced to the tree it was built from.
+    """
+
+    permission_classes = [IsCopyReviewer]
+
+    def post(self, request: Request) -> Response:
+        serializer = SegmentIngestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        rows: list[SegmentUpsertDTO] = []
+        for index, row in enumerate(data["segments"]):
+            try:
+                rows.append(SegmentUpsertDTO(**row))
+            except ValidationError as exc:
+                # Named by position: at ~1 300 rows an unlocated validation error
+                # is a hunt, and the extractor writes them in a stable order.
+                return Response(
+                    {
+                        "detail": f"Row {index} is not a segment the mirror can hold.",
+                        "errors": exc.errors(include_url=False),
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        logger.info(
+            "[CopyDesk] Ingest of %d row(s) by UID:%s from revision %s",
+            len(rows),
+            getattr(request.user, "id", None),
+            data["revision"] or "(unstated)",
+        )
+        result = CopyDeskService.upsert_segments(rows, prune=data["prune"])
+        return Response(result.model_dump(mode="json"))
+
+
+class CopyDeskAppliedView(views.APIView):
+    """POST — `apply-copy` reports which accepted proposals reached the repository.
+
+    Stamps `applied_at`, which takes them out of the patch, and carries each
+    proposal's `source_hash` onto its segment, which is the only thing that ever
+    writes that column and therefore the only reason the stale state can fire at
+    all. Called after a real write: a dry run has nothing to report.
+    """
+
+    permission_classes = [IsCopyReviewer]
+
+    def post(self, request: Request) -> Response:
+        serializer = ProposalAppliedSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            result = CopyDeskService.mark_applied(
+                proposal_ids=serializer.validated_data["proposal_ids"],
+                reviewer=request_user(request),
+            )
+        except UnknownProposalsError as exc:
+            return Response(
+                {
+                    "detail": "No such proposal(s); nothing was stamped.",
+                    "unknown": [str(value) for value in exc.ids],
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(result.model_dump(mode="json"))
 
 
 class CopyDeskMarkSeenView(views.APIView):

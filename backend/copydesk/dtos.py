@@ -24,6 +24,14 @@ STATUS_VALUES = frozenset(ProposalStatus.values)
 MAX_VALUE_LENGTH = 20_000
 MAX_COMMENT_LENGTH = 1_000
 
+#: How many rows one ingest may carry. Today's corpus is 1 281 (427 keys in three
+#: locales) and stage G roughly doubles it, so this is about four times what the
+#: site can hold — a stop on a runaway client, not an estimate. Raising it much
+#: further is a decision rather than a number: past roughly ten thousand rows the
+#: body approaches Django's 2.5 MB `DATA_UPLOAD_MAX_MEMORY_SIZE` and the seam
+#: needs a shape that chunks, which is not something to discover as a 500.
+MAX_INGEST_ROWS = 6_000
+
 
 class CopyDeskBaseDTO(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
@@ -156,6 +164,59 @@ class SegmentDTO(BaseModel):
     #: Created after the reader's last visit to the desk.
     is_new: bool = False
     proposals: tuple[ProposalDTO, ...] = ()
+
+
+class SegmentIngestResultDTO(BaseModel):
+    """What one reconciliation of the mirror did, as the ingest reports it back.
+
+    The counts exist to be read by a person at a terminal, not to be stored.
+    `retired_keys` is the load-bearing one: a key leaves the desk only because
+    the extractor stopped emitting it, and the two reasons for that look
+    identical from here — the field was genuinely deleted from the site, or a
+    list gained an entry and every positional key below it shifted. The second
+    silently discards proposals and first-seen dates for rows that still exist
+    under a new name, so the run names what it withdrew instead of reporting a
+    number.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    created: int = 0
+    updated: int = 0
+    #: Rows (one key in one locale) soft-deleted, and the keys they came from.
+    retired: int = 0
+    retired_keys: tuple[str, ...] = ()
+    #: Open proposals that were sitting on a row this run withdrew. The number
+    #: that turns "pruned 40 dead rows" into "threw away somebody's evening".
+    orphaned_proposals: int = 0
+    #: The pages this payload covered — the only pages the prune could touch.
+    scopes: tuple[str, ...] = ()
+    #: More keys left at once than a single editorial deletion plausibly
+    #: explains. Reported, not refused: see `BULK_RETIREMENT_KEYS`.
+    bulk_retirement: bool = False
+
+
+class SkippedProposalDTO(BaseModel):
+    """One proposal the apply stamp declined to touch, and why."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    reason: str
+
+
+class ApplyStampResultDTO(BaseModel):
+    """What `apply-copy` managed to stamp.
+
+    Re-running the same batch is not an error — a script that wrote the files
+    and lost the response has to be able to say so again — so an already-applied
+    proposal is skipped rather than refused.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    applied: int = 0
+    skipped: tuple[SkippedProposalDTO, ...] = ()
 
 
 class ScopeSummaryDTO(BaseModel):
