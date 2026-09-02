@@ -4,13 +4,32 @@
 # names under src/assets/photos (bg expects -desktop / -mobile crops).
 # The `about:` block feeds the /o-nas milestone list (place/blurb/img) — all optional,
 # falling back to venue/essence; a missing img renders the milestone text-only.
+#
+# THREE SHAPES, AND THE DIFFERENCE BETWEEN THEM IS THE WHOLE POINT.
+#   1. A FOREIGN ORIGINAL is content, not a language: `text`, `inscriptio`, `claspText`,
+#      `movements[].lat`. It is printed unchanged in every locale and is never translated.
+#   2. Its VERNACULAR RENDERING is a `*Gloss` map keyed by locale — `textGloss`, `inscriptioGloss`,
+#      `claspTextGloss`, `movements[].gloss`. `pl` is required (Polish is the source a translation
+#      renders); `en` and `fr` arrive per field as the site is translated, and each falls back to
+#      Polish on its own. This replaced a `*Pl` suffix that meant BOTH "the Polish of this foreign
+#      text" and, to any later reader, "the Polish locale" — so `textEn` beside `textPl` would have
+#      put a language and a piece of content behind one word.
+#   3. Everything else is ordinary Polish prose (`essence`, `note`, `programArc`, `line`,
+#      `prologue`, `gallery[].alt`…), still a bare string. It is translatable too and enters the
+#      copy desk by key; do not turn one of those fields into a map on its own.
+#
+# NO DATE IS EVER WRITTEN INTO COPY. `metaPlace` is the place half of the dateline and the moment
+# is formatted from `date` (lib/dates) — or, where the day is genuinely vague, taken from
+# `dateLabel`. `verbum.speaker` is the name alone, for the same reason. `inscriptioRef` is
+# structural (book id + chapter + verses, lib/scriptureRef) because "Iz 11, 1" is "Is 11:1" in
+# English: the abbreviation and both separators are language choices.
 
 - id: wcielenie
   order: 1
   roman: "I"
   latin: Incarnatio
   title: Kontemplacja Wcielenia
-  meta: "Bazylika NSPJ, Kraków · 20 stycznia 2024"
+  metaPlace: { pl: "Bazylika NSPJ, Kraków" }
   venue: "Bazylika NSPJ, Kraków"
   date: "2024-01-20"
   time: "20:00"
@@ -58,7 +77,7 @@
     dni po tym, jak zespół powstał. Zanim zabrzmi pierwszy dźwięk,
     o. Jarek Naliwajko SJ wprowadza w tajemnicę Wcielenia.
   verbum:
-    speaker: "o. Jarek Naliwajko SJ · 20 stycznia 2024"
+    speaker: { pl: "o. Jarek Naliwajko SJ" }
     quote: >-
       Odkrywanie tajemnicy kończy się zawsze tak samo. Prowadzi do kolejnej tajemnicy.
       W przeciwnym wypadku to nie ona, tylko wiedza lub rutyna.
@@ -119,34 +138,34 @@
   movements:
     - id: prophetia
       lat: Prophetia
-      pl: Zapowiedź
+      gloss: { pl: Zapowiedź }
       line: >-
         Zanim padnie słowo o Dziecku, brzmi obietnica: różdżka z pnia Jessego, krzyk pasterzy
         w nocy, adwentowy róg obwieszczający nadejście.
     - id: nativitas
       lat: Nativitas
-      pl: Narodziny
+      gloss: { pl: Narodziny }
       line: >-
         Dziecko przychodzi. Wokół Niego zbiera się kontemplacja Matki: renesansowa Hiszpania i polska kolęda.
     - id: umbra
       lat: Umbra
-      pl: Cień
+      gloss: { pl: Cień }
       interlude:
         lat: "Vox in Rama audita est, ploratus et ululatus: Rachel plorans filios suos."
-        pl: "W Rama słychać lament i wielki płacz: Rachel opłakuje swoje dzieci."
-        ref: "Jr 31, 15 · Mt 2, 18"
+        gloss: { pl: "W Rama słychać lament i wielki płacz: Rachel opłakuje swoje dzieci." }
+        ref: { scripture: [{ book: jer, chapter: "31", verses: ["15"] }, { book: matt, chapter: "2", verses: ["18"] }] }
       line: >-
         Tuż po narodzinach pada cień: kołysanka matki nad dzieckiem, które Herod skazał
         na śmierć.
     - id: impletio
       lat: Impletio
-      pl: Spełnienie
+      gloss: { pl: Spełnienie }
       line: >-
         W świątyni Symeon bierze Dziecko na ręce: „moje oczy ujrzały Twoje zbawienie”.
         Obietnica z początku wieczoru dopełnia się.
     - id: laus
       lat: Laus
-      pl: Uwielbienie
+      gloss: { pl: Uwielbienie }
       line: >-
         Zostaje już tylko nowa pieśń i radość: Chrystus się narodził.
   credits:
@@ -182,8 +201,8 @@
     - { img: kd-wcielenie-7, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ", credit: "Tomasz Czajkowski" }
     - { img: kd-wcielenie-8, alt: "VoctEnsemble po Kontemplacji Wcielenia w Bazylice NSPJ" }
   inscriptio: "Et egredietur virga de radice Iesse"
-  inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
-  inscriptioRef: "Iz 11, 1"
+  inscriptioGloss: { pl: "I wyrośnie różdżka z pnia Jessego" }
+  inscriptioRef: { scripture: [{ book: isa, chapter: "11", verses: ["1"] }] }
   reflection: >-
     Wcielenie stanowi coś niewysłowionego, co z biegiem czasu często staje się dla nas
     powszednim. Kiedy uświadamiamy sobie znaczenie tej tajemnicy, możemy odzyskać zmysł
@@ -210,8 +229,8 @@
         ten program. Po polsku znana jako „Cudowna różdżka wzrosła” (przekład ks. Pawła Sikory,
         1912). Sandström osnuwa dawny chorał wokół unoszącego się nad nim kwartetu solistów.
       inscriptio: "Et egredietur virga de radice Iesse"
-      inscriptioPl: "I wyrośnie różdżka z pnia Jessego"
-      inscriptioRef: "Iz 11, 1"
+      inscriptioGloss: { pl: "I wyrośnie różdżka z pnia Jessego" }
+      inscriptioRef: { scripture: [{ book: isa, chapter: "11", verses: ["1"] }] }
       text: |-
         Es ist ein Ros' entsprungen
         aus einer Wurzel zart,
@@ -220,14 +239,15 @@
         und hat ein Blümlein bracht
         mitten im kalten Winter,
         wohl zu der halben Nacht.
-      textPl: |-
-        Wyrosła różdżka
-        z delikatnego korzenia,
-        jak śpiewali nam dawni —
-        z rodu Jessego;
-        i wydała kwiat
-        pośród mroźnej zimy,
-        o północnej porze.
+      textGloss:
+        pl: |-
+          Wyrosła różdżka
+          z delikatnego korzenia,
+          jak śpiewali nam dawni —
+          z rodu Jessego;
+          i wydała kwiat
+          pośród mroźnej zimy,
+          o północnej porze.
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "Le cri des bergers"
@@ -239,8 +259,8 @@
         samotności, która wsłuchana w „echo milczenia” przemienia się w piękno. Dwanaście głosów
         rozpisanych na całą przestrzeń nawy.
       inscriptio: "Pastores erant in regione eadem vigilantes"
-      inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
-      inscriptioRef: "Łk 2, 8"
+      inscriptioGloss: { pl: "Pasterze trzymali straż nocną nad swoją trzodą" }
+      inscriptioRef: { scripture: [{ book: luke, chapter: "2", verses: ["8"] }] }
     - composer: "Jacob Handl (Gallus)"
       years: "1550–1591"
       work: "Canite tuba"
@@ -252,8 +272,8 @@
         Gallusa, Słoweńca z kręgu muzyki cesarskiej, obwieszcza nadejście jak głos rogu:
         „Oto przychodzi Bóg, Zbawiciel nasz”.
       inscriptio: "Canite tuba in Sion · Ecce Deus salvator noster adveniet"
-      inscriptioPl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz"
-      inscriptioRef: "Za 9, 14"
+      inscriptioGloss: { pl: "Trąbcie w róg na Syjonie · Oto przychodzi Bóg, Zbawiciel nasz" }
+      inscriptioRef: { scripture: [{ book: zech, chapter: "9", verses: ["14"] }] }
       text: |-
         Canite tuba in Sion, vocate gentes,
         annuntiate populis et dicite:
@@ -261,13 +281,14 @@
         Annuntiate et auditum facite,
         loquimini et clamate:
         Ecce Deus salvator noster adveniet.
-      textPl: |-
-        Trąbcie w róg na Syjonie, zwołajcie narody,
-        oznajmijcie ludom i mówcie:
-        Oto przyjdzie Bóg, Zbawiciel nasz.
-        Oznajmiajcie i głoście,
-        mówcie i wołajcie:
-        Oto przyjdzie Bóg, Zbawiciel nasz.
+      textGloss:
+        pl: |-
+          Trąbcie w róg na Syjonie, zwołajcie narody,
+          oznajmijcie ludom i mówcie:
+          Oto przyjdzie Bóg, Zbawiciel nasz.
+          Oznajmiajcie i głoście,
+          mówcie i wołajcie:
+          Oto przyjdzie Bóg, Zbawiciel nasz.
     - composer: "Bernat Vivancos"
       years: "ur. 1973"
       work: "A Child is born"
@@ -277,7 +298,7 @@
       note: >-
         Współczesna, prosta kolęda na cztery głosy do wiersza H. M. MacGilla z 1876 roku. Po
         zapowiedziach przychodzą same narodziny.
-      inscriptioPl: "tekst: H. M. MacGill (1876)"
+      inscriptioGloss: { pl: "tekst: H. M. MacGill (1876)" }
     - composer: "Tomás Luis de Victoria"
       years: "1548–1611"
       work: "Alma Redemptoris Mater"
@@ -289,7 +310,7 @@
         Victorii: osiem samodzielnych linii prowadzi ze sobą dialog pokrewny weneckiemu coro
         spezzato, choć o rozstawieniu chóru w przestrzeni sam kompozytor nie zostawił wskazówek.
       inscriptio: "Alma Redemptoris Mater"
-      inscriptioPl: "Czcigodna Matko Odkupiciela · antyfona maryjna"
+      inscriptioGloss: { pl: "Czcigodna Matko Odkupiciela · antyfona maryjna" }
     - composer: "Krzysztof Penderecki"
       years: "1933–2020"
       work: "O gloriosa Virginum"
@@ -301,7 +322,7 @@
         wenezuelskiego El Sistema. Prawykonano go w Caracas, pod batutą samego kompozytora;
         polska premiera odbyła się kilka dni później.
       inscriptio: "O gloriosa Virginum"
-      inscriptioPl: "O najchwalebniejsza z dziewic"
+      inscriptioGloss: { pl: "O najchwalebniejsza z dziewic" }
     - composer: "Mariusz Kramarz"
       work: "Gdy śliczna Panna"
       movement: nativitas
@@ -309,7 +330,7 @@
       note: >-
         Polska kolęda w opracowaniu Mariusza Kramarza: rodzimy głos w tym międzynarodowym
         programie, tuż po współczesnych narodzinach.
-      inscriptioPl: "aranżacja współczesna kolędy polskiej"
+      inscriptioGloss: { pl: "aranżacja współczesna kolędy polskiej" }
     - composer: "Philip Stopford"
       years: "ur. 1977"
       work: "Lully, Lullay"
@@ -322,7 +343,7 @@
         który pada tuż po narodzinach. Stopford ubrał ją w 2008 roku w chłodną współczesną
         harmonię.
       inscriptio: "Coventry Carol — Rzeź Niewiniątek"
-      inscriptioPl: "kołysanka matki za skazane dziecko · Mt 2, 16"
+      inscriptioGloss: { pl: "kołysanka matki za skazane dziecko · Mt 2, 16" }
       text: |-
         Lully, lullay, thou little tiny child,
         bye, bye, lully, lullay.
@@ -343,26 +364,27 @@
         And ever mourn and sigh,
         for thy parting neither say nor sing:
         bye, bye, lully, lullay.
-      textPl: |-
-        Lully, lullay, maleńkie Dziecię,
-        bye, bye, lully, lullay.
-        Lullay, maleńkie Dziecię,
-        bye, bye, lully, lullay.
+      textGloss:
+        pl: |-
+          Lully, lullay, maleńkie Dziecię,
+          bye, bye, lully, lullay.
+          Lullay, maleńkie Dziecię,
+          bye, bye, lully, lullay.
 
-        O siostry, cóż uczynić mamy,
-        by ocalić w ten dzień
-        biedne maleństwo, któremu śpiewamy:
-        bye, bye, lully, lullay?
+          O siostry, cóż uczynić mamy,
+          by ocalić w ten dzień
+          biedne maleństwo, któremu śpiewamy:
+          bye, bye, lully, lullay?
 
-        Herod, król, w swej wściekłości
-        rozkazał dziś
-        swoim zbrojnym, na własnych oczach,
-        zgładzić wszystkie małe dzieci.
+          Herod, król, w swej wściekłości
+          rozkazał dziś
+          swoim zbrojnym, na własnych oczach,
+          zgładzić wszystkie małe dzieci.
 
-        Biada mi, biedne Dziecię, żal mi Ciebie!
-        Wciąż będę płakać i wzdychać;
-        na Twoje odejście — ani słowa, ani pieśni:
-        bye, bye, lully, lullay.
+          Biada mi, biedne Dziecię, żal mi Ciebie!
+          Wciąż będę płakać i wzdychać;
+          na Twoje odejście — ani słowa, ani pieśni:
+          bye, bye, lully, lullay.
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "Nunc dimittis"
@@ -373,8 +395,8 @@
         w jego tintinnabuli, to spełnienie obietnicy, od której wieczór się zaczął; starzec może
         odejść w pokoju.
       inscriptio: "Nunc dimittis servum tuum, Domine"
-      inscriptioPl: "Teraz, o Władco, pozwól odejść słudze Twemu · kantyk Symeona"
-      inscriptioRef: "Łk 2, 29–32"
+      inscriptioGloss: { pl: "Teraz, o Władco, pozwól odejść słudze Twemu · kantyk Symeona" }
+      inscriptioRef: { scripture: [{ book: luke, chapter: "2", verses: ["29–32"] }] }
       text: |-
         Nunc dimittis servum tuum, Domine,
         secundum verbum tuum in pace,
@@ -382,13 +404,14 @@
         quod parasti ante faciem omnium populorum:
         lumen ad revelationem gentium
         et gloriam plebis tuae Israel.
-      textPl: |-
-        Teraz, o Władco, pozwól odejść słudze Twemu
-        w pokoju, według Twojego słowa,
-        bo moje oczy ujrzały Twoje zbawienie,
-        któreś przygotował wobec wszystkich narodów:
-        światło na oświecenie pogan
-        i chwałę ludu Twego, Izraela.
+      textGloss:
+        pl: |-
+          Teraz, o Władco, pozwól odejść słudze Twemu
+          w pokoju, według Twojego słowa,
+          bo moje oczy ujrzały Twoje zbawienie,
+          któreś przygotował wobec wszystkich narodów:
+          światło na oświecenie pogan
+          i chwałę ludu Twego, Izraela.
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
       work: "Cantate Domino"
@@ -401,8 +424,8 @@
         przez splecione wersety Psalmów 96 i 98: wezwanie do nowej pieśni, którego radość
         słychać w samej fakturze.
       inscriptio: "Cantate Domino canticum novum"
-      inscriptioPl: "Śpiewajcie Panu pieśń nową"
-      inscriptioRef: "Ps 98 (97)"
+      inscriptioGloss: { pl: "Śpiewajcie Panu pieśń nową" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "98", chapterAlt: "97" }] }
     - composer: "Anonim / aranż. Brian Kay"
       work: "Gaudete"
       movement: laus
@@ -412,7 +435,7 @@
         Kolęda z fińsko-szwedzkiego zbioru świętych pieśni Piae Cantiones (1582), w opracowaniu
         Briana Kaya. Radość jako bis: „Chrystus się narodził”, ostatnie słowo wieczoru.
       inscriptio: "Gaudete, gaudete! Christus est natus"
-      inscriptioPl: "Radujcie się! Chrystus się narodził"
+      inscriptioGloss: { pl: "Radujcie się! Chrystus się narodził" }
       text: |-
         Gaudete, gaudete! Christus est natus
         ex Maria virgine, gaudete!
@@ -436,29 +459,30 @@
         psallat iam in lustro;
         benedicat Domino:
         salus Regi nostro.
-      textPl: |-
-        Radujcie się, radujcie! Chrystus się narodził
-        z Maryi Dziewicy, radujcie się!
+      textGloss:
+        pl: |-
+          Radujcie się, radujcie! Chrystus się narodził
+          z Maryi Dziewicy, radujcie się!
 
-        Nadszedł czas łaski,
-        którego pragnęliśmy;
-        pieśni radości
-        pobożnie oddajmy.
+          Nadszedł czas łaski,
+          którego pragnęliśmy;
+          pieśni radości
+          pobożnie oddajmy.
 
-        Bóg stał się człowiekiem,
-        natura się zdumiewa;
-        świat został odnowiony
-        przez Chrystusa Króla.
+          Bóg stał się człowiekiem,
+          natura się zdumiewa;
+          świat został odnowiony
+          przez Chrystusa Króla.
 
-        Zamknięta brama Ezechiela
-        została przekroczona;
-        skąd wzeszło światło,
-        tam znajduje się zbawienie.
+          Zamknięta brama Ezechiela
+          została przekroczona;
+          skąd wzeszło światło,
+          tam znajduje się zbawienie.
 
-        Niech więc nasze zgromadzenie
-        śpiewa już w jasności;
-        niech błogosławi Panu:
-        cześć Królowi naszemu.
+          Niech więc nasze zgromadzenie
+          śpiewa już w jasności;
+          niech błogosławi Panu:
+          cześć Królowi naszemu.
       bis: true
 
 - id: wolanie-gor
@@ -466,7 +490,7 @@
   roman: "II"
   latin: Terra
   title: Wołanie Gór
-  meta: "Dworek Gościnny, Szczawnica · 1 czerwca 2024"
+  metaPlace: { pl: "Dworek Gościnny, Szczawnica" }
   venue: "Dworek Gościnny, Szczawnica"
   date: "2024-06-01"
   admission: paid
@@ -484,8 +508,8 @@
   accent: "#7d9890"
   reverse: true
   inscriptio: "Ad te clamamus, exsules filii Hevae"
-  inscriptioPl: "Do Ciebie wołamy, wygnańcy, synowie Ewy"
-  inscriptioRef: "Salve Regina"
+  inscriptioGloss: { pl: "Do Ciebie wołamy, wygnańcy, synowie Ewy" }
+  inscriptioRef: { source: { pl: "Salve Regina" } }
   essence: "Góry były oddechem tego programu. Dwanaście głosów i skrzypce Radu Ropotana prowadziły od sakralnej polifonii ku pieśniom, w których krajobraz staje się pamięcią wspólnoty."
   facts:
     - 12 głosów i skrzypce
@@ -596,36 +620,36 @@
   movements:
     - id: clamor
       lat: Clamor
-      pl: Wołanie
+      gloss: { pl: Wołanie }
       line: >-
         Zew pasterzy odbity od zboczy: jeszcze bez słów, sam głos w przestrzeni.
     - id: advocata
       lat: Advocata
-      pl: Orędowniczka
+      gloss: { pl: Orędowniczka }
       line: >-
         Wołanie znajduje adresata: Matkę, do której wołają wygnańcy, i kobiety, których praca
         trzyma świat w ruchu.
     - id: sacramentum
       lat: Sacramentum
-      pl: Tajemnica ołtarza
+      gloss: { pl: Tajemnica ołtarza }
       line: >-
         Trzy hymny przed Najświętszym Sakramentem: dwa do słów św. Tomasza z Akwinu (raz w
         polifonii korsykańskiej, raz u współczesnego Łotysza) i polska pieśń Góreckiego.
     - id: astra
       lat: Astra
-      pl: Gwiazdy
+      gloss: { pl: Gwiazdy }
       line: >-
         Najwyższy punkt pierwszej części: samotna noc pod gwiazdami, których eony nie zdołają
         zasmucić ani zmęczyć.
     - id: volatus
       lat: Volatus
-      pl: Lot
+      gloss: { pl: Lot }
       line: >-
         Po przerwie ziemia i powietrze: wiejski skrzypek, zakochany ptak, Bach i skowronek,
         który wznosi się, aż zginie w świetle.
     - id: reditus
       lat: Reditus
-      pl: Powrót
+      gloss: { pl: Powrót }
       line: >-
         Z nieba z powrotem na ziemię: zamarznięta rzeka, dziewczyna przy młynie. I światło, które
         zstępuje, by jutro wzejść na nowo.
@@ -641,8 +665,8 @@
         przez lata związany z Escolanią de Montserrat, osnuwa wokół niego dwanaście głosów
         rozpisanych na całą przestrzeń sali. Od tego bezsłownego wołania bierze nazwę cały wieczór.
       inscriptio: "Pastores erant in regione eadem vigilantes"
-      inscriptioPl: "Pasterze trzymali straż nocną nad swoją trzodą"
-      inscriptioRef: "Łk 2, 8"
+      inscriptioGloss: { pl: "Pasterze trzymali straż nocną nad swoją trzodą" }
+      inscriptioRef: { scripture: [{ book: luke, chapter: "2", verses: ["8"] }] }
     - composer: "Anonim / tradycja Oksytanii"
       work: "Salve Regina"
       movement: advocata
@@ -655,7 +679,7 @@
         oksytańskim: „Adiu, Maria, siás tot de gràcia…”, modlitwa w mowie, którą pasterze
         naprawdę mówili.
       inscriptio: "Salve, Regina, mater misericordiae"
-      inscriptioPl: "Witaj Królowo, Matko Miłosierdzia · antyfona maryjna"
+      inscriptioGloss: { pl: "Witaj Królowo, Matko Miłosierdzia · antyfona maryjna" }
       text: |-
         Salve, Regina, mater misericordiae,
         vita, dulcedo et spes nostra, salve.
@@ -667,17 +691,18 @@
         Et Jesum, benedictum fructum ventris tui,
         nobis post hoc exsilium ostende.
         O clemens, o pia, o dulcis Virgo Maria.
-      textPl: |-
-        Witaj Królowo, Matko Miłosierdzia,
-        życie, słodyczy i nadziejo nasza, witaj!
-        Do Ciebie wołamy wygnańcy, synowie Ewy;
-        do Ciebie wzdychamy jęcząc i płacząc
-        na tym łez padole.
-        Przeto, Orędowniczko nasza,
-        one miłosierne oczy Twoje na nas zwróć,
-        a Jezusa, błogosławiony owoc żywota Twojego,
-        po tym wygnaniu nam okaż.
-        O łaskawa, o litościwa, o słodka Panno Maryjo!
+      textGloss:
+        pl: |-
+          Witaj Królowo, Matko Miłosierdzia,
+          życie, słodyczy i nadziejo nasza, witaj!
+          Do Ciebie wołamy wygnańcy, synowie Ewy;
+          do Ciebie wzdychamy jęcząc i płacząc
+          na tym łez padole.
+          Przeto, Orędowniczko nasza,
+          one miłosierne oczy Twoje na nas zwróć,
+          a Jezusa, błogosławiony owoc żywota Twojego,
+          po tym wygnaniu nam okaż.
+          O łaskawa, o litościwa, o słodka Panno Maryjo!
     - composer: "David MacIntyre"
       years: "ur. 1952"
       work: "Ave Maria"
@@ -690,7 +715,7 @@
         codziennie ukazywać Matka Boża, i tłum odmawiający w tym czasie różaniec. Stąd sześć
         głosów: sześcioro dzieci, sześć partii; utwór na same głosy wysokie. Fermata na ostatnim,
         cichym takcie to w zamyśle MacIntyre'a moment zjawienia.
-      inscriptioPl: "na sześć głosów wysokich · fermata ciszy na końcu"
+      inscriptioGloss: { pl: "na sześć głosów wysokich · fermata ciszy na końcu" }
     - composer: "Polifonia korsykańska"
       work: "Tantum ergo sacramentum"
       movement: sacramentum
@@ -700,7 +725,7 @@
         Pange lingua św. Tomasza z Akwinu (XIII w.), śpiewane przy adoracji, najczęściej na
         repozycję, gdy Najświętszy Sakrament wraca do tabernakulum.
       inscriptio: "Tantum ergo Sacramentum veneremur cernui"
-      inscriptioPl: "Przed tak wielkim Sakramentem upadajmy na twarze · z hymnu Pange lingua"
+      inscriptioGloss: { pl: "Przed tak wielkim Sakramentem upadajmy na twarze · z hymnu Pange lingua" }
       text: |-
         Tantum ergo Sacramentum
         veneremur cernui:
@@ -716,21 +741,22 @@
         procedenti ab utroque
         compar sit laudatio.
         Amen.
-      textPl: |-
-        Przed tak wielkim Sakramentem
-        upadajmy wszyscy wraz,
-        niech przed Nowym Testamentem
-        starych praw ustąpi czas:
-        co dla zmysłów niepojęte,
-        niech dopełni wiara w nas.
+      textGloss:
+        pl: |-
+          Przed tak wielkim Sakramentem
+          upadajmy wszyscy wraz,
+          niech przed Nowym Testamentem
+          starych praw ustąpi czas:
+          co dla zmysłów niepojęte,
+          niech dopełni wiara w nas.
 
-        Bogu Ojcu i Synowi
-        hołd po wszystkie nieśmy dni:
-        niech podaje wiek wiekowi
-        hymn triumfu, dzięki, czci;
-        a równemu Im Duchowi
-        niechaj wieczna chwała brzmi.
-        Amen.
+          Bogu Ojcu i Synowi
+          hołd po wszystkie nieśmy dni:
+          niech podaje wiek wiekowi
+          hymn triumfu, dzięki, czci;
+          a równemu Im Duchowi
+          niechaj wieczna chwała brzmi.
+          Amen.
     - composer: "Ēriks Ešenvalds"
       years: "ur. 1977"
       work: "O salutaris hostia"
@@ -742,7 +768,7 @@
         Ten sam obrzęd co przed chwilą, tylko język o siedem wieków późniejszy: u Ešenvaldsa
         wielowarstwowe harmonie i chóralne klastry.
       inscriptio: "O salutaris Hostia, quae caeli pandis ostium"
-      inscriptioPl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens"
+      inscriptioGloss: { pl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens" }
       text: |-
         O salutaris Hostia,
         quae caeli pandis ostium:
@@ -754,17 +780,18 @@
         qui vitam sine termino
         nobis donet in patria.
         Amen.
-      textPl: |-
-        O zbawcza Hostio, godna czci,
-        co lud do niebios wiedziesz bram.
-        Bój srogi nęka wiernych Ci,
-        daj siłę, pomoc ześlij nam.
+      textGloss:
+        pl: |-
+          O zbawcza Hostio, godna czci,
+          co lud do niebios wiedziesz bram.
+          Bój srogi nęka wiernych Ci,
+          daj siłę, pomoc ześlij nam.
 
-        Jednemu w Trójcy Władcy ziem
-        niech będzie chwała w każdy czas,
-        niech On wieczystym życiem Swym
-        w Ojczyźnie rajskiej darzy nas.
-        Amen.
+          Jednemu w Trójcy Władcy ziem
+          niech będzie chwała w każdy czas,
+          niech On wieczystym życiem Swym
+          w Ojczyźnie rajskiej darzy nas.
+          Amen.
     - composer: "Henryk Mikołaj Górecki"
       years: "1933–2010"
       work: "Sanctus, Sanctus, Sanctus"
@@ -776,17 +803,18 @@
         tego samego, z którego śpiewa się w polskich kościołach od pokoleń. Minimalne środki,
         maksymalny efekt. Oryginał jest polski i mówi „Jezu, jesteś niepojęty”; tu zabrzmiała
         wersja łacińska, w której ten sam wers mówi „Jezu, przychodzisz do nas”.
-      inscriptioPl: "z cyklu Pieśni kościelne op. 84 · oryginał polski: Święty, święty, święty"
+      inscriptioGloss: { pl: "z cyklu Pieśni kościelne op. 84 · oryginał polski: Święty, święty, święty" }
       text: |-
         Sanctus, sanctus, sanctus,
         sanctus semper sanctus,
         Jesu Christe venis nobis
         sanctissimo Sacramento.
-      textPl: |-
-        Święty, Święty, Święty,
-        Święty zawsze Święty,
-        Jezu, przychodzisz do nas
-        w Najświętszym Sakramencie.
+      textGloss:
+        pl: |-
+          Święty, Święty, Święty,
+          Święty zawsze Święty,
+          Jezu, przychodzisz do nas
+          w Najświętszym Sakramencie.
     - composer: "Ēriks Ešenvalds"
       years: "ur. 1977"
       work: "Stars"
@@ -797,7 +825,7 @@
         do chóru szklane harmonijki (strojone kieliszki, po których wodzi się mokrym palcem), żeby
         brzmiały jak migotanie. Harmonie są otwarte i przestronne; to najwyższy punkt wieczoru,
         i na nim kończy się pierwsza część.
-      inscriptioPl: "tekst: Sara Teasdale"
+      inscriptioGloss: { pl: "tekst: Sara Teasdale" }
       text: |-
         Alone in the night
         on a dark hill
@@ -823,31 +851,32 @@
         am honored to be
         witness
         of so much majesty.
-      textPl: |-
-        Samotny w nocy
-        na ciemnym wzgórzu,
-        wśród sosen
-        pachnących i cichych,
+      textGloss:
+        pl: |-
+          Samotny w nocy
+          na ciemnym wzgórzu,
+          wśród sosen
+          pachnących i cichych,
 
-        a nad głową
-        niebo pełne gwiazd —
-        białych, topazowych
-        i zamglonych czerwienią;
+          a nad głową
+          niebo pełne gwiazd —
+          białych, topazowych
+          i zamglonych czerwienią;
 
-        miriady o bijących
-        sercach z ognia,
-        których eony
-        nie zdołają zasmucić ani zmęczyć;
+          miriady o bijących
+          sercach z ognia,
+          których eony
+          nie zdołają zasmucić ani zmęczyć;
 
-        w górę kopuły nieba,
-        jak na wielkie wzgórze,
-        patrzę, jak maszerują
-        dostojnie i spokojnie,
+          w górę kopuły nieba,
+          jak na wielkie wzgórze,
+          patrzę, jak maszerują
+          dostojnie i spokojnie,
 
-        i wiem, że mam
-        zaszczyt być
-        świadkiem
-        tak wielkiego majestatu.
+          i wiem, że mam
+          zaszczyt być
+          świadkiem
+          tak wielkiego majestatu.
       clasp: "Przerwa"
     - composer: "George Enescu"
       years: "1881–1955"
@@ -860,7 +889,7 @@
         ułożonych wedle biegu dnia: od skrzypka, przez świerszcza i wiatr w kominie, po nocną burzę
         i wschód słońca. Ménétrier to wiejski skrzypek, ten od wesel. Otwiera drugą część wieczoru;
         gra Radu Ropotan: jak Enescu, Rumun.
-      inscriptioPl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek"
+      inscriptioGloss: { pl: "z cyklu Impressions d'enfance op. 28 · wiejski skrzypek" }
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
       work: "Quel augellin che canta"
@@ -872,7 +901,7 @@
         Ptak, który śpiewa „tak słodko”, jest metaforą zakochanego serca: gdyby miał ludzką duszę,
         powiedziałby „płonę z miłości”, a drugi ptak mu odpowiada.
       inscriptio: "Quel augellin che canta sì dolcemente"
-      inscriptioPl: "Ten ptaszek, co śpiewa tak słodko · z IV księgi madrygałów"
+      inscriptioGloss: { pl: "Ten ptaszek, co śpiewa tak słodko · z IV księgi madrygałów" }
       text: |-
         Quel augellin che canta
         sì dolcemente
@@ -886,19 +915,20 @@
         che li rispond': Ardo d'amor anch' io!
         Che sii tu benedetto,
         amoroso, gentil, vago augelletto!
-      textPl: |-
-        Ten ptaszek, co śpiewa
-        tak słodko
-        i z figlarną lekkością lata
-        to do jodły, to do buka,
-        a potem do mirtu —
-        gdyby miał ludzkiego ducha,
-        rzekłby: Płonę z miłości, płonę z miłości!
-        Lecz płonie w sercu
-        i woła swoje pragnienie,
-        które mu odpowiada: Płonę z miłości i ja!
-        Bądź błogosławiony,
-        kochający, delikatny, piękny ptaszku!
+      textGloss:
+        pl: |-
+          Ten ptaszek, co śpiewa
+          tak słodko
+          i z figlarną lekkością lata
+          to do jodły, to do buka,
+          a potem do mirtu —
+          gdyby miał ludzkiego ducha,
+          rzekłby: Płonę z miłości, płonę z miłości!
+          Lecz płonie w sercu
+          i woła swoje pragnienie,
+          które mu odpowiada: Płonę z miłości i ja!
+          Bądź błogosławiony,
+          kochający, delikatny, piękny ptaszku!
     - composer: "J. S. Bach"
       years: "1685–1750"
       work: "Preludium z Partity E-dur BWV 1006"
@@ -911,7 +941,7 @@
         chwila,
         gdy zostają same skrzypce, i most między ptakiem Monteverdiego a skowronkiem Vaughana
         Williamsa.
-      inscriptioPl: "z Partity na skrzypce solo nr 3 E-dur"
+      inscriptioGloss: { pl: "z Partity na skrzypce solo nr 3 E-dur" }
     - composer: "Ralph Vaughan Williams"
       years: "1872–1958"
       work: "The Lark Ascending · oprac. P. Drayton"
@@ -924,7 +954,7 @@
         wznoszącym się ku niebu; linia melodyczna wznosi się i opada, naśladując lot. Paul Drayton
         przepisał utwór na skrzypce i chór, więc słowa Mereditha, w oryginale tylko wypisane nad
         nutami, tutaj naprawdę słychać.
-      inscriptioPl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton"
+      inscriptioGloss: { pl: "tekst: George Meredith · oprac. na skrzypce i chór: Paul Drayton" }
       text: |-
         He rises and begins to round,
         he drops the silver chain of sound,
@@ -940,21 +970,22 @@
 
         Till lost on his aerial rings
         in light, and then the fancy sings.
-      textPl: |-
-        Wzbija się i zaczyna zataczać kręgi,
-        upuszcza srebrny łańcuch dźwięku
-        o wielu ogniwach, bez przerwy,
-        w ćwierkaniu, gwizdach, ślizgach i drżeniu.
+      textGloss:
+        pl: |-
+          Wzbija się i zaczyna zataczać kręgi,
+          upuszcza srebrny łańcuch dźwięku
+          o wielu ogniwach, bez przerwy,
+          w ćwierkaniu, gwizdach, ślizgach i drżeniu.
 
-        Bo śpiewa, aż jego niebo się wypełni —
-        to miłość do ziemi w nas zaszczepia;
-        i wciąż wznosząc się wyżej i wyżej,
-        nasza dolina jest jego złotym kielichem,
-        a on winem, które się przelewa,
-        by unieść nas z sobą, gdy odchodzi.
+          Bo śpiewa, aż jego niebo się wypełni —
+          to miłość do ziemi w nas zaszczepia;
+          i wciąż wznosząc się wyżej i wyżej,
+          nasza dolina jest jego złotym kielichem,
+          a on winem, które się przelewa,
+          by unieść nas z sobą, gdy odchodzi.
 
-        Aż zginie w swoich powietrznych kręgach
-        w świetle — i wtedy śpiewa wyobraźnia.
+          Aż zginie w swoich powietrznych kręgach
+          w świetle — i wtedy śpiewa wyobraźnia.
     - composer: "Jacek Sykulski"
       years: "ur. 1964"
       work: "Stoi lód na Prośnie"
@@ -967,7 +998,7 @@
         dopisał całą historię, tak dopasowaną, że w muzyce nie trzeba było zmienić ani nuty.
         Dziewczyna z Podzamcza płacze nad zamarzniętą Prosną, młyn stoi, chleba nie będzie, a Jan
         Nepomucen, patron mostów i rzek, stoi przy niej.
-      inscriptioPl: "pieśń w idiomie ludowym · słowa dopisane do wokalizy"
+      inscriptioGloss: { pl: "pieśń w idiomie ludowym · słowa dopisane do wokalizy" }
       text: |-
         Stoi lód na Prośnie,
         stoi koło młyna —
@@ -1005,7 +1036,7 @@
         napisał sam. W partyturze prosi chór, by w pierwszych taktach dodał odgłosy nocnych
         zwierząt (świerszcza, sowy), a potem, coraz gęściej, świergot ptaków; na końcu wszystko
         wraca i cichnie.
-      inscriptioPl: "wiersz kompozytora · śpiewane sylaby nie mają znaczenia"
+      inscriptioGloss: { pl: "wiersz kompozytora · śpiewane sylaby nie mają znaczenia" }
       text: |-
         It was a quiet night
         — when a glimpse of light slowly gazed upon the sky.
@@ -1016,16 +1047,17 @@
         — and slowly
 
         it will descend again from its mighty throne.
-      textPl: |-
-        Była cicha noc
-        — gdy spojrzenie światła powoli spoczęło na niebie.
+      textGloss:
+        pl: |-
+          Była cicha noc
+          — gdy spojrzenie światła powoli spoczęło na niebie.
 
-        Budząc śpiące dusze
-        — radośnie śpiewające
-        — tańczące w promieniu światła
-        — i powoli
+          Budząc śpiące dusze
+          — radośnie śpiewające
+          — tańczące w promieniu światła
+          — i powoli
 
-        znów zstąpi ze swego potężnego tronu.
+          znów zstąpi ze swego potężnego tronu.
       bis: true
 
 - id: 9-kart
@@ -1033,7 +1065,8 @@
   roman: "III"
   latin: Psalmi
   title: 9 Kart z Księgi Psalmów
-  meta: "Rybnik · Łódź · Bazylika NSPJ, Kraków · 2024"
+  metaPlace: { pl: "Rybnik · Łódź · Bazylika NSPJ, Kraków" }
+  dateLabel: { pl: "2024" }
   venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź / Bazylika św. Antoniego, Rybnik"
   viaDate: "2024"
   about:
@@ -1053,8 +1086,8 @@
   # (Was #bfa05f — a twin of Wcielenie's gold; the registrum made the clash visible.)
   accent: "#7a648f"
   inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
-  inscriptioPl: "Zmiłuj się nade mną, Boże, w swojej łaskawości"
-  inscriptioRef: "Ps 51"
+  inscriptioGloss: { pl: "Zmiłuj się nade mną, Boże, w swojej łaskawości" }
+  inscriptioRef: { scripture: [{ book: ps, chapter: "51" }] }
   essence: "Psalm jest miejscem, gdzie człowiek nie musi upraszczać siebie przed Bogiem. Miserere Allegriego, podzielone na dziewięć części, oplatało cały wieczór; między jego pokutne strofy wchodziły kolejno psalmy dziękczynienia, mądrości i radości."
   facts:
     - 9 psalmów
@@ -1148,19 +1181,20 @@
         oplatają pozostałe psalmy: pięciogłosowy chór prowadzi wers po wersie, a czterech solistów
         odpowiada mu z oddalenia; stąd echo.
       inscriptio: "Miserere mei, Deus, secundum magnam misericordiam tuam"
-      inscriptioPl: "Zmiłuj się nade mną, Boże, w łaskawości swojej"
-      inscriptioRef: "Ps 51 (50)"
+      inscriptioGloss: { pl: "Zmiłuj się nade mną, Boże, w łaskawości swojej" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "51", chapterAlt: "50" }] }
       clasp: "Miserere — część I"
       claspText: |-
         Miserere mei, Deus, secundum magnam misericordiam tuam;
         et secundum multitudinem miserationum tuarum, dele iniquitatem meam.
         Amplius lava me ab iniquitate mea,
         et a peccato meo munda me.
-      claspTextPl: |-
-        Zmiłuj się nade mną, Boże, w łaskawości swojej.
-        W ogromie swej litości zgładź nieprawość moją.
-        Obmyj mnie zupełnie z mojej winy
-        i oczyść mnie z grzechu mojego.
+      claspTextGloss:
+        pl: |-
+          Zmiłuj się nade mną, Boże, w łaskawości swojej.
+          W ogromie swej litości zgładź nieprawość moją.
+          Obmyj mnie zupełnie z mojej winy
+          i oczyść mnie z grzechu mojego.
     - composer: "Orlando di Lasso"
       years: "1532–1594"
       work: "Laudate Dominum omnes gentes"
@@ -1172,29 +1206,31 @@
         w dialogujących chórach: najkrótszy tekst wieczoru dostaje jego największą obsadę.
         Po pierwszej części Miserere pokutnik milknie, a odzywa się cała ziemia.
       inscriptio: "Laudate Dominum omnes gentes"
-      inscriptioPl: "Chwalcie Pana, wszystkie narody"
-      inscriptioRef: "Ps 117"
+      inscriptioGloss: { pl: "Chwalcie Pana, wszystkie narody" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "117" }] }
       text: |-
         Laudate Dominum omnes gentes,
         laudate Dominum omnes populi.
         Quoniam confirmata est super nos misericordia eius,
         et veritas Domini manet in aeternum.
-      textPl: |-
-        Chwalcie Pana, wszystkie narody,
-        wysławiajcie Go, wszystkie ludy,
-        bo Jego łaskawość nad nami potężna,
-        a wierność Pańska trwa na wieki.
+      textGloss:
+        pl: |-
+          Chwalcie Pana, wszystkie narody,
+          wysławiajcie Go, wszystkie ludy,
+          bo Jego łaskawość nad nami potężna,
+          a wierność Pańska trwa na wieki.
       clasp: "Miserere — część II"
       claspText: |-
         Quoniam iniquitatem meam ego cognosco,
         et peccatum meum contra me est semper.
         Tibi soli peccavi, et malum coram te feci:
         ut justificeris in sermonibus tuis, et vincas cum judicaris.
-      claspTextPl: |-
-        Uznaję bowiem nieprawość swoją,
-        a grzech mój jest zawsze przede mną.
-        Przeciwko Tobie samemu zgrzeszyłem i uczyniłem, co złe jest, przed Tobą,
-        abyś okazał się sprawiedliwy w swym wyroku i prawy w swoim sądzie.
+      claspTextGloss:
+        pl: |-
+          Uznaję bowiem nieprawość swoją,
+          a grzech mój jest zawsze przede mną.
+          Przeciwko Tobie samemu zgrzeszyłem i uczyniłem, co złe jest, przed Tobą,
+          abyś okazał się sprawiedliwy w swym wyroku i prawy w swoim sądzie.
     - composer: "Anton Bruckner"
       years: "1824–1896"
       work: "Os justi, WAB 30"
@@ -1208,31 +1244,33 @@
         lidyjskiej. Chwalił się tym Traumihlerowi w liście. Po drugiej części Miserere, w której
         pokutnik uznaje swoją winę, wchodzi obraz człowieka sprawiedliwego.
       inscriptio: "Os justi meditabitur sapientiam"
-      inscriptioPl: "Usta sprawiedliwego głoszą mądrość"
-      inscriptioRef: "Ps 37, 30–31"
+      inscriptioGloss: { pl: "Usta sprawiedliwego głoszą mądrość" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "37", verses: ["30–31"] }] }
       text: |-
         Os justi meditabitur sapientiam:
         et lingua ejus loquetur judicium.
         Lex Dei ejus in corde ipsius:
         et non supplantabuntur gressus ejus.
         Alleluia.
-      textPl: |-
-        Usta sprawiedliwego głoszą mądrość
-        i język jego mówi to, co słuszne.
-        Prawo jego Boga jest w jego sercu,
-        a jego kroki się nie zachwieją.
-        Alleluja.
+      textGloss:
+        pl: |-
+          Usta sprawiedliwego głoszą mądrość
+          i język jego mówi to, co słuszne.
+          Prawo jego Boga jest w jego sercu,
+          a jego kroki się nie zachwieją.
+          Alleluja.
       clasp: "Miserere — część III"
       claspText: |-
         Ecce enim in iniquitatibus conceptus sum,
         et in peccatis concepit me mater mea.
         Ecce enim veritatem dilexisti;
         incerta et occulta sapientiae tuae manifestasti mihi.
-      claspTextPl: |-
-        Oto urodziłem się obciążony winą
-        i jako grzesznika poczęła mnie matka.
-        A Ty masz upodobanie w ukrytej prawdzie,
-        naucz mnie tajemnic mądrości.
+      claspTextGloss:
+        pl: |-
+          Oto urodziłem się obciążony winą
+          i jako grzesznika poczęła mnie matka.
+          A Ty masz upodobanie w ukrytej prawdzie,
+          naucz mnie tajemnic mądrości.
     - composer: "Charles Villiers Stanford"
       years: "1852–1924"
       work: "Beati quorum via, op. 38 nr 3"
@@ -1245,25 +1283,27 @@
         łacińskich motetów. Sześć głosów dzieli się na dwie trzygłosowe grupy, które podają sobie
         tę samą frazę; droga, o której mowa, jest tu słyszalna.
       inscriptio: "Beati quorum via integra est"
-      inscriptioPl: "Szczęśliwi, których droga nieskalana"
-      inscriptioRef: "Ps 119, 1"
+      inscriptioGloss: { pl: "Szczęśliwi, których droga nieskalana" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "119", verses: ["1"] }] }
       text: |-
         Beati quorum via integra est,
         qui ambulant in lege Domini.
-      textPl: |-
-        Szczęśliwi, których droga nieskalana,
-        którzy postępują według Prawa Pańskiego.
+      textGloss:
+        pl: |-
+          Szczęśliwi, których droga nieskalana,
+          którzy postępują według Prawa Pańskiego.
       clasp: "Miserere — część IV"
       claspText: |-
         Asperges me hyssopo, et mundabor;
         lavabis me, et super nivem dealbabor.
         Auditui meo dabis gaudium et laetitiam,
         et exsultabunt ossa humiliata.
-      claspTextPl: |-
-        Pokrop mnie hizopem, a stanę się czysty,
-        obmyj mnie, a nad śnieg wybieleję.
-        Spraw, abym usłyszał radość i wesele,
-        niech się radują kości, które skruszyłeś.
+      claspTextGloss:
+        pl: |-
+          Pokrop mnie hizopem, a stanę się czysty,
+          obmyj mnie, a nad śnieg wybieleję.
+          Spraw, abym usłyszał radość i wesele,
+          niech się radują kości, które skruszyłeś.
     - composer: "J. S. Bach"
       years: "1685–1750"
       work: "Singet dem Herrn ein neues Lied, BWV 225"
@@ -1277,8 +1317,8 @@
         w Lipsku, miał zawołać: „Oto nareszcie coś, z czego można się czegoś nauczyć”, i poprosił
         o rozłożenie głosów.
       inscriptio: "Singet dem Herrn ein neues Lied"
-      inscriptioPl: "Śpiewajcie Panu pieśń nową"
-      inscriptioRef: "Ps 149, 1–3"
+      inscriptioGloss: { pl: "Śpiewajcie Panu pieśń nową" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "149", verses: ["1–3"] }] }
       text: |-
         Singet dem Herrn ein neues Lied,
         die Gemeine der Heiligen sollen ihn loben.
@@ -1286,24 +1326,26 @@
         Die Kinder Zion sei'n fröhlich über ihrem Könige,
         Sie sollen loben seinen Namen im Reigen;
         mit Pauken und mit Harfen sollen sie ihm spielen.
-      textPl: |-
-        Śpiewaj Panu nową pieśń,
-        zebranie świętych niech Go chwali.
-        Niech się Izrael cieszy z tego, kto go uczynił,
-        niech dzieci Syjonu radują się swym Królem,
-        niech w tańcu wysławiają Jego imię;
-        z bębnami i harfami niech Mu grają.
+      textGloss:
+        pl: |-
+          Śpiewaj Panu nową pieśń,
+          zebranie świętych niech Go chwali.
+          Niech się Izrael cieszy z tego, kto go uczynił,
+          niech dzieci Syjonu radują się swym Królem,
+          niech w tańcu wysławiają Jego imię;
+          z bębnami i harfami niech Mu grają.
       clasp: "Miserere — część V"
       claspText: |-
         Averte faciem tuam a peccatis meis,
         et omnes iniquitates meas dele.
         Cor mundum crea in me, Deus,
         et spiritum rectum innova in visceribus meis.
-      claspTextPl: |-
-        Odwróć swe oblicze od moich grzechów
-        i zmaż wszystkie moje przewinienia.
-        Stwórz, Boże, we mnie serce czyste
-        i odnów we mnie moc ducha.
+      claspTextGloss:
+        pl: |-
+          Odwróć swe oblicze od moich grzechów
+          i zmaż wszystkie moje przewinienia.
+          Stwórz, Boże, we mnie serce czyste
+          i odnów we mnie moc ducha.
     - composer: "Orlando Gibbons"
       years: "1583–1625"
       work: "O clap your hands"
@@ -1315,8 +1357,8 @@
         sadza Boga na tronie wśród okrzyków i trąb, a chór rozbija się na osiem głosów, żeby ten
         tłum było słychać.
       inscriptio: "O clap your hands together, all ye people"
-      inscriptioPl: "Wszystkie narody, klaskajcie w dłonie"
-      inscriptioRef: "Ps 47, 2–5"
+      inscriptioGloss: { pl: "Wszystkie narody, klaskajcie w dłonie" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "47", verses: ["2–5"] }] }
       text: |-
         O clap your hands together, all ye people;
         O sing unto God with the voice of melody.
@@ -1326,26 +1368,28 @@
         and the nations under our feet.
         He shall choose out an heritage for us,
         even the worship of Jacob, whom he loved.
-      textPl: |-
-        Wszystkie narody, klaskajcie w dłonie,
-        wykrzykujcie Bogu radosnym głosem,
-        bo Pan najwyższy, straszliwy,
-        jest wielkim Królem nad całą ziemią.
-        On nam poddaje narody
-        i ludy rzuca pod nasze stopy.
-        Wybiera dla nas dziedzictwo —
-        chlubę Jakuba, którego miłuje.
+      textGloss:
+        pl: |-
+          Wszystkie narody, klaskajcie w dłonie,
+          wykrzykujcie Bogu radosnym głosem,
+          bo Pan najwyższy, straszliwy,
+          jest wielkim Królem nad całą ziemią.
+          On nam poddaje narody
+          i ludy rzuca pod nasze stopy.
+          Wybiera dla nas dziedzictwo —
+          chlubę Jakuba, którego miłuje.
       clasp: "Miserere — część VI"
       claspText: |-
         Ne projicias me a facie tua,
         et spiritum sanctum tuum ne auferas a me.
         Redde mihi laetitiam salutaris tui,
         et spiritu principali confirma me.
-      claspTextPl: |-
-        Nie odrzucaj mnie od swego oblicza
-        i nie odbieraj mi świętego ducha swego.
-        Przywróć mi radość z Twojego zbawienia
-        i wzmocnij mnie duchem ofiarnym.
+      claspTextGloss:
+        pl: |-
+          Nie odrzucaj mnie od swego oblicza
+          i nie odbieraj mi świętego ducha swego.
+          Przywróć mi radość z Twojego zbawienia
+          i wzmocnij mnie duchem ofiarnym.
     - composer: "Salomone Rossi"
       years: "1570–1630"
       work: "Barukh habba beshem Adonai"
@@ -1359,8 +1403,8 @@
         programie
         ułożonym z psalmów łacińskich, niemieckich i angielskich, wraca ich język pierwotny.
       inscriptio: "Barukh haba b'shem Adonai"
-      inscriptioPl: "Błogosławiony, który przybywa w imię Pańskie"
-      inscriptioRef: "Ps 118, 26–29"
+      inscriptioGloss: { pl: "Błogosławiony, który przybywa w imię Pańskie" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "118", verses: ["26–29"] }] }
       text: |-
         Baruch haba b'shem Adonai!
         B'rakhnuchém mi-beit Adonai.
@@ -1370,26 +1414,28 @@
         Elohai, aromemeka.
         Hodu l'Adonai, ki tov,
         ki l'olam chasdo.
-      textPl: |-
-        Błogosławiony, który przybywa w imię Pańskie!
-        Błogosławimy wam z domu Pańskiego.
-        Pan jest Bogiem: niech nas oświeci!
-        Ścieśnijcie szeregi, z gałęziami w rękach, aż do rogów ołtarza.
-        Jesteś moim Bogiem, chcę Ci dziękować:
-        Boże mój, chcę Ciebie wywyższać.
-        Wysławiajcie Pana, bo dobry;
-        bo łaska Jego na wieki.
+      textGloss:
+        pl: |-
+          Błogosławiony, który przybywa w imię Pańskie!
+          Błogosławimy wam z domu Pańskiego.
+          Pan jest Bogiem: niech nas oświeci!
+          Ścieśnijcie szeregi, z gałęziami w rękach, aż do rogów ołtarza.
+          Jesteś moim Bogiem, chcę Ci dziękować:
+          Boże mój, chcę Ciebie wywyższać.
+          Wysławiajcie Pana, bo dobry;
+          bo łaska Jego na wieki.
       clasp: "Miserere — część VII"
       claspText: |-
         Docebo iniquos vias tuas,
         et impii ad te convertentur.
         Libera me de sanguinibus, Deus, Deus salutis meae,
         et exsultabit lingua mea justitiam tuam.
-      claspTextPl: |-
-        Będę nieprawych nauczał dróg Twoich
-        i wrócą do Ciebie grzesznicy.
-        Uwolnij mnie, Boże, od kary za krew przelaną, Boże, mój Zbawco,
-        niech sławi mój język Twoją sprawiedliwość.
+      claspTextGloss:
+        pl: |-
+          Będę nieprawych nauczał dróg Twoich
+          i wrócą do Ciebie grzesznicy.
+          Uwolnij mnie, Boże, od kary za krew przelaną, Boże, mój Zbawco,
+          niech sławi mój język Twoją sprawiedliwość.
     - composer: "Heinrich Schütz"
       years: "1585–1672"
       work: "Jauchzet dem Herrn, alle Welt, SWV 36"
@@ -1402,8 +1448,8 @@
         Bachem; w tym programie oba ich psalmy brzmią po niemiecku i na dwa chóry; słychać
         stulecie, które je dzieli.
       inscriptio: "Jauchzet dem Herren, alle Welt"
-      inscriptioPl: "Wykrzykujcie na cześć Pana, wszystkie ziemie"
-      inscriptioRef: "Ps 100"
+      inscriptioGloss: { pl: "Wykrzykujcie na cześć Pana, wszystkie ziemie" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "100" }] }
       text: |-
         Jauchzet dem Herren, alle Welt!
         Dienet dem Herren mit Freuden;
@@ -1422,34 +1468,36 @@
         und auch dem heilgen Geiste,
         wie es war im Anfang, jetzt und immerdar
         und von Ewigkeit zu Ewigkeit. Amen.
-      textPl: |-
-        Wykrzykujcie na cześć Pana, wszystkie ziemie;
-        służcie Panu z weselem!
-        Wśród okrzyków radości stawajcie przed Nim!
-        Wiedzcie, że Pan jest Bogiem:
-        On sam nas stworzył, my Jego własnością,
-        jesteśmy Jego ludem, owcami Jego pastwiska.
-        Wstępujcie w Jego bramy wśród dziękczynienia,
-        wśród hymnów w Jego przedsionki;
-        chwalcie Go i błogosławcie Jego imię!
-        Albowiem dobry jest Pan,
-        łaskawość Jego trwa na wieki,
-        a wierność Jego przez pokolenia.
+      textGloss:
+        pl: |-
+          Wykrzykujcie na cześć Pana, wszystkie ziemie;
+          służcie Panu z weselem!
+          Wśród okrzyków radości stawajcie przed Nim!
+          Wiedzcie, że Pan jest Bogiem:
+          On sam nas stworzył, my Jego własnością,
+          jesteśmy Jego ludem, owcami Jego pastwiska.
+          Wstępujcie w Jego bramy wśród dziękczynienia,
+          wśród hymnów w Jego przedsionki;
+          chwalcie Go i błogosławcie Jego imię!
+          Albowiem dobry jest Pan,
+          łaskawość Jego trwa na wieki,
+          a wierność Jego przez pokolenia.
 
-        Chwała Ojcu i Synowi, i Duchowi Świętemu,
-        jak była na początku, teraz i zawsze,
-        i na wieki wieków. Amen.
+          Chwała Ojcu i Synowi, i Duchowi Świętemu,
+          jak była na początku, teraz i zawsze,
+          i na wieki wieków. Amen.
       clasp: "Miserere — część VIII"
       claspText: |-
         Domine, labia mea aperies,
         et os meum annuntiabit laudem tuam.
         Quoniam si voluisses sacrificium, dedissem utique;
         holocaustis non delectaberis.
-      claspTextPl: |-
-        Panie, otwórz wargi moje,
-        a usta moje będą głosić Twoją chwałę.
-        Ofiarą bowiem Ty się nie radujesz,
-        a całopalenia choćbym dał, nie przyjmiesz.
+      claspTextGloss:
+        pl: |-
+          Panie, otwórz wargi moje,
+          a usta moje będą głosić Twoją chwałę.
+          Ofiarą bowiem Ty się nie radujesz,
+          a całopalenia choćbym dał, nie przyjmiesz.
     - composer: "Claudio Monteverdi"
       years: "1567–1643"
       work: "Cantate Domino"
@@ -1462,8 +1510,8 @@
         Tym samym motetem zespół zamknął program „Kontemplacji Wcielenia”, od której zaczął się
         cykl; tutaj jest ostatnim słowem chwały przed dziewiątą częścią Miserere.
       inscriptio: "Cantate Domino canticum novum"
-      inscriptioPl: "Śpiewajcie Panu pieśń nową"
-      inscriptioRef: "Ps 98 (97)"
+      inscriptioGloss: { pl: "Śpiewajcie Panu pieśń nową" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "98", chapterAlt: "97" }] }
       text: |-
         Cantate Domino canticum novum,
         Cantate et benedicite nomini ejus:
@@ -1471,13 +1519,14 @@
         Cantate et exultate et psallite
         in cythara et voce psalmi:
         Quia mirabilia fecit.
-      textPl: |-
-        Śpiewajcie Panu pieśń nową,
-        śpiewajcie Panu, błogosławcie Jego imię,
-        albowiem cuda uczynił.
-        Cieszcie się i weselcie, i grajcie
-        przy wtórze cytry i przy dźwięku harfy,
-        albowiem cuda uczynił.
+      textGloss:
+        pl: |-
+          Śpiewajcie Panu pieśń nową,
+          śpiewajcie Panu, błogosławcie Jego imię,
+          albowiem cuda uczynił.
+          Cieszcie się i weselcie, i grajcie
+          przy wtórze cytry i przy dźwięku harfy,
+          albowiem cuda uczynił.
       clasp: "Miserere — część IX + epilog"
       claspText: |-
         Sacrificium Deo spiritus contribulatus;
@@ -1487,14 +1536,15 @@
 
         Tunc acceptabis sacrificium justitiae, oblationes et holocausta;
         tunc imponent super altare tuum vitulos.
-      claspTextPl: |-
-        Boże, moją ofiarą jest duch skruszony,
-        pokornym i skruszonym sercem Ty, Boże, nie gardzisz.
-        Panie, okaż Syjonowi łaskę w Twej dobroci,
-        odbuduj mury Jeruzalem.
+      claspTextGloss:
+        pl: |-
+          Boże, moją ofiarą jest duch skruszony,
+          pokornym i skruszonym sercem Ty, Boże, nie gardzisz.
+          Panie, okaż Syjonowi łaskę w Twej dobroci,
+          odbuduj mury Jeruzalem.
 
-        Wtedy przyjmiesz prawe ofiary: dary i całopalenia,
-        wtedy składać będą cielce na Twoim ołtarzu.
+          Wtedy przyjmiesz prawe ofiary: dary i całopalenia,
+          wtedy składać będą cielce na Twoim ołtarzu.
     - composer: "Orlando Gibbons"
       years: "1583–1625"
       work: "Drop, drop, slow tears"
@@ -1505,7 +1555,7 @@
         temu wieczorowi jego najbardziej triumfalny psalm, zostawia jego ostatnie i najcichsze
         słowo. Zespół prosił, żeby podczas bisu wyświetlić na ekranach polski tekst: po dziewięciu
         częściach Miserere te łzy miały zostać zrozumiane.
-      inscriptioPl: "słowa: Phineas Fletcher"
+      inscriptioGloss: { pl: "słowa: Phineas Fletcher" }
       text: |-
         Drop, drop, slow tears,
         and bathe those beauteous feet
@@ -1521,21 +1571,22 @@
         drown all my faults and fears;
         nor let his eye
         see sin, but through my tears.
-      textPl: |-
-        Spływajcie, spływajcie, łzy powolne,
-        Obmyjcie te piękne stopy,
-        Które z niebios przyniosły wieść o Pokoju,
-        I Księcia Pokoju w swej chwale.
+      textGloss:
+        pl: |-
+          Spływajcie, spływajcie, łzy powolne,
+          Obmyjcie te piękne stopy,
+          Które z niebios przyniosły wieść o Pokoju,
+          I Księcia Pokoju w swej chwale.
 
-        Nie ustawajcie, oczy w smutku skąpane,
-        Błagajcie o Jego miłosierdzie;
-        Wołajcie o przebaczenie,
-        Bo grzech nie ustaje w swej złości.
+          Nie ustawajcie, oczy w smutku skąpane,
+          Błagajcie o Jego miłosierdzie;
+          Wołajcie o przebaczenie,
+          Bo grzech nie ustaje w swej złości.
 
-        W głębokich strumieniach mych łez
-        Zatopcie wszystkie winy i lęki,
-        Niech Jego oko nie widzi grzechu,
-        Lecz tylko poprzez łzy.
+          W głębokich strumieniach mych łez
+          Zatopcie wszystkie winy i lęki,
+          Niech Jego oko nie widzi grzechu,
+          Lecz tylko poprzez łzy.
       bis: true
 
 - id: hymn-poleglym
@@ -1543,7 +1594,7 @@
   roman: "IV"
   latin: Memoria
   title: Hymn Poległym
-  meta: "Bazylika Mariacka, Kraków · 22 lutego 2025"
+  metaPlace: { pl: "Bazylika Mariacka, Kraków" }
   venue: "Bazylika Mariacka, Kraków"
   date: "2025-02-22"
   time: "20:00"
@@ -1565,8 +1616,8 @@
   accent: "#5e6e84"
   variant: memoriam
   inscriptio: "Боже великий, єдиний, нам Україну храни"
-  inscriptioPl: "Boże wielki, jedyny, Ukrainę nam chroń"
-  inscriptioRef: "Modlitwa za Ukrainę"
+  inscriptioGloss: { pl: "Boże wielki, jedyny, Ukrainę nam chroń" }
+  inscriptioRef: { source: { pl: "Modlitwa za Ukrainę" } }
   essence: "Hołd tym, którzy oddali życie w obronie Ukrainy, i modlitwa o pokój dla tych, którzy niosą dalej ciężar wojny. W kulminacji, przy otwarciu ołtarza Bazyliki Mariackiej, zabrzmiała organowa improwizacja na hymn Ukrainy."
   facts:
     - Bazylika Mariacka
@@ -1661,35 +1712,35 @@
   movements:
     - id: introitus
       lat: Introitus
-      pl: Na wejście
+      gloss: { pl: Na wejście }
       line: >-
         Najpierw sama przestrzeń: wielkie organy Bazyliki Mariackiej. Pierwszym słowem, jakie
         pada tego wieczoru, jest modlitwa po ukraińsku.
     - id: luctus
       lat: Luctus
-      pl: Żałoba
+      gloss: { pl: Żałoba }
       line: >-
         Modlitwa zaczyna się od tego, co jest: litania o pokój, rzeki Babilonu, nad którymi
         wygnańcy zawiesili swoje instrumenty, i psalm, który pyta wprost: jak długo jeszcze?
     - id: lorica
       lat: Lorica
-      pl: Zbroja
+      gloss: { pl: Zbroja }
       line: >-
         Dwie modlitwy o osłonę: pancerz św. Patryka, w którym Chrystus staje ze wszystkich stron,
         i hymn, w którym wierni proszą o siłę, bo „bój srogi” ich nęka.
     - id: exsequiae
       lat: Exsequiae
-      pl: Nad grobem
+      gloss: { pl: Nad grobem }
       line: >-
         Cztery ogniwa pogrzebu: lot aniołów nad grobem, hymn poległym bez jednego słowa, wezwanie
         do duszy, by się nie trwożyła, i prośba o odpoczynek.
     - id: lux
       lat: Lux
-      pl: Światłość
+      gloss: { pl: Światłość }
       interlude:
         lat: "Conflabunt gladios suos in vomeres: nec exercebuntur ultra ad proelium."
-        pl: "Swe miecze przekują na lemiesze; i nie będą się więcej zaprawiać do wojny."
-        ref: "Iz 2, 4"
+        gloss: { pl: "Swe miecze przekują na lemiesze; i nie będą się więcej zaprawiać do wojny." }
+        ref: { scripture: [{ book: isa, chapter: "2", verses: ["4"] }] }
       line: >-
         Dopiero teraz wolno mówić o świetle, i wtedy otwiera się ołtarz.
   program:
@@ -1719,8 +1770,8 @@
         jako duchowy hymn Ukrainy. Pierwszym słowem tego wieczoru jest więc prośba
         w języku tych, o których się modli.
       inscriptio: "Боже великий, єдиний, нам Україну храни"
-      inscriptioPl: "Boże wielki, jedyny, Ukrainę nam chroń"
-      inscriptioRef: "Modlitwa za Ukrainę · O. Konyski, 1885"
+      inscriptioGloss: { pl: "Boże wielki, jedyny, Ukrainę nam chroń" }
+      inscriptioRef: { source: { pl: "Modlitwa za Ukrainę · O. Konyski, 1885" } }
       text: |-
         Боже великий, єдиний,
         нам Україну храни,
@@ -1736,21 +1787,22 @@
         нам Україну храни,
         всі свої ласки й щедроти
         Ти на люд наш зверни.
-      textPl: |-
-        Boże wielki, jedyny,
-        Ukrainę nam chroń,
-        promieniem wolności i światła
-        Ty ją oświeć.
+      textGloss:
+        pl: |-
+          Boże wielki, jedyny,
+          Ukrainę nam chroń,
+          promieniem wolności i światła
+          Ty ją oświeć.
 
-        Światłem nauki i wiedzy
-        nas, dzieci, oświeć,
-        w czystej miłości do kraju
-        Ty nas, Boże, wychowaj.
+          Światłem nauki i wiedzy
+          nas, dzieci, oświeć,
+          w czystej miłości do kraju
+          Ty nas, Boże, wychowaj.
 
-        Modlimy się, Boże jedyny,
-        Ukrainę nam chroń,
-        wszystkie swoje łaski i szczodrość
-        Ty na lud nasz zwróć.
+          Modlimy się, Boże jedyny,
+          Ukrainę nam chroń,
+          wszystkie swoje łaski i szczodrość
+          Ty na lud nasz zwróć.
       clasp: "Wprowadzenie do modlitwy · ks. inf. Dariusz Raś"
     - composer: "Siergiej Rachmaninow"
       years: "1873–1943"
@@ -1764,13 +1816,14 @@
         roku w niespełna trzy tygodnie. Było to jego pierwsze dzieło cerkiewne; siedem lat
         później opuścił Rosję na zawsze. Tego wieczoru jego prośba o pokój całego świata
         zabrzmiała zaraz po modlitwie za Ukrainę.
-      inscriptioPl: "z Liturgii św. Jana Chryzostoma · odpowiedzi chóru"
+      inscriptioGloss: { pl: "z Liturgii św. Jana Chryzostoma · odpowiedzi chóru" }
       text: |-
         Господи, помилуй.
         Тебе, Господи.
-      textPl: |-
-        Panie, zmiłuj się.
-        Tobie zawierzamy, Panie.
+      textGloss:
+        pl: |-
+          Panie, zmiłuj się.
+          Tobie zawierzamy, Panie.
     - composer: "Giovanni P. da Palestrina"
       years: "1525–1594"
       work: "Super flumina Babylonis"
@@ -1783,20 +1836,21 @@
         pieśni Pańskiej w obcej ziemi. Palestrina prowadzi cztery głosy z całkowitym spokojem;
         żałoba jest tu w tym, co ucichło.
       inscriptio: "Super flumina Babylonis, illic sedimus et flevimus"
-      inscriptioPl: "Nad rzekami Babilonu tam siedzieliśmy i płakali"
-      inscriptioRef: "Ps 137 (136), 1–2"
+      inscriptioGloss: { pl: "Nad rzekami Babilonu tam siedzieliśmy i płakali" }
+      inscriptioRef: { scripture: [{ book: ps, chapter: "137", chapterAlt: "136", verses: ["1–2"] }] }
       text: |-
         Super flumina Babylonis,
         illic sedimus et flevimus,
         dum recordaremur tui, Sion.
         In salicibus in medio eius
         suspendimus organa nostra.
-      textPl: |-
-        Nad rzekami Babilonu —
-        tam myśmy siedzieli i płakali,
-        kiedyśmy wspominali Syjon.
-        Na wierzbach tamtej krainy
-        zawiesiliśmy instrumenty nasze.
+      textGloss:
+        pl: |-
+          Nad rzekami Babilonu —
+          tam myśmy siedzieli i płakali,
+          kiedyśmy wspominali Syjon.
+          Na wierzbach tamtej krainy
+          zawiesiliśmy instrumenty nasze.
     - composer: "Dieterich Buxtehude"
       years: "1637–1707"
       work: "Ach Herr, mich armen Sünder, BuxWV 178"
@@ -1808,7 +1862,7 @@
         Mateuszowej. Sam tekst chorału jest parafrazą Psalmu 6, pierwszego z psalmów pokutnych,
         w którym dusza pyta wprost: jak długo jeszcze? Tu słów nie było. Grał je na organach
         Michał Piechnik; kto zna melodię, ten je usłyszał.
-      inscriptioPl: "opracowanie organowe chorału · parafraza Psalmu 6"
+      inscriptioGloss: { pl: "opracowanie organowe chorału · parafraza Psalmu 6" }
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "The Deer's Cry"
@@ -1822,7 +1876,7 @@
         stąd druga nazwa: krzyk jelenia. To modlitwa ochronna: Chrystus ustawia się dookoła
         mówiącego ze wszystkich stron. Pärt w swoim tintinnabuli powtarza ją tak, jak powtarza
         się modlitwę, której naprawdę się potrzebuje.
-      inscriptioPl: "z „Pancerza św. Patryka” (Lorica)"
+      inscriptioGloss: { pl: "z „Pancerza św. Patryka” (Lorica)" }
       text: |-
         Christ with me, Christ before me,
         Christ behind me, Christ in me,
@@ -1835,18 +1889,19 @@
         Christ in every eye that sees me,
         Christ in every ear that hears me,
         Christ with me.
-      textPl: |-
-        Chrystus ze mną, Chrystus przede mną,
-        Chrystus za mną, Chrystus we mnie,
-        Chrystus pode mną, Chrystus nade mną,
-        Chrystus po mojej prawicy, Chrystus po lewicy,
-        Chrystus, gdy się kładę, Chrystus, gdy siadam,
-        Chrystus we mnie, Chrystus, gdy wstaję,
-        Chrystus w sercu każdego, kto o mnie myśli,
-        Chrystus w ustach każdego, kto o mnie mówi,
-        Chrystus w każdym oku, które mnie widzi,
-        Chrystus w każdym uchu, które mnie słyszy.
-        Chrystus ze mną.
+      textGloss:
+        pl: |-
+          Chrystus ze mną, Chrystus przede mną,
+          Chrystus za mną, Chrystus we mnie,
+          Chrystus pode mną, Chrystus nade mną,
+          Chrystus po mojej prawicy, Chrystus po lewicy,
+          Chrystus, gdy się kładę, Chrystus, gdy siadam,
+          Chrystus we mnie, Chrystus, gdy wstaję,
+          Chrystus w sercu każdego, kto o mnie myśli,
+          Chrystus w ustach każdego, kto o mnie mówi,
+          Chrystus w każdym oku, które mnie widzi,
+          Chrystus w każdym uchu, które mnie słyszy.
+          Chrystus ze mną.
     - composer: "Ēriks Ešenvalds"
       years: "ur. 1977"
       work: "O salutaris hostia"
@@ -1860,7 +1915,7 @@
         eucharystyczny mówi o wojnie wprost; jako jedyny tekst tego wieczoru zespół wydrukował
         go w programie w całości.
       inscriptio: "O salutaris Hostia, quae caeli pandis ostium"
-      inscriptioPl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens"
+      inscriptioGloss: { pl: "O Zbawcza Hostio, która otwierasz bramy nieba · z hymnu Verbum supernum prodiens" }
       text: |-
         O salutaris Hostia,
         quae caeli pandis ostium:
@@ -1872,17 +1927,18 @@
         qui vitam sine termino
         nobis donet in patria.
         Amen.
-      textPl: |-
-        O zbawcza Hostio, godna czci,
-        co lud do niebios wiedziesz bram.
-        Bój srogi nęka wiernych Ci,
-        daj siłę, pomoc ześlij nam.
+      textGloss:
+        pl: |-
+          O zbawcza Hostio, godna czci,
+          co lud do niebios wiedziesz bram.
+          Bój srogi nęka wiernych Ci,
+          daj siłę, pomoc ześlij nam.
 
-        Jednemu w Trójcy Władcy ziem
-        niech będzie chwała w każdy czas,
-        niech On wieczystym życiem Swym
-        w Ojczyźnie rajskiej darzy nas.
-        Amen.
+          Jednemu w Trójcy Władcy ziem
+          niech będzie chwała w każdy czas,
+          niech On wieczystym życiem Swym
+          w Ojczyźnie rajskiej darzy nas.
+          Amen.
     - composer: "John Tavener"
       years: "1944–2013"
       work: "Song for Athene"
@@ -1896,7 +1952,7 @@
         chórem trwa przez cały czas nieruchomy burdon basów: ison. Świat usłyszał ten utwór
         w 1997 roku, gdy przy jego dźwiękach wynoszono z Opactwa Westminsterskiego trumnę
         księżnej Diany.
-      inscriptioPl: "tekst: matka Thekla · Szekspir i prawosławne nabożeństwo żałobne"
+      inscriptioGloss: { pl: "tekst: matka Thekla · Szekspir i prawosławne nabożeństwo żałobne" }
       text: |-
         Alleluia. May flights of angels sing thee to thy rest.
         Alleluia. Remember me, O Lord, when you come into your kingdom.
@@ -1906,15 +1962,16 @@
         Alleluia. Life: a shadow and a dream.
         Alleluia. Weeping at the grave creates the song: Alleluia.
         Alleluia. Come, enjoy rewards and crowns I have prepared for you.
-      textPl: |-
-        Alleluja. Niech aniołów loty niosą cię do snu.
-        Alleluja. Wspomnij na mnie, Panie, gdy przyjdziesz do swego królestwa.
-        Alleluja. Daj odpoczynek, Panie, swej służebnicy, która zasnęła.
-        Alleluja. Chór świętych znalazł źródło życia
-        i bramę raju.
-        Alleluja. Życie — cień i sen.
-        Alleluja. Płacz nad grobem staje się pieśnią: Alleluja.
-        Alleluja. Przyjdźcie, weźcie nagrody i korony, które wam przygotowałem.
+      textGloss:
+        pl: |-
+          Alleluja. Niech aniołów loty niosą cię do snu.
+          Alleluja. Wspomnij na mnie, Panie, gdy przyjdziesz do swego królestwa.
+          Alleluja. Daj odpoczynek, Panie, swej służebnicy, która zasnęła.
+          Alleluja. Chór świętych znalazł źródło życia
+          i bramę raju.
+          Alleluja. Życie — cień i sen.
+          Alleluja. Płacz nad grobem staje się pieśnią: Alleluja.
+          Alleluja. Przyjdźcie, weźcie nagrody i korony, które wam przygotowałem.
     - composer: "John Williams"
       years: "ur. 1932"
       work: "Hymn to the Fallen"
@@ -1924,7 +1981,7 @@
         Z muzyki do „Szeregowca Ryana” Stevena Spielberga. Chór nie śpiewa w nim ani jednego
         słowa: sama wokaliza; Williams pisał go nie pod konkretną scenę, lecz jako hymn dla
         poległych. Bez imion i bez języka, więc i bez granic. Od tego utworu wieczór wziął nazwę.
-      inscriptioPl: "z muzyki do filmu „Szeregowiec Ryan” · chór bez słów"
+      inscriptioGloss: { pl: "z muzyki do filmu „Szeregowiec Ryan” · chór bez słów" }
     - composer: "Jean Sibelius"
       years: "1865–1957"
       work: "Be Still My Soul · hymn z Finlandii, op. 26"
@@ -1938,7 +1995,7 @@
         później hymn Kathariny von Schlegel z 1752 roku, w angielskim przekładzie Jane Borthwick:
         nie trwóż się, duszo ma. W koncercie za poległych Ukrainy zabrzmiała więc fińska melodia
         wolności ze słowami o ukojeniu.
-      inscriptioPl: "słowa: K. von Schlegel (1752), przekład ang. J. Borthwick · zwrotka III"
+      inscriptioGloss: { pl: "słowa: K. von Schlegel (1752), przekład ang. J. Borthwick · zwrotka III" }
       text: |-
         Be still, my soul: the hour is hastening on
         when we shall be forever with the Lord,
@@ -1946,13 +2003,14 @@
         sorrow forgot, love's purest joys restored.
         Be still, my soul: when change and tears are past,
         all safe and blessed we shall meet at last.
-      textPl: |-
-        Nie trwóż się, duszo ma: zbliża się godzina,
-        gdy na zawsze będziemy z Panem;
-        gdy przeminą zawód, ból i strach,
-        smutek ustąpi, a czysta radość miłości powróci.
-        Nie trwóż się, duszo ma: gdy miną zmiany i łzy,
-        bezpieczni i błogosławieni spotkamy się wreszcie.
+      textGloss:
+        pl: |-
+          Nie trwóż się, duszo ma: zbliża się godzina,
+          gdy na zawsze będziemy z Panem;
+          gdy przeminą zawód, ból i strach,
+          smutek ustąpi, a czysta radość miłości powróci.
+          Nie trwóż się, duszo ma: gdy miną zmiany i łzy,
+          bezpieczni i błogosławieni spotkamy się wreszcie.
     - composer: "Gabriel Fauré"
       years: "1845–1924"
       work: "Pie Jesu · z Requiem op. 48"
@@ -1965,15 +2023,16 @@
         kompozytor się nie spierał, tak właśnie widział śmierć. Tekst to dwa zdania: zmiłuj się
         i daj odpoczynek.
       inscriptio: "Pie Jesu Domine, dona eis requiem"
-      inscriptioPl: "Miłosierny Panie Jezu, daj im odpoczynek · z Requiem op. 48"
+      inscriptioGloss: { pl: "Miłosierny Panie Jezu, daj im odpoczynek · z Requiem op. 48" }
       text: |-
         Pie Jesu Domine,
         dona eis requiem,
         dona eis requiem sempiternam.
-      textPl: |-
-        Miłosierny Panie Jezu,
-        daj im odpoczynek,
-        daj im odpoczynek wieczny.
+      textGloss:
+        pl: |-
+          Miłosierny Panie Jezu,
+          daj im odpoczynek,
+          daj im odpoczynek wieczny.
     - composer: "Edward Elgar"
       years: "1857–1934"
       work: "Lux aeterna (Nimrod) · oprac. J. Cameron"
@@ -1988,15 +2047,16 @@
         muzykę nad grobami, co roku przy Cenotaph w Londynie, w Niedzielę Pamięci. John Cameron
         podłożył pod nią komunię z Mszy żałobnej: światłość wiekuistą.
       inscriptio: "Lux aeterna luceat eis, Domine"
-      inscriptioPl: "Światłość wieczna niechaj im świeci, Panie · komunia z Mszy żałobnej"
+      inscriptioGloss: { pl: "Światłość wieczna niechaj im świeci, Panie · komunia z Mszy żałobnej" }
       text: |-
         Lux aeterna luceat eis, Domine,
         cum sanctis tuis in aeternum,
         quia pius es.
-      textPl: |-
-        Światłość wieczna niechaj im świeci, Panie,
-        wraz z Twymi Świętymi na wieki,
-        bo jesteś miłosierny.
+      textGloss:
+        pl: |-
+          Światłość wieczna niechaj im świeci, Panie,
+          wraz z Twymi Świętymi na wieki,
+          bo jesteś miłosierny.
     - composer: "Michał Piechnik"
       work: "Impresja organowa na temat „Szcze ne wmerła Ukrajiny”"
       movement: lux
@@ -2007,7 +2067,7 @@
         Tytularny organista Bazyliki Mariackiej zaimprowizował na ten temat przy już otwartym
         ołtarzu. Z wieży tego samego kościoła co godzinę gra się hejnał, który urywa się w pół
         dźwięku, na pamiątkę najazdu.
-      inscriptioPl: "hymn Ukrainy · słowa: P. Czubynski (1862), melodia: ks. M. Werbycki"
+      inscriptioGloss: { pl: "hymn Ukrainy · słowa: P. Czubynski (1862), melodia: ks. M. Werbycki" }
       clasp: "Błogosławieństwo · ks. inf. Dariusz Raś"
     - composer: "Edward C. Bairstow"
       years: "1874–1946"
@@ -2019,18 +2079,19 @@
         Bairstow był przez trzydzieści trzy lata organistą katedry w Yorku; ten krótki anthem
         śpiewa się zwykle po komunii, a jego tekst pochodzi z Pieśni nad Pieśniami. Po wieczorze,
         który zamknął się hymnem narodu w wojnie, ostatnie słowo należy do innego sztandaru.
-      inscriptioPl: "z Pieśni nad Pieśniami"
-      inscriptioRef: "PnP 2, 3–4"
+      inscriptioGloss: { pl: "z Pieśni nad Pieśniami" }
+      inscriptioRef: { scripture: [{ book: song, chapter: "2", verses: ["3–4"] }] }
       text: |-
         I sat down under his shadow with great delight,
         and his fruit was sweet to my taste.
         He brought me to the banqueting house,
         and his banner over me was love.
-      textPl: |-
-        W upragnionym jego cieniu usiadłam,
-        a owoc jego słodki memu podniebieniu.
-        Wprowadził mnie do domu wina
-        i jak sztandar rozwinął nade mną swą Miłość.
+      textGloss:
+        pl: |-
+          W upragnionym jego cieniu usiadłam,
+          a owoc jego słodki memu podniebieniu.
+          Wprowadził mnie do domu wina
+          i jak sztandar rozwinął nade mną swą Miłość.
       bis: true
 
 - id: aeternam
@@ -2038,7 +2099,8 @@
   roman: "V"
   latin: Lamentum
   title: Aeternam — Epitafium dla Gazy
-  meta: "Mistrzejowice, Kraków · Niedzica · jesień 2025"
+  metaPlace: { pl: "Mistrzejowice, Kraków · Niedzica" }
+  dateLabel: { pl: "jesień 2025" }
   venue: "Mistrzejowice, Kraków / Niedzica"
   viaDate: jesień 2025
   about:
@@ -2059,8 +2121,8 @@
   accent: "#7d766c"
   variant: memoriam
   inscriptio: "Requiem aeternam dona eis, Domine, et lux perpetua luceat eis"
-  inscriptioPl: "Wieczny odpoczynek racz im dać, Panie, a światłość wiekuista niechaj im świeci"
-  inscriptioRef: "Introit Requiem"
+  inscriptioGloss: { pl: "Wieczny odpoczynek racz im dać, Panie, a światłość wiekuista niechaj im świeci" }
+  inscriptioRef: { source: { pl: "Introit Requiem" } }
   essence: "Wobec cierpienia mieszkańców Gazy wybraliśmy język współczucia, nie komentarza. Program prowadził od Aeternam Vivancosa i lamentu Vox in Rama, przez modlitwy o pokój Pärta, Havrylets i Gjeilo oraz obraz męki Lottiego, ku schronieniu Shaw i zawierzeniu Tavenera."
   facts:
     - 4 / 8 / 12 głosów
@@ -2141,40 +2203,40 @@
   movements:
     - id: epitaphium
       lat: Epitaphium
-      pl: Epitafium
+      gloss: { pl: Epitafium }
       line: >-
         Wieczór zaczyna się tam, gdzie kończy się mowa: od słów śpiewanych nad grobami
         od wieków.
     - id: ploratus
       lat: Ploratus
-      pl: Lament niewinnych
+      gloss: { pl: Lament niewinnych }
       line: >-
         Rachel opłakuje swoje dzieci: w tradycji biblijnej figura każdej matki, której
         odebrano dziecko.
     - id: oratio
       lat: Oratio pro pace
-      pl: Modlitwa o pokój
+      gloss: { pl: Modlitwa o pokój }
       line: >-
         Trzy prośby z trzech stron Europy: antyfona napisana po zamachach w Madrycie,
         norweskie ukojenie z wiolonczelą, ukraińskie wołanie do Bogurodzicy.
     - id: passio
       lat: Passio
-      pl: Obraz męki
+      gloss: { pl: Obraz męki }
       interlude:
         lat: "Videns civitatem, flevit super illam: Si cognovisses et tu, quæ ad pacem tibi!"
-        pl: "Na widok miasta zapłakał nad nim: O gdybyś i ty poznało to, co służy pokojowi!"
-        ref: "Łk 19, 41–42"
+        gloss: { pl: "Na widok miasta zapłakał nad nim: O gdybyś i ty poznało to, co służy pokojowi!" }
+        ref: { scripture: [{ book: luke, chapter: "19", verses: ["41–42"] }] }
       line: >-
         W połowie wieczoru: ciężar krzyża, wypisany chromatyką ośmiu głosów.
     - id: refugium
       lat: Refugium
-      pl: Schronienie
+      gloss: { pl: Schronienie }
       line: >-
         Po męce wraca najmniejszy obraz, jaki zna Psałterz: wróbel i jaskółka, które przy
         ołtarzu znajdują gniazdo.
     - id: commendatio
       lat: Commendatio
-      pl: Zawierzenie
+      gloss: { pl: Zawierzenie }
       line: >-
         Zostaje zawierzenie Tej, która stała pod krzyżem, i obietnica, którą niesie ostatni
         refren.
@@ -2203,13 +2265,14 @@
         Część Requiem katalońskiego kompozytora, przez lata związanego z chórem chłopięcym
         Escolania de Montserrat. Podstawą jest Introit Mszy za zmarłych, słowa odmawiane nad
         grobami od wieków. Vivancos zestawia współczesną heterofonię z prostotą dawnego chorału.
-      inscriptioPl: "Introit Mszy za zmarłych"
+      inscriptioGloss: { pl: "Introit Mszy za zmarłych" }
       text: |-
         Requiem æternam dona eis, Domine,
         et lux perpetua luceat eis.
-      textPl: |-
-        Wieczny odpoczynek racz im dać, Panie,
-        a światłość wiekuista niechaj im świeci.
+      textGloss:
+        pl: |-
+          Wieczny odpoczynek racz im dać, Panie,
+          a światłość wiekuista niechaj im świeci.
     - composer: "Mikołaj Zieleński"
       years: "1560–1620"
       work: "Vox in Rama"
@@ -2224,17 +2287,18 @@
         biblijnej
         figurą matki opłakującej wszystkie niewinne ofiary; motet śpiewano w liturgii dnia
         Świętych Młodzianków.
-      inscriptioRef: "Mt 2, 18"
+      inscriptioRef: { scripture: [{ book: matt, chapter: "2", verses: ["18"] }] }
       text: |-
         Vox in Rama audita est,
         ploratus et ululatus multus.
         Rachel plorans filios suos,
         noluit consolari, quia non sunt.
-      textPl: |-
-        Krzyk usłyszano w Rama,
-        płacz i jęk wielki.
-        Rachel opłakuje swe dzieci
-        i nie chce utulić się w żalu, bo ich już nie ma.
+      textGloss:
+        pl: |-
+          Krzyk usłyszano w Rama,
+          płacz i jęk wielki.
+          Rachel opłakuje swe dzieci
+          i nie chce utulić się w żalu, bo ich już nie ma.
     - composer: "Arvo Pärt"
       years: "ur. 1935"
       work: "Da pacem Domine"
@@ -2247,17 +2311,18 @@
         Pärt wpisał średniowieczną antyfonę w swój styl tintinnabuli, odnaleziony po dziesięcioletnim
         okresie twórczego milczenia. Prosta formuła wraca tu jak oddech: trwa, zamiast prowadzić
         do kulminacji.
-      inscriptioPl: "antyfona średniowieczna"
+      inscriptioGloss: { pl: "antyfona średniowieczna" }
       text: |-
         Da pacem, Domine, in diebus nostris,
         quia non est alius,
         qui pugnet pro nobis,
         nisi tu, Deus noster.
-      textPl: |-
-        Obdarz nas pokojem, Panie, w naszych czasach,
-        bo nie ma nikogo,
-        kto by walczył za nas,
-        prócz Ciebie, Boże nasz.
+      textGloss:
+        pl: |-
+          Obdarz nas pokojem, Panie, w naszych czasach,
+          bo nie ma nikogo,
+          kto by walczył za nas,
+          prócz Ciebie, Boże nasz.
     - composer: "Ola Gjeilo"
       years: "ur. 1978"
       work: "Serenity"
@@ -2270,7 +2335,7 @@
         Głos instrumentu, porównywany do ludzkiego, prowadzi z chórem intymny dialog. Tekst mówi o
         narodzinach; w tym programie o narodzinach Księcia Pokoju.
       inscriptio: "O magnum mysterium"
-      inscriptioPl: "responsorium Bożego Narodzenia"
+      inscriptioGloss: { pl: "responsorium Bożego Narodzenia" }
       text: |-
         O magnum mysterium,
         et admirabile sacramentum,
@@ -2279,14 +2344,15 @@
         Beata Virgo, cujus viscera meruerunt portare
         Dominum Christum.
         Alleluia.
-      textPl: |-
-        O wielka tajemnico
-        i cudowny sakramencie,
-        że zwierzęta ujrzały narodzonego Pana,
-        leżącego w żłobie.
-        Błogosławiona Dziewico, której łono zasłużyło, by nosić
-        Chrystusa Pana.
-        Alleluja.
+      textGloss:
+        pl: |-
+          O wielka tajemnico
+          i cudowny sakramencie,
+          że zwierzęta ujrzały narodzonego Pana,
+          leżącego w żłobie.
+          Błogosławiona Dziewico, której łono zasłużyło, by nosić
+          Chrystusa Pana.
+          Alleluja.
     - composer: "Hanna Havrylets"
       years: "1958–2022"
       work: "Prayer · Молитва до Пресвятої Богородиці"
@@ -2298,17 +2364,18 @@
         muzyki współczesnej. Zmarła w Kijowie w 2022 roku, w pierwszych dniach rosyjskiej inwazji,
         gdy dostęp do pomocy medycznej był ograniczony. Jej modlitwa do Bogurodzicy, oparta na
         prostych liniach melodycznych, brzmi dziś jak świadectwo.
-      inscriptioPl: "Modlitwa do Przenajświętszej Bogurodzicy"
+      inscriptioGloss: { pl: "Modlitwa do Przenajświętszej Bogurodzicy" }
       text: |-
         Пресвятая Богородице, вислухай нас.
         Пресвятая Богородице, будь нам заступницею.
         Всесильною Твоєю рукою допоможи нам
         Перемогти ворогiв, що напали.
-      textPl: |-
-        Przenajświętsza Bogurodzico, wysłuchaj nas.
-        Przenajświętsza Bogurodzico, bądź nam orędowniczką.
-        Swą wszechmocną ręką pomóż nam
-        pokonać wrogów, którzy nas napadli.
+      textGloss:
+        pl: |-
+          Przenajświętsza Bogurodzico, wysłuchaj nas.
+          Przenajświętsza Bogurodzico, bądź nam orędowniczką.
+          Swą wszechmocną ręką pomóż nam
+          pokonać wrogów, którzy nas napadli.
     - composer: "Antonio Lotti"
       years: "1667–1740"
       work: "Crucifixus"
@@ -2321,13 +2388,14 @@
         i XVIII wieku. Zachowały się jego liczne opracowania tego tekstu na różne obsady; wersja
         ośmiogłosowa należy do najbardziej przejmujących. Chromatyczne prowadzenie głosów i gęsta
         faktura tworzą obraz ciężaru krzyża: barokowa ekspresja podporządkowana teologii pasyjnej.
-      inscriptioPl: "z Credo Mszy"
+      inscriptioGloss: { pl: "z Credo Mszy" }
       text: |-
         Crucifixus etiam pro nobis sub Pontio Pilato:
         passus, et sepultus est.
-      textPl: |-
-        Ukrzyżowany również za nas, pod Poncjuszem Piłatem
-        został umęczony i pogrzebany.
+      textGloss:
+        pl: |-
+          Ukrzyżowany również za nas, pod Poncjuszem Piłatem
+          został umęczony i pogrzebany.
     - composer: "Caroline Shaw"
       years: "ur. 1982"
       work: "and the swallow"
@@ -2341,7 +2409,7 @@
         od reszty programu: zamiast lamentu przychodzi obraz najmniejszych stworzeń, które przy ołtarzu
         znajdują gniazdo. Tym samym psalmem zespół zamknął zapowiedź wieczoru: nadzieją, że
         nadejdzie dzień, kiedy każdy będzie mógł wypowiedzieć „Jak miłe są przybytki Twoje, Panie”.
-      inscriptioRef: "Ps 84, 2–4. 7"
+      inscriptioRef: { scripture: [{ book: ps, chapter: "84", verses: ["2–4", "7"] }] }
       text: |-
         How beloved is your dwelling place, o lord of hosts.
         My soul yearns,
@@ -2354,18 +2422,19 @@
         They pass through the Valley of Bakka,
         they make it a place of springs;
         the autumn rains cover it with pools.
-      textPl: |-
-        Jak miłe są przybytki Twoje, Panie Zastępów!
-        Dusza moja pragnie i tęskni [do przedsieni Pańskich.]
-        Moje serce i moje ciało radośnie wołają [do Boga żywego.]
+      textGloss:
+        pl: |-
+          Jak miłe są przybytki Twoje, Panie Zastępów!
+          Dusza moja pragnie i tęskni [do przedsieni Pańskich.]
+          Moje serce i moje ciało radośnie wołają [do Boga żywego.]
 
-        Nawet wróbel dom sobie znajduje
-        i jaskółka gniazdo,
-        gdzie złoży swe pisklęta.
+          Nawet wróbel dom sobie znajduje
+          i jaskółka gniazdo,
+          gdzie złoży swe pisklęta.
 
-        Przechodząc doliną Baka,
-        przemieniają ją w źródło,
-        a wczesny deszcz błogosławieństwem ją okryje.
+          Przechodząc doliną Baka,
+          przemieniają ją w źródło,
+          a wczesny deszcz błogosławieństwem ją okryje.
     - composer: "John Tavener"
       years: "1944–2013"
       work: "Mother of God, here I stand"
@@ -2378,7 +2447,7 @@
         w londyńskim Temple Church w 2003 roku; tekst pochodzi z poezji Michaiła Lermontowa.
         Muzyka trwa w zupełnej statyce, bez kulminacji, jak ikona w dźwięku. W tym programie
         cisza jest kulminacją: gestem zawierzenia ofiar Gazy.
-      inscriptioPl: "tekst: Michaił Lermontow"
+      inscriptioGloss: { pl: "tekst: Michaił Lermontow" }
       text: |-
         Mother of God, here I stand now praying,
         Before this icon of your radiant brightness,
@@ -2387,14 +2456,15 @@
         For the sins of my soul, nor for all the souls
         Numb, joyless and desolate on earth;
         But for THEM alone, whom I wholly give you.
-      textPl: |-
-        Matko Boża, oto stoję na modlitwie
-        przed ikoną Twego światła.
-        Nie proszę o wybawienie z pola bitwy,
-        nie składam dziękczynienia, nie błagam o odpuszczenie
-        grzechów mej duszy ni dusz wszystkich,
-        otępiałych, bez wesela, opuszczonych na ziemi.
-        Lecz tylko za NICH, których całkowicie Tobie oddaję.
+      textGloss:
+        pl: |-
+          Matko Boża, oto stoję na modlitwie
+          przed ikoną Twego światła.
+          Nie proszę o wybawienie z pola bitwy,
+          nie składam dziękczynienia, nie błagam o odpuszczenie
+          grzechów mej duszy ni dusz wszystkich,
+          otępiałych, bez wesela, opuszczonych na ziemi.
+          Lecz tylko za NICH, których całkowicie Tobie oddaję.
     - composer: "John Tavener"
       years: "1944–2013"
       work: "A Hymn to the Mother of God"
@@ -2407,7 +2477,7 @@
         do tekstu z liturgii bizantyjskiej. Kompozytor zestawia dwa sześciogłosowe chóry, których
         nakładające się frazy tworzą rezonans i przestrzeń: dialog ziemi z niebem. Ostatni refren
         przenosi wieczór od bólu ku obietnicy.
-      inscriptioPl: "tekst z liturgii bizantyjskiej"
+      inscriptioGloss: { pl: "tekst z liturgii bizantyjskiej" }
       text: |-
         In you, O Woman full of grace,
         the angelic choirs and the human race,
@@ -2422,20 +2492,21 @@
         In you, O Woman full of grace,
         all creation rejoices.
         Glory to you.
-      textPl: |-
-        W Tobie, o Niewiasto pełna łaski,
-        chóry anielskie i rodzaj ludzki
-        — całe stworzenie raduje się.
-        O uświęcona świątynio, mistyczny raju,
-        chwało dziewic,
-        w Tobie Bóg stał się ciałem
-        i stał się Dziecięciem,
-        Ten, który jest naszym Bogiem od wieków.
-        On uczynił Twoje łono tronem
-        i sprawił, że stało się szersze niż niebiosa.
-        W Tobie, o Niewiasto pełna łaski,
-        całe stworzenie raduje się.
-        Chwała Tobie.
+      textGloss:
+        pl: |-
+          W Tobie, o Niewiasto pełna łaski,
+          chóry anielskie i rodzaj ludzki
+          — całe stworzenie raduje się.
+          O uświęcona świątynio, mistyczny raju,
+          chwało dziewic,
+          w Tobie Bóg stał się ciałem
+          i stał się Dziecięciem,
+          Ten, który jest naszym Bogiem od wieków.
+          On uczynił Twoje łono tronem
+          i sprawił, że stało się szersze niż niebiosa.
+          W Tobie, o Niewiasto pełna łaski,
+          całe stworzenie raduje się.
+          Chwała Tobie.
     - composer: "Rihards Dubra"
       years: "ur. 1964"
       work: "O crux, ave"
@@ -2447,17 +2518,18 @@
         To hymn święta Podwyższenia Krzyża Świętego, tego samego dnia, w którym zespół śpiewał
         ten program po raz pierwszy. Prosta, niemal archaiczna faktura zamyka wieczór prośbą
         o przebaczenie.
-      inscriptioPl: "z hymnu Vexilla regis · Wenancjusz Fortunat (VI w.)"
+      inscriptioGloss: { pl: "z hymnu Vexilla regis · Wenancjusz Fortunat (VI w.)" }
       text: |-
         O crux, ave, spes unica,
         hoc passionis tempore:
         auge piis justitiam,
         reisque dona veniam.
-      textPl: |-
-        Witaj, Krzyżu, jedyna nadziejo,
-        w tym czasie Męki Pańskiej;
-        przymnóż sprawiedliwość wiernym,
-        a winowajcom udziel przebaczenia.
+      textGloss:
+        pl: |-
+          Witaj, Krzyżu, jedyna nadziejo,
+          w tym czasie Męki Pańskiej;
+          przymnóż sprawiedliwość wiernym,
+          a winowajcom udziel przebaczenia.
       bis: true
 
 - id: bobola
@@ -2465,7 +2537,7 @@
   roman: "VI"
   latin: Liturgia
   title: Uroczystość św. Andrzeja Boboli
-  meta: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa · 16 maja 2026"
+  metaPlace: { pl: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa" }
   venue: "Sanktuarium Narodowe św. Andrzeja Boboli, Warszawa"
   date: "2026-05-16"
   address: "ul. Rakowiecka 61, Warszawa"

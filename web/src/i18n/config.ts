@@ -15,6 +15,22 @@
 export const LOCALES = ["pl", "en", "fr"] as const;
 export type Locale = (typeof LOCALES)[number];
 
+/**
+ * One string held per locale — the shape every translatable value in `concerts.yaml` takes
+ * (`textGloss`, `inscriptioGloss`, `metaPlace`, `movements[].gloss`…).
+ *
+ * POLISH IS REQUIRED and the others are not, because Polish is the canonical source: a
+ * translation exists only as the rendering of a Polish value, and a map without `pl` would be a
+ * translation of nothing — nothing to fall back to on the Polish page, and nothing for the copy
+ * desk to hash a translation against.
+ */
+export type LocalizedText = Partial<Record<Locale, string>> & { readonly pl: string };
+
+/** The value `locale` prints, falling back to Polish while a translation is still missing. */
+export function pickLocale(text: LocalizedText, locale: Locale): string {
+  return text[locale] ?? text.pl;
+}
+
 /** Canonical origin — the single owner of the production URL for build-time absolute links
  *  (canonical, og:url, hreflang, JSON-LD @id). Mirrors astro.config `site`; import this rather
  *  than re-hardcoding the host in every page component. */

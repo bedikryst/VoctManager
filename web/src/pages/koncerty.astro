@@ -18,7 +18,9 @@ import SiteFooter from "../components/SiteFooter.astro";
 import BleedImage from "../components/BleedImage.astro";
 import { photo, bleedPair } from "../lib/photos";
 import { absolute, musicEvent } from "../lib/eventSchema";
-import { SITE } from "../i18n/config";
+import { longDate } from "../lib/dates";
+import { formatRef } from "../lib/scriptureRef";
+import { pickLocale, SITE, type Locale } from "../i18n/config";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import "../styles/vault.css";
 
@@ -30,11 +32,24 @@ const description =
 
 const hero = bleedPair("koncerty-hero");
 
+// This route exists in Polish only (outside TRANSLATED_ROUTES) — the locale is named rather than
+// assumed so every localized value on the page reads from one place. See /koncerty/[id].
+const lang: Locale = "pl";
+
 const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
 const stationCount = concerts.length;
 const stations = concerts.map((c, i) => ({
   ...c.data,
   id: c.id,
+  // The dateline is composed here, not stored: place per locale, the moment formatted from the
+  // ISO `date` or taken from the vague `dateLabel` (a tour across a year, a season).
+  metaPlace: pickLocale(c.data.metaPlace, lang),
+  meta: [
+    pickLocale(c.data.metaPlace, lang),
+    c.data.date ? longDate(c.data.date, lang) : c.data.dateLabel && pickLocale(c.data.dateLabel, lang),
+  ]
+    .filter(Boolean)
+    .join(" · "),
   // Via-rail fill is derived from position, not stored per-entry: adding a concert
   // no longer means re-percentaging every other YAML row by hand.
   viaStep: `${Math.round(((i + 1) / stationCount) * 100)}%`,
@@ -113,7 +128,7 @@ const listItems = await Promise.all(
         // The venue has to travel WITH the date it belongs to: pairing the opening evening's day
         // with the concert-level venue string (which lists all three cities) would describe an
         // evening that never happened.
-        venue: opening?.venue ?? s.venue ?? s.meta,
+        venue: opening?.venue ?? s.venue ?? s.metaPlace,
         address: opening ? opening.address : s.address,
         admission: opening ? opening.admission : s.admission,
       }),
@@ -289,8 +304,12 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                     data-d="2"
                   >
                     <em class="station-inscriptio-src">{s.inscriptio}</em>
-                    {s.inscriptioPl && <span class="station-inscriptio-pl">{s.inscriptioPl}</span>}
-                    {s.inscriptioRef && <span class="station-inscriptio-ref">{s.inscriptioRef}</span>}
+                    {s.inscriptioGloss && (
+                      <span class="station-inscriptio-pl">{pickLocale(s.inscriptioGloss, lang)}</span>
+                    )}
+                    {s.inscriptioRef && (
+                      <span class="station-inscriptio-ref">{formatRef(s.inscriptioRef, lang)}</span>
+                    )}
                   </p>
                 )}
                 {/* One step behind the essence, not level with it. The station speaks in four

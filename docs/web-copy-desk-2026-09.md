@@ -7,11 +7,12 @@ for it, and §1 of the board-feedback file points here.
 ## How to read this file
 
 - **§1 What changed and why** — the reframe. Read this before questioning any decision below.
-- **§2 The two-iteration rule** — a hard constraint on the whole stage.
+- **§2 The two-iteration rule** — how OUR translation passes are run, and the separate rule that a
+  Polish edit invalidates what was built on it.
 - **§3 Architecture** — where it lives, who is source of truth, how someone gets in.
 - **§4 The segment** — the unit everything else is built on.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
-- **§6 Order of work** — stages, and what each one delivers.
+- **§6 Order of work** — stages, and what each one delivers. **§6a** records what stage A shipped.
 - **§7 Traps** — things that look correct and ship wrong.
 - **§8 Open decisions.**
 
@@ -60,22 +61,38 @@ translating now, against the current Polish, is not wasted work.
 
 ## §2 The two-iteration rule
 
-**Translations go in at least two iterations. Always. This is not a schedule risk to manage, it is
-the shape of the work.**
+**A translation this project produces is never handed over on the pass that wrote it. Minimum two
+iterations: draft the locale, then re-read the whole of it against the Polish. If the second pass
+finds anything, there is a third.** This is a rule about OUR work — the agent's EN and FR drafts —
+not about how many rounds a human editor is allowed.
 
-Iteration one translates the Polish as it stands today. Florent then edits the Polish. Every Polish
-edit — even a single word — puts the two translations built on it out of date, because a translator
-renders a *sense*, and the sense is what he is adjusting. So:
+The reason is what translating ~8 700 words per locale actually does to a writer. Drafting is
+sequential and local: each segment is rendered against the one Polish sentence in front of it, and
+the faults that matter are the ones only visible from outside that window — a term rendered two
+ways in two concerts, a register that drifts from programme-book to blurb across a long page, a
+line that reads fine in English and no longer says what the Polish said, a French incipit that
+picked up hard spaces `lib/typo.ts` is about to add again. None of those are visible from inside
+the sentence that produced them, and none of them are caught by "check as you go", because the
+checker is the drafter at the same altitude.
 
-1. **Pass 1** — all three locales are drafted and handed over together (what Florent asked for).
-2. He edits, in any locale, in any order.
-3. **Pass 2** — every segment whose Polish changed is retranslated against the new Polish and goes
-   back to him marked *source changed since your translation*.
+So the second pass is a different job from the first and has to be run as one: read the locale end
+to end **beside the Polish**, segment by segment, with the drafting finished. Terminology and
+register are checked across concerts, not within one. Do not merge it into the drafting pass and do
+not treat it as proofreading — spelling is not what it is for.
 
-The desk must make pass 2 cheap, which is what §4's source hash is for. A build that cannot tell
-which translations are stale has not implemented this rule, whatever the UI looks like.
+**Iteration count is a floor, not a plan.** Two is the minimum; the third pass is decided by what
+the second one finds, not scheduled in advance. Size the stage as if there will be three.
 
-Do not promise anyone a single pass. Do not size the stage as if pass 2 were an exception.
+### And separately: a Polish edit invalidates its translations
+
+Not the same rule, and easy to file under it. Florent edits the Polish — that is the point of the
+desk — and every Polish edit, even a single word, puts the two translations built on it out of
+date, because a translator renders a *sense* and the sense is what he is adjusting. So a segment
+whose Polish moved is retranslated against the new Polish and goes back marked *source changed
+since your translation* — and the retranslation is itself subject to §2 above.
+
+The desk must make that cheap, which is what §4's source hash is for. A build that cannot tell
+which translations are stale has not implemented this, whatever the UI looks like.
 
 ## §3 Architecture
 
@@ -213,11 +230,19 @@ inscriptioGloss: { pl: "…", en: "…", fr: "…" }
 movements:
   - lat: "Prophetia"
     gloss: { pl: "Zapowiedź", en: "Prophecy", fr: "Prophétie" }
-    line:  { pl: "…", en: "…", fr: "…" }
 ```
 
 This is a mechanical migration of the existing file plus the components that read it, and it must
-land **before** translation starts, not alongside it.
+land **before** translation starts, not alongside it. **Shipped 2026-09-02 — see §6a for what it
+actually did and the two places it departs from this sketch.**
+
+**The rule the file now states in its own header, and the one to hold the line on:** a locale map is
+what a *foreign original's vernacular* takes, and nothing else. `movements[].line` is not one — an
+earlier draft of this block showed it as a map, and it is ordinary Polish prose exactly like
+`note`, `essence`, `programArc` and `gallery[].alt`. Making one prose field a map while the other
+forty stay strings puts two shapes for one thing back in the file, which is the fault the rename
+exists to remove. All prose migrates together or not at all; today it is `pl`-only strings entering
+the desk by key (§4), and how it holds three locales is stage G's question, not stage A's.
 
 ### Sung texts are translated in full (decided)
 
@@ -251,13 +276,64 @@ French month/day capitalization does not survive naive formatting (see the proje
 
 | # | stage | delivers |
 |---|---|---|
-| A | `concerts.yaml` locale-map migration (§5) + components that read it | the file can hold three locales at all |
+| A | `concerts.yaml` locale-map migration (§5) + components that read it — **done, §6a** | the file can hold three locales at all |
 | B | backend: segment model, proposals API, `can_edit_site_copy`, notification | proposals can exist |
 | C | extractor + `apply-copy` script, both directions through `key` | proposals can reach git |
 | D | panel: `/redakcja/*` shell, contents list, editor, reviewer mode | the desk |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang | the pages exist |
 | G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing | the rest of the corpus enters the desk |
+
+### §6a Stage A — what shipped (2026-09-02)
+
+`concerts.yaml` migrated in one pass by a throwaway line-level script (never a YAML round-trip: the
+file's comments are half its value, and a parse-and-dump would have deleted every one of them).
+Each transform asserted it could reproduce the ORIGINAL Polish string from what it wrote, which is
+what made a 611-line diff safe to accept. Counts: 6 `metaPlace`, 2 `dateLabel`, 1 `speaker`,
+60 `inscriptioGloss`, 28 structural refs, 42 `textGloss`, 9 `claspTextGloss`, 25 `gloss`.
+Verified in `dist/`: every dateline, citation and gloss renders character-identical to before, and
+the node counts per class match the YAML counts exactly.
+
+**Four decisions worth carrying.**
+
+- **The locale map requires `pl` and leaves `en`/`fr` optional** (`LocalizedText`,
+  `pickLocale`, both in `i18n/config.ts`). Polish is the source a translation *renders*, so a map
+  without it would be a translation of nothing — no fallback on the Polish page, and nothing for
+  §4's `source_hash` to hash. Fallback is per FIELD, not per concert: a half-translated evening
+  builds and prints Polish only where the English is still missing.
+- **The dateline is composed at render, never stored.** `metaPlace` is the place half (copy, per
+  locale); the moment comes from `date` through `lib/dates` (`longDate(iso, locale)` — ICU gives
+  lowercase months in PL/FR and `en-GB` day-first, all three correct) or, where the day is genuinely
+  vague, from a `dateLabel` map ("jesień 2025"). `verbum.speaker` is now the name alone, with the
+  concert's own date appended — "o." is "Fr" in English and "P." in French, so the name is copy and
+  the date never is. A `superRefine` fails the build on a concert with neither `date` nor
+  `dateLabel`, because the alternative is a hero that prints a place, no moment, and no error.
+- **`inscriptioRef` is structural** (`lib/scriptureRef`): `{ scripture: [{ book, chapter,
+  chapterAlt?, verses[] }], source? }`. Three things in "Iz 11, 1" are language choices, not one —
+  the abbreviation, the chapter/verse mark (`, ` in PL/FR, `:` in EN) and the mark between two
+  verse groups (`. ` in PL, `, ` in EN), which is why `verses` is a LIST: "Ps 84, 2–4. 7" is the one
+  citation in the corpus that has two. The book table ships complete in all three locales because a
+  book abbreviation is a lexical fact, not copy for Florent to review — it is the only en/fr text
+  this stage wrote.
+- **`source` exists because not every incipit comes from a numbered verse.** Four references are
+  named sources ("Salve Regina", "Introit Requiem", "Modlitwa za Ukrainę"), and they are copy: the
+  first is a proper title that stays itself in all three, the second is "Requiem Introit" in
+  English, the third is a translation. A locale map is right for all of them and the translator's
+  job includes knowing which is which.
+
+**One finding for whoever translates this file.** `inscriptioPl` was doing two jobs, not one, and
+`inscriptioGloss` inherits both: on a work with an `inscriptio` it is that Latin's vernacular, but
+on a work WITHOUT one it is a standalone editorial note occupying the same slot — "tekst:
+H. M. MacGill (1876)", "aranżacja współczesna kolędy polskiej", "na sześć głosów wysokich · fermata
+ciszy na końcu". Those are our prose about the work, not a translation of anything, and rendering
+them back against a Latin that is not there would invent a source. §5's corpus table counts the
+whole 422 words as "vernacular glosses"; some of it is ordinary editorial Polish.
+
+**Left standing, deliberately.** The CSS hooks still read `.kd-text-pl`, `.kd-movement-pl`,
+`.station-inscriptio-pl` and their siblings. They are page-scoped presentational names, `-pl` there
+means "the gloss column" rather than a locale, and `.kd-inscriptio-gloss` is already taken by the
+wrapper span — so renaming them now buys nothing and collides. Sweep them when stage F forks the
+route, which is also when the three locales stop sharing one file.
 
 A–D are infrastructure and can be verified without any translation existing. E is the long pole and
 is where pass 1 of §2 happens. G's last item — the landing — is deliberately last: the guardrails
@@ -289,6 +365,19 @@ costs nothing, a surprise costs his goodwill.
   desk renders using site markup.
 - **Alt text is translatable copy.** `gallery[].alt` is 621 words. It is not decoration; leaving it
   Polish on the English page is an accessibility regression, not a cosmetic one.
+- **A key named `pl` under a foreign original is the `*Pl` trap wearing a different hat.** The
+  suffix was the visible half; `movements[].pl` and `interlude.pl` were the same ambiguity written
+  as a nested key, and a grep for `Pl:` would not have found either. Both are `gloss` now. When a
+  new field appears beside a `lat`/`text`/`inscriptio`, ask which of §5's two meanings its name
+  carries before writing it.
+- **A migration of this file may not go through a YAML parser.** `concerts.yaml` is ~2 500 lines of
+  which a large share is comments carrying decisions nothing else records (the veil per station,
+  the run boundaries, the consent scope on the roster). Any parse-and-dump deletes all of them
+  silently and the build stays green. Rewrite lines, and make each transform prove it can
+  reconstruct the original string.
+- **The file is CRLF on a Windows checkout,** so a migration script that splits on `\n` matches
+  nothing at all and reports a clean run over zero changes. Split on `/\r?\n/` and restore the
+  ending on write.
 
 ## §8 Open decisions
 

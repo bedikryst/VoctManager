@@ -19,6 +19,7 @@
  * @architecture Astro assets 2026
  * @module lib/galleryRuns
  */
+import { longDate } from "./dates";
 
 /** What a run is drawn from. Callers bring their own fields (image, alt, aspect) on top. */
 export interface RunnableShot {
@@ -67,13 +68,10 @@ const REHEARSAL_TITLE = "Próba";
 const singleVenue = (venue: string | undefined): string | undefined =>
   venue && !venue.includes(" / ") ? venue : undefined;
 
-/** Weekday-free long date, the register the concert pages already print their tour rows in. */
-export const plDate = (iso: string): string =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+/** Run heads are Polish wherever they are printed today — `/obrazy` and `/koncerty/[id]` are both
+    Polish-only routes. When either gains a locale, this takes it as a parameter like every other
+    call into lib/dates. */
+const plDate = (iso: string): string => longDate(iso, "pl");
 
 /**
  * Cut a gallery into runs, in document order. A rehearsal inherits NOTHING: its place and date

@@ -22,7 +22,7 @@ import { photo, photoOptional, bleedPair } from "../../lib/photos";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ABOUT } from "../../i18n/content/o-nas";
 import { UI } from "../../i18n/ui";
-import { localizePath, pageI18n, SITE, type Locale } from "../../i18n/config";
+import { localizePath, pageI18n, pickLocale, SITE, type Locale } from "../../i18n/config";
 import "../../styles/vault.css";
 
 interface Props {
@@ -51,7 +51,7 @@ const milestones = concerts.map((entry, i) => {
   const loc = lang === "en" ? a?.en : lang === "fr" ? a?.fr : undefined;
   return {
     year: entry.data.date?.slice(0, 4) ?? entry.data.viaDate.match(/\d{4}/)?.[0] ?? entry.data.viaDate,
-    place: loc?.place ?? a?.place ?? entry.data.venue ?? entry.data.meta,
+    place: loc?.place ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
     title: loc?.title ?? entry.data.title,
     img: a?.img ? photoOptional(a.img) : undefined,
     d: String((i % 3) + 1),

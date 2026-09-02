@@ -32,6 +32,9 @@ import { candleFrom, candleInkFrom } from "../../lib/candle";
 import type { TabulaEntry } from "../../lib/tabula";
 import { absolute, musicEvent } from "../../lib/eventSchema";
 import { videoAsset, videoAssetAv1 } from "../../lib/videos";
+import { longDate } from "../../lib/dates";
+import { formatRef } from "../../lib/scriptureRef";
+import { pickLocale, type Locale } from "../../i18n/config";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ImageLightbox } from "../../islands/landing/ImageLightbox";
 import { VideoPlayer } from "../../islands/landing/video/VideoPlayer";
@@ -49,6 +52,16 @@ export async function getStaticPaths() {
 
 const { entry } = Astro.props;
 const c = entry.data;
+// This route exists in Polish only (`/koncerty/[id]` is outside TRANSLATED_ROUTES), so the locale
+// is a constant here rather than a prop. It is still read from a named binding, and every
+// localized value on the page goes through it, so the `/en` and `/fr` route files that stage F
+// adds are this file with one line changed instead of a hunt for hard-coded Polish.
+const lang: Locale = "pl";
+// The dateline is composed, never stored: the place is copy held per locale, the moment is either
+// the ISO `date` formatted for this locale or the vague `dateLabel` (a season, a bare year).
+const metaPlace = pickLocale(c.metaPlace, lang);
+const metaDate = c.date ? longDate(c.date, lang) : c.dateLabel && pickLocale(c.dateLabel, lang);
+const heroMeta = [metaPlace, metaDate].filter(Boolean).join(" · ");
 // The hero takes the station's canonical photograph (`heroImg`) — the same file /o-nas shows
 // as the milestone — rather than a second byte-identical copy under the `st-*-bg-desktop`
 // name. `bg` stays what it is: the pre-blurred card wash for /koncerty.
@@ -141,7 +154,7 @@ const conductorCredit = c.credits.find((cr) => /dyrygent/i.test(cr.role));
 // A page carries the sung word when any work — or any clasp, since in 9 Kart the psalm itself
 // lives in the returns rather than in the work rows — prints its text. The provenance line hangs
 // off this, so a clasp-only page must still own up to where its texts come from.
-const hasText = c.program.some((p) => p.text || p.textPl || p.claspText || p.claspTextPl);
+const hasText = c.program.some((p) => p.text || p.textGloss || p.claspText || p.claspTextGloss);
 
 // ── `realizacja` is a free-text credit line owned by the /koncerty listing, and each evening fills
 // it with whatever extra hand it had: "Realizacja: Ars Sonora Studio", "Skrzypce: Radu Ropotan",
@@ -247,7 +260,7 @@ const events = hasTour
         url: eventUrl,
         date: c.date,
         time: c.time,
-        venue: c.venue ?? c.meta,
+        venue: c.venue ?? metaPlace,
         address: c.address,
         admission: c.admission,
       }),
@@ -256,14 +269,6 @@ const jsonLd =
   events.length === 1
     ? { "@context": "https://schema.org", ...events[0] }
     : events.map((e) => ({ "@context": "https://schema.org", ...e }));
-
-// Weekday-free long date for the tour rows (dates are ISO in YAML).
-const plDate = (iso: string): string =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 ---
 
 <BaseLayout
@@ -306,18 +311,22 @@ const plDate = (iso: string): string =>
           <span class="lat">{c.latin}</span>
         </p>
         <h1 class="kd-hero-title reveal ink-press" data-d="1">{c.title}</h1>
-        <p class="kd-hero-meta reveal" data-d="1">{c.meta}{c.time ? ` · godz. ${c.time}` : ""}</p>
+        <p class="kd-hero-meta reveal" data-d="1">{heroMeta}{c.time ? ` · godz. ${c.time}` : ""}</p>
 
         {c.inscriptio && (
           <p class="kd-inscriptio reveal" data-d="2">
             <em class="kd-inscriptio-lat">{c.inscriptio}</em>
             {/* The vernacular and the citation are one line of their own under the verse — the
-                citation cites the verse, so it travels with the Polish rather than claiming a
+                citation cites the verse, so it travels with the gloss rather than claiming a
                 third line for four characters. */}
-            {(c.inscriptioPl || c.inscriptioRef) && (
+            {(c.inscriptioGloss || c.inscriptioRef) && (
               <span class="kd-inscriptio-gloss">
-                {c.inscriptioPl && <span class="kd-inscriptio-pl">{c.inscriptioPl}</span>}
-                {c.inscriptioRef && <span class="kd-inscriptio-ref">{c.inscriptioRef}</span>}
+                {c.inscriptioGloss && (
+                  <span class="kd-inscriptio-pl">{pickLocale(c.inscriptioGloss, lang)}</span>
+                )}
+                {c.inscriptioRef && (
+                  <span class="kd-inscriptio-ref">{formatRef(c.inscriptioRef, lang)}</span>
+                )}
               </span>
             )}
           </p>
@@ -413,7 +422,14 @@ const plDate = (iso: string): string =>
           <blockquote class="kd-verbum-quote reveal" data-d="1">
             <p>{c.verbum.quote}</p>
           </blockquote>
-          <p class="kd-verbum-cite reveal" data-d="2">{c.verbum.speaker}</p>
+          {/* The speaker's name is copy; the day he spoke is the concert's own `date`, appended
+              here so the citation cannot drift from it (and simply absent for an evening whose
+              day is vague, rather than invented). */}
+          <p class="kd-verbum-cite reveal" data-d="2">
+            {[pickLocale(c.verbum.speaker, lang), c.date && longDate(c.date, lang)]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
 
           <details class="kd-verbum-full reveal" data-d="2">
             <summary>
@@ -456,7 +472,7 @@ const plDate = (iso: string): string =>
           <ol class="kd-tour-list reveal-rule">
             {c.dates.map((d, i) => (
               <li class="kd-tour-row reveal" data-d={String((i % 3) + 1)}>
-                <span class="kd-tour-date">{plDate(d.date)}</span>
+                <span class="kd-tour-date">{longDate(d.date, lang)}</span>
                 <span class="kd-tour-venue">{d.venue}</span>
                 {d.time && <span class="kd-tour-time">godz. {d.time}</span>}
               </li>
@@ -537,11 +553,15 @@ const plDate = (iso: string): string =>
                 {grp.movement?.interlude && (
                   <li class="kd-interlude" aria-label="Przerywnik biblijny">
                     <p class="kd-interlude-lat reveal">{grp.movement.interlude.lat}</p>
-                    {grp.movement.interlude.pl && (
-                      <p class="kd-interlude-pl reveal" data-d="1">{grp.movement.interlude.pl}</p>
+                    {grp.movement.interlude.gloss && (
+                      <p class="kd-interlude-pl reveal" data-d="1">
+                        {pickLocale(grp.movement.interlude.gloss, lang)}
+                      </p>
                     )}
                     {grp.movement.interlude.ref && (
-                      <span class="kd-interlude-ref micro reveal" data-d="1">{grp.movement.interlude.ref}</span>
+                      <span class="kd-interlude-ref micro reveal" data-d="1">
+                        {formatRef(grp.movement.interlude.ref, lang)}
+                      </span>
                     )}
                   </li>
                 )}
@@ -549,7 +569,7 @@ const plDate = (iso: string): string =>
                   <li class="kd-movement reveal reveal-rule">
                     <h3 class="kd-movement-head">
                       <span class="kd-movement-lat">{grp.movement.lat}</span>
-                      <span class="kd-movement-pl">{grp.movement.pl}</span>
+                      <span class="kd-movement-pl">{pickLocale(grp.movement.gloss, lang)}</span>
                     </h3>
                     {grp.movement.line && <p class="kd-movement-line">{grp.movement.line}</p>}
                   </li>
@@ -581,10 +601,10 @@ const plDate = (iso: string): string =>
                         </span>
                       )}
                     </p>
-                    {(p.inscriptio || p.inscriptioPl || p.inscriptioRef) && (
+                    {(p.inscriptio || p.inscriptioGloss || p.inscriptioRef) && (
                       <p class="kd-program-inscriptio">
                         {p.inscriptio && <em class="kd-program-inscriptio-lat">{p.inscriptio}</em>}
-                        {p.inscriptio && p.inscriptioPl && (
+                        {p.inscriptio && p.inscriptioGloss && (
                           <span class="kd-dot" aria-hidden="true">·</span>
                         )}
                         {/* Same pairing as the hero's, but this one only breaks onto its own line
@@ -594,11 +614,13 @@ const plDate = (iso: string): string =>
                             one: two works in the yaml carry a chapter and verse and no incipit
                             (Zieleński's "Vox in Rama", Shaw's "refugium"), and brackets around a
                             standalone reference would be a parenthesis to nothing. */}
-                        {(p.inscriptioPl || p.inscriptioRef) && (
+                        {(p.inscriptioGloss || p.inscriptioRef) && (
                           <span class="kd-program-inscriptio-gloss">
-                            {p.inscriptioPl && <span class="kd-program-inscriptio-pl">{p.inscriptioPl}</span>}
+                            {p.inscriptioGloss && (
+                              <span class="kd-program-inscriptio-pl">{pickLocale(p.inscriptioGloss, lang)}</span>
+                            )}
                             {p.inscriptioRef && (
-                              <span class="kd-program-inscriptio-ref">{p.inscriptio || p.inscriptioPl ? ` (${p.inscriptioRef})` : p.inscriptioRef}</span>
+                              <span class="kd-program-inscriptio-ref">{p.inscriptio || p.inscriptioGloss ? ` (${formatRef(p.inscriptioRef, lang)})` : formatRef(p.inscriptioRef, lang)}</span>
                             )}
                           </span>
                         )}
@@ -613,15 +635,15 @@ const plDate = (iso: string): string =>
                       </p>
                     )}
                     {p.note && <p class="kd-program-note-work">{p.note}</p>}
-                    {(p.text || p.textPl) && (
+                    {(p.text || p.textGloss) && (
                       <details class="kd-text">
                         <summary>
                           <span class="kd-text-cue">Tekst i przekład</span>
                           <span class="kd-text-icon" aria-hidden="true"></span>
                         </summary>
-                        <div class:list={["kd-text-cols", { "is-single": !(p.text && p.textPl) }]}>
+                        <div class:list={["kd-text-cols", { "is-single": !(p.text && p.textGloss) }]}>
                           {p.text && <p class="kd-text-orig">{p.text}</p>}
-                          {p.textPl && <p class="kd-text-pl">{p.textPl}</p>}
+                          {p.textGloss && <p class="kd-text-pl">{pickLocale(p.textGloss, lang)}</p>}
                         </div>
                       </details>
                     )}
@@ -631,10 +653,12 @@ const plDate = (iso: string): string =>
                         it brings words back (9 Kart — Psalm 51 returning between the psalms). It is
                         content either way, so it stays in the accessibility tree. */}
                     {p.clasp && (
-                      <li class:list={["kd-clasp", { "is-sung": p.claspText || p.claspTextPl }]}>
+                      <li class:list={["kd-clasp", { "is-sung": p.claspText || p.claspTextGloss }]}>
                         <span class="kd-clasp-rule reveal"><span>{p.clasp}</span></span>
                         {p.claspText && <p class="kd-clasp-lat reveal">{p.claspText}</p>}
-                        {p.claspTextPl && <p class="kd-clasp-pl reveal" data-d="1">{p.claspTextPl}</p>}
+                        {p.claspTextGloss && (
+                          <p class="kd-clasp-pl reveal" data-d="1">{pickLocale(p.claspTextGloss, lang)}</p>
+                        )}
                       </li>
                     )}
                   </>

@@ -10,6 +10,7 @@
 import { defineCollection } from "astro:content";
 import { file } from "astro/loaders";
 import { z } from "astro/zod";
+import { SCRIPTURE_BOOKS } from "./lib/scriptureRef";
 
 /** Localized milestone editorial (per non-default locale) inside a concert's `about` block —
     every field optional so a partial translation still validates and falls back to Polish. */
@@ -20,6 +21,51 @@ const milestoneI18n = z
     title: z.string().optional(),
   })
   .optional();
+
+/**
+ * One string held per locale — the shape of every translatable value in this file that is NOT
+ * plain Polish prose. Polish is required (it is the source a translation renders); `en` and `fr`
+ * are optional so a half-translated concert still builds and falls back to Polish per field.
+ *
+ * THE SUFFIX THIS REPLACED MEANT TWO THINGS. `textPl` was never "the Polish variant of `text`" in
+ * the i18n sense — it was the vernacular of a foreign original, and on the English page that slot
+ * has to hold English. Adding `textEn` beside it would have put a locale and a piece of content
+ * behind one suffix, with nothing to tell a later reader which `Pl` was which.
+ */
+const localized = z.object({
+  pl: z.string(),
+  en: z.string().optional(),
+  fr: z.string().optional(),
+});
+
+/**
+ * A citation under an incipit, stored structurally because every visible part of "Iz 11, 1" is a
+ * language choice — see lib/scriptureRef, which owns the book abbreviations and the marks. Carries
+ * a chapter-and-verse `scripture` list, a named `source` (an antiphon, an introit, a prayer — not
+ * every incipit comes from a numbered verse), or both; an empty reference would print nothing at
+ * all, so at least one is required.
+ */
+const scriptureRef = z
+  .object({
+    scripture: z
+      .array(
+        z.object({
+          book: z.enum(SCRIPTURE_BOOKS),
+          chapter: z.string(),
+          /** Septuagint/Vulgate numbering, printed in parentheses ("Ps 98 (97)"). */
+          chapterAlt: z.string().optional(),
+          /** Verse groups: one entry per contiguous run ("Ps 84, 2–4. 7" is `["2–4", "7"]`),
+              because the mark BETWEEN two groups is the one Polish sets as a full stop and
+              English as a comma. */
+          verses: z.array(z.string()).optional(),
+        }),
+      )
+      .optional(),
+    source: localized.optional(),
+  })
+  .refine((r) => (r.scripture?.length ?? 0) > 0 || r.source !== undefined, {
+    message: "A reference needs a `scripture` citation, a named `source`, or both.",
+  });
 
 /**
  * A venue line ends with the place it stood in, and the landing's ledger reads that tail as a
@@ -41,9 +87,16 @@ const concerts = defineCollection({
     roman: z.string(),
     latin: z.string(),
     title: z.string(),
-    /** Presentational one-line venue + date, e.g. "Bazylika NSPJ, Kraków · 20 stycznia 2024". */
-    meta: z.string(),
-    /** Venue name alone — feeds schema.org Place.name (meta is display-only). */
+    /** The place half of the presentational dateline ("Bazylika NSPJ, Kraków"), per locale. The
+        date half is NOT stored: it is formatted from `date` (or, where the day is vague, from
+        `dateLabel`) so that translating the line cannot carry a Polish date into English, and
+        cannot drift from the structured value it restates. */
+    metaPlace: localized,
+    /** The dateline's date where there is no `date` to format — a tour across a year, a season.
+        Copy, not a date, so it is held per locale ("jesień 2025" → "autumn 2025"). Distinct from
+        `viaDate`, which is the via-rail's own abbreviation of the same moment. */
+    dateLabel: localized.optional(),
+    /** Venue name alone — feeds schema.org Place.name (`metaPlace` is display-only). */
     venue: z.string().optional(),
     /** ISO date (YYYY-MM-DD) for schema.org startDate. Omitted when the date is vague
         (a season or bare year); JSON-LD then skips startDate rather than fabricate one. */
@@ -147,12 +200,17 @@ const concerts = defineCollection({
         z.object({
           id: z.string(),
           lat: z.string(),
-          pl: z.string(),
+          /** The act's name in the reader's language, under the Latin. */
+          gloss: localized,
           line: z.string().optional(),
           /** A full-bleed dark scripture beat rendered BEFORE this act — the night nave
               returning mid-reading at a dramatic hinge. Use sparingly (earned pivots only). */
           interlude: z
-            .object({ lat: z.string(), pl: z.string().optional(), ref: z.string().optional() })
+            .object({
+              lat: z.string(),
+              gloss: localized.optional(),
+              ref: scriptureRef.optional(),
+            })
             .optional(),
         }),
       )
@@ -280,7 +338,9 @@ const concerts = defineCollection({
         transcript once its asset lands in assets/videos. */
     verbum: z
       .object({
-        speaker: z.string(),
+        /** The speaker's name and title alone — "o." is "Fr" in English and "P." in French, so it
+            is copy. The evening's date is appended from the concert's own `date` at render. */
+        speaker: localized,
         quote: z.string(),
         text: z.string(),
         bridge: z.string().optional(),
@@ -295,10 +355,13 @@ const concerts = defineCollection({
     reflectionNote: z.string().optional(),
     /** Latin epigraph that opens the concert page (typically a biblical source). */
     inscriptio: z.string().optional(),
-    /** Polish translation of inscriptio. */
-    inscriptioPl: z.string().optional(),
-    /** Biblical / source reference for the inscription (e.g. "Iz 11,1"). */
-    inscriptioRef: z.string().optional(),
+    /** The epigraph in the reader's language. Note that this slot ALSO carries a standalone
+        editorial gloss where a work has no `inscriptio` at all ("tekst: H. M. MacGill (1876)",
+        "aranżacja współczesna kolędy polskiej") — those entries are notes, not translations, and
+        must be rendered per locale rather than translated back against a Latin that isn't there. */
+    inscriptioGloss: localized.optional(),
+    /** Structural citation for the inscription — see the `scriptureRef` note above. */
+    inscriptioRef: scriptureRef.optional(),
     /** Optional in-page pull-quote (composer or director on a single work). */
     pullQuote: z
       .object({
@@ -337,8 +400,11 @@ const concerts = defineCollection({
           /** Sung text in the original language (Latin / German / English…), verbatim. Store
               as a YAML block scalar to preserve line breaks. */
           text: z.string().optional(),
-          /** Polish translation of `text`. */
-          textPl: z.string().optional(),
+          /** The sung text in the reader's language, per locale. Where a canonical published
+              translation of a hymn exists, use it and credit it rather than inventing one — an
+              invented English of "Es ist ein Ros'" reads as an error to anyone who knows the
+              repertoire. Store as a YAML block scalar under each locale key. */
+          textGloss: localized.optional(),
           /** A clasp/refrain label rendered as a slim hairline row AFTER this item — used for
               "9 Kart", where Miserere returns between the psalms (e.g. "Miserere — część II"). */
           clasp: z.string().optional(),
@@ -347,13 +413,14 @@ const concerts = defineCollection({
               of the Miserere brings the next two verses of Psalm 51, so the psalm runs across
               the whole programme exactly as the evening distributed it. Store as a block scalar. */
           claspText: z.string().optional(),
-          /** Polish translation of `claspText`. */
-          claspTextPl: z.string().optional(),
+          /** The clasp's words in the reader's language, per locale. */
+          claspTextGloss: localized.optional(),
           /** Liturgical incipit / source verse in Latin (concert page only). */
           inscriptio: z.string().optional(),
-          /** Polish translation of inscriptio. */
-          inscriptioPl: z.string().optional(),
-          inscriptioRef: z.string().optional(),
+          /** The incipit in the reader's language — or, where there is no `inscriptio`, the
+              work's standalone editorial gloss (see the concert-level field). */
+          inscriptioGloss: localized.optional(),
+          inscriptioRef: scriptureRef.optional(),
           bis: z.boolean().default(false),
         }),
       )
@@ -372,6 +439,20 @@ const concerts = defineCollection({
    * surname, and this tile was the one derivation on the landing with no such floor.
    */
   .superRefine((concert, ctx) => {
+    // The dateline is now half data and half copy, and the data half has two possible homes: an
+    // ISO `date` the formatter renders, or a `dateLabel` for an evening whose day is genuinely
+    // vague. With neither, the hero prints a place and no moment at all — and it prints it
+    // cleanly, which is the same silent class of failure the venue rules below refuse.
+    if (!concert.date && !concert.dateLabel) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["date"],
+        message:
+          "A concert needs a `date` to format, or a `dateLabel` where the day is vague (a season," +
+          " a bare year) — otherwise its dateline prints a place with no moment.",
+      });
+    }
+
     // A per-date venue is ONE evening in ONE place by definition, so a slash there is a tour
     // written into a single row — it would be counted once and named by its last city alone.
     for (const [index, date] of concert.dates.entries()) {
