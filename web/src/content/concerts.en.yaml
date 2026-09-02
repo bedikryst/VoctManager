@@ -1,0 +1,26 @@
+# concerts.en.yaml — the EN overlay over src/content/concerts.yaml.
+#
+# MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk
+# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
+# renders sits at the matching path in concerts.yaml, which holds no translations at all.
+#
+# Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
+# the desk still shows the old value, marks nothing stale, and the next apply run writes over
+# what you typed. The reviewable route is a proposal.
+#
+# Sorted by key and written whole, so a diff of this file is a diff of the translation.
+
+concert.9-kart.about.blurb: "A programme built from the psalms: from penitence and thanksgiving to the joy of praise, with music by Allegri, Bach, Rossi, Bruckner and Stanford."
+concert.9-kart.about.place: "Rybnik · Łódź · Kraków"
+concert.9-kart.title: "Nine Leaves from the Book of Psalms"
+concert.aeternam.about.blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament toward prayer."
+concert.aeternam.about.place: "Mistrzejowice · Niedzica"
+concert.aeternam.title: "Aeternam — Epitaph for Gaza"
+concert.hymn-poleglym.about.blurb: "A spiritual concert in tribute to those who gave their lives in defence of freedom, and a prayer for peace — for Ukraine and for the generations to come."
+concert.hymn-poleglym.about.place: "St Mary's Basilica · Kraków"
+concert.hymn-poleglym.title: "Hymn for the Fallen"
+concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
+concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
+concert.wcielenie.title: "Contemplation of the Incarnation"
+concert.wolanie-gor.about.blurb: "A concert for twelve voices and violin with Radu Ropotan: sacred music, nature and songs rooted in the landscape of the Pieniny mountains."
+concert.wolanie-gor.title: "The Call of the Mountains"

@@ -11,6 +11,13 @@
  *  directions, it is what `apply-copy` addresses in stage C3, and it is what lets the test prove
  *  reversibility mechanically: resolve the path back in the parsed document and it must be the
  *  exact string that was emitted.
+ *
+ *  TWO SOURCES, ONE MIRROR. Polish comes from `concerts.yaml`; `en` and `fr` come from the overlay
+ *  files, addressed by the very key this walk produces (spec §8). The mirror is a projection of
+ *  git, so a locale column shows what the repository holds for it and nothing else — an empty
+ *  string where no translation exists yet, which is the column the desk offers for editing.
+ *  A translation found INSIDE `concerts.yaml` is refused rather than read: after stage C3 that file
+ *  is Polish-only, and quietly accepting a stray `en:` would put one fact back in two homes.
  * @architecture Astro islands 2026
  * @module copydesk/extract
  */
@@ -42,8 +49,11 @@ const NAMESPACE = "concert";
  * @typedef {object} SegmentPath
  * @property {(string|number)[]} pl Where the Polish scalar sits in the parsed document.
  * @property {"plain"|"map"} shape
- * @property {Partial<Record<string, (string|number)[]>>} [seeded] Where an existing translation
- *  was read from — the legacy `about` block, which stage C3 empties into the overlay.
+ */
+
+/**
+ * @typedef {Partial<Record<string, Map<string, string>>>} Overlays The translations the repository
+ *  holds, per locale, keyed by segment key.
  */
 
 /**
@@ -80,25 +90,25 @@ function asCopy(value, key) {
 }
 
 /**
- * One key in all three locales. Polish carries the repository's value; the other two carry
- * whatever the repository already holds for them, which today is only the `about` block's
- * translations and is otherwise empty — the desk needs the empty column to offer it for editing.
+ * One key in all three locales. Polish carries the corpus's value; the other two carry whatever the
+ * overlay holds for that key, which is an empty string until somebody translates it — the desk
+ * needs the empty column in order to offer it for editing.
  *
  * @param {object} args
  * @param {string} args.key
  * @param {string} args.plValue
- * @param {Partial<Record<string, string>>} args.translations
+ * @param {Overlays} args.overlays
  * @param {string} args.scopeLabel
  * @param {string} args.label
  * @param {number} args.order
  * @returns {Segment[]}
  */
-function localeRows({ key, plValue, translations, scopeLabel, label, order }) {
+function localeRows({ key, plValue, overlays, scopeLabel, label, order }) {
   return SITE_LOCALES.map((locale) => ({
     key,
     locale,
     kind: "TEXT",
-    value: locale === "pl" ? plValue : (translations[locale] ?? ""),
+    value: locale === "pl" ? plValue : (overlays[locale]?.get(key) ?? ""),
     scope_label: scopeLabel,
     label,
     order,
@@ -106,41 +116,35 @@ function localeRows({ key, plValue, translations, scopeLabel, label, order }) {
 }
 
 /**
- * Read the `en`/`fr` a field already has: the sibling slots of a locale map, or the absolute paths
- * a `seed` names.
+ * Refuse a translation sitting in the Polish corpus.
+ *
+ * The locale maps stage A introduced still have `en`/`fr` slots in shape — they are what a *gloss
+ * of a foreign original* is written into — but §8 settled that no locale but Polish is stored in
+ * this file any more. A stray one would be a fact with two homes, and the failure it causes is
+ * silent: whichever copy the reader is not looking at goes stale with nothing to say so.
  *
  * @param {Record<string, unknown>} concert
- * @param {{ shape?: "plain"|"map", seed?: {en: string, fr: string} }} entry
+ * @param {string} key
  * @param {(string|number)[]} plAt
- * @returns {{ values: Partial<Record<string, string>>, seeded: Partial<Record<string, (string|number)[]>> }}
  */
-function readTranslations(concert, entry, plAt) {
-  /** @type {Partial<Record<string, string>>} */
-  const values = {};
-  /** @type {Partial<Record<string, (string|number)[]>>} */
-  const seeded = {};
+function refuseStrayTranslation(concert, key, plAt) {
+  const mapAt = plAt.slice(0, -1);
+  const map = mapAt.reduce(
+    (node, step) => (node === null || typeof node !== "object" ? undefined : node[step]),
+    /** @type {any} */ (concert),
+  );
+  if (map === null || typeof map !== "object") return;
 
-  if (entry.shape === "map") {
-    // The Polish sits at `…pl`; its siblings are the same map's other locales.
-    const mapAt = plAt.slice(0, -1);
-    for (const locale of ["en", "fr"]) {
-      const { found, value, at } = resolve(concert, locale, mapAt);
-      if (found && typeof value === "string" && value.length > 0) {
-        values[locale] = value;
-        seeded[locale] = at;
-      }
+  for (const locale of ["en", "fr"]) {
+    const value = map[locale];
+    if (typeof value === "string" && value.length > 0) {
+      throw new Error(
+        `[copydesk] ${key}: concerts.yaml holds a ${locale} value at ` +
+          `${[...mapAt, locale].join(".")}. Since stage C3 that file is Polish-only — ` +
+          `move it to concerts.${locale}.yaml under this key.`,
+      );
     }
   }
-  if (entry.seed) {
-    for (const locale of /** @type {const} */ (["en", "fr"])) {
-      const { found, value, at } = resolve(concert, entry.seed[locale]);
-      if (found && typeof value === "string" && value.length > 0) {
-        values[locale] = value;
-        seeded[locale] = at;
-      }
-    }
-  }
-  return { values, seeded };
 }
 
 /**
@@ -158,9 +162,10 @@ function composeLabel(listLabel, position, fieldLabel) {
  * Extract one concert.
  *
  * @param {Record<string, unknown>} concert
+ * @param {Overlays} [overlays]
  * @returns {{ segments: Segment[], paths: Record<string, SegmentPath> }}
  */
-export function extractConcert(concert) {
+export function extractConcert(concert, overlays = {}) {
   const id = concert.id;
   if (typeof id !== "string" || id.length === 0) {
     throw new Error("[copydesk] a concert without an `id` cannot be keyed.");
@@ -176,7 +181,7 @@ export function extractConcert(concert) {
   /**
    * @param {string} keyTail
    * @param {string} label
-   * @param {{ shape?: "plain"|"map", seed?: {en: string, fr: string} }} entry
+   * @param {{ shape?: "plain"|"map" }} entry
    * @param {{ found: boolean, value: unknown, at: (string|number)[] }} hit
    */
   const emit = (keyTail, label, entry, hit) => {
@@ -185,11 +190,9 @@ export function extractConcert(concert) {
     const plValue = asCopy(hit.value, key);
     if (plValue === null) return;
 
-    const { values, seeded } = readTranslations(concert, entry, hit.at);
-    segments.push(
-      ...localeRows({ key, plValue, translations: values, scopeLabel, label, order }),
-    );
-    paths[key] = { pl: hit.at, shape: entry.shape ?? "plain", ...(Object.keys(seeded).length ? { seeded } : {}) };
+    if (entry.shape === "map") refuseStrayTranslation(concert, key, hit.at);
+    segments.push(...localeRows({ key, plValue, overlays, scopeLabel, label, order }));
+    paths[key] = { pl: hit.at, shape: entry.shape ?? "plain" };
     order += 1;
   };
 
@@ -230,16 +233,17 @@ export function extractConcert(concert) {
  * those is cheaper to find here than as a 400 in the middle of an ingest run.
  *
  * @param {Record<string, unknown>[]} concerts
- * @returns {{ segments: Segment[], paths: Record<string, SegmentPath>, stats: Record<string, number> }}
+ * @param {Overlays} [overlays]
+ * @returns {{ segments: Segment[], paths: Record<string, SegmentPath>, orphans: Record<string, string[]>, stats: Record<string, number> }}
  */
-export function extractAll(concerts) {
+export function extractAll(concerts, overlays = {}) {
   /** @type {Segment[]} */
   const segments = [];
   /** @type {Record<string, SegmentPath>} */
   const paths = {};
 
   for (const concert of concerts) {
-    const one = extractConcert(concert);
+    const one = extractConcert(concert, overlays);
     for (const key of Object.keys(one.paths)) {
       if (key in paths) throw new Error(`[copydesk] duplicate key across concerts: ${key}`);
     }
@@ -261,10 +265,21 @@ export function extractAll(concerts) {
     }
   }
 
+  // An overlay value whose key has left the corpus. Reported rather than deleted: the same
+  // positional keying that makes an inserted programme entry re-key its neighbours (§6d) would
+  // make a silent cleanup throw away a translation that is still wanted three lines down.
+  /** @type {Record<string, string[]>} */
+  const orphans = {};
+  for (const [locale, entries] of Object.entries(overlays)) {
+    const stray = [...(entries?.keys() ?? [])].filter((key) => !(key in paths)).sort();
+    if (stray.length) orphans[locale] = stray;
+  }
+
   const translated = segments.filter((s) => s.locale !== "pl" && s.value.length > 0).length;
   return {
     segments,
     paths,
+    orphans,
     stats: {
       concerts: concerts.length,
       keys: Object.keys(paths).length,

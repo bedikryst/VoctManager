@@ -828,6 +828,9 @@ class ApiTests(TestCase):
                 "locale": SiteLocale.POLISH,
                 "kind": SegmentKind.TEXT,
                 "value": "Nowe",
+                # The pre-image: what the apply script must find in the file before
+                # it is allowed to write over it.
+                "base_value": self.segment.value,
                 "source_hash": "",
             }],
         )

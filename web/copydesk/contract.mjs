@@ -24,13 +24,13 @@
  *     is the only place that trap can be caught mechanically.
  *
  *  WHERE A TRANSLATION LIVES. Polish is the only locale `concerts.yaml` holds (spec §8, option b):
- *  `en` and `fr` are written to per-locale overlay files keyed by these same dotted keys, so the
- *  Polish source file is never restructured again and `apply-copy`'s line-level path — the one
- *  operation that can destroy the corpus — only ever REPLACES a Polish scalar in place. The two
- *  shapes below therefore describe how the extractor READS today, not where a translation goes:
- *  `map` fields are the `*Gloss` locale maps stage A introduced, whose `en`/`fr` slots are empty
- *  and stay so; `seed` names the legacy `about.en`/`about.fr` block, which is the one place real
- *  translations already sit and which stage C3 moves into the overlay.
+ *  `en` and `fr` are read from and written to the per-locale overlay files (`concerts.en.yaml`,
+ *  `concerts.fr.yaml`) under these same dotted keys, so the Polish source file is never
+ *  restructured again and `apply-copy`'s line-level path — the one operation that can destroy the
+ *  corpus — only ever REPLACES a Polish scalar in place. `shape` therefore says how the extractor
+ *  READS a Polish value, not where its translation goes: `map` is one of the `*Gloss` locale maps
+ *  stage A introduced, whose `en`/`fr` slots are now empty by rule and whose Polish sits at `.pl`.
+ *  Stage C3 emptied the last exception, the `about.en`/`about.fr` block, into the overlays.
  * @architecture Astro islands 2026
  * @module copydesk/contract
  */
@@ -63,8 +63,6 @@ const TEXT = "TEXT";
  * @property {string} label
  * @property {"plain"|"map"} [shape]
  * @property {string} [note]
- * @property {{en: string, fr: string}} [seed] Absolute paths holding this field's existing `en`
- *  and `fr` values — the legacy `about` block, and nothing else.
  * @property {string|null} [keyBy] For a list: the entry field carrying a stable id, or `null` to
  *  key by position.
  * @property {Field[]} [fields] For a list.
@@ -89,12 +87,11 @@ export const CONCERT_CONTRACT = [
     kind: "field",
     path: "title",
     label: "Tytuł koncertu",
-    // The ONE fact this corpus holds in two homes: `about.en.title` is the English of this exact
-    // string. This key owns it; the milestone block reads it as a fallback once C3 empties that
-    // block into the overlay. Nothing else in `about` duplicates a concert field — `about.place`
-    // ("Bazylika NSPJ · Kraków") and `metaPlace` ("Bazylika NSPJ, Kraków") are different lines
-    // for different surfaces, and `about.blurb` is a shorter register than `essence`.
-    seed: { en: "about.en.title", fr: "about.fr.title" },
+    // The ONE fact this corpus used to hold in two homes: `about.en.title` was the English of
+    // this exact string. This key owns it now, in the overlay, and the /o-nas milestone reads it
+    // from there. Nothing else in `about` duplicated a concert field — `about.place` ("Bazylika
+    // NSPJ · Kraków") and `metaPlace` ("Bazylika NSPJ, Kraków") are different lines for different
+    // surfaces, and `about.blurb` is a shorter register than `essence`.
   },
   { kind: "field", path: "metaPlace.pl", key: "metaPlace", label: "Nagłówek · miejsce", shape: "map" },
   {
@@ -273,18 +270,8 @@ export const CONCERT_CONTRACT = [
   },
 
   // ── Poza stroną koncertu ────────────────────────────────────────────────────────────────────
-  {
-    kind: "field",
-    path: "about.place",
-    label: "/o-nas · miejsce kamienia milowego",
-    seed: { en: "about.en.place", fr: "about.fr.place" },
-  },
-  {
-    kind: "field",
-    path: "about.blurb",
-    label: "/o-nas · nota kamienia milowego",
-    seed: { en: "about.en.blurb", fr: "about.fr.blurb" },
-  },
+  { kind: "field", path: "about.place", label: "/o-nas · miejsce kamienia milowego" },
+  { kind: "field", path: "about.blurb", label: "/o-nas · nota kamienia milowego" },
 ];
 
 /**

@@ -25,14 +25,34 @@ import { fileURLToPath } from "node:url";
 
 import YAML from "yaml";
 
+import { collapse, plan } from "./apply.mjs";
 import { CONCERT_CONTRACT, NOT_COPY, SITE_LOCALES } from "./contract.mjs";
 import { extractAll } from "./extract.mjs";
 import { normalizeForHash, sourceHash } from "./normalize.mjs";
+import { OVERLAY_LOCALES, parseOverlay, renderOverlay } from "./overlay.mjs";
+import { collectScalars, commentLines, detectEol, replaceScalars } from "./yamlEdit.mjs";
 
 const HERE = fileURLToPath(new URL(".", import.meta.url));
 const CORPUS = new URL("../src/content/concerts.yaml", import.meta.url);
+/** @param {string} locale */
+const overlayUrl = (locale) => new URL(`../src/content/concerts.${locale}.yaml`, import.meta.url);
 
-const readCorpus = async () => YAML.parse(await readFile(CORPUS, "utf8"));
+const readRaw = async () => readFile(CORPUS, "utf8");
+const readCorpus = async () => YAML.parse(await readRaw());
+
+/**
+ * The overlays as the extractor takes them: locale → key → value.
+ *
+ * @returns {Promise<Record<string, Map<string, string>>>}
+ */
+async function readOverlays() {
+  /** @type {Record<string, Map<string, string>>} */
+  const overlays = {};
+  for (const locale of OVERLAY_LOCALES) {
+    overlays[locale] = parseOverlay(await readFile(overlayUrl(locale), "utf8"), locale);
+  }
+  return overlays;
+}
 
 // --------------------------------------------------------------------------------------------- //
 // Hash parity                                                                                     //
@@ -115,17 +135,37 @@ test("every key carries exactly the three site locales, at one order", async () 
 });
 
 test("Polish is never empty and a translation is only ever a repository value", async () => {
-  const { segments } = extractAll(await readCorpus());
+  const overlays = await readOverlays();
+  const { segments } = extractAll(await readCorpus(), overlays);
   for (const segment of segments) {
     if (segment.locale === "pl") {
       assert.ok(segment.value.length > 0, `${segment.key}: a Polish segment with no value`);
     }
   }
-  // Today only the legacy `about` block holds translations; every other en/fr row is the empty
-  // column the desk offers for editing. If this number moves without stage C3 having run, the
-  // extractor has started reading a translation from somewhere it should not.
+  // Every non-empty en/fr row comes from an overlay file and from nowhere else; the rest are the
+  // empty columns the desk offers for editing. A row with a value the overlays do not hold means
+  // the extractor has started reading a translation out of the Polish corpus again.
+  for (const segment of segments) {
+    if (segment.locale === "pl" || !segment.value) continue;
+    assert.equal(
+      overlays[segment.locale].get(segment.key),
+      segment.value,
+      `${segment.key} [${segment.locale}]: a value that is not in the overlay`,
+    );
+  }
   const translated = segments.filter((s) => s.locale !== "pl" && s.value.length > 0);
-  assert.equal(translated.length, 28, "the 28 values in the about.en / about.fr blocks");
+  assert.equal(translated.length, 28, "the 28 values stage C3 moved out of the about blocks");
+});
+
+test("the corpus is Polish-only, and a stray translation in it is refused", async () => {
+  const corpus = await readCorpus();
+  // The `*Gloss` maps keep their shape — they mark the vernacular of a foreign original — but §8
+  // settled that no locale but Polish is STORED here. A value smuggled back into one would be a
+  // fact with two homes, and the reader would never learn which of them had gone stale.
+  const glossed = corpus.find((/** @type {any} */ c) => c.inscriptioGloss);
+  assert.ok(glossed, "the corpus should still have a gloss to test against");
+  glossed.inscriptioGloss.en = "smuggled";
+  assert.throws(() => extractAll(corpus), /concerts\.yaml holds a en value/u);
 });
 
 // --------------------------------------------------------------------------------------------- //
@@ -152,20 +192,13 @@ test("every key resolves back to the exact string it was read from", async () =>
   }
 });
 
-test("a seeded translation points at the slot it came from", async () => {
-  const concerts = await readCorpus();
-  const { segments, paths } = extractAll(concerts);
-  const byConcert = new Map(concerts.map((/** @type {{id: string}} */ c) => [c.id, c]));
-
-  for (const segment of segments) {
-    if (segment.locale === "pl" || segment.value.length === 0) continue;
-    const at = paths[segment.key]?.seeded?.[segment.locale];
-    assert.ok(at, `${segment.key} [${segment.locale}]: a value with no source path`);
-
-    let node = byConcert.get(segment.key.split(".")[1]);
-    for (const step of at) node = node?.[step];
-    assert.equal(node, segment.value, `${segment.key} [${segment.locale}]: path does not lead back`);
-  }
+test("every overlay key addresses a field the corpus still holds", async () => {
+  // The overlay is keyed by the desk's key and nothing binds the two files together, so a key that
+  // left the corpus leaves a translation with nothing to translate. `extractAll` reports those
+  // rather than deleting them: with positional keys (§6d), a key that vanished may be the same
+  // sentence three lines further down.
+  const { orphans } = extractAll(await readCorpus(), await readOverlays());
+  assert.deepEqual(orphans, {}, "an overlay value whose key is no longer in concerts.yaml");
 });
 
 // --------------------------------------------------------------------------------------------- //
@@ -194,28 +227,24 @@ function collectLeaves(node, prefix, into) {
   into.add(prefix);
 }
 
-/** The shape paths the contract claims, including a locale map's `en`/`fr` siblings. */
+/**
+ * The shape paths the contract claims.
+ *
+ * A locale map's `en`/`fr` siblings are deliberately NOT covered: since stage C3 the corpus holds
+ * no translations, so a path ending in `.en` is a field nobody has accounted for — and the
+ * accounting test below is then the mechanical guard that says so.
+ */
 function contractPaths() {
   /** @type {Set<string>} */
   const covered = new Set();
-  /** @param {string} path @param {"plain"|"map"|undefined} shape */
-  const add = (path, shape) => {
-    covered.add(path);
-    if (shape === "map") {
-      const stem = path.slice(0, -".pl".length);
-      covered.add(`${stem}.en`);
-      covered.add(`${stem}.fr`);
-    }
-  };
 
   for (const entry of CONCERT_CONTRACT) {
     if (entry.kind === "field") {
-      add(entry.path, entry.shape);
-      if (entry.seed) for (const path of Object.values(entry.seed)) covered.add(path);
+      covered.add(entry.path);
       continue;
     }
     for (const field of entry.fields ?? []) {
-      add(field.path === null ? `${entry.path}[]` : `${entry.path}[].${field.path}`, field.shape);
+      covered.add(field.path === null ? `${entry.path}[]` : `${entry.path}[].${field.path}`);
     }
   }
   return covered;
@@ -254,7 +283,7 @@ test("no path is claimed as copy and as not-copy at once", async (t) => {
   for (const concert of concerts) collectLeaves(concert, "", present);
 
   const declaredButUnused = [...covered, ...Object.keys(NOT_COPY)]
-    .filter((p) => !present.has(p) && !p.endsWith(".en") && !p.endsWith(".fr"))
+    .filter((p) => !present.has(p))
     .sort();
   t.diagnostic(`declared but unused in this corpus: ${declaredButUnused.join(", ") || "none"}`);
 });
@@ -267,4 +296,204 @@ test("two runs over an unchanged corpus are byte-identical", async () => {
   const first = extractAll(await readCorpus());
   const second = extractAll(await readCorpus());
   assert.equal(JSON.stringify(first), JSON.stringify(second));
+});
+
+// --------------------------------------------------------------------------------------------- //
+// The write direction — the one operation that can destroy the corpus                             //
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * Where each YAML style actually occurs, so the round trip is tested on the real file.
+ *
+ * @type {{at: (string|number)[], style: string, mutate: (value: string) => string}[]}
+ */
+const STYLE_SAMPLES = [
+  { at: [0, "title"], style: "PLAIN", mutate: (v) => `${v} (poprawka)` },
+  { at: [0, "essence"], style: "QUOTE_DOUBLE", mutate: (v) => v.replace("Próba", "Próba wejścia —") },
+  { at: [0, "video", "caption"], style: "QUOTE_SINGLE", mutate: (v) => `${v} · zapis` },
+  {
+    at: [0, "prologue"],
+    style: "BLOCK_FOLDED",
+    mutate: (v) => `${v} Zdanie dopisane przez redakcję, dostatecznie długie, by wymusić ponowne złamanie wierszy.`,
+  },
+  { at: [0, "verbum", "text"], style: "BLOCK_LITERAL", mutate: (v) => v.replace("Dobry wieczór", "Dobry wieczór Państwu") },
+];
+
+/** @type {(tree: unknown, at: (string|number)[]) => string} */
+const valueAt = (tree, at) =>
+  at.reduce((node, step) => /** @type {any} */ (node)?.[step], /** @type {any} */ (tree));
+
+test("a Polish scalar is replaced in place, in every style the corpus uses", async () => {
+  const raw = await readRaw();
+  const tree = YAML.parse(raw);
+  const edits = STYLE_SAMPLES.map((sample) => ({
+    path: sample.at,
+    expected: valueAt(tree, sample.at),
+    value: sample.mutate(valueAt(tree, sample.at)),
+    label: sample.at.join("."),
+  }));
+
+  const { text, changes } = replaceScalars(raw, edits);
+
+  // The style is kept: a diff that also reflows a paragraph hides the sentence that changed.
+  assert.deepEqual(changes.map((c) => c.style), STYLE_SAMPLES.map((s) => s.style));
+
+  const after = YAML.parse(text);
+  for (const edit of edits) assert.equal(valueAt(after, edit.path), edit.value, edit.label);
+
+  // What §7 is actually afraid of: the comments, and everything nobody asked to change.
+  assert.deepEqual(commentLines(text), commentLines(raw), "comment lines");
+  const before = collectScalars(tree);
+  const now = collectScalars(after);
+  const edited = new Set(edits.map((e) => e.path.join(" ")));
+  assert.equal(now.size, before.size);
+  for (const [at, value] of before) {
+    if (!edited.has(at)) assert.equal(now.get(at), value, `${at} changed and nobody asked it to`);
+  }
+
+  // The file is CRLF on a Windows checkout and stays that way (§7).
+  assert.equal(detectEol(raw), "\r\n");
+  assert.equal(/(?<!\r)\n/u.test(text), false, "a bare LF was written into a CRLF file");
+});
+
+test("a replacement that would change a field's TYPE is quoted instead", async () => {
+  // The trap a naive in-place write walks into: `facts: - 2024` is a number, and the schema that
+  // rejects it does so three steps away from the file that caused it.
+  const raw = await readRaw();
+  const tree = YAML.parse(raw);
+  const at = [0, "facts", 0];
+  const { text } = replaceScalars(raw, [
+    { path: at, expected: valueAt(tree, at), value: "2024", label: "fact" },
+  ]);
+  assert.equal(valueAt(YAML.parse(text), at), "2024");
+  assert.match(text, /- "2024"/u);
+});
+
+test("the write refuses a pre-image it does not recognise", async () => {
+  const raw = await readRaw();
+  assert.throws(
+    () => replaceScalars(raw, [{ path: [0, "title"], expected: "coś innego", value: "x", label: "t" }]),
+    /does not hold the value the desk recorded/u,
+  );
+});
+
+test("an empty value is refused rather than deleting a field", async () => {
+  const raw = await readRaw();
+  const tree = YAML.parse(raw);
+  assert.throws(
+    () => replaceScalars(raw, [
+      { path: [0, "title"], expected: valueAt(tree, [0, "title"]), value: "", label: "t" },
+    ]),
+    /would delete the field/u,
+  );
+});
+
+test("two edits addressing one scalar are refused", async () => {
+  const raw = await readRaw();
+  const tree = YAML.parse(raw);
+  const expected = valueAt(tree, [0, "title"]);
+  assert.throws(
+    () => replaceScalars(raw, [
+      { path: [0, "title"], expected, value: "A", label: "t" },
+      { path: [0, "title"], expected, value: "B", label: "t" },
+    ]),
+    /two edits address one scalar/u,
+  );
+});
+
+// --------------------------------------------------------------------------------------------- //
+// The overlays                                                                                    //
+// --------------------------------------------------------------------------------------------- //
+
+test("an overlay round-trips every shape a translation can take", () => {
+  const entries = new Map([
+    ["concert.x.essence", "A single line with \"quotes\", a colon: and a # hash."],
+    ["concert.x.verbum.text", "Two paragraphs.\n\nThe second one, with a trailing word."],
+    ["concert.x.facts.0", "12"],
+    ["concert.x.a", "Un français : avec espaces insécables !"],
+  ]);
+  const text = renderOverlay("en", entries, "\r\n");
+  assert.deepEqual([...parseOverlay(text, "en").entries()], [...entries.entries()].sort());
+});
+
+// --------------------------------------------------------------------------------------------- //
+// The apply plan — the patch turned into writes, with everything but the HTTP                     //
+// --------------------------------------------------------------------------------------------- //
+
+/**
+ * @param {Partial<import("./apply.mjs").PatchRow>} row
+ * @returns {import("./apply.mjs").PatchRow}
+ */
+const patchRow = (row) => ({
+  id: "00000000-0000-0000-0000-000000000000",
+  key: "concert.wcielenie.essence",
+  locale: "pl",
+  kind: "TEXT",
+  value: "",
+  base_value: "",
+  source_hash: "",
+  ...row,
+});
+
+test("a patch is planned into a Polish write, an overlay write, and a refusal", async () => {
+  const raw = await readRaw();
+  const corpus = YAML.parse(raw);
+  const overlays = await readOverlays();
+  const { paths } = extractAll(corpus, overlays);
+  const index = new Map(corpus.map((/** @type {any} */ c, /** @type {number} */ i) => [c.id, i]));
+
+  const key = "concert.wcielenie.essence";
+  const at = [/** @type {number} */ (index.get("wcielenie")), ...paths[key].pl];
+  const rows = [
+    patchRow({ id: "a", key, locale: "pl", value: "Nowa esencja.", base_value: valueAt(corpus, at) }),
+    patchRow({ id: "b", key, locale: "en", value: "A first English rendering." }),
+    // A translation of a value the overlay already holds.
+    patchRow({
+      id: "c",
+      key: "concert.9-kart.title",
+      locale: "en",
+      value: "Nine Leaves of the Psalter",
+      base_value: "Nine Leaves from the Book of Psalms",
+    }),
+    // A key retired from the site after its proposal was accepted: refused, never guessed at.
+    patchRow({ id: "d", key: "concert.wcielenie.nosuchfield", locale: "pl", value: "x" }),
+    // A Polish row written against a value the file no longer holds: the un-synced tree.
+    patchRow({ id: "e", key: "concert.wcielenie.title", locale: "pl", value: "y", base_value: "stare" }),
+  ];
+
+  const { winners, superseded } = collapse(rows);
+  assert.equal(superseded.length, 0);
+
+  const planned = plan(winners, { paths, index, overlays, corpus });
+  assert.equal(planned.scalarEdits.length, 1, "one Polish edit");
+  assert.equal(planned.overlayEdits.length, 2, "two translations");
+  assert.equal(planned.problems.length, 2, "the retired key and the stale pre-image");
+  assert.match(planned.problems[0], /has no such key/u);
+  assert.match(planned.problems[1], /does not hold the value the desk recorded/u);
+  // Nothing refused is stamped as applied: the file never received it.
+  assert.deepEqual(planned.writable.map((row) => row.id), ["a", "b", "c"]);
+
+  const { text } = replaceScalars(raw, planned.scalarEdits);
+  assert.equal(valueAt(YAML.parse(text), at), "Nowa esencja.");
+});
+
+test("two accepted proposals for one segment collapse to the last decision", () => {
+  const rows = [
+    patchRow({ id: "first", value: "Wcześniejsza" }),
+    patchRow({ id: "second", value: "Późniejsza" }),
+    patchRow({ id: "other", locale: "en", value: "Later" }),
+  ];
+  const { winners, superseded } = collapse(rows);
+  // The patch arrives oldest-decision-first, so the last row is what reaches the file — and the
+  // one it superseded is still stamped, or it would be written over that value tomorrow.
+  assert.deepEqual(winners.map((row) => row.id), ["second", "other"]);
+  assert.deepEqual(superseded.map((row) => row.id), ["first"]);
+});
+
+test("an overlay is sorted and deterministic", () => {
+  const entries = new Map([["concert.b.x", "B"], ["concert.a.x", "A"]]);
+  const once = renderOverlay("fr", entries, "\r\n");
+  const twice = renderOverlay("fr", new Map([...entries].reverse()), "\r\n");
+  assert.equal(once, twice, "key order in the map must not reach the file");
+  assert.ok(once.indexOf("concert.a.x") < once.indexOf("concert.b.x"));
 });

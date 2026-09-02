@@ -1,0 +1,26 @@
+# concerts.fr.yaml — the FR overlay over src/content/concerts.yaml.
+#
+# MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk
+# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
+# renders sits at the matching path in concerts.yaml, which holds no translations at all.
+#
+# Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
+# the desk still shows the old value, marks nothing stale, and the next apply run writes over
+# what you typed. The reviewable route is a proposal.
+#
+# Sorted by key and written whole, so a diff of this file is a diff of the translation.
+
+concert.9-kart.about.blurb: "Un programme bâti sur les psaumes : de la pénitence et de l'action de grâce à la joie de la louange, avec des pièces d'Allegri, Bach, Rossi, Bruckner et Stanford."
+concert.9-kart.about.place: "Rybnik · Łódź · Cracovie"
+concert.9-kart.title: "Neuf feuillets du Livre des Psaumes"
+concert.aeternam.about.blurb: "Un programme de mémoire et de compassion face à la souffrance des civils : Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti et Tavener menant de la lamentation vers la prière."
+concert.aeternam.about.place: "Mistrzejowice · Niedzica"
+concert.aeternam.title: "Aeternam — Épitaphe pour Gaza"
+concert.hymn-poleglym.about.blurb: "Un concert spirituel en hommage à ceux qui ont donné leur vie pour la liberté, et une prière pour la paix — pour l'Ukraine et pour les générations à venir."
+concert.hymn-poleglym.about.place: "Basilique Sainte-Marie · Cracovie"
+concert.hymn-poleglym.title: "Hymne aux morts"
+concert.wcielenie.about.blurb: "Les débuts du cycle des Concerts Spirituels : Renaissance, baroque et création contemporaine réunis autour du mystère de la Nativité et de l'Incarnation."
+concert.wcielenie.about.place: "Basilique du Sacré-Cœur · Cracovie"
+concert.wcielenie.title: "Contemplation de l'Incarnation"
+concert.wolanie-gor.about.blurb: "Un concert pour douze voix et violon avec Radu Ropotan : musique sacrée, nature et chants enracinés dans le paysage des Pieniny."
+concert.wolanie-gor.title: "L'Appel des montagnes"

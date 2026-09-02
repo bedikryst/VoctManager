@@ -12,31 +12,21 @@ import { file } from "astro/loaders";
 import { z } from "astro/zod";
 import { SCRIPTURE_BOOKS } from "./lib/scriptureRef";
 
-/** Localized milestone editorial (per non-default locale) inside a concert's `about` block —
-    every field optional so a partial translation still validates and falls back to Polish. */
-const milestoneI18n = z
-  .object({
-    place: z.string().optional(),
-    blurb: z.string().optional(),
-    title: z.string().optional(),
-  })
-  .optional();
-
 /**
- * One string held per locale — the shape of every translatable value in this file that is NOT
- * plain Polish prose. Polish is required (it is the source a translation renders); `en` and `fr`
- * are optional so a half-translated concert still builds and falls back to Polish per field.
+ * The vernacular of a foreign original — the slot `textPl` and `inscriptioPl` used to fill.
  *
  * THE SUFFIX THIS REPLACED MEANT TWO THINGS. `textPl` was never "the Polish variant of `text`" in
  * the i18n sense — it was the vernacular of a foreign original, and on the English page that slot
  * has to hold English. Adding `textEn` beside it would have put a locale and a piece of content
  * behind one suffix, with nothing to tell a later reader which `Pl` was which.
+ *
+ * IT IS POLISH-ONLY AND `.strict()` SAYS SO. Since stage C3 this file holds no translations at all
+ * — `en` and `fr` live in `concerts.{en,fr}.yaml` under the copy desk's keys (lib/copyOverlay), so
+ * that the one operation which rewrites this file by hand never has to open a map to add a locale.
+ * Strict rather than stripped, because zod's default would drop a hand-added `en:` in silence and
+ * the value would simply never appear on the page.
  */
-const localized = z.object({
-  pl: z.string(),
-  en: z.string().optional(),
-  fr: z.string().optional(),
-});
+const localized = z.object({ pl: z.string() }).strict();
 
 /**
  * A citation under an incipit, stored structurally because every visible part of "Iz 11, 1" is a
@@ -128,14 +118,8 @@ const concerts = defineCollection({
         blurb: z.string().optional(),
         /** photo() base name for the 3:2 milestone image. */
         img: z.string().optional(),
-        /** Localized milestone editorial (English) for the About page — place / blurb / a
-            translated concert title. Each field falls back to its Polish counterpart (title to
-            the concert `title`), so a partly-filled block still renders. Populate per concert as
-            the site is translated; the full concert programme stays Polish-only for now. */
-        en: milestoneI18n,
-        /** Localized milestone editorial (French) — same fallbacks as `en`. */
-        fr: milestoneI18n,
       })
+      .strict()
       .optional(),
     accent: z.string(),
     essence: z.string(),

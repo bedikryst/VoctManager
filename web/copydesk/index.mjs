@@ -1,10 +1,11 @@
 // @ts-check
 /**
  * @file index.mjs
- * @description `npm run copy:extract` — reads `src/content/concerts.yaml` and writes the copy
- *  desk's view of it. The output is the input to stage C2's ingest, and it is DETERMINISTIC on
- *  purpose: no timestamp, keys in reading order, so two runs over an unchanged corpus produce a
- *  byte-identical file and any difference between them is a real change to the site's text.
+ * @description `npm run copy:extract` — reads `src/content/concerts.yaml` plus the two locale
+ *  overlays and writes the copy desk's view of them. The output is the input to stage C2's ingest,
+ *  and it is DETERMINISTIC on purpose: no timestamp, keys in reading order, so two runs over an
+ *  unchanged corpus produce a byte-identical file and any difference between them is a real change
+ *  to the site's text.
  *
  *  `segments` is exactly the shape `SegmentUpsertDTO` accepts — that DTO forbids extra fields, so
  *  the paths the apply script needs travel beside it in `paths` rather than inside the rows.
@@ -19,6 +20,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import YAML from "yaml";
 
 import { extractAll } from "./extract.mjs";
+import { OVERLAY_LOCALES, readOverlay } from "./overlay.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SOURCE = "src/content/concerts.yaml";
@@ -52,7 +54,11 @@ export async function readConcerts() {
  * @param {{ out?: string, quiet?: boolean }} [options]
  */
 export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
-  const { segments, paths, stats } = extractAll(await readConcerts());
+  /** @type {Record<string, Map<string, string>>} */
+  const overlays = {};
+  for (const locale of OVERLAY_LOCALES) overlays[locale] = await readOverlay(locale);
+
+  const { segments, paths, orphans, stats } = extractAll(await readConcerts(), overlays);
 
   const payload = { source: SOURCE, stats, segments, paths };
   await writeFile(path.join(WEB_ROOT, out), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
@@ -62,6 +68,12 @@ export async function extractToFile({ out = DEFAULT_OUT, quiet = false } = {}) {
     console.log(
       `  ${stats.concerts} concerts · ${stats.keys} keys · ${stats.rows} rows · ${stats.translated} already translated`,
     );
+    for (const [locale, keys] of Object.entries(orphans)) {
+      console.warn(
+        `[copydesk] concerts.${locale}.yaml holds ${keys.length} value(s) for keys the corpus no ` +
+          `longer has: ${keys.join(", ")}`,
+      );
+    }
   }
   return payload;
 }

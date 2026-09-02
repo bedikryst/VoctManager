@@ -26,14 +26,13 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { apiBase, authenticate, credentials, postJson } from "./client.mjs";
 import { extractToFile } from "./index.mjs";
 
 const WEB_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 /** Where the corpus lives, relative to `web/` — the only tree the guard cares about. */
 const CONTENT_DIR = "src/content";
-
-const DEFAULT_API = "http://localhost:8000";
 
 /**
  * @param {string[]} args
@@ -55,26 +54,6 @@ function describeTree() {
 }
 
 /**
- * @param {string} base
- * @param {string} email
- * @param {string} password
- * @returns {Promise<string>}
- */
-async function authenticate(base, email, password) {
-  const response = await fetch(`${base}/api/token/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  if (!response.ok) {
-    throw new Error(`[copydesk] sign-in failed: ${response.status} ${await response.text()}`);
-  }
-  const { access } = await response.json();
-  if (!access) throw new Error("[copydesk] sign-in returned no access token.");
-  return access;
-}
-
-/**
  * @param {object} args
  * @param {string} args.base
  * @param {string} args.token
@@ -83,21 +62,7 @@ async function authenticate(base, email, password) {
  * @param {boolean} args.prune
  */
 async function ingest({ base, token, segments, revision, prune }) {
-  const response = await fetch(`${base}/api/copydesk/segments/ingest/`, {
-    method: "POST",
-    headers: {
-      // Explicit charset: the payload is Polish prose and this is the one place a
-      // default could quietly reinterpret it.
-      "Content-Type": "application/json; charset=utf-8",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ segments, revision, prune }),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(`[copydesk] ingest failed: ${response.status} ${JSON.stringify(payload)}`);
-  }
-  return payload;
+  return postJson(`${base}/api/copydesk/segments/ingest/`, token, { segments, revision, prune });
 }
 
 /**
@@ -157,18 +122,14 @@ async function main() {
     return;
   }
 
-  const base = (process.env.COPYDESK_API ?? DEFAULT_API).replace(/\/+$/u, "");
-  const email = process.env.COPYDESK_EMAIL;
-  const password = process.env.COPYDESK_PASSWORD;
-  if (!email || !password) {
-    console.error(
-      "[copydesk] Set COPYDESK_EMAIL and COPYDESK_PASSWORD (a staff account — the same one that reviews).",
-    );
+  const base = apiBase();
+  const account = credentials();
+  if (account === null) {
     process.exitCode = 1;
     return;
   }
 
-  const token = await authenticate(base, email, password);
+  const token = await authenticate(base, account);
   report(await ingest({ base, token, segments, revision, prune }));
 }
 

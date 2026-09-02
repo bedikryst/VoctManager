@@ -7,8 +7,9 @@ for it, and §1 of the board-feedback file points here.
 ## How to read this file
 
 - **§1 What changed and why** — the reframe. Read this before questioning any decision below.
-- **§2 The two-iteration rule** — how OUR translation passes are run, and the separate rule that a
-  Polish edit invalidates what was built on it.
+- **§2 The two-iteration rule** — the sequencing (all three locales at once, never PL-then-the-rest),
+  how OUR translation passes are run, and the separate rule that a Polish edit invalidates what was
+  built on it.
 - **§3 Architecture** — where it lives, who is source of truth, how someone gets in.
 - **§4 The segment** — the unit everything else is built on.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
@@ -61,6 +62,24 @@ already at a usable level. Expect nuance, word choice and clause order — not r
 translating now, against the current Polish, is not wasted work.
 
 ## §2 The two-iteration rule
+
+### First, the sequencing this keeps being confused with
+
+**Florent is handed PL, EN and FR at once. There is no round in which he approves the Polish and
+the translations are written afterwards.** It comes straight from §1.2 — he will not work in
+rounds — and §6's stage E is where it is scheduled: both locales are drafted against the Polish as
+it stands, *before* he has seen the desk. The board-feedback file says the same thing in one line:
+"he approves all locales at once".
+
+The objection this answers is "why translate copy the editor is about to change". Because of what
+he is going to change: syntax, word choice, clause order, the occasional recast sentence — §1's
+closing paragraph, which is the developer's own correction and the reason the Polish is not treated
+as a throwaway draft. Repairing a translation after an edit of that size is one segment's work and
+the desk finds the segments for you (the source hash, below). Holding two locales back until the
+Polish is declared final costs the stage a second sitting, which is exactly what §1 says he refused.
+
+A Polish rewrite deep enough to invalidate the *sense* of a whole page is the case where this would
+be wasted work — and it is the case §1 measured and does not expect.
 
 **A translation this project produces is never handed over on the pass that wrote it. Minimum two
 iterations: draft the locale, then re-read the whole of it against the Polish. If the second pass
@@ -281,7 +300,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | B | backend: segment model, proposals API, `can_edit_site_copy`, notification — **done, §6b** | proposals can exist |
 | C1 | the key contract + extractor (read direction) + the hash-parity fixture — **done, §6d** | the corpus has stable ids |
 | C2 | the ingest seam: the extractor's door, retirement, `applied_at` + segment stamp — **done, §6e** | the mirror can be refreshed |
-| C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files | proposals can reach git |
+| C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files — **done, §6f** | proposals can reach git |
 | D1 | panel: `/redakcja/*` shell + contents list | a way in |
 | D2 | the editor: reading-order column, locale switch, inline edit, autosave | the desk |
 | D3 | reviewer mode: old → new, accept / reject / edit further | the patch gets made |
@@ -433,7 +452,8 @@ is how one of them gets made by accident.
 **Four defects found by reading the shipped code, not by writing new code.** Each is the kind that
 builds green and fails silently, and each would have been hit mid-pass by a single-run stage C.
 
-1. **Two thirds of the corpus has nowhere to put a translation.** Only the `*Gloss`/`localized` maps
+1. **Two thirds of the corpus has nowhere to put a translation.** **Closed in C3 — §6f: the overlay
+   files receive all of them.** Only the `*Gloss`/`localized` maps
    and `about.{en,fr}` can hold one; ordinary prose is a bare `z.string()`. So 279 of 428 fields —
    558 of the desk's translation rows — could be proposed, reviewed and accepted with no slot in the
    repository to receive them. §5 deferred "how prose holds three locales" to stage G, but stage E
@@ -459,7 +479,8 @@ builds green and fails silently, and each would have been hit mid-pass by a sing
    the rows also prunes what the extractor did not emit, **scoped to the scopes it actually read**
    — a run over one concert must not retire the other five, and a run that retires many keys at
    once must say so loudly, because that is the signature of a shifted list (§6d).
-4. **`about.en.title` already holds the English concert title.** `concert.<id>.title` in `en` and
+4. **`about.en.title` already holds the English concert title.** **Closed in C3 — §6f: the block is
+   gone and `concert.<id>.title` owns it.** `concert.<id>.title` in `en` and
    `concert.<id>.about.en.title` are one fact with two homes. The contract names ONE owner and
    makes the other a render-time fallback; otherwise the desk asks an editor to write the same
    sentence twice and whichever copy is not written goes stale without a signal. **Narrowed while
@@ -601,6 +622,69 @@ all and returns it, because the ids come from `/proposals/patch/` and one that d
 the script and the database disagree about what was written. And a row carrying a field the mirror
 cannot hold is a 400 that names its POSITION: `SegmentUpsertDTO` forbids extras (`paths` travels
 beside the rows, never inside them), and at ~1 300 rows an unlocated validation error is a hunt.
+
+### §6f Stage C3 — what shipped (2026-09-02)
+
+The write direction, in five files: `web/copydesk/yamlEdit.mjs` (the splicer), `overlay.mjs` (the
+two locale files, read and written), `client.mjs` (the HTTP door both commands now share),
+`apply.mjs` (`npm run copy:apply`), and `src/lib/copyOverlay.ts`, which is the read side the site
+renders through. Plus `base_value` on `GET /proposals/patch/`.
+
+**The `about.{en,fr}` blocks are gone.** 10 blocks, 28 values, 38 lines deleted and **zero
+inserted**, by a throwaway line-level script that proved its own removal: no comment inside a
+removed span, the removed slices put back reproduce the original file byte for byte, every other
+leaf identical, comment lines 142 → 142. The 28 values now sit in `concerts.en.yaml` /
+`concerts.fr.yaml` under the desk's own keys, and the extractor reads them from there: **427 keys,
+1 281 rows, 28 translated before the move and after it** — the desk's view of the site did not
+change by one row, which is the whole claim the move had to make.
+
+**Six decisions worth carrying.**
+
+- **The pre-image is the MIRROR's value, not the file's, and that is what makes the check worth
+  running.** Comparing the file to itself proves nothing; `base_value` is what the desk believes
+  the repository holds, so a mismatch means the tree and the mirror disagree — a hand edit in
+  `concerts.yaml`, or a `copy:sync` older than the checkout — and the row is refused with both
+  strings printed. It is value-level rather than byte-level for a concrete reason: the folded
+  blocks in this corpus are hand-wrapped at deliberate points, so no emitter reproduces their bytes,
+  and a byte-level pre-image would have failed on 112 of 427 fields.
+- **The style is tried, not argued about.** Each candidate rendering is spliced into the real
+  document and parsed THERE, and is kept only if the value comes back exactly. The field's existing
+  style is tried first, so a diff shows the sentence that changed rather than a restyled block —
+  and the fallbacks catch what no rule would have: a plain scalar whose new value is `2024` becomes
+  quoted rather than a number, and one carrying `: ` or ` #` stops being plain. A folded block IS
+  re-wrapped (greedy, ~100 columns, the corpus's own measure), which is the one visible cost.
+- **Four proofs, and the cheapest one carries the weight.** Pre-image, in-situ re-parse, then:
+  revert every span and the original file must return byte for byte — which subsumes the comment
+  count, because a comment cannot survive being reconstructed if it moved. The fourth is a survey
+  of every other leaf. Then the file is read back FROM DISK and checked again, and a write that
+  fails that check is rolled back to the bytes it started from. Dry run is the default; `--write` is
+  the flag that touches anything.
+- **The corpus is Polish-only by rule now, and three independent things say so.** `localized` is
+  `z.object({pl}).strict()`, so a hand-added `en:` fails the build instead of being silently
+  stripped; the extractor throws, naming the path and the file to move it to; and the accounting
+  test no longer covers `.en`/`.fr` siblings, so one appearing is an unaccounted field. Three
+  guards for one rule is not belt-and-braces here — the failure it prevents is a fact with two
+  homes, which is silent in every direction: whichever copy the reader is not looking at goes stale
+  with nothing to say so.
+- **An empty value is refused, and a refused row is a non-zero exit.** Writing `""` into a scalar
+  deletes the field rather than clearing it, and the honest answer to an editor who emptied a box is
+  to reject the proposal. A retired key still carrying an accepted proposal is reported on every run
+  and keeps the exit code red — standing pressure to either restore the field or reject the
+  proposal, where a green run would let it sit forever.
+- **Two accepted proposals on one segment collapse to the last decision, and BOTH are stamped.**
+  §6b keeps the competition on purpose; the apply script writes the later one and reports the
+  earlier as superseded. Stamping only the winner would leave the loser in tomorrow's patch, to be
+  written over the value that replaced it. A superseded row whose winner was refused is not stamped
+  at all — nothing about that segment reached the repository.
+
+**Left standing, deliberately.** `pickLocale` still reads `en`/`fr` off a `LocalizedText` at render
+and the corpus can no longer hold either, so every surface but the /o-nas milestone list prints
+Polish regardless of locale. Nothing regressed — the concert pages have no `en`/`fr` routes yet —
+but **stage F's first job is feeding the overlay into those call sites**, not forking the route:
+`metaPlace`, `dateLabel`, every `*Gloss` and `inscriptioRef.source` are read through `pickLocale`
+today and each needs the overlay merged in before an English concert page can be anything but
+Polish. `lib/registrum.ts` is the same story for the nav rail, where §6d's `viaDate` finding also
+still stands.
 
 ## §7 Traps
 

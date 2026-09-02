@@ -13,6 +13,7 @@
     "test:audit": "node --test audit/audit.test.mjs",
     "copy:extract": "node copydesk/index.mjs",
     "copy:sync": "node copydesk/sync.mjs",
+    "copy:apply": "node copydesk/apply.mjs",
     "test:copydesk": "node --test copydesk/copydesk.test.mjs",
     "photos:proxy": "node downscale-photos.mjs"
   },

@@ -7,7 +7,8 @@
  *  /fr/o-nas) are one-liners that differ only in `lang`. Rich fields (…Html) render with `set:html`,
  *  plain ones as text; neither carries typography — the build-time pass (lib/typo.ts) gives every
  *  locale its own. The milestone list still derives from the `concerts` collection (SSoT with
- *  /koncerty), reading its localized `about.{en,fr}` block and falling back to Polish. The donation
+ *  /koncerty), reading its translations from the per-locale overlay (lib/copyOverlay) and falling
+ *  back per field to the Polish the corpus holds. The donation
  *  Vault is a shared island that is still Polish-only (a later pass) — the one deliberate seam.
  * @architecture Astro islands 2026
  * @module components/pages/AboutPage
@@ -19,6 +20,7 @@ import SiteChrome from "../SiteChrome.astro";
 import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import { photo, photoOptional, bleedPair } from "../../lib/photos";
+import { concertKey, overlayValue } from "../../lib/copyOverlay";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ABOUT } from "../../i18n/content/o-nas";
 import { UI } from "../../i18n/ui";
@@ -42,20 +44,22 @@ const plate = bleedPair("swiatlo-krzyz");
 const florent = photo("florent");
 
 // Milestones — derived from the `concerts` collection (single source of truth with /koncerty):
-// appending a concert to concerts.yaml extends this list automatically. The localized `about.{en,
-// fr}` block overrides place/blurb/title per locale, each falling back to the Polish about, then to
-// venue/essence/title — so an untranslated concert still renders (in Polish) rather than breaking.
+// appending a concert to concerts.yaml extends this list automatically. The translations come from
+// the per-locale overlay (lib/copyOverlay) under the copy desk's own keys, each falling back to the
+// Polish about, then to venue/essence/title — so an untranslated concert still renders (in Polish)
+// rather than breaking. The overlay is where a translated concert TITLE lives too: it used to be
+// duplicated in `about.en.title`, which left one fact with two homes and no signal when they drifted.
 const concerts = (await getCollection("concerts")).sort((a, b) => a.data.order - b.data.order);
 const milestones = concerts.map((entry, i) => {
   const a = entry.data.about;
-  const loc = lang === "en" ? a?.en : lang === "fr" ? a?.fr : undefined;
+  const translated = (field: string) => overlayValue(concertKey(entry.id, field), lang);
   return {
     year: entry.data.date?.slice(0, 4) ?? entry.data.viaDate.match(/\d{4}/)?.[0] ?? entry.data.viaDate,
-    place: loc?.place ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
-    title: loc?.title ?? entry.data.title,
+    place: translated("about.place") ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
+    title: translated("title") ?? entry.data.title,
     img: a?.img ? photoOptional(a.img) : undefined,
     d: String((i % 3) + 1),
-    body: loc?.blurb ?? a?.blurb ?? entry.data.essence,
+    body: translated("about.blurb") ?? a?.blurb ?? entry.data.essence,
     // Only concerts that actually own a detail page get a control — `hasPage` is the same flag
     // /koncerty gates its station link on, so a row here can never point at a 404. The path stays
     // Polish in every locale on purpose: /koncerty/[id] exists only in Polish, and localizePath

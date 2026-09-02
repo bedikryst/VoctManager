@@ -175,6 +175,13 @@ class CopyDeskPatchView(views.APIView):
     writes a segment's history in the order it was decided, and keyed by
     `key`+`locale` rather than by row id, because that pair is what the apply
     script addresses in the YAML.
+
+    `base_value` is the mirror's PRE-IMAGE: the value the desk believes the
+    repository currently holds for this segment. The apply script refuses any row
+    whose file does not match it, which is the only way it can tell a patch it may
+    write from one written against a tree that has since moved — a hand edit in
+    `concerts.yaml`, or a mirror older than the checkout. Without it the script
+    would overwrite in the dark, and the loss would be somebody's prose.
     """
 
     permission_classes = [IsCopyReviewer]
@@ -195,6 +202,7 @@ class CopyDeskPatchView(views.APIView):
                     "locale": proposal.segment.locale,
                     "kind": proposal.segment.kind,
                     "value": proposal.value,
+                    "base_value": proposal.segment.value,
                     "source_hash": proposal.source_hash,
                 }
                 for proposal in proposals
