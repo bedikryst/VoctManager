@@ -795,9 +795,14 @@
     50% { opacity: 1; transform: translate(-50%, -50%) scale(1.14); }
   }
 
+  /* Weight tracks base.css's `.eyebrow`: Cinzel's hairlines fall under a device pixel at this
+     size, so the axis carries the legibility, not the ink. A `.micro` that carries no `.lat`
+     child stays Cinzel throughout (the two-tier rule turns only the ones that do into mono),
+     which is why the landing's bare section labels were the worst case on the site. */
   .micro {
     font-family: var(--capitalis);
     font-size: var(--micro);
+    font-weight: 600;
     letter-spacing: 0.24em;
     line-height: 1.45;
     padding-bottom: 8px;

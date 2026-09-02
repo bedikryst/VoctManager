@@ -327,6 +327,56 @@ const plDate = (iso: string): string =>
       </div>
     </section>
 
+    {/* ── The evening's contents, printed ONCE as front matter ───────────────────────────────
+          The page already has an index — the chrome's tabula, built from the same array below.
+          What it does not have is one that serves a FIRST reading: tabula.css states the weakness
+          itself ("the register is summoned by a POINTER… and this by a scroll gesture the reader
+          may not have meant as one"), and the threshold is 180px of deliberate backward scroll on
+          desktop, 340 on touch. A reader going down the page for the first time never makes that
+          gesture, so the tabula serves RETURN and nothing served ARRIVAL. These are the longest
+          documents on the site; arriving in one with no idea what it holds is what made a composed
+          page read as a wall, and it is why the gallery and the roster at the foot were reported
+          as unreachable rather than as badly placed.
+
+          So the page states its contents where a book states them — at the front, read once, left
+          behind. Not chrome: nothing sticky, nothing summoned, no permanent slot spent. The bar's
+          tabula goes on doing what it does well.
+
+          RENDERED FROM THE SAME `tabula` ARRAY, deliberately. Its rows are already guarded by the
+          same `when` expressions as the bands themselves, so a row here can never point at a band
+          this concert did not render — and a second hand-kept list would be a second vocabulary
+          for one page, which is the fault the array's own header warns about.
+
+          It stands on `--night` because the prologue below it does: the hero, this leaf and the
+          threshold band are one dark opening stretch, and the page's first parchment is `#program`. */}
+    {tabula.length > 1 && (
+      <nav class="kd-band kd-tabula-front" aria-label="Zawartość wieczoru">
+        <div class="kd-wrap">
+          <h2 class="kd-section-label micro reveal">
+            <span class="lat">Tabula</span>
+            <span class="kd-dot" aria-hidden="true">·</span>
+            <span>Zawartość wieczoru</span>
+          </h2>
+          <ol class="kd-tabula-list reveal-rule">
+            {tabula.map((e, i) => (
+              <li class="kd-tabula-row reveal" data-d={String((i % 3) + 1)}>
+                {/* The register goes on the ROW; the link keeps its own hover transition, which a
+                    `.reveal` on the same element would replace rather than add to. */}
+                <a class="kd-tabula-link" href={`#${e.id}`}>
+                  <span class="kd-tabula-roman">{e.roman}</span>
+                  <span class="kd-tabula-title">{e.title}</span>
+                  <span class="kd-tabula-lead" aria-hidden="true"></span>
+                  {e.figure && (
+                    <span class="kd-tabula-figure" lang={e.figureLang}>{e.figure}</span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </nav>
+    )}
+
     {/* ── Prologue: the threshold of the evening — draws the reader across the doorway
           into the experience before the reflection. ─────────────────────────────── */}
     {c.prologue && (
@@ -1008,7 +1058,21 @@ const plDate = (iso: string): string =>
      700 while every other capitalis micro on the page sits at 400. 400 is what a <span> here
      used to resolve to (body's 300, clamped up by the face) — the value is the old rendering
      written down, not a new one. Same trap, same fix, on `.kd-movement-pl` inside its <h3>. */
-  .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-weight: 400; font-size: 10.5px; letter-spacing: .26em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
+  /* These are the page's real <h2>s — eight of them, one per band — and at 10.5px/400 they were
+     what made a composed page read as an undifferentiated wall: a reader who cannot pick out the
+     section heads has no way to scan, and length then feels infinite. `.titulus` (base.css) is the
+     atom for this job; the values are restated here because this rule is emitted with the page's
+     astro cid and so out-specifies it.
+
+     600 is safe on THIS rule specifically because it keeps `--capitalis`: Cinzel is variable
+     (400–900). Do not copy the weight to a rubric that falls through to base.css's `:has(.lat)`
+     mono swap — Plex Mono ships only 300/400 here and would be synthesized.
+
+     (Worth knowing, not fixed in this pass: because the page bundle loads after base.css and the
+     two rules tie at (0,2,0), this declaration silently overrides the two-tier `:has(.lat)`
+     treatment — on a concert page both tiers stay Cinzel caps and separate on tracking and colour
+     alone, where the rest of the site separates them on face and case as well.) */
+  .kd-section-label { display: inline-flex; align-items: center; gap: 8px; font-family: var(--capitalis); font-weight: 600; font-size: 12.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--candle); margin: 0 0 22px; }
   /* Gold that has to be READ, on the two parchment bands. Full candle is 2.10 : 1 there — it
      fails AA outright at every size these labels are set in — and the tint the station carries
      does not change that: the accent is normalized to the candle's own luminance, so all five
@@ -1049,6 +1113,34 @@ const plDate = (iso: string): string =>
   /* The unsigned hand-off out of the word — quieter than the quote, our register. */
   .kd-verbum-bridge { margin: clamp(40px, 5.5vw, 60px) 0 0; max-width: 46ch; font-family: var(--serif); font-style: italic; font-weight: 300; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.6; color: rgba(244, 241, 233, .64); }
   .kd-verbum-note { margin: clamp(22px, 3vw, 32px) 0 0; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: rgba(244, 241, 233, .48); }
+
+  /* ── Front matter: the evening's contents, printed once (markup above the hero's close) ──
+     Deliberately SHALLOWER than a `.kd-band`: this is a leaf between the hero and the threshold,
+     not a station of the evening, and full band padding would make the reader cross a screen of
+     air to reach a list whose whole job is to be passed through quickly.
+
+     The grammar is the chrome tabula's (numeral · name · leader · figure) because it indexes the
+     same eight bands and a second grammar for one page's contents is a second vocabulary. What
+     differs is scale and the leader: the bar's is drawn on hover because the bar is a control,
+     and this one is standing type, so the hairline is simply there. */
+  .kd-tabula-front { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(48px, 6vw, 78px); padding-bottom: clamp(48px, 6vw, 78px); }
+  .kd-tabula-list { list-style: none; margin: 0; padding: 0; max-width: 720px; border-top: 1px solid rgba(244, 241, 233, .14); }
+  .kd-tabula-row { border-bottom: 1px solid rgba(244, 241, 233, .14); }
+  .kd-tabula-link { display: grid; grid-template-columns: 34px minmax(0, max-content) minmax(24px, 1fr) max-content; align-items: baseline; column-gap: clamp(12px, 1.4vw, 18px); padding: clamp(12px, 1.5vw, 16px) 0; color: inherit; text-decoration: none; transition: color .3s var(--ease); }
+  .kd-tabula-link:hover { color: var(--candle); }
+  .kd-tabula-roman { font-family: var(--capitalis); font-size: 11px; font-weight: 600; letter-spacing: .12em; color: var(--candle); }
+  .kd-tabula-title { font-family: var(--serif); font-weight: 300; font-size: clamp(19px, 1.9vw, 24px); line-height: 1.2; white-space: nowrap; }
+  /* Baseline-aligned with the title, so it must not be pushed by a wrapping one — the titles are
+     the bands' own short names and none of them wraps at this measure down to 360. */
+  .kd-tabula-lead { height: 1px; margin-bottom: 6px; background-color: currentColor; opacity: .2; }
+  .kd-tabula-figure { font-family: var(--capitalis); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: rgba(244, 241, 233, .5); white-space: nowrap; }
+  /* The Latin figure is the one part a narrow row can lose: it names the band a second time, in a
+     language the title has already said in Polish. Below this the leader takes its column. */
+  @media (max-width: 560px) {
+    .kd-tabula-link { grid-template-columns: 28px minmax(0, max-content) minmax(16px, 1fr); }
+    .kd-tabula-figure { display: none; }
+    .kd-tabula-title { font-size: 18px; }
+  }
 
   /* ── Tour (dark, slim) ─────────────────────────────────────────────────── */
   .kd-tour { background: var(--night, #100f0d); color: var(--paper); padding-top: clamp(64px, 8vw, 108px); padding-bottom: clamp(64px, 8vw, 108px); }
@@ -1395,6 +1487,7 @@ const plDate = (iso: string): string =>
   }
   /* Night bands — the hairline is paper on dark, not ink on parchment. */
   html.voct-motion .kd-tour-list.reveal-rule,
+  html.voct-motion .kd-tabula-list.reveal-rule,
   html.voct-motion .kd-run-head.reveal-rule,
   html.voct-motion .kd-gallery-foot.reveal-rule {
     border-top-color: transparent;

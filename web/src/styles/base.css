@@ -224,16 +224,49 @@ button { font: inherit; }
 /* The rubric atom. `text-transform: uppercase` is load-bearing now, not cosmetic: Cinzel
    has no lowercase, so anything reaching this class must already be caps-safe.
    Tracking is tighter than the 0.3em the mono wanted — Cinzel's capitals are wide by
-   design and 0.3em pulled the words apart into separate letters. Weight 500 rather than
-   400 because inscriptional capitals at 11px need the extra stroke to hold on the dark
-   ground; on parchment 400 would do, but one value that works on both beats two. */
+   design and 0.3em pulled the words apart into separate letters.
+
+   WEIGHT 600 IS THE FLOOR FOR THIS FACE AT THIS SIZE, and it is the same finding the litany
+   plate reached on the same material (guardrails: "what actually fails at this size is the
+   letterform"): Cinzel is Trajan-lineage with real stroke modulation, so its hairlines fall
+   under a device pixel and the glyph thins to partial coverage. `.litany-name` answers it at
+   600 and so does this. The face is variable (400–900), so the axis costs nothing.
+
+   Contrast is NOT what fails here and must not be "fixed" instead: --ink-muted on --paper
+   measures 4.53 : 1, which clears AA. Reach for the axis, not the ink. */
 .eyebrow {
   font-family: var(--capitalis);
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+/* ── `.titulus`: the rubric that NAMES A BAND ─────────────────────────────────
+   The rubric family does three jobs at one size — naming a section, labelling a datum
+   (.kd-voces-voice, .kd-program-num, .tabula-meta, the vault's form labels), and standing as
+   an incidental inscription (.kol-close, the kickers) — and until now had no way to say
+   which. Only the first is a heading in everything but markup: on a concert page these ARE
+   the <h2>s, and eight of them set at 10.5px is what made a composed page read as a wall.
+
+   So the size lift belongs to that job alone and `--micro` stays where it is. The token is
+   declared in two files (landing/01-foundation.css, vault.css) and read by the other two
+   jobs, where the labels are not the complaint and the rows are tight.
+
+   Tracking comes DOWN as size and weight go up — same pressure the comment above records at
+   0.3em, and weight adds to it. Carries no colour: a band's ground already sets that.
+
+   IT MUST BE WRITTEN AS A COMPOUND, and a bare `.titulus` silently does nothing on the landing.
+   base.css ships in the shared bundle and the landing sheet loads AFTER it, so at (0,1,0) each,
+   `.micro { font-size: var(--micro) }` simply wins on order. Naming the atom it composes with
+   takes this to (0,2,0) and makes it independent of bundle order.
+
+   The `:has(.lat)` rule below deliberately lands after this one and re-tracks the two-tier case
+   to 0.06em: a Cinzel-caps rubric wants the wide tracking, a Plex Sans lowercase gloss does not. */
+:is(.micro, .eyebrow, .press-eyebrow, .kd-hero-eyebrow, .kol-eyebrow).titulus {
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
 }
 /* ── Two-tier rubric: the Latin voice and its gloss ───────────────────────────
    ONE canonical definition — the eight page-level copies that used to set this were
@@ -264,8 +297,33 @@ button { font: inherit; }
   .kd-hero-eyebrow, .kd-section-label, .kd-vianav-label,
   .kol-eyebrow, .kol-section-label
 ):has(.lat) {
-  font-family: var(--mono);
+  /* THE GLOSS IS SANS, NOT MONO, and the three reasons it changed are worth keeping because the
+     mono version looked defensible for a long time.
+
+     What the gloss must do is stated two comments down: stay a QUIET TRANSLATION and not compete
+     with the Latin stone beside it, with the contrast carried by face + case + colour. Any face
+     with a real lowercase satisfies that — Cinzel cannot, because it has none and maps lowercase
+     to small capitals, which would put both tiers in caps and spend the case contrast. So the
+     question was never Cinzel-or-mono; it was which lowercase face.
+
+     Mono was the wrong one. This file's own font comment rejects the typewriter register for
+     rubrics — it says Cinzel "replaces IBM Plex Mono there, whose typewriter register said
+     'terminal' about text that is epigraphic" — and a rubric's gloss is the same epigraphic
+     object as its Latin, just spoken aloud. Reading `· Via · archiwum koncertów` half in a
+     ledger face was the one place that judgment had not been carried through.
+
+     And mono cannot take the weight this pass needs: it ships here as TWO STATIC MASTERS, 300
+     and 400 (public/fonts), so anything heavier is a synthesized fake bold, which on a monospace
+     at 10–12px smears. Plex Sans is variable (100–700) and is already the site's reading voice,
+     so the gloss can be tuned on the axis like everything else.
+
+     Mono keeps the job it is actually for and must NOT be swept out of it: strings a reader
+     copies or verifies character by character — IBAN, NIP, KRS, amounts, e-mail addresses, the
+     vault. That is a ledger, not a terminal. */
+  font-family: var(--sans);
   text-transform: lowercase;
+  font-weight: 400;
+  letter-spacing: 0.06em;
 }
 
 :is(
@@ -275,7 +333,10 @@ button { font: inherit; }
 ) .lat {
   font-family: var(--capitalis);
   font-style: normal;
-  font-weight: 500;
+  /* Tracks .eyebrow's 600. This tier is the ONLY Cinzel in a two-tier rubric — the parent
+     turns mono under the `:has(.lat)` rule above — so if the parents are lifted and this is
+     not, the stone ends up lighter than the gloss reading it and the two-tier shape inverts. */
+  font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--lat-ink, var(--candle));

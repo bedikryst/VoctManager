@@ -290,8 +290,14 @@
     max-width: 720px;
   }
 
+  /* 0.62, not 0.5. Composited over this section's scrimmed nave the label measured 4.43–4.89 : 1
+     depending on which part of the photograph sat under it — straddling the AA line, failing on
+     the lighter passages. 0.62 lands 5.97–6.95 across every ground the frame offers, and stops
+     short of full paper, where a label would start competing with the h2 beside it.
+     Unrelated to `--half-ink` (0.44): that is the reveal register's entrance floor, this is a
+     resting colour. */
   .ensemble-copy .micro {
-    color: rgba(244, 241, 233, 0.5);
+    color: rgba(244, 241, 233, 0.62);
   }
 
   /* `.ink-press` heading: this weight is the press's landing point, so it must stay equal to
@@ -1038,8 +1044,9 @@
     --rule-ink: var(--coda-rule);
   }
 
+  /* Same floor and same reason as `.ensemble-copy .micro` above. */
   .final-contact .micro {
-    color: rgba(244, 241, 233, 0.5);
+    color: rgba(244, 241, 233, 0.62);
   }
 
   .final-contact-name {

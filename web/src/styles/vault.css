@@ -36,9 +36,13 @@
   --micro: 11px;
 }
 
+/* Mirrors the landing's `.micro` (landing/01-foundation.css) declaration for declaration —
+   including the 600, which is the weight base.css's rubric atom carries for this face at this
+   size. The two must stay identical: which one applies is bundle order. */
 .micro {
   font-family: var(--capitalis);
   font-size: var(--micro);
+  font-weight: 600;
   letter-spacing: 0.24em;
   line-height: 1.45;
   padding-bottom: 8px;

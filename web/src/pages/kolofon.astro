@@ -603,7 +603,13 @@ const imagines = [...rows(hands, ""), ...rows(outlets, "źródło")];
      win on bundle order, collapsing both halves into one voice — so these carry geometry and
      the gloss tier's colour and tracking only. */
   .kol-eyebrow { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; letter-spacing: .1em; color: rgba(244, 241, 233, .68); margin: 0 0 28px; }
-  .kol-section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 10.5px; font-weight: 400; letter-spacing: .1em; color: var(--ink-muted); margin: 0 0 28px; }
+  /* The page's band heads — real <h2>s, and the section-naming job `.titulus` (base.css) names.
+     Size restated here rather than adding the class to eight elements, because this rule carries
+     the page's astro cid and would out-specify the atom anyway. No `font-family`: these fall
+     through to base.css's two-tier rule, which sets the gloss in Plex Sans and the `.lat` tier in
+     Cinzel — do not add one here or that treatment silently stops applying, which is exactly what
+     happened on the concert pages. */
+  .kol-section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 400; letter-spacing: .06em; color: var(--ink-muted); margin: 0 0 28px; }
   .kol-band-deep .kol-section-label { color: rgba(244, 241, 233, .56); }
   /* Ground-agnostic: the separator belongs to whichever tier it sits between, on parchment and
      on the dark band alike. A fixed colour here was a near-white dot on parchment. */
