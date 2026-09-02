@@ -23,6 +23,7 @@ import {
   ClipboardCheck,
   MessageCircle,
   Megaphone,
+  PencilLine,
   type LucideIcon,
 } from "lucide-react";
 
@@ -324,6 +325,27 @@ const describe = (
           : undefined,
       };
     }
+    case "SITE_COPY_PROPOSED": {
+      // The editor is the title: what the reader decides on opening this is
+      // whose judgement they are about to read, and how much of it.
+      const scopes = notification.metadata.scopes ?? [];
+      const named = scopes
+        .map((entry) => entry.label || entry.scope)
+        .filter(Boolean);
+      return {
+        title: notification.metadata.author_name,
+        pill: t("notifications.inapp.site_copy_changes", {
+          count: notification.metadata.proposal_count ?? 0,
+        }),
+        context:
+          named.length === 1
+            ? named[0]
+            : t("notifications.inapp.site_copy_pages", { count: named.length }),
+        // Beyond the first two the list stops being scannable, and the count
+        // above already says how many there are.
+        detail: named.length > 1 ? named.slice(0, 2).join(" · ") : undefined,
+      };
+    }
     case "MESSAGE_RECEIVED":
       // Subject + snippet are user-authored content — passed through verbatim.
       return {
@@ -459,6 +481,10 @@ const resolveVisual = (
       // has not made yet, not a fault. A queue holding a reschedule arrives at
       // URGENT and is escalated to crimson above, by level rather than by type.
       return { icon: Megaphone, accent: "gold" };
+    case "SITE_COPY_PROPOSED":
+      // Amethyst, the content hue: this is work on the site's text, next to the
+      // scores and recordings rather than next to the schedule.
+      return { icon: PencilLine, accent: "amethyst" };
     case "MESSAGE_RECEIVED":
     case "CHANNEL_MESSAGE":
       return { icon: MessageCircle, accent: "incense" };
@@ -512,6 +538,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
       return navigate(
         projectId ? `/panel/projects/${projectId}?announce=1` : "/panel/projects",
       );
+    }
+    if (notification.notification_type === "SITE_COPY_PROPOSED") {
+      // Needs its own branch ahead of the substring chain below: the type names
+      // nothing in that vocabulary, so it would type-check, render, and then
+      // dead-end at /panel. The desk takes over the shell, so this leaves the
+      // panel's route tree entirely.
+      return navigate("/redakcja/przeglad");
     }
     if (type === "MATERIAL_UPLOADED") {
       return navigate(isAdmin ? "/panel/archive-management" : "/panel/materials");

@@ -181,6 +181,37 @@ class AnnouncementPendingMetadata(EnterpriseBaseDTO):
     message: str | None = None
 
 
+class CopyScopeMetadata(EnterpriseBaseDTO):
+    """One page an editor touched, and how much of it.
+
+    `label` is the page's own name as the site prints it ("Kontemplacja
+    Wcielenia") — copy, not a code, and the one exception to the language-neutral
+    rule above for the same reason `project_name` is: translating the title of a
+    concert would name something that does not exist.
+    """
+    scope: str
+    label: str = ""
+    count: int = 0
+
+
+class SiteCopyProposedMetadata(EnterpriseBaseDTO):
+    """An editor's sitting at the copy desk, gathered once they have stopped.
+
+    `locales` carries bare codes, not language names: whether "en" reads as
+    "English", "angielski" or "anglais" is the reader's question, answered at
+    render time like every other code in this module.
+
+    `scopes` is what makes the digest answerable without opening it — the
+    developer needs to know which pages moved before deciding whether this is a
+    ten-minute review or an evening's.
+    """
+    author_id: int | None = None
+    author_name: str
+    proposal_count: int = 0
+    scopes: tuple[CopyScopeMetadata, ...] = ()
+    locales: tuple[str, ...] = ()
+
+
 class ProjectCancelledMetadata(EnterpriseBaseDTO):
     """A cancellation is an alarm in its own right, not a status field in a diff —
     it carries no `changes`, so the cast reads "cancelled" rather than a status

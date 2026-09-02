@@ -4257,8 +4257,8 @@ msgstr "Czas trwania (minuty)"
 
 msgid ""
 "How long the session runs. Stored as a length rather than a closing instant "
-"so it survives a move of the start and a DST boundary; null means nobody has "
-"timed it and no surface may state an end."
+"so it survives a move of the start and a DST boundary; null means nobody has"
+" timed it and no surface may state an end."
 msgstr ""
 "Ile trwa próba. Zapisywane jako długość, a nie godzina zakończenia, dzięki "
 "czemu przetrwa przesunięcie początku i zmianę czasu; brak wartości oznacza, "
@@ -4566,3 +4566,61 @@ msgstr "Restauracja"
 #: logistics/models.py:22
 msgid "Car park"
 msgstr "Parking"
+
+#: notifications/message_content.py:0
+msgid "Copy desk"
+msgstr "Redakcja treści"
+
+#: notifications/message_content.py:0
+msgid "Editor"
+msgstr "Redakcja"
+
+#: notifications/message_content.py:0
+msgid "Proposed"
+msgstr "Zaproponowano"
+
+#: notifications/message_content.py:0
+msgid "Languages"
+msgstr "Języki"
+
+#: notifications/message_content.py:0
+msgid "Review the proposals"
+msgstr "Zobacz propozycje"
+
+#: notifications/message_content.py:0
+msgid "an editor"
+msgstr "ktoś z redakcji"
+
+#: notifications/message_content.py:0
+msgid "%(editor)s proposed %(changes)s"
+msgstr "%(editor)s proponuje %(changes)s"
+
+#: notifications/message_content.py:0
+msgid "Copy desk: %(changes)s from %(editor)s"
+msgstr "Redakcja treści: %(changes)s — %(editor)s"
+
+#: notifications/message_content.py:0
+msgid ""
+"%(editor)s has been through the copy desk and left %(changes)s waiting. "
+"Nothing has reached the site: proposals stay in the panel until you accept "
+"them, and an accepted one still arrives as an ordinary diff for you to read "
+"before it is committed."
+msgstr ""
+"%(editor)s zostawia w redakcji treści %(changes)s. Nic nie trafiło na "
+"stronę: propozycje czekają w panelu, dopóki ich nie zaakceptujesz, a "
+"zaakceptowana i tak przychodzi jako zwykły diff — do przeczytania przed "
+"commitem."
+
+#: notifications/message_content.py:0
+msgid "%(count)d page"
+msgid_plural "%(count)d pages"
+msgstr[0] "%(count)d strona"
+msgstr[1] "%(count)d strony"
+msgstr[2] "%(count)d stron"
+
+#: notifications/message_content.py:0
+msgid "Page"
+msgid_plural "Pages"
+msgstr[0] "Strona"
+msgstr[1] "Strony"
+msgstr[2] "Stron"

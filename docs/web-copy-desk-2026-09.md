@@ -12,7 +12,8 @@ for it, and §1 of the board-feedback file points here.
 - **§3 Architecture** — where it lives, who is source of truth, how someone gets in.
 - **§4 The segment** — the unit everything else is built on.
 - **§5 `concerts.yaml`** — the measured corpus and the `*Pl` trap that blocks three locales.
-- **§6 Order of work** — stages, and what each one delivers. **§6a** records what stage A shipped.
+- **§6 Order of work** — stages, and what each one delivers. **§6a** and **§6b** record what stages
+  A and B shipped; **§6c** splits stage C and states the four defects that forced the split.
 - **§7 Traps** — things that look correct and ship wrong.
 - **§8 Open decisions.**
 
@@ -277,9 +278,13 @@ French month/day capitalization does not survive naive formatting (see the proje
 | # | stage | delivers |
 |---|---|---|
 | A | `concerts.yaml` locale-map migration (§5) + components that read it — **done, §6a** | the file can hold three locales at all |
-| B | backend: segment model, proposals API, `can_edit_site_copy`, notification | proposals can exist |
-| C | extractor + `apply-copy` script, both directions through `key` | proposals can reach git |
-| D | panel: `/redakcja/*` shell, contents list, editor, reviewer mode | the desk |
+| B | backend: segment model, proposals API, `can_edit_site_copy`, notification — **done, §6b** | proposals can exist |
+| C1 | the key contract + extractor (read direction) + the hash-parity fixture — **done, §6d** | the corpus has stable ids |
+| C2 | the ingest seam: `import_copy_segments`, retirement, `applied_at` + segment stamp | the mirror can be refreshed |
+| C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files | proposals can reach git |
+| D1 | panel: `/redakcja/*` shell + contents list | a way in |
+| D2 | the editor: reading-order column, locale switch, inline edit, autosave | the desk |
+| D3 | reviewer mode: old → new, accept / reject / edit further | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang | the pages exist |
 | G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing | the rest of the corpus enters the desk |
@@ -335,6 +340,76 @@ means "the gloss column" rather than a locale, and `.kd-inscriptio-gloss` is alr
 wrapper span — so renaming them now buys nothing and collides. Sweep them when stage F forks the
 route, which is also when the three locales stop sharing one file.
 
+### §6b Stage B — what shipped (2026-09-02)
+
+New Django app `copydesk` (`/api/copydesk/*`), plus the capability flag and the notification.
+
+**§4's segment is TWO tables, and that is the one real departure from the sketch above.**
+`CopySegment` is a *projection of git* — key, locale, kind, the value the repository currently
+holds, and the page/label/order the desk renders it by. `CopyProposal` is what the database
+actually owns. The split is forced by the two derived states: "stale" needs the current Polish and
+"new since last visit" needs to know when a segment first appeared, and neither is a fact about a
+proposal. Nothing in the API writes the mirror — the extractor does, through
+`CopyDeskService.upsert_segments`, and `update_or_create` keeps `created_at` a true first-seen (a
+reconciliation that recreated rows would flag the whole corpus as new on every run).
+
+**Five decisions worth carrying.**
+
+- **Staleness is measured against the Polish as it currently *means*, not as it currently ships.**
+  `effective_source_hashes` prefers an accepted-but-unapplied Polish proposal, then an open one,
+  and falls back to the repository value. Waiting for the commit would leave a window in which a
+  translation whose source has already moved reads as fresh — exactly the silence §2 exists to
+  break. Where the sketch says `source_hash` is one field, it is now two: on the *segment* it is
+  the Polish the published translation renders (stamped at apply); on the *proposal* it is the
+  Polish the editor wrote against.
+- **A blank hash means "unknown", never "fresh".** Every translation predating the desk carries
+  one, and the DTO reports `is_stale` and `source_known` separately so the desk can say so rather
+  than dressing ignorance up as freshness.
+- **The hash normalizes, and every rule is one the TypeScript extractor must mirror** (`hashing.py`
+  is the SSOT, `normalize_for_hash` is exported for exactly that): NFC, CRLF→LF, hard spaces folded
+  to ordinary ones, ends stripped. Interior whitespace is deliberately left alone. The hard-space
+  rule is load-bearing — `lib/typo.ts` inserts those at build time, so without it a typographic
+  pass would mark every translation on a page stale.
+- **One open proposal per person per segment, revised in place; two editors may compete.** The
+  desk autosaves, so a row per keystroke would bury the reviewer — but auto-resolving a clash
+  between Florent and Ania would silently discard somebody's words. The reviewer sees both.
+  `ACCEPTED`/`REJECTED` are terminal and a further change is a new proposal, so the record of what
+  was decided against which Polish survives the next edit.
+- **`can_edit_site_copy` is a capability; reviewing is `is_staff`.** Editing and reviewing are
+  different powers: accepting is not an opinion about wording, it is the decision to put a value
+  into the repository and commit it. Managership is the wrong test — §3 expects an editor to be a
+  manager. `copy_desk_seen_at` sits beside the flag on `UserProfile`, server-side for the same
+  reason as `welcome_seen_at`: a visit is a fact about the person, not about a browser.
+
+**§8's notification decision, resolved: one digest per editor per sitting, raised by the clock.**
+Per segment was rejected on three counts — volume (~500 segments, of which one concert page is
+dozens), granularity (the reader's unit of action is one trip to reviewer mode, so a message per
+segment is an alert per thing nobody acts on individually), and the fact that a sitting that
+crossed three pages is honestly described by its counts rather than split into three notifications
+all leading to the same screen. The harder half was defining "a session": §1 rules out rounds and
+the desk autosaves, so there is no submit button to hang a digest on. **The session boundary is a
+pause** — `copydesk.dispatch_copy_proposal_digests` reports an editor only once their most recent
+unannounced proposal is older than `QUIET_PERIOD` (30 min), on the same hourly beat and with the
+same claim-before-dispatch guard as the announcement nudge. A continuous two-hour sitting therefore
+produces one message, not four, and one proposal still being typed holds back the whole sitting
+rather than having its older half reported out from under the editor. Revising a proposal clears
+`notified_at`: wording that no longer stands was described by a digest that already went out.
+
+`SITE_COPY_PROPOSED` is **not** in `DIGESTIBLE_TYPES` — it is already a digest, and batching a
+batch would cost it up to a day for nothing. Its preference group `site_copy` needed a new
+`staff_only` flag on `PreferenceGroup`: the group's audience is narrower than manager, and without
+it every other manager would be shown a switch over a notification they cannot receive, which is
+the one fault `notifications/delivery.py` exists to prevent.
+
+**Left for stage C, with the fields already in place.** `applied_at` on the proposal and
+`GET /api/copydesk/proposals/patch/` (accepted-and-unapplied, keyed by `key`+`locale`, which is what
+the apply script addresses in the YAML) are the seam `apply-copy` writes through. The extractor's
+entry point is `upsert_segments`; it must produce keys matching `KEY_PATTERN`, and `scope` is always
+derived from the key, never supplied.
+
+**The reviewer's route is `/redakcja/przeglad`.** Promised by the push, the e-mail CTA and the
+bell's deep-link; stage D owns the shell but not this address.
+
 A–D are infrastructure and can be verified without any translation existing. E is the long pole and
 is where pass 1 of §2 happens. G's last item — the landing — is deliberately last: the guardrails
 forbid restructuring its composition, and its copy is the most tightly bound to it.
@@ -343,6 +418,134 @@ forbid restructuring its composition, and its copy is the most tightly bound to 
 is the one piece of work in this plan that would genuinely be thrown away. It joins the desk after
 the recut, and Florent is told up front that a small second batch is coming — a stated expectation
 costs nothing, a surprise costs his goodwill.
+
+### §6c Stage C, split into three — and why
+
+**Measured before splitting.** `concerts.yaml` yields **428 Polish segments** across the six
+concerts — 279 ordinary prose strings and 149 locale maps — from **47 field families**, the largest
+being `program[].note` (58), `program[].inscriptioGloss` (55), `gallery[].alt` (48) and
+`program[].textGloss` (42). At three locales that is **1 284 desk rows**. The size is not the reason
+to split; the count of independent judgments is. Deciding, for 47 families, whether a field is copy
+at all, which locales may hold it, what its label reads and where it sorts, is 47 decisions that no
+build or test can check — and doing them in the same pass as the two mechanically dangerous scripts
+is how one of them gets made by accident.
+
+**Four defects found by reading the shipped code, not by writing new code.** Each is the kind that
+builds green and fails silently, and each would have been hit mid-pass by a single-run stage C.
+
+1. **Two thirds of the corpus has nowhere to put a translation.** Only the `*Gloss`/`localized` maps
+   and `about.{en,fr}` can hold one; ordinary prose is a bare `z.string()`. So 279 of 428 fields —
+   558 of the desk's translation rows — could be proposed, reviewed and accepted with no slot in the
+   repository to receive them. §5 deferred "how prose holds three locales" to stage G, but stage E
+   *writes those very translations*: the real deadline is before C3, and it is now §8's decision.
+2. **Nothing ever stamps `CopySegment.source_hash`.** §6b puts the stamp at apply time and the apply
+   path did not exist, so today every translation row reports `source_known=False` in perpetuity and
+   the stale state — §2 made mechanical, the entire reason the hash exists — never fires once.
+   `apply-copy` must carry the accepted proposal's `source_hash` onto its segment in the same call
+   that sets `applied_at`; `upsert_segments` must keep leaving that column out of its `defaults`
+   (it does), or the next extractor run erases the provenance it just recorded.
+3. **There is no ingest seam, and no retirement.** `upsert_segments` is a Python classmethod, the
+   extractor is a node script reading YAML in `web/`, and Postgres publishes no host port — so
+   something has to carry one to the other. **Recommended: a staff-only ingest endpoint**, so the
+   whole loop is one command run from the repo (`npm run copy:sync` = extract, then POST), which is
+   also how `apply-copy` must already reach the database. It does not break the rule that the desk's
+   API never writes the mirror: that rule is about the EDITOR-facing routes, and this door is
+   staff-only with a git-derived payload. Guard it by refusing to run against a dirty
+   `src/content/` — a mirror built from uncommitted text describes a site nobody is serving. The
+   alternative, a management command fed over `docker compose exec -T … < file`, avoids the new
+   endpoint at the cost of coupling the loop to the server; C2 chooses. Separately, nothing removes
+   a key that has left the site: a deleted `note` would sit on the desk forever. Whatever carries
+   the rows also prunes what the extractor did not emit, **scoped to the scopes it actually read**
+   — a run over one concert must not retire the other five, and a run that retires many keys at
+   once must say so loudly, because that is the signature of a shifted list (§6d).
+4. **`about.en.title` already holds the English concert title.** `concert.<id>.title` in `en` and
+   `concert.<id>.about.en.title` are one fact with two homes. The contract names ONE owner and
+   makes the other a render-time fallback; otherwise the desk asks an editor to write the same
+   sentence twice and whichever copy is not written goes stale without a signal. **Narrowed while
+   building C1:** it is the ONLY such pair. `about.place` ("Bazylika NSPJ · Kraków") and
+   `metaPlace` ("Bazylika NSPJ, Kraków") are different lines for different surfaces, and
+   `about.blurb` is a shorter register than `essence` — so `about.{en,fr}.place`/`blurb` are
+   legitimate translations of their own fields rather than duplicates of anything.
+
+**C1 — the key contract and the extractor.** The contract is a table, one row per field family:
+YAML path → key template, `kind`, `label`, `order`, and which locales the repository can hold for
+it. It is the stage's real output; the extractor is a walk over it. `scope` is never in the table —
+it is `scope_from_key`, both sides. Verified by `node --test`: every emitted key matches
+`KEY_PATTERN`, resolves back to exactly one YAML path, and is unique across the corpus; and the
+**hash-parity fixture** — one file of adversarial strings (NBSP, narrow NBSP, thin space, CRLF, NFD
+`é`, `ł`, a block scalar's trailing newline) with expected digests, read by BOTH the node test and a
+new Python test, so a drift between `hashing.py` and its mirror fails on both sides rather than
+marking the whole corpus stale one day. Reads YAML through a parser, which is safe: the ban in §7 is
+on parse-and-**dump**.
+
+**C2 — the ingest seam.** The door defect 3 describes, the scoped prune with its loud report, and
+`POST /api/copydesk/proposals/applied/` (reviewer-only) which stamps `applied_at` and defect 2's
+segment hash together. Backend-shaped, backend-verified: ruff, mypy, copydesk tests on sqlite.
+
+**C3 — `apply-copy`.** Writes Polish back into `concerts.yaml` by line and translations into the
+overlay files, authenticating with reviewer credentials against `/api/token/` because the host
+cannot reach the database. Dry-run is the default. §8's decision shrinks the dangerous half to one
+operation — replacing a Polish scalar in place, never inserting a key — and it still gets two
+proofs, not one: each transform reconstructs its own pre-image (stage A's rule), and the whole file
+is re-read afterwards to assert that every untouched field is byte-identical and the comment count
+is unchanged. The second is what would actually catch a stray parse-and-dump. C3 also empties the
+`about.en`/`about.fr` blocks into the overlays, so that each fact ends up with exactly one home.
+
+**D is split for the opposite reason.** C's risk is silent data damage and its check is a test; D's
+risk is a surface nobody can read, and its only check is the developer's eye — which cannot be
+applied to three surfaces built in one sitting, because by the third the first is no longer being
+looked at. D1 ends with an empty shell and a real contents list, D2 with one page editable, D3 with
+the reviewer's queue; each is a thing to open and judge before the next is designed on top of it.
+The canon is `.ai/04_design_system.md`, and the takeover in §3 means the desk composes the panel's
+primitives without the panel's chrome — not that it invents its own.
+
+### §6d Stage C1 — what shipped (2026-09-02)
+
+`web/copydesk/`: `contract.mjs` (the table), `extract.mjs` (the walk), `index.mjs`
+(`npm run copy:extract`), `normalize.mjs` (the hash mirror), `fixtures/hash-parity.json`, and
+`copydesk.test.mjs` (`npm run test:copydesk`), plus a `HashParityFixtureTests` on the Python side.
+**46 copy families against 65 not-copy rows; 427 keys, 1 281 desk rows, 28 of them already
+translated** — the `about.en`/`about.fr` blocks, which are the only translations the repository
+holds today.
+
+**Five decisions worth carrying.**
+
+- **The contract's declaration order IS the desk's reading order.** `order` is a counter over the
+  table, laid out in the sequence /koncerty/[id] prints — hero, próg, słowo, refleksja, program,
+  cytat, głosy, zapis, obrazy, koda — with the two fields that live on /o-nas at the end, saying so
+  in their label. Re-ordering the table re-orders the desk and never touches a key.
+- **Both tables are complete, and a test enforces it.** The suite walks every leaf in the corpus
+  and fails on a path that neither `CONCERT_CONTRACT` nor `NOT_COPY` names. This is the only
+  mechanical form §7's warning can take — "when a new field appears beside a `lat`/`text`/
+  `inscriptio`, ask which meaning its name carries" is otherwise a sentence in a document nobody
+  opens while editing YAML. The reverse direction (a table row for a path the corpus lacks) is
+  reported, not asserted: five of them are optional fields six concerts have not used yet, and
+  only the zod schema could tell those from a field that was removed.
+- **A list is keyed by a natural id where one exists that is not itself copy** — `gallery[].img`
+  and `movements[].id` — and by position everywhere else. Position is stable only under APPEND:
+  inserting a work mid-programme re-keys every work below it and the desk loses their proposals and
+  their first-seen date. Accepted because a past concert's programme does not gain a work, and
+  guarded in C2 rather than prevented — a run that retires many keys at once has the signature of a
+  shifted list and must say so instead of pruning quietly. `roster.groups[].voice` and
+  `credits[].role` look like natural keys and are not: they are the values about to be translated.
+- **The hash mirror does not use `trim()`.** JavaScript strips U+FEFF, which Python does not treat
+  as whitespace at all; Python strips U+0085 and U+001C–U+001F, which JavaScript leaves standing.
+  Two of the twenty parity cases exist for exactly this, and a naive mirror passes eighteen of them
+  — which is the shape of the failure worth designing against, since the eighteen would have been
+  read as proof.
+- **Every segment in this corpus is `TEXT`.** There is no `<em>`, `<strong>` or `<a>` anywhere in
+  `concerts.yaml`, so §7's `contenteditable` trap and the `HTML` sanitizer path do not bite until
+  stage G brings the static pages in.
+
+**Two more dates baked into copy — §6a's sweep was incomplete.** Both print Polish on the English
+page and neither is caught by anything today. `reflectionAttribution` carries one inside a
+translatable string ("Florent de Bazelaire · 20 stycznia 2024"), which is exactly what
+`verbum.speaker` was before stage A split it, and it will drift from the concert's own `date` the
+moment either is edited. `viaDate` is a hand-written Polish abbreviation of the same moment
+("sty 2024", "jesień 2025") — it is excluded from the desk because a date is never copy, not
+because it is harmless: the via-rail will print "sty 2024" on the English page until it is derived
+from `date`/`dateLabel`. Both are recorded in the contract at the field they affect. Fix them where
+stage F forks the route, or earlier if a locale ships first.
 
 ## §7 Traps
 
@@ -381,9 +584,31 @@ costs nothing, a surprise costs his goodwill.
 
 ## §8 Open decisions
 
-- **Notification shape.** `NotificationType` has ~8 layers to touch. Decide whether an editor's
-  session produces one digest ("Florent proposed 12 changes on Kontemplacja Wcielenia") or one per
-  segment. Digest is almost certainly right; confirm before building.
+- ~~**Notification shape.**~~ **Settled 2026-09-02 — one digest per editor per sitting, where a
+  sitting ends at a 30-minute pause. Reasoning and mechanism in §6b.**
+- ~~**Where a translated PROSE value lives in the repository**~~ **Settled 2026-09-02 — (b), the
+  per-locale overlay.** `concerts.yaml` is Polish-only from here on; `concerts.en.yaml` and
+  `concerts.fr.yaml` hold every translated value under the desk's own dotted key. The consequence
+  worth stating separately, because it is the strongest argument for the choice: `apply-copy`'s
+  line-level path now only ever REPLACES a Polish scalar in place — it never inserts a key, never
+  opens a flow map, never indents a block scalar under a new locale. The overlays are written
+  whole, carry no comments to lose, and cannot damage the corpus. Stage A's locale maps keep their
+  shape (they mark a *gloss of a foreign original*, which was their point) and simply stay
+  `pl`-only; the `about.{en,fr}` block, the one place translations sit today, is C3's to move out
+  so that each fact has exactly one home. The reasoning as it stood before the decision: **(a)
+  Migrate all 279 prose fields to locale maps**, the way stage A migrated the glosses:
+  one file, one shape for everything, `pickLocale` already reads it — at the price of a second
+  line-level rewrite of the file §7 says may never meet a parser, and of a Polish source file whose
+  every paragraph is buried under two translations the Polish editor is not reading.
+  **(b) Per-locale overlay files** (`concerts.en.yaml`, `concerts.fr.yaml`) keyed by the desk's own
+  dotted key: the Polish file is never restructured again, the overlays are machine-written and
+  carry no comments to lose, and `apply-copy`'s dangerous path shrinks to Polish edits only — at the
+  price of a second place to look and a merge in the loader. **(b) is the recommendation**, on the
+  strength of shrinking the one operation in this plan that can destroy the corpus; the objection to
+  answer is §5's rule against two shapes for one thing, and the answer is that the split is by
+  *language*, not by field — every field behaves identically. Decide before C3; C1 and C2 are
+  unaffected either way, because the desk shows an empty `en` column regardless of where its value
+  will eventually be written.
 - **Whether accepted proposals auto-commit.** Currently manual (`apply-copy` → developer commits).
   A bot commit is a later convenience and needs no model change.
 - **Copyright on canonical hymn translations** (§5). Needs the same treatment the site already gives

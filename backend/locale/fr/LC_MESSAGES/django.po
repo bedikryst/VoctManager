@@ -4278,8 +4278,8 @@ msgstr "Durée (minutes)"
 
 msgid ""
 "How long the session runs. Stored as a length rather than a closing instant "
-"so it survives a move of the start and a DST boundary; null means nobody has "
-"timed it and no surface may state an end."
+"so it survives a move of the start and a DST boundary; null means nobody has"
+" timed it and no surface may state an end."
 msgstr ""
 "Durée de la répétition. Stockée comme une longueur plutôt qu'une heure de "
 "fin, afin de survivre à un décalage du début et au changement d'heure ; une "
@@ -4306,7 +4306,8 @@ msgstr "Direction du pupitre"
 
 msgid "Leads their voice section in this project. Listed first within it."
 msgstr ""
-"Dirige son pupitre sur ce projet. Apparaît en tête de la liste de ce pupitre."
+"Dirige son pupitre sur ce projet. Apparaît en tête de la liste de ce "
+"pupitre."
 
 msgid ""
 "%(artist)s is asking to be excused from a run of rehearsals. The dates are "
@@ -4590,3 +4591,59 @@ msgstr "Restaurant"
 #: logistics/models.py:22
 msgid "Car park"
 msgstr "Parking"
+
+#: notifications/message_content.py:0
+msgid "Copy desk"
+msgstr "Rédaction des textes"
+
+#: notifications/message_content.py:0
+msgid "Editor"
+msgstr "Rédaction"
+
+#: notifications/message_content.py:0
+msgid "Proposed"
+msgstr "Proposé"
+
+#: notifications/message_content.py:0
+msgid "Languages"
+msgstr "Langues"
+
+#: notifications/message_content.py:0
+msgid "Review the proposals"
+msgstr "Voir les propositions"
+
+#: notifications/message_content.py:0
+msgid "an editor"
+msgstr "un membre de la rédaction"
+
+#: notifications/message_content.py:0
+msgid "%(editor)s proposed %(changes)s"
+msgstr "%(editor)s propose %(changes)s"
+
+#: notifications/message_content.py:0
+msgid "Copy desk: %(changes)s from %(editor)s"
+msgstr "Rédaction des textes : %(changes)s — %(editor)s"
+
+#: notifications/message_content.py:0
+msgid ""
+"%(editor)s has been through the copy desk and left %(changes)s waiting. "
+"Nothing has reached the site: proposals stay in the panel until you accept "
+"them, and an accepted one still arrives as an ordinary diff for you to read "
+"before it is committed."
+msgstr ""
+"%(editor)s a laissé %(changes)s à la rédaction des textes. Rien n'est parti "
+"sur le site : les propositions attendent dans le panneau jusqu'à ce que vous"
+" les acceptiez, et une proposition acceptée arrive encore sous forme de "
+"simple diff, à relire avant le commit."
+
+#: notifications/message_content.py:0
+msgid "%(count)d page"
+msgid_plural "%(count)d pages"
+msgstr[0] "%(count)d page"
+msgstr[1] "%(count)d pages"
+
+#: notifications/message_content.py:0
+msgid "Page"
+msgid_plural "Pages"
+msgstr[0] "Page"
+msgstr[1] "Pages"

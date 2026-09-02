@@ -1,0 +1,177 @@
+"""
+@file dtos.py
+@description Copy desk Data Transfer Objects. The read side is what the desk
+             renders — a segment together with the two derived states §4 names,
+             stale and new-since-last-visit. The write side is validated before
+             anything reaches the database.
+@architecture Enterprise SaaS 2026 (Pydantic V2)
+@module copydesk/dtos
+"""
+from __future__ import annotations
+
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from .models import KEY_PATTERN, ProposalStatus, SegmentKind, SiteLocale
+
+LOCALE_VALUES = frozenset(SiteLocale.values)
+KIND_VALUES = frozenset(SegmentKind.values)
+STATUS_VALUES = frozenset(ProposalStatus.values)
+
+#: Generous enough for the longest prose in the corpus (`note` runs to several
+#: hundred words) and tight enough that a stuck client cannot post a book.
+MAX_VALUE_LENGTH = 20_000
+MAX_COMMENT_LENGTH = 1_000
+
+
+class CopyDeskBaseDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", validate_by_name=True, validate_by_alias=True)
+
+
+# --------------------------------------------------------------------------- #
+# Write side                                                                    #
+# --------------------------------------------------------------------------- #
+
+class ProposalWriteDTO(CopyDeskBaseDTO):
+    """An editor's change to one segment.
+
+    `status` is limited to the open states: a proposal is accepted or rejected
+    through the reviewer's own action, never by an editor naming the outcome
+    they would like.
+    """
+
+    segment_id: UUID
+    value: str = Field(default="", max_length=MAX_VALUE_LENGTH)
+    comment: str = Field(default="", max_length=MAX_COMMENT_LENGTH)
+    status: str = ProposalStatus.PROPOSED
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        allowed = {ProposalStatus.DRAFT.value, ProposalStatus.PROPOSED.value}
+        if value not in allowed:
+            raise ValueError(f"status must be one of: {', '.join(sorted(allowed))}.")
+        return value
+
+
+class ProposalReviewDTO(CopyDeskBaseDTO):
+    """A reviewer's verdict.
+
+    `value` is optional and present only when the reviewer edited the wording
+    before accepting it — §4's "accept / reject / edit further" as one act, so
+    the record shows what was actually put into the repository rather than what
+    was proposed and then silently altered.
+    """
+
+    status: str
+    value: str | None = Field(default=None, max_length=MAX_VALUE_LENGTH)
+    comment: str | None = Field(default=None, max_length=MAX_COMMENT_LENGTH)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: str) -> str:
+        allowed = {ProposalStatus.ACCEPTED.value, ProposalStatus.REJECTED.value}
+        if value not in allowed:
+            raise ValueError(f"status must be one of: {', '.join(sorted(allowed))}.")
+        return value
+
+
+class SegmentUpsertDTO(CopyDeskBaseDTO):
+    """One row of the extractor's reading of the repository (stage C).
+
+    Every field here comes from git. Nothing in this DTO may be set by the desk's
+    API — a write path from the panel into the mirror would make the database the
+    source of truth, which is the CMS §3 rejected.
+    """
+
+    key: str = Field(..., min_length=3, max_length=200, pattern=KEY_PATTERN)
+    locale: str
+    kind: str = SegmentKind.TEXT
+    value: str = Field(default="", max_length=MAX_VALUE_LENGTH)
+    scope_label: str = Field(default="", max_length=200)
+    label: str = Field(default="", max_length=200)
+    order: int = Field(default=0, ge=0)
+
+    @field_validator("locale")
+    @classmethod
+    def validate_locale(cls, value: str) -> str:
+        if value not in LOCALE_VALUES:
+            raise ValueError(f"locale must be one of: {', '.join(sorted(LOCALE_VALUES))}.")
+        return value
+
+    @field_validator("kind")
+    @classmethod
+    def validate_kind(cls, value: str) -> str:
+        if value not in KIND_VALUES:
+            raise ValueError(f"kind must be one of: {', '.join(sorted(KIND_VALUES))}.")
+        return value
+
+
+# --------------------------------------------------------------------------- #
+# Read side                                                                     #
+# --------------------------------------------------------------------------- #
+
+class ProposalDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    value: str
+    status: str
+    comment: str
+    author_id: int | None
+    author_name: str
+    is_mine: bool
+    #: A translation whose Polish has moved since it was written. Always False on
+    #: a Polish proposal — a source renders nothing, so it goes stale against
+    #: nothing — and False when the provenance is unknown, which `source_known`
+    #: reports separately rather than dressing up as freshness.
+    is_stale: bool = False
+    source_known: bool = True
+    updated_at: str
+    reviewed_at: str | None = None
+    applied_at: str | None = None
+
+
+class SegmentDTO(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    id: UUID
+    key: str
+    locale: str
+    kind: str
+    scope: str
+    scope_label: str
+    label: str
+    order: int
+    #: What the repository holds today — the value the public site is serving.
+    value: str
+    #: The Polish this row's locale renders. Equal to `value` on a Polish row.
+    #: Carried per segment so the desk can show the original under a toggle
+    #: without a second request per row.
+    source_value: str = ""
+    #: The published translation is out of date against the current Polish.
+    is_stale: bool = False
+    source_known: bool = True
+    #: Created after the reader's last visit to the desk.
+    is_new: bool = False
+    proposals: tuple[ProposalDTO, ...] = ()
+
+
+class ScopeSummaryDTO(BaseModel):
+    """One line of the contents list.
+
+    Four counts because the editor asked to see what they had already done:
+    how much there is, how much has been touched, how much has been settled, and
+    what has appeared since they were last here.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    scope: str
+    label: str
+    segments: int = 0
+    touched: int = 0
+    accepted: int = 0
+    new: int = 0
+    stale: int = 0

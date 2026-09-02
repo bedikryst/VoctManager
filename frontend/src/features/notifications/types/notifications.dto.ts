@@ -23,6 +23,7 @@ export type NotificationType =
   | "PARTICIPATION_RESPONSE"
   | "ATTENDANCE_SUBMITTED"
   | "ANNOUNCEMENT_PENDING"
+  | "SITE_COPY_PROPOSED"
   | "CUSTOM_ADMIN_MESSAGE"
   | "MESSAGE_RECEIVED"
   | "CHANNEL_MESSAGE"
@@ -149,6 +150,30 @@ export interface AnnouncementPendingMetadata {
   /** A count, not a rendered duration — the viewer's language decides whether it
    *  reads as hours or days. */
   waiting_hours?: number;
+}
+
+/** One page an editor touched during a sitting at the copy desk. `label` is the
+ *  page's own name as the site prints it — a name, not copy to translate. */
+export interface CopyScopeMetadata {
+  scope: string;
+  label?: string;
+  count?: number;
+}
+
+/**
+ * An editor's sitting at the copy desk, gathered into one message once they have
+ * stopped. Staff-only: the reader is whoever applies an accepted proposal to the
+ * repository and commits it.
+ *
+ * `locales` carries bare codes, never language names — whether "en" reads as
+ * "English", "angielski" or "anglais" is answered in the viewer's language here.
+ */
+export interface SiteCopyProposedMetadata {
+  author_id?: number | null;
+  author_name: string;
+  proposal_count?: number;
+  scopes?: CopyScopeMetadata[];
+  locales?: string[];
 }
 
 export interface ProjectReminderMetadata extends EventMomentMetadata {
@@ -332,6 +357,10 @@ export type NotificationDTO = BaseNotification &
         metadata: AnnouncementPendingMetadata;
       }
     | {
+        notification_type: "SITE_COPY_PROPOSED";
+        metadata: SiteCopyProposedMetadata;
+      }
+    | {
         notification_type:
           | "PROJECT_CANCELLED"
           | "CONTRACT_ISSUED"
@@ -376,6 +405,7 @@ export type NotificationGroupId =
   | "messages"
   | "materials"
   | "safety_net"
+  | "site_copy"
   | "team";
 
 export interface NotificationPreferenceGroupDTO {

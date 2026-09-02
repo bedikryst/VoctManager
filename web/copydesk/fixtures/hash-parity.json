@@ -1,0 +1,145 @@
+{
+  "note": "Hash-parity fixture. backend/copydesk/hashing.py is the SSOT; web/copydesk/normalize.mjs must reproduce it character for character. Both sides read THIS file, so a drift fails on both. Inputs are written as JSON escapes on purpose: these characters are invisible in an editor and a file carrying them literally is one careless paste away from testing something else. Regenerate only when hashing.py itself changes.",
+  "cases": [
+    {
+      "id": "plain",
+      "why": "the ordinary case: nothing to normalize",
+      "input": "Kontemplacja Wcielenia",
+      "normalized": "Kontemplacja Wcielenia",
+      "sha256": "518f993ca4ff35cbde883de43b626f4920dd79dcc5d15c33f9d67a61f37b54d8"
+    },
+    {
+      "id": "nbsp",
+      "why": "NO-BREAK SPACE \u2014 lib/typo.ts pins these at build time",
+      "input": "Iz 11,\u00a01",
+      "normalized": "Iz 11, 1",
+      "sha256": "1762dcb10e0064c4e83d9af7b37cb494c0a9cc7cb1a2a8986c66b9bd103024ec"
+    },
+    {
+      "id": "narrow-nbsp",
+      "why": "NARROW NO-BREAK SPACE \u2014 French punctuation spacing",
+      "input": "Requiem\u202f: introit",
+      "normalized": "Requiem : introit",
+      "sha256": "f0df701ebd089f647270025a32b3c98f15331c6a25c25b0446e3f943577df3a4"
+    },
+    {
+      "id": "thin-space",
+      "why": "THIN SPACE \u2014 the third hard space in the table",
+      "input": "1\u2009000 lat",
+      "normalized": "1 000 lat",
+      "sha256": "6a946cf41515a2fbb17270589dd3c1eac00828cefc1125e2d9526a91b86be94f"
+    },
+    {
+      "id": "crlf",
+      "why": "the corpus is CRLF on a Windows checkout",
+      "input": "Wiersz\r\ndrugi",
+      "normalized": "Wiersz\ndrugi",
+      "sha256": "00ece1483c275936ce5529e55e0796bc1c9054f569b38f520c66aa8f66f464ba"
+    },
+    {
+      "id": "cr-only",
+      "why": "a lone CR is a line ending too",
+      "input": "Wiersz\rdrugi",
+      "normalized": "Wiersz\ndrugi",
+      "sha256": "00ece1483c275936ce5529e55e0796bc1c9054f569b38f520c66aa8f66f464ba"
+    },
+    {
+      "id": "nfd",
+      "why": "combining acute \u2014 must equal the precomposed form after NFC",
+      "input": "Sacre\u0301-C\u0153ur",
+      "normalized": "Sacr\u00e9-C\u0153ur",
+      "sha256": "cf696ac1836448f97e68c60cefd164db5d0e369b15c00589de87dff2fb9e49a5"
+    },
+    {
+      "id": "nfc",
+      "why": "the precomposed twin of the case above",
+      "input": "Sacr\u00e9-C\u0153ur",
+      "normalized": "Sacr\u00e9-C\u0153ur",
+      "sha256": "cf696ac1836448f97e68c60cefd164db5d0e369b15c00589de87dff2fb9e49a5"
+    },
+    {
+      "id": "stroked-l",
+      "why": "NFD does not decompose l-with-stroke; NFC must leave it exactly as it stands",
+      "input": "Wyros\u0142a r\u00f3\u017cd\u017cka",
+      "normalized": "Wyros\u0142a r\u00f3\u017cd\u017cka",
+      "sha256": "3efff71fbbc4fb060588903cb88f1179e6c632e41fd068678cfe25137f7f7790"
+    },
+    {
+      "id": "trailing-newline",
+      "why": "a YAML block scalar carries one",
+      "input": "Tekst bloku\n",
+      "normalized": "Tekst bloku",
+      "sha256": "4e2d141c317e1938131ac567f5fb2db0776fffae9361176a732bd23ca55cf6f0"
+    },
+    {
+      "id": "padded",
+      "why": "leading and trailing whitespace is layout, not sense",
+      "input": "  Tekst  ",
+      "normalized": "Tekst",
+      "sha256": "5d07abcd8c8c64590e240d2b79e1b0d8cd356ff8aba69f6c6710982a06b667b6"
+    },
+    {
+      "id": "interior-double-space",
+      "why": "interior whitespace is deliberately NOT collapsed",
+      "input": "Dwa  odst\u0119py",
+      "normalized": "Dwa  odst\u0119py",
+      "sha256": "2222507c05c3df52212b2b32077feb5e78aa23af4306add8e969be7edbc94557"
+    },
+    {
+      "id": "bom",
+      "why": "U+FEFF is NOT whitespace to Python \u2014 a mirror using JS trim() would strip it and diverge",
+      "input": "\ufeffTekst",
+      "normalized": "\ufeffTekst",
+      "sha256": "141e9cb59e8f7903306bef3a231b794e917f373a5c17093dc67209aff7280cd5"
+    },
+    {
+      "id": "nel",
+      "why": "U+0085 IS whitespace to Python and is NOT in JavaScript's trim set \u2014 the same divergence, mirrored",
+      "input": "Tekst\u0085",
+      "normalized": "Tekst",
+      "sha256": "5d07abcd8c8c64590e240d2b79e1b0d8cd356ff8aba69f6c6710982a06b667b6"
+    },
+    {
+      "id": "ideographic-space",
+      "why": "U+3000 is Zs: whitespace on both sides, stripped",
+      "input": "Tekst\u3000",
+      "normalized": "Tekst",
+      "sha256": "5d07abcd8c8c64590e240d2b79e1b0d8cd356ff8aba69f6c6710982a06b667b6"
+    },
+    {
+      "id": "empty",
+      "why": "nothing to hash: the empty digest means 'no source recorded'",
+      "input": "",
+      "normalized": "",
+      "sha256": ""
+    },
+    {
+      "id": "whitespace-only",
+      "why": "strips to nothing, so it hashes to nothing",
+      "input": "   \n\t  ",
+      "normalized": "",
+      "sha256": ""
+    },
+    {
+      "id": "nbsp-only",
+      "why": "folds to spaces, then strips to nothing",
+      "input": "\u00a0\u202f",
+      "normalized": "",
+      "sha256": ""
+    },
+    {
+      "id": "french-punctuation",
+      "why": "a whole French line as lib/typo.ts leaves it",
+      "input": "Requiem\u202f? Oui\u00a0!",
+      "normalized": "Requiem ? Oui !",
+      "sha256": "4a22ea62e291199e5714893318eb5c469707f520d346914236a351ac5722a679"
+    },
+    {
+      "id": "mixed",
+      "why": "every rule at once, in the order normalize_for_hash applies them",
+      "input": "Linia\u00a0jeden\r\nLinia dwa \r\n",
+      "normalized": "Linia jeden\nLinia dwa",
+      "sha256": "d688748ddc034d26f0bc993a67236875427ac98042cec7645002ee5abce8cc33"
+    }
+  ]
+}

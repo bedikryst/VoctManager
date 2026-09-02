@@ -46,6 +46,7 @@ ignore = [
 known-first-party = [
     "archive",
     "config",
+    "copydesk",
     "core",
     "documents",
     "logistics",

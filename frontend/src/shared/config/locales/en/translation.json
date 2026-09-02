@@ -3008,7 +3008,8 @@
       "CHANNEL_MESSAGE": "Project channel",
       "NOTIFICATION_READ_RECEIPT": "Read receipt",
       "fallback": "Notification",
-      "ANNOUNCEMENT_PENDING": "Announcement queue"
+      "ANNOUNCEMENT_PENDING": "Announcement queue",
+      "SITE_COPY_PROPOSED": "Copy desk"
     },
     "status": {
       "attendance": {
@@ -3105,7 +3106,11 @@
       "announcement_pending_days_one": "waiting {{count}} day",
       "announcement_pending_days_other": "waiting {{count}} days",
       "announcement_pending_unaware_one": "{{count}} person hasn't been told",
-      "announcement_pending_unaware_other": "{{count}} people haven't been told"
+      "announcement_pending_unaware_other": "{{count}} people haven't been told",
+      "site_copy_changes_one": "{{count}} change",
+      "site_copy_changes_other": "{{count}} changes",
+      "site_copy_pages_one": "{{count}} page",
+      "site_copy_pages_other": "{{count}} pages"
     },
     "push": {
       "toasts": {
@@ -4817,7 +4822,8 @@
         "REHEARSAL_SCHEDULED": "New Rehearsal Scheduled",
         "REHEARSAL_UPDATED": "Rehearsal Time/Location Changed",
         "SYSTEM_ALERT": "System Maintenance or Alert",
-        "ANNOUNCEMENT_PENDING": "Unannounced changes waiting"
+        "ANNOUNCEMENT_PENDING": "Unannounced changes waiting",
+        "SITE_COPY_PROPOSED": "Proposed changes to the site's text"
       },
       "unsubscribe_modal": {
         "description": "You will no longer receive push notifications on this device. You can turn them back on at any time.",
@@ -4849,6 +4855,7 @@
         "messages": "Messages",
         "materials": "Materials & reminders",
         "safety_net": "Unsent announcements",
+        "site_copy": "Copy desk",
         "team": "Team operations"
       },
       "type_desc": {
@@ -4869,6 +4876,7 @@
         "ABSENCE_REQUESTED": "A singer requests an absence",
         "SYSTEM_ALERT": "Maintenance and important system notices",
         "ANNOUNCEMENT_PENDING": "A project's queue is waiting and the cast still doesn't know",
+        "SITE_COPY_PROPOSED": "An editor has proposed changes to the site's text",
         "PROJECT_CANCELLED": "An event is called off",
         "REHEARSAL_SCHEDULED": "A new rehearsal joins the schedule",
         "REHEARSAL_CANCELLED": "A rehearsal is called off",
@@ -4891,12 +4899,14 @@
         "messages": "Someone writing to you — a reply in a conversation, or a message from management.",
         "materials": "New scores and recordings, plus reminders shortly before a rehearsal or concert.",
         "safety_net": "The one notification about something that has not been done yet: changes are waiting in the queue and the cast still doesn't know. That is why it goes to email too.",
+        "site_copy": "Someone has been through the site's copy desk and left proposals to review. One message per sitting, not per change — which is why it also goes to email.",
         "team": "Responses to invitations, attendance updates and absence requests. The same events the daily digest below gathers up."
       },
       "groups_email_off": {
         "commitments": "You will not get an email when a rehearsal or concert time changes. The app still shows everything — but only once you open it.",
         "messages": "You will not get an email when someone writes to you. The message will be waiting in the app.",
-        "safety_net": "You will not get an email when an announcement queue is left unsent. The reminder will stay in the app — that is, where it only reaches you if you were opening it anyway."
+        "safety_net": "You will not get an email when an announcement queue is left unsent. The reminder will stay in the app — that is, where it only reaches you if you were opening it anyway.",
+        "site_copy": "You will not get an email when someone leaves proposals at the copy desk. The notification will stay in the app — and the proposals will wait until you look."
       },
       "details_show": "Details ({{n}})",
       "details_hide": "Hide details",

@@ -5,6 +5,10 @@ dist/
 dist-verify/
 # generated types
 .astro/
+# The copy desk's reading of concerts.yaml (`npm run copy:extract`) — a projection of the YAML,
+# regenerated on demand and ingested over the API, so committing it would put the same text in
+# git twice and double the diff on every copy change.
+copydesk/segments.json
 # deps
 node_modules/
 # env & local

@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     'logistics',
     'documents',
     'payments',
+    'copydesk',
 ]
 
 # --- AUTHENTICATION BACKENDS ---
@@ -328,6 +329,13 @@ CELERY_BEAT_SCHEDULE = {
     # Hourly; each recipient's digest_hour gates the actual send to once a day.
     'notifications-send-digests': {
         'task': 'notifications.send_notification_digests',
+        'schedule': timedelta(hours=1),
+    },
+    # Hourly, but the quiet period inside the task decides whether anything is
+    # said: an editor still working keeps their whole sitting out of the sweep,
+    # so a long session at the copy desk produces one digest and not four.
+    'copydesk-dispatch-proposal-digests': {
+        'task': 'copydesk.dispatch_copy_proposal_digests',
         'schedule': timedelta(hours=1),
     },
 }

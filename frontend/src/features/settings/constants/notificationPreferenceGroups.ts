@@ -56,6 +56,9 @@ export const NOTIFICATION_GROUP_ICON: Record<NotificationGroupId, LucideIcon> = 
   // A one-member group, so it shares its single row's glyph rather than inventing
   // a second symbol for the same event.
   safety_net: Megaphone,
+  // A one-member group, sharing its single row's glyph rather than inventing a
+  // second symbol for the same event.
+  site_copy: PencilLine,
   team: ShieldCheck,
 };
 
@@ -90,6 +93,8 @@ export const NOTIFICATION_TYPE_ICON: Partial<Record<NotificationType, LucideIcon
   ABSENCE_REQUESTED: CalendarOff,
   // Safety net — the queue nobody has published yet
   ANNOUNCEMENT_PENDING: Megaphone,
+  // Copy desk — an editor has been through the public site's text
+  SITE_COPY_PROPOSED: PencilLine,
 };
 
 export const FALLBACK_TYPE_ICON: LucideIcon = Bell;

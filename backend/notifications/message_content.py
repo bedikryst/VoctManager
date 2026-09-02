@@ -1492,6 +1492,102 @@ def _compose_announcement_pending(ctx: MessageContext) -> MessageContent:
     )
 
 
+#: The desk's reviewer entrance. Stage D owns the route tree (`/redakcja/*`);
+#: this is the address the nudge promises, so the two must agree.
+_COPY_DESK_REVIEW_URL = "/redakcja/przeglad"
+
+def _locale_names(codes: Iterable[str]) -> str:
+    """Bare locale codes rendered in the reader's language, in the site's order.
+
+    The map is built per call, not at module scope: `_` here is eager gettext,
+    so a dict literal beside it would be translated once at import into whatever
+    language happened to be active and then handed to every reader.
+    """
+    names = {"pl": _("Polish"), "en": _("English"), "fr": _("French")}
+    present = set(codes)
+    return ", ".join(
+        str(names.get(code, code)) for code in ("pl", "en", "fr") if code in present
+    )
+
+
+def _compose_site_copy_proposed(ctx: MessageContext) -> MessageContent:
+    """One editor has finished a sitting at the copy desk.
+
+    Addressed to whoever reviews and commits, and composed as a digest rather
+    than one message per segment: the corpus is ~500 segments and a single
+    concert page is dozens of them, while the reader's unit of action is one
+    trip to the reviewer — so a message per segment would be an alert per thing
+    nobody acts on individually.
+
+    The editor's name leads. What the reader decides on opening this is whose
+    judgement they are reading, and how much of it; which page comes second and
+    only when there is one, because a sitting that crossed three pages is
+    honestly described by the count, not by whichever page happened to be first.
+    """
+    m = ctx.metadata
+    author = m.get("author_name") or _("an editor")
+    count = int(m.get("proposal_count") or 0)
+    raw_scopes = [s for s in (m.get("scopes") or ()) if isinstance(s, dict)]
+    locales = [str(code) for code in (m.get("locales") or ())]
+
+    changes_phrase = ngettext(
+        "%(count)d change", "%(count)d changes", count
+    ) % {"count": count}
+
+    scope_labels = [str(s.get("label") or s.get("scope") or "") for s in raw_scopes]
+    scope_labels = [label for label in scope_labels if label]
+    if len(scope_labels) == 1:
+        where = scope_labels[0]
+    else:
+        where = ngettext(
+            "%(count)d page", "%(count)d pages", len(scope_labels)
+        ) % {"count": len(scope_labels)}
+
+    details: list[DetailRow] = [
+        _row(_("Editor"), author),
+        _row(_("Proposed"), changes_phrase),
+    ]
+    if scope_labels:
+        details.append(_row(
+            ngettext("Page", "Pages", len(scope_labels)),
+            # Each page with its own count, so the reader can tell one adjusted
+            # word on six pages from a rewritten evening.
+            " · ".join(
+                f"{s.get('label') or s.get('scope')!s} ({int(s.get('count') or 0)})"
+                for s in raw_scopes
+                if (s.get("label") or s.get("scope"))
+            ),
+        ))
+    if locales:
+        details.append(_row(_("Languages"), _locale_names(locales)))
+
+    return MessageContent(
+        notification_type=ctx.notification_type,
+        level=ctx.level,
+        title=_("%(editor)s proposed %(changes)s") % {
+            "editor": author, "changes": changes_phrase,
+        },
+        body=where,
+        url_path=_COPY_DESK_REVIEW_URL,
+        # Per editor, so a second sitting replaces the first nudge on the lock
+        # screen rather than stacking beside it — there is one queue to review.
+        tag=f"site-copy:{m.get('author_id') or author}",
+        actions=(_open_action(_COPY_DESK_REVIEW_URL),),
+        subject=_("Copy desk: %(changes)s from %(editor)s") % {
+            "changes": changes_phrase, "editor": author,
+        },
+        eyebrow=_("Copy desk"),
+        email_lead=_(
+            "%(editor)s has been through the copy desk and left %(changes)s"
+            " waiting. Nothing has reached the site: proposals stay in the panel"
+            " until you accept them, and an accepted one still arrives as an"
+            " ordinary diff for you to read before it is committed."
+        ) % {"editor": author, "changes": changes_phrase},
+        details=tuple(details),
+        cta_label=_("Review the proposals"),
+    )
+
+
 def _compose_custom_admin_message(ctx: MessageContext) -> MessageContent:
     """Direct manager → singer message. The sender names the title; the push body
     carries only the subject (lock-screen safe), while the full message is kept to
@@ -1646,6 +1742,7 @@ _COMPOSERS: dict[str, _Composer] = {
     NotificationType.PARTICIPATION_RESPONSE: _compose_participation_response,
     NotificationType.ATTENDANCE_SUBMITTED: _compose_attendance_submitted,
     NotificationType.ANNOUNCEMENT_PENDING: _compose_announcement_pending,
+    NotificationType.SITE_COPY_PROPOSED: _compose_site_copy_proposed,
     NotificationType.CUSTOM_ADMIN_MESSAGE: _compose_custom_admin_message,
     NotificationType.MESSAGE_RECEIVED: _compose_message_received,
     NotificationType.CHANNEL_MESSAGE: _compose_channel_message,

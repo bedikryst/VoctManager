@@ -40,6 +40,13 @@ class PreferenceGroup:
     email: bool
     push: bool = True
     manager_only: bool = False
+    # Narrower than manager_only, and needed because one group's audience is
+    # narrower than "manager": the copy desk's reviewer is whoever applies an
+    # accepted proposal to the repository and commits it, which is a staff
+    # account by definition. Showing that control to a manager who will never
+    # receive the notification would be a switch over nothing — the same fault
+    # the module's whole shape exists to avoid.
+    staff_only: bool = False
 
 
 # The declaration order is the render order of the ledger. Team operations sit
@@ -65,6 +72,11 @@ class PreferenceGroup:
 #     has *not* happened, and the failure it guards against is a conductor who
 #     stopped opening the app — precisely the reader push and the in-app badge
 #     cannot reach.
+#   • site_copy — an editor has proposed changes to the public site's text.
+#     E-mail ON + push ON. Deliberately NOT folded into the daily digest below:
+#     it is already a digest — one message per editor per sitting — and batching
+#     a batch would only cost it up to a day for nothing. Staff-only, because
+#     the reader is whoever applies the proposals to the repository.
 #   • team — the manager's job console: routine reports of things that already
 #     happened. Push ON, e-mail OFF; at INFO level the daily digest carries them.
 PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
@@ -124,6 +136,13 @@ PREFERENCE_GROUPS: tuple[PreferenceGroup, ...] = (
         types=(NotificationType.ANNOUNCEMENT_PENDING,),
     ),
     PreferenceGroup(
+        id="site_copy",
+        email=True,
+        manager_only=True,
+        staff_only=True,
+        types=(NotificationType.SITE_COPY_PROPOSED,),
+    ),
+    PreferenceGroup(
         id="team",
         email=False,
         manager_only=True,
@@ -171,6 +190,13 @@ MANAGER_ONLY_TYPES: frozenset[str] = frozenset(
     ntype
     for group in PREFERENCE_GROUPS
     if group.manager_only
+    for ntype in group.types
+)
+
+STAFF_ONLY_TYPES: frozenset[str] = frozenset(
+    ntype
+    for group in PREFERENCE_GROUPS
+    if group.staff_only
     for ntype in group.types
 )
 
@@ -232,6 +258,15 @@ def assert_preference_policy_is_coherent() -> None:
     missing = {choice.value for choice in NotificationType} - covered
     if missing:
         raise ValueError(f"Notification types with no delivery group: {sorted(missing)}")
+
+    # Staff is the narrower audience, so a staff-only group that forgot to also
+    # be manager-only would be rendered to every reader by the first gate and
+    # then contradicted by the second.
+    inconsistent = [
+        group.id for group in PREFERENCE_GROUPS if group.staff_only and not group.manager_only
+    ]
+    if inconsistent:
+        raise ValueError(f"Staff-only groups must also be manager-only: {sorted(inconsistent)}")
 
 
 def is_digestible(notification_type: str, level: str) -> bool:

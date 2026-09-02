@@ -3008,7 +3008,8 @@
       "CHANNEL_MESSAGE": "Canal du projet",
       "NOTIFICATION_READ_RECEIPT": "Accusé de lecture",
       "fallback": "Notification",
-      "ANNOUNCEMENT_PENDING": "File d'annonces"
+      "ANNOUNCEMENT_PENDING": "File d'annonces",
+      "SITE_COPY_PROPOSED": "Rédaction des textes"
     },
     "status": {
       "attendance": {
@@ -3106,7 +3107,11 @@
       "announcement_pending_days_one": "depuis {{count}} jour",
       "announcement_pending_days_other": "depuis {{count}} jours",
       "announcement_pending_unaware_one": "{{count}} personne n'est pas au courant",
-      "announcement_pending_unaware_other": "{{count}} personnes ne sont pas au courant"
+      "announcement_pending_unaware_other": "{{count}} personnes ne sont pas au courant",
+      "site_copy_changes_one": "{{count}} modification",
+      "site_copy_changes_other": "{{count}} modifications",
+      "site_copy_pages_one": "{{count}} page",
+      "site_copy_pages_other": "{{count}} pages"
     },
     "push": {
       "toasts": {
@@ -4818,7 +4823,8 @@
         "REHEARSAL_SCHEDULED": "Nouvelle répétition programmée",
         "REHEARSAL_UPDATED": "Heure/Lieu de répétition modifié",
         "SYSTEM_ALERT": "Maintenance ou alerte système",
-        "ANNOUNCEMENT_PENDING": "Modifications non annoncées"
+        "ANNOUNCEMENT_PENDING": "Modifications non annoncées",
+        "SITE_COPY_PROPOSED": "Propositions de modification des textes du site"
       },
       "unsubscribe_modal": {
         "description": "Vous ne recevrez plus de notifications push sur cet appareil. Vous pourrez les réactiver à tout moment.",
@@ -4850,6 +4856,7 @@
         "messages": "Messages",
         "materials": "Partitions et rappels",
         "safety_net": "Annonces non envoyées",
+        "site_copy": "Rédaction des textes",
         "team": "Opérations d'équipe"
       },
       "type_desc": {
@@ -4870,6 +4877,7 @@
         "ABSENCE_REQUESTED": "Un choriste demande une absence",
         "SYSTEM_ALERT": "Maintenance et avis système importants",
         "ANNOUNCEMENT_PENDING": "La file d'un projet attend et les chanteurs l'ignorent encore",
+        "SITE_COPY_PROPOSED": "Un membre de la rédaction a proposé des modifications aux textes du site",
         "PROJECT_CANCELLED": "Un événement est annulé",
         "REHEARSAL_SCHEDULED": "Une nouvelle répétition rejoint le calendrier",
         "REHEARSAL_CANCELLED": "Une répétition est annulée",
@@ -4892,12 +4900,14 @@
         "messages": "Quelqu'un vous écrit — une réponse dans une conversation ou un message de la direction.",
         "materials": "Nouvelles partitions et nouveaux enregistrements, ainsi que les rappels peu avant une répétition ou un concert.",
         "safety_net": "La seule notification portant sur ce qui n'a pas encore été fait : des modifications attendent dans la file et les choristes l'ignorent toujours. C'est pourquoi elle part aussi par e-mail.",
+        "site_copy": "Quelqu'un est passé par la rédaction des textes du site et a laissé des propositions à relire. Un message par séance, et non par modification — c'est pourquoi il part aussi par e-mail.",
         "team": "Les réponses aux invitations, les mises à jour de présence et les demandes d'absence. Les mêmes événements que rassemble le résumé quotidien ci-dessous."
       },
       "groups_email_off": {
         "commitments": "Vous ne recevrez pas d'e-mail lorsqu'un horaire de répétition ou de concert change. L'application affiche toujours tout — mais seulement si vous l'ouvrez.",
         "messages": "Vous ne recevrez pas d'e-mail lorsque quelqu'un vous écrit. Le message vous attendra dans l'application.",
-        "safety_net": "Vous ne recevrez pas d'e-mail lorsqu'une file d'annonces reste non envoyée. Le rappel restera dans l'application — c'est-à-dire là où il ne vous atteindra que si vous l'ouvrez déjà."
+        "safety_net": "Vous ne recevrez pas d'e-mail lorsqu'une file d'annonces reste non envoyée. Le rappel restera dans l'application — c'est-à-dire là où il ne vous atteindra que si vous l'ouvrez déjà.",
+        "site_copy": "Vous ne recevrez pas d'e-mail lorsque quelqu'un laisse des propositions à la rédaction. La notification restera dans l'application — et les propositions attendront que vous y jetiez un œil."
       },
       "details_show": "Détails ({{n}})",
       "details_hide": "Masquer les détails",

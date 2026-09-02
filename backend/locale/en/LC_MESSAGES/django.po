@@ -3093,8 +3093,8 @@ msgstr ""
 
 msgid ""
 "How long the session runs. Stored as a length rather than a closing instant "
-"so it survives a move of the start and a DST boundary; null means nobody has "
-"timed it and no surface may state an end."
+"so it survives a move of the start and a DST boundary; null means nobody has"
+" timed it and no surface may state an end."
 msgstr ""
 
 msgid "Ends"
@@ -3219,3 +3219,55 @@ msgstr ""
 #: logistics/models.py:22
 msgid "Car park"
 msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Copy desk"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Editor"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Proposed"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Languages"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Review the proposals"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "an editor"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "%(editor)s proposed %(changes)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "Copy desk: %(changes)s from %(editor)s"
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid ""
+"%(editor)s has been through the copy desk and left %(changes)s waiting. "
+"Nothing has reached the site: proposals stay in the panel until you accept "
+"them, and an accepted one still arrives as an ordinary diff for you to read "
+"before it is committed."
+msgstr ""
+
+#: notifications/message_content.py:0
+msgid "%(count)d page"
+msgid_plural "%(count)d pages"
+msgstr[0] "%(count)d page"
+msgstr[1] "%(count)d pages"
+
+#: notifications/message_content.py:0
+msgid "Page"
+msgid_plural "Pages"
+msgstr[0] "Page"
+msgstr[1] "Pages"

@@ -53,6 +53,13 @@ class NotificationType(models.TextChoices):
     # --- SYSTEM ---
     SYSTEM_ALERT = 'SYSTEM_ALERT', _('System Maintenance or Alert')
 
+    # --- PUBLIC SITE / COPY DESK ---
+    # One editor's sitting at the copy desk, gathered into a single message once
+    # they have stopped. Raised by the clock rather than by an edit, for the same
+    # reason ANNOUNCEMENT_PENDING is: the desk has no "submit" button, so the
+    # boundary of a sitting is a pause, and only a sweep can see a pause.
+    SITE_COPY_PROPOSED = 'SITE_COPY_PROPOSED', _('Site Copy Proposed')
+
     # --- MANAGER ALERTS ---
     PARTICIPATION_RESPONSE = 'PARTICIPATION_RESPONSE', _('Artist Project Response')
     ATTENDANCE_SUBMITTED = 'ATTENDANCE_SUBMITTED', _('Artist Attendance Info')

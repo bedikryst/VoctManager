@@ -290,8 +290,15 @@ class NotificationPreferenceAPIView(views.APIView):
         # control, so the hidden types are exactly the ungrouped ones and the
         # boot-time coherence assert refuses any overlap. Filtering here again
         # would only cast doubt on an invariant that is already enforced.
+        is_staff = bool(getattr(request.user, 'is_staff', False))
+
         for group in PREFERENCE_GROUPS:
             if group.manager_only and not is_manager:
+                continue
+            # A narrower audience than manager: the copy desk's reviewer is
+            # whoever commits an accepted proposal, so every other manager would
+            # be shown a switch over a notification they cannot receive.
+            if group.staff_only and not is_staff:
                 continue
 
             groups.append({

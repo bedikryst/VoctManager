@@ -56,13 +56,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # their own actions)
             'welcome_seen_at', 'push_email_offer_seen_at',
 
+            # Copy desk. The capability is granted from the admin and never by
+            # the account itself; the visit stamp has its own POST action. Both
+            # are here so the panel can decide whether to offer the way in at all.
+            'can_edit_site_copy', 'copy_desk_seen_at',
+
             # Integrations
             'calendar_token'
         )
         # Critical Security: Users cannot escalate their own role or spoof tokens.
-        # The two stamps are server-authoritative — clients read them but cannot set them.
+        # Everything listed here is server-authoritative — clients read these but
+        # cannot set them, and none of them appear in UserPreferencesUpdateDTO
+        # (which forbids extras, so echoing one back in a PATCH is a 400).
         read_only_fields = (
             'role', 'calendar_token', 'welcome_seen_at', 'push_email_offer_seen_at',
+            'can_edit_site_copy', 'copy_desk_seen_at',
         )
 
     def _absolute_media_url(self, field) -> str | None:

@@ -272,7 +272,28 @@ class UserProfile(EnterpriseBaseModel):
         default=AppRole.ARTIST,
         help_text=_("Business role defining application access level.")
     )
-    
+
+    # A CAPABILITY, deliberately not a fourth AppRole. The codebase splits the
+    # world binarily into manager and not-manager — ~180 `is_manager` call sites,
+    # and the decisive ones are negative (`ManagerRoute`, `ConductorDeck`,
+    # `useCommandItems`) — so an EDITOR role would land in the not-manager branch
+    # everywhere and be served an artist's schedule, materials and personal file.
+    # Editing the site's copy is orthogonal to what a role means here: the
+    # conductor holds it, and so could a translator who sings in the ensemble.
+    can_edit_site_copy = models.BooleanField(
+        default=False,
+        help_text=_("Grants access to the copy desk (/redakcja) to propose changes "
+                    "to the public site's text. Set from the admin; independent of role.")
+    )
+    copy_desk_seen_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text=_("When the editor last opened the copy desk. Drives the "
+                    "'new since your last visit' flag, which is what keeps a "
+                    "later stage's new segments from reading as a fresh wall of "
+                    "text. Server-side for the same reason as welcome_seen_at: "
+                    "the visit is a fact about the person, not about a browser.")
+    )
+
     @property
     def is_manager(self) -> bool:
         return self.role == AppRole.MANAGER
