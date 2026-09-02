@@ -2086,6 +2086,7 @@
           "mark_attendance": "Mark attendance",
           "new_artist": "New artist",
           "new_project": "New project",
+          "open_copy_desk": "Site copy desk",
           "report_absence": "Report absence"
         },
         "current": "Here",
@@ -5121,6 +5122,52 @@
         "notifications": "Their notifications inbox — the count belongs to the account reading it.",
         "controls": "No button here writes anything or opens a document: attendance, documents, scores and offline download stay on screen and do nothing. Only views open — the tabs, and a song in the songbook."
       }
+    }
+  },
+  "copy_desk": {
+    "eyebrow": "Copy desk",
+    "back_to_panel": "Panel",
+    "loading": "Opening the copy desk...",
+    "refused": {
+      "title": "This desk is not yours",
+      "description": "Editing the site's text is a capability of its own — an administrator grants it, and it does not follow from your role in the ensemble."
+    },
+    "unreachable": {
+      "title": "The desk did not open",
+      "description": "The contents list could not be fetched. Try again in a moment.",
+      "retry": "Try again"
+    },
+    "families": {
+      "concert": "Concerts"
+    },
+    "contents": {
+      "title": "Site",
+      "title_highlight": "copy",
+      "segments_one": "segment",
+      "segments_other": "segments",
+      "pages_one": "page",
+      "pages_other": "pages",
+      "touched_one": "touched",
+      "touched_other": "touched",
+      "accepted_one": "accepted",
+      "accepted_other": "accepted",
+      "new_badge_one": "{{count}} new",
+      "new_badge_other": "{{count}} new",
+      "stale_badge_one": "{{count}} stale",
+      "stale_badge_other": "{{count}} stale",
+      "segment_note": "A segment is one field of one page, in one language.",
+      "empty_title": "The contents list is empty",
+      "empty_description": "The site's text has not reached the desk yet. The corpus arrives in a step of its own, straight from the repository (copy:sync)."
+    },
+    "review": {
+      "link": "Review queue",
+      "back": "Contents",
+      "title": "Review",
+      "title_highlight": "queue",
+      "empty_title": "Nothing is waiting yet",
+      "empty_description": "Editors' proposals will appear here once the desk opens for writing. An accepted change still reaches the site only through a commit.",
+      "refused_title": "Reviewing belongs to the publisher",
+      "refused_description": "Accepting a change ends in a commit to the repository, so it is settled by whoever publishes the site. Your proposals wait for them in the contents list."
     }
   }
 }

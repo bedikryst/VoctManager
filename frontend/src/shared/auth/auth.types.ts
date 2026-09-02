@@ -30,6 +30,14 @@ export interface AuthProfile {
   calendar_token?: string;
   /** Set once, server-side, when the member completes the one-time home welcome. */
   welcome_seen_at?: string | null;
+  /**
+   * The copy-desk capability (`/redakcja`). A capability and NOT a fourth role:
+   * the panel splits the world binarily into manager and not-manager, and an
+   * editor of the public site's text is orthogonal to that split. Granted from
+   * the Django admin, never by the account itself, which is why it is read-only
+   * here as well as on the server.
+   */
+  can_edit_site_copy?: boolean;
 }
 
 export interface AuthUser {

@@ -178,6 +178,22 @@ const DocumentViewerPage = lazyWithPreload(
   () => import("@pages/panel/DocumentViewerPage"),
 );
 
+// The copy desk — the site's editorial surface. A LAYOUT TAKEOVER: its own
+// shell, its own route tree, and none of the panel's chrome around it. Kept out
+// of PANEL_ROUTE_PRELOADERS deliberately — the chunk belongs to the handful of
+// accounts holding `can_edit_site_copy`, not to every session that signs in.
+const CopyDeskShell = lazyWithPreload(() =>
+  import("@/widgets/copy-desk-shell/CopyDeskShell").then((m) => ({
+    default: m.CopyDeskShell,
+  })),
+);
+const CopyDeskContentsPage = lazyWithPreload(
+  () => import("@pages/copydesk/CopyDeskContentsPage"),
+);
+const CopyDeskReviewPage = lazyWithPreload(
+  () => import("@pages/copydesk/CopyDeskReviewPage"),
+);
+
 const PANEL_ROUTE_PRELOADERS: readonly DashboardRoutePreloader[] = [
   { preload: DashboardHome.preload },
   { preload: SettingsPage.preload },
@@ -381,6 +397,24 @@ export const router = createBrowserRouter(
           path="/documents/:docType/:docId"
           element={<DocumentViewerPage />}
         />
+
+        {/* `/redakcja/przeglad` is an address stage B already promised in three
+            places — the push, the digest e-mail's CTA and the bell's deep link
+            — so the tree owns it as well as its own front page. The desk's
+            shell gates the whole tree on one request and renders its own
+            Suspense inside the rail; nothing here belongs to <DashboardLayout>. */}
+        <Route
+          path="/redakcja"
+          element={
+            <Suspense fallback={<EtherealLoader />}>
+              <CopyDeskShell />
+            </Suspense>
+          }
+        >
+          <Route index element={<CopyDeskContentsPage />} />
+          <Route path="przeglad" element={<CopyDeskReviewPage />} />
+          <Route path="*" element={<Navigate to="/redakcja" replace />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/panel" replace />} />

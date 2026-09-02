@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 import type { AuthUser } from "@/shared/auth/auth.types";
-import { isArtist } from "@/shared/auth/rbac";
+import { canEditSiteCopy, isArtist } from "@/shared/auth/rbac";
 import type { Artist, Piece, Project } from "@/shared/types";
 import { ProjectService } from "@/features/projects/api/project.service";
 import { projectKeys } from "@/features/projects/api/project.queries";
@@ -48,7 +48,7 @@ import type { ThemePreference } from "@/shared/theme/themeController";
 
 import { useNavigationAura } from "../hooks/useNavigationAura";
 import { foldSearchText } from "../lib/navSearch";
-import { COMMAND_ACTIONS } from "./commandActions";
+import { COMMAND_ACTIONS, type CommandActionScope } from "./commandActions";
 import { useProjectQuickAccess } from "./quickAccessStore";
 
 export type CommandKind = "action" | "nav" | "project" | "artist" | "piece";
@@ -117,6 +117,7 @@ export const useCommandItems = (
   const { t, i18n } = useTranslation();
   const aura = useNavigationAura(user);
   const isManager = aura.isManagerUser;
+  const isCopyEditor = canEditSiteCopy(user);
   const location = useLocation();
   const { favorites, recents } = useProjectQuickAccess();
   const { preference, setPreference } = useTheme();
@@ -183,12 +184,24 @@ export const useCommandItems = (
     };
 
     // ---- Quick actions ----
+    // `artist` has always meant "not a manager" rather than `isArtist`, so a
+    // crew member keeps the rows written for the non-manager side; only the
+    // copy-desk row asks a question that is not about the role at all.
+    const canSeeAction = (scope: CommandActionScope): boolean => {
+      switch (scope) {
+        case "all":
+          return true;
+        case "manager":
+          return isManager;
+        case "copy_editor":
+          return isCopyEditor;
+        case "artist":
+          return !isManager;
+      }
+    };
+
     const actionItems: CommandItem[] = COMMAND_ACTIONS.filter((action) =>
-      action.scope === "all"
-        ? true
-        : action.scope === "manager"
-          ? isManager
-          : !isManager,
+      canSeeAction(action.scope),
     ).map((action) => {
       const label = t(action.labelKey, action.defaultLabel);
       return {
@@ -328,6 +341,7 @@ export const useCommandItems = (
     aura.navGroups,
     artists,
     i18n.language,
+    isCopyEditor,
     isManager,
     location.pathname,
     myMaterials,

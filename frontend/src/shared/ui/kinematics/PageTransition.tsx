@@ -18,14 +18,25 @@
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 
+import { cn } from "@/shared/lib/utils";
 import { INK } from "./motion-presets";
 
 interface PageTransitionProps {
   children: React.ReactNode;
+  /**
+   * Layout escape hatch, merged through `cn()`. The `min-h-screen` below is
+   * this component owning something that belongs to the caller: it is right
+   * under the panel shell, where the page starts at the top of the viewport,
+   * and wrong under any shell that puts a band above it — there the short
+   * states scroll by exactly the height of that band. A caller in that position
+   * passes `min-h-0`; everyone else passes nothing and renders as before.
+   */
+  className?: string;
 }
 
 export const PageTransition = ({
   children,
+  className,
 }: PageTransitionProps): React.JSX.Element => {
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -36,7 +47,7 @@ export const PageTransition = ({
       initial={{ opacity: INK.half }}
       animate={{ opacity: 1 }}
       transition={{ duration: INK.in, ease: INK.ease }}
-      className="w-full min-h-screen"
+      className={cn("w-full min-h-screen", className)}
     >
       {children}
     </motion.div>

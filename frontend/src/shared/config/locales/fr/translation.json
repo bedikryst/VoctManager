@@ -2086,6 +2086,7 @@
           "mark_attendance": "Marquer la présence",
           "new_artist": "Nouvel artiste",
           "new_project": "Nouveau projet",
+          "open_copy_desk": "Rédaction des textes du site",
           "report_absence": "Signaler une absence"
         },
         "current": "Ici",
@@ -5122,6 +5123,52 @@
         "notifications": "Sa boîte de notifications — le compteur appartient au compte qui la lit.",
         "controls": "Aucun bouton n'enregistre ni n'ouvre de document ici : présence, documents, partitions et téléchargement hors ligne restent affichés et ne font rien. Seules les vues s'ouvrent — les onglets et une pièce du recueil."
       }
+    }
+  },
+  "copy_desk": {
+    "eyebrow": "Rédaction",
+    "back_to_panel": "Panneau",
+    "loading": "Ouverture de la rédaction...",
+    "refused": {
+      "title": "Ce bureau n'est pas le vôtre",
+      "description": "Modifier les textes du site est une habilitation à part — elle est accordée par un administrateur et ne découle pas de votre rôle dans l'ensemble."
+    },
+    "unreachable": {
+      "title": "La rédaction ne s'est pas ouverte",
+      "description": "Le sommaire n'a pas pu être chargé. Réessayez dans un instant.",
+      "retry": "Réessayer"
+    },
+    "families": {
+      "concert": "Concerts"
+    },
+    "contents": {
+      "title": "Textes",
+      "title_highlight": "du site",
+      "segments_one": "segment",
+      "segments_other": "segments",
+      "pages_one": "page",
+      "pages_other": "pages",
+      "touched_one": "retouché",
+      "touched_other": "retouchés",
+      "accepted_one": "accepté",
+      "accepted_other": "acceptés",
+      "new_badge_one": "{{count}} nouveau",
+      "new_badge_other": "{{count}} nouveaux",
+      "stale_badge_one": "{{count}} obsolète",
+      "stale_badge_other": "{{count}} obsolètes",
+      "segment_note": "Un segment, c'est un champ d'une page dans une seule langue.",
+      "empty_title": "Le sommaire est vide",
+      "empty_description": "Les textes du site ne sont pas encore arrivés à la rédaction. Le corpus y entre par une étape à part, directement depuis le dépôt (copy:sync)."
+    },
+    "review": {
+      "link": "Relecture",
+      "back": "Sommaire",
+      "title": "Propositions",
+      "title_highlight": "à relire",
+      "empty_title": "Rien n'attend encore ici",
+      "empty_description": "Les propositions des rédacteurs apparaîtront ici dès que la rédaction s'ouvrira à l'écriture. Une modification acceptée n'atteint le site que par un commit.",
+      "refused_title": "La relecture revient à l'éditeur",
+      "refused_description": "Accepter une modification se termine par un commit dans le dépôt : c'est donc la personne qui publie le site qui tranche. Vos propositions l'attendent dans le sommaire."
     }
   }
 }

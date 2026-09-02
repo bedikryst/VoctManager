@@ -11,12 +11,23 @@
 import {
   CalendarCheck,
   CalendarOff,
+  PenLine,
   Plus,
   UserPlus,
   type LucideIcon,
 } from "lucide-react";
 
-export type CommandActionScope = "manager" | "artist" | "all";
+/**
+ * Who an action is offered to. Three of these are roles; `copy_editor` is a
+ * CAPABILITY (`can_edit_site_copy`), which is the whole reason the copy desk
+ * did not become a fourth `AppRole` — an editor is orthogonal to the
+ * manager/not-manager split every other gate in the panel is built on.
+ */
+export type CommandActionScope =
+  | "manager"
+  | "artist"
+  | "copy_editor"
+  | "all";
 
 export interface CommandActionDef {
   readonly id: string;
@@ -59,5 +70,17 @@ export const COMMAND_ACTIONS: readonly CommandActionDef[] = [
     icon: CalendarOff,
     to: "/panel/schedule",
     scope: "artist",
+  },
+  // The panel's only doorway into the desk, and the reason it is here rather
+  // than in the nav: `/redakcja` takes the shell over, so a rail item pointing
+  // out of the panel would be a tab that closes the panel. The address editors
+  // are given is a link; this is for the editor who is already inside.
+  {
+    id: "open_copy_desk",
+    labelKey: "dashboard.layout.command.actions.open_copy_desk",
+    defaultLabel: "Redakcja tekstów serwisu",
+    icon: PenLine,
+    to: "/redakcja",
+    scope: "copy_editor",
   },
 ] as const;
