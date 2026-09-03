@@ -111,6 +111,7 @@ export const LOCALE_META: Record<Locale, LocaleMeta> = {
  */
 export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
   "/o-nas",
+  "/kontakt",
   "/koncerty/wcielenie",
   "/koncerty/wolanie-gor",
   "/koncerty/9-kart",

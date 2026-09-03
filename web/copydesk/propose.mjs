@@ -33,6 +33,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { apiBase, authenticate, credentials, getJson, postJson } from "./client.mjs";
 import { extractAll } from "./extract.mjs";
+import { extractAllPages } from "./extractPages.mjs";
 import { readConcerts } from "./index.mjs";
 import { OVERLAY_LOCALES, parseOverlay, readOverlay } from "./overlay.mjs";
 
@@ -80,14 +81,28 @@ async function readDrafts(locale) {
  * The corpus as the desk should currently see it: the Polish of every translatable key, and the
  * value the repository already holds for this locale.
  *
+ * BOTH corpora, because a draft file is a page's worth of work and a page is either an evening or a
+ * static page — the key's namespace is the only difference, and `plan` refuses a key the corpus
+ * does not have. Reading the evenings alone would refuse every `page.` row with "the corpus has no
+ * such key", which is a true sentence about the wrong corpus (§6t records the same shape of error
+ * in the apply script).
+ *
  * @param {string} locale
  */
 async function readCorpus(locale) {
   /** @type {Record<string, Map<string, string>>} */
-  const overlays = {};
-  for (const other of OVERLAY_LOCALES) overlays[other] = await readOverlay(other);
+  const concertOverlays = {};
+  /** @type {Record<string, Map<string, string>>} */
+  const pageOverlays = {};
+  for (const other of OVERLAY_LOCALES) {
+    concertOverlays[other] = await readOverlay(other);
+    pageOverlays[other] = await readOverlay(other, { corpus: "pages" });
+  }
   const concerts = await readConcerts();
-  const { segments } = extractAll(concerts, overlays);
+  const segments = [
+    ...extractAll(concerts, concertOverlays).segments,
+    ...(await extractAllPages(pageOverlays)).segments,
+  ];
 
   /** @type {Map<string, string>} */
   const polish = new Map();

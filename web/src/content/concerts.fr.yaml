@@ -4,9 +4,15 @@
 # (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
 # renders sits at the matching path in concerts.yaml, which holds no translations at all.
 #
+# FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this
+# locale — which is what lets a page go up while its prose is still being reviewed.
+#
 # Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
 # the desk still shows the old value, marks nothing stale, and the next apply run writes over
 # what you typed. The reviewable route is a proposal.
+#
+# Do not hand-type French punctuation spacing. `lib/typo.ts` inserts the narrow no-break
+# space before `? ! : ;` at build time, and a hand-typed hard space doubles up.
 #
 # Sorted by key and written whole, so a diff of this file is a diff of the translation.
 
@@ -627,7 +633,7 @@ concert.wcielenie.program.8.textGloss: |-
 concert.wcielenie.program.9.inscriptioGloss: "Chantez au Seigneur un chant nouveau"
 concert.wcielenie.program.9.note: "Un motet à six voix, publié en 1620 dans un recueil de Giulio Cesare Bianchi. Une mesure ternaire joyeuse l'ouvre : quatre voix d'abord, puis aussitôt les six. Il parcourt des versets entrelacés des psaumes 96 et 98 — un appel au chant nouveau dont la joie s'entend dans la texture même."
 concert.wcielenie.programArc: "L'ordre fait ici partie de la composition. La soirée suit le cours de l'histoire du salut : du rameau de la prophétie d'Isaïe à la naissance même, en passant par la veille nocturne des bergers et la trompette de l'Avent de Gallus. Vient ensuite une contemplation mariale, puis une ombre soudaine : la berceuse d'une mère sur un enfant condamné par Hérode. Le cantique de Siméon la referme au Temple : « mes yeux ont vu ton salut ». C'est l'accomplissement de la promesse par laquelle le programme a commencé ; à partir de là il ne reste que la louange et la joie du bis."
-concert.wcielenie.programLede: "Dix regards et un bis"
+concert.wcielenie.programLede: "Dix regards"
 concert.wcielenie.prologue: "Le vingt janvier, le soir, basilique du Sacré-Cœur-de-Jésus à Cracovie. Vingt jours après la naissance de l'ensemble. Avant que retentisse le premier son, le P. Jarek Naliwajko SJ introduit l'assistance au mystère de l'Incarnation."
 concert.wcielenie.realizacja: "Réalisation : Ars Sonora Studio"
 concert.wcielenie.reflection: "L'Incarnation est quelque chose d'indicible, qui avec le temps nous devient souvent banal. Lorsque nous prenons conscience de ce que signifie ce mystère, nous pouvons retrouver le sens de la présence de Dieu dans nos vies."

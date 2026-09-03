@@ -101,6 +101,10 @@ export default function CopyDeskScopePage(): React.JSX.Element {
 
   const segments = useMemo(() => data?.segments ?? [], [data]);
   const fields = useMemo(() => buildFields(segments), [segments]);
+  const hasMarkup = useMemo(
+    () => fields.some((field) => field.kind === "HTML"),
+    [fields],
+  );
   const locales = LOCALE_VIEWS[view];
 
   const summary = contents.scopes.find((entry) => entry.scope === scope);
@@ -268,6 +272,20 @@ export default function CopyDeskScopePage(): React.JSX.Element {
             "Oznaczenia przy polu: „Przyjęte” i „Odrzucone” to werdykt wydawcy, „Polski się zmienił” znaczy, że tłumaczenie napisano do starszej wersji polskiego, a „Nowe” — że pole pojawiło się od Twojej ostatniej wizyty.",
           )}
         </Caption>
+
+        {/* Said once for the page rather than on each of its markup rows: a
+            field carrying tags is self-identifying — the editor can see them —
+            and what they cannot see is that this is deliberate, that they are
+            editing the field's own source, and that a tag they delete takes
+            the emphasis or the link off the site with it. */}
+        {hasMarkup && (
+          <Caption color="graphite">
+            {t(
+              "copy_desk.editor.markup_note",
+              "W niektórych polach widać znaczniki strony: „<em>” wyróżnia słowo, „<a …>” robi odnośnik. Poprawiaj tekst między nimi i zostaw je na miejscu — skasowany znacznik zabiera ze strony wyróżnienie albo odnośnik.",
+            )}
+          </Caption>
+        )}
 
         {locales.includes("fr") && (
           <Caption color="graphite" lang="fr">

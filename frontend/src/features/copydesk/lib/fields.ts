@@ -27,6 +27,13 @@ export interface CopyDeskField {
   readonly key: string;
   readonly label: string;
   readonly order: number;
+  /**
+   * `HTML` where the value carries the page's own inline markup and is therefore
+   * edited as its own source. It is a property of the KEY, not of a language:
+   * the extractor derives it from the field's name, so every locale of one field
+   * agrees on it.
+   */
+  readonly kind: CopyDeskSegment["kind"];
   /** Absent where the extractor holds no row for that language yet. */
   readonly cells: Partial<Record<SiteLocale, CopyDeskCell>>;
 }
@@ -55,6 +62,7 @@ export const buildFields = (
       key: segment.key,
       label: segment.label,
       order: segment.order,
+      kind: segment.kind,
       cells: { [segment.locale]: readCell(segment) },
     });
   }

@@ -1,0 +1,58 @@
+# page.kontakt — EN draft (stage G4). Same flat shape as the overlay it will become.
+# The first PAGE draft rather than an evening's, so two things differ from the concert files beside
+# it: the keys carry the `page.` namespace, and four fields are `HTML` segments — their markup is
+# written here exactly as the reader receives it. Internal hrefs stay Polish (`/press`,
+# `/polityka-prywatnosci`); `lib/pageCopy` localizes them at render, so a translator never types a
+# locale prefix.
+# The hero's four venues take the renderings the site has already shipped — "Łódź Cathedral" from
+# the 9-kart gallery, "the Tempel Synagogue" and "Tyniec Abbey" from /o-nas — rather than fresh
+# ones: a reader who follows the link must not meet the same building under a second name.
+# Not the overlay: `npm run copy:propose --locale en` carries these in as proposals, which is the
+# only door that stamps the provenance hash the stale state is computed from.
+
+page.kontakt.meta.title: "Contact — VoctEnsemble | VoctFoundation"
+page.kontakt.meta.description: "Write to VoctEnsemble and the VoctFoundation: concerts and music for liturgies, patronage, general enquiries. We answer personally — in Polish, English and French."
+
+page.kontakt.hero.eyebrow: "Contact"
+page.kontakt.hero.title1: "Write"
+page.kontakt.hero.title2Html: "to <em>us.</em>"
+page.kontakt.hero.lede: "Łódź Cathedral, a manor house in Szczawnica, the Tempel Synagogue, weddings at Tyniec Abbey — every one of those evenings began with somebody's invitation. The next could be yours."
+page.kontakt.hero.scrollCue: "Choose a door"
+
+page.kontakt.channels.eyebrow: "Three doors"
+page.kontakt.channels.h2: "Tell us what brings you."
+page.kontakt.channels.introHtml: "We have laid the post out across three addresses, so that a message goes straight to the matter it concerns. Behind all three are <em>the same three people</em> — the foundation's board."
+
+page.kontakt.channels.items.booking.role: "Concerts and liturgies"
+page.kontakt.channels.items.booking.subject: "VoctEnsemble invitation"
+page.kontakt.channels.items.booking.hint: "Tell us where and when: the name of the place, a rough date, the occasion. We will write back with a programme shaped for that acoustic."
+
+page.kontakt.channels.items.patronat.role: "Patronage and sponsorship"
+page.kontakt.channels.items.patronat.subject: "VoctEnsemble patronage and sponsorship"
+page.kontakt.channels.items.patronat.hint: "A donation, honorary patronage or an institutional partnership. Tell us what interests you — we will say where the support goes and what will come of it."
+
+page.kontakt.channels.items.ogolne.role: "General enquiries"
+page.kontakt.channels.items.ogolne.subject: "VoctEnsemble general enquiries"
+page.kontakt.channels.items.ogolne.hint: "Everything else: questions, artistic collaboration, the foundation's affairs. If you do not know which address to choose, choose this one."
+
+page.kontakt.after.languages: "Write in Polish, English or French — we answer in the language you begin in. As quickly as the rehearsal and concert calendar allows; usually within a few days."
+page.kontakt.after.pressHtml: "Journalists and promoters will find biographies, high-resolution photographs and full programmes in the <a href=\"/press\">press materials →</a>"
+
+page.kontakt.voices.label: "Read and answered by"
+page.kontakt.voices.note: "The board of the VoctFoundation. We answer together — and we mean it to stay that way even once we have grown."
+
+page.kontakt.locus.eyebrow: "The foundation"
+page.kontakt.locus.h2: "Behind the voice stands a foundation."
+page.kontakt.locus.foundationLabel: "Foundation"
+page.kontakt.locus.mission: "The VoctFoundation works in the field of culture, the arts and the protection of heritage; VoctEnsemble is its resident ensemble. Our income is devoted entirely to our statutory purposes."
+page.kontakt.locus.foundationLink: "Meet the foundation and its board →"
+page.kontakt.locus.addressLabel: "Correspondence address"
+page.kontakt.locus.addressNote: "We keep no office there — we meet where we sing."
+
+page.kontakt.legal.controllerLabel: "Data controller"
+page.kontakt.legal.rodoHtml: "When you write to us, you entrust us with your data (your name, e-mail address and the content of your message). We process it solely in order to answer your message (Art. 6(1)(f) GDPR). You have the right to access, rectify and erase it — <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>. More in the <a href=\"/polityka-prywatnosci\">privacy policy</a>."
+
+page.kontakt.coda.h2: "Until we hear one another."
+page.kontakt.coda.lede: "And best of all — live, in an acoustic that remembers."
+page.kontakt.coda.concertsLink: "See the concerts →"
+page.kontakt.coda.supportLink: "Support the foundation →"

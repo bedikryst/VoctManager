@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **shape settled and `kontakt` extracted, §6r; the contract walk, the extractor and the write path still to build** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **`kontakt` is through the whole loop and live in three locales (§6r, §6s, §6t, §6u); `koncerty`, `obrazy`, `kolofon`, the chrome and the landing are still Polish-only** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1637,6 +1637,85 @@ still the one page holding prose in TypeScript (§6r's named debt). And the desk
 one sentence saying what the editor is looking at, in the same place §7 says French punctuation
 spacing has to be said.
 
+### §6u Stage G4 — `/kontakt` goes through the whole loop, and two pages it found on the way (2026-09-04)
+
+G3 opened the door and left three things owed. This stage walked the first page all the way through
+the loop the desk was built for — extract, sync, propose, accept, apply, flip the route — which is
+the first time any of it has run end to end on real translations rather than on a rehearsal.
+
+**One tool change, and it was the door the page corpus was still shut behind.** `copy:propose` read
+the evenings alone (`readCorpus` → `extractAll`), so every `page.` key would have been refused with
+"the corpus has no such key" — a true sentence about the wrong corpus, which is exactly the shape of
+error §6t caught in `apply.mjs` and fixed there. It reads both corpora now. Nothing else in the
+command is corpus-specific: a draft file is a page's worth of work, and whether that page is an
+evening or `/kontakt` is a fact about the key's namespace and nothing more.
+
+**What shipped.** `copydesk/drafts/{en,fr}/kontakt.yaml` — 36 fields each, both §2 passes — carried
+in as proposals (`copy:sync`: 108 rows created, the page corpus entering the mirror at last;
+`copy:propose --write`: 36 + 37), accepted, and written by `copy:apply --write` into
+`pages.en.yaml`, `pages.fr.yaml` and `concerts.fr.yaml`. Then `/kontakt` entered
+`TRANSLATED_ROUTES`, which is what makes the two foreign pages canonicalize to themselves and every
+localized link across the site point at them. Verified in `dist/`: three titles, three h1s, a
+complete hreflang graph on all three, and `/en/kontakt` reachable from `/en/o-nas` and from every
+English concert page.
+
+**Four decisions worth carrying.**
+
+- **The four `HTML` fields came back through the sanitizer unchanged**, which is §6t's superset rule
+  holding in production rather than in a unit test: `to <em>us.</em>`, both `<a href>` links and the
+  `mailto:` one survived the round trip a proposal makes through `sanitize_for_kind` on the way in
+  and out. This is the first time the whitelist has met markup an editor could actually lose.
+- **A page's translation follows the corpus's own renderings, not fresh ones.** The hero names four
+  venues and three of them are already on the site in English and French — `Łódź Cathedral` /
+  `la cathédrale de Łódź` from the 9-kart gallery, `the Tempel Synagogue` / `la synagogue Tempel`
+  and Tyniec's abbey from `/o-nas`. A reader who follows the link must not meet the same building
+  under a second name, and the draft that says "archcathedral" because the Polish says
+  "archikatedra" is the failure mode: it is a good translation of the sentence and a bad one of the
+  site. §2's second pass is what finds this — the first pass has only the one Polish line in front
+  of it.
+- **French takes the split the French wants.** `hero.title1`/`title2Html` are two composed lines and
+  the Polish breaks them "Napisz / do nas." French cannot break `Écrivez-nous` at all, so the line
+  is `Écrivez-nous / un mot.` — the addressee stays whole and the emphasis moves to the last word,
+  which is what the contract's own note about the break licenses. Same class of decision in the
+  RODO note: `(art. 6, § 1, f) RGPD)` closes a parenthesis in the middle of its own citation, so
+  the citation leaves the parenthesis (`au titre de l'art. 6, § 1, f) RGPD`) rather than being
+  transliterated into a shape French does not use.
+- **The `HTML` sentence G3 owed is per PAGE, not per row.** A field carrying tags is
+  self-identifying — the editor can see them in the textarea. What they cannot see is that this is
+  deliberate, that they are editing the field's own source, and that a tag they delete takes the
+  emphasis or the link off the site with it. So it sits beside the French spacing note, shown when
+  the page actually holds an `HTML` field, which also keeps it from becoming forty identical
+  captions when `/kolofon` arrives. `kind` reaches `CopyDeskField` for this; it is a property of the
+  KEY, so every locale of one field agrees on it.
+
+**Two defects found by running the loop, not by writing new code.** Neither is in the copy desk.
+
+- **`concert.wcielenie.programLede` had two translations and one of them was a lie.** `ede9a30`
+  edited the Polish from "Dziesięć spojrzeń i bis" to "Dziesięć spojrzeń" and hand-edited
+  `concerts.en.yaml` in the same commit, leaving `concerts.fr.yaml` saying `Dix regards et un bis` —
+  a French page advertising an encore its own lede no longer names. **A hand edit of an overlay is
+  the one move that makes the stale machinery blind**, and the overlay header says so in as many
+  words: the desk never learned the Polish had moved, so it never marked the French stale, and the
+  drift surfaced only because `copy:propose`'s dry run compares every drafted value against the
+  repository. The correction went through the desk like any other value. Note what did NOT need
+  correcting: `programArc` still says "the joy of the encore" in all three, because the encore is
+  still in the programme — the edit shortened the LEDE, and the arc was right to keep it.
+- **Ten foreign concert pages have carried a Polish footer since stage F.**
+  `ConcertPage.astro` rendered `<SiteFooter />` with no `lang`, while `AboutPage` and `ContactPage`
+  pass it. The default is Polish and it is there on purpose — "every un-migrated caller renders
+  byte-identical to before" — which is what made this invisible for a whole stage: the page built,
+  the audit passed, and the only symptom was a site map reading "O nas · Koncerty · Obrazy ·
+  Kontakt" under an English concert. The remaining `<SiteFooter />` callers (404, kolofon, koncerty,
+  obrazy, press) are correct: those pages are Polish-only and are stage G's.
+
+**What is still owed.** `o-nas.ts` is still the one page holding prose in TypeScript (§6r's named
+debt), and it is now also the one page whose translations no editor can reach. The next pages are
+`/koncerty`, `/obrazy`, `/kolofon` and the chrome, each of them a content module plus a contract
+plus two route files before its entry in `TRANSLATED_ROUTES`; the landing stays last. And the
+donation vault's terms (`Regulamin darowizn`, and the privacy link beside it) print Polish in every
+locale on every page that carries the island — legal copy, so a decision rather than an oversight,
+but it is the one Polish text left on a finished English page.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1646,6 +1725,19 @@ spacing has to be said.
   fix: the computed style says `sticky`, the element is in the flow, and nothing anywhere reports an
   error. Measure `getBoundingClientRect().top` after a scroll; anything but ~0 means it is not
   sticking, whatever the computed style claims.
+- **A hand edit of an overlay is the one move that makes the stale machinery blind.** The desk
+  computes staleness from the mirror, and only `copy:sync` moves the mirror; so editing
+  `concerts.yaml` and one overlay in the same commit — which looks like the careful thing to do —
+  leaves the desk holding the old Polish, marking nothing stale, and the OTHER locale silently
+  wrong. It shipped: `concert.wcielenie.programLede` said `Dix regards et un bis` on a French page
+  whose Polish had dropped the encore from the lede a day earlier (§6u). If you must edit an overlay
+  by hand, run `copy:sync` in the same breath — the file's own header says so — and remember there
+  are two of them.
+- **A prop whose default is Polish is invisible when it is wrong.** `SiteFooter`'s `lang` defaults
+  to `DEFAULT_LOCALE` so that un-migrated callers render byte-identical to before, which is right
+  for the migration and lethal afterwards: `ConcertPage` never passed it, and ten English and French
+  concert pages shipped a Polish site map for the whole of stage F with nothing failing. When a
+  shared component learns `lang`, grep every caller in the same pass; the build cannot tell you.
 - **A watermark is written by an act, never by a visit.** The desk's reading marks are per page
   (`CopyScopeVisit`) and only the control at the foot of a page writes one. Stamping on arrival or
   on departure looks like a convenience and is a lie the surface cannot walk back: it declares a

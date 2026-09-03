@@ -1,0 +1,59 @@
+# page.kontakt — FR draft (stage G4). Traduit du polonais, jamais de l'anglais.
+# Premier corpus de PAGE et non de soirée : les clés portent l'espace de noms `page.`, et quatre
+# champs sont des segments `HTML` — leur balisage est écrit ici tel que le lecteur le reçoit. Les
+# liens internes restent polonais (`/press`, `/polityka-prywatnosci`) ; `lib/pageCopy` les localise
+# au rendu, un traducteur n'a jamais à taper un préfixe de langue.
+# Pas d'espaces insécables tapées à la main : `lib/typo.ts` les insère au build avant `? ! : ;`.
+# Deux choix à relire : le titre du hero est coupé en deux lignes à l'endroit que le français veut
+# (« Écrivez-nous / un mot. »), et la citation du RGPD sort de sa parenthèse — « (art. 6, § 1, f)
+# RGPD) » ferme une parenthèse au milieu, ce que le polonais n'a pas à gérer.
+# Les quatre lieux du hero reprennent les formes déjà publiées — « la cathédrale de Łódź » vient de
+# la galerie de 9-kart, « la synagogue Tempel » et « l'abbaye de Tyniec » de /o-nas : un lecteur qui
+# suit le lien ne doit pas retrouver le même bâtiment sous un second nom.
+
+page.kontakt.meta.title: "Contact — VoctEnsemble | Fondation VoctFoundation"
+page.kontakt.meta.description: "Écrivez à VoctEnsemble et à la Fondation VoctFoundation : concerts et musique pour la liturgie, mécénat, questions générales. Nous répondons personnellement — en polonais, en anglais et en français."
+
+page.kontakt.hero.eyebrow: "Contact"
+page.kontakt.hero.title1: "Écrivez-nous"
+page.kontakt.hero.title2Html: "un <em>mot.</em>"
+page.kontakt.hero.lede: "La cathédrale de Łódź, un manoir à Szczawnica, la synagogue Tempel, des mariages à l'abbaye de Tyniec — chacune de ces soirées a commencé par l'invitation de quelqu'un. La prochaine peut être la vôtre."
+page.kontakt.hero.scrollCue: "Choisissez une porte"
+
+page.kontakt.channels.eyebrow: "Trois portes"
+page.kontakt.channels.h2: "Dites-nous ce qui vous amène."
+page.kontakt.channels.introHtml: "Nous avons réparti le courrier sur trois adresses, pour qu'un message arrive tout de suite là où il faut. Derrière les trois, <em>les trois mêmes personnes</em> — le conseil de la fondation."
+
+page.kontakt.channels.items.booking.role: "Concerts et liturgies"
+page.kontakt.channels.items.booking.subject: "Invitation VoctEnsemble"
+page.kontakt.channels.items.booking.hint: "Dites-nous où et quand : le nom du lieu, une date approximative, l'occasion. Nous répondrons par une proposition de programme conçue pour cette acoustique."
+
+page.kontakt.channels.items.patronat.role: "Mécénat et patronage"
+page.kontakt.channels.items.patronat.subject: "Mécénat et patronage VoctEnsemble"
+page.kontakt.channels.items.patronat.hint: "Un don, un patronage d'honneur ou une collaboration institutionnelle. Dites-nous ce qui vous intéresse — nous vous dirons à quoi servira ce soutien et ce qui en naîtra."
+
+page.kontakt.channels.items.ogolne.role: "Questions générales"
+page.kontakt.channels.items.ogolne.subject: "Questions générales VoctEnsemble"
+page.kontakt.channels.items.ogolne.hint: "Tout le reste : questions, collaboration artistique, affaires de la fondation. Si vous ne savez pas quelle adresse choisir, choisissez celle-ci."
+
+page.kontakt.after.languages: "Écrivez en polonais, en anglais ou en français — nous répondrons dans la langue de votre message. Aussi vite que le calendrier des répétitions et des concerts le permet ; en général sous quelques jours."
+page.kontakt.after.pressHtml: "Les journalistes et les organisateurs trouveront les biographies, les photographies en haute résolution et les programmes complets dans le <a href=\"/press\">dossier de presse →</a>"
+
+page.kontakt.voices.label: "Qui lit et qui répond"
+page.kontakt.voices.note: "Le conseil de la Fondation VoctFoundation. Nous répondons ensemble — et nous voulons qu'il en soit encore ainsi quand nous aurons grandi."
+
+page.kontakt.locus.eyebrow: "La fondation"
+page.kontakt.locus.h2: "Derrière la voix se tient une fondation."
+page.kontakt.locus.foundationLabel: "Fondation"
+page.kontakt.locus.mission: "La Fondation VoctFoundation agit dans le domaine de la culture, des arts et de la protection du patrimoine ; VoctEnsemble en est l'ensemble en résidence. Nous affectons l'intégralité de nos revenus aux buts statutaires."
+page.kontakt.locus.foundationLink: "Découvrez la fondation et son conseil →"
+page.kontakt.locus.addressLabel: "Adresse postale"
+page.kontakt.locus.addressNote: "Nous n'y tenons pas de bureau — nous nous retrouvons là où nous chantons."
+
+page.kontakt.legal.controllerLabel: "Responsable du traitement"
+page.kontakt.legal.rodoHtml: "En nous écrivant, vous nous confiez vos données (nom, adresse e-mail et contenu du message). Nous ne les traitons que pour répondre à votre message, au titre de l'art. 6, § 1, f) RGPD. Vous avez le droit d'y accéder, de les rectifier et de les effacer — <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>. Plus d'informations dans la <a href=\"/polityka-prywatnosci\">politique de confidentialité</a>."
+
+page.kontakt.coda.h2: "Au plaisir de vous entendre."
+page.kontakt.coda.lede: "Et mieux encore — de vive voix, dans une acoustique qui se souvient."
+page.kontakt.coda.concertsLink: "Voir les concerts →"
+page.kontakt.coda.supportLink: "Soutenir la fondation →"

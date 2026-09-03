@@ -5177,6 +5177,7 @@
       "awaiting": "Accepté — en attente d'écriture dans le dépôt",
       "controls_note": "Sous un champ, dès que vous y écrivez : « Original » montre le texte que le site porte aujourd'hui, « Remarque » ajoute un mot pour l'éditeur, et « Annuler » retire votre proposition et laisse le texte du site.",
       "marks_note": "Les mentions à côté d'un champ : « Accepté » et « Refusé » sont le verdict de l'éditeur, « Le polonais a changé » signifie que la traduction a été écrite sur une version antérieure du polonais, « Nouveau » que le champ est apparu depuis que vous avez marqué cette page comme relue, et « Modifié » qu'il était déjà là et que son texte a bougé depuis.",
+      "markup_note": "Certains champs laissent voir le balisage de la page : « <em> » met un mot en valeur, « <a …> » crée un lien. Modifiez le texte entre les balises et laissez-les en place — une balise supprimée emporte avec elle la mise en valeur ou le lien.",
       "autosave_note": "Tout s'enregistre seul. L'éditeur reçoit un récapitulatif une demi-heure après votre dernière frappe — ou tout de suite, si vous cliquez « J'ai fini » en haut.",
       "missing_title": "Cette page n'est pas dans la rédaction",
       "missing_description": "Le corpus arrive ici directement depuis le dépôt, par une étape à part (copy:sync). Revenez au sommaire et choisissez une page."

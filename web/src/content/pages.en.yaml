@@ -1,9 +1,51 @@
-# English overlay for the static pages — machine-written by `npm run copy:apply`, never by hand.
+# pages.en.yaml — the EN overlay over the static pages' Polish in src/content/pages/.
 #
-# One flat map of the copy desk's own dotted key → the English of that field. Keys are
-# `page.<page>.<path>` and are produced by `src/i18n/content/copySpec.ts`, which the page itself
-# reads through `lib/pageCopy`; the Polish they translate lives in `src/content/pages/<page>.yaml`.
+# MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk
+# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
+# renders sits at the matching path in that page's own file, which holds no translations at all.
 #
-# FALLBACK IS PER FIELD. A key missing here prints its Polish beside fields that print English,
-# which is what lets a page go up in English while its prose is still being reviewed — a page that
-# waited for a complete translation would show nothing at all for months.
+# FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this
+# locale — which is what lets a page go up while its prose is still being reviewed.
+#
+# Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
+# the desk still shows the old value, marks nothing stale, and the next apply run writes over
+# what you typed. The reviewable route is a proposal.
+#
+# Sorted by key and written whole, so a diff of this file is a diff of the translation.
+
+page.kontakt.after.languages: "Write in Polish, English or French — we answer in the language you begin in. As quickly as the rehearsal and concert calendar allows; usually within a few days."
+page.kontakt.after.pressHtml: "Journalists and promoters will find biographies, high-resolution photographs and full programmes in the <a href=\"/press\">press materials →</a>"
+page.kontakt.channels.eyebrow: "Three doors"
+page.kontakt.channels.h2: "Tell us what brings you."
+page.kontakt.channels.introHtml: "We have laid the post out across three addresses, so that a message goes straight to the matter it concerns. Behind all three are <em>the same three people</em> — the foundation's board."
+page.kontakt.channels.items.booking.hint: "Tell us where and when: the name of the place, a rough date, the occasion. We will write back with a programme shaped for that acoustic."
+page.kontakt.channels.items.booking.role: "Concerts and liturgies"
+page.kontakt.channels.items.booking.subject: "VoctEnsemble invitation"
+page.kontakt.channels.items.ogolne.hint: "Everything else: questions, artistic collaboration, the foundation's affairs. If you do not know which address to choose, choose this one."
+page.kontakt.channels.items.ogolne.role: "General enquiries"
+page.kontakt.channels.items.ogolne.subject: "VoctEnsemble general enquiries"
+page.kontakt.channels.items.patronat.hint: "A donation, honorary patronage or an institutional partnership. Tell us what interests you — we will say where the support goes and what will come of it."
+page.kontakt.channels.items.patronat.role: "Patronage and sponsorship"
+page.kontakt.channels.items.patronat.subject: "VoctEnsemble patronage and sponsorship"
+page.kontakt.coda.concertsLink: "See the concerts →"
+page.kontakt.coda.h2: "Until we hear one another."
+page.kontakt.coda.lede: "And best of all — live, in an acoustic that remembers."
+page.kontakt.coda.supportLink: "Support the foundation →"
+page.kontakt.hero.eyebrow: "Contact"
+page.kontakt.hero.lede: "Łódź Cathedral, a manor house in Szczawnica, the Tempel Synagogue, weddings at Tyniec Abbey — every one of those evenings began with somebody's invitation. The next could be yours."
+page.kontakt.hero.scrollCue: "Choose a door"
+page.kontakt.hero.title1: "Write"
+page.kontakt.hero.title2Html: "to <em>us.</em>"
+page.kontakt.legal.controllerLabel: "Data controller"
+page.kontakt.legal.rodoHtml: "When you write to us, you entrust us with your data (your name, e-mail address and the content of your message). We process it solely in order to answer your message (Art. 6(1)(f) GDPR). You have the right to access, rectify and erase it — <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>. More in the <a href=\"/polityka-prywatnosci\">privacy policy</a>."
+page.kontakt.locus.addressLabel: "Correspondence address"
+page.kontakt.locus.addressNote: "We keep no office there — we meet where we sing."
+page.kontakt.locus.eyebrow: "The foundation"
+page.kontakt.locus.foundationLabel: "Foundation"
+page.kontakt.locus.foundationLink: "Meet the foundation and its board →"
+page.kontakt.locus.h2: "Behind the voice stands a foundation."
+page.kontakt.locus.mission: "The VoctFoundation works in the field of culture, the arts and the protection of heritage; VoctEnsemble is its resident ensemble. Our income is devoted entirely to our statutory purposes."
+page.kontakt.meta.description: "Write to VoctEnsemble and the VoctFoundation: concerts and music for liturgies, patronage, general enquiries. We answer personally — in Polish, English and French."
+page.kontakt.meta.title: "Contact — VoctEnsemble | VoctFoundation"
+page.kontakt.voices.label: "Read and answered by"
+page.kontakt.voices.note: "The board of the VoctFoundation. We answer together — and we mean it to stay that way even once we have grown."

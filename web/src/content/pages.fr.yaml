@@ -1,6 +1,54 @@
-# French overlay for the static pages — machine-written by `npm run copy:apply`, never by hand.
-# See the head of `pages.en.yaml`: one flat map of the copy desk's dotted key → the French of that
-# field, falling back per field to the Polish in `src/content/pages/<page>.yaml`.
+# pages.fr.yaml — the FR overlay over the static pages' Polish in src/content/pages/.
 #
-# Do not hand-type French punctuation spacing here. `lib/typo.ts` inserts the narrow no-break space
-# before `? ! : ;` at build; a hand-typed hard space doubles up.
+# MACHINE-WRITTEN by `npm run copy:apply`, which is the write direction of the copy desk
+# (docs/web-copy-desk-2026-09.md §6c). Every key is a copy-desk segment key; the Polish it
+# renders sits at the matching path in that page's own file, which holds no translations at all.
+#
+# FALLBACK IS PER FIELD. A key missing here prints its Polish, beside fields that print this
+# locale — which is what lets a page go up while its prose is still being reviewed.
+#
+# Edit here only in an emergency, and run `npm run copy:sync` straight afterwards — otherwise
+# the desk still shows the old value, marks nothing stale, and the next apply run writes over
+# what you typed. The reviewable route is a proposal.
+#
+# Do not hand-type French punctuation spacing. `lib/typo.ts` inserts the narrow no-break
+# space before `? ! : ;` at build time, and a hand-typed hard space doubles up.
+#
+# Sorted by key and written whole, so a diff of this file is a diff of the translation.
+
+page.kontakt.after.languages: "Écrivez en polonais, en anglais ou en français — nous répondrons dans la langue de votre message. Aussi vite que le calendrier des répétitions et des concerts le permet ; en général sous quelques jours."
+page.kontakt.after.pressHtml: "Les journalistes et les organisateurs trouveront les biographies, les photographies en haute résolution et les programmes complets dans le <a href=\"/press\">dossier de presse →</a>"
+page.kontakt.channels.eyebrow: "Trois portes"
+page.kontakt.channels.h2: "Dites-nous ce qui vous amène."
+page.kontakt.channels.introHtml: "Nous avons réparti le courrier sur trois adresses, pour qu'un message arrive tout de suite là où il faut. Derrière les trois, <em>les trois mêmes personnes</em> — le conseil de la fondation."
+page.kontakt.channels.items.booking.hint: "Dites-nous où et quand : le nom du lieu, une date approximative, l'occasion. Nous répondrons par une proposition de programme conçue pour cette acoustique."
+page.kontakt.channels.items.booking.role: "Concerts et liturgies"
+page.kontakt.channels.items.booking.subject: "Invitation VoctEnsemble"
+page.kontakt.channels.items.ogolne.hint: "Tout le reste : questions, collaboration artistique, affaires de la fondation. Si vous ne savez pas quelle adresse choisir, choisissez celle-ci."
+page.kontakt.channels.items.ogolne.role: "Questions générales"
+page.kontakt.channels.items.ogolne.subject: "Questions générales VoctEnsemble"
+page.kontakt.channels.items.patronat.hint: "Un don, un patronage d'honneur ou une collaboration institutionnelle. Dites-nous ce qui vous intéresse — nous vous dirons à quoi servira ce soutien et ce qui en naîtra."
+page.kontakt.channels.items.patronat.role: "Mécénat et patronage"
+page.kontakt.channels.items.patronat.subject: "Mécénat et patronage VoctEnsemble"
+page.kontakt.coda.concertsLink: "Voir les concerts →"
+page.kontakt.coda.h2: "Au plaisir de vous entendre."
+page.kontakt.coda.lede: "Et mieux encore — de vive voix, dans une acoustique qui se souvient."
+page.kontakt.coda.supportLink: "Soutenir la fondation →"
+page.kontakt.hero.eyebrow: "Contact"
+page.kontakt.hero.lede: "La cathédrale de Łódź, un manoir à Szczawnica, la synagogue Tempel, des mariages à l'abbaye de Tyniec — chacune de ces soirées a commencé par l'invitation de quelqu'un. La prochaine peut être la vôtre."
+page.kontakt.hero.scrollCue: "Choisissez une porte"
+page.kontakt.hero.title1: "Écrivez-nous"
+page.kontakt.hero.title2Html: "un <em>mot.</em>"
+page.kontakt.legal.controllerLabel: "Responsable du traitement"
+page.kontakt.legal.rodoHtml: "En nous écrivant, vous nous confiez vos données (nom, adresse e-mail et contenu du message). Nous ne les traitons que pour répondre à votre message, au titre de l'art. 6, § 1, f) RGPD. Vous avez le droit d'y accéder, de les rectifier et de les effacer — <a href=\"mailto:rodo@voctensemble.com\">rodo@voctensemble.com</a>. Plus d'informations dans la <a href=\"/polityka-prywatnosci\">politique de confidentialité</a>."
+page.kontakt.locus.addressLabel: "Adresse postale"
+page.kontakt.locus.addressNote: "Nous n'y tenons pas de bureau — nous nous retrouvons là où nous chantons."
+page.kontakt.locus.eyebrow: "La fondation"
+page.kontakt.locus.foundationLabel: "Fondation"
+page.kontakt.locus.foundationLink: "Découvrez la fondation et son conseil →"
+page.kontakt.locus.h2: "Derrière la voix se tient une fondation."
+page.kontakt.locus.mission: "La Fondation VoctFoundation agit dans le domaine de la culture, des arts et de la protection du patrimoine ; VoctEnsemble en est l'ensemble en résidence. Nous affectons l'intégralité de nos revenus aux buts statutaires."
+page.kontakt.meta.description: "Écrivez à VoctEnsemble et à la Fondation VoctFoundation : concerts et musique pour la liturgie, mécénat, questions générales. Nous répondons personnellement — en polonais, en anglais et en français."
+page.kontakt.meta.title: "Contact — VoctEnsemble | Fondation VoctFoundation"
+page.kontakt.voices.label: "Qui lit et qui répond"
+page.kontakt.voices.note: "Le conseil de la Fondation VoctFoundation. Nous répondons ensemble — et nous voulons qu'il en soit encore ainsi quand nous aurons grandi."
