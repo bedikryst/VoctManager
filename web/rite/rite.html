@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>VoctEnsemble — rite</title>
+<!--
+  The brand rite, lifted out of the site as a standalone film stage.
+
+  This is the CADENCE from `src/styles/landing/01-foundation.css` — the same layers, the same
+  keyframes, the same easing curves, transcribed rather than re-invented. If the site's cadence
+  is ever retimed, the numbers below are what has to follow it; nothing here re-derives them.
+
+  What was DROPPED from the site version, and why:
+    · `.rite-raster` (the PNG master) — it exists only for the hinge into the audio question,
+      where the mark shrinks to ~110px and the vector stops being the legible master. At film
+      sizes the vector is always the better master, and a 186×456 PNG would be the one blurry
+      thing in a 4K frame.
+    · the whole hold loop — spark, radiating rings, the two surfacing display words. The plate
+      here is modelled on the site's BRIEF rite (`html.rite-brief`), which is the cadence alone
+      against ground and bloom: it puts the hold's atmosphere at `display: none` precisely
+      because a ceremony of known length has nothing to cover. That is the same reasoning a
+      film has.
+    · `--rite-lead: 300ms` (the brief rite's lead-in) — it exists so the animation does not
+      appear mid-stride on the first painted frame. A film has a first frame by definition.
+
+  Everything is driven off the query string so `render.mjs` and a human opening this file get
+  the identical stage. See README.md for the parameters.
+-->
+<style>
+  :root {
+    /* tokens.css */
+    --candle: #c6a45b;
+    --ground: #080807;
+    --ease: cubic-bezier(0.22, 0.61, 0.16, 1);
+    --ease-slow: cubic-bezier(0.16, 0.84, 0.24, 1);
+
+    /* The illumination's own curve, and the one place the site deliberately does NOT use
+       `--ease-slow`. The V occupies only p 0.28–0.79 of the light's travel, so a front-loaded
+       curve opens the letterform in ~240ms and then spends the rest of the duration crawling
+       up the bare hairline above it. This one is fast-slow-fast: up the drawn stem like a fuse,
+       a crawl while the V opens (~1.05s of the 1.6s), then the invisible tip quickly. */
+    --illum-ease: cubic-bezier(0.1, 0.45, 0.75, 0.72);
+
+    /* The pen's curve. It replaced `--ease-slow`, which the site's own CSS documents as the curve
+       for "something arriving and settling from nowhere" — and that is what it drew: 19% of the
+       stem in the first frame at 30fps, half of it inside 103ms of the 900, then 633ms creeping
+       through the last fifth. A whip followed by a stall, and the stroke effectively finished
+       around 200ms, so the punctum at 880ms had no gesture left to belong to.
+
+       This one starts from rest, peaks at 48% of the travel and settles into the terminal, so the
+       nib reaches the foot of the stem exactly as the dot lands. The LANDING PAGE carries the same
+       curve (`--pen-ease` in `styles/landing/01-foundation.css`) — the film and the site must
+       write with one hand, so a change to either belongs in both. */
+    --draw-ease: cubic-bezier(0.62, 0.02, 0.34, 1);
+
+    /* The mark, inlined so this file travels alone. Mask sources are read as ALPHA, so the
+       paint only has to be opaque — the white is not a colour decision. */
+    --mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 2469.8' fill='%23fff' %3E%3Cpath d='M 0,660.1 L 231,660.1 C 229.4,660.6 224.5,661.1 221.4,661.6 C 218.2,662.1 215.7,662.6 212.3,663.5 C 208.9,664.3 204.8,665.3 200.8,666.5 C 196.9,667.7 193.2,668.8 188.8,670.7 C 184.4,672.6 179.1,674.9 174.6,677.9 C 170.1,680.9 165.2,685 161.8,688.8 C 158.5,692.6 156.1,696.4 154.4,700.8 C 152.7,705.3 151.5,709.7 151.7,715.3 C 151.8,721 152.1,725.4 155.3,734.6 C 158.5,743.9 164.7,756.7 170.9,770.8 C 177.1,784.9 189.1,811 192.7,819.1 L 500,1475.7 L 500,1549 L 517.1,1512.2 C 587.6,1369.7 657.2,1227 724.8,1084.4 C 762.9,1004 801.1,923.6 836.3,843.2 C 838,839.2 841.7,831.1 846.8,819.1 C 851.9,807 861.4,784.9 866.9,770.8 C 872.4,756.7 877.1,743.9 879.7,734.6 C 882.3,725.4 882.6,721 882.4,715.3 C 882.2,709.7 880.6,705.3 878.6,700.8 C 876.5,696.4 873.8,692.6 869.9,688.8 C 866,685 860.5,680.9 855.3,677.9 C 850,674.9 843.6,672.6 838.4,670.7 C 833.1,668.8 829,667.7 823.9,666.5 C 818.8,665.3 812.7,664.3 807.6,663.5 C 802.5,662.6 799.6,662.1 793.1,661.6 C 786.7,661.1 773,660.6 769,660.4 L 1000,660.1 C 998.9,660.6 995.7,661.1 993.4,661.6 C 991.1,662.1 989,662.6 986.1,663.5 C 983.3,664.3 979.6,665.3 976.2,666.5 C 972.8,667.7 969.7,668.8 965.6,670.7 C 961.5,672.6 956.6,674.9 951.8,677.9 C 946.9,680.9 941.1,685 936.4,688.8 C 931.7,692.6 927.6,696.4 923.6,700.8 C 919.6,705.3 915.7,709.7 912.1,715.3 C 908.5,721 906.5,725.4 902,734.6 C 897.4,743.9 891.5,756.7 884.8,770.8 C 878.1,784.9 867.8,807 862.1,819.1 C 856.4,831.1 852.6,839.2 850.7,843.2 L 500,1584.7 C 147.4,839.2 143.5,831.1 137.8,819.1 C 132.1,807 121.7,784.9 115,770.8 C 108.3,756.7 102.5,743.9 97.9,734.6 C 93.4,725.4 91.4,721 87.8,715.3 C 84.2,709.7 80.3,705.3 76.3,700.8 C 72.3,696.4 68.2,692.6 63.5,688.8 C 58.8,685 52.9,680.9 48,677.9 C 43.2,674.9 38.5,672.6 34.4,670.7 C 30.3,668.8 26.9,667.7 23.5,666.5 C 20.1,665.3 16.7,664.3 13.9,663.5 C 11.1,662.6 8.9,662.1 6.6,661.6 C 4.3,661.1 1.1,660.6 0,660.4 Z'%3E%3C/path%3E%3Crect x='493.5' y='0' width='13' height='2221.7'%3E%3C/rect%3E%3Cellipse cx='500' cy='2427.3' rx='60.8' ry='38.5' transform='rotate(-22.7 500 2427.3)'%3E%3C/ellipse%3E%3C/svg%3E");
+    /* 1000 / 2469.8 — the viewBox's own aspect. The box is matched on HEIGHT because that is
+       what limits the `contain` mask. */
+    --mark-aspect: 0.4049;
+
+    /* Overwritten from the query string. */
+    --rite-h: 1200px;
+    --stroke: 8;
+    --draw-dur: 900ms;
+    --note-at: 880ms;
+    --note-dur: 180ms;
+    --illum-at: 1000ms;
+    --illum-dur: 1600ms;
+    --lead: 0ms;
+    --exit-at: 3500ms;
+    --exit-dur: 700ms;
+
+    /* Lengths the site states in px against its ~420px mark. At film sizes a px is a different
+       fraction of the frame, so each is re-expressed as the site's own RATIO to mark height —
+       a bloom left at a literal 26rem would be a locket in a 4K frame. */
+    --bloom-r: calc(var(--rite-h) * 0.99); /* 26rem / 420px */
+    --exit-blur: calc(var(--rite-h) * 0.0429); /* 18px / 420px */
+  }
+
+  html, body { margin: 0; height: 100%; }
+
+  body {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--ground);
+  }
+
+  body.bg-alpha { background: transparent; }
+
+  .film {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+  }
+
+  /* ── the plate ────────────────────────────────────────────────────────────────
+     The site's own ground under the mark: a warm bloom off-centre at 48%, sitting a little
+     high so the V lands in the brightest part of it rather than the long stem. It is LIGHT
+     against a dark ground, so over transparency it has nothing to be seen against and
+     premultiplies wrong — only `plate` carries it. */
+  .bloom {
+    position: absolute;
+    inset: 0;
+    /* The site states this as two stops, and at a 420px mark that is fine. Across a 4K frame the
+       straight ramp's kink at the transparent stop becomes a visible CIRCLE — a hard edge in the
+       derivative, which 8-bit encoding then quantises into a ring. These stops are a smoothstep
+       falloff: no kink at either end, so the bloom has no boundary to band along. */
+    background: radial-gradient(
+      circle at 50% 48%,
+      rgba(198, 164, 91, 0.16) 0,
+      rgba(198, 164, 91, 0.152) calc(var(--bloom-r) * 0.2),
+      rgba(198, 164, 91, 0.125) calc(var(--bloom-r) * 0.38),
+      rgba(198, 164, 91, 0.086) calc(var(--bloom-r) * 0.55),
+      rgba(198, 164, 91, 0.047) calc(var(--bloom-r) * 0.71),
+      rgba(198, 164, 91, 0.018) calc(var(--bloom-r) * 0.86),
+      rgba(198, 164, 91, 0) var(--bloom-r)
+    );
+  }
+
+  body:not(.bg-plate) .bloom { display: none; }
+
+  /* ── the opening (the film's anticipation, and NOT a delay) ───────────────────
+     A cut has nothing before its first frame, so the pen would otherwise arrive mid-gesture
+     on a static plate. This breathes the nave's own glow up out of black instead — and does
+     it UNDERNEATH the writing rather than before it, so anticipation costs the cadence
+     nothing and the finished mark keeps every millisecond of rest it was budgeted.
+
+     It is atmosphere, not an object, which is the whole reason it works where a spark at the
+     stem's head does not: it has no position of its own to be abandoned at. */
+  body.has-open .bloom {
+    opacity: 0;
+    animation: riteOpen var(--open-dur) var(--ease-slow) forwards;
+  }
+
+  @keyframes riteOpen { to { opacity: 1; } }
+
+  .stage {
+    position: relative;
+    width: calc(var(--rite-h) * var(--mark-aspect));
+    height: var(--rite-h);
+    /* The frame's optical centre is a director's decision, not the mark's: the V sits in the
+       middle of a tall box with a long stem above it and a punctum below, so a box-centred
+       mark reads low. `?shift=` nudges it as a fraction of the mark's height. */
+    translate: 0 calc(var(--rite-h) * var(--shift, 0));
+  }
+
+  .rite {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* ── scriptura ────────────────────────────────────────────────────────────────
+     The pen draws ONLY the parts of the mark that truly are lines: the stem and the
+     punctum, at the real geometry's own coordinates. The V is never a centerline
+     wireframe — a uniform stroke through a serif letterform is a different object
+     (it reads as a downward arrow) and it only ever appears in its true modulated
+     form, opened by the rising light. */
+  .rite-skel {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .rs-stem {
+    stroke: var(--candle);
+    stroke-width: var(--stroke);
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+  }
+
+  .rs-note {
+    fill: var(--candle);
+    opacity: 0;
+  }
+
+  /* ── illuminatio ──────────────────────────────────────────────────────────────
+     Solid gold below, fading at the leading edge, travelling by transform alone under
+     a mask of the mark. Height 128% so a full ascent leaves 100% of the mark inside the
+     solid part. The V is never drawn; it is REVEALED. */
+  .rite-fill {
+    position: absolute;
+    inset: 0;
+    -webkit-mask: var(--mark) center / contain no-repeat;
+    mask: var(--mark) center / contain no-repeat;
+  }
+
+  .rite-fill::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 128%;
+    background: linear-gradient(
+      0deg,
+      var(--candle) 0%,
+      var(--candle) 78%,
+      rgba(198, 164, 91, 0) 100%
+    );
+    transform: translateY(100%);
+  }
+
+  /* The skeleton is never faded out, and must not be. The pen's line is 8 units where the
+     real stem is 13, in the same gold, so the light simply OVERTAKES it: the hairline gains
+     body where the light has passed and stays a hairline above it. Dimming it on a timer
+     instead put out the upper stem while the light was still below the V's apex, and the
+     rising light then re-revealed it — reading as the line being drawn a second time from
+     the middle. Anything that dims the skeleton has to follow the light, and the light
+     already does that job. */
+
+  /* ── the ink bead (OPTIONAL, and not the site's) ──────────────────────────────
+     The nib presses, and the line is drawn OUT OF the ink it leaves. Earlier versions put a
+     spark at the stem's head and let the pen leave without it, which could never work: two
+     independent objects on a curve this front-loaded (~40% of the stem inside the first 60ms)
+     always separate, and what the eye sees is a dot dying at a point the line has abandoned.
+
+     So the bead is not a second object. It is the STROKE'S LEADING EDGE, and it can be, exactly,
+     because the stem is a straight line: the tip's position is linear in the animation's
+     parameter, so a translate sharing the stroke's duration, delay and easing sits on the tip to
+     the unit, every frame, with nothing read back in script.
+
+     Its silhouette comes free from the line it rides. The bead's tail overlaps stroke that is
+     already drawn and in the same gold, so only the part WIDER than the line is visible — and an
+     ellipse narrows towards its ends, so what shows is a teardrop: bulge at the tip, tapering
+     back up the stroke. It ends at exactly the stroke's own half-width, which is why it does not
+     need to be hidden or faded: at that size it IS the line. */
+  .bead { fill: var(--candle); }
+
+  body:not(.has-nib) .bead-pos { display: none; }
+
+  .bead-pos {
+    transform: translateY(4px);
+  }
+
+  /* ── the beats ────────────────────────────────────────────────────────────────
+     One shared origin: every animation starts at document time 0 and carries its own delay,
+     which is what lets `render.mjs` seek the whole cadence by setting a single `currentTime`
+     on all of them at once. */
+  .rs-stem {
+    animation: riteDraw var(--draw-dur) var(--draw-ease) var(--lead) forwards;
+  }
+
+  .rs-note {
+    animation: riteNote var(--note-dur) var(--ease) calc(var(--lead) + var(--note-at)) forwards;
+  }
+
+  .rite-fill::after {
+    animation: riteIllum var(--illum-dur) var(--illum-ease) calc(var(--lead) + var(--illum-at)) forwards;
+  }
+
+  /* Identical duration, delay and easing to `.rs-stem` — that identity IS the mechanism. Change
+     one and the bead comes off the tip. */
+  .bead-pos {
+    animation: beadTravel var(--draw-dur) var(--draw-ease) var(--lead) forwards;
+  }
+
+  /* LINEAR, unlike everything else here. The stops below are placed against the stroke's own
+     eased motion, so the shape must not be eased a second time on top of them. They are
+     calibrated to `--draw-ease`'s velocity peak at 48%; a different pen curve moves that peak
+     and the ink then stretches in the wrong place. */
+  .bead {
+    animation:
+      beadPress var(--lead) ease-out both,
+      beadDrag var(--draw-dur) linear var(--lead) forwards;
+  }
+
+  /* The site's own exit (`.preloader.is-hidden`): the rite does not slide or scale away, it
+     goes out of focus and out of light at once. Taken on the WRAPPER so the plate leaves with
+     the mark — and so it never has to share the `animation` property with the opening. An
+     INTRO does not use this: it ends on the lit mark and the editor cuts. */
+  body.has-exit .film {
+    animation: riteExit var(--exit-dur) var(--ease-slow) var(--exit-at) forwards;
+  }
+
+  @keyframes riteDraw { to { stroke-dashoffset: 0; } }
+  @keyframes riteNote { to { opacity: 1; } }
+  @keyframes riteIllum { to { transform: translateY(0); } }
+
+  @keyframes beadTravel { to { transform: translateY(2221.7px); } }
+
+  @keyframes beadPress { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Sizes are multiples of the pen's own width, so the bead stays in proportion at any
+     `--stroke`. Ink is drawn out by SPEED, so the stretch tracks the stroke's velocity: it peaks
+     at 48%, where `--draw-ease` is fastest. The last stop is the whole point — at half the
+     stroke's width the bead has become the line's own end, so it disappears by ARRIVING rather
+     than by being switched off. */
+  @keyframes beadDrag {
+    0% {
+      rx: calc(var(--stroke) * 1.7px); ry: calc(var(--stroke) * 1.7px);
+      cy: calc(var(--stroke) * -1.224px);
+    }
+    20% {
+      rx: calc(var(--stroke) * 1.4px); ry: calc(var(--stroke) * 2.4px);
+      cy: calc(var(--stroke) * -1.728px);
+    }
+    48% {
+      rx: calc(var(--stroke) * 1.2px); ry: calc(var(--stroke) * 4px);
+      cy: calc(var(--stroke) * -2.88px);
+    }
+    75% {
+      rx: calc(var(--stroke) * 0.9px); ry: calc(var(--stroke) * 2px);
+      cy: calc(var(--stroke) * -1.44px);
+    }
+    100% {
+      rx: calc(var(--stroke) * 0.5px); ry: calc(var(--stroke) * 0.5px);
+      cy: calc(var(--stroke) * -0.36px);
+    }
+  }
+
+  @keyframes riteExit {
+    to { opacity: 0; filter: blur(var(--exit-blur)); }
+  }
+</style>
+</head>
+<body>
+  <div class="film">
+  <div class="bloom" aria-hidden="true"></div>
+  <div class="stage">
+    <div class="rite">
+      <svg class="rite-skel" viewBox="0 0 1000 2469.8" fill="none">
+        <path class="rs-stem" d="M 500,4 L 500,2221.7" pathLength="1" />
+        <!-- The bead's resting geometry is written as attributes, so it is what shows during the
+             press, before `beadDrag` takes over. `cy` is always −0.72·`ry`, at every stop: the
+             bulge then sits ON the nib rather than floating above it, and a little of the bead
+             runs ahead of the deposited line — which is where a wet nib actually is. -->
+        <g class="bead-pos">
+          <ellipse class="bead" cx="500" cy="-9.79" rx="13.6" ry="13.6" />
+        </g>
+        <ellipse
+          class="rs-note"
+          cx="500" cy="2427.3" rx="60.8" ry="38.5"
+          transform="rotate(-22.7 500 2427.3)"
+        />
+      </svg>
+      <span class="rite-fill"></span>
+    </div>
+  </div>
+  </div>
+
+<script>
+  // Query string → CSS custom properties. Every knob the renderer and a human share.
+  const q = new URLSearchParams(location.search);
+  const num = (k, d) => { const v = Number(q.get(k)); return Number.isFinite(v) && q.has(k) ? v : d; };
+
+  const markH = num("h", 1200);
+  const stroke = Math.min(num("stroke", 8), 12.5); // see README: at 13 the pen IS the stem
+  const nib = q.get("nib") === "1";
+  // A STILL HEAD before the cadence, and a film needs one whether or not the bead is on. The
+  // cadence starts at full speed, so with an open shutter the first frame averages a window in
+  // which the pen has already moved — the file then opens on a stroke in progress, which reads
+  // as cutting in late. Four still frames at 30fps is enough to establish the plate first, and
+  // it is also the window the nib presses in, which is why 400 is the right value with it.
+  const lead = num("lead", nib ? 400 : 120);
+  // Long enough to read as the frame breathing rather than a fade-up, and it deliberately
+  // outlasts the pen's own 900ms — the glow is still settling as the stroke lands.
+  const openDur = num("open", 1200);
+  const exit = q.get("exit") === "1";
+  const exitDur = num("exitdur", 700);
+
+  // The cadence's own end: the light lands at lead + 1000 + 1600. Everything after it is rest,
+  // and rest is what a total duration actually buys — so DURATION is the control and the rest
+  // is derived, not the other way round.
+  const CADENCE_END = lead + 2600;
+  const hold = q.has("hold")
+    ? num("hold", 0)
+    : Math.max(0, num("dur", 3500) - CADENCE_END - (exit ? exitDur : 0));
+  const EXIT_AT = CADENCE_END + hold;
+  const TOTAL = EXIT_AT + (exit ? exitDur : 0);
+
+  const root = document.documentElement;
+  root.style.setProperty("--rite-h", markH + "px");
+  root.style.setProperty("--stroke", String(stroke));
+  root.style.setProperty("--lead", lead + "ms");
+  root.style.setProperty("--open-dur", openDur + "ms");
+  root.style.setProperty("--exit-at", EXIT_AT + "ms");
+  root.style.setProperty("--exit-dur", exitDur + "ms");
+  root.style.setProperty("--shift", String(num("shift", 0)));
+
+  // Named pen curves. `site` is the landing page's own `--ease-slow`, kept so the film can be
+  // matched back to the site exactly; the others are here to be compared against it.
+  const EASES = {
+    pen: "cubic-bezier(0.62, 0.02, 0.34, 1)",
+    site: "cubic-bezier(0.16, 0.84, 0.24, 1)",
+    soft: "cubic-bezier(0.45, 0, 0.55, 1)",
+    sharp: "cubic-bezier(0.7, 0, 0.55, 1)",
+    linear: "linear",
+  };
+  if (q.has("drawease")) {
+    const raw = q.get("drawease");
+    root.style.setProperty("--draw-ease", EASES[raw] ?? raw);
+  }
+  if (q.has("bloom")) root.style.setProperty("--bloom-r", `calc(var(--rite-h) * ${num("bloom", 0.99)})`);
+  if (q.has("ground")) root.style.setProperty("--ground", "#" + q.get("ground").replace(/^#/, ""));
+
+  const bg = q.get("bg") ?? "plate";
+  document.body.classList.add(`bg-${["plate", "dark", "alpha"].includes(bg) ? bg : "plate"}`);
+  if (nib) document.body.classList.add("has-nib");
+  if (exit) document.body.classList.add("has-exit");
+  if (openDur > 0) document.body.classList.add("has-open");
+
+  // The renderer's contract. Captured once: `fill: forwards` keeps every animation alive for
+  // the whole timeline, so this set stays complete and seeking never has to re-query.
+  const shots = [];
+  requestAnimationFrame(() => {
+    for (const a of document.getAnimations()) { a.pause(); a.currentTime = 0; shots.push(a); }
+    if (q.get("render") !== "1") play();
+    window.riteReady = true;
+  });
+
+  window.riteTotal = TOTAL;
+  // Published so the renderer can report where the beats actually landed — and warn when a
+  // requested duration left the finished mark no time to be looked at.
+  window.riteTiming = { lead, openDur, cadenceEnd: CADENCE_END, hold, exitAt: EXIT_AT, total: TOTAL };
+  window.riteSeek = (t) => { for (const a of shots) a.currentTime = t; };
+
+  function play() {
+    for (const a of shots) { a.currentTime = 0; a.play(); }
+  }
+  // Opened by hand: click anywhere to watch it again.
+  addEventListener("click", () => { if (q.get("render") !== "1") play(); });
+</script>
+</body>
+</html>

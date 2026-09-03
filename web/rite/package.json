@@ -1,0 +1,19 @@
+{
+  "name": "voct-rite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "VoctEnsemble brand animation — standalone render harness for video work. Self-contained on purpose: the folder is handed to video collaborators without the rest of the site, so it carries its own dependency rather than borrowing web/'s.",
+  "scripts": {
+    "postinstall": "playwright install chromium",
+    "intro": "node render.mjs --preset=intro",
+    "intro-hd": "node render.mjs --preset=intro-hd",
+    "preview": "node render.mjs --preset=intro-mp4",
+    "black": "node render.mjs --preset=intro-black",
+    "alpha": "node render.mjs --preset=intro-alpha",
+    "shorts": "node render.mjs --preset=shorts",
+    "all": "npm run intro && npm run alpha && npm run black && npm run shorts && npm run preview"
+  },
+  "dependencies": {
+    "playwright": "^1.60.0"
+  }
+}
