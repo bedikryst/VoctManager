@@ -1,0 +1,6 @@
+# French overlay for the static pages — machine-written by `npm run copy:apply`, never by hand.
+# See the head of `pages.en.yaml`: one flat map of the copy desk's dotted key → the French of that
+# field, falling back per field to the Polish in `src/content/pages/<page>.yaml`.
+#
+# Do not hand-type French punctuation spacing here. `lib/typo.ts` inserts the narrow no-break space
+# before `? ! : ;` at build; a hand-typed hard space doubles up.

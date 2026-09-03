@@ -1,0 +1,132 @@
+# The editorial text of /kontakt — Polish, and Polish only.
+#
+# WHY THIS IS YAML AND NOT A TypeScript MODULE. Page prose arrives one field at a time, through
+# review, over months: the copy desk proposes, a reviewer accepts, `copy:apply` writes. That write
+# is the one operation in the whole system that can destroy hand-made text, and it already exists,
+# proven, for YAML (`copydesk/yamlEdit.mjs`, four reconstruction proofs). Holding this prose in a
+# `.ts` literal would mean a SECOND implementation of that operation — and a worse one, since every
+# accepted French sentence and every `<a href="…">` would have to survive string escaping that can
+# corrupt the file while leaving it parseable. See docs/web-copy-desk-2026-09.md §6r.
+#
+# The page's CHROME went the other way, to `src/i18n/content/kontakt.ts`, and the line between them
+# is not "prose vs label" but whether completeness can be demanded: an aria-label must exist in all
+# three locales or the build should fail (a type enforces that), while a paragraph must be allowed
+# to stand in Polish on the English page until somebody translates it (an overlay does that, per
+# field). The same line `koncert.ts` draws between the page talking and the concert talking.
+#
+# TRANSLATIONS ARE NOT HERE. They live in `src/content/pages.{en,fr}.yaml` under this page's desk
+# key — `page.kontakt.` + the dotted path below — and are read through `lib/copyOverlay`.
+#
+# NO TYPOGRAPHY. Write the prose plainly: `lib/typo.ts` pins Polish orphans, the "św." binding and
+# French punctuation spacing in the rendered HTML at build. Spell `&nbsp;` here only for a binding
+# those rules do not make.
+
+meta:
+  title: "Kontakt — VoctEnsemble | Fundacja VoctFoundation"
+  description: >-
+    Napisz do VoctEnsemble i Fundacji VoctFoundation: koncerty i oprawy liturgii, mecenat, sprawy
+    ogólne. Odpowiadamy osobiście — po polsku, angielsku i francusku.
+
+hero:
+  # Vernacular gloss of the Latin rubric `Scribe nobis`, which stays in the markup because Latin is
+  # the same in every locale.
+  eyebrow: "Kontakt"
+  # The title is set as two lines and the break is compositional, not grammatical — a translation
+  # decides its own split rather than reproducing this one word for word.
+  title1: "Napisz"
+  title2Html: "do <em>nas.</em>"
+  lede: >-
+    Archikatedra w Łodzi, dworek w Szczawnicy, Synagoga Tempel, śluby w Tyńcu — każdy z tych
+    wieczorów zaczął się od czyjegoś zaproszenia. Następne może być Twoje.
+  scrollCue: "Wybierz drzwi"
+
+channels:
+  # Gloss of `Tres ianuae`.
+  eyebrow: "Troje drzwi"
+  h2: "Powiedz nam, z czym przychodzisz."
+  introHtml: >-
+    Rozpisaliśmy pocztę na trzy adresy, żeby wiadomość od razu trafiała do właściwej sprawy. Pod
+    wszystkimi trzema są <em>te same trzy osoby</em> — zarząd fundacji.
+  # Ordered by conversion: the two channels the site exists for first, catch-all last. RODO is
+  # deliberately NOT a channel here — it lives in the controller note at the foot of the page.
+  #
+  # `id` is what the desk keys a channel by — an identity rather than a position, so adding or
+  # reordering a channel re-keys none of the others (an email address cannot serve: `@` and `.` are
+  # not legal in a key part). The address sits here with its own copy rather than in the component
+  # because a channel is one object: its label, its subject line and the place it goes belong
+  # together, and the page's JSON-LD contact points are built from these same three entries.
+  items:
+    - id: "booking"
+      email: "booking@voctensemble.com"
+      role: "Koncerty i liturgie"
+      # Prefilled mail subject. It is copy: a French reader's message should arrive with a French
+      # subject line, and nothing about it is a proper name except the ensemble.
+      subject: "Zaproszenie VoctEnsemble"
+      hint: >-
+        Napisz, gdzie i kiedy: nazwa miejsca, przybliżony termin, okazja. Odpiszemy propozycją
+        programu ułożonego pod tę akustykę.
+    - id: "patronat"
+      email: "patronat@voctensemble.com"
+      role: "Mecenat i patronat"
+      subject: "Mecenat i patronat VoctEnsemble"
+      hint: >-
+        Darowizna, patronat honorowy albo współpraca instytucjonalna. Napiszcie, co Was interesuje —
+        odpowiemy, na co pójdzie wsparcie i co z niego powstanie.
+    - id: "ogolne"
+      email: "kontakt@voctensemble.com"
+      role: "Sprawy ogólne"
+      subject: "Sprawy ogólne VoctEnsemble"
+      hint: >-
+        Wszystko pozostałe: pytania, współpraca artystyczna, sprawy fundacji. Jeśli nie wiesz, który
+        adres wybrać, wybierz ten.
+
+after:
+  languages: >-
+    Pisz po polsku, po angielsku albo po francusku — odpowiemy w tym języku, w którym zaczniesz.
+    Najszybciej, jak pozwala kalendarz prób i koncertów; zwykle w ciągu kilku dni.
+  # The trailing arrow is part of the authored markup here, as it is in every link label on this
+  # page. Keep it when translating; the site has no other way of drawing it.
+  pressHtml: >-
+    Dziennikarze i organizatorzy znajdą biogramy, zdjęcia w wysokiej rozdzielczości i pełne programy
+    w <a href="/press">materiałach prasowych →</a>
+
+voices:
+  label: "Czytają i odpowiadają"
+  # The board, named rather than assigned per channel — a young foundation answers together, and
+  # saying so is more honest than a fabricated "dedicated contact". Proper names, so never copy.
+  names:
+    - "Florent de Bazelaire"
+    - "Anna Marcisz"
+    - "Krystian Bugalski"
+  note: >-
+    Zarząd Fundacji VoctFoundation. Odpowiadamy wspólnie — i chcemy, żeby tak zostało także wtedy,
+    gdy urośniemy.
+
+locus:
+  # Gloss of `Fundatio`.
+  eyebrow: "Fundacja"
+  h2: "Za głosem stoi fundacja."
+  foundationLabel: "Fundacja"
+  mission: >-
+    Fundacja VoctFoundation działa w obszarze kultury, sztuki oraz ochrony dziedzictwa; VoctEnsemble
+    jest jej zespołem-rezydentem. Dochód przeznaczamy w całości na cele statutowe.
+  foundationLink: "Poznaj fundację i zarząd →"
+  addressLabel: "Adres korespondencyjny"
+  addressNote: "Biura tu nie prowadzimy — spotykamy się tam, gdzie śpiewamy."
+
+legal:
+  controllerLabel: "Administrator danych"
+  # The legal citation is locale-dependent: "art. 6 ust. 1 lit. f RODO" is Art. 6(1)(f) GDPR in
+  # English and art. 6, § 1, f) RGPD in French. Translate the citation, never transliterate it.
+  rodoHtml: >-
+    Pisząc do nas, powierzasz nam swoje dane (imię, adres e-mail oraz treść wiadomości).
+    Przetwarzamy je wyłącznie po to, by odpowiedzieć na Twoją wiadomość (art. 6 ust. 1 lit. f RODO).
+    Masz prawo dostępu, sprostowania i usunięcia danych —
+    <a href="mailto:rodo@voctensemble.com">rodo@voctensemble.com</a>. Więcej
+    w <a href="/polityka-prywatnosci">polityce prywatności</a>.
+
+coda:
+  h2: "Do usłyszenia."
+  lede: "A najlepiej — na żywo, w akustyce, która pamięta."
+  concertsLink: "Zobacz koncerty →"
+  supportLink: "Wesprzyj fundację →"

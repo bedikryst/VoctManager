@@ -2,8 +2,12 @@
  * @file ui.ts
  * @description Chrome dictionary — the short, cross-page UI strings shared by SiteChrome and
  *  SiteFooter (nav labels, menu affordances, footer headings, the language switcher). These are
- *  ATOMIC labels, so they live as keyed strings; page PROSE does not belong here (it lives in
- *  per-locale content modules under `i18n/content/`). Latin rubrics on the nav (Introitus, De
+ *  ATOMIC labels, so they live as keyed strings, complete in every locale because the type says so.
+ *  Page PROSE does not belong here: it is the copy desk's, held in Polish under
+ *  `src/content/pages/<page>.yaml` and translated per field through the overlay (`lib/pageCopy`).
+ *  A page's OWN chrome — its landmark names, its affordances — sits beside that page's schema in
+ *  `i18n/content/<page>.ts`, on the same rule: chrome must be complete, prose may not be required
+ *  to be. Latin rubrics on the nav (Introitus, De
  *  nobis, Via, Scribe nobis, Sustinete nos) are locale-neutral and stay in the markup — only the
  *  vernacular gloss is translated here. The Polish column is the source of truth and is copied
  *  verbatim from the pre-i18n markup, so `lang="pl"` renders byte-identical to before.

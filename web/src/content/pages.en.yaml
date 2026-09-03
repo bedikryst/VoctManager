@@ -1,0 +1,9 @@
+# English overlay for the static pages — machine-written by `npm run copy:apply`, never by hand.
+#
+# One flat map of the copy desk's own dotted key → the English of that field. Keys are
+# `page.<page>.<path>` and are produced by `src/i18n/content/copySpec.ts`, which the page itself
+# reads through `lib/pageCopy`; the Polish they translate lives in `src/content/pages/<page>.yaml`.
+#
+# FALLBACK IS PER FIELD. A key missing here prints its Polish beside fields that print English,
+# which is what lets a page go up in English while its prose is still being reviewed — a page that
+# waited for a complete translation would show nothing at all for months.

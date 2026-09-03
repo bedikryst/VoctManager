@@ -1,0 +1,14 @@
+---
+/**
+ * @file en/kontakt.astro
+ * @description English contact route (/en/kontakt). Structure lives in the shared ContactPage
+ *  component; this route only selects the locale. The chrome is translated in
+ *  i18n/content/kontakt.ts, and the prose falls back per field to the Polish in
+ *  src/content/pages/kontakt.yaml until the copy desk's English lands in content/pages.en.yaml.
+ * @architecture Astro islands 2026
+ * @module pages/en/kontakt
+ */
+import ContactPage from "../../components/pages/ContactPage.astro";
+---
+
+<ContactPage lang="en" />

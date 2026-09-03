@@ -1,9 +1,16 @@
 /**
  * @file copyOverlay.ts
- * @description The READ side of the per-locale overlays. `concerts.yaml` is Polish-only; every
- *  English and French value the site prints for a concert lives in `concerts.en.yaml` /
- *  `concerts.fr.yaml` under the copy desk's own dotted key (`concert.wcielenie.about.blurb`), and
- *  this module is the single place that resolves one.
+ * @description The READ side of the per-locale overlays. The site's Polish is the source and is
+ *  held in two corpora — `concerts.yaml` for the evenings, `content/pages/<page>.yaml` for the
+ *  static pages — and every English and French value it prints lives in an overlay file beside
+ *  them, under the copy desk's own dotted key (`concert.wcielenie.about.blurb`,
+ *  `page.kontakt.hero.lede`). This module is the single place that resolves one.
+ *
+ *  ONE LOOKUP OVER FOUR FILES. The two corpora keep their own overlays because `copy:apply` writes
+ *  each of them whole, but they share a key space (`concert.` / `page.` are the namespaces), so a
+ *  reader asks by key and never says which file it came from. A key present in both is refused at
+ *  module load: it would mean one fact with two translations, and whichever the page did not read
+ *  would rot in silence.
  *
  *  WHY THE TRANSLATIONS LEFT THE CORPUS. Keeping them beside their Polish would have meant a
  *  second line-level rewrite of a file whose ~150 comments carry decisions nothing else records,
@@ -24,8 +31,10 @@
  */
 import YAML from "yaml";
 
-import enRaw from "../content/concerts.en.yaml?raw";
-import frRaw from "../content/concerts.fr.yaml?raw";
+import concertsEnRaw from "../content/concerts.en.yaml?raw";
+import concertsFrRaw from "../content/concerts.fr.yaml?raw";
+import pagesEnRaw from "../content/pages.en.yaml?raw";
+import pagesFrRaw from "../content/pages.fr.yaml?raw";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/config";
 
 /** A locale that can have an overlay: every locale but the Polish source (`DEFAULT_LOCALE`, which
@@ -37,24 +46,36 @@ export type OverlayLocale = Exclude<Locale, "pl">;
  * machine-written, so a shape that surprises this is a hand edit that went wrong, and it is better
  * to hear about it here than to print `[object Object]` into a page.
  */
-function parseOverlay(raw: string, locale: OverlayLocale): ReadonlyMap<string, string> {
+function parseOverlay(raw: string, file: string, into: Map<string, string>): void {
   const parsed: unknown = YAML.parse(raw) ?? {};
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    throw new Error(`concerts.${locale}.yaml is not a map of key → value.`);
+    throw new Error(`${file} is not a map of key → value.`);
   }
-  const entries = new Map<string, string>();
   for (const [key, value] of Object.entries(parsed)) {
     if (typeof value !== "string") {
-      throw new Error(`concerts.${locale}.yaml: ${key} holds ${typeof value}, not a string.`);
+      throw new Error(`${file}: ${key} holds ${typeof value}, not a string.`);
     }
-    if (value.length > 0) entries.set(key, value);
+    if (value.length === 0) continue;
+    if (into.has(key)) throw new Error(`${file}: ${key} is already translated in another overlay.`);
+    into.set(key, value);
   }
+}
+
+function loadLocale(locale: OverlayLocale, files: readonly [string, string][]): ReadonlyMap<string, string> {
+  const entries = new Map<string, string>();
+  for (const [name, raw] of files) parseOverlay(raw, `${name}.${locale}.yaml`, entries);
   return entries;
 }
 
 const OVERLAYS: Readonly<Record<OverlayLocale, ReadonlyMap<string, string>>> = {
-  en: parseOverlay(enRaw, "en"),
-  fr: parseOverlay(frRaw, "fr"),
+  en: loadLocale("en", [
+    ["concerts", concertsEnRaw],
+    ["pages", pagesEnRaw],
+  ]),
+  fr: loadLocale("fr", [
+    ["concerts", concertsFrRaw],
+    ["pages", pagesFrRaw],
+  ]),
 };
 
 /**

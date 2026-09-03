@@ -321,7 +321,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
-| G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **shape in §6q, not built** | the rest of the corpus enters the desk |
+| G | static pages onto the desk (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing — **shape settled and `kontakt` extracted, §6r; the contract walk, the extractor and the write path still to build** | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
 
@@ -1424,6 +1424,89 @@ contract or editorial decisions rather than code: the psalm register in English 
 Kart`'s `program.4.textGloss` in the singular, and the honorific in `credits[].name` (§6o's closing
 paragraph — splitting the honorific off the name is a `contract.mjs` change).
 
+### §6r Stage G1 — where a page's words live, decided, and `kontakt` moved into it (2026-09-03)
+
+§6q sketched the output of this stage as "a content module per page, the `o-nas.ts` pattern". Built
+against that sketch, the first page found the sketch and §8 pulling in opposite directions, and the
+question had to be settled before a single line of `kontakt.ts` could be written: **`o-nas.ts` holds
+three locales of prose in TypeScript literals, and `copy:apply` has no way to write a `.ts` file at
+all.** It writes a Polish scalar into `concerts.yaml` through `yamlEdit.mjs` and it rewrites an
+overlay whole. Nothing else.
+
+**Decided: a page's PROSE is YAML on the desk's own terms; a page's CHROME stays a typed triple.**
+
+The line between them is not "prose vs label", which is unfalsifiable at the margin — is a section
+rubric a label? is a scroll cue? — but **whether completeness can be demanded**:
+
+- An aria-label, a button, a landmark name must exist in all three locales or the page is broken
+  for somebody. `Record<Locale, T>` makes the compiler say so, and adding a section without
+  translating its landmark cannot build. That is `ui.ts` and `koncert.ts`, and page chrome joins
+  them at `i18n/content/<page>.ts`.
+- A paragraph arrives one field at a time, through review, over months. Requiring completeness would
+  mean an English page shows nothing until every field is translated. So prose takes the shape the
+  corpus already has: Polish source, per-locale overlay, fallback **per field**.
+
+That rule DERIVES the split `koncert.ts` already states in prose ("everything here is the PAGE
+talking; everything the CONCERT says comes from `concerts.yaml` through the overlay") instead of
+contradicting it, and it answers the sketch: the file §6q named still exists at the path it named —
+it holds the page's schema, its key contract and its chrome, and its words live next door.
+
+The second argument is the heavier one and it is about danger rather than taxonomy. **A TypeScript
+writer would be a second implementation of the one operation in this system that can destroy
+hand-written text** — and a worse one than the YAML it duplicates: a YAML block scalar holds prose
+verbatim, while a TS literal needs every quote, backslash and `${` escaped, in French sentences and
+in `<a href="…">` attributes, where a bug corrupts the file and leaves it parsing. `yamlEdit.mjs`
+already proves four things about a write before a byte lands. Two implementations of that is a
+defect on its own terms.
+
+**What shipped.** `/kontakt` renders from a shared component in three locales, with no word changed:
+
+- `src/content/pages/kontakt.yaml` — the Polish prose, 36 copy fields, and the three non-copy fields
+  a channel needs (`id`, `email`) plus the board's names, each with its reason in a comment.
+- `src/i18n/content/copySpec.ts` — the key rule, **once**, because it is read from both ends: the
+  page looks a key up in the overlay and the extractor emits the same key from the same YAML. Two
+  implementations would diverge in silence — a good translation stored under a key the page never
+  asks for, and a page still printing Polish with nothing anywhere reporting an error.
+- `src/i18n/content/kontakt.ts` — zod schema (`.strict()` throughout, so a hand-added `en:` fails
+  the build instead of being dropped), the desk contract in reading order, and the chrome triple.
+- `src/lib/pageCopy.ts` — parse, validate, substitute per field from the overlay, and localize every
+  internal `href` inside an HTML field through `localizePath`, so a translator writes `/press` and
+  never thinks about locale prefixes.
+- `src/lib/copyOverlay.ts` — one lookup over four files now (`concerts.{en,fr}.yaml` +
+  `pages.{en,fr}.yaml`), refusing a key that appears in two of them.
+- `ContactPage.astro` + three one-line routes. **Not** in `TRANSLATED_ROUTES` — the prose is still
+  Polish, and the set is what makes a page's links, canonical and hreflang point at it.
+
+**Two rules this settled, both mechanical rather than judged.**
+
+- **The `Html` suffix IS the segment kind.** A field named `…Html` renders through `set:html` and is
+  an `HTML` segment; everything else is `TEXT`, edited as plain text with no markup path at all.
+  Derived from the name rather than declared per field, so the two cannot disagree — and it is the
+  authoring convention the content modules already state. `kontakt` has four of them, which is where
+  §7's `contenteditable` sanitizer finally gets something to sanitize.
+- **A page's lists are keyed by an explicit `id`, never by position.** `concerts.yaml` keys
+  positionally and pays for it (§6d). A hand-written page has no reason to: `channels.items` carry
+  `id: booking`, so reordering a channel re-keys nothing. An email cannot serve — `@` and `.` are
+  not legal inside a key part, which `KEY_PATTERN` would have caught only at ingest.
+
+**The proof that no word moved.** `/kontakt` was built before the refactor and after it, and the two
+renders compared with only what moving a file is allowed to change normalized away (Astro's per-file
+scoped-style id, asset content hashes, insignificant whitespace, `&nbsp;` vs U+00A0). Four
+differences remained, all of them intended: `"inLanguage":"pl"` added to the JSON-LD, the scoped
+stylesheet renamed `kontakt.css` → `ContactPage.css`, `data-copied="Skopiowano"` added to the three
+copy buttons (the confirmation is read off the button now, because one script serves three locales),
+and the island's `uid`. No text node, no tag, no href differs. Whitespace normalization can hide a
+lost space that mattered, so the hunks were read rather than counted.
+
+**Left standing, deliberately.** `/en/kontakt` and `/fr/kontakt` build, carry English and French
+chrome around Polish prose, and canonicalize to `/kontakt` — because `localizePath` returns the
+Polish URL for a path outside `TRANSLATED_ROUTES`. That is the ordering contract doing its job, not
+a defect: route files first, the set afterwards, once the prose is genuinely translated.
+
+**And the debt this creates, named rather than buried:** `o-nas.ts` is now the one page holding
+prose in TypeScript. It should move to `content/pages/o-nas.yaml` with today's reviewed EN/FR going
+into the overlays — otherwise the desk will hold every page but the one it was modelled on.
+
 ## §7 Traps
 
 - **`overflow-x: hidden` on the body kills every page-level `position: sticky`.** One axis `hidden`
@@ -1453,6 +1536,12 @@ paragraph — splitting the honorific off the name is a `contract.mjs` change).
   everything else, and `text` segments must be edited as plain text with no HTML path at all. This
   is the same failure mode as the annotation payload sanitizer: a serializer that rebuilds its
   payload silently drops whatever is not on the list.
+- **A module the extractor imports may not reach for the bundler.** `i18n/content/copySpec.ts` and
+  each page's `i18n/content/<page>.ts` are imported by Node directly — type-stripping, no build step
+  — so that the key a translation is stored under is the same expression as the key the page looks
+  up. One `?raw`, one `astro:assets`, one `import.meta.glob` anywhere in that import graph and the
+  extractor stops resolving, with an error that names a module three hops away from the one that
+  broke. The Vite-only half lives in `lib/pageCopy.ts` and imports the pure half, never the reverse.
 - **Do not let editors type French punctuation spacing.** `lib/typo.ts` inserts the narrow no-break
   spaces before `? ! : ;` and pins orphans at build time. Hand-typed hard spaces double up. Say so
   on the desk, in French, in one sentence.
