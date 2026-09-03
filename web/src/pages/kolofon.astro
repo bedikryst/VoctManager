@@ -136,7 +136,7 @@ for (const entry of (await getCollection("concerts")).sort((a, b) => a.data.orde
   // Every frame keeps the road back to its own evening, exactly as /obrazy's do — a set opened
   // from a name would otherwise be the dead end the frame's exit was built to close.
   const exit = c.hasPage ? { href: `/koncerty/${entry.id}`, hrefLabel: c.title } : {};
-  for (const run of galleryRuns(c.gallery, { venue: c.venue, date: c.date })) {
+  for (const run of galleryRuns(c.gallery, { venue: c.venue, date: c.date }, "pl")) {
     const caption = [run.title, run.date].filter(Boolean).join(" · ");
     // FRAME BY FRAME, never over `run.credits` — that roll is deduplicated per run, so walking it
     // would tally a hand once per evening and print "1 fot." under someone who shot eight. The
@@ -157,7 +157,7 @@ for (const entry of (await getCollection("concerts")).sort((a, b) => a.data.orde
         caption,
         // Resolved by the trigger, never by the room — only a surface reading the gallery knows
         // whether a frame has a photographer, an outlet or the ensemble behind it.
-        credit: frameCredit(shot),
+        credit: frameCredit(shot, "pl"),
         ...exit,
       });
     }

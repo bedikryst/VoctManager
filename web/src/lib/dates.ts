@@ -18,7 +18,7 @@
  * @architecture Astro islands 2026
  * @module lib/dates
  */
-import type { Locale } from "../i18n/config";
+import { pickLocale, type Locale, type LocalizedText } from "../i18n/config";
 
 const INTL_LOCALE: Record<Locale, string> = { pl: "pl-PL", en: "en-GB", fr: "fr-FR" };
 
@@ -29,3 +29,43 @@ export const longDate = (iso: string, locale: Locale): string =>
     month: "long",
     year: "numeric",
   });
+
+/**
+ * Month and year only — the register ribbons' column ("sty 2024" / "Jan 2024" / "janv. 2024"),
+ * where a full date has no room and the day is not the fact being stated.
+ *
+ * It replaces the hand-written `viaDate` the corpus used to carry, which was a Polish month in a
+ * string and would have printed "sty 2024" in the chrome of every English concert page (the reason
+ * `contract.mjs` files it under stage F). ICU reproduces the six hand-written Polish values
+ * exactly; the two evenings whose day is genuinely vague have no `date` at all and state a
+ * `dateLabel` instead, which is copy and per locale.
+ */
+export const shortDate = (iso: string, locale: Locale): string =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString(INTL_LOCALE[locale], {
+    month: "short",
+    year: "numeric",
+  });
+
+/**
+ * An evening's moment as the rails and registers abbreviate it — the derived replacement for the
+ * hand-written `viaDate` the corpus used to carry.
+ *
+ * The field was a Polish month inside a string ("sty 2024"), which §7 of the copy-desk spec bans
+ * outright and which would have printed Polish in the chrome of every English and French concert
+ * page. ICU reproduces all four hand-written values exactly, so this is the one place the
+ * abbreviation is composed. An evening whose day is genuinely vague has no `date` and states a
+ * `dateLabel` instead — that one IS copy, and a surface holding the concert's id should resolve it
+ * through the copy overlay rather than taking the corpus's Polish (lib/registrum does).
+ */
+export const viaMoment = (
+  moment: {
+    readonly date?: string | undefined;
+    readonly dateLabel?: LocalizedText | undefined;
+  },
+  locale: Locale,
+): string =>
+  moment.date
+    ? shortDate(moment.date, locale)
+    : moment.dateLabel
+      ? pickLocale(moment.dateLabel, locale)
+      : "";

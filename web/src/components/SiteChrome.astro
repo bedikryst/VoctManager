@@ -45,9 +45,11 @@ const {
 const t = UI[lang];
 
 /* The "registrum" — desktop register ribbons under KONCERTY (styles/registrum.css),
-   derived from the concerts collection (page-bearing entries only, Via order). Ribbon hrefs point
-   at concert pages, which stay Polish-only for now, so they are NOT localized. */
-const ribbons = toRibbons(await getCollection("concerts"));
+   derived from the concerts collection (page-bearing entries only, Via order). Each row's title,
+   place and moment come out in THIS page's locale (lib/registrum reads the copy overlay); the
+   hrefs it returns are canonical Polish base paths, which is what `current` is compared against
+   and what `localizePath` turns into this locale's URL for the concerts that have one. */
+const ribbons = toRibbons(await getCollection("concerts"), lang);
 /* SECTION state, not page state — `data-section` is the visual "you are somewhere in here"
    and it is a separate attribute from `aria-current` on purpose. `aria-current="page"` is a
    claim that THIS LINK POINTS AT THE PAGE YOU ARE ON, so on /koncerty/wcielenie it belongs to
@@ -140,7 +142,7 @@ const langOptions = showLang
             ribbons.map((r, i) => (
               <a
                 class="ribbon"
-                href={r.href}
+                href={localizePath(r.href, lang)}
                 style={`--rib: ${r.accent}; --i: ${i};`}
                 aria-current={current === r.href ? "page" : undefined}
               >
@@ -159,14 +161,16 @@ const langOptions = showLang
           }
           {/* The register's closing line — the archive of every evening's photographs, filed
               under the section it belongs to. Deliberately NOT a sixth ribbon (registrum.css):
-              no numeral, no silk, no leader. The URL stays Polish, as it is untranslated. */}
+              no numeral, no silk, no leader. The URL stays Polish, as the page is untranslated;
+              its NAME is still this locale's, because a reader of the English chrome has to be
+              able to tell what the link is before they follow it into a Polish page. */}
           <a
             class="registrum-all"
             href="/obrazy"
             aria-current={current === "/obrazy" ? "page" : undefined}
           >
-            <span class="registrum-all-word">Obrazy</span>
-            <span class="registrum-all-gloss">wszystkie fotografie</span>
+            <span class="registrum-all-word">{t.nav.archive}</span>
+            <span class="registrum-all-gloss">{t.nav.archiveGloss}</span>
           </a>
         </div>
       </div>
@@ -300,7 +304,7 @@ const langOptions = showLang
           style="--i: 0; --vb: 1.5; --vr: 0"
           aria-current={current === "/" ? "page" : undefined}
         >
-          <span class="voice-pl">{t.nav.home}</span>
+          <span class="voice-gloss">{t.nav.home}</span>
           <span class="voice-lead" aria-hidden="true"></span>
           <span class="voice-lat">Introitus</span>
         </a>
@@ -310,7 +314,7 @@ const langOptions = showLang
           style="--i: 1; --vb: 2.5; --vr: 0"
           aria-current={current === "/o-nas" ? "page" : undefined}
         >
-          <span class="voice-pl">{t.nav.about}</span>
+          <span class="voice-gloss">{t.nav.about}</span>
           <span class="voice-lead" aria-hidden="true"></span>
           <span class="voice-lat">De nobis</span>
         </a>
@@ -320,7 +324,7 @@ const langOptions = showLang
           style="--i: 2; --vb: 3.5; --vr: 0"
           aria-current={current === "/koncerty" ? "page" : undefined}
         >
-          <span class="voice-pl">{t.nav.concerts}</span>
+          <span class="voice-gloss">{t.nav.concerts}</span>
           <span class="voice-lead" aria-hidden="true"></span>
           <span class="voice-lat">Via</span>
         </a>
@@ -330,7 +334,7 @@ const langOptions = showLang
           style="--i: 3; --vb: 4.5; --vr: 0"
           aria-current={current === "/kontakt" ? "page" : undefined}
         >
-          <span class="voice-pl">{t.nav.contact}</span>
+          <span class="voice-gloss">{t.nav.contact}</span>
           <span class="voice-lead" aria-hidden="true"></span>
           <span class="voice-lat">Scribe nobis</span>
         </a>

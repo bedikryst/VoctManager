@@ -35,7 +35,6 @@
   time: "20:00"
   address: "ul. Kopernika 26, Kraków"
   admission: free
-  viaDate: sty 2024
   about:
     place: "Bazylika NSPJ · Kraków"
     blurb: "Debiut cyklu Koncertów Duchowych: renesans, barok i współczesność ułożone wokół tajemnicy Bożego Narodzenia oraz Wcielenia."
@@ -486,7 +485,6 @@
   venue: "Dworek Gościnny, Szczawnica"
   date: "2024-06-01"
   admission: paid
-  viaDate: cze 2024
   about:
     place: "Dworek Gościnny · Szczawnica"
     blurb: "Koncert na dwanaście głosów i skrzypce z Radu Ropotanem: muzyka sakralna, przyroda i pieśni zakorzenione w krajobrazie Pienin."
@@ -1086,7 +1084,6 @@
   metaPlace: { pl: "Rybnik · Łódź · Bazylika NSPJ, Kraków" }
   dateLabel: { pl: "2024" }
   venue: "Bazylika NSPJ, Kraków / Archikatedra, Łódź / Bazylika św. Antoniego, Rybnik"
-  viaDate: "2024"
   about:
     place: "Rybnik · Łódź · Kraków"
     blurb: "Program zbudowany z psalmów: od pokuty i dziękczynienia po radość uwielbienia, z muzyką Allegriego, Bacha, Rossiego, Brucknera i Stanforda."
@@ -1610,7 +1607,6 @@
   time: "20:00"
   address: "plac Mariacki 5, Kraków"
   admission: free
-  viaDate: lut 2025
   about:
     place: "Bazylika Mariacka · Kraków"
     blurb: "Koncert duchowy jako hołd dla tych, którzy oddali życie w obronie wolności, oraz modlitwa o pokój dla Ukrainy i przyszłych pokoleń."
@@ -2104,7 +2100,6 @@
   metaPlace: { pl: "Mistrzejowice, Kraków · Niedzica" }
   dateLabel: { pl: "jesień 2025" }
   venue: "Mistrzejowice, Kraków / Niedzica"
-  viaDate: jesień 2025
   about:
     place: "Mistrzejowice · Niedzica"
     blurb: "Program pamięci i współczucia wobec cierpienia cywilów: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti i Tavener prowadzący od lamentu ku modlitwie."
@@ -2537,7 +2532,6 @@
   address: "ul. Rakowiecka 61, Warszawa"
   # A sung liturgy, not a ticketed concert — the Mass was open to whoever came.
   admission: free
-  viaDate: maj 2026
   about:
     place: "Sanktuarium Narodowe św. Andrzeja Boboli · Warszawa"
     blurb: "Oprawa liturgii w dniu 100-lecia polskich prowincji jezuickich, podczas Mszy św. celebrowanej przez abp. Adriana Galbasa z homilią o. Artura Sosy SJ."

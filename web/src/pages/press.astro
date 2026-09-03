@@ -31,6 +31,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import SiteChrome from "../components/SiteChrome.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { photo, bleedPair } from "../lib/photos";
+import { viaMoment } from "../lib/dates";
 import { PATHS } from "../data/landing/paths";
 import { MODAL_VIDEO } from "../data/landing/video";
 import { VaultIsland } from "../islands/landing/VaultIsland";
@@ -247,7 +248,7 @@ const register = await Promise.all(
     return {
       ...p,
       roman: meta?.roman ?? "",
-      yearLabel: meta?.date?.slice(0, 4) ?? meta?.viaDate.match(/\d{4}/)?.[0] ?? "",
+      yearLabel: meta?.date?.slice(0, 4) ?? (meta ? viaMoment(meta, "pl").match(/\d{4}/)?.[0] : undefined) ?? "",
       posterSrc: p.video
         ? (await getImage({ src: photo(p.poster), width: 900, format: "webp" })).src
         : undefined,

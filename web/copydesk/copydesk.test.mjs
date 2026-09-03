@@ -153,8 +153,16 @@ test("Polish is never empty and a translation is only ever a repository value", 
       `${segment.key} [${segment.locale}]: a value that is not in the overlay`,
     );
   }
+  // Counted against the overlays rather than a frozen number: this asserted 28 (what stage C3
+  // moved out of the about blocks) and went red the moment stage E's import wrote 830 more. The
+  // invariant it was reaching for is the one above — a translated row exists exactly where an
+  // overlay holds one — so state it as the identity it is.
   const translated = segments.filter((s) => s.locale !== "pl" && s.value.length > 0);
-  assert.equal(translated.length, 28, "the 28 values stage C3 moved out of the about blocks");
+  assert.equal(
+    translated.length,
+    overlays.en.size + overlays.fr.size,
+    "one translated row per overlay entry, and none from anywhere else",
+  );
 });
 
 test("the corpus is Polish-only, and a stray translation in it is refused", async () => {
@@ -446,7 +454,17 @@ test("a patch is planned into a Polish write, an overlay write, and a refusal", 
   const at = [/** @type {number} */ (index.get("wcielenie")), ...paths[key].pl];
   const rows = [
     patchRow({ id: "a", key, locale: "pl", value: "Nowa esencja.", base_value: valueAt(corpus, at) }),
-    patchRow({ id: "b", key, locale: "en", value: "A first English rendering." }),
+    // A translation written over what the overlay currently holds, sourced from the overlay so
+    // the row cannot go stale again. It used to be a FIRST rendering against an empty column,
+    // which stopped being reachable in this corpus when stage E filled all 428 keys in both
+    // locales — an empty pre-image is now a stale one, and the plan refuses it.
+    patchRow({
+      id: "b",
+      key,
+      locale: "en",
+      value: "A first English rendering.",
+      base_value: overlays.en.get(key),
+    }),
     // A translation of a value the overlay already holds.
     patchRow({
       id: "c",

@@ -66,10 +66,18 @@ const citeText = (cite: ScriptureCite, locale: Locale): string => {
   return out;
 };
 
-/** The whole reference on one line. Several citations, and a named source beside them, are
- *  joined by the interpunct the site already uses to seat two facts on one line. */
-export function formatRef(ref: ScriptureRef, locale: Locale): string {
+/**
+ * The whole reference on one line. Several citations, and a named source beside them, are
+ * joined by the interpunct the site already uses to seat two facts on one line.
+ *
+ * `source` is COPY and the citations are not — a book abbreviation and a verse mark are lexical
+ * facts this module ships complete, while "Introit Requiem" is a translator's decision. So a
+ * caller that can reach the copy desk's overlay passes the resolved string; one that cannot falls
+ * back to the reference's own map, which after stage C3 holds Polish alone.
+ */
+export function formatRef(ref: ScriptureRef, locale: Locale, source?: string | undefined): string {
   const parts = (ref.scripture ?? []).map((cite) => citeText(cite, locale));
-  if (ref.source) parts.push(pickLocale(ref.source, locale));
+  const named = source ?? (ref.source && pickLocale(ref.source, locale));
+  if (named) parts.push(named);
   return parts.join(" · ");
 }

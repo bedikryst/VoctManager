@@ -50,6 +50,12 @@ export interface UIStrings {
      * landmark label in a French document, which is exactly the kind of gap that ships.
      */
     readonly tabulaAria: string;
+    /** The photograph archive (/obrazy) as the registrum's closing line names it, plus the gloss
+        under it. The page itself is Polish-only, so the LINK stays a Polish URL — but a reader of
+        the English or French chrome still has to be able to tell where it goes before following
+        it, which is why the name is translated and the destination is not. */
+    readonly archive: string;
+    readonly archiveGloss: string;
   };
   /**
    * The three column heads are the POLISH HALF of a two-voice rubric — the Latin
@@ -103,6 +109,8 @@ export const UI: Record<Locale, UIStrings> = {
       closeAria: "Zamknij menu",
       langAria: "Wybór języka",
       tabulaAria: "Spis treści tej strony",
+      archive: "Obrazy",
+      archiveGloss: "wszystkie fotografie",
     },
     footer: {
       foundation: "Fundacja",
@@ -139,6 +147,8 @@ export const UI: Record<Locale, UIStrings> = {
       closeAria: "Close menu",
       langAria: "Language",
       tabulaAria: "Contents of this page",
+      archive: "Images",
+      archiveGloss: "every photograph",
     },
     footer: {
       foundation: "Foundation",
@@ -175,6 +185,8 @@ export const UI: Record<Locale, UIStrings> = {
       closeAria: "Fermer le menu",
       langAria: "Langue",
       tabulaAria: "Sommaire de cette page",
+      archive: "Images",
+      archiveGloss: "toutes les photographies",
     },
     footer: {
       foundation: "Fondation",

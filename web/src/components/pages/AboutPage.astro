@@ -21,6 +21,7 @@ import SiteFooter from "../SiteFooter.astro";
 import BleedImage from "../BleedImage.astro";
 import { photo, photoOptional, bleedPair } from "../../lib/photos";
 import { concertKey, overlayValue } from "../../lib/copyOverlay";
+import { viaMoment } from "../../lib/dates";
 import { VaultIsland } from "../../islands/landing/VaultIsland";
 import { ABOUT } from "../../i18n/content/o-nas";
 import { UI } from "../../i18n/ui";
@@ -54,7 +55,7 @@ const milestones = concerts.map((entry, i) => {
   const a = entry.data.about;
   const translated = (field: string) => overlayValue(concertKey(entry.id, field), lang);
   return {
-    year: entry.data.date?.slice(0, 4) ?? entry.data.viaDate.match(/\d{4}/)?.[0] ?? entry.data.viaDate,
+    year: entry.data.date?.slice(0, 4) ?? viaMoment(entry.data, lang).match(/\d{4}/)?.[0] ?? "",
     place: translated("about.place") ?? a?.place ?? entry.data.venue ?? pickLocale(entry.data.metaPlace, lang),
     title: translated("title") ?? entry.data.title,
     img: a?.img ? photoOptional(a.img) : undefined,

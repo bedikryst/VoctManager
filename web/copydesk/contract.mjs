@@ -303,11 +303,10 @@ export const NOT_COPY = {
   time: "clock time",
   address: "street address — JSON-LD only",
   admission: "enum, JSON-LD only",
-  viaDate:
-    "A POLISH DATE IN A STRING (\"sty 2024\", \"jesień 2025\") — §6a's rule says no date is ever " +
-    "written into copy, and this is the one the sweep left. It is excluded from the desk because " +
-    "it is a date, not because it is harmless: the via-rail will print \"sty 2024\" on the " +
-    "English page until it is derived from `date`/`dateLabel`. Stage F.",
+  // `viaDate` stood here and is GONE from the file (stage F, §6o): it was a Polish month written
+  // into data, and it would have printed "sty 2024" in the chrome of every English page. It is
+  // derived now — `viaMoment` in `src/lib/dates.ts`, from `date` or, where the day is vague, from
+  // the `dateLabel` above, which IS copy and is on the desk.
   inscriptio: "Latin original — content, not a locale (§5)",
   "inscriptioRef.scripture[].book": "structural citation — lib/scriptureRef formats it per locale",
   "inscriptioRef.scripture[].chapter": "structural citation",

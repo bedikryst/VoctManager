@@ -1,0 +1,34 @@
+---
+/**
+ * @file en/koncerty/[id].astro
+ * @description English concert page (/en/koncerty/[id]). Structure and copy live in the shared
+ *  ConcertPage component; this route selects the locale and, crucially, the SET.
+ *
+ *  THE SWITCH IS `TRANSLATED_ROUTES` AND IT IS READ HERE. A concert gets a foreign page the
+ *  moment its base path enters that set, and the localized links to it light up from the same
+ *  entry — so the page and the links to it can never appear one without the other. That is what
+ *  dissolves, for this route, the ordering contract i18n/config states for hand-written pages
+ *  ("add the path only after both route files exist"): here both route files exist for the whole
+ *  family from the start, and the set decides which concerts they generate. Flip one id at a time.
+ * @architecture Astro islands 2026
+ * @module pages/en/koncerty/[id]
+ */
+import { getCollection } from "astro:content";
+import ConcertPage from "../../../components/pages/ConcertPage.astro";
+import { isTranslated } from "../../../i18n/config";
+
+export async function getStaticPaths() {
+  const concerts = await getCollection(
+    "concerts",
+    ({ id, data }) => data.hasPage && isTranslated(`/koncerty/${id}`),
+  );
+  return concerts.map((entry) => ({
+    params: { id: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+
+<ConcertPage lang="en" entry={entry} />

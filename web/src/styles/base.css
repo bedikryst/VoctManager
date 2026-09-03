@@ -47,7 +47,7 @@
 /* Cyrillic. Concert pages carry sung text in its original language, and one of them is the
    Ukrainian hymn "Боже великий, єдиний, нам Україну храни" — set, like every other sung text,
    in `--serif` (koncerty/[id].astro: .kd-inscriptio-lat and .kd-text-orig are italic,
-   .kd-text-pl roman), so BOTH styles need the subset or the hymn drops to Georgia in the
+   .kd-text-gloss roman), so BOTH styles need the subset or the hymn drops to Georgia in the
    middle of a page that is otherwise Cormorant throughout.
    `unicode-range` gates the download: these two files are fetched only by a document that
    actually contains Cyrillic, so every other page pays nothing for them. */

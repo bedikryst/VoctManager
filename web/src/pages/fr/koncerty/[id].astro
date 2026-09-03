@@ -1,0 +1,32 @@
+---
+/**
+ * @file fr/koncerty/[id].astro
+ * @description French concert page (/fr/koncerty/[id]). Structure and copy live in the shared
+ *  ConcertPage component; this route selects the locale and the set, exactly as its English
+ *  sibling does — see that file for why `TRANSLATED_ROUTES` is read here rather than trusted to
+ *  be flipped in the right order.
+ *
+ *  The URL segment stays the Polish `koncerty`: a slug is an address, and translating it would
+ *  break every link the ensemble has already shared while gaining nothing a reader can use.
+ * @architecture Astro islands 2026
+ * @module pages/fr/koncerty/[id]
+ */
+import { getCollection } from "astro:content";
+import ConcertPage from "../../../components/pages/ConcertPage.astro";
+import { isTranslated } from "../../../i18n/config";
+
+export async function getStaticPaths() {
+  const concerts = await getCollection(
+    "concerts",
+    ({ id, data }) => data.hasPage && isTranslated(`/koncerty/${id}`),
+  );
+  return concerts.map((entry) => ({
+    params: { id: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+
+<ConcertPage lang="fr" entry={entry} />

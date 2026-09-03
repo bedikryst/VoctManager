@@ -13,6 +13,7 @@
 import { getCollection } from "astro:content";
 import BleedImage from "../BleedImage.astro";
 import { bleedPair } from "../../lib/photos";
+import { viaMoment } from "../../lib/dates";
 import { MODAL_VIDEO } from "../../data/landing/video";
 
 const hero = bleedPair("hero-landing");
@@ -42,7 +43,7 @@ const upcoming = (await getCollection("concerts"))
           href={upcoming.data.hasPage ? `/koncerty/${upcoming.id}` : "/koncerty"}
         >
           <span class="hero-announce-dot" aria-hidden="true"></span>
-          <span>Najbliżej — <strong>{upcoming.data.title}</strong> · {upcoming.data.viaDate}</span>
+          <span>Najbliżej — <strong>{upcoming.data.title}</strong> · {viaMoment(upcoming.data, "pl")}</span>
         </a>
       )}
       <div class="hero-kicker micro intro-stage">Concerts Spirituels</div>

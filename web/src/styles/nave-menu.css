@@ -575,7 +575,7 @@
    seat the word with its own air. Width alone was the old rule and it broke the moment the
    card was cut to the screen: a narrow, tall phone gets a deep band and the word would have
    grown past the measure it has to fit in. */
-.voice-pl {
+.voice-gloss {
   font-family: var(--serif);
   font-size: clamp(26px, min(10.5vw, calc(var(--band) * 0.46)), 44px);
   /* MUST equal --wght-rest (tokens.css) — the press below drives the axis through
@@ -598,11 +598,11 @@
    four words at --wght-press for the life of the page. Same tokens, same clock, this card's own
    trigger. Gated on the motion class exactly as registers.css gates its own: without it the
    declared font-weight renders and there is no axis to strand. */
-html.voct-motion .voice-pl {
+html.voct-motion .voice-gloss {
   --wght: var(--wght-press);
   font-variation-settings: "wght" var(--wght);
 }
-html.voct-motion .chrome.menu-open .voice-pl {
+html.voct-motion .chrome.menu-open .voice-gloss {
   --wght: var(--wght-rest);
 }
 /* The leader — the missal table's dotted rule, drawn solid as everywhere on this site. It
@@ -642,7 +642,7 @@ html.voct-motion .chrome.menu-open .voice-pl {
 }
 /* The book is open at your page: the current voice's word is set rubric — with the vitta's
    tip at its line, the only red at rest. */
-.voice[aria-current="page"] .voice-pl {
+.voice[aria-current="page"] .voice-gloss {
   color: var(--crimson);
 }
 
@@ -749,7 +749,7 @@ html.voct-motion .chrome.menu-open .voice-pl {
   letter-spacing: 0.12em;
   color: rgba(22, 21, 20, 0.62);
 }
-/* Both drivers again (see .voice-pl): the title is the longest string on the card and the
+/* Both drivers again (see .voice-gloss): the title is the longest string on the card and the
    measure is the binding constraint on a narrow phone. */
 .via-title {
   font-family: var(--serif);
@@ -958,11 +958,11 @@ html.voct-motion .chrome.menu-open .voice-pl {
 /* ── Press (touch-only surface → :active, never :hover): the word turns rubric under the
    finger — "becoming your page", the only transient red — and gives slightly toward the
    ribbon's coming run. ── */
-.voice:active .voice-pl,
-.voice:focus-visible .voice-pl {
+.voice:active .voice-gloss,
+.voice:focus-visible .voice-gloss {
   color: var(--crimson);
 }
-.voice:active .voice-pl {
+.voice:active .voice-gloss {
   transform: translateX(4px);
 }
 
@@ -978,7 +978,7 @@ html.voct-motion .chrome.menu-open .voice-pl {
   transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .nave-list.is-committing .voice.is-chosen .voice-lat,
-.nave-list.is-committing .voice.is-chosen .voice-pl,
+.nave-list.is-committing .voice.is-chosen .voice-gloss,
 .nave-list.is-committing .via-row.is-chosen .via-title,
 .nave-list.is-committing .via-row.is-chosen .via-roman {
   color: var(--crimson);
@@ -986,7 +986,7 @@ html.voct-motion .chrome.menu-open .voice-pl {
 }
 /* Hold exactly what the finger showed (the give) so the snapshot never catches the word
    mid-release on touch-up. */
-.nave-list.is-committing .voice.is-chosen .voice-pl {
+.nave-list.is-committing .voice.is-chosen .voice-gloss {
   transform: translateX(4px);
 }
 .nave-list.is-committing .via-row.is-chosen .via-title {
@@ -1170,7 +1170,7 @@ body.nav-open {
   .nave-antiphon,
   .voice,
   .voice-lead,
-  .voice-pl,
+  .voice-gloss,
   .via::before,
   .via-label,
   .via-row,
@@ -1185,7 +1185,7 @@ body.nav-open {
   }
   /* States snap (rules drawn, leaders and ribbon at their page, retargets land instantly); the
      scripts also skip the pull hold and navigate immediately. */
-  .voice:active .voice-pl,
+  .voice:active .voice-gloss,
   .via-row:active .via-title,
   .nave-cta:active .nave-cta-word {
     transform: none;

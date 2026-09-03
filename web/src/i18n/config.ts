@@ -26,7 +26,15 @@ export type Locale = (typeof LOCALES)[number];
  */
 export type LocalizedText = Partial<Record<Locale, string>> & { readonly pl: string };
 
-/** The value `locale` prints, falling back to Polish while a translation is still missing. */
+/**
+ * The value `locale` prints, falling back to Polish while a translation is still missing.
+ *
+ * MIND WHERE THE MAP CAME FROM. `concerts.yaml` has been Polish-only since stage C3 and its maps
+ * carry `pl` alone, so calling this on one returns Polish in every locale — silently, on a page
+ * that looks translated. A concert field's translation lives in the copy desk's per-locale overlay
+ * and is read through `lib/copyOverlay`; this function is for maps that genuinely hold their own
+ * locales.
+ */
 export function pickLocale(text: LocalizedText, locale: Locale): string {
   return text[locale] ?? text.pl;
 }
@@ -40,19 +48,21 @@ export function pickLocale(text: LocalizedText, locale: Locale): string {
  * regardless, because an empty one falls back to Polish and would print a Polish stanza under an
  * English original; it is the PAGE that decides not to say the same thing twice.
  *
+ * `gloss` is the value THIS RENDER prints — the caller has already resolved it through the copy
+ * desk's overlay. It is not a `LocalizedText` any more: since stage C3 a map in `concerts.yaml`
+ * carries `pl` alone, so reading one here would have collapsed the English gloss against nothing
+ * and printed the Polish under every foreign original.
+ *
  * Compared on collapsed whitespace: the original and its gloss are hand-wrapped block scalars
  * written at different times, and a line break is not a difference in what was sung.
  */
 export function glossFor(
   original: string | undefined,
-  gloss: LocalizedText | undefined,
-  locale: Locale,
+  gloss: string | undefined,
 ): string | null {
-  if (!gloss) return null;
-  const value = pickLocale(gloss, locale);
-  if (!value.trim()) return null;
+  if (!gloss || !gloss.trim()) return null;
   const flatten = (text: string) => text.replace(/\s+/gu, " ").trim();
-  return original && flatten(original) === flatten(value) ? null : value;
+  return original && flatten(original) === flatten(gloss) ? null : gloss;
 }
 
 /** Canonical origin — the single owner of the production URL for build-time absolute links
@@ -91,8 +101,22 @@ export const LOCALE_META: Record<Locale, LocaleMeta> = {
  * `src/pages/en/<page>.astro` and `src/pages/fr/<page>.astro` exist. Flip the switch first and
  * every localized link to this page (nav, footer, the switcher) immediately starts pointing at
  * `/en/<page>` and `/fr/<page>`, which 404 until those route files ship.
+ *
+ * THE CONCERT PAGES ARE THE ONE EXEMPTION, and they earned it by being a parameterized route
+ * rather than a page. `src/pages/{en,fr}/koncerty/[id].astro` exist for the whole family and read
+ * THIS SET in their own `getStaticPaths`, so adding an id emits the two foreign pages and lights
+ * the links to them in the same build — there is no window in which one exists without the other,
+ * and no ordering left to get wrong. Six concerts therefore become six entries, each flipped on
+ * its own: a concert enters when its translation is reviewed, not when the section is.
  */
-export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>(["/o-nas"]);
+export const TRANSLATED_ROUTES: ReadonlySet<string> = new Set<string>([
+  "/o-nas",
+  "/koncerty/wcielenie",
+  "/koncerty/wolanie-gor",
+  "/koncerty/9-kart",
+  "/koncerty/hymn-poleglym",
+  "/koncerty/aeternam",
+]);
 
 /**
  * Master visibility of the on-page language switcher. Temporarily OFF: the EN/FR pages still build

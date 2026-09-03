@@ -83,8 +83,9 @@ const concerts = defineCollection({
         cannot drift from the structured value it restates. */
     metaPlace: localized,
     /** The dateline's date where there is no `date` to format — a tour across a year, a season.
-        Copy, not a date, so it is held per locale ("jesień 2025" → "autumn 2025"). Distinct from
-        `viaDate`, which is the via-rail's own abbreviation of the same moment. */
+        Copy, not a date, so it is held per locale ("jesień 2025" → "autumn 2025"). It is also
+        what the via-rail's abbreviation falls back to when there is no `date` to shorten
+        (`viaMoment`, lib/dates). */
     dateLabel: localized.optional(),
     /** Venue name alone — feeds schema.org Place.name (`metaPlace` is display-only). */
     venue: z.string().optional(),
@@ -103,9 +104,6 @@ const concerts = defineCollection({
         it unset emits neither. A touring concert states this per date instead (see `dates`),
         since one programme can be free in one city and ticketed in the next. */
     admission: z.enum(["free", "paid"]).optional(),
-    /** Short via-rail date label (e.g. "sty 2024"). The via-rail fill % is computed
-        from order in the page, not stored here. */
-    viaDate: z.string(),
     /** /o-nas milestone editorial — the About page derives its "Via" list from this
         collection (single source of truth with /koncerty). All fields optional:
         place falls back to `venue`, blurb to `essence`; a missing img renders the

@@ -20,6 +20,7 @@
  * @module lib/galleryRuns
  */
 import { longDate } from "./dates";
+import type { Locale } from "../i18n/config";
 
 /** What a run is drawn from. Callers bring their own fields (image, alt, aspect) on top. */
 export interface RunnableShot {
@@ -42,7 +43,7 @@ export interface GalleryRun<T> {
   readonly moment: "rehearsal" | "concert";
   /** What the run is called at its head: the place, or "Próba" for a rehearsal. */
   readonly title: string;
-  /** Long Polish date, absent when nothing on record supplies one. */
+  /** Long date in the caller's locale, absent when nothing on record supplies one. */
   readonly date?: string;
   /** The run's photographers, first appearance first — a run can span two hands (Łódź). */
   readonly credits: readonly string[];
@@ -55,8 +56,13 @@ export interface GalleryRun<T> {
 }
 
 /** The rehearsal's own name. It stands where a place would, because a rehearsal room is the one
- *  thing this archive never recorded — see the note in concerts.yaml above Wcielenie's gallery. */
-const REHEARSAL_TITLE = "Próba";
+ *  thing this archive never recorded — see the note in concerts.yaml above Wcielenie's gallery.
+ *  It is the run head's ONLY translatable part: every other title is a venue, which is a name. */
+const REHEARSAL_TITLE: Record<Locale, string> = {
+  pl: "Próba",
+  en: "Rehearsal",
+  fr: "Répétition",
+};
 
 /**
  * A concert-level `venue` holding several places joined by " / " (the touring entries) is a LIST,
@@ -68,19 +74,18 @@ const REHEARSAL_TITLE = "Próba";
 const singleVenue = (venue: string | undefined): string | undefined =>
   venue && !venue.includes(" / ") ? venue : undefined;
 
-/** Run heads are Polish wherever they are printed today — `/obrazy` and `/koncerty/[id]` are both
-    Polish-only routes. When either gains a locale, this takes it as a parameter like every other
-    call into lib/dates. */
-const plDate = (iso: string): string => longDate(iso, "pl");
-
 /**
  * Cut a gallery into runs, in document order. A rehearsal inherits NOTHING: its place and date
  * were not recorded, and handing it the concert's own would state a room and a day this archive
  * has no grounds for.
+ *
+ * `locale` reaches only the two things a head can say in a language: the rehearsal's name and the
+ * date's format. `/obrazy` is still Polish-only and passes `"pl"`; the concert page passes its own.
  */
 export function galleryRuns<T extends RunnableShot>(
   shots: readonly T[],
-  fallback: RunFallback = {},
+  fallback: RunFallback,
+  locale: Locale,
 ): GalleryRun<T>[] {
   const runs: GalleryRun<T>[] = [];
   let key: string | null = null;
@@ -95,8 +100,8 @@ export function galleryRuns<T extends RunnableShot>(
       key = next;
       runs.push({
         moment: shot.moment,
-        title: rehearsal ? REHEARSAL_TITLE : (venue ?? ""),
-        ...(iso ? { date: plDate(iso) } : {}),
+        title: rehearsal ? REHEARSAL_TITLE[locale] : (venue ?? ""),
+        ...(iso ? { date: longDate(iso, locale) } : {}),
         credits: [],
         sources: [],
         anyUncredited: false,

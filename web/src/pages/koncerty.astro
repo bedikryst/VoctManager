@@ -18,7 +18,7 @@ import SiteFooter from "../components/SiteFooter.astro";
 import BleedImage from "../components/BleedImage.astro";
 import { photo, bleedPair } from "../lib/photos";
 import { absolute, musicEvent } from "../lib/eventSchema";
-import { longDate } from "../lib/dates";
+import { longDate, viaMoment } from "../lib/dates";
 import { formatRef } from "../lib/scriptureRef";
 import { pickLocale, SITE, type Locale } from "../i18n/config";
 import { VaultIsland } from "../islands/landing/VaultIsland";
@@ -44,6 +44,8 @@ const stations = concerts.map((c, i) => ({
   // The dateline is composed here, not stored: place per locale, the moment formatted from the
   // ISO `date` or taken from the vague `dateLabel` (a tour across a year, a season).
   metaPlace: pickLocale(c.data.metaPlace, lang),
+  // The via-rail's own abbreviation of that same moment — derived, never stored (lib/dates).
+  viaDate: viaMoment(c.data, lang),
   meta: [
     pickLocale(c.data.metaPlace, lang),
     c.data.date ? longDate(c.data.date, lang) : c.data.dateLabel && pickLocale(c.data.dateLabel, lang),
@@ -305,7 +307,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
                   >
                     <em class="station-inscriptio-src">{s.inscriptio}</em>
                     {s.inscriptioGloss && (
-                      <span class="station-inscriptio-pl">{pickLocale(s.inscriptioGloss, lang)}</span>
+                      <span class="station-inscriptio-gloss">{pickLocale(s.inscriptioGloss, lang)}</span>
                     )}
                     {s.inscriptioRef && (
                       <span class="station-inscriptio-ref">{formatRef(s.inscriptioRef, lang)}</span>
@@ -579,7 +581,7 @@ const ogImage = (await getImage({ src: hero.desktop, width: 1200, format: "webp"
      (Latin / Ukrainian) reads in the accent; its translation + reference sit quieter below. */
   .station-inscriptio { margin: 22px 0 0; max-width: 42ch; padding-left: 16px; border-left: 1px solid color-mix(in srgb, var(--accent, var(--candle)) 45%, transparent); }
   .station-inscriptio-src { display: block; font-family: var(--serif); font-style: italic; font-size: clamp(16px, 1.6vw, 21px); line-height: 1.4; color: var(--accent, var(--candle)); }
-  .station-inscriptio-pl { display: block; margin-top: 6px; font-family: var(--serif); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.45; color: rgba(244,241,233,.64); }
+  .station-inscriptio-gloss { display: block; margin-top: 6px; font-family: var(--serif); font-size: clamp(14px, 1.2vw, 16px); line-height: 1.45; color: rgba(244,241,233,.64); }
   .station-inscriptio-ref { display: block; margin-top: 8px; font-family: var(--capitalis); font-size: 9.5px; letter-spacing: .2em; text-transform: uppercase; color: rgba(244,241,233,.44); }
   /* LEAD — hand the incipit's own border to a pseudo-rule that can be drawn. `html.voct-motion`
      is :global() on purpose: Astro scopes every compound, and a scope attribute appended to

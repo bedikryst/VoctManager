@@ -53,6 +53,7 @@ import { galleryRuns } from "../lib/galleryRuns";
 import { creditList, creditSentence, frameCredit } from "../lib/photoCredit";
 import { framedShot } from "../lib/galleryFrame";
 import { candleFrom } from "../lib/candle";
+import { viaMoment } from "../lib/dates";
 import { SITE } from "../i18n/config";
 import { VaultIsland } from "../islands/landing/VaultIsland";
 import { ImageLightbox } from "../islands/landing/ImageLightbox";
@@ -112,7 +113,8 @@ const evenings = await Promise.all(
       // The concert's own venue and date are the fallback, so a single-venue evening states
       // neither per frame. `galleryRuns` refuses a slash-joined venue list for the two touring
       // entries — every frame of those carries its own.
-      galleryRuns(resolved, { venue: c.venue, date: c.date }).map(async (run) => {
+      // This page is Polish-only (docs/web-imagines-spec.md §7), which is what the locale says.
+      galleryRuns(resolved, { venue: c.venue, date: c.date }, "pl").map(async (run) => {
         // The plate is the run's FIRST frame — the frames are stored in the order they were
         // taken, so a run opens where the evening did — unless one of them claims the slot with
         // `plate: true`. Exactly one gallery does, and it earned it by measurement rather than
@@ -145,7 +147,7 @@ const evenings = await Promise.all(
       roman: c.roman,
       latin: c.latin,
       title: c.title,
-      viaDate: c.viaDate,
+      viaDate: viaMoment(c, "pl"),
       hasPage: c.hasPage,
       candle: candleFrom(c.accent),
       // The rail's fill, as on /koncerty: how far down the Via this evening stands.
@@ -167,6 +169,7 @@ const photographers = creditList(
   [...new Set(allShots.map((s) => s.credit).filter(Boolean))] as string[],
   [...new Set(allShots.map((s) => s.source).filter(Boolean))] as string[],
   false,
+  "pl",
 );
 // The archive's own frames are the colophon's closing sentence rather than a list item: they are
 // the majority here, and a majority reads as a statement, not as one entry among seven.
@@ -409,7 +412,7 @@ const jsonLd = {
                       data-image-sizes={run.plate.frame.sizes}
                       data-image-alt={run.plate.alt}
                       data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
-                      data-image-credit={frameCredit(run.plate)}
+                      data-image-credit={frameCredit(run.plate, "pl")}
                       data-image-w={String(run.plate.frame.width)}
                       data-image-h={String(run.plate.frame.height)}
                       data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}
@@ -456,7 +459,7 @@ const jsonLd = {
                         must speak: the name alone would take the frames beside it with it. */}
                     {(run.credits.length > 0 || run.sources.length > 0) && (
                       <span class="im-inscription-credit micro reveal" data-d="2">
-                        {creditSentence(run.credits, run.sources, run.anyUncredited, "fot.")}
+                        {creditSentence(run.credits, run.sources, run.anyUncredited, "pl", "head")}
                       </span>
                     )}
                   </div>
@@ -490,7 +493,7 @@ const jsonLd = {
                           data-image-sizes={g.frame.sizes}
                           data-image-alt={g.alt}
                           data-image-caption={[run.title, run.date].filter(Boolean).join(" · ")}
-                          data-image-credit={frameCredit(g)}
+                          data-image-credit={frameCredit(g, "pl")}
                           data-image-w={String(g.frame.width)}
                           data-image-h={String(g.frame.height)}
                           data-image-href={e.hasPage ? `/koncerty/${e.id}` : undefined}

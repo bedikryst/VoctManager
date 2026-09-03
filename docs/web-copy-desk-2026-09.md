@@ -320,7 +320,7 @@ French month/day capitalization does not survive naive formatting (see the proje
 | D2 | the editor: reading-order column, locale switch, inline edit, autosave — **done, §6h** | the desk |
 | D3 | reviewer mode: old → new, accept / reject / edit further — **done, §6i** | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 — **EN pass 1 done, §6j** | Florent's first sitting |
-| F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang | the pages exist |
+| F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang — **done, §6o** | the pages exist |
 | G | static pages extracted into content modules (`kontakt`, `koncerty` index, `obrazy`, `kolofon`, chrome), then landing | the rest of the corpus enters the desk |
 
 ### §6a Stage A — what shipped (2026-09-02)
@@ -1245,6 +1245,79 @@ and staff would make them reviewers of their own proposals. The one thing to che
 `user_is_manager` is role-MANAGER **or** staff, so an account whose profile role is not MANAGER
 loses the manager screens along with the admin.
 
+### §6o Stage F — the fork, and the defect the chrome was hiding (2026-09-03)
+
+`src/pages/koncerty/[id].astro` is now three route files over one component
+(`components/pages/ConcertPage.astro`, the AboutPage pattern), the chrome is
+`i18n/content/koncert.ts`, and `/en/koncerty/[id]` and `/fr/koncerty/[id]` build for all five
+page-bearing concerts. **Proved by diff: every Polish page in `dist/` is word-for-word identical to
+the pre-stage build** — the only additions anywhere are the hreflang graph and
+`og:locale:alternate`.
+
+**The chrome was about forty lines. The page was not translated at all, and that is the finding.**
+Every prose field — `title`, `essence`, `prologue`, the whole `verbum`, `reflection`, 58 × `note`,
+`rubric`, `credits[].role`, `roster.groups[].voice`, 621 words of `gallery[].alt` — was read
+straight off `concerts.yaml`, which is Polish. Worse, the *locale maps* looked translated and were
+not: `pickLocale(c.metaPlace, "en")` returns Polish, because stage C3 made the corpus Polish-only
+and moved every translation to the overlay. So the honest description of stage F is not "fork a
+route" but "connect the page to the corpus the desk has been filling since stage E", and the fork
+was the smaller half. `say(field, polish)` in the component is the one door; `pickLocale` is gone
+from the page and now carries a warning in `i18n/config` naming the trap.
+
+**Six decisions worth carrying.**
+
+- **`TRANSLATED_ROUTES` drives `getStaticPaths`, which dissolves §7's ordering contract for this
+  route.** The trap exists because a hand-written page's switch and its route files are two
+  separate acts; a parameterized route has no such gap — `src/pages/{en,fr}/koncerty/[id].astro`
+  exist for the whole family and read the set themselves, so adding an id emits the two pages and
+  lights every link to them in the same build. Six concerts are six entries, each flipped on its
+  own, and there is no window in which a link points at a page that is not there. Five are on;
+  `bobola` has no page in any locale.
+- **`glossFor` no longer takes a `LocalizedText`, and that was a live bug in waiting.** It read the
+  map through `pickLocale`, so on an English page it would have compared the English original
+  against the POLISH gloss, found them different, and printed the Polish stanza under the English
+  one — the exact failure §6j's rule exists to prevent, arriving through the collapse check rather
+  than through an empty slot. It now takes the value the caller resolved.
+- **`viaDate` is deleted from the corpus, not worked around.** `contract.mjs` filed it under stage F
+  and it was the last Polish month written into data: `shortDate` reproduces all four hand-written
+  values exactly (`sty 2024`, `cze 2024`, `lut 2025`, `maj 2026`), and the two evenings whose day is
+  vague carry no `date` at all and state a `dateLabel`, which is copy and comes through the overlay.
+  One derivation, `viaMoment` in `lib/dates`, now serves the chrome's registrum, `/koncerty`,
+  `/obrazy`, `/press` and the landing.
+- **Three shared libraries took a locale rather than a second copy.** `galleryRuns` (the rehearsal's
+  name and the run head's date), `photoCredit` (four labels: `Fot.` / `fot.` / `źródło:` /
+  `archiwum zespołu`) and `registrum` (title, place and moment, read from the overlay). The credit
+  opener stayed a caller's choice — a colophon opens a sentence, a run head opens a clause — because
+  folding them into one would have capitalized `/obrazy`'s run heads as a silent side effect.
+- **The `-pl` hooks are swept, and the collision that deferred them had a right answer.**
+  `.kd-text-pl`, `.kd-movement-pl`, `.kd-interlude-pl`, `.kd-clasp-pl`,
+  `.kd-program-inscriptio-pl`, `.kd-inscriptio-pl` and `/koncerty`'s `.station-inscriptio-pl` are
+  `-gloss` now. The two names already taken by a wrapper became `-line`: the wrapper is the LINE the
+  verse and its gloss sit on, which is what it always was. `.voice-pl` in the chrome went with them
+  (`.voice-gloss`, in `SiteChrome`, `StickyHeader` and `nave-menu.css`) — it was the one already
+  shipping a lie, holding English on `/en/o-nas` under a name that said Polish.
+- **The registrum's ribbons localize their hrefs; the archive's does not.** `/obrazy` is Polish-only
+  by its own spec, so the link stays a Polish URL — but its NAME is translated
+  (`UI.nav.archive` / `archiveGloss`), because a reader of the English chrome has to know where a
+  link goes before following it into a Polish page.
+
+**Two things this stage found and did NOT fix, both corpus decisions rather than code.** An
+honorific is not a name: `credits[].name` is `NOT_COPY`, so the French page prints
+"Parole d'introduction · o. Jarek Naliwajko SJ" in the credits while the verbum's citation, whose
+`speaker` IS copy, correctly reads "P. Jarek Naliwajko SJ". The same person, two honorifics, one
+page. Splitting the honorific off the name is a contract change and belongs with whoever decides
+it. And `reflectionAttribution`, `roster.note` and `bobola.facts.1` still carry hand-rendered
+months inside translatable strings, exactly as §6j recorded — they read correctly in all three
+locales today and will drift from `date` the first time one moves.
+
+**Left standing, deliberately.** `LANG_SWITCHER_ENABLED` stays `false`: the ten new pages are
+link-only, and hreflang plus localized links do their work without a visible chip. `/koncerty`,
+`/obrazy`, the landing and `/press` stay Polish-only — they are stage G's — so a foreign concert
+page links back into Polish for the section it belongs to, which `localizePath` handles by
+returning the Polish URL rather than a 404. And the footer's `tempusLiturgicus` incipit still
+prints its Polish gloss in every locale; it is chrome nobody has translated yet, and it is on every
+page, not just these.
+
 ## §7 Traps
 
 - **Every editor who is `is_staff` is a REVIEWER.** `user_is_copy_reviewer` tests staff and nothing
@@ -1263,10 +1336,24 @@ loses the manager screens along with the admin.
   on the desk, in French, in one sentence.
 - **Source drift is silent without the hash.** §4 exists for this. A translation whose Polish moved
   looks perfectly fine on screen.
-- **`TRANSLATED_ROUTES` is a manual ordering contract.** `i18n/config.ts` states it: add the path
-  only *after* both route files exist, or every localized link starts pointing at a 404. With six
-  concerts this becomes six entries, each flipped independently — do not flip the set for the whole
-  concert section at once.
+- **`TRANSLATED_ROUTES` is a manual ordering contract — except where the route reads it.**
+  `i18n/config.ts` states it: add the path only *after* both route files exist, or every localized
+  link starts pointing at a 404. The concert pages are exempt because
+  `src/pages/{en,fr}/koncerty/[id].astro` filter their own `getStaticPaths` through the set (§6o),
+  so page and links appear together; every hand-written page still owes the contract. Flip one
+  concert at a time regardless — a concert enters when its translation is reviewed, not when the
+  section is.
+- **A `LocalizedText` from `concerts.yaml` carries `pl` and nothing else.** Since stage C3 the
+  corpus is Polish-only and translations live in the overlay, so `pickLocale` on a concert field
+  returns Polish in EVERY locale — silently, on a page that looks translated. This is what stage F
+  found across the whole concert page (§6o). Read a concert's copy through `lib/copyOverlay`;
+  `pickLocale` is for maps that genuinely hold their own locales.
+- **A route tree outside `/panel` has to be declared twice, and neither place is the router.** The
+  desk lives at `/redakcja/*`, which nginx (`infra/nginx/{prod,local}.conf`) and the service
+  worker's navigation allowlist (`frontend/src/sw.ts`) each have to know, mirroring one another. It
+  was in neither, so navigating inside the app worked and a RELOAD 404'd into the marketing site —
+  on the one surface reached mainly by link, where a cold load is the normal way in. Missing from
+  nginx, a reload 404s; missing from the worker, the same load fails only offline.
 - **Astro scoped styles do not reach injected DOM**, and delegated clicks must capture, not bubble,
   because of the ClientRouter. Both are recorded project traps and both apply to any preview the
   desk renders using site markup.

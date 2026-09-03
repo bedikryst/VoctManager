@@ -441,7 +441,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 style={{ "--i": 0, "--vb": 1.5, "--vr": 0 } as React.CSSProperties}
                 onClick={() => closeMenu(false)}
               >
-                <span className="voice-pl">Główna</span>
+                <span className="voice-gloss">Główna</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Introitus</span>
               </a>
@@ -451,7 +451,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 style={{ "--i": 1, "--vb": 2.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-pl">O nas</span>
+                <span className="voice-gloss">O nas</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">De nobis</span>
               </a>
@@ -461,7 +461,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 style={{ "--i": 2, "--vb": 3.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-pl">Koncerty</span>
+                <span className="voice-gloss">Koncerty</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Via</span>
               </a>
@@ -471,7 +471,7 @@ export function StickyHeader({ ribbons = [] }: StickyHeaderProps): React.JSX.Ele
                 style={{ "--i": 3, "--vb": 4.5, "--vr": 0 } as React.CSSProperties}
                 onClick={commitVoice}
               >
-                <span className="voice-pl">Kontakt</span>
+                <span className="voice-gloss">Kontakt</span>
                 <span className="voice-lead" aria-hidden="true" />
                 <span className="voice-lat">Scribe nobis</span>
               </a>
