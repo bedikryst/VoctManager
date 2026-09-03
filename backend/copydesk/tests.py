@@ -1032,6 +1032,104 @@ class DigestTests(TestCase):
         self.assertIsNotNone(CopyProposal.objects.get().notified_at)
 
 
+class EarlyDigestTests(TestCase):
+    """"I have finished" — the same digest, asked for before the pause elapses.
+
+    The claim it must make is that nothing DEPENDS on it: an editor who never
+    finds the control is reported by the clock exactly as before, which is the
+    difference between an accelerator and a submit button.
+    """
+
+    def setUp(self):
+        self.api = APIClient()
+        self.editor = make_user("florent@example.com", editor=True)
+        self.reviewer = make_user("dev@example.com", staff=True)
+        self.segment = make_segment(
+            "concert.wcielenie.essence", SiteLocale.POLISH, "Treść"
+        )
+        self.url = reverse("copydesk-notify")
+
+    def _propose(self, value="Nowa treść"):
+        return CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value=value),
+            author=self.editor,
+        )
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_a_sitting_can_be_reported_before_the_pause_elapses(self, delay):
+        self._propose()
+        self.api.force_authenticate(user=self.editor)
+
+        response = self.api.post(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data, {"proposals": 1, "delivered": True})
+        self.assertEqual(delay.call_args.kwargs["metadata"]["proposal_count"], 1)
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_the_clock_does_not_report_it_a_second_time(self, delay):
+        self._propose()
+        self.api.force_authenticate(user=self.editor)
+        self.api.post(self.url)
+        delay.reset_mock()
+
+        CopyProposal.objects.all().update(
+            updated_at=timezone.now() - QUIET_PERIOD - timedelta(minutes=1)
+        )
+        self.assertEqual(dispatch_copy_proposal_digests(), {"digests": 0})
+        delay.assert_not_called()
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_pressing_it_with_nothing_new_announces_nothing(self, delay):
+        self.api.force_authenticate(user=self.editor)
+
+        response = self.api.post(self.url)
+
+        self.assertEqual(response.data, {"proposals": 0, "delivered": False})
+        delay.assert_not_called()
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_an_edit_after_the_digest_is_news_again(self, delay):
+        proposal = self._propose()
+        self.api.force_authenticate(user=self.editor)
+        self.api.post(self.url)
+        delay.reset_mock()
+
+        self._propose("Jednak inaczej")
+        proposal.refresh_from_db()
+        self.assertIsNone(proposal.notified_at)
+
+        response = self.api.post(self.url)
+        self.assertEqual(response.data["proposals"], 1)
+        self.assertEqual(delay.call_count, 1)
+
+    @patch("copydesk.tasks.send_bulk_notifications_task.delay")
+    def test_it_announces_only_the_caller_s_own_work(self, delay):
+        other = make_user("ania@example.com", editor=True)
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.segment.id, value="Ania pisze"),
+            author=other,
+        )
+        self._propose()
+        self.api.force_authenticate(user=self.editor)
+
+        response = self.api.post(self.url)
+
+        self.assertEqual(response.data["proposals"], 1)
+        self.assertEqual(
+            delay.call_args.kwargs["metadata"]["author_id"], self.editor.id
+        )
+        self.assertIsNone(
+            CopyProposal.objects.get(author=other).notified_at
+        )
+
+    def test_a_singer_cannot_raise_a_digest(self):
+        singer = make_user("singer@example.com")
+        self.api.force_authenticate(user=singer)
+
+        self.assertEqual(self.api.post(self.url).status_code, 403)
+
+
 class NotificationWiringTests(TestCase):
     """The checklist that silently degrades to generic copy when a layer is missed."""
 

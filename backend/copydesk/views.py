@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 from uuid import UUID
 
+from django.utils import timezone
 from pydantic import ValidationError
 from rest_framework import status, views
 from rest_framework.request import Request
@@ -21,7 +22,12 @@ from core.request_utils import request_user
 
 from .dtos import ProposalReviewDTO, ProposalWriteDTO, SegmentUpsertDTO
 from .models import CopyProposal, ProposalStatus
-from .permissions import CanEditSiteCopy, IsCopyReviewer, user_is_copy_reviewer
+from .permissions import (
+    CanEditSiteCopy,
+    IsCopyReviewer,
+    copy_desk_reviewers,
+    user_is_copy_reviewer,
+)
 from .serializers import (
     ProposalAppliedSerializer,
     ProposalReviewSerializer,
@@ -36,6 +42,7 @@ from .services import (
     SegmentNotFoundError,
     UnknownProposalsError,
 )
+from .tasks import dispatch_digest_for_author
 
 logger = logging.getLogger(__name__)
 
@@ -294,6 +301,40 @@ class CopyDeskAppliedView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(result.model_dump(mode="json"))
+
+
+class CopyDeskNotifyView(views.APIView):
+    """POST — the editor says they have finished, and the digest goes now.
+
+    It changes nothing about what is SAVED. The desk autosaves, so an editor's
+    words are on the server the moment they stop typing; this only moves the
+    moment the reviewers are told forward, from "thirty minutes after you went
+    quiet" to "now". That is deliberately the whole of it: a control that GATED
+    the work would mean an editor who never noticed it had their evening sit
+    unseen indefinitely, where the failure of this one is that a digest arrives
+    a little later than it could have.
+
+    Idempotent by the same claim the sweep uses: pressing it twice announces
+    nothing the second time, because the first pass stamped `notified_at`. A
+    later edit clears that stamp, so revised wording is news again.
+    """
+
+    permission_classes = [CanEditSiteCopy]
+
+    def post(self, request: Request) -> Response:
+        editor = request_user(request)
+        outcome = dispatch_digest_for_author(
+            author_id=editor.id,
+            reviewer_ids=[str(user.id) for user in copy_desk_reviewers()],
+            now=timezone.now(),
+        )
+        logger.info(
+            "[CopyDesk] Editor UID:%s closed a sitting: %d proposal(s), delivered=%s",
+            editor.id, outcome.proposals, outcome.delivered,
+        )
+        return Response(
+            {"proposals": outcome.proposals, "delivered": outcome.delivered}
+        )
 
 
 class CopyDeskMarkSeenView(views.APIView):

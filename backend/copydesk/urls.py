@@ -13,6 +13,7 @@ from .views import (
     CopyDeskContentsView,
     CopyDeskIngestView,
     CopyDeskMarkSeenView,
+    CopyDeskNotifyView,
     CopyDeskPatchView,
     CopyDeskProposalDetailView,
     CopyDeskProposalsView,
@@ -40,4 +41,7 @@ urlpatterns = [
         name="copydesk-proposal-review",
     ),
     path("mark-seen/", CopyDeskMarkSeenView.as_view(), name="copydesk-mark-seen"),
+    # "I have finished" — the same digest the hourly beat raises, asked for early.
+    # Never a submit: nothing is held back until it is called.
+    path("notify/", CopyDeskNotifyView.as_view(), name="copydesk-notify"),
 ]

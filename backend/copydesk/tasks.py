@@ -1,16 +1,20 @@
 """
 @file tasks.py
-@description The copy desk's one scheduled job: telling the reviewers that an
-             editor has been through the desk. Raised by the clock rather than
-             by a write, because the thing worth reporting is that somebody has
-             STOPPED editing, and only a sweep can observe a pause.
+@description Telling the reviewers that an editor has been through the desk.
+             The sweep below is the GUARANTEE — it observes that somebody has
+             stopped editing, which only a clock can see — and the desk's
+             "I have finished" control is the same digest raised early by hand
+             (`CopyDeskNotifyView`). Both go through `dispatch_digest_for_author`,
+             so an editor who never finds the control loses nothing but time.
 @architecture Enterprise SaaS 2026
 @module copydesk/tasks
 """
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from celery import shared_task
 from django.db.models import Max
@@ -28,12 +32,72 @@ logger = logging.getLogger(__name__)
 #: How long an editor must have been still before their sitting is reported.
 #:
 #: This is the definition of "a session", and it has to be one: §1 rules out
-#: rounds and the desk autosaves, so there is no submit button to hang a digest
+#: rounds and the desk autosaves, so there is no submit button the WORK depends
 #: on. Thirty minutes is long enough that a pause to look something up does not
 #: split a sitting in two, and short enough that an evening's work is reported
 #: the same evening. Against the hourly beat below, a continuous two-hour sitting
 #: produces one message, not four.
 QUIET_PERIOD = timedelta(minutes=30)
+
+
+@dataclass(frozen=True)
+class DigestOutcome:
+    """What one editor's digest managed to do.
+
+    Two numbers rather than one, because they can disagree: proposals are
+    CLAIMED (stamped `notified_at`) before anything is dispatched, so an install
+    with no active staff account claims a sitting it then has nobody to tell.
+    Reporting that as "sent" would be a lie to the editor who pressed the button.
+    """
+
+    proposals: int = 0
+    delivered: bool = False
+
+
+def dispatch_digest_for_author(
+    *, author_id: int, reviewer_ids: Sequence[str], now: datetime
+) -> DigestOutcome:
+    """Announce one editor's unannounced proposals, whatever raised the call.
+
+    The claim comes first and restates its own condition in the write: two beats,
+    two workers, or a beat racing the editor's own "I have finished" would
+    otherwise all pass the read and all send. `updated_at` is deliberately left
+    alone — announcing a proposal is bookkeeping, not an edit, and the desk shows
+    that column as when the editor last worked on the segment.
+    """
+    pending = list(
+        CopyProposal.objects.filter(
+            author_id=author_id,
+            status=ProposalStatus.PROPOSED,
+            notified_at__isnull=True,
+        ).select_related("segment", "author")
+    )
+    if not pending:
+        return DigestOutcome()
+
+    claimed = CopyProposal.objects.filter(
+        id__in=[proposal.id for proposal in pending],
+        notified_at__isnull=True,
+    ).update(notified_at=now)
+    if not claimed:
+        return DigestOutcome()
+
+    # An editor who also reviews is not told about their own sitting.
+    recipients = [uid for uid in reviewer_ids if uid != str(author_id)]
+    if not recipients:
+        logger.info(
+            "[CopyDesk] %d proposal(s) by UID:%s have no reviewer to tell.",
+            len(pending), author_id,
+        )
+        return DigestOutcome(proposals=len(pending), delivered=False)
+
+    send_bulk_notifications_task.delay(
+        recipient_ids=recipients,
+        notification_type=NotificationType.SITE_COPY_PROPOSED,
+        level=NotificationLevel.INFO,
+        metadata=_digest_metadata(pending).model_dump(mode="json"),
+    )
+    return DigestOutcome(proposals=len(pending), delivered=True)
 
 
 @shared_task(name="copydesk.dispatch_copy_proposal_digests")
@@ -48,6 +112,11 @@ def dispatch_copy_proposal_digests() -> dict:
     Per editor rather than per segment for the reason §8 suspected and the corpus
     confirms — ~500 segments, of which one concert page is dozens. A message per
     segment would be an alert per thing nobody acts on individually.
+
+    This is the path that must never be removed. The desk offers an editor a way
+    to raise their own digest early, but nothing in the record depends on their
+    having pressed it: a sitting that ends by closing the laptop is reported by
+    this beat, and the only difference the control makes is when.
     """
     now = timezone.now()
     cutoff = now - QUIET_PERIOD
@@ -71,49 +140,10 @@ def dispatch_copy_proposal_digests() -> dict:
     sent = 0
 
     for row in settled:
-        author_id = row["author_id"]
-        pending = list(
-            CopyProposal.objects.filter(
-                author_id=author_id,
-                status=ProposalStatus.PROPOSED,
-                notified_at__isnull=True,
-            ).select_related("segment", "author")
+        outcome = dispatch_digest_for_author(
+            author_id=row["author_id"], reviewer_ids=reviewer_ids, now=now
         )
-        if not pending:
-            continue
-
-        # Claim before dispatching, and restate the condition in the write: two
-        # beats or two workers reading this queue at once would otherwise both
-        # pass the check above and both send. Same guard as the announcement
-        # nudge, and needed for the same reason.
-        # `updated_at` is deliberately left alone: announcing a proposal is
-        # bookkeeping, not an edit, and the desk shows that column as when the
-        # editor last worked on the segment.
-        claimed = CopyProposal.objects.filter(
-            id__in=[proposal.id for proposal in pending],
-            notified_at__isnull=True,
-        ).update(notified_at=now)
-        if not claimed:
-            continue
-
-        # An editor who also reviews is not told about their own sitting.
-        recipients = [
-            uid for uid in reviewer_ids if uid != str(author_id)
-        ]
-        if not recipients:
-            logger.info(
-                "[CopyDesk] %d proposal(s) by UID:%s have no reviewer to tell.",
-                len(pending), author_id,
-            )
-            continue
-
-        send_bulk_notifications_task.delay(
-            recipient_ids=recipients,
-            notification_type=NotificationType.SITE_COPY_PROPOSED,
-            level=NotificationLevel.INFO,
-            metadata=_digest_metadata(pending).model_dump(mode="json"),
-        )
-        sent += 1
+        sent += int(outcome.delivered)
 
     if sent:
         logger.info("[CopyDesk] Dispatched %d copy-proposal digest(s).", sent)

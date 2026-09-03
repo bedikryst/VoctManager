@@ -190,6 +190,9 @@ const CopyDeskShell = lazyWithPreload(() =>
 const CopyDeskContentsPage = lazyWithPreload(
   () => import("@pages/copydesk/CopyDeskContentsPage"),
 );
+const CopyDeskScopePage = lazyWithPreload(
+  () => import("@pages/copydesk/CopyDeskScopePage"),
+);
 const CopyDeskReviewPage = lazyWithPreload(
   () => import("@pages/copydesk/CopyDeskReviewPage"),
 );
@@ -413,6 +416,9 @@ export const router = createBrowserRouter(
         >
           <Route index element={<CopyDeskContentsPage />} />
           <Route path="przeglad" element={<CopyDeskReviewPage />} />
+          {/* A scope is a dotted key (`concert.wcielenie`), which is one path
+              segment; the static routes above outrank it either way. */}
+          <Route path=":scope" element={<CopyDeskScopePage />} />
           <Route path="*" element={<Navigate to="/redakcja" replace />} />
         </Route>
       </Route>

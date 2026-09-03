@@ -307,8 +307,8 @@ French month/day capitalization does not survive naive formatting (see the proje
 | C1 | the key contract + extractor (read direction) + the hash-parity fixture — **done, §6d** | the corpus has stable ids |
 | C2 | the ingest seam: the extractor's door, retirement, `applied_at` + segment stamp — **done, §6e** | the mirror can be refreshed |
 | C3 | `apply-copy` (write direction) + the `en`/`fr` overlay files — **done, §6f** | proposals can reach git |
-| D1 | panel: `/redakcja/*` shell + contents list | a way in |
-| D2 | the editor: reading-order column, locale switch, inline edit, autosave | the desk |
+| D1 | panel: `/redakcja/*` shell + contents list — **done, §6g** | a way in |
+| D2 | the editor: reading-order column, locale switch, inline edit, autosave — **done, §6h** | the desk |
 | D3 | reviewer mode: old → new, accept / reject / edit further | the patch gets made |
 | E | EN + FR draft for all six concerts (~8 700 words × 2), pass 1 | Florent's first sitting |
 | F | `/en/koncerty/[id]`, `/fr/koncerty/[id]` routes, per-concert `TRANSLATED_ROUTES`, hreflang | the pages exist |
@@ -692,6 +692,158 @@ today and each needs the overlay merged in before an English concert page can be
 Polish. `lib/registrum.ts` is the same story for the nav rail, where §6d's `viaDate` finding also
 still stands.
 
+### §6g Stage D1 — what shipped (2026-09-02)
+
+The takeover and the contents list, in seven files: `widgets/copy-desk-shell/CopyDeskShell.tsx`
+(the second shell in the app), `pages/copydesk/CopyDeskContentsPage.tsx`,
+`pages/copydesk/CopyDeskReviewPage.tsx`, and `features/copydesk/` (the DTOs, the service, the
+contents query, `lib/scopeGroups.ts`, and the two components). Plus the route tree in `App.tsx`,
+`canEditSiteCopy` in `shared/auth/rbac.ts`, and one command-palette row. **1 281 rows across six
+concert pages, every count resting at zero** — which is the correct picture and the whole point of
+judging this surface before the editor is designed on top of it.
+
+**Six decisions worth carrying.**
+
+- **The shell gates the whole tree on ONE request, and the 403 IS the refusal screen.** The panel
+  never learns `is_staff`, and the server admits staff to the desk whether or not the flag is set
+  (§6b), so a client-side predicate could not be the gate without locking a developer out of their
+  own reviewer route. `canEditSiteCopy` therefore decides one thing only: whether the panel OFFERS
+  the way in. The contents query is both the gate and the first read, so the two pages below it
+  share one cache entry rather than asking twice — and a corpus already in hand outranks a refetch
+  that failed, because the reconciling tier re-asks on every mount and a train tunnel is not a
+  revoked capability.
+- **The visit is stamped on the way OUT, and D1 owns it because nothing else could.**
+  `copy_desk_seen_at` is null until something writes it, and `is_new` is
+  `seen_at is not None and created_at > seen_at` — so before this stage the `new` counter could
+  never fire once, on any row, ever. Stamping on ARRIVAL would have been worse than not stamping:
+  the counter would clear itself before the reader had seen what it counted. It is written from the
+  shell's unmount, only if the corpus was actually read, and only as fire-and-forget — a stamp that
+  fails is next visit's list being slightly longer, not something to interrupt an editor with.
+- **Two kinds of figure per row, and the split is the design.** How big a page is and how much work
+  stands on it (`segments`, `touched`, `accepted`) are FACTS about the row and read as one plain
+  sentence through `StatLine`. What is NEW since the last visit and what has gone STALE under an
+  edited Polish are exceptions: they wear a chip, and they appear only when they exist. Stale is
+  GOLD, never crimson — a translation whose source moved is work waiting, not something broken —
+  and new is `incense`, because it is news rather than work. A page nobody has touched says nothing
+  beyond its size, which is what will keep a returning editor's eye on the handful of rows that
+  changed instead of on six identical ones.
+- **The rows do not open, and nothing on screen says they will.** §6c splits D is for judging one
+  surface at a time; a row linking into an unbuilt editor would have been a second empty surface,
+  and a sentence promising one would be stage-note copy somebody has to remember to delete. The
+  rows carry no hover, no chevron and no pointer cursor, so nothing invites the click that has
+  nowhere to go. **D2's first move is making the row a link.**
+- **The contents list has no page order of its own.** The payload arrives ordered by scope KEY —
+  `concert.9-kart`, `concert.aeternam`, `concert.bobola` — which is slug order and means nothing to
+  a reader. It is grouped by key family (`concert.*` today, `page.*` from stage G) and sorted by
+  title inside the family, which is at least the order somebody hunting for a title looks in. The
+  site's own sequence is chronological and the desk carries no date per page: putting it right means
+  the extractor emitting a per-scope order, and that is a contract change, not a sort.
+- **A `segment` is a ROW, and the page says so once.** The count is key × locale, so a concert with
+  71 editable fields reports 213 — a figure nobody can check unless the surface states what it
+  counts. It is not divided by three anywhere: nothing guarantees a key holds all three locales once
+  the extractor has retired a row.
+
+**Two smaller shapes.** The desk is the THIRD surface that has to set `body.admin-mode` — the panel
+shell and the auth shell are the others — because `body:not(.admin-mode) *` hides the cursor
+outright, a rule left over from the public zone this app used to carry; a full-screen route that
+forgets it is a screen with nothing to point at. And `PageTransition` gained an optional
+`className`: its `min-h-screen` is the composite owning the caller's layout, right under the panel
+(where a page starts at the top of the viewport) and wrong under any shell with a band above it,
+where every short state scrolled by exactly the height of that band.
+
+**Left standing, deliberately.** The `new` and `stale` chips cannot be seen yet — the first visit
+has no `seen_at` to be new against, and no proposal can exist until D2 — so their design is the one
+part of this surface the eye has not judged. And the palette row is gated on the profile flag alone,
+so a staff account without `can_edit_site_copy` reaches the desk by URL (the server admits it) but is
+not offered it; setting the flag on one's own account in the admin is the intended fix, and it is
+also the only way to see what an editor sees.
+
+### §6h Stage D2 — what shipped (2026-09-03)
+
+The editor, at `/redakcja/:scope`: `pages/copydesk/CopyDeskScopePage.tsx`, `features/copydesk/`
+(`components/SegmentRow`, `components/SegmentCell`, `components/SittingClosure`, `lib/fields`,
+`lib/proposals`, `lib/localeView`, `model/sittingStore`, plus the segment DTOs, the three writes and
+their cache patches), the contents row turned into a link, and the shell's back affordance stepping
+to the spis rather than always to the panel. On the backend, one addition: `POST
+/api/copydesk/notify/` and the `dispatch_digest_for_author` the hourly sweep now shares with it.
+
+**§8's notification decision, amended: the pause stays the guarantee, and the editor may raise the
+digest early.** The question re-opened before building was whether the desk should have a "confirm
+and send" button instead of the 30-minute quiet period, the developer's own objection to it being
+that an editor might not notice the button. The objection is right and it is not the decisive
+argument; the decisive one is what each design does when the control IS missed. **A submit that
+nobody presses leaves a finished evening unseen indefinitely, and neither party knows: the editor
+believes they have delivered, the reviewer has nothing to read. A clock that nobody notices costs
+half an hour.** One failure is silent and permanent, the other is a delay, so the clock keeps the
+work and the button becomes an accelerator: it announces what is already saved, and pressing it is
+the only thing it does. That also spares the model a state — "written but not sent" would have to be
+honoured by the reviewer's queue, the patch endpoint and the digest, or the button would be a lie.
+
+What the button genuinely buys, and the clock cannot, is **closure**: an editor learns their evening
+arrived somewhere, which is the difference between finishing and wondering. Hence the shape — the
+control appears in the rail only once this visit has written something, and comes back if the editor
+carries on writing after pressing it; the foot of the column says in one sentence what happens if
+they never do. It is never called *zatwierdź*: accepting is the reviewer's word for the decision to
+commit, and one word over two powers is how an editor comes to believe they have published.
+
+**Seven decisions worth carrying.**
+
+- **The cell is a `<textarea>` at rest, not a paragraph that swaps into one.** A page is seventy-odd
+  fields and the swap costs a measurement, a focus hand-off and a reflow per click; the `ghost` field
+  shell already draws nothing until the pointer or the caret arrives, which is the same read for none
+  of the machinery. Its height comes from a mirror span sharing one CSS grid cell — same type, same
+  padding, a trailing U+200B so the last newline does not collapse — rather than from
+  `scrollHeight`, so opening the three-language view does not run two hundred forced layouts.
+- **The resting state says nothing at all.** The corpus is 1 281 rows; a row that decorates itself is
+  1 281 things to look past. Chips appear only where a fact exists (a settled verdict, a Polish that
+  has moved, another editor at the same paragraph), and the original, the comment field and the
+  withdrawal appear only once the editor has written something. The language mark is a 24 px gutter
+  and is dropped entirely when one language is on screen — the switch already said which.
+- **Polish is in every view, which is what makes "the original" unambiguous.** The four views are
+  PL / +EN / +FR / +EN +FR, so a translation is never on screen without the source it renders. The
+  toggle under a touched cell therefore shows what the REPOSITORY holds for that cell — never the
+  Polish, which is already beside it. The page's width follows the switch (3xl / 5xl / 7xl): a
+  `note` of several hundred words set in three columns at 3xl is three ribbons.
+- **The autosave patches the cache and deliberately does not recompute staleness.** The response
+  carries an id and a status, so a settled sentence costs one round trip rather than a re-read of
+  213 rows. But whether a Polish edit has just invalidated its translations is the SERVER's verdict
+  — it hashes under the same normalization the extractor mirrors — and a second, hand-rolled answer
+  in the client is how the desk would start disagreeing with the digest about which rows are out of
+  date. The reconciling tier fetches the truth back on the next mount or window focus.
+- **A cell adopts the server's value only while nothing of its own is in flight.** The reconciling
+  tier refetches on every window focus, and an editor who alt-tabs mid-sentence must not come back to
+  the paragraph they were replacing. The same ref makes the field flush on blur, on unmount and on a
+  locale switch, so nothing depends on the debounce being the right length.
+- **The corpus is not persisted.** The panel dehydrates its whole query cache for 24 h of offline
+  paint; a day-old copy of the site's text restored on a cold boot would put an editor's paragraph
+  next to a source that has moved, which is the exact silence the source hash exists to break.
+  `meta: { persist: false }`, the same door the score-package blob uses.
+- **The page's figures are counted from the payload it is drawing.** `71 pól · 213 segmentów ·
+  4 ruszone` comes from the segments in hand, not from the contents list's row for the same scope:
+  two figures beside each other answer for the same set of rows or they are not siblings.
+
+**Two smaller shapes.** An emptied field says so WHILE it is being typed, because `apply-copy`
+refuses an empty value outright — clearing a YAML scalar deletes the field rather than emptying it,
+and the honest moment to say that is before the editor moves on. And §7's French spacing warning is
+one sentence, in French, printed once per page whenever the French column is on screen, whatever
+language the desk's own chrome is in: it is advice to the hands typing, not chrome to translate.
+
+**Left standing, deliberately.**
+
+- **A comment with an unchanged value is a real proposal** and reaches the reviewer as one. "This
+  sentence bothers me and I do not know what it should say" is worth carrying; whether it should
+  count as *touched* on the contents list is a question the reviewer's queue will answer better than
+  a guess here.
+- **Another editor's open proposal is named, not readable.** The cell says "Ania też tu pisze" and
+  shows nothing of her wording — a competing draft displayed as text would invite an editor to revise
+  a sentence the site has never carried. Reading both is the reviewer's screen, which is D3.
+- **The sitting is client-side and shallow.** Reloading the page loses the counter, so the offer of
+  an early digest disappears; nothing else changes, because the proposals are on the server and the
+  clock reports them regardless. This is the one place where "it is only an accelerator" is doing
+  real work.
+- **No field-to-field keyboard motion, and 71 fields render at once.** Both are judgments to make on
+  the built surface rather than in advance; the column is the thing to look at first.
+
 ## §7 Traps
 
 - **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`
@@ -734,7 +886,8 @@ still stands.
 ## §8 Open decisions
 
 - ~~**Notification shape.**~~ **Settled 2026-09-02 — one digest per editor per sitting, where a
-  sitting ends at a 30-minute pause. Reasoning and mechanism in §6b.**
+  sitting ends at a 30-minute pause. Reasoning and mechanism in §6b; amended 2026-09-03 in §6h,
+  which keeps the pause as the guarantee and lets the editor raise their own digest early.**
 - ~~**Where a translated PROSE value lives in the repository**~~ **Settled 2026-09-02 — (b), the
   per-locale overlay. Built in C3 (§6f); the corpus is Polish-only and three guards enforce it.** `concerts.yaml` is Polish-only from here on; `concerts.en.yaml` and
   `concerts.fr.yaml` hold every translated value under the desk's own dotted key. The consequence

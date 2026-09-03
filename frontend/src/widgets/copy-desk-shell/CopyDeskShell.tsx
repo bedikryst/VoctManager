@@ -26,13 +26,15 @@
  */
 
 import React, { Suspense, useEffect, useRef } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 
 import { useCopyDeskContents } from "@/features/copydesk/api/copydesk.queries";
 import { CopyDeskService } from "@/features/copydesk/api/copydesk.service";
 import { CopyDeskAccessRefusal } from "@/features/copydesk/components/CopyDeskAccessRefusal";
+import { SittingClosure } from "@/features/copydesk/components/SittingClosure";
+import { useCopyDeskSitting } from "@/features/copydesk/model/sittingStore";
 import type { CopyDeskContents } from "@/features/copydesk/types/copydesk.dto";
 import { Button } from "@/shared/ui/primitives/Button";
 import { Eyebrow } from "@/shared/ui/primitives/typography";
@@ -46,7 +48,14 @@ export interface CopyDeskOutletContext {
 
 export const CopyDeskShell = (): React.JSX.Element => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const { data: contents, isLoading, error, refetch } = useCopyDeskContents();
+  const resetSitting = useCopyDeskSitting((state) => state.resetSitting);
+
+  // The sitting is this visit and nothing longer: what it has written, whether
+  // a digest has been raised for it, and how it is being read. Leaving the desk
+  // ends it — the proposals themselves are on the server either way.
+  useEffect(() => resetSitting, [resetSitting]);
 
   // `body:not(.admin-mode) *` hides the cursor outright — the rule belongs to
   // the public zone the panel app used to carry, and any full-screen route that
@@ -61,6 +70,8 @@ export const CopyDeskShell = (): React.JSX.Element => {
   // that ended at the refusal screen saw nothing to mark as seen. Fire and
   // forget — a stamp that fails is the reader's next visit reporting a slightly
   // longer list, not something to interrupt them with.
+  const isDeskIndex = pathname.replace(/\/$/, "") === "/redakcja";
+
   const hasReadCorpus = useRef(false);
   useEffect(() => {
     if (contents) hasReadCorpus.current = true;
@@ -80,17 +91,34 @@ export const CopyDeskShell = (): React.JSX.Element => {
 
       {/* The one affordance §3 allows the takeover, and it stays reachable: a
           desk you have to scroll to the top of to leave is a room with the door
-          behind the furniture. */}
-      <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-4 border-b border-hairline bg-ethereal-canvas/90 px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] sm:px-6">
+          behind the furniture. It steps back one level rather than always
+          leaving: from a page of text the way out an editor wants is the
+          contents list, and the panel is one click further.
+
+          The rail is also where "I have finished" lives, for the reason it is
+          not a submit — it belongs to the sitting, not to any one page, and a
+          control that scrolled away with the paragraph it happened to sit under
+          would be an offer nobody found. */}
+      <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-ethereal-canvas/90 px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] sm:px-6">
         <Button
           variant="ghost"
           size="sm"
           asChild
           leftIcon={<ArrowLeft size={14} aria-hidden="true" />}
         >
-          <Link to="/panel">{t("copy_desk.back_to_panel", "Panel")}</Link>
+          {isDeskIndex ? (
+            <Link to="/panel">{t("copy_desk.back_to_panel", "Panel")}</Link>
+          ) : (
+            <Link to="/redakcja">{t("copy_desk.review.back", "Spis treści")}</Link>
+          )}
         </Button>
-        <Eyebrow color="muted">{t("copy_desk.eyebrow", "Redakcja")}</Eyebrow>
+
+        <div className="flex min-w-0 items-center gap-3">
+          <SittingClosure />
+          <Eyebrow color="muted" className="hidden sm:inline">
+            {t("copy_desk.eyebrow", "Redakcja")}
+          </Eyebrow>
+        </div>
       </header>
 
       <main

@@ -1,19 +1,36 @@
 /**
  * @file copydesk.queries.ts
- * @description Cache keys and reads for the copy desk.
+ * @description Cache keys, reads and the desk's three writes — the autosave, the
+ * withdrawal, and the digest an editor raises when they have finished.
  * @architecture Enterprise SaaS 2026
  * @module features/copydesk/api/copydesk.queries
  */
 
-import { useQuery, type UseQueryResult } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type UseMutationResult,
+  type UseQueryResult,
+} from "@tanstack/react-query";
 
 import { RECONCILING_REFETCH } from "@/shared/api/queryPolicy";
 import { CopyDeskService } from "./copydesk.service";
-import type { CopyDeskContents } from "../types/copydesk.dto";
+import type {
+  CopyDeskContents,
+  CopyDeskNotifyResult,
+  CopyDeskProposal,
+  CopyDeskProposalWrite,
+  CopyDeskProposalWritten,
+  CopyDeskSegment,
+  CopyDeskSegments,
+} from "../types/copydesk.dto";
+import { isOpen } from "../lib/proposals";
 
 export const copyDeskKeys = {
   root: ["copydesk"] as const,
   contents: () => ["copydesk", "contents"] as const,
+  segments: (scope: string) => ["copydesk", "segments", scope] as const,
 };
 
 /**
@@ -41,4 +58,158 @@ export const useCopyDeskContents = (): UseQueryResult<CopyDeskContents> =>
     staleTime: CONTENTS_STALE,
     retry: false,
     ...RECONCILING_REFETCH,
+  });
+
+/**
+ * One page of the corpus, in all three languages.
+ *
+ * `persist: false` keeps it out of the panel's 24-hour localStorage snapshot.
+ * The corpus is a projection of git and the desk's whole job is to work against
+ * what the repository holds NOW; a day-old copy restored on a cold boot would
+ * put an editor's paragraph next to a source that has moved, which is precisely
+ * the silence the source hash exists to break. It is also six pages of prose
+ * that no chorister's offline panel has any use for.
+ */
+export const useCopyDeskSegments = (
+  scope: string,
+): UseQueryResult<CopyDeskSegments> =>
+  useQuery({
+    queryKey: copyDeskKeys.segments(scope),
+    queryFn: () => CopyDeskService.getSegments(scope),
+    enabled: Boolean(scope),
+    meta: { persist: false },
+    staleTime: CONTENTS_STALE,
+    ...RECONCILING_REFETCH,
+  });
+
+/** The proposal the server now holds, as the desk can honestly describe it. */
+const writtenProposal = (
+  written: CopyDeskProposalWritten,
+  payload: CopyDeskProposalWrite,
+  previous: CopyDeskProposal | null,
+): CopyDeskProposal => ({
+  id: written.id,
+  value: payload.value,
+  comment: payload.comment,
+  status: written.status,
+  author_id: previous?.author_id ?? null,
+  author_name: previous?.author_name ?? "",
+  is_mine: true,
+  // Not a guess: the server stamps a proposal against the Polish as it stands at
+  // the moment of the write, so a value saved a millisecond ago renders the
+  // current source by construction.
+  is_stale: false,
+  source_known: true,
+  updated_at: new Date().toISOString(),
+  reviewed_at: null,
+  applied_at: null,
+});
+
+/**
+ * The autosave.
+ *
+ * The response carries an id and a status, so the cache is patched rather than
+ * refetched: one page is ~213 rows and re-reading all of them every time a
+ * sentence settles would put the desk's own network traffic between the editor
+ * and their next paragraph.
+ *
+ * What the patch deliberately does NOT do is recompute staleness. Editing the
+ * Polish invalidates the two translations built on it, and that verdict belongs
+ * to the server (it hashes the value under the same normalization the extractor
+ * uses). The reconciling tier fetches it back on the next mount or window focus;
+ * inventing a second, hand-rolled answer here is how the desk would start
+ * disagreeing with the digest about which rows are out of date.
+ */
+export const useSaveProposal = (
+  scope: string,
+): UseMutationResult<
+  CopyDeskProposalWritten,
+  Error,
+  CopyDeskProposalWrite
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: CopyDeskService.saveProposal,
+    onSuccess: (written, payload) => {
+      let isFirstOnThisSegment = false;
+
+      queryClient.setQueryData<CopyDeskSegments>(
+        copyDeskKeys.segments(scope),
+        (current) => {
+          if (!current) return current;
+          return {
+            segments: current.segments.map((segment) => {
+              if (segment.id !== payload.segment_id) return segment;
+              const previous =
+                segment.proposals.find(
+                  (proposal) => proposal.is_mine && isOpen(proposal),
+                ) ?? null;
+              isFirstOnThisSegment = previous === null;
+              return {
+                ...segment,
+                proposals: [
+                  writtenProposal(written, payload, previous),
+                  ...segment.proposals.filter(
+                    (proposal) => !(proposal.is_mine && isOpen(proposal)),
+                  ),
+                ],
+              } satisfies CopyDeskSegment;
+            }),
+          };
+        },
+      );
+
+      // The contents list counts segments that have been TOUCHED, so only the
+      // first write on a given segment moves it. Revising the same paragraph
+      // twenty times changes nothing there, and refetching the census each time
+      // would be twenty reads answering the same number.
+      if (isFirstOnThisSegment) {
+        void queryClient.invalidateQueries({
+          queryKey: copyDeskKeys.contents(),
+        });
+      }
+    },
+  });
+};
+
+/** Taking back one's own open proposal: the segment returns to what git holds. */
+export const useWithdrawProposal = (
+  scope: string,
+): UseMutationResult<void, Error, string> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: CopyDeskService.withdrawProposal,
+    onSuccess: (_result, proposalId) => {
+      queryClient.setQueryData<CopyDeskSegments>(
+        copyDeskKeys.segments(scope),
+        (current) =>
+          current
+            ? {
+                segments: current.segments.map((segment) => ({
+                  ...segment,
+                  proposals: segment.proposals.filter(
+                    (proposal) => proposal.id !== proposalId,
+                  ),
+                })),
+              }
+            : current,
+      );
+      void queryClient.invalidateQueries({ queryKey: copyDeskKeys.contents() });
+    },
+  });
+};
+
+/**
+ * "I have finished" — the digest, raised now rather than half an hour after the
+ * last keystroke. It writes nothing an editor could lose by not pressing it.
+ */
+export const useNotifyReviewers = (): UseMutationResult<
+  CopyDeskNotifyResult,
+  Error,
+  void
+> =>
+  useMutation({
+    mutationFn: CopyDeskService.notifyReviewers,
   });

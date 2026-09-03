@@ -5,9 +5,10 @@
  * route.
  *
  * It answers the question an editor asked for by name — "what have I already
- * done" — and it is deliberately the whole of stage D1. The rows do not open
- * yet: the editor is the next surface, and a contents list is a thing to judge
- * on its own before anything is designed on top of it.
+ * done" — and each row opens that page's text. The counts are what a returning
+ * editor reads first: how big a page is and how much work stands on it are
+ * plain type, while what is NEW and what has gone STALE wear a chip, because
+ * those are the rows worth going back to.
  * @architecture Enterprise SaaS 2026
  * @module pages/copydesk/CopyDeskContentsPage
  */
