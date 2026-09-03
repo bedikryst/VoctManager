@@ -5172,6 +5172,9 @@
       "withdraw_failed": "That change could not be withdrawn.",
       "save_failed": "That change could not be saved. Check your connection — the text is still in the field.",
       "emptied": "An empty field is refused: emptying it deletes the field from the site rather than clearing it. Undo if that is not what you meant.",
+      "awaiting": "Accepted — waiting to be written into the repository",
+      "controls_note": "Under a field, once you have written in it: “Original” shows the text the site carries today, “Note” adds a remark for the publisher, and “Undo” drops your proposal and leaves the site's own text.",
+      "marks_note": "The marks beside a field: “Accepted” and “Rejected” are the publisher's verdict, “The Polish has moved” means the translation was written against an older Polish, and “New” means the field has appeared since your last visit.",
       "autosave_note": "It saves itself. The publisher gets one digest half an hour after you stop typing — or straight away, if you press “I'm finished” at the top.",
       "missing_title": "This page is not on the desk",
       "missing_description": "The corpus arrives here straight from the repository, in a step of its own (copy:sync). Go back to the contents list and pick a page."

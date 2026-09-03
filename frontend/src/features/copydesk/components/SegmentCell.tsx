@@ -68,7 +68,7 @@ export const SegmentCell = ({
   onWithdraw,
 }: SegmentCellProps): React.JSX.Element => {
   const { t } = useTranslation();
-  const { segment, mine, others, settled } = cell;
+  const { segment, mine, others, settled, awaiting } = cell;
 
   const savedValue = currentValue(cell);
   const savedComment = mine?.comment ?? "";
@@ -200,6 +200,28 @@ export const SegmentCell = ({
                 })}
               </Caption>
             ))}
+          </div>
+        )}
+
+        {/* The decided sentence, while it is still only decided. Gold rather
+            than the parchment of "Na serwisie": this is not what the site says,
+            it is what the site will say once the patch is written out. */}
+        {awaiting && (
+          <div className="rounded-nested border border-ethereal-gold/25 bg-ethereal-gold/6 px-2.5 py-2">
+            <Eyebrow size="overline-sm" color="gold">
+              {t(
+                "copy_desk.editor.awaiting",
+                "Przyjęte — czeka na wpisanie do repozytorium",
+              )}
+            </Eyebrow>
+            <Text
+              size="sm"
+              color="graphite"
+              lang={segment.locale}
+              className="whitespace-pre-wrap"
+            >
+              {awaiting.value}
+            </Text>
           </div>
         )}
 

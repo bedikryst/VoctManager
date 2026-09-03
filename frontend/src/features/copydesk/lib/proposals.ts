@@ -45,12 +45,26 @@ export interface CopyDeskCell {
    * whose resting state is meant to say nothing at all.
    */
   readonly settled: CopyDeskProposal | null;
+  /**
+   * Wording a reviewer has accepted that the repository has not received yet —
+   * whoever wrote it.
+   *
+   * `segment.value` is git's, and between the verdict and the next run of
+   * `apply-copy` it cannot show this: the cell would print the sentence being
+   * replaced, or nothing at all where a field is being translated for the first
+   * time, under a chip saying the change was accepted. That gap is hours or days
+   * wide, because writing the patch out is a person's errand from a checkout —
+   * so the desk states the decided text rather than letting the wait read as
+   * lost work.
+   */
+  readonly awaiting: CopyDeskProposal | null;
 }
 
 export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
   let mine: CopyDeskProposal | null = null;
   const others: CopyDeskProposal[] = [];
   let settled: CopyDeskProposal | null = null;
+  let awaiting: CopyDeskProposal | null = null;
 
   // The payload arrives newest first, so the first settled row found is the
   // last decision made about this field.
@@ -58,12 +72,20 @@ export const readCell = (segment: CopyDeskSegment): CopyDeskCell => {
     if (isOpen(proposal)) {
       if (proposal.is_mine) mine ??= proposal;
       else others.push(proposal);
-    } else if (settled === null && proposal.is_mine) {
-      settled = proposal;
+      continue;
+    }
+    if (settled === null && proposal.is_mine) settled = proposal;
+    if (
+      awaiting === null &&
+      proposal.status === "ACCEPTED" &&
+      proposal.applied_at === null &&
+      proposal.value !== segment.value
+    ) {
+      awaiting = proposal;
     }
   }
 
-  return { segment, mine, others, settled };
+  return { segment, mine, others, settled, awaiting };
 };
 
 /**

@@ -122,7 +122,7 @@ export const CopyDeskShell = (): React.JSX.Element => {
       </header>
 
       <main
-        className="relative z-10 mx-auto flex w-full max-w-[1500px] flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] sm:px-6"
+        className="relative z-10 mx-auto flex w-full max-w-440 flex-1 flex-col px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)] sm:px-6"
         id="main-content"
       >
         {/* Data first, and deliberately: with the reconciling tier every mount

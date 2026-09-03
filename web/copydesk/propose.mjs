@@ -248,9 +248,15 @@ async function proposeAndAccept(base, token, segmentId, value) {
     // announce to the person who ran it.
     status: "DRAFT",
   });
-  await postJson(`${base}/api/copydesk/proposals/${written.id}/review/`, token, {
-    status: "ACCEPTED",
-  });
+  try {
+    await postJson(`${base}/api/copydesk/proposals/${written.id}/review/`, token, {
+      status: "ACCEPTED",
+    });
+  } catch (error) {
+    // 409 is "already settled", which is the state this call was asking for — it happens when a
+    // retried accept follows one that landed and lost its response.
+    if (/** @type {{status?: number}} */ (error).status !== 409) throw error;
+  }
 }
 
 /**
@@ -323,11 +329,35 @@ async function main() {
   }
   const token = await authenticate(base, account);
 
+  // What the desk has already accepted and not yet handed to the repository. Skipping it makes the
+  // import RESUMABLE, which matters because the run posts a thousand times against a one-vCPU
+  // droplet: a run that dies at row 300 has to be re-runnable without proposing the first 299 a
+  // second time. `plan` cannot answer this — it compares against the repository, and these values
+  // are precisely the ones that have not reached it yet.
+  const { proposals: pending } = await getJson(
+    `${base}/api/copydesk/proposals/patch/`,
+    token,
+  );
+  /** @type {Map<string, string>} */
+  const waiting = new Map();
+  for (const row of pending) if (row.locale === locale) waiting.set(row.key, row.value);
+  const remaining = writable.filter((row) => waiting.get(row.key) !== row.value);
+  if (remaining.length < writable.length) {
+    console.log(
+      `[copydesk] ${writable.length - remaining.length} already accepted and waiting for the ` +
+        `repository · ${remaining.length} left to post.`,
+    );
+  }
+  if (!remaining.length) {
+    console.log("[copydesk] nothing left to post — run `npm run copy:apply` next.");
+    return;
+  }
+
   // Grouped by page because that is what the desk reads by, and because the drift check below
   // needs the Polish of the same page in the same breath.
   /** @type {Map<string, {key: string, value: string}[]>} */
   const byScope = new Map();
-  for (const row of writable) {
+  for (const row of remaining) {
     const scope = scopeOf(row.key);
     byScope.set(scope, [...(byScope.get(scope) ?? []), row]);
   }
@@ -350,7 +380,7 @@ async function main() {
 
       await proposeAndAccept(base, token, segment.id, row.value);
       posted += 1;
-      if (posted % 50 === 0) console.log(`[copydesk] ${posted} / ${writable.length}`);
+      if (posted % 50 === 0) console.log(`[copydesk] ${posted} / ${remaining.length}`);
     }
     console.log(`[copydesk] ${scope}: ${rows.length} accepted`);
   }

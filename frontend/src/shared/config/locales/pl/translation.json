@@ -5209,6 +5209,9 @@
       "withdraw_failed": "Nie udało się cofnąć zmiany.",
       "save_failed": "Nie udało się zapisać tej zmiany. Sprawdź połączenie — tekst nadal jest w polu.",
       "emptied": "Puste pole zostanie odrzucone — wyczyszczenie kasuje pole z serwisu, a nie opróżnia go. Cofnij, jeśli nie o to chodziło.",
+      "awaiting": "Przyjęte — czeka na wpisanie do repozytorium",
+      "controls_note": "Pod polem, kiedy coś w nim napiszesz: „Oryginał” pokazuje tekst, który jest teraz na stronie, „Uwaga” dopisuje notkę dla wydawcy, „Cofnij” kasuje Twoją propozycję i zostawia tekst ze strony.",
+      "marks_note": "Oznaczenia przy polu: „Przyjęte” i „Odrzucone” to werdykt wydawcy, „Polski się zmienił” znaczy, że tłumaczenie napisano do starszej wersji polskiego, a „Nowe” — że pole pojawiło się od Twojej ostatniej wizyty.",
       "autosave_note": "Zapisuje się samo. Wydawca dostaje zestawienie pół godziny po tym, jak przestaniesz pisać — albo od razu, kiedy klikniesz „Skończyłem” u góry.",
       "missing_title": "Tej strony nie ma w redakcji",
       "missing_description": "Korpus wchodzi tu prosto z repozytorium, osobnym krokiem (copy:sync). Wróć do spisu i wybierz stronę z listy."

@@ -47,12 +47,20 @@ import { Caption, Heading } from "@/shared/ui/primitives/typography";
 import { EtherealLoader } from "@/shared/ui/kinematics/EtherealLoader";
 import { PageTransition } from "@/shared/ui/kinematics/PageTransition";
 
-/** Whole strings: a width assembled from a variable generates no CSS. */
+/**
+ * Whole strings: a width assembled from a variable generates no CSS.
+ *
+ * One language is capped at a reading measure and the others are not: a column
+ * of prose stops being readable somewhere past 80 characters, but two or three
+ * columns each need that measure of their own, and a cap sized for one of them
+ * squeezes all three into ribbons with the screen empty on both sides. `all`
+ * takes whatever the shell allows.
+ */
 const VIEW_WIDTH: Readonly<Record<LocaleViewId, string>> = {
   pl: "max-w-3xl",
-  "pl-en": "max-w-5xl",
-  "pl-fr": "max-w-5xl",
-  all: "max-w-7xl",
+  "pl-en": "max-w-295",
+  "pl-fr": "max-w-295",
+  all: "max-w-none",
 };
 
 /** The switch says what it does in the languages themselves; nothing to translate. */
@@ -227,6 +235,24 @@ export default function CopyDeskScopePage(): React.JSX.Element {
             className="sm:w-auto"
           />
         </header>
+
+        {/* The controls appear under a field only once it has been touched, and
+            the chips appear only where a fact exists — so a legend is the one
+            place an editor can meet either before meeting it unannounced. Above
+            the text, because that is where the question gets asked, and stated
+            in two lines rather than a panel, because it is chrome about chrome. */}
+        <Caption color="graphite">
+          {t(
+            "copy_desk.editor.controls_note",
+            "Pod polem, kiedy coś w nim napiszesz: „Oryginał” pokazuje tekst, który jest teraz na stronie, „Uwaga” dopisuje notkę dla wydawcy, „Cofnij” kasuje Twoją propozycję i zostawia tekst ze strony.",
+          )}
+        </Caption>
+        <Caption color="graphite">
+          {t(
+            "copy_desk.editor.marks_note",
+            "Oznaczenia przy polu: „Przyjęte” i „Odrzucone” to werdykt wydawcy, „Polski się zmienił” znaczy, że tłumaczenie napisano do starszej wersji polskiego, a „Nowe” — że pole pojawiło się od Twojej ostatniej wizyty.",
+          )}
+        </Caption>
 
         {locales.includes("fr") && (
           <Caption color="graphite" lang="fr">

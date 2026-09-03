@@ -12,15 +12,898 @@
 
 concert.9-kart.about.blurb: "A programme built from the psalms: from penitence and thanksgiving to the joy of praise, with music by Allegri, Bach, Rossi, Bruckner and Stanford."
 concert.9-kart.about.place: "Rybnik · Łódź · Kraków"
+concert.9-kart.credits.0.role: "Conductor"
+concert.9-kart.credits.1.role: "Introductory word"
+concert.9-kart.credits.2.role: "Lighting design"
+concert.9-kart.dateLabel: "2024"
+concert.9-kart.essence: "A psalm is the place where one need not simplify oneself before God. Allegri's Miserere, divided into nine parts, was wound around the whole evening; between its penitential stanzas came psalms of thanksgiving, of wisdom and of joy in turn."
+concert.9-kart.facts.0: "9 psalms"
+concert.9-kart.facts.1: "6 / 8 / 9 / 12 voices"
+concert.9-kart.facts.2: "The Miserere as a clasp"
+concert.9-kart.gallery.kd-9-kart-0.alt: "The programme of the Spiritual Concert Nine Leaves from the Book of Psalms"
+concert.9-kart.gallery.kd-9-kart-1.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-10.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-11.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-12.alt: "VoctEnsemble after the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.gallery.kd-9-kart-13.alt: "VoctEnsemble after the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-14.alt: "VoctEnsemble after the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-15.alt: "VoctEnsemble with its conductor during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-2.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-3.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-4.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-5.alt: "VoctEnsemble during the concert Nine Leaves in the Sacred Heart Basilica in Kraków"
+concert.9-kart.gallery.kd-9-kart-6.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-7.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-8.alt: "VoctEnsemble during the concert Nine Leaves in the basilica in Rybnik"
+concert.9-kart.gallery.kd-9-kart-9.alt: "VoctEnsemble during the concert Nine Leaves in Łódź Cathedral"
+concert.9-kart.inscriptioGloss: "Have mercy upon me, O God, after thy great goodness"
+concert.9-kart.metaPlace: "Rybnik · Łódź · Sacred Heart Basilica, Kraków"
+concert.9-kart.posterAlt: "Poster for the concert Nine Leaves from the Book of Psalms"
+concert.9-kart.program.0.clasp: "Miserere — part I"
+concert.9-kart.program.0.claspTextGloss: |-
+  Have mercy upon me, O God, after thy great goodness:
+  according to the multitude of thy mercies do away mine offences.
+  Wash me throughly from my wickedness:
+  and cleanse me from my sin.
+concert.9-kart.program.0.inscriptioGloss: "Have mercy upon me, O God, after thy great goodness"
+concert.9-kart.program.0.note: "A penitential psalm sung in the Sistine Chapel at Tenebrae in Holy Week. The Vatican guarded this music: taking a copy out carried the threat of excommunication, and the soloists' ornamented lines were passed on by ear, from one generation to the next. The fourteen-year-old Mozart heard it in 1770 and wrote it down from memory. Here the work is divided into nine parts which wind around the other psalms: a five-voice choir leads verse by verse, and four soloists answer it from a distance — hence the echo."
+concert.9-kart.program.1.clasp: "Miserere — part II"
+concert.9-kart.program.1.claspTextGloss: |-
+  For I acknowledge my faults:
+  and my sin is ever before me.
+  Against thee only have I sinned, and done this evil in thy sight:
+  that thou mightest be justified in thy saying, and clear when thou art judged.
+concert.9-kart.program.1.inscriptioGloss: "O praise the Lord, all ye nations"
+concert.9-kart.program.1.note: "Psalm 117 is the shortest in the whole Psalter: two verses, a summons addressed to all the nations. Lassus — a Fleming attached from 1556 to the Bavarian court in Munich, and the author of more than two thousand works — set them for twelve voices in choirs that answer one another: the shortest text of the evening is given its largest forces. After the first part of the Miserere the penitent falls silent, and the whole earth speaks."
+concert.9-kart.program.1.textGloss: |-
+  O praise the Lord, all ye nations:
+  praise him, all ye peoples.
+  For his merciful kindness is ever more and more towards us:
+  and the truth of the Lord endureth for ever.
+concert.9-kart.program.2.clasp: "Miserere — part III"
+concert.9-kart.program.2.claspTextGloss: |-
+  Behold, I was shapen in wickedness:
+  and in sin hath my mother conceived me.
+  But lo, thou requirest truth in the inward parts:
+  and shalt make me to understand wisdom secretly.
+concert.9-kart.program.2.inscriptioGloss: "The mouth of the righteous is exercised in wisdom"
+concert.9-kart.program.2.note: "A gradual written for Ignaz Traumihler, choirmaster of the abbey of St Florian — the abbey in whose crypt, beneath the organ, Bruckner later asked to be buried. The composer set himself a rule as strict as the law the psalm speaks of: not one sharp, not one flat, no seventh chords, everything in the pure Lydian mode. He boasted of it to Traumihler in a letter. After the second part of the Miserere, in which the penitent acknowledges his fault, comes the portrait of a righteous man."
+concert.9-kart.program.2.textGloss: |-
+  The mouth of the righteous is exercised in wisdom:
+  and his tongue will be talking of judgement.
+  The law of his God is in his heart:
+  and his goings shall not slide.
+  Alleluia.
+concert.9-kart.program.3.clasp: "Miserere — part IV"
+concert.9-kart.program.3.claspTextGloss: |-
+  Thou shalt purge me with hyssop, and I shall be clean:
+  thou shalt wash me, and I shall be whiter than snow.
+  Thou shalt make me hear of joy and gladness:
+  that the bones which thou hast broken may rejoice.
+concert.9-kart.program.3.inscriptioGloss: "Blessed are those that are undefiled in the way"
+concert.9-kart.program.3.note: "Psalm 119 is the longest in the Psalter: a hundred and seventy-six verses about the Law of God. Stanford takes one of them, the first. The motet was written for the choir of Trinity College, Cambridge, where the composer was organist, and appeared in 1905 in a set of three Latin motets. Six voices divide into two groups of three which hand the same phrase to one another; the way the psalm speaks of can be heard here."
+concert.9-kart.program.3.textGloss: |-
+  Blessed are those that are undefiled in the way:
+  and walk in the law of the Lord.
+concert.9-kart.program.4.clasp: "Miserere — part V"
+concert.9-kart.program.4.claspTextGloss: |-
+  Turn thy face from my sins:
+  and put out all my misdeeds.
+  Make me a clean heart, O God:
+  and renew a right spirit within me.
+concert.9-kart.program.4.inscriptioGloss: "O sing unto the Lord a new song"
+concert.9-kart.program.4.note: "The best known of Bach's motets, written in Leipzig. Two four-voice choirs pass the verses of the psalm between them like a ball; the composer weaves together Psalm 149, a Lutheran chorale and verses of Psalm 150. It is the most joyful and the most difficult link of the evening, set exactly opposite the penitence of the Miserere. When Mozart heard this motet at St Thomas's in Leipzig in 1789 he is said to have exclaimed: “Now here at last is something one can learn from”, and asked for the parts to be laid out for him."
+concert.9-kart.program.4.textGloss: |-
+  O sing unto the Lord a new song:
+  let the congregation of saints praise him.
+  Let Israel rejoice in him that made him:
+  and let the children of Sion be joyful in their King.
+  Let them praise his Name in the dance:
+  let them sing praises unto him with tabret and harp.
+concert.9-kart.program.5.clasp: "Miserere — part VI"
+concert.9-kart.program.5.claspTextGloss: |-
+  Cast me not away from thy presence:
+  and take not thy holy Spirit from me.
+  O give me the comfort of thy help again:
+  and stablish me with thy free Spirit.
+concert.9-kart.program.5.inscriptioGloss: "O clap your hands together, all ye people"
+concert.9-kart.program.5.note: "Gibbons, organist of the Chapel Royal, wrote this anthem for eight voices in 1622 as his doctoral exercise for Oxford; the text comes from Coverdale's psalter, the psalter of the English Prayer Book. Psalm 47 seats God on a throne amid shouting and trumpets, and the choir breaks into eight voices so that the crowd can be heard."
+concert.9-kart.program.5.textGloss: |-
+  O clap your hands together, all ye people;
+  O sing unto God with the voice of melody.
+  For the Lord is high and to be feared;
+  he is the great King of all the earth.
+  He shall subdue the people under us,
+  and the nations under our feet.
+  He shall choose out an heritage for us,
+  even the worship of Jacob, whom he loved.
+concert.9-kart.program.6.clasp: "Miserere — part VII"
+concert.9-kart.program.6.claspTextGloss: |-
+  Then shall I teach thy ways unto the wicked:
+  and sinners shall be converted unto thee.
+  Deliver me from blood-guiltiness, O God, thou that art the God of my health:
+  and my tongue shall sing of thy righteousness.
+concert.9-kart.program.6.inscriptioGloss: "Blessed be he that cometh in the Name of the Lord"
+concert.9-kart.program.6.note: "Rossi was a Jew at the Gonzaga court in Mantua; the duke released him from the obligation to wear the yellow badge the others had to wear. In the collection “Ha-shirim asher li-Shlomo” (Venice) he was the first to apply Renaissance polyphony to Hebrew liturgical texts; the preface, defending part-singing in the synagogue, was written for him by Rabbi Leon of Modena. Here, in a programme built from psalms in Latin, German and English, their original language returns."
+concert.9-kart.program.6.textGloss: |-
+  Blessed be he that cometh in the Name of the Lord!
+  We have blessed you out of the house of the Lord.
+  God is the Lord who hath shewed us light:
+  bind the sacrifice with cords, yea, even unto the horns of the altar.
+  Thou art my God, and I will thank thee:
+  thou art my God, and I will exalt thee.
+  O give thanks unto the Lord, for he is gracious:
+  and his mercy endureth for ever.
+concert.9-kart.program.7.clasp: "Miserere — part VIII"
+concert.9-kart.program.7.claspTextGloss: |-
+  Thou shalt open my lips, O Lord:
+  and my mouth shall shew thy praise.
+  For thou desirest no sacrifice, else would I give it thee:
+  but thou delightest not in burnt-offerings.
+concert.9-kart.program.7.inscriptioGloss: "O be joyful in the Lord, all ye lands"
+concert.9-kart.program.7.note: "From the collection “Psalmen Davids” (Dresden, 1619), the first great work Schütz wrote after returning from Venice, where he had studied with Giovanni Gabrieli. He brought polychoral writing back with him and applied it to Luther's German psalter. Schütz was born exactly a hundred years before Bach; in this programme both their psalms sound in German and for two choirs, and the century between them can be heard."
+concert.9-kart.program.7.textGloss: |-
+  O be joyful in the Lord, all ye lands:
+  serve the Lord with gladness,
+  and come before his presence with a song.
+  Be ye sure that the Lord he is God:
+  it is he that hath made us, and not we ourselves;
+  we are his people, and the sheep of his pasture.
+  O go your way into his gates with thanksgiving,
+  and into his courts with praise:
+  be thankful unto him, and speak good of his Name.
+  For the Lord is gracious,
+  his mercy is everlasting:
+  and his truth endureth from generation to generation.
+
+  Glory be to the Father, and to the Son, and to the Holy Ghost;
+  as it was in the beginning, is now, and ever shall be,
+  world without end. Amen.
+concert.9-kart.program.8.clasp: "Miserere — part IX + epilogue"
+concert.9-kart.program.8.claspTextGloss: |-
+  The sacrifice of God is a troubled spirit:
+  a broken and contrite heart, O God, shalt thou not despise.
+  O be favourable and gracious unto Sion:
+  build thou the walls of Jerusalem.
+
+  Then shalt thou be pleased with the sacrifice of righteousness, with the burnt-offerings and oblations:
+  then shall they offer young bullocks upon thine altar.
+concert.9-kart.program.8.inscriptioGloss: "O sing unto the Lord a new song"
+concert.9-kart.program.8.note: "A motet for six voices published in Giulio Cesare Bianchi's Milanese collection. The text is woven from two psalms — verses of 98 interlacing with a verse of 96 — and the summons it opens with had already been heard that evening, in Bach: O sing unto the Lord a new song. The ensemble closed the programme of “Contemplation of the Incarnation”, the concert the cycle began with, using this same motet; here it is the last word of praise before the ninth part of the Miserere."
+concert.9-kart.program.8.textGloss: |-
+  O sing unto the Lord a new song:
+  sing unto the Lord, and praise his Name;
+  for he hath done marvellous things.
+  Be glad and rejoice, and sing praises
+  upon the harp and with the voice of a psalm,
+  for he hath done marvellous things.
+concert.9-kart.program.9.inscriptioGloss: "words: Phineas Fletcher"
+concert.9-kart.program.9.note: "A poem by Phineas Fletcher — printed only in 1633, though it had circulated earlier — set to a melody by Gibbons from George Wither's book of church songs. The same hand that gave this evening its most triumphant psalm leaves it its last and quietest word. The ensemble asked for the Polish text to be shown on the screens during the encore: after nine parts of the Miserere, these tears were meant to be understood."
+concert.9-kart.program.9.textGloss: |-
+  Drop, drop, slow tears,
+  and bathe those beauteous feet
+  which brought from Heaven
+  the news and Prince of Peace.
+
+  Cease not, wet eyes,
+  his mercies to entreat;
+  to cry for vengeance
+  sin doth never cease.
+
+  In your deep floods
+  drown all my faults and fears;
+  nor let his eye
+  see sin, but through my tears.
+concert.9-kart.programArc: "Beside the list of works the ensemble added two words: “order matters”. The evening begins with penitence — Allegri's Miserere, Psalm 51 — and immediately interrupts it: the psalm is cut into nine parts, and between them come glory, wisdom, the law, joy, the throne, thanksgiving and a new song, each in turn. The penitent will not finish his prayer until every other voice of the Psalter has sounded; only after the last does he return for the ninth time and say it to the end. As in a life, in which sorrow and joy are interwoven."
+concert.9-kart.programLede: "Nine psalms, entwined with the Miserere"
+concert.9-kart.programNote: "The line-up of thirteen singers is recorded for the Kraków evening (16 November 2024); the ensemble had performed the same programme, in the same order, in Rybnik and in Łódź."
+concert.9-kart.prologue: "The sixteenth of November 2024, the Sacred Heart Basilica in Kraków. The third evening of this programme, after Rybnik and Łódź. Before the first sound, Fr Przemysław Wysogląd SJ sets out the context of the psalms, and Ada Bystrzycka's light sculpts the space. The ensemble asks for one thing: not to applaud the individual pieces, and to keep the silence between them."
+concert.9-kart.reflectionNote: "The Psalter lays feelings side by side: a complaint next to a thanksgiving, a plea for mercy next to a summons to dance. The nine leaves of this evening were chosen for exactly that span, and clasped together by one penitential prayer that returns nine times."
+concert.9-kart.textNote: "The texts follow the concert programme. The English of the psalms follows the Book of Common Prayer psalter — Coverdale's, the psalter Gibbons himself set — with the Authorised Version where Coverdale's wording has drifted out of use."
 concert.9-kart.title: "Nine Leaves from the Book of Psalms"
-concert.aeternam.about.blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament toward prayer."
+concert.aeternam.about.blurb: "A programme of memory and compassion before the suffering of civilians: Vivancos, Zieleński, Pärt, Havrylets, Gjeilo, Lotti and Tavener leading from lament towards prayer."
 concert.aeternam.about.place: "Mistrzejowice · Niedzica"
+concert.aeternam.credits.0.role: "Conductor"
+concert.aeternam.credits.1.role: "Cello"
+concert.aeternam.credits.2.role: "String quartet"
+concert.aeternam.dateLabel: "autumn 2025"
+concert.aeternam.essence: "Faced with the suffering of the people of Gaza we chose the language of compassion, not of commentary. The programme led from Vivancos's Aeternam and the lament Vox in Rama, through prayers for peace by Pärt, Havrylets and Gjeilo and Lotti's image of the Passion, towards Shaw's refuge and Tavener's act of commendation."
+concert.aeternam.facts.0: "4 / 8 / 12 voices"
+concert.aeternam.facts.1: "Lament and prayer"
+concert.aeternam.facts.2: "Kraków · Niedzica"
+concert.aeternam.gallery.kd-aeternam-0.alt: "VoctEnsemble during the concert Epitaph for Gaza in Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-1.alt: "VoctEnsemble during the concert Epitaph for Gaza in Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-2.alt: "VoctEnsemble during the concert Epitaph for Gaza in Mistrzejowice"
+concert.aeternam.gallery.kd-aeternam-3.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.gallery.kd-aeternam-4.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.gallery.kd-aeternam-5.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.gallery.kd-aeternam-6.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.gallery.kd-aeternam-7.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.gallery.kd-aeternam-8.alt: "VoctEnsemble during the concert Epitaph for Gaza in Niedzica"
+concert.aeternam.inscriptioGloss: "Eternal rest grant unto them, O Lord, and let perpetual light shine upon them"
+concert.aeternam.inscriptioRef.source: "Requiem Introit"
+concert.aeternam.links.0.label: "Press coverage ↗"
+concert.aeternam.links.1.label: "Onet / KAI ↗"
+concert.aeternam.metaPlace: "Mistrzejowice, Kraków · Niedzica"
+concert.aeternam.movements.commendatio.gloss: "Commendation"
+concert.aeternam.movements.commendatio.line: "What remains is the commending of everything to her who stood beneath the cross, and the promise the last refrain carries."
+concert.aeternam.movements.epitaphium.gloss: "Epitaph"
+concert.aeternam.movements.epitaphium.line: "The evening begins where speech ends: with words that have been sung over graves for centuries."
+concert.aeternam.movements.oratio.gloss: "Prayer for peace"
+concert.aeternam.movements.oratio.line: "Three pleas from three corners of Europe: an antiphon written after the Madrid bombings, a Norwegian consolation with cello, a Ukrainian cry to the Mother of God."
+concert.aeternam.movements.passio.gloss: "Image of the Passion"
+concert.aeternam.movements.passio.interlude.gloss: "When he beheld the city, he wept over it: If thou hadst known the things which belong unto thy peace!"
+concert.aeternam.movements.passio.line: "At the midpoint of the evening: the weight of the cross, written out in the chromaticism of eight voices."
+concert.aeternam.movements.ploratus.gloss: "Lament of the innocents"
+concert.aeternam.movements.ploratus.line: "Rachel weeping for her children: in the biblical tradition, the figure of every mother whose child has been taken from her."
+concert.aeternam.movements.refugium.gloss: "Refuge"
+concert.aeternam.movements.refugium.line: "After the Passion the smallest image the Psalter knows returns: the sparrow and the swallow that find a nest beside the altar."
+concert.aeternam.posterAlt: "Poster for the concert Aeternam — Epitaph for Gaza"
+concert.aeternam.program.0.inscriptioGloss: "the Introit of the Mass for the dead"
+concert.aeternam.program.0.note: "A movement from the Requiem of the Catalan composer, for years attached to the Escolania de Montserrat boys' choir. Its foundation is the Introit of the Mass for the dead, words said over graves for centuries. Vivancos sets contemporary heterophony beside the plainness of old chant."
+concert.aeternam.program.0.textGloss: |-
+  Eternal rest grant unto them, O Lord,
+  and let perpetual light shine upon them.
+concert.aeternam.program.1.note: "A motet from the collection Communiones totius anni, published in Venice in 1611. Zieleński set this text — a verse of Jeremiah taken up in Matthew's Gospel — so that the overlapping voices themselves become a cry. Rachel, the mother of Joseph and Benjamin, is in the biblical tradition the figure of the mother mourning every innocent victim; the motet was sung in the liturgy of the Holy Innocents."
+concert.aeternam.program.1.textGloss: |-
+  In Rama was there a voice heard,
+  lamentation and great mourning.
+  Rachel weeping for her children,
+  and would not be comforted, because they are not.
+concert.aeternam.program.2.inscriptioGloss: "a medieval antiphon"
+concert.aeternam.program.2.note: "Written at Jordi Savall's request three days after the Madrid bombings of 11 March 2004. Pärt set a medieval antiphon in his tintinnabuli style, the style he found after ten years of creative silence. The simple formula returns here like breathing: it lasts, instead of leading to a climax."
+concert.aeternam.program.2.textGloss: |-
+  Give peace, O Lord, in our time,
+  because there is none other
+  that fighteth for us,
+  but only thou, O God.
+concert.aeternam.program.3.inscriptioGloss: "a responsory of Christmas"
+concert.aeternam.program.3.note: "The Norwegian composer set the responsory O magnum mysterium for choir and solo cello. The voice of the instrument, so often compared to the human one, holds an intimate dialogue with the choir. The text speaks of a birth; in this programme, of the birth of the Prince of Peace."
+concert.aeternam.program.3.textGloss: |-
+  O great mystery
+  and wondrous sacrament,
+  that the animals should see the newborn Lord
+  lying in a manger.
+  O blessed Virgin, whose womb was worthy to bear
+  Christ the Lord.
+  Alleluia.
+concert.aeternam.program.4.inscriptioGloss: "A Prayer to the Most Holy Mother of God"
+concert.aeternam.program.4.note: "The composer, a pupil of Myroslav Skoryk, was one of the leading figures of contemporary Ukrainian music. She died in Kyiv in 2022, in the first days of the Russian invasion, when access to medical care was restricted. Her prayer to the Mother of God, built on simple melodic lines, sounds today like a testimony."
+concert.aeternam.program.4.textGloss: |-
+  Most holy Mother of God, hear us.
+  Most holy Mother of God, be our advocate.
+  With thy almighty hand help us
+  to overcome the enemies who have fallen upon us.
+concert.aeternam.program.5.inscriptioGloss: "from the Creed of the Mass"
+concert.aeternam.program.5.note: "A fragment of the Creed from a mass by Lotti, who worked in Venice at the turn of the seventeenth and eighteenth centuries. Many settings of this text by him survive, for various forces; the eight-voice version is among the most affecting. The chromatic movement of the voices and the dense texture make an image of the weight of the cross: Baroque expression subordinated to the theology of the Passion."
+concert.aeternam.program.5.textGloss: |-
+  And was crucified also for us under Pontius Pilate:
+  he suffered and was buried.
+concert.aeternam.program.6.note: "The American composer, a Pulitzer Prize winner, wrote this piece to a commission from the Nederlands Kamerkoor for its “150 Psalms” series. Its chamber forces and light texture set it apart from the rest of the programme: instead of a lament comes an image of the smallest creatures, which find a nest beside the altar. The ensemble closed the announcement of the evening with the same psalm — with the hope that a day will come when anyone can say “How amiable are thy dwellings, O Lord of hosts”."
+concert.aeternam.program.6.textGloss: |-
+  How beloved is your dwelling place, o lord of hosts.
+  My soul yearns,
+  my heart and my flesh cry [out].
+
+  The sparrow found a house,
+  and the swallow her nest,
+  where she may raise her young.
+
+  They pass through the Valley of Bakka,
+  they make it a place of springs;
+  the autumn rains cover it with pools.
+concert.aeternam.program.7.inscriptioGloss: "text: Mikhail Lermontov"
+concert.aeternam.program.7.note: "Part of the monumental cycle The Veil of the Temple, first performed at the Temple Church in London in 2003; the text comes from the poetry of Mikhail Lermontov. The music stands completely still, without a climax, like an icon in sound. In this programme the silence is the climax: a gesture commending the victims of Gaza."
+concert.aeternam.program.7.textGloss: |-
+  Mother of God, here I stand now praying,
+  Before this icon of your radiant brightness,
+  Not praying to be saved from a battlefield;
+  Not giving thanks, nor seeking forgiveness
+  For the sins of my soul, nor for all the souls
+  Numb, joyless and desolate on earth;
+  But for THEM alone, whom I wholly give you.
+concert.aeternam.program.8.inscriptioGloss: "a text from the Byzantine liturgy"
+concert.aeternam.program.8.note: "One of Tavener's best known choral works, written in memory of his mother, to a text from the Byzantine liturgy. The composer sets two six-voice choirs side by side, and their overlapping phrases create resonance and space: a dialogue between earth and heaven. The last refrain carries the evening from pain towards a promise."
+concert.aeternam.program.8.textGloss: |-
+  In you, O Woman full of grace,
+  the angelic choirs and the human race,
+  all creation rejoices.
+  O sanctified temple, mystical paradise,
+  glory of virgins,
+  in you God was made flesh
+  and became a child,
+  He who is our God before all ages.
+  He made your womb a throne,
+  and made it wider than the heavens.
+  In you, O Woman full of grace,
+  all creation rejoices.
+  Glory to you.
+concert.aeternam.program.9.inscriptioGloss: "from the hymn Vexilla regis · Venantius Fortunatus (6th century)"
+concert.aeternam.program.9.note: "The Latvian composer set a fragment of the hymn Vexilla regis by Venantius Fortunatus (6th century). It is the hymn of the feast of the Exaltation of the Holy Cross — the very day on which the ensemble sang this programme for the first time. A plain, almost archaic texture closes the evening with a plea for forgiveness."
+concert.aeternam.program.9.textGloss: |-
+  O Cross, our one reliance, hail!
+  This holy Passiontide, avail
+  to give fresh merit to the saint,
+  and pardon to the penitent.
+concert.aeternam.programArc: "The order here is a prayer. The evening opens with the words the Church sings over a grave, and immediately afterwards it goes as low as one can go: to a mother's cry over her killed children. From there it leads through three pleas for peace and through the weight of the cross, as far as the place where even the swallow has a nest, and to the last refrain, in which all creation rejoices."
+concert.aeternam.programLede: "A prayer in music: nine links and an encore"
+concert.aeternam.programNote: "The instrumental interludes differed between the two evenings: in Mistrzejowice a string quartet played Arvo Pärt's Psalom, in Niedzica Joanna Indyk played movements from Bach's cello suites. The list above covers the links common to both performances."
+concert.aeternam.prologue: "The fourteenth of September 2025, the lower church in Mistrzejowice. The feast of the Exaltation of the Holy Cross, on the eve of the memorial of Our Lady of Sorrows. The ensemble asks for one thing: that the evening sound out in silence, as a single work."
+concert.aeternam.pullQuote.about: "from the announcement of the concert"
+concert.aeternam.pullQuote.attribution: "VoctEnsemble"
+concert.aeternam.pullQuote.text: "Where civilians, children and families carry the marks of war upon them, we ask: what are justice, memory and mercy today? What inscription should be cut on the grave of Gaza?"
+concert.aeternam.reflection: "“Epitaph for Gaza” is an act of prayer and a gesture of solidarity with wounded humanity in Gaza. Standing before the suffering of its people, we look in music for the purest language of compassion — believing that contemplation, silence and song can carry both the pain and the light of hope where words are no longer enough."
+concert.aeternam.reflectionAttribution: "VoctEnsemble · September 2025"
+concert.aeternam.reflectionNote: "The programme takes a road Christianity has known for centuries: from the prayer at the grave, through a mother's lament and a plea for peace, through the image of the Passion, to the commending of everything to her who stood beneath the cross."
+concert.aeternam.roster.groups.0.voice: "Soprano I"
+concert.aeternam.roster.groups.1.voice: "Soprano II"
+concert.aeternam.roster.groups.2.voice: "Alto I"
+concert.aeternam.roster.groups.3.voice: "Alto II"
+concert.aeternam.roster.groups.4.voice: "Alto III"
+concert.aeternam.roster.groups.5.voice: "Tenor I"
+concert.aeternam.roster.groups.6.voice: "Tenor II"
+concert.aeternam.roster.groups.7.voice: "Tenor III"
+concert.aeternam.roster.groups.8.voice: "Bass I"
+concert.aeternam.roster.groups.9.voice: "Bass II"
+concert.aeternam.roster.note: "The line-up of the evening in Mistrzejowice, 14 September 2025, after the ensemble's press note."
 concert.aeternam.title: "Aeternam — Epitaph for Gaza"
+concert.aeternam.video.caption: "An excerpt from the concert “Aeternam — Epitaph for Gaza” · VoctEnsemble 2025"
+concert.aeternam.video.note: "C. Shaw — and the swallow (Psalm 84) · recorded from the nave · live sound"
+concert.bobola.about.blurb: "Music for the liturgy on the centenary of the Polish Jesuit provinces, at a Mass celebrated by Archbishop Adrian Galbas with a homily by Fr Arturo Sosa SJ."
+concert.bobola.about.place: "National Shrine of St Andrew Bobola · Warsaw"
+concert.bobola.essence: "Here the music served the liturgy. On the centenary of both Polish provinces of the Society of Jesus, the singing took its place within the rite, presided over by Archbishop Adrian Galbas, with the homily preached by Fr Arturo Sosa SJ."
+concert.bobola.facts.0: "Warsaw"
+concert.bobola.facts.1: "16 May 2026"
+concert.bobola.facts.2: "Centenary of the Jesuit provinces"
+concert.bobola.links.0.label: "Broadcast of the Mass ↗"
+concert.bobola.links.1.label: "Photo report (Episkopat) ↗"
+concert.bobola.metaPlace: "National Shrine of St Andrew Bobola, Warsaw"
+concert.bobola.title: "The Solemnity of St Andrew Bobola"
 concert.hymn-poleglym.about.blurb: "A spiritual concert in tribute to those who gave their lives in defence of freedom, and a prayer for peace — for Ukraine and for the generations to come."
 concert.hymn-poleglym.about.place: "St Mary's Basilica · Kraków"
-concert.hymn-poleglym.title: "Hymn for the Fallen"
+concert.hymn-poleglym.credits.0.role: "Conductor"
+concert.hymn-poleglym.credits.1.role: "Word and blessing"
+concert.hymn-poleglym.credits.2.role: "Cantor of the basilica"
+concert.hymn-poleglym.essence: "A tribute to those who gave their lives in defence of Ukraine, and a prayer for peace for those who carry the weight of the war onwards. At its climax, with the altarpiece of St Mary's Basilica opened, an organ improvisation on the Ukrainian anthem sounded."
+concert.hymn-poleglym.facts.0: "St Mary's Basilica"
+concert.hymn-poleglym.facts.1: "A prayer for peace"
+concert.hymn-poleglym.facts.2: "Remembrance for Ukraine"
+concert.hymn-poleglym.gallery.kd-hymn-0.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-1.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-2.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-3.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-4.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.gallery.kd-hymn-5.alt: "VoctEnsemble during the concert Hymn to the Fallen in St Mary's Basilica in Kraków"
+concert.hymn-poleglym.inscriptioGloss: "Great and only God, preserve Ukraine for us"
+concert.hymn-poleglym.inscriptioRef.source: "Prayer for Ukraine"
+concert.hymn-poleglym.metaPlace: "St Mary's Basilica, Kraków"
+concert.hymn-poleglym.movements.exsequiae.gloss: "At the grave"
+concert.hymn-poleglym.movements.exsequiae.line: "Four links of a burial: the flight of angels over the grave, a hymn to the fallen without a single word, a summons to the soul not to be afraid, and a plea for rest."
+concert.hymn-poleglym.movements.introitus.gloss: "Entrance"
+concert.hymn-poleglym.movements.introitus.line: "First the space alone: the great organ of St Mary's Basilica. The first word spoken this evening is a prayer in Ukrainian."
+concert.hymn-poleglym.movements.lorica.gloss: "Breastplate"
+concert.hymn-poleglym.movements.lorica.line: "Two prayers for shelter: the breastplate of St Patrick, in which Christ stands on every side, and a hymn in which the faithful ask for strength, because “the fierce battle” presses upon them."
+concert.hymn-poleglym.movements.luctus.gloss: "Mourning"
+concert.hymn-poleglym.movements.luctus.line: "The prayer starts from what is: a litany for peace, the rivers of Babylon on which the exiles hung up their instruments, and a psalm that asks outright: how long?"
+concert.hymn-poleglym.movements.lux.gloss: "Light"
+concert.hymn-poleglym.movements.lux.interlude.gloss: "They shall beat their swords into plowshares; neither shall they learn war any more."
+concert.hymn-poleglym.movements.lux.line: "Only now is it permitted to speak of light, and then the altarpiece is opened."
+concert.hymn-poleglym.posterAlt: "Poster for the concert Hymn to the Fallen"
+concert.hymn-poleglym.program.0.note: "The “great” fantasia and fugue in G minor, associated with Bach's visit to Hamburg in 1720 — the same visit during which he improvised for half an hour on the chorale “An Wasserflüssen Babylon”, and the aged Reincken is said to have remarked that he had thought this art already dead. The fantasia is almost operatic: recitative, suspensions, a chromaticism with no floor to it. Krzysztof Michałek played it as the entrance music, before the first word of the evening was spoken; the rivers of Babylon will return here shortly, in Palestrina."
+concert.hymn-poleglym.program.1.clasp: "Introduction to the prayer · Mgr Dariusz Raś"
+concert.hymn-poleglym.program.1.inscriptioGloss: "Great and only God, preserve Ukraine for us"
+concert.hymn-poleglym.program.1.inscriptioRef.source: "Prayer for Ukraine · O. Konysky, 1885"
+concert.hymn-poleglym.program.1.note: "Rutter wrote it in the first weeks after the Russian invasion of 2022 and made it available to choirs free of charge, asking in return for support for the victims of the war. The text is Oleksandr Konysky's “Prayer for Ukraine”, which Mykola Lysenko set in 1885; it is sung to this day as Ukraine's spiritual anthem. The first word of this evening is therefore a plea in the language of those it prays for."
+concert.hymn-poleglym.program.1.textGloss: |-
+  Great and only God,
+  preserve Ukraine for us,
+  with the ray of freedom and of light
+  do thou illumine her.
+
+  With the light of learning and of knowledge
+  illumine us, thy children,
+  and in pure love of our land
+  bring us up, O God.
+
+  We pray to thee, O only God,
+  preserve Ukraine for us,
+  turn all thy graces and thy bounty
+  upon our people.
+concert.hymn-poleglym.program.10.inscriptioGloss: "Merciful Lord Jesus, grant them rest · from the Requiem op. 48"
+concert.hymn-poleglym.program.10.note: "The fourth and only solo movement of Fauré's Requiem, written for a boy's voice. Across his whole requiem Fauré gave up the Dies irae sequence, which in other settings takes up the most room: there is no judgement here and no terror. The work has been called a “lullaby of death”; the composer did not argue, that was how he saw death. The text is two sentences: have mercy, and grant them rest."
+concert.hymn-poleglym.program.10.textGloss: |-
+  Merciful Lord Jesus,
+  grant them rest,
+  grant them rest everlasting.
+concert.hymn-poleglym.program.11.inscriptioGloss: "Let light eternal shine upon them, O Lord · the communion of the Requiem Mass"
+concert.hymn-poleglym.program.11.note: "Nimrod is the ninth of the Enigma Variations: a portrait of August Jaeger, the publisher and friend who, at a moment of doubt, persuaded Elgar not to stop writing. Jäger is German for “hunter”, and Nimrod was the hunter of the Bible: hence the name. Britain plays this music over graves, every year at the Cenotaph in London on Remembrance Sunday. John Cameron set the communion of the Requiem Mass beneath it: light eternal."
+concert.hymn-poleglym.program.11.rubric: "During this piece the Veit Stoss altarpiece was opened"
+concert.hymn-poleglym.program.11.textGloss: |-
+  Let light eternal shine upon them, O Lord,
+  with thy saints for ever,
+  for thou art merciful.
+concert.hymn-poleglym.program.12.clasp: "Blessing · Mgr Dariusz Raś"
+concert.hymn-poleglym.program.12.inscriptioGloss: "the anthem of Ukraine · words: P. Chubynsky (1862), melody: Fr M. Verbytsky"
+concert.hymn-poleglym.program.12.note: "The anthem of Ukraine: words by Pavlo Chubynsky of 1862, melody by Fr Mykhailo Verbytsky, a Greek Catholic priest — “Ukraine has not yet perished, nor her glory, nor her freedom”. The titular organist of St Mary's Basilica improvised on the theme with the altarpiece already open. From the tower of the same church a trumpet call is played every hour, breaking off mid-note in memory of an invasion."
+concert.hymn-poleglym.program.13.inscriptioGloss: "from the Song of Songs"
+concert.hymn-poleglym.program.13.note: "Bairstow was organist of York Minster for thirty-three years; this short anthem is usually sung after communion, and its text comes from the Song of Songs. After an evening that closed with the anthem of a nation at war, the last word belongs to a different banner."
+concert.hymn-poleglym.program.13.textGloss: |-
+  I sat down under his shadow with great delight,
+  and his fruit was sweet to my taste.
+  He brought me to the banqueting house,
+  and his banner over me was love.
+concert.hymn-poleglym.program.2.inscriptioGloss: "from the Liturgy of St John Chrysostom · the choir's responses"
+concert.hymn-poleglym.program.2.note: "The great litany opens the Orthodox Divine Liturgy; it is also called the litany of peace, because the deacon's first petitions are for the peace from on high and for the peace of the whole world. The choir answers them with two sentences only. Rachmaninov wrote his Liturgy of St John Chrysostom in 1910 in under three weeks. It was his first church work; seven years later he left Russia for good. That evening his petition for the peace of the whole world sounded immediately after the prayer for Ukraine."
+concert.hymn-poleglym.program.2.textGloss: |-
+  Lord, have mercy.
+  To thee, O Lord.
+concert.hymn-poleglym.program.3.inscriptioGloss: "By the waters of Babylon we sat down and wept"
+concert.hymn-poleglym.program.3.note: "A motet for four voices published in 1581. Psalm 137, the song of the exiles who laid music aside by the rivers of Babylon: they hung their instruments on the willows, because they could not sing the Lord's song in a strange land. Palestrina leads the four voices with complete calm; the mourning here is in what has fallen silent."
+concert.hymn-poleglym.program.3.textGloss: |-
+  By the waters of Babylon —
+  there we sat down and wept,
+  when we remembered Sion.
+  Upon the willows of that land
+  we hanged up our instruments.
+concert.hymn-poleglym.program.4.inscriptioGloss: "an organ setting of the chorale · a paraphrase of Psalm 6"
+concert.hymn-poleglym.program.4.note: "An organ setting of the chorale on the melody the world now knows as the Passion chorale, “O Haupt voll Blut und Wunden”, the one Bach called upon five times in the St Matthew Passion. The chorale text is itself a paraphrase of Psalm 6, the first of the penitential psalms, in which the soul asks outright: how long? Here there were no words. Michał Piechnik played them on the organ; anyone who knows the melody heard them."
+concert.hymn-poleglym.program.5.inscriptioGloss: "from “The Breastplate of St Patrick” (Lorica)"
+concert.hymn-poleglym.program.5.note: "Pärt wrote it to a commission from the Irish Louth Contemporary Music Society. The text is a fragment of “The Breastplate of St Patrick”, the prayer the saint is said to have recited as he went to convert the king of Tara; the king's men then saw, instead of travellers, a herd of deer — hence the second name: the deer's cry. It is a prayer of protection: Christ places himself on every side of the one who speaks. Pärt, in his tintinnabuli, repeats it the way a prayer one genuinely needs is repeated."
+concert.hymn-poleglym.program.5.textGloss: |-
+  Christ with me, Christ before me,
+  Christ behind me, Christ in me,
+  Christ beneath me, Christ above me,
+  Christ on my right, Christ on my left,
+  Christ when I lie down, Christ when I sit down,
+  Christ in me, Christ when I arise,
+  Christ in the heart of every man who thinks of me,
+  Christ in the mouth of everyone who speaks of me,
+  Christ in every eye that sees me,
+  Christ in every ear that hears me,
+  Christ with me.
+concert.hymn-poleglym.program.6.inscriptioGloss: "O saving Victim, opening wide the gate of heaven · from the hymn Verbum supernum prodiens"
+concert.hymn-poleglym.program.6.note: "The same hymn that sounded in “The Call of the Mountains”: the last two stanzas of St Thomas Aquinas's Verbum supernum prodiens, sung at the exposition of the Blessed Sacrament. Here, though, something else is audible in it: “bella premunt hostilia, da robur, fer auxilium” — the fierce battle presses upon thy faithful, give strength, send help. A thirteenth-century eucharistic hymn speaks of war outright; it is the only text of the evening the ensemble printed in the programme in full."
+concert.hymn-poleglym.program.6.textGloss: |-
+  O saving Victim, opening wide
+  the gate of heaven to man below;
+  our foes press on from every side,
+  thine aid supply, thy strength bestow.
+
+  To thy great name be endless praise,
+  immortal Godhead, One in Three;
+  O grant us endless length of days
+  in our true native land with thee.
+  Amen.
+concert.hymn-poleglym.program.7.inscriptioGloss: "text: Mother Thekla · Shakespeare and the Orthodox funeral service"
+concert.hymn-poleglym.program.7.note: "Tavener wrote it after the death of Athene Hariades, a young actress and a friend of the family, who was killed in a cycling accident. The text was assembled by Mother Thekla, an Orthodox nun and for many years the composer's collaborator: she interweaves Horatio's words from “Hamlet” — “may flights of angels sing thee to thy rest” — with the Orthodox funeral service. Beneath the choir a motionless drone of basses runs throughout: the ison. The world heard the piece in 1997, when the coffin of Diana, Princess of Wales, was carried out of Westminster Abbey to its sound."
+concert.hymn-poleglym.program.7.textGloss: |-
+  Alleluia. May flights of angels sing thee to thy rest.
+  Alleluia. Remember me, O Lord, when you come into your kingdom.
+  Alleluia. Give rest, O Lord, to your handmaid, who has fallen asleep.
+  Alleluia. The Choir of Saints have found the well-spring of life,
+  and door of paradise.
+  Alleluia. Life: a shadow and a dream.
+  Alleluia. Weeping at the grave creates the song: Alleluia.
+  Alleluia. Come, enjoy rewards and crowns I have prepared for you.
+concert.hymn-poleglym.program.8.inscriptioGloss: "from the score of the film “Saving Private Ryan” · choir without words"
+concert.hymn-poleglym.program.8.note: "From the score of Steven Spielberg's “Saving Private Ryan”. The choir does not sing a single word in it: pure vocalise. Williams wrote it not for a particular scene but as a hymn for the fallen. Without names and without a language, and so without borders. The evening took its name from this piece."
+concert.hymn-poleglym.program.9.inscriptioGloss: "words: K. von Schlegel (1752), English translation by J. Borthwick · stanza III"
+concert.hymn-poleglym.program.9.note: "The melody comes from the finale of the tone poem Finlandia, which Sibelius wrote in 1899, when tsarist Russia curtailed Finland's autonomy and imposed censorship on the Finnish press. The piece was then performed under invented titles to get round the ban; it became the song of resistance of a nation that did not yet have a state. Katharina von Schlegel's hymn of 1752, in Jane Borthwick's English translation, was later fitted to that melody: be still, my soul. So at a concert for Ukraine's fallen, a Finnish melody of freedom sounded to words of consolation."
+concert.hymn-poleglym.program.9.textGloss: |-
+  Be still, my soul: the hour is hastening on
+  when we shall be forever with the Lord,
+  when disappointment, grief, and fear are gone,
+  sorrow forgot, love's purest joys restored.
+  Be still, my soul: when change and tears are past,
+  all safe and blessed we shall meet at last.
+concert.hymn-poleglym.programArc: "The order here is a rite. The evening begins with the organ, and the first word spoken is in Ukrainian. Then the programme goes down to where mourning actually lives: to a litany for peace, to the rivers of Babylon on which the exiles hung up their instruments, and to a psalm that asks outright: how long? From there it leads through two prayers for shelter and through a burial, as far as the wordless hymn the evening is named after. Only at the end is it permitted to speak of light, and then the one thing that cannot be sung takes place: the altarpiece is opened."
+concert.hymn-poleglym.programLede: "A prayer for peace: thirteen links and an encore"
+concert.hymn-poleglym.programNote: "Besides the organ works listed in the programme, Michał Piechnik, titular organist of St Mary's Basilica, improvised between the links of the evening; in its announcement the ensemble called these interludes “a parallel narration, giving substance to the tragic face of war”."
+concert.hymn-poleglym.prologue: "The twenty-second of February 2025, a Saturday, eight in the evening. St Mary's Basilica in Kraków, two days before the third anniversary of the full-scale invasion of Ukraine. Before the first word is spoken, the organ fills the church; then the archpriest of the basilica leads the congregation into prayer."
+concert.hymn-poleglym.pullQuote.about: "manager of VoctEnsemble, from the announcement of the concert"
+concert.hymn-poleglym.pullQuote.attribution: "Anna Kaczka-Marcisz"
+concert.hymn-poleglym.pullQuote.text: "This is the first time we have taken part in a project which, beyond its spiritual dimension, speaks so directly to the greatest of human aspirations — freedom and self-determination. We want this concert to be not only an act of remembrance, but also a gift of solace to those who have suffered loss, and an expression of our solidarity with the Ukrainian people."
+concert.hymn-poleglym.realizacja: "Organ: Michał Piechnik · Krzysztof Michałek"
+concert.hymn-poleglym.reflection: "The concert is an expression of remembrance, of solidarity and of support for those the conflict has touched directly — families, friends, and also those who are still fighting for their freedom and their dignity."
+concert.hymn-poleglym.reflectionAttribution: "VoctEnsemble · February 2025"
+concert.hymn-poleglym.textNote: "The original texts follow the concert programme and the books they come from; the printed programme of the evening carried them abridged. The English of the hymns, antiphons and biblical passages follows the traditional versions — the Book of Common Prayer and the Authorised Version, and Edward Caswall's of 1849 for the hymn of St Thomas Aquinas — and the remaining translations are our own."
+concert.hymn-poleglym.title: "Hymn to the Fallen"
 concert.wcielenie.about.blurb: "The debut of the Spiritual Concerts cycle: Renaissance, Baroque and the present day arranged around the mystery of the Nativity and the Incarnation."
 concert.wcielenie.about.place: "Sacred Heart Basilica · Kraków"
+concert.wcielenie.credits.0.role: "Conductor"
+concert.wcielenie.credits.1.role: "Introductory word"
+concert.wcielenie.essence: "An attempt to enter the mystery of the Incarnation: from Isaiah's prophecy to the Canticle of Simeon, in music from Sandström to Monteverdi."
+concert.wcielenie.facts.0: "4 / 8 / 12 voices"
+concert.wcielenie.facts.1: "Renaissance — 21st century"
+concert.wcielenie.facts.2: "The cycle's debut"
+concert.wcielenie.gallery.kd-wcielenie-0.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-1.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-2.alt: "VoctEnsemble rehearsing for Contemplation of the Incarnation"
+concert.wcielenie.gallery.kd-wcielenie-3.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-4.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-5.alt: "The main nave during VoctEnsemble's Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-6.alt: "VoctEnsemble performing Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-7.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.gallery.kd-wcielenie-8.alt: "VoctEnsemble after Contemplation of the Incarnation in the Sacred Heart Basilica"
+concert.wcielenie.inscriptioGloss: "And there shall come forth a rod out of the stem of Jesse"
+concert.wcielenie.metaPlace: "Sacred Heart Basilica, Kraków"
+concert.wcielenie.movements.impletio.gloss: "Fulfilment"
+concert.wcielenie.movements.impletio.line: "In the temple Simeon takes the Child in his arms: “mine eyes have seen thy salvation”. The promise from the start of the evening is fulfilled."
+concert.wcielenie.movements.laus.gloss: "Praise"
+concert.wcielenie.movements.laus.line: "All that remains is a new song and joy: Christ is born."
+concert.wcielenie.movements.nativitas.gloss: "Nativity"
+concert.wcielenie.movements.nativitas.line: "The Child comes. Around him gathers his Mother's contemplation: Renaissance Spain and a Polish carol."
+concert.wcielenie.movements.prophetia.gloss: "Prophecy"
+concert.wcielenie.movements.prophetia.line: "Before a word is said of the Child, the promise sounds: a rod from the stem of Jesse, the shepherds' cry in the night, the Advent trumpet announcing the coming."
+concert.wcielenie.movements.umbra.gloss: "Shadow"
+concert.wcielenie.movements.umbra.interlude.gloss: "In Rama was there a voice heard, lamentation and great mourning: Rachel weeping for her children."
+concert.wcielenie.movements.umbra.line: "Just after the birth a shadow falls: a mother's lullaby over a child Herod has condemned."
+concert.wcielenie.posterAlt: "Poster for the concert Contemplation of the Incarnation"
+concert.wcielenie.program.0.inscriptioGloss: "And there shall come forth a rod out of the stem of Jesse"
+concert.wcielenie.program.0.note: "A German carol from the end of the sixteenth century (Trier, 1587), first printed in a Jesuit hymnal from Speyer (1599). Its twenty-three stanzas run through the whole of sacred history, from Isaiah's prophecy to the adoration of the Magi: the very road this programme is about to travel. In English it is known as “Lo, how a rose e'er blooming”, in Theodore Baker's translation of 1894. Sandström weaves the old chorale around a quartet of soloists floating above it."
+concert.wcielenie.program.0.textGloss: |-
+  Lo, how a rose e'er blooming
+  from tender stem hath sprung,
+  of Jesse's lineage coming
+  as men of old have sung.
+  It came, a flow'ret bright,
+  amid the cold of winter,
+  when half spent was the night.
+concert.wcielenie.program.1.inscriptioGloss: "Shepherds keeping watch over their flock by night"
+concert.wcielenie.program.1.note: "The cry of shepherds keeping watch over their flock by night. In Vivancos it is a lost melody of solitude which, listening into the “echo of silence”, is transformed into beauty. Twelve voices written out across the whole space of the nave."
+concert.wcielenie.program.10.inscriptioGloss: "Rejoice! Christ is born"
+concert.wcielenie.program.10.note: "A carol from the Finnish-Swedish collection of sacred songs Piae Cantiones (1582), arranged by Brian Kay. Joy as an encore: “Christ is born”, the last word of the evening."
+concert.wcielenie.program.10.textGloss: |-
+  Rejoice, rejoice! Christ is born
+  of the Virgin Mary, rejoice!
+
+  The time of grace has come
+  that we have longed for;
+  let us render songs of joy
+  in devotion.
+
+  God is made man,
+  and nature marvels;
+  the world is renewed
+  by Christ the King.
+
+  The closed gate of Ezekiel
+  has been passed through;
+  whence the light has risen,
+  there salvation is found.
+
+  Therefore let our assembly
+  sing now in brightness;
+  let it bless the Lord:
+  honour to our King.
+concert.wcielenie.program.2.inscriptioGloss: "Blow the trumpet in Zion · Behold, God our Saviour shall come"
+concert.wcielenie.program.2.note: "An Advent motet for five voices on words of the prophet Zechariah. The Renaissance counterpoint of Gallus, a Slovene from the circle of imperial music, announces the coming like the sound of a trumpet: “Behold, God our Saviour shall come”."
+concert.wcielenie.program.2.textGloss: |-
+  Blow the trumpet in Zion, call the nations,
+  proclaim it to the peoples and say:
+  Behold, God our Saviour shall come.
+  Proclaim it and make it known,
+  speak and cry aloud:
+  Behold, God our Saviour shall come.
+concert.wcielenie.program.3.inscriptioGloss: "text: H. M. MacGill (1876)"
+concert.wcielenie.program.3.note: "A simple contemporary carol for four voices, to a poem by H. M. MacGill of 1876. After the prophecies comes the birth itself."
+concert.wcielenie.program.4.inscriptioGloss: "Gracious Mother of the Redeemer · Marian antiphon"
+concert.wcielenie.program.4.note: "The Marian antiphon of Advent, sung from 1 December to 2 February. Victoria's motet for eight voices: eight independent lines hold a dialogue akin to the Venetian coro spezzato, although the composer himself left no instruction about placing the choir in space."
+concert.wcielenie.program.5.inscriptioGloss: "O most glorious of virgins"
+concert.wcielenie.program.5.note: "Penderecki wrote this piece in 2009 for the seventieth birthday of José Antonio Abreu, founder of Venezuela's El Sistema. It was first performed in Caracas under the composer's own baton; the Polish premiere followed a few days later."
+concert.wcielenie.program.6.inscriptioGloss: "a contemporary arrangement of a Polish carol"
+concert.wcielenie.program.6.note: "A Polish carol arranged by Mariusz Kramarz: a native voice in this international programme, immediately after the contemporary nativity."
+concert.wcielenie.program.7.inscriptioGloss: "a mother's lullaby for a condemned child · Mt 2:16"
+concert.wcielenie.program.7.note: "The Coventry Carol comes from the sixteenth-century mystery play “The Shearmen and Tailors”. It is a lullaby sung in the mother's voice over a condemned child: the shadow of the Massacre of the Innocents, falling immediately after the birth. Stopford clothed it in cool contemporary harmony in 2008."
+concert.wcielenie.program.7.textGloss: |-
+  Lully, lullay, thou little tiny child,
+  bye, bye, lully, lullay.
+  Lullay, thou little tiny child,
+  bye, bye, lully, lullay.
+
+  O sisters too, how may we do
+  for to preserve this day
+  this poor youngling for whom we do sing:
+  bye, bye, lully, lullay?
+
+  Herod the king, in his raging,
+  charged he hath this day
+  his men of might, in his own sight,
+  all young children to slay.
+
+  That woe is me, poor child, for thee!
+  And ever mourn and sigh,
+  for thy parting neither say nor sing:
+  bye, bye, lully, lullay.
+concert.wcielenie.program.8.inscriptioGloss: "Lord, now lettest thou thy servant depart in peace · the Canticle of Simeon"
+concert.wcielenie.program.8.note: "The Canticle of Simeon from the Presentation in the temple: “mine eyes have seen thy salvation”. In Pärt, in his tintinnabuli, it is the fulfilment of the promise the evening began with; the old man may depart in peace."
+concert.wcielenie.program.8.textGloss: |-
+  Lord, now lettest thou thy servant depart in peace,
+  according to thy word.
+  For mine eyes have seen thy salvation,
+  which thou hast prepared before the face of all people;
+  to be a light to lighten the Gentiles,
+  and to be the glory of thy people Israel.
+concert.wcielenie.program.9.inscriptioGloss: "O sing unto the Lord a new song"
+concert.wcielenie.program.9.note: "A motet for six voices, published in 1620 in a collection by Giulio Cesare Bianchi. A joyful triple metre opens it: four voices first, then at once the full six. It runs through interwoven verses of Psalms 96 and 98 — a call to a new song whose joy is audible in the texture itself."
+concert.wcielenie.programArc: "The order is part of the composition here. The evening runs like the history of salvation: from the rod of Isaiah's prophecy, through the shepherds' night watch and Gallus's Advent trumpet, to the birth itself. Then a Marian contemplation, and after it a sudden shadow: a mother's lullaby over a child condemned by Herod. The Canticle of Simeon closes it in the temple: “mine eyes have seen thy salvation”. This is the fulfilment of the promise the programme began with; from here there is only praise, and the joy of the encore."
+concert.wcielenie.programLede: "Ten glances and an encore"
+concert.wcielenie.prologue: "The twentieth of January, evening, the Basilica of the Sacred Heart of Jesus in Kraków. Twenty days after the ensemble came into being. Before the first sound, Fr Jarek Naliwajko SJ leads the audience into the mystery of the Incarnation."
+concert.wcielenie.realizacja: "Production: Ars Sonora Studio"
+concert.wcielenie.reflection: "The Incarnation is something unutterable, which with the passing of time often becomes ordinary to us. When we grasp what this mystery means, we can recover our sense of God's presence in our lives."
+concert.wcielenie.reflectionAttribution: "Florent de Bazelaire · 20 January 2024"
+concert.wcielenie.roster.groups.0.voice: "Sopranos"
+concert.wcielenie.roster.groups.1.voice: "Altos"
+concert.wcielenie.roster.groups.2.voice: "Tenors"
+concert.wcielenie.roster.groups.3.voice: "Basses"
+concert.wcielenie.roster.groups.4.detail: "The quartet floating above the chorale in Es ist ein Ros' entsprungen; in Le cri des bergers it completes the twelve voices."
+concert.wcielenie.roster.groups.4.voice: "Solo quartet"
+concert.wcielenie.roster.note: "Neither the performers nor the organisers took a fee for this evening; the debut was supported by a public collection raised around the newly formed ensemble."
 concert.wcielenie.title: "Contemplation of the Incarnation"
+concert.wcielenie.verbum.bridge: "Then the murmur dies away, and out of the winter half-light rises Sandström's rod."
+concert.wcielenie.verbum.quote: "Uncovering a mystery always ends the same way. It leads to another mystery. Otherwise it is not a mystery at all, but knowledge, or routine."
+concert.wcielenie.verbum.speaker: "Fr Jarek Naliwajko SJ"
+concert.wcielenie.verbum.text: |-
+  Good evening, and God bless you. I warmly welcome everyone who has come to our church,
+  to the Basilica of the Sacred Heart of Jesus.
+
+  Ladies and gentlemen, this evening, with this inaugural concert, the performers wish to
+  invite us into the still unsettling world of the spirit — a world which urges the
+  performers themselves, the authors of tonight's meeting, towards a kind of inner
+  movement, towards casting that disquiet out of themselves: that is, towards the
+  necessity of telling of the mystery of the spirit.
+
+  Because for the time being — that is, for some two hundred thousand years — humanity has
+  come up with no better word for that intriguing part of our own immersion in time, the
+  part we have never fully recognised. No better word than spirit has been invented. They
+  want to let us in on a mystery. And yet uncovering a mystery always ends the same way.
+  It leads to another mystery. Otherwise it is not a mystery at all, but knowledge, or
+  routine — so adored by some, and so often mistaken for life.
+
+  But let us begin with the poster for tonight's concert; it should be showing on our
+  screens. A cobalt ground, and across it white rays spreading outwards — do notice this —
+  or else converging inwards, rays made of letters that form words. They are converging or
+  departing, or arriving, but the direction is the viewer's to decide, because in life one
+  either descends towards the centre or goes out, moves away from the centre, in which
+  there is nothing but that very cobalt or indigo ground behind a small white spot — as on
+  this poster.
+
+  And these three colours are associated with the symbol of the highest spirituality — in
+  Indian anthropology, for instance: indigo is the highest chakra, the one that joins us to
+  the spirit of the universe, just as white does in our own tradition, where it belongs to
+  the Absolute. Following that thread further: indigo and cobalt were used to dye royal
+  robes, and so the robes of the anointed of God.
+
+  Democracy — unfortunately and fortunately — has made us all equal; though what has really
+  done it is the routine of democracy, or rather: democracy is routine. Tonight, however,
+  the performers wish to lead us out of the comfort of the everyday, in which routine has
+  taken us over and given us an illusory sense of safety, of a certain equality — because
+  routine is surely the sister of forgetting the world of the spirit.
+
+  The performers are proposing that we meet the Incarnation once again. They lead us out of
+  routine in order to lead us into the Incarnation. And yet in the moment I speak that word
+  and it turns into a sound wave, I strip the Incarnation of all its boundlessness. It
+  becomes apparently comprehensible, and by that entirely untrue — blurred, certainly,
+  because it has been stripped of its mystery. The Incarnation flows out and flows in at
+  once — like those rays on the poster: from the source it flows out to us, and with us it
+  flows back into the centre.
+
+  A spiritual concert — for that is the subtitle its authors have given to this whole cycle,
+  of which we too will be not only witnesses but, in some sense, makers — is the first
+  scene. Tonight is nothing other than a meeting with oneself, if only we consent to that
+  inner movement of ours, and so discover that we are not alone, neither within ourselves
+  nor around us, and that fullness is trying to find an utterance which crosses boundaries
+  rather than blurring them, and finds it precisely through music.
+
+  And finally, a request from the performers: please do not applaud during the programme.
+  We give ourselves over entirely to a suspension of awareness and let ourselves be moved
+  only as the waves of a boundless ocean are moved. We listen, and let nothing in us be
+  active but our attentiveness to the spirit. And so let us welcome tonight's performers.
+concert.wcielenie.video.caption: "Selected excerpts from “Contemplation of the Incarnation” · VoctEnsemble 2024"
 concert.wolanie-gor.about.blurb: "A concert for twelve voices and violin with Radu Ropotan: sacred music, nature and songs rooted in the landscape of the Pieniny mountains."
+concert.wolanie-gor.about.place: "Dworek Gościnny · Szczawnica"
+concert.wolanie-gor.credits.0.role: "Conductor"
+concert.wolanie-gor.essence: "The mountains were this programme's breath. Twelve voices and the violin of Radu Ropotan led from sacred polyphony towards songs in which a landscape becomes the memory of a community."
+concert.wolanie-gor.facts.0: "12 voices and violin"
+concert.wolanie-gor.facts.1: "The Pieniny"
+concert.wolanie-gor.facts.2: "From the Pyrenees to Indonesia"
+concert.wolanie-gor.gallery.kd-wolanie-0.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-1.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-2.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-3.alt: "VoctEnsemble rehearsing for the concert The Call of the Mountains"
+concert.wolanie-gor.gallery.kd-wolanie-4.alt: "VoctEnsemble performing The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-5.alt: "VoctEnsemble performing The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-6.alt: "VoctEnsemble taking a bow after The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.gallery.kd-wolanie-7.alt: "VoctEnsemble after The Call of the Mountains at the Dworek Gościnny in Szczawnica"
+concert.wolanie-gor.inscriptioGloss: "To thee do we cry, poor banished children of Eve"
+concert.wolanie-gor.inscriptioRef.source: "Salve Regina"
+concert.wolanie-gor.metaPlace: "Dworek Gościnny, Szczawnica"
+concert.wolanie-gor.movements.advocata.gloss: "Advocate"
+concert.wolanie-gor.movements.advocata.line: "The call finds someone to address: the Mother the banished cry out to, and the women whose work keeps the world turning."
+concert.wolanie-gor.movements.astra.gloss: "Stars"
+concert.wolanie-gor.movements.astra.line: "The highest point of the first half: a solitary night beneath stars that no aeon can sadden or tire."
+concert.wolanie-gor.movements.clamor.gloss: "Call"
+concert.wolanie-gor.movements.clamor.line: "The shepherds' call thrown back from the slopes: still without words, a voice alone in space."
+concert.wolanie-gor.movements.reditus.gloss: "Return"
+concert.wolanie-gor.movements.reditus.line: "From the sky back down to earth: a frozen river, a girl beside the mill. And a light that descends in order to rise again tomorrow."
+concert.wolanie-gor.movements.sacramentum.gloss: "Mystery of the altar"
+concert.wolanie-gor.movements.sacramentum.line: "Three hymns before the Blessed Sacrament: two to words of St Thomas Aquinas — once in Corsican polyphony, once in a contemporary Latvian setting — and a Polish hymn by Górecki."
+concert.wolanie-gor.movements.volatus.gloss: "Flight"
+concert.wolanie-gor.movements.volatus.line: "After the interval, earth and air: a village fiddler, a bird in love, Bach, and the lark that rises until it is lost in the light."
+concert.wolanie-gor.posterAlt: "Poster for the concert The Call of the Mountains"
+concert.wolanie-gor.program.0.inscriptioGloss: "Shepherds keeping watch over their flock by night"
+concert.wolanie-gor.program.0.note: "The call of shepherds in the Pyrenees; the only “text” of this piece is the cry “Eee-Ooo”. Vivancos, for years attached to the Escolania de Montserrat, weaves twelve voices around it, written out across the whole space of the hall. The whole evening takes its name from this wordless call."
+concert.wolanie-gor.program.1.inscriptioGloss: "Hail, holy Queen, Mother of mercy · Marian antiphon"
+concert.wolanie-gor.program.1.note: "The Marian antiphon in the version of the shepherds of Rouergue — a historic region of what is now Occitania — and the monks of the small town of Estaing. Austere, plain polyphony close to the Corsican tradition: here many voices are a form of community. From it comes the sentence that stands as the inscription over the whole evening: “Ad te clamamus”, to thee do we cry. The wordless call of the first piece is given words here. In recordings of this version the antiphon is closed by a Hail Mary recited in the Occitan dialect — “Adiu, Maria, siás tot de gràcia…” — a prayer in the speech the shepherds actually used."
+concert.wolanie-gor.program.1.textGloss: |-
+  Hail, holy Queen, Mother of mercy,
+  our life, our sweetness and our hope, hail!
+  To thee do we cry, poor banished children of Eve;
+  to thee do we send up our sighs,
+  mourning and weeping in this vale of tears.
+  Turn then, most gracious advocate,
+  thine eyes of mercy towards us,
+  and after this our exile
+  show unto us the blessed fruit of thy womb, Jesus.
+  O clement, O loving, O sweet Virgin Mary!
+concert.wolanie-gor.program.10.inscriptioGloss: "text: George Meredith · arr. for violin and choir: Paul Drayton"
+concert.wolanie-gor.program.10.note: "A pastoral tone poem for violin, written in 1914 and revised in 1920; it waited six years for its first performance because the war had broken out. Its inspiration was George Meredith's poem about a lark rising towards the sky; the melodic line rises and falls in imitation of the flight. Paul Drayton rewrote the piece for violin and choir, so that Meredith's words — in the original only written above the notes — can here actually be heard."
+concert.wolanie-gor.program.10.textGloss: |-
+  He rises and begins to round,
+  he drops the silver chain of sound,
+  of many links without a break,
+  in chirrup, whistle, slur and shake.
+
+  For singing till his heaven fills,
+  'tis love of earth that he instils,
+  and ever winging up and up,
+  our valley is his golden cup
+  and he the wine which overflows
+  to lift us with him as he goes.
+
+  Till lost on his aerial rings
+  in light, and then the fancy sings.
+concert.wolanie-gor.program.11.inscriptioGloss: "a song in a folk idiom · words written to an existing vocalise"
+concert.wolanie-gor.program.11.note: "Sykulski wrote it to a commission from Agnieszka Franków-Żelazny for the Polish National Youth Choir: as a vocalise, without words. Something was missing from it, though — “the piece carried no message”. So the composer sent the score to a friend, who in the course of a single night wrote a whole story into it, fitted so exactly that not one note had to change. A girl from Podzamcze weeps over the frozen Prosna, the mill has stopped, there will be no bread, and John of Nepomuk, patron of bridges and rivers, stands beside her."
+concert.wolanie-gor.program.11.textGloss: |-
+  Ice stands on the Prosna,
+  stands beside the mill —
+  five years the girl from Podzamcze
+  has been coming here.
+
+  The girl stands and whimpers,
+  a kerchief hidden in her hands;
+  St Roch is calling her
+  to high Mass, for comfort.
+
+  Oj dana, oj dana…
+
+  The mill stands — but who is there
+  to set its wheel rattling?
+  There is no flour, none at all,
+  and there will be no bread.
+
+  Dana, dana… na na, na na…
+
+  Ice stands on the Prosna,
+  time flows on beneath the ice,
+  and John of Nepomuk
+  stands beside the girl.
+
+  Dana, dana… na na…
+concert.wolanie-gor.program.12.inscriptioGloss: "the composer's own poem · the sung syllables carry no meaning"
+concert.wolanie-gor.program.12.note: "The Indonesian composer built the piece on the Melayu scale, and the syllables sung mean nothing: it is a pure exploration of the colours of the human voice. Its starting point is a poem Steven wrote himself. In the score he asks the choir to add the sounds of night animals in the opening bars — a cricket, an owl — and then, more and more densely, birdsong; at the end everything returns and falls quiet."
+concert.wolanie-gor.program.12.textGloss: |-
+  It was a quiet night
+  — when a glimpse of light slowly gazed upon the sky.
+
+  Awakening the sleeping souls
+  — joyfully singing
+  — dancing in the ray of light
+  — and slowly
+
+  it will descend again from its mighty throne.
+concert.wolanie-gor.program.2.inscriptioGloss: "for six high voices · a fermata of silence at the close"
+concert.wolanie-gor.program.2.note: "The Canadian composer wrote it while gathering material for an opera about the events at Medjugorje, in a Bosnia then at war: six children to whom, from June 1981, the Mother of God was said to appear daily, and the crowd praying the rosary while it happened. Hence the six voices: six children, six parts, a piece for high voices alone. The fermata on the last, quiet bar is, in MacIntyre's conception, the moment of the apparition."
+concert.wolanie-gor.program.3.inscriptioGloss: "Down in adoration falling before so great a Sacrament · from the hymn Pange lingua"
+concert.wolanie-gor.program.3.note: "Corsican polyphony from the Franciscan tradition. The text is the last two stanzas of the hymn Pange lingua by St Thomas Aquinas (13th century), sung at adoration and most often at Benediction, as the Blessed Sacrament returns to the tabernacle."
+concert.wolanie-gor.program.3.textGloss: |-
+  Down in adoration falling,
+  lo, the sacred Host we hail;
+  lo, o'er ancient forms departing,
+  newer rites of grace prevail;
+  faith for all defects supplying,
+  where the feeble senses fail.
+
+  To the everlasting Father,
+  and the Son who reigns on high,
+  with the Holy Ghost proceeding
+  forth from each eternally,
+  be salvation, honour, blessing,
+  might and endless majesty.
+  Amen.
+concert.wolanie-gor.program.4.inscriptioGloss: "O saving Victim, opening wide the gate of heaven · from the hymn Verbum supernum prodiens"
+concert.wolanie-gor.program.4.note: "St Thomas Aquinas again: the last two stanzas of the hymn Verbum supernum prodiens, written for Corpus Christi and sung at the exposition of the Blessed Sacrament. The same rite as a moment ago, in a language seven centuries younger: in Ešenvalds, layered harmonies and choral clusters."
+concert.wolanie-gor.program.4.textGloss: |-
+  O saving Victim, opening wide
+  the gate of heaven to man below;
+  our foes press on from every side,
+  thine aid supply, thy strength bestow.
+
+  To thy great name be endless praise,
+  immortal Godhead, One in Three;
+  O grant us endless length of days
+  in our true native land with thee.
+  Amen.
+concert.wolanie-gor.program.5.inscriptioGloss: "from the cycle Church Songs op. 84 · Polish original: Święty, święty, święty"
+concert.wolanie-gor.program.5.note: "From the cycle of twenty-one Church Songs op. 84, which Górecki wrote in Katowice in 1986 on melodies from Fr Jan Siedlecki's hymnal, the book Polish churches have sung from for generations. Minimal means, maximal effect. The original is Polish and says “Jesus, you are beyond understanding”; here the Latin version was sung, in which the same line says “Jesus, you come to us”."
+concert.wolanie-gor.program.5.textGloss: |-
+  Holy, holy, holy,
+  holy, ever holy,
+  Jesus, you come to us
+  in the Blessed Sacrament.
+concert.wolanie-gor.program.6.clasp: "Interval"
+concert.wolanie-gor.program.6.inscriptioGloss: "text: Sara Teasdale"
+concert.wolanie-gor.program.6.note: "A poem by the American poet Sara Teasdale about a solitary night beneath the stars. To the choir Ešenvalds added glass harmonicas — tuned glasses played with a wet finger — so that they would sound like a shimmer. The harmonies are open and spacious; this is the highest point of the evening, and the first half ends on it."
+concert.wolanie-gor.program.6.textGloss: |-
+  Alone in the night
+  on a dark hill
+  with pines around me
+  spicy and still,
+
+  and a heaven full of stars
+  over my head,
+  white and topaz
+  and misty red;
+
+  myriads with beating
+  hearts of fire
+  that aeons
+  cannot vex or tire;
+
+  up the dome of heaven
+  like a great hill,
+  I watch them marching
+  stately and still,
+
+  and I know that I
+  am honored to be
+  witness
+  of so much majesty.
+concert.wolanie-gor.program.7.inscriptioGloss: "from the cycle Impressions d'enfance op. 28 · the village fiddler"
+concert.wolanie-gor.program.7.note: "The first of the ten miniatures of Impressions d'enfance op. 28, childhood memories arranged by the course of a day: from the fiddler, through the cricket and the wind in the chimney, to the night storm and the sunrise. The ménétrier is the village fiddler, the one who plays at weddings. It opens the second half of the evening; the player is Radu Ropotan — like Enescu, a Romanian."
+concert.wolanie-gor.program.8.inscriptioGloss: "That little bird that sings so sweetly · from the fourth book of madrigals"
+concert.wolanie-gor.program.8.note: "A madrigal from the fourth book of five-voice madrigals, published in Venice in 1603, on the threshold between Renaissance polyphony and the Baroque, as music begins to paint the affections. The bird that sings “so sweetly” is a metaphor for a heart in love: had it a human soul it would say “I burn with love”, and a second bird answers it."
+concert.wolanie-gor.program.8.textGloss: |-
+  That little bird that sings
+  so sweetly,
+  and flies so lightly and wantonly
+  now to the fir, now to the beech,
+  and then to the myrtle —
+  had it a human spirit
+  it would say: I burn with love, I burn with love!
+  But it burns in its heart
+  and calls out its desire,
+  which answers back: And I burn with love!
+  Blessed be you,
+  loving, gentle, lovely little bird!
+concert.wolanie-gor.program.9.inscriptioGloss: "from the Partita for solo violin no. 3 in E major"
+concert.wolanie-gor.program.9.note: "From the third partita, part of the set of six sonatas and partitas for solo violin completed in 1720, masterpieces of the violin literature. Pure energy and lightness: the second moment in this programme when the violin is left alone, and the bridge between Monteverdi's bird and Vaughan Williams's lark."
+concert.wolanie-gor.programArc: "The order leads upwards and back again. The evening opens with a wordless call, the shepherds' “Eee-Ooo” from the Pyrenees, and immediately afterwards that same call is given words: the Salve Regina of the shepherds of Rouergue, “Ad te clamamus”, to thee do we cry. From here the programme climbs through an Ave Maria and three hymns sung before the Blessed Sacrament, up to Ešenvalds's night sky; the interval falls there. The second half begins low and human, with a village fiddler, and then attempts flight three times: Monteverdi's bird, Bach, and Vaughan Williams's lark, which is lost in the light. What remains is the return to earth: ice on the Prosna. And an encore, in which the light comes down from its throne back towards us."
+concert.wolanie-gor.programLede: "Twelve songs of the mountains and an encore"
+concert.wolanie-gor.programNote: "The evening ran for an hour and three quarters, with an interval; the concert was hosted by the Dworek Gościnny and Pieniny Resort & SPA."
+concert.wolanie-gor.prologue: "The first of June 2024, the Dworek Gościnny in Szczawnica. The one evening of this cycle held outside a church. A programme about the calling of the mountains sounded in the mountains: the Pieniny beyond the windows. Twelve voices, Radu Ropotan's violin, two halves and an interval."
+concert.wolanie-gor.pullQuote.about: "on Le cri des bergers, the piece the evening was named after"
+concert.wolanie-gor.pullQuote.attribution: "Bernat Vivancos"
+concert.wolanie-gor.pullQuote.text: "Le cri des bergers is a song of solitude — a cry of dread, of suffering and uncertainty; a lost song that resonates inside each of us. If we know how to listen into its “echo of silence”, we can turn silence into magic, magic into sound, and sound into beauty. Then solitude finds a companion, dread turns into peace and suffering into joy — and the lost song receives an answer of the same force."
+concert.wolanie-gor.realizacja: "Violin: Radu Ropotan"
+concert.wolanie-gor.reflectionNote: "The mountains teach listening: a voice sent out into space comes back changed. This programme listens for what the echo does to a human call — whether it stays a cry, or becomes a prayer, a flight, a song. And whether a solitary voice can count on an answer."
+concert.wolanie-gor.roster.groups.0.voice: "Sopranos"
+concert.wolanie-gor.roster.groups.1.voice: "Altos"
+concert.wolanie-gor.roster.groups.2.voice: "Tenors"
+concert.wolanie-gor.roster.groups.3.voice: "Basses"
+concert.wolanie-gor.roster.note: "The line-up of the evening in Szczawnica, 1 June 2024; violin, Radu Ropotan."
+concert.wolanie-gor.textNote: "The Latin and original-language texts come from the ensemble's own programmes. The English of the hymns and antiphons follows the traditional versions — Edward Caswall's, of 1849, for the two hymns of St Thomas Aquinas — and the remaining translations are our own."
 concert.wolanie-gor.title: "The Call of the Mountains"
+concert.wolanie-gor.video.caption: "An excerpt from the concert “The Call of the Mountains” · VoctEnsemble 2024"
+concert.wolanie-gor.video.note: "J. Sykulski — Stoi lód na Prośnie · recorded from the audience · live sound"
