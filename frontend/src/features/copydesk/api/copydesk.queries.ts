@@ -22,6 +22,8 @@ import type {
   CopyDeskProposal,
   CopyDeskProposalWrite,
   CopyDeskProposalWritten,
+  CopyDeskQueue,
+  CopyDeskReviewWrite,
   CopyDeskSegment,
   CopyDeskSegments,
 } from "../types/copydesk.dto";
@@ -31,6 +33,7 @@ export const copyDeskKeys = {
   root: ["copydesk"] as const,
   contents: () => ["copydesk", "contents"] as const,
   segments: (scope: string) => ["copydesk", "segments", scope] as const,
+  queue: () => ["copydesk", "queue"] as const,
 };
 
 /**
@@ -81,6 +84,58 @@ export const useCopyDeskSegments = (
     staleTime: CONTENTS_STALE,
     ...RECONCILING_REFETCH,
   });
+
+/**
+ * The reviewer's queue: everything open across every page, with the standing
+ * patch beside it.
+ *
+ * `persist: false` for the same reason the corpus is not persisted — these rows
+ * are somebody's unsettled words and a day-old copy restored on a cold boot
+ * would offer a verdict on wording that has since been revised or withdrawn.
+ */
+export const useCopyDeskQueue = (
+  enabled: boolean,
+): UseQueryResult<CopyDeskQueue> =>
+  useQuery({
+    queryKey: copyDeskKeys.queue(),
+    queryFn: CopyDeskService.getQueue,
+    enabled,
+    meta: { persist: false },
+    staleTime: CONTENTS_STALE,
+    ...RECONCILING_REFETCH,
+  });
+
+/**
+ * A verdict, and the one write on the desk that refetches rather than patching.
+ *
+ * The autosave patches its cache because it moves one field of 213 and knows
+ * exactly what changed. A verdict moves three things at once — the entry leaves
+ * the queue, the patch summary gains a field, the contents list's counts shift
+ * — and two of them are the server's arithmetic (a Polish acceptance also
+ * restates which translations are stale). A hand-rolled answer to any of that
+ * is how the queue would start disagreeing with the band above it, and the read
+ * it costs is the queue, which is only ever as long as the work that is waiting.
+ */
+export const useReviewProposal = (): UseMutationResult<
+  CopyDeskProposalWritten,
+  Error,
+  CopyDeskReviewWrite
+> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: CopyDeskService.reviewProposal,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: copyDeskKeys.queue() });
+      void queryClient.invalidateQueries({ queryKey: copyDeskKeys.contents() });
+      // The editor's own page shows the settled chip on the cell it was written
+      // in; leaving it warm would show the proposal as still open there.
+      void queryClient.invalidateQueries({
+        queryKey: ["copydesk", "segments"],
+      });
+    },
+  });
+};
 
 /** The proposal the server now holds, as the desk can honestly describe it. */
 const writtenProposal = (

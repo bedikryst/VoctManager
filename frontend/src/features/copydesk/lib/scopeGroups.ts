@@ -6,6 +6,8 @@
  * @module features/copydesk/lib/scopeGroups
  */
 
+import { FileText, Music2, type LucideIcon } from "lucide-react";
+
 import type { CopyDeskScopeSummary } from "../types/copydesk.dto";
 
 /**
@@ -35,6 +37,19 @@ export const FAMILY_LABELS: Readonly<
 > = {
   concert: { key: "copy_desk.families.concert", fallback: "Koncerty" },
 };
+
+/**
+ * Same map as the labels, and in the same place for the same reason: the
+ * contents list and the reviewer's queue both head a page with it, and two
+ * private copies is how one surface starts marking a concert with a different
+ * glyph than the other. A family the desk has no icon for keeps the neutral one.
+ */
+const FAMILY_ICONS: Readonly<Record<string, LucideIcon>> = {
+  concert: Music2,
+};
+
+export const familyIcon = (family: string): LucideIcon =>
+  FAMILY_ICONS[family] ?? FileText;
 
 /**
  * Alphabetical within a family, by the page's own title.

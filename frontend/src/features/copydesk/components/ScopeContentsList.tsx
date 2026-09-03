@@ -18,20 +18,18 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { FileText, Music2, type LucideIcon } from "lucide-react";
-
 import { SectionCard } from "@/shared/ui/composites/SectionCard";
 import { StatLine, type StatLineItem } from "@/shared/ui/composites/StatLine";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Heading } from "@/shared/ui/primitives/typography";
 
-import { FAMILY_LABELS, formatCount, groupScopes } from "../lib/scopeGroups";
+import {
+  FAMILY_LABELS,
+  familyIcon,
+  formatCount,
+  groupScopes,
+} from "../lib/scopeGroups";
 import type { CopyDeskScopeSummary } from "../types/copydesk.dto";
-
-/** Same map as the labels: a family the desk has no icon for keeps the neutral one. */
-const FAMILY_ICONS: Readonly<Record<string, LucideIcon>> = {
-  concert: Music2,
-};
 
 interface ScopeContentsListProps {
   readonly scopes: readonly CopyDeskScopeSummary[];
@@ -48,7 +46,7 @@ export const ScopeContentsList = ({
     <div className="flex flex-col gap-5">
       {groups.map((group) => {
         const meta = FAMILY_LABELS[group.family];
-        const Icon = FAMILY_ICONS[group.family] ?? FileText;
+        const Icon = familyIcon(group.family);
 
         return (
           <SectionCard

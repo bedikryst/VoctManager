@@ -17,6 +17,7 @@ from .views import (
     CopyDeskPatchView,
     CopyDeskProposalDetailView,
     CopyDeskProposalsView,
+    CopyDeskQueueView,
     CopyDeskReviewView,
     CopyDeskSegmentsView,
 )
@@ -28,6 +29,9 @@ urlpatterns = [
     path("segments/ingest/", CopyDeskIngestView.as_view(), name="copydesk-ingest"),
     path("proposals/", CopyDeskProposalsView.as_view(), name="copydesk-proposals"),
     # Ahead of the <uuid:pk> routes so neither is swallowed by a detail match.
+    # The reviewer's screen: everything open, across every page, plus what the
+    # apply script still owes the repository.
+    path("proposals/queue/", CopyDeskQueueView.as_view(), name="copydesk-queue"),
     path("proposals/patch/", CopyDeskPatchView.as_view(), name="copydesk-patch"),
     path("proposals/applied/", CopyDeskAppliedView.as_view(), name="copydesk-applied"),
     path(

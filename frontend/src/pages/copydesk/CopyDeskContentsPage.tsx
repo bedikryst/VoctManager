@@ -38,6 +38,14 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
     [contents.scopes],
   );
 
+  // The same figure the queue counts — a segment with an open proposal — so the
+  // way in can say how much is waiting without a second request. Silent at zero:
+  // a reviewer with nothing to settle is the resting case.
+  const waiting = useMemo(
+    () => contents.scopes.reduce((total, scope) => total + scope.touched, 0),
+    [contents.scopes],
+  );
+
   // One census, over the whole corpus, and the only place either figure is
   // stated: the cards below list their pages rather than counting them.
   const census: StatLineItem[] = [
@@ -71,7 +79,12 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
             contents.is_reviewer ? (
               <Button variant="secondary" size="sm" asChild>
                 <Link to="/redakcja/przeglad">
-                  {t("copy_desk.review.link", "Przegląd zmian")}
+                  {waiting > 0
+                    ? t("copy_desk.review.link_count", {
+                        count: waiting,
+                        defaultValue: "Przegląd zmian ({{count}})",
+                      })
+                    : t("copy_desk.review.link", "Przegląd zmian")}
                 </Link>
               </Button>
             ) : undefined

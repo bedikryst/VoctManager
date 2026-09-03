@@ -13,6 +13,8 @@ import type {
   CopyDeskNotifyResult,
   CopyDeskProposalWrite,
   CopyDeskProposalWritten,
+  CopyDeskQueue,
+  CopyDeskReviewWrite,
   CopyDeskSegments,
 } from "../types/copydesk.dto";
 
@@ -20,6 +22,7 @@ export const COPY_DESK_ENDPOINTS = {
   contents: "/api/copydesk/contents/",
   segments: "/api/copydesk/segments/",
   proposals: "/api/copydesk/proposals/",
+  queue: "/api/copydesk/proposals/queue/",
   markSeen: "/api/copydesk/mark-seen/",
   notify: "/api/copydesk/notify/",
 } as const;
@@ -59,6 +62,39 @@ export const CopyDeskService = {
     const { data } = await api.post<CopyDeskProposalWritten>(
       COPY_DESK_ENDPOINTS.proposals,
       payload,
+    );
+    return data;
+  },
+
+  /**
+   * The reviewer's screen in one request: every field somebody is waiting on a
+   * verdict for, and the summary of what has been accepted and not yet written.
+   *
+   * Reviewer-only, and it exists because nothing else could answer it — the
+   * contents list counts touched segments per page but names none of them, and
+   * the editor's read is one page at a time.
+   */
+  getQueue: async (): Promise<CopyDeskQueue> => {
+    const { data } = await api.get<CopyDeskQueue>(COPY_DESK_ENDPOINTS.queue);
+    return data;
+  },
+
+  /**
+   * One verdict. Accepting does NOT touch the public site: it marks a value as
+   * one the reviewer intends to commit, `copy:apply` writes it into the
+   * repository, and a `git diff` puts it in front of a reader.
+   *
+   * A corrected `value` makes accept-and-edit one act, so the record holds what
+   * was actually written rather than what was proposed and then altered.
+   */
+  reviewProposal: async ({
+    proposalId,
+    status,
+    value,
+  }: CopyDeskReviewWrite): Promise<CopyDeskProposalWritten> => {
+    const { data } = await api.post<CopyDeskProposalWritten>(
+      `${COPY_DESK_ENDPOINTS.proposals}${proposalId}/review/`,
+      value === undefined ? { status } : { status, value },
     );
     return data;
   },

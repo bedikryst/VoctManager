@@ -45,6 +45,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { isManager } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
 import { onActivate } from "@/shared/lib/dom/a11y";
+import { formatRelativeTime } from "@/shared/lib/time/intl";
 import { Badge } from "@/shared/ui/primitives/Badge";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
@@ -409,27 +410,6 @@ const ACCENT: Record<Accent, { tile: string; dot: string }> = {
   },
 };
 
-const getRelativeTime = (dateString: string, lang: string): string => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.round((date.getTime() - now.getTime()) / 1000);
-
-  const rtf = new Intl.RelativeTimeFormat(lang || "pl", { numeric: "auto" });
-
-  const absDiff = Math.abs(diffInSeconds);
-  if (absDiff < 60) return rtf.format(Math.round(diffInSeconds), "second");
-  if (absDiff < 3600)
-    return rtf.format(Math.round(diffInSeconds / 60), "minute");
-  if (absDiff < 86400)
-    return rtf.format(Math.round(diffInSeconds / 3600), "hour");
-  if (absDiff < 2592000)
-    return rtf.format(Math.round(diffInSeconds / 86400), "day");
-  if (absDiff < 31536000)
-    return rtf.format(Math.round(diffInSeconds / 2592000), "month");
-
-  return rtf.format(Math.round(diffInSeconds / 31536000), "year");
-};
-
 /** Full, localized date+time — surfaced on hover/long-press so the relative
  *  label ("2 days ago") never costs the reader the actual moment. */
 const getAbsoluteTime = (dateString: string, lang: string): string => {
@@ -513,7 +493,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 
   const { icon: Icon, accent } = resolveVisual(notification);
   const accentStyle = ACCENT[accent];
-  const timeAgo = getRelativeTime(notification.created_at, i18n.language);
+  const timeAgo = formatRelativeTime(notification.created_at, i18n.language);
   const absoluteTime = getAbsoluteTime(notification.created_at, i18n.language);
   // Genuine alarms (cancellations, rejections, URGENT) resolve to crimson — give
   // those rows a left accent so they're triaged at a glance, not just by icon hue.

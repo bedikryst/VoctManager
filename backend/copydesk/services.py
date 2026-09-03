@@ -21,6 +21,8 @@ from django.utils import timezone
 
 from .dtos import (
     ApplyStampResultDTO,
+    PatchScopeDTO,
+    PatchSummaryDTO,
     ProposalDTO,
     ProposalReviewDTO,
     ProposalWriteDTO,
@@ -451,6 +453,78 @@ class CopyDeskService:
             updated_at=proposal.updated_at.isoformat(),
             reviewed_at=_iso(proposal.reviewed_at),
             applied_at=_iso(proposal.applied_at),
+        )
+
+    @classmethod
+    def review_queue(cls, *, user: User) -> tuple[SegmentDTO, ...]:
+        """Every segment somebody is waiting on a verdict for, across all pages.
+
+        The reviewer's unit is the SEGMENT and not the proposal, because two
+        editors may hold competing open proposals on one field (§6b) and the
+        whole point of keeping both is that they are read together and chosen
+        between. So the queue is a list of segments carrying their proposals —
+        the same shape the editor's page returns, which is what lets one set of
+        types and one reading of a cell serve both surfaces.
+
+        It exists as its own read because nothing else could answer it. The
+        contents list counts touched segments per page but names none of them,
+        and the editor's endpoint is one page at a time: composing the queue
+        from those would mean six requests fetching 1 281 rows to find the four
+        that are waiting, and it would grow a request per page every time the
+        corpus does.
+
+        Settled proposals travel too — a field that was rejected last week is
+        context for the proposal standing on it today — and the client decides
+        what to draw.
+        """
+        segment_ids = set(
+            CopyProposal.objects.filter(status__in=OPEN_STATUSES).values_list(
+                "segment_id", flat=True
+            )
+        )
+        if not segment_ids:
+            return ()
+        segments = list(
+            CopySegment.objects.filter(id__in=segment_ids).order_by(
+                "scope", "order", "key", "locale"
+            )
+        )
+        return cls._project(segments, user)
+
+    @staticmethod
+    def patch_summary() -> PatchSummaryDTO:
+        """What is accepted and still only a decision.
+
+        The counterpart to `CopyDeskPatchView`, which hands the apply script the
+        rows themselves: this is the same set, as a person needs to read it —
+        how many fields, on which pages, and how long the oldest has been
+        waiting. Accepting settles nothing on the public site, so a reviewer who
+        never runs `copy:apply` has a growing pile of decisions nobody has
+        committed, and this is the only place that says so.
+        """
+        proposals = list(
+            CopyProposal.objects.filter(
+                status=ProposalStatus.ACCEPTED, applied_at__isnull=True
+            ).select_related("segment")
+        )
+        if not proposals:
+            return PatchSummaryDTO()
+
+        labels: dict[str, str] = {}
+        segments_by_scope: dict[str, set[UUID]] = {}
+        for proposal in proposals:
+            segment = proposal.segment
+            labels.setdefault(segment.scope, segment.scope_label or segment.scope)
+            segments_by_scope.setdefault(segment.scope, set()).add(segment.id)
+
+        decisions = [p.reviewed_at for p in proposals if p.reviewed_at is not None]
+        return PatchSummaryDTO(
+            rows=sum(len(ids) for ids in segments_by_scope.values()),
+            scopes=tuple(
+                PatchScopeDTO(scope=scope, label=labels[scope], rows=len(ids))
+                for scope, ids in sorted(segments_by_scope.items())
+            ),
+            since=_iso(min(decisions)) if decisions else None,
         )
 
     @classmethod

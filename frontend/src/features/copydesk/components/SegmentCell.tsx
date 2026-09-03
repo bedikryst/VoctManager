@@ -8,9 +8,8 @@
  * page holds seventy-odd fields and the swap would cost a measurement, a focus
  * hand-off and a reflow on every click; the ghost field shell already draws
  * nothing until the pointer or the caret arrives, which is the same read for
- * none of the machinery. Its height comes from a mirror span in the same grid
- * cell rather than from `scrollHeight`, so no layout is forced and a locale
- * switch does not run two hundred measurements.
+ * none of the machinery. The field itself is `GrowingTextarea`, which owns the
+ * mirror that gives it its height.
  *
  * What the cell says at rest is: the text. No chip, no border, no toggle — the
  * corpus is 1 281 rows and a resting state that decorates itself is 1 281
@@ -35,6 +34,7 @@ import {
 } from "@/shared/ui/primitives/fieldShell";
 import { Caption, Eyebrow, Text } from "@/shared/ui/primitives/typography";
 
+import { GrowingTextarea } from "./GrowingTextarea";
 import { LOCALE_MARKS } from "../lib/localeView";
 import {
   currentValue,
@@ -52,14 +52,6 @@ import type { CopyDeskProposalWrite } from "../types/copydesk.dto";
  * unmount, so the worst a longer wait could cost is one round trip.
  */
 const AUTOSAVE_DELAY_MS = 900;
-
-/**
- * The two boxes have to be the same shape or the field is the wrong height.
- * Written as one literal on both elements — a size class in one place and a
- * leading class in another is exactly the pair `tailwind-merge` reorders.
- */
-const CELL_TEXT = `${FIELD_TEXT_SCALE.sm} leading-relaxed`;
-const CELL_PADDING = "px-2.5 py-1.5";
 
 interface SegmentCellProps {
   readonly cell: CopyDeskCell;
@@ -160,45 +152,17 @@ export const SegmentCell = ({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* The field's own height is the mirror's height: same type, same
-            padding, same wrapping, in the same grid cell. The trailing
-            zero-width space keeps a trailing newline from collapsing, which is
-            what makes the box grow as the caret moves to a new line. */}
-        <div className="grid">
-          <span
-            aria-hidden="true"
-            className={cn(
-              "invisible col-start-1 row-start-1 whitespace-pre-wrap wrap-break-word",
-              CELL_TEXT,
-              CELL_PADDING,
-            )}
-          >
-            {`${value}\u200B`}
-          </span>
-          <textarea
-            value={value}
-            rows={1}
-            spellCheck
-            lang={segment.locale}
-            aria-label={`${segment.label} · ${LOCALE_MARKS[segment.locale]}`}
-            onChange={(event) => {
-              setValue(event.target.value);
-              queue(event.target.value, comment);
-            }}
-            onBlur={flush}
-            className={cn(
-              fieldShellVariants({ variant: "ghost" }),
-              // The shell transitions ALL properties, and this field's height is
-              // the grid row's: every new line would then animate for 300 ms
-              // behind the caret that made it. Colour is what the transition was
-              // for.
-              "col-start-1 row-start-1 resize-none overflow-hidden transition-colors",
-              CELL_TEXT,
-              CELL_PADDING,
-              hasNewWording(cell) && "bg-ethereal-gold/6",
-            )}
-          />
-        </div>
+        <GrowingTextarea
+          value={value}
+          lang={segment.locale}
+          ariaLabel={`${segment.label} · ${LOCALE_MARKS[segment.locale]}`}
+          onValueChange={(next) => {
+            setValue(next);
+            queue(next, comment);
+          }}
+          onBlur={flush}
+          className={cn(hasNewWording(cell) && "bg-ethereal-gold/6")}
+        />
 
         {isEmptied && (
           <Caption color="gold" className="px-2.5">

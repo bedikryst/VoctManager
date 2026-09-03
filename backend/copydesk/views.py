@@ -217,6 +217,31 @@ class CopyDeskPatchView(views.APIView):
         })
 
 
+class CopyDeskQueueView(views.APIView):
+    """GET — the reviewer's screen: what is waiting, and what has been decided.
+
+    Two halves of one question, in one request because they are read together.
+    `segments` is every field somebody is waiting on a verdict for, each with
+    the proposals standing on it (both of them, where two editors compete);
+    `patch` is what has already been accepted and is still only a decision,
+    because accepting writes nothing anywhere — `apply-copy` does, and then a
+    commit does.
+
+    Reviewer-only, like the patch it summarises. The editor's own view of their
+    proposals is their page of the desk, where the wording sits beside the text
+    it changes.
+    """
+
+    permission_classes = [IsCopyReviewer]
+
+    def get(self, request: Request) -> Response:
+        segments = CopyDeskService.review_queue(user=request_user(request))
+        return Response({
+            "segments": [segment.model_dump(mode="json") for segment in segments],
+            "patch": CopyDeskService.patch_summary().model_dump(mode="json"),
+        })
+
+
 class CopyDeskIngestView(views.APIView):
     """POST — the extractor's door into the mirror. Staff only.
 

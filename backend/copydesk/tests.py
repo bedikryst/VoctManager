@@ -737,6 +737,123 @@ class ContentsListTests(TestCase):
         self.assertEqual(summary.stale, 1)
 
 
+class ReviewQueueTests(TestCase):
+    """The reviewer's read: what is waiting anywhere, and what has been decided
+    and not yet written."""
+
+    def setUp(self):
+        self.florent = make_user("florent@example.com", editor=True)
+        self.ania = make_user("ania@example.com", editor=True)
+        self.reviewer = make_user("dev@example.com", staff=True)
+        self.polish = make_segment("concert.wcielenie.essence", SiteLocale.POLISH, "Treść")
+        self.english = make_segment(
+            "concert.wcielenie.essence", SiteLocale.ENGLISH, "Text", order=1,
+        )
+        self.untouched = make_segment(
+            "concert.wcielenie.about", SiteLocale.POLISH, "O koncercie", order=2,
+        )
+
+    def test_only_segments_somebody_is_waiting_on_are_in_the_queue(self):
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.polish.id, value="Nowa treść"),
+            author=self.florent,
+        )
+        settled = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.english.id, value="New text"),
+            author=self.florent,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=settled.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.REJECTED),
+            reviewer=self.reviewer,
+        )
+
+        queue = CopyDeskService.review_queue(user=self.reviewer)
+        self.assertEqual([entry.id for entry in queue], [self.polish.id])
+
+    def test_two_editors_on_one_field_arrive_as_one_entry_carrying_both(self):
+        """§6b keeps competing proposals on purpose; the queue is where they are
+        read side by side, so BOTH values have to travel."""
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.polish.id, value="Wersja Florenta"),
+            author=self.florent,
+        )
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.polish.id, value="Wersja Ani"),
+            author=self.ania,
+        )
+
+        queue = CopyDeskService.review_queue(user=self.reviewer)
+        self.assertEqual(len(queue), 1)
+        self.assertEqual(
+            {proposal.value for proposal in queue[0].proposals},
+            {"Wersja Florenta", "Wersja Ani"},
+        )
+        # The value the site is serving is what each of them is measured against.
+        self.assertEqual(queue[0].value, "Treść")
+
+    def test_a_note_without_a_rewrite_reaches_the_queue(self):
+        """A comment on an unchanged value is a real proposal (§6h), and the
+        queue is where it is told apart from a rewrite — by the value, which is
+        the one the repository already holds."""
+        CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(
+                segment_id=self.polish.id, value="Treść", comment="To zdanie mi zgrzyta.",
+            ),
+            author=self.florent,
+        )
+
+        queue = CopyDeskService.review_queue(user=self.reviewer)
+        self.assertEqual(queue[0].proposals[0].value, queue[0].value)
+        self.assertEqual(queue[0].proposals[0].comment, "To zdanie mi zgrzyta.")
+
+    def test_the_patch_counts_fields_rather_than_decisions(self):
+        """Two accepted proposals competing for one field collapse to one write,
+        so the band promises one changed line and not two."""
+        for author, value in ((self.florent, "Pierwsza"), (self.ania, "Druga")):
+            proposal = CopyDeskService.save_proposal(
+                dto=ProposalWriteDTO(segment_id=self.polish.id, value=value),
+                author=author,
+            )
+            CopyDeskService.review_proposal(
+                proposal_id=proposal.id,
+                dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+                reviewer=self.reviewer,
+            )
+
+        summary = CopyDeskService.patch_summary()
+        self.assertEqual(summary.rows, 1)
+        self.assertEqual(len(summary.scopes), 1)
+        self.assertEqual(summary.scopes[0].label, "Kontemplacja Wcielenia")
+        self.assertIsNotNone(summary.since)
+
+    def test_an_applied_decision_leaves_the_patch(self):
+        proposal = CopyDeskService.save_proposal(
+            dto=ProposalWriteDTO(segment_id=self.polish.id, value="Nowa treść"),
+            author=self.florent,
+        )
+        CopyDeskService.review_proposal(
+            proposal_id=proposal.id,
+            dto=ProposalReviewDTO(status=ProposalStatus.ACCEPTED),
+            reviewer=self.reviewer,
+        )
+        self.assertEqual(CopyDeskService.patch_summary().rows, 1)
+
+        CopyDeskService.mark_applied(proposal_ids=[proposal.id], reviewer=self.reviewer)
+        self.assertEqual(CopyDeskService.patch_summary().rows, 0)
+
+    def test_the_queue_is_reviewer_only(self):
+        api = APIClient()
+        api.force_authenticate(user=self.florent)
+        self.assertEqual(api.get(reverse("copydesk-queue")).status_code, 403)
+
+        api.force_authenticate(user=self.reviewer)
+        response = api.get(reverse("copydesk-queue"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["segments"], [])
+        self.assertEqual(response.data["patch"]["rows"], 0)
+
+
 class PermissionTests(TestCase):
     def test_the_capability_is_independent_of_role(self):
         editor = make_user("florent@example.com", editor=True)

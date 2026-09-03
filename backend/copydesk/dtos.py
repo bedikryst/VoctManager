@@ -219,6 +219,37 @@ class ApplyStampResultDTO(BaseModel):
     skipped: tuple[SkippedProposalDTO, ...] = ()
 
 
+class PatchScopeDTO(BaseModel):
+    """One page's share of the patch that is waiting to be written."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    scope: str
+    label: str
+    rows: int = 0
+
+
+class PatchSummaryDTO(BaseModel):
+    """What has been accepted and has not yet reached the repository.
+
+    Counted in SEGMENTS rather than in proposals, because a segment is what the
+    apply script writes: where two accepted proposals compete for one field, the
+    patch collapses to the last decision and the file gains one changed line.
+    Reporting two would promise the reviewer a diff twice the size of the one
+    they are about to read.
+
+    `since` is the oldest decision still unwritten — the fact that turns "eight
+    changes waiting" into "eight changes waiting since Tuesday", which is the
+    only thing on this surface that says the command has been forgotten.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    rows: int = 0
+    scopes: tuple[PatchScopeDTO, ...] = ()
+    since: str | None = None
+
+
 class ScopeSummaryDTO(BaseModel):
     """One line of the contents list.
 

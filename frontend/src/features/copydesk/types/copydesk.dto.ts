@@ -126,6 +126,63 @@ export interface CopyDeskProposalWritten {
 }
 
 /**
+ * One page's share of the patch waiting to be written into the repository.
+ */
+export interface CopyDeskPatchScope {
+  readonly scope: string;
+  readonly label: string;
+  readonly rows: number;
+}
+
+/**
+ * What has been accepted and has not yet reached the repository.
+ *
+ * `rows` counts FIELDS, not decisions: where two accepted proposals compete for
+ * one field the apply script keeps the last one, so the diff the reviewer is
+ * about to read has one changed line and not two. `since` is the oldest
+ * decision still unwritten — the only figure on the surface that says the
+ * command has been forgotten.
+ */
+export interface CopyDeskPatchSummary {
+  readonly rows: number;
+  readonly scopes: readonly CopyDeskPatchScope[];
+  readonly since: string | null;
+}
+
+/**
+ * `GET /api/copydesk/proposals/queue/` — the reviewer's screen.
+ *
+ * `segments` carries the same shape the editor's page returns, deliberately: a
+ * queue entry IS a segment with the proposals standing on it, so one set of
+ * types and one reading of a cell serve both surfaces. Two competing proposals
+ * arrive as two entries in one segment's `proposals` — the reviewer reads both
+ * and chooses, which is the whole reason §6b refuses to auto-resolve them.
+ */
+export interface CopyDeskQueue {
+  readonly segments: readonly CopyDeskSegment[];
+  readonly patch: CopyDeskPatchSummary;
+}
+
+/**
+ * `POST /api/copydesk/proposals/<id>/review/` — one verdict.
+ *
+ * `value` travels only when the reviewer corrected the wording before accepting
+ * it — §4's "accept / reject / edit further" as a single act, so the record
+ * shows what was actually put into the repository rather than what was proposed
+ * and then quietly altered.
+ *
+ * `comment` is deliberately NOT sent by the desk: the field is the one the
+ * EDITOR wrote their note in, and a reviewer's text would replace it while
+ * reaching nobody — no surface renders a reviewer's comment back to the person
+ * who proposed the change.
+ */
+export interface CopyDeskReviewWrite {
+  readonly proposalId: string;
+  readonly status: "ACCEPTED" | "REJECTED";
+  readonly value?: string;
+}
+
+/**
  * `POST /api/copydesk/notify/` — "I have finished", which raises the digest the
  * clock would otherwise raise thirty minutes after the last keystroke.
  *

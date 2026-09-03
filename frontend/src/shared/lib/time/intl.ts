@@ -81,6 +81,38 @@ export const formatLocalizedDateTime = (
   timeZone?: string,
 ): string => formatDateValue(value, options, language, timeZone);
 
+/**
+ * "2 hours ago" / "za 5 minut", in the reader's language.
+ *
+ * The one copy: the notification bell and the copy desk's review queue both
+ * date somebody's action relative to now, and a second private ladder would put
+ * two answers on screen for the same moment. It reads the clock at call time,
+ * so a surface that must stay honest over a long sitting re-renders on a
+ * ticking `useNow` rather than memoising this.
+ */
+export const formatRelativeTime = (
+  value: DateInput,
+  language?: string,
+): string => {
+  const date = toValidDate(value);
+  if (!date) return "";
+
+  const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const distance = Math.abs(seconds);
+  const formatter = new Intl.RelativeTimeFormat(getIntlLocale(language), {
+    numeric: "auto",
+  });
+
+  if (distance < 60) return formatter.format(seconds, "second");
+  if (distance < 3600) return formatter.format(Math.round(seconds / 60), "minute");
+  if (distance < 86400) return formatter.format(Math.round(seconds / 3600), "hour");
+  if (distance < 2592000) return formatter.format(Math.round(seconds / 86400), "day");
+  if (distance < 31536000) {
+    return formatter.format(Math.round(seconds / 2592000), "month");
+  }
+  return formatter.format(Math.round(seconds / 31536000), "year");
+};
+
 export const isDifferentTimezone = (targetTimeZone?: string): boolean => {
   if (!targetTimeZone) return false;
   try {
