@@ -25,10 +25,19 @@ import {
   useMotionValue,
 } from "framer-motion";
 import { NavLink, useNavigate } from "react-router-dom";
-import { ChevronRight, LogOut, Search, Settings, Star, X } from "lucide-react";
+import {
+  ChevronRight,
+  LogOut,
+  PenLine,
+  Search,
+  Settings,
+  Star,
+  X,
+} from "lucide-react";
 
 import { cn } from "@/shared/lib/utils";
 import type { AuthUser } from "@/shared/auth/auth.types";
+import { canEditSiteCopy } from "@/shared/auth/rbac";
 import { Eyebrow, Label } from "@/shared/ui/primitives/typography";
 import { FIELD_TEXT_SCALE } from "@/shared/ui/primitives/fieldShell";
 import { Avatar } from "@/shared/ui/composites/Avatar";
@@ -431,6 +440,29 @@ export const MobileNavSheet = ({
               ariaLabel={aura.t("settings.app.theme.title", "Wygląd")}
             />
           </div>
+
+          {/* Same doorway as the desktop rail's footer, and here for the same
+              reason: `/redakcja` replaces the shell, so it belongs with what
+              leaves the panel rather than in the command list above. Gold
+              rather than the list's neutral rows — it is not one more place
+              inside the panel. */}
+          {canEditSiteCopy(user) && (
+            <NavLink
+              to="/redakcja"
+              onClick={onClose}
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-ethereal-gold outline-none transition-colors hover:bg-ethereal-gold/10 focus-visible:ring-2 focus-visible:ring-ethereal-gold/40 active:scale-[0.99]"
+            >
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-ethereal-gold/25 bg-ethereal-gold/10">
+                <PenLine size={18} strokeWidth={2} aria-hidden="true" />
+              </span>
+              <Label size="base" weight="medium" color="inherit">
+                {aura.t(
+                  "dashboard.layout.actions.copy_desk",
+                  "Redakcja tekstów serwisu",
+                )}
+              </Label>
+            </NavLink>
+          )}
 
           <button
             type="button"

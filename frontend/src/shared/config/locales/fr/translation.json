@@ -2075,6 +2075,8 @@
     },
     "layout": {
       "actions": {
+        "copy_desk": "Rédaction des textes du site",
+        "copy_desk_short": "Rédaction",
         "logout": "Déconnexion",
         "open_menu": "Menu",
         "pin": "Épingler le panneau",

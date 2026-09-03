@@ -25,7 +25,8 @@ BUILD_ENV = COMPOSE_PARALLEL_LIMIT=1 APP_BUILD_SHA=$(shell git rev-parse --short
 # a bare timestamp — leaving "already fixed" and "still broken" indistinguishable
 # in the triage queue, which is the one thing the stamp exists to prevent.
 
-.PHONY: up prod deploy gc down logs shell migrate seed superuser reset-test-data
+.PHONY: up prod deploy gc down logs shell migrate seed superuser reset-test-data \
+        copy-sync copy-draft copy-check copy-apply
 
 up:
 	$(BUILD_ENV) $(COMPOSE_DEV) up --build -d
@@ -102,3 +103,38 @@ superuser:
 # what this target exists to preserve.
 reset-test-data:
 	bash infra/reset-test-data.sh $(ARGS)
+
+# ------------------------------------------------------------------
+# Copy desk — the loop between the repository and /redakcja
+# ------------------------------------------------------------------
+# These four run in `web/`, not in a container: the desk's mirror is fed from a
+# CHECKOUT and written back to one, which is the whole shape of §3 (git stays
+# source of truth). Postgres publishes no host port, so they reach the desk over
+# HTTP and sign in with the credentials in `web/.env` — copy `web/.env.example`
+# and fill the password in. The stack must be up AND migrated first; `make up`
+# applies no migrations.
+#
+#   make copy-sync    the corpus enters the desk. Until this has run, /redakcja
+#                     is empty — that is what its empty state is telling you.
+#                     Refuses a dirty web/src/content/.
+#   make copy-draft   the finished drafts become accepted proposals, EN then FR.
+#   make copy-check   what the patch WOULD write. Touches nothing.
+#   make copy-apply   writes the overlays, stamps them applied, shows the diff.
+#                     Commits nothing — the diff is the review.
+#
+# The full reasoning, and the three failures worth recognising on sight, are in
+# docs/web-copy-desk-2026-09.md §6m.
+copy-sync:
+	cd web && npm run copy:sync
+
+copy-draft:
+	cd web && npm run copy:propose -- --locale en --write
+	cd web && npm run copy:propose -- --locale fr --write
+
+copy-check:
+	cd web && npm run copy:apply
+
+copy-apply:
+	cd web && npm run copy:apply -- --write
+	@git --no-pager diff --stat -- web/src/content/
+	@echo "Read the diff, then commit. Nothing is deployed by this target."

@@ -2075,6 +2075,8 @@
     },
     "layout": {
       "actions": {
+        "copy_desk": "Site copy desk",
+        "copy_desk_short": "Copy desk",
         "logout": "Log out",
         "open_menu": "Menu",
         "pin": "Pin panel",

@@ -31,6 +31,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     avatar_thumb_url = serializers.SerializerMethodField()
 
+    # The EFFECTIVE capability, not the column. The desk admits staff whatever
+    # the flag says (`user_can_edit_site_copy`), so reporting the raw boolean
+    # would hide the door from exactly the account that built it: a developer
+    # who never set the flag on themselves sees no way in and full access
+    # behind the URL. One predicate, asked once, answered the same on both
+    # sides.
+    can_edit_site_copy = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = (
@@ -68,9 +76,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # Everything listed here is server-authoritative — clients read these but
         # cannot set them, and none of them appear in UserPreferencesUpdateDTO
         # (which forbids extras, so echoing one back in a PATCH is a 400).
+        # `can_edit_site_copy` is absent from this tuple and still unwritable:
+        # it is a SerializerMethodField above, and DRF refuses to see a declared
+        # field named here at all.
         read_only_fields = (
             'role', 'calendar_token', 'welcome_seen_at', 'push_email_offer_seen_at',
-            'can_edit_site_copy', 'copy_desk_seen_at',
+            'copy_desk_seen_at',
         )
 
     def _absolute_media_url(self, field) -> str | None:
@@ -79,6 +90,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         url = field.url
         request = self.context.get('request')
         return request.build_absolute_uri(url) if request else url
+
+    def get_can_edit_site_copy(self, obj: UserProfile) -> bool:
+        # Imported here rather than at module scope: `copydesk` reads `core`'s
+        # models, so a top-level import would close the circle at app load.
+        from copydesk.permissions import user_can_edit_site_copy
+
+        return user_can_edit_site_copy(obj.user)
 
     def get_avatar_url(self, obj: UserProfile) -> str | None:
         return self._absolute_media_url(obj.avatar)

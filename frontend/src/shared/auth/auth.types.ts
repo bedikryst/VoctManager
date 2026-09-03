@@ -36,6 +36,10 @@ export interface AuthProfile {
    * editor of the public site's text is orthogonal to that split. Granted from
    * the Django admin, never by the account itself, which is why it is read-only
    * here as well as on the server.
+   *
+   * Sent as the EFFECTIVE answer rather than the stored column: staff reach the
+   * desk regardless of the flag, and a payload reporting the column would hide
+   * the door from the one account that can also review.
    */
   can_edit_site_copy?: boolean;
 }

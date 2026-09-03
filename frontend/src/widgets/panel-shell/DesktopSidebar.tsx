@@ -2,7 +2,7 @@ import React, { forwardRef } from "react";
 import { Link, NavLink, NavLinkProps } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Transition } from "framer-motion";
-import { LogOut, Pin, Search, Settings } from "lucide-react";
+import { LogOut, PenLine, Pin, Search, Settings } from "lucide-react";
 import { cva } from "class-variance-authority";
 
 import { useNavigationAura } from "./hooks/useNavigationAura";
@@ -11,6 +11,7 @@ import { useCommandPalette } from "./command/CommandPaletteProvider";
 import { NotificationCenter } from "@/features/notifications/components/NotificationCenter";
 import { UnreadMessagesBadge } from "@/features/messages/components/UnreadMessagesBadge";
 import type { AuthUser } from "@/shared/auth/auth.types";
+import { canEditSiteCopy } from "@/shared/auth/rbac";
 import { cn } from "@/shared/lib/utils";
 import { useSidebarKinematics } from "@/shared/ui/kinematics/hooks/useSidebarKinematics";
 
@@ -370,6 +371,53 @@ export const DesktopSidebar = ({
               position="absolute-top"
               className="opacity-50"
             />
+
+            {/* The doorway to the copy desk, and the reason it is HERE and not
+                in the nav above: `/redakcja` takes the whole shell over, so a
+                rail item pointing at it would be a tab that closes the panel.
+                The footer is where the panel keeps what leaves it — settings,
+                log-out — and this belongs in that company. Gold outline rather
+                than the rail's ghost treatment for the same reason: it is not
+                one more place inside the panel.
+
+                Offered only to accounts the server will actually admit; the
+                payload carries the effective capability, so staff see it
+                whether or not the flag was set on them. */}
+            {canEditSiteCopy(user) && (
+              <Tooltip
+                content={t(
+                  "dashboard.layout.actions.copy_desk",
+                  "Redakcja tekstów serwisu",
+                )}
+                disabled={isExpanded}
+                side="right"
+              >
+                <Link
+                  to="/redakcja"
+                  aria-label={t(
+                    "dashboard.layout.actions.copy_desk",
+                    "Redakcja tekstów serwisu",
+                  )}
+                  style={{ width: isExpanded ? "100%" : "56px" }}
+                  className="group/desk relative block h-10 shrink-0 overflow-hidden rounded-xl border border-ethereal-gold/30 bg-ethereal-gold/6 text-ethereal-gold outline-none transition-[width,background-color] duration-300 ease-out hover:bg-ethereal-gold/12 focus-visible:ring-2 focus-visible:ring-ethereal-gold/50"
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-14 flex items-center justify-center transition-transform duration-300 ease-out group-active/desk:scale-95">
+                    <PenLine size={17} strokeWidth={2} aria-hidden="true" />
+                  </div>
+                  <motion.div
+                    initial={false}
+                    animate={{ opacity: isExpanded ? 1 : 0 }}
+                    transition={CONTENT_FADE_TRANSITION}
+                    className="absolute left-14 right-3 top-0 bottom-0 flex items-center whitespace-nowrap"
+                    aria-hidden={!isExpanded}
+                  >
+                    <Label size="sm" weight="medium" color="inherit">
+                      {t("dashboard.layout.actions.copy_desk_short", "Redakcja")}
+                    </Label>
+                  </motion.div>
+                </Link>
+              </Tooltip>
+            )}
 
             {/* The plate names the sidebar's own rung, which is what it always
                 painted: white over #FBFAF7 was a no-op, and the identity block

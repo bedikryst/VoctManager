@@ -71,9 +71,10 @@ export const COMMAND_ACTIONS: readonly CommandActionDef[] = [
     to: "/panel/schedule",
     scope: "artist",
   },
-  // The panel's only doorway into the desk, and the reason it is here rather
-  // than in the nav: `/redakcja` takes the shell over, so a rail item pointing
-  // out of the panel would be a tab that closes the panel. The address editors
+  // One of two doorways into the desk; the other is the sidebar footer, beside
+  // the settings and log-out that also leave the panel. Neither is a nav item,
+  // and that is the constraint: `/redakcja` takes the shell over, so a rail tab
+  // pointing at it would be a tab that closes the panel. The address editors
   // are given is a link; this is for the editor who is already inside.
   {
     id: "open_copy_desk",

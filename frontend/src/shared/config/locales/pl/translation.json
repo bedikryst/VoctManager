@@ -2085,6 +2085,8 @@
     },
     "layout": {
       "actions": {
+        "copy_desk": "Redakcja tekstów serwisu",
+        "copy_desk_short": "Redakcja",
         "logout": "Wyloguj",
         "open_menu": "Menu",
         "pin": "Przypnij panel",
