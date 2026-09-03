@@ -268,3 +268,29 @@ export const useNotifyReviewers = (): UseMutationResult<
   useMutation({
     mutationFn: CopyDeskService.notifyReviewers,
   });
+
+/**
+ * "I have read this page" — the watermark the contents list divides on.
+ *
+ * Both caches are invalidated rather than patched, because the mark moves more
+ * than a number: the contents row changes side, and every `is_new` and
+ * `is_changed` on the page it names is recomputed against the new moment. Both
+ * are the server's arithmetic over `created_at`/`updated_at`, and a hand-rolled
+ * second answer is how a row would keep its "Nowe" chip on a page the list has
+ * already moved to the reviewed half.
+ */
+export const useMarkScopeSeen = (
+  scope: string,
+): UseMutationResult<void, Error, void> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => CopyDeskService.markScopeSeen(scope),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: copyDeskKeys.contents() });
+      void queryClient.invalidateQueries({
+        queryKey: copyDeskKeys.segments(scope),
+      });
+    },
+  });
+};

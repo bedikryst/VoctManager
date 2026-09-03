@@ -36,6 +36,7 @@ from .hashing import source_hash
 from .models import (
     OPEN_STATUSES,
     CopyProposal,
+    CopyScopeVisit,
     CopySegment,
     ProposalStatus,
     SegmentKind,
@@ -72,7 +73,9 @@ class _ScopeCounts:
     touched: int = 0
     accepted: int = 0
     new: int = 0
+    changed: int = 0
     stale: int = 0
+    seen_at: datetime | None = None
 
 
 @dataclass(frozen=True)
@@ -149,6 +152,15 @@ class CopyDeskService:
         — a reconciliation that recreated rows would flag the whole corpus as new
         every time the extractor ran.
 
+        **And it does not SAVE an unchanged row, for the same reason one level
+        down.** `updated_at` is `auto_now`, so an unconditional `update_or_create`
+        stamps every row on every run and the column ends up meaning "when the
+        extractor last ran" rather than "when this text moved". `CopyScopeVisit`
+        computes "changed since you reviewed this page" from exactly that column,
+        so a blanket save would tell every reader that the whole corpus had moved
+        after any sync at all. `updated` therefore counts real changes, which is
+        also what makes the run's own report readable: a no-op sync says zero.
+
         `source_hash` is deliberately absent from `defaults` and must stay so.
         That column is the provenance `mark_applied` records — the Polish a
         PUBLISHED translation renders — and the extractor knows nothing about it.
@@ -169,20 +181,30 @@ class CopyDeskService:
 
         with transaction.atomic():
             for row in rows:
-                _segment, was_created = CopySegment.objects.update_or_create(
-                    key=row.key,
-                    locale=row.locale,
-                    defaults={
-                        "kind": row.kind,
-                        "value": row.value,
-                        "scope": scope_from_key(row.key),
-                        "scope_label": row.scope_label,
-                        "label": row.label,
-                        "order": row.order,
-                    },
+                fields = {
+                    "kind": row.kind,
+                    "value": row.value,
+                    "scope": scope_from_key(row.key),
+                    "scope_label": row.scope_label,
+                    "label": row.label,
+                    "order": row.order,
+                }
+                segment, was_created = CopySegment.objects.get_or_create(
+                    key=row.key, locale=row.locale, defaults=fields
                 )
-                created += int(was_created)
-                updated += int(not was_created)
+                if was_created:
+                    created += 1
+                else:
+                    changed = [
+                        name
+                        for name, value in fields.items()
+                        if getattr(segment, name) != value
+                    ]
+                    if changed:
+                        for name in changed:
+                            setattr(segment, name, fields[name])
+                        segment.save(update_fields=[*changed, "updated_at"])
+                        updated += 1
                 seen.add((row.key, row.locale))
                 scopes.add(scope_from_key(row.key))
 
@@ -377,7 +399,7 @@ class CopyDeskService:
                 key__in=keys, locale=SiteLocale.POLISH
             )
         }
-        seen_at = getattr(getattr(user, "profile", None), "copy_desk_seen_at", None)
+        watermarks = cls.watermarks(user=user, scopes={s.scope for s in segments})
 
         proposals_by_segment: dict[UUID, list[CopyProposal]] = {}
         for proposal in (
@@ -393,11 +415,27 @@ class CopyDeskService:
                 proposals=proposals_by_segment.get(segment.id, []),
                 current_hash=current_hashes.get(segment.key, ""),
                 source_value=polish_values.get(segment.key, ""),
-                seen_at=seen_at,
+                seen_at=watermarks.get(segment.scope),
                 user=user,
             )
             for segment in segments
         )
+
+    @classmethod
+    def watermarks(
+        cls, *, user: User, scopes: Iterable[str] | None = None
+    ) -> dict[str, datetime]:
+        """Where this reader has declared each page reviewed.
+
+        A page ABSENT from the result has never been reviewed by them, which is
+        not the same as "reviewed a long time ago" and is why this returns a
+        sparse map rather than defaulting to the epoch: everything on an unread
+        page is new to its reader, and an epoch would report none of it.
+        """
+        visits: QuerySet[CopyScopeVisit] = CopyScopeVisit.objects.filter(user=user)
+        if scopes is not None:
+            visits = visits.filter(scope__in=list(scopes))
+        return {visit.scope: visit.seen_at for visit in visits}
 
     @classmethod
     def _segment_dto(
@@ -426,7 +464,16 @@ class CopyDeskService:
             source_value=source_value,
             is_stale=is_stale,
             source_known=source_known,
-            is_new=bool(seen_at is not None and segment.created_at > seen_at),
+            # No watermark on this page means the reader has never declared it
+            # reviewed, so every row on it is new to them — the state an editor
+            # meeting a page for the first time is actually in. `changed` is the
+            # complement and never overlaps: a row cannot both have appeared
+            # since the mark and have been standing there when it was made.
+            is_new=bool(seen_at is None or segment.created_at > seen_at),
+            is_changed=bool(
+                seen_at is not None
+                and segment.created_at <= seen_at < segment.updated_at
+            ),
             proposals=tuple(
                 cls._proposal_dto(proposal, current_hash=current_hash, user=user)
                 for proposal in proposals
@@ -529,20 +576,26 @@ class CopyDeskService:
 
     @classmethod
     def scope_summaries(cls, *, user: User) -> tuple[ScopeSummaryDTO, ...]:
-        """The contents list: every page of the corpus with its four counts.
+        """The contents list: every page of the corpus with its counts.
 
         Assembled in Python over the whole mirror rather than as grouped
         aggregates, because `stale` is not a column — it is a comparison against
         a Polish value that may itself only exist as a proposal. At ~500 segments
         across three locales this is one pass over a small table, and a query
         that cannot express the state honestly is not the cheaper option.
+
+        `seen_at` is the reader's watermark on that page and the surface's own
+        divider: a page with one is REVIEWED, a page without one has never been,
+        and the two counts beside it (`new`, `changed`) say whether it has moved
+        since. None of the three is a state anybody maintains — see
+        `CopyScopeVisit` — which is what keeps the split free of tick-boxes.
         """
         segments = list(CopySegment.objects.all().order_by("scope", "order", "key"))
         if not segments:
             return ()
 
         current_hashes = cls.effective_source_hashes({s.key for s in segments})
-        seen_at = getattr(getattr(user, "profile", None), "copy_desk_seen_at", None)
+        watermarks = cls.watermarks(user=user)
 
         # The two figures answer different questions, which is why one counts
         # everybody's proposals and the other only the reader's. TOUCHED is a
@@ -570,10 +623,18 @@ class CopyDeskService:
             bucket = summaries.setdefault(segment.scope, _ScopeCounts())
             if not bucket.label and segment.scope_label:
                 bucket.label = segment.scope_label
+            bucket.seen_at = watermarks.get(segment.scope)
             bucket.segments += 1
             bucket.touched += int(segment.id in touched_ids)
             bucket.accepted += int(segment.id in accepted_ids)
-            bucket.new += int(seen_at is not None and segment.created_at > seen_at)
+            # The same pair of comparisons the row-level flags make, and they
+            # have to stay the same pair: a page reporting "3 new" whose rows
+            # carry four chips is a count nobody can check.
+            mark = bucket.seen_at
+            bucket.new += int(mark is None or segment.created_at > mark)
+            bucket.changed += int(
+                mark is not None and segment.created_at <= mark < segment.updated_at
+            )
             is_stale, _known = cls._staleness(
                 segment.locale, segment.source_hash, current_hashes.get(segment.key, "")
             )
@@ -587,7 +648,9 @@ class CopyDeskService:
                 touched=counts.touched,
                 accepted=counts.accepted,
                 new=counts.new,
+                changed=counts.changed,
                 stale=counts.stale,
+                seen_at=_iso(counts.seen_at),
             )
             for scope, counts in summaries.items()
         )
@@ -791,10 +854,25 @@ class CopyDeskService:
         return ApplyStampResultDTO(applied=applied, skipped=tuple(skipped))
 
     @classmethod
-    def mark_seen(cls, *, user: User) -> None:
-        """Stamp the visit that the new-since-last-visit state is measured from."""
-        profile = getattr(user, "profile", None)
-        if profile is None:
-            return
-        profile.copy_desk_seen_at = timezone.now()
-        profile.save(update_fields=["copy_desk_seen_at", "updated_at"])
+    def mark_scope_seen(cls, *, user: User, scope: str) -> datetime:
+        """Declare one page reviewed by this reader, and return the new mark.
+
+        The only writer of a watermark, and it is always a deliberate act: the
+        desk offers it at the foot of a page, where a reader who has actually
+        read one is standing. Nothing stamps on arrival or on departure — see
+        `CopyScopeVisit` for why an opened page is not a reviewed page.
+
+        Re-declaring moves the mark forward rather than adding a row, so "changed
+        since you reviewed this" is always measured from the last time the reader
+        said so. A scope with no segments is still stampable: the mirror is
+        refreshed independently of the desk, and refusing would make the answer
+        depend on whether the extractor had run.
+        """
+        now = timezone.now()
+        visit, created = CopyScopeVisit.objects.get_or_create(
+            user=user, scope=scope, defaults={"seen_at": now}
+        )
+        if not created:
+            visit.seen_at = now
+            visit.save(update_fields=["seen_at", "updated_at"])
+        return now

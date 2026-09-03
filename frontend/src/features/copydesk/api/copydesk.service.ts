@@ -117,16 +117,17 @@ export const CopyDeskService = {
   },
 
   /**
-   * Stamps the visit the "new since last visit" state is measured from. Called
-   * when the reader LEAVES the desk, not when they arrive: a segment that
-   * appeared since last time has to survive being read, or the counter clears
-   * itself before it has said anything.
+   * "I have read this page" — the watermark the contents list divides on.
    *
-   * The stamp lives on the profile, server-side, for the same reason
-   * `welcome_seen_at` does — a visit is a fact about the person, not about a
-   * browser.
+   * One page, named, and only ever from a deliberate press. Nothing stamps on
+   * arrival or on departure: opening a 213-row concert to check one line is not
+   * reviewing it, and a stamp written on the way out would say it was, with
+   * nothing anywhere to put the page back.
+   *
+   * The mark lives server-side for the same reason `welcome_seen_at` does — a
+   * reading is a fact about the person, not about a browser.
    */
-  markSeen: async (): Promise<void> => {
-    await api.post(COPY_DESK_ENDPOINTS.markSeen);
+  markScopeSeen: async (scope: string): Promise<void> => {
+    await api.post(COPY_DESK_ENDPOINTS.markSeen, { scope });
   },
 };

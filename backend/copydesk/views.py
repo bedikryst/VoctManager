@@ -32,6 +32,7 @@ from .serializers import (
     ProposalAppliedSerializer,
     ProposalReviewSerializer,
     ProposalWriteSerializer,
+    ScopeSeenSerializer,
     SegmentIngestSerializer,
     SegmentQuerySerializer,
 )
@@ -363,10 +364,29 @@ class CopyDeskNotifyView(views.APIView):
 
 
 class CopyDeskMarkSeenView(views.APIView):
-    """POST — stamp this visit, clearing the new-since-last-visit flags."""
+    """POST — the reader declares ONE page reviewed.
+
+    Deliberately not called on the way in or on the way out. A single desk-wide
+    stamp written on departure — which is what this route used to be — said "you
+    have read the whole corpus" whenever somebody opened one page of it, and
+    nothing could ever put a page back. So the act is explicit, it names its
+    scope, and the two counts beside that page on the contents list become
+    comparisons against the moment it was made.
+
+    Idempotent in the only sense that matters here: pressing it twice moves the
+    mark forward, which is exactly what "I have read it again" means.
+    """
 
     permission_classes = [CanEditSiteCopy]
 
     def post(self, request: Request) -> Response:
-        CopyDeskService.mark_seen(user=request_user(request))
-        return Response({"status": "seen"}, status=status.HTTP_200_OK)
+        serializer = ScopeSeenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        seen_at = CopyDeskService.mark_scope_seen(
+            user=request_user(request), scope=serializer.validated_data["scope"]
+        )
+        return Response(
+            {"scope": serializer.validated_data["scope"], "seen_at": seen_at.isoformat()},
+            status=status.HTTP_200_OK,
+        )

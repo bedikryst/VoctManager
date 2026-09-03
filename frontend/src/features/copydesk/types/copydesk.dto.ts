@@ -16,11 +16,20 @@
  * rather than dividing, because nothing guarantees every key holds all three
  * locales (a row retired by the extractor leaves its siblings standing).
  *
- * The four counts after it are all subsets of `segments`, which is what lets
- * them share a sentence: `touched` has an open proposal on it, `accepted` one
- * the reviewer has settled but `apply-copy` has not yet written, `new` appeared
- * after the reader's last visit, and `stale` is a translation whose Polish has
- * moved since it was written.
+ * The counts after it are all subsets of `segments`, which is what lets them
+ * share a sentence: `touched` has an open proposal on it, `accepted` one the
+ * reviewer has settled but `apply-copy` has not yet written, and `stale` is a
+ * translation whose Polish has moved since it was written.
+ *
+ * `seen_at` is when this reader last declared the page read, and it is what the
+ * list divides on. `new` and `changed` are comparisons against it — segments
+ * that appeared since, and segments already there whose published value has
+ * moved — so both fall to zero on their own and a page leaves the "to review"
+ * half without anybody ticking anything. A page with no `seen_at` has never been
+ * reviewed by this reader, and every one of its segments counts as `new`.
+ *
+ * `stale` deliberately takes no part in that division: it does not clear by
+ * being read, so a page carrying it could never leave.
  */
 export interface CopyDeskScopeSummary {
   readonly scope: string;
@@ -29,7 +38,9 @@ export interface CopyDeskScopeSummary {
   readonly touched: number;
   readonly accepted: number;
   readonly new: number;
+  readonly changed: number;
   readonly stale: number;
+  readonly seen_at: string | null;
 }
 
 /**
@@ -99,7 +110,13 @@ export interface CopyDeskSegment {
   readonly source_value: string;
   readonly is_stale: boolean;
   readonly source_known: boolean;
+  /**
+   * Appeared since this reader declared THIS page read — and true for every row
+   * of a page they never have, which is the state a first reading is in.
+   */
   readonly is_new: boolean;
+  /** Was already here at that mark, and its published value has moved since. */
+  readonly is_changed: boolean;
   readonly proposals: readonly CopyDeskProposal[];
 }
 

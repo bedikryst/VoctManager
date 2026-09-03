@@ -285,14 +285,11 @@ class UserProfile(EnterpriseBaseModel):
         help_text=_("Grants access to the copy desk (/redakcja) to propose changes "
                     "to the public site's text. Set from the admin; independent of role.")
     )
-    copy_desk_seen_at = models.DateTimeField(
-        null=True, blank=True,
-        help_text=_("When the editor last opened the copy desk. Drives the "
-                    "'new since your last visit' flag, which is what keeps a "
-                    "later stage's new segments from reading as a fresh wall of "
-                    "text. Server-side for the same reason as welcome_seen_at: "
-                    "the visit is a fact about the person, not about a browser.")
-    )
+    # The copy desk's visit stamp is NOT here. One profile-wide timestamp answered
+    # "when were you last on the desk", which is not the question the surface asks
+    # — opening any one page cleared the new-since-last-visit state for the whole
+    # corpus, permanently. It is `copydesk.CopyScopeVisit` now: one watermark per
+    # reader per page, written only when the reader says they have read that page.
 
     @property
     def is_manager(self) -> bool:

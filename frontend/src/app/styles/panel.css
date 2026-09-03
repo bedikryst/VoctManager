@@ -651,6 +651,23 @@ html {
 }
 
 /*
+ * The horizontal guard, and it may never be `hidden`. A box with one axis
+ * `hidden` and the other `visible` computes the visible axis to `auto`, which
+ * makes the BODY a scroll container — while the document still scrolls on
+ * `html`. Every `position: sticky` whose scrollport is the page then resolves
+ * against a body that never moves and simply travels away with the text; the
+ * copy desk's rail is the one surface in the app that scrolls the document, so
+ * it is where this showed. `clip` clips exactly the same overflow and creates
+ * no scroll container, so the other axis stays `visible`. The `hidden`
+ * declaration below it is the fallback for engines that do not know `clip` —
+ * they keep today's behaviour rather than gaining a horizontal scrollbar.
+ */
+body {
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+/*
  * …and the other half of that contract. Because `html` owns the scrollbar and
  * keeps it declared, `body { overflow: hidden }` never removes it — but
  * `react-remove-scroll` (inside every Radix Select, DropdownMenu, Popover and

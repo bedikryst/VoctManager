@@ -161,8 +161,13 @@ class SegmentDTO(BaseModel):
     #: The published translation is out of date against the current Polish.
     is_stale: bool = False
     source_known: bool = True
-    #: Created after the reader's last visit to the desk.
+    #: Created since the reader last declared THIS PAGE reviewed — and true for
+    #: every row of a page they never have, which is the state a first reading is
+    #: actually in.
     is_new: bool = False
+    #: Already on the page at that mark, and its published value has moved since.
+    #: Never true at the same time as `is_new`; the two partition the page.
+    is_changed: bool = False
     proposals: tuple[ProposalDTO, ...] = ()
 
 
@@ -253,9 +258,17 @@ class PatchSummaryDTO(BaseModel):
 class ScopeSummaryDTO(BaseModel):
     """One line of the contents list.
 
-    Four counts because the editor asked to see what they had already done:
+    The counts exist because the editor asked to see what they had already done:
     how much there is, how much has been touched, how much has been settled, and
-    what has appeared since they were last here.
+    what has moved since they read it.
+
+    `seen_at` is the divider the surface groups on — reviewed pages on one side,
+    everything else on the other — and it is a fact rather than a flag: it is
+    written only when the reader declares a page read. `new` and `changed` are
+    comparisons against it, and both are zero on a page nothing has touched since,
+    which is how a page leaves the "to review" half without anybody ticking it.
+    `stale` is deliberately not part of that division: it does not clear by being
+    read, so a page carrying it could never leave.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -266,4 +279,6 @@ class ScopeSummaryDTO(BaseModel):
     touched: int = 0
     accepted: int = 0
     new: int = 0
+    changed: int = 0
     stale: int = 0
+    seen_at: str | None = None

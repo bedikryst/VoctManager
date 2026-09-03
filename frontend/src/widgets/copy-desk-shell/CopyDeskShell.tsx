@@ -5,33 +5,33 @@
  *
  * Entering `/redakcja` replaces the panel's chrome outright: no sidebar, no nav
  * dock, no command palette, no ambient dock. What remains is the ground the
- * panel is painted on, one rail naming where the reader is, and a single way
- * back. The desk composes the panel's primitives; it does not compete with the
- * panel's furniture, and it does not invent furniture of its own.
+ * panel is painted on and one rail carrying the two ways out of a room with no
+ * other doors — a step back one level, and the panel itself. The desk composes
+ * the panel's primitives; it does not compete with the panel's furniture, and
+ * it does not invent furniture of its own.
  *
- * Two responsibilities beyond the frame, both of which belong to the shell
- * because they are true of the whole route tree:
+ * One responsibility beyond the frame, and it belongs to the shell because it is
+ * true of the whole route tree: **the gate.** One request answers "may this
+ * account be here at all", and the 403 it can return IS the refusal screen. Both
+ * pages below then read that same cache entry instead of asking again. A refusal
+ * still renders inside the rail, so the way out is never something the reader
+ * has to find.
  *
- *  - **The gate.** One request answers "may this account be here at all", and
- *    the 403 it can return IS the refusal screen. Both pages below then read
- *    that same cache entry instead of asking again. A refusal still renders
- *    inside the rail, so the way out is never something the reader has to find.
- *  - **The visit stamp.** `copy_desk_seen_at` is what "new since last visit" is
- *    measured from, and it is written when the reader LEAVES — a segment that
- *    appeared since last time has to survive being read, or the counter clears
- *    itself before it has said anything.
+ * What the shell deliberately does NOT do is stamp anything. Reading marks are
+ * per page and per reader (`CopyScopeVisit`), and a shell-wide stamp written on
+ * the way out is the defect they replaced: it declared the whole corpus read
+ * because somebody opened one page of it.
  *
  * @architecture Enterprise SaaS 2026
  * @module widgets/copy-desk-shell/CopyDeskShell
  */
 
-import React, { Suspense, useEffect, useRef } from "react";
+import React, { Suspense, useEffect } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, LayoutDashboard } from "lucide-react";
 
 import { useCopyDeskContents } from "@/features/copydesk/api/copydesk.queries";
-import { CopyDeskService } from "@/features/copydesk/api/copydesk.service";
 import { CopyDeskAccessRefusal } from "@/features/copydesk/components/CopyDeskAccessRefusal";
 import { SittingClosure } from "@/features/copydesk/components/SittingClosure";
 import { useCopyDeskSitting } from "@/features/copydesk/model/sittingStore";
@@ -66,40 +66,30 @@ export const CopyDeskShell = (): React.JSX.Element => {
     return () => document.body.classList.remove("admin-mode");
   }, []);
 
-  // Stamped on the way out, and only if the corpus was actually read: a visit
-  // that ended at the refusal screen saw nothing to mark as seen. Fire and
-  // forget — a stamp that fails is the reader's next visit reporting a slightly
-  // longer list, not something to interrupt them with.
   const isDeskIndex = pathname.replace(/\/$/, "") === "/redakcja";
-
-  const hasReadCorpus = useRef(false);
-  useEffect(() => {
-    if (contents) hasReadCorpus.current = true;
-  }, [contents]);
-  useEffect(
-    () => () => {
-      if (hasReadCorpus.current) {
-        void CopyDeskService.markSeen().catch(() => undefined);
-      }
-    },
-    [],
-  );
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-transparent font-sans text-ethereal-ink antialiased">
       <EtherealBackground />
 
-      {/* The one affordance §3 allows the takeover, and it stays reachable: a
-          desk you have to scroll to the top of to leave is a room with the door
-          behind the furniture. It steps back one level rather than always
-          leaving: from a page of text the way out an editor wants is the
-          contents list, and the panel is one click further.
+      {/* The affordances §3 allows the takeover, and they stay reachable: a desk
+          you have to scroll to the top of to leave is a room with the door
+          behind the furniture. `position: sticky` only delivers that while the
+          page itself is the scrollport — `panel.css` keeps the body out of that
+          role, and this is the surface that proves it.
+
+          The left link steps back one level: from a page of text the way out an
+          editor wants is the contents list.
 
           The rail is also where "I have finished" lives, for the reason it is
           not a submit — it belongs to the sitting, not to any one page, and a
           control that scrolled away with the paragraph it happened to sit under
           would be an offer nobody found. */}
-      <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-ethereal-canvas/90 px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] sm:px-6">
+      {/* Opaque enough to READ over, and blurred rather than solid: the ambient
+          layer's wash is at its strongest under exactly this band, so a flat
+          fill would print a lid across the top of the nave. The blur passes the
+          gradient through and destroys the body text travelling beneath it. */}
+      <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between gap-3 border-b border-hairline bg-ethereal-canvas/92 px-4 py-2.5 pt-[calc(env(safe-area-inset-top)+0.625rem)] backdrop-blur-md sm:px-6">
         <Button
           variant="ghost"
           size="sm"
@@ -115,9 +105,26 @@ export const CopyDeskShell = (): React.JSX.Element => {
 
         <div className="flex min-w-0 items-center gap-3">
           <SittingClosure />
-          <Eyebrow color="muted" className="hidden sm:inline">
-            {t("copy_desk.eyebrow", "Redakcja")}
-          </Eyebrow>
+          {/* The step back is one level, which leaves the panel two clicks away
+              from the text an editor actually works in — and the desk is a
+              takeover, so nothing else on screen leads out of it. The way out
+              therefore gets its own place, opposite the step back, and only
+              where it is not already the step back. On the index the rail's
+              left link IS this, so the slot names the room instead. */}
+          {isDeskIndex ? (
+            <Eyebrow color="muted" className="hidden sm:inline">
+              {t("copy_desk.eyebrow", "Redakcja")}
+            </Eyebrow>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              leftIcon={<LayoutDashboard size={14} aria-hidden="true" />}
+            >
+              <Link to="/panel">{t("copy_desk.back_to_panel", "Panel")}</Link>
+            </Button>
+          )}
         </div>
       </header>
 

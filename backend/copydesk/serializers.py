@@ -91,6 +91,17 @@ class ProposalAppliedSerializer(serializers.Serializer):
     )
 
 
+class ScopeSeenSerializer(serializers.Serializer):
+    """Which page the reader is declaring reviewed.
+
+    Unvalidated against the mirror on purpose: a watermark is a fact about the
+    reader, and refusing one for a scope the extractor has not ingested yet would
+    make "I have read this" depend on when `copy:sync` last ran.
+    """
+
+    scope = serializers.CharField(max_length=120)
+
+
 class SegmentQuerySerializer(serializers.Serializer):
     """The desk reads one page at a time, in one or more locale columns."""
 

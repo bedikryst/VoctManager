@@ -13,7 +13,7 @@ from django.contrib import admin
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
-from .models import CopyProposal, CopySegment
+from .models import CopyProposal, CopyScopeVisit, CopySegment
 
 
 @admin.register(CopySegment)
@@ -49,6 +49,27 @@ class CopyProposalAdmin(admin.ModelAdmin):
         'notified_at', 'reviewed_by', 'reviewed_at', 'created_at', 'updated_at',
     )
     fields = (*readonly_fields, 'status', 'applied_at')
+
+    def has_add_permission(self, request: HttpRequest) -> bool:
+        return False
+
+
+@admin.register(CopyScopeVisit)
+class CopyScopeVisitAdmin(admin.ModelAdmin):
+    """Who has declared which page reviewed, and when.
+
+    Deletable, and that is the escape hatch worth having: removing a row puts a
+    page back into the reader's "to review" half exactly as if they had never
+    read it. Nothing here is worth adding by hand — a watermark asserts that a
+    person read something, and the admin cannot know that.
+    """
+
+    list_display = ('user', 'scope', 'seen_at')
+    list_filter = ('scope', 'is_deleted')
+    search_fields = ('scope', 'user__email')
+    ordering = ('-seen_at',)
+    raw_id_fields = ('user',)
+    readonly_fields = ('id', 'user', 'scope', 'seen_at', 'created_at', 'updated_at')
 
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False

@@ -8,6 +8,7 @@
 
 import { FileText, Music2, type LucideIcon } from "lucide-react";
 
+import { formatLocalizedDate } from "@/shared/lib/time/intl";
 import type { CopyDeskScopeSummary } from "../types/copydesk.dto";
 
 /**
@@ -18,10 +19,27 @@ import type { CopyDeskScopeSummary } from "../types/copydesk.dto";
  */
 export const scopeFamily = (scope: string): string => scope.split(".")[0] ?? scope;
 
-export interface CopyDeskScopeGroup {
-  readonly family: string;
-  readonly scopes: readonly CopyDeskScopeSummary[];
-  readonly segments: number;
+/**
+ * Whether a page still wants this reader's eyes.
+ *
+ * Three cases, one predicate: they have never declared it read, something has
+ * appeared on it since they did, or something that was already there has moved.
+ * All three are comparisons the server makes against one watermark — nothing
+ * here is a state anybody maintains, which is why the list needs no tick-boxes.
+ *
+ * `stale` is deliberately absent. A translation whose Polish has moved is work
+ * outstanding, and it does not clear by being read: folding it in would make a
+ * page that can never leave the pending half however often its reader goes
+ * through it. It stays a count on the row, on whichever side the row sits.
+ */
+export const isPendingReview = (scope: CopyDeskScopeSummary): boolean =>
+  scope.seen_at === null || scope.new > 0 || scope.changed > 0;
+
+export interface CopyDeskScopeSplit {
+  /** Never read, or moved since it was. */
+  readonly pending: readonly CopyDeskScopeSummary[];
+  /** Read, and nothing has happened to it since. */
+  readonly reviewed: readonly CopyDeskScopeSummary[];
 }
 
 /**
@@ -52,49 +70,50 @@ export const familyIcon = (family: string): LucideIcon =>
   FAMILY_ICONS[family] ?? FileText;
 
 /**
- * Alphabetical within a family, by the page's own title.
+ * The two halves the desk opens on, each in reading order.
  *
- * The payload arrives ordered by scope KEY, which is the slug — so the six
- * concerts come back in an order that means nothing to a reader ("9-kart" then
- * "aeternam" then "bobola"). The site's own sequence is chronological and the
- * desk does not carry a date per page, so title order is the honest option: it
- * is at least the order somebody scanning for a title would look in.
- * `numeric` so a title that opens with a figure sorts as a number.
+ * The division is by review state rather than by family, because that is the
+ * question an editor arrives with — where is there something I have not looked
+ * at — and it answers it before they have read a single title. Family survives
+ * as the first sort key and as the glyph on the row, which is as much structure
+ * as a corpus of a dozen pages can carry without a second level of nesting.
+ *
+ * Within a family: alphabetical by the page's own title. The payload arrives
+ * ordered by scope KEY, which is the slug — so the six concerts come back in an
+ * order that means nothing to a reader ("9-kart" then "aeternam" then "bobola").
+ * The site's own sequence is chronological and the desk does not carry a date
+ * per page, so title order is the honest option: it is at least the order
+ * somebody scanning for a title would look in. `numeric` so a title that opens
+ * with a figure sorts as a number.
  */
-export const groupScopes = (
+export const splitScopes = (
   scopes: readonly CopyDeskScopeSummary[],
   language: string,
-): readonly CopyDeskScopeGroup[] => {
+): CopyDeskScopeSplit => {
   const collator = new Intl.Collator(language, {
     numeric: true,
     sensitivity: "base",
   });
-
-  const byFamily = new Map<string, CopyDeskScopeSummary[]>();
-  for (const scope of scopes) {
-    const family = scopeFamily(scope.scope);
-    const bucket = byFamily.get(family);
-    if (bucket) {
-      bucket.push(scope);
-    } else {
-      byFamily.set(family, [scope]);
-    }
-  }
 
   const rank = (family: string): number => {
     const index = FAMILY_ORDER.indexOf(family);
     return index === -1 ? FAMILY_ORDER.length : index;
   };
 
-  return [...byFamily.entries()]
-    .sort(([a], [b]) => rank(a) - rank(b) || collator.compare(a, b))
-    .map(([family, entries]) => ({
-      family,
-      scopes: [...entries].sort((a, b) =>
+  const inReadingOrder = (
+    entries: readonly CopyDeskScopeSummary[],
+  ): readonly CopyDeskScopeSummary[] =>
+    [...entries].sort(
+      (a, b) =>
+        rank(scopeFamily(a.scope)) - rank(scopeFamily(b.scope)) ||
+        collator.compare(scopeFamily(a.scope), scopeFamily(b.scope)) ||
         collator.compare(a.label || a.scope, b.label || b.scope),
-      ),
-      segments: entries.reduce((total, entry) => total + entry.segments, 0),
-    }));
+    );
+
+  return {
+    pending: inReadingOrder(scopes.filter(isPendingReview)),
+    reviewed: inReadingOrder(scopes.filter((scope) => !isPendingReview(scope))),
+  };
 };
 
 /**
@@ -103,3 +122,15 @@ export const groupScopes = (
  */
 export const formatCount = (value: number, language: string): string =>
   new Intl.NumberFormat(language).format(value);
+
+/**
+ * The day a watermark carries. A day and not a timestamp: nobody reads a page
+ * twice in a minute, and the two surfaces that print it — the contents row and
+ * the mark at the foot of a page — have to print the same words.
+ */
+export const seenOnDate = (seenAt: string, language: string): string =>
+  formatLocalizedDate(
+    seenAt,
+    { year: "numeric", month: "long", day: "numeric" },
+    language,
+  );

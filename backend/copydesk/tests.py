@@ -34,7 +34,14 @@ from notifications.models import NotificationLevel, NotificationType
 
 from .dtos import ProposalReviewDTO, ProposalWriteDTO, SegmentUpsertDTO
 from .hashing import normalize_for_hash, source_hash
-from .models import CopyProposal, CopySegment, ProposalStatus, SegmentKind, SiteLocale
+from .models import (
+    CopyProposal,
+    CopyScopeVisit,
+    CopySegment,
+    ProposalStatus,
+    SegmentKind,
+    SiteLocale,
+)
 from .permissions import user_can_edit_site_copy, user_is_copy_reviewer
 from .sanitizers import sanitize_html, sanitize_text
 from .services import CopyDeskService, ProposalClosedError, UnknownProposalsError
@@ -676,36 +683,79 @@ class ApplyStampTests(TestCase):
 
 
 class NewSinceLastVisitTests(TestCase):
+    """The watermark is per page, and only an explicit act writes one."""
+
     def setUp(self):
         self.editor = make_user("florent@example.com", editor=True)
 
-    def test_everything_is_new_until_the_first_visit_is_stamped(self):
+    def _by_key(self, scope="page.kontakt"):
+        return {
+            segment.key: segment
+            for segment in CopyDeskService.segments_for_scope(
+                scope=scope, user=self.editor,
+            )
+        }
+
+    def test_an_unreviewed_page_is_new_in_its_entirety(self):
         make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
         segments = CopyDeskService.segments_for_scope(
             scope="page.kontakt", user=self.editor,
         )
-        # No visit recorded yet: nothing is claimed as new, because there is no
-        # "last time" to measure against and a first sitting is not a diff.
-        self.assertFalse(segments[0].is_new)
+        # No watermark on this page: the reader has never declared it read, so
+        # every row on it is new TO THEM. Reporting nothing as new here was the
+        # single-stamp model's own blind spot — a first reading looked identical
+        # to a page with nothing to see.
+        self.assertTrue(segments[0].is_new)
+        self.assertFalse(segments[0].is_changed)
 
-    def test_a_segment_added_after_the_visit_reads_as_new(self):
+    def test_a_segment_added_after_the_mark_reads_as_new(self):
         make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
-        CopyDeskService.mark_seen(user=self.editor)
-        self.editor.profile.refresh_from_db()
+        CopyDeskService.mark_scope_seen(user=self.editor, scope="page.kontakt")
 
         later = make_segment("page.kontakt.hero.body", SiteLocale.POLISH, "Nowa sekcja")
         CopySegment.objects.filter(id=later.id).update(
             created_at=timezone.now() + timedelta(seconds=5)
         )
 
-        segments = {
-            segment.key: segment
-            for segment in CopyDeskService.segments_for_scope(
-                scope="page.kontakt", user=self.editor,
-            )
-        }
+        segments = self._by_key()
         self.assertFalse(segments["page.kontakt.hero.lede"].is_new)
         self.assertTrue(segments["page.kontakt.hero.body"].is_new)
+
+    def test_a_value_that_moved_after_the_mark_reads_as_changed(self):
+        segment = make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        CopyDeskService.mark_scope_seen(user=self.editor, scope="page.kontakt")
+
+        CopySegment.objects.filter(id=segment.id).update(
+            value="Zapraszamy serdecznie",
+            updated_at=timezone.now() + timedelta(seconds=5),
+        )
+
+        row = self._by_key()["page.kontakt.hero.lede"]
+        # The two states partition the page and never overlap: this row was
+        # standing there when the mark was made, so it is changed, not new.
+        self.assertTrue(row.is_changed)
+        self.assertFalse(row.is_new)
+
+    def test_marking_one_page_says_nothing_about_another(self):
+        make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        make_segment("page.kolofon.credits.lede", SiteLocale.POLISH, "Zdjęcia")
+        CopyDeskService.mark_scope_seen(user=self.editor, scope="page.kontakt")
+
+        self.assertFalse(self._by_key()["page.kontakt.hero.lede"].is_new)
+        self.assertTrue(
+            self._by_key("page.kolofon")["page.kolofon.credits.lede"].is_new
+        )
+
+    def test_re_marking_moves_the_mark_rather_than_adding_a_row(self):
+        make_segment("page.kontakt.hero.lede", SiteLocale.POLISH, "Zapraszamy")
+        first = CopyDeskService.mark_scope_seen(user=self.editor, scope="page.kontakt")
+        second = CopyDeskService.mark_scope_seen(user=self.editor, scope="page.kontakt")
+
+        self.assertGreaterEqual(second, first)
+        self.assertEqual(
+            CopyScopeVisit.objects.filter(user=self.editor, scope="page.kontakt").count(),
+            1,
+        )
 
 
 class ContentsListTests(TestCase):
@@ -734,6 +784,44 @@ class ContentsListTests(TestCase):
         self.assertEqual(summary.label, "Kontemplacja Wcielenia")
         self.assertEqual(summary.segments, 3)
         self.assertEqual(summary.accepted, 1)
+        self.assertEqual(summary.stale, 1)
+
+    def test_a_page_leaves_the_to_review_half_by_being_marked(self):
+        editor = make_user("florent@example.com", editor=True)
+        make_segment("concert.wcielenie.essence", SiteLocale.POLISH, "Treść")
+
+        before = CopyDeskService.scope_summaries(user=editor)[0]
+        self.assertIsNone(before.seen_at)
+        self.assertEqual(before.new, 1)
+
+        CopyDeskService.mark_scope_seen(user=editor, scope="concert.wcielenie")
+
+        after = CopyDeskService.scope_summaries(user=editor)[0]
+        # The whole division, in three values: the mark exists and neither
+        # comparison finds anything. Nothing was ticked and nothing stores
+        # "reviewed" as a state.
+        self.assertIsNotNone(after.seen_at)
+        self.assertEqual(after.new, 0)
+        self.assertEqual(after.changed, 0)
+
+    def test_a_reviewed_page_still_reports_what_went_stale_under_it(self):
+        """Staleness is outstanding work, not unread news.
+
+        It does not clear by being read, so it must not decide the two halves —
+        a page carrying it would never leave the "to review" side however many
+        times its reader went through it. It stays a count on the row instead.
+        """
+        editor = make_user("florent@example.com", editor=True)
+        make_segment("concert.wcielenie.essence", SiteLocale.POLISH, "Treść")
+        make_segment(
+            "concert.wcielenie.essence", SiteLocale.ENGLISH, "Text",
+            source_hash=source_hash("Coś zupełnie innego"),
+        )
+        CopyDeskService.mark_scope_seen(user=editor, scope="concert.wcielenie")
+
+        summary = CopyDeskService.scope_summaries(user=editor)[0]
+        self.assertEqual(summary.new, 0)
+        self.assertEqual(summary.changed, 0)
         self.assertEqual(summary.stale, 1)
 
     def test_someone_elses_verdict_is_not_my_work(self):
@@ -1070,12 +1158,25 @@ class ApiTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["unknown"], [str(stray)])
 
-    def test_mark_seen_stamps_the_visit(self):
+    def test_mark_seen_stamps_the_named_page(self):
         self.api.force_authenticate(user=self.editor)
-        response = self.api.post(reverse("copydesk-mark-seen"))
+        response = self.api.post(
+            reverse("copydesk-mark-seen"), {"scope": "concert.wcielenie"}, format="json",
+        )
         self.assertEqual(response.status_code, 200)
-        self.editor.profile.refresh_from_db()
-        self.assertIsNotNone(self.editor.profile.copy_desk_seen_at)
+        self.assertEqual(response.data["scope"], "concert.wcielenie")
+        self.assertTrue(
+            CopyScopeVisit.objects.filter(
+                user=self.editor, scope="concert.wcielenie"
+            ).exists()
+        )
+
+    def test_mark_seen_without_a_scope_is_refused(self):
+        # The route used to stamp the whole corpus from an empty body. A payload
+        # that names no page must not fall back to that.
+        self.api.force_authenticate(user=self.editor)
+        response = self.api.post(reverse("copydesk-mark-seen"), {}, format="json")
+        self.assertEqual(response.status_code, 400)
 
 
 class DigestTests(TestCase):

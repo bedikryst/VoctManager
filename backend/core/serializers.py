@@ -64,10 +64,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             # their own actions)
             'welcome_seen_at', 'push_email_offer_seen_at',
 
-            # Copy desk. The capability is granted from the admin and never by
-            # the account itself; the visit stamp has its own POST action. Both
-            # are here so the panel can decide whether to offer the way in at all.
-            'can_edit_site_copy', 'copy_desk_seen_at',
+            # Copy desk. Granted from the admin and never by the account itself;
+            # here so the panel can decide whether to offer the way in at all.
+            # The reading watermarks are per PAGE and live on the desk's own
+            # payload (`copydesk.CopyScopeVisit`) — a profile cannot carry them.
+            'can_edit_site_copy',
 
             # Integrations
             'calendar_token'
@@ -81,7 +82,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         # field named here at all.
         read_only_fields = (
             'role', 'calendar_token', 'welcome_seen_at', 'push_email_offer_seen_at',
-            'copy_desk_seen_at',
         )
 
     def _absolute_media_url(self, field) -> str | None:

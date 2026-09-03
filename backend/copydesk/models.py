@@ -1,10 +1,12 @@
 """
 @file models.py
-@description The copy desk's two tables. `CopySegment` is a PROJECTION of the
+@description The copy desk's three tables. `CopySegment` is a PROJECTION of the
              site's text as git holds it, refreshed by the extractor;
              `CopyProposal` is what the database actually owns — an editor's
              proposed change, which reaches the public site only by being
-             written into the repo and passing through a `git diff`.
+             written into the repo and passing through a `git diff`;
+             `CopyScopeVisit` is one reader's watermark on one page, and the
+             only thing the contents list's two halves are computed from.
 @architecture Enterprise SaaS 2026
 @module copydesk/models
 """
@@ -302,3 +304,76 @@ class CopyProposal(EnterpriseBaseModel):
     @property
     def is_open(self) -> bool:
         return self.status in OPEN_STATUSES
+
+
+class CopyScopeVisit(EnterpriseBaseModel):
+    """One reader's watermark on one page of the corpus.
+
+    **A row means "I have read this page", and only an explicit act writes one.**
+    Opening a page does not: an editor who taps into a 213-row concert to check a
+    single line has not reviewed it, and a stamp written on the way out would say
+    they had — permanently, since nothing ever puts a page back. That was the
+    defect in the single profile-wide stamp this table replaces, where merely
+    entering the desk cleared the new-since-last-visit state for the whole corpus.
+
+    Everything the contents list shows is a COMPARISON against `seen_at`, never a
+    stored state, which is what keeps it from needing to be maintained:
+
+    - **no row at all** — this page has never been reviewed by this reader, and
+      every segment on it is new to them. The absence is the honest starting
+      point, so nothing migrates a profile stamp in here: "when were you last on
+      the desk" is not an answer to "have you read this page".
+    - **new** — segments created after `seen_at`.
+    - **changed** — segments already present at `seen_at` whose published value
+      has moved since. This is what makes `CopySegment.updated_at` load-bearing:
+      the ingest must not save a row it did not change (`upsert_segments`), or
+      every reader is told the whole corpus moved every time the extractor ran.
+
+    Staleness is deliberately NOT one of them. It is reader-independent and it
+    does not clear by being read, so a page carrying it could never leave the
+    "to review" half however often it was reviewed.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="copy_scope_visits",
+        help_text=_("Whose reading this records. CASCADE: a watermark outlives nobody."),
+    )
+    scope = models.CharField(
+        max_length=120,
+        db_index=True,
+        help_text=_("The page reviewed. Always a `scope_from_key` value."),
+    )
+    seen_at = models.DateTimeField(
+        help_text=_(
+            "When this reader last declared the page reviewed. Set explicitly "
+            "rather than on arrival or departure — see the class docstring."
+        ),
+    )
+
+    class Meta:
+        db_table = "copydesk_scope_visit"
+        ordering = ["scope"]
+        verbose_name = _("Copy Scope Visit")
+        verbose_name_plural = _("Copy Scope Visits")
+        constraints = [
+            # One watermark per person per page: re-declaring a page reviewed
+            # moves the mark forward, it does not accumulate a history. The
+            # condition matches the sibling tables so a soft-deleted row cannot
+            # collide with its own replacement.
+            models.UniqueConstraint(
+                fields=["user", "scope"],
+                condition=models.Q(is_deleted=False),
+                name="unique_scope_visit_per_user",
+            ),
+        ]
+        indexes = [
+            # Declared explicitly: overriding Meta drops EnterpriseBaseModel's own.
+            models.Index(fields=["is_deleted", "-created_at"], name="copydesk_visit_isdel_idx"),
+            # The contents list reads every one of a reader's watermarks at once.
+            models.Index(fields=["user", "scope"], name="copydesk_visit_user_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.scope} seen by UID:{self.user_id}"

@@ -21,6 +21,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { FileQuestion } from "lucide-react";
 
+import { ScopeReviewMark } from "@/features/copydesk/components/ScopeReviewMark";
 import { SegmentRow } from "@/features/copydesk/components/SegmentRow";
 import {
   useCopyDeskSegments,
@@ -28,7 +29,7 @@ import {
   useWithdrawProposal,
 } from "@/features/copydesk/api/copydesk.queries";
 import { buildFields } from "@/features/copydesk/lib/fields";
-import { formatCount } from "@/features/copydesk/lib/scopeGroups";
+import { formatCount, seenOnDate } from "@/features/copydesk/lib/scopeGroups";
 import {
   LOCALE_VIEWS,
   LOCALE_VIEW_ORDER,
@@ -223,6 +224,20 @@ export default function CopyDeskScopePage(): React.JSX.Element {
               {title}
             </Heading>
             <StatLine stats={facts} />
+            {/* Where the reader stands on arrival. The ACT is at the foot, where
+                a page has actually been read; this is the same fact stated on
+                the way in, read from the same summary so the two cannot
+                disagree. Silent on a page never marked — that is the resting
+                state, and a line saying "not yet read" would be on every row of
+                a corpus nobody has started. */}
+            {summary?.seen_at && (
+              <Caption color="graphite">
+                {t("copy_desk.contents.seen_on", {
+                  date: seenOnDate(summary.seen_at, language),
+                  defaultValue: "Przejrzane {{date}}",
+                })}
+              </Caption>
+            )}
           </div>
           <SegmentedTabs
             items={LOCALE_VIEW_ORDER.map((id) => ({
@@ -272,11 +287,15 @@ export default function CopyDeskScopePage(): React.JSX.Element {
           ))}
         </ul>
 
-        {/* The one place the desk explains its own silence. An editor who never
-            presses "Skończyłem" has lost nothing, and the sentence that says so
-            belongs at the foot of the column, which is where the question
-            arises. */}
-        <Caption color="graphite" className="border-t border-hairline pt-3">
+        {/* Two sentences at the foot, and they answer different questions. This
+            one is the reader's claim about the PAGE — it clears it off the
+            contents list and nothing else. */}
+        <ScopeReviewMark scope={scope} summary={summary} language={language} />
+
+        {/* And this one is the desk explaining its own silence. An editor who
+            never presses "Skończyłem" has lost nothing, and the sentence that
+            says so belongs where the question arises. */}
+        <Caption color="graphite">
           {t(
             "copy_desk.editor.autosave_note",
             "Zapisuje się samo. Wydawca dostaje zestawienie pół godziny po tym, jak przestaniesz pisać — albo od razu, kiedy klikniesz „Skończyłem” u góry.",

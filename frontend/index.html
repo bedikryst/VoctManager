@@ -298,7 +298,10 @@
       the previous shape and cost every dashboard load the full download.
     -->
   </head>
-  <body class="antialiased overflow-x-hidden theme-panel">
+  <!-- The horizontal guard is NOT a utility here: `overflow-x-hidden` makes the
+       body a scroll container and breaks every page-level `position: sticky`.
+       `panel.css` owns the rule, in `clip` form, with the reasoning. -->
+  <body class="antialiased theme-panel">
     <div id="root" class="min-h-screen w-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

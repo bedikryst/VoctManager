@@ -51,6 +51,12 @@ export const SegmentRow = ({
 }: SegmentRowProps): React.JSX.Element => {
   const { t } = useTranslation();
   const isNew = locales.some((locale) => field.cells[locale]?.segment.is_new);
+  // The two never coincide on one segment, but a FIELD is up to three of them,
+  // and a field whose Polish is new while its French merely moved is honestly
+  // both. "New" wins the single chip: it is the stronger claim about the row.
+  const isChanged =
+    !isNew &&
+    locales.some((locale) => field.cells[locale]?.segment.is_changed);
 
   return (
     <li className="border-t border-hairline py-2.5">
@@ -64,6 +70,11 @@ export const SegmentRow = ({
         </Eyebrow>
         {isNew && (
           <Badge variant="incense">{t("copy_desk.editor.new", "Nowe")}</Badge>
+        )}
+        {isChanged && (
+          <Badge variant="incense">
+            {t("copy_desk.editor.changed", "Zmienione")}
+          </Badge>
         )}
       </div>
 
