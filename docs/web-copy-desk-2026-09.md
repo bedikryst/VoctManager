@@ -1192,6 +1192,59 @@ one endpoint over data the desk already stores, and it is the honest half of "se
 the state, not the trigger. Not built; worth building when the desk has an editor other than its
 author.
 
+### §6n Stage E — the run itself, and the four things production taught it (2026-09-03)
+
+**It ran, against production, from the laptop: 856 values, of which 830 were written by this run**
+(416 EN + 414 FR; 26 were already in the repository from stage C3 and needed nothing). Both overlays
+now hold 428 of 428, `hymn-poleglym.title` reads "Hymn to the Fallen", and `copy:extract` reports
+`856 already translated`. Stage E is closed.
+
+**The loop as written could not survive its own volume, and three of the four fixes are in
+`client.mjs`.** The command posts twice per value — propose, then accept — so a locale is ~830
+requests at a panel that allows 300 a minute per account and runs one Django process on a one-vCPU
+droplet next to the site it serves. What that produced, in the order it appeared: a 500 three
+quarters of the way through the English run; a 429 nine seconds into the French one; and then a
+stretch where the worker answered 500 to *everything*, `POST /api/token/` included, for the better
+part of a minute. Only the last of those is interesting, and it is the diagnosis for all three: the
+import was a load test aimed at production, and the panel's own users were behind it in the queue.
+
+- **Requests are paced at 400 ms** — under half the server's cap, deliberately. A locale takes a few
+  unattended minutes, which is the right price for a command that runs twice a year.
+- **5xx and dropped connections are retried** (2 s, 5 s, 15 s, 30 s), because a wedged worker
+  recovers in tens of seconds and losing the run at row 300 costs everything above it.
+- **429 is retried on the server's own `Retry-After`**, up to twelve times. It is the one 4xx that
+  means "later" rather than "never", and DRF does not record a throttled request in its own history,
+  so waiting costs nothing but time.
+- **And `copy:propose` is now RESUMABLE**, which is the fix that made the rest survivable: it reads
+  `proposals/patch/` first and skips every value the desk already holds accepted and unwritten.
+  `plan()` cannot answer that question — it compares the drafts against the REPOSITORY, and these
+  are precisely the values that have not reached it. Re-running a broken import now costs the
+  remainder instead of a second proposal on every row. Accepting tolerates a 409 for the same
+  reason: a retried accept that follows one which landed and lost its response is asking for the
+  state it already has.
+
+**The fourth fix is the panel's, and the run is what exposed it.** Between the verdict and the next
+`copy:apply` the desk held 830 decided sentences that no file carried — and the editor's cell had
+nowhere to show them: `segment.value` is git's, so the screen read as a chip saying "Przyjęte" over
+an empty field. The first editor to see it read it as lost work, and said so. `readCell` now also
+reports `awaiting` — the newest accepted, unapplied proposal on the row, whoever wrote it — and the
+cell prints it in gold under the field, labelled as waiting for the repository rather than as
+published. It costs no request: the payload already carried every proposal with its `applied_at`.
+
+**Two smaller things from the same sitting, both reported by the same editor.** The scope page now
+carries a two-line legend above the text, because the row's controls appear only after a field is
+touched and its chips only where a fact exists — so an editor meets every one of them unannounced,
+and "what does Cofnij do" has no answer anywhere on the surface. And the three-language view is no
+longer capped at a single column's reading measure: `all` takes the shell's full width (raised to
+1760), because three columns each need a measure of their own and a cap sized for one squeezed all
+three into ribbons with the screen empty on both sides.
+
+**Florent and Ania lose `is_staff`** (decided 2026-09-03, executed in the Django admin) and keep
+`can_edit_site_copy`. This is §7's first trap taken at its word rather than moved: they are editors,
+and staff would make them reviewers of their own proposals. The one thing to check while doing it —
+`user_is_manager` is role-MANAGER **or** staff, so an account whose profile role is not MANAGER
+loses the manager screens along with the admin.
+
 ## §7 Traps
 
 - **Every editor who is `is_staff` is a REVIEWER.** `user_is_copy_reviewer` tests staff and nothing
