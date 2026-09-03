@@ -394,6 +394,15 @@
        over — but the brief rite IS the first thing the visitor meets, and starting on the
        frame the page paints reads as walking in on something already in progress. */
     --rite-lead: 0ms;
+    /* The pen's own curve, and deliberately NOT `--ease-slow` — the second place in this cadence
+       where that token is the wrong one. It is for something arriving and settling from nowhere,
+       and it drew the stem accordingly: 19% of the stroke in the first frame, half of it inside
+       103ms of the 900, then 633ms creeping through the last fifth. That is not a hand writing;
+       it is an object landing. Worse, the stroke effectively finished around 200ms and crept
+       from there, so the punctum appearing at 880ms had no gesture left to belong to.
+       This curve starts from rest, peaks at 48% of the travel and settles into the terminal, so
+       the nib reaches the foot of the stem exactly as the dot lands. */
+    --pen-ease: cubic-bezier(0.62, 0.02, 0.34, 1);
   }
 
   html.rite-brief .rite {
@@ -472,7 +481,7 @@
      statement. */
 
   :is(.preloader.is-cadence, html.rite-brief .preloader) .rs-stem {
-    animation: riteDraw 900ms var(--ease-slow) forwards;
+    animation: riteDraw 900ms var(--pen-ease) forwards;
     animation-delay: var(--rite-lead);
   }
 
