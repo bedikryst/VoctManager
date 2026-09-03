@@ -18,6 +18,7 @@ import { Link, useOutletContext } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Inbox } from "lucide-react";
 
+import { CopyDeskPrimer } from "@/features/copydesk/components/CopyDeskPrimer";
 import { ScopeContentsList } from "@/features/copydesk/components/ScopeContentsList";
 import { formatCount } from "@/features/copydesk/lib/scopeGroups";
 import type { CopyDeskOutletContext } from "@/widgets/copy-desk-shell/CopyDeskShell";
@@ -113,6 +114,11 @@ export default function CopyDeskContentsPage(): React.JSX.Element {
                 "Segment to jedno pole strony w jednym języku.",
               )}
             </Text>
+            {/* Below the census and above the pages: an editor arriving for the
+                first time needs the route their sentence takes before they need
+                the list of pages, and one returning to finish a page scrolls
+                past three lines. */}
+            <CopyDeskPrimer />
             <ScopeContentsList scopes={contents.scopes} />
           </>
         )}

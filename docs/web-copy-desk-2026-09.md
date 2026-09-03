@@ -157,6 +157,15 @@ Instead: **a capability flag on `UserProfile`** (`can_edit_site_copy`), independ
 disturbs nothing. Florent and Ania already have accounts; the flag is set from Django admin — no
 frontend UI for editor management in this stage, deliberately.
 
+**The profile payload reports the EFFECTIVE capability, not the stored column** (amended 2026-09-03).
+`user_can_edit_site_copy` admits staff whatever the flag says, so a serializer echoing the column
+would hide every doorway from the one account that can also review — the developer, who has no
+reason to have set the flag on themselves. The panel then offers the desk to exactly whom the server
+will admit, from one predicate. Two doorways exist and neither is a nav tab: the command palette
+(⌘K) and the sidebar footer, beside settings and log-out. That placement is the constraint from D1
+restated — `/redakcja` replaces the shell, so a rail item pointing at it would be a tab that closes
+the panel, while the footer is already where the panel keeps what leaves it.
+
 **Token links are deferred, not rejected.** When a genuinely external reviewer appears (a translator
 who is not in the ensemble), the right door is a per-person signed link, not an account: it keeps a
 stranger out of the identity model entirely — no acceptance of a choir application's terms they will
@@ -1138,30 +1147,59 @@ run under `node --env-file-if-exists=.env`, so the file is read at start-up and 
 registry for every process on the machine, which is a worse trade than a gitignored file next to the
 code that reads it.
 
-**The six commands, and which of them can be run without the stack.**
+**The loop, as `make` targets.** They exist because this is run rarely — a sequence nobody remembers
+in a year is a sequence that gets reconstructed wrongly, and the npm scripts underneath say nothing
+about their own order. The comment block above them in the `Makefile` is the runbook's short form.
 
 ```
-make up                              # and `make migrate` — nothing applies migrations for you
-cd web
-npm run copy:sync                    # extract + ingest; REFUSES a dirty src/content/
-npm run copy:propose -- --locale en --write
-npm run copy:propose -- --locale fr --write
-npm run copy:apply                   # dry run — reads the patch, writes nothing
-npm run copy:apply -- --write        # writes the overlays, stamps applied
-git diff -- src/content/concerts.en.yaml src/content/concerts.fr.yaml
+make up && make migrate      # nothing applies migrations for you, in any environment
+make copy-sync               # the corpus enters the desk. Until this runs, /redakcja is EMPTY
+make copy-draft              # drafts → accepted proposals, EN then FR
+make copy-check              # what the patch would write; touches nothing
+make copy-apply              # writes the overlays, stamps applied, prints the diff
 ```
+
+Underneath: `npm run copy:sync`, `copy:propose -- --locale <l> --write`, `copy:apply` and
+`copy:apply -- --write`, all run in `web/`.
 
 `copy:propose` without `--write` and `copy:sync --dry-run` are pure local reads and need neither the
 stack nor the credentials — they are the way to check coverage offline. **`copy:apply`'s dry run is
 not**: the patch it prints comes from the server, so it signs in like the rest.
+
+**WHICH MACHINE, AND WHICH DESK — the part that is easy to get backwards.** The commands run from a
+developer's checkout, always, and `COPYDESK_API` decides which panel they feed. **Never on the
+server**: its `/root/voctmanager/web` is a deploy artifact — it has no `node_modules` (the site is
+built inside an image, so `npm ci` never runs there) and, worse, anything `copy:apply` wrote into it
+would sit as an uncommitted change that the next `git pull` overwrites, having reached no reader.
+The desk an editor actually uses is **production's**, because that is where Florent and Ania have
+accounts, so the working shape is: `COPYDESK_API=https://voctensemble.com` in `web/.env`, the loop
+run from the laptop, the diff committed and deployed from there. The dev stack is for rehearsing the
+machinery against a database nobody is reading.
 
 **Three failures worth recognising on sight.** A sign-in that returns 401 is the password; a 403 on
 the first real request is an account that is not `is_staff`; and a 500 or a missing-table error from
 `copy:sync` is the dev database being older than the copy-desk migrations — `make migrate` is a
 separate manual step in every environment.
 
+**Why this is not a button in the panel, and what would have to change for it to be one.** All four
+targets are operations on a CHECKOUT: `copy:sync` reads `src/content/` and refuses to ingest text
+that is not committed, `copy:apply` writes two files and hands them to `git diff`. The panel runs in
+a container that has no checkout, no working tree and no commit rights, and giving it those is the
+open decision "whether accepted proposals auto-commit" (§8) — a bot identity, a deploy key and a
+push, not a button. What the panel could cheaply gain instead is the *reading*: which revision the
+mirror was last ingested at, and how many accepted proposals are waiting for the repository. That is
+one endpoint over data the desk already stores, and it is the honest half of "see it in the app" —
+the state, not the trigger. Not built; worth building when the desk has an editor other than its
+author.
+
 ## §7 Traps
 
+- **Every editor who is `is_staff` is a REVIEWER.** `user_is_copy_reviewer` tests staff and nothing
+  else, and `copy_desk_reviewers` mails the digest to every active staff account. So an editor who
+  was made staff for some unrelated admin errand can accept their own proposals and receives the
+  reviewer's digest — the two-iteration rule quietly loses its second iteration, and nothing on
+  screen says so. Grant `can_edit_site_copy` and leave staff alone; if an editor genuinely needs the
+  Django admin, the reviewer test has to move to a narrower predicate before they get it.
 - **`contenteditable` injects markup.** The browser will produce `<div>`, `<br>` and styled `<span>`
   inside an edited `html` segment. The export path must whitelist `<em> <strong> <a>` and flatten
   everything else, and `text` segments must be edited as plain text with no HTML path at all. This

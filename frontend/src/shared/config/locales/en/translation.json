@@ -5127,6 +5127,22 @@
     }
   },
   "copy_desk": {
+    "primer": {
+      "title": "How this works",
+      "propose": {
+        "title": "You write a proposal",
+        "body": "Click a sentence, correct it, and it saves itself. The site does not change — a proposal now stands beside that sentence."
+      },
+      "review": {
+        "title": "A reviewer settles it",
+        "body": "They see the old and the new wording side by side, and accept or reject. Accepting still does not touch the site."
+      },
+      "publish": {
+        "title": "The change reaches the site",
+        "body": "A separate command writes accepted sentences into the repository, and a deployment carries them to the site. Until then the page says what it said."
+      },
+      "source_note": "Polish is the source. When a Polish sentence changes, the translations beside it are marked out of date — nothing disappears and nothing publishes itself."
+    },
     "sitting": {
       "finish": "I'm finished",
       "announced": "Reported",

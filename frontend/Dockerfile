@@ -18,7 +18,7 @@
 # ==========================================
 # Stage 1: Panel SPA builder (Vite + React)
 # ==========================================
-FROM node:22-alpine AS panel-builder
+FROM node:24-alpine AS panel-builder
 
 WORKDIR /app
 
@@ -71,7 +71,7 @@ RUN VITE_VAPID_PUBLIC_KEY="${VITE_VAPID_PUBLIC_KEY:-$VAPID_PUBLIC_KEY}" npm run 
 # ==========================================
 # Stage 2: Astro public-site builder (Astro 6 + Sharp image pipeline)
 # ==========================================
-FROM node:22-alpine AS web-builder
+FROM node:24-alpine AS web-builder
 
 WORKDIR /app
 
@@ -80,7 +80,7 @@ ENV CI=true \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# Astro's image pipeline uses Sharp, which needs libvips. The node:22-alpine
+# Astro's image pipeline uses Sharp, which needs libvips. The node:24-alpine
 # image ships pre-built vips bindings for Sharp via npm, so no extra apk packages
 # are needed in this lane; if a future Astro version drops Alpine prebuilts, add
 # `RUN apk add --no-cache vips-dev build-base python3` here.

@@ -5128,6 +5128,22 @@
     }
   },
   "copy_desk": {
+    "primer": {
+      "title": "Comment cela fonctionne",
+      "propose": {
+        "title": "Vous rédigez une proposition",
+        "body": "Cliquez sur une phrase, corrigez-la, l'enregistrement se fait seul. Le site ne change pas — une proposition se pose à côté de cette phrase."
+      },
+      "review": {
+        "title": "Un relecteur tranche",
+        "body": "Il voit l'ancienne et la nouvelle formulation côte à côte, puis accepte ou refuse. L'acceptation ne touche toujours pas au site."
+      },
+      "publish": {
+        "title": "La modification arrive sur le site",
+        "body": "Une commande distincte inscrit les phrases acceptées dans le dépôt, et un déploiement les porte sur le site. D'ici là, la page dit ce qu'elle disait."
+      },
+      "source_note": "Le polonais est la source. Quand une phrase polonaise change, les traductions qui l'accompagnent sont signalées comme obsolètes — rien ne disparaît et rien ne se publie tout seul."
+    },
     "sitting": {
       "finish": "J'ai fini",
       "announced": "Transmis",

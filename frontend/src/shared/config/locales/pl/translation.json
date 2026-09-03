@@ -5162,6 +5162,22 @@
     }
   },
   "copy_desk": {
+    "primer": {
+      "title": "Jak to działa",
+      "propose": {
+        "title": "Piszesz propozycję",
+        "body": "Klikasz w zdanie, poprawiasz je, zapis idzie sam. Serwis się nie zmienia — przy tym zdaniu staje propozycja."
+      },
+      "review": {
+        "title": "Recenzent ją rozstrzyga",
+        "body": "Widzi stare i nowe brzmienie obok siebie i przyjmuje albo odrzuca. Przyjęcie wciąż nie dotyka strony."
+      },
+      "publish": {
+        "title": "Zmiana wchodzi na stronę",
+        "body": "Przyjęte zdania wpisuje do repozytorium osobne polecenie, a na serwis wprowadza je wdrożenie. Do tego czasu strona mówi to, co mówiła."
+      },
+      "source_note": "Polski jest źródłem. Kiedy polskie zdanie się zmieni, tłumaczenia przy nim zostają oznaczone jako nieaktualne — nic nie znika i nic nie publikuje się samo."
+    },
     "sitting": {
       "finish": "Skończyłem",
       "announced": "Zgłoszone",
